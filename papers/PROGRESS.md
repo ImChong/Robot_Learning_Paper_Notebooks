@@ -465,7 +465,7 @@
 | 578  | [Event-Based Upper-Body Humanoid Teleoperation Under Challenging Illumination](https://arxiv.org/abs/2607.29227) ✅ [笔记](07_Teleoperation/Event-Based_Upper-Body_Humanoid_Teleoperation_Under_Challenging_Illumination/Event-Based_Upper-Body_Humanoid_Teleoperation_Under_Challenging_Illumination.md) | 2026.07 | 2026-08-25 | ✅ 已总结 |
 
 
-### Navigation（20篇）
+### Navigation（21篇）
 
 
 | #   | 论文                                                                                                                                                         | 日期      | 🌟  | 状态   |
@@ -491,6 +491,7 @@
 | 368  | [LOVON: Legged Open-Vocabulary Object Navigator](https://arxiv.org/abs/2507.06747) ✅ [笔记](08_Navigation/LOVON__Legged_Open-Vocabulary_Object_Navigator/LOVON__Legged_Open-Vocabulary_Object_Navigator.md) | 2025-07-09 |  | ✅ 已总结 |
 | 369  | [GuideWalk: Learning Unified Autonomous Navigation and Locomotion for Humanoid Robots across Versatile Terrains](https://arxiv.org/abs/2606.10449) ✅ [笔记](08_Navigation/GuideWalk__Learning_Unified_Autonomous_Navigation_and_Locomotion_for_Humanoid/GuideWalk__Learning_Unified_Autonomous_Navigation_and_Locomotion_for_Humanoid.md) | 2026-06-09 |  | ✅ 已总结 |
 | 579  | [HumanoidVLN: A Physics-Grounded Simulator and Benchmark for Vision-Language Navigation Across Diverse Humanoid Embodiments](https://arxiv.org/abs/2608.12860) ✅ [笔记](08_Navigation/HumanoidVLN__Physics-Grounded_Simulator_and_Benchmark_for_Vision-Language_Navigation/HumanoidVLN__Physics-Grounded_Simulator_and_Benchmark_for_Vision-Language_Navigation.md) | 2026-08-13 | 2026-08-26 | ✅ 已总结 |
+| 584  | [EgoNav: Bridging Learned Waypoints and Geometry-Aware Local Control for Robust Indoor Navigation](https://arxiv.org/abs/2608.25642) ✅ [笔记](08_Navigation/EgoNav__Bridging_Learned_Waypoints_and_Geometry-Aware_Local_Control/EgoNav__Bridging_Learned_Waypoints_and_Geometry-Aware_Local_Control.md) | 2026-08-26 | 2026-09-06 | ✅ 已总结 |
 
 
 ### State Estimation（17篇）

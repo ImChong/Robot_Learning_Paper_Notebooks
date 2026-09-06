@@ -2444,6 +2444,18 @@
     "display_name": "Navigation",
     "papers": [
       {
+        "title": "EgoNav: Bridging Learned Waypoints and Geometry-Aware Local Control for Robust Indoor Navigation",
+        "path": "papers/08_Navigation/EgoNav__Bridging_Learned_Waypoints_and_Geometry-Aware_Local_Control/EgoNav__Bridging_Learned_Waypoints_and_Geometry-Aware_Local_Control.md",
+        "url": "/papers/08_Navigation/EgoNav__Bridging_Learned_Waypoints_and_Geometry-Aware_Local_Control/EgoNav__Bridging_Learned_Waypoints_and_Geometry-Aware_Local_Control.html",
+        "dir": "EgoNav__Bridging_Learned_Waypoints_and_Geometry-Aware_Local_Control",
+        "arxiv": "2608.25642",
+        "has_open_source": false,
+        "published_date_zh": "2026年8月26日（arXiv v1）",
+        "published_date_en": "Aug 26, 2026 (arXiv v1)",
+        "zhname": "EgoNav：用几何感知的局部控制弥合「学习式路点」，实现鲁棒室内导航",
+        "zh_title": "EgoNav：用几何感知的局部控制弥合「学习式路点」，实现鲁棒室内导航"
+      },
+      {
         "title": "HumanoidVLN: A Physics-Grounded Simulator and Benchmark for Vision-Language Navigation Across Diverse Humanoid Embodiments",
         "path": "papers/08_Navigation/HumanoidVLN__Physics-Grounded_Simulator_and_Benchmark_for_Vision-Language_Navigation/HumanoidVLN__Physics-Grounded_Simulator_and_Benchmark_for_Vision-Language_Navigation.md",
         "url": "/papers/08_Navigation/HumanoidVLN__Physics-Grounded_Simulator_and_Benchmark_for_Vision-Language_Navigation/HumanoidVLN__Physics-Grounded_Simulator_and_Benchmark_for_Vision-Language_Navigation.html",
