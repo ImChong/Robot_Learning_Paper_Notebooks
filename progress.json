@@ -41,12 +41,12 @@
         "13_Physics-Based_Animation",
         "14_Human_Motion"
       ],
-      "last_module": "07_Teleoperation",
-      "last_index": 347,
-      "last_title": "Deep Imitation Learning for Humanoid Loco-manipulation through Human Teleoperation (TRILL, arXiv:2309.01952)",
-      "next_module": "08_Navigation",
-      "last_completed_date": "2026-09-05",
-      "note": "07_Teleoperation 模块推进最新发表且尚无笔记的论文《Deep Imitation Learning for Humanoid Loco-manipulation through Human Teleoperation》(TRILL, arXiv:2309.01952, v1 2023-09-05 / v2 2023-11-19, IEEE-RAS Humanoids 2023 最佳论文入围; UT Austin RPL×HCRL, Mingyo Seo/Luis Sentis/Yuke Zhu 等; 双臂人形 DRACO 3)。本模块 2026 年新论文均已建笔记, 按「已有内容则跳过」规则顺延到最新且无笔记者(PROGRESS 第 347 项)。高自由度人形做「边走边操作」卡在演示难采、策略难训: 直接遥控几十个关节认知/体力负担大, 在关节空间硬采轨迹样本效率低。TRILL 把操作者放进直觉 VR 界面, 只需给「任务空间高层指令」(双手末端目标位姿/视角), 底层全身控制器 WBC 负责把指令翻成满足动力学/约束的关节力矩并稳定动力学(100Hz); 采到的演示训练一个从机载双目相机+本体感觉直接输出任务空间指令的视觉运动策略(20Hz), 策略与控制器双频分层构成实时闭环; 再配面向移动操作定制的高层动作抽象提升模仿学习样本效率。Robosuite(MuJoCo)仿真采集/训练 + 真机 DRACO 3 迁移。仿真自由行走 96%/灵巧操作 80%/移动操作 92%, 真机取放工具 80%(10 次)、拧下喷雾盖 90%(10 次)。含整体流程 mermaid + 源码运行时序图(基于开源 UT-Austin-RPL/TRILL: simulator/pnc(WBC)/mimic+models(IL)/scripts/configs)。下一篇轮转到 08_Navigation。",
+      "last_module": "08_Navigation",
+      "last_index": 584,
+      "last_title": "EgoNav: Bridging Learned Waypoints and Geometry-Aware Local Control for Robust Indoor Navigation (arXiv:2608.25642)",
+      "next_module": "09_State_Estimation",
+      "last_completed_date": "2026-09-06",
+      "note": "08_Navigation 模块推进最新发表且尚无笔记的论文《EgoNav: Bridging Learned Waypoints and Geometry-Aware Local Control for Robust Indoor Navigation》(arXiv:2608.25642, v1 2026-08-26; Jing Wang/Shiqi Zhao/Hairong Qu/Peng Yin)。该 EgoNav 与 08_Navigation 里已存在的 EgoNav(2604.00416, Learning Humanoid Navigation from Human Data) 为同名不同文。本文无官方开源仓库(构建块 GNM/ViNT/NoMaD、DFormerV2、MixVPR、Falco 均开源)，故无源码运行时序图。下一篇轮转到 09_State_Estimation 模块最新发表且无笔记的论文。",
       "last_date": "2026-09-05",
       "next_candidate": null
     },
@@ -2367,7 +2367,7 @@
       "folder": "papers/04_Loco-Manipulation_and_WBC/Learning_Vision-Driven_Reactive_Soccer_Skills_for_Humanoid_Robots",
       "note_file": "Learning_Vision-Driven_Reactive_Soccer_Skills_for_Humanoid_Robots.md",
       "pdf_file": "Learning.pdf",
-      "status": "pending",
+      "status": "done",
       "start_date": null,
       "done_date": null,
       "route": "Loco-Manipulation",
@@ -5863,6 +5863,26 @@
       "arxiv": "2508.08258",
       "pdf_file": "",
       "route": "物理动画",
+      "title_cn": ""
+    },
+    {
+      "title": "Deep Imitation Learning for Humanoid Loco-manipulation through Human Teleoperation",
+      "folder": "papers/07_Teleoperation/TRILL__Deep_Imitation_Learning_for_Humanoid_Loco-manipulation_through_Human_Teleoperation",
+      "note_file": "TRILL__Deep_Imitation_Learning_for_Humanoid_Loco-manipulation_through_Human_Teleoperation.md",
+      "status": "done",
+      "arxiv": "2309.01952",
+      "pdf_file": "",
+      "route": "Teleoperation",
+      "title_cn": ""
+    },
+    {
+      "title": "EgoNav: Bridging Learned Waypoints and Geometry-Aware Local Control for Robust Indoor Navigation",
+      "folder": "papers/08_Navigation/EgoNav__Bridging_Learned_Waypoints_and_Geometry-Aware_Local_Control",
+      "note_file": "EgoNav__Bridging_Learned_Waypoints_and_Geometry-Aware_Local_Control.md",
+      "status": "done",
+      "arxiv": "2608.25642",
+      "pdf_file": "",
+      "route": "Navigation",
       "title_cn": ""
     }
   ]
