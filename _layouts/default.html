@@ -146,6 +146,51 @@
   </button>
 
   <script>
+    /* ─── 浮动按钮避让页脚 ──────────────────────────────
+       左下角 #sidebar-toggle 与右下角 #back-to-top 都是 position: fixed，
+       滚到底部时会压住 .site-footer。这里按 footer 在视口内的可见高度实时
+       抬高两者共用的 --fab-bottom，保证按钮始终浮在页脚之上。 */
+    (function() {
+      var footer = document.querySelector('.site-footer');
+      if (!footer) return;
+
+      var BASE = 24;   // 默认离底距离，与 style.css 中 --fab-bottom 的回退值一致
+      var GAP = 16;    // 按钮与页脚顶边之间的呼吸空隙
+      var last = -1;
+
+      function update() {
+        var rect = footer.getBoundingClientRect();
+        // footer 顶边高出视口底边多少，即页脚在屏幕底部占据的高度
+        var overlap = Math.max(0, window.innerHeight - rect.top);
+        var bottom = Math.max(BASE, Math.round(overlap) + GAP);
+        if (bottom !== last) {
+          last = bottom;
+          document.documentElement.style.setProperty('--fab-bottom', bottom + 'px');
+        }
+      }
+
+      var ticking = false;
+      function onScroll() {
+        if (ticking) return;
+        ticking = true;
+        window.requestAnimationFrame(function() {
+          update();
+          ticking = false;
+        });
+      }
+
+      window.addEventListener('scroll', onScroll, { passive: true });
+      window.addEventListener('resize', onScroll, { passive: true });
+      // 语言切换、字体加载等会改变页脚高度，可用时用 ResizeObserver 兜底
+      if (typeof ResizeObserver === 'function') {
+        new ResizeObserver(onScroll).observe(footer);
+      }
+
+      update();
+    })();
+  </script>
+
+  <script>
     /* ─── Back to Top ───────────────────────────────── */
     (function() {
       var btn = document.getElementById('back-to-top');

@@ -553,11 +553,19 @@ body.index-search-active .paper-list-toggle-group {
   border-radius: 3px;
 }
 
+/* ===== 浮动按钮的底部落位 =====
+   --fab-bottom 由 _layouts/default.html 的脚本按 .site-footer 的可见高度实时更新：
+   页面未滚到底时保持 24px；footer 进入视口后抬高，避免两个 FAB 压住页脚文字。
+   左右两个 FAB 必须共用同一个表达式，否则会破坏中轴线镜像关系。 */
+:root {
+  --fab-bottom: 24px;
+}
+
 /* Sidebar Toggle & Overlay */
 .sidebar-toggle {
   display: none;
   position: fixed;
-  bottom: 24px;
+  bottom: var(--fab-bottom, 24px);
   left: 20px;
   width: 48px;
   height: 48px;
@@ -601,7 +609,7 @@ body.index-search-active .paper-list-toggle-group {
 
 /* ===== Back to Top（右下角进度环 FAB，_layouts/default.html 注入） =====
    落位与左下角的 .sidebar-toggle 关于页面中轴线镜面对称：
-   同样的 bottom: 24px 与 48x48 尺寸，left: 20px 镜像成 right: 20px。
+   同样的 bottom: var(--fab-bottom) 与 48x48 尺寸，left: 20px 镜像成 right: 20px。
    两者不共用断点尺寸覆盖，以免任一侧变化后破坏镜像关系。 */
 .back-to-top {
   --btt-progress: 0;
@@ -610,7 +618,7 @@ body.index-search-active .paper-list-toggle-group {
   align-items: center;
   justify-content: center;
   position: fixed;
-  bottom: 24px;
+  bottom: var(--fab-bottom, 24px);
   right: 20px;
   width: 48px;
   height: 48px;
