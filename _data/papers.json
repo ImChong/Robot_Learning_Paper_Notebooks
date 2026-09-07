@@ -1319,6 +1319,18 @@
         "published_date_en": "Nov 2025 (arXiv v1)· Aug 2026 (v2)",
         "zhname": "视觉驱动的人形机器人反应式足球技能学习",
         "zh_title": "视觉驱动的人形机器人反应式足球技能学习"
+      },
+      {
+        "title": "H2-COMPACT: Human-Humanoid Co-Manipulation via Adaptive Contact Trajectory Policies",
+        "path": "papers/04_Loco-Manipulation_and_WBC/H2-COMPACT__Human-Humanoid_Co-Manipulation_via_Adaptive_Contact_Trajectory/H2-COMPACT__Human-Humanoid_Co-Manipulation_via_Adaptive_Contact_Trajectory.md",
+        "url": "/papers/04_Loco-Manipulation_and_WBC/H2-COMPACT__Human-Humanoid_Co-Manipulation_via_Adaptive_Contact_Trajectory/H2-COMPACT__Human-Humanoid_Co-Manipulation_via_Adaptive_Contact_Trajectory.html",
+        "dir": "H2-COMPACT__Human-Humanoid_Co-Manipulation_via_Adaptive_Contact_Trajectory",
+        "arxiv": "2505.17627",
+        "has_open_source": true,
+        "published_date_zh": "2025年5月23日（arXiv）",
+        "published_date_en": "May 23, 2025 (arXiv)",
+        "zhname": "H2-COMPACT：基于自适应接触轨迹策略的人-人形协同搬运",
+        "zh_title": "H2-COMPACT：基于自适应接触轨迹策略的人-人形协同搬运"
       }
     ],
     "zhname": "运动操作与全身控制",
@@ -1337,7 +1349,7 @@
         "has_open_source": true,
         "published_date_zh": "2026年8月29日（v1） / 2026年9月1日（v2）",
         "published_date_en": "Aug 29, 2026 (v1) / Sep 1, 2026 (v2)",
-        "zhname": "AnyWorld：可分解的第一人称世界模型，把人类视频改写成跨本体机器人经验",
+        "zhname": "AnyWorld：可分解的第一人称世界模型，把人类视频「改写」成跨本体机器人经验",
         "zh_title": "AnyWorld：可分解的第一人称世界模型，把人类视频改写成跨本体机器人经验"
       },
       {
@@ -2212,14 +2224,14 @@
         "zh_title": "HumanPlus：人形机器人对人类的影子跟随与模仿"
       },
       {
-        "title": "Deep Imitation Learning for Humanoid Loco-manipulation through Human Teleoperation",
+        "title": "Deep Imitation Learning for Humanoid Loco-manipulation through Human Teleoperation (TRILL)",
         "path": "papers/07_Teleoperation/TRILL__Deep_Imitation_Learning_for_Humanoid_Loco-manipulation_through_Human_Teleoperation/TRILL__Deep_Imitation_Learning_for_Humanoid_Loco-manipulation_through_Human_Teleoperation.md",
         "url": "/papers/07_Teleoperation/TRILL__Deep_Imitation_Learning_for_Humanoid_Loco-manipulation_through_Human_Teleoperation/TRILL__Deep_Imitation_Learning_for_Humanoid_Loco-manipulation_through_Human_Teleoperation.html",
         "dir": "TRILL__Deep_Imitation_Learning_for_Humanoid_Loco-manipulation_through_Human_Teleoperation",
         "arxiv": "2309.01952",
         "has_open_source": true,
-        "published_date_zh": "2023年9月（arXiv v1）· 2023年11月（v2）· IEEE-RAS Humanoids 2023",
-        "published_date_en": "Sep 2023 (arXiv v1) · Nov 2023 (v2) · IEEE-RAS Humanoids 2023",
+        "published_date_zh": "2023年9月（arXiv v1，2023年9月5日）· v2 2023年11月19日 · IEEE-RAS Humanoids 2023（最佳论文奖入围 · WBC 技术委员会）",
+        "published_date_en": "Sep 2023 (arXiv v1, Sep 5, 2023)· v2 Nov 19, 2023 · IEEE-RAS Humanoids 2023 (最佳论文奖入围 · WBC 技术委员会)",
         "zhname": "TRILL：通过人类遥操作的人形移动操作深度模仿学习",
         "zh_title": "TRILL：通过人类遥操作的人形移动操作深度模仿学习"
       }
@@ -2449,7 +2461,7 @@
         "url": "/papers/08_Navigation/EgoNav__Bridging_Learned_Waypoints_and_Geometry-Aware_Local_Control/EgoNav__Bridging_Learned_Waypoints_and_Geometry-Aware_Local_Control.html",
         "dir": "EgoNav__Bridging_Learned_Waypoints_and_Geometry-Aware_Local_Control",
         "arxiv": "2608.25642",
-        "has_open_source": false,
+        "has_open_source": true,
         "published_date_zh": "2026年8月26日（arXiv v1）",
         "published_date_en": "Aug 26, 2026 (arXiv v1)",
         "zhname": "EgoNav：用几何感知的局部控制弥合「学习式路点」，实现鲁棒室内导航",
