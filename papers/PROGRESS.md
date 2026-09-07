@@ -209,7 +209,7 @@
 | 133  | [Learning Gentle Humanoid Locomotion and End-Effector Stabilization Control](https://arxiv.org/abs/2505.24198)                                                   | 2025.05    |     | ⏳ 待读 |
 | 134  | [Mobi-π: Mobilizing Your Robot Learning Policy](https://arxiv.org/abs/2505.23692)                                                                                | 2025.05    |     | ⏳ 待读 |
 | 135  | [SMAP: Self-supervised Motion Adaptation for Physically Plausible Humanoid Whole-body Control](https://arxiv.org/abs/2505.19463)                                 | 2025.05    |     | ⏳ 待读 |
-| 136  | H2-COMPACT: Human-Humanoid Co-Manipulation via Adaptive Contact Trajectory Policies                                                                              | 2025.05    |     | ⏳ 待读 |
+| 136  | [H2-COMPACT: Human-Humanoid Co-Manipulation via Adaptive Contact Trajectory Policies](https://arxiv.org/abs/2505.17627) ✅ [笔记](04_Loco-Manipulation_and_WBC/H2-COMPACT__Human-Humanoid_Co-Manipulation_via_Adaptive_Contact_Trajectory/H2-COMPACT__Human-Humanoid_Co-Manipulation_via_Adaptive_Contact_Trajectory.md) | 2025.05    | 2026-09-07 | ✅ 已总结 |
 | 137  | [Unleashing Humanoid Reaching Potential via Real-world-Ready Skill Space](https://arxiv.org/abs/2505.10918)                                                      | 2025.05    |     | ⏳ 待读 |
 | 138  | [HuB: Learning Extreme Humanoid Balance](https://arxiv.org/abs/2505.07294)                                                                                       | 2025.05    |     | ⏳ 待读 |
 | 139  | [FALCON: Learning Force-Adaptive Humanoid Loco-Manipulation](https://arxiv.org/abs/2505.06776)                                                                   | 2025.05    |     | ⏳ 待读 |
