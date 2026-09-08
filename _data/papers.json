@@ -2413,6 +2413,17 @@
         "zh_title": "RoboPerform：音频直驱的人形即兴表达运动"
       },
       {
+        "title": "RoboMirror: Understand Before You Imitate for Video to Humanoid Locomotion",
+        "path": "papers/05_Locomotion/RoboMirror__Understand_Before_You_Imitate_for_Video_to_Humanoid_Locomotion/RoboMirror__Understand_Before_You_Imitate_for_Video_to_Humanoid_Locomotion.md",
+        "url": "/papers/05_Locomotion/RoboMirror__Understand_Before_You_Imitate_for_Video_to_Humanoid_Locomotion/RoboMirror__Understand_Before_You_Imitate_for_Video_to_Humanoid_Locomotion.html",
+        "dir": "RoboMirror__Understand_Before_You_Imitate_for_Video_to_Humanoid_Locomotion",
+        "arxiv": "2512.23649",
+        "published_date_zh": "2025年12月29日（v1） / 2026年8月29日（v5）",
+        "published_date_en": "Dec 29, 2025 (v1) / Aug 29, 2026 (v5)",
+        "zhname": "RoboMirror：先理解再模仿的视频驱动人形运动框架",
+        "zh_title": "RoboMirror：先理解再模仿的视频驱动人形运动框架"
+      },
+      {
         "title": "Extreme Parkour with Legged Robots",
         "path": "papers/05_Locomotion/Extreme_Parkour_with_Legged_Robots/Extreme_Parkour_with_Legged_Robots.md",
         "url": "/papers/05_Locomotion/Extreme_Parkour_with_Legged_Robots/Extreme_Parkour_with_Legged_Robots.html",
