@@ -1591,6 +1591,18 @@
         "zh_title": "LEGO：通过玩随机拼装玩具学会抓取任意物体"
       },
       {
+        "title": "Humanoid Everyday: A Comprehensive Robotic Dataset for Open-World Humanoid Manipulation",
+        "path": "papers/06_Manipulation/Humanoid_Everyday__A_Comprehensive_Robotic_Dataset_for_Open-World_Humanoid_Manipulation/Humanoid_Everyday__A_Comprehensive_Robotic_Dataset_for_Open-World_Humanoid_Manipulation.md",
+        "url": "/papers/06_Manipulation/Humanoid_Everyday__A_Comprehensive_Robotic_Dataset_for_Open-World_Humanoid_Manipulation/Humanoid_Everyday__A_Comprehensive_Robotic_Dataset_for_Open-World_Humanoid_Manipulation.html",
+        "dir": "Humanoid_Everyday__A_Comprehensive_Robotic_Dataset_for_Open-World_Humanoid_Manipulation",
+        "arxiv": "2510.08807",
+        "has_open_source": true,
+        "published_date_zh": "2025年10月9日（arXiv v1）/ 2026年7月4日（v3）",
+        "published_date_en": "Oct 9, 2025 (arXiv v1)/ Jul 4, 2026 (v3)",
+        "zhname": "Humanoid Everyday：面向开放世界人形操作的综合机器人数据集",
+        "zh_title": "Humanoid Everyday：开放世界人形操作综合数据集"
+      },
+      {
         "title": "Towards Proprioception-Aware Embodied Planning for Dual-Arm Humanoid Robots",
         "path": "papers/06_Manipulation/Towards_Proprioception-Aware_Embodied_Planning_for_Dual-Arm_Humanoid_Robots/Towards_Proprioception-Aware_Embodied_Planning_for_Dual-Arm_Humanoid_Robots.md",
         "url": "/papers/06_Manipulation/Towards_Proprioception-Aware_Embodied_Planning_for_Dual-Arm_Humanoid_Robots/Towards_Proprioception-Aware_Embodied_Planning_for_Dual-Arm_Humanoid_Robots.html",
