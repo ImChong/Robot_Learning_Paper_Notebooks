@@ -422,7 +422,7 @@
 | 323  | A Systematic Study of Data Modalities and Strategies for Co-training Large Behavior Models for Robot Manipulation                                         | -       |     | ⏳ 待读 |
 | 324  | [Learning to Grasp Anything by Playing with Random Toys](https://arxiv.org/abs/2510.12866) ✅ [笔记](06_Manipulation/LEGO__Learning_to_Grasp_Anything_by_Playing_with_Random_Toys/LEGO__Learning_to_Grasp_Anything_by_Playing_with_Random_Toys.md) | 2025.10 | 2026-08-02 | ✅ 已总结 |
 | 325  | [A Humanoid Visual-Tactile-Action Dataset for Contact-Rich Manipulation](https://arxiv.org/abs/2510.25725) | 2025.10 |  | ⏳ 待读 |
-| 326  | Humanoid Everyday: A Comprehensive Robotic Dataset for Open-World Humanoid Manipulation | 2025.10 |  | ⏳ 待读 |
+| 326  | [Humanoid Everyday: A Comprehensive Robotic Dataset for Open-World Humanoid Manipulation](https://arxiv.org/abs/2510.08807) ✅ [笔记](06_Manipulation/Humanoid_Everyday__A_Comprehensive_Robotic_Dataset_for_Open-World_Humanoid_Manipulation/Humanoid_Everyday__A_Comprehensive_Robotic_Dataset_for_Open-World_Humanoid_Manipulation.md) | 2025.10 | 2026-09-09 | ✅ 已总结 |
 | 327  | [Sim-and-Real Co-Training: A Simple Recipe for Vision-Based Robotic Manipulation](https://arxiv.org/abs/2503.24361) | 2025.03 |  | ⏳ 待读 |
 | 328  | Is imitation learning the route to humanoid robots? | - |  | ⏳ 待读 |
 | 526  | [Sim-to-Real Reinforcement Learning for Vision-Based Dexterous Manipulation on Humanoids](https://toruowo.github.io/recipe/) | 2025.02 |  | ⏳ 待读 |
