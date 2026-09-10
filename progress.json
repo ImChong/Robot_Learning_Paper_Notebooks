@@ -41,12 +41,12 @@
         "13_Physics-Based_Animation",
         "14_Human_Motion"
       ],
-      "last_module": "06_Manipulation",
-      "last_index": 326,
-      "last_title": "Humanoid Everyday: A Comprehensive Robotic Dataset for Open-World Humanoid Manipulation (arXiv:2510.08807)",
-      "next_module": "07_Teleoperation",
-      "last_completed_date": "2026-09-09",
-      "note": "06_Manipulation 模块推进最新发表且尚无笔记的论文《Humanoid Everyday: A Comprehensive Robotic Dataset for Open-World Humanoid Manipulation》(arXiv:2510.08807, v1 2025-10-09 / v3 2026-07-04)。模块内 2511/2510 更晚发表的条目（如 Dexterity from Smart Lenses 2511.16661、A Humanoid Visual-Tactile-Action Dataset 2510.25725 等）均已有笔记，PROGRESS.md 中 #326 旧状态为「待读」实属陈旧标记，故本篇为最新未整理论文。USC / Toyota Research Institute 出品，Unitree G1/H1 遥操作采集 10.3k 轨迹/300万+帧/260 任务/7 大类多模态数据，配云端标准化评测平台。🌟 已开源 github.com/physical-superintelligence-lab/Humanoid-Everyday（数据加载器 + he2lerobot 转换脚本），故含源码运行时序图。下一篇轮转到 07_Teleoperation 模块最新发表且无笔记的论文。",
+      "last_module": "07_Teleoperation",
+      "last_index": 277,
+      "last_title": "X-OP: Cross-Morphology Whole-Body Teleoperation via MPC Retargeting (arXiv:2606.07934)",
+      "next_module": "08_Navigation",
+      "last_completed_date": "2026-09-10",
+      "note": "07_Teleoperation 模块补齐了 progress.json 中标记为 done 但缺失笔记文件的《X-OP: Cross-Morphology Whole-Body Teleoperation via MPC Retargeting》(arXiv:2606.07934, v1 2026-06-06)。该模块内更晚发表的条目（Teleopit 2608.01834、Event-Based 2607.29227、Humanoid-GPT 2606.03985 等）均已有笔记，X-OP 是模块内唯一缺笔记者。下一篇轮转到 08_Navigation。论文未公开代码，暂无源码运行时序图。",
       "last_date": "2026-09-09",
       "next_candidate": null
     },
@@ -4605,7 +4605,9 @@
       "arxiv": "2606.07934",
       "pdf_file": "",
       "route": "遥操作",
-      "title_cn": "单台 Apple Vision Pro 驱动、跨形态免重训的分层全身遥操作：MPC 重定向器兼顾操作者意图与动力学可行性"
+      "title_cn": "单台 Apple Vision Pro 驱动、跨形态免重训的分层全身遥操作：MPC 重定向器兼顾操作者意图与动力学可行性",
+      "done_date": "2026-09-10",
+      "start_date": "2026-09-10"
     },
     {
       "title": "EgoNav: Learning Humanoid Navigation from Human Data",

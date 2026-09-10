@@ -1978,6 +1978,17 @@
         "zh_title": "HEFT：面向重载全尺寸人形的全身遥操作"
       },
       {
+        "title": "X-OP: Cross-Morphology Whole-Body Teleoperation via MPC Retargeting",
+        "path": "papers/07_Teleoperation/X-OP__Cross-Morphology_Whole-Body_Teleoperation_via_MPC_Retargeting/X-OP__Cross-Morphology_Whole-Body_Teleoperation_via_MPC_Retargeting.md",
+        "url": "/papers/07_Teleoperation/X-OP__Cross-Morphology_Whole-Body_Teleoperation_via_MPC_Retargeting/X-OP__Cross-Morphology_Whole-Body_Teleoperation_via_MPC_Retargeting.html",
+        "dir": "X-OP__Cross-Morphology_Whole-Body_Teleoperation_via_MPC_Retargeting",
+        "arxiv": "2606.07934",
+        "published_date_zh": "2026年6月6日（arXiv v1）",
+        "published_date_en": "Jun 6, 2026 (arXiv v1)",
+        "zhname": "X-OP：用 MPC 重定向做跨形态全身遥操作",
+        "zh_title": "X-OP：用 MPC 重定向做跨形态全身遥操作"
+      },
+      {
         "title": "Humanoid-GPT: Scaling Data and Structure for Zero-Shot Motion Tracking",
         "path": "papers/07_Teleoperation/Humanoid-GPT__Scaling_Data_and_Structure_for_Zero-Shot_Motion_Tracking/Humanoid-GPT__Scaling_Data_and_Structure_for_Zero-Shot_Motion_Tracking.md",
         "url": "/papers/07_Teleoperation/Humanoid-GPT__Scaling_Data_and_Structure_for_Zero-Shot_Motion_Tracking/Humanoid-GPT__Scaling_Data_and_Structure_for_Zero-Shot_Motion_Tracking.html",

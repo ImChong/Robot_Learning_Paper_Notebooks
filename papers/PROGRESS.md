@@ -431,7 +431,7 @@
 | 577  | [RoboEdit: Turning Human Manipulation Videos into Scalable Robot Experience](https://arxiv.org/abs/2608.18948) ✅ [笔记](06_Manipulation/RoboEdit__Turning_Human_Manipulation_Videos_into_Scalable_Robot_Experience/RoboEdit__Turning_Human_Manipulation_Videos_into_Scalable_Robot_Experience.md) | 2026.08 | 2026-08-24 | ✅ 已总结 |
 
 
-### Teleoperation（26篇）
+### Teleoperation（27篇）
 
 
 | #   | 论文                                                                                                                                                             | 日期      | 🌟  | 状态   |
@@ -463,6 +463,7 @@
 | 555  | [Humanoid-GPT: Scaling Data and Structure for Zero-Shot Motion Tracking](https://arxiv.org/abs/2606.03985) 🌟 ✅ [笔记](07_Teleoperation/Humanoid-GPT__Scaling_Data_and_Structure_for_Zero-Shot_Motion_Tracking/Humanoid-GPT__Scaling_Data_and_Structure_for_Zero-Shot_Motion_Tracking.md) | 2026.06 | 2026-07-24 | ✅ 已总结 |
 | 568  | [Teleopit: A Full-Embodiment Humanoid Teleoperation System](https://arxiv.org/abs/2608.01834) 🌟 ✅ [笔记](07_Teleoperation/Teleopit__A_Full-Embodiment_Humanoid_Teleoperation_System/Teleopit__A_Full-Embodiment_Humanoid_Teleoperation_System.md) | 2026.08 | 2026-08-14 | ✅ 已总结 |
 | 578  | [Event-Based Upper-Body Humanoid Teleoperation Under Challenging Illumination](https://arxiv.org/abs/2607.29227) ✅ [笔记](07_Teleoperation/Event-Based_Upper-Body_Humanoid_Teleoperation_Under_Challenging_Illumination/Event-Based_Upper-Body_Humanoid_Teleoperation_Under_Challenging_Illumination.md) | 2026.07 | 2026-08-25 | ✅ 已总结 |
+| 585  | [X-OP: Cross-Morphology Whole-Body Teleoperation via MPC Retargeting](https://arxiv.org/abs/2606.07934) ✅ [笔记](07_Teleoperation/X-OP__Cross-Morphology_Whole-Body_Teleoperation_via_MPC_Retargeting/X-OP__Cross-Morphology_Whole-Body_Teleoperation_via_MPC_Retargeting.md) | 2026.06 | 2026-09-10 | ✅ 已总结 |
 
 
 ### Navigation（21篇）
