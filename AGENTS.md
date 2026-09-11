@@ -75,6 +75,38 @@ chore(Progress): 更新论文阅读进度
 
 若与外部 Agent 提示冲突，涉及论文字段分工与首页展示时，以本节为准。
 
+## 论文页交互演示（`assets/js/demos/`）
+
+笔记里可以内嵌可交互的小演示（滑块 / 拖拽 / 浏览器内跑的小实验），首例见 `papers/01_Foundational_RL/PPO_Proximal_Policy_Optimization/`。
+
+### 为什么不能直接在 Markdown 里写 `<script>`
+
+`scripts/sanitize_paper_html.py` 会在构建后用 nh3 清洗 `#paper-body`，`script` / `canvas` / `input` / `button` 等标签会被整段删除（防止笔记里的原始 HTML 变成存储型 XSS）。**能活下来的只有带 `class` 和 `data-*` 的 `div`**，所以演示的 DOM 必须在运行时由外部脚本生成。
+
+### 三步接线
+
+1. **笔记 front matter 声明**（只有声明了才会加载演示资源）：
+
+```yaml
+demos: ["ppo"]
+```
+
+2. **正文放空占位符**（`data-demo` 是演示 id，`p.demo-fallback` 是无 JS 时的兜底文案）：
+
+```html
+<div class="paper-demo" data-demo="ppo-clip"><p class="demo-fallback">（本节含交互演示，需要启用 JavaScript）</p></div>
+```
+
+3. **实现放在 `assets/js/demos/<bundle>.js`**，在文件末尾的 `BUILDERS` 映射里按 `data-demo` 注册构建函数。`_layouts/paper.html` 只会为**真实存在**的 `assets/js/demos/<name>.js` 输出 `<script>`，样式统一走 `assets/css/paper-demos.css`。
+
+### 写演示的约束
+
+- **无外部依赖**：站点 CSP 只允许 `self` 与 jsdelivr，演示一律用原生 Canvas + DOM，不要引第三方库。
+- **主题自适应**：画布颜色从 `--demo-*` CSS 变量读取，并监听 `data-theme` 变化重绘；深浅两套配色都要定义。
+- **移动端可用**：画布按容器宽度 + `devicePixelRatio` 重绘，控件在 600px 以下换行；表格放进 `.demo-table-wrap` 横向滚动。
+- **数字要对得上正文**：演示里的默认参数应与笔记中手推的例子一致（`tests/test_paper_demos.py` 会校验 PPO 的 GAE 例子）。
+- **提交前跑** `python3 -m pytest tests/test_paper_demos.py -v`，并按下文「Pull Request：须附「修复页」渲染截图」附上渲染截图。
+
 ## Cursor Cloud specific instructions
 
 ### Services overview

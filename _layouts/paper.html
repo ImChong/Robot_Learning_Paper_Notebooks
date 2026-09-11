@@ -58,3 +58,24 @@ layout: default
 
 {% assign paper_js = site.static_files | where: "path", "/assets/js/paper.js" | first %}
 <script src="{{ '/assets/js/paper.js' | relative_url }}{% if paper_js %}?v={{ paper_js.modified_time | date: '%s' }}{% endif %}" defer></script>
+
+{%- comment -%}
+  Interactive demos. A note opts in with `demos: ["ppo"]` in its front matter and
+  drops empty `<div class="paper-demo" data-demo="..."></div>` placeholders in the
+  markdown; scripts/sanitize_paper_html.py strips <script>/<canvas>/<input> from
+  #paper-body, so the widgets are built at runtime by the demo script instead.
+  Only names that resolve to a real file under assets/js/demos/ are emitted.
+{%- endcomment -%}
+{%- if page.demos -%}
+  {%- assign demo_css = site.static_files | where: "path", "/assets/css/paper-demos.css" | first -%}
+  {%- if demo_css -%}
+<link rel="stylesheet" href="{{ '/assets/css/paper-demos.css' | relative_url }}?v={{ demo_css.modified_time | date: '%s' }}">
+  {%- endif -%}
+  {%- for demo in page.demos -%}
+    {%- assign demo_path = '/assets/js/demos/' | append: demo | append: '.js' -%}
+    {%- assign demo_file = site.static_files | where: "path", demo_path | first -%}
+    {%- if demo_file -%}
+<script src="{{ demo_path | relative_url }}?v={{ demo_file.modified_time | date: '%s' }}" defer></script>
+    {%- endif -%}
+  {%- endfor -%}
+{%- endif -%}

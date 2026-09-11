@@ -1,0 +1,357 @@
+/* ===== Interactive paper demos =====
+ *
+ * Loaded only on paper pages whose front matter declares `demos:` (see
+ * _layouts/paper.html). The markup is built at runtime by
+ * assets/js/demos/<name>.js, because scripts/sanitize_paper_html.py strips
+ * everything but a plain <div> from #paper-body — a note may only ship the
+ * placeholder `<div class="paper-demo" data-demo="..."></div>`.
+ */
+
+:root,
+[data-theme="dark"] {
+  --demo-surface: #212124;
+  --demo-surface-2: #2a2a2e;
+  --demo-border: #3c3c3c;
+  --demo-accent: #569cd6;
+  --demo-good: #4ec9a4;
+  --demo-bad: #e06c75;
+  --demo-warn: #d7a75f;
+  --demo-muted: #8a8a8a;
+  --demo-grid: #37373a;
+}
+
+[data-theme="light"] {
+  --demo-surface: #fbfbfa;
+  --demo-surface-2: #f2f2f0;
+  --demo-border: #e0e0e0;
+  --demo-accent: #1f6feb;
+  --demo-good: #17795e;
+  --demo-bad: #c0392b;
+  --demo-warn: #9a6b10;
+  --demo-muted: #6b6b6b;
+  --demo-grid: #e6e6e4;
+}
+
+.paper-demo {
+  margin: 2rem 0;
+}
+
+.paper-demo .demo-fallback {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.demo-card {
+  border: 1px solid var(--demo-border);
+  border-radius: 10px;
+  background: var(--demo-surface);
+  padding: 1.1rem 1.2rem 1.2rem;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans SC',
+    'PingFang SC', 'Microsoft YaHei', sans-serif;
+  font-size: 0.92rem;
+  line-height: 1.6;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.demo-head {
+  margin-bottom: 0.9rem;
+}
+
+.demo-badge {
+  display: inline-block;
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  padding: 0.1rem 0.45rem;
+  border-radius: 4px;
+  border: 1px solid var(--demo-accent);
+  color: var(--demo-accent);
+  vertical-align: 0.15em;
+  margin-right: 0.5rem;
+}
+
+.demo-card .demo-title {
+  display: inline;
+  font-size: 1.02rem;
+  font-weight: 600;
+  color: var(--text);
+  margin: 0;
+}
+
+.demo-card .demo-sub {
+  margin: 0.45rem 0 0;
+  color: var(--text-secondary);
+  font-size: 0.86rem;
+}
+
+/* ── controls ─────────────────────────────────────────────────────────── */
+.demo-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.25rem;
+  padding: 0.75rem 0.85rem;
+  border: 1px solid var(--demo-border);
+  border-radius: 8px;
+  background: var(--demo-surface-2);
+  margin-bottom: 0.9rem;
+}
+
+.demo-control {
+  flex: 1 1 210px;
+  min-width: 0;
+}
+
+.demo-control-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.5rem;
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  margin-bottom: 0.2rem;
+}
+
+.demo-control-value {
+  font-family: 'SF Mono', Menlo, Consolas, monospace;
+  color: var(--text);
+  font-size: 0.84rem;
+}
+
+.demo-card input[type="range"] {
+  width: 100%;
+  accent-color: var(--demo-accent);
+  margin: 0;
+  height: 1.4rem;
+  cursor: pointer;
+}
+
+.demo-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.demo-btn {
+  font: inherit;
+  font-size: 0.82rem;
+  padding: 0.28rem 0.7rem;
+  border-radius: 6px;
+  border: 1px solid var(--demo-border);
+  background: var(--demo-surface);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.demo-btn:hover {
+  border-color: var(--demo-accent);
+  color: var(--demo-accent);
+}
+
+.demo-btn.is-active {
+  border-color: var(--demo-accent);
+  background: var(--demo-accent);
+  color: #fff;
+}
+
+.demo-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.demo-toggle input {
+  accent-color: var(--demo-accent);
+  cursor: pointer;
+}
+
+/* ── canvas stage ─────────────────────────────────────────────────────── */
+.demo-stage {
+  position: relative;
+  width: 100%;
+  margin-bottom: 0.8rem;
+}
+
+.demo-stage canvas {
+  display: block;
+  width: 100%;
+  border-radius: 8px;
+  touch-action: pan-y;
+}
+
+.demo-stage-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+}
+
+.demo-stage-grid > .demo-stage {
+  flex: 1 1 300px;
+  min-width: 0;
+  margin-bottom: 0;
+}
+
+.demo-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 1rem;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  margin-bottom: 0.7rem;
+}
+
+.demo-legend span::before {
+  content: '';
+  display: inline-block;
+  width: 0.85rem;
+  height: 0.2rem;
+  border-radius: 2px;
+  margin-right: 0.35rem;
+  vertical-align: 0.15em;
+  background: currentColor;
+}
+
+/* ── readouts ─────────────────────────────────────────────────────────── */
+.demo-readout {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.demo-stat {
+  flex: 1 1 120px;
+  min-width: 0;
+  border: 1px solid var(--demo-border);
+  border-radius: 7px;
+  background: var(--demo-surface-2);
+  padding: 0.45rem 0.6rem;
+}
+
+.demo-stat-k {
+  display: block;
+  font-size: 0.74rem;
+  color: var(--text-secondary);
+}
+
+.demo-stat-v {
+  display: block;
+  font-family: 'SF Mono', Menlo, Consolas, monospace;
+  font-size: 0.98rem;
+  color: var(--text);
+  word-break: break-word;
+}
+
+.demo-stat-v.is-good { color: var(--demo-good); }
+.demo-stat-v.is-bad { color: var(--demo-bad); }
+.demo-stat-v.is-warn { color: var(--demo-warn); }
+.demo-stat-v.is-accent { color: var(--demo-accent); }
+
+.demo-verdict {
+  border-left: 3px solid var(--demo-accent);
+  border-radius: 0 6px 6px 0;
+  background: var(--demo-surface-2);
+  padding: 0.55rem 0.75rem;
+  margin-bottom: 0.75rem;
+  font-size: 0.88rem;
+  color: var(--text);
+}
+
+.demo-verdict.is-frozen { border-left-color: var(--demo-warn); }
+.demo-verdict.is-learning { border-left-color: var(--demo-good); }
+
+.demo-note {
+  font-size: 0.84rem;
+  color: var(--text-secondary);
+  border-top: 1px dashed var(--demo-border);
+  padding-top: 0.7rem;
+}
+
+.demo-note p { margin: 0 0 0.35rem; }
+.demo-note p:last-child { margin-bottom: 0; }
+.demo-note b { color: var(--text); }
+
+/* ── data table (GAE steps) ───────────────────────────────────────────── */
+.demo-table-wrap {
+  overflow-x: auto;
+  margin-bottom: 0.8rem;
+  -webkit-overflow-scrolling: touch;
+}
+
+.demo-card table.demo-table {
+  border-collapse: collapse;
+  width: 100%;
+  min-width: 360px;
+  font-size: 0.82rem;
+  font-family: 'SF Mono', Menlo, Consolas, monospace;
+}
+
+.demo-card table.demo-table th,
+.demo-card table.demo-table td {
+  border: 1px solid var(--demo-border);
+  padding: 0.3rem 0.45rem;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.demo-card table.demo-table th {
+  background: var(--demo-surface-2);
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.demo-card table.demo-table td.is-good { color: var(--demo-good); }
+.demo-card table.demo-table td.is-bad { color: var(--demo-bad); }
+
+.demo-stepper {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.demo-stepper button {
+  font: inherit;
+  font-size: 0.78rem;
+  line-height: 1;
+  width: 1.4rem;
+  height: 1.4rem;
+  border-radius: 4px;
+  border: 1px solid var(--demo-border);
+  background: var(--demo-surface);
+  color: var(--text);
+  cursor: pointer;
+  padding: 0;
+}
+
+.demo-stepper button:hover {
+  border-color: var(--demo-accent);
+  color: var(--demo-accent);
+}
+
+.demo-stepper .demo-stepper-v {
+  min-width: 2.6rem;
+  display: inline-block;
+}
+
+@media (max-width: 600px) {
+  .demo-card {
+    padding: 0.85rem 0.7rem 0.9rem;
+    font-size: 0.88rem;
+  }
+
+  .demo-controls {
+    gap: 0.6rem;
+    padding: 0.6rem;
+  }
+
+  .demo-control {
+    flex: 1 1 100%;
+  }
+
+  .demo-stat {
+    flex: 1 1 45%;
+  }
+}
