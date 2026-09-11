@@ -71,6 +71,11 @@ layout: default
   {%- if demo_css -%}
 <link rel="stylesheet" href="{{ '/assets/css/paper-demos.css' | relative_url }}?v={{ demo_css.modified_time | date: '%s' }}">
   {%- endif -%}
+  {%- comment -%} Shared toolkit first: every bundle below expects window.PaperDemoKit. {%- endcomment -%}
+  {%- assign demo_kit = site.static_files | where: "path", "/assets/js/demos/kit.js" | first -%}
+  {%- if demo_kit -%}
+<script src="{{ '/assets/js/demos/kit.js' | relative_url }}?v={{ demo_kit.modified_time | date: '%s' }}" defer></script>
+  {%- endif -%}
   {%- for demo in page.demos -%}
     {%- assign demo_path = '/assets/js/demos/' | append: demo | append: '.js' -%}
     {%- assign demo_file = site.static_files | where: "path", demo_path | first -%}

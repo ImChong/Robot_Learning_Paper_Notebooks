@@ -77,7 +77,7 @@ chore(Progress): 更新论文阅读进度
 
 ## 论文页交互演示（`assets/js/demos/`）
 
-笔记里可以内嵌可交互的小演示（滑块 / 拖拽 / 浏览器内跑的小实验），首例见 `papers/01_Foundational_RL/PPO_Proximal_Policy_Optimization/`。
+笔记里可以内嵌可交互的小演示（滑块 / 拖拽 / 浏览器内跑的小实验），已接入的有 `PPO` / `AWR` / `DeepMimic` / `AMP` 四篇（均在 `papers/01_Foundational_RL/`）。
 
 ### 为什么不能直接在 Markdown 里写 `<script>`
 
@@ -97,14 +97,30 @@ demos: ["ppo"]
 <div class="paper-demo" data-demo="ppo-clip"><p class="demo-fallback">（本节含交互演示，需要启用 JavaScript）</p></div>
 ```
 
-3. **实现放在 `assets/js/demos/<bundle>.js`**，在文件末尾的 `BUILDERS` 映射里按 `data-demo` 注册构建函数。`_layouts/paper.html` 只会为**真实存在**的 `assets/js/demos/<name>.js` 输出 `<script>`，样式统一走 `assets/css/paper-demos.css`。
+3. **实现放在 `assets/js/demos/<bundle>.js`**，文件末尾用 `K.mount({ 'demo-id': builder })` 按 `data-demo` 注册构建函数。`_layouts/paper.html` 只会为**真实存在**的 `assets/js/demos/<name>.js` 输出 `<script>`，样式统一走 `assets/css/paper-demos.css`。
+
+### 共享工具箱 `assets/js/demos/kit.js`
+
+滑块 / 按钮 / 表格 / 读数条 / Canvas 坐标系 / 主题重绘 / 确定性随机数都在 `kit.js` 里，`_layouts/paper.html` 会在所有 bundle **之前**加载它，bundle 只需从 `window.PaperDemoKit` 取：
+
+```js
+(function () {
+  var K = window.PaperDemoKit;
+  var el = K.el, fmt = K.fmt, card = K.card, slider = K.slider, stage = K.stage, begin = K.begin;
+  function buildFoo(host) { var root = card(host, { title: '...', sub: '...' }); /* ... */ }
+  K.mount({ 'paper-foo': buildFoo });
+})();
+```
+
+`kit.js` 不是 bundle，**不要**写进某篇笔记的 `demos:` 列表。新增通用控件请加到 `kit.js` 并在 `window.PaperDemoKit` 里导出，不要在 bundle 里再抄一份。
 
 ### 写演示的约束
 
 - **无外部依赖**：站点 CSP 只允许 `self` 与 jsdelivr，演示一律用原生 Canvas + DOM，不要引第三方库。
 - **主题自适应**：画布颜色从 `--demo-*` CSS 变量读取，并监听 `data-theme` 变化重绘；深浅两套配色都要定义。
 - **移动端可用**：画布按容器宽度 + `devicePixelRatio` 重绘，控件在 600px 以下换行；表格放进 `.demo-table-wrap` 横向滚动。
-- **数字要对得上正文**：演示里的默认参数应与笔记中手推的例子一致（`tests/test_paper_demos.py` 会校验 PPO 的 GAE 例子）。
+- **数字要对得上正文**：演示里的默认参数应与笔记中手推的例子一致（`tests/test_paper_demos.py` 会校验 PPO 的 GAE 例子、AWR 的权重例子、DeepMimic 的四维奖励例子、AMP 的判别器 loss 例子）。**反过来也成立**：如果发现正文的手算结果本身有误，应当先改正文，再让演示对齐。
+- **玩具模型要标注是玩具**：浏览器里跑的小实验（RSI/ET 消融、off-policy buffer、对抗训练等）只复现机制，不是论文的仿真。这类演示必须在 `demo-note` 里写明「这是简化模型，数值不能和论文直接比」，并且**结论要经得起换种子**——写进正文的定量说法（谁比谁高多少）必须是多种子平均后仍成立的。
 - **提交前跑** `python3 -m pytest tests/test_paper_demos.py -v`，并按下文「Pull Request：须附「修复页」渲染截图」附上渲染截图。
 
 ## Cursor Cloud specific instructions

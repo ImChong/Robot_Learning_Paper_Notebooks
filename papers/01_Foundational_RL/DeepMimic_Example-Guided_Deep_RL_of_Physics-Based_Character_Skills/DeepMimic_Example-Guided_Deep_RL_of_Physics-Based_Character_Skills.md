@@ -3,6 +3,7 @@ layout: paper
 paper_order: 3
 title: "DeepMimic: Example-Guided Deep RL of Physics-Based Character Skills"
 category: "Foundational RL"
+demos: ["deepmimic"]
 ---
 
 # DeepMimic: Example-Guided Deep RL of Physics-Based Character Skills
@@ -31,6 +32,11 @@ category: "Foundational RL"
 ## 🎯 一句话总结
 
 DeepMimic 让物理仿真角色通过**模仿动作捕捉数据**来学习技能——给一段人类翻跟斗的动作录像，RL 智能体就能在物理仿真中学会翻跟斗，同时保持物理真实性（不穿模、不悬浮）。
+
+> 🎮 **本文内嵌 3 个可交互演示**（滑块拖一拖就能看结果，无需安装任何东西）：
+> 1. 四维模仿奖励 —— 拖各分量的误差，看 $k$（多严格）和 $w$（占多少分）分别在管什么
+> 2. RSI × ET 消融 —— 同样的采样预算，花在哪个阶段决定了后空翻学不学得会
+> 3. 目标角度 + PD 控制 —— 为什么策略输出的是姿态而不是扭矩，以及 Stable PD 在救什么
 
 ---
 
@@ -170,6 +176,12 @@ def compute_reward(root_pos, root_rot, root_vel, root_ang_vel, joint_rot, dof_ve
 - 这种形式对**小误差宽容**（$e^{-0.01} \approx 0.99$），对**大误差严格**（$e^{-10} \approx 0.00005$）
 - 比线性惩罚更平滑，有利于 RL 优化
 
+四个分量的 $k$ 差了 400 倍（速度 0.1 ↔ 末端 40），权重又差了 6.5 倍（0.1 ↔ 0.65）。这两组数到底谁在管什么，拖一遍最快——下面的实验台默认就是后面「第 2 步」那个 $t=15$ 的例子：
+
+<div class="paper-demo" data-demo="deepmimic-reward"><p class="demo-fallback">（本节含交互演示，需要启用 JavaScript）</p></div>
+
+> 💡 拖完会发现一个容易搞混的点：**$k$ 管曲线陡不陡，$w$ 管这条曲线在总分里占多少**。末端项 $k=40$ 最严格，但它权重只有 0.15，所以手脚差几厘米扣的分，未必比姿态项差几度扣得多。
+
 ### 参考状态初始化（RSI）
 
 训练的另一个关键技巧——**Reference State Initialization**：
@@ -268,6 +280,12 @@ flowchart TB
         B1["摔倒"] --> B2["立刻终止 episode"] --> B3["RSI 随机阶段<br/>重新初始化"] --> B4["高效采样"]
     end
 </div>
+
+论文 Section 10.4 的消融实验（见下文 Q7 的表格）正是把这两个开关分别关掉跑一遍。下面这个演示把同样的四组配置放在一起跑：一段参考动作被切成若干阶段，每消耗一个样本只能练当前所在的阶段，**采样预算固定**——RSI 决定 episode 从哪儿开始，ET 决定摔一次要赔多少步：
+
+<div class="paper-demo" data-demo="deepmimic-rsi"><p class="demo-fallback">（本节含交互演示，需要启用 JavaScript）</p></div>
+
+> ⚠️ 注意右边那张「每个阶段被练到的次数」：没有 RSI 时练习次数是**递减**的（全压在前两个阶段），有 RSI 时才铺得开。切到「走路」预设，四条曲线会挤在一起——和 Q7 表里 Walk 那一行（0.980 / 0.981 / 0.974）对得上。这只是个复现机制的简化模型，不是论文的物理仿真，数值别直接和论文比。
 
 #### MimicKit 实现：ET 代码
 
@@ -515,15 +533,17 @@ flowchart LR
     end
     ref --> CMP["四维指数奖励"]
     sim --> CMP
-    CMP --> OUT["r_I ≈ 0.82<br/>0.65·r_p + 0.1·r_v<br/>+ 0.15·r_ee + 0.1·r_com"]
+    CMP --> OUT["r_I ≈ 0.81<br/>0.65·r_p + 0.1·r_v<br/>+ 0.15·r_ee + 0.1·r_com"]
 </div>
 
-| 分量 | 计算结果 |
-|------|----------|
-| $r^p$ | $\exp(-0.18) \approx 0.84$ |
-| $r^v$ | $\approx 0.90$ |
-| $r^{ee}$ | $\approx 0.75$ |
-| $r^{com}$ | $\exp(-0.4) \approx 0.67$ |
+| 分量 | 误差 | 计算结果 |
+|------|------|----------|
+| $r^p$ | $\sum_j \lVert \hat{q}_j \ominus q_j \rVert^2 = 0.09$ | $\exp(-2 \times 0.09) \approx 0.84$ |
+| $r^v$ | $\sum_j \lVert \dot{\hat{q}}_j - \dot{q}_j \rVert^2 = 1.0$ | $\exp(-0.1 \times 1.0) \approx 0.90$ |
+| $r^{ee}$ | $\sum_e \lVert \hat{p}_e - p_e \rVert^2 = 0.0072$ | $\exp(-40 \times 0.0072) \approx 0.75$ |
+| $r^{com}$ | $\lVert \hat{p}_{com} - p_{com} \rVert^2 = 0.04$ | $\exp(-10 \times 0.04) \approx 0.67$ |
+
+加权求和：$0.65 \times 0.835 + 0.1 \times 0.905 + 0.15 \times 0.750 + 0.1 \times 0.670 \approx 0.813$。这组误差就是上面那个交互演示的默认值，可以回去逐项拖着看。
 
 ### 第 3 步：PPO 更新
 
@@ -869,6 +889,12 @@ flowchart TB
     PD --> BULLET["Bullet 物理引擎<br/>施加扭矩 τ"]
     BULLET --> SNEW["新状态 s'"]
 </div>
+
+这条控制流可以直接跑一遍。下面是一个单关节的 PD 跟踪实验：策略按控制频率写下目标角，PD 按仿真频率把它换成扭矩——可以拖 $k_p$、$k_d$、关节等效转动惯量 $M$（就是附录 J 那个质量矩阵的对角元），以及两个频率：
+
+<div class="paper-demo" data-demo="deepmimic-pd"><p class="demo-fallback">（本节含交互演示，需要启用 JavaScript）</p></div>
+
+> ⚠️ 把仿真频率拖到 60 Hz、再取消「用 Stable PD」，扭矩会直接飞到十万量级——这就是论文为什么要 1200 Hz 物理步进 **加** Stable PD。勾回 Stable PD，同样的参数立刻稳住：它把 $k_p$、$k_d$ 挪进了分母 $A = M + \Delta t \cdot k_d + \Delta t^2 \cdot k_p$（见附录 J）。
 
 ### G. Multi-Clip Reward：多剪辑模仿与技能组合
 
