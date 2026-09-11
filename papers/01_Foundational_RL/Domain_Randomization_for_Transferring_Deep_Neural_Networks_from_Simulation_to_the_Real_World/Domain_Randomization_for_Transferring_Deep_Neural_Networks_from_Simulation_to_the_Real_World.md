@@ -4,6 +4,7 @@ paper_order: 12
 title: "Domain Randomization for Transferring Deep Neural Networks from Simulation to the Real World"
 category: "Sim-to-Real"
 zhname: "域随机化：从仿真到真实世界的深度神经网络迁移"
+demos: ["domain_randomization"]
 ---
 
 # Domain Randomization for Transferring Deep Neural Networks from Simulation to the Real World
@@ -78,6 +79,10 @@ flowchart TB
     CNN --> Deploy["零真实训练样本<br/>迁移到真实机械臂"]
 </div>
 
+「足够多样」到底长什么样？下面这个实验台画了九张训练图——把所有开关关掉，九张图会变得一模一样，网络立刻就能靠「红块在棕色桌面的哪个位置」作弊：
+
+<div class="paper-demo" data-demo="dr-scene"><p class="demo-fallback">（本节含交互演示，需要启用 JavaScript）</p></div>
+
 ### 随机化的参数
 
 本文针对**物体检测/定位**任务，随机化以下视觉参数：
@@ -97,6 +102,10 @@ flowchart TB
 - **网络输出**：物体在相机坐标系下的 3D 位置
 - **数据来源**：仅使用 DR 仿真数据，零真实世界训练样本
 
+「只要真实世界的分布落在训练时覆盖的随机化空间内」这句话可以直接画出来。拖动真实世界的位置和随机化范围，注意右边那条 **U 形曲线**——范围并不是越大越好：
+
+<div class="paper-demo" data-demo="dr-coverage"><p class="demo-fallback">（本节含交互演示，需要启用 JavaScript）</p></div>
+
 ### 实验结果
 
 | 方法 | 定位误差 |
@@ -106,6 +115,10 @@ flowchart TB
 | 在真实数据上微调 | 略有提升，但 DR 单独已可用 |
 
 机器人抓取成功率：**DR-only 训练达到 78%，微调后达到 87%**。
+
+上面这张清单里五类随机化的贡献并不平均。逐个关掉看成功率掉多少，就知道哪一项是真的在救迁移：
+
+<div class="paper-demo" data-demo="dr-ablation"><p class="demo-fallback">（本节含交互演示，需要启用 JavaScript）</p></div>
 
 ---
 

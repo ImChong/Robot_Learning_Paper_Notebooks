@@ -32,6 +32,26 @@ AMP_NOTE = (
     / "AMP_Adversarial_Motion_Priors_for_Stylized_Physics-Based_Character_Control.md"
 )
 
+
+def _note(folder: str) -> Path:
+    """papers/01_Foundational_RL/<folder>/<folder>.md"""
+    return FOUNDATIONAL / folder / f"{folder}.md"
+
+
+ADD_NOTE = _note("ADD_Adversarial_Differential_Discriminators")
+ASE_NOTE = _note("ASE_Adversarial_Skill_Embeddings_for_Large-Scale_Motion_Control")
+CALM_NOTE = _note("CALM_Conditional_Adversarial_Latent_Models_for_Directable_Virtual_Characters")
+PULSE_NOTE = _note("PULSE_Physics-based_Universal_Latent_Space")
+PHC_NOTE = _note("PHC_Perpetual_Humanoid_Control")
+DIFFUSION_POLICY_NOTE = _note("Diffusion_Policy")
+BEYONDMIMIC_NOTE = _note("BeyondMimic")
+LCP_NOTE = _note("LCP_Sim-to-Real_Action_Smoothing")
+DR_VISION_NOTE = _note(
+    "Domain_Randomization_for_Transferring_Deep_Neural_Networks_from_Simulation_to_the_Real_World"
+)
+DR_THEORY_NOTE = _note("Domain_Randomization_Understanding_Sim-to-Real_Transfer")
+MIMICKIT_NOTE = _note("MimicKit_A_Reinforcement_Learning_Framework_for_Motion_Imitation_and_Control")
+
 PLACEHOLDER_RE = re.compile(r'<div class="paper-demo" data-demo="([a-z0-9-]+)"')
 FRONTMATTER_DEMOS_RE = re.compile(r'^demos:\s*\[(.+)\]\s*$', re.MULTILINE)
 
@@ -101,6 +121,29 @@ def test_notes_declare_their_demos_in_reading_order():
             ["deepmimic-reward", "deepmimic-rsi", "deepmimic-pd"],
         ),
         AMP_NOTE: ("amp", ["amp-disc", "amp-reward", "amp-style"]),
+        ADD_NOTE: ("add", ["add-diff", "add-reward", "add-curriculum"]),
+        ASE_NOTE: ("ase", ["ase-latent", "ase-encoder", "ase-diversity"]),
+        CALM_NOTE: ("calm", ["calm-encoder", "calm-hlc", "calm-fsm"]),
+        PULSE_NOTE: ("pulse", ["pulse-vib", "pulse-prior", "pulse-downstream"]),
+        PHC_NOTE: ("phc", ["phc-pmcp", "phc-mcp", "phc-recovery"]),
+        DIFFUSION_POLICY_NOTE: (
+            "diffusion_policy",
+            ["dp-multimodal", "dp-denoise", "dp-rhc"],
+        ),
+        BEYONDMIMIC_NOTE: (
+            "beyondmimic",
+            ["bm-anchor", "bm-sampling", "bm-guidance"],
+        ),
+        LCP_NOTE: ("lcp", ["lcp-sensitivity", "lcp-gp", "lcp-vs-filter"]),
+        DR_VISION_NOTE: (
+            "domain_randomization",
+            ["dr-scene", "dr-coverage", "dr-ablation"],
+        ),
+        DR_THEORY_NOTE: ("dr_theory", ["drt-gap", "drt-memory", "drt-sysid"]),
+        MIMICKIT_NOTE: (
+            "mimickit",
+            ["mimickit-family", "mimickit-reward", "mimickit-config"],
+        ),
     }
     for note, (bundle, placeholders) in expected.items():
         text = note.read_text(encoding="utf-8")
@@ -112,7 +155,9 @@ def test_every_bundle_uses_the_shared_kit():
     """Only kit.js may define the widget toolkit; bundles pull it off window."""
     kit = DEMO_KIT.read_text(encoding="utf-8")
     assert "window.PaperDemoKit" in kit
-    for name in ("ppo", "awr", "deepmimic", "amp"):
+    bundles = sorted(js.stem for js in DEMO_JS_DIR.glob("*.js") if js.stem != "kit")
+    assert len(bundles) >= 15, "01_Foundational_RL 每篇笔记都应该有自己的 demo bundle"
+    for name in bundles:
         js = (DEMO_JS_DIR / f"{name}.js").read_text(encoding="utf-8")
         assert "window.PaperDemoKit" in js, f"{name}.js 必须复用共享工具箱"
         assert "K.mount(" in js, f"{name}.js 必须通过 K.mount 注册构建函数"

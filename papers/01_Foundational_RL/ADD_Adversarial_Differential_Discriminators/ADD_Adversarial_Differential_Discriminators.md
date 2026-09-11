@@ -3,6 +3,7 @@ layout: paper
 paper_order: 6
 title: "ADD: Adversarial Disentanglement and Distillation"
 category: "Foundational RL"
+demos: ["add"]
 ---
 
 # ADD: Adversarial Disentanglement and Distillation
@@ -162,6 +163,10 @@ $$
 > 💡 **直觉**：
 > 不是问“这个动作像不像专家”，而是问“你现在这个误差，看起来像不像‘没有误差’”。
 
+下面这个实验台把这一步拆开了：拖动四个维度上的跟踪误差，看 $\Delta o$ 怎么被归一化、怎么被判别器打成一个分数、最后怎么变成 PPO 收到的奖励。**注意正样本那条线始终钉在 $\Delta o = 0$ 上**——它是唯一的正类：
+
+<div class="paper-demo" data-demo="add-diff"><p class="demo-fallback">（本节含交互演示，需要启用 JavaScript）</p></div>
+
 ### 第三个概念：奖励来自判别器，而不是手工加权
 
 ADD 的训练流程可以概括成：
@@ -207,6 +212,10 @@ disc_reward_weight: 1.0
 - ADD：让判别器自己从数据里学“什么时候 pose 更重要，什么时候 vel 更重要”
 
 这就是它对多目标优化更自然的地方。
+
+「自动平衡」听起来很虚，直接对比一下就具体了。下面这个演示把 DeepMimic 写死的四项权重（0.65 / 0.1 / 0.15 / 0.1）和判别器的隐含权重并排画出来，切换旋风踢的四个阶段，看固定权重从哪一步开始跟不上：
+
+<div class="paper-demo" data-demo="add-reward"><p class="demo-fallback">（本节含交互演示，需要启用 JavaScript）</p></div>
 
 ### 第五个概念：它和 AMP 到底差在哪？
 
@@ -344,6 +353,10 @@ flowchart TB
 这些权重不是全程恒定的。
 
 而 ADD 的判别器会在不同状态区间自动学到不同维度的重要性，所以对这种**阶段性强、动态变化快**的动作尤其有优势。
+
+还有一件手工 reward 做不到的事：**判别器的标准会跟着策略一起变严**。策略越准，负样本离零向量越近，判别器必须更挑剔才分得开——奖励的「陡峭区」于是一路往 0 挪，形成一条自动课程。下面这个玩具训练回路把它和一个固定核宽度 $\exp(-k e^2)$ 的 reward 放在一起跑：
+
+<div class="paper-demo" data-demo="add-curriculum"><p class="demo-fallback">（本节含交互演示，需要启用 JavaScript）</p></div>
 
 ---
 

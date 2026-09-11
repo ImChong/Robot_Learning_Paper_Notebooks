@@ -4,6 +4,7 @@ paper_order: 10
 title: "Diffusion Policy: Visuomotor Policy Learning via Action Diffusion"
 category: "基础强化学习"
 zhname: "Diffusion Policy：基于动作扩散的视觉运动策略学习"
+demos: ["diffusion_policy"]
 ---
 
 # Diffusion Policy: Visuomotor Policy Learning via Action Diffusion
@@ -54,6 +55,10 @@ zhname: "Diffusion Policy：基于动作扩散的视觉运动策略学习"
 - **高维连续空间建模**：传统方案如 GMM 或 VAE 在高维复杂动作序列上的表现力不足。
 - **训练稳定性**：相比于 GAN 或 EBM（能量模型），扩散模型的训练过程更加稳定且可扩展。
 
+「平均动作会撞上障碍」这句话值得亲眼看一次。下面这个实验台里，人类演示一半从上绕、一半从下绕——MSE 回归给出的是两峰的**均值**，正好是障碍所在的位置；扩散策略采的是分布，每次落在某一侧：
+
+<div class="paper-demo" data-demo="dp-multimodal"><p class="demo-fallback">（本节含交互演示，需要启用 JavaScript）</p></div>
+
 ---
 
 ## 🔧 方法详解
@@ -81,6 +86,10 @@ flowchart TB
     Exec --> O
 </div>
 
+下面这个演示真的在浏览器里跑 DDIM：拖动步数滑块，看长度 16 的动作 chunk 怎么从一团高斯噪声收敛成一条平滑轨迹。注意**整条 chunk 是一起锁定模式的**——这正是 action chunking 除了「预测得远」之外的另一半价值：
+
+<div class="paper-demo" data-demo="dp-denoise"><p class="demo-fallback">（本节含交互演示，需要启用 JavaScript）</p></div>
+
 ---
 
 ## 🚶 具体实例
@@ -96,6 +105,10 @@ flowchart TB
 - **观测**：双目摄像头画面 + 机械臂关节角。
 - **去噪**：模型从随机轨迹开始，经过 10 步迭代，逐渐形成一条平滑的抓取路径。
 - **执行**：预测未来 16 步，实际执行前 8 步，随后接收新观测再次预测。
+
+「预测 16 步、执行前 8 步」这个配置背后是一个取舍。拖动 $T_a$，看反应延迟和推理开销怎么此消彼长：
+
+<div class="paper-demo" data-demo="dp-rhc"><p class="demo-fallback">（本节含交互演示，需要启用 JavaScript）</p></div>
 
 ---
 

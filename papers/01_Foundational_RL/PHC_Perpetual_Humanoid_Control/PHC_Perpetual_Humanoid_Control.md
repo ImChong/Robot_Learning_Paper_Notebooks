@@ -3,6 +3,7 @@ layout: paper
 paper_order: 5
 title: "PHC: Perpetual Humanoid Control for Real-time Simulated Avatars"
 category: "Foundational RL"
+demos: ["phc"]
 ---
 
 # PHC: Perpetual Humanoid Control for Real-time Simulated Avatars
@@ -247,6 +248,10 @@ self.pnn.freeze_pnn(self.training_prim)
 
 > 💡 **类比**：像老师带学生。普通老师先教全班；实在教不会的，交给更强的老师；再不会，再交给更专门的老师。最关键的是，前面的老师不会被后面的内容“洗掉记忆”。
 
+下面这个实验台把这个闭环跑了出来：左边是整个动作库（每格一条 clip，按难度排序），点一次「训练下一轮」就新增一列 primitive。右边同时画着**单网络微调**那条线——它每轮也在难例上训，但会把旧技能洗掉：
+
+<div class="paper-demo" data-demo="phc-pmcp"><p class="demo-fallback">（本节含交互演示，需要启用 JavaScript）</p></div>
+
 ### 第四步：乘法组合（Multiplicative Composition）
 
 所有 Primitive 冻结后，Composer $C$ 学习动态混合它们：
@@ -282,6 +287,10 @@ actions = torch.sum(weights[:, :, None] * x_all, dim=1)
 - 然后由 composer 给权重，做连续混合
 
 > 🔑 **关键理解**：PHC 不是“当前时刻只选一个专家”，而是更像“多个专家同时给意见，再做加权融合”。这也是它在动作过渡和失败恢复时更顺的原因。
+
+「连续混合」和「只选一个专家」差在哪？下面这个演示只有一个旋钮：Composer 的温度。把它拉满，softmax 变成 one-hot，输出曲线就会在交界处出现**台阶**——那一跳在 30Hz 的控制回路上就是一次力矩冲击：
+
+<div class="paper-demo" data-demo="phc-mcp"><p class="demo-fallback">（本节含交互演示，需要启用 JavaScript）</p></div>
 
 ### 第五步：摔倒恢复（Fail-State Recovery）
 
@@ -364,6 +373,10 @@ stateDiagram-v2
 </div>
 
 > 🔑 对照 DeepMimic 笔记的 episode 状态机看：DeepMimic 的 FAIL 是**终态**（只能 reset 重来），PHC 把 FAIL 变成了**中间态**（恢复模式），这正是论文标题里 “Perpetual” 的机制来源。
+
+这套「摔倒 → 恢复 → 切回」的逻辑跑起来是什么样？下面这个实验台画了一整条 episode：注意底下那条模式带，以及右边那根短柱——它代表没有 $P^F$ 时这条 episode 会在第几步结束：
+
+<div class="paper-demo" data-demo="phc-recovery"><p class="demo-fallback">（本节含交互演示，需要启用 JavaScript）</p></div>
 
 ---
 

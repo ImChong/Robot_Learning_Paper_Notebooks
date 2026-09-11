@@ -3,6 +3,7 @@ layout: paper
 paper_order: 13
 title: "Learning Smooth Humanoid Locomotion through Lipschitz-Constrained Policies (LCP)"
 category: "Sim-to-Real"
+demos: ["lcp"]
 ---
 
 # Learning Smooth Humanoid Locomotion through Lipschitz-Constrained Policies (LCP)
@@ -114,6 +115,10 @@ $$
 
 > **观测 $o$ 稍微动一下，动作 $a$ 不要炸。**
 
+这句话在真机上有一个非常具体的形式：**动作抖动 ≈ K × 观测噪声**。下面这个实验台把两个旋钮都给你——先把噪声拖到 0 看看「仿真里一切正常」，再拖到真机量级：
+
+<div class="paper-demo" data-demo="lcp-sensitivity"><p class="demo-fallback">（本节含交互演示，需要启用 JavaScript）</p></div>
+
 ---
 
 ### 第二个概念：约束梯度，就等于约束敏感度
@@ -141,6 +146,10 @@ $$
 > 💡 **一句话直觉**：
 > PPO 在学“做什么动作更赚”；LCP 在学“别一惊一乍地做”。
 
+$\lambda_{gp}$ 不是越大越好。下面这个演示画出 $J(K) - \lambda_{gp}K^2$ 这条总目标曲线，峰值落在哪里就是训出来的敏感度——顺便看看压过头时任务表现要付多少：
+
+<div class="paper-demo" data-demo="lcp-gp"><p class="demo-fallback">（本节含交互演示，需要启用 JavaScript）</p></div>
+
 ---
 
 ### 第三个概念：它和平滑 reward/低通滤波器到底差在哪？
@@ -156,6 +165,10 @@ LCP 的优势不是“数学更炫”，而是：
 **它把“平滑”从经验技巧，变成了策略函数本身的结构性约束。**
 
 这点非常适合工程落地。因为一旦你把“平滑”做成 policy regularizer，它就能比较自然地迁移到不同机器人、不同任务、不同训练框架里。
+
+这张表里「低通滤波：可能拖慢反应」具体是多慢？下面这个实验台把三条曲线画在一起，第 80 步有一个阶跃——低通那条要爬很久才追上，而 LCP 那条是立刻跟的：
+
+<div class="paper-demo" data-demo="lcp-vs-filter"><p class="demo-fallback">（本节含交互演示，需要启用 JavaScript）</p></div>
 
 ---
 

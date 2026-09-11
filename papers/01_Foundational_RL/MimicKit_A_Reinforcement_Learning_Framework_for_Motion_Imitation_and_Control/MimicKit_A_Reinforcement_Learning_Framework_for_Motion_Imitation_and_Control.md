@@ -4,6 +4,7 @@ paper_order: 14
 title: "MimicKit: A Reinforcement Learning Framework for Motion Imitation and Control"
 category: "基础强化学习"
 zhname: "MimicKit：运动模仿与控制的强化学习框架"
+demos: ["mimickit"]
 ---
 
 # MimicKit: A Reinforcement Learning Framework for Motion Imitation and Control
@@ -107,6 +108,10 @@ timeline
     2025 : ADD — 判别器吃「差异」，兼得跟踪精度与免调参
          : MimicKit — 把整条谱系收进一个统一框架
 </div>
+
+「哪些共享、哪些替换」这句话可以直接点出来看：下面这个实验台把六个算法对五大模块的改动量摊开——注意 ADD 是改得最少的那一个，但它撬动的是「要不要手写 tracking reward」这个大问题：
+
+<div class="paper-demo" data-demo="mimickit-family"><p class="demo-fallback">（本节含交互演示，需要启用 JavaScript）</p></div>
 
 ### 3. 框架设计偏轻量
 
@@ -356,6 +361,10 @@ r_t ≈ 0.893
 
 把这一帧的 0.89 乘以 G1 walk 一段约 50 步（≈1.7s）的稳定跟踪，单 episode return 约在 **40+** 量级——这就是 PPO 优化的目标值。
 
+上面这一帧的 0.893 可以自己拖出来。注意 `key_pos` 的权重只有 0.15、scale 却是 10.0——**权重管「谁重要」，scale 管「多敏感」**，这是手调奖励最容易混的两件事：
+
+<div class="paper-demo" data-demo="mimickit-reward"><p class="demo-fallback">（本节含交互演示，需要启用 JavaScript）</p></div>
+
 ---
 
 ## 🤖 工程价值
@@ -364,6 +373,10 @@ r_t ≈ 0.893
 - **横向比较方便**：同一套角色和动作数据上切换算法，比读多个独立仓库更直接。
 - **扩展入口清晰**：新增 motion imitation 算法时，可以优先判断它改的是 agent、model、reward 还是 dataset。
 - **机器人相关性强**：虽然起点是 physics-based character control，但论文明确覆盖 robotics 场景，尤其适合 humanoid motion tracking / imitation 的工程预研。
+
+最后是那几个一眼看过去平平无奇、其实互相牵制的数字：`num_envs: 4096`、`steps_per_iter: 32`、`actor_epochs/batch: 5/4`。拖一拖就知道换台机器为什么不能照搬：
+
+<div class="paper-demo" data-demo="mimickit-config"><p class="demo-fallback">（本节含交互演示，需要启用 JavaScript）</p></div>
 
 ---
 
