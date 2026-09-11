@@ -4,6 +4,7 @@ paper_order: 8
 title: "CALM: Conditional Adversarial Latent Models for Directable Virtual Characters"
 zhname: "CALM：面向可控虚拟角色的条件对抗潜变量模型"
 category: "Foundational RL"
+demos: ["calm"]
 ---
 
 # CALM: Conditional Adversarial Latent Models for Directable Virtual Characters
@@ -107,6 +108,10 @@ CALM 分三个阶段，每阶段解决一个问题：
 
 > **但此时只有"技能"，没有"方向"。**
 
+「给一个 $z$ 就能生成对应技能」听起来和 ASE 一样，但**这个 $z$ 的来源完全不同**：ASE 是从球面上随机采，CALM 是让 encoder 去编一段真实动捕。下面这个演示把两者并排画出来——差别在于 CALM 的 latent 有名字，可以被「点名」：
+
+<div class="paper-demo" data-demo="calm-encoder"><p class="demo-fallback">（本节含交互演示，需要启用 JavaScript）</p></div>
+
 ### 第二层：High-Level Controller（HLC）——方向控制
 
 **目标**：训练一个高层策略，学会在 latent 空间里选方向来完成指定任务。
@@ -132,6 +137,10 @@ $$
 
 这样 HLC 学的是：**"我要朝这个方向完成任务，应该选哪个 latent"**。
 
+这一项为什么必要？把它的权重拖到 0 就知道了：HLC 会毫不犹豫地挑一个跑得最快的 latent，哪怕这一段要求的是蹲着走。cos 把它关进 $z_{target}$ 周围的一个锥里：
+
+<div class="paper-demo" data-demo="calm-hlc"><p class="demo-fallback">（本节含交互演示，需要启用 JavaScript）</p></div>
+
 ### 第三层：推理时组合——FSM 调度
 
 推理时不需要再训练，只要用一个有限状态机组合 LLC 和 HLC：
@@ -148,6 +157,10 @@ flowchart LR
 - 移动摇杆 → 方向控制
 - 按键 A → 攻击技能
 - 按键 B → 防御技能
+
+下面这个实验台把 `HumanoidStrikeFSM` 跑了一遍：拖时间轴或者直接按播放，注意右图里 **latent 是跳变的，但换的只是 $z$ 的来源**——三个状态用的是同一个 LLC，整段新增训练量为 0：
+
+<div class="paper-demo" data-demo="calm-fsm"><p class="demo-fallback">（本节含交互演示，需要启用 JavaScript）</p></div>
 
 ### 📊 CALM 三层架构与推理调度
 

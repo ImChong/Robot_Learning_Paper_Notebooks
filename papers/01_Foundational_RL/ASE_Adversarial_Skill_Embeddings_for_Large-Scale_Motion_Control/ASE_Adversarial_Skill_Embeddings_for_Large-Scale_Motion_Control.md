@@ -3,6 +3,7 @@ layout: paper
 paper_order: 7
 title: "ASE: Adversarial Skill Embeddings for Large-Scale Motion Control"
 category: "Foundational RL"
+demos: ["ase"]
 ---
 
 # ASE: Adversarial Skill Embeddings for Large-Scale Motion Control
@@ -149,6 +150,10 @@ $$
 
 > **技能不再是离散 ID，而是连续向量。**
 
+「连续向量」这句话直接转一圈就懂了。下面这个实验台把 latent 空间画成一个圆（论文里是 64 维球面 $S^{63}$），拖动角度看同一个策略怎么变成不同技能；按播放还能看到训练时每 0~5 秒重采样一次 $z$ 是什么效果：
+
+<div class="paper-demo" data-demo="ase-latent"><p class="demo-fallback">（本节含交互演示，需要启用 JavaScript）</p></div>
+
 ### 第二个概念：为什么不能只给 z，不做约束？
 
 因为如果你只是把 $z$ 拼到输入里，策略很可能**压根不理它**。
@@ -205,6 +210,10 @@ enc_reward_weight: 0.5
 - 如果只有 enc reward，策略可能学出一堆怪异但容易区分的动作
 - 两个一起上，才会得到**既自然又可区分**的技能空间
 
+把 `enc_reward_weight` 拖到 0 就能亲眼看到 latent collapse 是怎么发生的——它不是训练出 bug，**而是奖励函数下的最优解**：既然没人要求动作里必须看得出 $z$，忽略 $z$ 反而让每一步都停在最自然的动作上：
+
+<div class="paper-demo" data-demo="ase-encoder"><p class="demo-fallback">（本节含交互演示，需要启用 JavaScript）</p></div>
+
 ### 第五个概念：diversity loss
 
 光有 encoder 还不够，作者还加了一个 diversity 约束：
@@ -224,6 +233,10 @@ enc_reward_weight: 0.5
 如果 latent 已经差很多，但动作还差不多，就要惩罚。
 
 这使得 skill space 更均匀、更有用。
+
+源码里这个比值和它的目标值长这样——拖动两个 latent 的夹角，看 `diversity_ratio` 为什么应该是一条水平线：
+
+<div class="paper-demo" data-demo="ase-diversity"><p class="demo-fallback">（本节含交互演示，需要启用 JavaScript）</p></div>
 
 ### 第六个概念：latent 会定期重采样
 

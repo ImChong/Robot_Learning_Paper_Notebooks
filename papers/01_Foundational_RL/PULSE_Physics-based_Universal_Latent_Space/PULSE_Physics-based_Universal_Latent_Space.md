@@ -4,6 +4,7 @@ paper_order: 9
 title: "Universal Humanoid Motion Representations for Physics-Based Control (PULSE)"
 category: "基础强化学习"
 zhname: "PULSE：物理可行的通用潜在技能提取"
+demos: ["pulse"]
 ---
 
 # PULSE: Universal Humanoid Motion Representations for Physics-Based Control
@@ -67,6 +68,10 @@ PULSE 采用两阶段学习框架：
 3. **下游任务适配**
    - High-level 策略只需在 32 维潜空间中进行采样/优化，即可驱动机器人执行地形导航、击打物体等任务。
 
+第二阶段那个 KL 项前面的系数 $\beta$ 是整个方法的命门：太小，潜空间只是把 AMASS **背下来**；太大，后验塌成先验，latent 什么也没记住。下面这个实验台把这条 rate–distortion 曲线画了出来：
+
+<div class="paper-demo" data-demo="pulse-vib"><p class="demo-fallback">（本节含交互演示，需要启用 JavaScript）</p></div>
+
 ### 📊 PULSE 两阶段与下游调用流程
 
 <div class="mermaid">
@@ -79,6 +84,10 @@ flowchart TB
     HL --> Low["低层执行 / 跟踪器"]
     Low --> Robot["物理人形控制"]
 </div>
+
+而「本体感受先验」解决的是另一件事：**固定的 $\mathcal{N}(0, I)$ 不知道你此刻是站着还是在空中**。换个身体状态试试，看固定先验采出来的 $z$ 有多少在这一步根本执行不了——以及这个误差在长序列上怎么指数放大：
+
+<div class="paper-demo" data-demo="pulse-prior"><p class="demo-fallback">（本节含交互演示，需要启用 JavaScript）</p></div>
 
 ---
 
@@ -98,6 +107,10 @@ flowchart TB
 通过 PULSE，用户可以：
 - 从 latent space 中随机采样，机器人会自发产生连贯的人类动作（如转圈、挥手、小跑）。
 - 给定一个简单的奖励函数（如"击打目标"），策略能快速学会在 latent 中寻找合适的动作序列。
+
+「不再从零开始学怎么动」具体省了多少？下面这个演示把 32 维潜空间和 69 维关节空间的学习曲线放在一起，顺便看看高层残差拉太大时会发生什么：
+
+<div class="paper-demo" data-demo="pulse-downstream"><p class="demo-fallback">（本节含交互演示，需要启用 JavaScript）</p></div>
 
 ---
 

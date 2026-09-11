@@ -3,6 +3,7 @@ layout: paper
 paper_order: 12
 title: "Understanding Domain Randomization for Sim-to-real Transfer"
 category: "仿真到现实"
+demos: ["dr_theory"]
 ---
 
 # Understanding Domain Randomization for Sim-to-real Transfer
@@ -69,11 +70,19 @@ $$\text{gap} \leq f(\text{随机化分布}, \text{样本复杂度})$$
 
 关键发现：在** mild conditions** 下，这个 gap 可以足够小——意味着 DR 可以**无需任何现实样本**实现成功迁移。
 
+这个界不用啃公式也能看懂：下面这个实验台把 $\varepsilon_{approx}$ 和 $\varepsilon_{stat}$ 画成两条反向的曲线，拖动随机化区间和真实 $\mu^\star$，就能看到「太窄覆盖不到、太宽学不动」这个取舍长什么样：
+
+<div class="paper-demo" data-demo="drt-gap"><p class="demo-fallback">（本节含交互演示，需要启用 JavaScript）</p></div>
+
 ### Memory (历史依赖策略) 的重要性
 
 论文理论分析的一个核心结论：**DR 需要使用历史依赖策略（memory-based policy）**，而非只依赖当前状态的 Markov 策略。
 
 直觉：只有利用历史信息，策略才能隐式地识别当前所在的 domain，从而在仿真随机化中学到跨不同物理参数都有效的能力。
+
+「隐式地识别当前所在的 domain」具体是怎么发生的？下面这个演示把历史长度做成滑块——把它拖到 0（Markov），策略就只能按先验均值出一个保守动作；往上拖，$\mu$ 的后验会肉眼可见地收窄：
+
+<div class="paper-demo" data-demo="drt-memory"><p class="demo-fallback">（本节含交互演示，需要启用 JavaScript）</p></div>
 
 ---
 
@@ -200,6 +209,10 @@ flowchart TB
 ### Q6: ADR（Automatic Domain Randomization）和本文是什么关系？
 
 本文从理论上说明"随机化分布越接近真实分布，gap 越小"；ADR 从算法上让随机化分布**自适应扩大**——只要策略在当前分布上达到阈值表现，就把分布再加宽一点。两者在精神上完全一致：ADR 是本文理论结论的工程实现之一。
+
+顺便把 Q3 那个对比也画出来：SysID 的曲线又高又窄，DR 的又低又平。把「参数漂移」滑块拖大——真机上电池、磨损、地面材质每天都在变，这才是两者的胜负手：
+
+<div class="paper-demo" data-demo="drt-sysid"><p class="demo-fallback">（本节含交互演示，需要启用 JavaScript）</p></div>
 
 ---
 

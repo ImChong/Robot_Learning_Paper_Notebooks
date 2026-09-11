@@ -4,6 +4,7 @@ paper_order: 11
 title: "BeyondMimic: From Motion Tracking to Versatile Humanoid Control via Guided Diffusion"
 category: "基础强化学习"
 zhname: "BeyondMimic：从运动跟踪到引导扩散的多功能人形控制"
+demos: ["beyondmimic"]
 ---
 
 # BeyondMimic: From Motion Tracking to Versatile Humanoid Control via Guided Diffusion
@@ -112,6 +113,10 @@ $$\hat{T}_b = T_{\text{anchor}}\, T_{b_{\text{ref}}}^{-1}\, T_{b,\text{motion}}$
 
 开源实现中，每步在 `commands.py` 用机器人锚定姿态与参考锚定姿态的 yaw 差更新 `body_pos_relative_w` / `body_quat_relative_w`，与上式一致。
 
+这一步值得动手玩一下：拖动「漂移量」，看同一段动作在**刚性跟踪世界位姿**和**锚定跟踪**两种口径下，策略认为自己错了多少——以及为此付出的纠偏幅度怎么把动作风格吃掉：
+
+<div class="paper-demo" data-demo="bm-anchor"><p class="demo-fallback">（本节含交互演示，需要启用 JavaScript）</p></div>
+
 #### 1.2 观测空间（单步、无历史）
 
 跟踪策略**刻意不用历史**，观测 $\mathbf{o}$ 由三部分拼接：
@@ -181,6 +186,10 @@ $$r = r_{\text{tracking}} - \lambda_l r_{\text{limit}} - \lambda_s r_{\text{smoo
 $$p_s = \frac{\sum_{\tau=0}^{K-1} \gamma^\tau \bar{r}_{s+\tau}}{\sum_j \sum_\tau \gamma^\tau \bar{r}_{j+\tau}}$$
 
 再与均匀分布混合 $p_s' = \lambda \frac{1}{S} + (1-\lambda) p_s$，防止灾难性遗忘。非因果指数核 $\gamma^\tau$ 强调失败前邻近时段。
+
+$\lambda$ 和 $\gamma$ 这两个数具体在干什么？下面这个实验台把一条 30 秒的参考按 1 秒分箱，中间插了两段高动态。把 $\lambda$ 拖到 0，就能看到简单片段被慢慢忘掉的过程：
+
+<div class="paper-demo" data-demo="bm-sampling"><p class="demo-fallback">（本节含交互演示，需要启用 JavaScript）</p></div>
 
 #### 1.6 域随机化（极简）
 
@@ -268,6 +277,10 @@ $$G^c_{\bm{\tau}}(\bm{\tau}) = \sum_{t', b \in \mathcal{B}_c} B\!\left(\text{SDF
 $$B(x,\delta) = \begin{cases} -\ln(x) & x \geq \delta \\ -\ln(\delta) + \frac{1}{2}\left[\left(\frac{x-2\delta}{\delta}\right)^2 - 1\right] & x < \delta \end{cases}$$
 
 推理时引导梯度用 **CppAD** 在每个去噪步自动求导；扩散策略在 **RTX 4060 Mobile + TensorRT** 上异步线程运行，跟踪策略仍在机载 CPU ONNX 执行。
+
+「多个任务代价可直接相加」是这一节最值钱的一句话。下面这个演示在浏览器里跑了一遍带引导的 DDIM：两个勾选框各对应一个 $G$，同时勾上，梯度直接叠加——而训练时模型从没见过这个组合：
+
+<div class="paper-demo" data-demo="bm-guidance"><p class="demo-fallback">（本节含交互演示，需要启用 JavaScript）</p></div>
 
 #### 2.4 Motion Inpainting 与任务切换
 
