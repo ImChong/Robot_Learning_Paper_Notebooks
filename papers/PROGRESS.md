@@ -466,7 +466,7 @@
 | 585  | [X-OP: Cross-Morphology Whole-Body Teleoperation via MPC Retargeting](https://arxiv.org/abs/2606.07934) ✅ [笔记](07_Teleoperation/X-OP__Cross-Morphology_Whole-Body_Teleoperation_via_MPC_Retargeting/X-OP__Cross-Morphology_Whole-Body_Teleoperation_via_MPC_Retargeting.md) | 2026.06 | 2026-09-10 | ✅ 已总结 |
 
 
-### Navigation（21篇）
+### Navigation（22篇）
 
 
 | #   | 论文                                                                                                                                                         | 日期      | 🌟  | 状态   |
@@ -493,6 +493,7 @@
 | 369  | [GuideWalk: Learning Unified Autonomous Navigation and Locomotion for Humanoid Robots across Versatile Terrains](https://arxiv.org/abs/2606.10449) ✅ [笔记](08_Navigation/GuideWalk__Learning_Unified_Autonomous_Navigation_and_Locomotion_for_Humanoid/GuideWalk__Learning_Unified_Autonomous_Navigation_and_Locomotion_for_Humanoid.md) | 2026-06-09 |  | ✅ 已总结 |
 | 579  | [HumanoidVLN: A Physics-Grounded Simulator and Benchmark for Vision-Language Navigation Across Diverse Humanoid Embodiments](https://arxiv.org/abs/2608.12860) ✅ [笔记](08_Navigation/HumanoidVLN__Physics-Grounded_Simulator_and_Benchmark_for_Vision-Language_Navigation/HumanoidVLN__Physics-Grounded_Simulator_and_Benchmark_for_Vision-Language_Navigation.md) | 2026-08-13 | 2026-08-26 | ✅ 已总结 |
 | 584  | [EgoNav: Bridging Learned Waypoints and Geometry-Aware Local Control for Robust Indoor Navigation](https://arxiv.org/abs/2608.25642) ✅ [笔记](08_Navigation/EgoNav__Bridging_Learned_Waypoints_and_Geometry-Aware_Local_Control/EgoNav__Bridging_Learned_Waypoints_and_Geometry-Aware_Local_Control.md) | 2026-08-26 | 2026-09-06 | ✅ 已总结 |
+| 586  | [TANGO: Humanoid Navigation in Cluttered Environments with a Whole-Body Vision-Language-Action Model](https://arxiv.org/abs/2609.09158) ✅ [笔记](08_Navigation/TANGO__Whole-Body_Vision-Language_Navigation_in_Cluttered_Environments/TANGO__Whole-Body_Vision-Language_Navigation_in_Cluttered_Environments.md) | 2026-09-08 | 2026-09-11 | ✅ 已总结 |
 
 
 ### State Estimation（17篇）

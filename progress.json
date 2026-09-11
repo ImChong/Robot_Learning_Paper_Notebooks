@@ -41,20 +41,31 @@
         "13_Physics-Based_Animation",
         "14_Human_Motion"
       ],
-      "last_module": "07_Teleoperation",
-      "last_index": 277,
-      "last_title": "X-OP: Cross-Morphology Whole-Body Teleoperation via MPC Retargeting (arXiv:2606.07934)",
-      "next_module": "08_Navigation",
-      "last_completed_date": "2026-09-10",
-      "note": "07_Teleoperation 模块补齐了 progress.json 中标记为 done 但缺失笔记文件的《X-OP: Cross-Morphology Whole-Body Teleoperation via MPC Retargeting》(arXiv:2606.07934, v1 2026-06-06)。该模块内更晚发表的条目（Teleopit 2608.01834、Event-Based 2607.29227、Humanoid-GPT 2606.03985 等）均已有笔记，X-OP 是模块内唯一缺笔记者。下一篇轮转到 08_Navigation。论文未公开代码，暂无源码运行时序图。",
-      "last_date": "2026-09-09",
+      "last_module": "08_Navigation",
+      "last_index": 586,
+      "last_title": "TANGO: Humanoid Navigation in Cluttered Environments with a Whole-Body Vision-Language-Action Model (arXiv:2609.09158)",
+      "next_module": "09_State_Estimation",
+      "last_completed_date": "2026-09-11",
+      "note": "08_Navigation 模块补齐了最新发表的《TANGO: Humanoid Navigation in Cluttered Environments with a Whole-Body Vision-Language-Action Model》(arXiv:2609.09158, v1 2026-09-08, CoRL 2026)。这是该模块目前 arXiv 最新且无笔记的人形导航论文；模块内更早的条目均已有笔记。首个杂乱环境人形全身 VLN 框架：语言指令 + 第一视角 RGB → 29-DoF 全身关节角，PET 仿真数据管线 + System-2/1/0 分层 VLA(Qwen2.5VL-7B + 流匹配 MM-DiT + SONIC 跟踪器)，零样本迁移 Unitree G1。论文承诺开源但截至笔记时代码未释出，暂无源码运行时序图。下一篇轮转到 09_State_Estimation。",
+      "last_date": "2026-09-11",
       "next_candidate": null
     },
-    "last_summary_index": 347,
-    "last_summary_date": "2026-09-05",
-    "last_summary_title": "Deep Imitation Learning for Humanoid Loco-manipulation through Human Teleoperation",
+    "last_summary_index": 586,
+    "last_summary_date": "2026-09-11",
+    "last_summary_title": "TANGO: Humanoid Navigation in Cluttered Environments with a Whole-Body Vision-Language-Action Model",
     "next_summary_index": null,
     "log": [
+      {
+        "date": "2026-09-11",
+        "index": 586,
+        "title": "TANGO: Humanoid Navigation in Cluttered Environments with a Whole-Body Vision-Language-Action Model",
+        "folder": "papers/08_Navigation/TANGO__Whole-Body_Vision-Language_Navigation_in_Cluttered_Environments",
+        "module": "08_Navigation",
+        "arxiv": "2609.09158",
+        "project_page": "https://tango-vla.github.io/",
+        "code": "论文承诺开源(数据管线/数据集/VLA框架/权重/部署系统)，截至笔记时尚未释出",
+        "source": "⏳ 代码未释出(故无源码时序图) · 首个杂乱环境人形全身 VLN 框架：语言指令 + 第一视角 RGB + 本体感知 → 29-DoF 关节角 + 6D 基座旋转，全身几何自适应避障；PET(Plan-Edit-Track) 仿真数据管线造 64,633 条无碰撞轨迹；System-2/1/0 分层 VLA(Qwen2.5VL-7B + 流匹配 MM-DiT + SONIC 跟踪器) 云-边协同；纯仿真训练零样本迁移 Unitree G1，真机杂乱 3D 10/15 成功、0.73 次碰撞/次 · CoRL 2026 · UC Berkeley/北大/清华/港大/普林斯顿"
+      },
       {
         "date": "2026-08-19",
         "index": 572,
@@ -5886,6 +5897,16 @@
       "pdf_file": "",
       "route": "Navigation",
       "title_cn": ""
+    },
+    {
+      "title": "TANGO: Humanoid Navigation in Cluttered Environments with a Whole-Body Vision-Language-Action Model",
+      "folder": "papers/08_Navigation/TANGO__Whole-Body_Vision-Language_Navigation_in_Cluttered_Environments",
+      "note_file": "TANGO__Whole-Body_Vision-Language_Navigation_in_Cluttered_Environments.md",
+      "status": "done",
+      "arxiv": "2609.09158",
+      "pdf_file": "",
+      "route": "Navigation",
+      "title_cn": "TANGO：面向杂乱环境的人形全身视觉-语言-动作导航模型"
     }
   ]
 }
