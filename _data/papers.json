@@ -2490,6 +2490,17 @@
     "display_name": "Navigation",
     "papers": [
       {
+        "title": "TANGO: Humanoid Navigation in Cluttered Environments with a Whole-Body Vision-Language-Action Model",
+        "path": "papers/08_Navigation/TANGO__Whole-Body_Vision-Language_Navigation_in_Cluttered_Environments/TANGO__Whole-Body_Vision-Language_Navigation_in_Cluttered_Environments.md",
+        "url": "/papers/08_Navigation/TANGO__Whole-Body_Vision-Language_Navigation_in_Cluttered_Environments/TANGO__Whole-Body_Vision-Language_Navigation_in_Cluttered_Environments.html",
+        "dir": "TANGO__Whole-Body_Vision-Language_Navigation_in_Cluttered_Environments",
+        "arxiv": "2609.09158",
+        "published_date_zh": "2026年9月8日（arXiv v1） · CoRL 2026（RSS-WS'26 Oral）",
+        "published_date_en": "Sep 8, 2026 (arXiv v1) · CoRL 2026 (RSS-WS'26 Oral)",
+        "zhname": "TANGO：面向杂乱环境的人形全身视觉-语言-动作导航模型",
+        "zh_title": "TANGO：面向杂乱环境的人形全身视觉-语言-动作导航模型"
+      },
+      {
         "title": "EgoNav: Bridging Learned Waypoints and Geometry-Aware Local Control for Robust Indoor Navigation",
         "path": "papers/08_Navigation/EgoNav__Bridging_Learned_Waypoints_and_Geometry-Aware_Local_Control/EgoNav__Bridging_Learned_Waypoints_and_Geometry-Aware_Local_Control.md",
         "url": "/papers/08_Navigation/EgoNav__Bridging_Learned_Waypoints_and_Geometry-Aware_Local_Control/EgoNav__Bridging_Learned_Waypoints_and_Geometry-Aware_Local_Control.html",
