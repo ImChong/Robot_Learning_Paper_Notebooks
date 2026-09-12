@@ -2769,6 +2769,18 @@
     "display_name": "State Estimation",
     "papers": [
       {
+        "title": "KILVO: Kinematic-Inertial-LiDAR-Visual Odometry with Robust Multimodal Adaptation for Humanoid Robots",
+        "path": "papers/09_State_Estimation/KILVO__Kinematic-Inertial-LiDAR-Visual_Odometry_for_Humanoid_Robots/KILVO__Kinematic-Inertial-LiDAR-Visual_Odometry_for_Humanoid_Robots.md",
+        "url": "/papers/09_State_Estimation/KILVO__Kinematic-Inertial-LiDAR-Visual_Odometry_for_Humanoid_Robots/KILVO__Kinematic-Inertial-LiDAR-Visual_Odometry_for_Humanoid_Robots.html",
+        "dir": "KILVO__Kinematic-Inertial-LiDAR-Visual_Odometry_for_Humanoid_Robots",
+        "arxiv": "2608.05647",
+        "has_open_source": true,
+        "published_date_zh": "2026年8月6日（arXiv v1）",
+        "published_date_en": "Aug 6, 2026 (arXiv v1)",
+        "zhname": "KILVO：面向人形机器人的运动学-惯性-激光-视觉多模态自适应里程计",
+        "zh_title": "KILVO：面向人形机器人的运动学-惯性-激光-视觉多模态自适应里程计"
+      },
+      {
         "title": "Proprioceptive Invariant State Estimation for Humanoid Robots on Non-Inertial Ground",
         "path": "papers/09_State_Estimation/Proprioceptive_Invariant_State_Estimation_for_Humanoid_Robots_on_Non-Inertial_Ground/Proprioceptive_Invariant_State_Estimation_for_Humanoid_Robots_on_Non-Inertial_Ground.md",
         "url": "/papers/09_State_Estimation/Proprioceptive_Invariant_State_Estimation_for_Humanoid_Robots_on_Non-Inertial_Ground/Proprioceptive_Invariant_State_Estimation_for_Humanoid_Robots_on_Non-Inertial_Ground.html",

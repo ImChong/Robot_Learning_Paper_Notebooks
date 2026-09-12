@@ -41,20 +41,31 @@
         "13_Physics-Based_Animation",
         "14_Human_Motion"
       ],
-      "last_module": "08_Navigation",
-      "last_index": 586,
-      "last_title": "TANGO: Humanoid Navigation in Cluttered Environments with a Whole-Body Vision-Language-Action Model (arXiv:2609.09158)",
-      "next_module": "09_State_Estimation",
-      "last_completed_date": "2026-09-11",
-      "note": "08_Navigation 模块补齐了最新发表的《TANGO: Humanoid Navigation in Cluttered Environments with a Whole-Body Vision-Language-Action Model》(arXiv:2609.09158, v1 2026-09-08, CoRL 2026)。这是该模块目前 arXiv 最新且无笔记的人形导航论文；模块内更早的条目均已有笔记。首个杂乱环境人形全身 VLN 框架：语言指令 + 第一视角 RGB → 29-DoF 全身关节角，PET 仿真数据管线 + System-2/1/0 分层 VLA(Qwen2.5VL-7B + 流匹配 MM-DiT + SONIC 跟踪器)，零样本迁移 Unitree G1。论文承诺开源但截至笔记时代码未释出，暂无源码运行时序图。下一篇轮转到 09_State_Estimation。",
-      "last_date": "2026-09-11",
+      "last_module": "09_State_Estimation",
+      "last_index": 587,
+      "last_title": "KILVO: Kinematic-Inertial-LiDAR-Visual Odometry with Robust Multimodal Adaptation for Humanoid Robots (arXiv:2608.05647)",
+      "next_module": "10_Sim-to-Real",
+      "last_completed_date": "2026-09-12",
+      "note": "09_State_Estimation 模块补齐了最新发表的《KILVO: Kinematic-Inertial-LiDAR-Visual Odometry with Robust Multimodal Adaptation for Humanoid Robots》(arXiv:2608.05647, v1 2026-08-06, IEEE/ASME TMECH 2026)。这是该模块目前 arXiv 最新且无笔记的人形状态估计/里程计论文；模块内更早的条目均已有笔记。面向人形的四模态紧耦合里程计：运动学(关节编码器)+惯性(IMU)+LiDAR+视觉，塞进异步-顺序混合 ESIKF——1 kHz 高频侧做腿部运动学约束(基于偏差的噪声自适应)+免额外传感器的接触估计(>95% 准确)，10 Hz 低频侧顺序做 LiDAR 配准与视觉光度更新；多模态自适应在 KI/KIL/LIV/KILV 间无缝切换，传感器退化仍连续输出。LIKO 数据集 ATE≈1.5cm，真机 15 段序列平均≈1.45cm，1 kHz 输出、单帧 13.99ms。代码仓库 github.com/JixinGao/KILVO 已放出 15 段真机数据集，源码声明「即将释出」，截至笔记时未见代码故无源码时序图。下一篇轮转到 10_Sim-to-Real。",
+      "last_date": "2026-09-12",
       "next_candidate": null
     },
-    "last_summary_index": 586,
-    "last_summary_date": "2026-09-11",
-    "last_summary_title": "TANGO: Humanoid Navigation in Cluttered Environments with a Whole-Body Vision-Language-Action Model",
+    "last_summary_index": 587,
+    "last_summary_date": "2026-09-12",
+    "last_summary_title": "KILVO: Kinematic-Inertial-LiDAR-Visual Odometry with Robust Multimodal Adaptation for Humanoid Robots",
     "next_summary_index": null,
     "log": [
+      {
+        "date": "2026-09-12",
+        "index": 587,
+        "title": "KILVO: Kinematic-Inertial-LiDAR-Visual Odometry with Robust Multimodal Adaptation for Humanoid Robots",
+        "folder": "papers/09_State_Estimation/KILVO__Kinematic-Inertial-LiDAR-Visual_Odometry_for_Humanoid_Robots",
+        "module": "09_State_Estimation",
+        "arxiv": "2608.05647",
+        "project_page": "https://github.com/JixinGao/KILVO",
+        "code": "github.com/JixinGao/KILVO —— 已放出 15 段真机 rosbag 数据集，源码声明「code will be released soon」，截至笔记时未释出",
+        "source": "⏳ 源码未释出(故无源码时序图)，仅据论文描述给出运行时序 · 面向人形的运动学-惯性-激光-视觉四模态紧耦合 ESIKF：异步-顺序混合更新(1kHz 运动学约束+接触估计 / 10Hz LiDAR+视觉顺序更新)；免额外传感器接触估计>95% 准确、FPR≈3.67%；多模态自适应 KI/KIL/LIV/KILV 无缝切换；LIKO ATE≈0.0151m、真机≈0.0145m、1kHz 输出、单帧 13.99ms · BHR-B3 / Unitree G1 · IEEE/ASME TMECH 2026"
+      },
       {
         "date": "2026-09-11",
         "index": 586,
@@ -5907,6 +5918,16 @@
       "pdf_file": "",
       "route": "Navigation",
       "title_cn": "TANGO：面向杂乱环境的人形全身视觉-语言-动作导航模型"
+    },
+    {
+      "title": "KILVO: Kinematic-Inertial-LiDAR-Visual Odometry with Robust Multimodal Adaptation for Humanoid Robots",
+      "folder": "papers/09_State_Estimation/KILVO__Kinematic-Inertial-LiDAR-Visual_Odometry_for_Humanoid_Robots",
+      "note_file": "KILVO__Kinematic-Inertial-LiDAR-Visual_Odometry_for_Humanoid_Robots.md",
+      "status": "done",
+      "arxiv": "2608.05647",
+      "pdf_file": "",
+      "route": "State Estimation",
+      "title_cn": "KILVO：面向人形机器人的运动学-惯性-激光-视觉多模态自适应里程计"
     }
   ]
 }
