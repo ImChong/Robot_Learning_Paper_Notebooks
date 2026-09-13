@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN" data-theme="dark" data-lang-mode="en">
+<html lang="en" data-theme="dark" data-lang-mode="en">
 <head>
   <meta charset="UTF-8">
   <script>
@@ -14,6 +14,110 @@
       }
       window.getSiteTheme = getSiteTheme;
       document.documentElement.setAttribute('data-theme', getSiteTheme());
+    })();
+  </script>
+  <script>
+    /* Apply saved language before first paint (avoids zh/en text flash).
+
+       Two separate problems have to be solved before the first frame:
+
+       1. ``data-lang-mode`` on <html> drives CSS-only switches (the footer,
+          for example) and is read by every page script. It used to stay at
+          the authored "en" until a <body> script ran, so a zh visitor got a
+          frame of English.
+       2. Text carried in ``data-en``/``data-zh`` attributes has to be swapped
+          per element. The authored fallback text is English on some pages and
+          Chinese on others (e.g. _layouts/paper.html), so the flash happened
+          in both directions. Elements only exist once the parser reaches
+          them, so the swap is driven from a MutationObserver: its callback is
+          a microtask, which runs before the browser's next rendering
+          opportunity, i.e. before the authored text can be painted. */
+    (function () {
+      var LANG_KEY = 'cl-lang';
+      var root = document.documentElement;
+
+      function getSiteLang() {
+        try {
+          return localStorage.getItem(LANG_KEY) === 'zh' ? 'zh' : 'en';
+        } catch (e) {
+          return 'en';
+        }
+      }
+      window.getSiteLang = getSiteLang;
+
+      var mode = getSiteLang();
+      root.setAttribute('data-lang-mode', mode);
+      root.setAttribute('lang', mode === 'zh' ? 'zh-CN' : 'en');
+
+      var textAttr = mode === 'zh' ? 'data-zh' : 'data-en';
+      var otherTextAttr = mode === 'zh' ? 'data-en' : 'data-zh';
+      var attrPairs = [
+        ['placeholder', mode === 'zh' ? 'data-zh-placeholder' : 'data-en-placeholder'],
+        ['aria-label', mode === 'zh' ? 'data-zh-aria-label' : 'data-en-aria-label']
+      ];
+
+      /* Only swap when the element still holds the *other* language verbatim.
+         A partially parsed text node matches neither string, so it is left
+         alone and picked up by the full sweep in applyLang() later — never
+         half-translated, never duplicated. */
+      function swapText(el) {
+        var target = el.getAttribute(textAttr);
+        if (target === null) return;
+        var current = el.textContent;
+        if (current === target) return;
+        if (current === el.getAttribute(otherTextAttr)) el.textContent = target;
+      }
+
+      function swapAttrs(el) {
+        for (var i = 0; i < attrPairs.length; i++) {
+          var value = el.getAttribute(attrPairs[i][1]);
+          if (value !== null && el.getAttribute(attrPairs[i][0]) !== value) {
+            el.setAttribute(attrPairs[i][0], value);
+          }
+        }
+      }
+
+      function translate(el) {
+        swapText(el);
+        swapAttrs(el);
+      }
+
+      function translateTree(el) {
+        if (el.hasAttribute('data-en') || el.hasAttribute('data-en-placeholder') ||
+            el.hasAttribute('data-en-aria-label')) {
+          translate(el);
+        }
+        var nested = el.querySelectorAll(
+          '[data-en], [data-en-placeholder], [data-en-aria-label]'
+        );
+        for (var i = 0; i < nested.length; i++) translate(nested[i]);
+      }
+
+      if (typeof MutationObserver === 'function') {
+        var observer = new MutationObserver(function (records) {
+          for (var i = 0; i < records.length; i++) {
+            var record = records[i];
+            if (record.type === 'characterData') {
+              var owner = record.target.parentNode;
+              if (owner && owner.nodeType === 1) swapText(owner);
+              continue;
+            }
+            for (var j = 0; j < record.addedNodes.length; j++) {
+              var node = record.addedNodes[j];
+              if (node.nodeType === 3) {
+                var parent = node.parentNode;
+                if (parent && parent.nodeType === 1) swapText(parent);
+              } else if (node.nodeType === 1) {
+                translateTree(node);
+              }
+            }
+          }
+        });
+        observer.observe(root, { childList: true, subtree: true, characterData: true });
+        document.addEventListener('DOMContentLoaded', function () {
+          observer.disconnect();
+        });
+      }
     })();
   </script>
   <style>
@@ -599,12 +703,15 @@
         applyLang(cur === 'en' ? 'zh' : 'en');
       }
 
-      // Initialize on load
-      (function() {
-        var saved = localStorage.getItem(LANG_KEY);
-        var initial = (saved === 'zh') ? 'zh' : 'en';
-        applyLang(initial);
-      })();
+      // Initialize on load. The head script already set data-lang-mode and
+      // pre-translated the parsed markup; this is the full sweep that catches
+      // anything the observer skipped (e.g. text the parser delivered in
+      // pieces) and wires up the roadmap re-render.
+      applyLang(
+        typeof window.getSiteLang === 'function'
+          ? window.getSiteLang()
+          : localStorage.getItem(LANG_KEY) === 'zh' ? 'zh' : 'en'
+      );
 
       if (langToggle) langToggle.addEventListener('click', toggleLang);
     })();
