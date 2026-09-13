@@ -221,6 +221,7 @@
 | 145  | [LangWBC: Language-directed Humanoid Whole-Body Control via End-to-end Learning](https://arxiv.org/abs/2504.21738)                                               | 2025.04    |     | ⏳ 待读 |
 | 146  | [Physically Consistent Humanoid Loco-Manipulation using Latent Diffusion Models](https://arxiv.org/abs/2504.16843v1)                                             | 2025.04    |     | ⏳ 待读 |
 | 147  | [Adversarial Locomotion and Motion Imitation for Humanoid Policy Learning](https://arxiv.org/abs/2504.14305)                                                     | 2025.04    |     | ⏳ 待读 |
+| 589  | [Embodied Chain of Action Reasoning with Multi-Modal Foundation Model for Humanoid Loco-manipulation](https://arxiv.org/abs/2504.09532)                          | 2025.04    |     | ⏳ 待读 |
 | 148  | [Being-0: A Humanoid Robotic Agent with Vision-Language Models and Modular Skills](https://arxiv.org/abs/2503.12533)                                             | 2025.03    |     | ⏳ 待读 |
 | 149  | [Trinity: A Modular Humanoid Robot AI System](https://arxiv.org/abs/2503.08338)                                                                                  | 2025.03    |     | ⏳ 待读 |
 | 150  | [BEHAVIOR Robot Suite: Streamlining Real-World Whole-Body Manipulation for Everyday Household Activities](https://arxiv.org/abs/2503.05652)                      | 2025.03    |     | ⏳ 待读 |
