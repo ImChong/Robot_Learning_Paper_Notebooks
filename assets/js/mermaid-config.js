@@ -95,6 +95,44 @@
     });
   };
 
+  /**
+   * Roadmap 连线流动特效：为每条连线叠加一条虚线副本（overlay），由 CSS 把
+   * 虚线沿路径从起点推向终点，形成「知识沿路线图流动」的观感。
+   *
+   * 用叠加而不是直接给原连线加 dash：原连线保持实线底色，箭头标记也只画一次
+   * （overlay 去掉 marker-start/marker-end）。overlay 不吃指针事件，节点点击、
+   * 灯箱缩放行为不受影响。重复调用是幂等的（中英切换 / 灯箱重渲染都会再调）。
+   */
+  window.attachRoadmapEdgeFlow = function (container) {
+    if (!container || !container.querySelector) return;
+    var svg = container.querySelector('svg');
+    if (!svg) return;
+
+    var paths = svg.querySelectorAll('g.edgePaths path, path.flowchart-link');
+    var index = 0;
+    Array.prototype.forEach.call(paths, function (path) {
+      // Skip the overlays themselves and edges already decorated.
+      if (path.hasAttribute('data-roadmap-flow')) return;
+      if (path.hasAttribute('data-roadmap-flow-done')) return;
+      path.setAttribute('data-roadmap-flow-done', '');
+
+      var flow = path.cloneNode(false);
+      flow.removeAttribute('id');
+      flow.removeAttribute('data-roadmap-flow-done');
+      flow.removeAttribute('marker-start');
+      flow.removeAttribute('marker-end');
+      flow.setAttribute('data-roadmap-flow', '');
+      flow.setAttribute(
+        'class',
+        ((path.getAttribute('class') || '') + ' roadmap-edge-flow').trim()
+      );
+      // Stagger so parallel edges out of one node don't pulse in lockstep.
+      flow.style.animationDelay = (((index % 5) * 0.24).toFixed(2)) + 's';
+      index += 1;
+      path.parentNode.insertBefore(flow, path.nextSibling);
+    });
+  };
+
   /** After roadmap SVG insert (incl. lang-cache swap), fix iOS foreignObject sizing
    *  and strip alpha/compositing styles from year labels. */
   window.patchRoadmapMermaidDom = function (container) {

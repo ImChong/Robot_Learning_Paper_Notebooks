@@ -478,12 +478,12 @@
   }
 
   function attachRoadmapLinksInLightbox(sourceEl) {
-    if (
-      sourceEl.id === 'roadmap-mermaid' &&
-      stage &&
-      typeof window.attachRoadmapNodeLinks === 'function'
-    ) {
+    if (sourceEl.id !== 'roadmap-mermaid' || !stage) return;
+    if (typeof window.attachRoadmapNodeLinks === 'function') {
       window.attachRoadmapNodeLinks(stage);
+    }
+    if (typeof window.attachRoadmapEdgeFlow === 'function') {
+      window.attachRoadmapEdgeFlow(stage);
     }
   }
 

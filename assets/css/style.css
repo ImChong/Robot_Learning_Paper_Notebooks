@@ -18,6 +18,7 @@
   --blockquote-bg: #252526;
   --table-stripe: #2d2d2d;
   --kbd-bg: #333333;
+  --roadmap-flow: #7ec8ff;
 }
 
 [data-theme="light"] {
@@ -38,6 +39,7 @@
   --blockquote-bg: #fdf6f6;
   --table-stripe: #f9f9f9;
   --kbd-bg: #eee;
+  --roadmap-flow: #e0564f;
 }
 
 /* ===== Transitions ===== */
@@ -925,6 +927,54 @@ body.index-search-active .paper-list-toggle-group {
   font-weight: 400;
   color: var(--text-secondary);
   line-height: 1.2;
+}
+
+/* ===== Roadmap 连线流动特效 =====
+   attachRoadmapEdgeFlow() 在每条连线上方插入一条同路径的虚线副本；这里让虚线
+   沿路径向箭头方向推进（stroke-dashoffset 由正值走到 0 = 由起点流向终点）。
+   dasharray 之和必须等于 keyframes 的起始 offset，否则每轮循环会跳一下。
+   连线自带的 stroke / dasharray 来自 Mermaid 注入的 <style>（选择器更具体），
+   所以这里用 !important 覆盖。 */
+#roadmap-mermaid .roadmap-edge-flow,
+.mermaid-lightbox__stage .roadmap-edge-flow {
+  fill: none !important;
+  stroke: var(--roadmap-flow, #7ec8ff) !important;
+  stroke-width: 2.2px !important;
+  stroke-linecap: round !important;
+  stroke-dasharray: 10 26 !important;
+  stroke-dashoffset: 36;
+  opacity: 0.9;
+  pointer-events: none;
+  animation: roadmap-edge-flow 2.4s linear infinite;
+}
+
+/* 虚线（-.->）连线是「暂未精读 / 弱依赖」，流动也放慢、调淡以作区分。 */
+#roadmap-mermaid .roadmap-edge-flow.edge-pattern-dotted,
+.mermaid-lightbox__stage .roadmap-edge-flow.edge-pattern-dotted {
+  stroke-dasharray: 4 22 !important;
+  stroke-dashoffset: 26;
+  opacity: 0.65;
+  animation-duration: 3.2s;
+  animation-name: roadmap-edge-flow-dotted;
+}
+
+@keyframes roadmap-edge-flow {
+  from { stroke-dashoffset: 36; }
+  to { stroke-dashoffset: 0; }
+}
+
+@keyframes roadmap-edge-flow-dotted {
+  from { stroke-dashoffset: 26; }
+  to { stroke-dashoffset: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #roadmap-mermaid .roadmap-edge-flow,
+  .mermaid-lightbox__stage .roadmap-edge-flow {
+    animation: none;
+    /* 静止时不留一段悬空虚线，直接隐藏，保留底下的实线连线。 */
+    display: none;
+  }
 }
 
 #roadmap-mermaid svg g.roadmap-node-link:focus {
