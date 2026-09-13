@@ -504,6 +504,9 @@
       function finishRoadmapInsert(mermaidRoadmap) {
         mermaidRoadmap.removeAttribute('data-processed');
         window.attachRoadmapNodeLinks(mermaidRoadmap);
+        if (typeof window.attachRoadmapEdgeFlow === 'function') {
+          window.attachRoadmapEdgeFlow(mermaidRoadmap);
+        }
         if (typeof window.patchRoadmapMermaidDom === 'function') {
           window.patchRoadmapMermaidDom(mermaidRoadmap);
           requestAnimationFrame(function() {
