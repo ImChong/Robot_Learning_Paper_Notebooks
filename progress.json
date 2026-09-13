@@ -41,20 +41,31 @@
         "13_Physics-Based_Animation",
         "14_Human_Motion"
       ],
-      "last_module": "09_State_Estimation",
-      "last_index": 587,
-      "last_title": "KILVO: Kinematic-Inertial-LiDAR-Visual Odometry with Robust Multimodal Adaptation for Humanoid Robots (arXiv:2608.05647)",
-      "next_module": "10_Sim-to-Real",
-      "last_completed_date": "2026-09-12",
-      "note": "09_State_Estimation 模块补齐了最新发表的《KILVO: Kinematic-Inertial-LiDAR-Visual Odometry with Robust Multimodal Adaptation for Humanoid Robots》(arXiv:2608.05647, v1 2026-08-06, IEEE/ASME TMECH 2026)。这是该模块目前 arXiv 最新且无笔记的人形状态估计/里程计论文；模块内更早的条目均已有笔记。面向人形的四模态紧耦合里程计：运动学(关节编码器)+惯性(IMU)+LiDAR+视觉，塞进异步-顺序混合 ESIKF——1 kHz 高频侧做腿部运动学约束(基于偏差的噪声自适应)+免额外传感器的接触估计(>95% 准确)，10 Hz 低频侧顺序做 LiDAR 配准与视觉光度更新；多模态自适应在 KI/KIL/LIV/KILV 间无缝切换，传感器退化仍连续输出。LIKO 数据集 ATE≈1.5cm，真机 15 段序列平均≈1.45cm，1 kHz 输出、单帧 13.99ms。代码仓库 github.com/JixinGao/KILVO 已放出 15 段真机数据集，源码声明「即将释出」，截至笔记时未见代码故无源码时序图。下一篇轮转到 10_Sim-to-Real。",
-      "last_date": "2026-09-12",
+      "last_module": "10_Sim-to-Real",
+      "last_index": 588,
+      "last_title": "World Translation: Minimizing Sim-to-Real Gap with Backward Dynamics Extraction and Unpaired Domain Translation (arXiv:2607.18154)",
+      "next_module": "11_Simulation_Benchmark",
+      "last_completed_date": "2026-09-13",
+      "note": "10_Sim-to-Real 模块补齐最新发表且无笔记的《World Translation: Minimizing Sim-to-Real Gap with Backward Dynamics Extraction and Unpaired Domain Translation》(arXiv:2607.18154, v1 2026-07-20, 浙江大学 · 逐际动力 LimX Dynamics)。属 real-to-sim 路线：针对学习式动力学模型的「部分可观」难题（同一观测因突发接触/外力/负载等看不见的因素走向不同转移，而现有方法假设隐藏因素可从观测历史恢复，历史无信息时失效），提出核心洞察——隐藏原因的效果已写在这一步转移结果里，故不从历史正向预测，而是从已观测转移里「反向」提取隐藏动力学特征，再把该特征当作非配对域翻译问题在仿真域/真实域间迁移（保留动力学内容、只换域风格）；互补利用仿真器的确定性与学习模型的精确性。跨人形/四足/机械臂三类平台评测优于基线，隐藏因素越难从历史恢复增益越大，Unitree Go2 真机部署验证策略迁移改善。论文未给出公开源码/项目主页链接，故无源码运行时序图，仅据论文描述给出方法流程 mermaid。下一篇轮转到 11_Simulation_Benchmark。",
+      "last_date": "2026-09-13",
       "next_candidate": null
     },
-    "last_summary_index": 587,
-    "last_summary_date": "2026-09-12",
-    "last_summary_title": "KILVO: Kinematic-Inertial-LiDAR-Visual Odometry with Robust Multimodal Adaptation for Humanoid Robots",
+    "last_summary_index": 588,
+    "last_summary_date": "2026-09-13",
+    "last_summary_title": "World Translation: Minimizing Sim-to-Real Gap with Backward Dynamics Extraction and Unpaired Domain Translation",
     "next_summary_index": null,
     "log": [
+      {
+        "date": "2026-09-13",
+        "index": 588,
+        "title": "World Translation: Minimizing Sim-to-Real Gap with Backward Dynamics Extraction and Unpaired Domain Translation",
+        "folder": "papers/10_Sim-to-Real/World_Translation__Minimizing_Sim-to-Real_Gap_via_Backward_Dynamics_Extraction",
+        "module": "10_Sim-to-Real",
+        "arxiv": "2607.18154",
+        "project_page": "",
+        "code": "论文未给出公开的 GitHub 仓库 / 项目主页链接；截至笔记时无源码",
+        "source": "⏳ 无公开源码(故无源码时序图)，仅据论文描述给出方法流程 · real-to-sim 路线：针对学习式动力学模型的部分可观难题，提出反向动力学提取(从已观测转移里反向读出隐藏动力学信息，绕开「从历史恢复隐藏因素」的假设)+非配对域翻译(在仿真域/真实域间迁移动力学特征，保留内容只换风格)；仿真器确定性与学习模型精确性互补 · 人形/四足/机械臂三类平台评测，隐藏因素越难从历史恢复增益越大 · Unitree Go2 真机部署改善策略迁移 · 浙江大学 · 逐际动力 LimX Dynamics · arXiv:2607.18154"
+      },
       {
         "date": "2026-09-12",
         "index": 587,
@@ -1491,7 +1502,7 @@
         "has_open_source": true
       }
     ],
-    "last_completed_index": 455,
+    "last_completed_index": 588,
     "next_index": null
   },
   "papers": [
@@ -3010,10 +3021,10 @@
     {
       "title": "H2-COMPACT: Human-Humanoid Co-Manipulation via Adaptive Contact Trajectory Policies",
       "arxiv": "",
-      "folder": "papers/04_Loco-Manipulation_and_WBC/H2-COMPACT__Human-Humanoid_Co-Manipulation_via_Adaptive_Contact_Trajectory_Polic",
-      "note_file": "H2-COMPACT__Human-Humanoid_Co-Manipulation_via_Adaptive_Contact_Trajectory_Polic.md",
+      "folder": "papers/04_Loco-Manipulation_and_WBC/H2-COMPACT__Human-Humanoid_Co-Manipulation_via_Adaptive_Contact_Trajectory",
+      "note_file": "H2-COMPACT__Human-Humanoid_Co-Manipulation_via_Adaptive_Contact_Trajectory.md",
       "pdf_file": "H2-COMPACT.pdf",
-      "status": "pending",
+      "status": "done",
       "start_date": null,
       "done_date": null,
       "route": "Loco-Manipulation",
@@ -5928,6 +5939,16 @@
       "pdf_file": "",
       "route": "State Estimation",
       "title_cn": "KILVO：面向人形机器人的运动学-惯性-激光-视觉多模态自适应里程计"
+    },
+    {
+      "title": "World Translation: Minimizing Sim-to-Real Gap with Backward Dynamics Extraction and Unpaired Domain Translation",
+      "folder": "papers/10_Sim-to-Real/World_Translation__Minimizing_Sim-to-Real_Gap_via_Backward_Dynamics_Extraction",
+      "note_file": "World_Translation__Minimizing_Sim-to-Real_Gap_via_Backward_Dynamics_Extraction.md",
+      "status": "done",
+      "arxiv": "2607.18154",
+      "pdf_file": "",
+      "route": "Sim-to-Real",
+      "title_cn": ""
     }
   ]
 }

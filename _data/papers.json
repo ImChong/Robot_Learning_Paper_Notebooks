@@ -2936,6 +2936,17 @@
         "zh_title": "S3N：面向并联腿机构 Sim-to-Real 的仿真侧动力学归一化"
       },
       {
+        "title": "World Translation: Minimizing Sim-to-Real Gap with Backward Dynamics Extraction and Unpaired Domain Translation",
+        "path": "papers/10_Sim-to-Real/World_Translation__Minimizing_Sim-to-Real_Gap_via_Backward_Dynamics_Extraction/World_Translation__Minimizing_Sim-to-Real_Gap_via_Backward_Dynamics_Extraction.md",
+        "url": "/papers/10_Sim-to-Real/World_Translation__Minimizing_Sim-to-Real_Gap_via_Backward_Dynamics_Extraction/World_Translation__Minimizing_Sim-to-Real_Gap_via_Backward_Dynamics_Extraction.html",
+        "dir": "World_Translation__Minimizing_Sim-to-Real_Gap_via_Backward_Dynamics_Extraction",
+        "arxiv": "2607.18154",
+        "published_date_zh": "2026年7月20日（arXiv v1）",
+        "published_date_en": "Jul 20, 2026 (arXiv v1)",
+        "zhname": "World Translation：以反向动力学提取与非配对域翻译最小化 Sim-to-Real 差距",
+        "zh_title": "World Translation：以反向动力学提取与非配对域翻译最小化 Sim-to-Real 差距"
+      },
+      {
         "title": "Actuator Reality Shaping for Zero-Shot Sim-to-Real Robot Learning",
         "path": "papers/10_Sim-to-Real/Actuator_Reality_Shaping_for_Zero-Shot_Sim-to-Real_Robot_Learning/Actuator_Reality_Shaping_for_Zero-Shot_Sim-to-Real_Robot_Learning.md",
         "url": "/papers/10_Sim-to-Real/Actuator_Reality_Shaping_for_Zero-Shot_Sim-to-Real_Robot_Learning/Actuator_Reality_Shaping_for_Zero-Shot_Sim-to-Real_Robot_Learning.html",
