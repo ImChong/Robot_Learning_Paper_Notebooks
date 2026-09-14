@@ -41,13 +41,13 @@
         "13_Physics-Based_Animation",
         "14_Human_Motion"
       ],
-      "last_module": "10_Sim-to-Real",
-      "last_index": 588,
-      "last_title": "World Translation: Minimizing Sim-to-Real Gap with Backward Dynamics Extraction and Unpaired Domain Translation (arXiv:2607.18154)",
-      "next_module": "11_Simulation_Benchmark",
-      "last_completed_date": "2026-09-13",
-      "note": "10_Sim-to-Real 模块补齐最新发表且无笔记的《World Translation: Minimizing Sim-to-Real Gap with Backward Dynamics Extraction and Unpaired Domain Translation》(arXiv:2607.18154, v1 2026-07-20, 浙江大学 · 逐际动力 LimX Dynamics)。属 real-to-sim 路线：针对学习式动力学模型的「部分可观」难题（同一观测因突发接触/外力/负载等看不见的因素走向不同转移，而现有方法假设隐藏因素可从观测历史恢复，历史无信息时失效），提出核心洞察——隐藏原因的效果已写在这一步转移结果里，故不从历史正向预测，而是从已观测转移里「反向」提取隐藏动力学特征，再把该特征当作非配对域翻译问题在仿真域/真实域间迁移（保留动力学内容、只换域风格）；互补利用仿真器的确定性与学习模型的精确性。跨人形/四足/机械臂三类平台评测优于基线，隐藏因素越难从历史恢复增益越大，Unitree Go2 真机部署验证策略迁移改善。论文未给出公开源码/项目主页链接，故无源码运行时序图，仅据论文描述给出方法流程 mermaid。下一篇轮转到 11_Simulation_Benchmark。",
-      "last_date": "2026-09-13",
+      "last_module": "11_Simulation_Benchmark",
+      "last_index": 589,
+      "last_title": "HumanoidMimicGen: Data Generation for Loco-Manipulation via Whole-Body Planning (arXiv:2605.27724)",
+      "next_module": "12_Hardware_Design",
+      "last_completed_date": "2026-09-14",
+      "note": "11_Simulation_Benchmark 模块补齐最新发表且无笔记的《HumanoidMimicGen: Data Generation for Loco-Manipulation via Whole-Body Planning》(arXiv:2605.27724, v1 2026-05-26, NVIDIA GEAR · UT Austin，MimicGen/DexMimicGen 数据生成谱系的人形延伸)。核心：面向人形「臂+腿+躯干」高维复合动作空间——已有 MimicGen 系只对固定基座机械臂有效，人形简单重放会失稳/穿模/够不着。方法从一条带每臂技能标注的源演示出发，把接触密集全身技能对物体位姿做适配泛化，再用全身规划把单/双臂操作与「行走+操作」交织成稳定、无碰撞轨迹（上半身关节空间控制、下半身 pelvis 速度指令交学习式行走策略）；一条源演示放大成 ~1000 条合成演示。配套 9 任务仿真 loco-manipulation 基准（举箱/按钮/推货架/取电钻/避障取钻等）。结果：仿真+真机共训的全身视觉运动策略(含 VLA)较真机-only 成功率 71% vs 51%(+20%)。截至笔记时未见公开源码仓库(仅项目页 humanoidmimicgen.github.io 有视频)，故无源码运行时序图，仅据论文描述给出方法流程 mermaid。下一篇轮转到 12_Hardware_Design。",
+      "last_date": "2026-09-14",
       "next_candidate": null
     },
     "last_summary_index": 588,
@@ -5948,6 +5948,16 @@
       "arxiv": "2607.18154",
       "pdf_file": "",
       "route": "Sim-to-Real",
+      "title_cn": ""
+    },
+    {
+      "title": "HumanoidMimicGen: Data Generation for Loco-Manipulation via Whole-Body Planning",
+      "folder": "papers/11_Simulation_Benchmark/HumanoidMimicGen__Data_Generation_for_Loco-Manipulation_via_Whole-Body_Planning",
+      "note_file": "HumanoidMimicGen__Data_Generation_for_Loco-Manipulation_via_Whole-Body_Planning.md",
+      "status": "done",
+      "arxiv": "2605.27724",
+      "pdf_file": "",
+      "route": "Simulation Benchmark",
       "title_cn": ""
     }
   ]

@@ -3342,6 +3342,18 @@
         "zh_title": "GRAIL：用 3D 资产与视频先验生成人形 Loco-Manipulation 数据"
       },
       {
+        "title": "HumanoidMimicGen: Data Generation for Loco-Manipulation via Whole-Body Planning",
+        "path": "papers/11_Simulation_Benchmark/HumanoidMimicGen__Data_Generation_for_Loco-Manipulation_via_Whole-Body_Planning/HumanoidMimicGen__Data_Generation_for_Loco-Manipulation_via_Whole-Body_Planning.md",
+        "url": "/papers/11_Simulation_Benchmark/HumanoidMimicGen__Data_Generation_for_Loco-Manipulation_via_Whole-Body_Planning/HumanoidMimicGen__Data_Generation_for_Loco-Manipulation_via_Whole-Body_Planning.html",
+        "dir": "HumanoidMimicGen__Data_Generation_for_Loco-Manipulation_via_Whole-Body_Planning",
+        "arxiv": "2605.27724",
+        "has_open_source": false,
+        "published_date_zh": "2026年5月26日（arXiv v1）",
+        "published_date_en": "May 26, 2026 (arXiv v1)",
+        "zhname": "HumanoidMimicGen：用全身规划为「行走+操作」自动生成数据",
+        "zh_title": "HumanoidMimicGen：用全身规划为「行走+操作」自动生成数据"
+      },
+      {
         "title": "ComFree-Sim: A GPU-Parallelized Analytical Contact Physics Engine for Scalable Contact-Rich Robotics Simulation and Control",
         "path": "papers/11_Simulation_Benchmark/ComFree-Sim__GPU-Parallelized_Analytical_Contact_Physics_Engine/ComFree-Sim__GPU-Parallelized_Analytical_Contact_Physics_Engine.md",
         "url": "/papers/11_Simulation_Benchmark/ComFree-Sim__GPU-Parallelized_Analytical_Contact_Physics_Engine/ComFree-Sim__GPU-Parallelized_Analytical_Contact_Physics_Engine.html",

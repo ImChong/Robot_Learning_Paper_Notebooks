@@ -578,6 +578,7 @@
 | 527  | [MuJoCo Playground: An Open-Source Framework for GPU-Accelerated Robot Learning and Sim-to-Real Transfer](https://arxiv.org/abs/2502.08844) ✅ [笔记](11_Simulation_Benchmark/MuJoCo_Playground__An_Open-Source_Framework_for_GPU-Accelerated_Robot_Learning/MuJoCo_Playground__An_Open-Source_Framework_for_GPU-Accelerated_Robot_Learning.md) | 2025.01 | 🌟 | ✅ 已总结 |
 | 560  | [Labimus: A Simulation and Benchmark for Humanoid Dexterous Manipulation in Chemical Laboratory](https://arxiv.org/abs/2606.31037) ✅ [笔记](11_Simulation_Benchmark/Labimus__A_Simulation_and_Benchmark_for_Humanoid_Dexterous_Manipulation_in_Chemical_Lab/Labimus__A_Simulation_and_Benchmark_for_Humanoid_Dexterous_Manipulation_in_Chemical_Lab.md) | 2026-06-30 |     | ✅ 已总结 |
 | 564  | [RoboDojo: A Unified Sim-and-Real Benchmark for Comprehensive Evaluation of Generalist Robot Manipulation Policies](https://arxiv.org/abs/2607.04434) ✅ [笔记](11_Simulation_Benchmark/RoboDojo__A_Unified_Sim-and-Real_Benchmark_for_Generalist_Manipulation_Policies/RoboDojo__A_Unified_Sim-and-Real_Benchmark_for_Generalist_Manipulation_Policies.md) | 2026-07 | 🌟 | ✅ 已总结 |
+| 589  | [HumanoidMimicGen: Data Generation for Loco-Manipulation via Whole-Body Planning](https://arxiv.org/abs/2605.27724) ✅ [笔记](11_Simulation_Benchmark/HumanoidMimicGen__Data_Generation_for_Loco-Manipulation_via_Whole-Body_Planning/HumanoidMimicGen__Data_Generation_for_Loco-Manipulation_via_Whole-Body_Planning.md) | 2026-05-26 |  | ✅ 已总结 |
 
 
 ### Hardware Design（40篇）
