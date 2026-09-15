@@ -3118,6 +3118,17 @@
     "display_name": "Hardware Design",
     "papers": [
       {
+        "title": "A Dual-Cam Parallel Elastic Actuator with Shared Gas-Spring Compensation for Humanoid Ankles",
+        "path": "papers/12_Hardware_Design/Dual-Cam_Parallel_Elastic_Actuator_with_Shared_Gas-Spring_for_Humanoid_Ankles/Dual-Cam_Parallel_Elastic_Actuator_with_Shared_Gas-Spring_for_Humanoid_Ankles.md",
+        "url": "/papers/12_Hardware_Design/Dual-Cam_Parallel_Elastic_Actuator_with_Shared_Gas-Spring_for_Humanoid_Ankles/Dual-Cam_Parallel_Elastic_Actuator_with_Shared_Gas-Spring_for_Humanoid_Ankles.html",
+        "dir": "Dual-Cam_Parallel_Elastic_Actuator_with_Shared_Gas-Spring_for_Humanoid_Ankles",
+        "arxiv": "2608.30832",
+        "published_date_zh": "2026年8月31日（arXiv）",
+        "published_date_en": "Aug 31, 2026 (arXiv)",
+        "zhname": "双凸轮并联弹性驱动器：用共享气弹簧补偿人形踝关节双向力矩",
+        "zh_title": "双凸轮并联弹性驱动器：用共享气弹簧补偿人形踝关节双向力矩"
+      },
+      {
         "title": "Handroid: Bridging Dexterous Hand and Humanoid",
         "path": "papers/12_Hardware_Design/Handroid__Bridging_Dexterous_Hand_and_Humanoid/Handroid__Bridging_Dexterous_Hand_and_Humanoid.md",
         "url": "/papers/12_Hardware_Design/Handroid__Bridging_Dexterous_Hand_and_Humanoid/Handroid__Bridging_Dexterous_Hand_and_Humanoid.html",
@@ -3347,7 +3358,6 @@
         "url": "/papers/11_Simulation_Benchmark/HumanoidMimicGen__Data_Generation_for_Loco-Manipulation_via_Whole-Body_Planning/HumanoidMimicGen__Data_Generation_for_Loco-Manipulation_via_Whole-Body_Planning.html",
         "dir": "HumanoidMimicGen__Data_Generation_for_Loco-Manipulation_via_Whole-Body_Planning",
         "arxiv": "2605.27724",
-        "has_open_source": false,
         "published_date_zh": "2026年5月26日（arXiv v1）",
         "published_date_en": "May 26, 2026 (arXiv v1)",
         "zhname": "HumanoidMimicGen：用全身规划为「行走+操作」自动生成数据",
