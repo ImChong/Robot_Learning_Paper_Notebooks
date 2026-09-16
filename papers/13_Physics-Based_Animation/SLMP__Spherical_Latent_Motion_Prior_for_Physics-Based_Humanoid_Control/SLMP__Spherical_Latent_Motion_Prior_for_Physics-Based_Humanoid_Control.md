@@ -97,7 +97,7 @@ flowchart TB
         RAND["随机隐码<br/>z2 = ε/‖ε‖₂"]
         PI["π_φ(s, z) 隐码条件策略<br/>‖z‖₂ = 1"]
         DISC["判别器 D<br/>区分 专家动作 / 随机隐码动作"]
-        LOSS["L = L_distill + L_disc + L_DLSC<br/>w_d=e^(−β·d12), w_c=1+|min(0,D)|"]
+        LOSS["L = L_distill + L_disc + L_DLSC<br/>w_d=e^(−β·d12), w_c=1+#124;min(0,D)#124;"]
         ENC --> PI
         RAND --> PI
         PI --> DISC
@@ -107,7 +107,7 @@ flowchart TB
     end
 
     subgraph S3["③ 下游：双人格斗 (自博弈 + 稀疏奖励)"]
-        HIGH["高层 π_h(z|s)<br/>采样球面隐码"]
+        HIGH["高层 π_h(z#124;s)<br/>采样球面隐码"]
         SPARSE["稀疏规则奖励<br/>命中 / 击倒(+50) / 跌倒终止"]
         HIGH -->|"z_t"| PI
         HIGH --> SPARSE
