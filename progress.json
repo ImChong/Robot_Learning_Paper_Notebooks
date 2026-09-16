@@ -41,13 +41,13 @@
         "13_Physics-Based_Animation",
         "14_Human_Motion"
       ],
-      "last_module": "12_Hardware_Design",
-      "last_index": 590,
-      "last_title": "A Dual-Cam Parallel Elastic Actuator with Shared Gas-Spring Compensation for Humanoid Ankles (arXiv:2608.30832)",
-      "next_module": "13_Physics-Based_Animation",
-      "last_completed_date": "2026-09-15",
-      "note": "12_Hardware_Design 模块补齐最新发表且无笔记的《A Dual-Cam Parallel Elastic Actuator with Shared Gas-Spring Compensation for Humanoid Ankles》(arXiv:2608.30832, v1 2026-08-31, IEEE AIM 2026, 意大利技术研究院 IIT · HHCM, Tsagarakis 组)。一篇纯机构/驱动器设计论文：针对人形踝「既要大力矩(65kg 人形约 127N·m 俯仰/70N·m 翻滚)又要能效」的二难——大减速比齿轮箱损耗/反射惯量大、低减速比 QDD 静态又要持续大电流发热，提出 2 自由度并联弹性驱动器(PEA)。核心创新：用一根共享气弹簧+两个偏心凸轮同时补偿俯仰与翻滚静态力矩(滚针滚子接触、F50-13 电机+滚珠丝杠负责动态跟踪)，省掉「每轴一套弹簧」的体积质量。建立耦合模型 Fs(θ1,θ2)=Fsi+k(Δc1+Δc2+cp)，把凸轮型线参数化为 4 阶多项式、以力矩平方误差最小为目标(约束行程/曲率)、CasADi+IPOPT 求解。CREO 整腿(495mm/3.56kg)+7075-T6 凸轮 FEA(次表面 von Mises ~500MPa)+运动学仿真三组参考力矩。结果：解耦场景力矩最高卸掉 ~97%(R²≈0.99)，负载下翻滚峰值仍降 65.6%；耦合场景因共享单弹簧退化(R² 俯仰 0.87–0.94/翻滚 0.67–0.92)。全为仿真、暂无样机与公开源码，故无源码运行时序图，仅据论文给出方法流程 mermaid。下一篇轮转到 13_Physics-Based_Animation。",
-      "last_date": "2026-09-15",
+      "last_module": "13_Physics-Based_Animation",
+      "last_index": 591,
+      "last_title": "Spherical Latent Motion Prior for Physics-Based Simulated Humanoid Control (SLMP, arXiv:2603.01294)",
+      "next_module": "14_Human_Motion",
+      "last_completed_date": "2026-09-16",
+      "note": "13_Physics-Based_Animation 模块补齐最新发表且无笔记的《Spherical Latent Motion Prior for Physics-Based Simulated Humanoid Control》(SLMP, arXiv:2603.01294, v1 2026-03-01)。两阶段运动先验：① GCRL+PPO 训高保真动作跟踪专家；② 把专家蒸馏进单位球面隐空间，用蒸馏损失(保真)+判别器损失(区分专家/随机隐码动作)+判别器引导的局部语义一致性损失 DLSC(几何权重 w_d=e^(-β·d12)、语义权重 w_c=1+|min(0,D)|)塑形邻域，避免 VAE 重构信息损失与低密度区无效采样、以及 AMP 模式崩塌。下游用自博弈+稀疏规则奖励(命中/击倒+50/跌倒终止)学出类人双人格斗，跨形态迁移到 Unitree G1、ENGINEAI PM01。Isaac Gym 60Hz、隐维 d=64、双卡 RTX4090。含整体框架 mermaid 与源码运行时序图(基于 Colin-Jing/SLMP_Combat, phc/SMPLOlympics 框架)。",
+      "last_date": "2026-09-16",
       "next_candidate": null
     },
     "last_summary_index": 590,
@@ -5969,6 +5969,18 @@
       "pdf_file": "",
       "route": "Hardware Design",
       "title_cn": ""
+    },
+    {
+      "title": "SLMP: Spherical Latent Motion Prior for Physics-Based Simulated Humanoid Control",
+      "arxiv": "2603.01294",
+      "folder": "papers/13_Physics-Based_Animation/SLMP__Spherical_Latent_Motion_Prior_for_Physics-Based_Humanoid_Control",
+      "note_file": "SLMP__Spherical_Latent_Motion_Prior_for_Physics-Based_Humanoid_Control.md",
+      "pdf_file": "",
+      "status": "done",
+      "start_date": "2026-09-16",
+      "done_date": "2026-09-16",
+      "route": "物理动画",
+      "title_cn": "SLMP：面向物理仿真人形控制的球面隐空间运动先验"
     }
   ]
 }
