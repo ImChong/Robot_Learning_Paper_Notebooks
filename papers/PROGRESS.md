@@ -630,11 +630,12 @@
 | 531  | [Zeroth Bot](https://github.com/zeroth-robotics/zeroth-bot)                                                                                                            | -       |     | ⏳ 待读 |
 
 
-### Physics-Based Character Animation（29篇）
+### Physics-Based Character Animation（30篇）
 
 
 | #   | 论文                                                                                                                                               | 日期      | 🌟  | 状态   |
 | --- | ------------------------------------------------------------------------------------------------------------------------------------------------ | ------- | --- | ---- |
+| 591  | [SLMP: Spherical Latent Motion Prior for Physics-Based Simulated Humanoid Control](https://arxiv.org/abs/2603.01294) ✅ [笔记](13_Physics-Based_Animation/SLMP__Spherical_Latent_Motion_Prior_for_Physics-Based_Humanoid_Control/SLMP__Spherical_Latent_Motion_Prior_for_Physics-Based_Humanoid_Control.md) | 2026-03-01 |     | ✅ 已总结 |
 | 573  | [Lambda-Hold Control: Human-Like Movement Emerges from a Minimal Task Reward in Predictive Musculoskeletal Simulation](https://arxiv.org/abs/2608.17030) ✅ [笔记](13_Physics-Based_Animation/Lambda-Hold_Control__Human-Like_Movement_from_Minimal_Task_Reward/Lambda-Hold_Control__Human-Like_Movement_from_Minimal_Task_Reward.md) | 2026-08-17 | 🌟 | ✅ 已总结 |
 | 447  | Spatial relationship preserving character motion adaptation                                                                                      | 3349.17 |     | ⏳ 待读 |
 | 448  | [Iterative Closed-Loop Motion Synthesis for Scaling the Capabilities of Humanoid Control](https://arxiv.org/abs/2602.21599) [笔记](13_Physics-Based_Animation/Iterative_Closed-Loop_Motion_Synthesis/Iterative_Closed-Loop_Motion_Synthesis.md) | 2026-05-17 |     | ✅ 完成 |

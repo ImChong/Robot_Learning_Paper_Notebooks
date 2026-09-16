@@ -3610,6 +3610,18 @@
         "zh_title": "BFMTrack：用潜空间序列优化让行为基础模型做物理动作追踪"
       },
       {
+        "title": "Spherical Latent Motion Prior for Physics-Based Simulated Humanoid Control",
+        "path": "papers/13_Physics-Based_Animation/SLMP__Spherical_Latent_Motion_Prior_for_Physics-Based_Humanoid_Control/SLMP__Spherical_Latent_Motion_Prior_for_Physics-Based_Humanoid_Control.md",
+        "url": "/papers/13_Physics-Based_Animation/SLMP__Spherical_Latent_Motion_Prior_for_Physics-Based_Humanoid_Control/SLMP__Spherical_Latent_Motion_Prior_for_Physics-Based_Humanoid_Control.html",
+        "dir": "SLMP__Spherical_Latent_Motion_Prior_for_Physics-Based_Humanoid_Control",
+        "arxiv": "2603.01294",
+        "has_open_source": true,
+        "published_date_zh": "2026年3月1日（arXiv v1）",
+        "published_date_en": "Mar 1, 2026 (arXiv v1)",
+        "zhname": "SLMP：面向物理仿真人形控制的球面隐空间运动先验",
+        "zh_title": "SLMP：面向物理仿真人形控制的球面隐空间运动先验"
+      },
+      {
         "title": "Iterative Closed-Loop Motion Synthesis for Scaling the Capabilities of Humanoid Control",
         "path": "papers/13_Physics-Based_Animation/Iterative_Closed-Loop_Motion_Synthesis/Iterative_Closed-Loop_Motion_Synthesis.md",
         "url": "/papers/13_Physics-Based_Animation/Iterative_Closed-Loop_Motion_Synthesis/Iterative_Closed-Loop_Motion_Synthesis.html",
