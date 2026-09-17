@@ -882,15 +882,16 @@
       { size: 13, anchor: 'middle', cls: 'demo-x-ink2', w: 660 });
     s.appendChild(formula);
 
-    var CX = 178, CY = 204, R = 90;
+    var CX = 178, CY = 216, R = 82;
     var ring = svgEl('g', {});
     ring.appendChild(paint(svgEl('circle', { cx: CX, cy: CY, r: R, fill: 'none', 'stroke-width': 1.2 }), null, C_BORDER));
     ring.appendChild(paint(svgEl('line', { x1: CX - R - 8, y1: CY, x2: CX + R + 8, y2: CY, 'stroke-width': 1 }), null, C_BORDER));
     ring.appendChild(paint(svgEl('line', { x1: CX, y1: CY - R - 8, x2: CX, y2: CY + R + 8, 'stroke-width': 1 }), null, C_BORDER));
-    ring.appendChild(svgText(CX, 104, '‖z‖ ≡ 1（这里画成 S¹，论文是 S⁶³）', 'demo-x-mut', 10.5, 'middle'));
+    ring.appendChild(svgText(CX, 100, '（这里画成 S¹，论文是 S⁶³）', 'demo-x-mut', 10.5, 'middle'));
+    /* 每个通道标在它自己的主方向上：转到那儿，这一条就最大。 */
     CHANNELS.forEach(function (c) {
       var a = Math.atan2(c.w[1], c.w[0]);
-      ring.appendChild(svgText(CX + (R + 20) * Math.cos(a), CY - (R + 20) * Math.sin(a) + 3, c.label, 'demo-x-mut', 10,
+      ring.appendChild(svgText(CX + (R + 18) * Math.cos(a), CY - (R + 18) * Math.sin(a) + 3, c.label, 'demo-x-mut', 10,
         Math.cos(a) < -0.3 ? 'end' : Math.cos(a) > 0.3 ? 'start' : 'middle'));
     });
     s.appendChild(ring);
@@ -906,12 +907,12 @@
     var tip = paint(svgEl('circle', { cx: CX, cy: CY, r: 6, 'stroke-width': 1.6 }), C_ACCENT, C_SURFACE2);
     s.appendChild(arm);
     s.appendChild(tip);
-    var zTx = paint(svgText(CX, 322, '', 'demo-x-mono', 11.5, 'middle'), C_ACCENT);
+    var zTx = paint(svgText(766, 106, '', 'demo-x-mono', 11.5, 'end'), C_ACCENT);
     s.appendChild(zTx);
 
-    var barHead = svgText(340, 108, '同一个策略解码出的四个行为通道', 'demo-x-mut', 10.5);
+    var barHead = svgText(340, 106, '同一个策略解码出的四个行为通道', 'demo-x-mut', 10.5);
     s.appendChild(barHead);
-    var zeroLine = paint(svgEl('line', { x1: S2_ZERO, y1: 122, x2: S2_ZERO, y2: 272, 'stroke-width': 1, 'stroke-dasharray': '3 3' }), null, C_BORDER);
+    var zeroLine = paint(svgEl('line', { x1: S2_ZERO, y1: 122, x2: S2_ZERO, y2: 274, 'stroke-width': 1, 'stroke-dasharray': '3 3' }), null, C_BORDER);
     s.appendChild(zeroLine);
     var bars = CHANNELS.map(function (c, i) {
       var y = 140 + i * 38;
@@ -922,25 +923,25 @@
       s.appendChild(tx);
       return { rect: rect, tx: tx };
     });
-    var sayTx = paint(svgText(600, 300, '', null, 12.5, 'middle'), C_GOOD);
+    var sayTx = paint(svgText(600, 302, '', null, 12.5, 'middle'), C_GOOD);
     s.appendChild(sayTx);
 
     var tl = svgEl('g', {});
-    tl.appendChild(svgText(60, 328, '训练时不是一个 episode 用一个技能到底：latent_time_min 0.0 / latent_time_max 5.0', 'demo-x-mut', 10.5));
-    tl.appendChild(paint(svgEl('rect', { x: S2_TL0, y: 338, width: S2_TL1 - S2_TL0, height: 18, rx: 3, 'stroke-width': 1 }), C_SURFACE2, C_BORDER));
+    tl.appendChild(svgText(60, 340, '训练时不是一个 episode 用一个技能到底：latent_time_min 0.0 / latent_time_max 5.0', 'demo-x-mut', 10.5));
+    tl.appendChild(paint(svgEl('rect', { x: S2_TL0, y: 350, width: S2_TL1 - S2_TL0, height: 18, rx: 3, 'stroke-width': 1 }), C_SURFACE2, C_BORDER));
     var segNodes = S2_SEGS.map(function (sg, i) {
       var x0 = S2_TL0 + (sg.t0 / S2_SPAN) * (S2_TL1 - S2_TL0);
       var x1 = S2_TL0 + (sg.t1 / S2_SPAN) * (S2_TL1 - S2_TL0);
-      var rect = paint(svgEl('rect', { x: x0, y: 338, width: x1 - x0, height: 18, rx: 3, opacity: 0.28 }), i % 2 ? C_GOOD : C_ACCENT);
+      var rect = paint(svgEl('rect', { x: x0, y: 350, width: x1 - x0, height: 18, rx: 3, opacity: 0.28 }), i % 2 ? C_GOOD : C_ACCENT);
       tl.appendChild(rect);
-      tl.appendChild(paint(svgText((x0 + x1) / 2, 374, fmt(sg.t1 - sg.t0, 2) + ' s', 'demo-x-mono', 10, 'middle'), C_MUTED));
+      tl.appendChild(paint(svgText((x0 + x1) / 2, 384, fmt(sg.t1 - sg.t0, 2) + ' s', 'demo-x-mono', 10, 'middle'), C_MUTED));
       return rect;
     });
-    var head = paint(svgEl('line', { x1: S2_TL0, y1: 332, x2: S2_TL0, y2: 362, 'stroke-width': 1.8 }), null, C_BAD);
+    var head = paint(svgEl('line', { x1: S2_TL0, y1: 344, x2: S2_TL0, y2: 374, 'stroke-width': 1.8 }), null, C_BAD);
     tl.appendChild(head);
     s.appendChild(tl);
 
-    var foot = paint(svgText(400, 404, '技能不再是离散 ID，而是连续向量 —— 两个技能之间可以插值', null, 14.5, 'middle'), C_ACCENT);
+    var foot = paint(svgText(400, 410, '技能不再是离散 ID，而是连续向量 —— 两个技能之间可以插值', null, 14.5, 'middle'), C_ACCENT);
     s.appendChild(foot);
 
     /* 前 10.8 秒在四个停靠点之间平滑扫过（每个点停 1.1 s、扫 0.85 s），之后
@@ -1143,7 +1144,7 @@
      三张结果卡的数字全部由 bestSens / discR / encR 在同一个噪声 σ = 0.35 下现算。 */
   var S4_NODES = [
     { x: 105, w: 150, tex: '\\pi(a \\mid s, z)', sub: '把 z 编进动作' },
-    { x: 300, w: 180, t: '行为片段 o_disc', sub: '相邻两帧 (s, s′)' },
+    { x: 300, w: 180, tex: '\\text{行为片段 } o_{disc}', sub: '相邻两帧 (s, s′)' },
     { x: 500, w: 150, tex: 'E(o_{disc}) \\to \\hat z', sub: 'enc_net fc_2x1024' },
     { x: 692, w: 150, tex: 'r_{enc} = z \\cdot \\hat z', sub: '余弦对齐，越大越好' }
   ];
@@ -1232,28 +1233,33 @@
     var S4_BEST_DISC = bestSens(1, 0, S3_NOISE);
     var S4_BEST_BOTH = bestSens(0.5, 0.5, S3_NOISE);
     var S4_BEST_ENC = bestSens(0, 1, S3_NOISE);
+    /* 每张卡两行：标题配 s*，副标题配剩下的读数，免得长数字串顶到标题上。 */
     var cards = [
       {
-        y: 200, c: C_BAD, t: '只有 disc（AMP 加个 z）',
-        v: 's* = ' + fmt(S4_BEST_DISC, 2) + '　cos = ' + fmt(encR(S4_BEST_DISC, S3_NOISE), 3),
-        s: 'latent collapse：动作里看不出 z'
+        y: 200, c: C_BAD, t: '只有 disc（等于 AMP 加个 z）',
+        v: 's* = ' + fmt(S4_BEST_DISC, 2),
+        s: 'latent collapse：动作里看不出 z',
+        v2: 'cos ' + fmt(encR(S4_BEST_DISC, S3_NOISE), 3)
       },
       {
-        y: 250, c: C_GOOD, t: 'disc 0.5 + enc 0.5（MimicKit 默认）',
-        v: 's* = ' + fmt(S4_BEST_BOTH, 2) + '　disc = ' + fmt(discR(S4_BEST_BOTH), 3) + '　cos = ' + fmt(encR(S4_BEST_BOTH, S3_NOISE), 3),
-        s: '既留在自然流形上，又认得出是哪个技能'
+        y: 250, c: C_GOOD, t: 'disc 0.5 + enc 0.5（默认）',
+        v: 's* = ' + fmt(S4_BEST_BOTH, 2),
+        s: '既自然，又认得出是哪个技能',
+        v2: 'disc ' + fmt(discR(S4_BEST_BOTH), 3) + ' / cos ' + fmt(encR(S4_BEST_BOTH, S3_NOISE), 3)
       },
       {
         y: 300, c: C_WARN, t: '只有 enc',
-        v: 's* = ' + fmt(S4_BEST_ENC, 2) + '　disc = ' + fmt(discR(S4_BEST_ENC), 3),
-        s: '怪异但好区分：已经飞出人类动作流形'
+        v: 's* = ' + fmt(S4_BEST_ENC, 2),
+        s: '怪异但好区分：已经飞出人类动作流形',
+        v2: 'disc ' + fmt(discR(S4_BEST_ENC), 3)
       }
     ].map(function (c, i) {
       var g = svgEl('g', {});
       g.appendChild(paint(svgEl('rect', { x: 430, y: c.y, width: 340, height: 44, rx: 8, 'stroke-width': 1.4, 'stroke-dasharray': i === 1 ? '' : '4 3' }), C_SURFACE, c.c));
       g.appendChild(paint(svgText(442, c.y + 17, c.t, null, 11, 'start'), c.c));
-      g.appendChild(paint(svgText(758, c.y + 17, c.v, 'demo-x-mono', 10.5, 'end'), c.c));
+      g.appendChild(paint(svgText(758, c.y + 17, c.v, 'demo-x-mono', 11, 'end'), c.c));
       g.appendChild(svgText(442, c.y + 34, c.s, 'demo-x-mut', 10));
+      g.appendChild(paint(svgText(758, c.y + 34, c.v2, 'demo-x-mono', 10, 'end'), C_MUTED));
       s.appendChild(g);
       return { g: g, at: 9.6 + i * 1.3 };
     });
@@ -1275,8 +1281,8 @@
       mark.setAttribute('x2', s4x(sNow).toFixed(1));
       markDot.setAttribute('cx', s4x(sNow).toFixed(1));
       markDot.setAttribute('cy', s4y(rNow).toFixed(1));
-      markTx.setAttribute('x', (s4x(sNow) + 8).toFixed(1));
-      markTx.setAttribute('y', (s4y(rNow) - 10).toFixed(1));
+      markTx.setAttribute('x', (s4x(sNow) + 13).toFixed(1));
+      markTx.setAttribute('y', (s4y(rNow) + 4).toFixed(1));
       markTx.textContent = 's* = ' + fmt(sNow, 2);
 
       cards.forEach(function (c) { setOpacity(c.g, seg(t, c.at, c.at + 0.6)); });
@@ -1315,25 +1321,25 @@
     s.appendChild(f1);
     s.appendChild(f2);
 
+    /* 两个量都画成「弦」：外圈弦是两个 latent 的距离，内圈弦是两个动作的距离。
+       把动作向量画成 latent 向量的短版本（它们共线）看不出区别，所以只在动作
+       半径上放一个点，两点之间连线 —— 内外两条弦一眼就能比长短。 */
     var geom = svgEl('g', {});
-    geom.appendChild(svgText(S5_CX, 132, '实线 = latent，虚线 = 解码出的动作', 'demo-x-mut', 10.5, 'middle'));
+    geom.appendChild(paint(svgText(S5_CX, 130, '外圈虚线弦 = 两个 latent 差多远（z_diff）', null, 10.5, 'middle'), C_MUTED));
+    geom.appendChild(paint(svgText(S5_CX, 146, '内圈实线弦 = 解码出的动作差多远（a_diff）', null, 10.5, 'middle'), C_BAD));
     geom.appendChild(paint(svgEl('circle', { cx: S5_CX, cy: S5_CY, r: S5_R, fill: 'none', 'stroke-width': 1.2 }), null, C_BORDER));
     s.appendChild(geom);
-    var arm1 = paint(svgEl('line', { 'stroke-width': 2.2 }), null, C_ACCENT);
-    var arm2 = paint(svgEl('line', { 'stroke-width': 2.2 }), null, C_GOOD);
-    var act1 = paint(svgEl('line', { 'stroke-width': 1.4, 'stroke-dasharray': '4 3' }), null, C_ACCENT);
-    var act2 = paint(svgEl('line', { 'stroke-width': 1.4, 'stroke-dasharray': '4 3' }), null, C_GOOD);
-    var span = paint(svgEl('line', { 'stroke-width': 2 }), null, C_BAD);
-    [arm1, arm2, act1, act2, span].forEach(function (n) {
-      n.setAttribute('x1', S5_CX);
-      n.setAttribute('y1', S5_CY);
-      s.appendChild(n);
-    });
-    var spanTx = paint(svgText(0, 0, 'a_diff', 'demo-x-mono', 11, 'middle'), C_BAD);
-    s.appendChild(spanTx);
+    var arm1 = paint(svgEl('line', { x1: S5_CX, y1: S5_CY, 'stroke-width': 2.2 }), null, C_ACCENT);
+    var arm2 = paint(svgEl('line', { x1: S5_CX, y1: S5_CY, 'stroke-width': 2.2 }), null, C_GOOD);
+    var zSpan = paint(svgEl('line', { 'stroke-width': 1.8, 'stroke-dasharray': '5 4' }), null, C_MUTED);
+    var aSpan = paint(svgEl('line', { 'stroke-width': 2.4 }), null, C_BAD);
+    var actDot1 = paint(svgEl('circle', { r: 4.5, 'stroke-width': 1.4 }), C_ACCENT, C_SURFACE2);
+    var actDot2 = paint(svgEl('circle', { r: 4.5, 'stroke-width': 1.4 }), C_GOOD, C_SURFACE2);
+    [arm1, arm2, zSpan, aSpan, actDot1, actDot2].forEach(function (n) { s.appendChild(n); });
 
     var plotG = svgEl('g', {});
-    plotG.appendChild(svgText(S5_PX0, 132, 'ratio 应该是一条水平线', 'demo-x-mut', 10.5));
+    plotG.appendChild(svgText(S5_PX0, 130, 'ratio 应该是一条水平线', 'demo-x-mut', 10.5));
+    plotG.appendChild(svgText(S5_PX0, 146, '横轴 = 两个 latent 的夹角', 'demo-x-mut', 10.5));
     plotG.appendChild(paint(svgEl('line', { x1: S5_PX0, y1: S5_PY0, x2: S5_PX1, y2: S5_PY0, 'stroke-width': 1.2 }), null, C_BORDER));
     plotG.appendChild(paint(svgEl('line', { x1: S5_PX0, y1: S5_PY0, x2: S5_PX0, y2: s5y(S5_RMAX), 'stroke-width': 1.2 }), null, C_BORDER));
     [0, 45, 90, 135, 180].forEach(function (d) {
@@ -1344,13 +1350,15 @@
     });
     plotG.appendChild(paint(svgEl('line', { x1: S5_PX0, y1: s5y(S5_TAR), x2: S5_PX1, y2: s5y(S5_TAR), 'stroke-width': 1.6, 'stroke-dasharray': '5 4' }), null, C_WARN));
     plotG.appendChild(paint(svgText(S5_PX1, s5y(S5_TAR) - 8, 'diversity_tar = 1.0', 'demo-x-mono', 10, 'end'), C_WARN));
-    var zLine = paint(svgEl('path', { fill: 'none', 'stroke-width': 1.5, 'stroke-dasharray': '4 4' }), null, C_MUTED);
-    var aLine = paint(svgEl('path', { fill: 'none', 'stroke-width': 1.5, 'stroke-dasharray': '4 4' }), null, C_GOOD);
+    /* z_diff 画成粗底带、a_diff 用虚线压在上面：默认参数下两者完全重合
+       （ratio ≡ 1 就是这个意思），粗细不同才看得出是两条线。 */
+    var zLine = paint(svgEl('path', { fill: 'none', 'stroke-width': 4.5, opacity: 0.45 }), null, C_MUTED);
+    var aLine = paint(svgEl('path', { fill: 'none', 'stroke-width': 1.8, 'stroke-dasharray': '5 4' }), null, C_GOOD);
     var rLine = paint(svgEl('path', { fill: 'none', 'stroke-width': 2.4 }), null, C_ACCENT);
     [zLine, aLine, rLine].forEach(function (n) { plotG.appendChild(n); });
-    plotG.appendChild(paint(svgText(S5_PX0 + 6, 150, 'z_diff', 'demo-x-mono', 10), C_MUTED));
-    plotG.appendChild(paint(svgText(S5_PX0 + 62, 150, 'a_diff', 'demo-x-mono', 10), C_GOOD));
-    plotG.appendChild(paint(svgText(S5_PX0 + 118, 150, 'ratio', 'demo-x-mono', 10), C_ACCENT));
+    plotG.appendChild(paint(svgText(S5_PX0 + 168, 130, 'z_diff', 'demo-x-mono', 10), C_MUTED));
+    plotG.appendChild(paint(svgText(S5_PX0 + 224, 130, 'a_diff', 'demo-x-mono', 10), C_GOOD));
+    plotG.appendChild(paint(svgText(S5_PX0 + 280, 130, 'ratio', 'demo-x-mono', 10), C_ACCENT));
     var here = paint(svgEl('circle', { r: 4.8, 'stroke-width': 1.5 }), C_ACCENT, C_SURFACE);
     plotG.appendChild(here);
     s.appendChild(plotG);
@@ -1396,23 +1404,26 @@
 
       var z1 = zOf(S5_Z1),
         z2 = zOf(S5_Z1 + rad);
-      var k = S5_R * 0.55;
+      var k = S5_R * 0.62 * sens;
       var on = seg(t, 1.2, 1.8);
-      [[arm1, z1[0] * S5_R, z1[1] * S5_R, on], [arm2, z2[0] * S5_R, z2[1] * S5_R, on],
-        [act1, z1[0] * k * sens, z1[1] * k * sens, on], [act2, z2[0] * k * sens, z2[1] * k * sens, on]]
-        .forEach(function (a) {
-          a[0].setAttribute('x2', (S5_CX + a[1]).toFixed(1));
-          a[0].setAttribute('y2', (S5_CY - a[2]).toFixed(1));
-          setOpacity(a[0], a[3]);
-        });
-      span.setAttribute('x1', (S5_CX + z1[0] * k * sens).toFixed(1));
-      span.setAttribute('y1', (S5_CY - z1[1] * k * sens).toFixed(1));
-      span.setAttribute('x2', (S5_CX + z2[0] * k * sens).toFixed(1));
-      span.setAttribute('y2', (S5_CY - z2[1] * k * sens).toFixed(1));
-      setOpacity(span, on);
-      spanTx.setAttribute('x', (S5_CX + ((z1[0] + z2[0]) * k * sens) / 2).toFixed(1));
-      spanTx.setAttribute('y', (S5_CY - ((z1[1] + z2[1]) * k * sens) / 2 - 10).toFixed(1));
-      setOpacity(spanTx, on * (sens > 0.05 ? 1 : 0));
+      /* 两条 latent 半径 + 动作半径上的两个点，然后各连一条弦。 */
+      function place(node, r1, r2) {
+        node.setAttribute('x1', (S5_CX + z1[0] * r1).toFixed(1));
+        node.setAttribute('y1', (S5_CY - z1[1] * r1).toFixed(1));
+        node.setAttribute('x2', (S5_CX + z2[0] * r2).toFixed(1));
+        node.setAttribute('y2', (S5_CY - z2[1] * r2).toFixed(1));
+      }
+      arm1.setAttribute('x2', (S5_CX + z1[0] * S5_R).toFixed(1));
+      arm1.setAttribute('y2', (S5_CY - z1[1] * S5_R).toFixed(1));
+      arm2.setAttribute('x2', (S5_CX + z2[0] * S5_R).toFixed(1));
+      arm2.setAttribute('y2', (S5_CY - z2[1] * S5_R).toFixed(1));
+      place(zSpan, S5_R, S5_R);
+      place(aSpan, k, k);
+      actDot1.setAttribute('cx', (S5_CX + z1[0] * k).toFixed(1));
+      actDot1.setAttribute('cy', (S5_CY - z1[1] * k).toFixed(1));
+      actDot2.setAttribute('cx', (S5_CX + z2[0] * k).toFixed(1));
+      actDot2.setAttribute('cy', (S5_CY - z2[1] * k).toFixed(1));
+      [arm1, arm2, zSpan, aSpan, actDot1, actDot2].forEach(function (n) { setOpacity(n, on); });
 
       var zPts = [], aPts = [], rPts = [];
       for (var i = 1; i <= 180; i++) {
