@@ -80,10 +80,10 @@
 
   function buildDiffDemo(host) {
     var root = card(host, {
-      title: 'ADD 的判别器看的是 Δo，不是姿态本身',
+      title: 'ADD 的判别器看的是 $\\Delta o$，不是姿态本身',
       sub:
-        '拖动四个维度上的跟踪误差，看 Δo = o^demo − o 怎么被 DiffNormalizer 拉到同一量纲，' +
-        '再被判别器打成一个分数 D，最后变成 r = max[0, 1 − 0.25(D − 1)²]。正样本永远只有一个：Δo = 0。'
+        '拖动四个维度上的跟踪误差，看 $\\Delta o = o^{demo} - o$ 怎么被 DiffNormalizer 拉到同一量纲，' +
+        '再被判别器打成一个分数 $D$，最后变成 $r = \\max[0,\\ 1 - 0.25(D - 1)^2]$。正样本永远只有一个：$\\Delta o = 0$。'
     });
 
     var state = { e: DIFF_PRESETS[1].e.slice(), tau: 1.0, norm: true };
@@ -186,9 +186,9 @@
     note(root, [
       '**正样本只有一个点**：源码里 `self._pos_diff` 就是一个全 0 张量，每次更新都把它当成 real 喂给判别器。' +
         'AMP 需要一整个专家动作分布来当正类，ADD 的正类是「完全没有误差」这一个理想点 —— 这就是标题里 Differential Discriminator 的意思。',
-      '**DiffNormalizer 不是可选项**：关掉它再拖角速度，会看到 ‖Δô‖ 几乎只由 Δω 决定，末端那几厘米的误差完全没人管。' +
+      '**DiffNormalizer 不是可选项**：关掉它再拖角速度，会看到 $\\lVert \\Delta \\hat o \\rVert$ 几乎只由 $\\Delta \\omega$ 决定，末端那几厘米的误差完全没人管。' +
         '位置是米、角度是弧度、速度是 rad/s，不先拉到同一量纲，判别器就只会盯着尺度最大的那一维。',
-      '**τ 是判别器学出来的，不是你调的**：这里把它做成滑块只是为了让你看见它的作用 —— 它决定「多大的误差才算不像 0」。' +
+      '**$\\tau$ 是判别器学出来的，不是你调的**：这里把它做成滑块只是为了让你看见它的作用 —— 它决定「多大的误差才算不像 0」。' +
         '真实训练里它随着策略变好自动变小（第三个演示就在演这件事）。',
       '**这是简化模型**：真实判别器是 fc_2x1024，输入是整条差分向量而不是四个数，打分也不只依赖模长。' +
         '这里的数值不能和论文直接比，它只复现「判误差 → 打分 → 变成奖励」这条链路。'
@@ -228,7 +228,7 @@
           })
         );
         verdict.set(
-          '⚠️ 归一化关掉了：单独一维就占了 ‖Δô‖² 的 ' +
+          '⚠️ 归一化关掉了：单独一维就占了 $\\lVert \\Delta \\hat o \\rVert^2$ 的 ' +
             fmt(domShare * 100, 1) +
             '%。判别器现在只在跟这一维较劲，其他维度的误差它根本感觉不到 —— 这就是源码里必须有 DiffNormalizer 的原因。',
           'frozen'
@@ -248,7 +248,7 @@
             fmt(d, 2) +
             '，这条差分离零向量太远，r 只有 ' +
             fmt(r, 2) +
-            '。PPO 会把策略往「让 Δo 变小」的方向推 —— 而具体先修哪一维，是判别器的梯度说了算，不是你写的权重说了算。',
+            '。PPO 会把策略往「让 $\\Delta o$ 变小」的方向推 —— 而具体先修哪一维，是判别器的梯度说了算，不是你写的权重说了算。',
           'frozen'
         );
       }
@@ -704,18 +704,18 @@
         verdict.set(
           '✅ k = ' +
             fmt(state.k, 1) +
-            ' 时，固定核停在 e ≈ ' +
+            ' 时，固定核停在 $e \\approx$ ' +
             fmt(last.fix, 3) +
             ' 就不动了（梯度只剩 ' +
             fmt(gFix, 4) +
-            '），ADD 继续压到 e ≈ ' +
+            '），ADD 继续压到 $e \\approx$ ' +
             fmt(last.add, 3) +
             '。判别器把「合格线」一路往下挪，策略就一直有事可做。',
           'learning'
         );
       } else if (last.fix < last.add * 0.7) {
         verdict.set(
-          '🙂 这个 k 恰好选对了：固定核 e ≈ ' +
+          '🙂 这个 $k$ 恰好选对了：固定核 $e \\approx$ ' +
             fmt(last.fix, 3) +
             '，比 ADD 的 ' +
             fmt(last.add, 3) +
@@ -997,12 +997,14 @@
 
     var chips = [
       { y: 126, c: C_MUTED, t: 'AMP 的正类', a: '一整段专家动作分布', b: 'num_disc_obs_steps: 10' },
-      { y: 216, c: C_GOOD, t: 'ADD 的正类', a: 'Δo⁺ = 0 —— 一个点', b: 'self._pos_diff 全 0 张量' }
+      { y: 216, c: C_GOOD, t: 'ADD 的正类', aTex: '\\Delta o^{+} = 0 \\text{ —— 一个点}', b: 'self._pos_diff 全 0 张量' }
     ].map(function (c, i) {
       var g = svgEl('g', {});
       g.appendChild(paint(svgEl('rect', { x: 590, y: c.y, width: 180, height: 76, rx: 8, 'stroke-width': 1.4, 'stroke-dasharray': i ? '' : '5 4' }), C_SURFACE, c.c));
       g.appendChild(paint(svgText(680, c.y + 22, c.t, null, 11.5, 'middle'), c.c));
-      g.appendChild(svgText(680, c.y + 42, c.a, 'demo-x-ink2', 10.5, 'middle'));
+      g.appendChild(c.aTex
+        ? svgMath(680, c.y + 42, c.aTex, { size: 10.5, anchor: 'middle', cls: 'demo-x-ink2', w: 174 })
+        : svgText(680, c.y + 42, c.a, 'demo-x-ink2', 10.5, 'middle'));
       g.appendChild(paint(svgText(680, c.y + 62, c.b, 'demo-x-mono', 9.5, 'middle'), C_MUTED));
       s.appendChild(g);
       return { g: g, at: 7.4 + i * 1.6 };
@@ -1016,7 +1018,7 @@
     });
     axis.appendChild(paint(svgEl('circle', { cx: S2_AX0, cy: 348, r: 11, fill: 'none', 'stroke-width': 1.4, 'stroke-dasharray': '4 3' }), null, C_GOOD));
     axis.appendChild(paint(svgEl('circle', { cx: S2_AX0, cy: 348, r: 6 }), C_GOOD));
-    axis.appendChild(paint(svgText(S2_AX0, 324, '正样本 Δo⁺ = 0', null, 11, 'middle'), C_GOOD));
+    axis.appendChild(svgMath(S2_AX0, 324, '\\text{正样本 } \\Delta o^{+} = 0', { size: 11, anchor: 'middle', w: 160 }).setTone(C_GOOD));
     s.appendChild(axis);
 
     var normed = S2_E.map(function (v, i) { return v / DIMS[i].scale; });
@@ -1084,9 +1086,10 @@
     s.appendChild(svgText(60, 38, '第一步：把四个量纲拉平；第二步：判别器给一个分数', 'demo-x-ink2', 13));
 
     s.appendChild(paint(svgEl('rect', { x: 40, y: 56, width: 390, height: 210, rx: 8, 'stroke-width': 1 }), C_SURFACE2, C_BORDER));
-    [[58, '原始 Δo', 'start'], [225, '÷ 典型尺度', 'middle'], [305, '归一化 Δô', 'middle'], [412, '占 ‖Δô‖²', 'end']]
+    [[58, '\\text{原始 } \\Delta o', 'start'], [225, '\\div \\text{ 典型尺度}', 'middle'],
+      [305, '\\text{归一化 } \\Delta \\hat o', 'middle'], [412, '\\text{占 } \\lVert \\Delta \\hat o \\rVert^2', 'end']]
       .forEach(function (c) {
-        s.appendChild(svgText(c[0], 84, c[1], 'demo-x-mut', 10.5, c[2]));
+        s.appendChild(svgMath(c[0], 84, c[1], { size: 10.5, anchor: c[2], cls: 'demo-x-mut', w: 150 }));
       });
     s.appendChild(paint(svgEl('line', { x1: 58, y1: 92, x2: 412, y2: 92, 'stroke-width': 1 }), null, C_BORDER));
 
@@ -1441,7 +1444,7 @@
       ]
     },
     {
-      title: '改判 Δo：正样本只有一个',
+      title: '改判 $\\Delta o$：正样本只有一个',
       dur: 15,
       build: buildSceneDiff,
       cues: [
@@ -1449,7 +1452,7 @@
         { at: 3.2, s: '这一帧的差分：髋关节角差 **0.18 rad**、躯干角速度差 **5.2 rad/s**、踢腿末端差 **0.09 m**、根部差 **0.08 m**。' },
         { at: 7.4, s: 'AMP 的正类是**一整段专家动作分布**（`num_disc_obs_steps: 10`，一个 10 步窗口）。' },
         { at: 9.0, s: 'ADD 的正类只有**一个点**：完全匹配时 $\\Delta o = 0$ —— 源码里 `self._pos_diff` 就是一个全 0 张量。' },
-        { at: 11.4, s: '负样本则是实际跑出来的差分：归一化之后这条落在 **‖Δô‖ = 3.45**，离零点很远。' },
+        { at: 11.4, s: '负样本则是实际跑出来的差分：归一化之后这条落在 **$\\lVert \\Delta \\hat o \\rVert = 3.45$**，离零点很远。' },
         { at: 13.4, s: '所以判别器要回答的只有一句：**这条差分，看起来像不像「零」**。' }
       ]
     },
@@ -1460,11 +1463,11 @@
       cues: [
         { at: 0.3, s: '差分向量里，位置是米、角度是弧度、速度是 rad/s —— **量纲不同，不能直接求模长**。' },
         { at: 1.0, s: 'DiffNormalizer 把每一维除以它的典型尺度：0.18 ÷ 0.15 = **1.20**，5.2 ÷ 2.0 = **2.60**，0.09 ÷ 0.05 = **1.80**。' },
-        { at: 4.2, s: '不归一化会怎样？同一条 Δo，**角速度一维就吃掉 99.8%** 的模长，末端那几厘米判别器根本感觉不到。' },
+        { at: 4.2, s: '不归一化会怎样？同一条 $\\Delta o$，**角速度一维就吃掉 99.8%** 的模长，末端那几厘米判别器根本感觉不到。' },
         { at: 6.4, s: '归一化之后判别器给一个打分 $D_\\psi \\in [-1, 1]$，再换成奖励：**$r = \\max[0,\\ 1 - 0.25(D_\\psi - 1)^2]$**（和 AMP 同一式）。' },
-        { at: 8.0, s: '「跟得很准」这条 ‖Δô‖ = 0.50，拿到 **r = 0.99**；「旋转慢了半拍」那条 ‖Δô‖ = 3.45，**r ≈ 0.01**。' },
+        { at: 8.0, s: '「跟得很准」这条 $\\lVert \\Delta \\hat o \\rVert = 0.50$，拿到 **$r = 0.99$**；「旋转慢了半拍」那条 $\\lVert \\Delta \\hat o \\rVert = 3.45$，**$r \\approx 0.01$**。' },
         { at: 10.8, s: '关键的是：**判别器的标准会跟着策略一起变严**。策略越准，负样本越靠近 0，它必须更挑剔才分得开。' },
-        { at: 12.6, s: '于是整条奖励曲线往零点挪：**同一个 ‖Δô‖ = 0.50，从 0.99 掉到 0.78** —— 对抗训练自带一条课程。' },
+        { at: 12.6, s: '于是整条奖励曲线往零点挪：**同一个 $\\lVert \\Delta \\hat o \\rVert = 0.50$，从 0.99 掉到 0.78** —— 对抗训练自带一条课程。' },
         { at: 15.6, s: '手写的 $\\exp(-k e^2)$ 做不到这件事：$k$ 是常数，要么早早饱和，要么一开始奖励恒为 0。' }
       ]
     },
@@ -1506,7 +1509,7 @@
       sub: '约 78 秒自动播放。空格播放/暂停，← → 换幕；画面里的数字与下面三个演示用的是同一份函数。',
       ariaLabel: 'ADD 五幕讲解动画',
       notes: [
-        '取数依据：第二幕那四个差分就是下面「Δo 实验台」的预设「旋转慢了半拍」，归一化后的 1.20 / 2.60 / 1.80 / 0.67 与 ‖Δô‖ = 3.45 由同一组 `DIMS[i].scale` 现算；' +
+        '取数依据：第二幕那四个差分就是下面「Δo 实验台」的预设「旋转慢了半拍」，归一化后的 1.20 / 2.60 / 1.80 / 0.67 与 $\\lVert \\Delta \\hat o \\rVert = 3.45$ 由同一组 `DIMS[i].scale` 现算；' +
           '第三幕的曲线、两个读数点与 τ 收紧的效果用的是同一对 `discScore` / `discReward`；第四幕手写那四根柱子是 DeepMimic 的 0.65 / 0.1 / 0.15 / 0.1，' +
           '判别器那四根是「谁来决定先修哪一维」演示里的 `discWeights()` 在默认分辨力 1.0 下算出来的。',
         '第五幕的 4096 env、`tar_obs_steps: [1, 2, 3]`、`disc_grad_penalty: 2`、`disc_logit_reg: 0.01`、回放池 20 万 / 1000、' +

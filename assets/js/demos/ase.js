@@ -442,7 +442,7 @@
         verdict.set(
           '💀 latent collapse：enc 权重 = ' +
             fmt(state.wEnc, 2) +
-            ' 时最优敏感度 s* ≈ ' +
+            ' 时最优敏感度 $s^*\\approx$ ' +
             fmt(best, 2) +
             '，策略把 z 完全忽略了。右图里所有颜色的点堆在一起 —— 换任何 latent 都是同一个动作，' +
             '这正是「只把 z 拼进输入」会发生的事。',
@@ -450,7 +450,7 @@
         );
       } else if (state.wDisc < 0.12) {
         verdict.set(
-          '⚠️ 没有判别器兜底：s* ≈ ' +
+          '⚠️ 没有判别器兜底：$s^*\\approx$ ' +
             fmt(best, 2) +
             '，每个 z 都对应一个非常好认的动作，但它们已经离数据流形很远了 —— ' +
             '技能是分开了，代价是动作不像人。这就是论文说「只有 enc reward 会学出怪异但容易区分的动作」。',
@@ -458,7 +458,7 @@
         );
       } else {
         verdict.set(
-          '✅ s* ≈ ' +
+          '✅ $s^*\\approx$ ' +
             fmt(best, 2) +
             '：动作既留在自然流形上（disc ' +
             fmt(discR(best), 2) +
@@ -633,7 +633,7 @@
     var verdict = verdictBox(root);
 
     note(root, [
-      '**z_diff 是被设计成 [0, 1] 的**：`0.5 − 0.5·cos` 把「完全相同」映射成 0、「完全相反」映射成 1。' +
+      '**z_diff 是被设计成 $[0, 1]$ 的**：`0.5 − 0.5·cos` 把「完全相同」映射成 0、「完全相反」映射成 1。' +
         '所以 ratio 的分母有个天然量纲，`diversity_tar: 1.0` 才有意义 —— 它在说「动作的差异应该和 latent 的差异成正比」。',
       '**它罚的是两头**：ratio 太小 = latent 变了动作没变（collapse）；ratio 太大 = 稍微动一下 latent 动作就面目全非，' +
         'latent 空间变得不连续、没法插值。平方误差把两种情况一起罚掉。',
@@ -661,15 +661,15 @@
 
       if (state.sens < 0.05) {
         verdict.set(
-          '💀 ratio ≈ 0：两个 latent 差了 ' +
+          '💀 ratio $\\approx$ 0：两个 latent 差了 ' +
             fmt((state.angle * 180) / Math.PI, 0) +
-            '°，动作却一模一样。diversity loss 立刻变成 (1 − 0)² = 1，把策略往「必须用 z」的方向推。' +
+            '°，动作却一模一样。diversity loss 立刻变成 $(1 - 0)^2 = 1$，把策略往「必须用 $z$」的方向推。' +
             '这就是这一项存在的全部理由。',
           'frozen'
         );
       } else if (Math.abs(ratio - state.tar) < 0.25) {
         verdict.set(
-          '✅ ratio ≈ ' +
+          '✅ ratio $\\approx$ ' +
             fmt(ratio, 2) +
             '，正好落在 diversity_tar = ' +
             fmt(state.tar, 2) +
@@ -679,7 +679,7 @@
         );
       } else if (ratio > state.tar) {
         verdict.set(
-          '⚠️ ratio ≈ ' +
+          '⚠️ ratio $\\approx$ ' +
             fmt(ratio, 2) +
             ' 偏大：latent 只挪了一点，动作就变化剧烈。技能是分得很开，但空间不连续 —— ' +
             '高层策略输出的 z 稍有抖动，底层动作就会突变。loss 同样会罚它。',
@@ -687,7 +687,7 @@
         );
       } else {
         verdict.set(
-          '⚠️ ratio ≈ ' +
+          '⚠️ ratio $\\approx$ ' +
             fmt(ratio, 2) +
             ' 偏小：动作的差异跟不上 latent 的差异，latent 空间正在往 collapse 的方向滑。',
           'frozen'
@@ -887,7 +887,7 @@
     ring.appendChild(paint(svgEl('circle', { cx: CX, cy: CY, r: R, fill: 'none', 'stroke-width': 1.2 }), null, C_BORDER));
     ring.appendChild(paint(svgEl('line', { x1: CX - R - 8, y1: CY, x2: CX + R + 8, y2: CY, 'stroke-width': 1 }), null, C_BORDER));
     ring.appendChild(paint(svgEl('line', { x1: CX, y1: CY - R - 8, x2: CX, y2: CY + R + 8, 'stroke-width': 1 }), null, C_BORDER));
-    ring.appendChild(svgText(CX, 100, '（这里画成 S¹，论文是 S⁶³）', 'demo-x-mut', 10.5, 'middle'));
+    ring.appendChild(svgMath(CX, 100, '\\text{（这里画成 } S^1 \\text{，论文是 } S^{63} \\text{）}', { size: 10.5, anchor: 'middle', cls: 'demo-x-mut', w: 220 }));
     /* 每个通道标在它自己的主方向上：转到那儿，这一条就最大。 */
     CHANNELS.forEach(function (c) {
       var a = Math.atan2(c.w[1], c.w[0]);
