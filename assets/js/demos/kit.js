@@ -498,6 +498,287 @@
     };
   }
 
+  // ─── SVG storyboard kit (for the narrated explainer animations) ──────────
+  /* The explainers draw on SVG rather than Canvas: the scenes are mostly text
+     and boxes, and SVG keeps them crisp and selectable. Colors go through
+     inline style (not presentation attributes) so `var(--demo-*)` resolves in
+     every browser and the site's theme switch needs no repaint hook. */
+
+  var SVG_NS = 'http://www.w3.org/2000/svg';
+
+  function svgEl(tag, attrs) {
+    var node = document.createElementNS(SVG_NS, tag);
+    for (var k in attrs) node.setAttribute(k, attrs[k]);
+    return node;
+  }
+
+  function svgText(x, y, str, cls, size, anchor) {
+    var node = svgEl('text', { x: x, y: y, 'font-size': size || 12 });
+    if (cls) node.setAttribute('class', cls);
+    if (anchor) node.setAttribute('text-anchor', anchor);
+    node.textContent = str;
+    return node;
+  }
+
+  function paint(node, fill, stroke) {
+    if (fill) node.style.fill = fill;
+    if (stroke) node.style.stroke = stroke;
+    return node;
+  }
+
+  /* Progress of `t` through the window [a, b], clamped to 0…1. */
+  function seg(t, a, b) {
+    return clamp((t - a) / (b - a), 0, 1);
+  }
+
+  function ease(x) {
+    return x < 0.5 ? 2 * x * x : 1 - Math.pow(-2 * x + 2, 2) / 2;
+  }
+
+  function setOpacity(node, v) {
+    node.style.opacity = v;
+  }
+
+  /* A scene canvas on the shared 800×420 grid the explainer CSS is sized for. */
+  function sceneSvg(label, viewBox) {
+    return svgEl('svg', {
+      viewBox: viewBox || '0 0 800 420',
+      class: 'demo-x-svg',
+      role: 'img',
+      'aria-label': label
+    });
+  }
+
+  /* An arrowhead <marker>; ids are document-global, so pass a bundle-unique one. */
+  function arrowMarker(svg, id, color) {
+    var defs = svgEl('defs', {});
+    var marker = svgEl('marker', {
+      id: id, viewBox: '0 0 10 10', refX: 9, refY: 5,
+      markerWidth: 7, markerHeight: 7, orient: 'auto-start-reverse'
+    });
+    marker.appendChild(paint(svgEl('path', { d: 'M 0 0 L 10 5 L 0 10 z' }), color));
+    defs.appendChild(marker);
+    svg.appendChild(defs);
+    return 'url(#' + id + ')';
+  }
+
+  var X_COLORS = {
+    accent: 'var(--demo-accent)',
+    good: 'var(--demo-good)',
+    bad: 'var(--demo-bad)',
+    warn: 'var(--demo-warn)',
+    muted: 'var(--demo-muted)',
+    grid: 'var(--demo-grid)',
+    border: 'var(--demo-border)',
+    surface: 'var(--demo-surface)',
+    surface2: 'var(--demo-surface-2)',
+    ink: 'var(--text)',
+    ink2: 'var(--text-secondary)'
+  };
+
+  function clockText(sec) {
+    var m = Math.floor(sec / 60), s = Math.floor(sec % 60);
+    return m + ':' + (s < 10 ? '0' : '') + s;
+  }
+
+  /* A narrated, auto-playing storyboard.
+   *
+   *   explainer(host, {
+   *     title, sub, ariaLabel, notes: ['取数依据：…'],
+   *     scenes: [{ title, dur, cues: [{ at, s }], build: function () {
+   *       return { el: <svg>, draw: function (t) {…} };
+   *     } }]
+   *   })
+   *
+   * Cue text may use **bold** spans. Playback starts when the frame scrolls
+   * into view (a note is long — an animation that finished above the fold
+   * helps nobody) and pauses when it leaves. With prefers-reduced-motion each
+   * scene is shown at its final frame and nothing animates. */
+  function explainer(host, opts) {
+    var specs = opts.scenes;
+    var root = card(host, { title: opts.title, sub: opts.sub });
+
+    var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var total = specs.reduce(function (a, sc) { return a + sc.dur; }, 0);
+
+    var chipRow = el('div', 'demo-x-chips');
+    root.appendChild(chipRow);
+
+    var frame = el('div', 'demo-x-frame');
+    var head = el('div', 'demo-x-head');
+    var noEl = el('span', 'demo-x-no', '01');
+    var titleEl = el('span', 'demo-x-title', specs[0].title);
+    var clockEl = el('span', 'demo-x-clock', '0:00 / ' + clockText(total));
+    [noEl, titleEl, clockEl].forEach(function (n) { head.appendChild(n); });
+    frame.appendChild(head);
+
+    var scroller = el('div', 'demo-x-scroll');
+    var stageEl = el('div', 'demo-x-stage');
+    scroller.appendChild(stageEl);
+    frame.appendChild(scroller);
+
+    var track = el('div', 'demo-x-track');
+    var fill = el('div', 'demo-x-track-fill');
+    track.appendChild(fill);
+    frame.appendChild(track);
+
+    var cueBox = el('div', 'demo-x-cues');
+    frame.appendChild(cueBox);
+    root.appendChild(frame);
+
+    var scenes = specs.map(function (spec) {
+      var built = spec.build();
+      var wrap = el('div', 'demo-x-scene');
+      wrap.appendChild(built.el);
+      wrap.hidden = true;
+      stageEl.appendChild(wrap);
+      return { spec: spec, wrap: wrap, draw: built.draw };
+    });
+
+    var chips = specs.map(function (spec, i) {
+      var b = el('button', 'demo-x-chip');
+      b.type = 'button';
+      b.appendChild(el('span', 'demo-x-chip-n', '0' + (i + 1)));
+      b.appendChild(document.createTextNode(spec.title));
+      b.addEventListener('click', function () { go(i, true); });
+      chipRow.appendChild(b);
+      return b;
+    });
+
+    var row = controlsRow(root);
+    var playBtn = button(row, '播放', function () {
+      if (!playing && idx === scenes.length - 1 && time >= scenes[idx].spec.dur) {
+        go(0, true);
+        return;
+      }
+      setPlaying(!playing);
+    });
+    button(row, '上一幕', function () { go(idx - 1, true); });
+    button(row, '下一幕', function () { go(idx + 1, true); });
+    button(row, '从头播', function () { go(0, true); });
+
+    if (opts.notes) note(root, opts.notes);
+
+    var idx = 0, time = 0, playing = false, last = 0, started = false, autoPaused = false, raf = null;
+
+    function buildCues() {
+      cueBox.textContent = '';
+      scenes[idx].spec.cues.forEach(function (cue) {
+        var p = el('p', 'demo-x-cue');
+        cue.s.split(/\*\*/).forEach(function (chunk, i) {
+          if (!chunk) return;
+          p.appendChild(i % 2 ? el('b', null, chunk) : document.createTextNode(chunk));
+        });
+        p.setAttribute('data-at', cue.at);
+        cueBox.appendChild(p);
+      });
+    }
+
+    function paintFrame() {
+      var sc = scenes[idx];
+      sc.draw(Math.min(time, sc.spec.dur));
+      fill.style.width = (Math.min(time / sc.spec.dur, 1) * 100).toFixed(1) + '%';
+      var before = 0;
+      for (var k = 0; k < idx; k++) before += scenes[k].spec.dur;
+      clockEl.textContent = clockText(before + Math.min(time, sc.spec.dur)) + ' / ' + clockText(total);
+      var cues = cueBox.children;
+      for (k = 0; k < cues.length; k++) {
+        cues[k].classList.toggle('is-on', time >= parseFloat(cues[k].getAttribute('data-at')));
+      }
+      playBtn.textContent = playing ? '暂停' : '播放';
+    }
+
+    function go(next, fromUser) {
+      idx = clamp(next, 0, scenes.length - 1);
+      time = reduceMotion ? scenes[idx].spec.dur : 0;
+      scenes.forEach(function (sc, i) { sc.wrap.hidden = i !== idx; });
+      noEl.textContent = '0' + (idx + 1);
+      titleEl.textContent = scenes[idx].spec.title;
+      chips.forEach(function (c, i) { c.setAttribute('aria-current', i === idx ? 'true' : 'false'); });
+      buildCues();
+      if (fromUser && !reduceMotion) {
+        playing = true;
+        ensureLoop();
+      }
+      paintFrame();
+    }
+
+    function tick(now) {
+      if (!playing) {
+        raf = null;
+        return;
+      }
+      if (!last) last = now;
+      var dt = Math.min((now - last) / 1000, 0.1);
+      last = now;
+      time += dt;
+      if (time >= scenes[idx].spec.dur) {
+        if (idx < scenes.length - 1) {
+          go(idx + 1);
+          raf = window.requestAnimationFrame(tick);
+          return;
+        }
+        time = scenes[idx].spec.dur;
+        playing = false;
+      }
+      paintFrame();
+      raf = playing ? window.requestAnimationFrame(tick) : null;
+    }
+
+    function ensureLoop() {
+      if (raf === null) {
+        last = 0;
+        raf = window.requestAnimationFrame(tick);
+      }
+    }
+
+    function setPlaying(v) {
+      playing = v;
+      if (v) ensureLoop();
+      paintFrame();
+    }
+
+    root.addEventListener('keydown', function (e) {
+      if (e.key === ' ' || e.key === 'Spacebar') {
+        e.preventDefault();
+        setPlaying(!playing);
+      } else if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        go(idx + 1, true);
+      } else if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        go(idx - 1, true);
+      }
+    });
+    root.setAttribute('tabindex', '0');
+    root.setAttribute('role', 'group');
+    root.setAttribute('aria-label', opts.ariaLabel || opts.title);
+
+    go(0);
+
+    if (!reduceMotion && typeof window.IntersectionObserver === 'function') {
+      var io = new window.IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+          if (entry.isIntersecting) {
+            if (!started) {
+              started = true;
+              setPlaying(true);
+            } else if (autoPaused) {
+              autoPaused = false;
+              setPlaying(true);
+            }
+          } else if (playing) {
+            autoPaused = true;
+            setPlaying(false);
+          }
+        });
+      }, { threshold: 0.4 });
+      io.observe(frame);
+    }
+
+    return root;
+  }
+
   // ─── deterministic randomness (demos must look the same on every reload) ──
   function mulberry32(a) {
     return function () {
@@ -584,6 +865,16 @@
     niceTicks: niceTicks,
     registerRenderer: registerRenderer,
     renderAll: renderAll,
+    svgEl: svgEl,
+    svgText: svgText,
+    paint: paint,
+    seg: seg,
+    ease: ease,
+    setOpacity: setOpacity,
+    sceneSvg: sceneSvg,
+    arrowMarker: arrowMarker,
+    xColors: X_COLORS,
+    explainer: explainer,
     mulberry32: mulberry32,
     gauss: gauss,
     softmax: softmax,

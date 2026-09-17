@@ -1046,50 +1046,23 @@
      the note derives elsewhere (the 5-step GAE walk-through, cases A and B),
      so the animation stays a summary of this note rather than a second source.
 
-     SVG is built here rather than in the markdown because sanitize_paper_html.py
-     keeps only plain <div> in #paper-body. Colors go through inline style (not
-     presentation attributes) so `var(--demo-*)` resolves in every browser. */
+     The player (scene chips, clock, cue track, autoplay-on-scroll) is the
+     shared K.explainer in kit.js; only the storyboard itself lives here. */
 
-  var SVG_NS = 'http://www.w3.org/2000/svg';
-
-  function svgEl(tag, attrs) {
-    var node = document.createElementNS(SVG_NS, tag);
-    for (var k in attrs) node.setAttribute(k, attrs[k]);
-    return node;
-  }
-
-  function svgText(x, y, str, cls, size, anchor) {
-    var node = svgEl('text', { x: x, y: y, 'font-size': size || 12 });
-    if (cls) node.setAttribute('class', cls);
-    if (anchor) node.setAttribute('text-anchor', anchor);
-    node.textContent = str;
-    return node;
-  }
-
-  function paint(node, fill, stroke) {
-    if (fill) node.style.fill = fill;
-    if (stroke) node.style.stroke = stroke;
-    return node;
-  }
-
-  function seg(t, a, b) {
-    return clamp((t - a) / (b - a), 0, 1);
-  }
-
-  function ease(x) {
-    return x < 0.5 ? 2 * x * x : 1 - Math.pow(-2 * x + 2, 2) / 2;
-  }
-
-  function setOpacity(node, v) {
-    node.style.opacity = v;
-  }
+  var svgEl = K.svgEl,
+    svgText = K.svgText,
+    paint = K.paint,
+    seg = K.seg,
+    ease = K.ease,
+    setOpacity = K.setOpacity,
+    sceneSvg = K.sceneSvg;
 
   function minus(s) {
-    return String(s).replace(/-/g, '−');
+    return String(s).replace(/-/g, '\u2212');
   }
 
   function signed(v, d) {
-    return (v >= 0 ? '+' : '−') + Math.abs(v).toFixed(d);
+    return (v >= 0 ? '+' : '\u2212') + Math.abs(v).toFixed(d);
   }
 
   /* Shared r-axis mapping: r ∈ [0.4, 1.8] → x ∈ [120, 720] in scene space. */
@@ -1097,25 +1070,16 @@
     return 120 + (r - 0.4) * (600 / 1.4);
   }
 
-  var C_ACCENT = 'var(--demo-accent)',
-    C_GOOD = 'var(--demo-good)',
-    C_BAD = 'var(--demo-bad)',
-    C_WARN = 'var(--demo-warn)',
-    C_MUTED = 'var(--demo-muted)',
-    C_GRID = 'var(--demo-grid)',
-    C_BORDER = 'var(--demo-border)',
-    C_SURFACE = 'var(--demo-surface)',
-    C_SURFACE2 = 'var(--demo-surface-2)';
-
-  function sceneSvg(label) {
-    var node = svgEl('svg', {
-      viewBox: '0 0 800 420',
-      class: 'ppo-x-svg',
-      role: 'img',
-      'aria-label': label
-    });
-    return node;
-  }
+  var X = K.xColors;
+  var C_ACCENT = X.accent,
+    C_GOOD = X.good,
+    C_BAD = X.bad,
+    C_WARN = X.warn,
+    C_MUTED = X.muted,
+    C_GRID = X.grid,
+    C_BORDER = X.border,
+    C_SURFACE = X.surface,
+    C_SURFACE2 = X.surface2;
 
   /* ── scene 1: how big a step ── */
   function hillY(x) {
@@ -1133,21 +1097,21 @@
 
   function buildSceneStep() {
     var s = sceneSvg('策略更新步长：一步迈太大冲出可信区并崩溃，迈太小几乎不动，PPO 让护栏跟着旧策略走、小步稳升');
-    var band = svgEl('rect', { x: 200, y: 70, width: 120, height: 300, rx: 3, class: 'ppo-x-band' });
+    var band = svgEl('rect', { x: 200, y: 70, width: 120, height: 300, rx: 3, class: 'demo-x-band' });
     var hill = paint(svgEl('path', { d: hillPath(60, 745), fill: 'none', 'stroke-width': 2.5 }), null, C_BORDER);
     var trail = paint(svgEl('path', { fill: 'none', 'stroke-width': 3.5, 'stroke-linecap': 'round' }), null, C_ACCENT);
     var ghosts = svgEl('g', {});
     var ball = paint(svgEl('circle', { cx: 260, cy: 280, r: 9 }), C_ACCENT);
-    var bandLab = svgText(260, 388, '可信区：只有 θ_old 附近才估得准', 'ppo-x-mono ppo-x-acc', 12, 'middle');
-    var tag = svgText(740, 44, '', 'ppo-x-mono', 15, 'end');
+    var bandLab = svgText(260, 388, '可信区：只有 θ_old 附近才估得准', 'demo-x-mono demo-x-acc', 12, 'middle');
+    var tag = svgText(740, 44, '', 'demo-x-mono', 15, 'end');
     tag.setAttribute('font-weight', '700');
-    var sub = svgText(740, 64, '', 'ppo-x-ink2', 12.5, 'end');
+    var sub = svgText(740, 64, '', 'demo-x-ink2', 12.5, 'end');
     [band, hill, trail, ghosts, ball,
-      svgText(60, 44, 'J(θ)　策略的真实表现', 'ppo-x-mono ppo-x-mut', 13),
+      svgText(60, 44, 'J(θ)　策略的真实表现', 'demo-x-mono demo-x-mut', 13),
       bandLab, tag, sub].forEach(function (n) { s.appendChild(n); });
 
     function draw(t) {
-      var x = 260, x0 = 260, center = 260, label = '', hint = '', tone = C_ACCENT, cls = 'ppo-x-acc', marks = [];
+      var x = 260, x0 = 260, center = 260, label = '', hint = '', tone = C_ACCENT, cls = 'demo-x-acc', marks = [];
       if (t < 3.9) {
         x = 260 + 430 * ease(seg(t, 0.8, 3.0));
         label = t > 0.9 ? '① 改太多' : '';
@@ -1155,13 +1119,13 @@
         /* Stay neutral until the caption names the failure, so the resting
            first frame doesn't already look like the bad case. */
         tone = label ? C_BAD : C_ACCENT;
-        cls = 'ppo-x-bad';
+        cls = 'demo-x-bad';
       } else if (t < 6.7) {
         x = 260 + 26 * ease(seg(t, 4.2, 5.6));
         label = '② 改太少';
         hint = '安全，但几乎原地踏步';
         tone = C_MUTED;
-        cls = 'ppo-x-mut';
+        cls = 'demo-x-mut';
       } else {
         label = '③ PPO';
         hint = '护栏跟着 θ_old 走，小步但一直在爬';
@@ -1189,7 +1153,7 @@
         ghosts.appendChild(paint(svgEl('circle', { cx: gx, cy: (hillY(gx) - 9).toFixed(1), r: 6, fill: 'none', 'stroke-width': 1.5 }), null, C_MUTED));
       });
       tag.textContent = label;
-      tag.setAttribute('class', 'ppo-x-mono ' + cls);
+      tag.setAttribute('class', 'demo-x-mono ' + cls);
       sub.textContent = hint;
       setOpacity(tag, label ? 1 : 0);
       setOpacity(sub, label ? 1 : 0);
@@ -1202,31 +1166,31 @@
   function buildSceneRatio() {
     var s = sceneSvg('概率比 r = 0.048 / 0.032 = 1.5，已经冲出 0.8 到 1.2 的安全带');
     var bar = paint(svgEl('rect', { x: 200, y: 172, width: 192, height: 26, rx: 3 }), C_ACCENT);
-    var val = svgText(404, 190, '0.032', 'ppo-x-mono ppo-x-acc', 13);
-    var ratio = svgText(600, 172, '1.00', 'ppo-x-mono ppo-x-acc', 46, 'middle');
+    var val = svgText(404, 190, '0.032', 'demo-x-mono demo-x-acc', 13);
+    var ratio = svgText(600, 172, '1.00', 'demo-x-mono demo-x-acc', 46, 'middle');
     ratio.setAttribute('font-weight', '700');
     var markLine = paint(svgEl('line', { x1: 377, y1: 296, x2: 377, y2: 340, 'stroke-width': 2 }), null, C_ACCENT);
     var markDot = paint(svgEl('circle', { cx: 377, cy: 340, r: 5.5 }), C_ACCENT);
-    var note2 = svgText(400, 398, 'r = 1.5 已经冲出安全带 —— 下一幕看裁剪怎么拦它', 'ppo-x-bad', 13.5, 'middle');
+    var note2 = svgText(400, 398, 'r = 1.5 已经冲出安全带 —— 下一幕看裁剪怎么拦它', 'demo-x-bad', 13.5, 'middle');
 
-    [svgText(60, 48, '同一个动作 a₁₅「抬腿迈步」，在旧策略和新策略下的概率', 'ppo-x-ink2', 13.5),
-      svgText(60, 126, 'π_old(a|s)', 'ppo-x-mono ppo-x-ink2', 13),
+    [svgText(60, 48, '同一个动作 a₁₅「抬腿迈步」，在旧策略和新策略下的概率', 'demo-x-ink2', 13.5),
+      svgText(60, 126, 'π_old(a|s)', 'demo-x-mono demo-x-ink2', 13),
       paint(svgEl('rect', { x: 200, y: 108, width: 192, height: 26, rx: 3, opacity: 0.55 }), C_MUTED),
-      svgText(404, 126, '0.032', 'ppo-x-mono ppo-x-mut', 13),
-      svgText(60, 190, 'π_θ(a|s)', 'ppo-x-mono ppo-x-ink2', 13),
+      svgText(404, 126, '0.032', 'demo-x-mono demo-x-mut', 13),
+      svgText(60, 190, 'π_θ(a|s)', 'demo-x-mono demo-x-ink2', 13),
       bar, val,
-      svgText(600, 112, 'r = 0.048 / 0.032', 'ppo-x-mono ppo-x-mut', 12.5, 'middle'),
+      svgText(600, 112, 'r = 0.048 / 0.032', 'demo-x-mono demo-x-mut', 12.5, 'middle'),
       ratio,
-      svgText(60, 248, 'r = 1 新旧一样', 'ppo-x-mono ppo-x-mut', 12.5),
-      svgText(240, 248, 'r > 1 更爱选这个动作', 'ppo-x-mono ppo-x-mut', 12.5),
-      svgText(470, 248, 'r < 1 更少选', 'ppo-x-mono ppo-x-mut', 12.5),
-      svgEl('rect', { x: 291, y: 296, width: 172, height: 44, rx: 3, class: 'ppo-x-band' }),
+      svgText(60, 248, 'r = 1 新旧一样', 'demo-x-mono demo-x-mut', 12.5),
+      svgText(240, 248, 'r > 1 更爱选这个动作', 'demo-x-mono demo-x-mut', 12.5),
+      svgText(470, 248, 'r < 1 更少选', 'demo-x-mono demo-x-mut', 12.5),
+      svgEl('rect', { x: 291, y: 296, width: 172, height: 44, rx: 3, class: 'demo-x-band' }),
       paint(svgEl('line', { x1: 120, y1: 340, x2: 720, y2: 340, 'stroke-width': 1 }), null, 'var(--text-secondary)'),
-      svgText(377, 288, '安全带 ε=0.2 → [0.8, 1.2]', 'ppo-x-mono ppo-x-acc', 12, 'middle'),
+      svgText(377, 288, '安全带 ε=0.2 → [0.8, 1.2]', 'demo-x-mono demo-x-acc', 12, 'middle'),
       markLine, markDot, note2].forEach(function (n) { s.appendChild(n); });
 
     [[120, '0.4'], [291, '0.8'], [377, '1.0'], [463, '1.2'], [591, '1.5'], [720, '1.8']].forEach(function (tick) {
-      s.appendChild(svgText(tick[0], 360, tick[1], 'ppo-x-mono ppo-x-mut', 11.5, 'middle'));
+      s.appendChild(svgText(tick[0], 360, tick[1], 'demo-x-mono demo-x-mut', 11.5, 'middle'));
     });
     setOpacity(note2, 0);
 
@@ -1239,9 +1203,9 @@
       paint(bar, tone);
       val.textContent = p.toFixed(3);
       val.setAttribute('x', (200 + p * 6000 + 12).toFixed(1));
-      val.setAttribute('class', 'ppo-x-mono ' + (hot ? 'ppo-x-bad' : 'ppo-x-acc'));
+      val.setAttribute('class', 'demo-x-mono ' + (hot ? 'demo-x-bad' : 'demo-x-acc'));
       ratio.textContent = r.toFixed(2);
-      ratio.setAttribute('class', 'ppo-x-mono ' + (hot ? 'ppo-x-bad' : 'ppo-x-acc'));
+      ratio.setAttribute('class', 'demo-x-mono ' + (hot ? 'demo-x-bad' : 'demo-x-acc'));
       var x = ratioX(r).toFixed(1);
       markLine.setAttribute('x1', x);
       markLine.setAttribute('x2', x);
@@ -1271,24 +1235,17 @@
 
   function buildSceneGae() {
     var s = sceneSvg('五步 rollout 的 GAE 计算：先算每步 TD 误差，再逆序按 0.9405 递推优势，末尾摔倒把 t=0 的优势拉到 −49.3');
-    var defs = svgEl('defs', {});
-    var marker = svgEl('marker', {
-      id: 'ppo-x-arrow', viewBox: '0 0 10 10', refX: 9, refY: 5,
-      markerWidth: 7, markerHeight: 7, orient: 'auto-start-reverse'
-    });
-    marker.appendChild(paint(svgEl('path', { d: 'M 0 0 L 10 5 L 0 10 z' }), C_ACCENT));
-    defs.appendChild(marker);
-    s.appendChild(defs);
+    var arrow = K.arrowMarker(s, 'ppo-x-arrow', C_ACCENT);
 
     var heads = [], rows = [], deltas = [], advs = [];
     GAE_X.forEach(function (x, i) {
       var head = svgEl('g', {});
-      head.appendChild(svgText(x, 78, 't=' + i, 'ppo-x-mono ppo-x-ink2', 13, 'middle'));
-      head.appendChild(svgText(x, 96, GAE_CASE[i], i === 4 ? 'ppo-x-bad' : 'ppo-x-mut', 11.5, 'middle'));
+      head.appendChild(svgText(x, 78, 't=' + i, 'demo-x-mono demo-x-ink2', 13, 'middle'));
+      head.appendChild(svgText(x, 96, GAE_CASE[i], i === 4 ? 'demo-x-bad' : 'demo-x-mut', 11.5, 'middle'));
       heads.push(head);
       var row = svgEl('g', {});
-      row.appendChild(svgText(x, 118, GAE_R[i], 'ppo-x-mono ppo-x-ink2', 12.5, 'middle'));
-      row.appendChild(svgText(x, 140, String(GAE_V[i]), 'ppo-x-mono ppo-x-ink2', 12.5, 'middle'));
+      row.appendChild(svgText(x, 118, GAE_R[i], 'demo-x-mono demo-x-ink2', 12.5, 'middle'));
+      row.appendChild(svgText(x, 140, String(GAE_V[i]), 'demo-x-mono demo-x-ink2', 12.5, 'middle'));
       rows.push(row);
 
       var d = GAE_DELTA[i], hd = Math.max(Math.abs(d) * 1.35, 2);
@@ -1296,7 +1253,7 @@
       gd.appendChild(paint(svgEl('rect', {
         x: x - 23, y: d >= 0 ? 186 - hd : 186, width: 46, height: hd, rx: 2, opacity: 0.85
       }), d >= 0 ? C_GOOD : C_BAD));
-      gd.appendChild(svgText(x, 180, signed(d, 1), 'ppo-x-mono ' + (d >= 0 ? 'ppo-x-good' : 'ppo-x-bad'), 12, 'middle'));
+      gd.appendChild(svgText(x, 180, signed(d, 1), 'demo-x-mono ' + (d >= 0 ? 'demo-x-good' : 'demo-x-bad'), 12, 'middle'));
       deltas.push(gd);
 
       var a = GAE_ADV[i], ha = Math.max(Math.abs(a) * 0.78, 2);
@@ -1304,26 +1261,26 @@
       ga.appendChild(paint(svgEl('rect', {
         x: x - 23, y: a >= 0 ? 282 - ha : 282, width: 46, height: ha, rx: 2, opacity: 0.85
       }), a >= 0 ? C_GOOD : C_BAD));
-      ga.appendChild(svgText(x, 274, signed(a, 1), 'ppo-x-mono ' + (a >= 0 ? 'ppo-x-good' : 'ppo-x-bad'), 12.5, 'middle'));
+      ga.appendChild(svgText(x, 274, signed(a, 1), 'demo-x-mono ' + (a >= 0 ? 'demo-x-good' : 'demo-x-bad'), 12.5, 'middle'));
       advs.push(ga);
     });
 
     var zero1 = paint(svgEl('line', { x1: 90, y1: 186, x2: 730, y2: 186, 'stroke-width': 1 }), null, 'var(--text-secondary)');
     var zero2 = paint(svgEl('line', { x1: 90, y1: 282, x2: 730, y2: 282, 'stroke-width': 1 }), null, 'var(--text-secondary)');
-    var dLab = svgText(62, 162, 'δ_t = r + γV(s′) − V(s)', 'ppo-x-mono ppo-x-mut', 12);
-    var aLab = svgText(62, 258, 'Â_t = δ_t + 0.9405·Â_{t+1}', 'ppo-x-mono ppo-x-mut', 12);
+    var dLab = svgText(62, 162, 'δ_t = r + γV(s′) − V(s)', 'demo-x-mono demo-x-mut', 12);
+    var aLab = svgText(62, 258, 'Â_t = δ_t + 0.9405·Â_{t+1}', 'demo-x-mono demo-x-mut', 12);
     var arrow = paint(svgEl('path', {
       d: 'M 660 242 L 146 242', fill: 'none', 'stroke-width': 1.6,
-      'stroke-dasharray': '5 4', 'marker-end': 'url(#ppo-x-arrow)'
+      'stroke-dasharray': '5 4', 'marker-end': arrow
     }), null, C_ACCENT);
-    var arrowLab = svgText(400, 234, '逆序回传，每退一步 ×0.9405', 'ppo-x-mono ppo-x-acc', 11.5, 'middle');
-    var calc = svgText(400, 356, '', 'ppo-x-mono ppo-x-acc', 14.5, 'middle');
-    var punch = svgText(400, 392, 'δ₀ 只看一步是 +0.5；Â₀ 却是 −49.3 —— 4 步后那一摔被传回了起点', 'ppo-x-ink2', 13.5, 'middle');
+    var arrowLab = svgText(400, 234, '逆序回传，每退一步 ×0.9405', 'demo-x-mono demo-x-acc', 11.5, 'middle');
+    var calc = svgText(400, 356, '', 'demo-x-mono demo-x-acc', 14.5, 'middle');
+    var punch = svgText(400, 392, 'δ₀ 只看一步是 +0.5；Â₀ 却是 −49.3 —— 4 步后那一摔被传回了起点', 'demo-x-ink2', 13.5, 'middle');
 
-    s.appendChild(svgText(60, 46, '一段 rollout：走 3 步 → 大晃 → 摔倒（done）　γ=0.99　λ=0.95', 'ppo-x-ink2', 13.5));
+    s.appendChild(svgText(60, 46, '一段 rollout：走 3 步 → 大晃 → 摔倒（done）　γ=0.99　λ=0.95', 'demo-x-ink2', 13.5));
     heads.concat(rows).forEach(function (n) { s.appendChild(n); });
-    s.appendChild(svgText(62, 118, 'r_t', 'ppo-x-mono ppo-x-mut', 12));
-    s.appendChild(svgText(62, 140, 'V(s_t)', 'ppo-x-mono ppo-x-mut', 12));
+    s.appendChild(svgText(62, 118, 'r_t', 'demo-x-mono demo-x-mut', 12));
+    s.appendChild(svgText(62, 140, 'V(s_t)', 'demo-x-mono demo-x-mut', 12));
     [dLab, zero1].concat(deltas).forEach(function (n) { s.appendChild(n); });
     [arrow, arrowLab, aLab, zero2].concat(advs).forEach(function (n) { s.appendChild(n); });
     [calc, punch].forEach(function (n) { s.appendChild(n); });
@@ -1368,42 +1325,42 @@
     var minLn = paint(svgEl('polyline', { fill: 'none', 'stroke-width': 3.5, 'stroke-linejoin': 'round' }), null, C_ACCENT);
     var guide = paint(svgEl('line', { x1: 377, y1: 230, x2: 377, y2: 230, 'stroke-width': 1 }), null, 'var(--text-secondary)');
     var dotNow = paint(svgEl('circle', { cx: 377, cy: 230, r: 6.5 }), C_ACCENT);
-    var readA = svgText(60, 68, 'Â = +2.3', 'ppo-x-mono ppo-x-good', 13.5);
+    var readA = svgText(60, 68, 'Â = +2.3', 'demo-x-mono demo-x-good', 13.5);
     readA.setAttribute('font-weight', '700');
-    var readR = svgText(188, 68, 'r = 1.00', 'ppo-x-mono ppo-x-ink2', 13);
-    var readU = svgText(296, 68, 'r·Â = 2.30', 'ppo-x-mono ppo-x-mut', 13);
-    var readC = svgText(424, 68, 'clip(r)·Â = 2.30', 'ppo-x-mono ppo-x-warn', 13);
-    var readM = svgText(566, 68, 'min = 2.30', 'ppo-x-mono ppo-x-acc', 13.5);
+    var readR = svgText(188, 68, 'r = 1.00', 'demo-x-mono demo-x-ink2', 13);
+    var readU = svgText(296, 68, 'r·Â = 2.30', 'demo-x-mono demo-x-mut', 13);
+    var readC = svgText(424, 68, 'clip(r)·Â = 2.30', 'demo-x-mono demo-x-warn', 13);
+    var readM = svgText(566, 68, 'min = 2.30', 'demo-x-mono demo-x-acc', 13.5);
     readM.setAttribute('font-weight', '700');
     var freeze = svgEl('g', {});
-    freeze.appendChild(svgEl('rect', { x: 684, y: 50, width: 106, height: 24, rx: 4, class: 'ppo-x-freeze-box' }));
-    var freezeTx = svgText(737, 67, '冻结 梯度=0', 'ppo-x-mono ppo-x-bad', 12, 'middle');
+    freeze.appendChild(svgEl('rect', { x: 684, y: 50, width: 106, height: 24, rx: 4, class: 'demo-x-freeze-box' }));
+    var freezeTx = svgText(737, 67, '冻结 梯度=0', 'demo-x-mono demo-x-bad', 12, 'middle');
     freezeTx.setAttribute('font-weight', '700');
     freeze.appendChild(freezeTx);
     setOpacity(freeze, 0);
 
-    s.appendChild(svgText(60, 40, '横轴：概率比 r　纵轴：这条样本贡献的目标值', 'ppo-x-ink2', 13));
-    s.appendChild(svgText(740, 40, 'L = min( r·Â , clip(r,0.8,1.2)·Â )', 'ppo-x-mono ppo-x-mut', 12.5, 'end'));
-    s.appendChild(svgEl('rect', { x: 291, y: 76, width: 172, height: 286, class: 'ppo-x-band-fill' }));
+    s.appendChild(svgText(60, 40, '横轴：概率比 r　纵轴：这条样本贡献的目标值', 'demo-x-ink2', 13));
+    s.appendChild(svgText(740, 40, 'L = min( r·Â , clip(r,0.8,1.2)·Â )', 'demo-x-mono demo-x-mut', 12.5, 'end'));
+    s.appendChild(svgEl('rect', { x: 291, y: 76, width: 172, height: 286, class: 'demo-x-band-fill' }));
     [291, 463].forEach(function (x) {
       s.appendChild(paint(svgEl('line', { x1: x, y1: 76, x2: x, y2: 362, 'stroke-width': 1, 'stroke-dasharray': '4 4' }), null, C_ACCENT));
     });
     s.appendChild(paint(svgEl('line', { x1: 120, y1: 230, x2: 730, y2: 230, 'stroke-width': 1 }), null, 'var(--text-secondary)'));
-    s.appendChild(svgText(110, 234, '0', 'ppo-x-mono ppo-x-mut', 11.5, 'end'));
+    s.appendChild(svgText(110, 234, '0', 'demo-x-mono demo-x-mut', 11.5, 'end'));
     [[120, '0.4'], [291, '0.8'], [377, '1.0'], [463, '1.2'], [591, '1.5'], [720, '1.8']].forEach(function (tick) {
-      s.appendChild(svgText(tick[0], 380, tick[1], 'ppo-x-mono ppo-x-mut', 11.5, 'middle'));
+      s.appendChild(svgText(tick[0], 380, tick[1], 'demo-x-mono demo-x-mut', 11.5, 'middle'));
     });
-    s.appendChild(svgText(738, 234, 'r', 'ppo-x-mono ppo-x-mut', 11.5));
+    s.appendChild(svgText(738, 234, 'r', 'demo-x-mono demo-x-mut', 11.5));
     [unclip, clipLn, minLn, guide, dotNow, readA, readR, readU, readC, readM, freeze].forEach(function (n) { s.appendChild(n); });
 
-    var legendSpecs = [[470, 500, C_MUTED, '6 4', 2, 506, 'r·Â', 'ppo-x-mut'],
-      [552, 582, C_WARN, null, 2, 588, 'clip(r)·Â', 'ppo-x-warn'],
-      [662, 692, C_ACCENT, null, 3.5, 698, 'min', 'ppo-x-acc']];
+    var legendSpecs = [[470, 500, C_MUTED, '6 4', 2, 506, 'r·Â', 'demo-x-mut'],
+      [552, 582, C_WARN, null, 2, 588, 'clip(r)·Â', 'demo-x-warn'],
+      [662, 692, C_ACCENT, null, 3.5, 698, 'min', 'demo-x-acc']];
     legendSpecs.forEach(function (spec) {
       var ln = svgEl('line', { x1: spec[0], y1: 400, x2: spec[1], y2: 400, 'stroke-width': spec[4] });
       if (spec[3]) ln.setAttribute('stroke-dasharray', spec[3]);
       s.appendChild(paint(ln, null, spec[2]));
-      s.appendChild(svgText(spec[5], 404, spec[6], 'ppo-x-mono ' + spec[7], 11.5));
+      s.appendChild(svgText(spec[5], 404, spec[6], 'demo-x-mono ' + spec[7], 11.5));
     });
 
     function draw(t) {
@@ -1440,7 +1397,7 @@
       var good = adv >= 0;
       var frozen = (good && r > 1.2) || (!good && r < 0.8);
       readA.textContent = 'Â = ' + signed(adv, 1);
-      readA.setAttribute('class', 'ppo-x-mono ' + (good ? 'ppo-x-good' : 'ppo-x-bad'));
+      readA.setAttribute('class', 'demo-x-mono ' + (good ? 'demo-x-good' : 'demo-x-bad'));
       readR.textContent = 'r = ' + r.toFixed(2);
       readU.textContent = 'r·Â = ' + minus(uv.toFixed(2));
       readC.textContent = 'clip(r)·Â = ' + minus(cv.toFixed(2));
@@ -1483,22 +1440,22 @@
       var g = svgEl('g', {});
       var rect = paint(svgEl('rect', { x: n.x - n.w / 2, y: n.y - 28, width: n.w, height: 56, rx: 8, 'stroke-width': 1.5 }), C_SURFACE, C_BORDER);
       g.appendChild(rect);
-      g.appendChild(svgText(n.x, n.y - 4, n.title, 'ppo-x-mono', 13.5, 'middle'));
-      g.appendChild(svgText(n.x, n.y + 16, n.sub, 'ppo-x-mut', 11.5, 'middle'));
+      g.appendChild(svgText(n.x, n.y - 4, n.title, 'demo-x-mono', 13.5, 'middle'));
+      g.appendChild(svgText(n.x, n.y + 16, n.sub, 'demo-x-mut', 11.5, 'middle'));
       s.appendChild(g);
       return rect;
     });
 
     var mid = svgEl('g', {});
-    var epochTx = svgText(400, 180, 'epoch 1 / 10', 'ppo-x-mono ppo-x-ink2', 13, 'middle');
+    var epochTx = svgText(400, 180, 'epoch 1 / 10', 'demo-x-mono demo-x-ink2', 13, 'middle');
     var track = paint(svgEl('rect', { x: 312, y: 196, width: 176, height: 14, rx: 3, 'stroke-width': 1 }), C_SURFACE2, C_BORDER);
-    var bandRect = svgEl('rect', { x: miniX(0.8), y: 196, width: miniX(1.2) - miniX(0.8), height: 14, class: 'ppo-x-band-fill' });
+    var bandRect = svgEl('rect', { x: miniX(0.8), y: 196, width: miniX(1.2) - miniX(0.8), height: 14, class: 'demo-x-band-fill' });
     var mark = paint(svgEl('line', { x1: miniX(1.0), y1: 192, x2: miniX(1.0), y2: 214, 'stroke-width': 2.5 }), null, C_ACCENT);
-    var brake = svgText(400, 248, 'clip 刹车 → 本轮冻结', 'ppo-x-mono ppo-x-bad', 12, 'middle');
+    var brake = svgText(400, 248, 'clip 刹车 → 本轮冻结', 'demo-x-mono demo-x-bad', 12, 'middle');
     brake.setAttribute('font-weight', '700');
     [epochTx, track, bandRect, mark,
-      svgText(miniX(0.8), 230, '0.8', 'ppo-x-mono ppo-x-mut', 10.5, 'middle'),
-      svgText(miniX(1.2), 230, '1.2', 'ppo-x-mono ppo-x-mut', 10.5, 'middle'),
+      svgText(miniX(0.8), 230, '0.8', 'demo-x-mono demo-x-mut', 10.5, 'middle'),
+      svgText(miniX(1.2), 230, '1.2', 'demo-x-mono demo-x-mut', 10.5, 'middle'),
       brake].forEach(function (n) { mid.appendChild(n); });
     setOpacity(mid, 0);
     s.appendChild(mid);
@@ -1598,199 +1555,16 @@
     }
   ];
 
-  function clockText(sec) {
-    var m = Math.floor(sec / 60), s = Math.floor(sec % 60);
-    return m + ':' + (s < 10 ? '0' : '') + s;
-  }
-
   function buildExplainerDemo(host) {
-    var root = card(host, {
+    K.explainer(host, {
       title: '五幕动画：PPO 全流程速览',
-      sub: '约 76 秒自动播放。空格播放/暂停，← → 换幕；画面里的数字与本文各节算例一致。'
+      sub: '约 76 秒自动播放。空格播放/暂停，← → 换幕；画面里的数字与本文各节算例一致。',
+      ariaLabel: 'PPO 五幕讲解动画',
+      notes: [
+        '取数依据：「第 2 步：计算优势（GAE）」的 5 步算例，与「第 3 步：PPO 裁剪更新」的案例 A（Â=+2.3, r=1.5）、案例 B（Â=−3.1, r=0.6）。'
+      ],
+      scenes: EXPLAINER_SCENES
     });
-
-    var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    var total = EXPLAINER_SCENES.reduce(function (a, sc) { return a + sc.dur; }, 0);
-
-    var chipRow = el('div', 'ppo-x-chips');
-    root.appendChild(chipRow);
-
-    var frame = el('div', 'ppo-x-frame');
-    var head = el('div', 'ppo-x-head');
-    var noEl = el('span', 'ppo-x-no', '01');
-    var titleEl = el('span', 'ppo-x-title', EXPLAINER_SCENES[0].title);
-    var clockEl = el('span', 'ppo-x-clock', '0:00 / ' + clockText(total));
-    [noEl, titleEl, clockEl].forEach(function (n) { head.appendChild(n); });
-    frame.appendChild(head);
-
-    var scroller = el('div', 'ppo-x-scroll');
-    var stageEl = el('div', 'ppo-x-stage');
-    scroller.appendChild(stageEl);
-    frame.appendChild(scroller);
-
-    var track = el('div', 'ppo-x-track');
-    var fill = el('div', 'ppo-x-track-fill');
-    track.appendChild(fill);
-    frame.appendChild(track);
-
-    var cueBox = el('div', 'ppo-x-cues');
-    frame.appendChild(cueBox);
-    root.appendChild(frame);
-
-    var scenes = EXPLAINER_SCENES.map(function (spec) {
-      var built = spec.build();
-      var wrap = el('div', 'ppo-x-scene');
-      wrap.appendChild(built.el);
-      wrap.hidden = true;
-      stageEl.appendChild(wrap);
-      return { spec: spec, wrap: wrap, draw: built.draw };
-    });
-
-    var chips = EXPLAINER_SCENES.map(function (spec, i) {
-      var b = el('button', 'ppo-x-chip');
-      b.type = 'button';
-      b.appendChild(el('span', 'ppo-x-chip-n', '0' + (i + 1)));
-      b.appendChild(document.createTextNode(spec.title));
-      b.addEventListener('click', function () { go(i, true); });
-      chipRow.appendChild(b);
-      return b;
-    });
-
-    var row = controlsRow(root);
-    var playBtn = button(row, '播放', function () {
-      if (!playing && idx === scenes.length - 1 && time >= scenes[idx].spec.dur) {
-        go(0, true);
-        return;
-      }
-      setPlaying(!playing);
-    });
-    button(row, '上一幕', function () { go(idx - 1, true); });
-    button(row, '下一幕', function () { go(idx + 1, true); });
-    button(row, '从头播', function () { go(0, true); });
-
-    note(root, [
-      '取数依据：「第 2 步：计算优势（GAE）」的 5 步算例，与「第 3 步：PPO 裁剪更新」的案例 A（Â=+2.3, r=1.5）、案例 B（Â=−3.1, r=0.6）。'
-    ]);
-
-    var idx = 0, time = 0, playing = false, last = 0, started = false, autoPaused = false, raf = null;
-
-    function buildCues() {
-      cueBox.textContent = '';
-      scenes[idx].spec.cues.forEach(function (cue) {
-        var p = el('p', 'ppo-x-cue');
-        cue.s.split(/\*\*/).forEach(function (chunk, i) {
-          if (!chunk) return;
-          p.appendChild(i % 2 ? el('b', null, chunk) : document.createTextNode(chunk));
-        });
-        p.setAttribute('data-at', cue.at);
-        cueBox.appendChild(p);
-      });
-    }
-
-    function paintFrame() {
-      var sc = scenes[idx];
-      sc.draw(Math.min(time, sc.spec.dur));
-      fill.style.width = (Math.min(time / sc.spec.dur, 1) * 100).toFixed(1) + '%';
-      var before = 0;
-      for (var k = 0; k < idx; k++) before += scenes[k].spec.dur;
-      clockEl.textContent = clockText(before + Math.min(time, sc.spec.dur)) + ' / ' + clockText(total);
-      var cues = cueBox.children;
-      for (k = 0; k < cues.length; k++) {
-        cues[k].classList.toggle('is-on', time >= parseFloat(cues[k].getAttribute('data-at')));
-      }
-      playBtn.textContent = playing ? '暂停' : '播放';
-    }
-
-    function go(next, fromUser) {
-      idx = clamp(next, 0, scenes.length - 1);
-      time = reduceMotion ? scenes[idx].spec.dur : 0;
-      scenes.forEach(function (sc, i) { sc.wrap.hidden = i !== idx; });
-      noEl.textContent = '0' + (idx + 1);
-      titleEl.textContent = scenes[idx].spec.title;
-      chips.forEach(function (c, i) { c.setAttribute('aria-current', i === idx ? 'true' : 'false'); });
-      buildCues();
-      if (fromUser && !reduceMotion) {
-        playing = true;
-        ensureLoop();
-      }
-      paintFrame();
-    }
-
-    function tick(now) {
-      if (!playing) {
-        raf = null;
-        return;
-      }
-      if (!last) last = now;
-      var dt = Math.min((now - last) / 1000, 0.1);
-      last = now;
-      time += dt;
-      if (time >= scenes[idx].spec.dur) {
-        if (idx < scenes.length - 1) {
-          go(idx + 1);
-          raf = window.requestAnimationFrame(tick);
-          return;
-        }
-        time = scenes[idx].spec.dur;
-        playing = false;
-      }
-      paintFrame();
-      raf = playing ? window.requestAnimationFrame(tick) : null;
-    }
-
-    function ensureLoop() {
-      if (raf === null) {
-        last = 0;
-        raf = window.requestAnimationFrame(tick);
-      }
-    }
-
-    function setPlaying(v) {
-      playing = v;
-      if (v) ensureLoop();
-      paintFrame();
-    }
-
-    root.addEventListener('keydown', function (e) {
-      if (e.key === ' ' || e.key === 'Spacebar') {
-        e.preventDefault();
-        setPlaying(!playing);
-      } else if (e.key === 'ArrowRight') {
-        e.preventDefault();
-        go(idx + 1, true);
-      } else if (e.key === 'ArrowLeft') {
-        e.preventDefault();
-        go(idx - 1, true);
-      }
-    });
-    root.setAttribute('tabindex', '0');
-    root.setAttribute('role', 'group');
-    root.setAttribute('aria-label', 'PPO 五幕讲解动画');
-
-    go(0);
-
-    /* Autoplay once the card is actually on screen — a note is long, and an
-       animation that finished above the fold helps nobody. */
-    if (!reduceMotion && typeof window.IntersectionObserver === 'function') {
-      var io = new window.IntersectionObserver(function (entries) {
-        entries.forEach(function (entry) {
-          if (entry.isIntersecting) {
-            if (!started) {
-              started = true;
-              setPlaying(true);
-            } else if (autoPaused) {
-              autoPaused = false;
-              setPlaying(true);
-            }
-          } else if (playing) {
-            autoPaused = true;
-            setPlaying(false);
-          }
-        });
-      }, { threshold: 0.4 });
-      io.observe(frame);
-    }
-
   }
 
   // ─── bootstrap ───────────────────────────────────────────────────────────

@@ -33,10 +33,11 @@ demos: ["deepmimic"]
 
 DeepMimic 让物理仿真角色通过**模仿动作捕捉数据**来学习技能——给一段人类翻跟斗的动作录像，RL 智能体就能在物理仿真中学会翻跟斗，同时保持物理真实性（不穿模、不悬浮）。
 
-> 🎮 **本文内嵌 3 个可交互演示**（滑块拖一拖就能看结果，无需安装任何东西）：
-> 1. 四维模仿奖励 —— 拖各分量的误差，看 $k$（多严格）和 $w$（占多少分）分别在管什么
-> 2. RSI × ET 消融 —— 同样的采样预算，花在哪个阶段决定了后空翻学不学得会
-> 3. 目标角度 + PD 控制 —— 为什么策略输出的是姿态而不是扭矩，以及 Stable PD 在救什么
+> 🎮 **本文内嵌 1 段动画 + 3 个可交互演示**（不用装任何东西）：
+> 1. [五幕动画：DeepMimic 全流程](#deepmimic-explainer-anim) —— 约 76 秒串完「为什么模仿 → 四维奖励 → RSI → ET → 训练闭环」
+> 2. 四维模仿奖励 —— 拖各分量的误差，看 $k$（多严格）和 $w$（占多少分）分别在管什么
+> 3. RSI × ET 消融 —— 同样的采样预算，花在哪个阶段决定了后空翻学不学得会
+> 4. 目标角度 + PD 控制 —— 为什么策略输出的是姿态而不是扭矩，以及 Stable PD 在救什么
 
 ---
 
@@ -60,7 +61,19 @@ DeepMimic 让物理仿真角色通过**模仿动作捕捉数据**来学习技能
 | **SIGGRAPH** | Special Interest Group on GRAPHics and Interactive Techniques | ACM 计算机图形学顶会，DeepMimic 发表于此 |
 
 ---
+
+## 🎬 五幕动画：DeepMimic 全流程 {#deepmimic-explainer-anim}
+
+<div class="paper-demo" data-demo="deepmimic-explainer"><p class="demo-fallback">（本节含动画演示，需要启用 JavaScript）</p></div>
+
+> 📖 动画覆盖的两节——「这篇论文要解决什么问题」和「DeepMimic 是怎么做的」——**文字讲解默认折叠**，想看推导、公式和对照表时点开各节的折叠条即可，内容一字未删；代码实现、后空翻实例和附录不在折叠范围内。
+
+---
+
 ## ❓ 这篇论文要解决什么问题？
+
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：纯 RL 学出来的动作为什么难看</summary>
 
 前面学的 PPO 和 AWR 都是"从零开始"训练策略——机器人自己摸索怎么走路。但这有个大问题：
 
@@ -72,7 +85,12 @@ DeepMimic 的解决思路：
 
 > 💡 **类比**：纯 RL 像是告诉孩子"你去那边"，孩子可能爬着去、滚着去。DeepMimic 像是先放一段视频"你看，走路应该这样"，然后孩子照着学——不仅到达目的地，而且姿态好看。
 
+</details>
+
 ### 之前方法的痛点
+
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：三类旧方法各卡在哪，以及 DeepMimic 的目标</summary>
 
 1. **纯运动学方法**（动画/轨迹回放）：动作好看但不物理——角色可以穿过地板、悬浮在空中
 2. **纯 RL 方法**（PPO 训练走路）：物理真实但动作难看——奖励函数很难精确描述"什么是好看的走路"
@@ -80,11 +98,16 @@ DeepMimic 的解决思路：
 
 DeepMimic 的目标：**用 RL + 动捕参考，同时实现物理真实性和动作自然性。**
 
+</details>
+
 ---
 
 ## 🔧 DeepMimic 是怎么做的？
 
 ### 核心思想：模仿奖励 + 任务奖励
+
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：总奖励 $r = w^I r^I + w^G r^G$ 的两项各管什么</summary>
 
 DeepMimic 的精髓是一个巧妙的**奖励函数设计**——同时追两个目标：
 
@@ -94,7 +117,12 @@ $$r_t = w^I \cdot r_t^I + w^G \cdot r_t^G$$
 - $r_t^G$（Goal Reward）：**任务奖励**——完成了多少任务目标（如前进速度）
 - $w^I, w^G$：权重，控制两者的平衡
 
+</details>
+
 ### 模仿奖励：四个维度衡量"像不像"
+
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：四维分量的公式与对照表</summary>
 
 模仿奖励由四个部分组成，分别衡量不同层面的相似度：
 
@@ -115,6 +143,8 @@ $$r_t^I = w^p \cdot r_t^p + w^v \cdot r_t^v + w^{ee} \cdot r_t^{ee} + w^{com} \c
 其中 $\hat{\cdot}$ 表示参考动捕数据中的值，无 hat 的是仿真角色的实际值。
 
 > 💡 **直觉**：就像给体操运动员打分——关节角度（动作标准度）、速度（节奏感）、末端位置（手脚到位）、重心（整体平衡）都要看。
+
+</details>
 
 #### MimicKit 实现：四维模仿奖励计算
 
@@ -171,10 +201,15 @@ def compute_reward(root_pos, root_rot, root_vel, root_ang_vel, joint_rot, dof_ve
 
 ### 为什么用指数函数 $\exp(-k \cdot \text{error}^2)$？
 
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：指数形式的四条好处</summary>
+
 - 误差为 0 时，$\exp(0) = 1$（满分）
 - 误差越大，奖励指数级衰减趋近于 0
 - 这种形式对**小误差宽容**（$e^{-0.01} \approx 0.99$），对**大误差严格**（$e^{-10} \approx 0.00005$）
 - 比线性惩罚更平滑，有利于 RL 优化
+
+</details>
 
 四个分量的 $k$ 差了 400 倍（速度 0.1 ↔ 末端 40），权重又差了 6.5 倍（0.1 ↔ 0.65）。这两组数到底谁在管什么，拖一遍最快——下面的实验台默认就是后面「第 2 步」那个 $t=15$ 的例子：
 
@@ -183,6 +218,9 @@ def compute_reward(root_pos, root_rot, root_vel, root_ang_vel, joint_rot, dof_ve
 > 💡 拖完会发现一个容易搞混的点：**$k$ 管曲线陡不陡，$w$ 管这条曲线在总分里占多少**。末端项 $k=40$ 最严格，但它权重只有 0.15，所以手脚差几厘米扣的分，未必比姿态项差几度扣得多。
 
 ### 参考状态初始化（RSI）
+
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：RSI 的定义、阶段时间轴与对照表</summary>
 
 训练的另一个关键技巧——**Reference State Initialization**：
 
@@ -200,6 +238,8 @@ flowchart LR
 | **RSI** | 随机从 t=0 / 20 / 30 / 50 开始 | 每个阶段都能练到 |
 
 > 💡 **RSI 的直觉**：就像学游泳不一定要从"站在池边→跳下去→划水"练起，可以直接从"已经在水里"开始练划水动作。
+
+</details>
 
 #### MimicKit 实现：RSI 代码
 
@@ -235,6 +275,9 @@ def sample_time(self, motion_ids, truncate_time=None):
 > 🔑 **RSI 核心流程**：`_sample_motion_times()` → `motion_lib.sample_time()` → 均匀采样 phase → `calc_motion_frame()` 获取该时刻的参考状态 → `_ref_state_init()` 将仿真角色设置为该状态
 
 ### Early Termination（ET，提前终止）
+
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：ET 的触发条件、episode 状态机与「无 ET vs 有 ET」对照图</summary>
 
 另一个关键训练技巧——当角色状态明显偏离参考动作时，**直接终止 episode**，不再浪费采样：
 
@@ -280,6 +323,8 @@ flowchart TB
         B1["摔倒"] --> B2["立刻终止 episode"] --> B3["RSI 随机阶段<br/>重新初始化"] --> B4["高效采样"]
     end
 </div>
+
+</details>
 
 论文 Section 10.4 的消融实验（见下文 Q7 的表格）正是把这两个开关分别关掉跑一遍。下面这个演示把同样的四组配置放在一起跑：一段参考动作被切成若干阶段，每消耗一个样本只能练当前所在的阶段，**采样预算固定**——RSI 决定 episode 从哪儿开始，ET 决定摔一次要赔多少步：
 
@@ -338,6 +383,9 @@ def compute_done(done_buf, time, ep_len, root_rot, body_pos, tar_root_rot, tar_b
 
 ### 训练流程
 
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：训练流程图（RSI → 策略 → ET → 奖励 → PPO）</summary>
+
 <div class="mermaid">
 flowchart TB
     START(["输入参考动捕 M = {q̂₀…q̂ₜ}"]) --> RSI["① RSI：随机时刻 t₀<br/>初始化仿真角色"]
@@ -350,6 +398,8 @@ flowchart TB
     DONE -->|否| POL
     DONE -->|是| END(["完成"])
 </div>
+
+</details>
 
 ---
 
