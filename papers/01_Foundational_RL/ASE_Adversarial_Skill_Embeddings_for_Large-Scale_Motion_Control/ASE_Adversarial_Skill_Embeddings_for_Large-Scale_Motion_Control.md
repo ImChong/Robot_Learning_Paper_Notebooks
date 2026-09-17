@@ -33,6 +33,12 @@ demos: ["ase"]
 
 ASE 在 AMP 的基础上往前迈了一大步：**不只是学“自然动作先验”，而是把海量技能压进一个连续潜空间 $z$ 里。** 这样底层控制器预训练一次，后面高层策略只需要学“什么时候切哪个 $z$”，就能组合出大量复杂行为。
 
+> 🎮 **本文内嵌 1 段动画 + 3 个可交互演示**（不用装任何东西）：
+> 1. [六幕动画：ASE 全流程](#ase-explainer-anim) —— 约 90 秒串完「技能被绑死 → 技能是球面上的方向 → latent collapse → encoder 把 z 逼回动作 → diversity 让空间等速 → 训练闭环与下游只选 z」
+> 2. latent 实验台 —— 拖动角度看同一个策略怎么变成不同技能，按播放还能看到每 0~5 秒重采样一次 $z$ 的效果
+> 3. 为什么非要加一个 encoder —— 把 `enc_reward_weight` 拖到 0，亲眼看 latent collapse 怎么成为最优解
+> 4. diversity loss 实验台 —— 拖两个 latent 的夹角，看 `diversity_ratio` 为什么应该是一条水平线
+
 ---
 
 ## 📌 英文缩写速查
@@ -49,7 +55,18 @@ ASE 在 AMP 的基础上往前迈了一大步：**不只是学“自然动作先
 
 ---
 
+## 🎬 六幕动画：ASE 全流程 {#ase-explainer-anim}
+
+<div class="paper-demo" data-demo="ase-explainer"><p class="demo-fallback">（本节含动画演示，需要启用 JavaScript）</p></div>
+
+> 📖 动画覆盖的三块——「这篇论文要解决什么问题」「ASE 是怎么做的」六个概念，以及实例里的五步拆解——**文字讲解默认折叠**，想看推导、公式和对照表时点开各节的折叠条即可，内容一字未删；流程图、类图、时序图、源码片段、论文超参表、面试题与附录不在折叠范围内。
+
+---
+
 ## ❓ 这篇论文要解决什么问题？
+
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：技能是「绑死」的，训一个 walk policy 它就只会走</summary>
 
 DeepMimic 解决了“学一段动作”；AMP 解决了“学一个自然的运动风格先验”；但它们都有一个明显问题：
 
@@ -72,8 +89,12 @@ DeepMimic 解决了“学一段动作”；AMP 解决了“学一个自然的运
 - 或者手工拼多个技能
 
 这就很浪费。
+</details>
 
 ### 问题一：大量动作没法变成“可调用技能”
+
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：上千条动捕训成上千个独立策略，根本没法扩展</summary>
 
 假设你有上千条动捕数据：
 - 走
@@ -89,8 +110,12 @@ DeepMimic 解决了“学一段动作”；AMP 解决了“学一个自然的运
 
 > 💡 **类比**：
 > DeepMimic 像一个人学会了 1000 个固定按钮——每个按钮对应一个动作。ASE 想做的是：**别再存 1000 个按钮了，改存一个“动作控制杆”空间。** 你推动不同方向，就能调出不同技能。
+</details>
 
 ### 问题二：技能应该能复用，而不是每次从零学
+
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：「带球跑」本来就该复用走 / 跑 / 转向 / 变速 / 平衡</summary>
 
 人类不是每次学新任务都从零开始。
 
@@ -101,8 +126,12 @@ DeepMimic 解决了“学一段动作”；AMP 解决了“学一个自然的运
 - 身体平衡
 
 ASE 的目标就是把这些基础能力预训练成一个**连续技能空间**，让高层任务只做组合，而不是重造轮子。
+</details>
 
 ### 问题三：无标签大规模动作数据怎么利用？
+
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：没人切好技能边界，所以这篇论文真正要解决的是什么</summary>
 
 很多动捕库是**无结构、无标签、无分段**的：
 - 没人告诉你哪段是 dodge，哪段是 kick，哪段是 idle
@@ -115,18 +144,26 @@ ASE 希望做到：
 这篇论文真正要解决的是：
 
 > **如何从大规模、无结构的动作数据中，学出一个既自然、又可复用、还能给下游任务调用的技能表示。**
+</details>
 
 ---
 
 ## 🔧 ASE 是怎么做的？
+
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：一句话版本：AMP + latent skill variable + 可反推 latent 的 encoder</summary>
 
 先说一句最核心的话：
 
 > **ASE = AMP + latent skill variable + 可反推 latent 的 encoder。**
 
 也就是说，它不是把 AMP 推翻重来，而是在 AMP 的“自然动作判别器”框架上，加入了一个技能潜变量 $z$，并强迫策略真的使用这个 $z$。
+</details>
 
 ### 第一个概念：给策略一个 latent code
+
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：从 $\pi(a_t \mid s_t)$ 到 $\pi(a_t \mid s_t, z)$，技能变成连续向量</summary>
 
 ASE 的策略不再只是：
 
@@ -149,12 +186,16 @@ $$
 这就是 ASE 的核心：
 
 > **技能不再是离散 ID，而是连续向量。**
+</details>
 
 「连续向量」这句话直接转一圈就懂了。下面这个实验台把 latent 空间画成一个圆（论文里是 64 维球面 $S^{63}$），拖动角度看同一个策略怎么变成不同技能；按播放还能看到训练时每 0~5 秒重采样一次 $z$ 是什么效果：
 
 <div class="paper-demo" data-demo="ase-latent"><p class="demo-fallback">（本节含交互演示，需要启用 JavaScript）</p></div>
 
 ### 第二个概念：为什么不能只给 z，不做约束？
+
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：网络常见的三种偷懒方式</summary>
 
 因为如果你只是把 $z$ 拼到输入里，策略很可能**压根不理它**。
 
@@ -164,8 +205,12 @@ $$
 - 把 $z$ 当噪声忽略掉
 
 所以 ASE 需要一个机制，逼策略真的把 $z$ 编进动作里。
+</details>
 
 ### 第三个概念：加一个 encoder，把技能“解码回来”
+
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：$E(o_{disc}) \approx z$ 给 latent space 加的那条「信息闭环」</summary>
 
 ASE 的办法很巧：
 
@@ -183,14 +228,19 @@ $$
 - latent 没被策略忽略
 
 这就相当于给 latent space 加了一条“信息闭环”。
+</details>
 
 ### 第四个概念：reward 由两部分组成
+
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：$r = w_{disc} r_{disc} + w_{enc} r_{enc} + w_{task} r_{task}$</summary>
 
 ASE 训练时的奖励大致是：
 
 $$
 r = w_{disc} r_{disc} + w_{enc} r_{enc} + w_{task} r_{task}
 $$
+</details>
 
 在 MimicKit 默认配置里：
 
@@ -199,6 +249,9 @@ task_reward_weight: 0.0
 disc_reward_weight: 0.5
 enc_reward_weight: 0.5
 ```
+
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：disc 与 enc 各占一半，谁少了都不行</summary>
 
 也就是说，预训练阶段主要靠两部分：
 
@@ -209,12 +262,16 @@ enc_reward_weight: 0.5
 - 如果只有 disc reward，策略容易坍缩成“都很自然但差不多”的行为
 - 如果只有 enc reward，策略可能学出一堆怪异但容易区分的动作
 - 两个一起上，才会得到**既自然又可区分**的技能空间
+</details>
 
 把 `enc_reward_weight` 拖到 0 就能亲眼看到 latent collapse 是怎么发生的——它不是训练出 bug，**而是奖励函数下的最优解**：既然没人要求动作里必须看得出 $z$，忽略 $z$ 反而让每一步都停在最自然的动作上：
 
 <div class="paper-demo" data-demo="ase-encoder"><p class="demo-fallback">（本节含交互演示，需要启用 JavaScript）</p></div>
 
 ### 第五个概念：diversity loss
+
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：不同 latent 要尽量对应不同动作，否则 skill space 就废了</summary>
 
 光有 encoder 还不够，作者还加了一个 diversity 约束：
 
@@ -233,12 +290,16 @@ enc_reward_weight: 0.5
 如果 latent 已经差很多，但动作还差不多，就要惩罚。
 
 这使得 skill space 更均匀、更有用。
+</details>
 
 源码里这个比值和它的目标值长这样——拖动两个 latent 的夹角，看 `diversity_ratio` 为什么应该是一条水平线：
 
 <div class="paper-demo" data-demo="ase-diversity"><p class="demo-fallback">（本节含交互演示，需要启用 JavaScript）</p></div>
 
 ### 第六个概念：latent 会定期重采样
+
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：一个 episode 内就换好几次技能，策略因此见过大量过渡</summary>
 
 ASE 不是每个 episode 固定一个技能到底，而是会隔一段时间随机换一个 latent：
 
@@ -251,6 +312,7 @@ ASE 不是每个 episode 固定一个技能到底，而是会隔一段时间随�
 > 💡 **直觉**：
 > 像训练一个“通用动作引擎”，不断告诉它：
 > 现在你是跑步人格，5 秒后切成闪避人格，再切成挥剑人格。
+</details>
 
 ---
 
@@ -315,11 +377,15 @@ MimicKit 的 README 里用的就是 `ase_humanoid_sword_shield_env.yaml`，这�
 
 ### 第 1 步：随机采样一个 latent
 
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：$z \sim \text{Uniform on sphere}$，同一个 $z$ 给出一致的行为风格</summary>
+
 训练时先采样一个单位向量：
 
 $$
 z \sim \text{Uniform on sphere}
 $$
+</details>
 
 比如：
 
@@ -341,14 +407,22 @@ flowchart LR
     IN --> PI["π(a#124;s,z)"]
 </div>
 
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：不同的 z 对应什么样的战斗风格</summary>
+
 比如：
 - 某些 z 对应 aggressive forward attack
 - 某些 z 对应 defensive sidestep
 - 某些 z 对应 idle / turn / reposition
+</details>
 
 ### 第 3 步：判别器保证动作自然
 
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：disc reward 只管「像不像动捕数据」</summary>
+
 像 AMP 一样，disc reward 会鼓励当前行为片段看起来像动捕数据，而不是乱抖、乱蹦。
+</details>
 
 ### 第 4 步：encoder 保证技能能被识别出来
 
@@ -361,19 +435,30 @@ flowchart LR
     ZP --> CMP["与原始 z 对齐 → enc reward"]
 </div>
 
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：对不上就罚 —— 技能必须真的体现在动作里</summary>
+
 如果 `z_pred` 和原始 `z` 对不上，说明这个技能没有真正体现在动作里，于是惩罚。
+</details>
 
 ### 第 5 步：高层任务怎么用？
+
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：预训练好之后，下游只学「选 latent」</summary>
 
 等 ASE 预训练好后，下游任务就不用重训底层动作控制器了。
 
 高层策略只需要学：
+</details>
 
 <div class="mermaid">
 flowchart TB
     HLC["高层任务策略"] --> Z["选择 latent z"]
     Z --> ASE["预训练 ASE π(a#124;s,z)"]
 </div>
+
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：把「动作控制」问题压成「选 latent」问题</summary>
 
 比如在对战任务里：
 - 敌人远 → 选前进型 z
@@ -385,6 +470,7 @@ flowchart TB
 > **把“动作控制”问题压成了“选 latent”问题。**
 
 这会让下游 RL 简单很多。
+</details>
 
 ---
 

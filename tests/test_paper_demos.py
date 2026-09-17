@@ -8,6 +8,7 @@ These tests pin the three links in that chain: placeholder survives sanitizing,
 layout loads the assets, and every placeholder has a builder behind it.
 """
 
+import math
 import re
 from pathlib import Path
 
@@ -133,7 +134,10 @@ def test_notes_declare_their_demos_in_reading_order():
             "add",
             ["add-explainer", "add-diff", "add-reward", "add-curriculum"],
         ),
-        ASE_NOTE: ("ase", ["ase-latent", "ase-encoder", "ase-diversity"]),
+        ASE_NOTE: (
+            "ase",
+            ["ase-explainer", "ase-latent", "ase-encoder", "ase-diversity"],
+        ),
         CALM_NOTE: ("calm", ["calm-encoder", "calm-hlc", "calm-fsm"]),
         PULSE_NOTE: ("pulse", ["pulse-vib", "pulse-prior", "pulse-downstream"]),
         PHC_NOTE: (
@@ -191,16 +195,19 @@ def test_demo_assets_are_theme_aware():
     assert "data-theme" in kit
 
 
-EXPLAINER_BUNDLES = ("ppo", "deepmimic", "amp", "add")
+EXPLAINER_BUNDLES = ("ppo", "deepmimic", "amp", "add", "ase")
 
 # 幕数由论文决定，不是统一模板：PPO / DeepMimic / AMP / ADD 的核心概念正好各 5 个，
-# PHC 开篇立了三堵墙（第一堵拆成「长出列」「混合列」两幕），所以是 6 幕。
+# PHC 开篇立了三堵墙（第一堵拆成「长出列」「混合列」两幕），所以是 6 幕；
+# ASE 在 AMP 上叠了六件事（latent / 为什么要约束 / encoder / 两半奖励 / diversity /
+# 定期重采样），也是 6 幕。
 EXPLAINER_SCENES = {
     "ppo": (PPO_NOTE, 5),
     "deepmimic": (DEEPMIMIC_NOTE, 5),
     "amp": (AMP_NOTE, 5),
     "add": (ADD_NOTE, 5),
     "phc": (PHC_NOTE, 6),
+    "ase": (ASE_NOTE, 6),
 }
 CN_NUMERALS = {4: "四", 5: "五", 6: "六", 7: "七"}
 
@@ -250,6 +257,94 @@ def test_explainer_formulas_go_through_katex():
         assert "svgMath" in js, f"{name}.js 的分镜公式应该用 K.svgMath 渲染"
         # 字幕轨里的公式写成 `$...$`，由 kit 的 rich() 交给 KaTeX
         assert re.search(r"s: '[^']*\$\\\\", js), f"{name}.js 的字幕应包含 $LaTeX$ 公式"
+
+
+def _ase_channels(js: str) -> list[tuple[float, float, float]]:
+    """The four hand-written behaviour channels the ASE latent demo decodes into."""
+    block = js[js.index("var CHANNELS = [") : js.index("function decode(")]
+    rows = re.findall(r"w: \[(-?[\d.]+), (-?[\d.]+)\], b: (-?[\d.]+)", block)
+    assert len(rows) == 4, "ASE 的行为通道应该是四个"
+    return [(float(a), float(b), float(c)) for a, b, c in rows]
+
+
+def _fmt(x: float, digits: int) -> str:
+    """kit.js 的 fmt()：定点小数，并且不输出 '-0.00'。"""
+    s = f"{x:.{digits}f}"
+    return s[1:] if re.fullmatch(r"-0(\.0*)?", s) else s
+
+
+def test_ase_explainer_numbers_come_from_the_shared_helpers():
+    """六幕动画的字幕数字必须和三个演示共用的那几个函数算出来的一致。
+
+    动画不许自己另算一套 —— 所以 ``bestSens`` / ``divParts`` /
+    ``latentSegments`` 在 bundle 里各只定义一次，讲解动画与演示共用。
+    """
+    js = (DEMO_JS_DIR / "ase.js").read_text(encoding="utf-8")
+    for helper in ("function bestSens(", "function divParts(", "function latentSegments("):
+        assert js.count(helper) == 1, f"{helper} 应该只定义一次，供演示与讲解动画共用"
+
+    cues = js[js.index("var ASE_SCENES = [") :]
+    # 字幕里的负号是排版用的 U+2212
+    cues = cues.replace("\u2212", "-")
+
+    # 第二幕：四个停靠点的读数由 decode() 现算（sens = 1.0）
+    channels = _ase_channels(js)
+    for angle in (0.65, 1.60, 2.55, 4.93):
+        z = (math.cos(angle), math.sin(angle))
+        row = " / ".join(
+            _fmt(min(max(b + w0 * z[0] + w1 * z[1], -1), 1.4), 2) for w0, w1, b in channels
+        )
+        assert row in cues, f"z 角 {angle} 的通道读数 {row} 不在字幕里"
+
+    # 第二幕：latent 时间线那几段来自 latentSegments(21)
+    for dur in _ase_latent_durations():
+        assert f"{dur:.2f} s" in cues, f"重采样分段 {dur:.2f} s 不在字幕里"
+
+    # 第三、四幕：s* 的三种权重配比
+    for w_disc, w_enc in ((1.0, 0.0), (0.5, 0.5), (0.0, 1.0)):
+        best = _ase_best_sens(w_disc, w_enc, 0.35)
+        assert _fmt(best, 2) in cues, f"权重 {w_disc}/{w_enc} 下的 s* = {best:.2f} 不在字幕里"
+    best_both = _ase_best_sens(0.5, 0.5, 0.35)
+    assert _fmt(math.exp(-0.45 * best_both**2), 3) in cues, "0.5/0.5 时的 disc reward 不在字幕里"
+
+    # 第五幕：ratio = 2s²，所以 z_diff 与 a_diff 在任何夹角上都相等
+    sens = math.sqrt(0.5)
+    for deg in (15, 150):
+        cos = math.cos(math.radians(deg))
+        z_diff = 0.5 - 0.5 * cos
+        a_diff = sens * sens * (2 - 2 * cos) / 2
+        assert _fmt(z_diff, 3) == _fmt(a_diff, 3), "√(tar/2) 处 z_diff 应与 a_diff 相等"
+        assert _fmt(z_diff, 3) in cues, f"{deg}° 处的 z_diff = {z_diff:.3f} 不在字幕里"
+
+
+def _ase_best_sens(w_disc: float, w_enc: float, noise: float) -> float:
+    """ase.js 的 bestSens()：在 s ∈ [0, 3] 上扫 301 个点取加权奖励最大者。"""
+
+    def total(s: float) -> float:
+        snr = (s * s) / (s * s + noise * noise) if s else 0.0
+        return w_disc * math.exp(-0.45 * s * s) + w_enc * math.sqrt(snr)
+
+    return max((3 * i / 300 for i in range(301)), key=total)
+
+
+def _ase_latent_durations() -> list[float]:
+    """ase.js 的 latentSegments(21, 11)：mulberry32 驱动的 U(0, 5) 分段长度。"""
+    state = 21
+
+    def rng() -> float:
+        nonlocal state
+        state = (state + 0x6D2B79F5) & 0xFFFFFFFF
+        t = (state ^ (state >> 15)) * (1 | state) & 0xFFFFFFFF
+        t = (t + ((t ^ (t >> 7)) * (61 | t) & 0xFFFFFFFF)) & 0xFFFFFFFF ^ t
+        return ((t ^ (t >> 14)) & 0xFFFFFFFF) / 4294967296
+
+    acc, durs = 0.0, []
+    while acc < 11:
+        dur = 0.4 + 4.6 * rng()
+        durs.append(dur)
+        acc += dur
+        rng()  # 每段之后再抽一次决定下一段的方向
+    return durs
 
 
 def test_ppo_gae_demo_matches_the_numbers_in_the_note():
