@@ -114,9 +114,19 @@ demos: ["ppo"]
 
 `kit.js` 不是 bundle，**不要**写进某篇笔记的 `demos:` 列表。新增通用控件请加到 `kit.js` 并在 `window.PaperDemoKit` 里导出，不要在 bundle 里再抄一份。
 
+### 演示里的公式：写 LaTeX，交给页面的 KaTeX
+
+站点本来就在 `_layouts/default.html` 里加载了 KaTeX（固定版本 + SRI），演示**复用同一份**，不要再引第二份、也不要自己拼 Unicode 上下标：
+
+- **HTML 文案**（`card` 的 `title` / `sub`、`note()` 的每一行、`verdictBox`、`K.explainer` 的字幕轨与分幕标题）里直接写 `$…$`，和 `**加粗**` 可以混用（`**$r_t(\theta)$**`）。解析在 `K.rich()`。
+- **SVG 分镜**用 `K.svgMath(x, y, tex, { size, anchor, cls, w, display })`，`x / y / anchor` 与 `svgText` 同义（`y` 仍是基线），返回的 `<foreignObject>` 带 `setTex()`（数字会变的公式）、`setX()`、`setCls()` / `setTone()`（HTML 吃 `color`，`paint()` 在这儿不起作用）。中文夹在公式里用 `\text{…}`，其中的 `%` / `#` / `&` 必须转义。
+- **每帧都在变的数字不要塞进公式**：拆成「静态公式标签 + `svgText` 数字」，否则每帧重排一次公式。
+- **Canvas 演示画不了公式**：`stage` / `plot` 那套是原生 Canvas，KaTeX 到不了，公式只能放在卡片标题、`demo-note` 等 HTML 部分。
+- KaTeX 拿不到（CDN 被挡）时，`K.texToPlain()` 会把公式降级成可读的纯文本，不会漏出原始 TeX；公式本身写错也是降级，不会显示 KaTeX 的红色报错。
+
 ### 写演示的约束
 
-- **无外部依赖**：站点 CSP 只允许 `self` 与 jsdelivr，演示一律用原生 Canvas + DOM，不要引第三方库。
+- **无外部依赖**：站点 CSP 只允许 `self` 与 jsdelivr，演示一律用原生 Canvas + DOM，不要引第三方库（公式例外：复用页面**已经加载**的 KaTeX，见上一节，不新增任何脚本）。
 - **主题自适应**：画布颜色从 `--demo-*` CSS 变量读取，并监听 `data-theme` 变化重绘；深浅两套配色都要定义。
 - **移动端可用**：画布按容器宽度 + `devicePixelRatio` 重绘，控件在 600px 以下换行；表格放进 `.demo-table-wrap` 横向滚动。
 - **数字要对得上正文**：演示里的默认参数应与笔记中手推的例子一致（`tests/test_paper_demos.py` 会校验 PPO 的 GAE 例子、AWR 的权重例子、DeepMimic 的四维奖励例子、AMP 的判别器 loss 例子）。**反过来也成立**：如果发现正文的手算结果本身有误，应当先改正文，再让演示对齐。

@@ -1051,6 +1051,7 @@
 
   var svgEl = K.svgEl,
     svgText = K.svgText,
+    svgMath = K.svgMath,
     paint = K.paint,
     seg = K.seg,
     ease = K.ease,
@@ -1102,12 +1103,14 @@
     var trail = paint(svgEl('path', { fill: 'none', 'stroke-width': 3.5, 'stroke-linecap': 'round' }), null, C_ACCENT);
     var ghosts = svgEl('g', {});
     var ball = paint(svgEl('circle', { cx: 260, cy: 280, r: 9 }), C_ACCENT);
-    var bandLab = svgText(260, 388, '可信区：只有 θ_old 附近才估得准', 'demo-x-mono demo-x-acc', 12, 'middle');
+    var bandLab = svgMath(260, 388, '\\text{可信区：只有 } \\theta_{old} \\text{ 附近才估得准}',
+      { size: 12, anchor: 'middle', cls: 'demo-x-acc', w: 300 });
     var tag = svgText(740, 44, '', 'demo-x-mono', 15, 'end');
     tag.setAttribute('font-weight', '700');
     var sub = svgText(740, 64, '', 'demo-x-ink2', 12.5, 'end');
     [band, hill, trail, ghosts, ball,
-      svgText(60, 44, 'J(θ)　策略的真实表现', 'demo-x-mono demo-x-mut', 13),
+      svgMath(60, 44, 'J(\\theta)', { size: 13, cls: 'demo-x-mut', w: 60 }),
+      svgText(106, 44, '策略的真实表现', 'demo-x-mut', 13),
       bandLab, tag, sub].forEach(function (n) { s.appendChild(n); });
 
     function draw(t) {
@@ -1147,7 +1150,7 @@
       trail.setAttribute('d', hillPath(Math.min(x0, x), Math.max(x0 + 1, x)));
       paint(trail, null, tone);
       band.setAttribute('x', center - 60);
-      bandLab.setAttribute('x', center);
+      bandLab.setX(center);
       ghosts.textContent = '';
       marks.forEach(function (gx) {
         ghosts.appendChild(paint(svgEl('circle', { cx: gx, cy: (hillY(gx) - 9).toFixed(1), r: 6, fill: 'none', 'stroke-width': 1.5 }), null, C_MUTED));
@@ -1171,22 +1174,25 @@
     ratio.setAttribute('font-weight', '700');
     var markLine = paint(svgEl('line', { x1: 377, y1: 296, x2: 377, y2: 340, 'stroke-width': 2 }), null, C_ACCENT);
     var markDot = paint(svgEl('circle', { cx: 377, cy: 340, r: 5.5 }), C_ACCENT);
-    var note2 = svgText(400, 398, 'r = 1.5 已经冲出安全带 —— 下一幕看裁剪怎么拦它', 'demo-x-bad', 13.5, 'middle');
+    var note2 = svgMath(400, 398, 'r = 1.5 \\text{ 已经冲出安全带 —— 下一幕看裁剪怎么拦它}',
+      { size: 13.5, anchor: 'middle', cls: 'demo-x-bad', w: 460 });
 
-    [svgText(60, 48, '同一个动作 a₁₅「抬腿迈步」，在旧策略和新策略下的概率', 'demo-x-ink2', 13.5),
-      svgText(60, 126, 'π_old(a|s)', 'demo-x-mono demo-x-ink2', 13),
+    [svgMath(60, 48, '\\text{同一个动作 } a_{15} \\text{「抬腿迈步」，在旧策略和新策略下的概率}',
+      { size: 13.5, cls: 'demo-x-ink2', w: 540 }),
+      svgMath(60, 126, '\\pi_{old}(a \\mid s)', { size: 13, cls: 'demo-x-ink2', w: 130 }),
       paint(svgEl('rect', { x: 200, y: 108, width: 192, height: 26, rx: 3, opacity: 0.55 }), C_MUTED),
       svgText(404, 126, '0.032', 'demo-x-mono demo-x-mut', 13),
-      svgText(60, 190, 'π_θ(a|s)', 'demo-x-mono demo-x-ink2', 13),
+      svgMath(60, 190, '\\pi_\\theta(a \\mid s)', { size: 13, cls: 'demo-x-ink2', w: 130 }),
       bar, val,
-      svgText(600, 112, 'r = 0.048 / 0.032', 'demo-x-mono demo-x-mut', 12.5, 'middle'),
+      svgMath(600, 112, 'r = 0.048 / 0.032', { size: 12.5, anchor: 'middle', cls: 'demo-x-mut', w: 200 }),
       ratio,
-      svgText(60, 248, 'r = 1 新旧一样', 'demo-x-mono demo-x-mut', 12.5),
-      svgText(240, 248, 'r > 1 更爱选这个动作', 'demo-x-mono demo-x-mut', 12.5),
-      svgText(470, 248, 'r < 1 更少选', 'demo-x-mono demo-x-mut', 12.5),
+      svgMath(60, 248, 'r = 1 \\text{ 新旧一样}', { size: 12.5, cls: 'demo-x-mut', w: 170 }),
+      svgMath(240, 248, 'r > 1 \\text{ 更爱选这个动作}', { size: 12.5, cls: 'demo-x-mut', w: 220 }),
+      svgMath(470, 248, 'r < 1 \\text{ 更少选}', { size: 12.5, cls: 'demo-x-mut', w: 150 }),
       svgEl('rect', { x: 291, y: 296, width: 172, height: 44, rx: 3, class: 'demo-x-band' }),
       paint(svgEl('line', { x1: 120, y1: 340, x2: 720, y2: 340, 'stroke-width': 1 }), null, 'var(--text-secondary)'),
-      svgText(377, 288, '安全带 ε=0.2 → [0.8, 1.2]', 'demo-x-mono demo-x-acc', 12, 'middle'),
+      svgMath(377, 288, '\\text{安全带 } \\varepsilon = 0.2 \\to [0.8,\\ 1.2]',
+        { size: 12, anchor: 'middle', cls: 'demo-x-acc', w: 260 }),
       markLine, markDot, note2].forEach(function (n) { s.appendChild(n); });
 
     [[120, '0.4'], [291, '0.8'], [377, '1.0'], [463, '1.2'], [591, '1.5'], [720, '1.8']].forEach(function (tick) {
@@ -1226,11 +1232,11 @@
   var GAE_DELTA = [0.5, 0.5, -9.4, -22.2, -30.0];
   var GAE_ADV = [-49.3, -52.9, -56.8, -50.4, -30.0];
   var GAE_CALC = [
-    'Â₀ = +0.5 + 0.9405 × (−52.9) = −49.3',
-    'Â₁ = +0.5 + 0.9405 × (−56.8) = −52.9',
-    'Â₂ = −9.4 + 0.9405 × (−50.4) = −56.8',
-    'Â₃ = −22.2 + 0.9405 × (−30.0) = −50.4',
-    'Â₄ = δ₄ = −30.0（done，没有下一步）'
+    '\\hat{A}_0 = +0.5 + 0.9405 \\times (-52.9) = -49.3',
+    '\\hat{A}_1 = +0.5 + 0.9405 \\times (-56.8) = -52.9',
+    '\\hat{A}_2 = -9.4 + 0.9405 \\times (-50.4) = -56.8',
+    '\\hat{A}_3 = -22.2 + 0.9405 \\times (-30.0) = -50.4',
+    '\\hat{A}_4 = \\delta_4 = -30.0 \\text{（done，没有下一步）}'
   ];
 
   function buildSceneGae() {
@@ -1267,20 +1273,23 @@
 
     var zero1 = paint(svgEl('line', { x1: 90, y1: 186, x2: 730, y2: 186, 'stroke-width': 1 }), null, 'var(--text-secondary)');
     var zero2 = paint(svgEl('line', { x1: 90, y1: 282, x2: 730, y2: 282, 'stroke-width': 1 }), null, 'var(--text-secondary)');
-    var dLab = svgText(62, 162, 'δ_t = r + γV(s′) − V(s)', 'demo-x-mono demo-x-mut', 12);
-    var aLab = svgText(62, 258, 'Â_t = δ_t + 0.9405·Â_{t+1}', 'demo-x-mono demo-x-mut', 12);
+    var dLab = svgMath(62, 162, '\\delta_t = r + \\gamma V(s\') - V(s)', { size: 12, cls: 'demo-x-mut', w: 200 });
+    var aLab = svgMath(62, 258, '\\hat{A}_t = \\delta_t + 0.9405\\,\\hat{A}_{t+1}', { size: 12, cls: 'demo-x-mut', w: 200 });
     var arrow = paint(svgEl('path', {
       d: 'M 660 242 L 146 242', fill: 'none', 'stroke-width': 1.6,
       'stroke-dasharray': '5 4', 'marker-end': arrow
     }), null, C_ACCENT);
-    var arrowLab = svgText(400, 234, '逆序回传，每退一步 ×0.9405', 'demo-x-mono demo-x-acc', 11.5, 'middle');
-    var calc = svgText(400, 356, '', 'demo-x-mono demo-x-acc', 14.5, 'middle');
-    var punch = svgText(400, 392, 'δ₀ 只看一步是 +0.5；Â₀ 却是 −49.3 —— 4 步后那一摔被传回了起点', 'demo-x-ink2', 13.5, 'middle');
+    var arrowLab = svgMath(400, 234, '\\text{逆序回传，每退一步 } \\times 0.9405',
+      { size: 11.5, anchor: 'middle', cls: 'demo-x-acc', w: 260 });
+    var calc = svgMath(400, 356, '', { size: 14.5, anchor: 'middle', cls: 'demo-x-acc', w: 420 });
+    var punch = svgMath(400, 392, '\\delta_0 \\text{ 只看一步是 } +0.5\\text{；} \\hat{A}_0 \\text{ 却是 } -49.3 \\text{ —— 4 步后那一摔被传回了起点}',
+      { size: 13.5, anchor: 'middle', cls: 'demo-x-ink2', w: 640 });
 
-    s.appendChild(svgText(60, 46, '一段 rollout：走 3 步 → 大晃 → 摔倒（done）　γ=0.99　λ=0.95', 'demo-x-ink2', 13.5));
+    s.appendChild(svgMath(60, 46, '\\text{一段 rollout：走 3 步 → 大晃 → 摔倒（done）} \\quad \\gamma = 0.99 \\quad \\lambda = 0.95',
+      { size: 13.5, cls: 'demo-x-ink2', w: 580 }));
     heads.concat(rows).forEach(function (n) { s.appendChild(n); });
-    s.appendChild(svgText(62, 118, 'r_t', 'demo-x-mono demo-x-mut', 12));
-    s.appendChild(svgText(62, 140, 'V(s_t)', 'demo-x-mono demo-x-mut', 12));
+    s.appendChild(svgMath(62, 118, 'r_t', { size: 12, cls: 'demo-x-mut', w: 40 }));
+    s.appendChild(svgMath(62, 140, 'V(s_t)', { size: 12, cls: 'demo-x-mut', w: 60 }));
     [dLab, zero1].concat(deltas).forEach(function (n) { s.appendChild(n); });
     [arrow, arrowLab, aLab, zero2].concat(advs).forEach(function (n) { s.appendChild(n); });
     [calc, punch].forEach(function (n) { s.appendChild(n); });
@@ -1304,7 +1313,7 @@
         if (t >= start) step = i;
       }
       if (step >= 0) {
-        calc.textContent = GAE_CALC[4 - step];
+        calc.setTex(GAE_CALC[4 - step]);
         setOpacity(calc, seg(t, 7.4 + step * 1.3, 7.7 + step * 1.3));
       } else {
         setOpacity(calc, 0);
@@ -1325,13 +1334,21 @@
     var minLn = paint(svgEl('polyline', { fill: 'none', 'stroke-width': 3.5, 'stroke-linejoin': 'round' }), null, C_ACCENT);
     var guide = paint(svgEl('line', { x1: 377, y1: 230, x2: 377, y2: 230, 'stroke-width': 1 }), null, 'var(--text-secondary)');
     var dotNow = paint(svgEl('circle', { cx: 377, cy: 230, r: 6.5 }), C_ACCENT);
-    var readA = svgText(60, 68, 'Â = +2.3', 'demo-x-mono demo-x-good', 13.5);
-    readA.setAttribute('font-weight', '700');
-    var readR = svgText(188, 68, 'r = 1.00', 'demo-x-mono demo-x-ink2', 13);
-    var readU = svgText(296, 68, 'r·Â = 2.30', 'demo-x-mono demo-x-mut', 13);
-    var readC = svgText(424, 68, 'clip(r)·Â = 2.30', 'demo-x-mono demo-x-warn', 13);
-    var readM = svgText(566, 68, 'min = 2.30', 'demo-x-mono demo-x-acc', 13.5);
-    readM.setAttribute('font-weight', '700');
+    /* Each readout is a static LaTeX label plus the number next to it: the
+       number changes every frame, and re-typesetting a formula 60 times a
+       second would be pure waste. */
+    var readA = svgMath(60, 68, '\\hat{A} =', { size: 13.5, cls: 'demo-x-good', w: 50 });
+    var readAV = svgText(96, 68, '+2.3', 'demo-x-mono demo-x-good', 13.5);
+    readAV.setAttribute('font-weight', '700');
+    var readR = svgMath(180, 68, 'r =', { size: 13, cls: 'demo-x-ink2', w: 40 });
+    var readRV = svgText(206, 68, '1.00', 'demo-x-mono demo-x-ink2', 13);
+    var readU = svgMath(272, 68, 'r\\hat{A} =', { size: 13, cls: 'demo-x-mut', w: 60 });
+    var readUV = svgText(316, 68, '2.30', 'demo-x-mono demo-x-mut', 13);
+    var readC = svgMath(390, 68, '\\mathrm{clip}(r)\\,\\hat{A} =', { size: 13, cls: 'demo-x-warn', w: 120 });
+    var readCV = svgText(486, 68, '2.30', 'demo-x-mono demo-x-warn', 13);
+    var readM = svgMath(556, 68, '\\min =', { size: 13.5, cls: 'demo-x-acc', w: 60 });
+    var readMV = svgText(604, 68, '2.30', 'demo-x-mono demo-x-acc', 13.5);
+    readMV.setAttribute('font-weight', '700');
     var freeze = svgEl('g', {});
     freeze.appendChild(svgEl('rect', { x: 684, y: 50, width: 106, height: 24, rx: 4, class: 'demo-x-freeze-box' }));
     var freezeTx = svgText(737, 67, '冻结 梯度=0', 'demo-x-mono demo-x-bad', 12, 'middle');
@@ -1340,7 +1357,8 @@
     setOpacity(freeze, 0);
 
     s.appendChild(svgText(60, 40, '横轴：概率比 r　纵轴：这条样本贡献的目标值', 'demo-x-ink2', 13));
-    s.appendChild(svgText(740, 40, 'L = min( r·Â , clip(r,0.8,1.2)·Â )', 'demo-x-mono demo-x-mut', 12.5, 'end'));
+    s.appendChild(svgMath(740, 40, 'L = \\min\\big(r\\hat{A},\\ \\mathrm{clip}(r, 0.8, 1.2)\\,\\hat{A}\\big)',
+      { size: 12.5, anchor: 'end', cls: 'demo-x-mut', w: 340 }));
     s.appendChild(svgEl('rect', { x: 291, y: 76, width: 172, height: 286, class: 'demo-x-band-fill' }));
     [291, 463].forEach(function (x) {
       s.appendChild(paint(svgEl('line', { x1: x, y1: 76, x2: x, y2: 362, 'stroke-width': 1, 'stroke-dasharray': '4 4' }), null, C_ACCENT));
@@ -1350,17 +1368,19 @@
     [[120, '0.4'], [291, '0.8'], [377, '1.0'], [463, '1.2'], [591, '1.5'], [720, '1.8']].forEach(function (tick) {
       s.appendChild(svgText(tick[0], 380, tick[1], 'demo-x-mono demo-x-mut', 11.5, 'middle'));
     });
-    s.appendChild(svgText(738, 234, 'r', 'demo-x-mono demo-x-mut', 11.5));
-    [unclip, clipLn, minLn, guide, dotNow, readA, readR, readU, readC, readM, freeze].forEach(function (n) { s.appendChild(n); });
+    s.appendChild(svgMath(738, 234, 'r', { size: 11.5, cls: 'demo-x-mut', w: 30 }));
+    [unclip, clipLn, minLn, guide, dotNow,
+      readA, readAV, readR, readRV, readU, readUV, readC, readCV, readM, readMV,
+      freeze].forEach(function (n) { s.appendChild(n); });
 
-    var legendSpecs = [[470, 500, C_MUTED, '6 4', 2, 506, 'r·Â', 'demo-x-mut'],
-      [552, 582, C_WARN, null, 2, 588, 'clip(r)·Â', 'demo-x-warn'],
-      [662, 692, C_ACCENT, null, 3.5, 698, 'min', 'demo-x-acc']];
+    var legendSpecs = [[470, 500, C_MUTED, '6 4', 2, 506, 'r\\hat{A}', 'demo-x-mut'],
+      [552, 582, C_WARN, null, 2, 588, '\\mathrm{clip}(r)\\,\\hat{A}', 'demo-x-warn'],
+      [662, 692, C_ACCENT, null, 3.5, 698, '\\min', 'demo-x-acc']];
     legendSpecs.forEach(function (spec) {
       var ln = svgEl('line', { x1: spec[0], y1: 400, x2: spec[1], y2: 400, 'stroke-width': spec[4] });
       if (spec[3]) ln.setAttribute('stroke-dasharray', spec[3]);
       s.appendChild(paint(ln, null, spec[2]));
-      s.appendChild(svgText(spec[5], 404, spec[6], 'demo-x-mono ' + spec[7], 11.5));
+      s.appendChild(svgMath(spec[5], 404, spec[6], { size: 11.5, cls: spec[7], w: 100 }));
     });
 
     function draw(t) {
@@ -1396,12 +1416,13 @@
 
       var good = adv >= 0;
       var frozen = (good && r > 1.2) || (!good && r < 0.8);
-      readA.textContent = 'Â = ' + signed(adv, 1);
-      readA.setAttribute('class', 'demo-x-mono ' + (good ? 'demo-x-good' : 'demo-x-bad'));
-      readR.textContent = 'r = ' + r.toFixed(2);
-      readU.textContent = 'r·Â = ' + minus(uv.toFixed(2));
-      readC.textContent = 'clip(r)·Â = ' + minus(cv.toFixed(2));
-      readM.textContent = 'min = ' + minus(mv.toFixed(2));
+      readA.setCls(good ? 'demo-x-good' : 'demo-x-bad');
+      readAV.textContent = signed(adv, 1);
+      readAV.setAttribute('class', 'demo-x-mono ' + (good ? 'demo-x-good' : 'demo-x-bad'));
+      readRV.textContent = r.toFixed(2);
+      readUV.textContent = minus(uv.toFixed(2));
+      readCV.textContent = minus(cv.toFixed(2));
+      readMV.textContent = minus(mv.toFixed(2));
       setOpacity(freeze, frozen ? 1 : 0);
       paint(dotNow, frozen ? C_BAD : C_ACCENT);
     }
@@ -1412,9 +1433,9 @@
   /* ── scene 5: the four-step loop ── */
   var LOOP_NODES = [
     { x: 400, y: 70, w: 268, title: '① 收集经验', sub: 'N 个环境 × T 步 → 2048 条样本' },
-    { x: 625, y: 210, w: 236, title: '② 计算优势', sub: 'GAE 给每条样本算 Â_t' },
+    { x: 625, y: 210, w: 236, title: '② 计算优势', subTex: '\\text{GAE 给每条样本算 } \\hat{A}_t' },
     { x: 400, y: 350, w: 306, title: '③ 多轮更新', sub: '同一批数据 10 个 epoch，clip 当刹车' },
-    { x: 175, y: 210, w: 226, title: '④ 同步旧策略', sub: 'π_old ← π_θ，回到 ①' }
+    { x: 175, y: 210, w: 226, title: '④ 同步旧策略', subTex: '\\pi_{old} \\leftarrow \\pi_\\theta \\text{，回到 ①}' }
   ];
   var LOOP_STEPS = [
     { hold: 0, d: 1.3 }, { move: 0, d: 1.0 }, { hold: 1, d: 1.2 }, { move: 1, d: 1.0 },
@@ -1441,7 +1462,9 @@
       var rect = paint(svgEl('rect', { x: n.x - n.w / 2, y: n.y - 28, width: n.w, height: 56, rx: 8, 'stroke-width': 1.5 }), C_SURFACE, C_BORDER);
       g.appendChild(rect);
       g.appendChild(svgText(n.x, n.y - 4, n.title, 'demo-x-mono', 13.5, 'middle'));
-      g.appendChild(svgText(n.x, n.y + 16, n.sub, 'demo-x-mut', 11.5, 'middle'));
+      g.appendChild(n.subTex
+        ? svgMath(n.x, n.y + 16, n.subTex, { size: 11.5, anchor: 'middle', cls: 'demo-x-mut', w: n.w })
+        : svgText(n.x, n.y + 16, n.sub, 'demo-x-mut', 11.5, 'middle'));
       s.appendChild(g);
       return rect;
     });
@@ -1515,31 +1538,31 @@
       ]
     },
     {
-      title: '第一把尺子：概率比 r', dur: 11, build: buildSceneRatio,
+      title: '第一把尺子：概率比 $r$', dur: 11, build: buildSceneRatio,
       cues: [
         { at: 0, s: '数据是旧策略采的，要评价新策略，先要一把尺子。' },
-        { at: 2.2, s: '概率比 **r = π_θ(a|s) / π_old(a|s)**：新策略有多偏爱这个动作。' },
-        { at: 5.4, s: '这条样本 **r = 0.048 / 0.032 = 1.5**，新策略爱过了头。' },
-        { at: 8.2, s: 'ε=0.2 的安全带是 **[0.8, 1.2]**，1.5 已经冲出去了。' }
+        { at: 2.2, s: '概率比 **$r = \\pi_\\theta(a \\mid s) / \\pi_{old}(a \\mid s)$**：新策略有多偏爱这个动作。' },
+        { at: 5.4, s: '这条样本 **$r = 0.048 / 0.032 = 1.5$**，新策略爱过了头。' },
+        { at: 8.2, s: '$\\varepsilon = 0.2$ 的安全带是 **$[0.8,\\ 1.2]$**，1.5 已经冲出去了。' }
       ]
     },
     {
-      title: '第二把尺子：优势与 GAE', dur: 20, build: buildSceneGae,
+      title: '第二把尺子：优势 $\\hat{A}$ 与 GAE', dur: 20, build: buildSceneGae,
       cues: [
         { at: 0, s: '光看回报没用，要问：这个动作比该状态的**平均水平**好多少。' },
-        { at: 2.6, s: '先算一步 TD 误差 **δ_t = r + γV(s′) − V(s)**，done 那步不 bootstrap。' },
-        { at: 7.0, s: '再**逆序**递推 **Â_t = δ_t + γλ·Â_{t+1}**，γλ = 0.99×0.95 = 0.9405。' },
-        { at: 14.0, s: 'δ₀ 只看一步是 +0.5；Â₀ 却是 −49.3 —— 摔倒的账被记回了起点。' }
+        { at: 2.6, s: '先算一步 TD 误差 **$\\delta_t = r + \\gamma V(s\') - V(s)$**，done 那步不 bootstrap。' },
+        { at: 7.0, s: '再**逆序**递推 **$\\hat{A}_t = \\delta_t + \\gamma\\lambda\\,\\hat{A}_{t+1}$**，$\\gamma\\lambda = 0.99 \\times 0.95 = 0.9405$。' },
+        { at: 14.0, s: '$\\delta_0$ 只看一步是 +0.5；$\\hat{A}_0$ 却是 −49.3 —— 摔倒的账被记回了起点。' }
       ]
     },
     {
       title: '核心机制：裁剪与冻结', dur: 22, build: buildSceneClip,
       cues: [
-        { at: 0, s: '有了 r 和 Â，PPO 的目标函数只做一件事：**取 min**。' },
-        { at: 2.0, s: '好动作 Â=+2.3，新策略越来越爱它，r 一路冲到 1.5。' },
-        { at: 5.4, s: 'min 选中裁剪分 **1.2×2.3 = 2.76**；1.2 是常数 → 梯度为 0，本轮**冻结**。' },
-        { at: 11.6, s: '换成坏动作 Â=−3.1，新策略把它压到 r=0.6。' },
-        { at: 15.4, s: 'min 选中 **−2.48**，clip 顶在 0.8 → 同样冻结：已经够讨厌了，别再狂砍。' },
+        { at: 0, s: '有了 $r$ 和 $\\hat{A}$，PPO 的目标函数只做一件事：**取 $\\min$**。' },
+        { at: 2.0, s: '好动作 $\\hat{A} = +2.3$，新策略越来越爱它，$r$ 一路冲到 1.5。' },
+        { at: 5.4, s: '$\\min$ 选中裁剪分 **$1.2 \\times 2.3 = 2.76$**；1.2 是常数 → 梯度为 0，本轮**冻结**。' },
+        { at: 11.6, s: '换成坏动作 $\\hat{A} = -3.1$，新策略把它压到 $r = 0.6$。' },
+        { at: 15.4, s: '$\\min$ 选中 **$-2.48$**，$\\mathrm{clip}$ 顶在 0.8 → 同样冻结：已经够讨厌了，别再狂砍。' },
         { at: 18.6, s: '冻结只挡「继续变本加厉」的那一侧；策略跑偏时的纠错梯度反而最大。' }
       ]
     },
@@ -1548,9 +1571,9 @@
       cues: [
         { at: 0, s: '把两把尺子放回训练循环。' },
         { at: 1.4, s: '① 收集：N 个环境各跑 T 步，凑够一批 2048 条样本。' },
-        { at: 3.3, s: '② 用 GAE 给每条样本算出 Â_t。' },
-        { at: 5.4, s: '③ 同一批数据跑 10 个 epoch —— r 越偏离 1，裁剪越常生效，自带刹车。' },
-        { at: 9.0, s: '④ π_old ← π_θ，回到 ①。简单、稳、好调，所以人形机器人训练几乎都用它。' }
+        { at: 3.3, s: '② 用 GAE 给每条样本算出 $\\hat{A}_t$。' },
+        { at: 5.4, s: '③ 同一批数据跑 10 个 epoch —— $r$ 越偏离 1，裁剪越常生效，自带刹车。' },
+        { at: 9.0, s: '④ $\\pi_{old} \\leftarrow \\pi_\\theta$，回到 ①。简单、稳、好调，所以人形机器人训练几乎都用它。' }
       ]
     }
   ];
@@ -1561,7 +1584,7 @@
       sub: '约 76 秒自动播放。空格播放/暂停，← → 换幕；画面里的数字与本文各节算例一致。',
       ariaLabel: 'PPO 五幕讲解动画',
       notes: [
-        '取数依据：「第 2 步：计算优势（GAE）」的 5 步算例，与「第 3 步：PPO 裁剪更新」的案例 A（Â=+2.3, r=1.5）、案例 B（Â=−3.1, r=0.6）。'
+        '取数依据：「第 2 步：计算优势（GAE）」的 5 步算例，与「第 3 步：PPO 裁剪更新」的案例 A（$\\hat{A} = +2.3$, $r = 1.5$）、案例 B（$\\hat{A} = -3.1$, $r = 0.6$）。'
       ],
       scenes: EXPLAINER_SCENES
     });

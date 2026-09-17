@@ -11,6 +11,11 @@
  *
  * and every widget has to be built at runtime. Styling: assets/css/paper-demos.css.
  *
+ * Formulas: write LaTeX and let the KaTeX the page already loads typeset it —
+ * `$…$` inside any demo string (card title/sub, note(), verdictBox, explainer
+ * cues) and K.svgMath() on an SVG storyboard. See AGENTS.md, and texToPlain()
+ * below for what a reader sees when that CDN is blocked.
+ *
  * Usage from a bundle:
  *
  *     (function () {
@@ -43,13 +48,157 @@
     return x < lo ? lo : x > hi ? hi : x;
   }
 
+  // ─── LaTeX / KaTeX ───────────────────────────────────────────────────────
+  /* Formulas in a demo are written as LaTeX and rendered by the KaTeX that
+     every page already loads (_layouts/default.html, pinned + SRI) — the
+     demos add no script of their own, so the CSP is untouched.
+     `$…$` inside any demo string goes through here (see rich()); a formula
+     drawn on an SVG storyboard goes through svgMath().
+     If the KaTeX CDN is blocked the formula degrades to readable plain text
+     (texToPlain) instead of leaking raw TeX, and re-renders if KaTeX shows
+     up late — the script is `defer`red, so it is normally already there. */
+
+  /* Enough of a TeX subset for the fallback to stay readable: the demos only
+     ever write single-level formulas. */
+  var TEX_FRAC = /\\frac\s*\{([^{}]*)\}\s*\{([^{}]*)\}/g;
+
+  var TEX_PLAIN = [
+    [/_\s*\{([^{}]*)\}/g, '_$1'], [/\^\s*\{([^{}]*)\}/g, '^$1'],
+    [/\\(?:text|mathrm|mathbf|mathit|mathbb|mathcal|mathsf|operatorname)\s*\{([^{}]*)\}/g, '$1'],
+    [/\\(?:qquad|quad)/g, '  '],
+    [/\\(?:bigg?|Bigg?)[lr]?/g, ''],
+    [/\\hat\s*\{?([A-Za-z])\}?/g, '$1̂'],
+    [/\\dot\s*\{?([A-Za-z])\}?/g, '$1̇'],
+    [/\\(?:left|right|,|;|!|\s)/g, ' '],
+    [/\\cdot/g, '·'], [/\\times/g, '×'], [/\\approx/g, '≈'],
+    [/\\le(?:q)?\b/g, '≤'], [/\\ge(?:q)?\b/g, '≥'], [/\\neq\b/g, '≠'],
+    [/\\to\b/g, '→'], [/\\rightarrow\b/g, '→'], [/\\leftarrow\b/g, '←'],
+    [/\\in\b/g, '∈'], [/\\sum\b/g, 'Σ'], [/\\infty\b/g, '∞'],
+    [/\\mid\b/g, '|'], [/\\sim\b/g, '~'], [/\\pm\b/g, '±'],
+    [/\\min\b/g, 'min'], [/\\max\b/g, 'max'], [/\\exp\b/g, 'exp'], [/\\log\b/g, 'log'],
+    [/\\alpha/g, 'α'], [/\\beta/g, 'β'], [/\\gamma/g, 'γ'], [/\\delta/g, 'δ'],
+    [/\\epsilon/g, 'ε'], [/\\varepsilon/g, 'ε'], [/\\theta/g, 'θ'], [/\\lambda/g, 'λ'],
+    [/\\mu/g, 'μ'], [/\\pi/g, 'π'], [/\\sigma/g, 'σ'], [/\\tau/g, 'τ'],
+    [/\\phi/g, 'φ'], [/\\varphi/g, 'φ'], [/\\psi/g, 'ψ'], [/\\omega/g, 'ω'],
+    [/\\Phi/g, 'Φ'], [/\\Psi/g, 'Ψ'], [/\\Sigma/g, 'Σ'], [/\\Omega/g, 'Ω'],
+    [/\^\{?\\?circ\}?/g, '°'],
+    [/[{}]/g, ''], [/\s{2,}/g, ' ']
+  ];
+
+  function texToPlain(tex) {
+    var s = String(tex);
+    /* Sub/superscript braces come off first (TEX_PLAIN[0..1]) so that a
+       fraction whose parts carry them still matches TEX_FRAC; then peel the
+       fractions from the inside out. */
+    s = s.replace(TEX_PLAIN[0][0], TEX_PLAIN[0][1]).replace(TEX_PLAIN[1][0], TEX_PLAIN[1][1]);
+    for (var pass = 0; pass < 3 && s.indexOf('\\frac') !== -1; pass++) {
+      s = s.replace(TEX_FRAC, '($1)/($2)');
+    }
+    for (var i = 2; i < TEX_PLAIN.length; i++) s = s.replace(TEX_PLAIN[i][0], TEX_PLAIN[i][1]);
+    return s.trim();
+  }
+
+  function katexReady() {
+    return !!(window.katex && typeof window.katex.render === 'function');
+  }
+
+  /* iOS WebKit paints KaTeX's HTML output (a stack of position:relative
+     offsets) at the SVG origin when it sits inside a <foreignObject> — the
+     same compositing bug assets/js/mermaid-config.js works around by asking
+     Mermaid for native MathML there. MathML creates no layer, so use it. */
+  function isIos() {
+    if (document.documentElement.classList.contains('ios')) return true;
+    if (typeof navigator === 'undefined') return false;
+    return /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+      (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  }
+
+  var pendingTex = [];
+  var texWatch = null;
+
+  function queueTex(job) {
+    pendingTex.push(job);
+    if (texWatch !== null) return;
+    var tries = 0;
+    texWatch = window.setInterval(function () {
+      if (katexReady()) {
+        window.clearInterval(texWatch);
+        texWatch = null;
+        var queue = pendingTex;
+        pendingTex = [];
+        queue.forEach(function (j) { renderTex(j.target, j.tex, j.opts); });
+      } else if (++tries > 50) {
+        // Give up rather than leave a timer running for the rest of the visit.
+        window.clearInterval(texWatch);
+        texWatch = null;
+        pendingTex = [];
+      }
+    }, 100);
+  }
+
+  function renderTex(target, tex, opts) {
+    var o = opts || {};
+    if (katexReady()) {
+      try {
+        window.katex.render(String(tex), target, {
+          displayMode: !!o.display,
+          output: o.output || 'htmlAndMathml',
+          /* Throw rather than paint KaTeX's red raw-TeX error on the page:
+             a typo in a formula then reads as plain text instead of shouting
+             at the reader. (`%`, `#`, `&` must be escaped inside \text{}.) */
+          throwOnError: true,
+          strict: false
+        });
+        return true;
+      } catch (e) {
+        /* A malformed formula must not take the whole demo down with it. */
+      }
+    }
+    target.textContent = texToPlain(tex);
+    if (!katexReady()) queueTex({ target: target, tex: tex, opts: o });
+    return false;
+  }
+
+  /* An inline formula for the HTML parts of a demo (titles, cues, notes). */
+  function tex(str, opts) {
+    var o = opts || {};
+    var span = el('span', 'demo-tex' + (o.cls ? ' ' + o.cls : ''));
+    renderTex(span, str, { display: o.display });
+    return span;
+  }
+
+  /* The tiny markup every human-readable demo string may use:
+     `**bold**` and `$LaTeX$`. The two do not nest inside one formula, but a
+     whole formula can sit inside a bold run (`**$r_t(\theta)$**`). */
+  function rich(parent, str) {
+    var s = String(str);
+    var re = /\*\*|\$[^$]+\$/g;
+    var target = parent, at = 0, m;
+    while ((m = re.exec(s)) !== null) {
+      if (m.index > at) target.appendChild(document.createTextNode(s.slice(at, m.index)));
+      at = m.index + m[0].length;
+      if (m[0] === '**') {
+        if (target === parent) {
+          target = el('b');
+          parent.appendChild(target);
+        } else {
+          target = parent;
+        }
+      } else {
+        target.appendChild(tex(m[0].slice(1, -1)));
+      }
+    }
+    if (at < s.length) target.appendChild(document.createTextNode(s.slice(at)));
+    return parent;
+  }
+
   function card(host, opts) {
     host.innerHTML = '';
     var root = el('div', 'demo-card');
     var head = el('div', 'demo-head');
     head.appendChild(el('span', 'demo-badge', '交互演示'));
-    head.appendChild(el('h4', 'demo-title', opts.title));
-    if (opts.sub) head.appendChild(el('p', 'demo-sub', opts.sub));
+    head.appendChild(rich(el('h4', 'demo-title'), opts.title));
+    if (opts.sub) head.appendChild(rich(el('p', 'demo-sub'), opts.sub));
     root.appendChild(head);
     host.appendChild(root);
     return root;
@@ -156,13 +305,8 @@
         if (html instanceof Node) {
           box.appendChild(html);
         } else {
-          // same tiny markup as note(): **bold** segments, nothing else
-          String(html)
-            .split(/\*\*/)
-            .forEach(function (chunk, i) {
-              if (!chunk) return;
-              box.appendChild(i % 2 ? el('b', null, chunk) : document.createTextNode(chunk));
-            });
+          // same tiny markup as note(): **bold** and $LaTeX$
+          rich(box, html);
         }
         box.className = 'demo-verdict' + (tone ? ' is-' + tone : '');
       }
@@ -188,13 +332,8 @@
   function note(parent, lines) {
     var box = el('div', 'demo-note');
     lines.forEach(function (line) {
-      var p = el('p');
-      // Lines use a tiny markup: **bold** segments only.
-      line.split(/\*\*/).forEach(function (chunk, i) {
-        if (!chunk) return;
-        p.appendChild(i % 2 ? el('b', null, chunk) : document.createTextNode(chunk));
-      });
-      box.appendChild(p);
+      // Lines use a tiny markup: **bold** and $LaTeX$ (see rich()).
+      box.appendChild(rich(el('p'), line));
     });
     parent.appendChild(box);
   }
@@ -520,6 +659,65 @@
     return node;
   }
 
+  /* A real formula on a storyboard. SVG has no math typesetting, so the
+     KaTeX output is hosted in a <foreignObject>; the box is sized generously
+     and the formula aligned inside it, which keeps the call site looking like
+     svgText (x, y, anchor) with no measure-then-place round trip.
+     `y` is the baseline svgText would use, so a label and a formula on the
+     same row line up.
+
+     Returns the <foreignObject>, with `setTex` for formulas whose numbers
+     change while the scene plays, and `setCls` / `setTone` for its colour —
+     `paint()` cannot help here, HTML takes `color`, not `fill`.
+     Options: { size, anchor, cls, w, h, display }. */
+  function svgMath(x, y, str, opts) {
+    var o = opts || {};
+    var size = o.size || 12;
+    var w = o.w || 300;
+    var h = o.h || size * (o.display ? 3.4 : 2.4);
+    var anchor = o.anchor || 'start';
+    var fo = svgEl('foreignObject', {
+      x: anchor === 'middle' ? x - w / 2 : anchor === 'end' ? x - w : x,
+      /* Centre the box on where the text's optical middle would be, so the
+         formula sits on the row rather than hanging below its baseline. */
+      y: y - 0.34 * size - h / 2,
+      width: w,
+      height: h,
+      class: 'demo-x-fo'
+    });
+    var box = document.createElement('div');
+    box.style.fontSize = size + 'px';
+    box.style.justifyContent = anchor === 'middle' ? 'center' : anchor === 'end' ? 'flex-end' : 'flex-start';
+    fo.appendChild(box);
+
+    var output = isIos() ? 'mathml' : 'htmlAndMathml';
+    fo.texBox = box;
+    /* The box is wider than the formula, so a call site that moves a label
+       around (a band that follows the camera) must go through this rather
+       than set `x` itself. */
+    fo.setX = function (nx) {
+      fo.setAttribute('x', anchor === 'middle' ? nx - w / 2 : anchor === 'end' ? nx - w : nx);
+      return fo;
+    };
+    fo.setCls = function (cls) {
+      box.className = 'demo-x-tex' + (cls ? ' ' + cls : '');
+      return fo;
+    };
+    fo.setTone = function (color) {
+      box.style.color = color || '';
+      return fo;
+    };
+    fo.setTex = function (next) {
+      if (fo.texSource === next) return fo;
+      fo.texSource = next;
+      renderTex(box, next, { display: o.display, output: output });
+      return fo;
+    };
+    fo.setCls(o.cls);
+    fo.setTex(str);
+    return fo;
+  }
+
   function paint(node, fill, stroke) {
     if (fill) node.style.fill = fill;
     if (stroke) node.style.stroke = stroke;
@@ -683,10 +881,11 @@
    *     } }]
    *   })
    *
-   * Cue text may use **bold** spans. Playback starts when the frame scrolls
-   * into view (a note is long — an animation that finished above the fold
-   * helps nobody) and pauses when it leaves. With prefers-reduced-motion each
-   * scene is shown at its final frame and nothing animates. */
+   * Cue text may use **bold** spans and $LaTeX$ formulas. Playback starts
+   * when the frame scrolls into view (a note is long — an animation that
+   * finished above the fold helps nobody) and pauses when it leaves. With
+   * prefers-reduced-motion each scene is shown at its final frame and
+   * nothing animates. */
   function explainer(host, opts) {
     var specs = opts.scenes;
     var root = card(host, { title: opts.title, sub: opts.sub });
@@ -700,7 +899,7 @@
     var frame = el('div', 'demo-x-frame');
     var head = el('div', 'demo-x-head');
     var noEl = el('span', 'demo-x-no', '01');
-    var titleEl = el('span', 'demo-x-title', specs[0].title);
+    var titleEl = rich(el('span', 'demo-x-title'), specs[0].title);
     var clockEl = el('span', 'demo-x-clock', '0:00 / ' + clockText(total));
     [noEl, titleEl, clockEl].forEach(function (n) { head.appendChild(n); });
     frame.appendChild(head);
@@ -732,7 +931,7 @@
       var b = el('button', 'demo-x-chip');
       b.type = 'button';
       b.appendChild(el('span', 'demo-x-chip-n', '0' + (i + 1)));
-      b.appendChild(document.createTextNode(spec.title));
+      rich(b, spec.title);
       b.addEventListener('click', function () { go(i, true); });
       chipRow.appendChild(b);
       return b;
@@ -757,11 +956,7 @@
     function buildCues() {
       cueBox.textContent = '';
       scenes[idx].spec.cues.forEach(function (cue) {
-        var p = el('p', 'demo-x-cue');
-        cue.s.split(/\*\*/).forEach(function (chunk, i) {
-          if (!chunk) return;
-          p.appendChild(i % 2 ? el('b', null, chunk) : document.createTextNode(chunk));
-        });
+        var p = rich(el('p', 'demo-x-cue'), cue.s);
         p.setAttribute('data-at', cue.at);
         cueBox.appendChild(p);
       });
@@ -786,7 +981,8 @@
       time = reduceMotion ? scenes[idx].spec.dur : 0;
       scenes.forEach(function (sc, i) { sc.wrap.hidden = i !== idx; });
       noEl.textContent = '0' + (idx + 1);
-      titleEl.textContent = scenes[idx].spec.title;
+      titleEl.textContent = '';
+      rich(titleEl, scenes[idx].spec.title);
       chips.forEach(function (c, i) { c.setAttribute('aria-current', i === idx ? 'true' : 'false'); });
       buildCues();
       if (fromUser && !reduceMotion) {
@@ -958,8 +1154,12 @@
     niceTicks: niceTicks,
     registerRenderer: registerRenderer,
     renderAll: renderAll,
+    tex: tex,
+    texToPlain: texToPlain,
+    rich: rich,
     svgEl: svgEl,
     svgText: svgText,
+    svgMath: svgMath,
     paint: paint,
     seg: seg,
     ease: ease,
