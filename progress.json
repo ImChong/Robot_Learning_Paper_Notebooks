@@ -41,18 +41,19 @@
         "13_Physics-Based_Animation",
         "14_Human_Motion"
       ],
-      "last_module": "13_Physics-Based_Animation",
-      "last_index": 591,
-      "last_title": "Spherical Latent Motion Prior for Physics-Based Simulated Humanoid Control (SLMP, arXiv:2603.01294)",
-      "next_module": "14_Human_Motion",
-      "last_completed_date": "2026-09-16",
-      "note": "13_Physics-Based_Animation 模块补齐最新发表且无笔记的《Spherical Latent Motion Prior for Physics-Based Simulated Humanoid Control》(SLMP, arXiv:2603.01294, v1 2026-03-01)。两阶段运动先验：① GCRL+PPO 训高保真动作跟踪专家；② 把专家蒸馏进单位球面隐空间，用蒸馏损失(保真)+判别器损失(区分专家/随机隐码动作)+判别器引导的局部语义一致性损失 DLSC(几何权重 w_d=e^(-β·d12)、语义权重 w_c=1+|min(0,D)|)塑形邻域，避免 VAE 重构信息损失与低密度区无效采样、以及 AMP 模式崩塌。下游用自博弈+稀疏规则奖励(命中/击倒+50/跌倒终止)学出类人双人格斗，跨形态迁移到 Unitree G1、ENGINEAI PM01。Isaac Gym 60Hz、隐维 d=64、双卡 RTX4090。含整体框架 mermaid 与源码运行时序图(基于 Colin-Jing/SLMP_Combat, phc/SMPLOlympics 框架)。",
-      "last_date": "2026-09-16",
-      "next_candidate": null
+      "last_module": "14_Human_Motion",
+      "last_index": 592,
+      "last_title": "MoVT: Video-Augmented Motion Tokenizer for Text-to-Motion Generation (arXiv:2609.14965)",
+      "next_module": "04_Loco-Manipulation_and_WBC",
+      "last_completed_date": "2026-09-17",
+      "note": "14_Human_Motion 模块补齐最新发表且无笔记的《MoVT: Video-Augmented Motion Tokenizer for Text-to-Motion Generation》(arXiv:2609.14965, v1 2026-09-14, ACM MM 2026 Oral)。核心是跨模态增强运动分词器：3D 残差 VQ-VAE 预训练→学前向 ℱ/后向 ℛ 双向映射+对齐损失让同一动作 3D/2D 序列共享 token 索引→用大规模动作视频 MotionX++ 训练增强 2D 码本 𝒞†₂d 吸收真实动作模式→经 ℛ 抬回 3D 微调(仅第一层码本来自 2D)→对齐的 3D/2D 双码本接进模态无关掩码 Transformer，使文本-视频对直接增强只用文本-动作对训练的生成器，不新增 3D 动捕即扩充码本表达力。HumanML3D(n=1024) FID 0.032/R-Prec@3 0.814/Diversity 9.960。华中科技大学×浙江大学。含整体框架 mermaid；官方源码 X-mOtion/MoVT 标注 Coming soon 暂未公开，故无源码时序图。",
+      "last_date": "2026-09-17",
+      "next_candidate": null,
+      "last_completed": "MoVT: Video-Augmented Motion Tokenizer for Text-to-Motion Generation (arXiv:2609.14965)"
     },
-    "last_summary_index": 590,
-    "last_summary_date": "2026-09-13",
-    "last_summary_title": "World Translation: Minimizing Sim-to-Real Gap with Backward Dynamics Extraction and Unpaired Domain Translation",
+    "last_summary_index": 592,
+    "last_summary_date": "2026-09-17",
+    "last_summary_title": "MoVT: Video-Augmented Motion Tokenizer for Text-to-Motion Generation",
     "next_summary_index": null,
     "log": [
       {
@@ -1500,6 +1501,15 @@
         "module": "07_Teleoperation",
         "arxiv": "2309.01952",
         "has_open_source": true
+      },
+      {
+        "date": "2026-09-17",
+        "index": 592,
+        "title": "MoVT: Video-Augmented Motion Tokenizer for Text-to-Motion Generation",
+        "folder": "papers/14_Human_Motion/MoVT__Video-Augmented_Motion_Tokenizer_for_Text-to-Motion_Generation",
+        "module": "14_Human_Motion",
+        "arxiv": "2609.14965",
+        "has_open_source": false
       }
     ],
     "last_completed_index": 588,

@@ -3755,6 +3755,18 @@
     "display_name": "Human Motion",
     "papers": [
       {
+        "title": "MoVT: Video-Augmented Motion Tokenizer for Text-to-Motion Generation",
+        "path": "papers/14_Human_Motion/MoVT__Video-Augmented_Motion_Tokenizer_for_Text-to-Motion_Generation/MoVT__Video-Augmented_Motion_Tokenizer_for_Text-to-Motion_Generation.md",
+        "url": "/papers/14_Human_Motion/MoVT__Video-Augmented_Motion_Tokenizer_for_Text-to-Motion_Generation/MoVT__Video-Augmented_Motion_Tokenizer_for_Text-to-Motion_Generation.html",
+        "dir": "MoVT__Video-Augmented_Motion_Tokenizer_for_Text-to-Motion_Generation",
+        "arxiv": "2609.14965",
+        "has_open_source": false,
+        "published_date_zh": "2026年9月14日（arXiv v1）",
+        "published_date_en": "Sep 14, 2026 (arXiv v1)",
+        "zhname": "MoVT：用视频增强运动分词器的文本到动作生成",
+        "zh_title": "MoVT：用视频增强运动分词器的文本到动作生成"
+      },
+      {
         "title": "UniMoFlow: Grounding Instruction-Driven 3D Human Motion Editing in Generation",
         "path": "papers/14_Human_Motion/UniMoFlow__Grounding_Instruction-Driven_3D_Human_Motion_Editing_in_Generation/UniMoFlow__Grounding_Instruction-Driven_3D_Human_Motion_Editing_in_Generation.md",
         "url": "/papers/14_Human_Motion/UniMoFlow__Grounding_Instruction-Driven_3D_Human_Motion_Editing_in_Generation/UniMoFlow__Grounding_Instruction-Driven_3D_Human_Motion_Editing_in_Generation.html",
