@@ -51,6 +51,7 @@
     {
       key: 'pose',
       name: 'r^p 关节姿态',
+      nameTex: 'r^p \\text{ 关节姿态}',
       w: 0.65,
       k: 2,
       unit: 'rad²',
@@ -63,6 +64,7 @@
     {
       key: 'vel',
       name: 'r^v 关节速度',
+      nameTex: 'r^v \\text{ 关节速度}',
       w: 0.1,
       k: 0.1,
       unit: '(rad/s)²',
@@ -74,6 +76,7 @@
     {
       key: 'ee',
       name: 'r^e 末端位置',
+      nameTex: 'r^e \\text{ 末端位置}',
       w: 0.15,
       k: 40,
       unit: 'm²',
@@ -86,6 +89,7 @@
     {
       key: 'com',
       name: 'r^c 质心位置',
+      nameTex: 'r^c \\text{ 质心位置}',
       w: 0.1,
       k: 10,
       unit: 'm²',
@@ -974,6 +978,7 @@
 
   var svgEl = K.svgEl,
     svgText = K.svgText,
+    svgMath = K.svgMath,
     paint = K.paint,
     seg = K.seg,
     ease = K.ease,
@@ -1023,9 +1028,9 @@
     });
 
     s.appendChild(svgText(212, 80, '纯 RL：奖励只写「前进速度」', 'demo-x-bad', 13.5, 'middle'));
-    s.appendChild(svgText(212, 100, 'r = r^G', 'demo-x-mono demo-x-mut', 12, 'middle'));
+    s.appendChild(svgMath(212, 100, 'r = r^G', { size: 12, anchor: 'middle', cls: 'demo-x-mut', w: 100 }));
     var rightTitle = svgText(587, 80, 'DeepMimic：再加一项「像不像」', 'demo-x-acc', 13.5, 'middle');
-    var rightSub = svgText(587, 100, 'r = w^I·r^I + w^G·r^G', 'demo-x-mono demo-x-mut', 12, 'middle');
+    var rightSub = svgMath(587, 100, 'r = w^I r^I + w^G r^G', { size: 12, anchor: 'middle', cls: 'demo-x-mut', w: 200 });
     s.appendChild(rightTitle);
     s.appendChild(rightSub);
 
@@ -1053,14 +1058,16 @@
 
     var legend = svgEl('g', {});
     legend.appendChild(paint(svgEl('line', { x1: 440, y1: 128, x2: 468, y2: 128, 'stroke-width': 2.5, 'stroke-dasharray': '5 4' }), null, C_MUTED));
-    legend.appendChild(svgText(474, 132, '参考动捕 q̂', 'demo-x-mut', 11, 'start'));
+    legend.appendChild(svgMath(474, 132, '\\text{参考动捕 } \\hat{q}', { size: 11, cls: 'demo-x-mut', w: 110 }));
     legend.appendChild(paint(svgEl('line', { x1: 600, y1: 128, x2: 628, y2: 128, 'stroke-width': 3 }), null, C_ACCENT));
-    legend.appendChild(svgText(634, 132, '仿真角色 q', 'demo-x-acc', 11, 'start'));
+    legend.appendChild(svgMath(634, 132, '\\text{仿真角色 } q', { size: 11, cls: 'demo-x-acc', w: 110 }));
     s.appendChild(legend);
 
     var formula = svgEl('g', {});
-    formula.appendChild(svgText(400, 382, 'r_t = w^I · r_t^I  +  w^G · r_t^G', 'demo-x-mono', 19, 'middle'));
-    formula.appendChild(svgText(400, 406, 'r^I 管「像不像参考动作」，r^G 管「任务做没做到」', 'demo-x-mut', 11.5, 'middle'));
+    formula.appendChild(svgMath(400, 382, 'r_t = w^I \\cdot r_t^I \\;+\\; w^G \\cdot r_t^G',
+      { size: 19, anchor: 'middle', w: 400 }));
+    formula.appendChild(svgMath(400, 406, 'r^I \\text{ 管「像不像参考动作」，} r^G \\text{ 管「任务做没做到」}',
+      { size: 11.5, anchor: 'middle', cls: 'demo-x-mut', w: 420 }));
     s.appendChild(formula);
 
     function draw(t) {
@@ -1087,10 +1094,16 @@
     var s = sceneSvg('t=15 的四维模仿奖励：每项都是 exp(−k·误差)，加权求和得到 r_I ≈ 0.81');
     s.appendChild(svgText(60, 48, '第 2 步｜t = 15（空中团身）：仿真角色和参考动捕差多少', 'demo-x-ink2', 13.5));
 
-    [[60, '分量', 'start'], [248, '误差', 'middle'], [312, 'k', 'middle'],
-      [452, 'r = exp(−k · 误差)', 'middle'], [600, 'w', 'middle'], [690, 'w · r', 'middle']
+    /* `tex: true` marks the columns whose heading is a formula. */
+    [{ x: 60, s: '分量', at: 'start' }, { x: 248, s: '误差', at: 'middle' },
+      { x: 312, s: 'k', at: 'middle', tex: true },
+      { x: 452, s: 'r = \\exp(-k \\cdot \\text{误差})', at: 'middle', tex: true },
+      { x: 600, s: 'w', at: 'middle', tex: true },
+      { x: 690, s: 'w \\cdot r', at: 'middle', tex: true }
     ].forEach(function (c) {
-      s.appendChild(svgText(c[0], 92, c[1], 'demo-x-mut', 11.5, c[2]));
+      s.appendChild(c.tex
+        ? svgMath(c.x, 92, c.s, { size: 11.5, anchor: c.at, cls: 'demo-x-mut', w: 180 })
+        : svgText(c.x, 92, c.s, 'demo-x-mut', 11.5, c.at));
     });
     s.appendChild(paint(svgEl('line', { x1: 60, y1: 100, x2: 740, y2: 100, 'stroke-width': 1 }), null, C_BORDER));
 
@@ -1098,7 +1111,7 @@
       var y = R_ROW_Y[i];
       var g = svgEl('g', {});
       var r = Math.exp(-term.k * term.err);
-      g.appendChild(svgText(60, y, term.name, 'demo-x-mono', 12.5));
+      g.appendChild(svgMath(60, y, term.nameTex, { size: 12.5, w: 150 }));
       var errTx = String(term.err).indexOf('.') < 0 ? term.err.toFixed(1) : String(term.err);
       g.appendChild(svgText(248, y, errTx, 'demo-x-mono demo-x-ink2', 12, 'middle'));
       var kTx = svgText(312, y, String(term.k), 'demo-x-mono demo-x-warn', 13, 'middle');
@@ -1120,7 +1133,7 @@
 
     s.appendChild(paint(svgEl('line', { x1: 60, y1: 300, x2: 740, y2: 300, 'stroke-width': 1 }), null, C_BORDER));
     var sumG = svgEl('g', {});
-    sumG.appendChild(svgText(60, 342, 'r_I = Σ w·r', 'demo-x-mono', 13));
+    sumG.appendChild(svgMath(60, 342, 'r_I = \\sum w \\cdot r', { size: 13, w: 130 }));
     sumG.appendChild(paint(svgEl('rect', { x: R_BAR_X, y: 326, width: R_BAR_W, height: 20, rx: 2, opacity: 0.2 }), C_MUTED));
     var stack = [];
     var acc = 0;
@@ -1137,7 +1150,9 @@
     sumG.appendChild(totalTx);
     s.appendChild(sumG);
 
-    var foot = svgText(60, 392, 'k 管曲线陡不陡，w 管这条曲线在总分里占多少：末端项 k=40 最严，可它只占 0.15。', 'demo-x-mut', 12);
+    var foot = svgMath(60, 392,
+      'k \\text{ 管曲线陡不陡，} w \\text{ 管这条曲线在总分里占多少：末端项 } k = 40 \\text{ 最严，可它只占 0.15。}',
+      { size: 12, cls: 'demo-x-mut', w: 660 });
     s.appendChild(foot);
 
     function draw(t) {
@@ -1329,11 +1344,12 @@
   /* ── scene 5: the training loop ── */
   var LOOP_NODES = [
     { x: 128, y: 60, w: 200, t: '① RSI 初始化', s: '随机相位，摆成参考那一帧' },
-    { x: 430, y: 78, w: 236, t: '② π_θ(s) → 目标关节角 â', s: '30 Hz，输出的不是扭矩' },
-    { x: 682, y: 182, w: 210, t: '③ Stable PD → 扭矩 τ', s: 'τ = k_p(â−q) + k_d(−q̇)' },
-    { x: 586, y: 366, w: 210, t: '④ Bullet 物理步进', s: '1200 Hz，得到新状态 s′' },
-    { x: 274, y: 366, w: 210, t: '⑤ 模仿奖励 r_I', s: '姿态 / 速度 / 末端 / 质心' },
-    { x: 178, y: 182, w: 210, t: '⑥ PPO 更新 π_θ', s: 'clip 机制与标准 PPO 相同' }
+    { x: 430, y: 78, w: 236, tTex: '\\text{② } \\pi_\\theta(s) \\to \\text{目标关节角 } \\hat{a}', s: '30 Hz，输出的不是扭矩' },
+    { x: 682, y: 182, w: 210, tTex: '\\text{③ Stable PD} \\to \\text{扭矩 } \\tau',
+      sTex: '\\tau = k_p(\\hat{a} - q) + k_d(-\\dot{q})' },
+    { x: 586, y: 366, w: 210, t: '④ Bullet 物理步进', sTex: '\\text{1200 Hz，得到新状态 } s\'' },
+    { x: 274, y: 366, w: 210, tTex: '\\text{⑤ 模仿奖励 } r_I', s: '姿态 / 速度 / 末端 / 质心' },
+    { x: 178, y: 182, w: 210, tTex: '\\text{⑥ PPO 更新 } \\pi_\\theta', s: 'clip 机制与标准 PPO 相同' }
   ];
 
   var LOOP_EDGES = [
@@ -1386,8 +1402,12 @@
       var g = svgEl('g', {});
       var rect = paint(svgEl('rect', { x: n.x - n.w / 2, y: n.y - 25, width: n.w, height: 50, rx: 8, 'stroke-width': 1.5 }), C_SURFACE2, C_BORDER);
       g.appendChild(rect);
-      g.appendChild(svgText(n.x, n.y - 4, n.t, 'demo-x-mono', 12.5, 'middle'));
-      g.appendChild(svgText(n.x, n.y + 14, n.s, 'demo-x-mut', 10.5, 'middle'));
+      g.appendChild(n.tTex
+        ? svgMath(n.x, n.y - 4, n.tTex, { size: 12.5, anchor: 'middle', w: n.w })
+        : svgText(n.x, n.y - 4, n.t, 'demo-x-mono', 12.5, 'middle'));
+      g.appendChild(n.sTex
+        ? svgMath(n.x, n.y + 14, n.sTex, { size: 10.5, anchor: 'middle', cls: 'demo-x-mut', w: n.w })
+        : svgText(n.x, n.y + 14, n.s, 'demo-x-mut', 10.5, 'middle'));
       s.appendChild(g);
       return { g: g, rect: rect };
     });
@@ -1458,8 +1478,8 @@
       cues: [
         { at: 0.4, s: '同一个「往前走」的任务，奖励函数只差一项，学出来的东西差很远。' },
         { at: 2.2, s: '左边是纯 RL：奖励只写「前进速度」，**姿态没人管** —— 螃蟹步、拖脚滑行、抖着前进都能拿高分。' },
-        { at: 4.8, s: '右边是 DeepMimic：给一段**动捕参考**，再加一项「像不像」的模仿奖励 r^I。' },
-        { at: 8.6, s: '总奖励 **r = w^I·r^I + w^G·r^G**：r^I 管好不好看，r^G 管任务做没做到。' },
+        { at: 4.8, s: '右边是 DeepMimic：给一段**动捕参考**，再加一项「像不像」的模仿奖励 $r^I$。' },
+        { at: 8.6, s: '总奖励 **$r = w^I r^I + w^G r^G$**：$r^I$ 管好不好看，$r^G$ 管任务做没做到。' },
         { at: 11.0, s: '物理仿真保证不穿模、不悬浮，模仿奖励保证姿态自然 —— **两个同时要**，这就是 DeepMimic。' }
       ]
     },
@@ -1468,13 +1488,13 @@
       dur: 18,
       build: buildSceneReward,
       cues: [
-        { at: 0.4, s: '模仿奖励拆成四项，每项都是 **exp(−k · 误差)**：误差 0 得满分 1，误差越大指数级掉分。' },
-        { at: 2.0, s: 'r^p 关节姿态：13 个关节四元数差分的平方和 0.09，**k = 2** → exp(−0.18) ≈ 0.84。' },
-        { at: 5.0, s: 'r^v 关节速度：误差 1.0，**k = 0.1 最宽松** —— 速度本来就抖，管太严反而没法学。' },
-        { at: 7.8, s: 'r^e 末端位置：误差只有 0.0072 m²（手脚差几厘米），但 **k = 40 最严**，只剩 0.75。' },
-        { at: 10.5, s: 'r^c 质心：误差 0.04 m²，**k = 10** → 0.67，四项里掉分最多的一项。' },
-        { at: 12.2, s: '**k 管曲线陡不陡，w 管这条曲线在总分里占多少** —— 这两组数管的不是一回事。' },
-        { at: 14.0, s: '加权求和 0.65×0.84 + 0.1×0.90 + 0.15×0.75 + 0.1×0.67 = **r_I ≈ 0.813**。' }
+        { at: 0.4, s: '模仿奖励拆成四项，每项都是 **$\\exp(-k \\cdot \\text{误差})$**：误差 0 得满分 1，误差越大指数级掉分。' },
+        { at: 2.0, s: '$r^p$ 关节姿态：13 个关节四元数差分的平方和 0.09，**$k = 2$** → $\\exp(-0.18) \\approx 0.84$。' },
+        { at: 5.0, s: '$r^v$ 关节速度：误差 1.0，**$k = 0.1$ 最宽松** —— 速度本来就抖，管太严反而没法学。' },
+        { at: 7.8, s: '$r^e$ 末端位置：误差只有 $0.0072\\ \\mathrm{m}^2$（手脚差几厘米），但 **$k = 40$ 最严**，只剩 0.75。' },
+        { at: 10.5, s: '$r^c$ 质心：误差 $0.04\\ \\mathrm{m}^2$，**$k = 10$** → 0.67，四项里掉分最多的一项。' },
+        { at: 12.2, s: '**$k$ 管曲线陡不陡，$w$ 管这条曲线在总分里占多少** —— 这两组数管的不是一回事。' },
+        { at: 14.0, s: '加权求和 $0.65 \\times 0.84 + 0.1 \\times 0.90 + 0.15 \\times 0.75 + 0.1 \\times 0.67$ = **$r_I \\approx 0.813$**。' }
       ]
     },
     {
@@ -1509,10 +1529,10 @@
       build: buildSceneLoop,
       cues: [
         { at: 0.4, s: '把前四幕串起来，就是 DeepMimic 的一次训练循环。' },
-        { at: 2.0, s: '① **RSI** 随机相位初始化 → ② 策略 π_θ(s) 输出**目标关节角 â**，不是扭矩。' },
-        { at: 4.6, s: '③ **Stable PD** 把 â 换成扭矩 τ = k_p(â−q) + k_d(−q̇)。' },
+        { at: 2.0, s: '① **RSI** 随机相位初始化 → ② 策略 $\\pi_\\theta(s)$ 输出**目标关节角 $\\hat{a}$**，不是扭矩。' },
+        { at: 4.6, s: '③ **Stable PD** 把 $\\hat{a}$ 换成扭矩 $\\tau = k_p(\\hat{a} - q) + k_d(-\\dot{q})$。' },
         { at: 6.0, s: '策略只有 30 Hz，物理 1200 Hz —— 一个目标角要被 PD **跑 40 个物理步**。' },
-        { at: 8.4, s: '④ 仿真出新状态 → ⑤ 算四维模仿奖励 r_I → ⑥ **PPO** 更新策略，回到 ②。' },
+        { at: 8.4, s: '④ 仿真出新状态 → ⑤ 算四维模仿奖励 $r_I$ → ⑥ **PPO** 更新策略，回到 ②。' },
         { at: 11.4, s: '中途摔倒就走 **ET** 那条虚线：直接回 ①，换个随机相位重来。' },
         { at: 13.2, s: '换句话说，**DeepMimic 的创新全在环境侧**：奖励、初始化、终止条件，PPO 一行没改。' }
       ]
@@ -1525,7 +1545,7 @@
       sub: '约 76 秒自动播放。空格播放/暂停，← → 换幕；画面里的数字与本文各节算例一致。',
       ariaLabel: 'DeepMimic 五幕讲解动画',
       notes: [
-        '取数依据：第二幕的四项误差与权重就是上面「模仿奖励」实验台的默认值（正文 t=15 的例子，r_I ≈ 0.813）；' +
+        '取数依据：第二幕的四项误差与权重就是上面「模仿奖励」实验台的默认值（正文 $t = 15$ 的例子，$r_I \\approx 0.813$）；' +
           '第三、四幕引用的 return 是论文 Section 10.4 的消融表（见 Q7）。',
         '第四幕的「600 步 / 200 步一次」只是说明「摔一次赔掉 episode 剩下步数」的示意刻度，不是论文的仿真设置。'
       ],

@@ -993,6 +993,7 @@
 
   var svgEl = K.svgEl,
     svgText = K.svgText,
+    svgMath = K.svgMath,
     paint = K.paint,
     seg = K.seg,
     ease = K.ease,
@@ -1026,14 +1027,16 @@
     });
 
     s.appendChild(svgText(212, 80, 'DeepMimic：逐帧对齐一条轨迹', 'demo-x-bad', 13.5, 'middle'));
-    s.appendChild(svgText(212, 100, '得知道「现在该是第几帧」→ 需要相位 φ', 'demo-x-mut', 11, 'middle'));
+    s.appendChild(svgMath(212, 100, '\\text{得知道「现在该是第几帧」→ 需要相位 } \\varphi',
+      { size: 11, anchor: 'middle', cls: 'demo-x-mut', w: 300 }));
 
     /* left: two rows of frames, wired index to index */
     var pairs = FRAME_X.map(function (x, i) {
       var g = svgEl('g', {});
-      [[140, 'q̂', C_MUTED], [236, 'q', C_BAD]].forEach(function (row, r) {
+      [[140, '\\hat{q}', C_MUTED], [236, 'q', C_BAD]].forEach(function (row, r) {
         g.appendChild(paint(svgEl('rect', { x: x - 22, y: row[0], width: 44, height: 30, rx: 4, 'stroke-width': 1.4 }), C_SURFACE, r ? C_BAD : C_BORDER));
-        g.appendChild(paint(svgText(x, row[0] + 20, row[1] + i, 'demo-x-mono', 12, 'middle'), r ? C_BAD : C_MUTED));
+        g.appendChild(svgMath(x, row[0] + 20, row[1] + '_{' + i + '}', { size: 12, anchor: 'middle', w: 44 })
+          .setTone(r ? C_BAD : C_MUTED));
       });
       var link = paint(svgEl('line', { x1: x, y1: 170, x2: x, y2: 236, 'stroke-width': 1.6, 'stroke-dasharray': '4 3' }), null, C_BAD);
       g.appendChild(link);
@@ -1048,12 +1051,14 @@
     s.appendChild(leftTag2);
 
     s.appendChild(svgText(587, 80, 'AMP：匹配一整个分布', 'demo-x-acc', 13.5, 'middle'));
-    s.appendChild(svgText(587, 100, '判别器只看一步转移 (s_t, s_{t+1})', 'demo-x-mut', 11, 'middle'));
+    s.appendChild(svgMath(587, 100, '\\text{判别器只看一步转移 } (s_t, s_{t+1})',
+      { size: 11, anchor: 'middle', cls: 'demo-x-mut', w: 280 }));
 
     /* right: the reference transitions as a cloud, policy transitions walking in */
     var BOX = { x: 440, y: 122, w: 300, h: 168 };
     s.appendChild(paint(svgEl('rect', { x: BOX.x, y: BOX.y, width: BOX.w, height: BOX.h, rx: 6, 'stroke-width': 1 }), C_SURFACE, C_BORDER));
-    s.appendChild(svgText(BOX.x + 8, BOX.y + 16, '运动特征空间 Φ(s), Φ(s′)', 'demo-x-mut', 10.5));
+    s.appendChild(svgMath(BOX.x + 8, BOX.y + 16, '\\text{运动特征空间 } \\Phi(s), \\Phi(s\')',
+      { size: 10.5, cls: 'demo-x-mut', w: 200 }));
 
     var rng = mulberry32(7);
     var blobs = [[0.32, 0.62], [0.62, 0.36], [0.5, 0.75]];
@@ -1072,7 +1077,8 @@
         r: 2.6, opacity: 0.5
       }), C_MUTED));
     }
-    s.appendChild(svgText(BOX.x + BOX.w - 8, BOX.y + BOX.h - 10, '灰点 = 参考数据的转移分布 d^M', 'demo-x-mut', 10.5, 'end'));
+    s.appendChild(svgMath(BOX.x + BOX.w - 8, BOX.y + BOX.h - 10, '\\text{灰点 = 参考数据的转移分布 } d^M',
+      { size: 10.5, anchor: 'end', cls: 'demo-x-mut', w: 240 }));
 
     var movers = [];
     for (i = 0; i < 9; i++) {
@@ -1124,10 +1130,13 @@
     var s = sceneSvg('正文那 4 个样本的判别器 loss：真样本贡献 −log D，假样本贡献 −log(1−D)，两项平均后总 loss ≈ 1.147');
     s.appendChild(svgText(60, 48, '判别器当前对一批 4 个样本的打分（正文「数值例子」）', 'demo-x-ink2', 13.5));
 
-    [[60, '样本', 'start'], [150, '来源', 'start'], [340, 'D_ψ', 'middle'], [398, '期望', 'middle'],
-      [L_BAR_X, '这条样本的 loss 贡献', 'start']
+    [{ x: 60, s: '样本', at: 'start' }, { x: 150, s: '来源', at: 'start' },
+      { x: 340, s: 'D_\\psi', at: 'middle', tex: true }, { x: 398, s: '期望', at: 'middle' },
+      { x: L_BAR_X, s: '这条样本的 loss 贡献', at: 'start' }
     ].forEach(function (c) {
-      s.appendChild(svgText(c[0], 96, c[1], 'demo-x-mut', 11.5, c[2]));
+      s.appendChild(c.tex
+        ? svgMath(c.x, 96, c.s, { size: 11.5, anchor: c.at, cls: 'demo-x-mut', w: 80 })
+        : svgText(c.x, 96, c.s, 'demo-x-mut', 11.5, c.at));
     });
     s.appendChild(paint(svgEl('line', { x1: 60, y1: 104, x2: 740, y2: 104, 'stroke-width': 1 }), null, C_BORDER));
 
@@ -1142,16 +1151,18 @@
       var dTx = svgText(340, y, sample.d.toFixed(1), 'demo-x-mono demo-x-ink2', 13, 'middle');
       dTx.setAttribute('font-weight', '700');
       g.appendChild(dTx);
-      g.appendChild(svgText(398, y, sample.real ? '→ 1' : '→ 0', 'demo-x-mono demo-x-mut', 11.5, 'middle'));
+      g.appendChild(svgMath(398, y, sample.real ? '\\to 1' : '\\to 0',
+        { size: 11.5, anchor: 'middle', cls: 'demo-x-mut', w: 50 }));
       g.appendChild(paint(svgEl('rect', { x: L_BAR_X, y: y - 13, width: L_BAR_W, height: 17, rx: 2, opacity: 0.18 }), C_MUTED));
       var bar = paint(svgEl('rect', { x: L_BAR_X, y: y - 13, width: 0, height: 17, rx: 2 }), color);
       g.appendChild(bar);
-      var tx = svgText(L_BAR_X + 8, y, '', 'demo-x-mono', 11.5);
+      var tx = svgMath(L_BAR_X + 8, y, '', { size: 11.5, w: 200 }).setTone(color);
       g.appendChild(tx);
       s.appendChild(g);
       return {
         g: g, bar: bar, tx: tx, loss: loss, real: sample.real,
-        expr: (sample.real ? '−log(' + sample.d.toFixed(1) + ')' : '−log(1−' + sample.d.toFixed(1) + ')') + ' = ' + loss.toFixed(3),
+        expr: (sample.real ? '-\\log(' + sample.d.toFixed(1) + ')' : '-\\log(1 - ' + sample.d.toFixed(1) + ')') +
+          ' = ' + loss.toFixed(3),
         at: 1.6 + i * 2.1
       };
     });
@@ -1165,12 +1176,12 @@
     s.appendChild(paint(svgEl('line', { x1: 60, y1: 288, x2: 740, y2: 288, 'stroke-width': 1 }), null, C_BORDER));
 
     var sums = [
-      { y: 316, label: '第一项（真样本平均）', sub: '−E_dM[log D]', v: term1, color: C_GOOD },
-      { y: 348, label: '第二项（假样本平均）', sub: '−E_dπ[log(1−D)]', v: term2, color: C_WARN }
+      { y: 316, label: '第一项（真样本平均）', sub: '-\\mathbb{E}_{d^M}[\\log D]', v: term1, color: C_GOOD },
+      { y: 348, label: '第二项（假样本平均）', sub: '-\\mathbb{E}_{d^\\pi}[\\log(1 - D)]', v: term2, color: C_WARN }
     ].map(function (row) {
       var g = svgEl('g', {});
       g.appendChild(svgText(60, row.y, row.label, 'demo-x-ink2', 12));
-      g.appendChild(paint(svgText(230, row.y, row.sub, 'demo-x-mono', 11.5), C_MUTED));
+      g.appendChild(svgMath(230, row.y, row.sub, { size: 11.5, w: 180 }).setTone(C_MUTED));
       g.appendChild(paint(svgEl('rect', { x: L_BAR_X, y: row.y - 13, width: row.v * LOSS_SCALE, height: 17, rx: 2, opacity: 0.85 }), row.color));
       g.appendChild(paint(svgText(L_BAR_X + row.v * LOSS_SCALE + 8, row.y, row.v.toFixed(3), 'demo-x-mono', 12.5), row.color));
       s.appendChild(g);
@@ -1178,7 +1189,9 @@
     });
 
     var totalG = svgEl('g', {});
-    totalG.appendChild(svgText(60, 388, '总 loss = ' + term1.toFixed(3) + ' + ' + term2.toFixed(3) + ' =', 'demo-x-mono demo-x-ink2', 13));
+    totalG.appendChild(svgMath(60, 388,
+      '\\text{总 loss} = ' + term1.toFixed(3) + ' + ' + term2.toFixed(3) + ' =',
+      { size: 13, cls: 'demo-x-ink2', w: 240 }));
     var totalTx = svgText(300, 390, (term1 + term2).toFixed(3), 'demo-x-mono demo-x-acc', 21);
     totalTx.setAttribute('font-weight', '700');
     totalG.appendChild(totalTx);
@@ -1195,8 +1208,8 @@
         setOpacity(row.g, seg(t, row.at - 0.4, row.at + 0.1));
         var w = row.loss * LOSS_SCALE * u;
         row.bar.setAttribute('width', w.toFixed(1));
-        row.tx.setAttribute('x', (L_BAR_X + w + 8).toFixed(1));
-        row.tx.textContent = u > 0.9 ? row.expr : '';
+        row.tx.setX(L_BAR_X + w + 8);
+        row.tx.setTex(u > 0.9 ? row.expr : '');
       });
       setOpacity(sums[0], seg(t, 10.4, 11.2));
       setOpacity(sums[1], seg(t, 11.6, 12.4));
@@ -1233,7 +1246,8 @@
 
   function buildSceneReward() {
     var s = sceneSvg('判别器打分 D 到风格奖励的两条曲线：论文实现的 LSGAN 形式在 D=1 处封顶 1、D≤−1 处归零，log 形式则在 D→1 时冲向无穷');
-    s.appendChild(svgText(60, 46, '判别器的一个标量打分，怎么变成策略拿到的风格奖励 r^S', 'demo-x-ink2', 13.5));
+    s.appendChild(svgMath(60, 46, '\\text{判别器的一个标量打分，怎么变成策略拿到的风格奖励 } r^S',
+      { size: 13.5, cls: 'demo-x-ink2', w: 480 }));
 
     var zero = paint(svgEl('rect', { x: px(-2), y: P.y0, width: px(-1) - px(-2), height: P.y1 - P.y0 }), C_BAD);
     zero.style.fillOpacity = '0.16';
@@ -1249,8 +1263,8 @@
       s.appendChild(svgText(P.x0 - 10, py(r) + 4, String(r), 'demo-x-mono demo-x-mut', 11, 'end'));
       if (r) s.appendChild(paint(svgEl('line', { x1: P.x0, y1: py(r), x2: P.x1, y2: py(r), 'stroke-width': 1, opacity: 0.35 }), null, C_BORDER));
     });
-    s.appendChild(svgText(P.x1, P.y1 + 34, '判别器输出 D →', 'demo-x-mut', 11, 'end'));
-    s.appendChild(svgText(P.x0 - 10, P.y0 - 10, 'r^S', 'demo-x-mono demo-x-mut', 11, 'end'));
+    s.appendChild(svgMath(P.x1, P.y1 + 34, '\\text{判别器输出 } D \\to', { size: 11, anchor: 'end', cls: 'demo-x-mut', w: 140 }));
+    s.appendChild(svgMath(P.x0 - 10, P.y0 - 10, 'r^S', { size: 11, anchor: 'end', cls: 'demo-x-mut', w: 40 }));
 
     var lsPath = paint(svgEl('path', { d: curvePath(styleReward, -2, 3), fill: 'none', 'stroke-width': 3 }), null, C_ACCENT);
     var logPath = paint(svgEl('path', {
@@ -1261,19 +1275,21 @@
     s.appendChild(lsPath);
 
     var lsLab = paint(svgText(px(1.62), py(0.46), 'LSGAN（论文实现）', 'demo-x-mono', 12, 'middle'), C_ACCENT);
-    var lsLab2 = paint(svgText(px(1.62), py(0.29), 'r^S = max[0, 1 − 0.25(D−1)²]', 'demo-x-mono', 11.5, 'middle'), C_ACCENT);
+    var lsLab2 = svgMath(px(1.62), py(0.29), 'r^S = \\max[0,\\ 1 - 0.25(D - 1)^2]',
+      { size: 11.5, anchor: 'middle', w: 240 }).setTone(C_ACCENT);
     var logLab = paint(svgText(px(1.1), py(2.74), 'log 形式（讲直觉用）', 'demo-x-mono', 12), C_WARN);
-    var logLab2 = paint(svgText(px(1.1), py(2.52), 'r = −log(1 − D) → D→1 时冲向 ∞', 'demo-x-mono', 11.5), C_WARN);
+    var logLab2 = svgMath(px(1.1), py(2.52), 'r = -\\log(1 - D) \\text{ → } D \\to 1 \\text{ 时冲向 } \\infty',
+      { size: 11.5, w: 280 }).setTone(C_WARN);
     [lsLab, lsLab2].forEach(function (n) { s.appendChild(n); });
     [logLab, logLab2].forEach(function (n) { s.appendChild(n); });
 
     var marks = [
-      { d: -1, r: 0, tx: 'D = −1 → r^S = 0', c: C_BAD, dy: -14 },
-      { d: 1, r: 1, tx: 'D = 1：被当成真数据 → r^S = 1（满分）', c: C_GOOD, dy: -16 }
+      { d: -1, r: 0, tx: 'D = -1 \\to r^S = 0', c: C_BAD, dy: -14 },
+      { d: 1, r: 1, tx: 'D = 1 \\text{：被当成真数据} \\to r^S = 1 \\text{（满分）}', c: C_GOOD, dy: -16 }
     ].map(function (m) {
       var g = svgEl('g', {});
       g.appendChild(paint(svgEl('circle', { cx: px(m.d), cy: py(m.r), r: 5 }), m.c));
-      g.appendChild(paint(svgText(px(m.d) + 10, py(m.r) + m.dy, m.tx, null, 11.5), m.c));
+      g.appendChild(svgMath(px(m.d) + 10, py(m.r) + m.dy, m.tx, { size: 11.5, w: 280 }).setTone(m.c));
       s.appendChild(g);
       return g;
     });
@@ -1287,16 +1303,17 @@
     var side = svgEl('g', {});
     side.appendChild(paint(svgEl('rect', { x: 588, y: 96, width: 172, height: 216, rx: 8, 'stroke-width': 1 }), C_SURFACE2, C_BORDER));
     side.appendChild(svgText(674, 122, '策略拿到的总奖励', 'demo-x-ink2', 12, 'middle'));
-    [['r^S  风格', '判别器给的', C_ACCENT, 150],
-      ['r^G  任务', 'exp(−0.25(v*−v)²)', C_GOOD, 206]
+    [['r^S \\; \\text{风格}', '\\text{判别器给的}', C_ACCENT, 150],
+      ['r^G \\; \\text{任务}', '\\exp(-0.25(v^* - v)^2)', C_GOOD, 206]
     ].forEach(function (row) {
-      side.appendChild(paint(svgText(674, row[3], row[0], 'demo-x-mono', 13, 'middle'), row[2]));
-      side.appendChild(svgText(674, row[3] + 17, row[1], 'demo-x-mut', 10.5, 'middle'));
+      side.appendChild(svgMath(674, row[3], row[0], { size: 13, anchor: 'middle', w: 160 }).setTone(row[2]));
+      side.appendChild(svgMath(674, row[3] + 17, row[1], { size: 10.5, anchor: 'middle', cls: 'demo-x-mut', w: 160 }));
       side.appendChild(paint(svgText(674, row[3] + 34, '× 0.5', 'demo-x-mono', 12, 'middle'), C_MUTED));
     });
     side.appendChild(paint(svgEl('line', { x1: 608, y1: 258, x2: 740, y2: 258, 'stroke-width': 1 }), null, C_BORDER));
-    side.appendChild(paint(svgText(674, 286, 'r = 0.5 r^S + 0.5 r^G', 'demo-x-mono', 12, 'middle'), C_ACCENT));
-    side.appendChild(svgText(674, 302, '论文 Table 4 的 w^S / w^G', 'demo-x-mut', 10, 'middle'));
+    side.appendChild(svgMath(674, 286, 'r = 0.5\\,r^S + 0.5\\,r^G', { size: 12, anchor: 'middle', w: 170 }).setTone(C_ACCENT));
+    side.appendChild(svgMath(674, 302, '\\text{论文 Table 4 的 } w^S / w^G',
+      { size: 10, anchor: 'middle', cls: 'demo-x-mut', w: 170 }));
     s.appendChild(side);
 
     var foot = svgText(60, 372, '换成 LSGAN 之后，奖励有上下界、梯度不会在 D→0 或 D→1 时爆炸 —— 对抗训练里这一点比「理论更漂亮」重要得多。', 'demo-x-mut', 12);
@@ -1375,11 +1392,11 @@
   }
 
   var STYLE_LANES = [
-    { cx: 158, name: 'Locomotion（走 + 跑混合）', goal: 'v* ∈ [1, 5] m/s', color: C_ACCENT,
+    { cx: 158, name: 'Locomotion（走 + 跑混合）', goal: 'v^* \\in [1, 5]\\ \\mathrm{m/s}', color: C_ACCENT,
       tag: '低速走、中速慢跑、高速跑，自动切换步态' },
-    { cx: 400, name: 'Zombie（僵尸）', goal: 'v* = 1 m/s', color: C_WARN,
+    { cx: 400, name: 'Zombie（僵尸）', goal: 'v^* = 1\\ \\mathrm{m/s}', color: C_WARN,
       tag: '拖着脚走、手臂僵直前伸，典型丧尸步态' },
-    { cx: 642, name: 'Stealthy（潜行）', goal: 'v* = 1 m/s', color: C_GOOD,
+    { cx: 642, name: 'Stealthy（潜行）', goal: 'v^* = 1\\ \\mathrm{m/s}', color: C_GOOD,
       tag: '弯腰低姿态前进，脚步轻柔' }
   ];
 
@@ -1394,7 +1411,8 @@
 
     var head = svgEl('g', {});
     head.appendChild(paint(svgEl('rect', { x: 196, y: 26, width: 408, height: 36, rx: 18, 'stroke-width': 1.4 }), C_SURFACE2, C_GOOD));
-    head.appendChild(paint(svgText(400, 44, '任务奖励三组完全相同：r^G = exp(−0.25 (v* − v_xcom)²)', 'demo-x-mono', 12.5, 'middle'), C_GOOD));
+    head.appendChild(svgMath(400, 44, '\\text{任务奖励三组完全相同：} r^G = \\exp(-0.25\\,(v^* - v_{xcom})^2)',
+      { size: 12.5, anchor: 'middle', w: 400 }).setTone(C_GOOD));
     head.appendChild(svgText(400, 76, '奖励函数里没有一个字提到姿态、步频、手臂怎么摆 —— 风格全由判别器给', 'demo-x-mut', 11, 'middle'));
     s.appendChild(head);
 
@@ -1403,7 +1421,7 @@
       var g = svgEl('g', {});
       g.appendChild(paint(svgEl('rect', { x: lane.cx - 118, y: 92, width: 236, height: 224, rx: 8, 'stroke-width': 1 }), C_SURFACE2, C_BORDER));
       g.appendChild(paint(svgText(lane.cx, 114, lane.name, null, 12.5, 'middle'), lane.color));
-      g.appendChild(paint(svgText(lane.cx, 133, lane.goal, 'demo-x-mono', 11, 'middle'), C_MUTED));
+      g.appendChild(svgMath(lane.cx, 133, lane.goal, { size: 11, anchor: 'middle', w: 200 }).setTone(C_MUTED));
       g.appendChild(paint(svgEl('line', { x1: lane.cx - 96, y1: GROUND, x2: lane.cx + 96, y2: GROUND, 'stroke-width': 1.4 }), null, C_BORDER));
       g.appendChild(paint(svgText(lane.cx, 302, lane.tag, null, 10.5, 'middle'), lane.color));
       s.appendChild(g);
@@ -1416,7 +1434,8 @@
       return { g: g, wrap: zoomed, fig: fig, cx: lane.cx, at: 1.0 + i * 1.5 };
     });
 
-    var gaitLab = svgText(60, 340, '混合数据集下，目标速度 v* 一扫，步态自己换（论文 Figure 4 右图）', 'demo-x-ink2', 12);
+    var gaitLab = svgMath(60, 340, '\\text{混合数据集下，目标速度 } v^* \\text{ 一扫，步态自己换（论文 Figure 4 右图）}',
+      { size: 12, cls: 'demo-x-ink2', w: 560 });
     s.appendChild(gaitLab);
 
     var bandG = svgEl('g', {});
@@ -1436,8 +1455,12 @@
     s.appendChild(bandG);
 
     var marker = paint(svgEl('rect', { x: SWEEP_X0 - 2, y: SWEEP_Y - 19, width: 4, height: 36, rx: 2 }), C_ACCENT);
+    /* The swept speed changes every frame, so only the `v* =` part is a
+       formula; the number stays a text node next to it. */
+    var markerLab = svgMath(684, 340, 'v^* =', { size: 12, anchor: 'end', w: 60 }).setTone(C_ACCENT);
     var markerTx = paint(svgText(740, 340, '', 'demo-x-mono', 12, 'end'), C_ACCENT);
     s.appendChild(marker);
+    s.appendChild(markerLab);
     s.appendChild(markerTx);
 
     var foot = paint(svgText(60, 412, '换数据集 = 换风格；判别器就是「风格编码器」，不用往奖励里写一句「膝盖该弯多少」。', null, 12), C_ACCENT);
@@ -1465,9 +1488,10 @@
       setOpacity(bandG, seg(t, 7.4, 8.1));
       var on = seg(t, 7.8, 8.3);
       setOpacity(marker, on);
+      setOpacity(markerLab, on);
       setOpacity(markerTx, on);
       marker.setAttribute('x', (sweepX(v) - 2).toFixed(1));
-      markerTx.textContent = 'v* = ' + v.toFixed(1) + ' m/s';
+      markerTx.textContent = v.toFixed(1) + ' m/s';
       setOpacity(foot, seg(t, 13.6, 14.3));
     }
 
@@ -1476,11 +1500,12 @@
 
   /* ── scene 5: the training loop ── */
   var AMP_NODES = [
-    { x: 160, y: 66, w: 216, t: '① 策略 π_θ 在仿真里跑', s: '收 4096 步 (s, a, r, s′)' },
-    { x: 486, y: 66, w: 250, t: '② 更新判别器 D_ψ', s: '真：动捕 256｜假：策略 + 回放池 256' },
-    { x: 680, y: 206, w: 200, t: '③ 风格奖励 r^S', s: 'max[0, 1 − 0.25(D−1)²]' },
-    { x: 470, y: 340, w: 244, t: '④ 合成奖励', s: 'r = 0.5·r^S + 0.5·r^G' },
-    { x: 168, y: 206, w: 216, t: '⑤ PPO 更新 π_θ', s: 'clip = 0.02（DeepMimic 是 0.2）' }
+    { x: 160, y: 66, w: 216, tTex: '\\text{① 策略 } \\pi_\\theta \\text{ 在仿真里跑}',
+      sTex: '\\text{收 4096 步 } (s, a, r, s\')' },
+    { x: 486, y: 66, w: 250, tTex: '\\text{② 更新判别器 } D_\\psi', s: '真：动捕 256｜假：策略 + 回放池 256' },
+    { x: 680, y: 206, w: 200, tTex: '\\text{③ 风格奖励 } r^S', sTex: '\\max[0,\\ 1 - 0.25(D - 1)^2]' },
+    { x: 470, y: 340, w: 244, t: '④ 合成奖励', sTex: 'r = 0.5\\,r^S + 0.5\\,r^G' },
+    { x: 168, y: 206, w: 216, tTex: '\\text{⑤ PPO 更新 } \\pi_\\theta', s: 'clip = 0.02（DeepMimic 是 0.2）' }
   ];
 
   var AMP_EDGES = [
@@ -1530,28 +1555,32 @@
       var g = svgEl('g', {});
       var rect = paint(svgEl('rect', { x: n.x - n.w / 2, y: n.y - 25, width: n.w, height: 50, rx: 8, 'stroke-width': 1.5 }), C_SURFACE2, C_BORDER);
       g.appendChild(rect);
-      g.appendChild(svgText(n.x, n.y - 4, n.t, 'demo-x-mono', 12.5, 'middle'));
-      g.appendChild(svgText(n.x, n.y + 14, n.s, 'demo-x-mut', 10.5, 'middle'));
+      g.appendChild(n.tTex
+        ? svgMath(n.x, n.y - 4, n.tTex, { size: 12.5, anchor: 'middle', w: n.w })
+        : svgText(n.x, n.y - 4, n.t, 'demo-x-mono', 12.5, 'middle'));
+      g.appendChild(n.sTex
+        ? svgMath(n.x, n.y + 14, n.sTex, { size: 10.5, anchor: 'middle', cls: 'demo-x-mut', w: n.w })
+        : svgText(n.x, n.y + 14, n.s, 'demo-x-mut', 10.5, 'middle'));
       s.appendChild(g);
       return { g: g, rect: rect };
     });
 
     var chips = [
-      { x: 455, y: 126, w: 240, tx: '回放池 10⁵：假样本不只来自当前策略', c: C_WARN },
-      { x: 455, y: 154, w: 240, tx: '梯度惩罚 w_GP = 10，只作用在真数据上', c: C_WARN },
-      { x: 455, y: 182, w: 240, tx: '判别器看不到任务目标 / 地形高度图', c: C_MUTED }
+      { x: 455, y: 126, w: 240, tx: '\\text{回放池 } 10^5 \\text{：假样本不只来自当前策略}', c: C_WARN },
+      { x: 455, y: 154, w: 240, tx: '\\text{梯度惩罚 } w_{GP} = 10 \\text{，只作用在真数据上}', c: C_WARN },
+      { x: 455, y: 182, w: 240, tx: '\\text{判别器看不到任务目标 / 地形高度图}', c: C_MUTED }
     ].map(function (c, i) {
       var g = svgEl('g', {});
       g.appendChild(paint(svgEl('rect', { x: c.x - c.w / 2, y: c.y - 12, width: c.w, height: 24, rx: 12, 'stroke-width': 1, 'stroke-dasharray': '4 3' }), C_SURFACE, c.c));
-      g.appendChild(paint(svgText(c.x, c.y + 4, c.tx, null, 10.5, 'middle'), c.c));
+      g.appendChild(svgMath(c.x, c.y + 4, c.tx, { size: 10.5, anchor: 'middle', w: c.w }).setTone(c.c));
       s.appendChild(g);
       return { g: g, at: 3.2 + i * 0.6 };
     });
 
     var taskChip = svgEl('g', {});
     taskChip.appendChild(paint(svgEl('rect', { x: 620, y: 300, width: 160, height: 44, rx: 8, 'stroke-width': 1, 'stroke-dasharray': '4 3' }), C_SURFACE, C_GOOD));
-    taskChip.appendChild(paint(svgText(700, 318, '任务奖励 r^G', 'demo-x-mono', 11.5, 'middle'), C_GOOD));
-    taskChip.appendChild(paint(svgText(700, 334, 'exp(−0.25(v*−v)²)', 'demo-x-mono', 10.5, 'middle'), C_GOOD));
+    taskChip.appendChild(svgMath(700, 318, '\\text{任务奖励 } r^G', { size: 11.5, anchor: 'middle', w: 150 }).setTone(C_GOOD));
+    taskChip.appendChild(svgMath(700, 334, '\\exp(-0.25(v^* - v)^2)', { size: 10.5, anchor: 'middle', w: 150 }).setTone(C_GOOD));
     s.appendChild(taskChip);
     var taskEdge = paint(svgEl('path', { d: polyPath([[620, 322], [594, 322]]), fill: 'none', 'stroke-width': 1.6, 'marker-end': K.arrowMarker(s, 'amp-x-arrow-task', C_GOOD) }), null, C_GOOD);
     s.appendChild(taskEdge);
@@ -1561,7 +1590,9 @@
 
     var tail = svgEl('g', {});
     tail.appendChild(paint(svgText(400, 392, 'AMP = PPO + 一个判别器分支', null, 15, 'middle'), C_ACCENT));
-    tail.appendChild(svgText(400, 412, 'DeepMimic 的四项 tracking 奖励被换成一个学出来的 r^S；1~3 亿样本、30~140 小时', 'demo-x-mut', 11, 'middle'));
+    tail.appendChild(svgMath(400, 412,
+      '\\text{DeepMimic 的四项 tracking 奖励被换成一个学出来的 } r^S \\text{；1~3 亿样本、30~140 小时}',
+      { size: 11, anchor: 'middle', cls: 'demo-x-mut', w: 620 }));
     s.appendChild(tail);
 
     function draw(t) {
@@ -1621,10 +1652,10 @@
       dur: 14,
       build: buildSceneWhy,
       cues: [
-        { at: 0.4, s: 'DeepMimic 的模仿奖励要求仿真的**第 t 帧对上参考的第 t 帧** —— 状态里得带一个相位变量 φ。' },
+        { at: 0.4, s: 'DeepMimic 的模仿奖励要求仿真的**第 $t$ 帧对上参考的第 $t$ 帧** —— 状态里得带一个相位变量 $\\varphi$。' },
         { at: 3.0, s: '代价是角色被钉在那条轨迹上：动捕有噪声就照抄噪声，**多段不同风格的片段也没法混着用**。' },
-        { at: 6.6, s: 'AMP 换了个问法：判别器只看**一步状态转移 (s_t, s_{t+1})**，问「这一步像不像数据里的某一步」。' },
-        { at: 9.2, s: '策略要做的是把自己产生的转移**推进参考数据的分布 d^M 里**，至于是第几帧、什么节奏，不管。' },
+        { at: 6.6, s: 'AMP 换了个问法：判别器只看**一步状态转移 $(s_t, s_{t+1})$**，问「这一步像不像数据里的某一步」。' },
+        { at: 9.2, s: '策略要做的是把自己产生的转移**推进参考数据的分布 $d^M$ 里**，至于是第几帧、什么节奏，不管。' },
         { at: 12.4, s: 'DeepMimic 匹配**轨迹**，AMP 匹配**分布** —— 临摹字帖 vs 学会一种字体。' }
       ]
     },
@@ -1634,10 +1665,10 @@
       build: buildSceneLoss,
       cues: [
         { at: 0.4, s: '判别器的训练目标就是经典 GAN 那一式，只是把「图片」换成了「状态转移」。' },
-        { at: 1.6, s: '真 #1 动捕走路被打了 **0.8**，期望是 1：这条的 loss 贡献 −log(0.8) = **0.223**，已经很小了。' },
-        { at: 3.8, s: '真 #2 动捕跑步只打了 0.6，−log(0.6) = **0.511** —— 判别器还得再把它往 1 推。' },
-        { at: 5.9, s: '假 #1 是策略在仿真里走路，打了 0.3；期望是 0，所以看的是 −log(1−0.3) = **0.357**。' },
-        { at: 8.2, s: '假 #2 才是重点：**策略摔倒了，却被打了 0.7**，−log(1−0.7) = **1.204**，全场最大的一笔。' },
+        { at: 1.6, s: '真 #1 动捕走路被打了 **0.8**，期望是 1：这条的 loss 贡献 $-\\log(0.8)$ = **0.223**，已经很小了。' },
+        { at: 3.8, s: '真 #2 动捕跑步只打了 0.6，$-\\log(0.6)$ = **0.511** —— 判别器还得再把它往 1 推。' },
+        { at: 5.9, s: '假 #1 是策略在仿真里走路，打了 0.3；期望是 0，所以看的是 $-\\log(1 - 0.3)$ = **0.357**。' },
+        { at: 8.2, s: '假 #2 才是重点：**策略摔倒了，却被打了 0.7**，$-\\log(1 - 0.7)$ = **1.204**，全场最大的一笔。' },
         { at: 10.4, s: '第一项（真样本平均）**0.367**，第二项（假样本平均）**0.780**，总 loss = **1.147**。' },
         { at: 13.0, s: '梯度下降会照着这两项把「真数据推高、策略动作压低」，判别器于是学会了「摔倒不像真实运动」。' }
       ]
@@ -1647,12 +1678,12 @@
       dur: 15,
       build: buildSceneReward,
       cues: [
-        { at: 0.4, s: '判别器学完了，它的打分**直接当奖励发给策略** —— 这就是风格奖励 r^S。' },
-        { at: 2.0, s: '论文实现用的是 LSGAN 形式：**r^S = max[0, 1 − 0.25(D − 1)²]**，真样本目标 +1、假样本目标 −1。' },
-        { at: 4.2, s: 'D = 1（判别器认了）→ r^S = **1，满分**；曲线在这里封顶，再像也不会多给。' },
-        { at: 5.6, s: 'D ≤ −1 → 被 max(0, ·) 压成 **0：奖励和梯度一起消失**，训练最初期整批数据都堆在这儿。' },
-        { at: 7.6, s: '对照一下前面讲直觉用的 log 形式 −log(1 − D)：**D → 1 时直接冲向无穷**，实践中很难稳。' },
-        { at: 10.2, s: '风格奖励再和任务奖励合成：论文 Table 4 的 **w^S = w^G = 0.5**。' },
+        { at: 0.4, s: '判别器学完了，它的打分**直接当奖励发给策略** —— 这就是风格奖励 $r^S$。' },
+        { at: 2.0, s: '论文实现用的是 LSGAN 形式：**$r^S = \\max[0,\\ 1 - 0.25(D - 1)^2]$**，真样本目标 +1、假样本目标 −1。' },
+        { at: 4.2, s: '$D = 1$（判别器认了）→ $r^S$ = **1，满分**；曲线在这里封顶，再像也不会多给。' },
+        { at: 5.6, s: '$D \\le -1$ → 被 $\\max(0, \\cdot)$ 压成 **0：奖励和梯度一起消失**，训练最初期整批数据都堆在这儿。' },
+        { at: 7.6, s: '对照一下前面讲直觉用的 log 形式 $-\\log(1 - D)$：**$D \\to 1$ 时直接冲向无穷**，实践中很难稳。' },
+        { at: 10.2, s: '风格奖励再和任务奖励合成：论文 Table 4 的 **$w^S = w^G = 0.5$**。' },
         { at: 12.0, s: '有上下界、梯度不爆炸 —— 对抗训练里这比「理论上更漂亮」重要得多。' }
       ]
     },
@@ -1662,10 +1693,10 @@
       build: buildSceneStyle,
       cues: [
         { at: 0.4, s: '论文 Target Heading 实验最有说服力的一组对照：**任务奖励三组一模一样**，只换参考数据集。' },
-        { at: 1.6, s: 'r^G = exp(−0.25(v* − v_xcom)²) —— 只有「速度接近目标」一个标量，**没有一个字提到姿态**。' },
+        { at: 1.6, s: '$r^G = \\exp(-0.25(v^* - v_{xcom})^2)$ —— 只有「速度接近目标」一个标量，**没有一个字提到姿态**。' },
         { at: 3.4, s: 'Locomotion（走跑混合）：低速走路、中速慢跑、高速跑步。' },
-        { at: 5.0, s: 'Zombie：拖着脚、手臂僵直前伸；Stealthy：弯腰压低重心、脚步轻柔。都是 v* = 1 m/s。' },
-        { at: 7.4, s: '混合数据集还有个额外好处：把 v* 从低扫到高，**步态自己换** —— 1~2 走路、2~3 慢跑、3~5 跑步。' },
+        { at: 5.0, s: 'Zombie：拖着脚、手臂僵直前伸；Stealthy：弯腰压低重心、脚步轻柔。都是 $v^* = 1\\ \\mathrm{m/s}$。' },
+        { at: 7.4, s: '混合数据集还有个额外好处：把 $v^*$ 从低扫到高，**步态自己换** —— 1~2 走路、2~3 慢跑、3~5 跑步。' },
         { at: 11.0, s: '只用走路数据训的策略在高速段拉不上去，只用跑步数据的在低速段下不来（论文 Figure 4 右图）。' },
         { at: 13.6, s: '**判别器就是「风格编码器」**：换一份数据就换一种风格，奖励函数一行不用改。' }
       ]
@@ -1676,14 +1707,14 @@
       build: buildSceneLoop,
       cues: [
         { at: 0.4, s: '把前四幕串起来，就是 AMP 的一次训练循环。' },
-        { at: 1.0, s: '① 策略 π_θ 在仿真里跑一轮，收 **4096 步**样本。' },
-        { at: 2.8, s: '② 更新判别器：真样本从动捕采 256 个，假样本从**当前策略 + 10⁵ 的回放池**采 256 个。' },
-        { at: 4.4, s: '回放池防的是判别器对当前策略过拟合；梯度惩罚 **w_GP = 10 只作用在真数据上**。' },
-        { at: 5.6, s: '③ 判别器给每一步转移打分，换成风格奖励 r^S。判别器**看不到任务目标**，所以同一个它能复用到别的任务。' },
-        { at: 7.6, s: '④ 和任务奖励合成：**r = 0.5·r^S + 0.5·r^G**。' },
-        { at: 9.6, s: '⑤ PPO 更新策略，**clip = 0.02** —— 比 DeepMimic 的 0.2 小 10 倍，因为奖励本身在动。' },
+        { at: 1.0, s: '① 策略 $\\pi_\\theta$ 在仿真里跑一轮，收 **4096 步**样本。' },
+        { at: 2.8, s: '② 更新判别器：真样本从动捕采 256 个，假样本从**当前策略 + $10^5$ 的回放池**采 256 个。' },
+        { at: 4.4, s: '回放池防的是判别器对当前策略过拟合；梯度惩罚 **$w_{GP} = 10$ 只作用在真数据上**。' },
+        { at: 5.6, s: '③ 判别器给每一步转移打分，换成风格奖励 $r^S$。判别器**看不到任务目标**，所以同一个它能复用到别的任务。' },
+        { at: 7.6, s: '④ 和任务奖励合成：**$r = 0.5\\,r^S + 0.5\\,r^G$**。' },
+        { at: 9.6, s: '⑤ PPO 更新策略，**$\\mathrm{clip} = 0.02$** —— 比 DeepMimic 的 0.2 小 10 倍，因为奖励本身在动。' },
         { at: 12.6, s: '中途摔倒就走 **ET** 那条虚线；接触密集的翻滚 / 起身任务会把它关掉。' },
-        { at: 14.0, s: '一句话：**AMP = PPO + 一个判别器分支**，DeepMimic 的四项手工 tracking 奖励全被一个学出来的 r^S 顶掉了。' }
+        { at: 14.0, s: '一句话：**AMP = PPO + 一个判别器分支**，DeepMimic 的四项手工 tracking 奖励全被一个学出来的 $r^S$ 顶掉了。' }
       ]
     }
   ];
@@ -1696,7 +1727,7 @@
       notes: [
         '取数依据：第二幕的四个打分就是上面「判别器 loss 实验台」的默认值（正文「数值例子」，总 loss ≈ 1.147）；' +
           '第三幕的曲线和「判别器打分 → 风格奖励」演示用的是同一个 styleReward()；' +
-          'w^S = w^G = 0.5、w_GP = 10、clip = 0.02、回放池 10⁵、4096 / 256 这些来自论文 Table 4 与正文第 2、3 步。',
+          '$w^S = w^G = 0.5$、$w_{GP} = 10$、$\\mathrm{clip} = 0.02$、回放池 $10^5$、4096 / 256 这些来自论文 Table 4 与正文第 2、3 步。',
         '第四幕的三个小人只是示意姿态，不是论文的仿真结果；1~2 / 2~3 / 3~5 m/s 的步态分段引自正文「多数据集的自动步态切换」。'
       ],
       scenes: AMP_SCENES

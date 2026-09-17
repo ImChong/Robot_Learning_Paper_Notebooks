@@ -449,12 +449,54 @@
   font-variant-numeric: tabular-nums;
 }
 
-.demo-x-mut { fill: var(--demo-muted); }
-.demo-x-ink2 { fill: var(--text-secondary); }
-.demo-x-acc { fill: var(--demo-accent); }
-.demo-x-good { fill: var(--demo-good); }
-.demo-x-bad { fill: var(--demo-bad); }
-.demo-x-warn { fill: var(--demo-warn); }
+/* SVG text takes `fill`, the HTML inside a <foreignObject> takes `color`, and
+   K.svgMath puts a formula in a foreignObject — so every tone class sets both
+   and a label and a formula can share one class name. */
+.demo-x-mut { fill: var(--demo-muted); color: var(--demo-muted); }
+.demo-x-ink2 { fill: var(--text-secondary); color: var(--text-secondary); }
+.demo-x-acc { fill: var(--demo-accent); color: var(--demo-accent); }
+.demo-x-good { fill: var(--demo-good); color: var(--demo-good); }
+.demo-x-bad { fill: var(--demo-bad); color: var(--demo-bad); }
+.demo-x-warn { fill: var(--demo-warn); color: var(--demo-warn); }
+
+/* ===== $LaTeX$ formulas (K.tex / K.svgMath, rendered by KaTeX) ===== */
+
+/* Inline, in the HTML parts of a demo: card title, cue track, footnotes. */
+.demo-tex {
+  /* KaTeX sets its own font; keep it from inflating the line it sits on. */
+  font-size: 1em;
+}
+
+.demo-tex .katex {
+  font-size: 1.05em;
+}
+
+/* On a storyboard: svgMath sizes the <foreignObject> generously and aligns
+   the formula inside it, so only the formula itself may be hit-testable — an
+   invisible box must not swallow clicks on the scene underneath. */
+.demo-x-fo {
+  overflow: visible;
+  pointer-events: none;
+  /* The default ink lives here, not on .demo-x-tex, so a tone class on the
+     box itself (.demo-x-acc …) still wins. */
+  color: var(--text);
+}
+
+.demo-x-tex {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  line-height: 1.1;
+  white-space: nowrap;
+  /* Only reached when KaTeX could not render (blocked CDN): the formula falls
+     back to plain text, on the same monospace stack as the labels near it. */
+  font-family: 'SF Mono', Menlo, Consolas, monospace;
+}
+
+.demo-x-tex .katex {
+  font-size: 1em;
+  pointer-events: auto;
+}
 
 .demo-x-band {
   fill: var(--demo-accent);

@@ -185,6 +185,33 @@ def test_demo_assets_are_theme_aware():
     assert "data-theme" in kit
 
 
+EXPLAINER_BUNDLES = ("ppo", "deepmimic", "amp")
+
+
+def test_explainer_formulas_go_through_katex():
+    """Formulas in the storyboard demos are LaTeX, typeset by the page's KaTeX.
+
+    The site already loads KaTeX (pinned + SRI in ``_layouts/default.html``),
+    so the kit renders through ``window.katex`` rather than shipping a second
+    copy — and degrades to plain text when that CDN is blocked.
+    """
+    kit = DEMO_KIT.read_text(encoding="utf-8")
+    assert "window.katex" in kit, "公式必须走页面已加载的 KaTeX，不要再引第二份"
+    assert "texToPlain" in kit, "KaTeX 取不到时要降级成可读的纯文本"
+    for helper in ("tex:", "rich:", "svgMath:"):
+        assert helper in kit, f"kit.js 必须导出 {helper} 供各 bundle 复用"
+
+    css = DEMO_CSS.read_text(encoding="utf-8")
+    for cls in (".demo-tex", ".demo-x-fo", ".demo-x-tex"):
+        assert cls in css, f"{cls} 需要在 paper-demos.css 里定义"
+
+    for name in EXPLAINER_BUNDLES:
+        js = (DEMO_JS_DIR / f"{name}.js").read_text(encoding="utf-8")
+        assert "svgMath" in js, f"{name}.js 的分镜公式应该用 K.svgMath 渲染"
+        # 字幕轨里的公式写成 `$...$`，由 kit 的 rich() 交给 KaTeX
+        assert re.search(r"s: '[^']*\$\\\\", js), f"{name}.js 的字幕应包含 $LaTeX$ 公式"
+
+
 def test_ppo_gae_demo_matches_the_numbers_in_the_note():
     """The default trajectory must be the one worked through in the markdown."""
     js = (DEMO_JS_DIR / "ppo.js").read_text(encoding="utf-8")
