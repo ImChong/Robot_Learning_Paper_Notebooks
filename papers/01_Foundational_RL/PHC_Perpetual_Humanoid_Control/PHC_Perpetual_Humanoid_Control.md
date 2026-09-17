@@ -33,6 +33,12 @@ demos: ["phc"]
 
 PHC 通过**渐进式乘法控制策略（PMCP）**，让仿真人形角色能模仿上万条动作序列、从摔倒中自然恢复、永不需要 reset——是从 DeepMimic "单动作模仿"迈向"大规模通用控制"的关键一步。
 
+> 🎮 **本文内嵌 1 段动画 + 3 个可交互演示**（不用装任何东西）：
+> 1. [五幕动画：PHC 全流程](#phc-explainer-anim) —— 约 80 秒串完「DeepMimic 之后的三堵墙 → PMCP 渐进扩容 → Composer 连续混合 → 摔倒恢复 → 两阶段训练闭环」
+> 2. PMCP 实验台 —— 点一次「训练下一轮」就新增一列 primitive，对照单网络微调怎么被洗掉
+> 3. Composer 演示 —— 只有一个温度旋钮，拉满就能看到连续混合退化成硬切换那一跳
+> 4. 摔倒恢复实验台 —— 画出一整条 episode，右边那根短柱是「没有 Pᶠ 时会在第几步结束」
+
 ---
 
 ## 📌 英文缩写速查
@@ -52,11 +58,27 @@ PHC 通过**渐进式乘法控制策略（PMCP）**，让仿真人形角色能�
 | PULSE | Physics-based Universal Latent Skill Extraction | 基于物理的通用潜在技能提取 |
 
 ---
+
+## 🎬 五幕动画：PHC 全流程 {#phc-explainer-anim}
+
+<div class="paper-demo" data-demo="phc-explainer"><p class="demo-fallback">（本节含动画演示，需要启用 JavaScript）</p></div>
+
+> 📖 动画覆盖的两块——「这篇论文要解决什么问题」和「PHC 是怎么做的」——**文字讲解默认折叠**，想看推导、公式和对照表时点开各节的折叠条即可，内容一字未删；流程图、源码片段、具体实例与附录不在折叠范围内。
+
+---
+
 ## ❓ 这篇论文要解决什么问题？
 
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：DeepMimic 之后还剩下什么</summary>
+
 回顾一下我们的学习路线：DeepMimic 解决了"如何模仿一段动作"的问题。但实际应用中，问题远不止于此：
+</details>
 
 ### 问题一：大规模学习的灾难性遗忘
+
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：三条路各堵在哪，以及钢琴学生的类比</summary>
 
 假如你有 10000 段不同的动作捕捉数据（走路、跑步、跳舞、翻跟斗……），想让一个策略网络全都学会。
 
@@ -65,21 +87,33 @@ PHC 通过**渐进式乘法控制策略（PMCP）**，让仿真人形角色能�
 - **用多个独立策略**：每个动作一个网络？那 10000 个网络怎么切换？
 
 > 💡 **类比**：就像一个钢琴学生，先学了《小星星》再学《钢琴协奏曲》——学完协奏曲回头弹《小星星》反而手生了。需要一个"不忘旧技能、还能学新技能"的方法。
+</details>
 
 ### 问题二：摔倒后怎么办？
+
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：为什么 reset 和 invisible hand 都不够</summary>
 
 DeepMimic 和之前的方法有个共同问题：角色一旦偏离参考动作太多就直接 reset 重来。但真实应用中（比如 VR 虚拟角色），你不能让角色摔倒后"消失重置"。
 
 - 之前的方案用**外部稳定力**（invisible hand）帮角色站稳——但这不真实
 - PHC 的目标是：**不用任何外力，角色摔倒后自己爬起来继续**
+</details>
 
 ### 问题三：输入噪声
 
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：参考动作从哪来，噪声有多大</summary>
+
 真实使用中，参考动作来自视频姿态估计或文本生成，噪声很大。控制器需要对噪声输入鲁棒。
+</details>
 
 ---
 
 ## 🔧 PHC 是怎么做的？
+
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：PHC 不是「把 DeepMimic 做大一点」：四件事的拆解</summary>
 
 先给一句最核心的话：**PHC 不是“把 DeepMimic 做大一点”这么简单，它本质上是把“动作模仿”升级成了“分层可扩展控制系统”。**
 
@@ -99,12 +133,17 @@ PHC 的思路则变成：
 > **大规模 motion tracking + 渐进式容量扩展 + 在线技能混合 + fail-state recovery**
 
 这四件事一起构成了 PHC。
+</details>
 
 ### 整体架构
+
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：PMCP 由哪三个组件构成</summary>
 
 PHC 的核心是 **PMCP（Progressive Multiplicative Control Policy）**，由三个关键组件组成：
 
 （架构见下方 PMCP 运行时数据流图）
+</details>
 
 ### 📊 PMCP 运行时数据流
 
@@ -148,6 +187,9 @@ $$\tau = k_p(a_t - q_{sim}) - k_d(\dot{q}_{sim})$$
 
 ### 第二步：奖励设计
 
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：三项奖励各管什么（含 $r_t \approx 0.5 r_{task} + 0.5 r_{amp} + r_{energy}$ 那张表）</summary>
+
 PHC 没有走 DeepMimic 那种“手工拆四项：pose/vel/ee/com”的路子，而是把 imitation reward 写成了**全身刚体级别的统一误差**。这比 DeepMimic 更适合大规模动作库，因为它不需要你手工盯着每一类动作重新调细节。
 
 整体奖励可以概括为：
@@ -161,6 +203,7 @@ $$r_t \approx 0.5 \cdot r_{task} + 0.5 \cdot r_{amp} + r_{energy}$$
 | $r_{task}$（模仿） | 刚体位置、旋转、线速度、角速度误差的指数奖励加权和 | 跟上参考动作 |
 | $r_{amp}$（对抗） | 判别器打分，鼓励动作像真实人类运动分布 | 保持自然与稳定 |
 | $r_{energy}$ | 功率/能量惩罚 | 防止高频抖动和暴力打关节 |
+</details>
 
 源码里 imitation reward 的实现非常直接：
 
@@ -189,6 +232,9 @@ reward_specs:
   w_ang_vel: 0.1
 ```
 
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：为什么提升到全身刚体空间，以及恢复模式下的 $r_{recover}$</summary>
+
 > 🔑 **直觉**：PHC 把“像不像参考动作”这件事提升到**全身刚体状态空间**去比较，而不是像 DeepMimic 那样更偏任务工程式地拆成 pose/ee/com 四块。这样做在大动作库上更统一，也更容易接噪声输入。
 
 恢复模式下，任务目标会被放松成“先回到目标附近再说”，不要求一开始就精确追全身姿态。你可以把它理解成：
@@ -196,12 +242,17 @@ reward_specs:
 $$r_{recover} \approx 0.5 \cdot r_{point} + 0.5 \cdot r_{amp} + 0.1 \cdot r_{energy}$$
 
 其中 $r_{point}$ 主要关心根节点是否靠近目标位置——先站起来、先回去，再重新接轨迹。
+</details>
 
 ### 第三步：渐进式训练（Progressive Training）
+
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：这一步为什么是分水岭</summary>
 
 这是 PHC 最核心的创新，也是它和“单网络硬吃全部 AMASS”最大的分水岭。
 
 训练过程分多轮：
+</details>
 
 <div class="mermaid">
 flowchart TB
@@ -211,6 +262,9 @@ flowchart TB
     F3 --> RF["第F轮：Pᶠ 摔倒恢复"] --> FC["冻结 Pᶠ"]
     FC --> C["训练 Composer C 混合所有 Primitive"]
 </div>
+
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：课程学习 vs 容量扩展，以及对应的两套结构</summary>
 
 你可以把它理解成一个**课程学习 + 容量扩展**的组合：
 
@@ -222,6 +276,7 @@ flowchart TB
 
 1. **PNN / Progressive 列网络**：用于逐个 primitive 扩展容量  
 2. **MCP / Composer 网络**：用于推理时把多个 primitive 混起来
+</details>
 
 PNN builder 里最关键的逻辑是：
 
@@ -233,6 +288,9 @@ self.pnn = PNN(actor_mlp_args,
                has_lateral=self.has_lateral)
 self.pnn.freeze_pnn(self.training_prim)
 ```
+
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：逐行读 PNN builder，以及 PMCP 的核心闭环与老师类比</summary>
 
 这段代码的含义很直接：
 - `numCols=self.num_prim`：有多少个 primitive，就建多少列网络
@@ -247,12 +305,16 @@ self.pnn.freeze_pnn(self.training_prim)
 > **先训全量 → 找失败样本 → 新增容量 → 只打难例 → 再找更难的失败样本**
 
 > 💡 **类比**：像老师带学生。普通老师先教全班；实在教不会的，交给更强的老师；再不会，再交给更专门的老师。最关键的是，前面的老师不会被后面的内容“洗掉记忆”。
+</details>
 
 下面这个实验台把这个闭环跑了出来：左边是整个动作库（每格一条 clip，按难度排序），点一次「训练下一轮」就新增一列 primitive。右边同时画着**单网络微调**那条线——它每轮也在难例上训，但会把旧技能洗掉：
 
 <div class="paper-demo" data-demo="phc-pmcp"><p class="demo-fallback">（本节含交互演示，需要启用 JavaScript）</p></div>
 
 ### 第四步：乘法组合（Multiplicative Composition）
+
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：$\Pi_{PHC}$ 那一式，以及「连续混合」的含义</summary>
 
 所有 Primitive 冻结后，Composer $C$ 学习动态混合它们：
 
@@ -262,6 +324,7 @@ $$
 
 - $C_i(s_t) \geq 0$：Composer 对第 $i$ 个 Primitive 的权重
 - 这不是简单的开关切换，而是**连续混合**，允许多个技能同时发挥作用
+</details>
 
 源码层面，Composer 是单独的 MLP：
 
@@ -281,12 +344,16 @@ x_all = torch.stack(actions, dim=1)
 actions = torch.sum(weights[:, :, None] * x_all, dim=1)
 ```
 
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：这两行代码为什么值得看</summary>
+
 这两行代码特别值得看，因为它把 PHC 的抽象概念直接落成了实现：
 - `actions` 不是一个网络给的
 - 而是多个 primitive 都给一份动作建议
 - 然后由 composer 给权重，做连续混合
 
 > 🔑 **关键理解**：PHC 不是“当前时刻只选一个专家”，而是更像“多个专家同时给意见，再做加权融合”。这也是它在动作过渡和失败恢复时更顺的原因。
+</details>
 
 「连续混合」和「只选一个专家」差在哪？下面这个演示只有一个旋钮：Composer 的温度。把它拉满，softmax 变成 one-hot，输出曲线就会在交界处出现**台阶**——那一跳在 30Hz 的控制回路上就是一次力矩冲击：
 
@@ -294,12 +361,16 @@ actions = torch.sum(weights[:, :, None] * x_all, dim=1)
 
 ### 第五步：摔倒恢复（Fail-State Recovery）
 
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：$P^F$ 的四条专门设计</summary>
+
 $P^F$ 的训练有专门设计：
 
 - **初始化**：角色被随机扔到地上（各种姿态）、距参考 2-5m 远
 - **简化目标**：恢复模式下只关注根节点位置，不管全身姿态
 - **切换机制**：当角色根节点距参考 < 0.5m 时，自动切回正常模仿模式
 - **训练数据**：只用简单移动数据 $Q_{loco}$
+</details>
 
 这一块源码其实非常硬核，而且很能体现 PHC 的工程价值。
 
@@ -317,10 +388,14 @@ self._fall_root_states = self._humanoid_root_states.clone()
 self._fall_dof_pos = self._dof_pos.clone()
 ```
 
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：fail-state 库是怎么「滚」出来的</summary>
+
 意思是：
 - 先把角色随机旋转、随机打乱到不稳定姿态
 - 让物理引擎自己滚一段时间
 - 最终停下来的那些状态，就被当成“真实摔倒状态库”
+</details>
 
 之后 reset 时，不再总是回到标准参考状态，而是有一定概率直接从这些 fail-state 开始：
 
@@ -338,10 +413,14 @@ flowchart TB
     R --> OK["根节点距参考 <0.5m → 切回模仿"]
 </div>
 
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：三个概率开关分别对应什么</summary>
+
 对应逻辑是：
 - 有些 episode 从正常轨迹开始
 - 有些 episode 直接从摔倒状态开始
 - 在 recovery 窗口内，环境**禁止 reset**，强迫策略自己爬起来
+</details>
 
 源码里这一句非常关键：
 
@@ -351,11 +430,15 @@ self.reset_buf[is_recovery] = 0
 self._terminate_buf[is_recovery] = 0
 ```
 
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：「不许 reset」为什么就是 perpetual</summary>
+
 也就是说：
 
 > **只要处于恢复阶段，哪怕你看起来“本来该终止了”，环境也不让你 reset。**
 
 这就是 PHC 真正“perpetual”的地方：不是口头上说永续，而是训练机制上就不允许你靠 reset 逃避失败。
+</details>
 
 把运行时的模式切换画成状态机，“永续”的含义就非常直白——DeepMimic 摔倒只能 reset，PHC 摔倒后多了一条**自己爬起来接回轨迹**的回路：
 
@@ -372,7 +455,11 @@ stateDiagram-v2
     IM --> IM : composer 混合 P¹…P³ 持续跟踪
 </div>
 
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：和 DeepMimic 的 episode 状态机对照</summary>
+
 > 🔑 对照 DeepMimic 笔记的 episode 状态机看：DeepMimic 的 FAIL 是**终态**（只能 reset 重来），PHC 把 FAIL 变成了**中间态**（恢复模式），这正是论文标题里 “Perpetual” 的机制来源。
+</details>
 
 这套「摔倒 → 恢复 → 切回」的逻辑跑起来是什么样？下面这个实验台画了一整条 episode：注意底下那条模式带，以及右边那根短柱——它代表没有 $P^F$ 时这条 episode 会在第几步结束：
 

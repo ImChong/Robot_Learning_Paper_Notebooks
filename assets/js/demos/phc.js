@@ -807,7 +807,824 @@
     render();
   }
 
+  // ─── demo 4: the five-scene explainer animation ──────────────────────────
+  /* A narrated storyboard of the whole method — 三堵墙 → PMCP 渐进扩容 →
+     Composer 连续混合 → 摔倒恢复 → 两阶段训练闭环. Every number on screen is
+     either recomputed from the interactive demos above (the PMCP grid reuses
+     buildLibrary/trainRound, the composer curves reuse PRIMS/expertise, the
+     recovery episode reuses runRecovery with that demo's default sliders) or
+     quoted from the note's own tables (reward weights, getup 概率、评估结果).
+
+     The player (scene chips, clock, cue track, autoplay-on-scroll) is the
+     shared K.explainer in kit.js; only the storyboard itself lives here. */
+
+  var svgEl = K.svgEl,
+    svgText = K.svgText,
+    paint = K.paint,
+    seg = K.seg,
+    ease = K.ease,
+    setOpacity = K.setOpacity,
+    sceneSvg = K.sceneSvg,
+    stickFigure = K.stickFigure,
+    polyPath = K.polyPath,
+    pointOn = K.pointOn;
+
+  var X = K.xColors;
+  var C_ACCENT = X.accent,
+    C_GOOD = X.good,
+    C_BAD = X.bad,
+    C_WARN = X.warn,
+    C_MUTED = X.muted,
+    C_BORDER = X.border,
+    C_SURFACE = X.surface,
+    C_SURFACE2 = X.surface2;
+
+  /* ── scene 1: the three walls DeepMimic leaves standing ── */
+  var WALL_X = [40, 285, 530],
+    WALL_W = 230;
+
+  function wallPanel(s, i, title, sub) {
+    var x = WALL_X[i];
+    s.appendChild(paint(svgEl('rect', { x: x, y: 60, width: WALL_W, height: 262, rx: 8, 'stroke-width': 1 }), C_SURFACE2, C_BORDER));
+    s.appendChild(paint(svgText(x + WALL_W / 2, 84, title, null, 13, 'middle'), C_BAD));
+    s.appendChild(svgText(x + WALL_W / 2, 103, sub, 'demo-x-mut', 10.5, 'middle'));
+    return x;
+  }
+
+  function lerpPose(a, b, u) {
+    function mix(p, q) { return p + (q - p) * u; }
+    return {
+      lean: mix(a.lean, b.lean),
+      armA: [mix(a.armA[0], b.armA[0]), mix(a.armA[1], b.armA[1])],
+      armB: [mix(a.armB[0], b.armB[0]), mix(a.armB[1], b.armB[1])],
+      legA: [mix(a.legA[0], b.legA[0]), mix(a.legA[1], b.legA[1])],
+      legB: [mix(a.legB[0], b.legB[0]), mix(a.legB[1], b.legB[1])]
+    };
+  }
+
+  var POSE_STAND = { lean: 4, armA: [-20, -14], armB: [20, 26], legA: [10, 6], legB: [-10, -6] };
+  /* 摔倒不去逐关节摆姿势，而是把整个小人绕脚底转过去 —— 这样一眼就认得出是「倒了」，
+     逐关节摆出来的躺姿在这个尺寸下只会糊成一团线。 */
+  var POSE_SPRAWL = { lean: 4, armA: [-56, -44], armB: [62, 84], legA: [24, 16], legB: [-18, -34] };
+
+  /* 面板三那具「参考骨架」：手画的关节点，方便让噪声单独抖起来。 */
+  var KP = [
+    [645, 168], [627, 174], [663, 174], [618, 198], [672, 198],
+    [614, 222], [676, 222], [645, 212], [633, 242], [657, 242],
+    [630, 268], [660, 268]
+  ];
+  var KP_BONES = [[0, 7], [0, 1], [0, 2], [1, 3], [3, 5], [2, 4], [4, 6], [7, 8], [8, 10], [7, 9], [9, 11]];
+
+  function buildSceneWalls() {
+    var s = sceneSvg('DeepMimic 之后剩下的三个问题：大规模学习会灾难性遗忘、摔倒只能 reset、参考动作带噪声');
+    s.appendChild(svgText(400, 40, 'DeepMimic 解决了「学会一个动作」，但离「一直用」还隔着三堵墙', 'demo-x-ink2', 13.5, 'middle'));
+
+    // ── 墙 1：灾难性遗忘 ──
+    var x1 = wallPanel(s, 0, '① 大规模学习互相覆盖', '10000 段 AMASS，一个网络吃不下');
+    var CW = 28, GAP = 6;
+    var cx0 = x1 + (WALL_W - (6 * CW + 5 * GAP)) / 2;
+    s.appendChild(svgText(x1 + 16, 142, '旧技能：走 / 站 / 伸手', 'demo-x-mut', 10));
+    s.appendChild(svgText(x1 + 16, 207, '新技能：后空翻 / 体操', 'demo-x-mut', 10));
+    var oldCells = [], newCells = [], i;
+    for (i = 0; i < 6; i++) {
+      oldCells.push(paint(svgEl('rect', { x: cx0 + i * (CW + GAP), y: 150, width: CW, height: 26, rx: 3 }), C_MUTED));
+      newCells.push(paint(svgEl('rect', { x: cx0 + i * (CW + GAP), y: 215, width: CW, height: 26, rx: 3 }), C_MUTED));
+      s.appendChild(oldCells[i]);
+      s.appendChild(newCells[i]);
+    }
+    var cap1a = paint(svgText(x1 + WALL_W / 2, 292, '学会后空翻 → 走路又忘了', null, 11.5, 'middle'), C_BAD);
+    var cap1b = svgText(x1 + WALL_W / 2, 310, '一个动作一个网络？10000 个怎么切', 'demo-x-mut', 10.5, 'middle');
+    s.appendChild(cap1a);
+    s.appendChild(cap1b);
+
+    // ── 墙 2：摔倒只能 reset ──
+    wallPanel(s, 1, '② 摔倒只能 reset 重来', '偏离参考太多 → episode 直接结束');
+    s.appendChild(paint(svgEl('line', { x1: 300, y1: 272, x2: 500, y2: 272, 'stroke-width': 1.5 }), null, C_BORDER));
+    var man = stickFigure(C_ACCENT, 3);
+    s.appendChild(man.el);
+    var stamp = svgEl('g', {});
+    stamp.appendChild(paint(svgEl('rect', { x: 352, y: 168, width: 96, height: 34, rx: 5, 'stroke-width': 2.4 }), 'none', C_BAD));
+    stamp.appendChild(paint(svgText(400, 191, 'RESET', 'demo-x-mono', 18, 'middle'), C_BAD));
+    stamp.setAttribute('transform', 'rotate(-9 400 185)');
+    s.appendChild(stamp);
+    var cap2a = paint(svgText(400, 292, 'VR avatar 不能「消失重置」', null, 11.5, 'middle'), C_BAD);
+    var cap2b = svgText(400, 310, '靠 invisible hand 扶一把？那不真实', 'demo-x-mut', 10.5, 'middle');
+    s.appendChild(cap2a);
+    s.appendChild(cap2b);
+
+    // ── 墙 3：噪声输入 ──
+    wallPanel(s, 2, '③ 参考动作本身有噪声', '来自视频姿态估计 / 文本生成');
+    KP_BONES.forEach(function (b) {
+      s.appendChild(paint(svgEl('line', {
+        x1: KP[b[0]][0], y1: KP[b[0]][1], x2: KP[b[1]][0], y2: KP[b[1]][1],
+        'stroke-width': 1.6, 'stroke-dasharray': '4 3'
+      }), null, C_MUTED));
+    });
+    s.appendChild(paint(svgEl('circle', { cx: 645, cy: 150, r: 9, fill: 'none', 'stroke-width': 1.6, 'stroke-dasharray': '4 3' }), null, C_MUTED));
+    var noisy = KP.map(function (p, k) {
+      var node = paint(svgEl('circle', { cx: p[0], cy: p[1], r: 3.6 }), C_WARN);
+      s.appendChild(node);
+      return { node: node, p: p, ph: k * 1.7 };
+    });
+    var cap3a = paint(svgText(645, 292, 'rotation 输入对噪声很敏感', null, 11.5, 'middle'), C_BAD);
+    var cap3b = svgText(645, 310, 'PHC 额外提供 keypoint 版本 s_kp', 'demo-x-mut', 10.5, 'middle');
+    s.appendChild(cap3a);
+    s.appendChild(cap3b);
+
+    var foot = svgEl('g', {});
+    foot.appendChild(paint(svgText(400, 356, 'PHC 的答卷：PMCP 加容量 ＋ Pᶠ 自恢复 ＋ keypoint 输入', null, 17, 'middle'), C_ACCENT));
+    foot.appendChild(svgText(400, 380, '接下来三幕，正好一堵墙一幕', 'demo-x-mut', 11.5, 'middle'));
+    s.appendChild(foot);
+
+    function draw(t) {
+      oldCells.forEach(function (c, k) {
+        var learn = seg(t, 1.0 + k * 0.16, 1.4 + k * 0.16);
+        var forget = seg(t, 3.6 + k * 0.16, 4.0 + k * 0.16);
+        paint(c, forget > 0.5 ? C_BAD : learn > 0.5 ? C_GOOD : C_MUTED);
+        c.style.opacity = forget > 0.5 ? 0.9 : learn > 0.5 ? 1 : 0.35;
+      });
+      newCells.forEach(function (c, k) {
+        var learn = seg(t, 3.0 + k * 0.16, 3.4 + k * 0.16);
+        paint(c, learn > 0.5 ? C_GOOD : C_MUTED);
+        c.style.opacity = learn > 0.5 ? 1 : 0.35;
+      });
+      setOpacity(cap1a, seg(t, 4.8, 5.4));
+      setOpacity(cap1b, seg(t, 5.2, 5.8));
+
+      var fall = ease(seg(t, 6.0, 7.0));
+      man.pose(400, 222, lerpPose(POSE_STAND, POSE_SPRAWL, fall));
+      man.el.setAttribute('transform',
+        'translate(' + (-62 * fall).toFixed(1) + ' ' + (-32 * fall).toFixed(1) + ') rotate(' + (78 * fall).toFixed(1) + ' 400 270)');
+      setOpacity(stamp, seg(t, 7.2, 7.8));
+      setOpacity(cap2a, seg(t, 7.9, 8.4));
+      setOpacity(cap2b, seg(t, 8.3, 8.8));
+
+      var on3 = seg(t, 9.0, 9.6);
+      noisy.forEach(function (n) {
+        var j = on3 * 4.5;
+        n.node.setAttribute('cx', (n.p[0] + Math.sin(t * 5.1 + n.ph) * j).toFixed(1));
+        n.node.setAttribute('cy', (n.p[1] + Math.cos(t * 6.3 + n.ph * 1.3) * j).toFixed(1));
+        setOpacity(n.node, on3);
+      });
+      setOpacity(cap3a, seg(t, 10.2, 10.7));
+      setOpacity(cap3b, seg(t, 10.6, 11.1));
+      setOpacity(foot, seg(t, 11.8, 12.6));
+    }
+
+    return { el: s, draw: draw };
+  }
+
+  /* ── scene 2: PMCP — 每轮新增一列，旧列冻死 ──
+     网格与曲线都由上面 phc-pmcp 那套 buildLibrary / trainRound 现算，
+     默认 focus = 0.6，所以画面上的数和那个实验台一模一样。 */
+  var PM_COLS = 24, PM_CELL = 14, PM_GX = 44, PM_GY = 96;
+  var PM_CX0 = 470, PM_CX1 = 765, PM_CY0 = 96, PM_CY1 = 236;
+  var PM_FT = [0, 0.771, 0.642, 0.729]; // 单网络微调：训一轮忘一轮（seed 17, forget 0.35）
+
+  function pmcpStory() {
+    var clips = buildLibrary(17);
+    var owner = new Array(LIB),
+      hard = [],
+      i;
+    for (i = 0; i < LIB; i++) hard.push(i);
+    var cov = [0],
+      left = [LIB];
+    for (var r = 0; r < 3; r++) {
+      var res = trainRound(clips, hard, 0.6);
+      /* eslint-disable-next-line no-loop-func */
+      res.solved.forEach(function (k) { owner[k] = r; });
+      hard = res.still;
+      left.push(hard.length);
+      cov.push((LIB - hard.length) / LIB);
+    }
+    return { owner: owner, cov: cov, left: left };
+  }
+
+  function pmX(round) {
+    return PM_CX0 + (round / 3) * (PM_CX1 - PM_CX0);
+  }
+
+  function pmY(v) {
+    return PM_CY1 - v * (PM_CY1 - PM_CY0);
+  }
+
+  function buildScenePmcp() {
+    var story = pmcpStory();
+    var s = sceneSvg('PMCP 渐进式训练：每轮在剩下的难例上新增一列 primitive 并冻结旧列，覆盖率一路涨到 98.3%，而单网络微调会被新数据洗回 72.9%');
+    s.appendChild(svgText(400, 40, '每一轮不是「再训一遍」，是「新开一列，旧列冻死」', 'demo-x-ink2', 13.5, 'middle'));
+
+    // ── 左：动作库网格 ──
+    s.appendChild(svgText(PM_GX, 84, '动作库 240 格（代表 AMASS 的一万多条，按难度排序）', 'demo-x-mut', 10.5));
+    var cells = [];
+    for (var i = 0; i < LIB; i++) {
+      var r = Math.floor(i / PM_COLS),
+        c = i % PM_COLS;
+      var rect = paint(svgEl('rect', {
+        x: PM_GX + c * PM_CELL + 1, y: PM_GY + r * PM_CELL + 1,
+        width: PM_CELL - 2, height: PM_CELL - 2, rx: 2
+      }), C_BAD);
+      s.appendChild(rect);
+      cells.push({ node: rect, own: story.owner[i] });
+    }
+    s.appendChild(svgText(PM_GX, 252, '← 容易', 'demo-x-mut', 10));
+    s.appendChild(svgText(PM_GX + PM_COLS * PM_CELL, 252, '难 →', 'demo-x-mut', 10, 'end'));
+
+    // ── 右：覆盖率曲线 ──
+    [0, 0.5, 1].forEach(function (v) {
+      var ln = paint(svgEl('line', { x1: PM_CX0, y1: pmY(v), x2: PM_CX1, y2: pmY(v), 'stroke-width': 1 }), null, C_BORDER);
+      if (v) ln.setAttribute('stroke-dasharray', '3 4');
+      s.appendChild(ln);
+      s.appendChild(svgText(PM_CX0 - 8, pmY(v) + 4, (v * 100).toFixed(0) + '%', 'demo-x-mono demo-x-mut', 10, 'end'));
+    });
+    s.appendChild(svgText(PM_CX0, 84, '动作库覆盖率', 'demo-x-mut', 10.5));
+    [0, 1, 2, 3].forEach(function (k) {
+      s.appendChild(svgText(pmX(k), 252, k ? 'P' + ['¹', '²', '³'][k - 1] : '起点', 'demo-x-mono demo-x-mut', 10, 'middle'));
+    });
+
+    var pmcpPts = story.cov.map(function (v, k) { return [pmX(k), pmY(v)]; });
+    var ftPts = PM_FT.map(function (v, k) { return [pmX(k), pmY(v)]; });
+    var pmcpLine = paint(svgEl('path', { d: '', fill: 'none', 'stroke-width': 2.6 }), null, C_GOOD);
+    var ftLine = paint(svgEl('path', { d: '', fill: 'none', 'stroke-width': 2.6, 'stroke-dasharray': '6 4' }), null, C_BAD);
+    s.appendChild(pmcpLine);
+    s.appendChild(ftLine);
+    var pmcpTag = paint(svgText(PM_CX1 - 6, pmY(0.30), 'PHC：冻结 + 加列', null, 10.5, 'end'), C_GOOD);
+    var ftTag = paint(svgText(PM_CX1 - 6, pmY(0.16), '单网络微调：被洗掉', null, 10.5, 'end'), C_BAD);
+    s.appendChild(pmcpTag);
+    s.appendChild(ftTag);
+
+    // ── 下：四张轮次卡 ──
+    var CARDS = [
+      { t: '第 1 轮 · P¹', a: '训练集：全部 240 条', b: '覆盖 77.1% → 冻结', c: C_GOOD, at: 2.0 },
+      { t: '第 2 轮 · P²', a: '只训 Q_hard² = 55 条', b: '覆盖 95.0% → 冻结', c: C_ACCENT, at: 5.0 },
+      { t: '第 3 轮 · P³', a: '只训 Q_hard³ = 12 条', b: '覆盖 98.3% → 冻结', c: C_ACCENT, at: 7.8 },
+      { t: '第 F 轮 · Pᶠ', a: '不打难例：用 Q_loco 训恢复', b: '不在这条曲线上（见第 4 幕）', c: C_WARN, at: 13.0 }
+    ];
+    var cards = CARDS.map(function (cd, k) {
+      var x = 26 + k * 190;
+      var g = svgEl('g', {});
+      g.appendChild(paint(svgEl('rect', { x: x, y: 268, width: 176, height: 62, rx: 7, 'stroke-width': 1.5 }), C_SURFACE, cd.c));
+      g.appendChild(paint(svgText(x + 10, 288, cd.t, 'demo-x-mono', 12), cd.c));
+      g.appendChild(svgText(x + 10, 305, cd.a, 'demo-x-mut', 10));
+      g.appendChild(svgText(x + 10, 321, cd.b, 'demo-x-mut', 10));
+      s.appendChild(g);
+      return { g: g, at: cd.at };
+    });
+
+    var foot = svgEl('g', {});
+    foot.appendChild(paint(svgText(400, 360, '第 3 轮：PHC 98.3%，单网络微调 72.9% —— 差的 25.4 个百分点全是被洗掉的旧技能', null, 14, 'middle'), C_ACCENT));
+    foot.appendChild(svgText(400, 382, '课程学习换的是「样本顺序」，PMCP 换的是「容量」：旧列 freeze_pnn 冻死，怎么练都洗不掉', 'demo-x-mut', 11.5, 'middle'));
+    s.appendChild(foot);
+
+    var TONES = [C_GOOD, C_ACCENT, C_ACCENT];
+    var REVEAL = [[1.6, 3.4], [4.6, 6.0], [7.4, 8.6]];
+
+    function draw(t) {
+      cells.forEach(function (c, i) {
+        if (c.own == null) {
+          paint(c.node, C_BAD);
+          setOpacity(c.node, 0.8);
+          return;
+        }
+        var w = REVEAL[c.own];
+        var u = seg(t, w[0] + (i / LIB) * (w[1] - w[0]) * 0.9, w[0] + (i / LIB) * (w[1] - w[0]) * 0.9 + 0.35);
+        paint(c.node, u > 0.5 ? TONES[c.own] : C_BAD);
+        setOpacity(c.node, u > 0.5 ? 1 : 0.8);
+      });
+
+      var shown = 1;
+      [3.4, 6.2, 8.8].forEach(function (a) { if (t >= a) shown++; });
+      pmcpLine.setAttribute('d', polyPath(pmcpPts.slice(0, shown)));
+      setOpacity(pmcpTag, seg(t, 3.6, 4.2));
+
+      var ftShown = t < 10.0 ? 0 : Math.min(4, 1 + Math.floor(seg(t, 10.0, 12.4) * 3.999));
+      ftLine.setAttribute('d', ftShown > 1 ? polyPath(ftPts.slice(0, ftShown)) : '');
+      setOpacity(ftTag, seg(t, 12.2, 12.8));
+
+      cards.forEach(function (cd) { setOpacity(cd.g, Math.max(0.25, seg(t, cd.at, cd.at + 0.5))); });
+      setOpacity(foot, seg(t, 14.6, 15.4));
+    }
+
+    return { el: s, draw: draw };
+  }
+
+  /* ── scene 3: Composer — 连续混合 vs 硬切换 ──
+     曲线用的就是 phc-mcp 那套 PRIMS / expertise / softmax，温度 1。 */
+  var MC = { x0: 72, x1: 540, wy0: 78, wy1: 188, ay0: 228, ay1: 338, sLo: -2.2, sHi: 2.2, aLo: -1.4, aHi: 1.35 };
+
+  function mcX(sv) {
+    return MC.x0 + ((sv - MC.sLo) / (MC.sHi - MC.sLo)) * (MC.x1 - MC.x0);
+  }
+
+  function mcWy(w) {
+    return MC.wy1 - w * (MC.wy1 - MC.wy0);
+  }
+
+  function mcAy(a) {
+    return MC.ay1 - ((a - MC.aLo) / (MC.aHi - MC.aLo)) * (MC.ay1 - MC.ay0);
+  }
+
+  function mcWeights(sv) {
+    return softmax(expertise(sv));
+  }
+
+  function mcBlend(sv) {
+    var w = mcWeights(sv),
+      a = 0;
+    PRIMS.forEach(function (p, i) { a += w[i] * p.act(sv); });
+    return a;
+  }
+
+  function mcHard(sv) {
+    var e = expertise(sv),
+      bi = 0;
+    e.forEach(function (v, i) { if (v > e[bi]) bi = i; });
+    return PRIMS[bi].act(sv);
+  }
+
+  function buildSceneMcp() {
+    var s = sceneSvg('Composer 的连续混合：三个 primitive 的 softmax 权重平滑交接，混合输出是连续的；换成 argmax 硬切换，输出会在交界处一步跳 1.07');
+    s.appendChild(svgText(400, 40, 'Composer：不是「此刻听谁的」，是「几个专家一起出主意」', 'demo-x-ink2', 13.5, 'middle'));
+
+    // 坐标轴
+    [MC.wy1, MC.ay1].forEach(function (y) {
+      s.appendChild(paint(svgEl('line', { x1: MC.x0, y1: y, x2: MC.x1, y2: y, 'stroke-width': 1 }), null, C_BORDER));
+    });
+    s.appendChild(svgText(MC.x0, 62, 'Composer 权重 C_i(s)（softmax，温度 1）', 'demo-x-mut', 10.5));
+    s.appendChild(svgText(MC.x0, 220, '最终动作 a（这里压成一维）', 'demo-x-mut', 10.5));
+    s.appendChild(svgText(MC.x1, 204, '状态 s：动作激烈程度 →', 'demo-x-mut', 10, 'end'));
+
+    var WC = [C_GOOD, C_ACCENT, C_WARN];
+    var grid = [];
+    for (var sv = MC.sLo; sv <= MC.sHi + 1e-9; sv += 0.04) grid.push(sv);
+
+    var LEG_X = [76, 196, 300];
+    WC.forEach(function (col, i) {
+      var pts = grid.map(function (v) { return [mcX(v), mcWy(mcWeights(v)[i])]; });
+      s.appendChild(paint(svgEl('path', { d: polyPath(pts), fill: 'none', 'stroke-width': 2 }), null, col));
+      /* 名字放在坐标轴下方的图例行里：曲线本身在图上到处跑，压在上面会互相盖 */
+      s.appendChild(paint(svgEl('rect', { x: LEG_X[i], y: 198, width: 9, height: 9, rx: 2 }), col));
+      s.appendChild(paint(svgText(LEG_X[i] + 14, 206, PRIMS[i].name, null, 10), col));
+    });
+
+    var blendPts = grid.map(function (v) { return [mcX(v), mcAy(mcBlend(v))]; });
+    var blendLine = paint(svgEl('path', { d: polyPath(blendPts), fill: 'none', 'stroke-width': 2.6 }), null, C_ACCENT);
+    s.appendChild(blendLine);
+    s.appendChild(paint(svgText(MC.x0 + 8, MC.ay1 + 15, '连续混合 Σ wᵢ·aᵢ', null, 10.5), C_ACCENT));
+
+    var hardPts = grid.map(function (v) { return [mcX(v), mcAy(mcHard(v))]; });
+    var hardLine = paint(svgEl('path', { d: polyPath(hardPts), fill: 'none', 'stroke-width': 2.2, 'stroke-dasharray': '6 4' }), null, C_BAD);
+    s.appendChild(hardLine);
+    var hardTag = paint(svgText(MC.x1, mcAy(mcHard(2.1)) - 10, '硬切换 argmax', null, 10.5, 'end'), C_BAD);
+    s.appendChild(hardTag);
+
+    // 扫描线 + 读数
+    var scan = paint(svgEl('line', { x1: 0, y1: MC.wy0 - 4, x2: 0, y2: MC.ay1 + 4, 'stroke-width': 1.4, 'stroke-dasharray': '4 4' }), null, C_MUTED);
+    s.appendChild(scan);
+    var wDots = WC.map(function (col) {
+      var d = paint(svgEl('circle', { cx: 0, cy: 0, r: 4 }), col);
+      s.appendChild(d);
+      return d;
+    });
+    var blendDot = paint(svgEl('circle', { cx: 0, cy: 0, r: 4.5 }), C_ACCENT);
+    var hardDot = paint(svgEl('circle', { cx: 0, cy: 0, r: 4.5 }), C_BAD);
+    s.appendChild(blendDot);
+    s.appendChild(hardDot);
+
+    var box = svgEl('g', {});
+    box.appendChild(paint(svgEl('rect', { x: 556, y: 74, width: 222, height: 132, rx: 7, 'stroke-width': 1.5 }), C_SURFACE, C_BORDER));
+    var rd = [
+      svgText(570, 98, '', 'demo-x-mono', 12),
+      svgText(570, 122, '', 'demo-x-mono', 11.5),
+      svgText(570, 146, '', 'demo-x-mono', 11.5),
+      svgText(570, 170, '', 'demo-x-mono', 11.5),
+      svgText(570, 194, '', 'demo-x-mono', 11.5)
+    ];
+    rd.forEach(function (n) { box.appendChild(n); });
+    s.appendChild(box);
+
+    var code = svgEl('g', {});
+    code.appendChild(paint(svgEl('rect', { x: 556, y: 228, width: 222, height: 92, rx: 7, 'stroke-width': 1, 'stroke-dasharray': '4 3' }), C_SURFACE2, C_ACCENT));
+    code.appendChild(svgText(568, 250, 'humanoid_im_mcp.py 就两行：', 'demo-x-mut', 10));
+    code.appendChild(paint(svgText(568, 272, 'x_all = stack(actions, 1)', 'demo-x-mono', 10.5), C_ACCENT));
+    code.appendChild(paint(svgText(568, 290, 'a = sum(w[:,:,None]*x_all, 1)', 'demo-x-mono', 10.5), C_ACCENT));
+    code.appendChild(svgText(568, 310, 'primitive 已冻结，C 只学「听谁的」', 'demo-x-mut', 10));
+    s.appendChild(code);
+
+    // 交界处的跳变标注
+    var jumpG = svgEl('g', {});
+    var jx = mcX(-0.65);
+    jumpG.appendChild(paint(svgEl('line', { x1: jx, y1: mcAy(-0.027), x2: jx, y2: mcAy(1.038), 'stroke-width': 3 }), null, C_BAD));
+    jumpG.appendChild(paint(svgEl('circle', { cx: jx, cy: mcAy(-0.027), r: 4 }), C_BAD));
+    jumpG.appendChild(paint(svgEl('circle', { cx: jx, cy: mcAy(1.038), r: 4 }), C_BAD));
+    jumpG.appendChild(paint(svgText(jx + 10, mcAy(1.038) - 8, '−0.03 → 1.04：一步跳 1.07', 'demo-x-mono', 11), C_BAD));
+    s.appendChild(jumpG);
+
+    var foot = svgEl('g', {});
+    foot.appendChild(paint(svgText(400, 366, '连续混合让「过渡」变成免费的副产品', null, 16, 'middle'), C_ACCENT));
+    foot.appendChild(svgText(400, 390, '同一个位置，硬切换那一跳在 30 Hz 的控制回路上就是一次力矩冲击；恢复也一样是 Pᶠ 权重慢慢升起来', 'demo-x-mut', 11, 'middle'));
+    s.appendChild(foot);
+
+    function draw(t) {
+      var u = seg(t, 1.6, 9.0);
+      var sv = MC.sLo + (MC.sHi - MC.sLo) * u;
+      var on = seg(t, 1.2, 1.8);
+      var w = mcWeights(sv);
+      scan.setAttribute('x1', mcX(sv).toFixed(1));
+      scan.setAttribute('x2', mcX(sv).toFixed(1));
+      setOpacity(scan, on);
+      wDots.forEach(function (d, i) {
+        d.setAttribute('cx', mcX(sv).toFixed(1));
+        d.setAttribute('cy', mcWy(w[i]).toFixed(1));
+        setOpacity(d, on);
+      });
+      blendDot.setAttribute('cx', mcX(sv).toFixed(1));
+      blendDot.setAttribute('cy', mcAy(mcBlend(sv)).toFixed(1));
+      setOpacity(blendDot, on);
+      var hardOn = seg(t, 9.6, 10.2);
+      hardDot.setAttribute('cx', mcX(sv).toFixed(1));
+      hardDot.setAttribute('cy', mcAy(mcHard(sv)).toFixed(1));
+      setOpacity(hardDot, on * hardOn);
+
+      setOpacity(box, on);
+      rd[0].textContent = 's = ' + sv.toFixed(2);
+      rd[1].textContent = 'w(P¹) = ' + w[0].toFixed(3);
+      rd[2].textContent = 'w(P²) = ' + w[1].toFixed(3);
+      rd[3].textContent = 'w(P³) = ' + w[2].toFixed(3);
+      rd[4].textContent = '混合 a = ' + mcBlend(sv).toFixed(3);
+
+      setOpacity(hardLine, Math.max(0.15, hardOn));
+      setOpacity(hardTag, hardOn);
+      setOpacity(jumpG, seg(t, 10.6, 11.4));
+      setOpacity(code, Math.max(0.2, seg(t, 6.4, 7.0)));
+      setOpacity(foot, seg(t, 12.6, 13.4));
+    }
+
+    return { el: s, draw: draw };
+  }
+
+  /* ── scene 4: 摔倒恢复 —— FAIL 从终态变中间态 ──
+     这条 episode 就是 phc-recovery 的默认设置（seed 31、阈值 0.5 m、
+     fallInitProb 0.3、恢复速度 0.12），所以两处画的是同一条轨迹。 */
+  var RC = { x0: 70, x1: 700, y0: 78, y1: 250, dHi: 5, steps: 400 };
+  var RC_OPTS = { switchDist: 0.5, fallInitProb: 0.3, recoverSpeed: 0.12, fallRate: 0.012, seed: 31, steps: 400 };
+
+  function rcX(step) {
+    return RC.x0 + (step / RC.steps) * (RC.x1 - RC.x0);
+  }
+
+  function rcY(d) {
+    return RC.y1 - (Math.min(d, RC.dHi) / RC.dHi) * (RC.y1 - RC.y0);
+  }
+
+  function buildSceneRecovery() {
+    var ep = runRecovery(RC_OPTS);
+    var s = sceneSvg('一条 400 步的 episode：摔倒 6 次、Pᶠ 每次都把根节点拉回 0.5 m 以内并切回模仿；没有 Pᶠ 的话，这条 episode 在第 21 步就结束了');
+    s.appendChild(svgText(400, 40, '同一条 episode：有 Pᶠ 能跑满 400 步，没有 Pᶠ 活到第 21 步', 'demo-x-ink2', 13.5, 'middle'));
+
+    // 坐标轴与阈值线
+    s.appendChild(paint(svgEl('line', { x1: RC.x0, y1: RC.y1, x2: RC.x1, y2: RC.y1, 'stroke-width': 1 }), null, C_BORDER));
+    s.appendChild(paint(svgEl('line', { x1: RC.x0, y1: rcY(0.5), x2: RC.x1, y2: rcY(0.5), 'stroke-width': 1.4, 'stroke-dasharray': '5 4' }), null, C_GOOD));
+    s.appendChild(paint(svgText(RC.x0 + 6, rcY(0.5) - 6, '切回模仿的阈值 0.5 m（也是 RET 的终止阈值）', null, 10.5), C_GOOD));
+    s.appendChild(svgText(RC.x0 - 8, RC.y0 + 6, '5 m', 'demo-x-mono demo-x-mut', 10, 'end'));
+    s.appendChild(svgText(RC.x0 - 8, RC.y1 + 4, '0', 'demo-x-mono demo-x-mut', 10, 'end'));
+    s.appendChild(svgText(RC.x0, 70, '根节点距参考的距离', 'demo-x-mut', 10.5));
+    s.appendChild(svgText(RC.x1, 70, '400 步 ≈ 13 秒（控制频率 30 Hz）', 'demo-x-mut', 10.5, 'end'));
+
+    var pts = ep.frames.map(function (f) { return [rcX(f.t), rcY(f.dist)]; });
+    var curve = paint(svgEl('path', { d: '', fill: 'none', 'stroke-width': 2 }), null, C_ACCENT);
+    s.appendChild(curve);
+    var head = paint(svgEl('circle', { cx: rcX(0), cy: rcY(ep.frames[0].dist), r: 4.5 }), C_ACCENT);
+    s.appendChild(head);
+
+    // 模式带
+    var segs = [], cur = ep.frames[0].mode, st = 0;
+    ep.frames.forEach(function (f, i) {
+      if (f.mode !== cur) { segs.push({ m: cur, a: st, b: i - 1 }); cur = f.mode; st = i; }
+    });
+    segs.push({ m: cur, a: st, b: RC.steps - 1 });
+    s.appendChild(paint(svgEl('rect', { x: RC.x0, y: 262, width: RC.x1 - RC.x0, height: 18, rx: 3, opacity: 0.18 }), C_MUTED));
+    var bands = segs.map(function (sg) {
+      var rect = paint(svgEl('rect', {
+        x: rcX(sg.a), y: 262, width: Math.max(1, rcX(sg.b + 1) - rcX(sg.a)), height: 18, rx: 2
+      }), sg.m === 'IMITATE' ? C_GOOD : C_WARN);
+      s.appendChild(rect);
+      return { node: rect, at: sg.a };
+    });
+    s.appendChild(svgText(RC.x0 - 8, 275, '模式', 'demo-x-mut', 10, 'end'));
+    s.appendChild(paint(svgText(RC.x0 + 6, 294, '绿 = IMITATE（追全身参考）', null, 10), C_GOOD));
+    s.appendChild(paint(svgText(RC.x0 + 200, 294, '橙 = RECOVER（Pᶠ 接管，只追根节点 r_point）', null, 10), C_WARN));
+
+    // 没有 Pᶠ 的话活多久
+    var dead = svgEl('g', {});
+    dead.appendChild(paint(svgEl('line', { x1: rcX(ep.deadAt), y1: RC.y0 - 4, x2: rcX(ep.deadAt), y2: 280, 'stroke-width': 1.6, 'stroke-dasharray': '4 3' }), null, C_BAD));
+    dead.appendChild(paint(svgText(rcX(ep.deadAt) + 8, RC.y0 + 6, '第 ' + ep.deadAt + ' 步第一次摔倒 —— 没有 Pᶠ，episode 到此为止', null, 11), C_BAD));
+    s.appendChild(dead);
+
+    var barG = svgEl('g', {});
+    [{ x: 716, h: 172, c: C_GOOD, t: '400 步', l: '有 Pᶠ' },
+      { x: 752, h: 172 * ep.deadAt / RC.steps, c: C_BAD, t: ep.deadAt + ' 步', l: '没有' }
+    ].forEach(function (b) {
+      barG.appendChild(paint(svgEl('rect', { x: b.x, y: RC.y1 - b.h, width: 24, height: b.h, rx: 2 }), b.c));
+      barG.appendChild(paint(svgText(b.x + 12, RC.y1 - b.h - 6, b.t, 'demo-x-mono', 10, 'middle'), b.c));
+      barG.appendChild(svgText(b.x + 12, RC.y1 + 14, b.l, 'demo-x-mut', 10, 'middle'));
+    });
+    s.appendChild(barG);
+
+    // 状态机
+    var smArrow = K.arrowMarker(s, 'phc-x-sm', C_MUTED);
+    var SM = [
+      { x: 130, t: 'IMITATE', sub: '追全身参考姿态', c: C_GOOD, w: 200 },
+      { x: 400, t: 'RECOVER', sub: 'Pᶠ 主导，只追根节点', c: C_WARN, w: 210 },
+      { x: 662, t: 'recovery 窗口 90 步', sub: 'reset_buf = 0，不许 reset', c: C_BAD, w: 216 }
+    ].map(function (n, i) {
+      var g = svgEl('g', {});
+      g.appendChild(paint(svgEl('rect', { x: n.x - n.w / 2, y: 312, width: n.w, height: 44, rx: 8, 'stroke-width': 1.5 }), C_SURFACE, n.c));
+      g.appendChild(paint(svgText(n.x, 331, n.t, 'demo-x-mono', 12, 'middle'), n.c));
+      g.appendChild(svgText(n.x, 348, n.sub, 'demo-x-mut', 10, 'middle'));
+      s.appendChild(g);
+      return { g: g, at: 12.0 + i * 0.5 };
+    });
+    var smEdges = [[[230, 334], [294, 334]], [[506, 334], [553, 334]]].map(function (e) {
+      var p = paint(svgEl('path', { d: polyPath(e), fill: 'none', 'stroke-width': 1.8, 'marker-end': smArrow }), null, C_MUTED);
+      s.appendChild(p);
+      return p;
+    });
+    var backArrow = K.arrowMarker(s, 'phc-x-back', C_GOOD);
+    var back = svgEl('g', {});
+    back.appendChild(paint(svgEl('path', {
+      d: polyPath([[662, 356], [662, 374], [130, 374], [130, 356]]),
+      fill: 'none', 'stroke-width': 1.8, 'marker-end': backArrow
+    }), null, C_GOOD));
+    back.appendChild(paint(svgText(396, 370, '根节点距参考 < 0.5 m → 切回模仿', null, 11, 'middle'), C_GOOD));
+    s.appendChild(back);
+
+    var foot = paint(svgText(400, 400, 'DeepMimic 的 FAIL 是终态，PHC 把它变成中间态 —— 这才是标题里 Perpetual 的机制来源', null, 13, 'middle'), C_ACCENT);
+    s.appendChild(foot);
+
+    function draw(t) {
+      var u = ease(seg(t, 1.2, 10.5));
+      var n = Math.max(2, Math.round(u * RC.steps));
+      curve.setAttribute('d', polyPath(pts.slice(0, n)));
+      head.setAttribute('cx', pts[n - 1][0].toFixed(1));
+      head.setAttribute('cy', pts[n - 1][1].toFixed(1));
+      paint(head, ep.frames[n - 1].mode === 'IMITATE' ? C_GOOD : C_WARN);
+      setOpacity(head, seg(t, 1.2, 1.6) * (1 - seg(t, 10.5, 11.0)));
+      bands.forEach(function (b) { setOpacity(b.node, b.at < n ? 1 : 0); });
+      setOpacity(dead, seg(t, 3.2, 3.8));
+      setOpacity(barG, seg(t, 10.6, 11.2));
+      SM.forEach(function (m) { setOpacity(m.g, Math.max(0.2, seg(t, m.at, m.at + 0.5))); });
+      smEdges.forEach(function (e, i) { setOpacity(e, Math.max(0.2, seg(t, 12.4 + i * 0.5, 12.8 + i * 0.5))); });
+      setOpacity(back, seg(t, 13.4, 14.0));
+      setOpacity(foot, seg(t, 14.4, 15.0));
+    }
+
+    return { el: s, draw: draw };
+  }
+
+  /* ── scene 5: 两阶段训练闭环 ── */
+  var S1_NODES = [
+    { x: 112, y: 128, w: 168, t: '① 训当前列 P^k', s: 'PPO；旧列 freeze_pnn' },
+    { x: 302, y: 128, w: 168, t: '② 全库评估', s: '跟不上的 → Q_hard^(k+1)' },
+    { x: 208, y: 232, w: 240, t: '③ 新增一列 P^(k+1)', s: '权重从上一列拷贝初始化' }
+  ];
+  var S1_EDGES = [
+    { pts: [[196, 128], [214, 128]] },
+    { pts: [[302, 152], [246, 208]] },
+    { pts: [[170, 208], [126, 152]] }
+  ];
+  var S2_NODES = [
+    { x: 496, y: 118, w: 160, t: '④ 冻结全部 primitive', s: 'P¹ P² P³ Pᶠ' },
+    { x: 686, y: 118, w: 160, t: '⑤ getup 环境', s: 'fallInit 0.3｜recovery 90 步' },
+    { x: 592, y: 196, w: 250, t: '⑥ 每列各出一份动作 aᵢ', s: 'pnn(curr_obs)' },
+    { x: 592, y: 272, w: 280, t: '⑦ a = Σ wᵢ·aᵢ，PPO 只更新 C', s: 'composer 的 softmax 权重 w' }
+  ];
+  var S2_EDGES = [
+    { pts: [[576, 118], [602, 118]] },
+    { pts: [[686, 141], [636, 173]] },
+    { pts: [[592, 219], [592, 249]] },
+    { pts: [[452, 272], [430, 272], [430, 196], [463, 196]] }
+  ];
+  var LOOP_STEPS = [
+    { stage: 0, kind: 'node', i: 0, a: 1.2, b: 2.4 },
+    { stage: 0, kind: 'edge', i: 0, a: 2.4, b: 2.9 },
+    { stage: 0, kind: 'node', i: 1, a: 2.9, b: 4.1 },
+    { stage: 0, kind: 'edge', i: 1, a: 4.1, b: 4.6 },
+    { stage: 0, kind: 'node', i: 2, a: 4.6, b: 5.8 },
+    { stage: 0, kind: 'edge', i: 2, a: 5.8, b: 6.3 },
+    { stage: 0, kind: 'node', i: 0, a: 6.3, b: 7.0 },
+    { stage: 1, kind: 'node', i: 0, a: 7.4, b: 8.4 },
+    { stage: 1, kind: 'edge', i: 0, a: 8.4, b: 8.8 },
+    { stage: 1, kind: 'node', i: 1, a: 8.8, b: 10.0 },
+    { stage: 1, kind: 'edge', i: 1, a: 10.0, b: 10.4 },
+    { stage: 1, kind: 'node', i: 2, a: 10.4, b: 11.4 },
+    { stage: 1, kind: 'edge', i: 2, a: 11.4, b: 11.8 },
+    { stage: 1, kind: 'node', i: 3, a: 11.8, b: 13.0 },
+    { stage: 1, kind: 'edge', i: 3, a: 13.0, b: 13.6 },
+    { stage: 1, kind: 'node', i: 2, a: 13.6, b: 14.2 }
+  ];
+
+  function flowNodes(s, defs) {
+    return defs.map(function (n) {
+      var g = svgEl('g', {});
+      var rect = paint(svgEl('rect', { x: n.x - n.w / 2, y: n.y - 23, width: n.w, height: 46, rx: 8, 'stroke-width': 1.5 }), C_SURFACE2, C_BORDER);
+      g.appendChild(rect);
+      g.appendChild(svgText(n.x, n.y - 3, n.t, 'demo-x-mono', 11.5, 'middle'));
+      g.appendChild(svgText(n.x, n.y + 14, n.s, 'demo-x-mut', 10, 'middle'));
+      s.appendChild(g);
+      return { g: g, rect: rect };
+    });
+  }
+
+  function buildSceneLoop() {
+    var s = sceneSvg('PHC 的两阶段训练：阶段一逐列训 primitive 并挖硬负例，阶段二冻结全部 primitive、在 getup 环境里只训 composer');
+    var arrow = K.arrowMarker(s, 'phc-x-flow', C_ACCENT);
+
+    [[24, '阶段一：渐进训练 primitive', 'learning=im_pnn_big  env=env_im_pnn'],
+      [408, '阶段二：训练 composer', 'learning=im_mcp_big  env=env_im_getup_mcp']
+    ].forEach(function (b) {
+      s.appendChild(paint(svgEl('rect', { x: b[0], y: 56, width: 368, height: 244, rx: 10, 'stroke-width': 1, 'stroke-dasharray': '6 5' }), C_SURFACE, C_BORDER));
+      s.appendChild(paint(svgText(b[0] + 184, 76, b[1], null, 12.5, 'middle'), C_ACCENT));
+      s.appendChild(svgText(b[0] + 184, 93, b[2], 'demo-x-mono demo-x-mut', 9.5, 'middle'));
+    });
+    s.appendChild(svgText(400, 40, '统一入口 phc/run_hydra.py：先逐列长出 primitive，再冻结它们训 composer', 'demo-x-ink2', 13.5, 'middle'));
+
+    var e1 = S1_EDGES.map(function (e) {
+      var p = paint(svgEl('path', { d: polyPath(e.pts), fill: 'none', 'stroke-width': 1.8, 'marker-end': arrow }), null, C_MUTED);
+      s.appendChild(p);
+      return p;
+    });
+    var e2 = S2_EDGES.map(function (e) {
+      var p = paint(svgEl('path', { d: polyPath(e.pts), fill: 'none', 'stroke-width': 1.8, 'marker-end': arrow }), null, C_MUTED);
+      s.appendChild(p);
+      return p;
+    });
+    var n1 = flowNodes(s, S1_NODES);
+    var n2 = flowNodes(s, S2_NODES);
+
+    var token = paint(svgEl('circle', { cx: -20, cy: -20, r: 6 }), C_ACCENT);
+    s.appendChild(token);
+
+    var rewardG = svgEl('g', {});
+    rewardG.appendChild(paint(svgText(400, 320, 'r ≈ 0.5·r_task + 0.5·r_amp + r_energy　｜　r_task 的四项权重 w_pos/rot/vel/ang = 0.5 / 0.3 / 0.1 / 0.1', 'demo-x-mono', 11, 'middle'), C_GOOD));
+    s.appendChild(rewardG);
+
+    var chips = [
+      { x: 50, tx: 'PHC：Succ 98.9%｜G-MPJPE 37.5｜ACC 3.3', c: C_ACCENT },
+      { x: 290, tx: 'PHC+ / PULSE：Succ 100%｜26.6', c: C_GOOD },
+      { x: 530, tx: '~1 周 A100｜全部权重 28.8 MB', c: C_MUTED }
+    ].map(function (c, i) {
+      var g = svgEl('g', {});
+      g.appendChild(paint(svgEl('rect', { x: c.x, y: 336, width: 220, height: 26, rx: 13, 'stroke-width': 1, 'stroke-dasharray': '4 3' }), C_SURFACE, c.c));
+      g.appendChild(paint(svgText(c.x + 110, 353, c.tx, null, 10, 'middle'), c.c));
+      s.appendChild(g);
+      return { g: g, at: 14.4 + i * 0.4 };
+    });
+
+    var foot = paint(svgText(400, 392, 'DeepMimic 学会一个动作；PHC 在一万条动作里一直活着、跟着、摔了还能自己起来', null, 14, 'middle'), C_ACCENT);
+    s.appendChild(foot);
+
+    function draw(t) {
+      var lit = [-1, -1], reach = [-1, -1], actE = [-1, -1], u = 0;
+      LOOP_STEPS.forEach(function (st) {
+        if (t >= st.a) reach[st.stage] = Math.max(reach[st.stage], st.i);
+        if (t >= st.a && t < st.b) {
+          if (st.kind === 'node') lit[st.stage] = st.i;
+          else { actE[st.stage] = st.i; u = seg(t, st.a, st.b); }
+        }
+      });
+
+      [[n1, 0], [n2, 1]].forEach(function (pair) {
+        pair[0].forEach(function (b, i) {
+          var seen = i <= reach[pair[1]];
+          setOpacity(b.g, seen ? 1 : 0.3);
+          paint(b.rect, i === lit[pair[1]] ? C_SURFACE : C_SURFACE2, i === lit[pair[1]] ? C_ACCENT : C_BORDER);
+          b.rect.setAttribute('stroke-width', i === lit[pair[1]] ? 2.5 : 1.5);
+        });
+      });
+      [[e1, 0], [e2, 1]].forEach(function (pair) {
+        pair[0].forEach(function (e, i) {
+          paint(e, null, i === actE[pair[1]] ? C_ACCENT : C_MUTED);
+          setOpacity(e, i <= reach[pair[1]] ? 1 : 0.28);
+        });
+      });
+
+      if (actE[0] >= 0 || actE[1] >= 0) {
+        var st1 = actE[0] >= 0 ? 0 : 1;
+        var p = pointOn((st1 ? S2_EDGES : S1_EDGES)[actE[st1]].pts, u);
+        token.setAttribute('cx', p[0].toFixed(1));
+        token.setAttribute('cy', p[1].toFixed(1));
+        setOpacity(token, 1);
+      } else {
+        setOpacity(token, 0);
+      }
+
+      setOpacity(rewardG, seg(t, 11.8, 12.4));
+      chips.forEach(function (c) { setOpacity(c.g, seg(t, c.at, c.at + 0.4)); });
+      setOpacity(foot, seg(t, 15.6, 16.3));
+    }
+
+    return { el: s, draw: draw };
+  }
+
+  var PHC_SCENES = [
+    {
+      title: 'DeepMimic 之后的三堵墙',
+      dur: 14,
+      build: buildSceneWalls,
+      cues: [
+        { at: 0.4, s: 'DeepMimic 解决了「给一段动捕，学会它」。真要拿去驱动一个实时 avatar，还差三件事。' },
+        { at: 1.0, s: '第一堵墙：**一万段 AMASS 塞进一个网络**。先学走路再学后空翻，学完回头，走路反而生疏了。' },
+        { at: 4.8, s: '这就是**灾难性遗忘**。那给每个动作配一个网络？一万个网络，运行时怎么切。' },
+        { at: 6.0, s: '第二堵墙：**偏离参考太多就 reset**。可 VR 里的虚拟角色不能摔一下就「消失重置」。' },
+        { at: 7.9, s: '之前的做法是加一只 invisible hand 把角色扶住 —— 能站稳，但不真实。PHC 的目标是**一点外力都不用**。' },
+        { at: 9.0, s: '第三堵墙：**参考动作本身带噪声**。视频姿态估计、文本生成出来的骨架都在抖。' },
+        { at: 11.8, s: 'PHC 的答卷正好三条：**PMCP 加容量、Pᶠ 自恢复、keypoint 输入** —— 接下来一堵墙一幕。' }
+      ]
+    },
+    {
+      title: 'PMCP：加容量，不是加轮次',
+      dur: 18,
+      build: buildScenePmcp,
+      cues: [
+        { at: 0.4, s: '左边 240 格是整个动作库（代表 AMASS 的一万多条），按难度从左上排到右下，红色表示还学不会。' },
+        { at: 1.6, s: '第 1 轮：P¹ 在**全量数据**上训，拿下 **77.1%**。剩下的 **55 条**就是论文说的 Q_hard²。' },
+        { at: 3.6, s: '关键一步在这里：**P¹ 训完立刻 freeze_pnn 冻死**，后面无论训什么，这片绿都不会再变红。' },
+        { at: 4.6, s: '第 2 轮新开一列 P²，权重从 P¹ 拷贝初始化，**只打那 55 条难例** → 覆盖率 **95.0%**，还剩 12 条。' },
+        { at: 7.4, s: '第 3 轮同理，只打 12 条 → **98.3%**。难例越少，新列的容量越集中，所以边际收益没有一路掉到 0。' },
+        { at: 10.0, s: '对照组是**同一个网络反复微调**：它每轮也在难例上训，但没有冻结 —— 77.1% 之后先掉到 64.2%，再爬也只有 **72.9%**。' },
+        { at: 13.0, s: '第 4 列是 Pᶠ，它不打难例，用简单移动数据 Q_loco 专训摔倒恢复 —— 下一幕单独讲。' },
+        { at: 14.6, s: '一句话：课程学习换的是**样本顺序**，PMCP 换的是**容量**。代价是推理时要跑 F 份前向，好在每列只是个 MLP。' }
+      ]
+    },
+    {
+      title: 'Composer：连续混合',
+      dur: 15,
+      build: buildSceneMcp,
+      cues: [
+        { at: 0.4, s: 'primitive 全部冻结之后，还差一个人决定「此刻该听谁的」—— 这就是 Composer C(s)。' },
+        { at: 1.6, s: '上图是三个 primitive 的 softmax 权重。扫描线往右走，权重**交接是连续的**，没有任何一处在跳。' },
+        { at: 4.2, s: '所以下图那条混合输出 a = Σ wᵢ·aᵢ 也是连续的：两个专家意见的加权平均，而不是二选一。' },
+        { at: 6.4, s: '源码就两行：`x_all = stack(actions)`、`a = sum(w * x_all)`。Composer 本身只是个小 MLP + Softmax。' },
+        { at: 9.6, s: '现在把它换成**硬切换**（argmax，等价于温度拉满）：红色虚线就是「此刻只听权重最高的那个」。' },
+        { at: 10.6, s: '看交界处：s ≈ −0.65 时，输出从 **−0.03 直接跳到 1.04**，一步 1.07。30 Hz 的控制回路上，这一跳就是一次力矩冲击。' },
+        { at: 12.6, s: '这也解释了**恢复为什么顺**：不是「切到 Pᶠ」，是 Pᶠ 的权重慢慢升起来、模仿那几列慢慢让位。' }
+      ]
+    },
+    {
+      title: '摔倒恢复：FAIL 变中间态',
+      dur: 16,
+      build: buildSceneRecovery,
+      cues: [
+        { at: 0.4, s: '这是一条 400 步的 episode，纵轴是根节点离参考有多远，绿色虚线是 0.5 m 那条阈值。' },
+        { at: 1.2, s: '曲线一开始贴着底走，这是 IMITATE 模式：正常追全身参考姿态。' },
+        { at: 3.2, s: '第 **21 步**摔了 —— 距离一下窜到 4 m 以上。**换成 DeepMimic，episode 到这里就结束了**。' },
+        { at: 4.4, s: 'PHC 这里切进 RECOVER：目标被放松成 r_point，**只要求根节点先回到参考附近**，不管全身姿态。' },
+        { at: 6.6, s: '距离降到 0.5 m 以内就自动切回模仿。底下那条模式带上，橙绿交替了 6 个来回 —— 摔 6 次，爬起来 6 次。' },
+        { at: 10.6, s: '右边两根柱子是同一条 episode 的两种活法：**有 Pᶠ 跑满 400 步，没有 Pᶠ 活到第 21 步**。' },
+        { at: 12.0, s: '训练上靠三个开关：一半 episode 从摔倒状态开局（fallInitProb 0.3），进入恢复窗口后 **90 步内 reset_buf 强制为 0**。' },
+        { at: 14.4, s: '也就是说：**哪怕看起来该终止了，环境也不让你 reset** —— DeepMimic 的 FAIL 是终态，PHC 把它变成了中间态。' }
+      ]
+    },
+    {
+      title: '两阶段训练闭环',
+      dur: 17,
+      build: buildSceneLoop,
+      cues: [
+        { at: 0.4, s: '把前三幕串起来，就是 phc/run_hydra.py 里的两个训练阶段。' },
+        { at: 1.2, s: '阶段一：① 训当前列 P^k（PPO，旧列 freeze_pnn 冻结，梯度不回传）。' },
+        { at: 2.9, s: '② 拿它跑一遍全库，**跟不上的序列导出成 Q_hard^(k+1)**；③ 新增一列，权重从上一列拷过来初始化。' },
+        { at: 6.3, s: '这个圈转几遍，primitive 就一列列长出来了 —— 这正是上一幕那张网格背后的过程。' },
+        { at: 7.4, s: '阶段二：④ **冻结全部 primitive**，只训 composer；⑤ 换到 getup 环境，混入从摔倒状态开局的 episode。' },
+        { at: 10.4, s: '⑥ 每列各出一份动作 aᵢ；⑦ composer 给权重，**a = Σ wᵢ·aᵢ**，PPO 这一阶段只更新 C。' },
+        { at: 11.8, s: '奖励从头到尾是同一套：**r ≈ 0.5·r_task + 0.5·r_amp + r_energy**，r_task 是全身刚体四项误差的指数加权。' },
+        { at: 14.4, s: 'cleaned AMASS 上的公开结果：**PHC 98.9% / G-MPJPE 37.5**，PHC+ 做到 100% / 26.6。' },
+        { at: 15.6, s: '一句话：**DeepMimic 学会一个动作，PHC 在一万条动作里一直活着** —— 这就是 Perpetual 的全部含义。' }
+      ]
+    }
+  ];
+
+  function buildExplainerDemo(host) {
+    K.explainer(host, {
+      title: '五幕动画：PHC 全流程速览',
+      sub: '约 80 秒自动播放。空格播放/暂停，← → 换幕；画面里的数字与本文各节、各实验台一致。',
+      ariaLabel: 'PHC 五幕讲解动画',
+      notes: [
+        '取数依据：第二幕的网格和覆盖率（77.1% → 95.0% → 98.3%，Q_hard 240 → 55 → 12）就是上面「PMCP 实验台」' +
+          '默认设置下现算出来的，单网络微调那条线（77.1 → 64.2 → 72.9）同样来自它的遗忘率默认值 35%；' +
+          '第三幕的权重与动作曲线用的是「Composer 演示」的同一组 primitive；第四幕那条 episode 就是「摔倒恢复实验台」' +
+          '的默认参数（阈值 0.5 m、fallInitProb 0.3、seed 31）跑出来的同一条。',
+        '第五幕里 0.5·r_task + 0.5·r_amp + r_energy、w_pos/rot/vel/ang = 0.5/0.3/0.1/0.1、recoverySteps 90、' +
+          'fallInitProb 0.3、98.9% / 37.5 / 100% / 26.6、28.8 MB 这些来自正文的奖励表、源码对照与附录。',
+        '**第二、三、四幕是玩具模型**：覆盖率、权重、距离曲线都由浏览器里的简化模型算出，只复现机制' +
+          '（冻结不塌 / 连续不跳 / 摔了能起），**数值不能和论文直接比** —— 第二幕那个 98.3% 和论文的 98.9% 只是巧合。'
+      ],
+      scenes: PHC_SCENES
+    });
+  }
+
+
   K.mount({
+    'phc-explainer': buildExplainerDemo,
     'phc-pmcp': buildPmcpDemo,
     'phc-mcp': buildMcpDemo,
     'phc-recovery': buildRecoveryDemo
