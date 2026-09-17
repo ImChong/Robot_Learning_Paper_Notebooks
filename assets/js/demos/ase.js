@@ -1671,8 +1671,7 @@
   function buildExplainerDemo(host) {
     K.explainer(host, {
       title: '六幕动画：ASE 全流程速览',
-      sub:
-        '约 90 秒自动播放。空格播放 / 暂停，← → 换幕；画面里的数字与下面三个演示用的是同一份函数。' +
+      sub: '约 90 秒自动播放。空格播放 / 暂停，← → 换幕；画面里的数字与下面三个演示用的是同一份函数。' +
         'ASE 在 AMP 上叠了六件事（latent / 为什么要约束 / encoder / 两半奖励 / diversity / 定期重采样），所以这里是六幕而不是五幕。',
       ariaLabel: 'ASE 六幕讲解动画',
       notes: [

@@ -79,7 +79,11 @@ chore(Progress): 更新论文阅读进度
 
 笔记里可以内嵌可交互的小演示（滑块 / 拖拽 / 浏览器内跑的小实验）。`papers/01_Foundational_RL/` 下的 **15 篇笔记已全部接入**，每篇 3 个演示（PPO / DeepMimic / AMP / ADD / PHC / ASE 额外各多一个 `*-explainer` 讲解动画，播放器是 `kit.js` 的 `K.explainer`），bundle 与笔记一一对应（`ppo` / `awr` / `deepmimic` / `amp` / `add` / `ase` / `calm` / `pulse` / `phc` / `diffusion_policy` / `beyondmimic` / `lcp` / `domain_randomization` / `dr_theory` / `mimickit`）。
 
-**讲解动画的幕数按内容定，不必凑成五幕**：前五篇是五幕，ASE 是六幕（它在 AMP 上叠了六件事，硬塞进五幕会让 encoder / 两半奖励 / diversity 三块在同一帧里挤成一团）。一幕对应一个能独立讲完的概念，塞不下就多加一幕，笔记正文与导航条里的「N 幕」字样要跟着改。
+### 讲解动画的幕数按内容定，不是固定五幕
+
+`K.explainer` 不限制分镜数量，**幕数应当由论文本身决定**：一个核心概念一幕，开篇提出几个问题就得有几幕来回答，不要为了凑齐模板而拆分或合并。当前 PPO / DeepMimic / AMP / ADD 各 5 幕（与各自笔记「是怎么做的」那几节一一对应），PHC 6 幕（开篇立了三堵墙，第一堵墙需要「先长出列」「再混合列」两幕），ASE 6 幕（它在 AMP 上叠了六件事：latent code / 为什么必须约束 / encoder / 两半奖励 / diversity / 定期重采样，挤进五幕会让 encoder、奖励拆两半和 diversity 三块共用同一帧，谁都读不清）。
+
+改动分镜时，`tests/test_paper_demos.py::test_explainer_scene_count_matches_the_title_and_note` 会核对三件事是否一致：分镜数量、`title` / `ariaLabel` 里的中文幕数、笔记里的 `## 🎬 N幕动画` 标题；`sub` 里写的「约 N 秒」也要和各幕 `dur` 之和对得上。新增讲解动画时记得把 bundle 加进 `EXPLAINER_BUNDLES` 与 `EXPLAINER_SCENES` 两处。
 
 ### 为什么不能直接在 Markdown 里写 `<script>`
 

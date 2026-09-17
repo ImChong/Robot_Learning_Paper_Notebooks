@@ -807,9 +807,12 @@
     render();
   }
 
-  // ─── demo 4: the five-scene explainer animation ──────────────────────────
+  // ─── demo 4: the six-scene explainer animation ───────────────────────────
   /* A narrated storyboard of the whole method — 三堵墙 → PMCP 渐进扩容 →
-     Composer 连续混合 → 摔倒恢复 → 两阶段训练闭环. Every number on screen is
+     Composer 连续混合 → 摔倒恢复 → 噪声输入换成关键点 → 两阶段训练闭环.
+     Six scenes rather than the five the other notes use: PHC opens on three
+     walls, and the third one (noisy reference) needs its own scene or the
+     opening promise goes unpaid. Every number on screen is
      either recomputed from the interactive demos above (the PMCP grid reuses
      buildLibrary/trainRound, the composer curves reuse PRIMS/expertise, the
      recovery episode reuses runRecovery with that demo's default sliders) or
@@ -820,6 +823,7 @@
 
   var svgEl = K.svgEl,
     svgText = K.svgText,
+    svgMath = K.svgMath,
     paint = K.paint,
     seg = K.seg,
     ease = K.ease,
@@ -933,7 +937,7 @@
 
     var foot = svgEl('g', {});
     foot.appendChild(paint(svgText(400, 356, 'PHC 的答卷：PMCP 加容量 ＋ Pᶠ 自恢复 ＋ keypoint 输入', null, 17, 'middle'), C_ACCENT));
-    foot.appendChild(svgText(400, 380, '接下来三幕，正好一堵墙一幕', 'demo-x-mut', 11.5, 'middle'));
+    foot.appendChild(svgText(400, 380, '接下来四幕：第一堵墙要两幕（先长出列，再混合列），后两堵墙各一幕', 'demo-x-mut', 11.5, 'middle'));
     s.appendChild(foot);
 
     function draw(t) {
@@ -1381,7 +1385,189 @@
     return { el: s, draw: draw };
   }
 
-  /* ── scene 5: 两阶段训练闭环 ── */
+  /* ── scene 5: 第三堵墙 —— 噪声输入与 keypoint 版目标 ──
+     这一幕的小人腿是几何示意：腿长按 0.85 m 折算成 116 px，所以髋 5° + 膝 5°
+     算出来的脚尖偏移（≈ 11 cm）与画面上的像素偏移是同一件事，不是论文数据。 */
+  var NZ_HIP = [360, 124], NZ_SEG = 58, NZ_DEG = 5;
+
+  function nzChain(deg1, deg2) {
+    var r1 = (deg1 * Math.PI) / 180, r2 = (deg2 * Math.PI) / 180;
+    var knee = [NZ_HIP[0] + NZ_SEG * Math.sin(r1), NZ_HIP[1] + NZ_SEG * Math.cos(r1)];
+    return [NZ_HIP, knee, [knee[0] + NZ_SEG * Math.sin(r2), knee[1] + NZ_SEG * Math.cos(r2)]];
+  }
+
+  var NZ_KP = [[640, 124], [640, 182], [640, 240]];
+
+  function buildSceneNoise() {
+    var s = sceneSvg('第三堵墙：参考姿态来自视频估计或 VR，每帧都在抖；旋转版目标会把髋、膝各 5 度的误差累积成脚尖 11 厘米的偏移，关键点版目标则让噪声留在原地，代价只是成功率 98.9% 掉到 98.7%');
+    s.appendChild(svgText(400, 40, '第三堵墙不用新模块：换一种「目标差异」的写法就够了', 'demo-x-ink2', 13.5, 'middle'));
+
+    // ── 左：参考从哪来 ──
+    s.appendChild(paint(svgEl('rect', { x: 40, y: 62, width: 210, height: 234, rx: 8, 'stroke-width': 1 }), C_SURFACE2, C_BORDER));
+    s.appendChild(paint(svgText(145, 86, '参考从哪来', null, 13, 'middle'), C_BAD));
+    s.appendChild(svgText(145, 104, '不是干净的 MoCap', 'demo-x-mut', 10.5, 'middle'));
+    var srcArrow = K.arrowMarker(s, 'phc-x-src', C_MUTED);
+    var src = svgEl('g', {});
+    [[114, '摄像头视频 / VR 手柄'], [158, 'HybrIK / MeTRAbs 估计']].forEach(function (b) {
+      src.appendChild(paint(svgEl('rect', { x: 62, y: b[0], width: 166, height: 28, rx: 6, 'stroke-width': 1.2 }), C_SURFACE, C_BORDER));
+      src.appendChild(svgText(145, b[0] + 18, b[1], 'demo-x-ink2', 10.5, 'middle'));
+    });
+    [[142, 158], [186, 202]].forEach(function (a) {
+      src.appendChild(paint(svgEl('path', { d: polyPath([[145, a[0]], [145, a[1]]]), fill: 'none', 'stroke-width': 1.6, 'marker-end': srcArrow }), null, C_MUTED));
+    });
+    s.appendChild(src);
+
+    /* 第一幕那具骨架原样缩到这儿，抖的还是同一组关节点。 */
+    var skel = svgEl('g', { transform: 'translate(-222.7 123.6) scale(0.57)' });
+    KP_BONES.forEach(function (b) {
+      skel.appendChild(paint(svgEl('line', {
+        x1: KP[b[0]][0], y1: KP[b[0]][1], x2: KP[b[1]][0], y2: KP[b[1]][1],
+        'stroke-width': 2.4, 'stroke-dasharray': '6 5'
+      }), null, C_MUTED));
+    });
+    skel.appendChild(paint(svgEl('circle', { cx: 645, cy: 150, r: 9, fill: 'none', 'stroke-width': 2.4, 'stroke-dasharray': '6 5' }), null, C_MUTED));
+    var dots = KP.map(function (p, k) {
+      var node = paint(svgEl('circle', { cx: p[0], cy: p[1], r: 5 }), C_WARN);
+      skel.appendChild(node);
+      return { node: node, p: p, ph: k * 1.7 };
+    });
+    s.appendChild(skel);
+    var srcCap = paint(svgText(145, 288, '每一帧都在抖', null, 11, 'middle'), C_BAD);
+    s.appendChild(srcCap);
+
+    // ── 中：旋转版目标 ──
+    var rotG = svgEl('g', {});
+    rotG.appendChild(paint(svgEl('rect', { x: 266, y: 62, width: 246, height: 234, rx: 8, 'stroke-width': 1 }), C_SURFACE2, C_BORDER));
+    rotG.appendChild(svgMath(389, 86, '\\text{旋转版目标 } s_{rot}', { size: 13, anchor: 'middle', cls: 'demo-x-bad', w: 230 }));
+    rotG.appendChild(svgText(389, 104, '关节旋转差 ＋ 位置 / 速度差', 'demo-x-mut', 10.5, 'middle'));
+    var trueChain = nzChain(0, 0);
+    [[trueChain[0], trueChain[1]], [trueChain[1], trueChain[2]]].forEach(function (b) {
+      rotG.appendChild(paint(svgEl('line', {
+        x1: b[0][0], y1: b[0][1], x2: b[1][0], y2: b[1][1], 'stroke-width': 3, 'stroke-linecap': 'round'
+      }), null, C_MUTED));
+    });
+    trueChain.forEach(function (p) {
+      rotG.appendChild(paint(svgEl('circle', { cx: p[0], cy: p[1], r: 4 }), C_MUTED));
+    });
+    s.appendChild(rotG);
+
+    var noisyChain = nzChain(NZ_DEG, 2 * NZ_DEG);
+    var noisyG = svgEl('g', {});
+    var bones = [[0, 1], [1, 2]].map(function (b) {
+      var ln = paint(svgEl('line', { 'stroke-width': 3, 'stroke-linecap': 'round', 'stroke-dasharray': '5 4' }), null, C_BAD);
+      noisyG.appendChild(ln);
+      return { ln: ln, b: b };
+    });
+    var joints = [0, 1, 2].map(function (i) {
+      var c = paint(svgEl('circle', { r: 4 }), C_BAD);
+      noisyG.appendChild(c);
+      return c;
+    });
+    noisyG.appendChild(paint(svgText(376, 146, '髋 5°', 'demo-x-mono', 10.5), C_BAD));
+    noisyG.appendChild(paint(svgText(382, 200, '膝 +5°', 'demo-x-mono', 10.5), C_BAD));
+    s.appendChild(noisyG);
+
+    var drift = svgEl('g', {});
+    drift.appendChild(paint(svgEl('line', {
+      x1: trueChain[2][0], y1: trueChain[2][1] + 12, x2: noisyChain[2][0], y2: trueChain[2][1] + 12, 'stroke-width': 1.6
+    }), null, C_BAD));
+    [trueChain[2][0], noisyChain[2][0]].forEach(function (x) {
+      drift.appendChild(paint(svgEl('line', {
+        x1: x, y1: trueChain[2][1] + 6, x2: x, y2: trueChain[2][1] + 18, 'stroke-width': 1.6
+      }), null, C_BAD));
+    });
+    drift.appendChild(paint(svgText(389, 272, '脚尖偏 ≈ 11 cm', 'demo-x-mono', 11.5, 'middle'), C_BAD));
+    s.appendChild(drift);
+    var rotCap = paint(svgText(389, 290, '误差 × 肢体长度，一路累积到末端', null, 10.5, 'middle'), C_BAD);
+    s.appendChild(rotCap);
+
+    // ── 右：关键点版目标 ──
+    var kpG = svgEl('g', {});
+    kpG.appendChild(paint(svgEl('rect', { x: 528, y: 62, width: 232, height: 234, rx: 8, 'stroke-width': 1 }), C_SURFACE2, C_BORDER));
+    kpG.appendChild(svgMath(644, 86, '\\text{关键点版目标 } s_{kp}', { size: 13, anchor: 'middle', cls: 'demo-x-good', w: 230 }));
+    kpG.appendChild(svgText(644, 104, '只要 3D 关键点位置差 ＋ 速度差', 'demo-x-mut', 10.5, 'middle'));
+    [[0, 1], [1, 2]].forEach(function (b) {
+      kpG.appendChild(paint(svgEl('line', {
+        x1: NZ_KP[b[0]][0], y1: NZ_KP[b[0]][1], x2: NZ_KP[b[1]][0], y2: NZ_KP[b[1]][1],
+        'stroke-width': 1.4, 'stroke-dasharray': '4 4'
+      }), null, C_MUTED));
+    });
+    var kpDots = NZ_KP.map(function (p, i) {
+      var halo = paint(svgEl('circle', { cx: p[0], cy: p[1], r: 8, fill: 'none', 'stroke-width': 1, 'stroke-dasharray': '3 3' }), null, C_GOOD);
+      var node = paint(svgEl('circle', { cx: p[0], cy: p[1], r: 4.5 }), C_GOOD);
+      kpG.appendChild(halo);
+      kpG.appendChild(node);
+      return { node: node, p: p, ph: i * 2.3 };
+    });
+    s.appendChild(kpG);
+    var kpLab = paint(svgText(644, 272, '脚尖也只差 ±3 cm', 'demo-x-mono', 11.5, 'middle'), C_GOOD);
+    var kpCap = paint(svgText(644, 290, '噪声留在原地，不沿运动链累积', null, 10.5, 'middle'), C_GOOD);
+    s.appendChild(kpLab);
+    s.appendChild(kpCap);
+
+    // ── 下：两种输入的公开结果 ──
+    var score = svgEl('g', {});
+    score.appendChild(svgText(44, 324, 'cleaned AMASS 11313 条：', 'demo-x-mut', 11));
+    [{ x: 186, w: 216, tx: 'PHC 旋转版　Succ 98.9%｜G-MPJPE 37.5', c: C_ACCENT },
+      { x: 412, w: 216, tx: 'PHC-KP 关键点版　98.7%｜40.7', c: C_GOOD }
+    ].forEach(function (c) {
+      score.appendChild(paint(svgEl('rect', { x: c.x, y: 308, width: c.w, height: 26, rx: 13, 'stroke-width': 1, 'stroke-dasharray': '4 3' }), C_SURFACE, c.c));
+      score.appendChild(paint(svgText(c.x + c.w / 2, 325, c.tx, null, 10, 'middle'), c.c));
+    });
+    score.appendChild(paint(svgText(640, 324, '成功率只差 0.2 个点', 'demo-x-mono', 10.5), C_GOOD));
+    s.appendChild(score);
+
+    var pre = svgText(400, 358, '前提是 PHC 直接输出绝对 PD 目标：参考在抖、人已经摔在地上时，根本没有可加残差的基准', 'demo-x-mut', 11, 'middle');
+    var foot = paint(svgText(400, 390, '同一套 PMCP ＋ Pᶠ，只换目标表示，就能接上视频和 VR', null, 15.5, 'middle'), C_ACCENT);
+    s.appendChild(pre);
+    s.appendChild(foot);
+
+    function draw(t) {
+      setOpacity(src, seg(t, 0.3, 1.0));
+      var jit = seg(t, 1.2, 1.8) * 4.5;
+      dots.forEach(function (n) {
+        n.node.setAttribute('cx', (n.p[0] + Math.sin(t * 5.1 + n.ph) * jit).toFixed(1));
+        n.node.setAttribute('cy', (n.p[1] + Math.cos(t * 6.3 + n.ph * 1.3) * jit).toFixed(1));
+      });
+      setOpacity(skel, seg(t, 1.0, 1.6));
+      setOpacity(srcCap, seg(t, 2.0, 2.6));
+
+      setOpacity(rotG, seg(t, 3.4, 4.0));
+      /* 从对齐状态转到 5°／10°，让「误差沿链条越走越大」是看见的，不是读到的。 */
+      var bend = ease(seg(t, 5.0, 6.4));
+      var now = nzChain(NZ_DEG * bend, 2 * NZ_DEG * bend);
+      bones.forEach(function (b) {
+        b.ln.setAttribute('x1', now[b.b[0]][0].toFixed(1));
+        b.ln.setAttribute('y1', now[b.b[0]][1].toFixed(1));
+        b.ln.setAttribute('x2', now[b.b[1]][0].toFixed(1));
+        b.ln.setAttribute('y2', now[b.b[1]][1].toFixed(1));
+      });
+      joints.forEach(function (c, i) {
+        c.setAttribute('cx', now[i][0].toFixed(1));
+        c.setAttribute('cy', now[i][1].toFixed(1));
+      });
+      setOpacity(noisyG, seg(t, 4.6, 5.2));
+      setOpacity(drift, seg(t, 6.4, 7.0));
+      setOpacity(rotCap, seg(t, 6.8, 7.4));
+
+      setOpacity(kpG, seg(t, 7.8, 8.4));
+      var kjit = seg(t, 8.4, 9.0) * 4.1;
+      kpDots.forEach(function (d) {
+        d.node.setAttribute('cx', (d.p[0] + Math.sin(t * 5.7 + d.ph) * kjit).toFixed(1));
+        d.node.setAttribute('cy', (d.p[1] + Math.cos(t * 6.9 + d.ph * 1.3) * kjit).toFixed(1));
+      });
+      setOpacity(kpLab, seg(t, 9.0, 9.6));
+      setOpacity(kpCap, seg(t, 9.4, 10.0));
+
+      setOpacity(score, seg(t, 10.6, 11.2));
+      setOpacity(pre, seg(t, 12.8, 13.4));
+      setOpacity(foot, seg(t, 14.8, 15.4));
+    }
+
+    return { el: s, draw: draw };
+  }
+
+  /* ── scene 6: 两阶段训练闭环 ── */
   var S1_NODES = [
     { x: 112, y: 128, w: 168, t: '① 训当前列 P^k', s: 'PPO；旧列 freeze_pnn' },
     { x: 302, y: 128, w: 168, t: '② 全库评估', s: '跟不上的 → Q_hard^(k+1)' },
@@ -1538,7 +1724,7 @@
         { at: 6.0, s: '第二堵墙：**偏离参考太多就 reset**。可 VR 里的虚拟角色不能摔一下就「消失重置」。' },
         { at: 7.9, s: '之前的做法是加一只 invisible hand 把角色扶住 —— 能站稳，但不真实。PHC 的目标是**一点外力都不用**。' },
         { at: 9.0, s: '第三堵墙：**参考动作本身带噪声**。视频姿态估计、文本生成出来的骨架都在抖。' },
-        { at: 11.8, s: 'PHC 的答卷正好三条：**PMCP 加容量、Pᶠ 自恢复、keypoint 输入** —— 接下来一堵墙一幕。' }
+        { at: 11.8, s: 'PHC 的答卷正好三条：**PMCP 加容量、Pᶠ 自恢复、keypoint 输入** —— 第一堵墙要两幕（长出列、再混合列），后两堵各一幕。' }
       ]
     },
     {
@@ -1586,14 +1772,29 @@
       ]
     },
     {
+      title: '噪声输入：换成关键点',
+      dur: 16,
+      build: buildSceneNoise,
+      cues: [
+        { at: 0.3, s: '前两堵墙讲完了：PMCP 管「学得下」，Pᶠ 管「摔得起」。第三堵墙在**输入端**。' },
+        { at: 1.6, s: '真实用法里参考姿态来自视频姿态估计（HybrIK / MeTRAbs）或 VR 控制器，**每一帧都在抖**。' },
+        { at: 3.6, s: 'PHC 的状态里，「目标差异」有两种写法。旋转版 $s_{rot}$ 比的是关节旋转差。' },
+        { at: 5.2, s: '旋转误差要**乘上肢体长度**：髋 $5^\\circ$、膝再 $5^\\circ$，传到脚尖就是 $11\\ \\mathrm{cm}$ —— 越往末端越大。' },
+        { at: 8.0, s: '关键点版 $s_{kp}$ 只问「每个 3D 点差多远」：噪声**留在原地，不沿运动链累积**。' },
+        { at: 10.8, s: '代价很小：cleaned AMASS 上 **98.9% → 98.7%**，G-MPJPE 37.5 → 40.7，换来能直接吃视频和 VR 输入。' },
+        { at: 13.0, s: '这也是 PHC **不用残差动作**的原因之一：参考本身在抖、人已经摔在地上时，根本没有可加残差的基准。' },
+        { at: 15.0, s: '三堵墙到这儿补齐 —— 最后一幕把它们拼回训练流程。' }
+      ]
+    },
+    {
       title: '两阶段训练闭环',
       dur: 17,
       build: buildSceneLoop,
       cues: [
-        { at: 0.4, s: '把前三幕串起来，就是 phc/run_hydra.py 里的两个训练阶段。' },
+        { at: 0.4, s: '把前面四幕串起来，就是 phc/run_hydra.py 里的两个训练阶段。' },
         { at: 1.2, s: '阶段一：① 训当前列 P^k（PPO，旧列 freeze_pnn 冻结，梯度不回传）。' },
         { at: 2.9, s: '② 拿它跑一遍全库，**跟不上的序列导出成 Q_hard^(k+1)**；③ 新增一列，权重从上一列拷过来初始化。' },
-        { at: 6.3, s: '这个圈转几遍，primitive 就一列列长出来了 —— 这正是上一幕那张网格背后的过程。' },
+        { at: 6.3, s: '这个圈转几遍，primitive 就一列列长出来了 —— 这正是第二幕那张网格背后的过程。' },
         { at: 7.4, s: '阶段二：④ **冻结全部 primitive**，只训 composer；⑤ 换到 getup 环境，混入从摔倒状态开局的 episode。' },
         { at: 10.4, s: '⑥ 每列各出一份动作 aᵢ；⑦ composer 给权重，**a = Σ wᵢ·aᵢ**，PPO 这一阶段只更新 C。' },
         { at: 11.8, s: '奖励从头到尾是同一套：**r ≈ 0.5·r_task + 0.5·r_amp + r_energy**，r_task 是全身刚体四项误差的指数加权。' },
@@ -1605,18 +1806,22 @@
 
   function buildExplainerDemo(host) {
     K.explainer(host, {
-      title: '五幕动画：PHC 全流程速览',
-      sub: '约 80 秒自动播放。空格播放/暂停，← → 换幕；画面里的数字与本文各节、各实验台一致。',
-      ariaLabel: 'PHC 五幕讲解动画',
+      title: '六幕动画：PHC 全流程速览',
+      sub: '约 96 秒自动播放。空格播放/暂停，← → 换幕；画面里的数字与本文各节、各实验台一致。开篇的三堵墙各有对应的一幕（第一堵占两幕），所以这篇比其余几篇多一幕。',
+      ariaLabel: 'PHC 六幕讲解动画',
       notes: [
         '取数依据：第二幕的网格和覆盖率（77.1% → 95.0% → 98.3%，Q_hard 240 → 55 → 12）就是上面「PMCP 实验台」' +
           '默认设置下现算出来的，单网络微调那条线（77.1 → 64.2 → 72.9）同样来自它的遗忘率默认值 35%；' +
           '第三幕的权重与动作曲线用的是「Composer 演示」的同一组 primitive；第四幕那条 episode 就是「摔倒恢复实验台」' +
           '的默认参数（阈值 0.5 m、fallInitProb 0.3、seed 31）跑出来的同一条。',
-        '第五幕里 0.5·r_task + 0.5·r_amp + r_energy、w_pos/rot/vel/ang = 0.5/0.3/0.1/0.1、recoverySteps 90、' +
+        '第五幕的 98.9% / 37.5 与 98.7% / 40.7 是官方仓库 README 在 cleaned AMASS（11313 条）上给出的 PHC 与 PHC-KP；' +
+          '两种目标表示（$s_{rot}$ / $s_{kp}$）、不加残差的绝对 PD 目标出自正文「第一步：状态和动作设计」与 Q5、Q7。',
+        '第六幕里 0.5·r_task + 0.5·r_amp + r_energy、w_pos/rot/vel/ang = 0.5/0.3/0.1/0.1、recoverySteps 90、' +
           'fallInitProb 0.3、98.9% / 37.5 / 100% / 26.6、28.8 MB 这些来自正文的奖励表、源码对照与附录。',
         '**第二、三、四幕是玩具模型**：覆盖率、权重、距离曲线都由浏览器里的简化模型算出，只复现机制' +
-          '（冻结不塌 / 连续不跳 / 摔了能起），**数值不能和论文直接比** —— 第二幕那个 98.3% 和论文的 98.9% 只是巧合。'
+          '（冻结不塌 / 连续不跳 / 摔了能起），**数值不能和论文直接比** —— 第二幕那个 98.3% 和论文的 98.9% 只是巧合。',
+        '第五幕的 5° / 11 cm / ±3 cm 同样是示意：腿长按 0.85 m 折算，髋、膝各差 5° 时脚尖的几何偏移就是 11 cm 上下，' +
+          '用来说明「旋转误差会沿运动链放大、关键点误差不会」，不是论文测出来的噪声水平。'
       ],
       scenes: PHC_SCENES
     });
