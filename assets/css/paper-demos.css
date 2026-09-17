@@ -336,6 +336,191 @@
   display: inline-block;
 }
 
+/* ===== ppo-explainer: the five-scene animation in the PPO note =====
+ * Built by assets/js/demos/ppo.js. Colors come from the --demo-* tokens above
+ * so the storyboard follows the site theme switch like every other demo. */
+
+.ppo-x-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-bottom: 0.8rem;
+}
+
+.ppo-x-chip {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.35rem;
+  border: 1px solid var(--demo-border);
+  border-radius: 999px;
+  background: var(--demo-surface-2);
+  color: var(--text-secondary);
+  padding: 0.22rem 0.7rem 0.28rem;
+  font: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.ppo-x-chip:hover {
+  border-color: var(--demo-accent);
+  color: var(--text);
+}
+
+.ppo-x-chip[aria-current="true"] {
+  border-color: var(--demo-accent);
+  background: var(--demo-surface);
+  color: var(--text);
+}
+
+.ppo-x-chip-n {
+  font-family: 'SF Mono', Menlo, Consolas, monospace;
+  font-size: 0.7rem;
+  color: var(--demo-muted);
+}
+
+.ppo-x-chip[aria-current="true"] .ppo-x-chip-n {
+  color: var(--demo-accent);
+}
+
+.ppo-x-frame {
+  border: 1px solid var(--demo-border);
+  border-radius: 8px;
+  background: var(--demo-surface);
+  overflow: hidden;
+}
+
+.ppo-x-head {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.45rem 0.7rem;
+  border-bottom: 1px solid var(--demo-border);
+  background: var(--demo-surface-2);
+}
+
+.ppo-x-no {
+  font-family: 'SF Mono', Menlo, Consolas, monospace;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--demo-accent);
+}
+
+.ppo-x-title {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.ppo-x-clock {
+  font-family: 'SF Mono', Menlo, Consolas, monospace;
+  font-size: 0.7rem;
+  color: var(--demo-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* The storyboard is drawn on a fixed 800×420 grid; below ~600px it scrolls
+   sideways inside its own box instead of shrinking the labels to nothing. */
+.ppo-x-scroll {
+  overflow-x: auto;
+}
+
+.ppo-x-stage {
+  min-width: 600px;
+}
+
+.ppo-x-scene[hidden] {
+  display: none;
+}
+
+.ppo-x-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.ppo-x-svg text {
+  fill: var(--text);
+}
+
+.ppo-x-mono {
+  font-family: 'SF Mono', Menlo, Consolas, monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+.ppo-x-mut { fill: var(--demo-muted); }
+.ppo-x-ink2 { fill: var(--text-secondary); }
+.ppo-x-acc { fill: var(--demo-accent); }
+.ppo-x-good { fill: var(--demo-good); }
+.ppo-x-bad { fill: var(--demo-bad); }
+.ppo-x-warn { fill: var(--demo-warn); }
+
+.ppo-x-band {
+  fill: var(--demo-accent);
+  fill-opacity: 0.1;
+  stroke: var(--demo-accent);
+  stroke-width: 1;
+  stroke-dasharray: 4 4;
+}
+
+.ppo-x-band-fill {
+  fill: var(--demo-accent);
+  fill-opacity: 0.1;
+}
+
+.ppo-x-freeze-box {
+  fill: var(--demo-bad);
+  fill-opacity: 0.12;
+  stroke: var(--demo-bad);
+  stroke-width: 1;
+}
+
+.ppo-x-track {
+  height: 3px;
+  background: var(--demo-grid);
+}
+
+.ppo-x-track-fill {
+  height: 100%;
+  width: 0;
+  background: var(--demo-accent);
+}
+
+.ppo-x-cues {
+  border-top: 1px solid var(--demo-border);
+  padding: 0.6rem 0.75rem 0.3rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  min-height: 7.5em;
+}
+
+.ppo-x-cue {
+  margin: 0;
+  font-size: 0.85rem;
+  line-height: 1.55;
+  color: var(--demo-muted);
+  opacity: 0.35;
+  transition: opacity 0.35s ease;
+}
+
+.ppo-x-cue.is-on {
+  opacity: 1;
+  color: var(--text-secondary);
+}
+
+.ppo-x-cue b {
+  color: var(--text);
+  font-weight: 600;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ppo-x-cue {
+    transition: none;
+  }
+}
+
 @media (max-width: 600px) {
   .demo-card {
     padding: 0.85rem 0.7rem 0.9rem;
@@ -353,5 +538,13 @@
 
   .demo-stat {
     flex: 1 1 45%;
+  }
+
+  .ppo-x-chip {
+    font-size: 0.74rem;
+  }
+
+  .ppo-x-cues {
+    min-height: 9em;
   }
 }

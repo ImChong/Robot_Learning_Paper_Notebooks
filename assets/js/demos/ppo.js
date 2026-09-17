@@ -13,6 +13,7 @@
  *   ppo-clip   — L^CLIP(r) curve: when does a sample still learn, when is it frozen
  *   ppo-gae    — GAE playground: how λ interpolates between one-step TD and Monte Carlo
  *   ppo-epochs — why clipping is what makes K-epoch reuse of one batch safe
+ *   ppo-explainer — five-scene narrated animation of the whole algorithm
  */
 
 (function () {
@@ -1039,10 +1040,764 @@
     iterSlider.refresh();
   }
 
+  // ─── demo 4: the five-scene explainer animation ──────────────────────────
+  /* A narrated storyboard of the whole algorithm — step size → probability
+     ratio → GAE → clipping → the four-step loop. Every number on screen is one
+     the note derives elsewhere (the 5-step GAE walk-through, cases A and B),
+     so the animation stays a summary of this note rather than a second source.
+
+     SVG is built here rather than in the markdown because sanitize_paper_html.py
+     keeps only plain <div> in #paper-body. Colors go through inline style (not
+     presentation attributes) so `var(--demo-*)` resolves in every browser. */
+
+  var SVG_NS = 'http://www.w3.org/2000/svg';
+
+  function svgEl(tag, attrs) {
+    var node = document.createElementNS(SVG_NS, tag);
+    for (var k in attrs) node.setAttribute(k, attrs[k]);
+    return node;
+  }
+
+  function svgText(x, y, str, cls, size, anchor) {
+    var node = svgEl('text', { x: x, y: y, 'font-size': size || 12 });
+    if (cls) node.setAttribute('class', cls);
+    if (anchor) node.setAttribute('text-anchor', anchor);
+    node.textContent = str;
+    return node;
+  }
+
+  function paint(node, fill, stroke) {
+    if (fill) node.style.fill = fill;
+    if (stroke) node.style.stroke = stroke;
+    return node;
+  }
+
+  function seg(t, a, b) {
+    return clamp((t - a) / (b - a), 0, 1);
+  }
+
+  function ease(x) {
+    return x < 0.5 ? 2 * x * x : 1 - Math.pow(-2 * x + 2, 2) / 2;
+  }
+
+  function setOpacity(node, v) {
+    node.style.opacity = v;
+  }
+
+  function minus(s) {
+    return String(s).replace(/-/g, '−');
+  }
+
+  function signed(v, d) {
+    return (v >= 0 ? '+' : '−') + Math.abs(v).toFixed(d);
+  }
+
+  /* Shared r-axis mapping: r ∈ [0.4, 1.8] → x ∈ [120, 720] in scene space. */
+  function ratioX(r) {
+    return 120 + (r - 0.4) * (600 / 1.4);
+  }
+
+  var C_ACCENT = 'var(--demo-accent)',
+    C_GOOD = 'var(--demo-good)',
+    C_BAD = 'var(--demo-bad)',
+    C_WARN = 'var(--demo-warn)',
+    C_MUTED = 'var(--demo-muted)',
+    C_GRID = 'var(--demo-grid)',
+    C_BORDER = 'var(--demo-border)',
+    C_SURFACE = 'var(--demo-surface)',
+    C_SURFACE2 = 'var(--demo-surface-2)';
+
+  function sceneSvg(label) {
+    var node = svgEl('svg', {
+      viewBox: '0 0 800 420',
+      class: 'ppo-x-svg',
+      role: 'img',
+      'aria-label': label
+    });
+    return node;
+  }
+
+  /* ── scene 1: how big a step ── */
+  function hillY(x) {
+    var u = (x - 430) / 170;
+    var y = 300 - 150 * Math.exp(-u * u * 0.9);
+    if (x > 585) y += (x - 585) * 0.95;
+    return Math.min(y, 372);
+  }
+
+  function hillPath(x0, x1) {
+    var d = '';
+    for (var x = x0; x <= x1; x += 5) d += (d ? ' L ' : 'M ') + x.toFixed(1) + ' ' + hillY(x).toFixed(1);
+    return d + ' L ' + x1.toFixed(1) + ' ' + hillY(x1).toFixed(1);
+  }
+
+  function buildSceneStep() {
+    var s = sceneSvg('策略更新步长：一步迈太大冲出可信区并崩溃，迈太小几乎不动，PPO 让护栏跟着旧策略走、小步稳升');
+    var band = svgEl('rect', { x: 200, y: 70, width: 120, height: 300, rx: 3, class: 'ppo-x-band' });
+    var hill = paint(svgEl('path', { d: hillPath(60, 745), fill: 'none', 'stroke-width': 2.5 }), null, C_BORDER);
+    var trail = paint(svgEl('path', { fill: 'none', 'stroke-width': 3.5, 'stroke-linecap': 'round' }), null, C_ACCENT);
+    var ghosts = svgEl('g', {});
+    var ball = paint(svgEl('circle', { cx: 260, cy: 280, r: 9 }), C_ACCENT);
+    var bandLab = svgText(260, 388, '可信区：只有 θ_old 附近才估得准', 'ppo-x-mono ppo-x-acc', 12, 'middle');
+    var tag = svgText(740, 44, '', 'ppo-x-mono', 15, 'end');
+    tag.setAttribute('font-weight', '700');
+    var sub = svgText(740, 64, '', 'ppo-x-ink2', 12.5, 'end');
+    [band, hill, trail, ghosts, ball,
+      svgText(60, 44, 'J(θ)　策略的真实表现', 'ppo-x-mono ppo-x-mut', 13),
+      bandLab, tag, sub].forEach(function (n) { s.appendChild(n); });
+
+    function draw(t) {
+      var x = 260, x0 = 260, center = 260, label = '', hint = '', tone = C_ACCENT, cls = 'ppo-x-acc', marks = [];
+      if (t < 3.9) {
+        x = 260 + 430 * ease(seg(t, 0.8, 3.0));
+        label = t > 0.9 ? '① 改太多' : '';
+        hint = '一步冲出可信区，站立技能直接崩';
+        /* Stay neutral until the caption names the failure, so the resting
+           first frame doesn't already look like the bad case. */
+        tone = label ? C_BAD : C_ACCENT;
+        cls = 'ppo-x-bad';
+      } else if (t < 6.7) {
+        x = 260 + 26 * ease(seg(t, 4.2, 5.6));
+        label = '② 改太少';
+        hint = '安全，但几乎原地踏步';
+        tone = C_MUTED;
+        cls = 'ppo-x-mut';
+      } else {
+        label = '③ PPO';
+        hint = '护栏跟着 θ_old 走，小步但一直在爬';
+        if (t < 8.4) {
+          x = 260 + 70 * ease(seg(t, 6.9, 8.1));
+        } else if (t < 10.0) {
+          x0 = center = 330;
+          x = 330 + 62 * ease(seg(t, 8.5, 9.7));
+          marks = [260];
+        } else {
+          x0 = center = 392;
+          x = 392 + 38 * ease(seg(t, 10.1, 11.3));
+          marks = [260, 330];
+        }
+      }
+      ball.setAttribute('cx', x.toFixed(1));
+      ball.setAttribute('cy', (hillY(x) - 9).toFixed(1));
+      paint(ball, tone);
+      trail.setAttribute('d', hillPath(Math.min(x0, x), Math.max(x0 + 1, x)));
+      paint(trail, null, tone);
+      band.setAttribute('x', center - 60);
+      bandLab.setAttribute('x', center);
+      ghosts.textContent = '';
+      marks.forEach(function (gx) {
+        ghosts.appendChild(paint(svgEl('circle', { cx: gx, cy: (hillY(gx) - 9).toFixed(1), r: 6, fill: 'none', 'stroke-width': 1.5 }), null, C_MUTED));
+      });
+      tag.textContent = label;
+      tag.setAttribute('class', 'ppo-x-mono ' + cls);
+      sub.textContent = hint;
+      setOpacity(tag, label ? 1 : 0);
+      setOpacity(sub, label ? 1 : 0);
+    }
+
+    return { el: s, draw: draw };
+  }
+
+  /* ── scene 2: the probability ratio ── */
+  function buildSceneRatio() {
+    var s = sceneSvg('概率比 r = 0.048 / 0.032 = 1.5，已经冲出 0.8 到 1.2 的安全带');
+    var bar = paint(svgEl('rect', { x: 200, y: 172, width: 192, height: 26, rx: 3 }), C_ACCENT);
+    var val = svgText(404, 190, '0.032', 'ppo-x-mono ppo-x-acc', 13);
+    var ratio = svgText(600, 172, '1.00', 'ppo-x-mono ppo-x-acc', 46, 'middle');
+    ratio.setAttribute('font-weight', '700');
+    var markLine = paint(svgEl('line', { x1: 377, y1: 296, x2: 377, y2: 340, 'stroke-width': 2 }), null, C_ACCENT);
+    var markDot = paint(svgEl('circle', { cx: 377, cy: 340, r: 5.5 }), C_ACCENT);
+    var note2 = svgText(400, 398, 'r = 1.5 已经冲出安全带 —— 下一幕看裁剪怎么拦它', 'ppo-x-bad', 13.5, 'middle');
+
+    [svgText(60, 48, '同一个动作 a₁₅「抬腿迈步」，在旧策略和新策略下的概率', 'ppo-x-ink2', 13.5),
+      svgText(60, 126, 'π_old(a|s)', 'ppo-x-mono ppo-x-ink2', 13),
+      paint(svgEl('rect', { x: 200, y: 108, width: 192, height: 26, rx: 3, opacity: 0.55 }), C_MUTED),
+      svgText(404, 126, '0.032', 'ppo-x-mono ppo-x-mut', 13),
+      svgText(60, 190, 'π_θ(a|s)', 'ppo-x-mono ppo-x-ink2', 13),
+      bar, val,
+      svgText(600, 112, 'r = 0.048 / 0.032', 'ppo-x-mono ppo-x-mut', 12.5, 'middle'),
+      ratio,
+      svgText(60, 248, 'r = 1 新旧一样', 'ppo-x-mono ppo-x-mut', 12.5),
+      svgText(240, 248, 'r > 1 更爱选这个动作', 'ppo-x-mono ppo-x-mut', 12.5),
+      svgText(470, 248, 'r < 1 更少选', 'ppo-x-mono ppo-x-mut', 12.5),
+      svgEl('rect', { x: 291, y: 296, width: 172, height: 44, rx: 3, class: 'ppo-x-band' }),
+      paint(svgEl('line', { x1: 120, y1: 340, x2: 720, y2: 340, 'stroke-width': 1 }), null, 'var(--text-secondary)'),
+      svgText(377, 288, '安全带 ε=0.2 → [0.8, 1.2]', 'ppo-x-mono ppo-x-acc', 12, 'middle'),
+      markLine, markDot, note2].forEach(function (n) { s.appendChild(n); });
+
+    [[120, '0.4'], [291, '0.8'], [377, '1.0'], [463, '1.2'], [591, '1.5'], [720, '1.8']].forEach(function (tick) {
+      s.appendChild(svgText(tick[0], 360, tick[1], 'ppo-x-mono ppo-x-mut', 11.5, 'middle'));
+    });
+    setOpacity(note2, 0);
+
+    function draw(t) {
+      var p = 0.032 + 0.016 * ease(seg(t, 2.0, 5.0));
+      var r = p / 0.032;
+      var hot = r > 1.2;
+      var tone = hot ? C_BAD : C_ACCENT;
+      bar.setAttribute('width', (p * 6000).toFixed(1));
+      paint(bar, tone);
+      val.textContent = p.toFixed(3);
+      val.setAttribute('x', (200 + p * 6000 + 12).toFixed(1));
+      val.setAttribute('class', 'ppo-x-mono ' + (hot ? 'ppo-x-bad' : 'ppo-x-acc'));
+      ratio.textContent = r.toFixed(2);
+      ratio.setAttribute('class', 'ppo-x-mono ' + (hot ? 'ppo-x-bad' : 'ppo-x-acc'));
+      var x = ratioX(r).toFixed(1);
+      markLine.setAttribute('x1', x);
+      markLine.setAttribute('x2', x);
+      markDot.setAttribute('cx', x);
+      paint(markDot, tone);
+      paint(markLine, null, tone);
+      setOpacity(note2, seg(t, 8.0, 8.8));
+    }
+
+    return { el: s, draw: draw };
+  }
+
+  /* ── scene 3: GAE, with the note's own five-step rollout ── */
+  var GAE_X = [140, 270, 400, 530, 660];
+  var GAE_CASE = ['正常走', '正常走', '正常走', '大晃', '摔倒 done'];
+  var GAE_R = ['+1', '+1', '+1', '−2', '−10'];
+  var GAE_V = [50, 50, 50, 40, 20];
+  var GAE_DELTA = [0.5, 0.5, -9.4, -22.2, -30.0];
+  var GAE_ADV = [-49.3, -52.9, -56.8, -50.4, -30.0];
+  var GAE_CALC = [
+    'Â₀ = +0.5 + 0.9405 × (−52.9) = −49.3',
+    'Â₁ = +0.5 + 0.9405 × (−56.8) = −52.9',
+    'Â₂ = −9.4 + 0.9405 × (−50.4) = −56.8',
+    'Â₃ = −22.2 + 0.9405 × (−30.0) = −50.4',
+    'Â₄ = δ₄ = −30.0（done，没有下一步）'
+  ];
+
+  function buildSceneGae() {
+    var s = sceneSvg('五步 rollout 的 GAE 计算：先算每步 TD 误差，再逆序按 0.9405 递推优势，末尾摔倒把 t=0 的优势拉到 −49.3');
+    var defs = svgEl('defs', {});
+    var marker = svgEl('marker', {
+      id: 'ppo-x-arrow', viewBox: '0 0 10 10', refX: 9, refY: 5,
+      markerWidth: 7, markerHeight: 7, orient: 'auto-start-reverse'
+    });
+    marker.appendChild(paint(svgEl('path', { d: 'M 0 0 L 10 5 L 0 10 z' }), C_ACCENT));
+    defs.appendChild(marker);
+    s.appendChild(defs);
+
+    var heads = [], rows = [], deltas = [], advs = [];
+    GAE_X.forEach(function (x, i) {
+      var head = svgEl('g', {});
+      head.appendChild(svgText(x, 78, 't=' + i, 'ppo-x-mono ppo-x-ink2', 13, 'middle'));
+      head.appendChild(svgText(x, 96, GAE_CASE[i], i === 4 ? 'ppo-x-bad' : 'ppo-x-mut', 11.5, 'middle'));
+      heads.push(head);
+      var row = svgEl('g', {});
+      row.appendChild(svgText(x, 118, GAE_R[i], 'ppo-x-mono ppo-x-ink2', 12.5, 'middle'));
+      row.appendChild(svgText(x, 140, String(GAE_V[i]), 'ppo-x-mono ppo-x-ink2', 12.5, 'middle'));
+      rows.push(row);
+
+      var d = GAE_DELTA[i], hd = Math.max(Math.abs(d) * 1.35, 2);
+      var gd = svgEl('g', {});
+      gd.appendChild(paint(svgEl('rect', {
+        x: x - 23, y: d >= 0 ? 186 - hd : 186, width: 46, height: hd, rx: 2, opacity: 0.85
+      }), d >= 0 ? C_GOOD : C_BAD));
+      gd.appendChild(svgText(x, 180, signed(d, 1), 'ppo-x-mono ' + (d >= 0 ? 'ppo-x-good' : 'ppo-x-bad'), 12, 'middle'));
+      deltas.push(gd);
+
+      var a = GAE_ADV[i], ha = Math.max(Math.abs(a) * 0.78, 2);
+      var ga = svgEl('g', {});
+      ga.appendChild(paint(svgEl('rect', {
+        x: x - 23, y: a >= 0 ? 282 - ha : 282, width: 46, height: ha, rx: 2, opacity: 0.85
+      }), a >= 0 ? C_GOOD : C_BAD));
+      ga.appendChild(svgText(x, 274, signed(a, 1), 'ppo-x-mono ' + (a >= 0 ? 'ppo-x-good' : 'ppo-x-bad'), 12.5, 'middle'));
+      advs.push(ga);
+    });
+
+    var zero1 = paint(svgEl('line', { x1: 90, y1: 186, x2: 730, y2: 186, 'stroke-width': 1 }), null, 'var(--text-secondary)');
+    var zero2 = paint(svgEl('line', { x1: 90, y1: 282, x2: 730, y2: 282, 'stroke-width': 1 }), null, 'var(--text-secondary)');
+    var dLab = svgText(62, 162, 'δ_t = r + γV(s′) − V(s)', 'ppo-x-mono ppo-x-mut', 12);
+    var aLab = svgText(62, 258, 'Â_t = δ_t + 0.9405·Â_{t+1}', 'ppo-x-mono ppo-x-mut', 12);
+    var arrow = paint(svgEl('path', {
+      d: 'M 660 242 L 146 242', fill: 'none', 'stroke-width': 1.6,
+      'stroke-dasharray': '5 4', 'marker-end': 'url(#ppo-x-arrow)'
+    }), null, C_ACCENT);
+    var arrowLab = svgText(400, 234, '逆序回传，每退一步 ×0.9405', 'ppo-x-mono ppo-x-acc', 11.5, 'middle');
+    var calc = svgText(400, 356, '', 'ppo-x-mono ppo-x-acc', 14.5, 'middle');
+    var punch = svgText(400, 392, 'δ₀ 只看一步是 +0.5；Â₀ 却是 −49.3 —— 4 步后那一摔被传回了起点', 'ppo-x-ink2', 13.5, 'middle');
+
+    s.appendChild(svgText(60, 46, '一段 rollout：走 3 步 → 大晃 → 摔倒（done）　γ=0.99　λ=0.95', 'ppo-x-ink2', 13.5));
+    heads.concat(rows).forEach(function (n) { s.appendChild(n); });
+    s.appendChild(svgText(62, 118, 'r_t', 'ppo-x-mono ppo-x-mut', 12));
+    s.appendChild(svgText(62, 140, 'V(s_t)', 'ppo-x-mono ppo-x-mut', 12));
+    [dLab, zero1].concat(deltas).forEach(function (n) { s.appendChild(n); });
+    [arrow, arrowLab, aLab, zero2].concat(advs).forEach(function (n) { s.appendChild(n); });
+    [calc, punch].forEach(function (n) { s.appendChild(n); });
+
+    function draw(t) {
+      var i;
+      for (i = 0; i < 5; i++) {
+        var f = seg(t, 0.3 + i * 0.34, 0.9 + i * 0.34);
+        setOpacity(heads[i], f);
+        setOpacity(rows[i], f);
+        setOpacity(deltas[i], seg(t, 2.8 + i * 0.6, 3.3 + i * 0.6));
+      }
+      setOpacity(dLab, seg(t, 2.4, 2.9));
+      setOpacity(aLab, seg(t, 6.7, 7.2));
+      setOpacity(arrow, seg(t, 6.9, 7.6));
+      setOpacity(arrowLab, seg(t, 6.9, 7.6));
+      var step = -1;
+      for (i = 0; i < 5; i++) {
+        var start = 7.4 + i * 1.3;
+        setOpacity(advs[4 - i], seg(t, start, start + 0.45));
+        if (t >= start) step = i;
+      }
+      if (step >= 0) {
+        calc.textContent = GAE_CALC[4 - step];
+        setOpacity(calc, seg(t, 7.4 + step * 1.3, 7.7 + step * 1.3));
+      } else {
+        setOpacity(calc, 0);
+      }
+      setOpacity(punch, seg(t, 14.0, 14.7));
+    }
+
+    return { el: s, draw: draw };
+  }
+
+  /* ── scene 4: the clipped objective, cases A and B ── */
+  function buildSceneClip() {
+    var s = sceneSvg('PPO 裁剪目标：三条线分别是未裁剪项、裁剪项和取 min 的结果；r 冲出 0.8 到 1.2 后 min 选中裁剪项，曲线变平，梯度为零');
+    function vy(v) { return 230 - v * 22; }
+
+    var unclip = paint(svgEl('polyline', { fill: 'none', 'stroke-width': 2, 'stroke-dasharray': '6 4' }), null, C_MUTED);
+    var clipLn = paint(svgEl('polyline', { fill: 'none', 'stroke-width': 2 }), null, C_WARN);
+    var minLn = paint(svgEl('polyline', { fill: 'none', 'stroke-width': 3.5, 'stroke-linejoin': 'round' }), null, C_ACCENT);
+    var guide = paint(svgEl('line', { x1: 377, y1: 230, x2: 377, y2: 230, 'stroke-width': 1 }), null, 'var(--text-secondary)');
+    var dotNow = paint(svgEl('circle', { cx: 377, cy: 230, r: 6.5 }), C_ACCENT);
+    var readA = svgText(60, 68, 'Â = +2.3', 'ppo-x-mono ppo-x-good', 13.5);
+    readA.setAttribute('font-weight', '700');
+    var readR = svgText(188, 68, 'r = 1.00', 'ppo-x-mono ppo-x-ink2', 13);
+    var readU = svgText(296, 68, 'r·Â = 2.30', 'ppo-x-mono ppo-x-mut', 13);
+    var readC = svgText(424, 68, 'clip(r)·Â = 2.30', 'ppo-x-mono ppo-x-warn', 13);
+    var readM = svgText(566, 68, 'min = 2.30', 'ppo-x-mono ppo-x-acc', 13.5);
+    readM.setAttribute('font-weight', '700');
+    var freeze = svgEl('g', {});
+    freeze.appendChild(svgEl('rect', { x: 684, y: 50, width: 106, height: 24, rx: 4, class: 'ppo-x-freeze-box' }));
+    var freezeTx = svgText(737, 67, '冻结 梯度=0', 'ppo-x-mono ppo-x-bad', 12, 'middle');
+    freezeTx.setAttribute('font-weight', '700');
+    freeze.appendChild(freezeTx);
+    setOpacity(freeze, 0);
+
+    s.appendChild(svgText(60, 40, '横轴：概率比 r　纵轴：这条样本贡献的目标值', 'ppo-x-ink2', 13));
+    s.appendChild(svgText(740, 40, 'L = min( r·Â , clip(r,0.8,1.2)·Â )', 'ppo-x-mono ppo-x-mut', 12.5, 'end'));
+    s.appendChild(svgEl('rect', { x: 291, y: 76, width: 172, height: 286, class: 'ppo-x-band-fill' }));
+    [291, 463].forEach(function (x) {
+      s.appendChild(paint(svgEl('line', { x1: x, y1: 76, x2: x, y2: 362, 'stroke-width': 1, 'stroke-dasharray': '4 4' }), null, C_ACCENT));
+    });
+    s.appendChild(paint(svgEl('line', { x1: 120, y1: 230, x2: 730, y2: 230, 'stroke-width': 1 }), null, 'var(--text-secondary)'));
+    s.appendChild(svgText(110, 234, '0', 'ppo-x-mono ppo-x-mut', 11.5, 'end'));
+    [[120, '0.4'], [291, '0.8'], [377, '1.0'], [463, '1.2'], [591, '1.5'], [720, '1.8']].forEach(function (tick) {
+      s.appendChild(svgText(tick[0], 380, tick[1], 'ppo-x-mono ppo-x-mut', 11.5, 'middle'));
+    });
+    s.appendChild(svgText(738, 234, 'r', 'ppo-x-mono ppo-x-mut', 11.5));
+    [unclip, clipLn, minLn, guide, dotNow, readA, readR, readU, readC, readM, freeze].forEach(function (n) { s.appendChild(n); });
+
+    var legendSpecs = [[470, 500, C_MUTED, '6 4', 2, 506, 'r·Â', 'ppo-x-mut'],
+      [552, 582, C_WARN, null, 2, 588, 'clip(r)·Â', 'ppo-x-warn'],
+      [662, 692, C_ACCENT, null, 3.5, 698, 'min', 'ppo-x-acc']];
+    legendSpecs.forEach(function (spec) {
+      var ln = svgEl('line', { x1: spec[0], y1: 400, x2: spec[1], y2: 400, 'stroke-width': spec[4] });
+      if (spec[3]) ln.setAttribute('stroke-dasharray', spec[3]);
+      s.appendChild(paint(ln, null, spec[2]));
+      s.appendChild(svgText(spec[5], 404, spec[6], 'ppo-x-mono ' + spec[7], 11.5));
+    });
+
+    function draw(t) {
+      var adv = t < 10.6 ? 2.3 : (t < 11.8 ? 2.3 - 5.4 * ease(seg(t, 10.6, 11.8)) : -3.1);
+      var r;
+      if (t < 2.2) r = 1.0;
+      else if (t < 5.2) r = 1.0 + 0.5 * ease(seg(t, 2.2, 5.2));
+      else if (t < 10.6) r = 1.5;
+      else if (t < 11.8) r = 1.5 - 0.5 * ease(seg(t, 10.6, 11.8));
+      else if (t < 12.6) r = 1.0;
+      else if (t < 15.6) r = 1.0 - 0.4 * ease(seg(t, 12.6, 15.6));
+      else r = 0.6;
+
+      var pu = [], pc = [], pm = [], q, x;
+      for (q = 0.4; q <= 1.801; q += 0.02) {
+        var u = q * adv, c = clamp(q, 0.8, 1.2) * adv;
+        x = ratioX(q).toFixed(1);
+        pu.push(x + ',' + vy(u).toFixed(1));
+        pc.push(x + ',' + vy(c).toFixed(1));
+        pm.push(x + ',' + vy(Math.min(u, c)).toFixed(1));
+      }
+      unclip.setAttribute('points', pu.join(' '));
+      clipLn.setAttribute('points', pc.join(' '));
+      minLn.setAttribute('points', pm.join(' '));
+
+      var uv = r * adv, cv = clamp(r, 0.8, 1.2) * adv, mv = Math.min(uv, cv);
+      var cx = ratioX(r).toFixed(1), cy = vy(mv).toFixed(1);
+      guide.setAttribute('x1', cx);
+      guide.setAttribute('x2', cx);
+      guide.setAttribute('y2', cy);
+      dotNow.setAttribute('cx', cx);
+      dotNow.setAttribute('cy', cy);
+
+      var good = adv >= 0;
+      var frozen = (good && r > 1.2) || (!good && r < 0.8);
+      readA.textContent = 'Â = ' + signed(adv, 1);
+      readA.setAttribute('class', 'ppo-x-mono ' + (good ? 'ppo-x-good' : 'ppo-x-bad'));
+      readR.textContent = 'r = ' + r.toFixed(2);
+      readU.textContent = 'r·Â = ' + minus(uv.toFixed(2));
+      readC.textContent = 'clip(r)·Â = ' + minus(cv.toFixed(2));
+      readM.textContent = 'min = ' + minus(mv.toFixed(2));
+      setOpacity(freeze, frozen ? 1 : 0);
+      paint(dotNow, frozen ? C_BAD : C_ACCENT);
+    }
+
+    return { el: s, draw: draw };
+  }
+
+  /* ── scene 5: the four-step loop ── */
+  var LOOP_NODES = [
+    { x: 400, y: 70, w: 268, title: '① 收集经验', sub: 'N 个环境 × T 步 → 2048 条样本' },
+    { x: 625, y: 210, w: 236, title: '② 计算优势', sub: 'GAE 给每条样本算 Â_t' },
+    { x: 400, y: 350, w: 306, title: '③ 多轮更新', sub: '同一批数据 10 个 epoch，clip 当刹车' },
+    { x: 175, y: 210, w: 226, title: '④ 同步旧策略', sub: 'π_old ← π_θ，回到 ①' }
+  ];
+  var LOOP_STEPS = [
+    { hold: 0, d: 1.3 }, { move: 0, d: 1.0 }, { hold: 1, d: 1.2 }, { move: 1, d: 1.0 },
+    { hold: 2, d: 3.0 }, { move: 2, d: 1.0 }, { hold: 3, d: 1.2 }, { move: 3, d: 1.0 }
+  ];
+
+  function buildSceneLoop() {
+    var s = sceneSvg('PPO 四步训练循环：收集经验、用 GAE 算优势、同一批数据跑十个 epoch 更新、同步旧策略，然后回到第一步');
+    function miniX(r) { return 312 + (r - 0.7) * (176 / 0.7); }
+
+    s.appendChild(paint(svgEl('ellipse', { cx: 400, cy: 210, rx: 225, ry: 140, fill: 'none', 'stroke-width': 2 }), null, C_GRID));
+    [-45, 45, 135, 225].forEach(function (deg) {
+      var a = deg * Math.PI / 180;
+      var px = 400 + 225 * Math.cos(a), py = 210 + 140 * Math.sin(a);
+      var rot = Math.atan2(140 * Math.cos(a), -225 * Math.sin(a)) * 180 / Math.PI;
+      s.appendChild(paint(svgEl('path', {
+        d: 'M -7 -5 L 7 0 L -7 5 Z',
+        transform: 'translate(' + px.toFixed(1) + ',' + py.toFixed(1) + ') rotate(' + rot.toFixed(1) + ')'
+      }), C_GRID));
+    });
+
+    var boxes = LOOP_NODES.map(function (n) {
+      var g = svgEl('g', {});
+      var rect = paint(svgEl('rect', { x: n.x - n.w / 2, y: n.y - 28, width: n.w, height: 56, rx: 8, 'stroke-width': 1.5 }), C_SURFACE, C_BORDER);
+      g.appendChild(rect);
+      g.appendChild(svgText(n.x, n.y - 4, n.title, 'ppo-x-mono', 13.5, 'middle'));
+      g.appendChild(svgText(n.x, n.y + 16, n.sub, 'ppo-x-mut', 11.5, 'middle'));
+      s.appendChild(g);
+      return rect;
+    });
+
+    var mid = svgEl('g', {});
+    var epochTx = svgText(400, 180, 'epoch 1 / 10', 'ppo-x-mono ppo-x-ink2', 13, 'middle');
+    var track = paint(svgEl('rect', { x: 312, y: 196, width: 176, height: 14, rx: 3, 'stroke-width': 1 }), C_SURFACE2, C_BORDER);
+    var bandRect = svgEl('rect', { x: miniX(0.8), y: 196, width: miniX(1.2) - miniX(0.8), height: 14, class: 'ppo-x-band-fill' });
+    var mark = paint(svgEl('line', { x1: miniX(1.0), y1: 192, x2: miniX(1.0), y2: 214, 'stroke-width': 2.5 }), null, C_ACCENT);
+    var brake = svgText(400, 248, 'clip 刹车 → 本轮冻结', 'ppo-x-mono ppo-x-bad', 12, 'middle');
+    brake.setAttribute('font-weight', '700');
+    [epochTx, track, bandRect, mark,
+      svgText(miniX(0.8), 230, '0.8', 'ppo-x-mono ppo-x-mut', 10.5, 'middle'),
+      svgText(miniX(1.2), 230, '1.2', 'ppo-x-mono ppo-x-mut', 10.5, 'middle'),
+      brake].forEach(function (n) { mid.appendChild(n); });
+    setOpacity(mid, 0);
+    s.appendChild(mid);
+
+    var token = paint(svgEl('circle', { cx: 400, cy: 70, r: 7 }), C_ACCENT);
+    s.appendChild(token);
+
+    function draw(t) {
+      var acc = 0, i, cur = null, local = 1;
+      for (i = 0; i < LOOP_STEPS.length; i++) {
+        if (t < acc + LOOP_STEPS[i].d) {
+          cur = LOOP_STEPS[i];
+          local = (t - acc) / LOOP_STEPS[i].d;
+          break;
+        }
+        acc += LOOP_STEPS[i].d;
+      }
+      if (!cur) cur = LOOP_STEPS[0];
+      var angle, active = -1;
+      if (cur.hold !== undefined) {
+        angle = -90 + cur.hold * 90;
+        active = cur.hold;
+      } else {
+        angle = -90 + cur.move * 90 + 90 * ease(local);
+      }
+      var rad = angle * Math.PI / 180;
+      token.setAttribute('cx', (400 + 225 * Math.cos(rad)).toFixed(1));
+      token.setAttribute('cy', (210 + 140 * Math.sin(rad)).toFixed(1));
+      boxes.forEach(function (rect, idx) {
+        var on = idx === active;
+        paint(rect, on ? C_SURFACE2 : C_SURFACE, on ? C_ACCENT : C_BORDER);
+        rect.setAttribute('stroke-width', on ? 2.5 : 1.5);
+      });
+      setOpacity(mid, active === 2 ? 1 : 0);
+      if (active === 2) {
+        epochTx.textContent = 'epoch ' + Math.min(10, 1 + Math.floor(10 * local)) + ' / 10';
+        var r = 1.0 + 0.3 * local, hot = r > 1.2, x = miniX(Math.min(r, 1.2)).toFixed(1);
+        mark.setAttribute('x1', x);
+        mark.setAttribute('x2', x);
+        paint(mark, null, hot ? C_BAD : C_ACCENT);
+        setOpacity(brake, hot ? 1 : 0);
+      }
+    }
+
+    return { el: s, draw: draw };
+  }
+
+  /* ── the player shell ── */
+  var EXPLAINER_SCENES = [
+    {
+      title: '步子迈多大', dur: 12, build: buildSceneStep,
+      cues: [
+        { at: 0, s: '问题不是「往哪改」，而是**一次改多少**。' },
+        { at: 3.0, s: '改太多：越出可信区，刚学会的站立一次更新就崩。' },
+        { at: 4.6, s: '改太少：安全，但训练几天也走不出去。' },
+        { at: 7.2, s: 'PPO 的答案是给每次更新**一条护栏**，护栏跟着旧策略走。' }
+      ]
+    },
+    {
+      title: '第一把尺子：概率比 r', dur: 11, build: buildSceneRatio,
+      cues: [
+        { at: 0, s: '数据是旧策略采的，要评价新策略，先要一把尺子。' },
+        { at: 2.2, s: '概率比 **r = π_θ(a|s) / π_old(a|s)**：新策略有多偏爱这个动作。' },
+        { at: 5.4, s: '这条样本 **r = 0.048 / 0.032 = 1.5**，新策略爱过了头。' },
+        { at: 8.2, s: 'ε=0.2 的安全带是 **[0.8, 1.2]**，1.5 已经冲出去了。' }
+      ]
+    },
+    {
+      title: '第二把尺子：优势与 GAE', dur: 20, build: buildSceneGae,
+      cues: [
+        { at: 0, s: '光看回报没用，要问：这个动作比该状态的**平均水平**好多少。' },
+        { at: 2.6, s: '先算一步 TD 误差 **δ_t = r + γV(s′) − V(s)**，done 那步不 bootstrap。' },
+        { at: 7.0, s: '再**逆序**递推 **Â_t = δ_t + γλ·Â_{t+1}**，γλ = 0.99×0.95 = 0.9405。' },
+        { at: 14.0, s: 'δ₀ 只看一步是 +0.5；Â₀ 却是 −49.3 —— 摔倒的账被记回了起点。' }
+      ]
+    },
+    {
+      title: '核心机制：裁剪与冻结', dur: 22, build: buildSceneClip,
+      cues: [
+        { at: 0, s: '有了 r 和 Â，PPO 的目标函数只做一件事：**取 min**。' },
+        { at: 2.0, s: '好动作 Â=+2.3，新策略越来越爱它，r 一路冲到 1.5。' },
+        { at: 5.4, s: 'min 选中裁剪分 **1.2×2.3 = 2.76**；1.2 是常数 → 梯度为 0，本轮**冻结**。' },
+        { at: 11.6, s: '换成坏动作 Â=−3.1，新策略把它压到 r=0.6。' },
+        { at: 15.4, s: 'min 选中 **−2.48**，clip 顶在 0.8 → 同样冻结：已经够讨厌了，别再狂砍。' },
+        { at: 18.6, s: '冻结只挡「继续变本加厉」的那一侧；策略跑偏时的纠错梯度反而最大。' }
+      ]
+    },
+    {
+      title: '合起来：四步循环', dur: 11.5, build: buildSceneLoop,
+      cues: [
+        { at: 0, s: '把两把尺子放回训练循环。' },
+        { at: 1.4, s: '① 收集：N 个环境各跑 T 步，凑够一批 2048 条样本。' },
+        { at: 3.3, s: '② 用 GAE 给每条样本算出 Â_t。' },
+        { at: 5.4, s: '③ 同一批数据跑 10 个 epoch —— r 越偏离 1，裁剪越常生效，自带刹车。' },
+        { at: 9.0, s: '④ π_old ← π_θ，回到 ①。简单、稳、好调，所以人形机器人训练几乎都用它。' }
+      ]
+    }
+  ];
+
+  function clockText(sec) {
+    var m = Math.floor(sec / 60), s = Math.floor(sec % 60);
+    return m + ':' + (s < 10 ? '0' : '') + s;
+  }
+
+  function buildExplainerDemo(host) {
+    var root = card(host, {
+      title: '五幕动画：PPO 全流程速览',
+      sub: '约 76 秒自动播放。空格播放/暂停，← → 换幕；画面里的数字与本文各节算例一致。'
+    });
+
+    var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var total = EXPLAINER_SCENES.reduce(function (a, sc) { return a + sc.dur; }, 0);
+
+    var chipRow = el('div', 'ppo-x-chips');
+    root.appendChild(chipRow);
+
+    var frame = el('div', 'ppo-x-frame');
+    var head = el('div', 'ppo-x-head');
+    var noEl = el('span', 'ppo-x-no', '01');
+    var titleEl = el('span', 'ppo-x-title', EXPLAINER_SCENES[0].title);
+    var clockEl = el('span', 'ppo-x-clock', '0:00 / ' + clockText(total));
+    [noEl, titleEl, clockEl].forEach(function (n) { head.appendChild(n); });
+    frame.appendChild(head);
+
+    var scroller = el('div', 'ppo-x-scroll');
+    var stageEl = el('div', 'ppo-x-stage');
+    scroller.appendChild(stageEl);
+    frame.appendChild(scroller);
+
+    var track = el('div', 'ppo-x-track');
+    var fill = el('div', 'ppo-x-track-fill');
+    track.appendChild(fill);
+    frame.appendChild(track);
+
+    var cueBox = el('div', 'ppo-x-cues');
+    frame.appendChild(cueBox);
+    root.appendChild(frame);
+
+    var scenes = EXPLAINER_SCENES.map(function (spec) {
+      var built = spec.build();
+      var wrap = el('div', 'ppo-x-scene');
+      wrap.appendChild(built.el);
+      wrap.hidden = true;
+      stageEl.appendChild(wrap);
+      return { spec: spec, wrap: wrap, draw: built.draw };
+    });
+
+    var chips = EXPLAINER_SCENES.map(function (spec, i) {
+      var b = el('button', 'ppo-x-chip');
+      b.type = 'button';
+      b.appendChild(el('span', 'ppo-x-chip-n', '0' + (i + 1)));
+      b.appendChild(document.createTextNode(spec.title));
+      b.addEventListener('click', function () { go(i, true); });
+      chipRow.appendChild(b);
+      return b;
+    });
+
+    var row = controlsRow(root);
+    var playBtn = button(row, '播放', function () {
+      if (!playing && idx === scenes.length - 1 && time >= scenes[idx].spec.dur) {
+        go(0, true);
+        return;
+      }
+      setPlaying(!playing);
+    });
+    button(row, '上一幕', function () { go(idx - 1, true); });
+    button(row, '下一幕', function () { go(idx + 1, true); });
+    button(row, '从头播', function () { go(0, true); });
+
+    note(root, [
+      '取数依据：「第 2 步：计算优势（GAE）」的 5 步算例，与「第 3 步：PPO 裁剪更新」的案例 A（Â=+2.3, r=1.5）、案例 B（Â=−3.1, r=0.6）。'
+    ]);
+
+    var idx = 0, time = 0, playing = false, last = 0, started = false, autoPaused = false, raf = null;
+
+    function buildCues() {
+      cueBox.textContent = '';
+      scenes[idx].spec.cues.forEach(function (cue) {
+        var p = el('p', 'ppo-x-cue');
+        cue.s.split(/\*\*/).forEach(function (chunk, i) {
+          if (!chunk) return;
+          p.appendChild(i % 2 ? el('b', null, chunk) : document.createTextNode(chunk));
+        });
+        p.setAttribute('data-at', cue.at);
+        cueBox.appendChild(p);
+      });
+    }
+
+    function paintFrame() {
+      var sc = scenes[idx];
+      sc.draw(Math.min(time, sc.spec.dur));
+      fill.style.width = (Math.min(time / sc.spec.dur, 1) * 100).toFixed(1) + '%';
+      var before = 0;
+      for (var k = 0; k < idx; k++) before += scenes[k].spec.dur;
+      clockEl.textContent = clockText(before + Math.min(time, sc.spec.dur)) + ' / ' + clockText(total);
+      var cues = cueBox.children;
+      for (k = 0; k < cues.length; k++) {
+        cues[k].classList.toggle('is-on', time >= parseFloat(cues[k].getAttribute('data-at')));
+      }
+      playBtn.textContent = playing ? '暂停' : '播放';
+    }
+
+    function go(next, fromUser) {
+      idx = clamp(next, 0, scenes.length - 1);
+      time = reduceMotion ? scenes[idx].spec.dur : 0;
+      scenes.forEach(function (sc, i) { sc.wrap.hidden = i !== idx; });
+      noEl.textContent = '0' + (idx + 1);
+      titleEl.textContent = scenes[idx].spec.title;
+      chips.forEach(function (c, i) { c.setAttribute('aria-current', i === idx ? 'true' : 'false'); });
+      buildCues();
+      if (fromUser && !reduceMotion) {
+        playing = true;
+        ensureLoop();
+      }
+      paintFrame();
+    }
+
+    function tick(now) {
+      if (!playing) {
+        raf = null;
+        return;
+      }
+      if (!last) last = now;
+      var dt = Math.min((now - last) / 1000, 0.1);
+      last = now;
+      time += dt;
+      if (time >= scenes[idx].spec.dur) {
+        if (idx < scenes.length - 1) {
+          go(idx + 1);
+          raf = window.requestAnimationFrame(tick);
+          return;
+        }
+        time = scenes[idx].spec.dur;
+        playing = false;
+      }
+      paintFrame();
+      raf = playing ? window.requestAnimationFrame(tick) : null;
+    }
+
+    function ensureLoop() {
+      if (raf === null) {
+        last = 0;
+        raf = window.requestAnimationFrame(tick);
+      }
+    }
+
+    function setPlaying(v) {
+      playing = v;
+      if (v) ensureLoop();
+      paintFrame();
+    }
+
+    root.addEventListener('keydown', function (e) {
+      if (e.key === ' ' || e.key === 'Spacebar') {
+        e.preventDefault();
+        setPlaying(!playing);
+      } else if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        go(idx + 1, true);
+      } else if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        go(idx - 1, true);
+      }
+    });
+    root.setAttribute('tabindex', '0');
+    root.setAttribute('role', 'group');
+    root.setAttribute('aria-label', 'PPO 五幕讲解动画');
+
+    go(0);
+
+    /* Autoplay once the card is actually on screen — a note is long, and an
+       animation that finished above the fold helps nobody. */
+    if (!reduceMotion && typeof window.IntersectionObserver === 'function') {
+      var io = new window.IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+          if (entry.isIntersecting) {
+            if (!started) {
+              started = true;
+              setPlaying(true);
+            } else if (autoPaused) {
+              autoPaused = false;
+              setPlaying(true);
+            }
+          } else if (playing) {
+            autoPaused = true;
+            setPlaying(false);
+          }
+        });
+      }, { threshold: 0.4 });
+      io.observe(frame);
+    }
+
+  }
+
   // ─── bootstrap ───────────────────────────────────────────────────────────
   K.mount({
     'ppo-clip': buildClipDemo,
     'ppo-gae': buildGaeDemo,
-    'ppo-epochs': buildEpochsDemo
+    'ppo-epochs': buildEpochsDemo,
+    'ppo-explainer': buildExplainerDemo
   });
 })();
