@@ -125,7 +125,10 @@ def test_notes_declare_their_demos_in_reading_order():
                 "deepmimic-pd",
             ],
         ),
-        AMP_NOTE: ("amp", ["amp-disc", "amp-reward", "amp-style"]),
+        AMP_NOTE: (
+            "amp",
+            ["amp-explainer", "amp-disc", "amp-reward", "amp-style"],
+        ),
         ADD_NOTE: ("add", ["add-diff", "add-reward", "add-curriculum"]),
         ASE_NOTE: ("ase", ["ase-latent", "ase-encoder", "ase-diversity"]),
         CALM_NOTE: ("calm", ["calm-encoder", "calm-hlc", "calm-fsm"]),
