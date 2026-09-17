@@ -33,6 +33,12 @@ demos: ["add"]
 
 ADD 的核心很狠：**把“精确运动跟踪”从手工 reward 工程问题，变成一个对抗判别问题。** 它不再像 DeepMimic / PHC 那样手调 pose、velocity、end-effector、CoM 各种权重，而是训练一个**只看“参考和当前的差值”**的判别器，直接告诉策略“你离目标还有多远、方向对不对”。
 
+> 🎮 **本文内嵌 1 段动画 + 3 个可交互演示**（不用装任何东西）：
+> 1. [五幕动画：ADD 全流程](#add-explainer-anim) —— 约 78 秒串完「手写加权和的困境 → 改判 Δo → 归一化/打分/奖励 → 四阶段的注意力转移 → 训练闭环」
+> 2. Δo 实验台 —— 拖四个维度的跟踪误差，看差分怎么被归一化、打分、变成 PPO 收到的奖励
+> 3. 谁来决定「先修哪一维」—— DeepMimic 写死的四项权重和判别器的隐含权重并排画，切换旋风踢的四个阶段
+> 4. 自动课程实验台 —— 判别器跟着策略一起变严，和一个固定核宽度的 reward 同台跑
+
 ---
 
 ## 📌 英文缩写速查
@@ -50,7 +56,18 @@ ADD 的核心很狠：**把“精确运动跟踪”从手工 reward 工程问题
 
 ---
 
+## 🎬 五幕动画：ADD 全流程 {#add-explainer-anim}
+
+<div class="paper-demo" data-demo="add-explainer"><p class="demo-fallback">（本节含动画演示，需要启用 JavaScript）</p></div>
+
+> 📖 动画覆盖的三块——「这篇论文要解决什么问题」「ADD 是怎么做的」和实例里的四步拆解——**文字讲解默认折叠**，想看推导、公式和对照表时点开各节的折叠条即可，内容一字未删；流程图、源码片段、论文超参表、面试题与附录不在折叠范围内。
+
+---
+
 ## ❓ 这篇论文要解决什么问题？
+
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：一个大 reward 要同时管多少件事，以及它带来的三件麻烦</summary>
 
 ADD 瞄准的是一个很老、但一直很烦的问题：
 
@@ -85,10 +102,14 @@ $$
 
 > 💡 **类比**：
 > 传统 tracking reward 像你在给学生打总分：姿态 30 分、速度 20 分、末端 25 分、质心 25 分。问题是每门课比例都要人工定，而且不同学生、不同考试还得重调。ADD 的想法则是：**别自己定科目权重了，直接训练一个“总教练”判断你现在和标准答案差在哪里。**
+</details>
 
 论文的关键洞察是：
 
 > **精确 tracking 本质上也是一个多目标优化问题，而对抗学习可以替代手工加权。**
+
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：AMP 判「像不像真人」，ADD 判「差值像不像 0」</summary>
 
 AMP 已经证明了判别器可以用来学“自然动作分布”；
 ADD 则更进一步：
@@ -109,10 +130,14 @@ ADD 则更进一步：
 > **当前你和目标之间的误差，看起来像不像“误差为 0”这个理想状态。**
 
 这直接把 reward 设计从“人工凑加权和”变成了“让判别器自动学多目标之间的 trade-off”。
+</details>
 
 ---
 
 ## 🔧 ADD 是怎么做的？
+
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：人话版：AMP 的形式 + DeepMimic/PHC 的目标</summary>
 
 先说一句人话版：
 
@@ -121,8 +146,12 @@ ADD 则更进一步：
 AMP 擅长学“像不像真人”；
 DeepMimic / PHC 擅长学“跟得准不准”；
 ADD 把对抗学习从“分布匹配”改造成“差分匹配”，于是你既保留了 adversarial 的自动权衡能力，又把目标收紧到了精确 tracking。
+</details>
 
 ### 第一个概念：别直接判状态，判“误差”
+
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：$\Delta o = o^{demo} - o$ 这一步为什么关键，以及正样本为什么自然是零向量</summary>
 
 假设当前模拟角色的判别输入是 $o$，参考动作对应的输入是 $o^{demo}$。
 
@@ -145,8 +174,12 @@ $$
 $$
 
 于是 ADD 的正样本就自然变成了零向量，而负样本是实际出现的差分误差。
+</details>
 
 ### 第二个概念：正样本只有一个也够用
+
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：正类是一个点，不是一个分布（Differential Discriminator 的字面意思）</summary>
 
 传统 GAN / AMP 通常需要大量正样本分布；但 ADD 这里的正样本不是一堆复杂数据，而是一个固定理想点：
 
@@ -162,6 +195,7 @@ $$
 
 > 💡 **直觉**：
 > 不是问“这个动作像不像专家”，而是问“你现在这个误差，看起来像不像‘没有误差’”。
+</details>
 
 下面这个实验台把这一步拆开了：拖动四个维度上的跟踪误差，看 $\Delta o$ 怎么被归一化、怎么被判别器打成一个分数、最后怎么变成 PPO 收到的奖励。**注意正样本那条线始终钉在 $\Delta o = 0$ 上**——它是唯一的正类：
 
@@ -178,11 +212,15 @@ flowchart LR
     S3 --> S4["④ r_disc → PPO 更新 π"]
 </div>
 
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：总 reward 退化成 $r \approx r_{disc}$</summary>
+
 所以总 reward 本质上变成：
 
 $$
 r \approx r_{disc}
 $$
+</details>
 
 在 MimicKit 的默认配置里，甚至直接把 task reward 权重设成 0：
 
@@ -191,13 +229,20 @@ task_reward_weight: 0.0
 disc_reward_weight: 1.0
 ```
 
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：这两行 yaml 说明作者不是拿对抗项当正则</summary>
+
 这意味着：
 
 > **默认 ADD 几乎完全靠判别器 reward 驱动。**
 
 这点很猛，因为它说明作者不是把对抗项当辅助正则，而是真拿它替代手工 tracking reward。
+</details>
 
 ### 第四个概念：为什么它能自动平衡多个目标？
+
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：差分向量里本来就装着四类误差，权重交给判别器学</summary>
 
 因为差分向量里本身就同时包含了多个维度的信息：
 - 姿态差
@@ -212,12 +257,16 @@ disc_reward_weight: 1.0
 - ADD：让判别器自己从数据里学“什么时候 pose 更重要，什么时候 vel 更重要”
 
 这就是它对多目标优化更自然的地方。
+</details>
 
 「自动平衡」听起来很虚，直接对比一下就具体了。下面这个演示把 DeepMimic 写死的四项权重（0.65 / 0.1 / 0.15 / 0.1）和判别器的隐含权重并排画出来，切换旋风踢的四个阶段，看固定权重从哪一步开始跟不上：
 
 <div class="paper-demo" data-demo="add-reward"><p class="demo-fallback">（本节含交互演示，需要启用 JavaScript）</p></div>
 
 ### 第五个概念：它和 AMP 到底差在哪？
+
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：AMP 与 ADD 的对照表，以及两句话版的区别</summary>
 
 这是面试必问。
 
@@ -236,6 +285,7 @@ disc_reward_weight: 1.0
 
 那 ADD 回答的是：
 > “你离标准答案还有多远？”
+</details>
 
 ---
 
@@ -297,6 +347,9 @@ flowchart LR
 
 ### 第 1 步：当前状态与参考状态做差
 
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：这一帧的四个差值分别有多大</summary>
+
 在某个时刻，环境会同时拿到：
 - 当前模拟角色观测 $o$
 - 参考动作当前帧观测 $o^{demo}$
@@ -315,6 +368,7 @@ $$
 那么 $\Delta o$ 会很小。
 
 如果角色完全乱了，比如旋转节奏错了、踢腿时机也不对，那 $\Delta o$ 就会很大。
+</details>
 
 ### 第 2 步：判别器判断“这个误差像不像 0”
 
@@ -327,10 +381,17 @@ flowchart TB
     D --> R["r_disc 高/低 → PPO"]
 </div>
 
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：打分高低怎么对应误差大小</summary>
+
 如果当前误差很小，判别器会给更高分；
 如果当前误差很大，判别器会给更低分。
+</details>
 
 ### 第 3 步：策略得到 reward 并更新
+
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：PPO 拿到这个奖励之后会往哪儿推</summary>
 
 于是 PPO 会倾向于选择那些能让误差变小的动作：
 
@@ -342,8 +403,12 @@ flowchart TB
 但不同的是：
 
 > **ADD 不需要你手工提前规定“姿态 0.5、速度 0.2、末端 0.3”这种比例。**
+</details>
 
 ### 第 4 步：为什么它对敏捷动作尤其有意义？
+
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：阶段性强的动作，权重本来就不该是常数</summary>
 
 像旋风踢、空翻、杂技这种动作，手工 reward 往往很难调：
 - 有些阶段姿态最重要
@@ -353,6 +418,7 @@ flowchart TB
 这些权重不是全程恒定的。
 
 而 ADD 的判别器会在不同状态区间自动学到不同维度的重要性，所以对这种**阶段性强、动态变化快**的动作尤其有优势。
+</details>
 
 还有一件手工 reward 做不到的事：**判别器的标准会跟着策略一起变严**。策略越准，负样本离零向量越近，判别器必须更挑剔才分得开——奖励的「陡峭区」于是一路往 0 挪，形成一条自动课程。下面这个玩具训练回路把它和一个固定核宽度 $\exp(-k e^2)$ 的 reward 放在一起跑：
 

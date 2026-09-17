@@ -70,6 +70,7 @@
     [/\\hat\s*\{?([A-Za-z])\}?/g, '$1̂'],
     [/\\dot\s*\{?([A-Za-z])\}?/g, '$1̇'],
     [/\\(?:left|right|,|;|!|\s)/g, ' '],
+    [/\\(?:cdots|ldots|dots)/g, '⋯'],
     [/\\cdot/g, '·'], [/\\times/g, '×'], [/\\approx/g, '≈'],
     [/\\le(?:q)?\b/g, '≤'], [/\\ge(?:q)?\b/g, '≥'], [/\\neq\b/g, '≠'],
     [/\\to\b/g, '→'], [/\\rightarrow\b/g, '→'], [/\\leftarrow\b/g, '←'],
@@ -80,6 +81,7 @@
     [/\\epsilon/g, 'ε'], [/\\varepsilon/g, 'ε'], [/\\theta/g, 'θ'], [/\\lambda/g, 'λ'],
     [/\\mu/g, 'μ'], [/\\pi/g, 'π'], [/\\sigma/g, 'σ'], [/\\tau/g, 'τ'],
     [/\\phi/g, 'φ'], [/\\varphi/g, 'φ'], [/\\psi/g, 'ψ'], [/\\omega/g, 'ω'],
+    [/\\Delta/g, 'Δ'], [/\\Gamma/g, 'Γ'], [/\\Lambda/g, 'Λ'], [/\\Theta/g, 'Θ'], [/\\Pi/g, 'Π'],
     [/\\Phi/g, 'Φ'], [/\\Psi/g, 'Ψ'], [/\\Sigma/g, 'Σ'], [/\\Omega/g, 'Ω'],
     [/\^\{?\\?circ\}?/g, '°'],
     [/[{}]/g, ''], [/\s{2,}/g, ' ']
