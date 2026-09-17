@@ -193,6 +193,40 @@ def test_demo_assets_are_theme_aware():
 
 EXPLAINER_BUNDLES = ("ppo", "deepmimic", "amp", "add")
 
+# 幕数由论文决定，不是统一模板：PPO / DeepMimic / AMP / ADD 的核心概念正好各 5 个，
+# PHC 开篇立了三堵墙（第一堵拆成「长出列」「混合列」两幕），所以是 6 幕。
+EXPLAINER_SCENES = {
+    "ppo": (PPO_NOTE, 5),
+    "deepmimic": (DEEPMIMIC_NOTE, 5),
+    "amp": (AMP_NOTE, 5),
+    "add": (ADD_NOTE, 5),
+    "phc": (PHC_NOTE, 6),
+}
+CN_NUMERALS = {4: "四", 5: "五", 6: "六", 7: "七"}
+
+
+def test_explainer_scene_count_matches_the_title_and_note():
+    """分镜数、标题里的幕数、笔记标题三者必须一致，改幕数时不能只改一处。"""
+    for bundle, (note, count) in EXPLAINER_SCENES.items():
+        js = (DEMO_JS_DIR / f"{bundle}.js").read_text(encoding="utf-8")
+        assert js.count("build: buildScene") == count, f"{bundle}.js 的分镜数量应为 {count}"
+
+        cn = CN_NUMERALS[count]
+        assert f"title: '{cn}幕动画" in js, f"{bundle}.js 的 explainer 标题应写「{cn}幕动画」"
+        assert f"{cn}幕讲解动画'" in js, f"{bundle}.js 的 ariaLabel 应写「{cn}幕讲解动画」"
+
+        text = note.read_text(encoding="utf-8")
+        assert f"## 🎬 {cn}幕动画" in text, f"{note} 的动画小节标题应写「{cn}幕动画」"
+
+
+def test_explainer_runtime_matches_the_sum_of_scene_durations():
+    """`sub` 里承诺的「约 N 秒」必须是各幕 dur 之和，否则进度条和文案对不上。"""
+    for bundle in EXPLAINER_SCENES:
+        js = (DEMO_JS_DIR / f"{bundle}.js").read_text(encoding="utf-8")
+        total = sum(float(d) for d in re.findall(r"dur: (\d+(?:\.\d+)?)", js))
+        promised = int(re.search(r"sub: '约 (\d+) 秒", js).group(1))
+        assert abs(total - promised) <= 1, f"{bundle}.js 说约 {promised} 秒，各幕加起来是 {total} 秒"
+
 
 def test_explainer_formulas_go_through_katex():
     """Formulas in the storyboard demos are LaTeX, typeset by the page's KaTeX.
