@@ -76,7 +76,7 @@
     var root = card(host, {
       title: 'PMCP：每一轮新增一个 primitive，旧的冻结起来',
       sub:
-        '第 1 轮在全部 AMASS 上训 P¹，冻结，把还没学会的导出成 Q_hard²；第 2 轮只打这些难例……' +
+        '第 1 轮在全部 AMASS 上训 $P^1$，冻结，把还没学会的导出成 $Q_{hard}^2$；第 2 轮只打这些难例……' +
         '点「训练下一轮」，看两条路线分岔：PHC 是加容量，单网络微调是覆盖旧记忆。'
     });
 
@@ -217,11 +217,11 @@
         );
       } else if (state.round === 1) {
         verdict.set(
-          '📗 第 1 轮：P¹ 在全部数据上拿下 ' +
+          '📗 第 1 轮：$P^1$ 在全部数据上拿下 ' +
             fmt(cov * 100, 1) +
             '%。剩下的 ' +
             sim.hard.length +
-            ' 条就是论文说的 Q_hard² —— 注意**这一步之后 P¹ 就被冻结了**，' +
+            ' 条就是论文说的 $Q_{hard}^2$ —— 注意**这一步之后 $P^1$ 就被冻结了**，' +
             '后面无论训什么，这片绿色都不会再变红。',
           'learning'
         );
@@ -428,7 +428,7 @@
     note(root, [
       '**过渡是免费拿到的**：两个 primitive 交界的地方，权重是连续变化的，所以输出动作也连续。' +
         '硬切换在同一个位置会**跳**一下 —— 在 30Hz 的控制回路上，这一跳就是一次力矩冲击，真机上能听见响。',
-      '**它也解释了摔倒恢复为什么顺**：恢复不是「切到 Pᶠ」这么生硬，而是 Pᶠ 的权重逐渐升起来、' +
+      '**它也解释了摔倒恢复为什么顺**：恢复不是「切到 $P^F$」这么生硬，而是 $P^F$ 的权重逐渐升起来、' +
         '模仿那几列逐渐让位。所以角色是「一边爬起来一边找回轨迹」，不是原地愣一下再重启。',
       '**Composer 本身很小**：`_build_mlp(..., units + [num_primitive])` 加一个 Softmax，' +
         '它要学的只是「此刻该听谁的」，不需要再学怎么动 —— primitive 已经冻结了。',
@@ -610,7 +610,7 @@
     var root = card(host, {
       title: '摔倒恢复：把「摔了就 reset」换成「摔了再爬起来」',
       sub:
-        'Pᶠ 只用简单移动数据训练，目标也被放松成「根节点先回到参考附近」。' +
+        '$P^F$ 只用简单移动数据训练，目标也被放松成「根节点先回到参考附近」。' +
         '根节点距参考 < 0.5 m 就自动切回正常模仿 —— 这个阈值是这个演示里最值得玩的旋钮。'
     });
 
@@ -694,8 +694,8 @@
       '**阈值太大会来回抖**：把切回阈值拖到 2 m 以上，角色离参考还很远就切回模仿模式，' +
         '结果是跟不上、再摔、再恢复。0.5 m 这个数看着随意，其实是在「早切回去省时间」和「切早了会再摔」之间取的。',
       '**这才是标题里 Perpetual 的意思**：在它之前，摔倒等于 episode 结束、等于要 reset。' +
-        '有了 Pᶠ 和 Composer，同一个控制器可以一直跑下去 —— 对真机和实时 avatar 来说，这个区别是决定性的。',
-      '**这是简化模型**：真实的恢复由 Pᶠ 在物理仿真里完成，距离曲线也不是这么光滑的。' +
+        '有了 $P^F$ 和 Composer，同一个控制器可以一直跑下去 —— 对真机和实时 avatar 来说，这个区别是决定性的。',
+      '**这是简化模型**：真实的恢复由 $P^F$ 在物理仿真里完成，距离曲线也不是这么光滑的。' +
         '这里只复现「模式切换 + 阈值取舍」这条逻辑，数值不能和论文比。'
     ]);
 
@@ -735,7 +735,7 @@
             res.falls +
             ' 次，每次都爬了回来，全程 ' +
             state.steps +
-            ' 步没有一次 reset。作为对照：没有 Pᶠ 的话，第 ' +
+            ' 步没有一次 reset。作为对照：没有 $P^F$ 的话，第 ' +
             res.deadAt +
             ' 步那次摔倒就已经结束了（右图那根短柱）。',
           'learning'
@@ -1042,7 +1042,9 @@
     });
     s.appendChild(svgText(PM_CX0, 84, '动作库覆盖率', 'demo-x-mut', 10.5));
     [0, 1, 2, 3].forEach(function (k) {
-      s.appendChild(svgText(pmX(k), 252, k ? 'P' + ['¹', '²', '³'][k - 1] : '起点', 'demo-x-mono demo-x-mut', 10, 'middle'));
+      s.appendChild(k
+        ? svgMath(pmX(k), 252, 'P^' + k, { size: 10, anchor: 'middle', cls: 'demo-x-mut', w: 60 })
+        : svgText(pmX(k), 252, '起点', 'demo-x-mono demo-x-mut', 10, 'middle'));
     });
 
     var pmcpPts = story.cov.map(function (v, k) { return [pmX(k), pmY(v)]; });
@@ -1058,17 +1060,21 @@
 
     // ── 下：四张轮次卡 ──
     var CARDS = [
-      { t: '第 1 轮 · P¹', a: '训练集：全部 240 条', b: '覆盖 77.1% → 冻结', c: C_GOOD, at: 2.0 },
-      { t: '第 2 轮 · P²', a: '只训 Q_hard² = 55 条', b: '覆盖 95.0% → 冻结', c: C_ACCENT, at: 5.0 },
-      { t: '第 3 轮 · P³', a: '只训 Q_hard³ = 12 条', b: '覆盖 98.3% → 冻结', c: C_ACCENT, at: 7.8 },
-      { t: '第 F 轮 · Pᶠ', a: '不打难例：用 Q_loco 训恢复', b: '不在这条曲线上（见第 4 幕）', c: C_WARN, at: 13.0 }
+      { tTex: '\\text{第 1 轮 } \\cdot\\ P^1', a: '训练集：全部 240 条', b: '覆盖 77.1% → 冻结', c: C_GOOD, at: 2.0 },
+      { tTex: '\\text{第 2 轮 } \\cdot\\ P^2', aTex: '\\text{只训 } Q_{hard}^2 = 55 \\text{ 条}', b: '覆盖 95.0% → 冻结', c: C_ACCENT, at: 5.0 },
+      { tTex: '\\text{第 3 轮 } \\cdot\\ P^3', aTex: '\\text{只训 } Q_{hard}^3 = 12 \\text{ 条}', b: '覆盖 98.3% → 冻结', c: C_ACCENT, at: 7.8 },
+      { tTex: '\\text{第 F 轮 } \\cdot\\ P^F', a: '不打难例：用 Q_loco 训恢复', b: '不在这条曲线上（见第 4 幕）', c: C_WARN, at: 13.0 }
     ];
     var cards = CARDS.map(function (cd, k) {
       var x = 26 + k * 190;
       var g = svgEl('g', {});
       g.appendChild(paint(svgEl('rect', { x: x, y: 268, width: 176, height: 62, rx: 7, 'stroke-width': 1.5 }), C_SURFACE, cd.c));
-      g.appendChild(paint(svgText(x + 10, 288, cd.t, 'demo-x-mono', 12), cd.c));
-      g.appendChild(svgText(x + 10, 305, cd.a, 'demo-x-mut', 10));
+      g.appendChild(cd.tTex
+        ? svgMath(x + 10, 288, cd.tTex, { size: 12, w: 156 }).setTone(cd.c)
+        : paint(svgText(x + 10, 288, cd.t, 'demo-x-mono', 12), cd.c));
+      g.appendChild(cd.aTex
+        ? svgMath(x + 10, 305, cd.aTex, { size: 10, cls: 'demo-x-mut', w: 156 })
+        : svgText(x + 10, 305, cd.a, 'demo-x-mut', 10));
       g.appendChild(svgText(x + 10, 321, cd.b, 'demo-x-mut', 10));
       s.appendChild(g);
       return { g: g, at: cd.at };
@@ -1153,7 +1159,7 @@
     [MC.wy1, MC.ay1].forEach(function (y) {
       s.appendChild(paint(svgEl('line', { x1: MC.x0, y1: y, x2: MC.x1, y2: y, 'stroke-width': 1 }), null, C_BORDER));
     });
-    s.appendChild(svgText(MC.x0, 62, 'Composer 权重 C_i(s)（softmax，温度 1）', 'demo-x-mut', 10.5));
+    s.appendChild(svgMath(MC.x0, 62, '\\text{Composer 权重 } C_i(s) \\text{（softmax，温度 1）}', { size: 10.5, cls: 'demo-x-mut', w: 300 }));
     s.appendChild(svgText(MC.x0, 220, '最终动作 a（这里压成一维）', 'demo-x-mut', 10.5));
     s.appendChild(svgText(MC.x1, 204, '状态 s：动作激烈程度 →', 'demo-x-mut', 10, 'end'));
 
@@ -1173,7 +1179,7 @@
     var blendPts = grid.map(function (v) { return [mcX(v), mcAy(mcBlend(v))]; });
     var blendLine = paint(svgEl('path', { d: polyPath(blendPts), fill: 'none', 'stroke-width': 2.6 }), null, C_ACCENT);
     s.appendChild(blendLine);
-    s.appendChild(paint(svgText(MC.x0 + 8, MC.ay1 + 15, '连续混合 Σ wᵢ·aᵢ', null, 10.5), C_ACCENT));
+    s.appendChild(svgMath(MC.x0 + 8, MC.ay1 + 15, '\\text{连续混合 } \\sum_i w_i a_i', { size: 10.5, w: 160 }).setTone(C_ACCENT));
 
     var hardPts = grid.map(function (v) { return [mcX(v), mcAy(mcHard(v))]; });
     var hardLine = paint(svgEl('path', { d: polyPath(hardPts), fill: 'none', 'stroke-width': 2.2, 'stroke-dasharray': '6 4' }), null, C_BAD);
@@ -1316,7 +1322,7 @@
     });
     s.appendChild(svgText(RC.x0 - 8, 275, '模式', 'demo-x-mut', 10, 'end'));
     s.appendChild(paint(svgText(RC.x0 + 6, 294, '绿 = IMITATE（追全身参考）', null, 10), C_GOOD));
-    s.appendChild(paint(svgText(RC.x0 + 200, 294, '橙 = RECOVER（Pᶠ 接管，只追根节点 r_point）', null, 10), C_WARN));
+    s.appendChild(svgMath(RC.x0 + 200, 294, '\\text{橙 = RECOVER（} P^F \\text{ 接管，只追根节点 } r_{point} \\text{）}', { size: 10, w: 300 }).setTone(C_WARN));
 
     // 没有 Pᶠ 的话活多久
     var dead = svgEl('g', {});
@@ -1569,9 +1575,9 @@
 
   /* ── scene 6: 两阶段训练闭环 ── */
   var S1_NODES = [
-    { x: 112, y: 128, w: 168, t: '① 训当前列 P^k', s: 'PPO；旧列 freeze_pnn' },
-    { x: 302, y: 128, w: 168, t: '② 全库评估', s: '跟不上的 → Q_hard^(k+1)' },
-    { x: 208, y: 232, w: 240, t: '③ 新增一列 P^(k+1)', s: '权重从上一列拷贝初始化' }
+    { x: 112, y: 128, w: 168, tTex: '\\text{① 训当前列 } P^k', s: 'PPO；旧列 freeze_pnn' },
+    { x: 302, y: 128, w: 168, t: '② 全库评估', sTex: '\\text{跟不上的} \\to Q_{hard}^{k+1}' },
+    { x: 208, y: 232, w: 240, tTex: '\\text{③ 新增一列 } P^{k+1}', s: '权重从上一列拷贝初始化' }
   ];
   var S1_EDGES = [
     { pts: [[196, 128], [214, 128]] },
@@ -1579,10 +1585,10 @@
     { pts: [[170, 208], [126, 152]] }
   ];
   var S2_NODES = [
-    { x: 496, y: 118, w: 160, t: '④ 冻结全部 primitive', s: 'P¹ P² P³ Pᶠ' },
+    { x: 496, y: 118, w: 160, t: '④ 冻结全部 primitive', sTex: 'P^1 \\; P^2 \\; P^3 \\; P^F' },
     { x: 686, y: 118, w: 160, t: '⑤ getup 环境', s: 'fallInit 0.3｜recovery 90 步' },
-    { x: 592, y: 196, w: 250, t: '⑥ 每列各出一份动作 aᵢ', s: 'pnn(curr_obs)' },
-    { x: 592, y: 272, w: 280, t: '⑦ a = Σ wᵢ·aᵢ，PPO 只更新 C', s: 'composer 的 softmax 权重 w' }
+    { x: 592, y: 196, w: 250, tTex: '\\text{⑥ 每列各出一份动作 } a_i', s: 'pnn(curr_obs)' },
+    { x: 592, y: 272, w: 280, tTex: '\\text{⑦ } a = \\sum_i w_i a_i \\text{，PPO 只更新 C}', s: 'composer 的 softmax 权重 w' }
   ];
   var S2_EDGES = [
     { pts: [[576, 118], [602, 118]] },
@@ -1614,8 +1620,12 @@
       var g = svgEl('g', {});
       var rect = paint(svgEl('rect', { x: n.x - n.w / 2, y: n.y - 23, width: n.w, height: 46, rx: 8, 'stroke-width': 1.5 }), C_SURFACE2, C_BORDER);
       g.appendChild(rect);
-      g.appendChild(svgText(n.x, n.y - 3, n.t, 'demo-x-mono', 11.5, 'middle'));
-      g.appendChild(svgText(n.x, n.y + 14, n.s, 'demo-x-mut', 10, 'middle'));
+      g.appendChild(n.tTex
+        ? svgMath(n.x, n.y - 3, n.tTex, { size: 11.5, anchor: 'middle', w: n.w })
+        : svgText(n.x, n.y - 3, n.t, 'demo-x-mono', 11.5, 'middle'));
+      g.appendChild(n.sTex
+        ? svgMath(n.x, n.y + 14, n.sTex, { size: 10, anchor: 'middle', cls: 'demo-x-mut', w: n.w })
+        : svgText(n.x, n.y + 14, n.s, 'demo-x-mut', 10, 'middle'));
       s.appendChild(g);
       return { g: g, rect: rect };
     });
@@ -1651,7 +1661,9 @@
     s.appendChild(token);
 
     var rewardG = svgEl('g', {});
-    rewardG.appendChild(paint(svgText(400, 320, 'r ≈ 0.5·r_task + 0.5·r_amp + r_energy　｜　r_task 的四项权重 w_pos/rot/vel/ang = 0.5 / 0.3 / 0.1 / 0.1', 'demo-x-mono', 11, 'middle'), C_GOOD));
+    rewardG.appendChild(svgMath(400, 320,
+      'r \\approx 0.5\\, r_{task} + 0.5\\, r_{amp} + r_{energy} \\quad\\vert\\quad r_{task} \\text{ 的四项权重 } w_{pos/rot/vel/ang} = 0.5 / 0.3 / 0.1 / 0.1',
+      { size: 11, anchor: 'middle', w: 720 }).setTone(C_GOOD));
     s.appendChild(rewardG);
 
     var chips = [
@@ -1724,7 +1736,7 @@
         { at: 6.0, s: '第二堵墙：**偏离参考太多就 reset**。可 VR 里的虚拟角色不能摔一下就「消失重置」。' },
         { at: 7.9, s: '之前的做法是加一只 invisible hand 把角色扶住 —— 能站稳，但不真实。PHC 的目标是**一点外力都不用**。' },
         { at: 9.0, s: '第三堵墙：**参考动作本身带噪声**。视频姿态估计、文本生成出来的骨架都在抖。' },
-        { at: 11.8, s: 'PHC 的答卷正好三条：**PMCP 加容量、Pᶠ 自恢复、keypoint 输入** —— 第一堵墙要两幕（长出列、再混合列），后两堵各一幕。' }
+        { at: 11.8, s: 'PHC 的答卷正好三条：**PMCP 加容量、$P^F$ 自恢复、keypoint 输入** —— 第一堵墙要两幕（长出列、再混合列），后两堵各一幕。' }
       ]
     },
     {
@@ -1733,12 +1745,12 @@
       build: buildScenePmcp,
       cues: [
         { at: 0.4, s: '左边 240 格是整个动作库（代表 AMASS 的一万多条），按难度从左上排到右下，红色表示还学不会。' },
-        { at: 1.6, s: '第 1 轮：P¹ 在**全量数据**上训，拿下 **77.1%**。剩下的 **55 条**就是论文说的 Q_hard²。' },
-        { at: 3.6, s: '关键一步在这里：**P¹ 训完立刻 freeze_pnn 冻死**，后面无论训什么，这片绿都不会再变红。' },
-        { at: 4.6, s: '第 2 轮新开一列 P²，权重从 P¹ 拷贝初始化，**只打那 55 条难例** → 覆盖率 **95.0%**，还剩 12 条。' },
+        { at: 1.6, s: '第 1 轮：$P^1$ 在**全量数据**上训，拿下 **77.1%**。剩下的 **55 条**就是论文说的 $Q_{hard}^2$。' },
+        { at: 3.6, s: '关键一步在这里：**$P^1$ 训完立刻 freeze_pnn 冻死**，后面无论训什么，这片绿都不会再变红。' },
+        { at: 4.6, s: '第 2 轮新开一列 $P^2$，权重从 $P^1$ 拷贝初始化，**只打那 55 条难例** → 覆盖率 **95.0%**，还剩 12 条。' },
         { at: 7.4, s: '第 3 轮同理，只打 12 条 → **98.3%**。难例越少，新列的容量越集中，所以边际收益没有一路掉到 0。' },
         { at: 10.0, s: '对照组是**同一个网络反复微调**：它每轮也在难例上训，但没有冻结 —— 77.1% 之后先掉到 64.2%，再爬也只有 **72.9%**。' },
-        { at: 13.0, s: '第 4 列是 Pᶠ，它不打难例，用简单移动数据 Q_loco 专训摔倒恢复 —— 下一幕单独讲。' },
+        { at: 13.0, s: '第 4 列是 $P^F$，它不打难例，用简单移动数据 $Q_{loco}$ 专训摔倒恢复 —— 下一幕单独讲。' },
         { at: 14.6, s: '一句话：课程学习换的是**样本顺序**，PMCP 换的是**容量**。代价是推理时要跑 F 份前向，好在每列只是个 MLP。' }
       ]
     },
@@ -1749,11 +1761,11 @@
       cues: [
         { at: 0.4, s: 'primitive 全部冻结之后，还差一个人决定「此刻该听谁的」—— 这就是 Composer C(s)。' },
         { at: 1.6, s: '上图是三个 primitive 的 softmax 权重。扫描线往右走，权重**交接是连续的**，没有任何一处在跳。' },
-        { at: 4.2, s: '所以下图那条混合输出 a = Σ wᵢ·aᵢ 也是连续的：两个专家意见的加权平均，而不是二选一。' },
+        { at: 4.2, s: '所以下图那条混合输出 $a = \\sum_i w_i a_i$ 也是连续的：两个专家意见的加权平均，而不是二选一。' },
         { at: 6.4, s: '源码就两行：`x_all = stack(actions)`、`a = sum(w * x_all)`。Composer 本身只是个小 MLP + Softmax。' },
         { at: 9.6, s: '现在把它换成**硬切换**（argmax，等价于温度拉满）：红色虚线就是「此刻只听权重最高的那个」。' },
-        { at: 10.6, s: '看交界处：s ≈ −0.65 时，输出从 **−0.03 直接跳到 1.04**，一步 1.07。30 Hz 的控制回路上，这一跳就是一次力矩冲击。' },
-        { at: 12.6, s: '这也解释了**恢复为什么顺**：不是「切到 Pᶠ」，是 Pᶠ 的权重慢慢升起来、模仿那几列慢慢让位。' }
+        { at: 10.6, s: '看交界处：$s \\approx -0.65$ 时，输出从 **−0.03 直接跳到 1.04**，一步 1.07。30 Hz 的控制回路上，这一跳就是一次力矩冲击。' },
+        { at: 12.6, s: '这也解释了**恢复为什么顺**：不是「切到 $P^F$」，是 $P^F$ 的权重慢慢升起来、模仿那几列慢慢让位。' }
       ]
     },
     {
@@ -1764,9 +1776,9 @@
         { at: 0.4, s: '这是一条 400 步的 episode，纵轴是根节点离参考有多远，绿色虚线是 0.5 m 那条阈值。' },
         { at: 1.2, s: '曲线一开始贴着底走，这是 IMITATE 模式：正常追全身参考姿态。' },
         { at: 3.2, s: '第 **21 步**摔了 —— 距离一下窜到 4 m 以上。**换成 DeepMimic，episode 到这里就结束了**。' },
-        { at: 4.4, s: 'PHC 这里切进 RECOVER：目标被放松成 r_point，**只要求根节点先回到参考附近**，不管全身姿态。' },
+        { at: 4.4, s: 'PHC 这里切进 RECOVER：目标被放松成 $r_{point}$，**只要求根节点先回到参考附近**，不管全身姿态。' },
         { at: 6.6, s: '距离降到 0.5 m 以内就自动切回模仿。底下那条模式带上，橙绿交替了 6 个来回 —— 摔 6 次，爬起来 6 次。' },
-        { at: 10.6, s: '右边两根柱子是同一条 episode 的两种活法：**有 Pᶠ 跑满 400 步，没有 Pᶠ 活到第 21 步**。' },
+        { at: 10.6, s: '右边两根柱子是同一条 episode 的两种活法：**有 $P^F$ 跑满 400 步，没有 $P^F$ 活到第 21 步**。' },
         { at: 12.0, s: '训练上靠三个开关：一半 episode 从摔倒状态开局（fallInitProb 0.3），进入恢复窗口后 **90 步内 reset_buf 强制为 0**。' },
         { at: 14.4, s: '也就是说：**哪怕看起来该终止了，环境也不让你 reset** —— DeepMimic 的 FAIL 是终态，PHC 把它变成了中间态。' }
       ]
@@ -1776,7 +1788,7 @@
       dur: 16,
       build: buildSceneNoise,
       cues: [
-        { at: 0.3, s: '前两堵墙讲完了：PMCP 管「学得下」，Pᶠ 管「摔得起」。第三堵墙在**输入端**。' },
+        { at: 0.3, s: '前两堵墙讲完了：PMCP 管「学得下」，$P^F$ 管「摔得起」。第三堵墙在**输入端**。' },
         { at: 1.6, s: '真实用法里参考姿态来自视频姿态估计（HybrIK / MeTRAbs）或 VR 控制器，**每一帧都在抖**。' },
         { at: 3.6, s: 'PHC 的状态里，「目标差异」有两种写法。旋转版 $s_{rot}$ 比的是关节旋转差。' },
         { at: 5.2, s: '旋转误差要**乘上肢体长度**：髋 $5^\\circ$、膝再 $5^\\circ$，传到脚尖就是 $11\\ \\mathrm{cm}$ —— 越往末端越大。' },
@@ -1792,12 +1804,12 @@
       build: buildSceneLoop,
       cues: [
         { at: 0.4, s: '把前面四幕串起来，就是 phc/run_hydra.py 里的两个训练阶段。' },
-        { at: 1.2, s: '阶段一：① 训当前列 P^k（PPO，旧列 freeze_pnn 冻结，梯度不回传）。' },
-        { at: 2.9, s: '② 拿它跑一遍全库，**跟不上的序列导出成 Q_hard^(k+1)**；③ 新增一列，权重从上一列拷过来初始化。' },
+        { at: 1.2, s: '阶段一：① 训当前列 $P^k$（PPO，旧列 freeze_pnn 冻结，梯度不回传）。' },
+        { at: 2.9, s: '② 拿它跑一遍全库，**跟不上的序列导出成 $Q_{hard}^{k+1}$**；③ 新增一列，权重从上一列拷过来初始化。' },
         { at: 6.3, s: '这个圈转几遍，primitive 就一列列长出来了 —— 这正是第二幕那张网格背后的过程。' },
         { at: 7.4, s: '阶段二：④ **冻结全部 primitive**，只训 composer；⑤ 换到 getup 环境，混入从摔倒状态开局的 episode。' },
-        { at: 10.4, s: '⑥ 每列各出一份动作 aᵢ；⑦ composer 给权重，**a = Σ wᵢ·aᵢ**，PPO 这一阶段只更新 C。' },
-        { at: 11.8, s: '奖励从头到尾是同一套：**r ≈ 0.5·r_task + 0.5·r_amp + r_energy**，r_task 是全身刚体四项误差的指数加权。' },
+        { at: 10.4, s: '⑥ 每列各出一份动作 $a_i$；⑦ composer 给权重，**$a = \\sum_i w_i a_i$**，PPO 这一阶段只更新 $C$。' },
+        { at: 11.8, s: '奖励从头到尾是同一套：**$r \\approx 0.5\\, r_{task} + 0.5\\, r_{amp} + r_{energy}$**，$r_{task}$ 是全身刚体四项误差的指数加权。' },
         { at: 14.4, s: 'cleaned AMASS 上的公开结果：**PHC 98.9% / G-MPJPE 37.5**，PHC+ 做到 100% / 26.6。' },
         { at: 15.6, s: '一句话：**DeepMimic 学会一个动作，PHC 在一万条动作里一直活着** —— 这就是 Perpetual 的全部含义。' }
       ]
@@ -1810,13 +1822,13 @@
       sub: '约 96 秒自动播放。空格播放/暂停，← → 换幕；画面里的数字与本文各节、各实验台一致。开篇的三堵墙各有对应的一幕（第一堵占两幕），所以这篇比其余几篇多一幕。',
       ariaLabel: 'PHC 六幕讲解动画',
       notes: [
-        '取数依据：第二幕的网格和覆盖率（77.1% → 95.0% → 98.3%，Q_hard 240 → 55 → 12）就是上面「PMCP 实验台」' +
+        '取数依据：第二幕的网格和覆盖率（77.1% → 95.0% → 98.3%，$Q_{hard}$ 240 → 55 → 12）就是上面「PMCP 实验台」' +
           '默认设置下现算出来的，单网络微调那条线（77.1 → 64.2 → 72.9）同样来自它的遗忘率默认值 35%；' +
           '第三幕的权重与动作曲线用的是「Composer 演示」的同一组 primitive；第四幕那条 episode 就是「摔倒恢复实验台」' +
           '的默认参数（阈值 0.5 m、fallInitProb 0.3、seed 31）跑出来的同一条。',
         '第五幕的 98.9% / 37.5 与 98.7% / 40.7 是官方仓库 README 在 cleaned AMASS（11313 条）上给出的 PHC 与 PHC-KP；' +
           '两种目标表示（$s_{rot}$ / $s_{kp}$）、不加残差的绝对 PD 目标出自正文「第一步：状态和动作设计」与 Q5、Q7。',
-        '第六幕里 0.5·r_task + 0.5·r_amp + r_energy、w_pos/rot/vel/ang = 0.5/0.3/0.1/0.1、recoverySteps 90、' +
+        '第六幕里 $0.5\\, r_{task} + 0.5\\, r_{amp} + r_{energy}$、$w_{pos/rot/vel/ang} = 0.5/0.3/0.1/0.1$、recoverySteps 90、' +
           'fallInitProb 0.3、98.9% / 37.5 / 100% / 26.6、28.8 MB 这些来自正文的奖励表、源码对照与附录。',
         '**第二、三、四幕是玩具模型**：覆盖率、权重、距离曲线都由浏览器里的简化模型算出，只复现机制' +
           '（冻结不塌 / 连续不跳 / 摔了能起），**数值不能和论文直接比** —— 第二幕那个 98.3% 和论文的 98.9% 只是巧合。',
