@@ -2457,3 +2457,50 @@ a.updates-item-link:hover {
     padding-left: 0;
   }
 }
+
+/* ===== 正文里的折叠讲解 <details class="paper-fold"> =====
+ * 用于「同一段内容已有动画/演示，文字作为可展开的细读版」的小节。 */
+.paper-body details.paper-fold {
+  margin: 0.9rem 0 1.6rem;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--link);
+  border-radius: 6px;
+  background: var(--bg-secondary);
+  padding: 0 1rem;
+}
+
+.paper-body details.paper-fold > summary {
+  cursor: pointer;
+  padding: 0.6rem 0;
+  font-size: 0.92rem;
+  color: var(--text-secondary);
+  list-style: none;
+  user-select: none;
+}
+
+.paper-body details.paper-fold > summary::-webkit-details-marker {
+  display: none;
+}
+
+.paper-body details.paper-fold > summary::before {
+  content: "▸ ";
+  color: var(--link);
+}
+
+.paper-body details.paper-fold[open] > summary {
+  color: var(--text);
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 0.8rem;
+}
+
+.paper-body details.paper-fold[open] > summary::before {
+  content: "▾ ";
+}
+
+.paper-body details.paper-fold > summary:hover {
+  color: var(--text);
+}
+
+.paper-body details.paper-fold > *:last-child {
+  margin-bottom: 1rem;
+}
