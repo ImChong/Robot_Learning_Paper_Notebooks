@@ -978,7 +978,11 @@
     seg = K.seg,
     ease = K.ease,
     setOpacity = K.setOpacity,
-    sceneSvg = K.sceneSvg;
+    sceneSvg = K.sceneSvg,
+    stickFigure = K.stickFigure,
+    poseWalk = K.poseWalk,
+    polyPath = K.polyPath,
+    pointOn = K.pointOn;
 
   var X = K.xColors;
   var C_ACCENT = X.accent,
@@ -992,71 +996,6 @@
     C_SURFACE2 = X.surface2;
 
   var TAU = Math.PI * 2;
-
-  /* ── a schematic stick figure ──
-     Angles are global and measured in degrees from straight-down, positive
-     towards +x (the direction the character faces), so a limb is one call. */
-  function limbPt(x, y, len, ang) {
-    var r = (ang * Math.PI) / 180;
-    return [x + len * Math.sin(r), y + len * Math.cos(r)];
-  }
-
-  function stickFigure(color, w, dashed) {
-    var g = svgEl('g', {});
-    function bone() {
-      var ln = paint(svgEl('line', { 'stroke-width': w, 'stroke-linecap': 'round' }), null, color);
-      if (dashed) ln.setAttribute('stroke-dasharray', '5 4');
-      g.appendChild(ln);
-      return ln;
-    }
-    var spine = bone(),
-      armA1 = bone(), armA2 = bone(), armB1 = bone(), armB2 = bone(),
-      legA1 = bone(), legA2 = bone(), legB1 = bone(), legB2 = bone();
-    var head = paint(svgEl('circle', { r: 8.5, fill: 'none', 'stroke-width': w }), null, color);
-    if (dashed) head.setAttribute('stroke-dasharray', '5 4');
-    g.appendChild(head);
-
-    function put(ln, p, q) {
-      ln.setAttribute('x1', p[0].toFixed(1));
-      ln.setAttribute('y1', p[1].toFixed(1));
-      ln.setAttribute('x2', q[0].toFixed(1));
-      ln.setAttribute('y2', q[1].toFixed(1));
-    }
-
-    function pose(x, y, P) {
-      var hip = [x, y];
-      var sh = limbPt(x, y, 42, 180 - P.lean);
-      put(spine, hip, sh);
-      var hd = limbPt(sh[0], sh[1], 15, 180 - P.lean);
-      head.setAttribute('cx', hd[0].toFixed(1));
-      head.setAttribute('cy', hd[1].toFixed(1));
-      [[armA1, armA2, P.armA], [armB1, armB2, P.armB]].forEach(function (a) {
-        var e = limbPt(sh[0], sh[1], 20, a[2][0]);
-        put(a[0], sh, e);
-        put(a[1], e, limbPt(e[0], e[1], 18, a[2][1]));
-      });
-      [[legA1, legA2, P.legA], [legB1, legB2, P.legB]].forEach(function (l) {
-        var k = limbPt(x, y, 24, l[2][0]);
-        put(l[0], hip, k);
-        put(l[1], k, limbPt(k[0], k[1], 24, l[2][1]));
-      });
-    }
-
-    return { el: g, pose: pose };
-  }
-
-  /* 有参考动捕时学出来的步态：手脚对称摆动、膝盖在摆动相折叠。 */
-  function poseWalk(ph) {
-    var s = Math.sin(ph * TAU),
-      c = Math.cos(ph * TAU);
-    return {
-      lean: 6,
-      armA: [-22 * s - 8, -22 * s + 16],
-      armB: [22 * s + 8, 22 * s + 32],
-      legA: [22 * s, 22 * s - 30 * Math.max(0, c)],
-      legB: [-22 * s, -22 * s - 30 * Math.max(0, -c)]
-    };
-  }
 
   /* 只奖励前进速度时的典型产物：深蹲、前倾、手乱挥——照样能拿高分。 */
   function poseFlail(ph) {
@@ -1423,28 +1362,6 @@
     { kind: 'edge', i: 5, a: 11.4, b: 12.0 },
     { kind: 'node', i: 1, a: 12.0, b: 12.8 }
   ];
-
-  function polyPath(pts) {
-    return pts.map(function (p, i) { return (i ? 'L ' : 'M ') + p[0] + ' ' + p[1]; }).join(' ');
-  }
-
-  function pointOn(pts, u) {
-    var lens = [], total = 0, i;
-    for (i = 1; i < pts.length; i++) {
-      var d = Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]);
-      lens.push(d);
-      total += d;
-    }
-    var want = u * total;
-    for (i = 0; i < lens.length; i++) {
-      if (want <= lens[i] || i === lens.length - 1) {
-        var k = lens[i] ? want / lens[i] : 0;
-        return [pts[i][0] + (pts[i + 1][0] - pts[i][0]) * k, pts[i][1] + (pts[i + 1][1] - pts[i][1]) * k];
-      }
-      want -= lens[i];
-    }
-    return pts[pts.length - 1];
-  }
 
   function buildSceneLoop() {
     var s = sceneSvg('DeepMimic 训练闭环：RSI 初始化、策略输出目标关节角、Stable PD 转扭矩、物理步进、模仿奖励、PPO 更新，摔倒则走 ET 回到初始化');

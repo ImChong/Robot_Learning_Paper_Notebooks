@@ -77,7 +77,7 @@ chore(Progress): 更新论文阅读进度
 
 ## 论文页交互演示（`assets/js/demos/`）
 
-笔记里可以内嵌可交互的小演示（滑块 / 拖拽 / 浏览器内跑的小实验）。`papers/01_Foundational_RL/` 下的 **15 篇笔记已全部接入**，每篇 3 个演示（PPO 与 DeepMimic 额外各多一个 `*-explainer` 五幕讲解动画，播放器是 `kit.js` 的 `K.explainer`），bundle 与笔记一一对应（`ppo` / `awr` / `deepmimic` / `amp` / `add` / `ase` / `calm` / `pulse` / `phc` / `diffusion_policy` / `beyondmimic` / `lcp` / `domain_randomization` / `dr_theory` / `mimickit`）。
+笔记里可以内嵌可交互的小演示（滑块 / 拖拽 / 浏览器内跑的小实验）。`papers/01_Foundational_RL/` 下的 **15 篇笔记已全部接入**，每篇 3 个演示（PPO / DeepMimic / AMP 额外各多一个 `*-explainer` 五幕讲解动画，播放器是 `kit.js` 的 `K.explainer`），bundle 与笔记一一对应（`ppo` / `awr` / `deepmimic` / `amp` / `add` / `ase` / `calm` / `pulse` / `phc` / `diffusion_policy` / `beyondmimic` / `lcp` / `domain_randomization` / `dr_theory` / `mimickit`）。
 
 ### 为什么不能直接在 Markdown 里写 `<script>`
 
