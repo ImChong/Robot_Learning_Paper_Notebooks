@@ -77,7 +77,9 @@ chore(Progress): 更新论文阅读进度
 
 ## 论文页交互演示（`assets/js/demos/`）
 
-笔记里可以内嵌可交互的小演示（滑块 / 拖拽 / 浏览器内跑的小实验）。`papers/01_Foundational_RL/` 下的 **15 篇笔记已全部接入**，每篇 3 个演示（PPO / DeepMimic / AMP / ADD / PHC 额外各多一个 `*-explainer` 五幕讲解动画，播放器是 `kit.js` 的 `K.explainer`），bundle 与笔记一一对应（`ppo` / `awr` / `deepmimic` / `amp` / `add` / `ase` / `calm` / `pulse` / `phc` / `diffusion_policy` / `beyondmimic` / `lcp` / `domain_randomization` / `dr_theory` / `mimickit`）。
+笔记里可以内嵌可交互的小演示（滑块 / 拖拽 / 浏览器内跑的小实验）。`papers/01_Foundational_RL/` 下的 **15 篇笔记已全部接入**，每篇 3 个演示（PPO / DeepMimic / AMP / ADD / PHC / ASE 额外各多一个 `*-explainer` 讲解动画，播放器是 `kit.js` 的 `K.explainer`），bundle 与笔记一一对应（`ppo` / `awr` / `deepmimic` / `amp` / `add` / `ase` / `calm` / `pulse` / `phc` / `diffusion_policy` / `beyondmimic` / `lcp` / `domain_randomization` / `dr_theory` / `mimickit`）。
+
+**讲解动画的幕数按内容定，不必凑成五幕**：前五篇是五幕，ASE 是六幕（它在 AMP 上叠了六件事，硬塞进五幕会让 encoder / 两半奖励 / diversity 三块在同一帧里挤成一团）。一幕对应一个能独立讲完的概念，塞不下就多加一幕，笔记正文与导航条里的「N 幕」字样要跟着改。
 
 ### 为什么不能直接在 Markdown 里写 `<script>`
 
