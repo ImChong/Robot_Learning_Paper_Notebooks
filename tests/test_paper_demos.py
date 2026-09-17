@@ -133,7 +133,10 @@ def test_notes_declare_their_demos_in_reading_order():
         ASE_NOTE: ("ase", ["ase-latent", "ase-encoder", "ase-diversity"]),
         CALM_NOTE: ("calm", ["calm-encoder", "calm-hlc", "calm-fsm"]),
         PULSE_NOTE: ("pulse", ["pulse-vib", "pulse-prior", "pulse-downstream"]),
-        PHC_NOTE: ("phc", ["phc-pmcp", "phc-mcp", "phc-recovery"]),
+        PHC_NOTE: (
+            "phc",
+            ["phc-explainer", "phc-pmcp", "phc-mcp", "phc-recovery"],
+        ),
         DIFFUSION_POLICY_NOTE: (
             "diffusion_policy",
             ["dp-multimodal", "dp-denoise", "dp-rhc"],
