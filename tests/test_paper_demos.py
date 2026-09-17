@@ -118,7 +118,12 @@ def test_notes_declare_their_demos_in_reading_order():
         AWR_NOTE: ("awr", ["awr-weights", "awr-buffer", "awr-regression"]),
         DEEPMIMIC_NOTE: (
             "deepmimic",
-            ["deepmimic-reward", "deepmimic-rsi", "deepmimic-pd"],
+            [
+                "deepmimic-explainer",
+                "deepmimic-reward",
+                "deepmimic-rsi",
+                "deepmimic-pd",
+            ],
         ),
         AMP_NOTE: ("amp", ["amp-disc", "amp-reward", "amp-style"]),
         ADD_NOTE: ("add", ["add-diff", "add-reward", "add-curriculum"]),

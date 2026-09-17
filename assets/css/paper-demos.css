@@ -336,18 +336,18 @@
   display: inline-block;
 }
 
-/* ===== ppo-explainer: the five-scene animation in the PPO note =====
- * Built by assets/js/demos/ppo.js. Colors come from the --demo-* tokens above
- * so the storyboard follows the site theme switch like every other demo. */
+/* ===== demo-x-*: the narrated storyboard animations (K.explainer) =====
+ * Built by K.explainer in assets/js/demos/kit.js; colors come from the --demo-*
+ * tokens above, so the storyboard follows the site theme switch. */
 
-.ppo-x-chips {
+.demo-x-chips {
   display: flex;
   flex-wrap: wrap;
   gap: 0.35rem;
   margin-bottom: 0.8rem;
 }
 
-.ppo-x-chip {
+.demo-x-chip {
   display: inline-flex;
   align-items: baseline;
   gap: 0.35rem;
@@ -361,35 +361,35 @@
   cursor: pointer;
 }
 
-.ppo-x-chip:hover {
+.demo-x-chip:hover {
   border-color: var(--demo-accent);
   color: var(--text);
 }
 
-.ppo-x-chip[aria-current="true"] {
+.demo-x-chip[aria-current="true"] {
   border-color: var(--demo-accent);
   background: var(--demo-surface);
   color: var(--text);
 }
 
-.ppo-x-chip-n {
+.demo-x-chip-n {
   font-family: 'SF Mono', Menlo, Consolas, monospace;
   font-size: 0.7rem;
   color: var(--demo-muted);
 }
 
-.ppo-x-chip[aria-current="true"] .ppo-x-chip-n {
+.demo-x-chip[aria-current="true"] .demo-x-chip-n {
   color: var(--demo-accent);
 }
 
-.ppo-x-frame {
+.demo-x-frame {
   border: 1px solid var(--demo-border);
   border-radius: 8px;
   background: var(--demo-surface);
   overflow: hidden;
 }
 
-.ppo-x-head {
+.demo-x-head {
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -398,14 +398,14 @@
   background: var(--demo-surface-2);
 }
 
-.ppo-x-no {
+.demo-x-no {
   font-family: 'SF Mono', Menlo, Consolas, monospace;
   font-size: 0.72rem;
   font-weight: 700;
   color: var(--demo-accent);
 }
 
-.ppo-x-title {
+.demo-x-title {
   flex: 1;
   min-width: 0;
   font-size: 0.84rem;
@@ -413,7 +413,7 @@
   color: var(--text);
 }
 
-.ppo-x-clock {
+.demo-x-clock {
   font-family: 'SF Mono', Menlo, Consolas, monospace;
   font-size: 0.7rem;
   color: var(--demo-muted);
@@ -422,41 +422,41 @@
 
 /* The storyboard is drawn on a fixed 800×420 grid; below ~600px it scrolls
    sideways inside its own box instead of shrinking the labels to nothing. */
-.ppo-x-scroll {
+.demo-x-scroll {
   overflow-x: auto;
 }
 
-.ppo-x-stage {
+.demo-x-stage {
   min-width: 600px;
 }
 
-.ppo-x-scene[hidden] {
+.demo-x-scene[hidden] {
   display: none;
 }
 
-.ppo-x-svg {
+.demo-x-svg {
   display: block;
   width: 100%;
   height: auto;
 }
 
-.ppo-x-svg text {
+.demo-x-svg text {
   fill: var(--text);
 }
 
-.ppo-x-mono {
+.demo-x-mono {
   font-family: 'SF Mono', Menlo, Consolas, monospace;
   font-variant-numeric: tabular-nums;
 }
 
-.ppo-x-mut { fill: var(--demo-muted); }
-.ppo-x-ink2 { fill: var(--text-secondary); }
-.ppo-x-acc { fill: var(--demo-accent); }
-.ppo-x-good { fill: var(--demo-good); }
-.ppo-x-bad { fill: var(--demo-bad); }
-.ppo-x-warn { fill: var(--demo-warn); }
+.demo-x-mut { fill: var(--demo-muted); }
+.demo-x-ink2 { fill: var(--text-secondary); }
+.demo-x-acc { fill: var(--demo-accent); }
+.demo-x-good { fill: var(--demo-good); }
+.demo-x-bad { fill: var(--demo-bad); }
+.demo-x-warn { fill: var(--demo-warn); }
 
-.ppo-x-band {
+.demo-x-band {
   fill: var(--demo-accent);
   fill-opacity: 0.1;
   stroke: var(--demo-accent);
@@ -464,30 +464,30 @@
   stroke-dasharray: 4 4;
 }
 
-.ppo-x-band-fill {
+.demo-x-band-fill {
   fill: var(--demo-accent);
   fill-opacity: 0.1;
 }
 
-.ppo-x-freeze-box {
+.demo-x-freeze-box {
   fill: var(--demo-bad);
   fill-opacity: 0.12;
   stroke: var(--demo-bad);
   stroke-width: 1;
 }
 
-.ppo-x-track {
+.demo-x-track {
   height: 3px;
   background: var(--demo-grid);
 }
 
-.ppo-x-track-fill {
+.demo-x-track-fill {
   height: 100%;
   width: 0;
   background: var(--demo-accent);
 }
 
-.ppo-x-cues {
+.demo-x-cues {
   border-top: 1px solid var(--demo-border);
   padding: 0.6rem 0.75rem 0.3rem;
   display: flex;
@@ -496,7 +496,7 @@
   min-height: 7.5em;
 }
 
-.ppo-x-cue {
+.demo-x-cue {
   margin: 0;
   font-size: 0.85rem;
   line-height: 1.55;
@@ -505,18 +505,18 @@
   transition: opacity 0.35s ease;
 }
 
-.ppo-x-cue.is-on {
+.demo-x-cue.is-on {
   opacity: 1;
   color: var(--text-secondary);
 }
 
-.ppo-x-cue b {
+.demo-x-cue b {
   color: var(--text);
   font-weight: 600;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .ppo-x-cue {
+  .demo-x-cue {
     transition: none;
   }
 }
@@ -540,11 +540,11 @@
     flex: 1 1 45%;
   }
 
-  .ppo-x-chip {
+  .demo-x-chip {
     font-size: 0.74rem;
   }
 
-  .ppo-x-cues {
+  .demo-x-cues {
     min-height: 9em;
   }
 }

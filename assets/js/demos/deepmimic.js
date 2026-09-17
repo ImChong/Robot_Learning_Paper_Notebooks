@@ -11,6 +11,7 @@
  *   deepmimic-reward — 四维模仿奖励：k 决定严格程度，w 决定谁说了算
  *   deepmimic-rsi    — RSI × ET 消融：采样预算花在哪，决定高动态技能学不学得会
  *   deepmimic-pd     — 策略输出目标角度：PD 增益、等效惯量与 Stable PD
+ *   deepmimic-explainer — 五幕讲解动画：为什么模仿 → 四维奖励 → RSI → ET → 训练闭环
  */
 
 (function () {
@@ -961,9 +962,664 @@
     render();
   }
 
+  // ─── demo 4: the five-scene explainer animation ──────────────────────────
+  /* A narrated storyboard of the whole method — 为什么要模仿 → 四维奖励 → RSI →
+     ET → 训练闭环. Every number on screen comes from somewhere else in this
+     note: the reward row reuses TERMS above (so it can never drift from the
+     interactive demo or the t=15 例子), and the ablation figures are the
+     paper's Section 10.4 table quoted in Q7.
+
+     The player (scene chips, clock, cue track, autoplay-on-scroll) is the
+     shared K.explainer in kit.js; only the storyboard itself lives here. */
+
+  var svgEl = K.svgEl,
+    svgText = K.svgText,
+    paint = K.paint,
+    seg = K.seg,
+    ease = K.ease,
+    setOpacity = K.setOpacity,
+    sceneSvg = K.sceneSvg;
+
+  var X = K.xColors;
+  var C_ACCENT = X.accent,
+    C_GOOD = X.good,
+    C_BAD = X.bad,
+    C_WARN = X.warn,
+    C_MUTED = X.muted,
+    C_GRID = X.grid,
+    C_BORDER = X.border,
+    C_SURFACE = X.surface,
+    C_SURFACE2 = X.surface2;
+
+  var TAU = Math.PI * 2;
+
+  /* ── a schematic stick figure ──
+     Angles are global and measured in degrees from straight-down, positive
+     towards +x (the direction the character faces), so a limb is one call. */
+  function limbPt(x, y, len, ang) {
+    var r = (ang * Math.PI) / 180;
+    return [x + len * Math.sin(r), y + len * Math.cos(r)];
+  }
+
+  function stickFigure(color, w, dashed) {
+    var g = svgEl('g', {});
+    function bone() {
+      var ln = paint(svgEl('line', { 'stroke-width': w, 'stroke-linecap': 'round' }), null, color);
+      if (dashed) ln.setAttribute('stroke-dasharray', '5 4');
+      g.appendChild(ln);
+      return ln;
+    }
+    var spine = bone(),
+      armA1 = bone(), armA2 = bone(), armB1 = bone(), armB2 = bone(),
+      legA1 = bone(), legA2 = bone(), legB1 = bone(), legB2 = bone();
+    var head = paint(svgEl('circle', { r: 8.5, fill: 'none', 'stroke-width': w }), null, color);
+    if (dashed) head.setAttribute('stroke-dasharray', '5 4');
+    g.appendChild(head);
+
+    function put(ln, p, q) {
+      ln.setAttribute('x1', p[0].toFixed(1));
+      ln.setAttribute('y1', p[1].toFixed(1));
+      ln.setAttribute('x2', q[0].toFixed(1));
+      ln.setAttribute('y2', q[1].toFixed(1));
+    }
+
+    function pose(x, y, P) {
+      var hip = [x, y];
+      var sh = limbPt(x, y, 42, 180 - P.lean);
+      put(spine, hip, sh);
+      var hd = limbPt(sh[0], sh[1], 15, 180 - P.lean);
+      head.setAttribute('cx', hd[0].toFixed(1));
+      head.setAttribute('cy', hd[1].toFixed(1));
+      [[armA1, armA2, P.armA], [armB1, armB2, P.armB]].forEach(function (a) {
+        var e = limbPt(sh[0], sh[1], 20, a[2][0]);
+        put(a[0], sh, e);
+        put(a[1], e, limbPt(e[0], e[1], 18, a[2][1]));
+      });
+      [[legA1, legA2, P.legA], [legB1, legB2, P.legB]].forEach(function (l) {
+        var k = limbPt(x, y, 24, l[2][0]);
+        put(l[0], hip, k);
+        put(l[1], k, limbPt(k[0], k[1], 24, l[2][1]));
+      });
+    }
+
+    return { el: g, pose: pose };
+  }
+
+  /* 有参考动捕时学出来的步态：手脚对称摆动、膝盖在摆动相折叠。 */
+  function poseWalk(ph) {
+    var s = Math.sin(ph * TAU),
+      c = Math.cos(ph * TAU);
+    return {
+      lean: 6,
+      armA: [-22 * s - 8, -22 * s + 16],
+      armB: [22 * s + 8, 22 * s + 32],
+      legA: [22 * s, 22 * s - 30 * Math.max(0, c)],
+      legB: [-22 * s, -22 * s - 30 * Math.max(0, -c)]
+    };
+  }
+
+  /* 只奖励前进速度时的典型产物：深蹲、前倾、手乱挥——照样能拿高分。 */
+  function poseFlail(ph) {
+    var s = Math.sin(ph * TAU),
+      q = Math.sin(ph * TAU * 2.7);
+    return {
+      lean: 27 + 6 * q,
+      armA: [146 + 22 * q, 118 + 30 * s],
+      armB: [-140 - 20 * s, -108 - 30 * q],
+      legA: [40 + 14 * s, -4 + 12 * s],
+      legB: [-34 + 12 * q, -64 + 12 * q]
+    };
+  }
+
+  /* ── scene 1: why imitate at all ── */
+  function buildSceneWhy() {
+    var s = sceneSvg('纯 RL 只奖励前进速度，学出前倾深蹲的怪步态；DeepMimic 再加一项模仿奖励，跟着动捕参考走');
+    var GROUND = 322;
+
+    [[40, C_SURFACE2], [415, C_SURFACE2]].forEach(function (p) {
+      s.appendChild(paint(svgEl('rect', { x: p[0], y: 56, width: 345, height: 288, rx: 8, 'stroke-width': 1 }), p[1], C_BORDER));
+    });
+    [[40, 385], [415, 760]].forEach(function (p) {
+      s.appendChild(paint(svgEl('line', { x1: p[0] + 16, y1: GROUND, x2: p[1] - 16, y2: GROUND, 'stroke-width': 1.5 }), null, C_BORDER));
+    });
+
+    s.appendChild(svgText(212, 80, '纯 RL：奖励只写「前进速度」', 'demo-x-bad', 13.5, 'middle'));
+    s.appendChild(svgText(212, 100, 'r = r^G', 'demo-x-mono demo-x-mut', 12, 'middle'));
+    var rightTitle = svgText(587, 80, 'DeepMimic：再加一项「像不像」', 'demo-x-acc', 13.5, 'middle');
+    var rightSub = svgText(587, 100, 'r = w^I·r^I + w^G·r^G', 'demo-x-mono demo-x-mut', 12, 'middle');
+    s.appendChild(rightTitle);
+    s.appendChild(rightSub);
+
+    function zoom(node, cx) {
+      var g = svgEl('g', {
+        transform: 'translate(' + cx + ' ' + GROUND + ') scale(1.4) translate(' + -cx + ' ' + -GROUND + ')'
+      });
+      g.appendChild(node);
+      return g;
+    }
+
+    var bad = stickFigure(C_BAD, 2.4);
+    s.appendChild(zoom(bad.el, 212));
+    var ghost = stickFigure(C_MUTED, 2, true);
+    var sim = stickFigure(C_ACCENT, 2.4);
+    var rightG = svgEl('g', {});
+    rightG.appendChild(zoom(ghost.el, 587));
+    rightG.appendChild(zoom(sim.el, 587));
+    s.appendChild(rightG);
+
+    var badTag = svgText(212, 344, '螃蟹步 / 拖脚滑行 / 抖着前进都能拿满分', 'demo-x-bad', 11.5, 'middle');
+    var goodTag = svgText(587, 344, '姿态被参考动捕钉住，物理仍由仿真保证', 'demo-x-acc', 11.5, 'middle');
+    s.appendChild(badTag);
+    s.appendChild(goodTag);
+
+    var legend = svgEl('g', {});
+    legend.appendChild(paint(svgEl('line', { x1: 440, y1: 128, x2: 468, y2: 128, 'stroke-width': 2.5, 'stroke-dasharray': '5 4' }), null, C_MUTED));
+    legend.appendChild(svgText(474, 132, '参考动捕 q̂', 'demo-x-mut', 11, 'start'));
+    legend.appendChild(paint(svgEl('line', { x1: 600, y1: 128, x2: 628, y2: 128, 'stroke-width': 3 }), null, C_ACCENT));
+    legend.appendChild(svgText(634, 132, '仿真角色 q', 'demo-x-acc', 11, 'start'));
+    s.appendChild(legend);
+
+    var formula = svgEl('g', {});
+    formula.appendChild(svgText(400, 382, 'r_t = w^I · r_t^I  +  w^G · r_t^G', 'demo-x-mono', 19, 'middle'));
+    formula.appendChild(svgText(400, 406, 'r^I 管「像不像参考动作」，r^G 管「任务做没做到」', 'demo-x-mut', 11.5, 'middle'));
+    s.appendChild(formula);
+
+    function draw(t) {
+      var ph = (t * 1.05) % 1;
+      var walkX = 132 + ((t * 18) % 156);
+      bad.pose(walkX, GROUND - 34, poseFlail(ph));
+      var rx = 507 + ((t * 18) % 156);
+      ghost.pose(rx, GROUND - 46, poseWalk(ph));
+      sim.pose(rx - 7, GROUND - 44, poseWalk(ph - 0.055));
+
+      var right = seg(t, 4.4, 5.6);
+      [rightTitle, rightSub, rightG, legend, goodTag].forEach(function (n) { setOpacity(n, right); });
+      setOpacity(badTag, seg(t, 2.2, 3.2));
+      setOpacity(formula, seg(t, 8.4, 9.4));
+    }
+
+    return { el: s, draw: draw };
+  }
+
+  /* ── scene 2: the four-term reward, on the note's t=15 example ── */
+  var R_BAR_X = 352, R_BAR_W = 200, R_ROW_Y = [130, 176, 222, 268];
+
+  function buildSceneReward() {
+    var s = sceneSvg('t=15 的四维模仿奖励：每项都是 exp(−k·误差)，加权求和得到 r_I ≈ 0.81');
+    s.appendChild(svgText(60, 48, '第 2 步｜t = 15（空中团身）：仿真角色和参考动捕差多少', 'demo-x-ink2', 13.5));
+
+    [[60, '分量', 'start'], [248, '误差', 'middle'], [312, 'k', 'middle'],
+      [452, 'r = exp(−k · 误差)', 'middle'], [600, 'w', 'middle'], [690, 'w · r', 'middle']
+    ].forEach(function (c) {
+      s.appendChild(svgText(c[0], 92, c[1], 'demo-x-mut', 11.5, c[2]));
+    });
+    s.appendChild(paint(svgEl('line', { x1: 60, y1: 100, x2: 740, y2: 100, 'stroke-width': 1 }), null, C_BORDER));
+
+    var rows = TERMS.map(function (term, i) {
+      var y = R_ROW_Y[i];
+      var g = svgEl('g', {});
+      var r = Math.exp(-term.k * term.err);
+      g.appendChild(svgText(60, y, term.name, 'demo-x-mono', 12.5));
+      var errTx = String(term.err).indexOf('.') < 0 ? term.err.toFixed(1) : String(term.err);
+      g.appendChild(svgText(248, y, errTx, 'demo-x-mono demo-x-ink2', 12, 'middle'));
+      var kTx = svgText(312, y, String(term.k), 'demo-x-mono demo-x-warn', 13, 'middle');
+      kTx.setAttribute('font-weight', '700');
+      g.appendChild(kTx);
+      g.appendChild(paint(svgEl('rect', { x: R_BAR_X, y: y - 13, width: R_BAR_W, height: 17, rx: 2, opacity: 0.2 }), C_MUTED));
+      var bar = paint(svgEl('rect', { x: R_BAR_X, y: y - 13, width: 0, height: 17, rx: 2 }), C_ACCENT);
+      g.appendChild(bar);
+      var rTx = svgText(R_BAR_X + 8, y, '', 'demo-x-mono', 12);
+      g.appendChild(rTx);
+      g.appendChild(svgText(600, y, String(term.w), 'demo-x-mono demo-x-ink2', 12, 'middle'));
+      var wr = svgText(690, y, (term.w * r).toFixed(3), 'demo-x-mono demo-x-good', 12.5, 'middle');
+      g.appendChild(wr);
+      s.appendChild(g);
+      return { g: g, bar: bar, rTx: rTx, wr: wr, r: r, w: term.w, at: 1.4 + i * 2.7 };
+    });
+
+    var total = rows.reduce(function (a, row) { return a + row.w * row.r; }, 0);
+
+    s.appendChild(paint(svgEl('line', { x1: 60, y1: 300, x2: 740, y2: 300, 'stroke-width': 1 }), null, C_BORDER));
+    var sumG = svgEl('g', {});
+    sumG.appendChild(svgText(60, 342, 'r_I = Σ w·r', 'demo-x-mono', 13));
+    sumG.appendChild(paint(svgEl('rect', { x: R_BAR_X, y: 326, width: R_BAR_W, height: 20, rx: 2, opacity: 0.2 }), C_MUTED));
+    var stack = [];
+    var acc = 0;
+    rows.forEach(function (row, i) {
+      var wdt = row.w * row.r * R_BAR_W;
+      var rect = paint(svgEl('rect', { x: R_BAR_X + acc, y: 326, width: wdt, height: 20, rx: i === 0 ? 2 : 0 }), i % 2 ? C_ACCENT : C_GOOD);
+      rect.style.fillOpacity = i % 2 ? 0.75 : 0.9;
+      acc += wdt;
+      sumG.appendChild(rect);
+      stack.push({ rect: rect, full: wdt });
+    });
+    var totalTx = svgText(690, 344, '', 'demo-x-mono demo-x-acc', 22, 'middle');
+    totalTx.setAttribute('font-weight', '700');
+    sumG.appendChild(totalTx);
+    s.appendChild(sumG);
+
+    var foot = svgText(60, 392, 'k 管曲线陡不陡，w 管这条曲线在总分里占多少：末端项 k=40 最严，可它只占 0.15。', 'demo-x-mut', 12);
+    s.appendChild(foot);
+
+    function draw(t) {
+      rows.forEach(function (row) {
+        var u = ease(seg(t, row.at, row.at + 1.4));
+        setOpacity(row.g, seg(t, row.at - 0.3, row.at + 0.2));
+        var wdt = row.r * R_BAR_W * u;
+        row.bar.setAttribute('width', wdt.toFixed(1));
+        row.rTx.textContent = u > 0.02 ? (row.r * u).toFixed(2) : '';
+        row.rTx.setAttribute('x', (R_BAR_X + wdt + 8).toFixed(1));
+        setOpacity(row.wr, seg(t, row.at + 1.2, row.at + 1.6));
+      });
+      var su = ease(seg(t, 13.6, 15.6));
+      setOpacity(sumG, seg(t, 13.2, 13.9));
+      var shown = 0;
+      stack.forEach(function (part) {
+        var take = Math.max(0, Math.min(part.full, total * su * R_BAR_W - shown));
+        part.rect.setAttribute('x', (R_BAR_X + shown).toFixed(1));
+        part.rect.setAttribute('width', take.toFixed(1));
+        shown += take;
+      });
+      totalTx.textContent = su > 0.02 ? (total * su).toFixed(3) : '';
+      setOpacity(foot, seg(t, 12.0, 12.8));
+    }
+
+    return { el: s, draw: draw };
+  }
+
+  /* ── scene 3: RSI ──
+     8 episodes, each surviving two stages from wherever it starts — the same
+     crude model the RSI×ET demo below runs, frozen to a fixed draw so the
+     picture is the same on every reload. */
+  var CLIP_STAGES = ['帧0 站直', '帧5 蓄力', '帧10 起跳', '帧15 团身', '帧20 倒立', '帧25 展开', '帧30 落地'];
+  var RSI_STARTS = [3, 0, 5, 1, 4, 2, 6, 1];
+  var STAGE_X = CLIP_STAGES.map(function (_, i) { return 100 + i * 98; });
+
+  function visitBars(s, baseline, color) {
+    return CLIP_STAGES.map(function (_, i) {
+      var g = svgEl('g', {});
+      var rect = paint(svgEl('rect', { x: STAGE_X[i] - 22, y: baseline, width: 44, height: 0, rx: 2 }), color);
+      var tx = svgText(STAGE_X[i], baseline - 4, '', 'demo-x-mono demo-x-mut', 11, 'middle');
+      g.appendChild(rect);
+      g.appendChild(tx);
+      s.appendChild(g);
+      return { rect: rect, tx: tx, baseline: baseline };
+    });
+  }
+
+  function paintVisits(bars, counts, scale) {
+    counts.forEach(function (c, i) {
+      var h = c * scale;
+      bars[i].rect.setAttribute('height', h.toFixed(1));
+      bars[i].rect.setAttribute('y', (bars[i].baseline - h).toFixed(1));
+      bars[i].tx.setAttribute('y', (bars[i].baseline - h - 4).toFixed(1));
+      bars[i].tx.textContent = c ? String(c) : '';
+    });
+  }
+
+  function buildSceneRsi() {
+    var s = sceneSvg('不用 RSI 时练习次数全压在前两个阶段，RSI 从随机相位起步后七个阶段都被练到');
+    s.appendChild(svgText(60, 40, '一段后空翻参考动作切成 7 个阶段（正文「第 0 步」那条时间轴）', 'demo-x-ink2', 13));
+
+    CLIP_STAGES.forEach(function (name, i) {
+      s.appendChild(paint(svgEl('rect', { x: STAGE_X[i] - 28, y: 56, width: 56, height: 24, rx: 4, 'stroke-width': 1 }), C_SURFACE2, C_BORDER));
+      s.appendChild(svgText(STAGE_X[i], 72, name.split(' ')[0], 'demo-x-mono demo-x-ink2', 11, 'middle'));
+      s.appendChild(svgText(STAGE_X[i], 94, name.split(' ')[1], 'demo-x-mut', 10.5, 'middle'));
+    });
+
+    s.appendChild(svgText(60, 128, '不用 RSI：episode 永远从帧 0 起', 'demo-x-bad', 12.5));
+    var coverA = svgText(740, 128, '', 'demo-x-mono demo-x-bad', 12.5, 'end');
+    s.appendChild(coverA);
+    var barsA = visitBars(s, 212, C_BAD);
+    s.appendChild(paint(svgEl('line', { x1: 60, y1: 212, x2: 740, y2: 212, 'stroke-width': 1 }), null, C_BORDER));
+
+    s.appendChild(svgText(60, 248, 'RSI：每个 episode 从随机相位起步', 'demo-x-acc', 12.5));
+    var coverB = svgText(740, 248, '', 'demo-x-mono demo-x-acc', 12.5, 'end');
+    s.appendChild(coverB);
+    var barsB = visitBars(s, 332, C_ACCENT);
+    s.appendChild(paint(svgEl('line', { x1: 60, y1: 332, x2: 740, y2: 332, 'stroke-width': 1 }), null, C_BORDER));
+
+    var verdict = svgText(60, 372, '论文 Section 10.4：Backflip 去掉 RSI（仅 ET）0.791 → 0.730，只学会「小幅向后跳」', 'demo-x-warn', 12.5);
+    var verdict2 = svgText(60, 396, '起点决定了哪些阶段有机会被练到——高动态技能的后半段，不给起点就永远到不了。', 'demo-x-mut', 11.5);
+    s.appendChild(verdict);
+    s.appendChild(verdict2);
+
+    function counts(starts, upTo) {
+      var c = CLIP_STAGES.map(function () { return 0; });
+      for (var i = 0; i < upTo; i++) {
+        for (var d = 0; d < 2; d++) {
+          var idx = starts[i] + d;
+          if (idx < c.length) c[idx]++;
+        }
+      }
+      return c;
+    }
+
+    function draw(t) {
+      var nA = Math.max(0, Math.min(8, Math.floor((t - 1.6) / 0.45) + 1));
+      var nB = Math.max(0, Math.min(8, Math.floor((t - 7.3) / 0.45) + 1));
+      var cA = counts([0, 0, 0, 0, 0, 0, 0, 0], nA), cB = counts(RSI_STARTS, nB);
+      paintVisits(barsA, cA, 8);
+      paintVisits(barsB, cB, 8);
+      function covered(c) {
+        return c.filter(function (n) { return n > 0; }).length;
+      }
+      coverA.textContent = nA ? '练到了 ' + covered(cA) + ' / 7 个阶段' : '';
+      coverB.textContent = nB ? '练到了 ' + covered(cB) + ' / 7 个阶段' : '';
+      setOpacity(verdict, seg(t, 12.4, 13.0));
+      setOpacity(verdict2, seg(t, 13.2, 13.8));
+    }
+
+    return { el: s, draw: draw };
+  }
+
+  /* ── scene 4: ET ──
+     600 步 / 200 步一次的数字是示意值，用来说明「摔一次赔掉 episode 剩下的步数」；
+     只有下方 Section 10.4 的 return 是论文原数。 */
+  var ET_BUDGET = 600, ET_X0 = 120, ET_W = 620;
+
+  function buildSceneEt() {
+    var s = sceneSvg('同样的采样预算，没有 ET 时大半步数花在摔倒后躺在地上，有 ET 时几乎全花在练动作上');
+    s.appendChild(svgText(60, 44, '固定 600 步采样预算，摔一次赔多少（示意）', 'demo-x-ink2', 13.5));
+
+    s.appendChild(svgText(60, 96, '无 ET：摔了还在仿真，episode 剩下的步数全是垃圾数据', 'demo-x-bad', 12.5));
+    s.appendChild(paint(svgEl('rect', { x: ET_X0, y: 110, width: ET_W, height: 32, rx: 3, opacity: 0.25 }), C_MUTED));
+    s.appendChild(svgText(60, 220, '有 ET：非脚部位触地就终止，RSI 换个相位立刻重来', 'demo-x-acc', 12.5));
+    s.appendChild(paint(svgEl('rect', { x: ET_X0, y: 234, width: ET_W, height: 32, rx: 3, opacity: 0.25 }), C_MUTED));
+
+    var laneA = svgEl('g', {}), laneB = svgEl('g', {});
+    s.appendChild(laneA);
+    s.appendChild(laneB);
+
+    var tagA = svgText(ET_X0, 168, '', 'demo-x-bad', 12);
+    var tagB = svgText(ET_X0, 292, '', 'demo-x-acc', 12);
+    s.appendChild(tagA);
+    s.appendChild(tagB);
+
+    var tbl = svgEl('g', {});
+    tbl.appendChild(svgText(60, 336, '论文 Section 10.4 的 return（越高越好）：', 'demo-x-mut', 12));
+    [['Backflip（高动态）', '0.791', '0.379', C_BAD],
+      ['Walk（低动态）', '0.980', '0.974', C_MUTED]
+    ].forEach(function (row, i) {
+      var y = 364 + i * 26;
+      tbl.appendChild(svgText(60, y, row[0], 'demo-x-ink2', 12));
+      tbl.appendChild(svgText(260, y, 'RSI + ET', 'demo-x-mut', 11.5));
+      tbl.appendChild(svgText(345, y, row[1], 'demo-x-mono demo-x-good', 12.5));
+      tbl.appendChild(svgText(420, y, '仅 RSI（无 ET）', 'demo-x-mut', 11.5));
+      tbl.appendChild(paint(svgText(540, y, row[2], 'demo-x-mono', 12.5), row[3]));
+      if (i === 1) tbl.appendChild(svgText(600, y, '← 很少摔，ET 自然无关紧要', 'demo-x-mut', 11));
+    });
+    s.appendChild(tbl);
+
+    /* 无 ET：一次尝试 = 30 步真正在练 + 170 步躺在地上；有 ET：30 步就重开。 */
+    function fillLane(lane, y, used, useful, span) {
+      lane.textContent = '';
+      var at = 0;
+      while (at < used) {
+        var goodLen = Math.min(useful, used - at);
+        lane.appendChild(paint(svgEl('rect', {
+          x: ET_X0 + (at / ET_BUDGET) * ET_W, y: y,
+          width: Math.max(0, (goodLen / ET_BUDGET) * ET_W - 0.6), height: 32, rx: 2
+        }), C_ACCENT));
+        at += useful;
+        if (span > useful && at < used) {
+          var junk = Math.min(span - useful, used - at);
+          lane.appendChild(paint(svgEl('rect', {
+            x: ET_X0 + (at / ET_BUDGET) * ET_W, y: y,
+            width: Math.max(0, (junk / ET_BUDGET) * ET_W - 0.6), height: 32, rx: 2, opacity: 0.55
+          }), C_BAD));
+          at += span - useful;
+        }
+      }
+    }
+
+    function draw(t) {
+      var used = ET_BUDGET * ease(seg(t, 1.4, 7.0));
+      fillLane(laneA, 110, used, 30, 200);
+      fillLane(laneB, 234, used, 30, 30);
+      tagA.textContent = '已用 ' + Math.round(used) + ' 步 → ' + Math.floor(used / 200) + ' 次练习，85% 是「躺在地上」';
+      tagB.textContent = '已用 ' + Math.round(used) + ' 步 → ' + Math.floor(used / 30) + ' 次练习，几乎全是有用样本';
+      setOpacity(tagA, seg(t, 5.2, 5.9));
+      setOpacity(tagB, seg(t, 5.2, 5.9));
+      setOpacity(tbl, seg(t, 10.0, 10.8));
+    }
+
+    return { el: s, draw: draw };
+  }
+
+  /* ── scene 5: the training loop ── */
+  var LOOP_NODES = [
+    { x: 128, y: 60, w: 200, t: '① RSI 初始化', s: '随机相位，摆成参考那一帧' },
+    { x: 430, y: 78, w: 236, t: '② π_θ(s) → 目标关节角 â', s: '30 Hz，输出的不是扭矩' },
+    { x: 682, y: 182, w: 210, t: '③ Stable PD → 扭矩 τ', s: 'τ = k_p(â−q) + k_d(−q̇)' },
+    { x: 586, y: 366, w: 210, t: '④ Bullet 物理步进', s: '1200 Hz，得到新状态 s′' },
+    { x: 274, y: 366, w: 210, t: '⑤ 模仿奖励 r_I', s: '姿态 / 速度 / 末端 / 质心' },
+    { x: 178, y: 182, w: 210, t: '⑥ PPO 更新 π_θ', s: 'clip 机制与标准 PPO 相同' }
+  ];
+
+  var LOOP_EDGES = [
+    { pts: [[228, 64], [306, 74]] },
+    { pts: [[548, 86], [640, 165]] },
+    { pts: [[682, 207], [636, 341]] },
+    { pts: [[481, 366], [385, 366]] },
+    { pts: [[228, 341], [192, 207]] },
+    { pts: [[240, 160], [326, 100]] }
+  ];
+
+  var ET_EDGE = { pts: [[586, 391], [586, 408], [20, 408], [20, 60], [22, 60]] };
+
+  var LOOP_STEPS = [
+    { kind: 'node', i: 0, a: 1.2, b: 2.4 },
+    { kind: 'edge', i: 0, a: 2.4, b: 3.0 },
+    { kind: 'node', i: 1, a: 3.0, b: 4.2 },
+    { kind: 'edge', i: 1, a: 4.2, b: 4.8 },
+    { kind: 'node', i: 2, a: 4.8, b: 6.2 },
+    { kind: 'edge', i: 2, a: 6.2, b: 6.8 },
+    { kind: 'node', i: 3, a: 6.8, b: 8.0 },
+    { kind: 'edge', i: 3, a: 8.0, b: 8.6 },
+    { kind: 'node', i: 4, a: 8.6, b: 9.8 },
+    { kind: 'edge', i: 4, a: 9.8, b: 10.4 },
+    { kind: 'node', i: 5, a: 10.4, b: 11.4 },
+    { kind: 'edge', i: 5, a: 11.4, b: 12.0 },
+    { kind: 'node', i: 1, a: 12.0, b: 12.8 }
+  ];
+
+  function polyPath(pts) {
+    return pts.map(function (p, i) { return (i ? 'L ' : 'M ') + p[0] + ' ' + p[1]; }).join(' ');
+  }
+
+  function pointOn(pts, u) {
+    var lens = [], total = 0, i;
+    for (i = 1; i < pts.length; i++) {
+      var d = Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]);
+      lens.push(d);
+      total += d;
+    }
+    var want = u * total;
+    for (i = 0; i < lens.length; i++) {
+      if (want <= lens[i] || i === lens.length - 1) {
+        var k = lens[i] ? want / lens[i] : 0;
+        return [pts[i][0] + (pts[i + 1][0] - pts[i][0]) * k, pts[i][1] + (pts[i + 1][1] - pts[i][1]) * k];
+      }
+      want -= lens[i];
+    }
+    return pts[pts.length - 1];
+  }
+
+  function buildSceneLoop() {
+    var s = sceneSvg('DeepMimic 训练闭环：RSI 初始化、策略输出目标关节角、Stable PD 转扭矩、物理步进、模仿奖励、PPO 更新，摔倒则走 ET 回到初始化');
+    var arrow = K.arrowMarker(s, 'dm-x-arrow', C_ACCENT);
+    var etArrow = K.arrowMarker(s, 'dm-x-arrow-et', C_BAD);
+
+    var etPath = paint(svgEl('path', {
+      d: polyPath(ET_EDGE.pts), fill: 'none', 'stroke-width': 1.8,
+      'stroke-dasharray': '6 5', 'marker-end': etArrow
+    }), null, C_BAD);
+    s.appendChild(etPath);
+    var etLab = paint(svgText(300, 402, 'ET：非脚部位触地 → 立刻终止，回 ① 换个随机相位', null, 11.5, 'middle'), C_BAD);
+    s.appendChild(etLab);
+
+    var edges = LOOP_EDGES.map(function (e) {
+      var p = paint(svgEl('path', { d: polyPath(e.pts), fill: 'none', 'stroke-width': 1.8, 'marker-end': arrow }), null, C_MUTED);
+      s.appendChild(p);
+      return p;
+    });
+
+    var boxes = LOOP_NODES.map(function (n) {
+      var g = svgEl('g', {});
+      var rect = paint(svgEl('rect', { x: n.x - n.w / 2, y: n.y - 25, width: n.w, height: 50, rx: 8, 'stroke-width': 1.5 }), C_SURFACE2, C_BORDER);
+      g.appendChild(rect);
+      g.appendChild(svgText(n.x, n.y - 4, n.t, 'demo-x-mono', 12.5, 'middle'));
+      g.appendChild(svgText(n.x, n.y + 14, n.s, 'demo-x-mut', 10.5, 'middle'));
+      s.appendChild(g);
+      return { g: g, rect: rect };
+    });
+
+    var chip = svgEl('g', {});
+    chip.appendChild(paint(svgEl('rect', { x: 690, y: 262, width: 100, height: 24, rx: 12, 'stroke-width': 1, 'stroke-dasharray': '4 3' }), C_SURFACE, C_WARN));
+    chip.appendChild(paint(svgText(740, 278, '×40 物理步', 'demo-x-mono', 11.5, 'middle'), C_WARN));
+    s.appendChild(chip);
+
+    var token = paint(svgEl('circle', { cx: -20, cy: -20, r: 6 }), C_ACCENT);
+    s.appendChild(token);
+
+    var tail = svgText(400, 30, 'DeepMimic = PPO 一行没改，换掉的是环境侧的奖励 / 初始化 / 终止条件', 'demo-x-acc', 12.5, 'middle');
+    s.appendChild(tail);
+
+    function draw(t) {
+      var lit = -1, reached = -1, actEdge = -1, u = 0;
+      LOOP_STEPS.forEach(function (st) {
+        if (t >= st.a) reached = Math.max(reached, st.kind === 'node' ? st.i : st.i);
+        if (t >= st.a && t < st.b) {
+          if (st.kind === 'node') lit = st.i;
+          else { actEdge = st.i; u = seg(t, st.a, st.b); }
+        }
+      });
+
+      boxes.forEach(function (b, i) {
+        var seen = i <= reached || (i === 1 && t >= 12.0);
+        setOpacity(b.g, seen ? 1 : 0.32);
+        paint(b.rect, i === lit ? C_SURFACE : C_SURFACE2, i === lit ? C_ACCENT : C_BORDER);
+        b.rect.setAttribute('stroke-width', i === lit ? 2.5 : 1.5);
+      });
+      edges.forEach(function (e, i) {
+        paint(e, null, i === actEdge ? C_ACCENT : C_MUTED);
+        setOpacity(e, i <= reached ? 1 : 0.3);
+      });
+
+      if (actEdge >= 0) {
+        var p = pointOn(LOOP_EDGES[actEdge].pts, u);
+        token.setAttribute('cx', p[0].toFixed(1));
+        token.setAttribute('cy', p[1].toFixed(1));
+        setOpacity(token, 1);
+      } else if (t >= 13.0 && t < 14.0) {
+        var q = pointOn(ET_EDGE.pts, seg(t, 13.0, 14.0));
+        token.setAttribute('cx', q[0].toFixed(1));
+        token.setAttribute('cy', q[1].toFixed(1));
+        paint(token, C_BAD);
+        setOpacity(token, 1);
+      } else {
+        setOpacity(token, 0);
+        paint(token, C_ACCENT);
+      }
+
+      var etOn = t >= 11.4;
+      setOpacity(etPath, etOn ? 1 : 0.25);
+      setOpacity(etLab, etOn ? 1 : 0.25);
+      setOpacity(chip, Math.max(0.25, seg(t, 5.2, 5.9)));
+      setOpacity(tail, seg(t, 13.2, 14.0));
+    }
+
+    return { el: s, draw: draw };
+  }
+
+  var DM_SCENES = [
+    {
+      title: '为什么要模仿',
+      dur: 13,
+      build: buildSceneWhy,
+      cues: [
+        { at: 0.4, s: '同一个「往前走」的任务，奖励函数只差一项，学出来的东西差很远。' },
+        { at: 2.2, s: '左边是纯 RL：奖励只写「前进速度」，**姿态没人管** —— 螃蟹步、拖脚滑行、抖着前进都能拿高分。' },
+        { at: 4.8, s: '右边是 DeepMimic：给一段**动捕参考**，再加一项「像不像」的模仿奖励 r^I。' },
+        { at: 8.6, s: '总奖励 **r = w^I·r^I + w^G·r^G**：r^I 管好不好看，r^G 管任务做没做到。' },
+        { at: 11.0, s: '物理仿真保证不穿模、不悬浮，模仿奖励保证姿态自然 —— **两个同时要**，这就是 DeepMimic。' }
+      ]
+    },
+    {
+      title: '四维模仿奖励',
+      dur: 18,
+      build: buildSceneReward,
+      cues: [
+        { at: 0.4, s: '模仿奖励拆成四项，每项都是 **exp(−k · 误差)**：误差 0 得满分 1，误差越大指数级掉分。' },
+        { at: 2.0, s: 'r^p 关节姿态：13 个关节四元数差分的平方和 0.09，**k = 2** → exp(−0.18) ≈ 0.84。' },
+        { at: 5.0, s: 'r^v 关节速度：误差 1.0，**k = 0.1 最宽松** —— 速度本来就抖，管太严反而没法学。' },
+        { at: 7.8, s: 'r^e 末端位置：误差只有 0.0072 m²（手脚差几厘米），但 **k = 40 最严**，只剩 0.75。' },
+        { at: 10.5, s: 'r^c 质心：误差 0.04 m²，**k = 10** → 0.67，四项里掉分最多的一项。' },
+        { at: 12.2, s: '**k 管曲线陡不陡，w 管这条曲线在总分里占多少** —— 这两组数管的不是一回事。' },
+        { at: 14.0, s: '加权求和 0.65×0.84 + 0.1×0.90 + 0.15×0.75 + 0.1×0.67 = **r_I ≈ 0.813**。' }
+      ]
+    },
+    {
+      title: 'RSI：从哪儿开始练',
+      dur: 15,
+      build: buildSceneRsi,
+      cues: [
+        { at: 0.4, s: '后空翻这段参考动作可以切成 7 个阶段：助跑 → 蓄力 → 起跳 → 团身 → 倒立 → 展开 → 落地。' },
+        { at: 2.0, s: '不用 RSI：每个 episode 都从**帧 0** 开始，而训练初期只撑得住一两个阶段。' },
+        { at: 4.6, s: '于是练习次数**全压在前两个阶段**，后面的空翻和落地一次都练不到。' },
+        { at: 7.2, s: 'RSI：从参考动作的**随机相位**起步，直接把角色摆成那一帧的姿态和速度。' },
+        { at: 10.4, s: '同样的采样预算，**七个阶段都被练到** —— 学游泳不必每次都从池边跳起。' },
+        { at: 12.4, s: '论文 Section 10.4：Backflip 去掉 RSI（仅 ET）**0.791 → 0.730**。' }
+      ]
+    },
+    {
+      title: 'ET：摔了赔多少',
+      dur: 15,
+      build: buildSceneEt,
+      cues: [
+        { at: 0.4, s: 'ET（Early Termination）：非脚部位触地就是摔了，**立刻结束 episode**，不再采样。' },
+        { at: 2.4, s: '不终止会怎样？角色躺在地上扭动，后面几百步**全是垃圾数据**，却照样占预算。' },
+        { at: 5.2, s: '同一份 600 步预算：没有 ET 只换来 3 次练习，有 ET 换来 20 次。' },
+        { at: 8.0, s: '更糟的是 class imbalance：训练数据里**「躺在地上」的状态占了大多数**，策略被这些状态带跑。' },
+        { at: 10.0, s: '论文 Section 10.4：Backflip 去掉 ET（仅 RSI）**0.791 → 0.379**，基本学废。' },
+        { at: 12.4, s: '但 Walk 那一行是 **0.980 → 0.974** —— 低动态技能很少摔，ET 自然无关紧要。' }
+      ]
+    },
+    {
+      title: '训练闭环',
+      dur: 15,
+      build: buildSceneLoop,
+      cues: [
+        { at: 0.4, s: '把前四幕串起来，就是 DeepMimic 的一次训练循环。' },
+        { at: 2.0, s: '① **RSI** 随机相位初始化 → ② 策略 π_θ(s) 输出**目标关节角 â**，不是扭矩。' },
+        { at: 4.6, s: '③ **Stable PD** 把 â 换成扭矩 τ = k_p(â−q) + k_d(−q̇)。' },
+        { at: 6.0, s: '策略只有 30 Hz，物理 1200 Hz —— 一个目标角要被 PD **跑 40 个物理步**。' },
+        { at: 8.4, s: '④ 仿真出新状态 → ⑤ 算四维模仿奖励 r_I → ⑥ **PPO** 更新策略，回到 ②。' },
+        { at: 11.4, s: '中途摔倒就走 **ET** 那条虚线：直接回 ①，换个随机相位重来。' },
+        { at: 13.2, s: '换句话说，**DeepMimic 的创新全在环境侧**：奖励、初始化、终止条件，PPO 一行没改。' }
+      ]
+    }
+  ];
+
+  function buildExplainerDemo(host) {
+    K.explainer(host, {
+      title: '五幕动画：DeepMimic 全流程速览',
+      sub: '约 76 秒自动播放。空格播放/暂停，← → 换幕；画面里的数字与本文各节算例一致。',
+      ariaLabel: 'DeepMimic 五幕讲解动画',
+      notes: [
+        '取数依据：第二幕的四项误差与权重就是上面「模仿奖励」实验台的默认值（正文 t=15 的例子，r_I ≈ 0.813）；' +
+          '第三、四幕引用的 return 是论文 Section 10.4 的消融表（见 Q7）。',
+        '第四幕的「600 步 / 200 步一次」只是说明「摔一次赔掉 episode 剩下步数」的示意刻度，不是论文的仿真设置。'
+      ],
+      scenes: DM_SCENES
+    });
+  }
+
   K.mount({
     'deepmimic-reward': buildRewardDemo,
     'deepmimic-rsi': buildRsiDemo,
-    'deepmimic-pd': buildPdDemo
+    'deepmimic-pd': buildPdDemo,
+    'deepmimic-explainer': buildExplainerDemo
   });
 })();
