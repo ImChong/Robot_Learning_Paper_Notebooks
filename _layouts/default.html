@@ -123,7 +123,45 @@
   <style>
     html { color-scheme: dark; background-color: #1e1e1e; }
     html[data-theme="light"] { color-scheme: light; background-color: #ffffff; }
+
+    /* Hold the paper body back until the post-parse pass has run.
+
+       A paper page is painted long before its markup is finished: KaTeX turns
+       `$…$` into math, mermaid turns diagram sources into SVG, and paper.js
+       builds the TOC, wraps tables and rebuilds code blocks with line
+       numbers. All of that lands after the first paint, so a reload used to
+       show raw `$\delta_t = …$` and raw `graph TD` text for a moment and then
+       snap into place. ``visibility`` (not ``display``) keeps the box in the
+       layout, so nothing jumps and #hash anchors still resolve.
+
+       Both classes are added by script and always removed again — by the
+       reveal below, or by its watchdog when KaTeX/mermaid never arrive — so a
+       JS-less visit and a blocked CDN both still show the content. */
+    html.paper-pending #paper-body { visibility: hidden; }
+    html:not(.mermaid-unavailable)
+      .paper-body .mermaid:not(.mermaid-unrendered):not(:has(svg)) { visibility: hidden; }
   </style>
+  <script>
+    /* Reveal gate for the markup above. ``revealPaperBody()`` is idempotent
+       and called from the DOMContentLoaded handler at the bottom of this
+       layout, once every other listener (paper.js, the demo bundles) has had
+       its turn. The timeout is the safety net: a KaTeX/mermaid CDN failure
+       must degrade to today's raw-source rendering, never to a blank page. */
+    (function () {
+      var REVEAL_TIMEOUT_MS = 2500;
+      var root = document.documentElement;
+      var revealed = false;
+
+      window.revealPaperBody = function revealPaperBody() {
+        if (revealed) return;
+        revealed = true;
+        root.classList.remove('paper-pending');
+      };
+
+      root.classList.add('paper-pending');
+      setTimeout(window.revealPaperBody, REVEAL_TIMEOUT_MS);
+    })();
+  </script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <!--
     CSP (defence-in-depth). Static site, no fetch/XHR — only KaTeX & mermaid
@@ -168,8 +206,16 @@
   {% assign mermaid_zoom_js = site.static_files | where: "path", "/assets/js/mermaid-zoom.js" | first %}
   <script src="{{ '/assets/js/mermaid-zoom.js' | relative_url }}{% if mermaid_zoom_js %}?v={{ mermaid_zoom_js.modified_time | date: '%s' }}{% endif %}" defer></script>
   <script>
+    var mermaidRunPending = false;
+
     function initMermaid(theme) {
-      if (typeof mermaid === 'undefined') return;
+      if (typeof mermaid === 'undefined') {
+        // Offline, or the CDN is blocked: nothing will ever turn the diagram
+        // sources into SVG, so let the raw source show instead of leaving the
+        // (visibility: hidden) placeholders empty forever.
+        document.documentElement.classList.add('mermaid-unavailable');
+        return;
+      }
       var config =
         typeof window.getMermaidSiteConfig === 'function'
           ? window.getMermaidSiteConfig(theme)
@@ -181,7 +227,43 @@
             };
       mermaid.initialize(config);
       window.roadmapMermaidConfigured = true;
-      
+
+      scheduleMermaidRun();
+    }
+
+    /* Rendering a paper's diagrams is seconds of synchronous layout work.
+       initMermaid() is called while the document is still parsing (from the
+       theme script at the bottom of <body>) and again from paper.js once the
+       ```mermaid fences have been converted, so doing the work inline blocked
+       parsing, DOMContentLoaded and therefore the reveal above — the text of
+       the page waited on the pictures.
+
+       Run it after the first revealed frame instead: text, math and TOC are
+       already in place, and the diagrams fill in behind their own
+       placeholders. Repeated calls collapse into one run, which is what the
+       theme-script + paper.js pair needs (it used to render twice). */
+    function scheduleMermaidRun() {
+      if (mermaidRunPending) return; // one queued run always renders every block
+      mermaidRunPending = true;
+      whenParsed(function () {
+        requestAnimationFrame(function () {
+          setTimeout(function () {
+            mermaidRunPending = false;
+            runMermaid();
+          }, 0);
+        });
+      });
+    }
+
+    function whenParsed(fn) {
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', fn, { once: true });
+      } else {
+        fn();
+      }
+    }
+
+    function runMermaid() {
       // 1. Snapshot source once (restore <br> as literal <br/>); re-render from snapshot on theme changes.
       document.querySelectorAll('.mermaid:not(#roadmap-mermaid)').forEach(function(el) {
         var readSource =
@@ -201,6 +283,7 @@
           if (source) el.setAttribute('data-original-code', source);
         }
         el.removeAttribute('data-processed');
+        el.classList.remove('mermaid-unrendered');
         var canonical = el.getAttribute('data-original-code');
         var renderSource =
           typeof window.prepareMermaidRenderSource === 'function'
@@ -217,14 +300,22 @@
           ? window.renderRoadmapMermaid(document.documentElement.getAttribute('data-lang-mode') || 'en')
           : Promise.resolve();
 
-      Promise.all([paperRun, roadmapRun]).then(function() {
+      Promise.all([paperRun, roadmapRun]).then(finishMermaidRun, finishMermaidRun);
+    }
+
+    function finishMermaidRun() {
+      document.querySelectorAll('.mermaid:not(#roadmap-mermaid)').forEach(function(el) {
         if (typeof window.patchMermaidForeignObjects === 'function') {
-          document.querySelectorAll('.mermaid:not(#roadmap-mermaid)').forEach(function(el) {
-            window.patchMermaidForeignObjects(el);
-          });
+          window.patchMermaidForeignObjects(el);
         }
-        if (typeof window.initKaTeX === 'function') window.initKaTeX();
+        // A block mermaid could not render (bad syntax, a rejected run) would
+        // stay blank behind its placeholder, so show its source again.
+        if (!el.querySelector('svg')) el.classList.add('mermaid-unrendered');
       });
+      // Safety net only: the math is rendered from DOMContentLoaded below and
+      // never lives inside a mermaid subtree, so this is a no-op unless KaTeX
+      // arrived late. Guarded by ``__katexInitialized``.
+      if (typeof window.initKaTeX === 'function') window.initKaTeX();
     }
   </script>
 
@@ -787,15 +878,34 @@
     };
 
     document.addEventListener("DOMContentLoaded", function() {
-      var hasMermaid =
-        document.querySelector('.mermaid') || document.getElementById('roadmap-mermaid');
-      if (!hasMermaid) {
-        if (!window.initKaTeX()) {
-          var check = setInterval(function() {
-            if (window.initKaTeX()) clearInterval(check);
-          }, 100);
-        }
+      /* Render the math straight away. This used to be skipped on any page
+         carrying a diagram, leaving it to the promise chain in initMermaid()
+         — so on a paper page every formula stayed raw `$…$` text until the
+         last diagram had been laid out. initKaTeX() rejects the `.mermaid`
+         subtrees itself (mermaid renders its own math), so the two passes are
+         independent and must not be chained. */
+      if (!window.initKaTeX()) {
+        // KaTeX is loaded with `defer`, so it has already executed by now
+        // unless the request failed outright; keep polling in case it is a
+        // slow proxy rather than a dead one, but give up instead of leaving a
+        // timer running for the rest of the visit.
+        var tries = 0;
+        var check = setInterval(function() {
+          if (window.initKaTeX()) {
+            clearInterval(check);
+            window.revealPaperBody();
+          } else if (++tries > 50) {
+            clearInterval(check);
+          }
+        }, 100);
       }
+
+      /* Reveal in a fresh task so the remaining DOMContentLoaded listeners —
+         paper.js (TOC, table wrappers, line-numbered code) and the demo
+         bundles, all registered after this one — have already reshaped the
+         body. Diagrams keep rendering afterwards behind their own
+         placeholders. */
+      setTimeout(window.revealPaperBody, 0);
     });
   </script>
   <script>
