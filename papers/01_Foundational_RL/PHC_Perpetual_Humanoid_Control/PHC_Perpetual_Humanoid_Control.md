@@ -34,7 +34,7 @@ demos: ["phc"]
 PHC 通过**渐进式乘法控制策略（PMCP）**，让仿真人形角色能模仿上万条动作序列、从摔倒中自然恢复、永不需要 reset——是从 DeepMimic "单动作模仿"迈向"大规模通用控制"的关键一步。
 
 > 🎮 **本文内嵌 1 段动画 + 3 个可交互演示**（不用装任何东西）：
-> 1. [五幕动画：PHC 全流程](#phc-explainer-anim) —— 约 80 秒串完「DeepMimic 之后的三堵墙 → PMCP 渐进扩容 → Composer 连续混合 → 摔倒恢复 → 两阶段训练闭环」
+> 1. [六幕动画：PHC 全流程](#phc-explainer-anim) —— 约 96 秒串完「DeepMimic 之后的三堵墙 → PMCP 渐进扩容 → Composer 连续混合 → 摔倒恢复 → 噪声输入换成关键点 → 两阶段训练闭环」（三堵墙各有一幕交代，所以比其余几篇多一幕）
 > 2. PMCP 实验台 —— 点一次「训练下一轮」就新增一列 primitive，对照单网络微调怎么被洗掉
 > 3. Composer 演示 —— 只有一个温度旋钮，拉满就能看到连续混合退化成硬切换那一跳
 > 4. 摔倒恢复实验台 —— 画出一整条 episode，右边那根短柱是「没有 Pᶠ 时会在第几步结束」
@@ -59,7 +59,7 @@ PHC 通过**渐进式乘法控制策略（PMCP）**，让仿真人形角色能�
 
 ---
 
-## 🎬 五幕动画：PHC 全流程 {#phc-explainer-anim}
+## 🎬 六幕动画：PHC 全流程 {#phc-explainer-anim}
 
 <div class="paper-demo" data-demo="phc-explainer"><p class="demo-fallback">（本节含动画演示，需要启用 JavaScript）</p></div>
 
