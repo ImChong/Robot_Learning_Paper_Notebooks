@@ -1052,8 +1052,12 @@
     geom.appendChild(tgtArm);
     geom.appendChild(pickArm);
     geom.appendChild(pickDot);
-    geom.appendChild(svgMath(S3_CX, 132, '\\text{允许锥：} \\cos \\ge 0.8',
+    geom.appendChild(svgMath(S3_CX, 124, '\\text{允许锥：} \\cos \\ge 0.8',
       { size: 10.5, anchor: 'middle', cls: 'demo-x-mut', w: 200 }));
+    /* 圆里只有两条线和一个扇形，谁是谁必须写出来：绿虚线 = 目标风格，蓝实线 =
+       HLC 这一步选的 latent。没有这两个标注，读者只能靠下面的读数反推。 */
+    geom.appendChild(paint(svgText(194, 148, 'z_target：' + skillByAngle(S3_TGT).skill.name, null, 10, 'end'), C_GOOD));
+    geom.appendChild(paint(svgText(238, 172, 'HLC 选的 z_t', null, 10), C_ACCENT));
     s.appendChild(geom);
 
     /* 四块读数等距排开：168 宽 + 12 间距，正好落在 46…754 之间，
@@ -1138,17 +1142,28 @@
         g.appendChild(paint(svgText(st.x, 96 + j * 18, line, null, j ? 10.5 : 12.5, 'middle'), j ? C_MUTED : st.color));
       });
       s.appendChild(g);
-      if (i < 2) {
-        s.appendChild(paint(svgEl('line', {
-          x1: st.x + 88, y1: 100, x2: stateSpecs[i + 1].x - 88, y2: 100, 'stroke-width': 1.8
-        }), null, C_MUTED));
-      }
       return { g: g, at: 0.8 + i * 1.4 };
+    });
+
+    /* 这一幕讲的就是「什么时候换」，所以状态之间要看得出方向和触发条件：
+       条件取自 simulateFSM()（range = 1.0 m；攻击帧数走完就把目标判为倒下）。
+       连线挂在「目的状态」那一组里，跟着它一起淡入 —— 否则箭头会先指着一个
+       两秒后才出现的空框。 */
+    var fsmArrow = K.arrowMarker(s, 'calm-x-arrow-fsm', C_MUTED);
+    var S4_COND = ['距离 < 1 m', '目标倒下'];
+    stateSpecs.forEach(function (st, i) {
+      if (i === 0) return;
+      var x1 = stateSpecs[i - 1].x + 88,
+        x2 = st.x - 92;
+      states[i].g.appendChild(paint(svgEl('line', {
+        x1: x1, y1: 100, x2: x2, y2: 100, 'stroke-width': 1.8, 'marker-end': fsmArrow
+      }), null, C_MUTED));
+      states[i].g.appendChild(svgText((x1 + x2) / 2, 92, S4_COND[i - 1], 'demo-x-mut', 9.5, 'middle'));
     });
 
     var zPlot = svgEl('g', {});
     zPlot.appendChild(paint(svgEl('rect', { x: 60, y: 168, width: 680, height: 150, rx: 8, 'stroke-width': 1 }), C_SURFACE2, C_BORDER));
-    zPlot.appendChild(svgText(72, 188, 'LLC 收到的 latent 时间线（与 FSM 实验台同一 simulateFSM）', 'demo-x-mut', 10.5));
+    zPlot.appendChild(svgText(72, 188, 'LLC 收到的 latent 时间线：纵轴 = z 的方向（与 FSM 实验台同一 simulateFSM）', 'demo-x-mut', 10.5));
     var px0 = 88,
       px1 = 712,
       py0 = 296,
@@ -1219,6 +1234,7 @@
     var s = sceneSvg('CALM 三阶段串行：先 LLC 再 HLC 再 FSM 推理；阶段三不再更新任何权重');
     s.appendChild(svgText(60, 30, 'CALM 的训练与推理：三阶段串行，推理期零训练', 'demo-x-ink2', 13));
 
+    var phaseArrow = K.arrowMarker(s, 'calm-x-arrow-phase', C_MUTED);
     var cards = S5_PHASES.map(function (ph, i) {
       /* 三张卡 + 冻结说明 + 落款要挤进 420 的画布：卡高 80、间距 96，
          第三张卡到 324 结束，下面的冻结说明（338 起）才不会压在它身上。 */
@@ -1228,8 +1244,12 @@
       g.appendChild(paint(svgText(82, y + 26, ph.title, null, 13.5), ph.color));
       g.appendChild(svgText(82, y + 48, ph.detail, 'demo-x-mut', 11));
       g.appendChild(paint(svgText(718, y + 26, ph.cmd, 'demo-x-mono', 11, 'end'), ph.color));
-      if (i < 2) {
-        g.appendChild(paint(svgEl('line', { x1: 400, y1: y + 80, x2: 400, y2: y + 96, 'stroke-width': 1.6 }), null, C_MUTED));
+      if (i > 0) {
+        /* 「串行」要看得出先后：箭头从上一张卡指进这一张，并且挂在这一张的组里
+           跟它一起淡入，不会先悬在空处指着还没出现的卡。 */
+        g.appendChild(paint(svgEl('line', {
+          x1: 400, y1: y - 16, x2: 400, y2: y - 2, 'stroke-width': 1.3, 'marker-end': phaseArrow
+        }), null, C_MUTED));
       }
       s.appendChild(g);
       return { g: g, at: 0.6 + i * 2.8 };
