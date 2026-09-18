@@ -157,7 +157,7 @@ demos: ["ppo"]
 
 站点本来就在 `_layouts/default.html` 里加载了 KaTeX（固定版本 + SRI），演示**复用同一份**，不要再引第二份、也不要自己拼 Unicode 上下标：
 
-- **HTML 文案**（`card` 的 `title` / `sub`、`note()` 的每一行、`verdictBox`、`K.explainer` 的字幕轨与分幕标题）里直接写 `$…$`，和 `**加粗**` 可以混用（`**$r_t(\theta)$**`）。解析在 `K.rich()`。
+- **HTML 文案**（`card` 的 `title` / `sub`、`note()` 的每一行、`verdictBox`、`K.explainer` 的字幕轨与分幕标题）里直接写 `$…$`，和 `**加粗**`、反引号包起来的 inline code 可以混用（`**$r_t(\theta)$**`、`` `awrWeights()` ``）。解析在 `K.rich()`：一对反引号会渲染成 `<code class="demo-code">`，样式在 `paper-demos.css`，所以函数名 / 配置项直接写反引号即可，不要手写 HTML。
 - **SVG 分镜**用 `K.svgMath(x, y, tex, { size, anchor, cls, w, display })`，`x / y / anchor` 与 `svgText` 同义（`y` 仍是基线），返回的 `<foreignObject>` 带 `setTex()`（数字会变的公式）、`setX()`、`setCls()` / `setTone()`（HTML 吃 `color`，`paint()` 在这儿不起作用）。中文夹在公式里用 `\text{…}`，其中的 `%` / `#` / `&` 必须转义。
 - **每帧都在变的数字不要塞进公式**：拆成「静态公式标签 + `svgText` 数字」，否则每帧重排一次公式。
 - **Canvas 演示画不了公式**：`stage` / `plot` 那套是原生 Canvas，KaTeX 到不了，公式只能放在卡片标题、`demo-note` 等 HTML 部分。

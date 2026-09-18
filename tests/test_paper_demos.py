@@ -265,6 +265,21 @@ def test_explainer_formulas_go_through_katex():
         assert re.search(r"s: '[^']*\$\\\\", js), f"{name}.js 的字幕应包含 $LaTeX$ 公式"
 
 
+def test_demo_strings_render_backticks_as_inline_code():
+    """演示里的 awrWeights() 这类标识符（字符串里用反引号包着）要渲染成 inline code。
+
+    kit 的 rich() 是所有人读得到的字符串（标题、字幕、结论框、脚注）唯一的
+    渲染入口，所以反引号只需要在那里认一次，各 bundle 原样写 markdown 即可。
+    """
+    kit = DEMO_KIT.read_text(encoding="utf-8")
+    rich = kit[kit.index("function rich(parent, str)") : kit.index("function card(host, opts)")]
+    assert "`[^`]+`" in rich, "rich() 的 re 要把一对反引号认成一段 code"
+    assert "el('code', 'demo-code'" in rich, "反引号里的内容要渲染成 <code class=\"demo-code\">"
+
+    css = DEMO_CSS.read_text(encoding="utf-8")
+    assert "code.demo-code" in css, "demo-code 需要在 paper-demos.css 里定义"
+
+
 def _ase_channels(js: str) -> list[tuple[float, float, float]]:
     """The four hand-written behaviour channels the ASE latent demo decodes into."""
     block = js[js.index("var CHANNELS = [") : js.index("function decode(")]
