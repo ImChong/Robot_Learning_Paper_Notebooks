@@ -7,6 +7,8 @@
  * <script>/<canvas>/<input> from #paper-body before publish.
  *
  * Demos:
+ *   pulse-explainer  — 六幕讲解动画：缺一个通用表示 → 阶段1 大规模模仿 → 阶段2 VIB 瓶颈 →
+ *                      本体感受先验 → 阶段3 下游只搜 32 维 → 闭环与源码落点
  *   pulse-vib        — 变分信息瓶颈：β 在「记住每个片段」和「什么都没学到」之间的取舍
  *   pulse-prior      — 本体感受先验 p(z|s)：为什么固定的 N(0, I) 会让长序列发散
  *   pulse-downstream — 32 维潜空间 vs 69 维关节空间：下游 RL 到底省在哪
@@ -468,6 +470,35 @@
   }
 
   // ─── demo 3: 下游 RL 在 32 维潜空间里搜 ──────────────────────────────────
+  /* 学习曲线那套解析式提到模块作用域：下面的演示和第五幕动画共用同一份，
+     免得两边各算一套「到 80% 分数要跑多少轮」。收敛速度 ∝ 1/维度，再乘上
+     「有多大比例的 rollout 不是废的」。 */
+  var LAT_DIM = 32,
+    RAW_DIM = 69,
+    LAT_USABLE = 0.9, // 先验 + 冻结 Decoder 兜底：采到的 z 基本都是自然动作
+    RAW_USABLE = 0.06; // 关节空间里随便采一组力矩，几乎必然当场倒地
+
+  function dsCurve(dim, usable, iters, hard) {
+    var rate = (usable * 12.0) / (dim * hard);
+    return 1 - Math.exp(-rate * iters * 0.01);
+  }
+
+  function dsIters(target, dim, usable, hard) {
+    if (target >= 1) return Infinity;
+    var rate = (usable * 12.0) / (dim * hard);
+    return -Math.log(1 - target) / (rate * 0.01);
+  }
+
+  /* 高层残差越大，够得到的任务越多（分数上限更高），但越容易飘出先验覆盖的那片。 */
+  function dsReach(residual) {
+    return clamp(0.65 + 0.45 * residual, 0, 1);
+  }
+
+  function dsNatural(residual) {
+    var over = Math.max(0, residual - 0.8);
+    return clamp(Math.exp(-0.9 * over * over * 2), 0, 1);
+  }
+
   function buildDownstreamDemo(host) {
     var root = card(host, {
       title: '下游任务为什么快：搜索空间从 69 维关节降到 32 维技能',
@@ -569,28 +600,18 @@
     ]);
 
     var render = registerRenderer(function () {
-      // 收敛速度 ∝ 1/维度，再乘上「有多大比例的 rollout 不是废的」
-      function curve(dim, usable, t, hard) {
-        var rate = (usable * 12.0) / (dim * hard);
-        return 1 - Math.exp(-rate * t * 0.01);
-      }
-      var latUsable = 0.9;
-      var rawUsable = 0.06;
-      var latFinal = curve(32, latUsable, state.iters, state.taskHard);
-      var rawFinal = curve(69, rawUsable, state.iters, state.taskHard);
+      var latUsable = LAT_USABLE;
+      var rawUsable = RAW_USABLE;
+      var latFinal = dsCurve(LAT_DIM, latUsable, state.iters, state.taskHard);
+      var rawFinal = dsCurve(RAW_DIM, rawUsable, state.iters, state.taskHard);
       // 残差太大 → 分数上限更高但自然度下降
-      var reach = clamp(0.65 + 0.45 * state.residual, 0, 1);
-      var natural = clamp(Math.exp(-0.9 * Math.max(0, state.residual - 0.8) * Math.max(0, state.residual - 0.8) * 2), 0, 1);
+      var reach = dsReach(state.residual);
+      var natural = dsNatural(state.residual);
       var latScore = clamp(latFinal * reach, 0, 1);
 
-      function itersTo(target, dim, usable) {
-        if (target >= 1) return Infinity;
-        var rate = (usable * 12.0) / (dim * state.taskHard);
-        return -Math.log(1 - target) / (rate * 0.01);
-      }
       // 残差限制了分数上限，所以潜空间要到 0.8 分，内部得先跑到 0.8 / reach
-      var tLat = itersTo(0.8 / reach, 32, latUsable),
-        tRaw = itersTo(0.8, 69, rawUsable);
+      var tLat = dsIters(0.8 / reach, LAT_DIM, latUsable, state.taskHard),
+        tRaw = dsIters(0.8, RAW_DIM, rawUsable, state.taskHard);
       function itersText(v) {
         return isFinite(v) ? fmt(v, 0) + ' 轮' : '达不到（残差太小）';
       }
@@ -649,8 +670,8 @@
       var lPts = [],
         rPts = [];
       for (var t = 0; t <= 1200; t += 10) {
-        lPts.push([p.sx(t), p.sy(clamp(curve(32, latUsable, t, state.taskHard) * reach, 0, 1))]);
-        rPts.push([p.sx(t), p.sy(curve(69, rawUsable, t, state.taskHard))]);
+        lPts.push([p.sx(t), p.sy(clamp(dsCurve(LAT_DIM, latUsable, t, state.taskHard) * reach, 0, 1))]);
+        rPts.push([p.sx(t), p.sy(dsCurve(RAW_DIM, rawUsable, t, state.taskHard))]);
       }
       line(g.ctx, rPts, P.bad, 2.2);
       line(g.ctx, lPts, natural < 0.6 ? P.warn : P.good, 2.4);
@@ -693,7 +714,691 @@
     render();
   }
 
+  // ─── demo 4: 六幕讲解动画 ────────────────────────────────────────────────
+  /* PULSE 的主线是三个阶段加一条命门：先训出跟得住 AMASS 的教师，再用 VIB 把它
+     蒸馏成 32 维潜空间（β 决定潜空间是查找表还是连续技能），本体感受先验负责让
+     长序列不发散，下游只在潜空间里搜。六幕对应笔记里的六件事，画面数字全部由上面
+     三个演示的同一批函数现算：`vib()` / `feasibleRate()` / `dsCurve()` / `dsIters()`。 */
+
+  var svgEl = K.svgEl,
+    svgText = K.svgText,
+    svgMath = K.svgMath,
+    paint = K.paint,
+    seg = K.seg,
+    ease = K.ease,
+    setOpacity = K.setOpacity,
+    sceneSvg = K.sceneSvg,
+    polyPath = K.polyPath,
+    pointOn = K.pointOn,
+    stickFigure = K.stickFigure,
+    poseWalk = K.poseWalk;
+
+  var X = K.xColors;
+  var C_ACCENT = X.accent,
+    C_GOOD = X.good,
+    C_BAD = X.bad,
+    C_WARN = X.warn,
+    C_MUTED = X.muted,
+    C_BORDER = X.border,
+    C_SURFACE = X.surface,
+    C_SURFACE2 = X.surface2;
+
+  /* ── scene 1: ASE / CALM 之后还缺什么 ── */
+  var S1_WALLS = [
+    { t: '① 覆盖率不足', d: 'ASE / CALM 的 latent 各自只覆盖一小撮动作' },
+    { t: '② 规模怎么压', d: '数万片段要进同一个可控的潜空间' },
+    { t: '③ 下游要免重训', d: '换任务不能重训底层控制器' }
+  ];
+
+  function buildSceneGap() {
+    var s = sceneSvg(
+      'ASE 与 CALM 的技能潜空间只覆盖自己训练用的那一小撮动作，而 AMASS 有数万片段；' +
+        'PULSE 要同时回答覆盖率、规模压缩、下游免重训三个问题'
+    );
+    s.appendChild(svgText(60, 32, 'ASE → CALM → PULSE：技能 latent 早就有了，通用表示还没有', 'demo-x-ink2', 13.5));
+
+    // 左：ASE / CALM 的潜空间只覆盖一角
+    s.appendChild(paint(svgEl('rect', { x: 40, y: 54, width: 340, height: 246, rx: 8, 'stroke-width': 1 }), C_SURFACE2, C_BORDER));
+    s.appendChild(svgText(210, 78, 'ASE / CALM 的技能潜空间', 'demo-x-ink2', 12, 'middle'));
+    var CX = 210,
+      CY = 186,
+      R = 70;
+    s.appendChild(paint(svgEl('circle', { cx: CX, cy: CY, r: R, fill: 'none', 'stroke-width': 1.2 }), null, C_BORDER));
+    var wedge = svgEl('g', {});
+    var a0 = 0.35,
+      a1 = 1.35;
+    wedge.appendChild(paint(svgEl('path', {
+      d: 'M ' + CX + ' ' + CY +
+        ' L ' + (CX + R * Math.cos(a1)).toFixed(1) + ' ' + (CY - R * Math.sin(a1)).toFixed(1) +
+        ' A ' + R + ' ' + R + ' 0 0 1 ' + (CX + R * Math.cos(a0)).toFixed(1) + ' ' + (CY - R * Math.sin(a0)).toFixed(1) + ' Z',
+      /* fill-opacity 而不是 opacity：setOpacity() 写的是行内 style.opacity，
+         会盖掉同名属性，扇形就成了一块盖住整圈的实心色。 */
+      'fill-opacity': 0.2
+    }), C_ACCENT));
+    var rngW = mulberry32(5);
+    for (var i = 0; i < 16; i++) {
+      var aa = a0 + (a1 - a0) * rngW(),
+        rr = R * (0.25 + 0.7 * rngW());
+      wedge.appendChild(paint(svgEl('circle', { cx: (CX + rr * Math.cos(aa)).toFixed(1), cy: (CY - rr * Math.sin(aa)).toFixed(1), r: 2.6 }), C_ACCENT));
+    }
+    wedge.appendChild(svgText(CX + 96, CY - 52, '训练用的那一小撮', 'demo-x-acc', 10, 'end'));
+    s.appendChild(wedge);
+    s.appendChild(svgText(210, 286, '换一批动作就得重训一套 latent', 'demo-x-mut', 10.5, 'middle'));
+
+    // 右：AMASS 的规模
+    s.appendChild(paint(svgEl('rect', { x: 410, y: 54, width: 350, height: 246, rx: 8, 'stroke-width': 1 }), C_SURFACE2, C_BORDER));
+    s.appendChild(svgText(585, 78, 'AMASS：数万个动作片段', 'demo-x-ink2', 12, 'middle'));
+    var cloud = [];
+    for (var r0 = 0; r0 < 9; r0++) {
+      for (var c0 = 0; c0 < 18; c0++) {
+        var d = paint(svgEl('circle', { cx: 436 + c0 * 17, cy: 106 + r0 * 17, r: 2.4 }), C_MUTED);
+        s.appendChild(d);
+        cloud.push({ n: d, at: 1.2 + (r0 * 18 + c0) * 0.022 });
+      }
+    }
+    s.appendChild(svgText(585, 286, '覆盖人类 99.8% 的日常动作', 'demo-x-mut', 10.5, 'middle'));
+
+    var walls = S1_WALLS.map(function (w, k) {
+      var g = svgEl('g', {});
+      var x = 44 + k * 252;
+      g.appendChild(paint(svgEl('rect', { x: x, y: 316, width: 236, height: 46, rx: 8, 'stroke-width': 1.2, 'stroke-dasharray': '5 4' }), C_SURFACE, C_BAD));
+      g.appendChild(paint(svgText(x + 118, 336, w.t, null, 11.5, 'middle'), C_BAD));
+      g.appendChild(svgText(x + 118, 352, w.d, 'demo-x-mut', 9.5, 'middle'));
+      s.appendChild(g);
+      return { g: g, at: 5.6 + k * 0.9 };
+    });
+
+    var foot = svgEl('g', {});
+    foot.appendChild(paint(svgText(400, 390, 'PULSE 要的是人形控制的「基础模型」：一个随便采一个 z 都能跑的 32 维通用潜空间', null, 14.5, 'middle'), C_ACCENT));
+    foot.appendChild(svgText(400, 411, '下游只学「何时用什么技能」，不再学「怎么动」', 'demo-x-mut', 11, 'middle'));
+    s.appendChild(foot);
+
+    function draw(t) {
+      setOpacity(wedge, seg(t, 0.4, 1.0));
+      cloud.forEach(function (c) { setOpacity(c.n, seg(t, c.at, c.at + 0.3)); });
+      walls.forEach(function (w) { setOpacity(w.g, seg(t, w.at, w.at + 0.5)); });
+      setOpacity(foot, seg(t, 10.4, 11.4));
+    }
+
+    return { el: s, draw: draw };
+  }
+
+  /* ── scene 2: 阶段 1 —— 先训一个什么都跟得住的教师 ── */
+  function buildSceneTeacher() {
+    var s = sceneSvg(
+      '阶段一用 AMASS 训练一个高保真模仿器：给它参考帧，它就能跟住；但拿掉参考帧，它不知道该做什么'
+    );
+    s.appendChild(svgText(60, 32, '阶段 1：先训一个「什么都跟得住」的模仿器', 'demo-x-ink2', 13.5));
+
+    s.appendChild(paint(svgEl('rect', { x: 40, y: 62, width: 196, height: 228, rx: 8, 'stroke-width': 1 }), C_SURFACE2, C_BORDER));
+    s.appendChild(svgText(138, 86, 'AMASS 片段', 'demo-x-mut', 11, 'middle'));
+    var rows = CLIPS.map(function (c, k) {
+      var g = svgEl('g', {});
+      var y = 104 + k * 36;
+      g.appendChild(paint(svgEl('rect', { x: 58, y: y, width: 160, height: 26, rx: 6, 'stroke-width': 1 }), C_SURFACE, C_BORDER));
+      g.appendChild(svgText(138, y + 17, c.name, 'demo-x-ink2', 11, 'middle'));
+      s.appendChild(g);
+      return { g: g, at: 0.6 + k * 0.4 };
+    });
+
+    var feedArrow = paint(svgEl('path', {
+      d: polyPath([[244, 176], [286, 176]]),
+      fill: 'none', 'stroke-width': 1.8,
+      'marker-end': K.arrowMarker(s, 'pulse-x-arrow-feed', C_ACCENT)
+    }), null, C_ACCENT);
+    s.appendChild(feedArrow);
+
+    var box = svgEl('g', {});
+    box.appendChild(paint(svgEl('rect', { x: 292, y: 118, width: 186, height: 116, rx: 8, 'stroke-width': 1.4 }), C_SURFACE2, C_ACCENT));
+    box.appendChild(svgText(385, 144, '模仿器（PHC 栈）', 'demo-x-acc', 12, 'middle'));
+    box.appendChild(svgMath(385, 170, '\\pi_{teacher}(a_t \\mid s_t, ref_t)', { size: 11.5, anchor: 'middle', cls: 'demo-x-ink2', w: 180 }));
+    box.appendChild(svgText(385, 196, 'phc/env/tasks/humanoid_im.py', 'demo-x-mono', 9.5, 'middle'));
+    box.appendChild(svgText(385, 218, '奖励 = 跟得有多准', 'demo-x-mut', 10, 'middle'));
+    s.appendChild(box);
+
+    var figs = svgEl('g', {});
+    var ref = stickFigure(C_MUTED, 2.2, true);
+    var sim = stickFigure(C_GOOD, 2.4, false);
+    figs.appendChild(ref.el);
+    figs.appendChild(sim.el);
+    figs.appendChild(svgText(568, 288, '参考帧', 'demo-x-mut', 10.5, 'middle'));
+    figs.appendChild(paint(svgText(676, 288, '教师跟住了', null, 10.5, 'middle'), C_GOOD));
+    s.appendChild(figs);
+
+    var chip = svgEl('g', {});
+    chip.appendChild(paint(svgEl('rect', { x: 44, y: 310, width: 712, height: 48, rx: 8, 'stroke-width': 1.2, 'stroke-dasharray': '5 4' }), C_SURFACE, C_WARN));
+    chip.appendChild(paint(svgText(400, 330, '但「跟得住」不等于「用得上」：拿掉参考帧，教师不知道该做什么', null, 11.5, 'middle'), C_WARN));
+    chip.appendChild(svgText(400, 348, '它没有一个可以采样、可以给高层策略当动作空间的表示', 'demo-x-mut', 10, 'middle'));
+    s.appendChild(chip);
+
+    var foot = paint(svgText(400, 392, '阶段 1 交出的是能力，不是表示 —— 把能力变成表示，是阶段 2 的事', null, 15, 'middle'), C_ACCENT);
+    s.appendChild(foot);
+
+    function draw(t) {
+      var ph = 0.1 + t * 0.3;
+      ref.pose(568, 226, poseWalk(ph));
+      sim.pose(676, 226, poseWalk(ph - 0.04));
+      rows.forEach(function (r) { setOpacity(r.g, seg(t, r.at, r.at + 0.4)); });
+      var boxOn = seg(t, 2.8, 3.4);
+      setOpacity(box, boxOn);
+      setOpacity(feedArrow, boxOn);
+      setOpacity(figs, seg(t, 4.4, 5.2));
+      setOpacity(chip, seg(t, 7.4, 8.2));
+      setOpacity(foot, seg(t, 10.0, 10.8));
+    }
+
+    return { el: s, draw: draw };
+  }
+
+  /* ── scene 3: 阶段 2 —— VIB，β 决定潜空间长什么样 ──
+     三列的数字就是上面 VIB 实验台的三个预设按钮，同一个 vib() 现算。 */
+  var S3_BETAS = [
+    { beta: 0, label: '\\beta = 0', tag: '纯蒸馏，不压缩', verdict: '把 AMASS 背下来', color: C_BAD },
+    { beta: 0.35, label: '\\beta \\approx 0.35', tag: 'PULSE 的落点', verdict: '采样能跑，编码认得出', color: C_GOOD },
+    { beta: 4, label: '\\beta = 4', tag: 'posterior collapse', verdict: '什么也没记住', color: C_BAD }
+  ];
+  var S3_V = S3_BETAS.map(function (b) { return vib(b.beta); });
+
+  function buildSceneVib() {
+    var s = sceneSvg(
+      'VIB 蒸馏：KL 项前面的 β 太小，潜空间只是把 AMASS 背下来；太大，后验塌成先验。' +
+        '三列分别是 β = 0、0.35、4 下五段动作的后验形状与读数'
+    );
+    s.appendChild(svgText(60, 30, '阶段 2：把教师蒸馏进潜空间，β 决定潜空间长什么样', 'demo-x-ink2', 13.5));
+    var formula = svgMath(400, 60,
+      '\\mathcal{L} = \\|a_{student} - a_{teacher}\\|^2 + \\beta \\cdot \\mathrm{KL}\\big(q(z \\mid s, ref) \\,\\|\\, p(z \\mid s)\\big)',
+      { size: 12.5, anchor: 'middle', cls: 'demo-x-ink2', w: 700 });
+    s.appendChild(formula);
+
+    var cols = S3_BETAS.map(function (b, k) {
+      var v = S3_V[k];
+      var cx = 178 + k * 222;
+      var g = svgEl('g', {});
+      g.appendChild(paint(svgEl('rect', { x: cx - 104, y: 88, width: 208, height: 218, rx: 8, 'stroke-width': 1.2 }), C_SURFACE2, b.color));
+      g.appendChild(svgMath(cx, 110, b.label, { size: 12.5, anchor: 'middle', w: 180 }).setTone(b.color));
+      g.appendChild(svgText(cx, 130, b.tag, 'demo-x-mut', 10, 'middle'));
+
+      // 五段动作的后验：宽度就是 vib() 给的 s
+      var base = 236,
+        halfW = 88,
+        sd = Math.max(0.05, v.s);
+      CLIPS.forEach(function (c) {
+        var mu = v.a * c.mu;
+        var lo = Math.max(-3, mu - 4 * sd),
+          hi = Math.min(3, mu + 4 * sd);
+        var pts = [[cx + (lo / 3) * halfW, base]];
+        for (var j = 0; j <= 40; j++) {
+          var z = lo + ((hi - lo) * j) / 40;
+          var pdf = Math.exp(-((z - mu) * (z - mu)) / (2 * sd * sd)) / (sd * Math.sqrt(2 * Math.PI));
+          pts.push([cx + (z / 3) * halfW, base - clamp(pdf / 1.6, 0, 1) * 70]);
+        }
+        pts.push([cx + (hi / 3) * halfW, base]);
+        g.appendChild(paint(svgEl('path', { d: polyPath(pts), fill: 'none', 'stroke-width': 1.6 }), null, b.color));
+      });
+      // 先验 N(0, 1) 作背景参照
+      var pr = [];
+      for (var q = 0; q <= 60; q++) {
+        var zz = -3 + (6 * q) / 60;
+        pr.push([cx + (zz / 3) * halfW, base - clamp(Math.exp(-(zz * zz) / 2) / Math.sqrt(2 * Math.PI) / 1.6, 0, 1) * 70]);
+      }
+      g.appendChild(paint(svgEl('path', { d: polyPath(pr), fill: 'none', 'stroke-width': 1.2, 'stroke-dasharray': '4 4' }), null, C_MUTED));
+      g.appendChild(paint(svgEl('line', { x1: cx - halfW, y1: base, x2: cx + halfW, y2: base, 'stroke-width': 1 }), null, C_BORDER));
+      g.appendChild(svgText(cx, base + 14, 'latent z（画成 1 维）', 'demo-x-mut', 9, 'middle'));
+
+      [
+        ['蒸馏误差', fmt(v.distort, 3)],
+        ['先验采样可用度', fmt(v.sample, 3)],
+        ['latent 记住的片段信息', fmt(v.a, 3)]
+      ].forEach(function (row, j) {
+        var y = 268 + j * 14;
+        g.appendChild(svgText(cx - 94, y, row[0], 'demo-x-mut', 9.5));
+        g.appendChild(paint(svgText(cx + 94, y, row[1], 'demo-x-mono', 10, 'end'), b.color));
+      });
+      s.appendChild(g);
+      return { g: g, at: 1.4 + k * 2.6 };
+    });
+
+    var verdicts = S3_BETAS.map(function (b, k) {
+      var n = paint(svgText(178 + k * 222, 330, b.verdict, null, 11, 'middle'), b.color);
+      s.appendChild(n);
+      return { n: n, at: 2.4 + k * 2.6 };
+    });
+
+    var foot = svgEl('g', {});
+    foot.appendChild(paint(svgText(400, 374, '中间那一段才是 PULSE：后验刚好连成一片，聚合起来又接近先验', null, 15, 'middle'), C_ACCENT));
+    foot.appendChild(svgText(400, 398, '「采样 → 连贯动作」和「编码 → 复刻动作」这时候才能同时成立', 'demo-x-mut', 11, 'middle'));
+    s.appendChild(foot);
+
+    function draw(t) {
+      setOpacity(formula, seg(t, 0.3, 1.0));
+      cols.forEach(function (c) { setOpacity(c.g, seg(t, c.at, c.at + 0.6)); });
+      verdicts.forEach(function (v) { setOpacity(v.n, seg(t, v.at, v.at + 0.5)); });
+      setOpacity(foot, seg(t, 12.4, 13.4));
+    }
+
+    return { el: s, draw: draw };
+  }
+
+  /* ── scene 4: 本体感受先验 p(z|s) ──
+     可行率与存活率都由上面「先验」演示的同一个 feasibleRate() 现算（状态 = 腾空中，seed = 4）。 */
+  var S4_ST = BODY_STATES[2];
+  var S4_SEED = 4;
+  var S4_PROP = feasibleRate(S4_ST, S4_ST.c, S4_ST.r * 0.32, S4_SEED);
+  var S4_FIXED = feasibleRate(S4_ST, [0, 0], 1.0, S4_SEED);
+  var S4_H = 40;
+  var S4_SURV_FIXED = Math.pow(S4_FIXED.rate, S4_H);
+
+  function buildScenePrior() {
+    var s = sceneSvg(
+      '腾空中这个状态下，固定先验 N(0, I) 采到的 z 只有 ' + fmt(S4_FIXED.rate * 100, 1) +
+        '% 是这一步做得出来的；本体感受先验把采样中心搬到当前状态的可行区上'
+    );
+    s.appendChild(svgText(60, 30, '命门二：固定的 N(0, I) 不知道你此刻站着还是在空中', 'demo-x-ink2', 13.5));
+
+    // 左：latent 平面
+    s.appendChild(paint(svgEl('rect', { x: 40, y: 52, width: 360, height: 276, rx: 8, 'stroke-width': 1 }), C_SURFACE2, C_BORDER));
+    var PX = 220,
+      PY = 196,
+      SC = 40;
+    function px(v) { return PX + v * SC; }
+    function py(v) { return PY - v * SC; }
+    s.appendChild(svgText(220, 74, '当前状态下「做得出来」的 latent 区域', 'demo-x-mut', 10.5, 'middle'));
+    BODY_STATES.forEach(function (st) {
+      if (st.id === S4_ST.id) return;
+      s.appendChild(paint(svgEl('circle', { cx: px(st.c[0]), cy: py(st.c[1]), r: st.r * SC, fill: 'none', 'stroke-width': 1, 'stroke-dasharray': '3 3' }), null, C_BORDER));
+      s.appendChild(svgText(px(st.c[0]), py(st.c[1] + st.r) - 5, st.name, 'demo-x-mut', 9, 'middle'));
+    });
+    var zone = svgEl('g', {});
+    zone.appendChild(paint(svgEl('circle', { cx: px(S4_ST.c[0]), cy: py(S4_ST.c[1]), r: S4_ST.r * SC, 'fill-opacity': 0.16, 'stroke-width': 1.4 }), C_GOOD, C_GOOD));
+    zone.appendChild(paint(svgText(px(S4_ST.c[0] + S4_ST.r) + 8, py(S4_ST.c[1]) - 10, S4_ST.name + ' 的可行区', null, 10), C_GOOD));
+    s.appendChild(zone);
+
+    var fixedDots = S4_FIXED.pts.map(function (q, k) {
+      var n = paint(svgEl('circle', { cx: px(clamp(q.x, -3.6, 3.6)).toFixed(1), cy: py(clamp(q.y, -2.6, 2.6)).toFixed(1), r: 2.8 }), q.ok ? C_GOOD : C_BAD);
+      s.appendChild(n);
+      return { n: n, at: 2.6 + k * 0.045 };
+    });
+    var propDots = S4_PROP.pts.map(function (q, k) {
+      var n = paint(svgEl('circle', { cx: px(clamp(q.x, -3.6, 3.6)).toFixed(1), cy: py(clamp(q.y, -2.6, 2.6)).toFixed(1), r: 2.8 }), q.ok ? C_GOOD : C_BAD);
+      s.appendChild(n);
+      return { n: n, at: 8.0 + k * 0.045 };
+    });
+    var fixedC = svgEl('g', {});
+    fixedC.appendChild(paint(svgEl('circle', { cx: px(0), cy: py(0), r: 6, 'stroke-width': 1.6 }), C_BAD, C_SURFACE2));
+    fixedC.appendChild(svgMath(px(0) + 12, py(0) + 4, '\\mathcal{N}(0, I)', { size: 10.5, w: 110 }).setTone(C_BAD));
+    s.appendChild(fixedC);
+    var propC = svgEl('g', {});
+    propC.appendChild(paint(svgEl('circle', { cx: px(S4_ST.c[0]), cy: py(S4_ST.c[1]), r: 6, 'stroke-width': 1.6 }), C_ACCENT, C_SURFACE2));
+    propC.appendChild(svgMath(px(S4_ST.c[0]), py(S4_ST.c[1] - S4_ST.r) + 18, 'p(z \\mid s)', { size: 10.5, anchor: 'middle', w: 110 }).setTone(C_ACCENT));
+    s.appendChild(propC);
+
+    // 右：存活率随步数衰减
+    s.appendChild(paint(svgEl('rect', { x: 420, y: 52, width: 340, height: 276, rx: 8, 'stroke-width': 1 }), C_SURFACE2, C_BORDER));
+    s.appendChild(svgText(590, 74, '连滚 N 步还没发散的概率（可行率的 N 次方）', 'demo-x-mut', 10.5, 'middle'));
+    var AX0 = 456,
+      AX1 = 736,
+      AY0 = 246,
+      AY1 = 96;
+    function ax(n) { return AX0 + (n / 60) * (AX1 - AX0); }
+    function ay(v) { return AY0 - v * (AY0 - AY1); }
+    s.appendChild(paint(svgEl('line', { x1: AX0, y1: AY0, x2: AX1, y2: AY0, 'stroke-width': 1.2 }), null, C_BORDER));
+    s.appendChild(paint(svgEl('line', { x1: AX0, y1: AY0, x2: AX0, y2: AY1, 'stroke-width': 1.2 }), null, C_BORDER));
+    [0, 20, 40, 60].forEach(function (n) {
+      s.appendChild(svgText(ax(n), AY0 + 15, String(n), 'demo-x-mut', 9.5, 'middle'));
+    });
+    s.appendChild(svgText(596, AY0 + 30, '连续滚了多少步', 'demo-x-mut', 9.5, 'middle'));
+    function survPath(rate) {
+      var pts = [];
+      for (var n = 0; n <= 60; n++) pts.push([ax(n), ay(Math.pow(rate, n))]);
+      return pts;
+    }
+    var curveFixed = paint(svgEl('path', { d: polyPath(survPath(S4_FIXED.rate)), fill: 'none', 'stroke-width': 2.4 }), null, C_BAD);
+    var curveProp = paint(svgEl('path', { d: polyPath(survPath(S4_PROP.rate)), fill: 'none', 'stroke-width': 2.4 }), null, C_GOOD);
+    s.appendChild(curveFixed);
+    s.appendChild(curveProp);
+    var readout = svgEl('g', {});
+    [
+      ['单步可行率', fmt(S4_PROP.rate * 100, 1) + '%', fmt(S4_FIXED.rate * 100, 1) + '%'],
+      ['滚 ' + S4_H + ' 步不发散', fmt(Math.pow(S4_PROP.rate, S4_H) * 100, 1) + '%', S4_SURV_FIXED.toExponential(1)]
+    ].forEach(function (row, j) {
+      var y = 296 + j * 19;
+      readout.appendChild(svgText(440, y, row[0], 'demo-x-mut', 10));
+      readout.appendChild(paint(svgText(640, y, 'p(z|s) ' + row[1], 'demo-x-mono', 10, 'end'), C_GOOD));
+      readout.appendChild(paint(svgText(748, y, row[2], 'demo-x-mono', 10, 'end'), C_BAD));
+    });
+    s.appendChild(readout);
+
+    var chip = svgEl('g', {});
+    chip.appendChild(svgText(400, 356, '单步 0.9 看着不错，连滚 40 步只剩 0.9⁴⁰ ≈ 1.5% —— 长序列对先验的要求苛刻得多', 'demo-x-mut', 11, 'middle'));
+    s.appendChild(chip);
+
+    var foot = paint(svgText(400, 392, '「随便采一个 z 都能跑」靠的不是维度低，是先验知道你此刻在空中', null, 15, 'middle'), C_ACCENT);
+    s.appendChild(foot);
+
+    function draw(t) {
+      setOpacity(zone, seg(t, 0.4, 1.0));
+      setOpacity(fixedC, seg(t, 2.0, 2.6));
+      fixedDots.forEach(function (d) { setOpacity(d.n, seg(t, d.at, d.at + 0.25)); });
+      setOpacity(curveFixed, seg(t, 5.4, 6.2));
+      setOpacity(propC, seg(t, 7.4, 8.0));
+      propDots.forEach(function (d) { setOpacity(d.n, seg(t, d.at, d.at + 0.25)); });
+      setOpacity(curveProp, seg(t, 9.8, 10.4));
+      setOpacity(readout, seg(t, 10.4, 11.0));
+      setOpacity(chip, seg(t, 11.6, 12.2));
+      setOpacity(foot, seg(t, 13.0, 13.8));
+    }
+
+    return { el: s, draw: draw };
+  }
+
+  /* ── scene 5: 阶段 3 —— 下游只在 32 维里搜 ──
+     曲线与两个「到 80% 分数要多少轮」用的是下面演示的 dsCurve / dsIters（默认残差 0.6、难度 1）。 */
+  var S5_REACH = dsReach(0.6);
+  var S5_ITERS = 400;
+  var S5_LAT = clamp(dsCurve(LAT_DIM, LAT_USABLE, S5_ITERS, 1) * S5_REACH, 0, 1);
+  var S5_RAW = dsCurve(RAW_DIM, RAW_USABLE, S5_ITERS, 1);
+  var S5_TLAT = dsIters(0.8 / S5_REACH, LAT_DIM, LAT_USABLE, 1);
+  var S5_TRAW = dsIters(0.8, RAW_DIM, RAW_USABLE, 1);
+
+  function buildSceneDownstream() {
+    var s = sceneSvg(
+      '下游任务冻结 Decoder 与先验，高层只在 32 维潜空间上输出一个残差；' +
+        '同样跑 400 轮，潜空间拿到 ' + fmt(S5_LAT, 2) + ' 分，从零学只有 ' + fmt(S5_RAW, 2) + ' 分'
+    );
+    s.appendChild(svgText(60, 28, '阶段 3：冻结 Decoder 与先验，高层只输出一个残差', 'demo-x-ink2', 13.5));
+
+    var chain = svgEl('g', {});
+    [
+      { x: 40, w: 118, t: '任务观测', sub: '目标速度 / 目标点', c: C_MUTED },
+      { x: 178, w: 148, t: '高层策略', sub: 'PPO 只更新这里', c: C_ACCENT },
+      { x: 346, w: 148, t: 'p(z|s) + Δz', sub: '32 维 latent', c: C_GOOD },
+      { x: 514, w: 128, t: '冻结 Decoder', sub: '物理可行性保底', c: C_GOOD },
+      { x: 662, w: 98, t: '关节动作', sub: '69 维', c: C_MUTED }
+    ].forEach(function (b, k) {
+      chain.appendChild(paint(svgEl('rect', { x: b.x, y: 54, width: b.w, height: 52, rx: 8, 'stroke-width': 1.3, 'stroke-dasharray': k === 3 ? '5 4' : '' }), C_SURFACE2, b.c));
+      chain.appendChild(paint(svgText(b.x + b.w / 2, 76, b.t, null, 11.5, 'middle'), b.c));
+      chain.appendChild(svgText(b.x + b.w / 2, 93, b.sub, 'demo-x-mut', 9.5, 'middle'));
+      if (k < 4) {
+        chain.appendChild(paint(svgEl('line', { x1: b.x + b.w + 3, y1: 80, x2: b.x + b.w + 17, y2: 80, 'stroke-width': 1.4 }), null, C_BORDER));
+      }
+    });
+    s.appendChild(chain);
+
+    // 学习曲线
+    s.appendChild(paint(svgEl('rect', { x: 40, y: 124, width: 436, height: 200, rx: 8, 'stroke-width': 1 }), C_SURFACE2, C_BORDER));
+    var BX0 = 86,
+      BX1 = 452,
+      BY0 = 288,
+      BY1 = 150;
+    function bx(it) { return BX0 + (it / 1200) * (BX1 - BX0); }
+    function by(v) { return BY0 - v * (BY0 - BY1); }
+    s.appendChild(paint(svgEl('line', { x1: BX0, y1: BY0, x2: BX1, y2: BY0, 'stroke-width': 1.2 }), null, C_BORDER));
+    s.appendChild(paint(svgEl('line', { x1: BX0, y1: BY0, x2: BX0, y2: BY1, 'stroke-width': 1.2 }), null, C_BORDER));
+    [0, 400, 800, 1200].forEach(function (it) {
+      s.appendChild(svgText(bx(it), BY0 + 15, String(it), 'demo-x-mut', 9.5, 'middle'));
+    });
+    s.appendChild(svgText(269, BY0 + 30, '训练迭代', 'demo-x-mut', 9.5, 'middle'));
+    s.appendChild(svgText(78, BY1 - 6, '任务分数', 'demo-x-mut', 9.5, 'end'));
+    s.appendChild(paint(svgEl('line', { x1: BX0, y1: by(0.8), x2: BX1, y2: by(0.8), 'stroke-width': 1, 'stroke-dasharray': '4 4' }), null, C_MUTED));
+    s.appendChild(svgText(BX0 + 6, by(0.8) - 6, '80% 分数线', 'demo-x-mut', 9));
+
+    function learnPts(dim, usable, scale) {
+      var pts = [];
+      for (var it = 0; it <= 1200; it += 20) pts.push([bx(it), by(clamp(dsCurve(dim, usable, it, 1) * scale, 0, 1))]);
+      return pts;
+    }
+    var latPath = paint(svgEl('path', { d: polyPath(learnPts(LAT_DIM, LAT_USABLE, S5_REACH)), fill: 'none', 'stroke-width': 2.6 }), null, C_GOOD);
+    var rawPath = paint(svgEl('path', { d: polyPath(learnPts(RAW_DIM, RAW_USABLE, 1)), fill: 'none', 'stroke-width': 2.4 }), null, C_BAD);
+    s.appendChild(rawPath);
+    s.appendChild(latPath);
+    var latLbl = paint(svgText(bx(940), by(0.9) - 8, '32 维潜空间', null, 10.5, 'middle'), C_GOOD);
+    var rawLbl = paint(svgText(bx(940), by(dsCurve(RAW_DIM, RAW_USABLE, 940, 1)) + 16, '69 维关节空间', null, 10.5, 'middle'), C_BAD);
+    s.appendChild(latLbl);
+    s.appendChild(rawLbl);
+    var mark = svgEl('g', {});
+    mark.appendChild(paint(svgEl('line', { x1: bx(S5_ITERS), y1: BY0, x2: bx(S5_ITERS), y2: BY1, 'stroke-width': 1, 'stroke-dasharray': '3 3' }), null, C_BORDER));
+    mark.appendChild(paint(svgEl('circle', { cx: bx(S5_ITERS), cy: by(S5_LAT), r: 4.5, 'stroke-width': 1.4 }), C_GOOD, C_SURFACE2));
+    mark.appendChild(paint(svgEl('circle', { cx: bx(S5_ITERS), cy: by(S5_RAW), r: 4.5, 'stroke-width': 1.4 }), C_BAD, C_SURFACE2));
+    s.appendChild(mark);
+
+    // 右：读数
+    var cards = [
+      { t: '跑满 ' + S5_ITERS + ' 轮', a: '32 维 ' + fmt(S5_LAT, 2) + ' 分', b: '69 维 ' + fmt(S5_RAW, 2) + ' 分', c: C_ACCENT },
+      { t: '到 80% 分数要多少轮', a: '约 ' + fmt(S5_TLAT, 0) + ' 轮', b: '约 ' + fmt(S5_TRAW, 0) + ' 轮', c: C_GOOD },
+      { t: '快了多少', a: fmt(S5_TRAW / S5_TLAT, 1) + ' ×', b: '维度只省一倍（69 → 32）', c: C_WARN }
+    ].map(function (c, k) {
+      var g = svgEl('g', {});
+      var y = 124 + k * 68;
+      g.appendChild(paint(svgEl('rect', { x: 494, y: y, width: 266, height: 58, rx: 8, 'stroke-width': 1.3 }), C_SURFACE2, c.c));
+      g.appendChild(svgText(508, y + 20, c.t, 'demo-x-mut', 10));
+      g.appendChild(paint(svgText(508, y + 42, c.a, 'demo-x-mono', 12), c.c));
+      g.appendChild(svgText(746, y + 42, c.b, 'demo-x-mut', 10, 'end'));
+      s.appendChild(g);
+      return { g: g, at: 4.0 + k * 1.6 };
+    });
+
+    var chip = svgText(400, 348, '剩下那一大截来自「不用再学怎么站稳」：关节空间里随便采一组力矩，角色几乎必然当场倒地', 'demo-x-mut', 11, 'middle');
+    s.appendChild(chip);
+
+    var foot = paint(svgText(400, 388, '高层学的是「何时用什么技能」，不是「怎么动」', null, 15, 'middle'), C_ACCENT);
+    s.appendChild(foot);
+
+    function draw(t) {
+      setOpacity(chain, seg(t, 0.3, 1.0));
+      var u = ease(seg(t, 1.4, 4.2));
+      latPath.setAttribute('d', polyPath(learnPts(LAT_DIM, LAT_USABLE, S5_REACH).slice(0, Math.max(2, Math.round(u * 61)))));
+      rawPath.setAttribute('d', polyPath(learnPts(RAW_DIM, RAW_USABLE, 1).slice(0, Math.max(2, Math.round(u * 61)))));
+      setOpacity(latLbl, seg(t, 3.0, 3.6));
+      setOpacity(rawLbl, seg(t, 3.0, 3.6));
+      setOpacity(mark, seg(t, 4.2, 4.8));
+      cards.forEach(function (c) { setOpacity(c.g, seg(t, c.at, c.at + 0.6)); });
+      setOpacity(chip, seg(t, 10.2, 10.9));
+      setOpacity(foot, seg(t, 12.4, 13.2));
+    }
+
+    return { el: s, draw: draw };
+  }
+
+  /* ── scene 6: 三阶段闭环与源码落点 ── */
+  var S6_CARDS = [
+    {
+      t: '阶段 1 · 大规模模仿',
+      cmd: 'env.models=[phc_3, phc_comp_3]',
+      file: 'phc/env/tasks/humanoid_im.py',
+      d: '训练好的 PHC 教师，跟得住 AMASS',
+      c: C_MUTED
+    },
+    {
+      t: '阶段 2 · VIB 蒸馏',
+      cmd: 'env.task=HumanoidImDistillGetup',
+      file: 'humanoid_im_distill.py + ar_prior.py',
+      d: '学生带瓶颈地模仿教师 → 32 维 z',
+      c: C_ACCENT
+    },
+    {
+      t: '阶段 3 · 下游任务',
+      cmd: 'env.task=HumanoidSpeedZ',
+      file: 'amp_network_z_builder.py',
+      d: 'PPO 只更新高层，Decoder 冻结',
+      c: C_GOOD
+    }
+  ];
+
+  function buildSceneLoop() {
+    var s = sceneSvg(
+      'PULSE 官方仓库的三阶段：PHC 教师 → HumanoidImDistillGetup 蒸馏出 32 维潜空间 → ' +
+        'HumanoidSpeedZ 等下游任务只训高层，统一入口都是 phc/run_hydra.py'
+    );
+    s.appendChild(svgText(60, 30, '三阶段闭环与源码落点（官方仓库 ZhengyiLuo/PULSE，入口 phc/run_hydra.py）', 'demo-x-ink2', 13));
+
+    var arrow = K.arrowMarker(s, 'pulse-x-arrow-stage', C_BORDER);
+    var cards = S6_CARDS.map(function (c, k) {
+      var g = svgEl('g', {});
+      var x = 40 + k * 252;
+      g.appendChild(paint(svgEl('rect', { x: x, y: 66, width: 216, height: 208, rx: 8, 'stroke-width': 1.4 }), C_SURFACE2, c.c));
+      g.appendChild(paint(svgText(x + 108, 92, c.t, null, 12, 'middle'), c.c));
+      g.appendChild(paint(svgEl('rect', { x: x + 14, y: 106, width: 188, height: 30, rx: 6, 'stroke-width': 1 }), C_SURFACE, C_BORDER));
+      g.appendChild(svgText(x + 108, 125, c.cmd, 'demo-x-mono', 8.5, 'middle'));
+      g.appendChild(svgText(x + 108, 158, c.file, 'demo-x-mono', 8.5, 'middle'));
+      g.appendChild(svgText(x + 108, 186, c.d, 'demo-x-mut', 10, 'middle'));
+      s.appendChild(g);
+      if (k < 2) {
+        s.appendChild(paint(svgEl('path', {
+          d: polyPath([[x + 220, 170], [x + 248, 170]]), fill: 'none', 'stroke-width': 1.6, 'marker-end': arrow
+        }), null, C_BORDER));
+      }
+      return { g: g, at: 0.8 + k * 2.4 };
+    });
+
+    var bottle = svgEl('g', {});
+    bottle.appendChild(svgMath(400, 218, '+\\, \\beta \\cdot \\mathrm{KL}\\big(q(z \\mid s, ref) \\,\\|\\, p(z \\mid s)\\big)',
+      { size: 11, anchor: 'middle', w: 260 }).setTone(C_ACCENT));
+    bottle.appendChild(svgText(400, 244, '瓶颈 + 先验一起学', 'demo-x-mut', 9.5, 'middle'));
+    s.appendChild(bottle);
+
+    var freeze = svgEl('g', {});
+    freeze.appendChild(paint(svgEl('rect', { x: 558, y: 208, width: 180, height: 50, rx: 8, 'stroke-width': 1.2, 'stroke-dasharray': '5 4' }), C_SURFACE, C_GOOD));
+    freeze.appendChild(paint(svgText(648, 228, '🔒 Decoder + 先验冻结', null, 10.5, 'middle'), C_GOOD));
+    freeze.appendChild(svgText(648, 246, '高层只输出 32 维残差', 'demo-x-mut', 9.5, 'middle'));
+    s.appendChild(freeze);
+
+    var track = [[148, 292], [400, 292], [652, 292]];
+    var rail = paint(svgEl('path', { d: polyPath(track), fill: 'none', 'stroke-width': 1.2, 'stroke-dasharray': '4 4' }), null, C_BORDER);
+    s.appendChild(rail);
+    var token = paint(svgEl('circle', { r: 6, 'stroke-width': 1.6 }), C_ACCENT, C_SURFACE2);
+    s.appendChild(token);
+    var tokenLbl = svgText(400, 314, 'AMASS 的动作能力，一路压进 32 维 latent', 'demo-x-mut', 10, 'middle');
+    s.appendChild(tokenLbl);
+
+    var foot = svgEl('g', {});
+    foot.appendChild(paint(svgText(400, 366, 'PULSE = 大规模模仿 + VIB 瓶颈 + 本体感受先验', null, 15.5, 'middle'), C_ACCENT));
+    foot.appendChild(svgText(400, 390, '把「会动」压成一个可采样的表示，下游就只剩「何时用什么技能」这一件事', 'demo-x-mut', 11.5, 'middle'));
+    foot.appendChild(svgText(400, 410, 'MimicKit 没有实现 VIB 蒸馏与 proprioceptive prior，读 PULSE 要用官方仓库', 'demo-x-mut', 10, 'middle'));
+    s.appendChild(foot);
+
+    function draw(t) {
+      cards.forEach(function (c) { setOpacity(c.g, seg(t, c.at, c.at + 0.7)); });
+      setOpacity(bottle, seg(t, 3.6, 4.4));
+      setOpacity(freeze, seg(t, 6.4, 7.2));
+      var on = seg(t, 8.0, 8.6);
+      setOpacity(rail, on);
+      setOpacity(token, on);
+      setOpacity(tokenLbl, on);
+      var pt = pointOn(track, ease(seg(t, 8.2, 11.0)));
+      token.setAttribute('cx', pt[0].toFixed(1));
+      token.setAttribute('cy', pt[1].toFixed(1));
+      setOpacity(foot, seg(t, 11.2, 12.0));
+    }
+
+    return { el: s, draw: draw };
+  }
+
+  var PULSE_SCENES = [
+    {
+      title: '缺一个通用表示',
+      dur: 13,
+      build: buildSceneGap,
+      cues: [
+        { at: 0.3, s: 'ASE 和 CALM 已经证明「技能可以压进 latent」—— 但它们的潜空间通常只针对特定任务或较小数据集。' },
+        { at: 1.2, s: '**AMASS 是数万个动作片段**，覆盖人类 99.8% 的日常动作 —— 这才是「通用」该有的量级。' },
+        { at: 5.6, s: '① **覆盖率不足**：之前的 latent skill 难以覆盖人类全谱系动作。' },
+        { at: 6.5, s: '② **规模怎么压**：如何把这么多片段压进一个统一且**可控**的潜空间？' },
+        { at: 7.4, s: '③ **下游要免重训**：高层策略得在不重训底层控制器的前提下直接用这个潜空间。' },
+        { at: 10.4, s: 'PULSE 要的是人形控制的**「基础模型」**：一个 32 维、随便采一个 $z$ 都能跑的通用潜空间。' }
+      ]
+    },
+    {
+      title: '阶段1：大规模模仿',
+      dur: 12,
+      build: buildSceneTeacher,
+      cues: [
+        { at: 0.3, s: '第一阶段只做一件事：训练一个**高保真运动模仿器**，跟踪 AMASS 里极其多样且无结构的动作。' },
+        { at: 2.8, s: '它是有参考帧的：$\\pi_{teacher}(a_t \\mid s_t, ref_t)$，奖励就是「跟得有多准」（PULSE 直接用训练好的 PHC）。' },
+        { at: 4.4, s: '给它一段动捕，它能跟住 —— 走、跑、转圈、挥手、跌倒爬起都行。' },
+        { at: 7.4, s: '但**「跟得住」不等于「用得上」**：拿掉参考帧，教师不知道该做什么。' },
+        { at: 8.6, s: '它没有一个可以采样、可以给高层策略当动作空间的**表示**。' },
+        { at: 10.0, s: '所以阶段 1 交出的是**能力**，不是表示 —— 把能力变成表示，是阶段 2 的事。' }
+      ]
+    },
+    {
+      title: '阶段2：VIB 瓶颈',
+      dur: 16,
+      build: buildSceneVib,
+      cues: [
+        { at: 0.3, s: '第二阶段用**变分信息瓶颈**把教师的技能蒸馏进一个概率潜空间。' },
+        { at: 0.8, s: '损失有两项：蒸馏项 $\\|a_{student} - a_{teacher}\\|^2$，加上 $\\beta$ 倍的 $\\mathrm{KL}(q(z \\mid s, ref) \\,\\|\\, p(z \\mid s))$。' },
+        { at: 1.4, s: '$\\beta = 0$：后验缩成五个尖峰，蒸馏误差 **' + fmt(S3_V[0].distort, 3) + '** —— 完美复刻，但那只是**把 AMASS 背下来**。' },
+        { at: 2.4, s: '代价是先验采样可用度只有 **' + fmt(S3_V[0].sample, 3) + '**：采到尖峰之间的空隙，解码出来什么都不是。' },
+        { at: 4.0, s: '$\\beta \\approx 0.35$：五段后验刚好连成一片又没糊在一起，采样可用度 **' + fmt(S3_V[1].sample, 3) + '**，蒸馏误差 **' + fmt(S3_V[1].distort, 3) + '**。' },
+        { at: 6.6, s: '$\\beta = 4$：**posterior collapse** —— latent 只记住了 **' + fmt(S3_V[2].a, 3) + '** 的片段信息，后验被压得和先验一模一样。' },
+        { at: 8.0, s: 'KL 降到 **' + fmt(S3_V[2].kl, 3) + '** 了，代价是解码器分不清你给的是「走」还是「跌倒爬起」。' },
+        { at: 12.4, s: '中间那一段才是 PULSE：**「采样 → 连贯动作」和「编码 → 复刻动作」这时候才能同时成立**。' }
+      ]
+    },
+    {
+      title: '本体感受先验',
+      dur: 15,
+      build: buildScenePrior,
+      cues: [
+        { at: 0.3, s: '光有瓶颈还不够。**固定的 $\\mathcal{N}(0, I)$ 不知道你此刻是站着还是在空中** —— 每个身体状态只有一小片 latent 是做得出来的。' },
+        { at: 2.0, s: '拿「腾空中」这个状态试：从固定先验采 40 个 $z$……' },
+        { at: 4.4, s: '只有 **' + fmt(S4_FIXED.rate * 100, 1) + '%** 是这一步真做得出来的，其余全是**在空中起跳**这种废动作。' },
+        { at: 5.4, s: '而发散是**指数级**的：连滚 ' + S4_H + ' 步还不发散的概率只剩 **' + S4_SURV_FIXED.toExponential(1) + '** —— 几乎必然摔。' },
+        { at: 7.4, s: 'PULSE 学的是 $p(z \\mid s)$：以当前姿态、速度为条件的**本体感受先验**（`ar_prior.py`）。' },
+        { at: 9.8, s: '采样中心搬到当前状态的可行区上，单步可行率 **' + fmt(S4_PROP.rate * 100, 1) + '%** —— 长序列这才稳得住。' },
+        { at: 11.6, s: '这也是论文特别强调「长时间序列下依然物理可行」的原因：单步 0.9 看着不错，40 步只剩 1.5%。' },
+        { at: 13.0, s: '**这是 PULSE 相对 ASE 的关键补丁**：ASE 从固定球面均匀采 $z$，默认「任何技能在任何状态都能启动」。' }
+      ]
+    },
+    {
+      title: '阶段3：下游只搜 32 维',
+      dur: 15,
+      build: buildSceneDownstream,
+      cues: [
+        { at: 0.3, s: '下游任务把 **Decoder 和先验整个冻结**，高层策略只在 $p(z \\mid s)$ 上输出一个 32 维残差 $\\Delta z$。' },
+        { at: 1.4, s: '同样跑 ' + S5_ITERS + ' 轮：潜空间拿到 **' + fmt(S5_LAT, 2) + '** 分，从零学 69 维关节只有 **' + fmt(S5_RAW, 2) + '** 分。' },
+        { at: 4.0, s: '要到 80% 分数，前者约 **' + fmt(S5_TLAT, 0) + ' 轮**，后者约 **' + fmt(S5_TRAW, 0) + ' 轮**。' },
+        { at: 5.6, s: '差了 **' + fmt(S5_TRAW / S5_TLAT, 1) + ' 倍** —— 但维度只从 69 降到 32，**降维本身只省一倍**。' },
+        { at: 7.2, s: '剩下那一大截来自先验：关节空间里随便采一组力矩，角色几乎必然当场倒地，那些 rollout 全是浪费。' },
+        { at: 10.2, s: '残差也不能随便拉大：偏出先验覆盖的那片，分数上去了，动作自然度会掉下来。' },
+        { at: 12.4, s: '一句话：**高层学的是「何时用什么技能」，不是「怎么动」**。' }
+      ]
+    },
+    {
+      title: '闭环与源码',
+      dur: 14,
+      build: buildSceneLoop,
+      cues: [
+        { at: 0.3, s: '官方仓库 `ZhengyiLuo/PULSE` 基于 PHC / IsaacGym 栈，三个阶段统一入口都是 `phc/run_hydra.py`。' },
+        { at: 0.8, s: '阶段 1 直接复用训练好的 PHC 教师：`env.models=[phc_3, phc_comp_3]`，对应 `humanoid_im.py`。' },
+        { at: 3.2, s: '阶段 2 `env.task=HumanoidImDistillGetup`：`humanoid_im_distill.py` 出蒸馏损失，`ar_prior.py` 同步学先验。' },
+        { at: 3.6, s: '蒸馏是 DAgger 式的在线过程：学生滚出新状态，同一状态再问教师要动作。' },
+        { at: 5.6, s: '阶段 3 `env.task=HumanoidSpeedZ`：`amp_network_z_builder.py` 搭 32 维 $z$ 的 actor-critic，配置在 `pulse_z_task.yaml`。' },
+        { at: 6.4, s: 'PPO **只更新高层**，物理可行性由冻结的 Decoder 保底。' },
+        { at: 11.2, s: '**PULSE = 大规模模仿 + VIB 瓶颈 + 本体感受先验** —— 把「会动」压成一个可采样的表示。' }
+      ]
+    }
+  ];
+
+  function buildExplainerDemo(host) {
+    K.explainer(host, {
+      title: '六幕动画：PULSE 全流程速览',
+      sub: '约 85 秒自动播放。空格播放/暂停，← → 换幕；画面里的数字与下面三个演示用的是同一份函数。',
+      ariaLabel: 'PULSE 六幕讲解动画',
+      notes: [
+        '取数依据：第三幕三列的蒸馏误差 / 采样可用度 / 保留的片段信息，由下面 VIB 实验台的同一个 `vib()` 在 $\\beta = 0 / 0.35 / 4$ 上现算（就是那三个预设按钮）；' +
+          '第四幕的可行率与存活率来自同一个 `feasibleRate()`（状态 = 腾空中，seed = 4，40 次采样）；' +
+          '第五幕的学习曲线与「到 80% 分数要多少轮」来自同一组 `dsCurve()` / `dsIters()`（残差 0.6、任务难度 1）。',
+        '第六幕的命令与文件路径来自笔记「PULSE 官方源码对照」与仓库 README：`humanoid_im.py` / `humanoid_im_distill.py` / `ar_prior.py` / `amp_network_z_builder.py` / `pulse_z_task.yaml`。',
+        '**这几幕里的玩具模型和下面三个演示同源**：latent 画成 1 维（第三幕）或 2 维平面（第四幕），可行区是一个圆，学习曲线是一条指数收敛的解析式。' +
+          '定性结论（$\\beta$ 太小是查找表、太大是 collapse、固定先验在长序列上指数发散、下游省的主要不是维度）成立，**具体数值不能和论文直接比**。'
+      ],
+      scenes: PULSE_SCENES
+    });
+  }
+
   K.mount({
+    'pulse-explainer': buildExplainerDemo,
     'pulse-vib': buildVibDemo,
     'pulse-prior': buildPriorDemo,
     'pulse-downstream': buildDownstreamDemo

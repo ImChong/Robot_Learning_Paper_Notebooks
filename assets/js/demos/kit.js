@@ -76,6 +76,8 @@
     [/\\to(?![A-Za-z])/g, '→'], [/\\rightarrow(?![A-Za-z])/g, '→'], [/\\leftarrow(?![A-Za-z])/g, '←'],
     [/\\in(?![A-Za-z])/g, '∈'], [/\\sum(?![A-Za-z])/g, 'Σ'], [/\\infty(?![A-Za-z])/g, '∞'],
     [/\\mid(?![A-Za-z])/g, '|'], [/\\sim(?![A-Za-z])/g, '~'], [/\\pm(?![A-Za-z])/g, '±'],
+    /* ‖·‖ 与 KL 里的分隔符：没有这一条，\|a - b\|^2 会把原始 TeX 漏出来。 */
+    [/\\\|/g, '‖'],
     [/\\propto(?![A-Za-z])/g, '∝'],
     [/\\min(?![A-Za-z])/g, 'min'], [/\\max(?![A-Za-z])/g, 'max'], [/\\exp(?![A-Za-z])/g, 'exp'], [/\\log(?![A-Za-z])/g, 'log'],
     [/\\alpha/g, 'α'], [/\\beta/g, 'β'], [/\\gamma/g, 'γ'], [/\\delta/g, 'δ'],
