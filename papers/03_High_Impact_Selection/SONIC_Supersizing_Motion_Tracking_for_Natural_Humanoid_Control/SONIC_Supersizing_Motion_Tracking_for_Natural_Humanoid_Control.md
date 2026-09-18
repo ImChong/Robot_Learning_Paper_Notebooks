@@ -141,8 +141,8 @@ SONIC 的论点是：**只要把 motion tracking 当作 foundational task 放大
 
 ## 🧭 整体框架（mermaid）
 
-<div class="mermaid" style="max-width:640px;margin:0 auto;">
-flowchart TB
+<div class="mermaid">
+flowchart LR
     subgraph DATA["📚 规模化 MoCap 监督"]
         direction TB
         D1["100M+ 帧 / 700h<br/>多源 motion 数据"]
@@ -160,12 +160,10 @@ flowchart TB
 
     subgraph TOKEN["🧩 Universal Token Space"]
         direction TB
-        T1["VR 全身 (PICO)"]
-        T2["VR 三点 (头/双手)"]
-        T3["视频 / 文本 / 音乐<br/>(GENMO)"]
-        T4["VLA: GR00T N1.5"]
+        T1["VR 全身 (PICO)<br/>VR 三点 (头/双手)"]
+        T2["视频 / 文本 / 音乐 (GENMO)<br/>VLA: GR00T N1.5"]
         ENC["Hybrid Encoder"]
-        T1 ~~~ T2 ~~~ T3 ~~~ T4 ~~~ ENC
+        T1 ~~~ T2 ~~~ ENC
     end
 
     subgraph PLAN["🧠 实时运动规划器"]
@@ -185,12 +183,10 @@ flowchart TB
 
     subgraph DEPLOY["🌍 下游能力"]
         direction TB
-        E1["未见 motion 零样本跟踪"]
-        E2["导航 0–6 m/s + 风格化"]
-        E3["蹲/跪/爬 全身技能"]
-        E4["拳击等交互娱乐"]
-        E5["VLA 取放 95% 成功"]
-        E1 ~~~ E2 ~~~ E3 ~~~ E4 ~~~ E5
+        E1["未见 motion 零样本跟踪<br/>导航 0–6 m/s + 风格化"]
+        E2["蹲/跪/爬 全身技能<br/>拳击等交互娱乐"]
+        E3["VLA 取放 95% 成功"]
+        E1 ~~~ E2 ~~~ E3
     end
 
     DATA --> SCALE
