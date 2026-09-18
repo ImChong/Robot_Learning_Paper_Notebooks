@@ -94,7 +94,7 @@ VLM 输出两个字段（典型如 `task = "push_button"`，`object = "soft_butt
 
 阻抗控制器实现的虚拟模型在 TCP 处：
 
-$$F_{ext} = K(x_d - x) + D(\dot{x}_d - \dot{x})$$
+$$F _ {ext} = K(x_d - x) + D(\dot{x}_d - \dot{x})$$
 
 其中 $K, D$ 由检索结果填入；$x_d$ 是目标位姿（任务相关的笛卡尔参考轨迹）。同时三指夹爪闭合到检索出来的目标角，完成接触。
 

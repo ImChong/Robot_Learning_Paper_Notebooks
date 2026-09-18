@@ -125,7 +125,7 @@ $$\mathbf{u}_t = [\Phi(\mathbf{x}_t),\ \nabla\Phi(\mathbf{x}_t),\ \mathbf{v}_t^{
 $$\mathbf{v}_t^{\text{norm}} = (\mathbf{v}_t \cdot \nabla\Phi(\mathbf{x}_t))\nabla\Phi(\mathbf{x}_t), \quad \mathbf{v}_t^{\text{tan}} = \mathbf{v}_t - \mathbf{v}_t^{\text{norm}}$$
 
 **时序表征**（历史窗口长度 $l$）：
-$$I_t = \{\mathbf{u}_{t-l+1}, \dots, \mathbf{u}_t\}$$
+$$I_t = \{\mathbf{u} _ {t-l+1}, \dots, \mathbf{u}_t\}$$
 
 $I_t$ 完全由机器人与 DF 的相对关系定义，与物体全局位置和尺度**无关**，天然支持几何泛化。
 
@@ -140,44 +140,44 @@ $I_t$ 完全由机器人与 DF 的相对关系定义，与物体全局位置和�
 **目的**：用模仿学习给策略一个稳定的初始化。
 
 **步骤**：
-1. 训练模仿策略 $\pi_{\text{mimic}}$（有特权动作参考），在物理仿真中追踪重定向的人类 MoCap 动作，生成物理合法的状态-动作轨迹
-2. 目标策略 $\pi_{\text{base}}$ 只用推理时可得的观测：
+1. 训练模仿策略 $\pi _ {\text{mimic}}$（有特权动作参考），在物理仿真中追踪重定向的人类 MoCap 动作，生成物理合法的状态-动作轨迹
+2. 目标策略 $\pi _ {\text{base}}$ 只用推理时可得的观测：
 
-$$o_{\text{base}} = [o_{\text{prop}},\ c_t^{\text{root}},\ z_t]$$
+$$o _ {\text{base}} = [o _ {\text{prop}},\ c_t^{\text{root}},\ z_t]$$
 
-- $o_{\text{prop}}$：本体感知（关节角、角速度、IMU 等）
+- $o _ {\text{prop}}$：本体感知（关节角、角速度、IMU 等）
 - $c_t^{\text{root}}$：稀疏根轨迹指令（目标位置/速度，**不是全身参考！**）
 - $z_t$：DF 交互隐变量
 
 **损失函数（行为克隆 + DAgger）**：
-$$\mathcal{L}_{\text{BC}} = \mathbb{E}_{s \sim \pi_{\text{base}}} \left[\|\pi_{\text{base}}(o_{\text{base}}) - \pi_{\text{mimic}}(o_{\text{mimic}})\|_2^2\right]$$
+$$\mathcal{L} _ {\text{BC}} = \mathbb{E} _ {s \sim \pi _ {\text{base}}} \left[\|\pi _ {\text{base}}(o _ {\text{base}}) - \pi _ {\text{mimic}}(o _ {\text{mimic}})\|_2^2\right]$$
 
-DAgger 让 $\pi_{\text{base}}$ 上场，遇到新状态时查询 $\pi_{\text{mimic}}$ 获取纠正动作，避免分布偏移。
+DAgger 让 $\pi _ {\text{base}}$ 上场，遇到新状态时查询 $\pi _ {\text{mimic}}$ 获取纠正动作，避免分布偏移。
 
 ---
 
 ### 阶段二：判别式后训练（核心创新）
 
-**问题**：预训练的 $\pi_{\text{base}}$ 是在固定物体上训的，会"背题"特定几何轨迹，遇到新尺寸就崩。
+**问题**：预训练的 $\pi _ {\text{base}}$ 是在固定物体上训的，会"背题"特定几何轨迹，遇到新尺寸就崩。
 
 **解法：AIP（对抗交互先验，Adversarial Interaction Priors）**
 
 灵感来自 AMP（Adversarial Motion Priors），但 AMP 正则化"动作自然性"，AIP 正则化"**交互几何合理性**"。
 
 **判别器目标**（最小二乘 GAN）：
-$$\mathcal{L}_D = \mathbb{E}_{z \sim \mathcal{B}_{\text{ref}}}[(D(z)-1)^2] + \mathbb{E}_{z \sim \pi}[(D(z)+1)^2]$$
+$$\mathcal{L}_D = \mathbb{E} _ {z \sim \mathcal{B} _ {\text{ref}}}[(D(z)-1)^2] + \mathbb{E} _ {z \sim \pi}[(D(z)+1)^2]$$
 
-- $\mathcal{B}_{\text{ref}}$：参考交互缓冲区（存储预训练时"正确"交互的 $z_t$）
+- $\mathcal{B} _ {\text{ref}}$：参考交互缓冲区（存储预训练时"正确"交互的 $z_t$）
 - 判别器 $D$ 学会区分"几何上合理的交互"vs"策略在新物体上产生的交互"
 
 **策略奖励**：
-$$r_t = r_{\text{task}} + \lambda_i r_{\text{interact}} + \lambda_s r_{\text{style}}$$
+$$r_t = r _ {\text{task}} + \lambda_i r _ {\text{interact}} + \lambda_s r _ {\text{style}}$$
 
 | 奖励项 | 公式 | 含义 |
 |--------|------|------|
-| $r_{\text{task}}$ | $-\|\mathbf{x}_t^{\text{root}} - \mathbf{c}_t^{\text{root}}\|_2$ | 跟踪根轨迹指令 |
-| $r_{\text{interact}}$ | $\max(0, 1 - 0.25(D(z_t)-1)^2)$ | 交互几何合理性（来自AIP判别器） |
-| $r_{\text{style}}$ | $\max(0, 1 - 0.25(D_{\text{AMP}}(s_t)-1)^2)$ | 动作自然性（来自AMP判别器） |
+| $r _ {\text{task}}$ | $-\|\mathbf{x}_t^{\text{root}} - \mathbf{c}_t^{\text{root}}\|_2$ | 跟踪根轨迹指令 |
+| $r _ {\text{interact}}$ | $\max(0, 1 - 0.25(D(z_t)-1)^2)$ | 交互几何合理性（来自AIP判别器） |
+| $r _ {\text{style}}$ | $\max(0, 1 - 0.25(D _ {\text{AMP}}(s_t)-1)^2)$ | 动作自然性（来自AMP判别器） |
 
 训练时**随机化物体几何**（尺度/形状/表面属性），无参考运动，策略必须依赖 DF 几何线索来决策。
 
@@ -190,11 +190,11 @@ $$r_t = r_{\text{task}} + \lambda_i r_{\text{interact}} + \lambda_s r_{\text{sty
 **目的**：去掉 MoCap 基础设施，用自中心深度图替代，实现真机部署。
 
 **方法**：DAgger 式蒸馏
-- 教师：$\pi_{\text{full}}$（有 MoCap 提供的精确 DF）
-- 学生：$\pi_{\text{vis}}$（只有自中心深度图）
+- 教师：$\pi _ {\text{full}}$（有 MoCap 提供的精确 DF）
+- 学生：$\pi _ {\text{vis}}$（只有自中心深度图）
 - DF 隐变量 $z_t$ 与深度特征对齐
 
-最终部署策略 $\pi_{\text{vis}}$ 只需机载深度相机，无需任何外部传感器基础设施。
+最终部署策略 $\pi _ {\text{vis}}$ 只需机载深度相机，无需任何外部传感器基础设施。
 
 ---
 

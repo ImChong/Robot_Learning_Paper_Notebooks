@@ -70,18 +70,18 @@ Humanoid-Gym 的定位就是：**给人形 locomotion 一个等价于 `legged_gy
 
 ### 1. 训练框架：Asymmetric Actor-Critic + PPO
 
-* **Actor 输入** $o_{\le t}$：本体感知 + 周期时钟信号 + 速度命令（参见下表「Observation」列）。
+* **Actor 输入** $o _ {\le t}$：本体感知 + 周期时钟信号 + 速度命令（参见下表「Observation」列）。
 * **Critic 输入** $s_t$：在 Actor 观测之外，补上仿真中的特权信息（摩擦、质量、外推力、跟踪误差、足端接触掩码、基座线速度等）。
 * 用 PPO 裁剪损失（$c_1=0.8, c_2=1.2$）+ GAE($\lambda=0.95$) + value loss 联合训练，1e-5 学习率，8192 个并行环境。
 
 | 通道 | 维度 | Actor obs | Critic state |
 |------|----:|:--------:|:-----------:|
 | Clock $(\sin t, \cos t)$ | 2 | ✓ | ✓ |
-| Cmd $(\dot P_{x,y,\gamma})$ | 3 | ✓ | ✓ |
+| Cmd $(\dot P _ {x,y,\gamma})$ | 3 | ✓ | ✓ |
 | Joint pos $\theta$ | 12 | ✓ | ✓ |
 | Joint vel $\dot\theta$ | 12 | ✓ | ✓ |
 | Base 角速度 / 欧拉角 | 6 | ✓ | ✓ |
-| Last action $a_{t-1}$ | 12 | ✓ | ✓ |
+| Last action $a _ {t-1}$ | 12 | ✓ | ✓ |
 | 摩擦 / 质量 / 推力 / 力矩 | 7 |   | ✓ |
 | Tracking diff / Stance mask / Contact | 16 |   | ✓ |
 | Base 线速度 | 3 |   | ✓ |
@@ -106,10 +106,10 @@ Humanoid-Gym 的定位就是：**给人形 locomotion 一个等价于 `legged_gy
 | 类别 | 代表项 | 公式 / 说明 | 权重 |
 |------|--------|------|----:|
 | 速度跟踪 | Lin / Ang vel tracking | $\phi(\dot P^b - \mathrm{CMD}, 5)$ | 1.2 / 1.0 |
-| 姿态稳定 | Orientation, Base height | $\phi(P^b_{\alpha\beta},5)$、$\phi(z-0.7,100)$ | 1.0 / 0.5 |
+| 姿态稳定 | Orientation, Base height | $\phi(P^b _ {\alpha\beta},5)$、$\phi(z-0.7,100)$ | 1.0 / 0.5 |
 | 步态匹配 | Contact Pattern | $\phi(I_p-I_d,\infty)$ | 1.0 |
 | 关节正则 | Joint pos tracking, Default joint | $\phi(\theta-\theta^\star,2)$ | 1.5 / 0.2 |
-| 能耗 / 平滑 | Energy, Action smoothness | $\|\tau\|\|\dot\theta\|$、$\|a_t-2a_{t-1}+a_{t-2}\|^2$ | -1e-4 / -0.01 |
+| 能耗 / 平滑 | Energy, Action smoothness | $\|\tau\|\|\dot\theta\|$、$\|a_t-2a _ {t-1}+a _ {t-2}\|^2$ | -1e-4 / -0.01 |
 | 接触保护 | Large contact | $\max(F-400, 0, 100)$ | -0.01 |
 
 > 这是公开的"人形 locomotion reward 模板"，后续 HugWBC、Distillation-PPO 等工作基本都在这套结构上加项或减项。

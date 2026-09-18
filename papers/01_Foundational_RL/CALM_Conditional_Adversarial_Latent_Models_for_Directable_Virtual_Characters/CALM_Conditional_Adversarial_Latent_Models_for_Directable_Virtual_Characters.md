@@ -37,7 +37,7 @@ CALM 在 ASE 的基础上加了一层"方向控制"能力——训练一个高�
 > 🎮 **本文内嵌 1 段动画 + 3 个可交互演示**（不用装任何东西）：
 > 1. [五幕动画：CALM 全流程](#calm-explainer-anim) —— 约 76 秒串完「ASE 缺方向 → LLC 编 latent → HLC 方向奖励 → FSM 零训练组合 → 三阶段训练闭环」
 > 2. latent 实验台 —— CALM 的 $z = E(\text{动捕})$ 与 ASE 随机采 $z$ 并排对比，看「点名技能」为什么重要
-> 3. 方向奖励实验台 —— 拖 $r_{dir}=\cos(z_{target},z_t)$ 权重，看 HLC 怎么被关进一个锥里
+> 3. 方向奖励实验台 —— 拖 $r _ {dir}=\cos(z _ {target},z_t)$ 权重，看 HLC 怎么被关进一个锥里
 > 4. FSM 实验台 —— 跑一遍 HumanoidStrike 式状态机，注意换的只是 $z$ 的来源
 
 ---
@@ -137,7 +137,7 @@ CALM 分三个阶段，每阶段解决一个问题：
 **目标**：训练一个 encoder-decoder，latent 能编码动作风格。
 
 - **Encoder** $E$：把一段 motion clip 编码成 latent $z$
-- **Decoder（低层策略）** $\pi_{LLC}$：输入当前状态 $s_t$ + latent $z$，输出动作 $a_t$
+- **Decoder（低层策略）** $\pi _ {LLC}$：输入当前状态 $s_t$ + latent $z$，输出动作 $a_t$
 
 整个 LLC 用对抗模仿学习训练（类似 ASE），判别器保证动作自然。
 
@@ -153,7 +153,7 @@ CALM 分三个阶段，每阶段解决一个问题：
 ### 第二层：High-Level Controller（HLC）——方向控制
 
 <details class="paper-fold" markdown="1">
-<summary>📖 展开文字：HLC 输出 latent，方向奖励 $r_{dir}=\cos(z_{target},z_t)$</summary>
+<summary>📖 展开文字：HLC 输出 latent，方向奖励 $r _ {dir}=\cos(z _ {target},z_t)$</summary>
 
 **目标**：训练一个高层策略，学会在 latent 空间里选方向来完成指定任务。
 
@@ -178,7 +178,7 @@ $$
 
 这样 HLC 学的是：**"我要朝这个方向完成任务，应该选哪个 latent"**。
 
-这一项为什么必要？把它的权重拖到 0 就知道了：HLC 会毫不犹豫地挑一个跑得最快的 latent，哪怕这一段要求的是蹲着走。cos 把它关进 $z_{target}$ 周围的一个锥里：
+这一项为什么必要？把它的权重拖到 0 就知道了：HLC 会毫不犹豫地挑一个跑得最快的 latent，哪怕这一段要求的是蹲着走。cos 把它关进 $z _ {target}$ 周围的一个锥里：
 </details>
 
 <div class="paper-demo" data-demo="calm-hlc"><p class="demo-fallback">（本节含交互演示，需要启用 JavaScript）</p></div>
@@ -527,7 +527,7 @@ python calm/run.py \
 **A**：因为 latent 编码了"技能语义"，传给 LLC 后能保证动作质量和风格。如果 HLC 直接输出动作，就绕过了低层的质量保证，丢失了对抗模仿学习训练出的自然运动特性。
 
 <h3 id="q4-calm-的方向奖励是什么">Q4: CALM 的方向奖励是什么？</h3>
-**A**：是 HLC 选出的 latent 和目标风格 latent 之间的余弦相似度。HLC 被鼓励选出让 $\cos(z_{selected}, z_{target})$ 最大的 latent，从而引导角色朝目标风格运动。
+**A**：是 HLC 选出的 latent 和目标风格 latent 之间的余弦相似度。HLC 被鼓励选出让 $\cos(z _ {selected}, z _ {target})$ 最大的 latent，从而引导角色朝目标风格运动。
 
 <h3 id="q5-calm-的-latent-space-有什么特点">Q5: CALM 的 latent space 有什么特点？</h3>
 **A**：它是语义化的——相近的 latent 对应相近的技能；latent 插值会得到平滑的技能过渡。这意味着可以在 latent 空间里做有意义的线性插值，比如从"冲刺"到"下蹲"的过渡会产生语义连贯的中间动作。

@@ -78,10 +78,10 @@ EAGLE 想直接拿出**一个网络**就能管多种机器人，并且只暴露"
 
 ### 2. 泛化-专家迭代蒸馏循环
 
-记当前 generalist 为 $\pi_G^{(k)}$，每个本体 $i$ 的 specialist 为 $\pi_{S_i}^{(k)}$，循环：
+记当前 generalist 为 $\pi_G^{(k)}$，每个本体 $i$ 的 specialist 为 $\pi _ {S_i}^{(k)}$，循环：
 
 1. **Pool training**：在多本体仿真池上训练 $\pi_G^{(0)}$，得到一个粗糙但通用的策略。
-2. **Specialize**：对每台机器人 $i$，从 $\pi_G^{(k)}$ 派生 $\pi_{S_i}^{(k)}$，在该机器人上做 RL 微调（针对它的 DoF / 动力学限制把性能推满）。
+2. **Specialize**：对每台机器人 $i$，从 $\pi_G^{(k)}$ 派生 $\pi _ {S_i}^{(k)}$，在该机器人上做 RL 微调（针对它的 DoF / 动力学限制把性能推满）。
 3. **Distill back**：用各 specialist 在自己机器人上 rollout 得到状态-动作分布，再以 DAgger 风格把多本体数据合并，蒸馏出新的 $\pi_G^{(k+1)}$。
 4. **Repeat**：回到第 2 步，直至 generalist 在所有本体上都接近 specialist 性能。
 

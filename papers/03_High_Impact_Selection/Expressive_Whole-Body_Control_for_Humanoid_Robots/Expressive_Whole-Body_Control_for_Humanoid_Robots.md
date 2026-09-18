@@ -112,11 +112,11 @@ flowchart TD
 
 **奖励函数（全身控制）：**
 
-$$r = r_{\text{tracking}} + r_{\text{locomotion}} + r_{\text{regularization}}$$
+$$r = r _ {\text{tracking}} + r _ {\text{locomotion}} + r _ {\text{regularization}}$$
 
-- $r_{\text{tracking}}$：上半身关节角度跟踪误差
-- $r_{\text{locomotion}}$：行走速度、姿态稳定性
-- $r_{\text{regularization}}$：动作平滑、能量消耗惩罚
+- $r _ {\text{tracking}}$：上半身关节角度跟踪误差
+- $r _ {\text{locomotion}}$：行走速度、姿态稳定性
+- $r _ {\text{regularization}}$：动作平滑、能量消耗惩罚
 
 ---
 
@@ -171,9 +171,9 @@ for each frame f in human_motion:
 
 假设当前帧：躯干俯仰 3°、右手相比参考滞后 0.2 rad、前进速度 0.75 m/s。
 
-- $r_{tracking}$：右手误差项 $\exp(-k \cdot 0.2^2)$ ≈ 较高值
-- $r_{locomotion}$：速度误差 $0.05$ m/s、姿态平稳 → 正贡献
-- $r_{regularization}$：动作相对上一步的变化、能耗项 → 小幅负贡献
+- $r _ {tracking}$：右手误差项 $\exp(-k \cdot 0.2^2)$ ≈ 较高值
+- $r _ {locomotion}$：速度误差 $0.05$ m/s、姿态平稳 → 正贡献
+- $r _ {regularization}$：动作相对上一步的变化、能耗项 → 小幅负贡献
 
 汇总奖励用于 PPO 更新。
 

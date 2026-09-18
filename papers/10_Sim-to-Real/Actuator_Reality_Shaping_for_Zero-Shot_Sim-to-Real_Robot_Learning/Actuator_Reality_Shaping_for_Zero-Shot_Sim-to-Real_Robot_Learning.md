@@ -68,13 +68,13 @@ Sim-to-real 掉点的头号根因是**执行器层的失配**：仿真里把电�
 
 仿真中每个关节被当作理想的二阶 PD 系统（弹簧-阻尼力源）：
 
-$$I_{sim}\,\ddot\theta = K_p(\bar\theta-\theta) - D\,\dot\theta + f$$
+$$I _ {sim}\,\ddot\theta = K_p(\bar\theta-\theta) - D\,\dot\theta + f$$
 
 其中 $\bar\theta$ 是策略输出的目标角。**这个二阶响应就是硬件要对齐的「参考模型」**。而真实电机满足带摩擦/失配的方程：
 
-$$J_{real}\,\ddot\theta = K_\tau (i-i_d) - d_{real}\dot\theta - \tau_f(\dot\theta) - \tau_{ext}$$
+$$J _ {real}\,\ddot\theta = K_\tau (i-i_d) - d _ {real}\dot\theta - \tau_f(\dot\theta) - \tau _ {ext}$$
 
-真实/仿真之比构成**乘性不确定度** $\Delta P(s)=P_{real}(s)/P_{sim}(s)-1$（主要是惯量与阻尼失配）。
+真实/仿真之比构成**乘性不确定度** $\Delta P(s)=P _ {real}(s)/P _ {sim}(s)-1$（主要是惯量与阻尼失配）。
 
 ### 2）二自由度（2-DoF）控制器：前馈定动态、反馈抗扰
 
@@ -85,13 +85,13 @@ $$u = \frac{F(s)}{\hat P(s)}\,r + K(s)\,e$$
 - **前馈路径 $F(s)$**：指定「想要的闭环动态」，直接对齐仿真参考模型（$\hat P$ 为标称对象模型）。
 - **反馈路径 $K(s)$**（PID）：**独立**补偿扰动与模型失配，不影响前馈设定的标称响应。
 
-采用**级联「位置环 + 速度环」**结构：外层位置环参考模型 $F_1(s)=K_p/(I_{sim}s^2+Ds+K_p)$，内层速度环参考模型 $F_2(s)=\alpha/(s+\alpha)$。
+采用**级联「位置环 + 速度环」**结构：外层位置环参考模型 $F_1(s)=K_p/(I _ {sim}s^2+Ds+K_p)$，内层速度环参考模型 $F_2(s)=\alpha/(s+\alpha)$。
 
 ### 3）扰动观测器（DOB）：把「非理想」都当扰动抵消
 
 DOB 估计集总扰动力矩并前馈抵消：
 
-$$\hat\tau_d = \frac{\alpha_{dob}}{s+\alpha_{dob}}\big(\tau-(sJ+d)\dot\theta\big)$$
+$$\hat\tau_d = \frac{\alpha _ {dob}}{s+\alpha _ {dob}}\big(\tau-(sJ+d)\dot\theta\big)$$
 
 摩擦、外力、惯量/阻尼失配都被当作「扰动」估出并消掉，使闭环响应**收敛到 $y\approx F\cdot r$**（与失配无关），从而给 RL 策略提供一个**标准化执行器接口**。
 

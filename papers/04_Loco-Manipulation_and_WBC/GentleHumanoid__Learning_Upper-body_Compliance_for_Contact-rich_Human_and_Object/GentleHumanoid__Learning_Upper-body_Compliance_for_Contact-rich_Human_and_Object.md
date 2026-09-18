@@ -103,23 +103,23 @@ GentleHumanoid 的核心思想可以概括成一句话：
 
 每个 link 的运动都受两类力共同影响：
 
-$$M \ddot{x}_i = f_{drive,i} + f_{interact,i}$$
+$$M \ddot{x}_i = f _ {drive,i} + f _ {interact,i}$$
 
 其中：
 - $M$ 是虚拟质量，论文里每个 link 取 **0.1 kg**
-- $f_{drive}$ 是“把机器人拉向目标 motion”的驱动力
-- $f_{interact}$ 是“来自人或物体接触”的交互力
+- $f _ {drive}$ 是“把机器人拉向目标 motion”的驱动力
+- $f _ {interact}$ 是“来自人或物体接触”的交互力
 
 这一步很关键，因为它把“柔顺”从一个模糊概念，变成了一个明确可积分的参考动力学系统。
 
 ### 2）驱动力：来自目标 motion 的阻抗弹簧-阻尼
 驱动力采用经典 spring-damper 形式：
 
-$$f_{drive} = K_p(x_{tar} - x_{cur}) + K_d(v_{tar} - v_{cur})$$
+$$f _ {drive} = K_p(x _ {tar} - x _ {cur}) + K_d(v _ {tar} - v _ {cur})$$
 
 其中：
-- $x_{tar}, v_{tar}$ 来自参考动作
-- $x_{cur}, v_{cur}$ 是当前 link 状态
+- $x _ {tar}, v _ {tar}$ 来自参考动作
+- $x _ {cur}, v _ {cur}$ 是当前 link 状态
 - $K_d = 2\sqrt{MK_p}$，即取临界阻尼
 
 直观理解：
@@ -130,7 +130,7 @@ $$f_{drive} = K_p(x_{tar} - x_{cur}) + K_d(v_{tar} - v_{cur})$$
 ### 3）交互力：统一的 spring-based 建模
 论文最核心的创新，是把 interaction force 统一成：
 
-$$f_{interact} = K_{spring}(x_{anchor} - x_{cur})$$
+$$f _ {interact} = K _ {spring}(x _ {anchor} - x _ {cur})$$
 
 但 anchor 的定义分两种：
 
@@ -156,7 +156,7 @@ $$f_{interact} = K_{spring}(x_{anchor} - x_{cur})$$
 
 ### 4）如何做多样化 force exposure
 训练时，作者会随机化：
-- **弹簧刚度**：$K_{spring} \sim U(5, 250)$
+- **弹簧刚度**：$K _ {spring} \sim U(5, 250)$
 - **受力 link 集合**：
   - 40% 无外力
   - 15% 双臂 6 个 link 同时受力
@@ -171,10 +171,10 @@ $$f_{interact} = K_{spring}(x_{anchor} - x_{cur})$$
 
 当驱动力太大时，不允许无限增大，而是按阈值缩放：
 
-$$f_{drive}^{limited} = \min\left(1, \frac{\tau_{safe}}{\|f_{drive}\|} \right) f_{drive}$$
+$$f _ {drive}^{limited} = \min\left(1, \frac{\tau _ {safe}}{\|f _ {drive}\|} \right) f _ {drive}$$
 
 其中：
-- 训练时 $\tau_{safe}$ 在 **5 N 到 15 N** 之间分段采样
+- 训练时 $\tau _ {safe}$ 在 **5 N 到 15 N** 之间分段采样
 - 部署时用户可以按任务调节这个阈值
 
 它带来的直接效果是：
@@ -185,9 +185,9 @@ $$f_{drive}^{limited} = \min\left(1, \frac{\tau_{safe}}{\|f_{drive}\|} \right) f
 ### 6）RL 控制策略：学会追随“参考柔顺动力学”
 策略目标不是直接拟合 reference motion，而是拟合积分后的 reference dynamics：
 
-$$\dot{x}^{ref}_{t+1} = \dot{x}^{ref}_t + \Delta t \cdot \frac{f_{drive} + f_{interact}}{M}$$
+$$\dot{x}^{ref} _ {t+1} = \dot{x}^{ref}_t + \Delta t \cdot \frac{f _ {drive} + f _ {interact}}{M}$$
 
-$$x^{ref}_{t+1} = x^{ref}_t + \Delta t \cdot \dot{x}^{ref}_{t+1}$$
+$$x^{ref} _ {t+1} = x^{ref}_t + \Delta t \cdot \dot{x}^{ref} _ {t+1}$$
 
 也就是说：
 - reference motion 先经过“驱动力 + 交互力”的动力学融合
@@ -272,7 +272,7 @@ python scripts/eval.py --run_path ${wandb_run_path} -p --export
 在 GentleHumanoid 里：
 1. wrist、elbow、shoulder 同时有 interaction force
 2. guiding / resistive spring 让整条手臂都“跟着让一点”
-3. 如果当前 $\tau_{safe}=10N$，驱动力也会被限制在大约这个量级
+3. 如果当前 $\tau _ {safe}=10N$，驱动力也会被限制在大约这个量级
 4. 结果不是“硬顶住”，而是边保持 hug、边顺着外力调整姿态
 
 ### 例子 2：拿气球

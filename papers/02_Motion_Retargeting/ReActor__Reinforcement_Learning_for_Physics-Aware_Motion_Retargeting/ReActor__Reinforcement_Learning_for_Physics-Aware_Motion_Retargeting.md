@@ -138,7 +138,7 @@ flowchart TB
 
 ### 1. 双层问题写法（Sec. 3）
 
-上层：$\min_{\mathbf{p}\in\mathcal{P}} \mathcal{L}(\mathbf{p}, \phi^*(\mathbf{p}))$，约束 $\phi^*(\mathbf{p}) = \arg\max_\phi \mathcal{R}(\mathbf{p},\phi)$。
+上层：$\min _ {\mathbf{p}\in\mathcal{P}} \mathcal{L}(\mathbf{p}, \phi^{\ast}(\mathbf{p}))$，约束 $\phi^{\ast}(\mathbf{p}) = \arg\max_\phi \mathcal{R}(\mathbf{p},\phi)$。
 下层：标准 **最大化回报** 的 RL；上层把 **仿真轨迹与参考的失配** 当监督。直觉上，$\mathbf{p}$ 把「人」那边的帧 **抬到** 机器人能跟上的流形附近，$\phi$ 负责在 **非光滑接触** 下真的跑起来。
 
 ### 2. 上层梯度为何能「算得动」（Sec. 4）
@@ -151,13 +151,13 @@ $$
   + \partial_{\mathbf{s}^*_t}\ell\,\mathrm{d}_{\mathbf{p}}\mathbf{s}^*_t
 $$
 
-里，利用 **对称损失** $\partial_{\mathbf{s}}\ell = -\partial_{\mathbf{g}}\ell$ 与 **「最优轨迹对参考的响应可标量近似」** $\mathrm{d}_{\mathbf{p}}\mathbf{s}^* \approx \alpha \,\mathrm{d}_{\mathbf{p}}\mathbf{g}$ 的假设，把敏感项收成 **$(1-\alpha)\,\partial_{\mathbf{g}}\ell\,\mathrm{d}_{\mathbf{p}}\mathbf{g}$** 的实用估计，再用当前策略 rollout 的样本做蒙特卡洛近似。可把 $\alpha$ 理解成 **「机器人有多听话地跟着 g 走」** 的黑盒灵敏度旋钮。
+里，利用 **对称损失** $\partial _ {\mathbf{s}}\ell = -\partial _ {\mathbf{g}}\ell$ 与 **「最优轨迹对参考的响应可标量近似」** $\mathrm{d} _ {\mathbf{p}}\mathbf{s}^{\ast} \approx \alpha \,\mathrm{d} _ {\mathbf{p}}\mathbf{g}$ 的假设，把敏感项收成 **$(1-\alpha)\,\partial _ {\mathbf{g}}\ell\,\mathrm{d} _ {\mathbf{p}}\mathbf{g}$** 的实用估计，再用当前策略 rollout 的样本做蒙特卡洛近似。可把 $\alpha$ 理解成 **「机器人有多听话地跟着 g 走」** 的黑盒灵敏度旋钮。
 
 ### 3. 参数化 $\mathbf{g}_t$ 的变量与损失（Sec. 5）
 
-- 从名义 T-pose 对齐开始：**根高度比** 给出全局尺度 $s = h_{\text{target}}/h_{\text{source}}$。
-- 对每个用户指定的刚体对，在源局部坐标里存 **常数 nominal 偏移** $\mathbf{x}^b_{\text{nom}}, \mathbf{R}^b_{\text{nom}}$，把缩放后的源骨架与目标帧对齐。
-- 优化变量：**小范数约束下的** $\mathbf{p}^b_{\text{pos}}, \mathbf{p}^b_{\text{ori}}$ 以及 **每条运动的可学习竖直平移** $p_z$（处理 AMASS 类数据里残余的穿地 / 漂浮）。
+- 从名义 T-pose 对齐开始：**根高度比** 给出全局尺度 $s = h _ {\text{target}}/h _ {\text{source}}$。
+- 对每个用户指定的刚体对，在源局部坐标里存 **常数 nominal 偏移** $\mathbf{x}^b _ {\text{nom}}, \mathbf{R}^b _ {\text{nom}}$，把缩放后的源骨架与目标帧对齐。
+- 优化变量：**小范数约束下的** $\mathbf{p}^b _ {\text{pos}}, \mathbf{p}^b _ {\text{ori}}$ 以及 **每条运动的可学习竖直平移** $p_z$（处理 AMASS 类数据里残余的穿地 / 漂浮）。
 - 位置、线速度、角速度项用 **平方误差**；旋转用 **测地线 Log 映射范数**；对欠驱动关节可只惩罚 swing/twist 子分量。
 
 ---
@@ -196,7 +196,7 @@ $$
 ## ⚠️ 局限与可改进点
 
 - **重定向参数假设时不变**：当前参数在整段动作中固定，引入**时变参数化**可扩大解空间但带来新挑战；
-- **近似梯度是实用假设**：$\mathrm{d}_{\mathbf{p}}\mathbf{s}^* \approx \alpha \mathrm{d}_{\mathbf{p}}\mathbf{g}$ 并非严格定理，在强多模态接触任务上，上层可能仍需调学习率与损失权重 $w_x, w_R,\ldots$ 的相对比例；
+- **近似梯度是实用假设**：$\mathrm{d} _ {\mathbf{p}}\mathbf{s}^{\ast} \approx \alpha \mathrm{d} _ {\mathbf{p}}\mathbf{g}$ 并非严格定理，在强多模态接触任务上，上层可能仍需调学习率与损失权重 $w_x, w_R,\ldots$ 的相对比例；
 - **形态差过大需精细奖励**：迁移到四足等差异极大形态时，需更细致的奖励调节，否则策略会「放弃跟踪换取少用外力」；
 - **物理不可行动作本质病态**：把「虚拟走上不存在的楼梯」这类动作重定向本就 ill-posed，是投影到地面还是照追，需更多用户可控性；
 - **语义对应仍需人工**：勾选刚体对仍是人工步骤，自动化对应选择可进一步降低使用门槛；
@@ -210,7 +210,7 @@ $$
 A：两步法先独立重定向、再训练跟踪，重定向的瑕疵会直接拖累下游。ReActor 把两步合成一个双层优化：下层 RL 跟踪、上层解重定向参数，用策略滚动出的仿真状态反过来更新参数，让参考动作与机器人形态的冲突在优化中被化解。
 
 **Q：双层优化怎么变得可解？**
-A：对上层损失推导**近似梯度**估计（TTSA 单循环 + 对称损失 + $\mathrm{d}_{\mathbf{p}}\mathbf{s}^*\approx\alpha\,\mathrm{d}_{\mathbf{p}}\mathbf{g}$ 假设），避免对整段 RL 训练做完整可微反传；下层用 PPO、Isaac Sim 大规模并行训练。
+A：对上层损失推导**近似梯度**估计（TTSA 单循环 + 对称损失 + $\mathrm{d} _ {\mathbf{p}}\mathbf{s}^{\ast}\approx\alpha\,\mathrm{d} _ {\mathbf{p}}\mathbf{g}$ 假设），避免对整段 RL 训练做完整可微反传；下层用 PPO、Isaac Sim 大规模并行训练。
 
 **Q：为什么要给策略一个作用在根的辅助力？会不会「作弊」？**
 A：像倒立这类动作对无手机器人物理不可行，根部 wrench 作为训练脚手架帮策略完成大数据集里的极端动作；同时在奖励里惩罚其用量、加连续死区，鼓励不必要时输出零力。论文明确区分 retargeting 与 motion imitation：下游若追求完全物理真实，可把 RFC 逐步收紧或换硬跟踪设定做第二阶段。

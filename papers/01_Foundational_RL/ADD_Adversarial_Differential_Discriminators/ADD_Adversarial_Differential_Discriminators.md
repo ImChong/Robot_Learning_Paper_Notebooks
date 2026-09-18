@@ -213,7 +213,7 @@ flowchart LR
 </div>
 
 <details class="paper-fold" markdown="1">
-<summary>📖 展开文字：总 reward 退化成 $r \approx r_{disc}$</summary>
+<summary>📖 展开文字：总 reward 退化成 $r \approx r _ {disc}$</summary>
 
 所以总 reward 本质上变成：
 
@@ -522,7 +522,7 @@ classDiagram
     ADDAgent o-- DiffNormalizer : 归一化差向量
 </div>
 
-- 对照 AMP 类图看增量：判别器输入从 $(s_t, s_{t+1})$ 状态对变成 `tar_disc_obs − disc_obs` 差向量；真样本从 mocap 片段变成**固定的全 0 张量**。
+- 对照 AMP 类图看增量：判别器输入从 $(s_t, s _ {t+1})$ 状态对变成 `tar_disc_obs − disc_obs` 差向量；真样本从 mocap 片段变成**固定的全 0 张量**。
 - `DiffNormalizer` 是 ADD 专属的辅助类——差向量里位置（米）、角度（弧度）、速度量纲不同，必须分量归一化后判别器才学得动。
 
 <h3 id="源码运行时序图">源码运行时序图</h3>

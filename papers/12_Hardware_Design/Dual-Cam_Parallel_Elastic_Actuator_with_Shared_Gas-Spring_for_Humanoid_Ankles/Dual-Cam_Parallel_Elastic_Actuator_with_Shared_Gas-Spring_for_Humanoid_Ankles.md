@@ -79,7 +79,7 @@ arxiv: "2608.30832"
 
 因为两个凸轮压的是**同一根**气弹簧，弹簧力是两个自由度压缩量之和的函数：
 
-$$F_s(\theta_1,\theta_2) = F_{si} + k\big(\Delta c_1(\theta_1) + \Delta c_2(\theta_2) + c_p\big)$$
+$$F_s(\theta_1,\theta_2) = F _ {si} + k\big(\Delta c_1(\theta_1) + \Delta c_2(\theta_2) + c_p\big)$$
 
 其中 $\theta_1$ 为俯仰、$\theta_2$ 为翻滚，$\Delta c_i$ 是各自凸轮引起的压缩量。于是两个方向的输出力矩变成**耦合的二元函数**。
 

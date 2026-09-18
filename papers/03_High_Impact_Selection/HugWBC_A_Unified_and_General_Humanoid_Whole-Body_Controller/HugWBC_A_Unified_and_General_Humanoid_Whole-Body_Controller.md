@@ -49,7 +49,7 @@ HugWBC 把"走、跳、立、单脚跳"四种步态以及**步频、抬脚高度
 | **AAC** | Asymmetric Actor-Critic | 非对称 A-C：critic 看特权信息，actor 只看真机能拿到的本体感觉 |
 | **Loco-Manip.** | Locomotion + Manipulation | 移动+操作，行走/跳跃时仍要精准操作物体 |
 | **Gait** | Gait | 步态（走、跑、跳、立、单脚跳） |
-| **Duty Cycle** | $\phi_{\text{stance}}$ | 一个步态周期内"支撑"占比，越小越偏腾空 |
+| **Duty Cycle** | $\phi _ {\text{stance}}$ | 一个步态周期内"支撑"占比，越小越偏腾空 |
 | **Phase Offset** | $\psi$ | 两脚相位差：走步 0.5、跳步 0.0 |
 | **PD** | Proportional-Derivative | 关节级 PD 控制器，把策略输出的目标关节角变扭矩 |
 | **PPO** | Proximal Policy Optimization | 训练 HugWBC 策略的 RL 算法 |
@@ -76,7 +76,7 @@ HugWBC 提出的解法是把**命令空间**写得足够通用，再用**对称�
 
 ### 1. 命令空间 $\mathcal{C} = \mathcal{K} \times \mathcal{B}$
 
-**任务命令 $\mathcal{K}$**：目标速度 $v_t = (v_{t,x}, v_{t,y}, \omega_t)$，决定"想去哪儿"。
+**任务命令 $\mathcal{K}$**：目标速度 $v_t = (v _ {t,x}, v _ {t,y}, \omega_t)$，决定"想去哪儿"。
 
 **行为命令 $\mathcal{B}$**：
 
@@ -86,7 +86,7 @@ $$
 
 - **foot 行为**：步频 $f_t$、最大抬脚高度 $l_t$；
 - **posture 行为**：身高 $h_t$、俯仰 $p_t$、腰偏航 $w_t$；
-- **gait 行为**：两脚相位 $\phi_{t,1}, \phi_{t,2}$、相位偏移 $\psi_t$、支撑占比 $\phi_{t,\text{stance}}$。
+- **gait 行为**：两脚相位 $\phi _ {t,1}, \phi _ {t,2}$、相位偏移 $\psi_t$、支撑占比 $\phi _ {t,\text{stance}}$。
 
 通过仅调 $\psi$ 与 $\phi_i$ 就能切换四种标准步态（walking $\psi=0.5$；jumping $\psi=0$；standing $\phi_i=0.25$；hopping 一脚 $\phi_i=0.75$ 飞，另一脚正常踩）。
 
@@ -207,7 +207,7 @@ A：HOVER 把若干**已训好的专家策略**用 mask + 蒸馏统一到一个�
 A：直接固定上身等价于策略只见过一种上身分布；真实部署时遥操作上身关节角是动态变化的，分布外。Intervention Training 把外部上身轨迹**在训练时就当作随机扰动注入**，下肢策略学到"任何上身姿态下都要稳"，是 HOMIE / OmniH2O / iDP3 等下游遥操和 IL 框架的友好底座。
 
 **Q：四种步态为什么 3 个能共用同一策略，hopping 要单独训？**  
-A：walking / standing / jumping 在动力学上有连续 morphism（只是 $\psi$、$\phi_{\text{stance}}$ 变化）；hopping 的一脚常态"飞行"导致动量与接触序列高度不对称，与其他三种步态在状态分布与奖励配比上偏差太大，论文实测放在一份策略里会拖累 walking 跟踪精度，故单训。
+A：walking / standing / jumping 在动力学上有连续 morphism（只是 $\psi$、$\phi _ {\text{stance}}$ 变化）；hopping 的一脚常态"飞行"导致动量与接触序列高度不对称，与其他三种步态在状态分布与奖励配比上偏差太大，论文实测放在一份策略里会拖累 walking 跟踪精度，故单训。
 
 **Q：对称损失在 humanoid 上的副作用？**  
 A：对**严格对称步态（走、跳、立）**几乎只有增益；对**非对称步态（hopping、单脚动作）**需要把对称镜像在该模式下关掉，否则会逼策略左右一致，反而压制单脚跳的天然不对称。论文里 hopping 专策略就是这个工程权衡的体现。
