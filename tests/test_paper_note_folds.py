@@ -11,7 +11,7 @@ import re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-FOUNDATIONAL = ROOT / "papers" / "01_Foundational_RL"
+PAPERS = ROOT / "papers"
 PAPER_JS = ROOT / "assets" / "js" / "paper.js"
 STYLE_CSS = ROOT / "assets" / "css" / "style.css"
 
@@ -22,8 +22,8 @@ RAW_HEADING = re.compile(r'^<h([2-4]) id="([^"]+)">')
 
 
 def explainer_notes():
-    """带讲解动画（``*-explainer`` 演示）的笔记。"""
-    return sorted(p for p in FOUNDATIONAL.rglob("*.md") if "-explainer" in p.read_text(encoding="utf-8"))
+    """带讲解动画（``*-explainer`` 演示）的笔记，不限板块。"""
+    return sorted(p for p in PAPERS.rglob("*.md") if "-explainer" in p.read_text(encoding="utf-8"))
 
 
 def fold_line_ranges(lines):

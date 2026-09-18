@@ -52,6 +52,13 @@ DR_VISION_NOTE = _note(
 )
 DR_THEORY_NOTE = _note("Domain_Randomization_Understanding_Sim-to-Real_Transfer")
 MIMICKIT_NOTE = _note("MimicKit_A_Reinforcement_Learning_Framework_for_Motion_Imitation_and_Control")
+SONIC_NOTE = (
+    ROOT
+    / "papers"
+    / "03_High_Impact_Selection"
+    / "SONIC_Supersizing_Motion_Tracking_for_Natural_Humanoid_Control"
+    / "SONIC_Supersizing_Motion_Tracking_for_Natural_Humanoid_Control.md"
+)
 
 PLACEHOLDER_RE = re.compile(r'<div class="paper-demo" data-demo="([a-z0-9-]+)"')
 FRONTMATTER_DEMOS_RE = re.compile(r'^demos:\s*\[(.+)\]\s*$', re.MULTILINE)
@@ -168,6 +175,7 @@ def test_notes_declare_their_demos_in_reading_order():
             "mimickit",
             ["mimickit-family", "mimickit-reward", "mimickit-config"],
         ),
+        SONIC_NOTE: ("sonic", ["sonic-explainer"]),
     }
     for note, (bundle, placeholders) in expected.items():
         text = note.read_text(encoding="utf-8")
@@ -201,7 +209,7 @@ def test_demo_assets_are_theme_aware():
     assert "data-theme" in kit
 
 
-EXPLAINER_BUNDLES = ("ppo", "awr", "deepmimic", "amp", "add", "ase", "calm", "pulse")
+EXPLAINER_BUNDLES = ("ppo", "awr", "deepmimic", "amp", "add", "ase", "calm", "pulse", "sonic")
 
 # 幕数由论文决定，不是统一模板：PPO / DeepMimic / AMP / ADD 的核心概念正好各 5 个，
 # PHC 开篇立了三堵墙（第一堵拆成「长出列」「混合列」两幕），所以是 6 幕；
@@ -209,7 +217,10 @@ EXPLAINER_BUNDLES = ("ppo", "awr", "deepmimic", "amp", "add", "ase", "calm", "pu
 # 定期重采样），也是 6 幕；AWR 是六件（PPO 的三个麻烦 / 评估 / 指数权重 /
 # 加权回归 / off-policy 的赚与亏 / 闭环与源码落点）；PULSE 也是六件
 # （缺一个通用表示 / 阶段 1 大规模模仿 / 阶段 2 VIB 瓶颈 / 本体感受先验 /
-# 阶段 3 下游只搜 32 维 / 闭环与源码落点）。
+# 阶段 3 下游只搜 32 维 / 闭环与源码落点）；SONIC 是七件（任务选错了 / 三轴一起放大 /
+# universal token space / 五项 aux loss 焊住潜空间 / 实时 kinematic planner /
+# System-1 + System-2 / 数据到实机的闭环），token space 与把三路 latent 焊在一起
+# 是两件独立的事，规划器与 VLA 也是，压进六幕会有两幕各塞两件事。
 EXPLAINER_SCENES = {
     "ppo": (PPO_NOTE, 5),
     "awr": (AWR_NOTE, 6),
@@ -220,6 +231,7 @@ EXPLAINER_SCENES = {
     "ase": (ASE_NOTE, 6),
     "calm": (CALM_NOTE, 5),
     "pulse": (PULSE_NOTE, 6),
+    "sonic": (SONIC_NOTE, 7),
 }
 CN_NUMERALS = {4: "四", 5: "五", 6: "六", 7: "七"}
 
@@ -473,3 +485,55 @@ def test_amp_disc_demo_matches_the_numbers_in_the_note():
     # 风格奖励用的是论文实现的 LSGAN 形式
     assert "r^S(s_t, s_{t+1}) = \\max\\left[0, \\; 1 - 0.25(D(s_t, s_{t+1}) - 1)^2\\right]" in note
     assert "max(0, 1 - 0.25 * (d - 1) * (d - 1))" in js
+
+
+def test_sonic_explainer_numbers_come_from_the_config():
+    """七幕动画不许手写换算结果：token 宽度、码率、控制步、参数量都得现算。
+
+    SONIC 这篇笔记没有别的交互演示可以共用函数，所以动画里每一个「算出来的」
+    数字都必须回溯到 ``sonic_release`` 的配置常量（FSQ 档位、Isaac Lab 的 dt、
+    各 MLP 的 ``hidden_dims``），而不是抄一份写死的字符串。
+    """
+    js = (DEMO_JS_DIR / "sonic.js").read_text(encoding="utf-8")
+    note = SONIC_NOTE.read_text(encoding="utf-8")
+
+    # FSQ：每帧 2 个 token × 32 维、每维 32 个 level
+    assert "var FSQ_LEVELS = 32," in js
+    assert "FSQ_DIM = 32," in js
+    assert "FSQ_TOKENS = 2;" in js
+    assert "var FSQ_FLAT = FSQ_DIM * FSQ_TOKENS;" in js
+    assert "var FSQ_BITS = FSQ_FLAT * (Math.log(FSQ_LEVELS) / Math.LN2);" in js
+    flat = 32 * 2
+    bits = flat * math.log2(32)
+    assert (flat, bits) == (64, 320)
+    # 笔记 §模型架构 里写的就是这两个数
+    assert "32 levels × 32 dim × 2 token/帧 = **64-d / 帧, ~320 bit/帧**" in note
+
+    # 50 Hz 控制（Isaac Lab dt = 0.02 s）：时间单位都换算成控制步
+    assert "var DT = 0.02;" in js
+    assert "var HZ = Math.round(1 / DT);" in js
+    assert "REPLAN_STEPS = Math.round(REPLAN_MS / (DT * 1000));" in js
+    assert round(1 / 0.02) == 50 and round(100 / 20) == 5
+    assert round(0.8 / 0.02) == 40 and round(2.4 / 0.02) == 120
+    assert "50 Hz（与 Isaac Lab `dt=0.02s` 对齐）" in note
+
+    # 参数量：把配置里的 hidden_dims 相邻两层相乘再求和，只含隐层之间的权重
+    assert js.count("function mlpParams(") == 1
+    assert "var ENC_DIMS = [2048, 1024, 512, 512];" in js
+    assert "var DYN_DIMS = [2048, 2048, 1024, 1024, 512, 512];" in js
+
+    def hidden(dims: list[int]) -> int:
+        return sum(a * b for a, b in zip(dims, dims[1:], strict=False))
+
+    enc = hidden([2048, 1024, 512, 512])
+    dyn = hidden([2048, 2048, 1024, 1024, 512, 512])
+    assert _fmt(3 * enc / 1e6, 2) == "8.65"
+    assert _fmt(dyn / 1e6, 2) == "8.13"
+    assert _fmt((3 * enc + dyn + enc + dyn) / 1e6, 2) == "27.79"
+    # 笔记里的 hidden_dims 必须和 bundle 里的一致
+    assert "`[2048, 1024, 512, 512]`" in note
+    assert "`[2048, 2048, 1024, 1024, 512, 512]`" in note
+
+    # 动画自己也要说明这只是隐层部分，和笔记那个 ≈ 42 M 不冲突
+    assert "**只含隐层之间的权重**" in js
+    assert "## 🎬 七幕动画：SONIC 全流程" in note
