@@ -164,6 +164,9 @@ flowchart TB
 
 ### 第一步：状态和动作设计
 
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：状态的两种目标表示，与「直接输出 PD 目标、不加残差」的动作空间</summary>
+
 **状态空间 $s_t$：**
 
 | 组成 | 内容 | 说明 |
@@ -184,6 +187,7 @@ flowchart TB
 $$\tau = k_p(a_t - q_{sim}) - k_d(\dot{q}_{sim})$$
 
 > ⚠️ 关键区别：DeepMimic 用的是参考动作 + 残差，PHC 直接输出绝对目标。这更难学但更通用。
+</details>
 
 ### 第二步：奖励设计
 
