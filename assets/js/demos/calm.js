@@ -973,9 +973,13 @@
     clipBox.appendChild(paint(svgEl('rect', { x: 430, y: 118, width: 310, height: 52, rx: 8, 'stroke-width': 1.2 }), C_SURFACE2, C_GOOD));
     clipBox.appendChild(svgText(448, 140, '动捕：走 / 蹲 / 踢 / 庆祝', 'demo-x-ink2', 11.5));
     clipBox.appendChild(paint(svgText(710, 140, 'E(m) → z', 'demo-x-mono', 12, 'end'), C_GOOD));
+    /* 「动捕经 E 编码，落进 latent 空间」这一箭：走圆右侧 y=190 的空当（在「走」
+       标签上方），带箭头停在圆边上。之前这条线拐进圆心竖着穿过整个 latent 圆、
+       又在圆外下方收尾，看着像在指「庆祝」那一簇，而不是指 latent 空间。 */
     clipBox.appendChild(paint(svgEl('path', {
-      d: 'M 585 170 L 585 198 L ' + CX + ' 198 L ' + CX + ' ' + (CY + R + 6),
-      fill: 'none', 'stroke-width': 1.6, 'stroke-dasharray': '5 4'
+      d: 'M 585 170 L 585 190 L ' + (CX + R - 4) + ' 190',
+      fill: 'none', 'stroke-width': 1.6, 'stroke-dasharray': '5 4',
+      'marker-end': K.arrowMarker(s, 'calm-x-arrow-clip', C_GOOD)
     }), null, C_GOOD));
     s.appendChild(clipBox);
 
