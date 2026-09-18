@@ -41,19 +41,19 @@
         "13_Physics-Based_Animation",
         "14_Human_Motion"
       ],
-      "last_module": "14_Human_Motion",
-      "last_index": 592,
-      "last_title": "MoVT: Video-Augmented Motion Tokenizer for Text-to-Motion Generation (arXiv:2609.14965)",
-      "next_module": "04_Loco-Manipulation_and_WBC",
-      "last_completed_date": "2026-09-17",
-      "note": "14_Human_Motion 模块补齐最新发表且无笔记的《MoVT: Video-Augmented Motion Tokenizer for Text-to-Motion Generation》(arXiv:2609.14965, v1 2026-09-14, ACM MM 2026 Oral)。核心是跨模态增强运动分词器：3D 残差 VQ-VAE 预训练→学前向 ℱ/后向 ℛ 双向映射+对齐损失让同一动作 3D/2D 序列共享 token 索引→用大规模动作视频 MotionX++ 训练增强 2D 码本 𝒞†₂d 吸收真实动作模式→经 ℛ 抬回 3D 微调(仅第一层码本来自 2D)→对齐的 3D/2D 双码本接进模态无关掩码 Transformer，使文本-视频对直接增强只用文本-动作对训练的生成器，不新增 3D 动捕即扩充码本表达力。HumanML3D(n=1024) FID 0.032/R-Prec@3 0.814/Diversity 9.960。华中科技大学×浙江大学。含整体框架 mermaid；官方源码 X-mOtion/MoVT 标注 Coming soon 暂未公开，故无源码时序图。",
-      "last_date": "2026-09-17",
+      "last_module": "04_Loco-Manipulation_and_WBC",
+      "last_index": 532,
+      "last_title": "ReActor: Reinforcement Learning for Physics-Aware Motion Retargeting (arXiv:2605.06593)",
+      "next_module": "05_Locomotion",
+      "last_completed_date": "2026-09-18",
+      "note": "04_Loco-Manipulation_and_WBC 模块补齐最新发表且无笔记的《ReActor: Reinforcement Learning for Physics-Aware Motion Retargeting》(arXiv:2605.06593, v1 2026-05-07, ACM TOG / SIGGRAPH 2026, Disney Research 瑞士)。把「人体动作重定向到机器人」重表述为物理仿真里的双层优化(bilevel)：上层解重定向参数、下层用 PPO 训跟踪策略，两者联合优化(对上层损失推近似梯度)，就地化解参考-形态冲突，产出无脚滑/无自穿模/动力学可执行的参考动作。用户只需稀疏语义刚体对应+根连杆对、免手调；参数化=全局缩放+标称变换+可学位置/朝向+每条动作竖直偏移；根部辅助力 wrench(惩罚+连续死区)兜住形态不可行的极端动作；RL 学初始化替代 RSI，DoF 少于源用 twist-swing。AMASS(PHC 过滤)全集训练，地面/自穿透·脚滑·脚部漂浮四类运动学指标与下游 RL 成功率/根位姿·关节 RMSE 均超 GMR、OmniRetarget；迁移四足 ANYmal D、真机 Lima、交互动画实时重定向(超实时)。Unitree G1(29DoF)/Lima(20DoF)/ANYmal D(12DoF)。含整体框架 mermaid；论文暂无公开代码，故无源码时序图。",
+      "last_date": "2026-09-18",
       "next_candidate": null,
-      "last_completed": "MoVT: Video-Augmented Motion Tokenizer for Text-to-Motion Generation (arXiv:2609.14965)"
+      "last_completed": "ReActor: Reinforcement Learning for Physics-Aware Motion Retargeting (arXiv:2605.06593)"
     },
-    "last_summary_index": 592,
-    "last_summary_date": "2026-09-17",
-    "last_summary_title": "MoVT: Video-Augmented Motion Tokenizer for Text-to-Motion Generation",
+    "last_summary_index": 532,
+    "last_summary_date": "2026-09-18",
+    "last_summary_title": "ReActor: Reinforcement Learning for Physics-Aware Motion Retargeting",
     "next_summary_index": null,
     "log": [
       {
@@ -1509,6 +1509,15 @@
         "folder": "papers/14_Human_Motion/MoVT__Video-Augmented_Motion_Tokenizer_for_Text-to-Motion_Generation",
         "module": "14_Human_Motion",
         "arxiv": "2609.14965",
+        "has_open_source": false
+      },
+      {
+        "date": "2026-09-18",
+        "index": 532,
+        "title": "ReActor: Reinforcement Learning for Physics-Aware Motion Retargeting",
+        "folder": "papers/04_Loco-Manipulation_and_WBC/ReActor__Reinforcement_Learning_for_Physics-Aware_Motion_Retargeting",
+        "module": "04_Loco-Manipulation_and_WBC",
+        "arxiv": "2605.06593",
         "has_open_source": false
       }
     ],
