@@ -34,6 +34,12 @@ demos: ["calm"]
 
 CALM 在 ASE 的基础上加了一层"方向控制"能力——训练一个高层策略学"朝哪个 latent 方向走"来完成指定任务，底层负责动作质量；两者组合起来，用一个简单的状态机就能编出复杂的组合动作，不用额外训练。
 
+> 🎮 **本文内嵌 1 段动画 + 3 个可交互演示**（不用装任何东西）：
+> 1. [五幕动画：CALM 全流程](#calm-explainer-anim) —— 约 76 秒串完「ASE 缺方向 → LLC 编 latent → HLC 方向奖励 → FSM 零训练组合 → 三阶段训练闭环」
+> 2. latent 实验台 —— CALM 的 $z = E(\text{动捕})$ 与 ASE 随机采 $z$ 并排对比，看「点名技能」为什么重要
+> 3. 方向奖励实验台 —— 拖 $r_{dir}=\cos(z_{target},z_t)$ 权重，看 HLC 怎么被关进一个锥里
+> 4. FSM 实验台 —— 跑一遍 HumanoidStrike 式状态机，注意换的只是 $z$ 的来源
+
 ---
 
 ## 📌 英文缩写速查
@@ -50,7 +56,18 @@ CALM 在 ASE 的基础上加了一层"方向控制"能力——训练一个高�
 
 ---
 
+## 🎬 五幕动画：CALM 全流程 {#calm-explainer-anim}
+
+<div class="paper-demo" data-demo="calm-explainer"><p class="demo-fallback">（本节含动画演示，需要启用 JavaScript）</p></div>
+
+> 📖 动画覆盖的三块——「CALM 要解决什么问题」「三层架构」与「具体实例」——**文字讲解默认折叠**，想看推导、公式和对照表时点开各节的折叠条即可，内容一字未删；流程图、类图、时序图、源码片段、论文超参表、面试题与附录不在折叠范围内。
+
+---
+
 ## ❓ CALM 要解决什么问题？
+
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：ASE 有技能 latent，但没有「方向」</summary>
 
 ASE 已经做到：把大量技能压进一个连续 latent 空间 $z$，高层策略只学"选哪个 $z$"。
 
@@ -63,22 +80,34 @@ ASE 已经做到：把大量技能压进一个连续 latent 空间 $z$，高层�
 这就是 CALM 要解决的：
 
 > **在 ASE 的 latent skill space 基础上，加入"方向控制"能力，让角色不仅能做某个技能，还能控制技能的执行方向。**
+</details>
 
 ### 问题一：ASE 没有方向感
+
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：latent 只编码「做什么」，不编码「朝哪做」</summary>
 
 ASE 的 latent 只编码"做什么技能"，不编码"朝哪个方向做"。
 
 你给 $z_1$ = 冲刺，$z_2$ = 下蹲——但这两个 latent 都没有"朝左走""朝右走"的信息。
+</details>
 
 ### 问题二：任务完成需要方向，但低层策略没有任务信息
+
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：追着蓝球跑 —— 低层知道怎么跑，不知道往哪跑</summary>
 
 比如任务目标是"追着蓝球跑"。低层策略知道怎么跑，但不知道往哪跑。
 
 传统做法是把目标信息塞进低层策略，但这样：
 - 每个新任务都得重训低层
 - 低层策略变得很复杂
+</details>
 
 ### 问题三：CALM 的核心洞察
+
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：方向不必写进 latent，而是在 latent 空间里选一个方向</summary>
 
 作者发现"方向"其实可以**不编码在 latent 里**，而是**在 latent 空间里选一个方向**。
 
@@ -88,14 +117,22 @@ ASE 的 latent 只编码"做什么技能"，不编码"朝哪个方向做"。
 - 高层策略专门学这个选择逻辑
 
 这样低层和高层各司其职，低层负责质量，高层负责方向。
+</details>
 
 ---
 
 ## 🔧 CALM 的三层架构
 
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：三阶段各解决一个问题</summary>
+
 CALM 分三个阶段，每阶段解决一个问题：
+</details>
 
 ### 第一层：Low-Level Controller（LLC）——动作质量
+
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：Encoder + 低层策略，latent 从动捕编出来</summary>
 
 **目标**：训练一个 encoder-decoder，latent 能编码动作风格。
 
@@ -109,10 +146,14 @@ CALM 分三个阶段，每阶段解决一个问题：
 > **但此时只有"技能"，没有"方向"。**
 
 「给一个 $z$ 就能生成对应技能」听起来和 ASE 一样，但**这个 $z$ 的来源完全不同**：ASE 是从球面上随机采，CALM 是让 encoder 去编一段真实动捕。下面这个演示把两者并排画出来——差别在于 CALM 的 latent 有名字，可以被「点名」：
+</details>
 
 <div class="paper-demo" data-demo="calm-encoder"><p class="demo-fallback">（本节含交互演示，需要启用 JavaScript）</p></div>
 
 ### 第二层：High-Level Controller（HLC）——方向控制
+
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：HLC 输出 latent，方向奖励 $r_{dir}=\cos(z_{target},z_t)$</summary>
 
 **目标**：训练一个高层策略，学会在 latent 空间里选方向来完成指定任务。
 
@@ -138,12 +179,17 @@ $$
 这样 HLC 学的是：**"我要朝这个方向完成任务，应该选哪个 latent"**。
 
 这一项为什么必要？把它的权重拖到 0 就知道了：HLC 会毫不犹豫地挑一个跑得最快的 latent，哪怕这一段要求的是蹲着走。cos 把它关进 $z_{target}$ 周围的一个锥里：
+</details>
 
 <div class="paper-demo" data-demo="calm-hlc"><p class="demo-fallback">（本节含交互演示，需要启用 JavaScript）</p></div>
 
 ### 第三层：推理时组合——FSM 调度
 
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：推理期用 FSM 组合 LLC 与 HLC，零训练</summary>
+
 推理时不需要再训练，只要用一个有限状态机组合 LLC 和 HLC：
+</details>
 
 <div class="mermaid">
 flowchart LR
@@ -153,12 +199,16 @@ flowchart LR
     A["状态：攻击"] --> LLC3["LLC 固定 z=攻击"]
 </div>
 
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：像游戏手柄 —— 摇杆管方向，按键管技能</summary>
+
 这就像视频游戏的控制：
 - 移动摇杆 → 方向控制
 - 按键 A → 攻击技能
 - 按键 B → 防御技能
 
 下面这个实验台把 `HumanoidStrikeFSM` 跑了一遍：拖时间轴或者直接按播放，注意右图里 **latent 是跳变的，但换的只是 $z$ 的来源**——三个状态用的是同一个 LLC，整段新增训练量为 0：
+</details>
 
 <div class="paper-demo" data-demo="calm-fsm"><p class="demo-fallback">（本节含交互演示，需要启用 JavaScript）</p></div>
 
@@ -181,9 +231,16 @@ flowchart TB
 
 ## 🚶 具体实例：CALM 如何让角色"追着目标踢剑"
 
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：蹲走向目标 → 踢 → 庆祝</summary>
+
 以 SIGGRAPH 演示里的场景为例："crouch-walk toward target → kick → celebrate"。
+</details>
 
 ### 阶段一：训练 LLC
+
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：任意 $z$ 都能生成对应技能，但不能控制方向</summary>
 
 <div class="mermaid">
 flowchart TB
@@ -193,8 +250,12 @@ flowchart TB
 </div>
 
 现在，给任意 $z$，LLC 都能生成对应技能的动作——但不能控制方向。
+</details>
 
 ### 阶段二：训练 HLC
+
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：任务 = 朝某个方向 crouch-walk</summary>
 
 **任务**：朝某个方向 crouch-walk。
 
@@ -204,8 +265,12 @@ flowchart LR
     HLC --> LLC["π_LLC(s, z_t)"]
     LLC --> R["移动奖励 + cos(z_target, z_t)"]
 </div>
+</details>
 
 ### 阶段三：FSM 组合
+
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：推理期手写状态机，不需要额外训练</summary>
 
 推理时，用户定义状态机：
 
@@ -217,6 +282,7 @@ flowchart TB
 </div>
 
 整个过程不需要额外训练，直接组合已有模型。
+</details>
 
 ---
 
