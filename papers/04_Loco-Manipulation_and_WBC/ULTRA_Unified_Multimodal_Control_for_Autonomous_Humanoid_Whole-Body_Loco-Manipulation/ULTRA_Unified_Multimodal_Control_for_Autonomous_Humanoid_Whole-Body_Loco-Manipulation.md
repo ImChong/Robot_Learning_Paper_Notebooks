@@ -242,16 +242,16 @@ $$\boldsymbol{o}_t = [\boldsymbol{o}_t^{\text{sim}},\ \boldsymbol{o}_t^{\text{re
 - $o^{\Delta}$：仿真状态 − 参考状态的残差（在 heading-aligned frame 下）
 
 #### 奖励函数（乘积形式，任何一项崩掉全部崩）
-$$r_{\text{track}} = r_p \cdot r_r \cdot r_{\text{obj}} \cdot r_{\text{int}} \cdot r_{\text{ct}} \cdot r_{\text{eng}}$$
+$$r _ {\text{track}} = r_p \cdot r_r \cdot r _ {\text{obj}} \cdot r _ {\text{int}} \cdot r _ {\text{ct}} \cdot r _ {\text{eng}}$$
 
 | 项 | 含义 | 权重（附录 Table B） |
 |----|------|---------------------|
 | $r_p$ | 末端执行器位置（只跟踪脚掌+手掌） | $k_p=10.0$ |
 | $r_r$ | 关键骨骼方向匹配 | $k_r=5.0$ |
-| $r_{\text{obj}}$ | 物体位姿/速度跟踪 | $k_{op}=5.0$, $k_{or}=0.5$ |
-| $r_{\text{int}}$ | 手掌-物体表面偏移（palm-to-surface） | $k_{\text{int}}=20.0$ |
-| $r_{\text{ct}}$ | 接触事件对齐（人类接触→G1对应关节） | $k_{\text{ct}}=5.0$ |
-| $r_{\text{eng}}$ | 关节力矩正则化 + 脚放置惩罚 | 见 Table C |
+| $r _ {\text{obj}}$ | 物体位姿/速度跟踪 | $k _ {op}=5.0$, $k _ {or}=0.5$ |
+| $r _ {\text{int}}$ | 手掌-物体表面偏移（palm-to-surface） | $k _ {\text{int}}=20.0$ |
+| $r _ {\text{ct}}$ | 接触事件对齐（人类接触→G1对应关节） | $k _ {\text{ct}}=5.0$ |
+| $r _ {\text{eng}}$ | 关节力矩正则化 + 脚放置惩罚 | 见 Table C |
 
 **设计哲学**：只精确锚定末端（手脚），中间关节自由——因为人机 embodiment 不同时全关节对齐往往不可行
 

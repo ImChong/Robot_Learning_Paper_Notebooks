@@ -116,7 +116,7 @@ Oracle 是一个**单一模式（全部观测，全部跟踪）下的强模仿�
 
 学生策略 $\pi^{\text{student}}$ 的目标观测被裁剪为：
 
-$$ s_t^{\text{g-student}} = M_{\text{sparsity}} \odot \left[ M_{\text{mode}} \odot s_t^{\text{g-upper}},\ M_{\text{mode}} \odot s_t^{\text{g-lower}} \right] $$
+$$ s_t^{\text{g-student}} = M _ {\text{sparsity}} \odot \left[ M _ {\text{mode}} \odot s_t^{\text{g-upper}},\ M _ {\text{mode}} \odot s_t^{\text{g-lower}} \right] $$
 
 - **Mode mask**：对上下半身**独立**地随机挑一种模式（位置 / 关节角 / 根部）；
 - **Sparsity mask**：在已选模式内再随机让一部分维度失活——例如"上身只跟左手"，"下身只跟躯干关节角"；

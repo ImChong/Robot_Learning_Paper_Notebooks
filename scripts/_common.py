@@ -143,6 +143,8 @@ def parse_frontmatter(content: str) -> dict:
 
 _INLINE_MATH_RE = re.compile(r"(?<!\$)\$(?!\$)(.+?)(?<!\$)\$(?!\$)", re.DOTALL)
 _DISPLAY_MATH_RE = re.compile(r"\$\$(.+?)\$\$", re.DOTALL)
+# Bare ^* inside inline math: kramdown GFM pairs * across adjacent $...$ spans.
+_MATH_SUPERSCRIPT_STAR_RE = re.compile(r"\^(?!\{)\*")
 
 
 def _escape_pipe_in_math_segment(tex: str) -> str:
@@ -194,6 +196,71 @@ def _escape_pipes_in_math_delimiters(text: str) -> str:
 
     text = _DISPLAY_MATH_RE.sub(_display_repl, text)
     return _INLINE_MATH_RE.sub(_inline_repl, text)
+
+
+def _normalize_math_segment_emphasis(tex: str) -> str:
+    """Keep kramdown GFM from turning LaTeX sub/sup markers into <em> tags.
+
+    With ``math_engine: null`` KaTeX runs client-side, but kramdown still
+    parses ``*`` / ``_`` inside ``$...$``. Adjacent inline spans on one line
+    can cross-pair (e.g. two ``\\phi^*`` blocks, or repeated ``_{\\mathbf p}``).
+    """
+    if "*" not in tex and "_{" not in tex:
+        return tex
+
+    normalized = _MATH_SUPERSCRIPT_STAR_RE.sub(r"^{\\ast}", tex)
+    if "_{" in normalized:
+        normalized = normalized.replace("_{", " _ {")
+    return normalized
+
+
+def _normalize_kramdown_math_emphasis_in_text(text: str) -> str:
+    def _inline_repl(match: re.Match[str]) -> str:
+        inner = match.group(1)
+        escaped = _normalize_math_segment_emphasis(inner)
+        if escaped == inner:
+            return match.group(0)
+        return f"${escaped}$"
+
+    def _display_repl(match: re.Match[str]) -> str:
+        inner = match.group(1)
+        escaped = _normalize_math_segment_emphasis(inner)
+        if escaped == inner:
+            return match.group(0)
+        return f"$${escaped}$$"
+
+    text = _DISPLAY_MATH_RE.sub(_display_repl, text)
+    return _INLINE_MATH_RE.sub(_inline_repl, text)
+
+
+def normalize_kramdown_math_emphasis(content: str) -> tuple[str, bool]:
+    """Escape ``^*`` / ``_{`` patterns inside math so kramdown won't emit ``<em>``."""
+    if "$" not in content or ("*" not in content and "_{" not in content):
+        return content, False
+
+    lines = content.split("\n")
+    in_fence = False
+    changed = False
+    new_lines: list[str] = []
+
+    for line in lines:
+        stripped = line.strip()
+        if stripped.startswith("```"):
+            in_fence = not in_fence
+            new_lines.append(line)
+            continue
+        if in_fence or "$" not in line:
+            new_lines.append(line)
+            continue
+
+        escaped = _normalize_kramdown_math_emphasis_in_text(line)
+        if escaped != line:
+            changed = True
+        new_lines.append(escaped)
+
+    if not changed:
+        return content, False
+    return "\n".join(new_lines), True
 
 
 def normalize_kramdown_math_pipes(content: str) -> tuple[str, bool]:

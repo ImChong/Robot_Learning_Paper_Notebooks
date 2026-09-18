@@ -146,7 +146,7 @@ $$
 > 💡 **一句话直觉**：
 > PPO 在学“做什么动作更赚”；LCP 在学“别一惊一乍地做”。
 
-$\lambda_{gp}$ 不是越大越好。下面这个演示画出 $J(K) - \lambda_{gp}K^2$ 这条总目标曲线，峰值落在哪里就是训出来的敏感度——顺便看看压过头时任务表现要付多少：
+$\lambda _ {gp}$ 不是越大越好。下面这个演示画出 $J(K) - \lambda _ {gp}K^2$ 这条总目标曲线，峰值落在哪里就是训出来的敏感度——顺便看看压过头时任务表现要付多少：
 
 <div class="paper-demo" data-demo="lcp-gp"><p class="demo-fallback">（本节含交互演示，需要启用 JavaScript）</p></div>
 
@@ -348,7 +348,7 @@ LCP 的优点是：
 ### 4. 它不神化自己，这反而更可信
 
 论文没有吹成“万能平滑神器”。它很老实：
-- GP 系数 $\lambda_{gp}$ 还是要调
+- GP 系数 $\lambda _ {gp}$ 还是要调
 - 太小，没效果
 - 太大，动作会过于迟钝、任务回报下降
 
@@ -428,7 +428,7 @@ $$
 
 其中：
 - $J(\theta)$：原始 RL 目标（文中用 PPO 优化）
-- $\lambda_{gp}$：gradient penalty 权重
+- $\lambda _ {gp}$：gradient penalty 权重
 - $\nabla_o \pi_\theta(o)$：policy 对 observation 的梯度
 
 ---
@@ -669,7 +669,7 @@ lcp_weight: 0.002   # λ_gp = 0.002，核心超参——太大动作太钝，太
 
 LCP 并不修改 PPO 的优化框架，只是在 actor loss 后面追加一项：
 
-$$\mathcal{L}_{total} = \underbrace{-L^{CLIP}(\theta)}_{\text{标准 PPO 策略损失}} + \underbrace{\lambda_{gp} \cdot \mathbb{E}\left[\|\nabla_o \log \pi_\theta(a \mid o)\|^2\right]}_{\text{LCP 平滑正则项}}$$
+$$\mathcal{L} _ {total} = \underbrace{-L^{CLIP}(\theta)} _ {\text{标准 PPO 策略损失}} + \underbrace{\lambda _ {gp} \cdot \mathbb{E}\left[\|\nabla_o \log \pi_\theta(a \mid o)\|^2\right]} _ {\text{LCP 平滑正则项}}$$
 
 代码里对应：
 ```python

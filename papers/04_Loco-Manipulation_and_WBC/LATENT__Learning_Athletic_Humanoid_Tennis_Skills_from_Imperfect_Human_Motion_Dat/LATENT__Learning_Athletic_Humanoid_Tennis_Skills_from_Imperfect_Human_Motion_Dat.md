@@ -96,7 +96,7 @@ LATENT 把训练拆成 **三个阶段**：先学"怎么动"，再学"怎么安�
 
 ### Stage 1：动作跟踪器预训练（Motion Tracker Pre-training）
 
-这一阶段的目标：在 MuJoCo 里训练一个策略 $\pi_{\text{track}}$，让它能跟踪 **"不完美的"** 人类网球动作碎片。
+这一阶段的目标：在 MuJoCo 里训练一个策略 $\pi _ {\text{track}}$，让它能跟踪 **"不完美的"** 人类网球动作碎片。
 
 数据侧：
 - **5 位业余球员**在 **3 × 5 m** 的小 MoCap 空间里做基础动作
@@ -130,7 +130,7 @@ LATENT 把训练拆成 **三个阶段**：先学"怎么动"，再学"怎么安�
 
 ### Stage 3：高层策略 + Latent Action Barrier（High-Level Policy with LAB）
 
-高层策略 $\pi_{\text{hi}}(z, \delta z \mid s, \text{ball})$ 接受机器人状态 + 球的状态，输出两样东西：
+高层策略 $\pi _ {\text{hi}}(z, \delta z \mid s, \text{ball})$ 接受机器人状态 + 球的状态，输出两样东西：
 
 1. latent 动作 $z$（选哪个原语、怎么组合）
 2. 残差 $\delta z$（对原语做局部修正）

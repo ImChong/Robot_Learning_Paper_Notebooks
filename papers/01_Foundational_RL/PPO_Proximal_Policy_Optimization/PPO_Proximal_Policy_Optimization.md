@@ -99,7 +99,7 @@ PPO 的目标就是：**找到一个简单又有效的方法，让策略更新�
 
 每次更新策略后，我们想知道"新策略和旧策略有多大差别"。用一个简单的比值来衡量：
 
-$$r_t(\theta) = \frac{\pi_\theta(a_t \mid s_t)}{\pi_{\theta_{old}}(a_t \mid s_t)}$$
+$$r_t(\theta) = \frac{\pi_\theta(a_t \mid s_t)}{\pi _ {\theta _ {old}}(a_t \mid s_t)}$$
 
 - $r_t = 1$：新旧策略完全一样，没有变化
 - $r_t = 1.5$：新策略选择这个动作的概率比旧策略高了 50%
@@ -150,7 +150,7 @@ $\epsilon$ 通常取 0.2，意味着概率比被限制在 $[0.8, 1.2]$ 之间。
 flowchart TB
     A["① 收集经验<br/>N 个并行环境各跑 T 步（共 $$N \times T$$ 个样本）"] --> B["② 计算优势<br/>用 GAE 得到每个 $$\hat{A}_t$$"]
     B --> C["③ 多轮更新<br/>同一批数据 K 个 epoch（Clip 防止过度更新）"]
-    C --> D["④ 更新旧策略<br/>$$\pi_{\theta_{old}} \leftarrow \pi_\theta$$"]
+    C --> D["④ 更新旧策略<br/>$$\pi _ {\theta _ {old}} \leftarrow \pi_\theta$$"]
     D --> A
 </div>
 
@@ -275,12 +275,12 @@ $$\hat{A}(s,a) = Q(s,a) - V(s)$$
 
 | 估法 | 公式 | 偏差 | 方差 |
 |------|------|------|------|
-| **一步 TD** | $\delta_t = r_t + \gamma V(s_{t+1}) - V(s_t)$ | 大（完全信任 $V$） | 小（只含一步随机性） |
+| **一步 TD** | $\delta_t = r_t + \gamma V(s _ {t+1}) - V(s_t)$ | 大（完全信任 $V$） | 小（只含一步随机性） |
 | **蒙特卡洛** | $G_t - V(s_t)$（真实整条回报） | 小（不依赖 $V$ 准） | 大（含整条轨迹随机性） |
 
 GAE 用 $\lambda$ 在两端之间插值，把未来若干步的 $\delta$ 按 $(\gamma\lambda)^l$ 加权累加：
 
-$$\hat{A}_t = \sum_{l=0}^{\infty}(\gamma\lambda)^l\,\delta_{t+l} \quad\Longleftrightarrow\quad \hat{A}_t = \delta_t + \gamma\lambda\,\hat{A}_{t+1}$$
+$$\hat{A}_t = \sum _ {l=0}^{\infty}(\gamma\lambda)^l\,\delta _ {t+l} \quad\Longleftrightarrow\quad \hat{A}_t = \delta_t + \gamma\lambda\,\hat{A} _ {t+1}$$
 
 - $\lambda=0$ → 退化成一步 TD（短视、低方差）
 - $\lambda=1$ → 退化成蒙特卡洛（远视、高方差）
@@ -291,7 +291,7 @@ $$\hat{A}_t = \sum_{l=0}^{\infty}(\gamma\lambda)^l\,\delta_{t+l} \quad\Longleftr
 <div class="mermaid">
 flowchart TB
     V["① $$V(s)$$ 估计"] --> TD["② $$\delta_t = r + \gamma V(s') - V(s)$$<br/>done 时不加 V(s')"]
-    TD --> GAE["③ 逆序 GAE：$$\hat{A}_t = \delta_t + \gamma\lambda\hat{A}_{t+1}$$<br/>done 边界截断"]
+    TD --> GAE["③ 逆序 GAE：$$\hat{A}_t = \delta_t + \gamma\lambda\hat{A} _ {t+1}$$<br/>done 边界截断"]
 </div>
 
 <h4 id="一个具体例子走-3-步后摔倒">一个具体例子：走 3 步后摔倒</h4>
@@ -306,7 +306,7 @@ flowchart TB
 | 3 | 大晃 | $-2$ | 40 |
 | 4 | 摔倒，done | $-10$ | 20 |
 
-**① 算每步 TD 误差** $\delta_t = r_t + \gamma V(s_{t+1}) - V(s_t)$（$t=4$ 是 done，不 bootstrap）：
+**① 算每步 TD 误差** $\delta_t = r_t + \gamma V(s _ {t+1}) - V(s_t)$（$t=4$ 是 done，不 bootstrap）：
 
 ```
 δ₀ = 1  + 0.99×50 - 50 = +0.5
@@ -316,7 +316,7 @@ flowchart TB
 δ₄ = -10 + 0(done) - 20 = -30.0    # done，不加 γV(s₅)
 ```
 
-**② 逆序递推 GAE** $\hat{A}\_t = \delta_t + 0.9405\,\hat{A}\_{t+1}$（从最后一步往前推，即源码里 `for i in reversed(...)`）：
+**② 逆序递推 GAE** $\hat{A}\_t = \delta_t + 0.9405\,\hat{A}\ _ {t+1}$（从最后一步往前推，即源码里 `for i in reversed(...)`）：
 
 ```
 Â₄ = -30.0
@@ -368,9 +368,9 @@ xychart-beta
 
 <h3 id="第-3-步ppo-裁剪更新核心">第 3 步：PPO 裁剪更新（核心！）</h3>
 
-保存旧策略 $\pi_{\theta_{old}} \leftarrow \pi_\theta$，然后对同一批 2048 个样本做 **10 个 epoch** 的更新。这一步只盯三件事：
+保存旧策略 $\pi _ {\theta _ {old}} \leftarrow \pi_\theta$，然后对同一批 2048 个样本做 **10 个 epoch** 的更新。这一步只盯三件事：
 
-1. **概率比** $r_t = \pi_\theta(a_t \mid s_t)\,/\,\pi_{\theta_{old}}(a_t \mid s_t)$：$r=1$ 表示新策略和旧策略一样；$r>1$ 表示更爱选这个动作；$r<1$ 表示更少选。
+1. **概率比** $r_t = \pi_\theta(a_t \mid s_t)\,/\,\pi _ {\theta _ {old}}(a_t \mid s_t)$：$r=1$ 表示新策略和旧策略一样；$r>1$ 表示更爱选这个动作；$r<1$ 表示更少选。
 2. **安全带** $[0.8,\ 1.2]$（$\epsilon=0.2$）：$r$ 最好待在这里面；冲出去就会被 `clip` 卡住。
 3. **取 $\min$**：在「未裁剪分数 $r\cdot\hat{A}$」和「裁剪分数 $\mathrm{clip}(r)\cdot\hat{A}$」里，选**更保守**的那个。一旦选中的是裁剪分，而 `clip(r)` 已经顶在边界上（$0.8$ 或 $1.2$），它对 $\theta$ 的导数就是 $0$——这个样本**本轮不再推动参数**，称作「冻结」。
 
@@ -393,7 +393,7 @@ flowchart TB
 
 <h4 id="案例-a好动作clipr12-也会冻结">案例 A：好动作——<code>clip(r)=1.2</code> 也会冻结</h4>
 
-机器人在 $t=15$ 选了一次「抬腿迈步」，$\hat{A}_{15}=+2.3$（比平均好）。
+机器人在 $t=15$ 选了一次「抬腿迈步」，$\hat{A} _ {15}=+2.3$（比平均好）。
 
 | 量 | 数值 | 人话 |
 |----|------|------|
@@ -411,7 +411,7 @@ flowchart TB
 
 <h4 id="案例-b坏动作clipr08-冻结">案例 B：坏动作——<code>clip(r)=0.8</code> 冻结</h4>
 
-$t=42$ 选了一次「乱甩手臂导致要倒」，$\hat{A}_{42}=-3.1$。新策略已经不太选它了：$r=0.6$（低于 $0.8$）。
+$t=42$ 选了一次「乱甩手臂导致要倒」，$\hat{A} _ {42}=-3.1$。新策略已经不太选它了：$r=0.6$（低于 $0.8$）。
 
 - 未裁剪：$0.6 \times (-3.1) = -1.86$
 - 裁剪后：$\mathrm{clip}(0.6)=0.8$，再 $\times(-3.1)=-2.48$
@@ -528,8 +528,8 @@ flowchart TB
     I["初始化 $$\pi_\theta,\, V_\phi$$（随机）<br/>创建 N=32 个并行环境"]
     L["32 个环境并行收集，各 64 步<br/>→ 2048 个样本"]
     G["按环境/轨迹独立计算 GAE 优势 $$\hat{A}_t$$"]
-    S["保存 $$\pi_{\theta_{old}} \leftarrow \pi_\theta$$"]
-    R["概率比 $$r_t(\theta)=\frac{\pi_\theta(a_t \mid s_t)}{\pi_{\theta_{old}}(a_t \mid s_t)}$$"]
+    S["保存 $$\pi _ {\theta _ {old}} \leftarrow \pi_\theta$$"]
+    R["概率比 $$r_t(\theta)=\frac{\pi_\theta(a_t \mid s_t)}{\pi _ {\theta _ {old}}(a_t \mid s_t)}$$"]
     P["PPO 更新（10 epoch）<br/>$$L^{CLIP}=\min(r_t\hat{A}_t,\,\mathrm{clip}(r_t,0.8,1.2)\hat{A}_t)$$"]
     U["更新 θ（策略）与 φ（价值 MSE）"]
     Q{回报 > 目标?}
@@ -878,7 +878,7 @@ action_entropy_weight: 0.0  # 熵正则（0 表示不用）
 <h3 id="q5-ppo-中的-loss-由哪些部分组成">Q5: PPO 中的 loss 由哪些部分组成？</h3>
 **A**: 两部分（有时三部分）：
 - **策略损失**：$-L^{CLIP}$（加负号因为 optimizer 做的是 minimize）
-- **价值损失**：$\frac{1}{2}\|V(s) - R_{target}\|^2$（让价值网络预测更准）
+- **价值损失**：$\frac{1}{2}\|V(s) - R _ {target}\|^2$（让价值网络预测更准）
 - **（可选）熵正则**：$-c \cdot H(\pi)$（鼓励探索，防止策略过早收敛）
 </details>
 
@@ -903,7 +903,7 @@ action_entropy_weight: 0.0  # 熵正则（0 表示不用）
 
 具体到 PPO：
 
-$$L^{CPI}(\theta) = \hat{\mathbb{E}}_t \left[ \frac{\pi_\theta(a_t \mid s_t)}{\pi_{\theta_{old}}(a_t \mid s_t)} \hat{A}_t \right] = \hat{\mathbb{E}}_t \left[ r_t(\theta) \hat{A}_t \right]$$
+$$L^{CPI}(\theta) = \hat{\mathbb{E}}_t \left[ \frac{\pi_\theta(a_t \mid s_t)}{\pi _ {\theta _ {old}}(a_t \mid s_t)} \hat{A}_t \right] = \hat{\mathbb{E}}_t \left[ r_t(\theta) \hat{A}_t \right]$$
 
 - 用旧策略采的数据，通过概率比来估算"如果换成新策略，回报会变好还是变差"，不用真的重新采样
 - PPO 的 clip 就是限制你每次最多加/减多少盐——防止估算偏差太大
@@ -921,7 +921,7 @@ $$L^{CPI}(\theta) = \hat{\mathbb{E}}_t \left[ \frac{\pi_\theta(a_t \mid s_t)}{\p
 
 这就是**重要性采样**（Importance Sampling）：
 
-$$r_t(\theta) = \frac{\pi_\theta(a_t \mid s_t)}{\pi_{\theta_{old}}(a_t \mid s_t)}$$
+$$r_t(\theta) = \frac{\pi_\theta(a_t \mid s_t)}{\pi _ {\theta _ {old}}(a_t \mid s_t)}$$
 
 - **$r_t = 1.5$**：新策略选这个动作的概率比旧策略高了 50%
 - **$r_t = 0.5$**：新策略选这个动作的概率减半了
@@ -945,7 +945,7 @@ $r_t(\theta) \times \hat{A}_t$ 就在告诉你：**新策略整体回报是变�
 
 <h3 id="b-loss-函数完整拆解">B. Loss 函数完整拆解</h3>
 
-$$\mathcal{L}_{total}(\theta, \phi) = \underbrace{-\mathbb{E}\left[ L^{CLIP}(\theta) \right]}_{\text{策略损失}} + \underbrace{\frac{1}{2} \mathbb{E}\left[ \left( V_\phi(s) - R_t \right)^2 \right]}_{\text{价值损失}}$$
+$$\mathcal{L} _ {total}(\theta, \phi) = \underbrace{-\mathbb{E}\left[ L^{CLIP}(\theta) \right]} _ {\text{策略损失}} + \underbrace{\frac{1}{2} \mathbb{E}\left[ \left( V_\phi(s) - R_t \right)^2 \right]} _ {\text{价值损失}}$$
 
 **为什么策略损失要加负号？**
 - PPO 的目标是**最大化** $L^{CLIP}$（让好动作概率更大）

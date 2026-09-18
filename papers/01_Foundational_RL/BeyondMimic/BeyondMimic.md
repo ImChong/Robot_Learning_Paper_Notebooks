@@ -98,16 +98,16 @@ flowchart LR
 
 #### 1.1 锚定跟踪目标（Anchor Tracking）
 
-真机不可避免全局漂移。若 rigid 跟踪世界系绝对位姿，策略会过度纠偏、动作僵硬。BeyondMimic 选定参考体 $b_{\text{ref}}$（通常为躯干/root），将各刚体位姿**相对锚定**到当前机器人姿态：
+真机不可避免全局漂移。若 rigid 跟踪世界系绝对位姿，策略会过度纠偏、动作僵硬。BeyondMimic 选定参考体 $b _ {\text{ref}}$（通常为躯干/root），将各刚体位姿**相对锚定**到当前机器人姿态：
 
-$$\hat{T}_b = T_{\text{anchor}}\, T_{b_{\text{ref}}}^{-1}\, T_{b,\text{motion}}$$
+$$\hat{T}_b = T _ {\text{anchor}}\, T _ {b _ {\text{ref}}}^{-1}\, T _ {b,\text{motion}}$$
 
-其中 $T_{\text{anchor}}$ 保留机器人当前 $xy$ 位置与参考高度、仅对齐 yaw：
+其中 $T _ {\text{anchor}}$ 保留机器人当前 $xy$ 位置与参考高度、仅对齐 yaw：
 
-- $p_{\text{anchor}} = [p_{b_{\text{ref}},x},\; p_{b_{\text{ref}},y},\; p_{b_{\text{ref}},z,\text{motion}}]$
-- $R_{\text{anchor}} = R_z\!\left(\mathrm{yaw}(R_{b_{\text{ref}}} R_{b_{\text{ref}},\text{motion}}^\top)\right)$
+- $p _ {\text{anchor}} = [p _ {b _ {\text{ref}},x},\; p _ {b _ {\text{ref}},y},\; p _ {b _ {\text{ref}},z,\text{motion}}]$
+- $R _ {\text{anchor}} = R_z\!\left(\mathrm{yaw}(R _ {b _ {\text{ref}}} R _ {b _ {\text{ref}},\text{motion}}^\top)\right)$
 
-各体 twist $\hat{\mathcal{V}}_b = \mathcal{V}_{b,\text{motion}}$ 不变。只跟踪子集 $\mathcal{B}_{\text{target}}$ 上的刚体，避免过密连杆带来的冗余。
+各体 twist $\hat{\mathcal{V}}_b = \mathcal{V} _ {b,\text{motion}}$ 不变。只跟踪子集 $\mathcal{B} _ {\text{target}}$ 上的刚体，避免过密连杆带来的冗余。
 
 > 🔑 **直觉**：保留动作风格与相对协调，允许水平面漂移；锚体位姿误差仍提供平衡与漂移修正信号。
 
@@ -123,13 +123,13 @@ $$\hat{T}_b = T_{\text{anchor}}\, T_{b_{\text{ref}}}^{-1}\, T_{b,\text{motion}}$
 
 | 分量 | 符号 | 维度/含义 | 作用 |
 |------|------|-----------|------|
-| 动作相位 | $\mathbf{c} = [\mathbf{q}_{\text{joint,motion}}, \mathbf{v}_{\text{joint,motion}}]$ | 参考关节位姿/速度 | 仅作时间相位，**不**直接关节跟踪 |
-| 锚定误差 | $\xi_{b_{\text{ref}}} \in \mathbb{R}^9$ | 位置误差 3 + 旋转误差矩阵前两列 6 | 平衡、全局朝向与漂移修正 |
-| 本体感知 | ${}^{b_{\text{root}}}\mathcal{V}_{b_{\text{root}}}, \mathbf{q}_{\text{joint}}, \mathbf{v}_{\text{joint}}, \mathbf{a}_{\text{last}}$ | 根 twist、关节状态、上一步动作 | 运动无关反馈 |
+| 动作相位 | $\mathbf{c} = [\mathbf{q} _ {\text{joint,motion}}, \mathbf{v} _ {\text{joint,motion}}]$ | 参考关节位姿/速度 | 仅作时间相位，**不**直接关节跟踪 |
+| 锚定误差 | $\xi _ {b _ {\text{ref}}} \in \mathbb{R}^9$ | 位置误差 3 + 旋转误差矩阵前两列 6 | 平衡、全局朝向与漂移修正 |
+| 本体感知 | ${}^{b _ {\text{root}}}\mathcal{V} _ {b _ {\text{root}}}, \mathbf{q} _ {\text{joint}}, \mathbf{v} _ {\text{joint}}, \mathbf{a} _ {\text{last}}$ | 根 twist、关节状态、上一步动作 | 运动无关反馈 |
 
-$$\mathbf{o} = [\mathbf{c},\; \xi_{b_{\text{ref}}},\; {}^{b_{\text{root}}}\mathcal{V}_{b_{\text{root}}},\; \mathbf{q}_{\text{joint}},\; \mathbf{v}_{\text{joint}},\; \mathbf{a}_{\text{last}}]$$
+$$\mathbf{o} = [\mathbf{c},\; \xi _ {b _ {\text{ref}}},\; {}^{b _ {\text{root}}}\mathcal{V} _ {b _ {\text{root}}},\; \mathbf{q} _ {\text{joint}},\; \mathbf{v} _ {\text{joint}},\; \mathbf{a} _ {\text{last}}]$$
 
-Critic 使用**非对称 actor-critic**：在 policy 观测之外额外输入各体相对参考体的位姿 $T_{b_{\text{ref}}}^{-1} T_{b,\text{motion}}$，便于在笛卡尔空间直接估计跟踪误差。
+Critic 使用**非对称 actor-critic**：在 policy 观测之外额外输入各体相对参考体的位姿 $T _ {b _ {\text{ref}}}^{-1} T _ {b,\text{motion}}$，便于在笛卡尔空间直接估计跟踪误差。
 
 > 若状态估计不可靠，可省略线速度相关的锚定位置误差与根线性 twist。
 
@@ -137,53 +137,53 @@ Critic 使用**非对称 actor-critic**：在 policy 观测之外额外输入各
 
 动画工作常用高 $k_p$ 近似运动学跟踪；真机上会放大噪声、损失碰撞柔顺性。BeyondMimic 按 Raibert 启发式设阻抗：
 
-$$k_{p,j} = I_j \omega_n^2, \quad k_{d,j} = 2 I_j \zeta \omega_n$$
+$$k _ {p,j} = I_j \omega_n^2, \quad k _ {d,j} = 2 I_j \zeta \omega_n$$
 
-- 反射惯量 $I_j = k_{g,j}^2 I_{\text{motor},j}$
+- 反射惯量 $I_j = k _ {g,j}^2 I _ {\text{motor},j}$
 - 自然频率 $\omega_n = 10\,\text{Hz}$（偏低，促柔顺）
 - 阻尼比 $\zeta = 2$（过阻尼，补偿惯量低估）
 
 动作是**归一化关节位置设定点**，而非力矩直接输出：
 
-$$\mathbf{q}_{j,t} = \bar{\mathbf{q}}_j + \alpha_j \mathbf{a}_{j,t}, \quad \alpha_j = 0.25 \frac{\tau_{j,\max}}{k_{p,j}}$$
+$$\mathbf{q} _ {j,t} = \bar{\mathbf{q}}_j + \alpha_j \mathbf{a} _ {j,t}, \quad \alpha_j = 0.25 \frac{\tau _ {j,\max}}{k _ {p,j}}$$
 
-低增益下 $\mathbf{q}_{j,t}$ 是生成力矩的中间变量，**故意不**按关节限位 clip。
+低增益下 $\mathbf{q} _ {j,t}$ 是生成力矩的中间变量，**故意不**按关节限位 clip。
 
 #### 1.4 奖励：一项任务 + 三项正则
 
-对 $\mathcal{B}_{\text{target}}$ 上各体计算位姿/速度误差，再对全体取均方：
+对 $\mathcal{B} _ {\text{target}}$ 上各体计算位姿/速度误差，再对全体取均方：
 
-$$\bar{e}_\chi = \frac{1}{\|\mathcal{B}_{\text{target}}\|} \sum_{b} \|\mathbf{e}_{\chi,b}\|^2, \quad \chi \in \{p, R, v, w\}$$
+$$\bar{e}_\chi = \frac{1}{\|\mathcal{B} _ {\text{target}}\|} \sum _ {b} \|\mathbf{e} _ {\chi,b}\|^2, \quad \chi \in \{p, R, v, w\}$$
 
 每项用高斯型指数奖励：
 
 $$r(\bar{e}_\chi, \sigma_\chi) = \exp\!\left(-\frac{\bar{e}_\chi}{\sigma_\chi^2}\right)$$
 
-$$r_{\text{tracking}} = \sum_{\chi \in \{p,R,v,w\}} r(\bar{e}_\chi, \sigma_\chi)$$
+$$r _ {\text{tracking}} = \sum _ {\chi \in \{p,R,v,w\}} r(\bar{e}_\chi, \sigma_\chi)$$
 
 仅加三个对 sim-to-real 关键的惩罚：
 
-$$r = r_{\text{tracking}} - \lambda_l r_{\text{limit}} - \lambda_s r_{\text{smooth}} - \lambda_c r_{\text{contact}}$$
+$$r = r _ {\text{tracking}} - \lambda_l r _ {\text{limit}} - \lambda_s r _ {\text{smooth}} - \lambda_c r _ {\text{contact}}$$
 
 | 惩罚项 | 含义 |
 |--------|------|
-| $r_{\text{limit}}$ | 软关节限位越界 |
-| $r_{\text{smooth}}$ | 动作变化率（抑制抖动） |
-| $r_{\text{contact}}$ | 末端自碰撞接触力超阈值计数 |
+| $r _ {\text{limit}}$ | 软关节限位越界 |
+| $r _ {\text{smooth}}$ | 动作变化率（抑制抖动） |
+| $r _ {\text{contact}}$ | 末端自碰撞接触力超阈值计数 |
 
-可选：对 $b_{\text{ref}}$ 再加全局位置/朝向跟踪奖励。
+可选：对 $b _ {\text{ref}}$ 再加全局位置/朝向跟踪奖励。
 
 > 对比 DeepMimic/PHC：没有力矩扰动、接触力大惩罚、滑移惩罚等大量启发式——论文认为**原则性建模 + 系统实现**（延迟、校准）比堆 DR 更重要。
 
 #### 1.5 终止、重置与自适应采样
 
-**终止**：(1) $b_{\text{ref}}$ 高度或 pitch/roll 误差超阈；(2) 任末端执行器高度偏离参考过多。
+**终止**：(1) $b _ {\text{ref}}$ 高度或 pitch/roll 误差超阈；(2) 任末端执行器高度偏离参考过多。
 
 **重置**：从参考轨迹自适应采样起始相位 + 根位姿/速度/关节扰动。
 
 长参考（数分钟、多技能串联）若均匀采样起始点，简单片段占主导。BeyondMimic 将轨迹按 **1 秒** 分箱，按失败率加权采样：
 
-$$p_s = \frac{\sum_{\tau=0}^{K-1} \gamma^\tau \bar{r}_{s+\tau}}{\sum_j \sum_\tau \gamma^\tau \bar{r}_{j+\tau}}$$
+$$p_s = \frac{\sum _ {\tau=0}^{K-1} \gamma^\tau \bar{r} _ {s+\tau}}{\sum_j \sum_\tau \gamma^\tau \bar{r} _ {j+\tau}}$$
 
 再与均匀分布混合 $p_s' = \lambda \frac{1}{S} + (1-\lambda) p_s$，防止灾难性遗忘。非因果指数核 $\gamma^\tau$ 强调失败前邻近时段。
 
@@ -220,9 +220,9 @@ $\lambda$ 和 $\gamma$ 这两个数具体在干什么？下面这个实验台把
 
 预测未来轨迹（预测控制式）：
 
-$$\bm{\tau}_t = [\bm{a}_t,\; \bm{s}_{t+1},\; \ldots,\; \bm{s}_{t+H},\; \bm{a}_{t+H}]$$
+$$\bm{\tau}_t = [\bm{a}_t,\; \bm{s} _ {t+1},\; \ldots,\; \bm{s} _ {t+H},\; \bm{a} _ {t+H}]$$
 
-条件于观测历史 $\bm{O}_t = [\bm{s}_{t-N}, \bm{a}_{t-N}, \ldots, \bm{s}_t]$。
+条件于观测历史 $\bm{O}_t = [\bm{s} _ {t-N}, \bm{a} _ {t-N}, \ldots, \bm{s}_t]$。
 
 | 超参 | 取值 | 说明 |
 |------|------|------|
@@ -233,9 +233,9 @@ $$\bm{\tau}_t = [\bm{a}_t,\; \bm{s}_{t+1},\; \ldots,\; \bm{s}_{t+H},\; \bm{a}_{t
 | 网络 | Transformer decoder | 6 层、4 头、512 维嵌入，**19.95M** 参数 |
 | 状态/动作噪声 | 独立 schedule | $\bm{k} = (\bm{k}_s, \bm{k}_a)$ |
 
-训练目标：标准 DDPM，网络 $x_{0,\theta}$ 预测干净轨迹，MSE 损失：
+训练目标：标准 DDPM，网络 $x _ {0,\theta}$ 预测干净轨迹，MSE 损失：
 
-$$\mathcal{L} = \text{MSE}\big(x_{0,\theta}(\bm{\tau}_t^{\bm{k}}, \bm{O}_t, \bm{k}),\; \bm{\tau}_t\big)$$
+$$\mathcal{L} = \text{MSE}\big(x _ {0,\theta}(\bm{\tau}_t^{\bm{k}}, \bm{O}_t, \bm{k}),\; \bm{\tau}_t\big)$$
 
 蒸馏数据：按 PDP / Diffuse-CLoC 流程 rollout 专家策略采集；相对跟踪阶段**额外加入动作延迟 DR**——扩散推理本身有观测→动作延迟，训练需对齐。
 
@@ -256,23 +256,23 @@ $$\mathcal{L} = \text{MSE}\big(x_{0,\theta}(\bm{\tau}_t^{\bm{k}}, \bm{O}_t, \bm{
 
 由 Bayes 分解条件 score：
 
-$$\nabla_{\bm{\tau}} \log p(\bm{\tau} \mid \bm{\tau}^*) = \nabla_{\bm{\tau}} \log p(\bm{\tau}) + \nabla_{\bm{\tau}} \log p(\bm{\tau}^* \mid \bm{\tau})$$
+$$\nabla _ {\bm{\tau}} \log p(\bm{\tau} \mid \bm{\tau}^{\ast}) = \nabla _ {\bm{\tau}} \log p(\bm{\tau}) + \nabla _ {\bm{\tau}} \log p(\bm{\tau}^{\ast} \mid \bm{\tau})$$
 
-设 $p(\bm{\tau}^* \mid \bm{\tau}) \propto \exp(-G^c_{\bm{\tau}}(\bm{\tau}))$，引导项为 $-\nabla_{\bm{\tau}} G^c_{\bm{\tau}}(\bm{\tau})$。多个任务代价可**直接相加**，无需训练时枚举组合。
+设 $p(\bm{\tau}^{\ast} \mid \bm{\tau}) \propto \exp(-G^c _ {\bm{\tau}}(\bm{\tau}))$，引导项为 $-\nabla _ {\bm{\tau}} G^c _ {\bm{\tau}}(\bm{\tau})$。多个任务代价可**直接相加**，无需训练时枚举组合。
 
 **摇杆速度跟踪**：
 
-$$G^c_{\bm{\tau}}(\bm{\tau}) = \frac{1}{2} \sum_{t'=t}^{t+H} \| V_{xy,t'}(\bm{\tau}_{t'}) - g_v \|^2$$
+$$G^c _ {\bm{\tau}}(\bm{\tau}) = \frac{1}{2} \sum _ {t'=t}^{t+H} \| V _ {xy,t'}(\bm{\tau} _ {t'}) - g_v \|^2$$
 
 **路点导航**（近目标时加大速度惩罚以停下）：
 
-$$G^{\text{ts}}_{\bm{\tau}}(\bm{\tau}) = \sum_{t'=t}^{t+H} (1 - e^{-2d}) \| P_x(\bm{s}_{t'}) - g_p \|^2 + e^{-2d} \| V_{x,t'}(\bm{\tau}_{t'}) \|^2$$
+$$G^{\text{ts}} _ {\bm{\tau}}(\bm{\tau}) = \sum _ {t'=t}^{t+H} (1 - e^{-2d}) \| P_x(\bm{s} _ {t'}) - g_p \|^2 + e^{-2d} \| V _ {x,t'}(\bm{\tau} _ {t'}) \|^2$$
 
-其中 $d = \|P_x(\bm{s}_{t'}) - g_p\|$（对梯度 detach）。
+其中 $d = \|P_x(\bm{s} _ {t'}) - g_p\|$（对梯度 detach）。
 
 **避障**（SDF + 松弛 barrier）：
 
-$$G^c_{\bm{\tau}}(\bm{\tau}) = \sum_{t', b \in \mathcal{B}_c} B\!\left(\text{SDF}(\mathbf{P}_{b,t'}(\bm{\tau})) - r_i,\; \delta\right)$$
+$$G^c _ {\bm{\tau}}(\bm{\tau}) = \sum _ {t', b \in \mathcal{B}_c} B\!\left(\text{SDF}(\mathbf{P} _ {b,t'}(\bm{\tau})) - r_i,\; \delta\right)$$
 
 $$B(x,\delta) = \begin{cases} -\ln(x) & x \geq \delta \\ -\ln(\delta) + \frac{1}{2}\left[\left(\frac{x-2\delta}{\delta}\right)^2 - 1\right] & x < \delta \end{cases}$$
 
@@ -485,7 +485,7 @@ sequenceDiagram
    - 真机关节估计误差经运动学链放大，扩散多步预测更易崩；笛卡尔 body 状态对 guidance 更鲁棒（Joystick 0% vs 80%）。
 
 5. **锚定跟踪 vs 全局跟踪？**
-   - 全局跟踪在漂移时过度纠偏、损失风格；锚定保留相对协调，仅用 $b_{\text{ref}}$ 全局误差做平衡与漂移修正。GMT 等用相对速度牺牲全局轨迹，BeyondMimic 用锚定兼顾风格与可控漂移。
+   - 全局跟踪在漂移时过度纠偏、损失风格；锚定保留相对协调，仅用 $b _ {\text{ref}}$ 全局误差做平衡与漂移修正。GMT 等用相对速度牺牲全局轨迹，BeyondMimic 用锚定兼顾风格与可控漂移。
 
 6. **与 SONIC / GMT 等的定位？**
    - SONIC 走**超大规模数据 + token 接口**；BeyondMimic 走**紧凑跟踪 + 扩散引导**，强调 test-time 优化与真机高动态。GMT 牺牲全局轨迹换鲁棒性；BeyondMimic 锚定方案保留更多全局语义。

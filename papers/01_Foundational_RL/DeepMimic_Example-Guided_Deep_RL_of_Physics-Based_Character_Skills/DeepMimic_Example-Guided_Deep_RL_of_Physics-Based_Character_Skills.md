@@ -133,10 +133,10 @@ $$r_t^I = w^p \cdot r_t^p + w^v \cdot r_t^v + w^{ee} \cdot r_t^{ee} + w^{com} \c
     <tr><th>分量</th><th>衡量什么</th><th>计算方式</th></tr>
   </thead>
   <tbody>
-    <tr><td>$r^p$（关节姿态）</td><td>每个关节角度是否匹配</td><td>$\exp\left(-2 \sum_j \| \hat{q}_{j} - q_{j} \|^2\right)$</td></tr>
-    <tr><td>$r^v$（关节速度）</td><td>每个关节角速度是否匹配</td><td>$\exp\left(-0.1 \sum_j \| \dot{\hat{q}}_{j} - \dot{q}_{j} \|^2\right)$</td></tr>
-    <tr><td>$r^{ee}$（末端位置）</td><td>手脚位置是否正确</td><td>$\exp\left(-40 \sum_e \| \hat{p}_{e} - p_{e} \|^2\right)$</td></tr>
-    <tr><td>$r^{com}$（质心位置）</td><td>身体重心是否在对的位置</td><td>$\exp\left(-10 \| \hat{p}_{com} - p_{com} \|^2\right)$</td></tr>
+    <tr><td>$r^p$（关节姿态）</td><td>每个关节角度是否匹配</td><td>$\exp\left(-2 \sum_j \| \hat{q} _ {j} - q _ {j} \|^2\right)$</td></tr>
+    <tr><td>$r^v$（关节速度）</td><td>每个关节角速度是否匹配</td><td>$\exp\left(-0.1 \sum_j \| \dot{\hat{q}} _ {j} - \dot{q} _ {j} \|^2\right)$</td></tr>
+    <tr><td>$r^{ee}$（末端位置）</td><td>手脚位置是否正确</td><td>$\exp\left(-40 \sum_e \| \hat{p} _ {e} - p _ {e} \|^2\right)$</td></tr>
+    <tr><td>$r^{com}$（质心位置）</td><td>身体重心是否在对的位置</td><td>$\exp\left(-10 \| \hat{p} _ {com} - p _ {com} \|^2\right)$</td></tr>
   </tbody>
 </table>
 
@@ -594,7 +594,7 @@ flowchart LR
 | $r^p$ | $\sum_j \lVert \hat{q}_j \ominus q_j \rVert^2 = 0.09$ | $\exp(-2 \times 0.09) \approx 0.84$ |
 | $r^v$ | $\sum_j \lVert \dot{\hat{q}}_j - \dot{q}_j \rVert^2 = 1.0$ | $\exp(-0.1 \times 1.0) \approx 0.90$ |
 | $r^{ee}$ | $\sum_e \lVert \hat{p}_e - p_e \rVert^2 = 0.0072$ | $\exp(-40 \times 0.0072) \approx 0.75$ |
-| $r^{com}$ | $\lVert \hat{p}_{com} - p_{com} \rVert^2 = 0.04$ | $\exp(-10 \times 0.04) \approx 0.67$ |
+| $r^{com}$ | $\lVert \hat{p} _ {com} - p _ {com} \rVert^2 = 0.04$ | $\exp(-10 \times 0.04) \approx 0.67$ |
 
 加权求和：$0.65 \times 0.835 + 0.1 \times 0.905 + 0.15 \times 0.750 + 0.1 \times 0.670 \approx 0.813$。这组误差就是上面那个交互演示的默认值，可以回去逐项拖着看。
 
@@ -976,7 +976,7 @@ flowchart TB
 
 <h4 id="方法一multi-clip-reward多剪辑奖励">方法一：Multi-Clip Reward（多剪辑奖励）</h4>
 
-$$r_t^I = \max_{j=1, \ldots, k} \left( r_t^{I, (j)} \right)$$
+$$r_t^I = \max _ {j=1, \ldots, k} \left( r_t^{I, (j)} \right)$$
 
 策略在每一步自动选择**当前最匹配的那段剪辑**作为目标。
 
@@ -988,9 +988,9 @@ $$r_t^I = \max_{j=1, \ldots, k} \left( r_t^{I, (j)} \right)$$
 
 分别训练多个单技能策略，推理时用**价值函数做 Boltzmann 选策略**：
 
-$$\Pi(a \mid s) = \sum_{i=1}^{k} p_i(s) \cdot \pi^i(a \mid s)$$
+$$\Pi(a \mid s) = \sum _ {i=1}^{k} p_i(s) \cdot \pi^i(a \mid s)$$
 
-$$p_i(s) = \frac{\exp(V^i(s) / T)}{\sum_{j=1}^{k} \exp(V^j(s) / T)}$$
+$$p_i(s) = \frac{\exp(V^i(s) / T)}{\sum _ {j=1}^{k} \exp(V^j(s) / T)}$$
 
 | | Multi-Clip Reward | Skill Selector | Composite Policy |
 |---|---|---|---|
@@ -1033,7 +1033,7 @@ $$p_i(s) = \frac{\exp(V^i(s) / T)}{\sum_{j=1}^{k} \exp(V^j(s) / T)}$$
 
 对于铰接多体系统（如 DeepMimic 的人形角色），运动方程写成**广义坐标**（关节角度）的形式：
 
-$$M(q) \cdot \ddot{q} = \tau + f_{ext}$$
+$$M(q) \cdot \ddot{q} = \tau + f _ {ext}$$
 
 其中：
 - $q$ ：关节角度向量
@@ -1049,8 +1049,8 @@ $M(q)$ 的每个元素含义：
 
 | 元素 | 含义 |
 |------|------|
-| $M_{ii}$（对角线） | 第 $i$ 个关节**独立转动**时需要克服的等效转动惯量 |
-| $M_{ij}$（非对角线） | 第 $j$ 个关节转动时，对第 $i$ 个关节产生的**耦合惯性力** |
+| $M _ {ii}$（对角线） | 第 $i$ 个关节**独立转动**时需要克服的等效转动惯量 |
+| $M _ {ij}$（非对角线） | 第 $j$ 个关节转动时，对第 $i$ 个关节产生的**耦合惯性力** |
 
 <h4 id="和-stable-pd-的关系">和 Stable PD 的关系</h4>
 

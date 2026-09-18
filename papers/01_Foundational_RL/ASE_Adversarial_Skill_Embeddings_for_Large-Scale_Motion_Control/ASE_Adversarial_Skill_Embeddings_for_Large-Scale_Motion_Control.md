@@ -210,7 +210,7 @@ $$
 ### 第三个概念：加一个 encoder，把技能“解码回来”
 
 <details class="paper-fold" markdown="1">
-<summary>📖 展开文字：$E(o_{disc}) \approx z$ 给 latent space 加的那条「信息闭环」</summary>
+<summary>📖 展开文字：$E(o _ {disc}) \approx z$ 给 latent space 加的那条「信息闭环」</summary>
 
 ASE 的办法很巧：
 
@@ -233,7 +233,7 @@ $$
 ### 第四个概念：reward 由两部分组成
 
 <details class="paper-fold" markdown="1">
-<summary>📖 展开文字：$r = w_{disc} r_{disc} + w_{enc} r_{enc} + w_{task} r_{task}$</summary>
+<summary>📖 展开文字：$r = w _ {disc} r _ {disc} + w _ {enc} r _ {enc} + w _ {task} r _ {task}$</summary>
 
 ASE 训练时的奖励大致是：
 

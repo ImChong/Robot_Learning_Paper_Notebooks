@@ -121,11 +121,11 @@ OmniXtreme = **两阶段训练框架**
 | 分量 | 含义 | 维度 |
 |------|------|------|
 | $q^{\text{ref}}, \dot{q}^{\text{ref}}$ | 参考关节位置和速度 | 29×2 |
-| $e_{\text{torso}}$ | 躯干位置差 + 6D方向差 | 3+6=9 |
-| $\mathcal{V}_{\text{imu}}$ | 基座线速度 + 角速度 | 6 |
+| $e _ {\text{torso}}$ | 躯干位置差 + 6D方向差 | 3+6=9 |
+| $\mathcal{V} _ {\text{imu}}$ | 基座线速度 + 角速度 | 6 |
 | $q - q^0$ | 相对关节位置 | 29 |
 | $\dot{q}$ | 关节速度 | 29 |
-| $a_{\text{last}}$ | 上一步动作 | 29 |
+| $a _ {\text{last}}$ | 上一步动作 | 29 |
 
 **数据来源**：
 - LAFAN1（Unitree重定向版）
@@ -144,15 +144,15 @@ OmniXtreme = **两阶段训练框架**
 
 **核心损失函数**：
 
-$$\mathcal{L}_{\text{FM}}(\theta) = \mathbb{E}_{t, \epsilon, a_{\text{expert}}} \left[ \|v_\theta(a_t, t, o) - (\epsilon - a_{\text{expert}})\|^2 \right]$$
+$$\mathcal{L} _ {\text{FM}}(\theta) = \mathbb{E} _ {t, \epsilon, a _ {\text{expert}}} \left[ \|v_\theta(a_t, t, o) - (\epsilon - a _ {\text{expert}})\|^2 \right]$$
 
-- $a_t = (1-t)a_{\text{expert}} + t\epsilon$：在专家动作和随机噪声之间插值
+- $a_t = (1-t)a _ {\text{expert}} + t\epsilon$：在专家动作和随机噪声之间插值
 - $v_\theta$ 学习速度场，预测"往哪个方向走才能从噪声到达专家动作"
 - 时间步 $t \sim \text{Beta}(\alpha, \beta)$，聚焦在关键区域加速收敛
 
 **推理时的动作生成**（前向欧拉积分，$t: 1 \to 0$）：
 
-$$a_{t-\frac{1}{D}} = a_t - \frac{1}{D} v_\theta(a_t, t, o)$$
+$$a _ {t-\frac{1}{D}} = a_t - \frac{1}{D} v_\theta(a_t, t, o)$$
 
 部署时 $D=5$（5步去噪），平衡质量与延迟。
 
@@ -176,11 +176,11 @@ $$a_{t-\frac{1}{D}} = a_t - \frac{1}{D} v_\theta(a_t, t, o)$$
 
 冻结阶段一的流匹配策略（不再改动），在其上面加一个**残差 PPO 策略**：
 
-$$a_{\text{final}} = a_{\text{flow}} + a_{\text{res}}$$
+$$a _ {\text{final}} = a _ {\text{flow}} + a _ {\text{res}}$$
 
-- $a_{\text{flow}}$：流匹配策略输出（冻结）
-- $a_{\text{res}}$：残差策略学习的修正量
-- 残差策略的观测 = 本体感觉 + 运动指令 + 当前的 $a_{\text{flow}}$
+- $a _ {\text{flow}}$：流匹配策略输出（冻结）
+- $a _ {\text{res}}$：残差策略学习的修正量
+- 残差策略的观测 = 本体感觉 + 运动指令 + 当前的 $a _ {\text{flow}}$
 
 > 💡 **类比**：流匹配策略是"写好的乐谱"，残差策略是"钢琴调音师"——乐谱不动，调音师微调每个音符让真实演出听起来完美。
 
@@ -201,10 +201,10 @@ $$a_{\text{final}} = a_{\text{flow}} + a_{\text{res}}$$
 
 解决真机高动态运动中的**过流保护**问题，对过度负关节功率施加惩罚：
 
-$$\mathcal{L}_{\text{neg-power}} = \sum_{j \in \mathcal{J}} \left( \frac{\max(-P_j - P_{\text{db}}, 0)}{K} \right)^2$$
+$$\mathcal{L} _ {\text{neg-power}} = \sum _ {j \in \mathcal{J}} \left( \frac{\max(-P_j - P _ {\text{db}}, 0)}{K} \right)^2$$
 
 - $P_j = \tau_j \cdot \omega_j$：关节 $j$ 的瞬时机械功率
-- $P_{\text{db}} = 150W$：死区阈值（低于此不惩罚）
+- $P _ {\text{db}} = 150W$：死区阈值（低于此不惩罚）
 - $K = 500$：归一化常数
 - **选择性应用于膝关节**（翻跟头时膝关节制动负载最大）
 - 奖励权重 $w = -10$
@@ -213,11 +213,11 @@ $$\mathcal{L}_{\text{neg-power}} = \sum_{j \in \mathcal{J}} \left( \frac{\max(-P
 
 建模真实执行器的**转矩-速度操作包络**（标准方法忽略了反电动势）：
 
-$$\tau_{\text{clipped}}(v) = \begin{cases} \tau_{\max,0}, & \|v\| < v_{x1} \\ \tau_{\max,0}\left(1 - \frac{\|v\| - v_{x1}}{v_{x2} - v_{x1}}\right), & v_{x1} \leq \|v\| \leq v_{x2} \\ 0, & \|v\| > v_{x2} \end{cases}$$
+$$\tau _ {\text{clipped}}(v) = \begin{cases} \tau _ {\max,0}, & \|v\| < v _ {x1} \\ \tau _ {\max,0}\left(1 - \frac{\|v\| - v _ {x1}}{v _ {x2} - v _ {x1}}\right), & v _ {x1} \leq \|v\| \leq v _ {x2} \\ 0, & \|v\| > v _ {x2} \end{cases}$$
 
 最大转矩还取决于转矩与速度是否同向（驱动 vs 制动）：
 
-$$\tau_{\max,0} = \begin{cases} \tau_{y1}, & v \cdot \tau_{\text{in}} > 0 & \text{（驱动，力矩大）} \\ \tau_{y2}, & v \cdot \tau_{\text{in}} \leq 0 & \text{（制动，力矩小）} \end{cases}$$
+$$\tau _ {\max,0} = \begin{cases} \tau _ {y1}, & v \cdot \tau _ {\text{in}} > 0 & \text{（驱动，力矩大）} \\ \tau _ {y2}, & v \cdot \tau _ {\text{in}} \leq 0 & \text{（制动，力矩小）} \end{cases}$$
 
 > 💡 **类比**：这就像给赛车设置了真实的"油门-转速曲线"——低转速时力矩大，高转速时力矩下降，急刹车时还要额外限制，而不是简单地"最大转矩就是最大转矩"。
 
@@ -302,7 +302,7 @@ python deploy_mujoco.py
 |------|------|------|
 | **专家策略（Teacher）** | MLP [512, 256, 128]，Actor-Critic 分离 | PPO 训练，每运动一个 |
 | **流匹配策略（预训练）** | Transformer + flow head | 统一策略，DAgger 蒸馏 |
-| **残差策略（后训练）** | MLP，PPO 训练 | 输入包含 $a_{\text{flow}}$；仓库提供 `residual_policy.onnx` |
+| **残差策略（后训练）** | MLP，PPO 训练 | 输入包含 $a _ {\text{flow}}$；仓库提供 `residual_policy.onnx` |
 
 ### 训练流程
 1. **Per-expert PPO**：每个运动单独训专家策略，保守随机化

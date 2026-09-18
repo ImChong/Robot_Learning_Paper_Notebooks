@@ -76,7 +76,7 @@ zhname: "首个 RL 真实世界人形行走（Berkeley · Causal Transformer）"
 
 策略 $\pi_o$ 输入是长度 $l=16$ 的历史窗口
 
-$$\{o_t, a_{t-1}, o_{t-1}, a_{t-2}, \ldots, o_{t-l+1}, a_{t-l}\}$$
+$$\{o_t, a _ {t-1}, o _ {t-1}, a _ {t-2}, \ldots, o _ {t-l+1}, a _ {t-l}\}$$
 
 每一对 (obs, act) 由一个 MLP（hidden=[512,512]）压成 192 维 token，加正弦位置编码后送入 **4 层、4 头、MLP-ratio 2.0 的因果 Transformer**；最后接 MLP（[256,128]）回归下一步动作 $a_t$。**总参数仅 1.4 M**，但足以承载 in-context adaptation。
 
@@ -87,7 +87,7 @@ $$\{o_t, a_{t-1}, o_{t-1}, a_{t-2}, \ldots, o_{t-l+1}, a_{t-l}\}$$
 | 阶段 | 输入 | 网络 | 监督 |
 |------|------|------|------|
 | ① 教师 $\pi_s$ | 完整 privileged 状态 $s_t$ | MLP [512,512,256,128] | PPO 直接最大化奖励 |
-| ② 学生 $\pi_o$ | 仅可观测历史 $(o_{t-l+1:t}, a_{t-l:t-1})$ | Causal Transformer | **PPO + 教师 imitation 联合损失** |
+| ② 学生 $\pi_o$ | 仅可观测历史 $(o _ {t-l+1:t}, a _ {t-l:t-1})$ | Causal Transformer | **PPO + 教师 imitation 联合损失** |
 
 联合训练比"纯模仿 + 后调"更优——消融显示对足卡场景尤其关键，因为纯模仿学不到教师没见过的恢复策略。
 

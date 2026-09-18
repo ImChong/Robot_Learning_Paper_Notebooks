@@ -76,7 +76,7 @@ DreamZero 的切入点：**视频是「世界如何演化」的稠密表征**—
 
 ### 1. 问题形式化：联合分布 = 视频预测 × 逆动力学
 
-给定语言指令 $\mathbf{c}$、本体状态 $\mathbf{q}_l$、历史观测 $\mathbf{o}_{0:l}$，DreamZero 联合预测未来 $H$ 步视频与动作：
+给定语言指令 $\mathbf{c}$、本体状态 $\mathbf{q}_l$、历史观测 $\mathbf{o} _ {0:l}$，DreamZero 联合预测未来 $H$ 步视频与动作：
 
 $$
 \underbrace{\pi_\theta(\mathbf{o}_{l:l+H}, \mathbf{a}_{l:l+H} \mid \mathbf{o}_{0:l}, \mathbf{c}, \mathbf{q}_l)}_{\text{DreamZero}}
@@ -91,7 +91,7 @@ $$
 
 | 模块 | 作用 |
 |---|---|
-| **VAE** | 编码视觉上下文 $\mathbf{o}_{0:l}$ |
+| **VAE** | 编码视觉上下文 $\mathbf{o} _ {0:l}$ |
 | **Text Encoder** | 编码语言 $\mathbf{c}$ |
 | **State Encoder** | 编码本体 $\mathbf{q}_l$ |
 | **自回归 DiT 主干** | Flow-matching 联合去噪视频潜变量与动作 |
@@ -113,7 +113,7 @@ $$
 \mathbf{a}_{t_k}^k = t_k \mathbf{a}_1^k + (1-t_k)\mathbf{a}_0^k
 $$
 
-其中 $\mathbf{z}_0, \mathbf{a}_0 \sim \mathcal{N}(0,I)$，$\mathbf{z}_1, \mathbf{a}_1$ 为干净潜视频与归一化动作。干净历史上下文 $\mathcal{C}_k = \{(\mathbf{z}_1^j, \mathbf{a}_1^j)\}_{j=1}^{k-1}$。
+其中 $\mathbf{z}_0, \mathbf{a}_0 \sim \mathcal{N}(0,I)$，$\mathbf{z}_1, \mathbf{a}_1$ 为干净潜视频与归一化动作。干净历史上下文 $\mathcal{C}_k = \{(\mathbf{z}_1^j, \mathbf{a}_1^j)\} _ {j=1}^{k-1}$。
 
 联合速度目标：
 

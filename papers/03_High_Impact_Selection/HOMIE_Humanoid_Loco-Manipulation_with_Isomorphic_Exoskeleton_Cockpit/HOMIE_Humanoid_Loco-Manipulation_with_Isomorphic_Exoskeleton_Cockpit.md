@@ -53,7 +53,7 @@ HOMIE 把"踩踏板控腿、同构外骨骼控臂、Hall 传感手套控手"塞�
 | **IK** | Inverse Kinematics | 逆运动学求解，主流 VR 遥操依赖项 |
 | **MoCap** | Motion Capture | 动捕设备，传统 WBC 训练所需的动作先验源 |
 | **DoF** | Degrees of Freedom | 自由度，HOMIE 手套支持 ≥15 DoF |
-| **PPO** | Proximal Policy Optimization | 训练 $\pi_{\text{loco}}$ 的 RL 算法 |
+| **PPO** | Proximal Policy Optimization | 训练 $\pi _ {\text{loco}}$ 的 RL 算法 |
 
 ---
 
@@ -67,7 +67,7 @@ HOMIE 把"踩踏板控腿、同构外骨骼控臂、Hall 传感手套控手"塞�
 
 更糟的是，**控腿和控臂被天然割裂**：RL locomotion 策略善于在地形上稳定行走，但没有面向遥操的姿态接口；遥操系统又只关心上肢，从不考虑行走对工作空间的影响。
 
-HOMIE 要做的就是把这三条线**收成一个驾驶舱**：底层 $\pi_{\text{loco}}$ 用 PPO 学一个**不需要 MoCap 先验**的 loco 策略；上层用同构外骨骼 + Hall 手套做 joint-matching；行走和蹲下命令则被压成一只踏板上的三维向量 $C_t = [v_x, \omega_{\text{yaw}}, h]$，让操作员双手始终空闲。
+HOMIE 要做的就是把这三条线**收成一个驾驶舱**：底层 $\pi _ {\text{loco}}$ 用 PPO 学一个**不需要 MoCap 先验**的 loco 策略；上层用同构外骨骼 + Hall 手套做 joint-matching；行走和蹲下命令则被压成一只踏板上的三维向量 $C_t = [v_x, \omega _ {\text{yaw}}, h]$，让操作员双手始终空闲。
 
 ---
 
@@ -77,20 +77,20 @@ HOMIE 要做的就是把这三条线**收成一个驾驶舱**：底层 $\pi_{\te
 
 操作员坐在驾驶舱里：
 
-- **下肢**：踩踏板生成 $C_t = [v_x, \omega_{\text{yaw}}, h]$（前进速度、转向速度、躯干目标高度），通过 Wi-Fi 发给机器人；策略 $\pi_{\text{loco}}$ 在机上以 50 Hz 接管下半身；
-- **上肢**：同构 7-DoF 外骨骼直接读关节角 $q_{\text{upper}}$，1:1 设给机器人对应电机，**完全跳过 IK**；
+- **下肢**：踩踏板生成 $C_t = [v_x, \omega _ {\text{yaw}}, h]$（前进速度、转向速度、躯干目标高度），通过 Wi-Fi 发给机器人；策略 $\pi _ {\text{loco}}$ 在机上以 50 Hz 接管下半身；
+- **上肢**：同构 7-DoF 外骨骼直接读关节角 $q _ {\text{upper}}$，1:1 设给机器人对应电机，**完全跳过 IK**；
 - **手指**：Hall 传感手套提供 ≥15 DoF 的指关节信号，可适配任意灵巧手；
 - **视觉反馈**：机器人 FPV 通过 Wi-Fi 回传到舱内屏幕。
 
 通信全部走 Wi-Fi，远距离作业也能用。
 
-### 2. RL 训练框架（$\pi_{\text{loco}}$）三件套
+### 2. RL 训练框架（$\pi _ {\text{loco}}$）三件套
 
-观测堆叠 5 步历史：$O_t = [C_t, \omega_t, g_t, q_t, \dot q_t, a_{t-1}]$，喂给 MLP 输出关节目标位置，再经 PD 转扭矩。**整个训练完全不需要 AMASS / MoCap 数据**，这是 HOMIE 相对 ExBody/HumanPlus/H2O 路线的最大差异。
+观测堆叠 5 步历史：$O_t = [C_t, \omega_t, g_t, q_t, \dot q_t, a _ {t-1}]$，喂给 MLP 输出关节目标位置，再经 PD 转扭矩。**整个训练完全不需要 AMASS / MoCap 数据**，这是 HOMIE 相对 ExBody/HumanPlus/H2O 路线的最大差异。
 
 #### ① 上身姿态课程（Upper-body Pose Curriculum）
 
-为了让 $\pi_{\text{loco}}$ 适应**任意连续变化的上身姿态**，引入比率 $\rho_a$（初始 0、线速度跟踪达标就 +0.05，最终到 1）：
+为了让 $\pi _ {\text{loco}}$ 适应**任意连续变化的上身姿态**，引入比率 $\rho_a$（初始 0、线速度跟踪达标就 +0.05，最终到 1）：
 
 $$ p(\rho_a' \mid \rho_a) = \frac{20(1-\rho_a)\,e^{-20(1-\rho_a)\rho_a'}}{1 - e^{-20(1-\rho_a)}} $$
 
@@ -100,15 +100,15 @@ $$ p(\rho_a' \mid \rho_a) = \frac{20(1-\rho_a)\,e^{-20(1-\rho_a)\rho_a'}}{1 - e^
 
 蹲下能力对于"拾取地面物体 / 操作高低不同的桌面"是刚需。引入：
 
-$$ r_{\text{knee}} = -\Big\| (h_{r,t} - h_t) \times \big( \frac{q_{\text{knee},t} - q_{\text{knee},\min}}{q_{\text{knee},\max} - q_{\text{knee},\min}} - \tfrac{1}{2} \big) \Big\| $$
+$$ r _ {\text{knee}} = -\Big\| (h _ {r,t} - h_t) \times \big( \frac{q _ {\text{knee},t} - q _ {\text{knee},\min}}{q _ {\text{knee},\max} - q _ {\text{knee},\min}} - \tfrac{1}{2} \big) \Big\| $$
 
-含义是：当 $h_{r,t} > h_t$（站太高）就鼓励膝关节弯，反之鼓励膝伸。每 4 秒重采样命令，**1/3 环境训蹲、2/3 训站走**，同一环境会在蹲/走之间切换，保证 $\pi_{\text{loco}}$ 蹲走过渡丝滑。
+含义是：当 $h _ {r,t} > h_t$（站太高）就鼓励膝关节弯，反之鼓励膝伸。每 4 秒重采样命令，**1/3 环境训蹲、2/3 训站走**，同一环境会在蹲/走之间切换，保证 $\pi _ {\text{loco}}$ 蹲走过渡丝滑。
 
 #### ③ 对称性利用（Symmetry Utilization）
 
-每条转移 $T_t = (s_t, a_t, r_t, s_{t+1})$ 沿机器人 x-z 平面镜像得到 $T_t'$，**一起入 rollout buffer**，并在 policy 网络上加：
+每条转移 $T_t = (s_t, a_t, r_t, s _ {t+1})$ 沿机器人 x-z 平面镜像得到 $T_t'$，**一起入 rollout buffer**，并在 policy 网络上加：
 
-$$ \mathcal{L}^{\text{actor}}_{\text{sym}} = \text{MSE}(a_t, a_t'),\quad \mathcal{L}^{\text{critic}}_{\text{sym}} = \text{MSE}(V_t, V_t') $$
+$$ \mathcal{L}^{\text{actor}} _ {\text{sym}} = \text{MSE}(a_t, a_t'),\quad \mathcal{L}^{\text{critic}} _ {\text{sym}} = \text{MSE}(V_t, V_t') $$
 
 强制策略左右对称，**等价于 2× 数据增强**，且大幅减小左右肢动作不一致导致的偏漂。
 
@@ -120,9 +120,9 @@ $$ \mathcal{L}^{\text{actor}}_{\text{sym}} = \text{MSE}(a_t, a_t'),\quad \mathca
 
 外骨骼几何与机器人 URDF 关节坐标系对齐，开机一次性标定后直接做 $q_t = p_t - o_t$ 的偏置映射。
 
-### 4. 数据飞轮：$\pi_{\text{loco}} \to$ 遥操采集 $\to \pi_{\text{auto}}$
+### 4. 数据飞轮：$\pi _ {\text{loco}} \to$ 遥操采集 $\to \pi _ {\text{auto}}$
 
-遥操产生的状态-动作流可直接作为模仿学习数据训练 $\pi_{\text{auto}}$；训好后 $\pi_{\text{auto}}$ 接管驾驶舱角色，自动给出 $(C_t, q_{\text{upper}})$，让机器人自主完成同类任务。这是把"低成本遥操"打成"低成本数据工厂"的关键闭环。
+遥操产生的状态-动作流可直接作为模仿学习数据训练 $\pi _ {\text{auto}}$；训好后 $\pi _ {\text{auto}}$ 接管驾驶舱角色，自动给出 $(C_t, q _ {\text{upper}})$，让机器人自主完成同类任务。这是把"低成本遥操"打成"低成本数据工厂"的关键闭环。
 
 ---
 
@@ -191,7 +191,7 @@ flowchart LR
 - **硬件成本** $0.5k，对比 OpenTelevision/DexCap 的 $4k、Mobile-ALOHA 的 $32k 是数量级下降；
 - **姿态获取速度** 比 VR / 视觉方案快 **~200%**，且精度由 0.09° 伺服读数保证；
 - **任务完成时间**：在抓放、装配等代表任务上**用 ~1/2 时间**完成同等任务；
-- **零样本 sim-to-real**：仅在 Isaac Gym 训出的 $\pi_{\text{loco}}$ 可直接迁移至 Unitree G1、Fourier GR-1；
+- **零样本 sim-to-real**：仅在 Isaac Gym 训出的 $\pi _ {\text{loco}}$ 可直接迁移至 Unitree G1、Fourier GR-1；
 - **消融**：去掉上身姿态课程 / 高度奖励 / 对称性增强中的任一项，要么不能蹲、要么上身大幅动作时下肢失衡；
 - **下游 IL**：HOMIE 采集的数据直接喂 imitation learning，机器人可自主完成抓放类任务。
 
@@ -211,7 +211,7 @@ flowchart LR
 ## 🎤 面试参考
 
 **Q：HOMIE 和 OmniH2O / HumanPlus 路线上的本质区别？**  
-A：OmniH2O / HumanPlus 用 VR 或视觉先估出人体姿态，再 retarget + IK 解算关节角，**训练依赖 MoCap motion prior**；HOMIE 用同构外骨骼直接拿到机器人坐标系下的关节角（joint-matching），完全跳过 IK 和 retargeting，且 $\pi_{\text{loco}}$ 训练不需要任何 MoCap 数据，靠"姿态课程 + 高度奖励 + 对称性"三件套自适应任意上身姿态。
+A：OmniH2O / HumanPlus 用 VR 或视觉先估出人体姿态，再 retarget + IK 解算关节角，**训练依赖 MoCap motion prior**；HOMIE 用同构外骨骼直接拿到机器人坐标系下的关节角（joint-matching），完全跳过 IK 和 retargeting，且 $\pi _ {\text{loco}}$ 训练不需要任何 MoCap 数据，靠"姿态课程 + 高度奖励 + 对称性"三件套自适应任意上身姿态。
 
 **Q：为什么用踏板而不是手柄或身体跟随做 locomotion 命令？**  
 A：手柄占用一只手，跟下肢操作冲突；身体跟随（HumanPlus 风格）要求操作员的物理空间和机器人匹配，不利于大场景或远距离作业。踏板把"控走 / 控蹲"塞到脚上，**双手全部留给上肢和手指**，符合"驾驶舱"隐喻，也方便单人完成全身 loco-manipulation。
@@ -220,7 +220,7 @@ A：手柄占用一只手，跟下肢操作冲突；身体跟随（HumanPlus 风
 A：因为上身姿态变化对下肢扰动是**非线性陡峭**的：早期策略稍微开个 30° 关节角就可能翻车。论文用指数采样分布让初始阶段大概率采到接近零的姿态偏移，随 $\rho_a \to 1$ 才平滑过渡到均匀分布，避免一上来就过难导致策略坍塌。
 
 **Q：HOMIE 能不能直接接 LLM / VLA 实现自主？**  
-A：可以。$\pi_{\text{auto}}$ 就是占位的"上层规划器"，HOMIE 提供的 $(C_t, q_{\text{upper}})$ 接口非常薄，任何能输出这个指令格式的策略（IL、Diffusion Policy、甚至 VLA 直接吐 token）都能接入。论文已经演示了 IL 直接驱动机器人做抓放任务。
+A：可以。$\pi _ {\text{auto}}$ 就是占位的"上层规划器"，HOMIE 提供的 $(C_t, q _ {\text{upper}})$ 接口非常薄，任何能输出这个指令格式的策略（IL、Diffusion Policy、甚至 VLA 直接吐 token）都能接入。论文已经演示了 IL 直接驱动机器人做抓放任务。
 
 **Q：和 HOVER 同样追求"统一接口"，差别在哪？**  
 A：HOVER 把多个**已有控制模式**用 mask 统一到一个学生策略里，强调控制层面的可复用；HOMIE 把**人 ↔ 机器人的物理接口**统一到同构硬件 + 踏板，强调采集端的可用性。两者其实正交：HOVER 可以做底层 motor backbone，HOMIE 做上层数据飞轮，组合起来就是一套完整的人形遥操栈。

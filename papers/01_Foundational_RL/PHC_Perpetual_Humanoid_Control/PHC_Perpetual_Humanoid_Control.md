@@ -175,8 +175,8 @@ flowchart TB
 | 目标差异 | 参考与当前的旋转/位置/速度差 | 下一步应该去哪 |
 
 两种目标表示：
-- **Rotation-based** $s_{rot}$：关节旋转差、位置差、线速度差、角速度差
-- **Keypoint-based** $s_{kp}$：3D 关键点位置差、速度差（更鲁棒，适合噪声输入）
+- **Rotation-based** $s _ {rot}$：关节旋转差、位置差、线速度差、角速度差
+- **Keypoint-based** $s _ {kp}$：3D 关键点位置差、速度差（更鲁棒，适合噪声输入）
 
 所有量都相对于角色当前朝向和根节点归一化。
 
@@ -184,7 +184,7 @@ flowchart TB
 
 直接输出各关节的 PD 控制目标（**不加残差**，不用外力）：
 
-$$\tau = k_p(a_t - q_{sim}) - k_d(\dot{q}_{sim})$$
+$$\tau = k_p(a_t - q _ {sim}) - k_d(\dot{q} _ {sim})$$
 
 > ⚠️ 关键区别：DeepMimic 用的是参考动作 + 残差，PHC 直接输出绝对目标。这更难学但更通用。
 </details>
@@ -192,21 +192,21 @@ $$\tau = k_p(a_t - q_{sim}) - k_d(\dot{q}_{sim})$$
 ### 第二步：奖励设计
 
 <details class="paper-fold" markdown="1">
-<summary>📖 展开文字：三项奖励各管什么（含 $r_t \approx 0.5 r_{task} + 0.5 r_{amp} + r_{energy}$ 那张表）</summary>
+<summary>📖 展开文字：三项奖励各管什么（含 $r_t \approx 0.5 r _ {task} + 0.5 r _ {amp} + r _ {energy}$ 那张表）</summary>
 
 PHC 没有走 DeepMimic 那种“手工拆四项：pose/vel/ee/com”的路子，而是把 imitation reward 写成了**全身刚体级别的统一误差**。这比 DeepMimic 更适合大规模动作库，因为它不需要你手工盯着每一类动作重新调细节。
 
 整体奖励可以概括为：
 
-$$r_t \approx 0.5 \cdot r_{task} + 0.5 \cdot r_{amp} + r_{energy}$$
+$$r_t \approx 0.5 \cdot r _ {task} + 0.5 \cdot r _ {amp} + r _ {energy}$$
 
 其中：
 
 | 奖励项 | 公式/说明 | 作用 |
 |--------|----------|------|
-| $r_{task}$（模仿） | 刚体位置、旋转、线速度、角速度误差的指数奖励加权和 | 跟上参考动作 |
-| $r_{amp}$（对抗） | 判别器打分，鼓励动作像真实人类运动分布 | 保持自然与稳定 |
-| $r_{energy}$ | 功率/能量惩罚 | 防止高频抖动和暴力打关节 |
+| $r _ {task}$（模仿） | 刚体位置、旋转、线速度、角速度误差的指数奖励加权和 | 跟上参考动作 |
+| $r _ {amp}$（对抗） | 判别器打分，鼓励动作像真实人类运动分布 | 保持自然与稳定 |
+| $r _ {energy}$ | 功率/能量惩罚 | 防止高频抖动和暴力打关节 |
 </details>
 
 源码里 imitation reward 的实现非常直接：
@@ -237,15 +237,15 @@ reward_specs:
 ```
 
 <details class="paper-fold" markdown="1">
-<summary>📖 展开文字：为什么提升到全身刚体空间，以及恢复模式下的 $r_{recover}$</summary>
+<summary>📖 展开文字：为什么提升到全身刚体空间，以及恢复模式下的 $r _ {recover}$</summary>
 
 > 🔑 **直觉**：PHC 把“像不像参考动作”这件事提升到**全身刚体状态空间**去比较，而不是像 DeepMimic 那样更偏任务工程式地拆成 pose/ee/com 四块。这样做在大动作库上更统一，也更容易接噪声输入。
 
 恢复模式下，任务目标会被放松成“先回到目标附近再说”，不要求一开始就精确追全身姿态。你可以把它理解成：
 
-$$r_{recover} \approx 0.5 \cdot r_{point} + 0.5 \cdot r_{amp} + 0.1 \cdot r_{energy}$$
+$$r _ {recover} \approx 0.5 \cdot r _ {point} + 0.5 \cdot r _ {amp} + 0.1 \cdot r _ {energy}$$
 
-其中 $r_{point}$ 主要关心根节点是否靠近目标位置——先站起来、先回去，再重新接轨迹。
+其中 $r _ {point}$ 主要关心根节点是否靠近目标位置——先站起来、先回去，再重新接轨迹。
 </details>
 
 ### 第三步：渐进式训练（Progressive Training）
@@ -318,7 +318,7 @@ self.pnn.freeze_pnn(self.training_prim)
 ### 第四步：乘法组合（Multiplicative Composition）
 
 <details class="paper-fold" markdown="1">
-<summary>📖 展开文字：$\Pi_{PHC}$ 那一式，以及「连续混合」的含义</summary>
+<summary>📖 展开文字：$\Pi _ {PHC}$ 那一式，以及「连续混合」的含义</summary>
 
 所有 Primitive 冻结后，Composer $C$ 学习动态混合它们：
 
@@ -373,7 +373,7 @@ $P^F$ 的训练有专门设计：
 - **初始化**：角色被随机扔到地上（各种姿态）、距参考 2-5m 远
 - **简化目标**：恢复模式下只关注根节点位置，不管全身姿态
 - **切换机制**：当角色根节点距参考 < 0.5m 时，自动切回正常模仿模式
-- **训练数据**：只用简单移动数据 $Q_{loco}$
+- **训练数据**：只用简单移动数据 $Q _ {loco}$
 </details>
 
 这一块源码其实非常硬核，而且很能体现 PHC 的工程价值。
@@ -733,7 +733,7 @@ DeepMimic 一次只学一个动作片段，用参考动作 + 残差作为动作�
 
 <h3 id="q5-phc-为什么不用残差动作">Q5: PHC 为什么不用残差动作？</h3>
 
-残差动作（$a = a_{ref} + \Delta a$）依赖参考动作作为基准，限制了策略的表达能力。PHC 直接输出绝对 PD 目标，虽然更难学习，但在处理噪声输入和恢复场景时更灵活——因为恢复时根本没有合理的参考动作可以加残差。
+残差动作（$a = a _ {ref} + \Delta a$）依赖参考动作作为基准，限制了策略的表达能力。PHC 直接输出绝对 PD 目标，虽然更难学习，但在处理噪声输入和恢复场景时更灵活——因为恢复时根本没有合理的参考动作可以加残差。
 
 <h3 id="q6-phc-的-relaxed-early-termination-是什么">Q6: PHC 的 Relaxed Early Termination 是什么？</h3>
 
@@ -781,7 +781,7 @@ DeepMimic 一次只学一个动作片段，用参考动作 + 残差作为动作�
 | 控制频率 | 30 Hz | 策略推理 |
 | 仿真频率 | 60 Hz | 物理仿真 |
 | 终止阈值 | 0.5m | 平均关节距离（排除脚踝/脚趾） |
-| 能量惩罚系数 | 0.0005 | $r_{energy}$ |
+| 能量惩罚系数 | 0.0005 | $r _ {energy}$ |
 | Primitive 数量 | 4（含恢复） | 3 个模仿 + 1 个恢复 |
 | 训练数据 | AMASS（过滤后） | 去除坐姿、人物交互等 |
 | 训练时间 | ~1 周 | 单张 A100 GPU |

@@ -125,11 +125,11 @@ $$
 \mathcal{L}_{\text{NCE}} = - \mathbb{E}_{t}\left[ \log \frac{\exp(\text{sim}(z_t, z^*_t)/\tau)}{\sum_{j} \exp(\text{sim}(z_t, z^*_j)/\tau)} \right]
 $$
 
-其中 $z_t = f_\theta(o_{t-H:t})$ 是 actor 由历史本体感知编出的潜变量，$z^*_t = f_\phi(s^*_t)$ 是 privileged encoder 由特权状态编出的潜变量，$\text{sim}$ 通常是余弦相似度，$\tau$ 是温度超参。
+其中 $z_t = f_\theta(o _ {t-H:t})$ 是 actor 由历史本体感知编出的潜变量，$z^{\ast}_t = f_\phi(s^{\ast}_t)$ 是 privileged encoder 由特权状态编出的潜变量，$\text{sim}$ 通常是余弦相似度，$\tau$ 是温度超参。
 
 **关键设计点**：
 
-- 训练时 critic 直接走特权 $s^*$，actor 只走本体感知 $o$，**只通过对比损失**让二者潜空间对齐；
+- 训练时 critic 直接走特权 $s^{\ast}$，actor 只走本体感知 $o$，**只通过对比损失**让二者潜空间对齐；
 - 部署时**只剩 actor**，特权编码器整个被丢掉——但 actor 隐状态已经学会"猜"出地形/摩擦/扰动的结构化表征。
 
 > 💡 直觉：RMA 是用**回归 MSE**把 privileged encoder 蒸到 student encoder；本文换成**对比损失**，主张能学到更**判别性、可迁移**的表征，对真实世界的分布偏移更鲁棒。
@@ -156,7 +156,7 @@ $$
 ### 4. 训练管线
 
 - **算法**：PPO + Asymmetric Actor-Critic；
-- **损失**：$\mathcal{L} = \mathcal{L}_{\text{PPO}} + \lambda_{\text{NCE}} \cdot \mathcal{L}_{\text{NCE}}$；
+- **损失**：$\mathcal{L} = \mathcal{L} _ {\text{PPO}} + \lambda _ {\text{NCE}} \cdot \mathcal{L} _ {\text{NCE}}$；
 - **观测**：
   - Actor 输入：本体感知（IMU 角速度 / 重力方向、关节位置 / 速度、上一步动作）+ 速度指令 + gait clock 相位；
   - Critic 输入：上面所有 + 特权信息（heightmap、摩擦、质量、外力等）；
@@ -279,7 +279,7 @@ flowchart TB
 A：MSE 蒸馏倾向于学到**绝对值对齐**的表征，但本体感知与特权信息维度差异大（前者百维实值，后者可能是高维 heightmap），强行 MSE 会让 actor encoder 倾向于"猜均值"。InfoNCE 只关心**相对关系**——同一时间步的 (o, z\*) 比其他时间步更近就行——这种**判别式**目标对噪声、维度差异、分布偏移都更鲁棒，也更适合后续被策略使用。
 
 **Q：自适应步态时钟会不会让训练不稳定？**
-A：会，所以作者把它写成 $\omega = \omega_{\text{base}} + \Delta\omega(z)$ 的残差形式，$\omega_{\text{base}}$ 给一个先验合理的固定值，$\Delta\omega$ 只学增量。这相当于在"clocked"和"clock-free"之间插了一个**可学习但有先验**的中间档，既保留固定时钟的稳定性，又获得无时钟的灵活性。
+A：会，所以作者把它写成 $\omega = \omega _ {\text{base}} + \Delta\omega(z)$ 的残差形式，$\omega _ {\text{base}}$ 给一个先验合理的固定值，$\Delta\omega$ 只学增量。这相当于在"clocked"和"clock-free"之间插了一个**可学习但有先验**的中间档，既保留固定时钟的稳定性，又获得无时钟的灵活性。
 
 **Q：30 cm 台阶 / 26.5° 斜坡为什么是有意义的数字？**
 A：30 cm ≈ 普通楼梯踏步高度（中国住宅规范 15-17 cm，办公楼可到 17-20 cm，户外大台阶可到 30 cm），是日常巡检 / 救援场景的常见极限；26.5° 接近 1:2 坡度（约 27°），是无障碍坡道（1:12 ≈ 4.8°）远不能覆盖的"陡坡"。能用纯本体感知零样本通过，这两个数字已经非常激进。

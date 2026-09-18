@@ -70,7 +70,7 @@ $$\text{gap} \leq f(\text{随机化分布}, \text{样本复杂度})$$
 
 关键发现：在** mild conditions** 下，这个 gap 可以足够小——意味着 DR 可以**无需任何现实样本**实现成功迁移。
 
-这个界不用啃公式也能看懂：下面这个实验台把 $\varepsilon_{approx}$ 和 $\varepsilon_{stat}$ 画成两条反向的曲线，拖动随机化区间和真实 $\mu^\star$，就能看到「太窄覆盖不到、太宽学不动」这个取舍长什么样：
+这个界不用啃公式也能看懂：下面这个实验台把 $\varepsilon _ {approx}$ 和 $\varepsilon _ {stat}$ 画成两条反向的曲线，拖动随机化区间和真实 $\mu^\star$，就能看到「太窄覆盖不到、太宽学不动」这个取舍长什么样：
 
 <div class="paper-demo" data-demo="drt-gap"><p class="demo-fallback">（本节含交互演示，需要启用 JavaScript）</p></div>
 
@@ -147,11 +147,11 @@ flowchart TB
 
 ### 第四步：sim-to-real gap 直觉估计
 
-论文定理：DR 返回策略 $\pi_{DR}$ 在真实 $\mu^\star$ 下的次优 gap 满足
-$$V^\star(\mu^\star) - V^{\pi_{DR}}(\mu^\star) \leq \underbrace{\epsilon_{approx}}_{\text{随机化覆盖误差}} + \underbrace{\epsilon_{stat}}_{\text{样本复杂度}}$$
+论文定理：DR 返回策略 $\pi _ {DR}$ 在真实 $\mu^\star$ 下的次优 gap 满足
+$$V^\star(\mu^\star) - V^{\pi _ {DR}}(\mu^\star) \leq \underbrace{\epsilon _ {approx}} _ {\text{随机化覆盖误差}} + \underbrace{\epsilon _ {stat}} _ {\text{样本复杂度}}$$
 
-- 若 $\mu^\star \in [0.3, 1.2]$（真实值落在随机化区间内）→ $\epsilon_{approx}$ 很小。
-- 若 $\mu^\star = 0.1$（比训练分布还滑）→ $\epsilon_{approx}$ 急剧变大，迁移失败。
+- 若 $\mu^\star \in [0.3, 1.2]$（真实值落在随机化区间内）→ $\epsilon _ {approx}$ 很小。
+- 若 $\mu^\star = 0.1$（比训练分布还滑）→ $\epsilon _ {approx}$ 急剧变大，迁移失败。
 
 **实战推论**：随机化区间要**覆盖真实分布**，宁可偏大。
 
