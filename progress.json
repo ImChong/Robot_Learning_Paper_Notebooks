@@ -46,7 +46,7 @@
       "last_title": "ReActor: Reinforcement Learning for Physics-Aware Motion Retargeting (arXiv:2605.06593)",
       "next_module": "05_Locomotion",
       "last_completed_date": "2026-09-18",
-      "note": "04_Loco-Manipulation_and_WBC 模块补齐最新发表且无笔记的《ReActor: Reinforcement Learning for Physics-Aware Motion Retargeting》(arXiv:2605.06593, v1 2026-05-07, ACM TOG / SIGGRAPH 2026, Disney Research 瑞士)。把「人体动作重定向到机器人」重表述为物理仿真里的双层优化(bilevel)：上层解重定向参数、下层用 PPO 训跟踪策略，两者联合优化(对上层损失推近似梯度)，就地化解参考-形态冲突，产出无脚滑/无自穿模/动力学可执行的参考动作。用户只需稀疏语义刚体对应+根连杆对、免手调；参数化=全局缩放+标称变换+可学位置/朝向+每条动作竖直偏移；根部辅助力 wrench(惩罚+连续死区)兜住形态不可行的极端动作；RL 学初始化替代 RSI，DoF 少于源用 twist-swing。AMASS(PHC 过滤)全集训练，地面/自穿透·脚滑·脚部漂浮四类运动学指标与下游 RL 成功率/根位姿·关节 RMSE 均超 GMR、OmniRetarget；迁移四足 ANYmal D、真机 Lima、交互动画实时重定向(超实时)。Unitree G1(29DoF)/Lima(20DoF)/ANYmal D(12DoF)。含整体框架 mermaid；论文暂无公开代码，故无源码时序图。",
+      "note": "04_Loco-Manipulation_and_WBC 模块补齐最新发表且无笔记的《ReActor: Reinforcement Learning for Physics-Aware Motion Retargeting》(arXiv:2605.06593, v1 2026-05-07, ACM TOG / SIGGRAPH 2026, Disney Research 瑞士)。把「人体动作重定向到机器人」重表述为物理仿真里的双层优化(bilevel)：上层解重定向参数、下层用 PPO 训跟踪策略，两者联合优化(对上层损失推近似梯度)，就地化解参考-形态冲突，产出无脚滑/无自穿模/动力学可执行的参考动作。用户只需稀疏语义刚体对应+根连杆对、免手调；参数化=全局缩放+标称变换+可学位置/朝向+每条动作竖直偏移；根部辅助力 wrench(惩罚+连续死区)兜住形态不可行的极端动作；RL 学初始化替代 RSI，DoF 少于源用 twist-swing。AMASS(PHC 过滤)全集训练，地面/自穿透·脚滑·脚部漂浮四类运动学指标与下游 RL 成功率/根位姿·关节 RMSE 均超 GMR、OmniRetarget；迁移四足 ANYmal D、真机 Lima、交互动画实时重定向(超实时)。Unitree G1(29DoF)/Lima(20DoF)/ANYmal D(12DoF)。含整体框架 mermaid；论文暂无公开代码，故无源码时序图。 【去重修订】该篇与 02_Motion_Retargeting 下既有的 ReActor 笔记为同一论文(arXiv:2605.06593)，已把本次补充的全文细节、整体框架 mermaid 与实验结果合并进 papers/02_Motion_Retargeting/ReActor__Reinforcement_Learning_for_Physics-Aware_Motion_Retargeting/，04_Loco-Manipulation_and_WBC 下的副本已删除。",
       "last_date": "2026-09-18",
       "next_candidate": null,
       "last_completed": "ReActor: Reinforcement Learning for Physics-Aware Motion Retargeting (arXiv:2605.06593)"
@@ -1515,8 +1515,8 @@
         "date": "2026-09-18",
         "index": 532,
         "title": "ReActor: Reinforcement Learning for Physics-Aware Motion Retargeting",
-        "folder": "papers/04_Loco-Manipulation_and_WBC/ReActor__Reinforcement_Learning_for_Physics-Aware_Motion_Retargeting",
-        "module": "04_Loco-Manipulation_and_WBC",
+        "folder": "papers/02_Motion_Retargeting/ReActor__Reinforcement_Learning_for_Physics-Aware_Motion_Retargeting",
+        "module": "02_Motion_Retargeting",
         "arxiv": "2605.06593",
         "has_open_source": false
       }

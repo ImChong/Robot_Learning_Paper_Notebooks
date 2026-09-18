@@ -231,9 +231,9 @@
         "path": "papers/02_Motion_Retargeting/ReActor__Reinforcement_Learning_for_Physics-Aware_Motion_Retargeting/ReActor__Reinforcement_Learning_for_Physics-Aware_Motion_Retargeting.md",
         "url": "/papers/02_Motion_Retargeting/ReActor__Reinforcement_Learning_for_Physics-Aware_Motion_Retargeting/ReActor__Reinforcement_Learning_for_Physics-Aware_Motion_Retargeting.html",
         "dir": "ReActor__Reinforcement_Learning_for_Physics-Aware_Motion_Retargeting",
-        "arxiv": "2605.06593v1",
-        "published_date_zh": "2026年5月（arXiv）",
-        "published_date_en": "May 2026 (arXiv)",
+        "arxiv": "2605.06593",
+        "published_date_zh": "2026年5月7日（arXiv v1）",
+        "published_date_en": "May 7, 2026 (arXiv v1)",
         "zhname": "ReActor：面向物理可行动作重定向的强化学习",
         "zh_title": "ReActor：面向物理可行动作重定向的强化学习"
       }
@@ -565,18 +565,6 @@
   "04_Loco-Manipulation_and_WBC": {
     "display_name": "Loco-Manipulation and WBC",
     "papers": [
-      {
-        "title": "ReActor: Reinforcement Learning for Physics-Aware Motion Retargeting",
-        "path": "papers/04_Loco-Manipulation_and_WBC/ReActor__Reinforcement_Learning_for_Physics-Aware_Motion_Retargeting/ReActor__Reinforcement_Learning_for_Physics-Aware_Motion_Retargeting.md",
-        "url": "/papers/04_Loco-Manipulation_and_WBC/ReActor__Reinforcement_Learning_for_Physics-Aware_Motion_Retargeting/ReActor__Reinforcement_Learning_for_Physics-Aware_Motion_Retargeting.html",
-        "dir": "ReActor__Reinforcement_Learning_for_Physics-Aware_Motion_Retargeting",
-        "arxiv": "2605.06593",
-        "has_open_source": false,
-        "published_date_zh": "2026年5月7日（arXiv v1）",
-        "published_date_en": "May 7, 2026 (arXiv v1)",
-        "zhname": "ReActor：用强化学习做物理感知的动作重定向",
-        "zh_title": "ReActor：用强化学习做物理感知的动作重定向"
-      },
       {
         "title": "GigaBrain-WBC-0.5: A Behavior World Model for Robust Whole-Body Control with Environment Interaction",
         "path": "papers/04_Loco-Manipulation_and_WBC/GigaBrain-WBC-0.5__A_Behavior_World_Model_for_Robust_Whole-Body_Control/GigaBrain-WBC-0.5__A_Behavior_World_Model_for_Robust_Whole-Body_Control.md",
