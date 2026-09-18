@@ -65,7 +65,7 @@ PPO 通过一个简单的**裁剪机制**，让强化学习的策略更新既大
 
 <div class="paper-demo" data-demo="ppo-explainer"><p class="demo-fallback">（本节含动画演示，需要启用 JavaScript）</p></div>
 
-> 📖 动画覆盖的两节——「这篇论文要解决什么问题」和「PPO 是怎么做的」——**文字讲解默认折叠**，想看推导、公式和对照表时点开各节的折叠条即可，内容一字未删。
+> 📖 **动画之后的正文默认全部折叠**：前半部分（「要解决什么问题」「是怎么做的」）按小节收起，后面的具体实例、源码对照、面试问题、讨论记录与附录整块收起。想细读哪一块就点开对应的折叠条，内容一字未删；目录里的标题依旧可以直接点，会自动展开所在折叠块，左侧目录顶部还有「展开全部文字」一键铺开。
 
 ---
 
@@ -162,11 +162,14 @@ flowchart TB
 
 ## 🚶 具体实例：用 PPO 训练人形机器人走路
 
+<details class="paper-fold" markdown="1">
+<summary>📖 展开全文（16 节）：环境设定 / 第 0 步：初始化 / 第 1 步：收集经验（多环境并行） / Episode 生命周期（状态图）…</summary>
+
 > 💡 **平台说明**：PPO 原论文（2017）在 **OpenAI Gym**（MuJoCo 物理引擎）的连续控制任务（HalfCheetah-v1、Hopper-v1、Humanoid-v1 等）和 **Atari** 游戏上做实验。下面示例使用现代等效版本 **Humanoid-v4**，与原论文 v1 版本在接口和环境细节上略有差异，但算法逻辑完全相同。
 
 下面用 OpenAI Gym 的 **Humanoid-v4** 环境（对应原论文 Humanoid-v1），走一遍 PPO 从初始化到收敛的完整流程。Humanoid 是一个 17 关节、376 维观测、17 维动作的人形机器人，目标是学会稳定地向前走。
 
-### 环境设定
+<h3 id="环境设定">环境设定</h3>
 
 | 项目 | 具体值 |
 |------|--------|
@@ -177,7 +180,7 @@ flowchart TB
 
 > 💡 奖励设计的直觉：**走得快**（$v_x$）有奖励，**动作太猛**（$\lVert a_t \rVert^2$）有惩罚，**摔倒**重罚。
 
-### 第 0 步：初始化
+<h3 id="第-0-步初始化">第 0 步：初始化</h3>
 
 ```
 策略网络 πθ:  MLP [376] → 256 → 256 → [17] (输出高斯分布的均值)   # Actor：输入376维观测，输出17维动作分布
@@ -193,7 +196,7 @@ flowchart TB
 
 此时策略随机输出扭矩 → 人形机器人一站起来就乱抖，几步就摔倒。
 
-### 第 1 步：收集经验（多环境并行）
+<h3 id="第-1-步收集经验多环境并行">第 1 步：收集经验（多环境并行）</h3>
 
 <div class="mermaid">
 flowchart TB
@@ -218,7 +221,7 @@ t=48:  s₄₈ = [重新站立...],  继续收集到 t=63                       
 > - **速度快**：GPU 向量化计算，32个环境几乎和1个一样快（如 Isaac Gym）
 > - **覆盖更广**：同时有的环境在站立，有的在行走，有的刚摔倒重置
 
-#### Episode 生命周期（状态图）
+<h4 id="episode-生命周期状态图">Episode 生命周期（状态图）</h4>
 
 单个环境里，一个 episode 从初始化到终止的完整状态流转如下。先记住 done 在哪里发生，下一步就能明白 GAE 为什么要"在 done 边界截断"：
 
@@ -240,9 +243,9 @@ stateDiagram-v2
 
 > 💡 done（FAIL / TIME）就是**轨迹边界**：上面 t=47 摔倒后 t=48 重新站立，两段属于不同轨迹。GAE 逆序递推到边界必须停下，不能把下一条轨迹的信息传过来——这就是第 2 步里"done 边界截断"的含义。
 
-### 第 2 步：计算优势（GAE）
+<h3 id="第-2-步计算优势gae">第 2 步：计算优势（GAE）</h3>
 
-#### 为什么要算优势？
+<h4 id="为什么要算优势">为什么要算优势？</h4>
 
 策略梯度的本质是：**好动作就抬高概率，坏动作就压低概率**。但"好坏"得有个**参照系**——比谁好？
 
@@ -266,7 +269,7 @@ $$\hat{A}(s,a) = Q(s,a) - V(s)$$
 | **降方差** | 基线只跟状态有关、与选哪个动作无关，**减它不改变梯度期望（无偏）**，却大幅压低方差 |
 | **信用分配** | 把"状态本身好不好"（归 $V$）和"这个动作选得好不好"（归优势）分开 |
 
-#### 为什么用 GAE，而不是直接 $Q - V$？
+<h4 id="为什么用-gae而不是直接-q---v">为什么用 GAE，而不是直接 $Q - V$？</h4>
 
 理想优势里的 $Q$、$V$ 都是真值，实际只有**会犯错的 Critic 估计 $V_\phi$**。用它估优势有两个极端：
 
@@ -291,7 +294,7 @@ flowchart TB
     TD --> GAE["③ 逆序 GAE：$$\hat{A}_t = \delta_t + \gamma\lambda\hat{A}_{t+1}$$<br/>done 边界截断"]
 </div>
 
-#### 一个具体例子：走 3 步后摔倒
+<h4 id="一个具体例子走-3-步后摔倒">一个具体例子：走 3 步后摔倒</h4>
 
 参数用 $\gamma=0.99,\ \lambda=0.95$，故 $\gamma\lambda=0.9405$。一段 rollout：机器人走了 3 步，第 4 步大晃，第 5 步摔倒（done）：
 
@@ -363,7 +366,7 @@ xychart-beta
 
 结果：站稳时 $\hat{A}_t > 0$（好动作），摔倒前 $\hat{A}_t \ll 0$（差动作）。
 
-### 第 3 步：PPO 裁剪更新（核心！）
+<h3 id="第-3-步ppo-裁剪更新核心">第 3 步：PPO 裁剪更新（核心！）</h3>
 
 保存旧策略 $\pi_{\theta_{old}} \leftarrow \pi_\theta$，然后对同一批 2048 个样本做 **10 个 epoch** 的更新。这一步只盯三件事：
 
@@ -373,7 +376,7 @@ xychart-beta
 
 > ❓ **先回答最常见的疑问**：好动作里算出 `clip(r)=1.2`，**也会冻结**。坏动作里 `clip(r)=0.8` 会冻结。两边是对称的——不是只有 $0.8$ 才冻。
 
-#### 一张图：什么时候还在学，什么时候刹住
+<h4 id="一张图什么时候还在学什么时候刹住">一张图：什么时候还在学，什么时候刹住</h4>
 
 <div class="mermaid">
 flowchart TB
@@ -388,7 +391,7 @@ flowchart TB
 
 可以把 $[0.8,\ 1.2]$ 想成车道：车（策略）可以在车道里加速/减速；一旦顶到护栏，方向盘这侧就锁死，防止一次转弯过大翻车。
 
-#### 案例 A：好动作——`clip(r)=1.2` 也会冻结
+<h4 id="案例-a好动作clipr12-也会冻结">案例 A：好动作——<code>clip(r)=1.2</code> 也会冻结</h4>
 
 机器人在 $t=15$ 选了一次「抬腿迈步」，$\hat{A}_{15}=+2.3$（比平均好）。
 
@@ -406,7 +409,7 @@ flowchart TB
 
 因为 $1.2$ 是常数（不随 $\theta$ 再变），这条样本的策略梯度为 $0$ → **冻结**。含义：好动作可以鼓励，但最多鼓励到概率比 $1.2$；再往上加码本轮不认。
 
-#### 案例 B：坏动作——`clip(r)=0.8` 冻结
+<h4 id="案例-b坏动作clipr08-冻结">案例 B：坏动作——<code>clip(r)=0.8</code> 冻结</h4>
 
 $t=42$ 选了一次「乱甩手臂导致要倒」，$\hat{A}_{42}=-3.1$。新策略已经不太选它了：$r=0.6$（低于 $0.8$）。
 
@@ -416,7 +419,7 @@ $t=42$ 选了一次「乱甩手臂导致要倒」，$\hat{A}_{42}=-3.1$。新策
 
 $0.8$ 是常数 → 梯度为 $0$ → **冻结**。含义：坏动作可以打压，但最多打压到概率比 $0.8$；已经压够了，本轮不再继续狂砍（以免策略抖得太狠）。
 
-#### 两个案例对照
+<h4 id="两个案例对照">两个案例对照</h4>
 
 | | 案例 A 好动作 | 案例 B 坏动作 |
 |--|--------------|--------------|
@@ -460,7 +463,7 @@ for epoch in range(10):                              # 同一批 2048 样本复�
 
 <div class="paper-demo" data-demo="ppo-epochs"><p class="demo-fallback">（本节含交互演示，需要启用 JavaScript）</p></div>
 
-#### 常见疑问
+<h4 id="常见疑问">常见疑问</h4>
 
 **Q1：clip 生效时，reward 是不是就不反传了？**
 
@@ -498,7 +501,7 @@ flowchart TB
     Dt -->|否| Ft["本步冻结"]
 </div>
 
-### 第 4 步：训练进展
+<h3 id="第-4-步训练进展">第 4 步：训练进展</h3>
 
 | 训练阶段 | 迭代次数 | 平均回报 | 行为表现 |
 |---------|---------|---------|---------|
@@ -518,7 +521,7 @@ xychart-beta
     line [30, 50, 200, 1000, 3000, 5000]
 </div>
 
-### 完整流程图
+<h3 id="完整流程图">完整流程图</h3>
 
 <div class="mermaid">
 flowchart TB
@@ -537,10 +540,14 @@ flowchart TB
 </div>
 
 > 💡 注意：收集时按环境分开（保持轨迹独立），但更新时**打乱混合**所有环境的样本——这是 PPO 样本效率高的关键。
+</details>
 
 ---
 
 ## 🤖 为什么 PPO 是人形机器人控制的首选？
+
+<details class="paper-fold" markdown="1">
+<summary>📖 展开全文：四条理由（高维动作空间友好 / 容错性强 / 工程友好 / 生态成熟）</summary>
 
 1. **高维动作空间友好**：Humanoid 有 17 个关节需要同时控制，PPO 的裁剪机制避免了高维空间中策略的剧烈震荡
 2. **容错性强**：人形机器人容易摔倒，PPO 不会因为几次摔倒就把已学会的平衡技能丢掉
@@ -548,14 +555,18 @@ flowchart TB
 4. **生态成熟**：几乎所有人形机器人 RL 论文（AMP、PHC、ASE 等）都以 PPO 为基础算法
 
 > **一句话**：如果只能学一个 RL 算法，PPO 是首选。它是 OpenAI Five (Dota 2)、RLHF (ChatGPT)、以及绝大多数机器人控制的核心算法。
+</details>
 
 ---
 
 ## 📁 MimicKit 源码对照
 
+<details class="paper-fold" markdown="1">
+<summary>📖 展开全文（11 节）：源码类图：PPO 在 MimicKit 中的位置 / 源码运行时序图 / 1. Actor-Critic 网络结构（PPOModel）…</summary>
+
 以下代码块对应 [MimicKit](https://github.com/xbpeng/MimicKit) 中 PPO 的实现，与上述讲解的各模块一一对应。
 
-### 源码类图：PPO 在 MimicKit 中的位置
+<h3 id="源码类图ppo-在-mimickit-中的位置">源码类图：PPO 在 MimicKit 中的位置</h3>
 
 先看静态结构。MimicKit 的所有算法都挂在 `BaseAgent` 的训练骨架下，PPO 是其中一条分支；后续论文（AMP、ASE、LCP……）的 Agent 都**继承自 PPOAgent**，所以这张图也是整个模块 01 源码的"地基"：
 
@@ -602,7 +613,7 @@ classDiagram
 - 读代码时按这个分工找：**采样循环**在 `BaseAgent`（`_rollout_train`），**PPO 特有的东西**全在 `PPOAgent` 的四个覆写方法里，**网络前向**在 `PPOModel`。
 - 后续笔记的类图会在这张图基础上"往下长"：AMPAgent 继承 PPOAgent 加鉴别器，ASEAgent 再继承 AMPAgent 加编码器。
 
-### 源码运行时序图
+<h3 id="源码运行时序图">源码运行时序图</h3>
 
 以 `python mimickit/run.py --mode train` 为入口，一次完整训练的调用时序如下（方法名对应 MimicKit 真实源码）：
 
@@ -644,7 +655,7 @@ sequenceDiagram
 - ①–③ 是一次性初始化：`run.py` 先按配置构建并行环境，再按 `agent_name` 构建 PPOAgent。
 - ⑤–⑨ 对应上文「第 1 步：收集经验」，⑩ 对应「第 2 步：计算优势」，⑪–⑭ 对应「第 3 步：PPO 裁剪更新」——MimicKit 里 Critic 与 Actor 分开各跑各的 epoch。
 
-### 1. Actor-Critic 网络结构（PPOModel）
+<h3 id="1-actor-critic-网络结构ppomodel">1. Actor-Critic 网络结构（PPOModel）</h3>
 
 ```python
 # mimickit/learning/ppo_model.py
@@ -662,7 +673,7 @@ class PPOModel(base_model.BaseModel):     # Actor-Critic 模型，继承通用�
 
 Actor 和 Critic 各自独立（不共享 backbone），这是人形机器人领域的主流选择。
 
-### 2. MLP 网络（fc_2layers_1024units）
+<h3 id="2-mlp-网络fc_2layers_1024units">2. MLP 网络（fc_2layers_1024units）</h3>
 
 ```python
 # mimickit/learning/nets/fc_2layers_1024units.py
@@ -691,7 +702,7 @@ model:                               # 网络结构配置
   critic_net: "fc_2layers_1024units" # [obs] → 1024 → 512 → [1] (价值标量)
 ```
 
-### 3. 概率比计算（r_t）
+<h3 id="3-概率比计算r_t">3. 概率比计算（r_t）</h3>
 
 ```python
 # mimickit/learning/ppo_agent.py - _compute_actor_loss()
@@ -702,7 +713,7 @@ a_logp = a_dist.log_prob(norm_a)          # 新策略下旧动作的对数概率
 a_ratio = torch.exp(a_logp - old_a_logp)  # 对数概率相减再取指数，数值上更稳定
 ```
 
-### 4. PPO 裁剪机制（核心！）
+<h3 id="4-ppo-裁剪机制核心">4. PPO 裁剪机制（核心！）</h3>
 
 ```python
 # mimickit/learning/ppo_agent.py - _compute_actor_loss()
@@ -723,7 +734,7 @@ ppo_clip_ratio: 0.2   # ε = 0.2，概率比限制在 [0.8, 1.2]
 norm_adv_clip: 4.0    # 优势归一化后限制在 [-4, 4]
 ```
 
-### 5. GAE / TD-λ 回报计算
+<h3 id="5-gae--td-λ-回报计算">5. GAE / TD-λ 回报计算</h3>
 
 ```python
 # mimickit/learning/rl_util.py
@@ -756,7 +767,7 @@ td_lambda: 0.95        # GAE λ=0.95
 discount: 0.99         # 折扣因子 γ=0.99
 ```
 
-### 6. 价值网络损失（Critic Loss）
+<h3 id="6-价值网络损失critic-loss">6. 价值网络损失（Critic Loss）</h3>
 
 ```python
 # mimickit/learning/ppo_agent.py - _compute_critic_loss()
@@ -773,7 +784,7 @@ def _compute_critic_loss(self, batch):                 # 计算价值网络的�
     return info                               # 返回损失信息
 ```
 
-### 7. 训练循环（PPO Update）
+<h3 id="7-训练循环ppo-update">7. 训练循环（PPO Update）</h3>
 
 ```python
 # mimickit/learning/ppo_agent.py - _update_model()
@@ -799,7 +810,7 @@ critic_epochs: 2       # Critic 更新 2 个 epoch
 critic_batch_size: 2   # 每个 batch 2 个环境
 ```
 
-### 8. Experience Buffer
+<h3 id="8-experience-buffer">8. Experience Buffer</h3>
 
 ```python
 # mimickit/learning/experience_buffer.py
@@ -823,7 +834,7 @@ class ExperienceBuffer():                    # 经验缓冲区：暂存一轮 ro
 steps_per_iter: 32     # 每轮收集 32 步 × N 个环境
 ```
 
-### 9. PPO 超参数一览
+<h3 id="9-ppo-超参数一览">9. PPO 超参数一览</h3>
 
 ```yaml
 # deepmimic_humanoid_ppo_agent.yaml
@@ -841,36 +852,44 @@ critic_batch_size: 2        # Critic batch size
 action_bound_weight: 10.0   # 动作范围惩罚（防止动作超出边界）
 action_entropy_weight: 0.0  # 熵正则（0 表示不用）
 ```
+</details>
 
 ---
 
 ## 🎤 面试高频问题 & 参考回答
 
-### Q1: PPO 和 TRPO 的区别？
+<details class="paper-fold" markdown="1">
+<summary>📖 展开全文（5 节）：Q1: PPO 和 TRPO 的区别？ / Q2: 裁剪具体怎么起作用？ / Q3: 为什么 PPO 能对同一批数据更新多次？…</summary>
+
+<h3 id="q1-ppo-和-trpo-的区别">Q1: PPO 和 TRPO 的区别？</h3>
 **A**: TRPO 用二阶优化（KL 散度硬约束），计算复杂，需要 Hessian 矩阵；PPO 用一阶优化 + 裁剪，更简单且效果相当。PPO 可以看作 TRPO 的"工程友好版"。
 
-### Q2: 裁剪具体怎么起作用？
+<h3 id="q2-裁剪具体怎么起作用">Q2: 裁剪具体怎么起作用？</h3>
 **A**: 把新旧策略的概率比限制在 $[1-\epsilon, 1+\epsilon]$ 范围内。好动作最多增大到 $1+\epsilon$ 倍就停，差动作最多减小到 $1-\epsilon$ 倍就停。确保每次更新都是"渐进改进"而不是"大跃进"。
 
-### Q3: 为什么 PPO 能对同一批数据更新多次？
+<h3 id="q3-为什么-ppo-能对同一批数据更新多次">Q3: 为什么 PPO 能对同一批数据更新多次？</h3>
 **A**: 因为裁剪机制是自适应的——随着更新轮次增加，概率比逐渐偏离 1，裁剪越来越频繁生效，自动限制了累积更新幅度。相当于自带刹车。
 
-### Q4: PPO 的优缺点？
+<h3 id="q4-ppo-的优缺点">Q4: PPO 的优缺点？</h3>
 **A**: 
 - **优点**：训练稳定、样本效率高（多 epoch 复用数据）、实现简单（一阶优化器）、广泛验证
 - **缺点**：对超参数（$\epsilon$, 学习率）敏感、在稀疏奖励任务上可能探索不足
 
-### Q5: PPO 中的 loss 由哪些部分组成？
+<h3 id="q5-ppo-中的-loss-由哪些部分组成">Q5: PPO 中的 loss 由哪些部分组成？</h3>
 **A**: 两部分（有时三部分）：
 - **策略损失**：$-L^{CLIP}$（加负号因为 optimizer 做的是 minimize）
 - **价值损失**：$\frac{1}{2}\|V(s) - R_{target}\|^2$（让价值网络预测更准）
 - **（可选）熵正则**：$-c \cdot H(\pi)$（鼓励探索，防止策略过早收敛）
+</details>
 
 ---
 
 ## 💬 讨论记录
 
-### 2026-03-15 Surrogate 的理解
+<details class="paper-fold" markdown="1">
+<summary>📖 展开全文（1 节）：2026-03-15 Surrogate 的理解</summary>
+
+<h3 id="2026-03-15-surrogate-的理解">2026-03-15 Surrogate 的理解</h3>
 
 **Q: PPO中的surrogate是什么？如何理解？**
 
@@ -908,19 +927,23 @@ $$r_t(\theta) = \frac{\pi_\theta(a_t \mid s_t)}{\pi_{\theta_{old}}(a_t \mid s_t)
 - **$r_t = 0.5$**：新策略选这个动作的概率减半了
 
 $r_t(\theta) \times \hat{A}_t$ 就在告诉你：**新策略整体回报是变好了还是变差了**。PPO 的 clip 再加一层保险：概率比偏太远时估算不准，所以截断掉。
+</details>
 
 ---
 
 ## 📎 附录
 
-### A. PPO 两种变体
+<details class="paper-fold" markdown="1">
+<summary>📖 展开全文（7 节）：A. PPO 两种变体 / B. Loss 函数完整拆解 / C. Actor-Critic 网络架构 / D. 超参数速查表…</summary>
+
+<h3 id="a-ppo-两种变体">A. PPO 两种变体</h3>
 
 | 变体 | 方法 | 特点 |
 |------|------|------|
 | **PPO-Penalty** | 在目标函数中加入 KL 惩罚项 | 类似 TRPO，用拉格朗日乘子自适应调整 |
 | **PPO-Clip** (主流) | 使用裁剪操作 | 更简单、更稳定，几乎所有实际应用的默认选择 |
 
-### B. Loss 函数完整拆解
+<h3 id="b-loss-函数完整拆解">B. Loss 函数完整拆解</h3>
 
 $$\mathcal{L}_{total}(\theta, \phi) = \underbrace{-\mathbb{E}\left[ L^{CLIP}(\theta) \right]}_{\text{策略损失}} + \underbrace{\frac{1}{2} \mathbb{E}\left[ \left( V_\phi(s) - R_t \right)^2 \right]}_{\text{价值损失}}$$
 
@@ -933,14 +956,14 @@ $$\mathcal{L}_{total}(\theta, \phi) = \underbrace{-\mathbb{E}\left[ L^{CLIP}(\th
 - 让价值网络 $V_\phi(s)$ 拟合目标回报 $R_t$
 - V 准 → 优势估计准 → 策略学得更好 → 新数据更好 → V 更准（良性循环）
 
-### C. Actor-Critic 网络架构
+<h3 id="c-actor-critic-网络架构">C. Actor-Critic 网络架构</h3>
 
 | 架构 | 结构 | 特点 |
 |------|------|------|
 | **共享 backbone** | 输入 → 共享 MLP → 分叉 → Actor/Critic head | 省显存，但两个 loss 可能互相干扰 |
 | **完全独立** | Actor MLP + Critic MLP 各自独立 | 更稳定，**人形机器人领域的主流选择**（Isaac Lab、legged_gym 等默认配置） |
 
-### D. 超参数速查表
+<h3 id="d-超参数速查表">D. 超参数速查表</h3>
 
 | 参数 | 含义 | 推荐值 |
 |------|------|--------|
@@ -953,7 +976,7 @@ $$\mathcal{L}_{total}(\theta, \phi) = \underbrace{-\mathbb{E}\left[ L^{CLIP}(\th
 | n_epochs | 同批数据更新轮数 | 3 ~ 10 |
 | mini_batch_size | 小批量大小 | 64 ~ 4096 |
 
-### E. 训练过程中各组件的变化
+<h3 id="e-训练过程中各组件的变化">E. 训练过程中各组件的变化</h3>
 
 <div class="mermaid">
 flowchart TB
@@ -976,14 +999,14 @@ flowchart TB
     E100 --> E1000
 </div>
 
-### F. 实验结果
+<h3 id="f-实验结果">F. 实验结果</h3>
 
 论文在多个基准任务上验证了 PPO 的效果：
 - **连续控制 (MuJoCo)**：HalfCheetah, Hopper, Walker, Swimmer, Ant, Humanoid，超越 TRPO、A2C
 - **Atari 游戏**：在大多数游戏上取得优异表现
 - **机械臂控制**：成功完成复杂的连续操作任务
 
-### G. 相关工作
+<h3 id="g-相关工作">G. 相关工作</h3>
 
 | 算法 | 年份 | 关系 |
 |------|------|------|
@@ -991,4 +1014,5 @@ flowchart TB
 | **A2C/A3C** | 2016 | 异步优势 Actor-Critic |
 | **SAC** | 2018 | 软 Actor-Critic，off-policy 方法 |
 | **TD3** | 2018 | 双延迟 DDPG，off-policy 方法 |
+</details>
 

@@ -59,7 +59,7 @@ ASE 在 AMP 的基础上往前迈了一大步：**不只是学“自然动作先
 
 <div class="paper-demo" data-demo="ase-explainer"><p class="demo-fallback">（本节含动画演示，需要启用 JavaScript）</p></div>
 
-> 📖 动画覆盖的三块——「这篇论文要解决什么问题」「ASE 是怎么做的」六个概念，以及实例里的五步拆解——**文字讲解默认折叠**，想看推导、公式和对照表时点开各节的折叠条即可，内容一字未删；流程图、类图、时序图、源码片段、论文超参表、面试题与附录不在折叠范围内。
+> 📖 **动画之后的正文默认全部折叠**：前半部分（「要解决什么问题」「是怎么做的」）按小节收起，后面的具体实例、源码对照、面试问题、讨论记录与附录整块收起。想细读哪一块就点开对应的折叠条，内容一字未删；目录里的标题依旧可以直接点，会自动展开所在折叠块，左侧目录顶部还有「展开全部文字」一键铺开。
 
 ---
 
@@ -476,7 +476,10 @@ flowchart TB
 
 ## 🤖 ASE 对人形机器人领域的意义
 
-### 1. 它把“技能”从离散策略变成了连续可组合表示
+<details class="paper-fold" markdown="1">
+<summary>📖 展开全文（4 节）：1. 它把“技能”从离散策略变成了连续可组合表示 / 2. 它是“基础模型”味道最强的一批早期工作之一…</summary>
+
+<h3 id="1-它把技能从离散策略变成了连续可组合表示">1. 它把“技能”从离散策略变成了连续可组合表示</h3>
 
 这是最大价值。
 
@@ -490,7 +493,7 @@ flowchart TB
 
 ASE 之后，技能可以放进一个连续空间里统一表示，后续任务只调 latent 就行。
 
-### 2. 它是“基础模型”味道最强的一批早期工作之一
+<h3 id="2-它是基础模型味道最强的一批早期工作之一">2. 它是“基础模型”味道最强的一批早期工作之一</h3>
 
 如果用今天的话说，ASE 很像在做一个 motion foundation prior：
 - 先大规模预训练
@@ -499,7 +502,7 @@ ASE 之后，技能可以放进一个连续空间里统一表示，后续任务�
 
 它虽然年代比现在这些 foundation model 说法更早，但思路已经很像了。
 
-### 3. 它比 AMP 更适合下游任务复用
+<h3 id="3-它比-amp-更适合下游任务复用">3. 它比 AMP 更适合下游任务复用</h3>
 
 AMP 的 prior 很强，但它主要提供的是“自然动作约束”；
 ASE 则提供的是：
@@ -509,7 +512,7 @@ ASE 则提供的是：
 
 所以从“拿来做任务”的角度，ASE 比 AMP 更进一步。
 
-### 4. 它为 CALM / PULSE 这条线打了底
+<h3 id="4-它为-calm--pulse-这条线打了底">4. 它为 CALM / PULSE 这条线打了底</h3>
 
 后面的：
 - **CALM**：让 latent skill 更可控
@@ -518,10 +521,14 @@ ASE 则提供的是：
 本质上都继承了 ASE 的思想：
 
 > **技能应该是可表示、可组合、可调用的，而不是一个个孤立策略。**
+</details>
 
 ---
 
 ## 📁 MimicKit 源码对照
+
+<details class="paper-fold" markdown="1">
+<summary>📖 展开全文（10 节）：源码类图：ASE = AMP + latent 管理 + Encoder / 源码运行时序图…</summary>
 
 ASE 在 MimicKit 里的实现非常适合拿来学，因为它把论文里的三个核心模块都写得很直白：
 
@@ -529,7 +536,7 @@ ASE 在 MimicKit 里的实现非常适合拿来学，因为它把论文里的三
 2. encoder 从行为片段预测 latent  
 3. diversity loss 保证不同 latent 真对应不同动作
 
-### 源码类图：ASE = AMP + latent 管理 + Encoder
+<h3 id="源码类图ase--amp--latent-管理--encoder">源码类图：ASE = AMP + latent 管理 + Encoder</h3>
 
 先看静态结构（接着 AMP 笔记的类图往下长）。继承链 `PPOAgent → AMPAgent → ASEAgent` 本身就是论文谱系，ASE 这层的所有新增成员都围绕 **latent z** 展开：
 
@@ -567,7 +574,7 @@ classDiagram
 - 对照 AMP 类图看增量：**Model 侧**的 `eval_actor` / `eval_critic` 签名从 `(obs)` 变成 `(obs, z)`——latent 是策略输入的一等公民；再加一个 `eval_enc()` 头。
 - **Agent 侧**新增的五个方法正好对应论文三件事：latent 管理（`_update_latents` / `_sample_latents`）、编码器目标（`_compute_enc_loss`）、多样性正则（`_compute_diversity_loss`）。
 
-### 源码运行时序图
+<h3 id="源码运行时序图">源码运行时序图</h3>
 
 以 `python mimickit/run.py --mode train --agent_config ase_*_agent.yaml` 为入口。`ASEAgent` 在 AMP 的骨架上再叠一层 **latent 管理 + Encoder**，一轮训练要同时更新 4 套参数（Actor / Critic / Disc / Enc）：
 
@@ -610,7 +617,7 @@ sequenceDiagram
 - ⑩–⑫ 对应第 4 节：奖励 = 判别器的"自然度" + 编码器的"技能可识别度"各占一半。
 - ⑭–⑯ 是 4 套参数（Disc / Enc / Critic / Actor）各自更新；⑰ 对应第 6 节的 diversity loss，防止 latent collapse。
 
-### 1. Actor / Critic 都显式接收 latent z
+<h3 id="1-actor--critic-都显式接收-latent-z">1. Actor / Critic 都显式接收 latent z</h3>
 
 ```python
 # mimickit/learning/ase_model.py
@@ -630,7 +637,7 @@ def eval_critic(self, obs, z):
 
 这说明 ASE 不是“后处理 latent”，而是把 latent 当成策略输入的一等公民。
 
-### 2. Encoder 从判别观测恢复 latent
+<h3 id="2-encoder-从判别观测恢复-latent">2. Encoder 从判别观测恢复 latent</h3>
 
 ```python
 # mimickit/learning/ase_model.py
@@ -649,7 +656,7 @@ $$
 
 输出还做了单位球归一化，说明 latent 是单位向量表示。
 
-### 3. latent 在训练中会定期重采样
+<h3 id="3-latent-在训练中会定期重采样">3. latent 在训练中会定期重采样</h3>
 
 ```python
 # mimickit/learning/ase_agent.py
@@ -679,7 +686,7 @@ latent_time_min: 0.0
 latent_time_max: 5.0
 ```
 
-### 4. 奖励由 disc reward + enc reward 组成
+<h3 id="4-奖励由-disc-reward--enc-reward-组成">4. 奖励由 disc reward + enc reward 组成</h3>
 
 ```python
 # mimickit/learning/ase_agent.py
@@ -703,7 +710,7 @@ enc_reward_weight: 0.5
 - disc reward 保证“动作自然”
 - enc reward 保证“技能可识别”
 
-### 5. Encoder loss 本质上是 latent 对齐
+<h3 id="5-encoder-loss-本质上是-latent-对齐">5. Encoder loss 本质上是 latent 对齐</h3>
 
 ```python
 # mimickit/learning/ase_agent.py
@@ -717,7 +724,7 @@ def _calc_enc_error(self, tar_latents, enc_pred):
 
 因为 z 已经归一化，所以内积越大，说明方向越一致。
 
-### 6. Diversity loss 防止 latent collapse
+<h3 id="6-diversity-loss-防止-latent-collapse">6. Diversity loss 防止 latent collapse</h3>
 
 ```python
 # mimickit/learning/ase_agent.py
@@ -747,7 +754,7 @@ diversity_tar: 1.0
 - 那动作输出也应该差得足够远
 - 否则就惩罚
 
-### 7. 默认超参数
+<h3 id="7-默认超参数">7. 默认超参数</h3>
 
 ```yaml
 # data/agents/ase_humanoid_agent.yaml
@@ -783,7 +790,7 @@ enc_reward_weight: 0.5
 task_reward_weight: 0.0
 ```
 
-### 8. 训练 / 测试命令
+<h3 id="8-训练--测试命令">8. 训练 / 测试命令</h3>
 
 ```bash
 # 训练
@@ -804,34 +811,42 @@ python mimickit/run.py --mode test \
   --visualize true \
   --model_file data/models/ase_humanoid_sword_shield_model.pt
 ```
+</details>
 
 ---
 
 ## 🎤 面试高频问题 & 参考回答
 
-### Q1: ASE 和 AMP 的核心区别是什么？
+<details class="paper-fold" markdown="1">
+<summary>📖 展开全文（6 节）：Q1: ASE 和 AMP 的核心区别是什么？ / Q2: 为什么 ASE 需要 encoder？…</summary>
+
+<h3 id="q1-ase-和-amp-的核心区别是什么">Q1: ASE 和 AMP 的核心区别是什么？</h3>
 **A**：AMP 学的是自然动作先验，本质上是“像不像 motion dataset”；ASE 在此基础上引入 latent skill variable 和 encoder，使策略不仅自然，还能通过 latent 空间显式控制和复用技能。
 
-### Q2: 为什么 ASE 需要 encoder？
+<h3 id="q2-为什么-ase-需要-encoder">Q2: 为什么 ASE 需要 encoder？</h3>
 **A**：因为如果没有 encoder 约束，策略可能会忽略 latent z。加入 encoder 后，系统要求从行为片段里能反推出 z，迫使策略真的把技能信息编码进动作里。
 
-### Q3: ASE 的 latent space 有什么价值？
+<h3 id="q3-ase-的-latent-space-有什么价值">Q3: ASE 的 latent space 有什么价值？</h3>
 **A**：它把大量技能压缩成一个连续、可插值、可复用的表示。下游任务不需要重新学底层运动控制，只需要学如何选择或调度 latent z。
 
-### Q4: Diversity loss 的作用是什么？
+<h3 id="q4-diversity-loss-的作用是什么">Q4: Diversity loss 的作用是什么？</h3>
 **A**：防止 latent collapse。也就是避免不同 z 输出几乎相同的动作。它要求 latent 差异和行为差异保持一致，让 skill space 更分散、更有表达力。
 
-### Q5: ASE 和 VAE 有什么像的地方？
+<h3 id="q5-ase-和-vae-有什么像的地方">Q5: ASE 和 VAE 有什么像的地方？</h3>
 **A**：像的地方在于都想把复杂数据压缩到潜空间里；不同的是 ASE 不是做重建，而是在 RL + adversarial imitation 框架中学习一个“可控制的技能 latent”，目标是行为生成与任务复用，不是像素/轨迹重建。
 
-### Q6: ASE 为什么适合做下游任务？
+<h3 id="q6-ase-为什么适合做下游任务">Q6: ASE 为什么适合做下游任务？</h3>
 **A**：因为它把低层动作能力预训练成一个 reusable motor skill prior。下游策略面对的决策空间从“直接控制几十个关节”变成“选择 64 维 latent”，学习会简单很多，而且动作更自然。
+</details>
 
 ---
 
 ## 💬 讨论记录
 
-### 2026-04-07：ASE 的真正价值不是“多技能”，而是“技能接口化”
+<details class="paper-fold" markdown="1">
+<summary>📖 展开全文（1 节）：2026-04-07：ASE 的真正价值不是“多技能”，而是“技能接口化”</summary>
+
+<h3 id="2026-04-07ase-的真正价值不是多技能而是技能接口化">2026-04-07：ASE 的真正价值不是“多技能”，而是“技能接口化”</h3>
 
 很多人第一眼会把 ASE 理解成“AMP 的多技能版”。
 
@@ -842,12 +857,16 @@ ASE 最值钱的是：
 > **它把原本只能隐式存在于策略权重里的技能，变成了一个显式可调用的 latent 接口。**
 
 这个接口一旦建立起来，后面的 CALM、PULSE 甚至更广义的 motion foundation model，都有路可走了。
+</details>
 
 ---
 
 ## 📎 附录
 
-### A. 与路线图其他论文的关联
+<details class="paper-fold" markdown="1">
+<summary>📖 展开全文（3 节）：A. 与路线图其他论文的关联 / B. 与相关方法对比 / C. 你该怎么理解 ASE？</summary>
+
+<h3 id="a-与路线图其他论文的关联">A. 与路线图其他论文的关联</h3>
 
 | 关系 | 说明 |
 |------|------|
@@ -856,7 +875,7 @@ ASE 最值钱的是：
 | **ASE → PULSE** | PULSE 把技能 latent 进一步做成更通用的运动基座 |
 | **DeepMimic → ASE** | DeepMimic 是单技能精确模仿，ASE 是多技能连续表示 |
 
-### B. 与相关方法对比
+<h3 id="b-与相关方法对比">B. 与相关方法对比</h3>
 
 | 特性 | DeepMimic | AMP | ASE |
 |------|-----------|-----|-----|
@@ -866,7 +885,7 @@ ASE 最值钱的是：
 | 是否适合下游复用 | 一般 | 较强 | 很强 |
 | 是否能直接表达技能切换 / 插值 | ❌ | 有限 | ✅ |
 
-### C. 你该怎么理解 ASE？
+<h3 id="c-你该怎么理解-ase">C. 你该怎么理解 ASE？</h3>
 
 如果只记一句：
 
@@ -875,6 +894,7 @@ ASE 最值钱的是：
 如果再加一句：
 
 > **ASE 的关键不是会很多动作，而是它把这些动作压成了一个可供上层策略调用的连续控制空间。**
+</details>
 
 ---
 

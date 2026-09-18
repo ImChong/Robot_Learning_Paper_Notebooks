@@ -100,6 +100,190 @@
     });
   }
 
+  // ─── Collapsed prose (<details class="paper-fold">) ───────────────────────
+  //
+  // Notes that carry a 🎬 explainer animation fold their prose away, so a TOC
+  // link, an in-page anchor or a shared #hash can point at a heading that sits
+  // inside a closed <details>: it is display:none, so its box has no position
+  // and scrolling to it would land at the top of the page. Everything below
+  // exists to make that navigation (and the demos inside a fold) behave.
+
+  var foldObservers = [];
+
+  /* Is this element inside a collapsed fold (or otherwise not rendered)?
+   *
+   * Chromium lays the content of a closed <details> out under
+   * ``content-visibility: hidden``: offsetParent stays set and offsetTop
+   * reports a position far past the end of the document, so the fold state has
+   * to be read from the DOM. checkVisibility() would answer this, but it
+   * returns false for *everything* before the first layout — which is exactly
+   * when the TOC is built — so walk the ancestors instead. */
+  function isHidden(el) {
+    var node = el.parentElement;
+    while (node) {
+      if (node.tagName === 'DETAILS' && !node.open) return true;
+      node = node.parentElement;
+    }
+    return el.offsetParent === null;
+  }
+
+  function onFoldToggle(fn) {
+    foldObservers.push(fn);
+  }
+
+  /* Mermaid lays a diagram out from its container's width; one that was first
+     drawn inside a closed fold can come back collapsed or blank, so re-run the
+     page's renderer once for the fold that just opened. */
+  var mermaidRefreshed = [];
+
+  function refreshMermaidIn(details) {
+    if (mermaidRefreshed.indexOf(details) !== -1) return;
+    var diagrams = details.querySelectorAll('.mermaid');
+    if (!diagrams.length) return;
+    mermaidRefreshed.push(details);
+    var stale = false;
+    for (var i = 0; i < diagrams.length; i++) {
+      var svg = diagrams[i].querySelector('svg');
+      if (!svg || svg.getBoundingClientRect().width < 50) {
+        stale = true;
+        break;
+      }
+    }
+    if (!stale) return;
+    if (typeof window.mermaid === 'undefined' || typeof window.runMermaid !== 'function') return;
+    window.requestAnimationFrame(function () {
+      window.runMermaid();
+    });
+  }
+
+  /* Open every <details> the node is nested in. Returns true if any opened. */
+  function revealNode(node) {
+    var opened = false;
+    var el = node;
+    while (el && el !== document.body) {
+      if (el.tagName === 'DETAILS' && !el.open) {
+        el.open = true;
+        opened = true;
+      }
+      el = el.parentElement;
+    }
+    return opened;
+  }
+
+  function initFolds() {
+    var body = document.getElementById('paper-body');
+    if (!body) return;
+
+    // `toggle` does not bubble — listen in the capture phase.
+    document.addEventListener(
+      'toggle',
+      function (e) {
+        var target = e.target;
+        if (!target || target.tagName !== 'DETAILS') return;
+        if (!body.contains(target)) return;
+        // A canvas drawn inside a closed fold measured a zero-width parent, so
+        // let the demos re-render themselves at their real width now.
+        var kit = window.PaperDemoKit;
+        if (kit && typeof kit.renderAll === 'function') kit.renderAll();
+        if (target.open) refreshMermaidIn(target);
+        for (var i = 0; i < foldObservers.length; i++) {
+          try {
+            foldObservers[i]();
+          } catch (err) {
+            /* a broken observer must not break the fold */
+          }
+        }
+      },
+      true
+    );
+
+    // A #hash aimed inside a fold: on load, and on every later hash change.
+    function revealHash() {
+      var hash = window.location.hash;
+      if (!hash || hash.length < 2) return;
+      var target;
+      try {
+        target = document.querySelector(hash);
+      } catch (err) {
+        return;
+      }
+      if (!target || !body.contains(target)) return;
+      if (!revealNode(target)) return;
+      // The fold just opened, so the target only now has a position.
+      window.requestAnimationFrame(function () {
+        var top = target.getBoundingClientRect().top + window.scrollY - 90;
+        window.scrollTo({ top: top });
+      });
+    }
+
+    revealHash();
+    window.addEventListener('hashchange', revealHash);
+
+    // In-page links in the note itself (the "本文内嵌 N 个演示" lists at the top).
+    body.addEventListener('click', function (e) {
+      var link = e.target && e.target.closest ? e.target.closest('a[href^="#"]') : null;
+      if (!link || !body.contains(link)) return;
+      var hash = link.getAttribute('href');
+      if (!hash || hash.length < 2) return;
+      var target;
+      try {
+        target = document.querySelector(hash);
+      } catch (err) {
+        return;
+      }
+      if (target) revealNode(target);
+    });
+  }
+
+  /* "Expand all / collapse all" for notes with more than a couple of folds:
+     one click to read (or Ctrl+F) the whole note, one to get the outline back. */
+  function initFoldToggleAll() {
+    var body = document.getElementById('paper-body');
+    var wrapper = document.querySelector('#toc-sidebar .toc-wrapper');
+    if (!body || !wrapper) return;
+    var folds = body.querySelectorAll('details.paper-fold');
+    if (folds.length < 3) return;
+
+    var zh = document.documentElement.getAttribute('data-lang-mode') === 'zh';
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'toc-fold-toggle';
+    btn.setAttribute('data-en', 'Expand all text');
+    btn.setAttribute('data-zh', '展开全部文字');
+    btn.textContent = zh ? '展开全部文字' : 'Expand all text';
+
+    function allOpen() {
+      for (var i = 0; i < folds.length; i++) {
+        if (!folds[i].open) return false;
+      }
+      return true;
+    }
+
+    function syncLabel() {
+      var collapse = allOpen();
+      btn.setAttribute('data-en', collapse ? 'Collapse all text' : 'Expand all text');
+      btn.setAttribute('data-zh', collapse ? '全部折叠' : '展开全部文字');
+      var useZh = document.documentElement.getAttribute('data-lang-mode') === 'zh';
+      btn.textContent = useZh ? btn.getAttribute('data-zh') : btn.getAttribute('data-en');
+      btn.setAttribute('aria-pressed', collapse ? 'true' : 'false');
+    }
+
+    btn.addEventListener('click', function () {
+      var open = !allOpen();
+      for (var i = 0; i < folds.length; i++) folds[i].open = open;
+      syncLabel();
+    });
+
+    onFoldToggle(syncLabel);
+    var title = wrapper.querySelector('.toc-title');
+    if (title && title.nextSibling) {
+      wrapper.insertBefore(btn, title.nextSibling);
+    } else {
+      wrapper.appendChild(btn);
+    }
+    syncLabel();
+  }
+
   // ─── Build TOC + scroll-spy active highlighting ───────────────────────────
   function initToc() {
     var body = document.getElementById('paper-body');
@@ -152,8 +336,18 @@
         if (mobileQuery.matches) closeMobileSidebar();
         window.history.replaceState(null, '', hash);
         var headerOffset = 90;
-        var targetTop = target.getBoundingClientRect().top + window.scrollY - headerOffset;
-        window.scrollTo({ top: targetTop, behavior: 'smooth' });
+        // The heading may live inside a collapsed fold; open it first, then
+        // measure, otherwise the jump lands wherever the hidden box reads.
+        var wasClosed = revealNode(target);
+        var scrollToTarget = function () {
+          var targetTop = target.getBoundingClientRect().top + window.scrollY - headerOffset;
+          window.scrollTo({ top: targetTop, behavior: wasClosed ? 'auto' : 'smooth' });
+        };
+        if (wasClosed) {
+          window.requestAnimationFrame(scrollToTarget);
+        } else {
+          scrollToTarget();
+        }
       });
     });
 
@@ -162,12 +356,15 @@
     var cachedPositions = [];
 
     function updatePositions() {
-      cachedPositions = headingArr.map(function(h) {
-        return h.offsetTop;
+      cachedPositions = headingArr.map(function (h) {
+        // A heading inside a closed fold has no usable position — skip it so
+        // the scroll-spy highlights the section the reader can actually see.
+        return isHidden(h) ? null : h.offsetTop;
       });
     }
 
     updatePositions();
+    onFoldToggle(updatePositions);
 
     if (window.ResizeObserver) {
       var ro = new ResizeObserver(updatePositions);
@@ -183,7 +380,7 @@
       var scrollPos = window.scrollY + 100;
       var current = -1;
       for (var i = 0; i < cachedPositions.length; i++) {
-        if (cachedPositions[i] <= scrollPos) current = i;
+        if (cachedPositions[i] !== null && cachedPositions[i] <= scrollPos) current = i;
       }
       // Only update DOM if the active section actually changed.
       if (current !== lastActive) {
@@ -440,7 +637,9 @@
   function init() {
     initPaperNav();
     initTableWrappers();
+    initFolds();
     initToc();
+    initFoldToggleAll();
     rebuildWithLineNumbers();
     wrapHeadingInlineCodePhrases();
     addInlineCodeBreakHints();

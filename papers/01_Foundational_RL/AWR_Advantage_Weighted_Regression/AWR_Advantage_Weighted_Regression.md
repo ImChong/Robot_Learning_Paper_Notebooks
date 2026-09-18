@@ -57,11 +57,16 @@ AWR 把强化学习变成了一个**加权监督学习**问题——从经验中
 
 <div class="paper-demo" data-demo="awr-explainer"><p class="demo-fallback">（本节含动画演示，需要启用 JavaScript）</p></div>
 
-> 📖 六幕分别对应下文的六件事：PPO 留下的三个麻烦 → ① 评估 $A = R - V$ → ② 指数权重 $\exp(A/\beta)/Z$ → 加权回归就是一次加权平均 → off-policy 的赚与亏 → 一整轮的闭环与源码落点。想看推导和对照表，继续往下读即可，动画不替代正文。
+> 🎞️ 六幕分别对应下文的六件事：PPO 留下的三个麻烦 → ① 评估 $A = R - V$ → ② 指数权重 $\exp(A/\beta)/Z$ → 加权回归就是一次加权平均 → off-policy 的赚与亏 → 一整轮的闭环与源码落点。
+>
+> 📖 **动画之后的正文默认全部折叠**：前半部分（「要解决什么问题」「是怎么做的」）按小节收起，后面的具体实例、源码对照、面试问题、讨论记录与附录整块收起。想细读哪一块就点开对应的折叠条，内容一字未删；目录里的标题依旧可以直接点，会自动展开所在折叠块，左侧目录顶部还有「展开全部文字」一键铺开。
 
 ---
 
 ## ❓ 这篇论文要解决什么问题？
+
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：PPO 留下的三个麻烦（方差、数据浪费、调参）</summary>
 
 学完 PPO 之后，你已经知道策略梯度的基本思路：试错 → 评估 → 更新策略。PPO 通过裁剪概率比来控制更新幅度，效果很好但还有几个麻烦：
 
@@ -72,6 +77,7 @@ AWR 把强化学习变成了一个**加权监督学习**问题——从经验中
 AWR 的思路完全不同：
 
 > 💡 **类比**：PPO 像是"边做边学"的学徒——师傅手把手教，每次只能学一步。AWR 更像是"考试复习"——把所有做过的题（历史经验）翻出来，重点看做对的题（高优势动作），直接模仿正确答案。
+</details>
 
 ---
 
@@ -79,13 +85,20 @@ AWR 的思路完全不同：
 
 ### 核心思想：把 RL 变成加权监督学习
 
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：好的动作多学、差的动作少学，整个算法只有两步</summary>
+
 AWR 的想法极其简单：**好的动作多学，差的动作少学（甚至不学）。**
 
 怎么衡量"好坏"？用优势值 $A(s,a)$。怎么控制"多学少学"？用指数权重。
 
 整个算法只有两步交替执行：
+</details>
 
 ### Step 1: 评估——算出每个动作有多好
+
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：$A(s_t, a_t) = R_t - V_\phi(s_t)$ 的三项含义</summary>
 
 用价值网络 $V_\phi(s)$ 估计状态价值，然后计算优势：
 
@@ -94,8 +107,12 @@ $$A(s_t, a_t) = R_t - V_\phi(s_t)$$
 - $R_t = \sum_{k=0}^{T-t} \gamma^k r_{t+k}$ 是从 $t$ 时刻到结束的折扣回报
 - $V_\phi(s_t)$ 是"这个状态平均能拿多少分"
 - $A > 0$：这个动作比平均好；$A < 0$：比平均差
+</details>
 
 ### Step 2: 改进——加权模仿好的动作
+
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：加权最大似然的目标函数与配分函数 $Z$ 的作用</summary>
 
 用指数优势作为权重，做加权最大似然回归：
 
@@ -112,6 +129,10 @@ $$Z = \sum_{(s,a) \in \mathcal{B}} \exp\left(\frac{A(s,a)}{\beta}\right)$$
 它的作用是确保所有权重的和为 1，即 $\sum w(s,a) = 1$，使得权重可以解释为概率分布。没有 $Z$，权重只是"未归一化的得分"；有了 $Z$，每个样本的权重才真正表示它在所有样本中的相对重要性。
 
 在实际实现中，$Z$ 通常通过遍历当前 batch 或 replay buffer 中的所有样本计算得到。由于 $Z$ 只取决于优势值的相对大小（而非策略参数），它不需要对 $\theta$ 求导，因此不会增加额外的计算复杂度。
+</details>
+
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：4 个样本的手算表：$Z \approx 152.18$，以及温度 $\beta$ 的作用</summary>
 
 **具体计算示例**（假设 batch 中有 4 个样本，$\beta = 1$）：
 
@@ -128,8 +149,12 @@ $$Z = \sum_{(s,a) \in \mathcal{B}} \exp\left(\frac{A(s,a)}{\beta}\right)$$
 $\beta$ 是温度参数，控制权重的"尖锐程度"：
 - $\beta$ 小 → 只有最好的动作权重高（激进学习）
 - $\beta$ 大 → 权重差异小，各种动作都学一点（保守学习）
+</details>
 
 ### 为什么这就够了？
+
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：$\beta = 1$ 时四档优势对应的权重，以及「权重就是更新限制器」</summary>
 
 看几个具体的权重值就明白了（假设 $\beta = 1$）：
 
@@ -141,6 +166,7 @@ $\beta$ 是温度参数，控制权重的"尖锐程度"：
 | -3 | 0.05 | ~0.0003 | 差的动作 → 基本忽略 |
 
 > 💡 指数函数天然地把好坏拉开了巨大差距——不需要裁剪，不需要 KL 约束，权重本身就是最好的"更新限制器"。
+</details>
 
 这张表只是 $\beta = 1$ 的一个切片。下面的实验台可以连续拖 $\beta$、改每条样本的优势、开关源码里的权重上限 `a_weight_clip: 20.0`，还会算出**有效样本数 ESS**——「这一批里实际还有几条样本在训练策略」：
 
@@ -150,6 +176,9 @@ $\beta$ 是温度参数，控制权重的"尖锐程度"：
 
 ### 对比 PPO 和 AWR
 
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：五行对照表：核心操作 / 更新限制 / 数据使用 / 概率比 / 复杂度</summary>
+
 | | PPO | AWR |
 |---|---|---|
 | **核心操作** | 裁剪概率比，梯度上升 | 指数加权，监督学习 |
@@ -157,6 +186,7 @@ $\beta$ 是温度参数，控制权重的"尖锐程度"：
 | **数据使用** | on-policy（用完即丢） | off-policy（历史数据可复用） |
 | **需要概率比？** | 需要 $\frac{\pi_{new}}{\pi_{old}}$ | 不需要 |
 | **实现复杂度** | 中等 | 极简（加权 MSE） |
+</details>
 
 ### 📊 AWR 交替迭代流程图
 
@@ -214,7 +244,11 @@ flowchart LR
     R --> B["Replay Buffer<br/>早期均值回报约 -50"]
 </div>
 
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：与 PPO 的关键区别：缓冲区会一直积累</summary>
+
 > **与 PPO 的关键区别**：PPO 每轮收集新数据后旧数据就丢了。AWR 的缓冲区会一直积累，好的经验可以反复被采样学习。
+</details>
 
 「旧数据还能用」听起来是白赚的，其实有代价。下面这个演示用的是**和 PPO 笔记第 3 个演示完全相同的玩具任务**，只把更新换成 AWR 的加权回归，唯一的变量是 buffer 保留多少轮数据：
 
@@ -234,6 +268,9 @@ flowchart TB
 
 ### 第 3 步：计算优势值
 
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：三条样本（好 / 普通 / 坏）的优势与权重手算</summary>
+
 对缓冲区中每条样本算优势：
 
 ```
@@ -252,6 +289,7 @@ flowchart TB
   A = -100 - 100 = -200   ← 坏动作！
   权重 w = exp(-200/1.0)/Z ≈ 0.0001
 ```
+</details>
 
 ### 第 4 步：加权回归更新策略（核心！）
 
@@ -263,7 +301,11 @@ flowchart TB
     G --> E["w≈0.95 强模仿好动作<br/>w≈0.03 几乎无影响<br/>w≈0.0001 基本忽略"]
 </div>
 
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：一句话总结：AWR 就是「选择性模仿」</summary>
+
 > 🔑 **一句话总结**：AWR 就是在做"选择性模仿"——从所有经历中挑出最好的动作，重点模仿。这比 PPO 的"概率比 × 优势 × 裁剪"简洁太多了。
+</details>
 
 那么「加权最大似然」这一步具体把策略挪到了哪里？对高斯策略来说它有闭式解：**新的均值就是样本按权重的加权平均** $\mu_{new} = \sum_i w_i a_i$。下面这个实验台把一整次更新画出来——散点是采到的动作（圆点越大权重越高），两条高斯是更新前后的策略：
 
@@ -302,6 +344,9 @@ flowchart TB
 
 ## 🤖 AWR 在人形机器人领域的意义
 
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：三点影响（AMP/ASE 的底子、离线 RL 的先驱、简洁性）与路线图视角</summary>
+
 AWR 本身在人形机器人控制中不是最常用的算法（PPO 用得更多），但它的思想对后续工作影响深远：
 
 1. **AMP/ASE 的理论基础**：AMP（Adversarial Motion Priors）和 ASE（Adversarial Skill Embeddings）中，用鉴别器输出作为"优势"来加权训练策略，本质上就是 AWR 的思路
@@ -309,14 +354,18 @@ AWR 本身在人形机器人控制中不是最常用的算法（PPO 用得更多
 3. **简洁性的启示**：AWR 告诉我们，有时候最简单的方法就是最好的——不需要复杂的数学约束，加权监督学习就能搞定策略优化
 
 > 💡 **路线图视角**：PPO 教你"如何安全地更新策略"，AWR 教你"如何从经验中提炼好的行为"。两种思路在后续的运动模仿类工作中会反复出现。
+</details>
 
 ---
 
 ## 📁 MimicKit 源码对照
 
+<details class="paper-fold" markdown="1">
+<summary>📖 展开全文（8 节）：源码类图：AWR 与 PPO 平行的另一条分支 / 源码运行时序图…</summary>
+
 以下代码块对应 [MimicKit](https://github.com/xbpeng/MimicKit) 中 AWR 的实现，与上述讲解的各模块一一对应。
 
-### 源码类图：AWR 与 PPO 平行的另一条分支
+<h3 id="源码类图awr-与-ppo-平行的另一条分支">源码类图：AWR 与 PPO 平行的另一条分支</h3>
 
 先看静态结构。和 AMP/ASE 不同，`AWRAgent` **不继承 PPOAgent**，而是与它平行、直接挂在 `BaseAgent` 下——因为 AWR 的 Actor 更新是加权回归，跟 PPO 的概率比裁剪完全是两套逻辑：
 
@@ -356,7 +405,7 @@ classDiagram
 - 继承关系直接反映算法关系：AMP/ASE/LCP 都长在 `PPOAgent` 下面（on-policy 家族），AWR 独立成枝——它的 buffer 可以保留旧数据（off-policy 倾向），Actor loss 是监督式的加权最大似然。
 - 读源码抓两处就够：`_build_train_data()` 里的 `w = clamp(exp(Â/β))`，和 `_compute_actor_loss()` 里的加权回归。
 
-### 源码运行时序图
+<h3 id="源码运行时序图">源码运行时序图</h3>
 
 以 `python mimickit/run.py --mode train` 为入口（agent 配置换成 `*_awr_agent.yaml`），训练时序与 PPO 共享同一骨架，差别集中在 **`_build_train_data()` 里算指数权重、Actor 用加权回归更新**：
 
@@ -396,7 +445,7 @@ sequenceDiagram
 
 对比 PPO 的时序：rollout 和 Critic 更新完全一致；差别在 ⑩ 处提前把优势换算成指数权重 `w`，⑭ 处 Actor 不再算概率比和 Clip，而是做一次加权监督回归。
 
-### 1. 核心：指数优势权重计算（`_build_train_data`）
+<h3 id="1-核心指数优势权重计算_build_train_data">1. 核心：指数优势权重计算（<code>_build_train_data</code>）</h3>
 
 ```python
 # mimickit/learning/awr_agent.py - _build_train_data()
@@ -420,7 +469,7 @@ awr_temp: 1.0        # 温度参数 β
 a_weight_clip: 20.0   # 权重上限，防止 exp(A) 过大
 ```
 
-### 2. 核心：加权回归更新策略（`_compute_actor_loss`）
+<h3 id="2-核心加权回归更新策略_compute_actor_loss">2. 核心：加权回归更新策略（<code>_compute_actor_loss</code>）</h3>
 
 ```python
 # mimickit/learning/awr_agent.py - _compute_actor_loss()
@@ -447,7 +496,7 @@ def _compute_actor_loss(self, batch):
 
 > 🔑 **对比 PPO**：PPO 用 `min(r·A, clip(r)·A)` 限制更新幅度；AWR 用 `exp(A/β)` 天然限制——差动作的权重趋近 0，好动作权重高。
 
-### 3. 价值网络损失（Critic Loss）
+<h3 id="3-价值网络损失critic-loss">3. 价值网络损失（Critic Loss）</h3>
 
 ```python
 # mimickit/learning/awr_agent.py - _compute_critic_loss()
@@ -464,7 +513,7 @@ def _compute_critic_loss(self, batch):
     return info
 ```
 
-### 4. Actor-Critic 网络结构（AWRModel）
+<h3 id="4-actor-critic-网络结构awrmodel">4. Actor-Critic 网络结构（AWRModel）</h3>
 
 ```python
 # mimickit/learning/awr_model.py
@@ -482,7 +531,7 @@ class AWRModel(base_model.BaseModel):
 
 网络结构与 PPO 相同（独立 Actor 和 Critic），MLP 用 fc_2layers_1024units（1024→512 两层）。
 
-### 5. 训练循环（`_update_model`）
+<h3 id="5-训练循环_update_model">5. 训练循环（<code>_update_model</code>）</h3>
 
 <div class="mermaid">
 flowchart TB
@@ -507,7 +556,7 @@ def _update_model(self):
     self._update_actor(actor_batch_size, num_actor_steps)
 ```
 
-### 6. AWR 超参数一览
+<h3 id="6-awr-超参数一览">6. AWR 超参数一览</h3>
 
 ```yaml
 # data/agents/deepmimic_humanoid_awr_agent.yaml
@@ -532,40 +581,52 @@ critic_batch_size: 2
 action_bound_weight: 10.0   # 动作范围惩罚
 action_entropy_weight: 0.0  # 熵正则（0 表示不用）
 ```
+</details>
 
 ---
 
 ## 🎤 面试高频问题 & 参考回答
 
-### Q1: AWR 和 PPO 的核心区别？
+<details class="paper-fold" markdown="1">
+<summary>📖 展开全文（5 节）：Q1: AWR 和 PPO 的核心区别？…</summary>
+
+<h3 id="q1-awr-和-ppo-的核心区别">Q1: AWR 和 PPO 的核心区别？</h3>
 **A**: PPO 通过裁剪概率比来限制策略更新幅度，是 on-policy 的。AWR 通过指数优势加权把 RL 变成加权监督学习，不需要概率比，天然支持 off-policy。AWR 更简洁，但 PPO 在 on-policy 场景下通常更强。
 
-### Q2: AWR 的权重 $\exp(A/\beta)$ 为什么能替代 PPO 的 clip？
+<h3 id="q2-awr-的权重-expabeta-为什么能替代-ppo-的-clip">Q2: AWR 的权重 $\exp(A/\beta)$ 为什么能替代 PPO 的 clip？</h3>
 **A**: 指数函数天然地将好动作和差动作的权重拉开巨大差距。差动作的权重趋近于 0（等于被忽略），好动作的权重很高。这种"自动筛选"机制本质上起到了和 clip 类似的效果——防止策略被差经验带偏。
 
-### Q3: 温度参数 $\beta$ 怎么选？
+<h3 id="q3-温度参数-beta-怎么选">Q3: 温度参数 $\beta$ 怎么选？</h3>
 **A**: $\beta$ 小 → 只学最好的动作（激进，可能忽略有用信息）；$\beta$ 大 → 所有动作都学一点（保守，学习慢）。通常从 $\beta = 1$ 开始，根据任务调整。一些变体会自适应调整 $\beta$。
 
-### Q4: AWR 能用于离线 RL 吗？
+<h3 id="q4-awr-能用于离线-rl-吗">Q4: AWR 能用于离线 RL 吗？</h3>
 **A**: 可以，这是 AWR 的一大优势。因为它不需要在线采样，不需要计算概率比，可以直接在离线数据集上做加权回归。这使它成为离线 RL 的早期代表方法，影响了后续的 IQL、CQL 等。
 
-### Q5: AWR 的局限性？
+<h3 id="q5-awr-的局限性">Q5: AWR 的局限性？</h3>
 **A**: 
 - 在 on-policy 场景下通常不如 PPO
 - 当缓冲区中好的样本很少时，学习效率会下降（没有好样本可以模仿）
 - 温度参数 $\beta$ 的选择对性能影响大
+</details>
 
 ---
 
 ## 💬 讨论记录
 
+<details class="paper-fold" markdown="1">
+<summary>📖 展开全文：讨论记录</summary>
+
 > 待补充
+</details>
 
 ---
 
 ## 📎 附录
 
-### A. 算法伪代码
+<details class="paper-fold" markdown="1">
+<summary>📖 展开全文（4 节）：A. 算法伪代码 / B. 与路线图其他论文的关联 / C. 超参数速查表 / D. 训练过程中各组件的变化</summary>
+
+<h3 id="a-算法伪代码">A. 算法伪代码</h3>
 
 <div class="mermaid">
 flowchart TB
@@ -577,7 +638,7 @@ flowchart TB
     Init --> Col --> Val --> Adv --> Pol --> Col
 </div>
 
-### B. 与路线图其他论文的关联
+<h3 id="b-与路线图其他论文的关联">B. 与路线图其他论文的关联</h3>
 
 <div class="mermaid">
 flowchart LR
@@ -587,7 +648,7 @@ flowchart LR
     AWR --> Offline["离线 RL<br/>IQL / CQL 等"]
 </div>
 
-### C. 超参数速查表
+<h3 id="c-超参数速查表">C. 超参数速查表</h3>
 
 | 参数 | 含义 | 推荐值 |
 |------|------|--------|
@@ -597,7 +658,7 @@ flowchart LR
 | buffer_size | 回放缓冲区大小 | 50K ~ 500K |
 | batch_size | 小批量大小 | 256 ~ 1024 |
 
-### D. 训练过程中各组件的变化
+<h3 id="d-训练过程中各组件的变化">D. 训练过程中各组件的变化</h3>
 
 <div class="mermaid">
 flowchart TB
@@ -626,4 +687,5 @@ flowchart TB
     end
     E20K --> E200K --> E500K
 </div>
+</details>
 

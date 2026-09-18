@@ -57,7 +57,7 @@ AMP 用 GAN 的思想替代了 DeepMimic 的手工模仿奖励——训练一个
 
 <div class="paper-demo" data-demo="amp-explainer"><p class="demo-fallback">（本节含动画演示，需要启用 JavaScript）</p></div>
 
-> 📖 动画覆盖的三块——「这篇论文要解决什么问题」「AMP 是怎么做的」和实例里的「关键观察」——**文字讲解默认折叠**，想看推导、公式和对照表时点开各节的折叠条即可，内容一字未删；伪代码、论文超参表和源码对照不在折叠范围内。
+> 📖 **动画之后的正文默认全部折叠**：前半部分（「要解决什么问题」「是怎么做的」）按小节收起，后面的具体实例、源码对照、面试问题、讨论记录与附录整块收起。想细读哪一块就点开对应的折叠条，内容一字未删；目录里的标题依旧可以直接点，会自动展开所在折叠块，左侧目录顶部还有「展开全部文字」一键铺开。
 
 ---
 
@@ -620,6 +620,9 @@ AMP:
 
 ## 🤖 AMP 对人形机器人领域的意义
 
+<details class="paper-fold" markdown="1">
+<summary>📖 展开全文：AMP 带来的改变，以及它自己的局限</summary>
+
 AMP 是从"精确模仿"到"风格学习"的关键转折点：
 
 1. **解放了奖励设计**：不再需要手工设计模仿奖励的每个分量和权重，鉴别器自动学习
@@ -627,21 +630,25 @@ AMP 是从"精确模仿"到"风格学习"的关键转折点：
 3. **任务与风格解耦**：风格奖励和任务奖励独立，可以自由组合（用跑步风格去追球、用走路风格去导航）
 4. **后续工作的基础**：ASE（技能嵌入）、CALM（条件潜变量模型）、ADD（对抗蒸馏）都建立在 AMP 的框架之上
 
-### AMP 的局限
+<h3 id="amp-的局限">AMP 的局限</h3>
 
 - **GAN 训练不稳定**：鉴别器和策略的对抗训练可能出现模式崩塌或训练震荡
 - **仍然需要动捕数据**：虽然不需要逐帧对齐，但还是需要参考数据
 - **单风格单策略**：一次训练只能学一种运动风格
 
 > 💡 **路线图视角**：DeepMimic 教你"如何精确模仿一个动作"，AMP 教你"如何学习一种运动风格"。接下来 ASE 会教你"如何把多种技能编码到一个潜空间中"，实现一个策略掌握多种技能。
+</details>
 
 ---
 
 ## 📁 MimicKit 源码对照
 
+<details class="paper-fold" markdown="1">
+<summary>📖 展开全文（10 节）：源码类图：AMP = PPO + 判别器分支 / 源码运行时序图…</summary>
+
 下面按 **PPO 笔记同样的模式**，把 AMP 在 MimicKit 中对应的实现模块对上。说明一下：你当前 workspace 里没有直接放 MimicKit 源码仓，但 `Robotics_Notebooks/Train/MimicKit` 里已经整理过对应代码结构和关键片段，所以这里按那套整理结果做源码映射。
 
-### 源码类图：AMP = PPO + 判别器分支
+<h3 id="源码类图amp--ppo--判别器分支">源码类图：AMP = PPO + 判别器分支</h3>
 
 先看静态结构（接着 PPO 笔记的类图往下长）。AMP 在 Agent 和 Model 两条继承链上各加一层，所有新增成员都围绕**判别器**展开；后续 ASE / ADD 又会从 `AMPAgent` 再往下长：
 
@@ -687,7 +694,7 @@ classDiagram
 - 对照 PPO 类图看增量就够了：**Agent 侧**多了 `_compute_disc_loss()`（真假二分类 + gradient penalty），**Model 侧**多了 `eval_disc()`（第三个网络头）。
 - `ASEAgent`、`ADDAgent` 都继承 `AMPAgent`——这条继承链本身就是论文谱系：PPO → AMP → ASE / ADD。
 
-### 源码运行时序图
+<h3 id="源码运行时序图">源码运行时序图</h3>
 
 以 `python mimickit/run.py --mode train --agent_config amp_*_agent.yaml` 为入口。AMP 复用 PPO 的训练骨架（`AMPAgent` 继承 `PPOAgent`），额外多出**判别器奖励替换**与**判别器更新**两处：
 
@@ -730,7 +737,7 @@ sequenceDiagram
 - ⑨–⑩ 是 AMP 的核心改动：奖励不再来自环境手写公式，而是判别器打分换算的风格奖励（详见上文「风格奖励」小节）。
 - ⑫–⑯ 对应下面第 1、2 节代码：判别器拿"参考数据 = 真、策略 rollout = 假"做二分类，与 PPO 的 actor/critic loss 相加后一次 backward，但三套网络的梯度互不串扰（见第 4 节）。
 
-### 1. AMP 总 loss = PPO loss + Discriminator loss
+<h3 id="1-amp-总-loss--ppo-loss--discriminator-loss">1. AMP 总 loss = PPO loss + Discriminator loss</h3>
 
 ```python
 # mimickit/learning/amp_agent.py
@@ -757,7 +764,7 @@ total_loss = actor_loss + critic_w * critic_loss + disc_w * disc_loss
 
 这正对应前面讲的“策略和鉴别器交替训练、互相对抗”。
 
-### 2. 判别器 loss：真样本 vs 假样本
+<h3 id="2-判别器-loss真样本-vs-假样本">2. 判别器 loss：真样本 vs 假样本</h3>
 
 ```python
 # mimickit/learning/amp_agent.py
@@ -780,7 +787,7 @@ def _compute_disc_loss(self, batch):
 
 > 💡 代码层面看，AMP 的核心不是“再加一个奖励函数”，而是**再加一个二分类器训练问题**。
 
-### 3. Discriminator 网络入口（eval_disc）
+<h3 id="3-discriminator-网络入口eval_disc">3. Discriminator 网络入口（eval_disc）</h3>
 
 ```python
 # mimickit/learning/amp_model.py
@@ -800,7 +807,7 @@ amp_obs ──► Discriminator ──► real / fake logit
 - **Critic**：负责估值
 - **Discriminator**：负责判断“这段运动像不像参考数据”
 
-### 4. 计算图解耦：Actor / Critic / Disc 各自管各自
+<h3 id="4-计算图解耦actor--critic--disc-各自管各自">4. 计算图解耦：Actor / Critic / Disc 各自管各自</h3>
 
 根据 `Robotics_Notebooks/Train/MimicKit/MimicKIt 04 Actor_Critic_Disc 网络结构详解.md` 的整理，MimicKit 里三部分 loss 的计算图是分开的：
 
@@ -822,7 +829,7 @@ total_loss.backward()
 
 这和前面 AMP 的理论描述是对齐的：**三套网络一起训练，但职责分工明确**。
 
-### 5. AMP 仍然复用 PPO 的 Actor 更新
+<h3 id="5-amp-仍然复用-ppo-的-actor-更新">5. AMP 仍然复用 PPO 的 Actor 更新</h3>
 
 AMP 的策略更新底座并没有变，依然是 PPO：
 
@@ -846,7 +853,7 @@ loss = actor_loss + self._critic_loss_weight * critic_loss
 
 这就是为什么 AMP 在工程上特别重要：它不是另起炉灶，而是在 PPO 这个成熟底盘上叠了一层风格学习模块。
 
-### 6. AMP 对应的任务配置：steering / location
+<h3 id="6-amp-对应的任务配置steering--location">6. AMP 对应的任务配置：steering / location</h3>
 
 在 `Robotics_Notebooks/Train/MimicKit/MimicKit 06 给定目标速度执行复合动作.md` 里，已经把 MimicKit 中 AMP 的任务导向配置理了一遍。对应到源码/配置层，常见是这几类：
 
@@ -873,7 +880,7 @@ flowchart TB
 
 这和论文中 Target Heading / 目标导航那部分实验是直接对应的。
 
-### 7. 从 PPO 到 AMP，代码层真正多出来了什么？
+<h3 id="7-从-ppo-到-amp代码层真正多出来了什么">7. 从 PPO 到 AMP，代码层真正多出来了什么？</h3>
 
 如果拿 PPO 笔记那套结构来对照，AMP 相比 PPO 主要新增了三样东西：
 
@@ -890,7 +897,7 @@ flowchart TB
 
 > **PPO 解决“怎么稳定更新策略”，AMP 解决“什么样的运动算自然、算像参考数据”。**
 
-### 8. 你看 AMP 源码时最该盯住的文件
+<h3 id="8-你看-amp-源码时最该盯住的文件">8. 你看 AMP 源码时最该盯住的文件</h3>
 
 如果之后你要继续往下啃 MimicKit，建议按这个顺序看：
 
@@ -907,31 +914,39 @@ flowchart TB
    看任务奖励、参考动作集、目标速度/方向是怎么接进来的
 
 这样读最顺，不会一上来就被 AMP 的“对抗训练”表象绕晕。
+</details>
 
 ---
 
 ## 🎤 面试高频问题 & 参考回答
 
-### Q1: AMP 和 DeepMimic 的核心区别？
+<details class="paper-fold" markdown="1">
+<summary>📖 展开全文（5 节）：Q1: AMP 和 DeepMimic 的核心区别？…</summary>
+
+<h3 id="q1-amp-和-deepmimic-的核心区别">Q1: AMP 和 DeepMimic 的核心区别？</h3>
 **A**: DeepMimic 用手工设计的模仿奖励逐帧对齐参考动作。AMP 用 GAN 的鉴别器自动学习"什么样的运动像参考数据"，匹配的是运动分布而非精确轨迹。AMP 更灵活，不需要时间对齐，支持多段参考数据。
 
-### Q2: AMP 的鉴别器输入为什么是 $(s_t, s_{t+1})$ 而不是单个 $s_t$？
+<h3 id="q2-amp-的鉴别器输入为什么是-s_t-s_t1-而不是单个-s_t">Q2: AMP 的鉴别器输入为什么是 $(s_t, s_{t+1})$ 而不是单个 $s_t$？</h3>
 **A**: 单个状态只能反映一个姿势，但"运动风格"是关于状态之间如何转移的——同样的站立姿势可以接走路也可以接跳跃。$(s_t, s_{t+1})$ 编码了一步的运动方向和速度，能更好地捕捉运动的动态特征。
 
-### Q3: AMP 的风格奖励为什么能表示“像不像参考动作”？
+<h3 id="q3-amp-的风格奖励为什么能表示像不像参考动作">Q3: AMP 的风格奖励为什么能表示“像不像参考动作”？</h3>
 **A**: 因为 AMP 让鉴别器专门学习“真实动捕转移”和“策略生成转移”的区别。论文实际实现采用 LSGAN 形式，风格奖励是 $r^S(s_t, s_{t+1}) = \max\left[0, 1 - 0.25(D(s_t, s_{t+1}) - 1)^2\right]$。当鉴别器把这一步转移判得越像真实数据（$D \to 1$），奖励就越高；判得越假（$D \to -1$），奖励就越接近 0。直觉上，它不是在逐帧跟模板比，而是在奖励“这一步运动看起来像真人/像参考风格”。
 
-### Q4: AMP 训练中会遇到什么问题？
+<h3 id="q4-amp-训练中会遇到什么问题">Q4: AMP 训练中会遇到什么问题？</h3>
 **A**: 和 GAN 一样的问题：①模式崩塌——策略只学会参考数据中的一种动作；②训练不稳定——鉴别器太强或太弱都会导致策略学不好。论文用了梯度惩罚（gradient penalty）来稳定训练。
 
-### Q5: AMP 中任务奖励和风格奖励怎么平衡？
+<h3 id="q5-amp-中任务奖励和风格奖励怎么平衡">Q5: AMP 中任务奖励和风格奖励怎么平衡？</h3>
 **A**: 通过权重 $w^S$ 和 $w^G$ 控制。$w^S$ 大 → 更像参考数据但可能完不成任务；$w^G$ 大 → 完成任务但动作可能不自然。实践中通常 $w^S = 0.5, w^G = 0.5$，具体根据任务调整。
+</details>
 
 ---
 
 ## 💬 讨论记录
 
-### 2026-04-19：AMP 和 DeepMimic 到底差在哪？
+<details class="paper-fold" markdown="1">
+<summary>📖 展开全文（2 节）：2026-04-19：AMP 和 DeepMimic 到底差在哪？…</summary>
+
+<h3 id="2026-04-19amp-和-deepmimic-到底差在哪">2026-04-19：AMP 和 DeepMimic 到底差在哪？</h3>
 
 **Q: DeepMimic 也有模仿奖励，AMP 也在学参考动作，它们本质区别是什么？**
 
@@ -948,7 +963,7 @@ flowchart TB
 
 ---
 
-### 2026-04-19：为什么说 AMP 是后续 ASE / CALM / ADD 的起点？
+<h3 id="2026-04-19为什么说-amp-是后续-ase--calm--add-的起点">2026-04-19：为什么说 AMP 是后续 ASE / CALM / ADD 的起点？</h3>
 
 AMP 真正打开的是一个新接口：
 
@@ -962,12 +977,16 @@ AMP 真正打开的是一个新接口：
 所以如果只记一件事：
 
 **DeepMimic 奠定了“模仿奖励”范式，AMP 奠定了“对抗风格先验”范式。**
+</details>
 
 ---
 
 ## 📎 附录
 
-### A. 鉴别器训练的梯度惩罚
+<details class="paper-fold" markdown="1">
+<summary>📖 展开全文（4 节）：A. 鉴别器训练的梯度惩罚 / B. 观察空间设计 / C. 与路线图其他论文的关联 / D. 超参数速查表</summary>
+
+<h3 id="a-鉴别器训练的梯度惩罚">A. 鉴别器训练的梯度惩罚</h3>
 
 为了稳定训练，AMP 对鉴别器加了梯度惩罚：
 
@@ -975,13 +994,13 @@ $$\mathcal{L}_{gp} = \frac{w_{gp}}{2} \mathbb{E}_{d^M}\left[\lVert \nabla_\psi D
 
 只对真实数据上的梯度做惩罚（不是 WGAN-GP 的插值梯度惩罚），防止鉴别器在参考数据附近变化太剧烈。
 
-### B. 观察空间设计
+<h3 id="b-观察空间设计">B. 观察空间设计</h3>
 
 AMP 的一个关键设计：鉴别器的输入**不包含全局位置和朝向**——只包含关节角度、角速度等局部特征。
 
 原因：运动风格与全局位置无关——在房间东边走路和西边走路，走路姿态应该一样。去掉全局位置可以让鉴别器专注于运动本身的特征。
 
-### C. 与路线图其他论文的关联
+<h3 id="c-与路线图其他论文的关联">C. 与路线图其他论文的关联</h3>
 
 | 关系 | 说明 |
 |------|------|
@@ -991,7 +1010,7 @@ AMP 的一个关键设计：鉴别器的输入**不包含全局位置和朝向**
 | **AMP → ADD** | ADD 对 AMP 训练的策略做对抗蒸馏 |
 | **AWR 思想 → AMP** | 鉴别器输出作为"优势"加权，与 AWR 的加权思想类似 |
 
-### D. 超参数速查表
+<h3 id="d-超参数速查表">D. 超参数速查表</h3>
 
 | 参数 | 含义 | 推荐值 |
 |------|------|--------|
@@ -1000,3 +1019,4 @@ AMP 的一个关键设计：鉴别器的输入**不包含全局位置和朝向**
 | $w_{gp}$（梯度惩罚权重） | 鉴别器正则化 | 10 |
 | 鉴别器学习率 | | 1e-5 ~ 5e-5 |
 | 策略学习率 | | 2e-5 ~ 5e-5 |
+</details>
