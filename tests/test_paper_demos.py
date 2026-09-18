@@ -138,7 +138,10 @@ def test_notes_declare_their_demos_in_reading_order():
             "ase",
             ["ase-explainer", "ase-latent", "ase-encoder", "ase-diversity"],
         ),
-        CALM_NOTE: ("calm", ["calm-encoder", "calm-hlc", "calm-fsm"]),
+        CALM_NOTE: (
+            "calm",
+            ["calm-explainer", "calm-encoder", "calm-hlc", "calm-fsm"],
+        ),
         PULSE_NOTE: ("pulse", ["pulse-vib", "pulse-prior", "pulse-downstream"]),
         PHC_NOTE: (
             "phc",
@@ -195,7 +198,7 @@ def test_demo_assets_are_theme_aware():
     assert "data-theme" in kit
 
 
-EXPLAINER_BUNDLES = ("ppo", "deepmimic", "amp", "add", "ase")
+EXPLAINER_BUNDLES = ("ppo", "deepmimic", "amp", "add", "ase", "calm")
 
 # 幕数由论文决定，不是统一模板：PPO / DeepMimic / AMP / ADD 的核心概念正好各 5 个，
 # PHC 开篇立了三堵墙（第一堵拆成「长出列」「混合列」两幕），所以是 6 幕；
@@ -208,6 +211,7 @@ EXPLAINER_SCENES = {
     "add": (ADD_NOTE, 5),
     "phc": (PHC_NOTE, 6),
     "ase": (ASE_NOTE, 6),
+    "calm": (CALM_NOTE, 5),
 }
 CN_NUMERALS = {4: "四", 5: "五", 6: "六", 7: "七"}
 
