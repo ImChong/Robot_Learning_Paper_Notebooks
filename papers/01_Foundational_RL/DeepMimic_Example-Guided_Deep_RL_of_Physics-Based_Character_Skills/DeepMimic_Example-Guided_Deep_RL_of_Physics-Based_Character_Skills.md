@@ -66,7 +66,7 @@ DeepMimic 让物理仿真角色通过**模仿动作捕捉数据**来学习技能
 
 <div class="paper-demo" data-demo="deepmimic-explainer"><p class="demo-fallback">（本节含动画演示，需要启用 JavaScript）</p></div>
 
-> 📖 动画覆盖的两节——「这篇论文要解决什么问题」和「DeepMimic 是怎么做的」——**文字讲解默认折叠**，想看推导、公式和对照表时点开各节的折叠条即可，内容一字未删；代码实现、后空翻实例和附录不在折叠范围内。
+> 📖 **动画之后的正文默认全部折叠**：前半部分（「要解决什么问题」「是怎么做的」）按小节收起，后面的具体实例、源码对照、面试问题、讨论记录与附录整块收起。想细读哪一块就点开对应的折叠条，内容一字未删；目录里的标题依旧可以直接点，会自动展开所在折叠块，左侧目录顶部还有「展开全部文字」一键铺开。
 
 ---
 
@@ -405,9 +405,12 @@ flowchart TB
 
 ## 🚶 具体实例：用 DeepMimic 训练后空翻
 
+<details class="paper-fold" markdown="1">
+<summary>📖 展开全文（15 节）：🚀 MimicKit 训练指令 / 环境设定（论文原文参数） / MimicKit 实现：主环境类 / 角色模型参数（Table 1）…</summary>
+
 下面以训练一个仿真人形角色做**后空翻（Backflip）**为例，走一遍完整流程。
 
-#### 🚀 MimicKit 训练指令
+<h4 id="-mimickit-训练指令">🚀 MimicKit 训练指令</h4>
 
 ```bash
 # 使用 MimicKit 训练 Humanoid 学习后空翻
@@ -418,7 +421,7 @@ python mimickit/run.py --mode train \
     --headless
 ```
 
-### 环境设定（论文原文参数）
+<h3 id="环境设定论文原文参数">环境设定（论文原文参数）</h3>
 
 | 项目 | 具体值 |
 |------|--------|
@@ -429,7 +432,7 @@ python mimickit/run.py --mode train \
 | **深度学习框架** | TensorFlow |
 | **硬件** | 8 核 CPU，**无 GPU 加速** |
 
-#### MimicKit 实现：主环境类
+<h4 id="mimickit-实现主环境类">MimicKit 实现：主环境类</h4>
 
 DeepMimic 的环境实现在 `mimickit/envs/deepmimic_env.py` 的 `DeepMimicEnv` 类中：
 
@@ -447,7 +450,7 @@ class DeepMimicEnv(char_env.CharEnv):
 
 > 🔑 **核心结构**：DeepMimicEnv 继承自 CharEnv，持有模仿奖励的四维权重配置 (`reward_pose_w`, `reward_vel_w`, `reward_root_pose_w`, `reward_root_vel_w`, `reward_key_pos_w`)
 
-#### 角色模型参数（Table 1）
+<h4 id="角色模型参数table-1">角色模型参数（Table 1）</h4>
 
 | 角色 | Links | 质量(kg) | 身高(m) | DoF | 状态维度 | 动作维度 |
 |------|-------|---------|---------|-----|---------|---------|
@@ -460,7 +463,7 @@ class DeepMimicEnv(char_env.CharEnv):
 - 关节类型：大部分是 **3-DoF 球关节**（spherical joint），膝盖和肘部是 **1-DoF 旋转关节**（revolute joint）
 - Atlas 质量是 Humanoid 的近 **4 倍**（169.8 vs 45 kg），PD 增益和扭矩限制也不同
 
-#### 训练超参数
+<h4 id="训练超参数">训练超参数</h4>
 
 | 参数 | 值 |
 |------|-----|
@@ -478,7 +481,7 @@ class DeepMimicEnv(char_env.CharEnv):
 | 训练样本量（Humanoid 单技能） | ~**6000 万**样本 |
 | 训练时间（Humanoid 单技能） | ~**2 天**（8 核 CPU） |
 
-#### 网络架构
+<h4 id="网络架构">网络架构</h4>
 
 | 层 | 参数 |
 |----|------|
@@ -495,7 +498,7 @@ class DeepMimicEnv(char_env.CharEnv):
 > - 控制频率 30Hz 远低于仿真频率 1200Hz，中间的 40 个物理步都用同一个 PD 目标
 > - 协方差矩阵是**固定的**，不是学习的——简化了训练
 
-#### 训练的具体技能和样本量（Table 2 节选）
+<h4 id="训练的具体技能和样本量table-2-节选">训练的具体技能和样本量（Table 2 节选）</h4>
 
 | 技能 | 动作时长(s) | 训练样本(×10⁶) | 归一化回报 |
 |------|-----------|---------------|-----------|
@@ -517,7 +520,7 @@ class DeepMimicEnv(char_env.CharEnv):
 
 > 💡 **注意动作空间的区别**：PPO 直接输出扭矩，DeepMimic 输出**目标关节角度**，再由底层 Stable PD 控制器计算扭矩。这使得策略输出更像"姿态指令"，学习更容易。
 
-### 第 0 步：准备参考动作
+<h3 id="第-0-步准备参考动作">第 0 步：准备参考动作</h3>
 
 <div class="mermaid">
 flowchart LR
@@ -526,7 +529,7 @@ flowchart LR
     F20 --> F25["帧 25<br/>展开身体"] --> F30["帧 30<br/>落地站稳"]
 </div>
 
-### 第 1 步：RSI 初始化 + 收集经验
+<h3 id="第-1-步rsi-初始化--收集经验">第 1 步：RSI 初始化 + 收集经验</h3>
 
 <div class="mermaid">
 flowchart TB
@@ -538,7 +541,7 @@ flowchart TB
     E3["Episode 3：从帧 25 起<br/>（即将落地）"] --> R3["重点练落地稳定"]
 </div>
 
-#### MimicKit 实现：动作库与运动数据加载
+<h4 id="mimickit-实现动作库与运动数据加载">MimicKit 实现：动作库与运动数据加载</h4>
 
 运动数据加载在 `MotionLib` 类中实现：
 
@@ -565,7 +568,7 @@ class MotionLib():
 
 > 🔑 **SLERP**：球面线性插值（Spherical Linear Interpolation），用于在两个四元数姿态之间平滑过渡，保证旋转插值的几何正确性
 
-### 第 2 步：计算模仿奖励
+<h3 id="第-2-步计算模仿奖励">第 2 步：计算模仿奖励</h3>
 
 以某一时刻 $t=15$（空中团身）为例：
 
@@ -595,12 +598,12 @@ flowchart LR
 
 加权求和：$0.65 \times 0.835 + 0.1 \times 0.905 + 0.15 \times 0.750 + 0.1 \times 0.670 \approx 0.813$。这组误差就是上面那个交互演示的默认值，可以回去逐项拖着看。
 
-### 第 3 步：PPO 更新
+<h3 id="第-3-步ppo-更新">第 3 步：PPO 更新</h3>
 
 收集一批经验后，用标准 PPO 算法更新策略（和之前学的一样）。
 唯一区别是奖励函数变了——不再是"前进速度"，而是"和参考动作像不像"。
 
-#### MimicKit 实现：PPO 训练
+<h4 id="mimickit-实现ppo-训练">MimicKit 实现：PPO 训练</h4>
 
 PPO 算法实现在 `mimickit/learning/ppo_agent.py`：
 
@@ -617,7 +620,7 @@ class PPOAgent(base_agent.BaseAgent):
 
 > 🔑 **PPO 核心**：和标准 PPO 一样，通过 clip 机制限制策略更新幅度，避免过度更新导致性能崩溃
 
-### 第 4 步：训练进展
+<h3 id="第-4-步训练进展">第 4 步：训练进展</h3>
 
 | 阶段 | 迭代 | 表现 |
 |------|------|------|
@@ -628,7 +631,7 @@ class PPOAgent(base_agent.BaseAgent):
 
 > 🔑 **RSI 的威力**：如果没有 RSI，智能体需要先学会助跑、再学起跳、再学翻转、再学落地——每一步都是前一步的前提，学习极慢。RSI 让每个片段独立练习，大大加速。
 
-#### MimicKit 实现：前向运动学
+<h4 id="mimickit-实现前向运动学">MimicKit 实现：前向运动学</h4>
 
 参考动作的姿态计算用到前向运动学，用于获取角色各部位的世界坐标：
 
@@ -641,14 +644,18 @@ class KinCharModel():
 ```
 
 > 🔑 **作用**：纯运动学计算（无物理仿真），用于获取参考动作中角色各部位的精确位置，供模仿奖励的末端位置项（$r^{ee}$）和参考角色渲染使用
+</details>
 
 ---
 
 ## 📁 MimicKit 源码运行时序图
 
+<details class="paper-fold" markdown="1">
+<summary>📖 展开全文（2 节）：源码类图：DeepMimic = 环境侧创新 / 源码运行时序图</summary>
+
 DeepMimic 在 [MimicKit](https://github.com/xbpeng/MimicKit) 中由 `deepmimic_env.py`（RSI / 拼观测 / 5 项奖励 / pose termination）+ `ppo_agent.py`（PPO 更新骨架）组合实现。
 
-### 源码类图：DeepMimic = 环境侧创新
+<h3 id="源码类图deepmimic--环境侧创新">源码类图：DeepMimic = 环境侧创新</h3>
 
 先看静态结构。和 PPO 笔记的类图对照着看会发现一件有意思的事：**DeepMimic 在 MimicKit 里没有自己的 Agent 类**——算法侧直接复用 `PPOAgent`，论文的全部创新（RSI、ET、模仿奖励）都落在**环境继承链**的 `DeepMimicEnv` 里：
 
@@ -697,7 +704,7 @@ classDiagram
 - 这个"算法不动、只换环境"的结构是 MimicKit 的通用套路：想读懂一篇模仿学习论文的实现，优先去 `envs/` 找它的环境类，`learning/` 里往往只是复用。
 - 后续 AMP 会同时动两边：环境侧加 `AMPEnv`（提供鉴别器观测），算法侧加 `AMPAgent`（训练鉴别器）。
 
-### 源码运行时序图
+<h3 id="源码运行时序图">源码运行时序图</h3>
 
 以 `python mimickit/run.py --mode train` 为入口，一次完整训练的调用时序如下：
 
@@ -736,10 +743,14 @@ sequenceDiagram
 - ⑨–⑫ 对应「模仿奖励」：环境每步都向 MotionLib 要参考帧——前瞻帧拼进观测（告诉策略"下一步该长什么样"），当前帧用来算 5 项指数奖励。
 - ⑬ 是 Early Termination：失败立刻截断，不浪费 rollout 配额。
 - ⑭–⑮ 是标准 PPO 更新，与 PPO 笔记的时序图完全一致。
+</details>
 
 ---
 
 ## 🤖 DeepMimic 对人形机器人领域的意义
+
+<details class="paper-fold" markdown="1">
+<summary>📖 展开全文：三点贡献（四维奖励范式 / RSI 成标配 / RL + 动捕可行）与三条局限</summary>
 
 DeepMimic 是**运动模仿学习**的开山之作，几乎所有后续的机器人动作模仿工作都建立在它的框架之上：
 
@@ -747,22 +758,26 @@ DeepMimic 是**运动模仿学习**的开山之作，几乎所有后续的机器
 2. **RSI 成为标配**：几乎所有后续的动作模仿工作都使用参考状态初始化
 3. **证明了 RL + 动捕的可行性**：之前人们认为复杂技能（空翻、武术）很难通过 RL 学会，DeepMimic 证明了只要有好的参考和奖励设计就可以
 
-### 但它也有明显的局限：
+<h3 id="但它也有明显的局限">但它也有明显的局限：</h3>
 
 - **一次只能学一个动作**：每个策略只对应一段参考动作，想学 10 个技能就要训 10 个策略
 - **奖励函数需要手工设计**：四个分量的权重 $w^p, w^v, w^{ee}, w^{com}$ 需要人工调节
 - **不能泛化**：学会了后空翻不代表能侧空翻
 
 > 💡 **路线图视角**：DeepMimic 教你"如何让 RL 智能体模仿一个特定动作"。接下来的 AMP 会解决"如何学习运动风格而不是精确复制每一帧"，PHC 会解决"如何在一个策略中模仿任意动作"。
+</details>
 
 ---
 
 ## 🎤 面试高频问题 & 参考回答
 
-### Q1: DeepMimic 的核心创新是什么？
+<details class="paper-fold" markdown="1">
+<summary>📖 展开全文（10 节）：Q1: DeepMimic 的核心创新是什么？ / Q2: 模仿奖励为什么用指数函数形式？…</summary>
+
+<h3 id="q1-deepmimic-的核心创新是什么">Q1: DeepMimic 的核心创新是什么？</h3>
 **A**: DeepMimic 的核心创新有两点：① **RSI + ET（参考状态初始化 + 提前终止）**：这是论文消融实验证明的最关键两个组件，使高动态技能（空翻、踢腿）的训练成为可能；② **模仿目标与任务目标联合优化**：将多维度模仿奖励（关节姿态+速度+末端+质心）与任务奖励结合，让智能体既"动作自然"又"目标导向"，同时保留了 RL 对扰动的适应性。
 
-### Q2: 模仿奖励为什么用指数函数形式？
+<h3 id="q2-模仿奖励为什么用指数函数形式">Q2: 模仿奖励为什么用指数函数形式？</h3>
 **A**: $\exp(-k \cdot \text{error}^2)$ 有几个好处：① 奖励范围在 $(0, 1]$，方便加权求和；② 对小误差宽容（接近1），对大误差严格（趋近0），梯度平滑；③ 各分量天然不需要归一化就能直接相加。另外，姿态奖励中的关节朝向比较用的是**四元数差分** $q_1 \ominus q_2$（相对旋转位移），而非欧拉角差分，因为四元数不存在万向锁和奇异性问题，更适合 RL 梯度优化。
 
 ![指数奖励曲线](figures/q2_reward_curves.png)
@@ -771,16 +786,16 @@ DeepMimic 是**运动模仿学习**的开山之作，几乎所有后续的机器
 ![四元数差分示意](figures/q2_quaternion_diff.png)
 *四元数差分 $q_1 \ominus q_2$ 的几何含义：两个旋转之间的相对位移（弧长 = ||$q_1 \ominus q_2$||），用弧度计量*
 
-### Q3: RSI（参考状态初始化）为什么重要？
+<h3 id="q3-rsi参考状态初始化为什么重要">Q3: RSI（参考状态初始化）为什么重要？</h3>
 **A**: 复杂动作（如空翻）是多个阶段的序列。RSI 在每个 episode 开始时**均匀采样（uniformly sample）**参考动捕中的一个状态作为初始状态，让智能体直接从任意阶段开始练习，而不必按顺序依次学会前置阶段才能进入后续阶段——这大幅加速了高动态动作的学习。对于循环技能，相位 $\phi$ 在每个 cycle 结束时重置为 0；对于非循环技能，episode 长度等于动作片段长度。
 
-### Q4: Early Termination 在 DeepMimic 中起什么作用？
+<h3 id="q4-early-termination-在-deepmimic-中起什么作用">Q4: Early Termination 在 DeepMimic 中起什么作用？</h3>
 **A**: 当躯干或头部接触地面、或某 link 低于高度阈值时，终止 episode。作用有三：① 避免在已摔倒状态上浪费采样；② 隐式惩罚摔倒——摔倒后后续奖励归零，策略被迫学会保持平衡；③ 本质上是一种**数据分布裁剪机制**，防止训练早期大量"角色在地上挣扎"的数据污染网络，使采样集中于有意义的动作状态。ET 和 RSI 配合，实现高效的多阶段训练。
 
-### Q5: DeepMimic 和纯 PPO 训练走路有什么区别？
+<h3 id="q5-deepmimic-和纯-ppo-训练走路有什么区别">Q5: DeepMimic 和纯 PPO 训练走路有什么区别？</h3>
 **A**: 论文 Table 4 的消融实验给出了直接证据：Strike 任务仅有模仿奖励时成功率 19%，两者都有时 99%；Throw 任务两者都有时 75%，仅有模仿奖励时仅 5%。这说明两点：① **单纯模仿不足以完成任务**，策略需要任务目标才能有效导向；② **没有模仿则动作不自然**，纯任务奖励下角色会发展出怪异但功能性策略（如抱着球跑而非扔球）。DeepMimic 的价值在于两者的平衡。
 
-### Q6: DeepMimic 的局限性？后续工作怎么解决？
+<h3 id="q6-deepmimic-的局限性后续工作怎么解决">Q6: DeepMimic 的局限性？后续工作怎么解决？</h3>
 **A**:
 - **一策略一动作** → AMP/ASE 引入风格学习和技能嵌入，一个策略学多个技能
 - **精确帧匹配** → AMP 用对抗学习匹配运动分布而非逐帧对比
@@ -789,7 +804,7 @@ DeepMimic 是**运动模仿学习**的开山之作，几乎所有后续的机器
 - **多 Clip 规模受限** → Multi-clip reward 适合相似类型的动作混搭（如多种走路），混合差异大的动作（如 sideflip + frontflip）会导致策略只模仿部分 clip → 需用 Composite Policy 解决
 - **PD 增益需手动调整** → 不同角色 morphology 需要不同 PD 控制器参数
 
-### Q7: 为什么 DeepMimic 能抗干扰？RSI+ET 消融实验说明了什么？
+<h3 id="q7-为什么-deepmimic-能抗干扰rsiet-消融实验说明了什么">Q7: 为什么 DeepMimic 能抗干扰？RSI+ET 消融实验说明了什么？</h3>
 **A**:
 论文做了完整的消融实验（Section 10.4），证明 RSI 和 ET 都是关键组件：
 
@@ -807,7 +822,7 @@ DeepMimic 是**运动模仿学习**的开山之作，几乎所有后续的机器
 
 抗干扰能力测试（Table 6）：Run 策略可承受 **720N·0.2s** 前向推动，Spinkick 可承受 **600N** 侧向推动，与 SAMCON 相当。
 
-### Q8: 不同角色之间策略能直接迁移吗？为什么？
+<h3 id="q8-不同角色之间策略能直接迁移吗为什么">Q8: 不同角色之间策略能直接迁移吗？为什么？</h3>
 **A**:
 **不能直接迁移**。论文做了人形→Atlas 的迁移实验：
 - 直接把 Humanoid 策略用于 Atlas：Run = 0.013，Backflip = 0.014（几乎为 0）
@@ -815,7 +830,7 @@ DeepMimic 是**运动模仿学习**的开山之作，几乎所有后续的机器
 
 **原因**：Atlas 质量是 Humanoid 的 **~4 倍**（169.8kg vs 45kg），质量分布完全不同，同样的动作策略在两个角色上产生的动力学差异巨大。迁移需要重新训练，但**动捕数据的姿态可以直接复制**（论文直接复制 local joint rotations），只需重新训练策略。
 
-### Q9: Composite Policy 怎么让角色自主切换技能？
+<h3 id="q9-composite-policy-怎么让角色自主切换技能">Q9: Composite Policy 怎么让角色自主切换技能？</h3>
 **A**:
 不是让一个策略同时学多个技能，而是**分别训练多个单技能策略**，推理时用**价值函数做 Boltzmann 选策略**：
 
@@ -827,19 +842,23 @@ $$
 
 其中 $T=0.3$ 是温度参数。值函数大的策略被选概率高。角色在每个 cycle 结束时重新采样新技能，通过值函数估计自动选择合适的过渡，无需手工设计转换逻辑。摔倒时自动触发 getup 策略。
 
-### Q10: Vision-based 任务怎么处理地形感知？
+<h3 id="q10-vision-based-任务怎么处理地形感知">Q10: Vision-based 任务怎么处理地形感知？</h3>
 **A**:
 对于需要视觉的地形穿越任务，策略输入额外加入了**高度图 H**（Heightmap）：
 - 卷积层处理：3 层卷积（16×8×8 → 32×4×4 → 32×4×4），最后接 64 个全连接单元
 - 高度图 + 状态 + 目标拼接后送入主网络（1024→512）
 - 训练采用**两阶段渐进学习**：先在平地训练纯模仿策略，再加入高度图在地形上微调
 - 1D 高度场（100 samples，跨 10m）用于线性障碍环境；2D 32×32 高度图用于弯曲平衡木
+</details>
 
 ---
 
 ## 📎 附录
 
-### A. 状态和动作空间详解
+<details class="paper-fold" markdown="1">
+<summary>📖 展开全文（19 节）：A. 状态和动作空间详解 / B. 模仿奖励权重参考值 / 奖励函数完整结构 / 模仿奖励四维分量 / k 值的物理含义…</summary>
+
+<h3 id="a-状态和动作空间详解">A. 状态和动作空间详解</h3>
 
 **状态空间**包含两部分：
 - **角色自身状态**：所有关节的旋转角度（四元数）、角速度、质心位置和速度
@@ -850,11 +869,11 @@ $$
 - PD 控制器：$\tau = k_p (\hat{q} - q) + k_d (\hat{\dot{q}} - \dot{q})$
 - 好处：策略只需关心"摆什么姿势"，底层稳定性由 PD 保证
 
-### B. 模仿奖励权重参考值
+<h3 id="b-模仿奖励权重参考值">B. 模仿奖励权重参考值</h3>
 
 > ⚠️ **重要说明**：以下所有数值均来自论文原文（Peng et al. 2018, arXiv:1804.02717），是**作者调优后的经验性固定值**，而非理论推导。这些本质上是超参数，论文默认使用这套值，不同任务或不同角色时可以调整。
 
-#### 奖励函数完整结构
+<h4 id="奖励函数完整结构">奖励函数完整结构</h4>
 
 总体奖励由模仿目标与任务目标加权组成：
 
@@ -864,7 +883,7 @@ $$r_t = \omega_I \cdot r_t^I + \omega_G \cdot r_t^G$$
 
 > *"The weights for the imitation and task objectives are set to $\omega_I = 0.7$ and $\omega_G = 0.3$ **for all tasks**."*
 
-#### 模仿奖励四维分量
+<h4 id="模仿奖励四维分量">模仿奖励四维分量</h4>
 
 $$r_t^I = w_p \cdot r_t^p + w_v \cdot r_t^v + w_e \cdot r_t^e + w_c \cdot r_t^c$$
 
@@ -875,7 +894,7 @@ $$r_t^I = w_p \cdot r_t^p + w_v \cdot r_t^v + w_e \cdot r_t^e + w_c \cdot r_t^c$
 | $r^e$（end-effector） | 手脚 3D 位置匹配 | $w_e = 0.15$ | **k = 40** | 精度要求最高 |
 | $r^c$（center-of-mass） | 质心位置偏移惩罚 | $w_c = 0.1$ | **k = 10** | 整体平衡 |
 
-#### k 值的物理含义
+<h4 id="k-值的物理含义">k 值的物理含义</h4>
 
 k 值决定了该分量对误差的敏感程度——**k 越大，对误差越严格**：
 
@@ -886,7 +905,7 @@ k 值决定了该分量对误差的敏感程度——**k 越大，对误差越�
 | k = 2（姿态） | 关节朝向误差容忍度较好 |
 | k = 0.1（速度） | 对速度误差最宽容，因为速度本身有随机性 |
 
-### C. 与路线图其他论文的关联
+<h3 id="c-与路线图其他论文的关联">C. 与路线图其他论文的关联</h3>
 
 | 关系 | 说明 |
 |------|------|
@@ -895,7 +914,7 @@ k 值决定了该分量对误差的敏感程度——**k 越大，对误差越�
 | **DeepMimic → PHC** | PHC 在 DeepMimic 基础上实现通用运动跟踪 |
 | **DeepMimic → ASE** | ASE 将模仿学到的技能编码为可组合的潜空间 |
 
-### D. 完整超参数速查表
+<h3 id="d-完整超参数速查表">D. 完整超参数速查表</h3>
 
 | 参数 | 含义 | 值 |
 |------|------|--------|
@@ -915,7 +934,7 @@ k 值决定了该分量对误差的敏感程度——**k 越大，对误差越�
 | $\lambda$（GAE） | 广义优势估计 | 0.95 |
 | $\epsilon$（PPO clip） | 截断阈值 | 0.2 |
 
-### E. DeepMimic 能学会的技能
+<h3 id="e-deepmimic-能学会的技能">E. DeepMimic 能学会的技能</h3>
 
 论文展示了多种技能：
 - **运动类**：走路、跑步、翻跟斗（前空翻、后空翻）、侧手翻
@@ -923,9 +942,9 @@ k 值决定了该分量对误差的敏感程度——**k 越大，对误差越�
 - **杂技类**：跳舞、翻滚
 - 全部在物理仿真中完成，具有真实的接触和碰撞
 
-### F. 策略输出的动作 $a$ 到底是什么？
+<h3 id="f-策略输出的动作-a-到底是什么">F. 策略输出的动作 $a$ 到底是什么？</h3>
 
-#### 结论：输出的是 PD 控制器的**目标关节角度**，不是力矩
+<h4 id="结论输出的是-pd-控制器的目标关节角度不是力矩">结论：输出的是 PD 控制器的<strong>目标关节角度</strong>，不是力矩</h4>
 
 论文原文（Section 5.1 States and Actions）明确写道：
 
@@ -946,7 +965,7 @@ flowchart TB
 
 > ⚠️ 把仿真频率拖到 60 Hz、再取消「用 Stable PD」，扭矩会直接飞到十万量级——这就是论文为什么要 1200 Hz 物理步进 **加** Stable PD。勾回 Stable PD，同样的参数立刻稳住：它把 $k_p$、$k_d$ 挪进了分母 $A = M + \Delta t \cdot k_d + \Delta t^2 \cdot k_p$（见附录 J）。
 
-### G. Multi-Clip Reward：多剪辑模仿与技能组合
+<h3 id="g-multi-clip-reward多剪辑模仿与技能组合">G. Multi-Clip Reward：多剪辑模仿与技能组合</h3>
 
 <div class="mermaid">
 flowchart TB
@@ -955,17 +974,17 @@ flowchart TB
     M3["Composite：Σ p_i(s) π^i(a#124;s)<br/>p_i ∝ exp(V^i/T)"]
 </div>
 
-#### 方法一：Multi-Clip Reward（多剪辑奖励）
+<h4 id="方法一multi-clip-reward多剪辑奖励">方法一：Multi-Clip Reward（多剪辑奖励）</h4>
 
 $$r_t^I = \max_{j=1, \ldots, k} \left( r_t^{I, (j)} \right)$$
 
 策略在每一步自动选择**当前最匹配的那段剪辑**作为目标。
 
-#### 方法二：Skill Selector（技能选择器）
+<h4 id="方法二skill-selector技能选择器">方法二：Skill Selector（技能选择器）</h4>
 
 给策略输入一个 **one-hot 向量** $\delta_t \in \{0,1\}^k$，明确告诉它"现在应该执行哪个动作"。
 
-#### 方法三：Composite Policy（复合策略）
+<h4 id="方法三composite-policy复合策略">方法三：Composite Policy（复合策略）</h4>
 
 分别训练多个单技能策略，推理时用**价值函数做 Boltzmann 选策略**：
 
@@ -981,7 +1000,7 @@ $$p_i(s) = \frac{\exp(V^i(s) / T)}{\sum_{j=1}^{k} \exp(V^j(s) / T)}$$
 
 ---
 
-### I. Flashcards 复习卡片
+<h3 id="i-flashcards-复习卡片">I. Flashcards 复习卡片</h3>
 
 | # | 问题 | 答案 |
 |---|------|------|
@@ -1006,9 +1025,9 @@ $$p_i(s) = \frac{\exp(V^i(s) / T)}{\sum_{j=1}^{k} \exp(V^j(s) / T)}$$
 | 19 | 复合策略 (Composite Policy) 如何在运行时自动选择执行哪种技能？ | 利用各独立策略的价值函数 $V(s)$，按玻尔兹曼分布采样选择预期回报最高的策略。 |
 | 20 | 在目标航向任务中，任务奖励 $r^G$ 如何定义？ | 奖励角色质心速度在目标方向上的分量，惩罚速度低于设定阈值的情况。 |
 
-### J. 质量矩阵 $M(q)$ 与关节等效质量
+<h3 id="j-质量矩阵-mq-与关节等效质量">J. 质量矩阵 $M(q)$ 与关节等效质量</h3>
 
-#### 从牛顿第二定律到广义坐标
+<h4 id="从牛顿第二定律到广义坐标">从牛顿第二定律到广义坐标</h4>
 
 单个质点的牛顿第二定律： $F = ma$ ， $m$ 是质量标量。
 
@@ -1022,7 +1041,7 @@ $$M(q) \cdot \ddot{q} = \tau + f_{ext}$$
 - $\tau$ ：关节扭矩
 - $M(q)$ ： $n \times n$ 的**质量矩阵**（也叫惯性矩阵）， $n$ 是关节自由度数
 
-#### 为什么是矩阵而非标量？
+<h4 id="为什么是矩阵而非标量">为什么是矩阵而非标量？</h4>
 
 因为**一个关节转动时，不只是带动它直接连接的肢体，还会影响所有下游肢体的运动**。
 
@@ -1033,7 +1052,7 @@ $M(q)$ 的每个元素含义：
 | $M_{ii}$（对角线） | 第 $i$ 个关节**独立转动**时需要克服的等效转动惯量 |
 | $M_{ij}$（非对角线） | 第 $j$ 个关节转动时，对第 $i$ 个关节产生的**耦合惯性力** |
 
-#### 和 Stable PD 的关系
+<h4 id="和-stable-pd-的关系">和 Stable PD 的关系</h4>
 
 在 Stable PD 中：
 
@@ -1043,10 +1062,14 @@ $$A = M + \Delta t \cdot k_d + \Delta t^2 \cdot k_p$$
 - **整个角色**： $M$ 是 $n \times n$ 矩阵 → 需要解线性方程组
 
 > 🔑 **一句话**：质量矩阵就是"关节版"的牛顿第二定律中的 $m$——多关节系统中，每个关节的 $m$ 不仅取决于自己，还取决于它带动的所有下游肢体，且随姿态变化。
+</details>
 
 ---
 
 ## 📁 MimicKit 关键文件速查
+
+<details class="paper-fold" markdown="1">
+<summary>📖 展开全文：关键文件速查表与快速定位命令</summary>
 
 > 📍 MimicKit 代码库路径：`/home/chong/Desktop/project/MimicKit`
 
@@ -1059,7 +1082,7 @@ $$A = M + \Delta t \cdot k_d + \Delta t^2 \cdot k_p$$
 | 工具函数 | `mimickit/util/torch_util.py` |
 | 物理引擎接口 | `mimickit/engines/engine.py` |
 
-### 快速定位命令
+<h3 id="快速定位命令">快速定位命令</h3>
 
 ```bash
 # 搜索 RSI 实现
@@ -1074,9 +1097,14 @@ grep -r "early_termination\|has_fallen\|pose_fail" /home/chong/Desktop/project/M
 # 搜索四元数差分
 grep -r "quat_diff_angle" /home/chong/Desktop/project/MimicKit/mimickit/
 ```
+</details>
 
 ---
 
 ## 💬 讨论记录
 
+<details class="paper-fold" markdown="1">
+<summary>📖 展开全文：讨论记录</summary>
+
 > 待补充
+</details>

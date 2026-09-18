@@ -63,7 +63,7 @@ PHC 通过**渐进式乘法控制策略（PMCP）**，让仿真人形角色能�
 
 <div class="paper-demo" data-demo="phc-explainer"><p class="demo-fallback">（本节含动画演示，需要启用 JavaScript）</p></div>
 
-> 📖 动画覆盖的两块——「这篇论文要解决什么问题」和「PHC 是怎么做的」——**文字讲解默认折叠**，想看推导、公式和对照表时点开各节的折叠条即可，内容一字未删；流程图、源码片段、具体实例与附录不在折叠范围内。
+> 📖 **动画之后的正文默认全部折叠**：前半部分（「要解决什么问题」「是怎么做的」）按小节收起，后面的具体实例、源码对照、面试问题、讨论记录与附录整块收起。想细读哪一块就点开对应的折叠条，内容一字未删；目录里的标题依旧可以直接点，会自动展开所在折叠块，左侧目录顶部还有「展开全部文字」一键铺开。
 
 ---
 
@@ -473,9 +473,12 @@ stateDiagram-v2
 
 ## 📁 PHC 源码对照
 
+<details class="paper-fold" markdown="1">
+<summary>📖 展开全文（7 节）：源码运行时序图 / 1. Progressive Primitive（PNN 列网络） / 2. Composer / MCP 网络…</summary>
+
 PHC 没有收进 MimicKit，但官方仓库已经公开，而且代码结构和论文是一一对得上的。下面给你一个“论文概念 ↔ 代码实现”的对照表。
 
-### 源码运行时序图
+<h3 id="源码运行时序图">源码运行时序图</h3>
 
 官方仓库 [ZhengyiLuo/PHC](https://github.com/ZhengyiLuo/PHC) 的统一入口是 `phc/run_hydra.py`（Hydra 配置 + rl_games 训练器 + IsaacGym）。训练分两个大阶段：先渐进式训练 primitive（PNN 列网络 + 硬负例挖掘），再冻结 primitive 训练 composer（MCP）：
 
@@ -521,7 +524,7 @@ sequenceDiagram
 - 阶段一对应第 1 节：`numCols` 个 primitive 逐列训练，硬负例（上一列跟不上的序列）驱动新列专攻难动作。
 - 阶段二对应第 2、3、5 节：composer 输出权重做动作融合；getup 环境混入"从摔倒状态开始 + 恢复窗口禁止 reset"的 episode，这就是 perpetual 的训练机制。
 
-### 1. Progressive Primitive（PNN 列网络）
+<h3 id="1-progressive-primitivepnn-列网络">1. Progressive Primitive（PNN 列网络）</h3>
 
 ```python
 # phc/learning/amp_network_pnn_builder.py
@@ -537,7 +540,7 @@ self.pnn.freeze_pnn(self.training_prim)
 - 每一列是一个 primitive
 - 训练新列时，旧列冻结，避免遗忘
 
-### 2. Composer / MCP 网络
+<h3 id="2-composer--mcp-网络">2. Composer / MCP 网络</h3>
 
 ```python
 # phc/learning/amp_network_mcp_builder.py
@@ -548,7 +551,7 @@ if self.has_softmax:
 
 这对应论文里的 composer $C(s)$，输出每个 primitive 的权重。
 
-### 3. Composer 执行动作融合
+<h3 id="3-composer-执行动作融合">3. Composer 执行动作融合</h3>
 
 ```python
 # phc/env/tasks/humanoid_im_mcp.py
@@ -562,7 +565,7 @@ actions = torch.sum(weights[:, :, None] * x_all, dim=1)
 - composer 给出权重
 - 最终动作 = 所有 primitive 动作的加权和
 
-### 4. Imitation Reward
+<h3 id="4-imitation-reward">4. Imitation Reward</h3>
 
 ```python
 # phc/env/tasks/humanoid_im.py
@@ -587,7 +590,7 @@ reward_specs:
   w_ang_vel: 0.1
 ```
 
-### 5. Fail-State Recovery / Getup
+<h3 id="5-fail-state-recovery--getup">5. Fail-State Recovery / Getup</h3>
 
 ```python
 # phc/env/tasks/humanoid_amp_getup.py
@@ -609,7 +612,7 @@ self._terminate_buf[is_recovery] = 0
 - 一旦进入恢复窗口，就不允许 reset
 - 策略必须自己把人形重新拉起来
 
-### 6. 公开结果（代码仓库 README）
+<h3 id="6-公开结果代码仓库-readme">6. 公开结果（代码仓库 README）</h3>
 
 官方仓库当前 README 给出的 cleaned AMASS（11313 sequences）结果是：
 
@@ -621,16 +624,20 @@ self._terminate_buf[is_recovery] = 0
 | **PHC-Prim** | 99.9% | 25.9 | 2.3 |
 
 > 注：这里是官方代码仓库后来补充的结果汇总，不完全等同于 ICCV 2023 论文原始表格；但它很好地说明了 PHC 系列后续演进到了什么程度。
+</details>
 
 ---
 
 ## 🚶 具体实例：PHC 如何处理一段视频输入
 
-### 场景
+<details class="paper-fold" markdown="1">
+<summary>📖 展开全文（6 节）：场景 / 第 1 步：获取参考姿态 / 第 2 步：计算状态 / 第 3 步：Primitive 各自输出…</summary>
+
+<h3 id="场景">场景</h3>
 
 用户在摄像头前做动作，视频姿态估计器（HybrIK）输出带噪声的骨骼姿态，PHC 驱动虚拟角色实时模仿。
 
-### 第 1 步：获取参考姿态
+<h3 id="第-1-步获取参考姿态">第 1 步：获取参考姿态</h3>
 
 ```
 用户做"挥手"动作
@@ -639,7 +646,7 @@ self._terminate_buf[is_recovery] = 0
   → 得到参考动作序列 {q_ref_1, q_ref_2, ...}
 ```
 
-### 第 2 步：计算状态
+<h3 id="第-2-步计算状态">第 2 步：计算状态</h3>
 
 ```
 当前帧 t：
@@ -648,7 +655,7 @@ self._terminate_buf[is_recovery] = 0
   → 拼接得到状态 s_t
 ```
 
-### 第 3 步：Primitive 各自输出
+<h3 id="第-3-步primitive-各自输出">第 3 步：Primitive 各自输出</h3>
 
 ```
 P¹(s_t) → μ¹, σ¹   (基础技能建议: "左臂向上抬 30°")
@@ -656,7 +663,7 @@ P²(s_t) → μ², σ²   (进阶技能建议: "协调肩膀旋转")
 Pᶠ(s_t) → μᶠ, σᶠ  (恢复技能建议: "不需要恢复")
 ```
 
-### 第 4 步：Composer 混合
+<h3 id="第-4-步composer-混合">第 4 步：Composer 混合</h3>
 
 ```
 C(s_t) → w = [0.7, 0.3, 0.0]  (主要用P¹，辅以P²，不需要恢复)
@@ -664,7 +671,7 @@ C(s_t) → w = [0.7, 0.3, 0.0]  (主要用P¹，辅以P²，不需要恢复)
 → PD 控制 → 关节扭矩 → 角色挥手
 ```
 
-### 第 5 步：突然摔倒！
+<h3 id="第-5-步突然摔倒">第 5 步：突然摔倒！</h3>
 
 ```
 用户突然蹲下，噪声导致参考姿态跳变
@@ -679,10 +686,14 @@ C(s_t) → w = [0.7, 0.3, 0.0]  (主要用P¹，辅以P²，不需要恢复)
   → 切回正常模仿模式
   C(s_t) → w = [0.6, 0.4, 0.0]
 ```
+</details>
 
 ---
 
 ## 🤖 PHC 在学习路线中的位置
+
+<details class="paper-fold" markdown="1">
+<summary>📖 展开全文：DeepMimic (2018) → PHC (2023) → PULSE (2024) 这条线上的位置</summary>
 
 ```
 DeepMimic (2018)     →    PHC (2023)         →    PULSE (2024)
@@ -695,50 +706,62 @@ PHC 解决了 DeepMimic 的三个痛点：
 1. **规模**：从几个动作 → 10000+ 动作（PMCP 解决遗忘）
 2. **鲁棒性**：摔倒自恢复，无需 reset（Fail-state Recovery）
 3. **噪声容忍**：支持视频/语言等噪声输入（Keypoint-based 输入）
+</details>
 
 ---
 
 ## 🎤 面试高频问题 & 参考回答
 
-### Q1: PHC 和 DeepMimic 的核心区别？
+<details class="paper-fold" markdown="1">
+<summary>📖 展开全文（7 节）：Q1: PHC 和 DeepMimic 的核心区别？ / Q2: PMCP 怎么解决灾难性遗忘？…</summary>
+
+<h3 id="q1-phc-和-deepmimic-的核心区别">Q1: PHC 和 DeepMimic 的核心区别？</h3>
 
 DeepMimic 一次只学一个动作片段，用参考动作 + 残差作为动作空间，角色偏离就 reset。PHC 能同时学上万条动作、直接输出绝对 PD 目标（不加残差不用外力），摔倒后自动恢复，支持永续运行。核心创新是 PMCP 架构解决大规模学习的灾难性遗忘问题。
 
-### Q2: PMCP 怎么解决灾难性遗忘？
+<h3 id="q2-pmcp-怎么解决灾难性遗忘">Q2: PMCP 怎么解决灾难性遗忘？</h3>
 
 渐进式训练：先学全部数据，收敛后冻结参数，找出失败的难例交给新网络学习。新网络从旧网络权重初始化（权重共享），保留已有技能。最终用 Composer 网络动态混合所有 Primitive 的输出。这样新技能不会覆盖旧技能，因为旧网络参数是冻结的。
 
-### Q3: 为什么用乘法组合（MCP）而不是简单切换？
+<h3 id="q3-为什么用乘法组合mcp而不是简单切换">Q3: 为什么用乘法组合（MCP）而不是简单切换？</h3>
 
 简单切换（mixture of experts）在技能边界会出现不连续的动作跳变。MCP 允许多个 Primitive 同时贡献、连续混合，过渡更平滑。比如从走路过渡到跑步时，两个 Primitive 可以按比例混合而不是硬切换。
 
-### Q4: PHC 的摔倒恢复是怎么实现的？
+<h3 id="q4-phc-的摔倒恢复是怎么实现的">Q4: PHC 的摔倒恢复是怎么实现的？</h3>
 
 专门训练一个 Recovery Primitive $P^F$：(1) 初始化时将角色随机扔到各种摔倒姿态，(2) 简化目标为只追踪根节点位置，(3) 用简单移动数据训练。当角色根节点距参考 < 0.5m 时自动切回正常模仿。关键是不使用任何外部稳定力。
 
-### Q5: PHC 为什么不用残差动作？
+<h3 id="q5-phc-为什么不用残差动作">Q5: PHC 为什么不用残差动作？</h3>
 
 残差动作（$a = a_{ref} + \Delta a$）依赖参考动作作为基准，限制了策略的表达能力。PHC 直接输出绝对 PD 目标，虽然更难学习，但在处理噪声输入和恢复场景时更灵活——因为恢复时根本没有合理的参考动作可以加残差。
 
-### Q6: PHC 的 Relaxed Early Termination 是什么？
+<h3 id="q6-phc-的-relaxed-early-termination-是什么">Q6: PHC 的 Relaxed Early Termination 是什么？</h3>
 
 当平均关节距参考超过 0.5m 就终止 episode，但**排除脚踝和脚趾关节**。这是因为脚部的精确匹配对维持平衡不那么重要，过早终止反而阻碍了策略学习平衡技巧。
 
-### Q7: PHC 能处理什么样的输入？
+<h3 id="q7-phc-能处理什么样的输入">Q7: PHC 能处理什么样的输入？</h3>
 
 两种：(1) Rotation-based：完整关节旋转，适合 MoCap 或 HybrIK 等旋转估计器；(2) Keypoint-based：只需 3D 关键点位置，适合 MeTRAbs 等位置估计器或 VR 控制器。后者更鲁棒，对噪声容忍度更高。
+</details>
 
 ---
 
 ## 💬 讨论记录
 
+<details class="paper-fold" markdown="1">
+<summary>📖 展开全文：讨论记录（待补充）</summary>
+
 （待补充）
+</details>
 
 ---
 
 ## 📎 附录
 
-### A. 网络架构
+<details class="paper-fold" markdown="1">
+<summary>📖 展开全文（6 节）：A. 网络架构 / B. 训练超参数 / C. 与 DeepMimic、AMP 的对比 / D. PHC+ 改进（ICLR 2024）…</summary>
+
+<h3 id="a-网络架构">A. 网络架构</h3>
 
 | 组件 | 架构 | 参数 |
 |------|------|------|
@@ -750,7 +773,7 @@ DeepMimic 一次只学一个动作片段，用参考动作 + 残差作为动作�
 
 > 🔑 一个容易搞混的点：**PNN 负责“学多个 primitive”**，**Composer/MCP 负责“运行时混这些 primitive”**。前者解决遗忘，后者解决调度。
 
-### B. 训练超参数
+<h3 id="b-训练超参数">B. 训练超参数</h3>
 
 | 参数 | 值 | 说明 |
 |------|-----|------|
@@ -764,7 +787,7 @@ DeepMimic 一次只学一个动作片段，用参考动作 + 残差作为动作�
 | 训练时间 | ~1 周 | 单张 A100 GPU |
 | 模型大小 | 28.8 MB | 含所有 Primitive 和 Composer |
 
-### C. 与 DeepMimic、AMP 的对比
+<h3 id="c-与-deepmimicamp-的对比">C. 与 DeepMimic、AMP 的对比</h3>
 
 | 特性 | DeepMimic | AMP | PHC |
 |------|-----------|-----|-----|
@@ -776,7 +799,7 @@ DeepMimic 一次只学一个动作片段，用参考动作 + 残差作为动作�
 | 噪声输入 | ❌ | ❌ | ✅ |
 | 灾难性遗忘 | N/A | 有 | PMCP 解决 |
 
-### D. PHC+ 改进（ICLR 2024）
+<h3 id="d-phc-改进iclr-2024">D. PHC+ 改进（ICLR 2024）</h3>
 
 PHC+ 是 PHC 的升级版，发表于 ICLR 2024（论文标题：Universal Humanoid Motion Representations for Physics-Based Control）：
 
@@ -786,7 +809,7 @@ PHC+ 是 PHC 的升级版，发表于 ICLR 2024（论文标题：Universal Human
 | PULSE 潜空间 | 将所有技能蒸馏到一个潜空间，可作为下游任务基础模型 |
 | 下游泛化 | 支持导航、地形行走、VR 控制等，无需重新训练 |
 
-### E. 关键实验指标
+<h3 id="e-关键实验指标">E. 关键实验指标</h3>
 
 | 数据集 / 模型 | 成功率 | MPJPE / G-MPJPE |
 |--------|--------|------------|
@@ -796,7 +819,7 @@ PHC+ 是 PHC 的升级版，发表于 ICLR 2024（论文标题：Universal Human
 | H36M-Motion*（MoCap） | 高 | 竞争力强 |
 | H36M-Test-Video*（视频噪声） | 鲁棒 | 噪声下仍可用 |
 
-### F. 你该怎么理解 PHC？
+<h3 id="f-你该怎么理解-phc">F. 你该怎么理解 PHC？</h3>
 
 如果只记一句：
 
@@ -805,3 +828,4 @@ PHC+ 是 PHC 的升级版，发表于 ICLR 2024（论文标题：Universal Human
 如果只记两句，再加一句：
 
 > **PHC 的真正价值不只是 tracking 精度，而是它把 motion imitation 从“单技能 demo”推进成了“可扩展控制系统”。**
+</details>

@@ -60,7 +60,7 @@ ADD 的核心很狠：**把“精确运动跟踪”从手工 reward 工程问题
 
 <div class="paper-demo" data-demo="add-explainer"><p class="demo-fallback">（本节含动画演示，需要启用 JavaScript）</p></div>
 
-> 📖 动画覆盖的三块——「这篇论文要解决什么问题」「ADD 是怎么做的」和实例里的四步拆解——**文字讲解默认折叠**，想看推导、公式和对照表时点开各节的折叠条即可，内容一字未删；流程图、源码片段、论文超参表、面试题与附录不在折叠范围内。
+> 📖 **动画之后的正文默认全部折叠**：前半部分（「要解决什么问题」「是怎么做的」）按小节收起，后面的具体实例、源码对照、面试问题、讨论记录与附录整块收起。想细读哪一块就点开对应的折叠条，内容一字未删；目录里的标题依旧可以直接点，会自动展开所在折叠块，左侧目录顶部还有「展开全部文字」一键铺开。
 
 ---
 
@@ -428,7 +428,10 @@ flowchart TB
 
 ## 🤖 ADD 对人形机器人领域的意义
 
-### 1. 它在挑战一个老习惯：reward 工程不一定非做不可
+<details class="paper-fold" markdown="1">
+<summary>📖 展开全文（4 节）：1. 它在挑战一个老习惯：reward 工程不一定非做不可 / 2. 它把“tracking”重新表述成“误差判别”…</summary>
+
+<h3 id="1-它在挑战一个老习惯reward-工程不一定非做不可">1. 它在挑战一个老习惯：reward 工程不一定非做不可</h3>
 
 过去大家默认：
 - 精确 tracking 就得手工 reward
@@ -440,7 +443,7 @@ ADD 直接反过来说：
 
 这事不只是 motion imitation 有用，对更广泛的多目标 RL 也有启发意义。
 
-### 2. 它把“tracking”重新表述成“误差判别”
+<h3 id="2-它把tracking重新表述成误差判别">2. 它把“tracking”重新表述成“误差判别”</h3>
 
 这其实是个很漂亮的建模视角。
 
@@ -454,7 +457,7 @@ ADD 给了一个通用思路：
 
 > **如果你的任务核心是“让误差趋近于 0”，那就可以考虑直接判误差，而不是手写误差聚合公式。**
 
-### 3. 它比 AMP 更接近“可部署 tracking 系统”
+<h3 id="3-它比-amp-更接近可部署-tracking-系统">3. 它比 AMP 更接近“可部署 tracking 系统”</h3>
 
 AMP 更偏“动作自然性正则器”；
 ADD 更偏“目标跟踪驱动器”。
@@ -466,7 +469,7 @@ ADD 更偏“目标跟踪驱动器”。
 
 那么 ADD 的味道会更对。
 
-### 4. 它对 robotics 的启发不止在动画
+<h3 id="4-它对-robotics-的启发不止在动画">4. 它对 robotics 的启发不止在动画</h3>
 
 虽然论文场景是 physics-based character control，但这个思路很容易迁到机器人：
 - 末端轨迹 tracking
@@ -474,14 +477,18 @@ ADD 更偏“目标跟踪驱动器”。
 - 多目标 imitation + smoothness + energy 的自动平衡
 
 尤其在 humanoid 上，reward 工程一直是巨坑。ADD 这种“让判别器学 trade-off”的思路，值得认真看。
+</details>
 
 ---
 
 ## 📁 MimicKit 源码对照
 
+<details class="paper-fold" markdown="1">
+<summary>📖 展开全文（10 节）：源码类图：ADD 对 AMP 的最小增量 / 源码运行时序图 / 1. ADDAgent 继承自 AMPAgent…</summary>
+
 ADD 在 MimicKit 里已经有官方实现，而且实现很清楚：**它就是在 AMPAgent 基础上，把判别器输入从“动作片段本身”改成了“参考与当前的差值”。**
 
-### 源码类图：ADD 对 AMP 的最小增量
+<h3 id="源码类图add-对-amp-的最小增量">源码类图：ADD 对 AMP 的最小增量</h3>
 
 先看静态结构（接着 AMP 笔记的类图往下长）。`ADDModel` 几乎是空的——网络结构与 AMP 完全一致，全部改动都在 **Agent 侧的数据流**：判别器喂什么、正负样本怎么造：
 
@@ -518,7 +525,7 @@ classDiagram
 - 对照 AMP 类图看增量：判别器输入从 $(s_t, s_{t+1})$ 状态对变成 `tar_disc_obs − disc_obs` 差向量；真样本从 mocap 片段变成**固定的全 0 张量**。
 - `DiffNormalizer` 是 ADD 专属的辅助类——差向量里位置（米）、角度（弧度）、速度量纲不同，必须分量归一化后判别器才学得动。
 
-### 源码运行时序图
+<h3 id="源码运行时序图">源码运行时序图</h3>
 
 以第 8 节的训练命令 `python mimickit/run.py --mode train --agent_config add_*_agent.yaml` 为入口。`ADDAgent` 继承 `AMPAgent`，时序骨架与 AMP 一致，但**判别器的输入与正负样本构造完全不同**：
 
@@ -560,7 +567,7 @@ sequenceDiagram
 - ⑥ 和 ⑨ 保留了 DeepMimic 的相位对齐与 pose termination；⑩–⑫ 里奖励不再手写，判别器吃"参考与当前的差"直接给分（对应第 3、4、5 节）。
 - ⑭–⑮ 对应第 2、7 节：负样本是新旧 rollout 的差异向量，配 replay buffer、gradient penalty 与 logit 正则。
 
-### 1. ADDAgent 继承自 AMPAgent
+<h3 id="1-addagent-继承自-ampagent">1. ADDAgent 继承自 AMPAgent</h3>
 
 ```python
 # mimickit/learning/add_agent.py
@@ -572,7 +579,7 @@ class ADDAgent(amp_agent.AMPAgent):
 
 这说明 ADD 不是推翻 AMP 重写，而是在 AMP 的框架上改判别器目标。
 
-### 2. 正样本就是零差值
+<h3 id="2-正样本就是零差值">2. 正样本就是零差值</h3>
 
 ```python
 # mimickit/learning/add_agent.py
@@ -590,7 +597,7 @@ disc_pos_logit = self._model.eval_disc(pos_diff)
 
 这就是 ADD 最关键的实现细节。
 
-### 3. 负样本是 demo 和当前观测的差分
+<h3 id="3-负样本是-demo-和当前观测的差分">3. 负样本是 demo 和当前观测的差分</h3>
 
 ```python
 # mimickit/learning/add_agent.py
@@ -608,7 +615,7 @@ $$
 
 判别器不再看“动作本身”，而是看“误差本身”。
 
-### 4. 判别器 reward 完全主导训练
+<h3 id="4-判别器-reward-完全主导训练">4. 判别器 reward 完全主导训练</h3>
 
 ```python
 # mimickit/learning/add_agent.py
@@ -628,7 +635,7 @@ disc_reward_weight: 1.0
 
 也就是说默认训练几乎完全靠 discriminator reward。
 
-### 5. 差分归一化器（DiffNormalizer）
+<h3 id="5-差分归一化器diffnormalizer">5. 差分归一化器（DiffNormalizer）</h3>
 
 ```python
 # mimickit/learning/add_agent.py
@@ -642,7 +649,7 @@ self._disc_obs_norm = diff_normalizer.DiffNormalizer(...)
 
 如果不归一化，判别器会被某些大尺度维度带偏。
 
-### 6. ADDModel 本身并不复杂
+<h3 id="6-addmodel-本身并不复杂">6. ADDModel 本身并不复杂</h3>
 
 ```python
 # mimickit/learning/add_model.py
@@ -656,7 +663,7 @@ class ADDModel(amp_model.AMPModel):
 - 正负样本构造方式
 - 用差分替代手工 tracking reward
 
-### 7. 默认超参数
+<h3 id="7-默认超参数">7. 默认超参数</h3>
 
 ```yaml
 # data/agents/add_g1_agent.yaml
@@ -676,7 +683,7 @@ td_lambda: 0.95
 discount: 0.99
 ```
 
-### 8. 训练 / 测试命令
+<h3 id="8-训练--测试命令">8. 训练 / 测试命令</h3>
 
 ```bash
 # 训练
@@ -697,46 +704,58 @@ python mimickit/run.py --mode test \
   --visualize true \
   --model_file data/models/add_humanoid_spinkick_model.pt
 ```
+</details>
 
 ---
 
 ## 🎤 面试高频问题 & 参考回答
 
-### Q1: ADD 和 AMP 的核心区别是什么？
+<details class="paper-fold" markdown="1">
+<summary>📖 展开全文（6 节）：Q1: ADD 和 AMP 的核心区别是什么？ / Q2: 为什么 ADD 只需要一个正样本？…</summary>
+
+<h3 id="q1-add-和-amp-的核心区别是什么">Q1: ADD 和 AMP 的核心区别是什么？</h3>
 **A**：AMP 的判别器输入是动作/状态片段本身，目标是学习“像不像真实运动分布”；ADD 的判别器输入是参考与当前之间的差分，目标是学习“离目标是否接近零误差”。所以 AMP 更偏自然性先验，ADD 更偏精确 tracking。
 
-### Q2: 为什么 ADD 只需要一个正样本？
+<h3 id="q2-为什么-add-只需要一个正样本">Q2: 为什么 ADD 只需要一个正样本？</h3>
 **A**：因为它判别的不是专家分布，而是误差分布。理想 tracking 时误差恒为 0，所以正样本天然就是零差向量，不需要像 GAN/AMP 那样准备大量正样本片段。
 
-### Q3: ADD 为什么能替代手工 reward？
+<h3 id="q3-add-为什么能替代手工-reward">Q3: ADD 为什么能替代手工 reward？</h3>
 **A**：因为多目标 tracking 本质上就是多个误差项的联合优化。传统方法靠手工加权和，ADD 则让判别器直接在差分空间里学习“哪些误差组合更接近理想匹配”。这相当于把 reward 聚合器从手工规则换成了可学习模型。
 
-### Q4: ADD 的优点是什么？
+<h3 id="q4-add-的优点是什么">Q4: ADD 的优点是什么？</h3>
 **A**：核心优点有三个：① 少手工调参；② 更容易跨不同技能复用；③ 对复杂敏捷动作更自然，因为不同阶段可以自动学习不同维度的重要性。
 
-### Q5: ADD 的潜在代价是什么？
+<h3 id="q5-add-的潜在代价是什么">Q5: ADD 的潜在代价是什么？</h3>
 **A**：训练会更依赖判别器稳定性，需要处理 replay buffer、gradient penalty、logit regularization、输入归一化等工程细节。如果判别器训崩，reward 信号也会一起崩。
 
-### Q6: ADD 适合什么任务？
+<h3 id="q6-add-适合什么任务">Q6: ADD 适合什么任务？</h3>
 **A**：适合那种“本质是误差趋近于 0”的多目标 tracking 任务，比如动作模仿、全身姿态跟踪、末端轨迹跟踪。对于纯开放式风格生成，AMP 那类方法通常更自然。
+</details>
 
 ---
 
 ## 💬 讨论记录
 
-### 2026-04-07：ADD 的一句话本质
+<details class="paper-fold" markdown="1">
+<summary>📖 展开全文（1 节）：2026-04-07：ADD 的一句话本质</summary>
+
+<h3 id="2026-04-07add-的一句话本质">2026-04-07：ADD 的一句话本质</h3>
 
 ADD 不是“又一个 adversarial imitation trick”，它真正有价值的地方是：
 
 > **把 tracking reward 从“人工写公式”变成“学习一个误差判别器”。**
 
 这比“它能模仿旋风踢”更值得记。
+</details>
 
 ---
 
 ## 📎 附录
 
-### A. 与路线图其他论文的关联
+<details class="paper-fold" markdown="1">
+<summary>📖 展开全文（3 节）：A. 与路线图其他论文的关联 / B. ADD 和相关方法对比 / C. 你该怎么理解 ADD？</summary>
+
+<h3 id="a-与路线图其他论文的关联">A. 与路线图其他论文的关联</h3>
 
 | 关系 | 说明 |
 |------|------|
@@ -745,7 +764,7 @@ ADD 不是“又一个 adversarial imitation trick”，它真正有价值的地
 | **PHC → ADD** | PHC 仍依赖手工 imitation reward，ADD 试图把这一步自动化 |
 | **ADD → 后续工作** | 为“学习型 reward 聚合器”提供了一个很强的范式 |
 
-### B. ADD 和相关方法对比
+<h3 id="b-add-和相关方法对比">B. ADD 和相关方法对比</h3>
 
 | 特性 | DeepMimic | AMP | PHC | ADD |
 |------|-----------|-----|-----|-----|
@@ -755,7 +774,7 @@ ADD 不是“又一个 adversarial imitation trick”，它真正有价值的地
 | 判别器输入 | 无 | 动作片段本身 | AMP 片段 | 参考-当前差分 |
 | 正样本 | 无 | 专家运动片段 | 专家运动片段 | 零差向量 |
 
-### C. 你该怎么理解 ADD？
+<h3 id="c-你该怎么理解-add">C. 你该怎么理解 ADD？</h3>
 
 如果只记一句：
 
@@ -764,6 +783,7 @@ ADD 不是“又一个 adversarial imitation trick”，它真正有价值的地
 如果再加一句：
 
 > **ADD 最值钱的，不是换了个判别器名字，而是它把多目标 reward 聚合从手工工程，推进到了可学习范式。**
+</details>
 
 ---
 

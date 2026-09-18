@@ -57,9 +57,9 @@ AWR 把强化学习变成了一个**加权监督学习**问题——从经验中
 
 <div class="paper-demo" data-demo="awr-explainer"><p class="demo-fallback">（本节含动画演示，需要启用 JavaScript）</p></div>
 
-> 📖 六幕分别对应下文的六件事：PPO 留下的三个麻烦 → ① 评估 $A = R - V$ → ② 指数权重 $\exp(A/\beta)/Z$ → 加权回归就是一次加权平均 → off-policy 的赚与亏 → 一整轮的闭环与源码落点。
+> 🎞️ 六幕分别对应下文的六件事：PPO 留下的三个麻烦 → ① 评估 $A = R - V$ → ② 指数权重 $\exp(A/\beta)/Z$ → 加权回归就是一次加权平均 → off-policy 的赚与亏 → 一整轮的闭环与源码落点。
 >
-> 动画已经覆盖的那几节，**文字讲解默认折叠**——想看推导、公式和对照表时点开各节的折叠条即可，内容一字未删；流程图、交互演示和源码始终展开。
+> 📖 **动画之后的正文默认全部折叠**：前半部分（「要解决什么问题」「是怎么做的」）按小节收起，后面的具体实例、源码对照、面试问题、讨论记录与附录整块收起。想细读哪一块就点开对应的折叠条，内容一字未删；目录里的标题依旧可以直接点，会自动展开所在折叠块，左侧目录顶部还有「展开全部文字」一键铺开。
 
 ---
 
@@ -360,9 +360,12 @@ AWR 本身在人形机器人控制中不是最常用的算法（PPO 用得更多
 
 ## 📁 MimicKit 源码对照
 
+<details class="paper-fold" markdown="1">
+<summary>📖 展开全文（8 节）：源码类图：AWR 与 PPO 平行的另一条分支 / 源码运行时序图…</summary>
+
 以下代码块对应 [MimicKit](https://github.com/xbpeng/MimicKit) 中 AWR 的实现，与上述讲解的各模块一一对应。
 
-### 源码类图：AWR 与 PPO 平行的另一条分支
+<h3 id="源码类图awr-与-ppo-平行的另一条分支">源码类图：AWR 与 PPO 平行的另一条分支</h3>
 
 先看静态结构。和 AMP/ASE 不同，`AWRAgent` **不继承 PPOAgent**，而是与它平行、直接挂在 `BaseAgent` 下——因为 AWR 的 Actor 更新是加权回归，跟 PPO 的概率比裁剪完全是两套逻辑：
 
@@ -402,7 +405,7 @@ classDiagram
 - 继承关系直接反映算法关系：AMP/ASE/LCP 都长在 `PPOAgent` 下面（on-policy 家族），AWR 独立成枝——它的 buffer 可以保留旧数据（off-policy 倾向），Actor loss 是监督式的加权最大似然。
 - 读源码抓两处就够：`_build_train_data()` 里的 `w = clamp(exp(Â/β))`，和 `_compute_actor_loss()` 里的加权回归。
 
-### 源码运行时序图
+<h3 id="源码运行时序图">源码运行时序图</h3>
 
 以 `python mimickit/run.py --mode train` 为入口（agent 配置换成 `*_awr_agent.yaml`），训练时序与 PPO 共享同一骨架，差别集中在 **`_build_train_data()` 里算指数权重、Actor 用加权回归更新**：
 
@@ -442,7 +445,7 @@ sequenceDiagram
 
 对比 PPO 的时序：rollout 和 Critic 更新完全一致；差别在 ⑩ 处提前把优势换算成指数权重 `w`，⑭ 处 Actor 不再算概率比和 Clip，而是做一次加权监督回归。
 
-### 1. 核心：指数优势权重计算（`_build_train_data`）
+<h3 id="1-核心指数优势权重计算_build_train_data">1. 核心：指数优势权重计算（<code>_build_train_data</code>）</h3>
 
 ```python
 # mimickit/learning/awr_agent.py - _build_train_data()
@@ -466,7 +469,7 @@ awr_temp: 1.0        # 温度参数 β
 a_weight_clip: 20.0   # 权重上限，防止 exp(A) 过大
 ```
 
-### 2. 核心：加权回归更新策略（`_compute_actor_loss`）
+<h3 id="2-核心加权回归更新策略_compute_actor_loss">2. 核心：加权回归更新策略（<code>_compute_actor_loss</code>）</h3>
 
 ```python
 # mimickit/learning/awr_agent.py - _compute_actor_loss()
@@ -493,7 +496,7 @@ def _compute_actor_loss(self, batch):
 
 > 🔑 **对比 PPO**：PPO 用 `min(r·A, clip(r)·A)` 限制更新幅度；AWR 用 `exp(A/β)` 天然限制——差动作的权重趋近 0，好动作权重高。
 
-### 3. 价值网络损失（Critic Loss）
+<h3 id="3-价值网络损失critic-loss">3. 价值网络损失（Critic Loss）</h3>
 
 ```python
 # mimickit/learning/awr_agent.py - _compute_critic_loss()
@@ -510,7 +513,7 @@ def _compute_critic_loss(self, batch):
     return info
 ```
 
-### 4. Actor-Critic 网络结构（AWRModel）
+<h3 id="4-actor-critic-网络结构awrmodel">4. Actor-Critic 网络结构（AWRModel）</h3>
 
 ```python
 # mimickit/learning/awr_model.py
@@ -528,7 +531,7 @@ class AWRModel(base_model.BaseModel):
 
 网络结构与 PPO 相同（独立 Actor 和 Critic），MLP 用 fc_2layers_1024units（1024→512 两层）。
 
-### 5. 训练循环（`_update_model`）
+<h3 id="5-训练循环_update_model">5. 训练循环（<code>_update_model</code>）</h3>
 
 <div class="mermaid">
 flowchart TB
@@ -553,7 +556,7 @@ def _update_model(self):
     self._update_actor(actor_batch_size, num_actor_steps)
 ```
 
-### 6. AWR 超参数一览
+<h3 id="6-awr-超参数一览">6. AWR 超参数一览</h3>
 
 ```yaml
 # data/agents/deepmimic_humanoid_awr_agent.yaml
@@ -578,40 +581,52 @@ critic_batch_size: 2
 action_bound_weight: 10.0   # 动作范围惩罚
 action_entropy_weight: 0.0  # 熵正则（0 表示不用）
 ```
+</details>
 
 ---
 
 ## 🎤 面试高频问题 & 参考回答
 
-### Q1: AWR 和 PPO 的核心区别？
+<details class="paper-fold" markdown="1">
+<summary>📖 展开全文（5 节）：Q1: AWR 和 PPO 的核心区别？…</summary>
+
+<h3 id="q1-awr-和-ppo-的核心区别">Q1: AWR 和 PPO 的核心区别？</h3>
 **A**: PPO 通过裁剪概率比来限制策略更新幅度，是 on-policy 的。AWR 通过指数优势加权把 RL 变成加权监督学习，不需要概率比，天然支持 off-policy。AWR 更简洁，但 PPO 在 on-policy 场景下通常更强。
 
-### Q2: AWR 的权重 $\exp(A/\beta)$ 为什么能替代 PPO 的 clip？
+<h3 id="q2-awr-的权重-expabeta-为什么能替代-ppo-的-clip">Q2: AWR 的权重 $\exp(A/\beta)$ 为什么能替代 PPO 的 clip？</h3>
 **A**: 指数函数天然地将好动作和差动作的权重拉开巨大差距。差动作的权重趋近于 0（等于被忽略），好动作的权重很高。这种"自动筛选"机制本质上起到了和 clip 类似的效果——防止策略被差经验带偏。
 
-### Q3: 温度参数 $\beta$ 怎么选？
+<h3 id="q3-温度参数-beta-怎么选">Q3: 温度参数 $\beta$ 怎么选？</h3>
 **A**: $\beta$ 小 → 只学最好的动作（激进，可能忽略有用信息）；$\beta$ 大 → 所有动作都学一点（保守，学习慢）。通常从 $\beta = 1$ 开始，根据任务调整。一些变体会自适应调整 $\beta$。
 
-### Q4: AWR 能用于离线 RL 吗？
+<h3 id="q4-awr-能用于离线-rl-吗">Q4: AWR 能用于离线 RL 吗？</h3>
 **A**: 可以，这是 AWR 的一大优势。因为它不需要在线采样，不需要计算概率比，可以直接在离线数据集上做加权回归。这使它成为离线 RL 的早期代表方法，影响了后续的 IQL、CQL 等。
 
-### Q5: AWR 的局限性？
+<h3 id="q5-awr-的局限性">Q5: AWR 的局限性？</h3>
 **A**: 
 - 在 on-policy 场景下通常不如 PPO
 - 当缓冲区中好的样本很少时，学习效率会下降（没有好样本可以模仿）
 - 温度参数 $\beta$ 的选择对性能影响大
+</details>
 
 ---
 
 ## 💬 讨论记录
 
+<details class="paper-fold" markdown="1">
+<summary>📖 展开全文：讨论记录</summary>
+
 > 待补充
+</details>
 
 ---
 
 ## 📎 附录
 
-### A. 算法伪代码
+<details class="paper-fold" markdown="1">
+<summary>📖 展开全文（4 节）：A. 算法伪代码 / B. 与路线图其他论文的关联 / C. 超参数速查表 / D. 训练过程中各组件的变化</summary>
+
+<h3 id="a-算法伪代码">A. 算法伪代码</h3>
 
 <div class="mermaid">
 flowchart TB
@@ -623,7 +638,7 @@ flowchart TB
     Init --> Col --> Val --> Adv --> Pol --> Col
 </div>
 
-### B. 与路线图其他论文的关联
+<h3 id="b-与路线图其他论文的关联">B. 与路线图其他论文的关联</h3>
 
 <div class="mermaid">
 flowchart LR
@@ -633,7 +648,7 @@ flowchart LR
     AWR --> Offline["离线 RL<br/>IQL / CQL 等"]
 </div>
 
-### C. 超参数速查表
+<h3 id="c-超参数速查表">C. 超参数速查表</h3>
 
 | 参数 | 含义 | 推荐值 |
 |------|------|--------|
@@ -643,7 +658,7 @@ flowchart LR
 | buffer_size | 回放缓冲区大小 | 50K ~ 500K |
 | batch_size | 小批量大小 | 256 ~ 1024 |
 
-### D. 训练过程中各组件的变化
+<h3 id="d-训练过程中各组件的变化">D. 训练过程中各组件的变化</h3>
 
 <div class="mermaid">
 flowchart TB
@@ -672,4 +687,5 @@ flowchart TB
     end
     E20K --> E200K --> E500K
 </div>
+</details>
 

@@ -18,8 +18,9 @@ def _ppo_full_flowchart_block() -> str:
         "papers/01_Foundational_RL/PPO_Proximal_Policy_Optimization/PPO_Proximal_Policy_Optimization.md"
     )
     text = path.read_text(encoding="utf-8")
-    start = text.index("### 完整流程图")
-    end = text.index("### ", start + 1)
+    # 这节现在位于折叠块内，标题写成原生 HTML（见 tests/test_paper_note_folds.py）。
+    start = text.index("完整流程图</h3>")
+    end = text.index("<h3 ", start + 1)
     return text[start:end]
 
 

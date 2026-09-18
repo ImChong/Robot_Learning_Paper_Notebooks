@@ -60,7 +60,7 @@ CALM 在 ASE 的基础上加了一层"方向控制"能力——训练一个高�
 
 <div class="paper-demo" data-demo="calm-explainer"><p class="demo-fallback">（本节含动画演示，需要启用 JavaScript）</p></div>
 
-> 📖 动画覆盖的三块——「CALM 要解决什么问题」「三层架构」与「具体实例」——**文字讲解默认折叠**，想看推导、公式和对照表时点开各节的折叠条即可，内容一字未删；流程图、类图、时序图、源码片段、论文超参表、面试题与附录不在折叠范围内。
+> 📖 **动画之后的正文默认全部折叠**：前半部分（「要解决什么问题」「是怎么做的」）按小节收起，后面的具体实例、源码对照、面试问题、讨论记录与附录整块收起。想细读哪一块就点开对应的折叠条，内容一字未删；目录里的标题依旧可以直接点，会自动展开所在折叠块，左侧目录顶部还有「展开全部文字」一键铺开。
 
 ---
 
@@ -288,7 +288,10 @@ flowchart TB
 
 ## 🤖 CALM 对人形机器人领域的意义
 
-### 1. 分离"做什么"和"往哪做"，是层次化控制的核心思想
+<details class="paper-fold" markdown="1">
+<summary>📖 展开全文（4 节）：1. 分离"做什么"和"往哪做"，是层次化控制的核心思想 / 2. FSM 组合证明了"免训练技能拼装"的可行性…</summary>
+
+<h3 id="1-分离做什么和往哪做是层次化控制的核心思想">1. 分离”做什么”和”往哪做”，是层次化控制的核心思想</h3>
 
 以前大多数方法把任务信息和动作质量混在一起。
 
@@ -296,13 +299,13 @@ CALM 证明了：把它们分开，用层次化策略分别处理，是可行且
 
 这给后续很多工作打了样。
 
-### 2. FSM 组合证明了"免训练技能拼装"的可行性
+<h3 id="2-fsm-组合证明了免训练技能拼装的可行性">2. FSM 组合证明了”免训练技能拼装”的可行性</h3>
 
 CALM 最重要的工程启示之一：**不需要为每个新任务重新训练**，只要写一个 FSM 把预训练好的模块拼起来。
 
 这在真实机器人部署时极其有价值。
 
-### 3. latent space 的方向性有语义含义
+<h3 id="3-latent-space-的方向性有语义含义">3. latent space 的方向性有语义含义</h3>
 
 CALM 展示了 latent 空间不只是一个"随机向量容器"——它可以有语义结构：
 - 相近方向 = 相近技能
@@ -310,21 +313,25 @@ CALM 展示了 latent 空间不只是一个"随机向量容器"——它可以�
 
 这让 latent 控制变得更直觉、更可解释。
 
-### 4. 它是 ASE→CALM→PULSE 链路的关键中间节点
+<h3 id="4-它是-asecalmpulse-链路的关键中间节点">4. 它是 ASE→CALM→PULSE 链路的关键中间节点</h3>
 
 <div class="mermaid">
 flowchart LR
     ASE["ASE：技能 embedding"] --> CALM["CALM：+ HLC + FSM"]
     CALM --> PULSE["PULSE：通用 latent 基座"]
 </div>
+</details>
 
 ---
 
 ## 📁 MimicKit 源码对照
 
+<details class="paper-fold" markdown="1">
+<summary>📖 展开全文（7 节）：源码运行时序图 / 1. 低层策略的 Latent 输入 / 2. 高层策略的 latent 选择 / 3. 方向奖励…</summary>
+
 > CALM 官方代码是独立仓库 [NVlabs/CALM](https://github.com/NVlabs/CALM)，基于 IsaacGym 实现，不在 MimicKit 里。以下对照参考 NVIDIA 官方实现的核心机制。
 
-### 源码运行时序图
+<h3 id="源码运行时序图">源码运行时序图</h3>
 
 官方仓库统一入口是 `calm/run.py`（内部走 rl_games 的 Runner），第 5 节的三条命令分别对应三个阶段。三阶段在时序上是**串行**的：先训 LLC（encoder + 低层策略 + 条件判别器），再冻结 LLC 训 HLC，最后 FSM 推理不再训练：
 
@@ -374,7 +381,7 @@ sequenceDiagram
 - 阶段二对应第 2、3 节：HLC 学的不是动作而是"选哪个 latent"，方向奖励就是余弦相似度。
 - 阶段三对应第 4 节 `FSMScheduler`：预训练好的 HLC/LLC 当积木拼，FSM 只做调度，零训练。
 
-### 1. 低层策略的 Latent 输入
+<h3 id="1-低层策略的-latent-输入">1. 低层策略的 Latent 输入</h3>
 
 ```python
 # CALM 官方实现（calm/models/calm.py 思路）
@@ -398,7 +405,7 @@ class ConditionalAdversarialLatentModel(nn.Module):
 
 **关键**：latent $z$ 不仅仅是噪声，而是从**真实参考动作**里提取出来的有语义的方向向量。
 
-### 2. 高层策略的 latent 选择
+<h3 id="2-高层策略的-latent-选择">2. 高层策略的 latent 选择</h3>
 
 ```python
 # 高层策略输出 latent（而非直接输出动作）
@@ -418,7 +425,7 @@ class HighLevelController(nn.Module):
 
 高层输出的 latent 再传给低层策略——这正是"选 latent"而非"直接选动作"的核心。
 
-### 3. 方向奖励
+<h3 id="3-方向奖励">3. 方向奖励</h3>
 
 ```python
 def compute_direction_reward(z_selected, z_target):
@@ -427,7 +434,7 @@ def compute_direction_reward(z_selected, z_target):
     return cos_sim  # 选出的 latent 和目标 latent 越接近，奖励越高
 ```
 
-### 4. FSM 组合
+<h3 id="4-fsm-组合">4. FSM 组合</h3>
 
 ```python
 # 推理时的状态机逻辑
@@ -463,7 +470,7 @@ stateDiagram-v2
 
 > 🔑 状态切换条件（距离、目标状态）是**手写的**，但每个状态内的动作全部由预训练策略生成——FSM 只负责"什么时候换 z"，动作质量由 LLC 保证。整个阶段三**零训练**。
 
-### 5. 训练命令（NVIDIA 官方）
+<h3 id="5-训练命令nvidia-官方">5. 训练命令（NVIDIA 官方）</h3>
 
 ```bash
 # 阶段一：训练低层控制器（LLC）
@@ -492,7 +499,7 @@ python calm/run.py \
   --checkpoint calm/data/models/calm_hlc_precision_trained_reallusion_sword_shield.pth
 ```
 
-### 6. 内置任务配置
+<h3 id="6-内置任务配置">6. 内置任务配置</h3>
 
 | 任务 | 配置文件 | 说明 |
 |------|----------|------|
@@ -501,31 +508,39 @@ python calm/run.py \
 | HumanoidReach | `humanoid_sword_shield_reach.yaml` | 到达目标 |
 | HumanoidHeading | `humanoid_sword_shield_heading.yaml` | 朝方向走 |
 | HumanoidStrike | `humanoid_sword_shield_strike.yaml` | 精确攻击 |
+</details>
 
 ---
 
 ## 🎤 面试高频问题 & 参考回答
 
-### Q1: CALM 和 ASE 的核心区别是什么？
+<details class="paper-fold" markdown="1">
+<summary>📖 展开全文（5 节）：Q1: CALM 和 ASE 的核心区别是什么？ / Q2: CALM 的 FSM 组合有什么价值？…</summary>
+
+<h3 id="q1-calm-和-ase-的核心区别是什么">Q1: CALM 和 ASE 的核心区别是什么？</h3>
 **A**：ASE 只学了一个 latent skill space，低层策略给定 $z$ 能生成对应技能，但没有方向控制能力。CALM 在 ASE 基础上加了一层高层策略（HLC），专门学"朝哪个 latent 方向走"来完成指定任务，实现了对技能执行方向的控制。
 
-### Q2: CALM 的 FSM 组合有什么价值？
+<h3 id="q2-calm-的-fsm-组合有什么价值">Q2: CALM 的 FSM 组合有什么价值？</h3>
 **A**：FSM 把预训练好的低层和高层策略当成模块拼起来，不需要为每个新任务重新训练整个系统。这对真实机器人部署极其重要——你可以预先训练好各种技能模块，用状态机实时组合出复杂行为。
 
-### Q3: 为什么 HLC 输出 latent 而不是直接输出动作？
+<h3 id="q3-为什么-hlc-输出-latent-而不是直接输出动作">Q3: 为什么 HLC 输出 latent 而不是直接输出动作？</h3>
 **A**：因为 latent 编码了"技能语义"，传给 LLC 后能保证动作质量和风格。如果 HLC 直接输出动作，就绕过了低层的质量保证，丢失了对抗模仿学习训练出的自然运动特性。
 
-### Q4: CALM 的方向奖励是什么？
+<h3 id="q4-calm-的方向奖励是什么">Q4: CALM 的方向奖励是什么？</h3>
 **A**：是 HLC 选出的 latent 和目标风格 latent 之间的余弦相似度。HLC 被鼓励选出让 $\cos(z_{selected}, z_{target})$ 最大的 latent，从而引导角色朝目标风格运动。
 
-### Q5: CALM 的 latent space 有什么特点？
+<h3 id="q5-calm-的-latent-space-有什么特点">Q5: CALM 的 latent space 有什么特点？</h3>
 **A**：它是语义化的——相近的 latent 对应相近的技能；latent 插值会得到平滑的技能过渡。这意味着可以在 latent 空间里做有意义的线性插值，比如从"冲刺"到"下蹲"的过渡会产生语义连贯的中间动作。
+</details>
 
 ---
 
 ## 💬 讨论记录
 
-### 2026-04-07：CALM 的真正贡献是"层次化解耦"而非新算法
+<details class="paper-fold" markdown="1">
+<summary>📖 展开全文（1 节）：2026-04-07：CALM 的真正贡献是"层次化解耦"而非新算法</summary>
+
+<h3 id="2026-04-07calm-的真正贡献是层次化解耦而非新算法">2026-04-07：CALM 的真正贡献是”层次化解耦”而非新算法</h3>
 
 CALM 用的核心技术（对抗模仿、latent skill embedding）在 ASE/AMP 里都有了。
 
@@ -534,12 +549,16 @@ CALM 的真正贡献是架构设计：
 > **把"技能选择"和"方向控制"分开成两个问题，用层次化策略分别解决。**
 
 这个设计思想影响了后来很多工作，包括 PULSE 和更广义的 motion foundation model 设计。
+</details>
 
 ---
 
 ## 📎 附录
 
-### A. 与路线图其他论文的关联
+<details class="paper-fold" markdown="1">
+<summary>📖 展开全文（3 节）：A. 与路线图其他论文的关联 / B. 与相关方法对比 / C. 你该怎么理解 CALM？</summary>
+
+<h3 id="a-与路线图其他论文的关联">A. 与路线图其他论文的关联</h3>
 
 | 关系 | 说明 |
 |------|------|
@@ -547,7 +566,7 @@ CALM 的真正贡献是架构设计：
 | **AMP → CALM** | CALM 的低层判别器技术继承自 AMP |
 | **CALM → PULSE** | PULSE 把 CALM 的 latent 思想扩展到更大规模的通用技能提取 |
 
-### B. 与相关方法对比
+<h3 id="b-与相关方法对比">B. 与相关方法对比</h3>
 
 | 特性 | ASE | CALM | DeepMimic |
 |------|-----|------|-----------|
@@ -557,7 +576,7 @@ CALM 的真正贡献是架构设计：
 | 是否支持 FSM 组合 | ❌ | ✅ | ❌ |
 | latent 是否语义化 | 部分 | ✅（方向有语义） | N/A |
 
-### C. 你该怎么理解 CALM？
+<h3 id="c-你该怎么理解-calm">C. 你该怎么理解 CALM？</h3>
 
 如果只记一句：
 
@@ -566,6 +585,7 @@ CALM 的真正贡献是架构设计：
 如果再加一句：
 
 > **它的核心思想是把"做什么"（技能）和"往哪做"（方向）分开——前者由 latent 决定，后者由高层策略决定。**
+</details>
 
 ---
 

@@ -85,6 +85,39 @@ chore(Progress): 更新论文阅读进度
 
 改动分镜时，`tests/test_paper_demos.py::test_explainer_scene_count_matches_the_title_and_note` 会核对三件事是否一致：分镜数量、`title` / `ariaLabel` 里的中文幕数、笔记里的 `## 🎬 N幕动画` 标题；`sub` 里写的「约 N 秒」也要和各幕 `dur` 之和对得上。新增讲解动画时记得把 bundle 加进 `EXPLAINER_BUNDLES` 与 `EXPLAINER_SCENES` 两处。
 
+### 有讲解动画的笔记：动画之后的正文默认折叠
+
+一篇笔记一旦内嵌了 `K.explainer` 讲解动画，动画之后的正文就**默认折叠**，读者想细读时自己点开：
+
+- 动画覆盖的那几节（「要解决什么问题」「是怎么做的」等）按**小节**折叠，每个折叠条写清里面是什么；
+- 再往后的**整块模块**（具体实例、源码对照、面试高频问题、讨论记录、附录）各收进一个折叠条；
+- **流程图、交互演示、代码块引子这些"看得见的东西"留在外面**，折叠的是文字讲解，内容一字未删。
+
+折叠块统一写成（`markdown="1"` 必须带，否则里面的 Markdown 不会被解析）：
+
+```html
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：这一段讲什么</summary>
+
+正文……
+
+</details>
+```
+
+**折叠块里的小节标题必须写成原生 HTML**，并带上它原本的 id：
+
+```html
+<h3 id="第-2-步计算优势gae">第 2 步：计算优势（GAE）</h3>
+```
+
+kramdown 在 `markdown="1"` 的 HTML 块里既不跑 GFM 的中文 id 生成器，也不认 `{#id}`：
+`### 环境设定` 会变成 `id="section-1"`，`{#id}` 会原样显示成文字，笔记里指向这些小节的锚点
+（以及分享出去的链接）就全断了。`tests/test_paper_note_folds.py` 会守住这条规则。
+
+`assets/js/paper.js` 负责折叠后的导航：点目录或跳锚点会自动展开所在折叠块，滚动高亮跳过
+收起来的标题，折叠块展开时重画里面的 Canvas 演示与 Mermaid 图，左侧目录顶部还有
+「展开全部文字 / 全部折叠」。
+
 ### 为什么不能直接在 Markdown 里写 `<script>`
 
 `scripts/sanitize_paper_html.py` 会在构建后用 nh3 清洗 `#paper-body`，`script` / `canvas` / `input` / `button` 等标签会被整段删除（防止笔记里的原始 HTML 变成存储型 XSS）。**能活下来的只有带 `class` 和 `data-*` 的 `div`**，所以演示的 DOM 必须在运行时由外部脚本生成。
