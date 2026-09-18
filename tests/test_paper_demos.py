@@ -116,7 +116,7 @@ def test_every_placeholder_has_a_builder_and_a_declared_bundle():
 def test_notes_declare_their_demos_in_reading_order():
     expected = {
         PPO_NOTE: ("ppo", ["ppo-explainer", "ppo-gae", "ppo-clip", "ppo-epochs"]),
-        AWR_NOTE: ("awr", ["awr-weights", "awr-buffer", "awr-regression"]),
+        AWR_NOTE: ("awr", ["awr-explainer", "awr-weights", "awr-buffer", "awr-regression"]),
         DEEPMIMIC_NOTE: (
             "deepmimic",
             [
@@ -198,14 +198,16 @@ def test_demo_assets_are_theme_aware():
     assert "data-theme" in kit
 
 
-EXPLAINER_BUNDLES = ("ppo", "deepmimic", "amp", "add", "ase", "calm")
+EXPLAINER_BUNDLES = ("ppo", "awr", "deepmimic", "amp", "add", "ase", "calm")
 
 # 幕数由论文决定，不是统一模板：PPO / DeepMimic / AMP / ADD 的核心概念正好各 5 个，
 # PHC 开篇立了三堵墙（第一堵拆成「长出列」「混合列」两幕），所以是 6 幕；
 # ASE 在 AMP 上叠了六件事（latent / 为什么要约束 / encoder / 两半奖励 / diversity /
-# 定期重采样），也是 6 幕。
+# 定期重采样），也是 6 幕；AWR 是六件（PPO 的三个麻烦 / 评估 / 指数权重 /
+# 加权回归 / off-policy 的赚与亏 / 闭环与源码落点）。
 EXPLAINER_SCENES = {
     "ppo": (PPO_NOTE, 5),
+    "awr": (AWR_NOTE, 6),
     "deepmimic": (DEEPMIMIC_NOTE, 5),
     "amp": (AMP_NOTE, 5),
     "add": (ADD_NOTE, 5),
@@ -377,6 +379,48 @@ def test_awr_weights_demo_matches_the_numbers_in_the_note():
     # exp(5) / (exp(5) + exp(1) + 1 + exp(-3)) = 148.41 / 152.18 = 0.975
     assert "Z \\approx 152.18" in note
     assert "148.41 / 152.18 \\approx 0.975" in note
+
+
+def test_awr_explainer_numbers_come_from_the_shared_helpers():
+    """六幕动画不许自己另算一套数字。
+
+    每个帮手在 bundle 里只定义一次，演示和讲解动画共用；讲解动画的字幕是把
+    ``awrWeights`` / ``weightedFit`` / ``runSet`` 的返回值拼进去，而不是抄一份
+    常量，所以改了默认参数两边会一起变。
+    """
+    js = (DEMO_JS_DIR / "awr.js").read_text(encoding="utf-8")
+    for helper in (
+        "function awrWeights(",
+        "function ess(",
+        "function weightedFit(",
+        "function runAwr(",
+        "function runSet(",
+    ):
+        assert js.count(helper) == 1, f"{helper} 应该只定义一次，供演示与讲解动画共用"
+
+    block = js[js.index("// ─── demo 4: the six-scene explainer animation") :]
+    # 第三幕：正文那张表的 4 个样本，走第一个演示的同一份预设与同一个函数
+    assert "var S3_ADVS = WEIGHT_PRESETS[0].advs;" in block
+    assert "var S3_W = awrWeights(S3_ADVS, 1, Infinity);" in block
+    # 第四幕：第二个演示的 weightedFit()，同一批采样
+    assert "sampleBatch(-0.3, 0.8, mulberry32(7))" in block
+    assert "weightedFit(S4_BATCH, 0.3, Infinity, true, 0.8)" in block
+    # 第五幕：第三个演示的 runSet()，24 个种子平均
+    for keep in (1, 4, 20):
+        assert f"runSet(3, 0.5, {keep})" in block, f"第五幕缺少 N = {keep} 的那条曲线"
+
+    # 那几个帮手算出来的，就是笔记里手写的那张表
+    raw = [math.exp(a) for a in (5, 1, 0, -3)]
+    partition = sum(raw)
+    weights = [r / partition for r in raw]
+    assert _fmt(raw[0], 2) == "148.41"
+    assert _fmt(partition, 2) == "152.18"
+    assert _fmt(weights[0], 3) == "0.975"
+    assert _fmt(1 / sum(w * w for w in weights), 2) == "1.05"
+
+    note = AWR_NOTE.read_text(encoding="utf-8")
+    assert "ESS ≈ 1.05" in note
+    assert "## 🎬 六幕动画：AWR 全流程" in note
 
 
 def test_deepmimic_reward_demo_matches_the_worked_example():

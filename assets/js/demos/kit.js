@@ -72,11 +72,12 @@
     [/\\(?:left|right|,|;|!|\s)/g, ' '],
     [/\\(?:cdots|ldots|dots)/g, '⋯'],
     [/\\cdot/g, '·'], [/\\times/g, '×'], [/\\approx/g, '≈'],
-    [/\\le(?:q)?\b/g, '≤'], [/\\ge(?:q)?\b/g, '≥'], [/\\neq\b/g, '≠'],
-    [/\\to\b/g, '→'], [/\\rightarrow\b/g, '→'], [/\\leftarrow\b/g, '←'],
-    [/\\in\b/g, '∈'], [/\\sum\b/g, 'Σ'], [/\\infty\b/g, '∞'],
-    [/\\mid\b/g, '|'], [/\\sim\b/g, '~'], [/\\pm\b/g, '±'],
-    [/\\min\b/g, 'min'], [/\\max\b/g, 'max'], [/\\exp\b/g, 'exp'], [/\\log\b/g, 'log'],
+    [/\\le(?:q)?(?![A-Za-z])/g, '≤'], [/\\ge(?:q)?(?![A-Za-z])/g, '≥'], [/\\neq(?![A-Za-z])/g, '≠'],
+    [/\\to(?![A-Za-z])/g, '→'], [/\\rightarrow(?![A-Za-z])/g, '→'], [/\\leftarrow(?![A-Za-z])/g, '←'],
+    [/\\in(?![A-Za-z])/g, '∈'], [/\\sum(?![A-Za-z])/g, 'Σ'], [/\\infty(?![A-Za-z])/g, '∞'],
+    [/\\mid(?![A-Za-z])/g, '|'], [/\\sim(?![A-Za-z])/g, '~'], [/\\pm(?![A-Za-z])/g, '±'],
+    [/\\propto(?![A-Za-z])/g, '∝'],
+    [/\\min(?![A-Za-z])/g, 'min'], [/\\max(?![A-Za-z])/g, 'max'], [/\\exp(?![A-Za-z])/g, 'exp'], [/\\log(?![A-Za-z])/g, 'log'],
     [/\\alpha/g, 'α'], [/\\beta/g, 'β'], [/\\gamma/g, 'γ'], [/\\delta/g, 'δ'],
     [/\\epsilon/g, 'ε'], [/\\varepsilon/g, 'ε'], [/\\theta/g, 'θ'], [/\\lambda/g, 'λ'],
     [/\\mu/g, 'μ'], [/\\pi/g, 'π'], [/\\sigma/g, 'σ'], [/\\tau/g, 'τ'],
@@ -90,9 +91,12 @@
   function texToPlain(tex) {
     var s = String(tex);
     /* Sub/superscript braces come off first (TEX_PLAIN[0..1]) so that a
-       fraction whose parts carry them still matches TEX_FRAC; then peel the
-       fractions from the inside out. */
-    s = s.replace(TEX_PLAIN[0][0], TEX_PLAIN[0][1]).replace(TEX_PLAIN[1][0], TEX_PLAIN[1][1]);
+       fraction whose parts carry them still matches TEX_FRAC — and they peel
+       from the inside out, or a nested one (π_{θ_{old}}) keeps its braces and
+       takes the surrounding \frac down with it. Then the fractions. */
+    for (var sub = 0; sub < 3 && /[_^]\s*\{/.test(s); sub++) {
+      s = s.replace(TEX_PLAIN[0][0], TEX_PLAIN[0][1]).replace(TEX_PLAIN[1][0], TEX_PLAIN[1][1]);
+    }
     for (var pass = 0; pass < 3 && s.indexOf('\\frac') !== -1; pass++) {
       s = s.replace(TEX_FRAC, '($1)/($2)');
     }
