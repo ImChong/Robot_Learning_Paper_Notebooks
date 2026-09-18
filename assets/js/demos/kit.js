@@ -174,11 +174,12 @@
   }
 
   /* The tiny markup every human-readable demo string may use:
-     `**bold**` and `$LaTeX$`. The two do not nest inside one formula, but a
-     whole formula can sit inside a bold run (`**$r_t(\theta)$**`). */
+     `**bold**`, `` `code` `` and `$LaTeX$`. A code run and a formula never
+     nest inside each other, but either can sit inside a bold run
+     (`**$r_t(\theta)$**`, ``**`disc_reward_weight: 1.0`**``). */
   function rich(parent, str) {
     var s = String(str);
-    var re = /\*\*|\$[^$]+\$/g;
+    var re = /\*\*|`[^`]+`|\$[^$]+\$/g;
     var target = parent, at = 0, m;
     while ((m = re.exec(s)) !== null) {
       if (m.index > at) target.appendChild(document.createTextNode(s.slice(at, m.index)));
@@ -190,6 +191,8 @@
         } else {
           target = parent;
         }
+      } else if (m[0].charAt(0) === '`') {
+        target.appendChild(el('code', 'demo-code', m[0].slice(1, -1)));
       } else {
         target.appendChild(tex(m[0].slice(1, -1)));
       }

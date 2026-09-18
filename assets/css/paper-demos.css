@@ -459,6 +459,25 @@
 .demo-x-bad { fill: var(--demo-bad); color: var(--demo-bad); }
 .demo-x-warn { fill: var(--demo-warn); color: var(--demo-warn); }
 
+/* ===== `inline code` in demo strings (K.rich) ===== */
+
+/* Inline code in any demo string (titles, cues, verdicts, notes): identifiers
+   like `awrWeights()` or `disc_reward_weight: 1.0` read as code, matching the
+   note body's inline code without inheriting .paper-body's own <code> rule. */
+.demo-card code.demo-code {
+  font-family: 'SF Mono', Menlo, Consolas, monospace;
+  font-size: 0.88em;
+  background: var(--demo-surface-2);
+  border: 1px solid var(--demo-border);
+  border-radius: 3px;
+  padding: 0.05em 0.35em;
+  /* Long identifiers wrap instead of pushing the card wider on a phone. */
+  word-break: normal;
+  overflow-wrap: anywhere;
+}
+
+.demo-card b code.demo-code { color: var(--text); }
+
 /* ===== $LaTeX$ formulas (K.tex / K.svgMath, rendered by KaTeX) ===== */
 
 /* Inline, in the HTML parts of a demo: card title, cue track, footnotes. */
