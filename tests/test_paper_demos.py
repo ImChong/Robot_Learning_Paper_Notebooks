@@ -142,7 +142,10 @@ def test_notes_declare_their_demos_in_reading_order():
             "calm",
             ["calm-explainer", "calm-encoder", "calm-hlc", "calm-fsm"],
         ),
-        PULSE_NOTE: ("pulse", ["pulse-vib", "pulse-prior", "pulse-downstream"]),
+        PULSE_NOTE: (
+            "pulse",
+            ["pulse-explainer", "pulse-vib", "pulse-prior", "pulse-downstream"],
+        ),
         PHC_NOTE: (
             "phc",
             ["phc-explainer", "phc-pmcp", "phc-mcp", "phc-recovery"],
@@ -198,13 +201,15 @@ def test_demo_assets_are_theme_aware():
     assert "data-theme" in kit
 
 
-EXPLAINER_BUNDLES = ("ppo", "awr", "deepmimic", "amp", "add", "ase", "calm")
+EXPLAINER_BUNDLES = ("ppo", "awr", "deepmimic", "amp", "add", "ase", "calm", "pulse")
 
 # 幕数由论文决定，不是统一模板：PPO / DeepMimic / AMP / ADD 的核心概念正好各 5 个，
 # PHC 开篇立了三堵墙（第一堵拆成「长出列」「混合列」两幕），所以是 6 幕；
 # ASE 在 AMP 上叠了六件事（latent / 为什么要约束 / encoder / 两半奖励 / diversity /
 # 定期重采样），也是 6 幕；AWR 是六件（PPO 的三个麻烦 / 评估 / 指数权重 /
-# 加权回归 / off-policy 的赚与亏 / 闭环与源码落点）。
+# 加权回归 / off-policy 的赚与亏 / 闭环与源码落点）；PULSE 也是六件
+# （缺一个通用表示 / 阶段 1 大规模模仿 / 阶段 2 VIB 瓶颈 / 本体感受先验 /
+# 阶段 3 下游只搜 32 维 / 闭环与源码落点）。
 EXPLAINER_SCENES = {
     "ppo": (PPO_NOTE, 5),
     "awr": (AWR_NOTE, 6),
@@ -214,6 +219,7 @@ EXPLAINER_SCENES = {
     "phc": (PHC_NOTE, 6),
     "ase": (ASE_NOTE, 6),
     "calm": (CALM_NOTE, 5),
+    "pulse": (PULSE_NOTE, 6),
 }
 CN_NUMERALS = {4: "四", 5: "五", 6: "六", 7: "七"}
 
