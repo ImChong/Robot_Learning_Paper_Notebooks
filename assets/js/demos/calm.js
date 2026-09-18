@@ -881,7 +881,8 @@
     s.appendChild(svgText(60, 32, 'ASE 之后：技能有了，方向还没有', 'demo-x-ink2', 13.5));
 
     s.appendChild(paint(svgEl('rect', { x: 40, y: 54, width: 340, height: 250, rx: 8, 'stroke-width': 1 }), C_SURFACE2, C_BORDER));
-    s.appendChild(svgText(210, 78, 'ASE：$z$ 编码「做什么技能」', 'demo-x-ink2', 12, 'middle'));
+    s.appendChild(svgMath(210, 78, '\\text{ASE：} z \\text{ 编码「做什么技能」}',
+      { size: 12, anchor: 'middle', cls: 'demo-x-ink2', w: 300 }));
     var cx = 210,
       cy = 188,
       R = 72;
@@ -936,10 +937,11 @@
   /* ── scene 2: LLC —— latent 从动捕编出来 ── */
   function buildSceneLlc() {
     var s = sceneSvg(
-      'CALM 的 encoder 把每段动捕编到 latent 空间的一块区域；给定 $z$ 就能点名技能，' +
-        '这和 ASE 从球面随机采 $z$ 完全不同'
+      'CALM 的 encoder 把每段动捕编到 latent 空间的一块区域；给定 z 就能点名技能，' +
+        '这和 ASE 从球面随机采 z 完全不同'
     );
-    s.appendChild(svgText(60, 32, '第一层 LLC：$z = E(\\text{动捕片段})$，动作质量交给对抗模仿', 'demo-x-ink2', 13));
+    s.appendChild(svgMath(60, 32, '\\text{第一层 LLC：} z = E(\\text{动捕片段}) \\text{，动作质量交给对抗模仿}',
+      { size: 13, cls: 'demo-x-ink2', w: 520 }));
     var formula = svgMath(400, 62, 'E(m) \\to z, \\qquad a_t \\sim \\pi_{LLC}(a_t \\mid s_t, z)',
       { size: 13, anchor: 'middle', cls: 'demo-x-ink2', w: 620 });
     s.appendChild(formula);
@@ -979,9 +981,12 @@
 
     var aseBox = svgEl('g', {});
     aseBox.appendChild(paint(svgEl('rect', { x: 430, y: 248, width: 310, height: 88, rx: 8, 'stroke-width': 1, 'stroke-dasharray': '4 3' }), C_SURFACE, C_MUTED));
-    aseBox.appendChild(svgText(448, 272, '对比 ASE：$z \\sim \\text{Uniform}(S^{d})$', 'demo-x-mut', 11.5));
-    aseBox.appendChild(svgText(448, 296, '随机采到的 $z$ 没有「这是踢腿」的标签', 'demo-x-mut', 11));
-    aseBox.appendChild(svgText(448, 318, 'CALM 可以直接写 $E(\\text{踢腿动作})$ 拿到踢的 latent', 'demo-x-good', 11));
+    aseBox.appendChild(svgMath(448, 272, '\\text{对比 ASE：} z \\sim \\text{Uniform}(S^{d})',
+      { size: 11.5, cls: 'demo-x-mut', w: 282 }));
+    aseBox.appendChild(svgMath(448, 296, '\\text{随机采到的 } z \\text{ 没有「这是踢腿」的标签}',
+      { size: 11, cls: 'demo-x-mut', w: 282 }));
+    aseBox.appendChild(svgMath(448, 318, '\\text{CALM 可以直接写 } E(\\text{踢腿动作}) \\text{ 拿到踢的 latent}',
+      { size: 11, cls: 'demo-x-good', w: 282 }));
     s.appendChild(aseBox);
 
     var foot = paint(svgText(400, 396, '能「点名」技能，后面 FSM 才能零训练组合', null, 15, 'middle'), C_ACCENT);
@@ -1014,7 +1019,7 @@
 
   function buildSceneHlc() {
     var s = sceneSvg(
-      'HLC 只输出 latent；方向奖励 $r_{dir} = \\cos(z_{target}, z_t)$ 把选择限制在目标风格附近的锥里'
+      'HLC 只输出 latent；方向奖励 r_dir = cos(z_target, z_t) 把选择限制在目标风格附近的锥里'
     );
     s.appendChild(svgText(60, 32, '第二层 HLC：在 latent 空间里选方向来完成任务', 'demo-x-ink2', 13.5));
     var formula = svgMath(400, 62, 'z_t = \\text{HLC}(s_t, \\text{goal}), \\qquad r_{dir} = \\cos(z_{target}, z_t)',
@@ -1027,29 +1032,38 @@
     var cone = paint(svgEl('path', {
       d: 'M ' + S3_CX + ' ' + S3_CY +
         ' L ' + s3Place(S3_TGT + half)[0] + ' ' + s3Place(S3_TGT + half)[1] +
-        ' A ' + S3_R + ' ' + S3_R + ' 0 0 0 ' + s3Place(S3_TGT - half)[0] + ' ' + s3Place(S3_TGT - half)[1] + ' Z',
-      opacity: 0.14
+        /* sweep-flag = 1：从 z_target+half 顺着屏幕顺时针扫到 z_target-half，
+           才是贴着这个圆的那段 74° 扇形；0 会把弧画到另一侧的圆上，变成一个
+           把选中的 latent 甩在外面的尖角。 */
+        ' A ' + S3_R + ' ' + S3_R + ' 0 0 1 ' + s3Place(S3_TGT - half)[0] + ' ' + s3Place(S3_TGT - half)[1] + ' Z',
+      /* fill-opacity，不是 opacity：这个节点的淡入由 setOpacity() 写 style.opacity，
+         行内样式会盖掉同名的 opacity 属性，锥形就成了一块盖住 z_target 的实心绿。 */
+      'fill-opacity': 0.18
     }), C_GOOD);
     geom.appendChild(cone);
-    var tgtArm = paint(svgEl('line', { x1: S3_CX, y1: S3_CY, 'stroke-width': 2 }), null, C_GOOD);
+    /* 目标方向本来就躺在同色的锥形填充里，实线会被吃掉；虚线才看得出 z_target。 */
+    var tgtArm = paint(svgEl('line', { x1: S3_CX, y1: S3_CY, 'stroke-width': 2, 'stroke-dasharray': '5 4' }), null, C_GOOD);
     var pickArm = paint(svgEl('line', { x1: S3_CX, y1: S3_CY, 'stroke-width': 2.6 }), null, C_ACCENT);
     var pickDot = paint(svgEl('circle', { r: 6, 'stroke-width': 1.6 }), C_ACCENT, C_SURFACE2);
     geom.appendChild(tgtArm);
     geom.appendChild(pickArm);
     geom.appendChild(pickDot);
-    geom.appendChild(svgText(S3_CX, 132, '允许锥：$\\cos \\ge 0.8$', 'demo-x-mut', 10.5, 'middle'));
+    geom.appendChild(svgMath(S3_CX, 132, '\\text{允许锥：} \\cos \\ge 0.8',
+      { size: 10.5, anchor: 'middle', cls: 'demo-x-mut', w: 200 }));
     s.appendChild(geom);
 
+    /* 四块读数等距排开：168 宽 + 12 间距，正好落在 46…754 之间，
+       盒子之间不再互相盖住数字。 */
     var readouts = [
       { cx: 130, label: 'HLC 选中', sub: skillByAngle(S3_BEST.angle).skill.name },
-      { cx: 330, label: 'cos(z_target, z)', sub: fmt(S3_BEST.cos, 3) },
-      { cx: 530, label: '任务奖励', sub: fmt(S3_BEST.task, 3) },
-      { cx: 690, label: '总奖励', sub: fmt(S3_BEST.total, 3) }
+      { cx: 310, label: 'cos(z_target, z)', sub: fmt(S3_BEST.cos, 3) },
+      { cx: 490, label: '任务奖励', sub: fmt(S3_BEST.task, 3) },
+      { cx: 670, label: '总奖励', sub: fmt(S3_BEST.total, 3) }
     ].map(function (r) {
       var g = svgEl('g', {});
-      g.appendChild(paint(svgEl('rect', { x: r.cx - 88, y: 318, width: 176, height: 34, rx: 6, 'stroke-width': 1 }), C_SURFACE2, C_BORDER));
-      g.appendChild(svgText(r.cx - 76, 332, r.label, 'demo-x-mut', 10));
-      g.appendChild(paint(svgText(r.cx + 76, 332, r.sub, 'demo-x-mono', 11.5, 'end'), C_ACCENT));
+      g.appendChild(paint(svgEl('rect', { x: r.cx - 84, y: 318, width: 168, height: 34, rx: 6, 'stroke-width': 1 }), C_SURFACE2, C_BORDER));
+      g.appendChild(svgText(r.cx - 72, 332, r.label, 'demo-x-mut', 10));
+      g.appendChild(paint(svgText(r.cx + 72, 332, r.sub, 'demo-x-mono', 11.5, 'end'), C_ACCENT));
       s.appendChild(g);
       return g;
     });
@@ -1087,8 +1101,10 @@
   }
 
   /* ── scene 4: FSM —— 换的只是 z 的来源 ── */
+  /* 与下面 FSM 实验台的默认参数完全一致（那边也是 steps: 200）：120 步只够走完
+     WALK，STRIKE 才刚起头、CHEER 根本没出现，时间线就讲不出「跳变」这件事。 */
   var S4_FRAMES = simulateFSM({
-    steps: 120,
+    steps: 200,
     tx: 2.2,
     ty: 1.4,
     range: 1.0,
@@ -1101,7 +1117,7 @@
 
   function buildSceneFsm() {
     var s = sceneSvg(
-      '推理期 FSM：WALK 用 HLC 输出的 $z$，STRIKE / CHEER 用 $E(\\text{对应动捕})$；' +
+      '推理期 FSM：WALK 用 HLC 输出的 z，STRIKE / CHEER 用 E(对应动捕)；' +
         '同一个 LLC，新增训练量为 0'
     );
     s.appendChild(svgText(60, 32, '第三层 FSM：三段技能拼起来，一次训练都不用加', 'demo-x-ink2', 13.5));
@@ -1200,14 +1216,16 @@
     s.appendChild(svgText(60, 30, 'CALM 的训练与推理：三阶段串行，推理期零训练', 'demo-x-ink2', 13));
 
     var cards = S5_PHASES.map(function (ph, i) {
-      var y = 58 + i * 108;
+      /* 三张卡 + 冻结说明 + 落款要挤进 420 的画布：卡高 80、间距 96，
+         第三张卡到 324 结束，下面的冻结说明（338 起）才不会压在它身上。 */
+      var y = 52 + i * 96;
       var g = svgEl('g', {});
-      g.appendChild(paint(svgEl('rect', { x: 60, y: y, width: 680, height: 88, rx: 10, 'stroke-width': 1.6 }), C_SURFACE2, ph.color));
-      g.appendChild(paint(svgText(82, y + 28, ph.title, null, 13.5), ph.color));
-      g.appendChild(svgText(82, y + 50, ph.detail, 'demo-x-mut', 11));
-      g.appendChild(paint(svgText(718, y + 28, ph.cmd, 'demo-x-mono', 11, 'end'), ph.color));
+      g.appendChild(paint(svgEl('rect', { x: 60, y: y, width: 680, height: 80, rx: 10, 'stroke-width': 1.6 }), C_SURFACE2, ph.color));
+      g.appendChild(paint(svgText(82, y + 26, ph.title, null, 13.5), ph.color));
+      g.appendChild(svgText(82, y + 48, ph.detail, 'demo-x-mut', 11));
+      g.appendChild(paint(svgText(718, y + 26, ph.cmd, 'demo-x-mono', 11, 'end'), ph.color));
       if (i < 2) {
-        g.appendChild(paint(svgEl('line', { x1: 400, y1: y + 88, x2: 400, y2: y + 108, 'stroke-width': 1.6 }), null, C_MUTED));
+        g.appendChild(paint(svgEl('line', { x1: 400, y1: y + 80, x2: 400, y2: y + 96, 'stroke-width': 1.6 }), null, C_MUTED));
       }
       s.appendChild(g);
       return { g: g, at: 0.6 + i * 2.8 };
@@ -1282,7 +1300,7 @@
       cues: [
         { at: 0.3, s: '推理期不需要再训练：用一个有限状态机组合 LLC 和 HLC。' },
         { at: 0.8, s: '**WALK**：HLC 输出 $z_t$，朝目标走；**STRIKE**：$z = E(\\text{攻击动作})$；**CHEER**：$z = E(\\text{庆祝动作})$。' },
-        { at: 4.2, s: '右图 latent 时间线与下面 FSM 实验台用的是同一个 `simulateFSM()` —— 注意 **latent 是跳变的，不是渐变**。' },
+        { at: 4.2, s: '下方 latent 时间线与下面 FSM 实验台用的是同一个 `simulateFSM()` —— 注意 **latent 是跳变的，不是渐变**。' },
         { at: 6.4, s: '换的只是 $z$ 的来源，动作质量全部由同一个 LLC 保证 —— 切换瞬间不会穿模。' },
         { at: 10.0, s: '状态切换条件（距离、目标是否倒下）是**手写的** —— 写错了没有任何机制会纠正它。' },
         { at: 11.4, s: '整条 **走 → 攻击 → 庆祝** 序列跑完，**新增训练量 = 0**。' }
