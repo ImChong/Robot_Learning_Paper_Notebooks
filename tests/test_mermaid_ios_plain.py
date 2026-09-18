@@ -28,7 +28,7 @@ def test_ppo_full_flowchart_keeps_katex_math_in_source():
     block = _ppo_full_flowchart_block()
     assert "$$" in block, "完整流程图源码应保留 $$..$$ KaTeX 公式（iOS 由 Mermaid 渲染为原生 MathML）"
     assert r"\hat{A}_t" in block
-    assert r"\pi_{\theta_{old}}" in block
+    assert r"\pi _ {\theta _ {old}}" in block
 
 
 def test_ios_mathml_strategy_wired_in_config():

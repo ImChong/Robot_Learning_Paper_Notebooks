@@ -483,7 +483,7 @@ def test_amp_disc_demo_matches_the_numbers_in_the_note():
     note = AMP_NOTE.read_text(encoding="utf-8")
     assert "总 loss = 0.367 + 0.780 = 1.147" in note
     # 风格奖励用的是论文实现的 LSGAN 形式
-    assert "r^S(s_t, s_{t+1}) = \\max\\left[0, \\; 1 - 0.25(D(s_t, s_{t+1}) - 1)^2\\right]" in note
+    assert "r^S(s_t, s _ {t+1}) = \\max\\left[0, \\; 1 - 0.25(D(s_t, s _ {t+1}) - 1)^2\\right]" in note
     assert "max(0, 1 - 0.25 * (d - 1) * (d - 1))" in js
 
 
