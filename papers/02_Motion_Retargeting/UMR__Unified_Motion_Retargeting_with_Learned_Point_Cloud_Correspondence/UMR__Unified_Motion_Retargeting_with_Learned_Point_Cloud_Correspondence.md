@@ -401,7 +401,7 @@ sequenceDiagram
         R->>R: 时序平滑 + warm start 给下一帧
     end
     R->>R: LQR 轨迹滤波（加速度 / jerk 代价）
-    R-->>U: output/<robot>/<clip>.npz + MuJoCo viewer
+    R-->>U: output/机器人名/片段名.npz + MuJoCo viewer
 </div>
 
 ---
