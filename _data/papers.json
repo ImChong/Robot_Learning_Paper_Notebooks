@@ -2301,6 +2301,18 @@
         "zh_title": "APEX：用棘轮式进度奖励学习「攀越式」高平台穿越的人形机器人技能"
       },
       {
+        "title": "ECO: Energy-Constrained Optimization with Reinforcement Learning for Humanoid Walking",
+        "path": "papers/05_Locomotion/ECO__Energy-Constrained_Optimization_with_RL_for_Humanoid_Walking/ECO__Energy-Constrained_Optimization_with_RL_for_Humanoid_Walking.md",
+        "url": "/papers/05_Locomotion/ECO__Energy-Constrained_Optimization_with_RL_for_Humanoid_Walking/ECO__Energy-Constrained_Optimization_with_RL_for_Humanoid_Walking.html",
+        "dir": "ECO__Energy-Constrained_Optimization_with_RL_for_Humanoid_Walking",
+        "arxiv": "2602.06445",
+        "has_open_source": true,
+        "published_date_zh": "2026年2月6日（arXiv v1）",
+        "published_date_en": "Feb 6, 2026 (arXiv v1)",
+        "zhname": "ECO：把能耗写成硬约束的人形节能行走强化学习框架",
+        "zh_title": "ECO：把人形行走能耗写成显式约束的受限 RL（PPO-Lagrangian · BRUCE）"
+      },
+      {
         "title": "Now You See That: Learning End-to-End Humanoid Locomotion from Raw Pixels",
         "path": "papers/05_Locomotion/Now_You_See_That_Learning_End-to-End_Humanoid_Locomotion_from_Raw_Pixels/Now_You_See_That_Learning_End-to-End_Humanoid_Locomotion_from_Raw_Pixels.md",
         "url": "/papers/05_Locomotion/Now_You_See_That_Learning_End-to-End_Humanoid_Locomotion_from_Raw_Pixels/Now_You_See_That_Learning_End-to-End_Humanoid_Locomotion_from_Raw_Pixels.html",
