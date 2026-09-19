@@ -4,6 +4,7 @@ title: "OmniRetarget: Interaction-Preserving Data Generation for Humanoid Whole-
 zhname: "OmniRetarget：面向人形全身运动操作与场景交互的交互保持数据生成"
 category: "Motion Retargeting"
 paper_order: 4
+demos: ["omniretarget"]
 ---
 
 # OmniRetarget: Interaction-Preserving Data Generation for Humanoid Whole-Body Loco-Manipulation and Scene Interaction
@@ -43,6 +44,9 @@ paper_order: 4
 
 OmniRetarget 把重定向从「关键点匹配 + 软惩罚」升级为「**interaction mesh 保形 + 序贯 SOCP 硬约束**」：在保持人与物体/地形相对空间关系的同时，消除脚滑与穿透；并能把一条 OMOMO / LAFAN1 / 自采 MoCap 演示扩成覆盖多物体配置、地形与机器人本体的数据集，使 proprioceptive RL 跟踪器无需课程学习与繁重 reward 工程即可跟住长时程动态交互。
 
+> 🎮 **本文内嵌 1 段讲解动画**（不用装任何东西）：
+> [七幕动画：OmniRetarget 全流程](#omniretarget-explainer-anim) —— 约 90 秒串完「现有 retargeting 只盯人体关键点 → interaction mesh 的 Delaunay 四面体 → Laplacian 形变能 → 序贯 SOCP 硬约束 → 一条演示四路扩增 → 极简 RL 与 Table II 定量论据 → 数据工厂到 G1 真机的闭环」。空格播放/暂停，← → 换幕，也可以直接点分幕标签跳着看。
+
 ---
 
 ## 📌 英文缩写速查
@@ -58,6 +62,14 @@ OmniRetarget 把重定向从「关键点匹配 + 软惩罚」升级为「**inter
 | **LAFAN1** | Lafayette Animation Dataset | 常用 BVH 动作库（本文 flat-terrain 来源之一） |
 | **RL** | Reinforcement Learning | 下游用参考轨迹训练跟踪策略 |
 | **Laplacian** | 图 Laplacian 坐标 | 衡量关键点相对邻域的局部几何关系 |
+
+---
+
+## 🎬 七幕动画：OmniRetarget 全流程 {#omniretarget-explainer-anim}
+
+<div class="paper-demo" data-demo="omniretarget-explainer"><p class="demo-fallback">（本节含动画演示，需要启用 JavaScript）</p></div>
+
+> 📖 **动画之后的正文默认全部折叠**：动画覆盖到的那几节（问题定义、方法详解、实验结果）按小节收起，再往后的主线关系、代码入口、个人笔记与参考文献各整块收起。想细读哪一块就点开对应的折叠条，内容一字未删；系统总览、网格构建、扩增与 RL 配方等流程图留在外面，目录里的标题依旧可以直接点，会自动展开所在折叠块，左侧目录顶部还有「展开全部文字」一键铺开。
 
 ---
 
@@ -79,6 +91,9 @@ flowchart TB
 
 ### 问题 1：现有 retargeting 忽视「交互」，只盯人体关键点
 
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：手↔物体、脚↔地形、身体↔墙壁，PHC / GMR 都不显式建模</summary>
+
 人形 loco-manipulation 需要的不只是「关节角像人」，还要保持：
 
 - 手与箱子的相对位姿与接触关系；
@@ -87,7 +102,12 @@ flowchart TB
 
 PHC、GMR 等主流管线以**无约束或软惩罚优化**做关键点匹配，**不显式建模物体与地形**，导致参考轨迹在交互任务上 contact 失真，下游 RL 不得不靠大量 ad-hoc 正则（脚滞空、接触时长等）补救。
 
+</details>
+
 ### 问题 2：软约束无法杜绝物理不可行动作
+
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：脚滑 / 自穿 / 关节突变，VideoMimic 的软惩罚也没有保证</summary>
 
 常见 artifact：
 
@@ -98,6 +118,8 @@ PHC、GMR 等主流管线以**无约束或软惩罚优化**做关键点匹配，
 | 关节突变 | 参考不连续，跟踪难收敛 |
 
 VideoMimic 用软接触/碰撞惩罚有所改善，但**无保证**且需仔细调参。OmniRetarget 把碰撞、关节限位、速度限位、stance 脚位置**写成硬约束**。
+
+</details>
 
 <div class="mermaid">
 flowchart LR
@@ -116,9 +138,14 @@ flowchart LR
 
 ### 问题 3：交互数据稀缺，单演示难以覆盖场景变化
 
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：一条演示要能扩到新物体位姿 / 尺寸 / 地形 / 本体，才叫数据工厂</summary>
+
 遥操作可在线适应，但难规模化；离线 retargeting 若不能从**一条演示**扩增到不同物体位姿、尺寸、地形高度与机器人本体，数据瓶颈依旧。OmniRetarget 把每次扩增都建模为**新的约束优化问题**（固定源 interaction mesh，变换目标侧采样点/物体/地形）。
 
 > 💡 **范式**：高质量参考 → 极简 RL 配方。与 BeyondMimic 一致，当参考干净时，DeepMimic 式 5 项奖励已足够；脏参考才逼出十几项 reward 调参。
+
+</details>
 
 <div class="mermaid">
 flowchart LR
@@ -191,11 +218,19 @@ flowchart LR
     style MESH fill:#e8f4fd,stroke:#1f78b4
 </div>
 
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：语义关键点 + 表面采样，Delaunay 四面体剖分得到体积网格</summary>
+
 - 顶点 = 用户指定的人体/机器人**语义关键点** + 物体与环境的**随机表面采样点**（接触区域更密采样）。
 - 对顶点集做 **Delaunay 四面体剖分**，得到 volumetric interaction mesh。
 - 人体与机器人只需**语义一致**的 keypoint 对应（如 hand↔hand），对精确解剖位置相对鲁棒。
 
+</details>
+
 #### 1.2 目标函数：Laplacian 形变能
+
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：Laplacian 坐标、形变能 E_L，以及每帧带硬约束的优化问题</summary>
 
 对关键点 \(p_{t,i}\)，Laplacian 坐标：
 
@@ -222,6 +257,8 @@ q_t^\star = \arg\min_{q_t} \sum_i \| L(p_{t,i}^{\text{source}}) - L(p_{t,i}^{\te
 - **Stance 判定**：源动作中脚在 xy 平面速度 < 1 cm/s → 该脚位置硬约束为上一帧。
 - **求解器**：自定义 SQP——目标二次近似、约束线性化；用 Drake 自动微分处理四元数浮基在 \(\mathbb{S}^3\) 上的导数；**warm-start** 上一帧解。
 
+</details>
+
 <div class="mermaid">
 flowchart TB
     subgraph FRAME["帧 t 序贯优化"]
@@ -242,6 +279,9 @@ flowchart TB
 
 #### 1.3 与 prior 方法对比（论文 Table I）
 
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：Table I —— 只有 OmniRetarget 同时勾了硬约束、物体、地形和扩增</summary>
+
 | 方法 | 硬运动学约束 | 物体交互 | 地形交互 | 数据扩增 | 优化 |
 |------|:---:|:---:|:---:|:---:|------|
 | IMMA | ✓ | ✗ | ✗ | ✗ | QP |
@@ -250,9 +290,16 @@ flowchart TB
 | VideoMimic | 软惩罚 | ✗ | ✓ | ✗ | JAX L-M |
 | **OmniRetarget** | **✓** | **✓** | **✓** | **✓** | **序贯 SOCP** |
 
+</details>
+
 ### 2. 系统性数据扩增
 
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：固定源 mesh，目标侧改配置后重求解同一优化</summary>
+
 固定源 demonstration 的 \(\mathcal{P}_t^{\text{source}}\)，变换目标侧配置后**重新求解**同一优化问题。
+
+</details>
 
 <div class="mermaid">
 flowchart TB
@@ -281,6 +328,9 @@ flowchart TB
     style OUT fill:#e8f8e8,stroke:#27ae60
 </div>
 
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：四条扩增轴，以及防止整机刚体平移的下身锚定</summary>
+
 | 扩增类型 | 做法 | 防平凡解技巧 |
 |----------|------|----------------|
 | **物体初始位姿** | 平移/旋转物体初始姿态，与原始物体轨迹指数插值混合 | 物体局部系建 mesh；下身锚定名义轨迹 \(\bar{q}_t^\star\) |
@@ -289,6 +339,8 @@ flowchart TB
 | **机器人本体** | 改 keypoint 对应与碰撞模型（G1 / H1 / T1） | 跨本体复用同一套管线 |
 
 下身锚定示例：对 pick-up 任务加重惩罚下身偏离 \(\bar{q}_t^\star\)，并约束初始双脚位置与名义轨迹一致，避免「整机关节刚体平移」式无效扩增。
+
+</details>
 
 ### 3. 下游 RL：极简配方（与 BeyondMimic 对齐）
 
@@ -333,13 +385,21 @@ flowchart TB
 
 #### 3.1 观测（纯本体感受，无显式场景/物体感知）
 
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：参考关节 / 骨盆误差 / 本体速度 / 上一步动作；wall-flip 可 mask 骨盆</summary>
+
 - 参考：关节 pos/vel、骨盆位姿误差；
 - 本体：骨盆线/角速度、关节 pos/vel；
 - 上一步动作。
 
 高动态动作（如 wall-flip）可 mask 骨盆线速度/位置误差（状态估计不可靠）。
 
+</details>
+
 #### 3.2 奖励（仅 5 项，权重直接沿用 BeyondMimic，零调参）
+
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：Body / Object Tracking、Action Rate、Soft Joint Limit、Self-Collision</summary>
 
 1. **Body Tracking** — DeepMimic 式 body pos/ori/线角速度；
 2. **Object Tracking**（适用时）— 物体 pos/ori；
@@ -347,7 +407,12 @@ flowchart TB
 4. **Soft Joint Limit**；
 5. **Self-Collision** — 自碰力 > 1 N 时二值惩罚。
 
+</details>
+
 #### 3.3 域随机化（仅 4 项）
+
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：躯干质心、关节默认位、随机推力、观测噪声，外加物体侧扰动</summary>
 
 - 躯干质心位置；
 - 关节默认位置；
@@ -355,6 +420,8 @@ flowchart TB
 - 观测噪声。
 
 物体侧另随机：质量 0.1–2 kg、质心 ±0.08 m、惯量 50–150%、形状 ±10%。
+
+</details>
 
 #### 3.4 训练分组
 
@@ -373,8 +440,13 @@ flowchart TB
     style PER fill:#fdebd0,stroke:#e67e22
 </div>
 
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：搬箱共用一个多任务策略，爬平台每条参考一个策略</summary>
+
 - 所有搬箱动作 → **单一多任务策略**；
 - 爬平台 → **每条参考一个策略**。
+
+</details>
 
 ---
 
@@ -382,14 +454,19 @@ flowchart TB
 
 ### 运动学质量 vs 基线（OMOMO 人-物交互）
 
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：Table II 人-物栏 —— OmniRetarget 82.20%，脚滑为 0，穿透 1.34 cm</summary>
+
 | 方法 | 穿透时长 ↓ | 最大深度 (cm) ↓ | 脚滑时长 ↓ | 接触保持 ↑ | 下游 RL 成功率 ↑ |
 |------|:---:|:---:|:---:|:---:|:---:|
-| PHC | 0.68±0.21 | 5.11±3.09 | 0.05±0.05 | 0.96±0.09 | 71.3%±22.6% |
-| GMR | 0.83±0.14 | 8.50±3.94 | 0.02±0.01 | 0.99±0.04 | 50.8%±23.9% |
-| VideoMimic | 0.60±0.27 | 7.48±4.95 | 0.12±0.07 | — | — |
-| **OmniRetarget** | **最优档** | **最优档** | **最优档** | **最优档** | **显著高于基线** |
+| PHC | 0.68±0.21 | 5.11±3.09 | 0.05±0.05 | 0.96±0.09 | 71.28%±22.55% |
+| GMR | 0.83±0.14 | 8.50±3.94 | 0.02±0.01 | 0.99±0.04 | 50.83%±23.89% |
+| VideoMimic | 0.60±0.27 | 7.48±4.95 | 0.12±0.07 | 0.77±0.25 | 3.85%±8.41% |
+| **OmniRetarget** | **0.00±0.01** | **1.34±0.34** | **0** | **0.96±0.09** | **82.20%±9.74%** |
 
-（具体数值见论文 Table II；OmniRetarget 在穿透、脚滑、接触保持与下游成功率上全面优于 PHC/GMR。）
+论文 Table II 原值。人-地形（自采 MoCap）栏 OmniRetarget 成功率 **94.73%±22.33%**（GMR 78.94%，PHC 52.63%）；脚滑时长与最大滑速均为 0。LAFAN1 机器人-only 栏 OmniRetarget 与 Unitree 基线同为 100%。
+
+</details>
 
 ### 真机亮点（Unitree G1）
 
@@ -413,6 +490,9 @@ flowchart LR
     style SKILLS fill:#e8f8e8,stroke:#27ae60
 </div>
 
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：搬箱、0.9 m 平台、30 s 跑酷、15 rad/s wall-flip，以及扩增 79.1% vs 82.2%</summary>
+
 | 任务 | 要点 |
 |------|------|
 | 搬箱（OMOMO） | 多样搬箱风格，自然全身协调 |
@@ -422,6 +502,8 @@ flowchart LR
 | **Wall-flip** | ~0.5 s 完成翻转，峰值角速度 **15 rad/s**；真机 **5/5** 成功率 |
 
 扩增数据评估：全扩增集训练、名义轨迹上评测成功率 **79.1%**，仅名义轨迹评测 **82.2%**——扩增显著扩大覆盖且性能几乎不降级。
+
+</details>
 
 ### 数据规模
 
@@ -438,8 +520,14 @@ flowchart LR
     style DS fill:#e8f8e8,stroke:#27ae60
 </div>
 
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：OMOMO 2.78 h + 自采 1 h + LAFAN1 4.6 h = 8.38 h，开源入口</summary>
+
 - 从 OMOMO、LAFAN1、自采 MoCap **retarget 生成 9+ 小时**轨迹（项目页；摘要写 8+ 小时）。
+- 论文 §V-B 给出可加总的三段：OMOMO 搬箱 **2.78 h** + 自采 MoCap **1 h** + LAFAN1 **4.6 h** = **8.38 h**。
 - 开源：[Hugging Face 数据集](https://huggingface.co/datasets/omniretarget/OmniRetarget_Dataset) + [Holosoma 代码](https://github.com/amazon-far/holosoma)。
+
+</details>
 
 ---
 
@@ -467,11 +555,19 @@ flowchart TB
     style RL fill:#e8f4fd,stroke:#1f78b4
 </div>
 
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：先读 GMR 理解「重定向质量决定下游 RL」，再看本文的交互保持</summary>
+
 **阅读顺序建议**：先读 [Retargeting Matters](Retargeting_Matters__General_Motion_Retargeting_for_Humanoid_Motion_Tracking/Retargeting_Matters__General_Motion_Retargeting_for_Humanoid_Motion_Tracking.md) 理解「重定向质量决定下游 RL」；再读本文看**交互保持 + 硬约束 + 数据扩增**如何把 loco-manipulation 参考做到 BeyondMimic 级简洁 RL 可跟踪。
+
+</details>
 
 ---
 
 ## 💻 代码与数据入口
+
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：Holosoma、Hugging Face 数据集、项目页 3D 对照</summary>
 
 | 资源 | 说明 |
 |------|------|
@@ -479,21 +575,33 @@ flowchart TB
 | [OmniRetarget_Dataset](https://huggingface.co/datasets/omniretarget/OmniRetarget_Dataset) | 已 retarget 的大规模 loco-manipulation 轨迹 |
 | [项目页交互 Demo](https://omniretarget.github.io) | 物体位姿/尺寸、地形高度、本体扩增的 3D 对比可视化 |
 
+</details>
+
 ---
 
 ## 📝 个人笔记 / 待跟进
+
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：Holosoma 闭环、与 GMR 对指标、Drake SQP 耗时、和 MeshMimic 对比</summary>
 
 - [ ] 在 Holosoma 中跑通单条 OMOMO → G1 retarget → RL 跟踪闭环
 - [ ] 对照 GMR 输出，统计同一段动作的穿透/脚滑指标
 - [ ] 阅读 Drake SQP 实现细节与每帧耗时（是否满足离线批处理规模）
 - [ ] 与 LessMimic / MeshMimic 等「场景感知模仿」对比数据侧差异
 
+</details>
+
 ---
 
 ## 📚 参考文献（核心）
+
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：OmniRetarget、Interaction Mesh、GMR、BeyondMimic、OMOMO</summary>
 
 - Yang et al., **OmniRetarget**, arXiv:2509.26633, ICRA 2026.
 - Kim et al., **Interaction Mesh** (SIGGRAPH 2013) — Laplacian 保形核心。
 - Araújo et al., **GMR / Retargeting Matters** — 关键点 IK 强基线。
 - Luo et al., **BeyondMimic** — 极简 reward 跟踪框架。
 - Li et al., **OMOMO** — 人-物交互 mocap 来源。
+
+</details>

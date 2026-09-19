@@ -59,6 +59,13 @@ GMR_NOTE = (
     / "Retargeting_Matters__General_Motion_Retargeting_for_Humanoid_Motion_Tracking"
     / "Retargeting_Matters__General_Motion_Retargeting_for_Humanoid_Motion_Tracking.md"
 )
+OMNI_NOTE = (
+    ROOT
+    / "papers"
+    / "02_Motion_Retargeting"
+    / "OmniRetarget__Interaction-Preserving_Data_Generation_for_Humanoid_Whole-Body_Loc"
+    / "OmniRetarget__Interaction-Preserving_Data_Generation_for_Humanoid_Whole-Body_Loc.md"
+)
 SONIC_NOTE = (
     ROOT
     / "papers"
@@ -184,6 +191,7 @@ def test_notes_declare_their_demos_in_reading_order():
         ),
         SONIC_NOTE: ("sonic", ["sonic-explainer"]),
         GMR_NOTE: ("gmr", ["gmr-explainer"]),
+        OMNI_NOTE: ("omniretarget", ["omniretarget-explainer"]),
     }
     for note, (bundle, placeholders) in expected.items():
         text = note.read_text(encoding="utf-8")
@@ -219,6 +227,7 @@ def test_demo_assets_are_theme_aware():
 
 EXPLAINER_BUNDLES = (
     "ppo", "awr", "deepmimic", "amp", "add", "ase", "calm", "pulse", "sonic", "gmr",
+    "omniretarget",
 )
 
 # 幕数由论文决定，不是统一模板：PPO / DeepMimic / AMP / ADD 的核心概念正好各 5 个，
@@ -235,6 +244,10 @@ EXPLAINER_BUNDLES = (
 # 非均匀局部缩放为什么是关键 / mink + DAQP 的两阶段约束 IK / Retargeting Matters 的定量论据 /
 # 闭环与源码落点），「五步流程」是论文层面的分解、「两阶段 IK」是代码层面的两张 match table，
 # 合成一幕会把两套分解叠在同一块画面上；关键创新第 ③ 步也撑得起单独一幕。
+# OmniRetarget 也是七件（现有 retargeting 只盯人体关键点 / interaction mesh 的
+# Delaunay 四面体 / Laplacian 形变能 / 序贯 SOCP 硬约束 / 一条演示四路扩增 /
+# 极简 RL 与 Table II / 数据工厂到 G1 真机的闭环），「网格保形」是目标、「硬约束」
+# 是可行域，合成一幕会让能量和 SDF/脚粘地抢同一块画面；扩增与下游 RL 也是两件独立的事。
 EXPLAINER_SCENES = {
     "ppo": (PPO_NOTE, 5),
     "awr": (AWR_NOTE, 6),
@@ -247,6 +260,7 @@ EXPLAINER_SCENES = {
     "pulse": (PULSE_NOTE, 6),
     "sonic": (SONIC_NOTE, 7),
     "gmr": (GMR_NOTE, 7),
+    "omniretarget": (OMNI_NOTE, 7),
 }
 CN_NUMERALS = {4: "四", 5: "五", 6: "六", 7: "七"}
 
@@ -552,3 +566,58 @@ def test_sonic_explainer_numbers_come_from_the_config():
     # 动画自己也要说明这只是隐层部分，和笔记那个 ≈ 42 M 不冲突
     assert "**只含隐层之间的权重**" in js
     assert "## 🎬 七幕动画：SONIC 全流程" in note
+
+
+def test_omniretarget_explainer_numbers_come_from_the_config():
+    """七幕动画不许手写换算结果：stance 单帧位移、Table II 差值、时长加总都得现算。"""
+    js = (DEMO_JS_DIR / "omniretarget.js").read_text(encoding="utf-8")
+    note = OMNI_NOTE.read_text(encoding="utf-8")
+
+    assert "var STANCE_CM_S = 1;" in js
+    assert "var MOCAP_FPS = 30;" in js
+    assert "var STANCE_MM_FRAME = (STANCE_CM_S * 10) / MOCAP_FPS;" in js
+    stance_mm = (1 * 10) / 30
+    assert abs(stance_mm - 0.333333) < 1e-6
+
+    assert "var N_REWARDS = 5;" in js
+    assert "var N_DR = 4;" in js
+    assert "var N_TERMS = N_REWARDS + N_DR;" in js
+    assert 5 + 4 == 9
+
+    assert "omni: { pen: 0.0, depth: 1.34, skate: 0, contact: 0.96, rl: 82.2 }" in js
+    assert "gmr: { pen: 0.83, depth: 8.5, skate: 0.02, contact: 0.99, rl: 50.83 }" in js
+    assert "phc: { pen: 0.68, depth: 5.11, skate: 0.05, contact: 0.96, rl: 71.28 }" in js
+    assert "vm: { pen: 0.6, depth: 7.48, skate: 0.12, contact: 0.77, rl: 3.85 }" in js
+    assert "var VS_PHC = OBJ.omni.rl - OBJ.phc.rl;" in js
+    assert "var VS_GMR = OBJ.omni.rl - OBJ.gmr.rl;" in js
+    assert "var VS_VM = OBJ.omni.rl - OBJ.vm.rl;" in js
+    assert "var DEPTH_VS_GMR = OBJ.gmr.depth - OBJ.omni.depth;" in js
+    assert _fmt(82.2 - 71.28, 1) == "10.9"
+    assert _fmt(82.2 - 50.83, 1) == "31.4"
+    assert _fmt(82.2 - 3.85, 1) == "78.4"
+    assert _fmt(8.5 - 1.34, 2) == "7.16"
+
+    assert "var AUG_FULL = 79.1;" in js
+    assert "var AUG_NOM = 82.2;" in js
+    assert "var AUG_DROP = AUG_NOM - AUG_FULL;" in js
+    assert _fmt(82.2 - 79.1, 1) == "3.1"
+
+    assert "var H_OMOMO = 2.78;" in js
+    assert "var H_MOCAP = 1;" in js
+    assert "var H_LAFAN = 4.6;" in js
+    assert "var H_SUM = H_OMOMO + H_MOCAP + H_LAFAN;" in js
+    assert _fmt(2.78 + 1 + 4.6, 2) == "8.38"
+
+    assert "var PLATFORM_M = 0.9;" in js
+    assert "var PLATFORM_PCT = 70;" in js
+    assert "var ROBOT_H_M = PLATFORM_M / (PLATFORM_PCT / 100);" in js
+    assert _fmt(0.9 / 0.7, 2) == "1.29"
+
+    assert "var WALL_RAD_S = 15;" in js
+    assert "var WALL_S = 0.5;" in js
+    assert "var WALL_RAD_IF_PEAK = WALL_RAD_S * WALL_S;" in js
+    assert _fmt(15 * 0.5, 1) == "7.5"
+
+    assert "82.20%±9.74%" in note
+    assert "2.78 h" in note and "4.6 h" in note and "8.38 h" in note
+    assert "## 🎬 七幕动画：OmniRetarget 全流程" in note
