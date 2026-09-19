@@ -105,16 +105,16 @@ flowchart TB
     SRCT["源模板 T-pose 网格<br/>SMPL-X / SOMA / 角色动画 / 扫描人体"]
     ROBT["机器人 T-pose MJCF<br/>(UMR Studio 导出 tpose_qpos)"]
 
-    subgraph S1["🧩 阶段一 · 点云对应学习（一次性，约 26 秒）"]
-        SAMP["体表采样<br/>各 4096 点，first-hit 只取外表面"]
+    subgraph S1["🧩 阶段一 · 点云对应学习"]
+        SAMP["体表采样（一次性，全程约 26 秒）<br/>各 4096 点，first-hit 只取外表面"]
         ENC["PointNet 编码器 E_θ<br/>吃机器人点云 → 潜向量"]
         DEC["MLP 解码器 D_θ<br/>为每个人点输出形变向量 d_i"]
         LOSS["L_corr = λ_c·Chamfer + λ_r·Repulsion + λ_e·Edge<br/>(1.0 / 0.002 / 0.4)"]
         BIND["绑定：人点→网格重心坐标<br/>机器人点→连杆局部坐标"]
     end
 
-    subgraph S2["🎯 阶段二 · 对应引导的重定向（逐帧）"]
-        MOVE["人点随源网格运动<br/>机器人点随 FK 运动"]
+    subgraph S2["🎯 阶段二 · 重定向求解"]
+        MOVE["逐帧：人点随源网格运动<br/>机器人点随 FK 运动"]
         RP["位姿残差 r_p：位置 + 表面法向偏移"]
         RC["接触残差 r_c：接触向量 c^h 与 c^r 对齐"]
         QP["阻尼约束 Gauss-Newton QP（Clarabel）<br/>关节限位 + 地面不穿透 + 信赖域"]
@@ -145,7 +145,7 @@ flowchart TB
 
 ### 阶段一：点云对应学习（在 T-pose 上学一次）
 
-记人体 T-pose 上采出的**有序**外表面点云为 $\mathbf{X}^{h}=\{\mathbf{x}^{h}_i\} _ {i=1}^{N}$，机器人 T-pose 上采出的**无序**点云为 $\mathbf{X}^{r}=\{\mathbf{x}^{r}_j\} _ {j=1}^{N}$。PointNet 编码器 $E_\theta$ 把机器人点云压成一个潜向量，MLP 解码器 $D_\theta$ 为**每个人点**吐一个形变向量：
+记人体 T-pose 上采出的**有序**外表面点云为 $\mathbf{X}^{h}=\lbrace\mathbf{x}^{h} _ {i}\rbrace _ {i=1}^{N}$，机器人 T-pose 上采出的**无序**点云为 $\mathbf{X}^{r}=\lbrace\mathbf{x}^{r} _ {j}\rbrace _ {j=1}^{N}$。PointNet 编码器 $E _ {\theta}$ 把机器人点云压成一个潜向量，MLP 解码器 $D _ {\theta}$ 为**每个人点**吐一个形变向量：
 
 $$
 \hat{\mathbf{X}}^{r}=\mathbf{X}^{h}+D_{\theta}(E_{\theta}(\mathbf{X}^{r})),\qquad \hat{\mathbf{x}}^{r}_{i}=\mathbf{x}^{h}_{i}+\mathbf{d}_{i}
@@ -153,15 +153,15 @@ $$
 
 **注意这里的巧思**：网络不是去「配对」，而是把人点云**整体形变**成机器人的形状。索引 $i$ 自然从人点云继承到机器人侧——第 $i$ 个人点和第 $i$ 个机器人点天生就是一对，**根本不存在匹配这一步**。
 
-损失是三项之和 $\mathcal{L} _ {\mathrm{corr}}=\lambda_c\mathcal{L}_c+\lambda_r\mathcal{L}_r+\lambda_e\mathcal{L}_e$：
+损失是三项之和 $\mathcal{L} _ {\mathrm{corr}}=\lambda _ {c}\mathcal{L} _ {c}+\lambda _ {r}\mathcal{L} _ {r}+\lambda _ {e}\mathcal{L} _ {e}$：
 
 | 项 | 作用 | 形式 | 默认权重 |
 |---|---|---|---|
-| **Chamfer** $\mathcal{L}_c$ | 主几何监督：形变后的点云要覆盖住机器人真实表面 | 对称最近邻平方距离 | 1.0 |
-| **Repulsion** $\mathcal{L}_r$ | 防止一堆点塌到同一小块区域（否则大片体表没人对应） | $\exp(-\lVert\hat{\mathbf{x}}^{r}_i-\hat{\mathbf{x}}^{r}_\ell\rVert^2/r^2)$，取 $K_r$ 近邻 | 0.002（$K_r=8$，$r=0.035$ m） |
-| **Edge smoothness** $\mathcal{L}_e$ | 沿人体模板**测地图**的相邻点，形变向量要接近 | $\lVert\mathbf{d}_i-\mathbf{d}_\ell\rVert^2$ | 0.4（测地图，$k=32$） |
+| **Chamfer** $\mathcal{L} _ {c}$ | 主几何监督：形变后的点云要覆盖住机器人真实表面 | 对称最近邻平方距离 | 1.0 |
+| **Repulsion** $\mathcal{L} _ {r}$ | 防止一堆点塌到同一小块区域（否则大片体表没人对应） | $\exp(-\lVert\hat{\mathbf{x}}^{r} _ {i}-\hat{\mathbf{x}}^{r} _ {\ell}\rVert^2/r^2)$，取 $K _ {r}$ 近邻 | 0.002（$K _ {r}=8$，$r=0.035$ m） |
+| **Edge smoothness** $\mathcal{L} _ {e}$ | 沿人体模板**测地图**的相邻点，形变向量要接近 | $\lVert\mathbf{d} _ {i}-\mathbf{d} _ {\ell}\rVert^2$ | 0.4（测地图，$k=32$） |
 
-> 论文明确说 $\mathcal{L}_e$ 是「学到连贯对应的关键」。直觉：只有 Chamfer 的话，网络完全可以把左手的点甩到机器人右手上——几何上 Chamfer 一样低，但**动起来就废了**。测地图平滑强制「人身上挨着的点，在机器人身上也得挨着」，把语义一致性从几何里逼出来。用测地距离而不是欧氏距离，是为了避免 T-pose 下**手臂贴着躯干**这种"空间上近、身体上远"的误连。
+> 论文明确说 $\mathcal{L} _ {e}$ 是「学到连贯对应的关键」。直觉：只有 Chamfer 的话，网络完全可以把左手的点甩到机器人右手上——几何上 Chamfer 一样低，但**动起来就废了**。测地图平滑强制「人身上挨着的点，在机器人身上也得挨着」，把语义一致性从几何里逼出来。用测地距离而不是欧氏距离，是为了避免 T-pose 下**手臂贴着躯干**这种"空间上近、身体上远"的误连。
 
 学完之后还有一个白送的好处：**机器人点云继承了人体的身体分区标签**。于是「哪块表面该加重权重」这种参数可以定义在人体模板上，**在不同机器人之间直接复用**（仓库里 `retarget_body_segment_surface*.py` 正是这么组织的：权重按动作源分文件，不按机器人分）。
 
@@ -170,42 +170,42 @@ $$
 点对被绑定后就变成了运动目标：人点通过**重心坐标**跟着源网格走，机器人点通过**连杆局部绑定 + FK** 跟着关节角走。每帧求解
 
 $$
-\min _ {\mathbf{q} _ t}\ \lVert\mathbf{r} _ p(\mathbf{q} _ t)\rVert_2^2+\lVert\mathbf{r} _ c(\mathbf{q} _ t)\rVert_2^2
+\min _ {\mathbf{q} _ t}\ \lVert\mathbf{r} _ p(\mathbf{q} _ t)\rVert_{2}^2+\lVert\mathbf{r} _ c(\mathbf{q} _ t)\rVert_{2}^2
 $$
 
 **位姿残差**同时管位置和表面朝向：
 
 $$
-\mathbf{r} _ {p,i}(\mathbf{q} _ t)=\begin{bmatrix}\sqrt{w_i^{p}}\bigl(\mathbf{x}^{r}_i(\mathbf{q} _ t)-\mathbf{x}^{h}_{t,i}\bigr)\\ \sqrt{w_i^{n}}\bigl(\bar{\mathbf{n}}^{r}_i(\mathbf{q} _ t)-\bar{\mathbf{n}}^{h}_{t,i}\bigr)\end{bmatrix}
+\mathbf{r} _ {p,i}(\mathbf{q} _ t)=\begin{bmatrix}\sqrt{w_{i}^{p}}\bigl(\mathbf{x}^{r}_{i}(\mathbf{q} _ t)-\mathbf{x}^{h}_{t,i}\bigr)\\ \sqrt{w_{i}^{n}}\bigl(\bar{\mathbf{n}}^{r}_{i}(\mathbf{q} _ t)-\bar{\mathbf{n}}^{h}_{t,i}\bigr)\end{bmatrix}
 $$
 
-其中法向量 $\bar{\mathbf{n}}$ 测的是**相对各自 T-pose 绑定的朝向变化**（仓库里对应 `surface_normal_cost_mode: "tpose_offset"`）——这很重要：人和机器人的表面法向绝对值本来就对不上（一个是肉、一个是塑料壳），能比的只有「相对初始状态转了多少」。权重 $w_i^p,w_i^n$ 按身体分区给。
+其中法向量 $\bar{\mathbf{n}}$ 测的是**相对各自 T-pose 绑定的朝向变化**（仓库里对应 `surface_normal_cost_mode: "tpose_offset"`）——这很重要：人和机器人的表面法向绝对值本来就对不上（一个是肉、一个是塑料壳），能比的只有「相对初始状态转了多少」。权重 $w _ {i}^p,w _ {i}^n$ 按身体分区给。
 
-**接触残差**沿用 BimArt 的接触表示。设环境（物体 / 场景 / 地面）点云为 $\mathbf{Y}_t$，对每个人点先找最近的环境点 $\pi_t(i)$，然后人和机器人**共用这个环境点**：
+**接触残差**沿用 BimArt 的接触表示。设环境（物体 / 场景 / 地面）点云为 $\mathbf{Y} _ {t}$，对每个人点先找最近的环境点 $\pi _ {t}(i)$，然后人和机器人**共用这个环境点**：
 
 $$
-\mathbf{c}^{h}_{t,i}=\mathbf{x}^{h}_{t,i}-\mathbf{y}_{t,\pi_t(i)},\qquad \mathbf{c}^{r}_{i}(\mathbf{q} _ t)=\mathbf{x}^{r}_{i}(\mathbf{q} _ t)-\mathbf{y}_{t,\pi_t(i)}
+\mathbf{c}^{h}_{t,i}=\mathbf{x}^{h}_{t,i}-\mathbf{y}_{t,\pi_{t}(i)},\qquad \mathbf{c}^{r}_{i}(\mathbf{q} _ t)=\mathbf{x}^{r}_{i}(\mathbf{q} _ t)-\mathbf{y}_{t,\pi_{t}(i)}
 $$
 
-只有落进阈值 $\tau_c$ 内的点才算活跃接触：$\mathcal{C} _ t=\{i\in\mathcal{I}\mid\lVert\mathbf{c}^{h} _ {t,i}\rVert_2\le\tau_c\}$（仓库默认 $\tau_c=0.1$ m）。**同一套构造统一处理地面、被操作物体与场景几何**；自接触则把环境点换成另一个**不相邻身体分区**上的对应点。
+只有落进阈值 $\tau _ {c}$ 内的点才算活跃接触：$\mathcal{C} _ {t}=\lbrace i\in\mathcal{I}\mid\lVert\mathbf{c}^{h} _ {t,i}\rVert _ {2}\le\tau _ {c}\rbrace$（仓库默认 $\tau _ {c}=0.1$ m）。**同一套构造统一处理地面、被操作物体与场景几何**；自接触则把环境点换成另一个**不相邻身体分区**上的对应点。
 
 > 这一步是 UMR 相对 OmniRetarget 的结构性差别：接触不是「检测到支撑相就硬粘住脚」，而是**每帧算出来的一个向量残差**，人手离开箱子时残差自然退出活跃集，不需要相位状态机。
 
 ### 约束更新：阻尼 Gauss-Newton + QP
 
-残差通过 FK 非线性依赖 $\mathbf{q}_t$，所以线性化 $\mathbf{r}(\mathbf{q}_t+\Delta\mathbf{q})\approx\mathbf{r}(\mathbf{q}_t)+\mathbf{J}(\mathbf{q}_t)\Delta\mathbf{q}$，每步解一个凸 QP：
+残差通过 FK 非线性依赖 $\mathbf{q} _ {t}$，所以线性化 $\mathbf{r}(\mathbf{q} _ {t}+\Delta\mathbf{q})\approx\mathbf{r}(\mathbf{q} _ {t})+\mathbf{J}(\mathbf{q} _ {t})\Delta\mathbf{q}$，每步解一个凸 QP：
 
 $$
-\min _ {\Delta\mathbf{q}}\ \tfrac12\lVert\mathbf{r}(\mathbf{q} _ t)+\mathbf{J}(\mathbf{q} _ t)\Delta\mathbf{q}\rVert_2^2+\tfrac{\mu}{2}\lVert\Delta\mathbf{q}\rVert_2^2
+\min _ {\Delta\mathbf{q}}\ \tfrac12\lVert\mathbf{r}(\mathbf{q} _ t)+\mathbf{J}(\mathbf{q} _ t)\Delta\mathbf{q}\rVert_{2}^2+\tfrac{\mu}{2}\lVert\Delta\mathbf{q}\rVert_{2}^2
 $$
 
 约束三条：
 
 | 约束 | 式子 | 作用 |
 |---|---|---|
-| 关节限位 | $\mathbf{q}^{-}\le\mathbf{q}_t+\Delta\mathbf{q}\le\mathbf{q}^{+}$ | 解出来的角度机器人转得到 |
-| 地面净空 | $-\mathbf{J}^{z}_i(\mathbf{q}_t)\Delta\mathbf{q}\le z^{r}_i(\mathbf{q}_t)-z_f$ | 对靠近地面的**表面点**线性化 $z_i\ge z_f$，硬约束不穿地 |
-| 信赖域 | $\lVert\Delta\mathbf{q}\rVert_2\le\eta$ | 线性化只在局部成立，限步长防跳飞 |
+| 关节限位 | $\mathbf{q}^{-}\le\mathbf{q} _ {t}+\Delta\mathbf{q}\le\mathbf{q}^{+}$ | 解出来的角度机器人转得到 |
+| 地面净空 | $-\mathbf{J}^{z} _ {i}(\mathbf{q} _ {t})\Delta\mathbf{q}\le z^{r} _ {i}(\mathbf{q} _ {t})-z _ {f}$ | 对靠近地面的**表面点**线性化 $z _ {i}\ge z _ {f}$，硬约束不穿地 |
+| 信赖域 | $\lVert\Delta\mathbf{q}\rVert _ {2}\le\eta$ | 线性化只在局部成立，限步长防跳飞 |
 
 阻尼 $\mu$ 在仓库里默认 `damping: 0.01`，信赖域 `max_dq: 0.15`（L2 模式）。QP 子问题交给 **Clarabel** 求解，几何与 FK 走 **MuJoCo**。
 
@@ -340,12 +340,12 @@ UMR/
 | 采样 | `num_points` | 4096 | $N$，人 / 机器人各采这么多点 |
 | 采样 | `exterior_method` | `first_hit` | 「exterior point cloud」：只要射线第一次打到的外表面 |
 | 训练 | `epochs` / `lr` | 500 / 1e-3（cosine） | 阶段一训练（约 10 秒） |
-| 训练 | `chamfer_weight` | 1.0 | $\lambda_c$ |
-| 训练 | `repulsion_weight` / `repulsion_k` / `repulsion_radius` | 0.002 / 8 / 0.035 | $\lambda_r$ / $K_r$ / $r$ |
-| 训练 | `edge_weight` / `edge_graph` / `edge_k` | 0.4 / `geodesic` / 32 | $\lambda_e$ 与测地邻接图 $\mathcal{E}$ |
+| 训练 | `chamfer_weight` | 1.0 | $\lambda _ {c}$ |
+| 训练 | `repulsion_weight` / `repulsion_k` / `repulsion_radius` | 0.002 / 8 / 0.035 | $\lambda _ {r}$ / $K _ {r}$ / $r$ |
+| 训练 | `edge_weight` / `edge_graph` / `edge_k` | 0.4 / `geodesic` / 32 | $\lambda _ {e}$ 与测地邻接图 $\mathcal{E}$ |
 | 求解 | `surface_normal_cost_mode` | `tpose_offset` | 式 (7) 里法向量测的是相对 T-pose 绑定的偏移 |
-| 求解 | `body_segment.schema` | `smplx_55_to_19_upper_arm_v1` | 身体分区 → 权重 $w^p_i,w^n_i$ |
-| 求解 | `ground_contact_map_threshold` | 0.1 | 地面接触的 $\tau_c$ |
+| 求解 | `body_segment.schema` | `smplx_55_to_19_upper_arm_v1` | 身体分区 → 权重 $w^p _ {i},w^n _ {i}$ |
+| 求解 | `ground_contact_map_threshold` | 0.1 | 地面接触的 $\tau _ {c}$ |
 | 求解 | `ground_penetration_hard_constraint` | `true` | 式 (14) 的地面净空硬不等式 |
 | 求解 | `self_contact_map_cost` / `_threshold` / `_max_pairs` | 500.0 / 0.1 / 256 | 自接触残差（环境点换成非相邻分区的对应点） |
 | 求解 | `damping` | 0.01 | 阻尼 $\mu$ |
@@ -446,19 +446,19 @@ sequenceDiagram
 A：因为它把对应关系建立在**几何**而不是**语义**上。网络不做"配对"，而是把人体 T-pose 点云整体形变成机器人形状，索引天然从人点云继承到机器人点云——第 $i$ 个人点和第 $i$ 个机器人点就是一对。人只需要提供两个 T-pose。
 
 **Q：只用 Chamfer 距离学对应会出什么问题？**
-A：Chamfer 只管"形变后的点云盖住机器人表面"，完全允许把左手的点甩到右手上——几何 loss 一样低，但动起来就乱套。所以必须加**沿人体模板测地图的边平滑项** $\mathcal{L}_e$（默认权重 0.4）逼出语义一致性，再加 repulsion 防止点塌成一堆。论文原文就说 $\mathcal{L}_e$ 是"学到连贯对应的关键"。
+A：Chamfer 只管"形变后的点云盖住机器人表面"，完全允许把左手的点甩到右手上——几何 loss 一样低，但动起来就乱套。所以必须加**沿人体模板测地图的边平滑项** $\mathcal{L} _ {e}$（默认权重 0.4）逼出语义一致性，再加 repulsion 防止点塌成一堆。论文原文就说 $\mathcal{L} _ {e}$ 是"学到连贯对应的关键"。
 
 **Q：为什么用测地图而不是欧氏近邻建边？**
 A：T-pose 下手臂贴着躯干、大腿内侧互相贴着，欧氏近邻会把"空间上近、身体上远"的点连起来，平滑项反而会把手臂的形变和躯干的形变绑死。测地距离沿表面走，不会跨过这种间隙。
 
 **Q：接触是怎么被"搬"过去的？**
-A：对每个人体表面点，先找它在环境点云上的最近点 $\pi_t(i)$，人侧接触向量是 $\mathbf{x}^h-\mathbf{y} _ {\pi_t(i)}$，机器人侧用**同一个环境点**算 $\mathbf{x}^r-\mathbf{y} _ {\pi_t(i)}$，两者的差作为残差。只有向量模长小于 $\tau_c$（默认 0.1 m）的点进入活跃集。地面、物体、场景统一走这套；自接触把环境点换成另一个非相邻身体分区上的对应点。
+A：对每个人体表面点，先找它在环境点云上的最近点 $\pi _ {t}(i)$，人侧接触向量是 $\mathbf{x}^h-\mathbf{y} _ {\pi _ {t}(i)}$，机器人侧用**同一个环境点**算 $\mathbf{x}^r-\mathbf{y} _ {\pi _ {t}(i)}$，两者的差作为残差。只有向量模长小于 $\tau _ {c}$（默认 0.1 m）的点进入活跃集。地面、物体、场景统一走这套；自接触把环境点换成另一个非相邻身体分区上的对应点。
 
 **Q：和 OmniRetarget 的接触处理差在哪？**
 A：OmniRetarget 用启发式检测支撑相再把脚硬粘住，跨动作分布容易失配、把不该保持的接触一直粘着（GRAIL Stair 上只有 11% 成功率）。UMR 的接触是**每帧算出来的向量残差**，人手离开物体时残差自动退出活跃集，不需要相位状态机。
 
 **Q：为什么求解要带信赖域？**
-A：残差通过 FK 非线性依赖关节角，Gauss-Newton 是局部线性化。一旦某帧目标离当前位形太远，线性化外推会解出大步长、把机器人甩到奇异位形。所以 QP 里同时放阻尼项 $\mu$（默认 0.01）与硬信赖域 $\lVert\Delta\mathbf{q}\rVert_2\le\eta$（默认 0.15）。
+A：残差通过 FK 非线性依赖关节角，Gauss-Newton 是局部线性化。一旦某帧目标离当前位形太远，线性化外推会解出大步长、把机器人甩到奇异位形。所以 QP 里同时放阻尼项 $\mu$（默认 0.01）与硬信赖域 $\lVert\Delta\mathbf{q}\rVert _ {2}\le\eta$（默认 0.15）。
 
 **Q：它比 GMR 好在哪、又在哪没有明显优势？**
 A：好在**接触密集与大幅翻滚的动作**（Fall and GetUp、Fight 成功率各高约 12 个百分点）以及**域随机化 / Sim2Sim 下的鲁棒性**；Walk、Jump 这类平稳动作两者基本打平——稀疏关键点本来就足以描述平稳步态，稠密对应的收益体现不出来。
