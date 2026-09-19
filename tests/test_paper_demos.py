@@ -52,6 +52,13 @@ DR_VISION_NOTE = _note(
 )
 DR_THEORY_NOTE = _note("Domain_Randomization_Understanding_Sim-to-Real_Transfer")
 MIMICKIT_NOTE = _note("MimicKit_A_Reinforcement_Learning_Framework_for_Motion_Imitation_and_Control")
+GMR_NOTE = (
+    ROOT
+    / "papers"
+    / "02_Motion_Retargeting"
+    / "Retargeting_Matters__General_Motion_Retargeting_for_Humanoid_Motion_Tracking"
+    / "Retargeting_Matters__General_Motion_Retargeting_for_Humanoid_Motion_Tracking.md"
+)
 SONIC_NOTE = (
     ROOT
     / "papers"
@@ -176,6 +183,7 @@ def test_notes_declare_their_demos_in_reading_order():
             ["mimickit-family", "mimickit-reward", "mimickit-config"],
         ),
         SONIC_NOTE: ("sonic", ["sonic-explainer"]),
+        GMR_NOTE: ("gmr", ["gmr-explainer"]),
     }
     for note, (bundle, placeholders) in expected.items():
         text = note.read_text(encoding="utf-8")
@@ -209,7 +217,9 @@ def test_demo_assets_are_theme_aware():
     assert "data-theme" in kit
 
 
-EXPLAINER_BUNDLES = ("ppo", "awr", "deepmimic", "amp", "add", "ase", "calm", "pulse", "sonic")
+EXPLAINER_BUNDLES = (
+    "ppo", "awr", "deepmimic", "amp", "add", "ase", "calm", "pulse", "sonic", "gmr",
+)
 
 # 幕数由论文决定，不是统一模板：PPO / DeepMimic / AMP / ADD 的核心概念正好各 5 个，
 # PHC 开篇立了三堵墙（第一堵拆成「长出列」「混合列」两幕），所以是 6 幕；
@@ -220,7 +230,11 @@ EXPLAINER_BUNDLES = ("ppo", "awr", "deepmimic", "amp", "add", "ase", "calm", "pu
 # 阶段 3 下游只搜 32 维 / 闭环与源码落点）；SONIC 是七件（任务选错了 / 三轴一起放大 /
 # universal token space / 五项 aux loss 焊住潜空间 / 实时 kinematic planner /
 # System-1 + System-2 / 数据到实机的闭环），token space 与把三路 latent 焊在一起
-# 是两件独立的事，规划器与 VLA 也是，压进六幕会有两幕各塞两件事。
+# 是两件独立的事，规划器与 VLA 也是，压进六幕会有两幕各塞两件事；GMR 也是七件
+# （retargeting 被当成前处理脚本 / 一条管线接 5 种格式 × 18+ 款机器人 / 论文的五步显式流程 /
+# 非均匀局部缩放为什么是关键 / mink + DAQP 的两阶段约束 IK / Retargeting Matters 的定量论据 /
+# 闭环与源码落点），「五步流程」是论文层面的分解、「两阶段 IK」是代码层面的两张 match table，
+# 合成一幕会把两套分解叠在同一块画面上；关键创新第 ③ 步也撑得起单独一幕。
 EXPLAINER_SCENES = {
     "ppo": (PPO_NOTE, 5),
     "awr": (AWR_NOTE, 6),
@@ -232,6 +246,7 @@ EXPLAINER_SCENES = {
     "calm": (CALM_NOTE, 5),
     "pulse": (PULSE_NOTE, 6),
     "sonic": (SONIC_NOTE, 7),
+    "gmr": (GMR_NOTE, 7),
 }
 CN_NUMERALS = {4: "四", 5: "五", 6: "六", 7: "七"}
 
