@@ -236,6 +236,18 @@
         "published_date_en": "May 7, 2026 (arXiv v1)",
         "zhname": "ReActor：面向物理可行动作重定向的强化学习",
         "zh_title": "ReActor：面向物理可行动作重定向的强化学习"
+      },
+      {
+        "title": "Unified Motion Retargeting for Humanoids with Learned Point Cloud Correspondence",
+        "path": "papers/02_Motion_Retargeting/UMR__Unified_Motion_Retargeting_with_Learned_Point_Cloud_Correspondence/UMR__Unified_Motion_Retargeting_with_Learned_Point_Cloud_Correspondence.md",
+        "url": "/papers/02_Motion_Retargeting/UMR__Unified_Motion_Retargeting_with_Learned_Point_Cloud_Correspondence/UMR__Unified_Motion_Retargeting_with_Learned_Point_Cloud_Correspondence.html",
+        "dir": "UMR__Unified_Motion_Retargeting_with_Learned_Point_Cloud_Correspondence",
+        "arxiv": "2609.02134",
+        "has_open_source": true,
+        "published_date_zh": "2026年9月2日（arXiv v1）",
+        "published_date_en": "Sep 2, 2026 (arXiv v1)",
+        "zhname": "UMR：基于学习点云对应的人形统一动作重定向",
+        "zh_title": "UMR：基于学习点云对应的人形统一动作重定向"
       }
     ],
     "subtitle": "Bridging human motion data and humanoid policies — geometric IK, learned retargeting, and the engineering choices that determine downstream policy quality",
