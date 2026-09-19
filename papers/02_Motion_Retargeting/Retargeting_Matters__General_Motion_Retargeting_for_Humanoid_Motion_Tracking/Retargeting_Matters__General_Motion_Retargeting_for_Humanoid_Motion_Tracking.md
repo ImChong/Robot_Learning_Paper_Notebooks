@@ -4,6 +4,7 @@ title: "Retargeting Matters: General Motion Retargeting for Humanoid Motion Trac
 zhname: "Retargeting Matters：面向人形运动跟踪的通用动作重定向"
 category: "Motion Retargeting"
 paper_order: 1
+demos: ["gmr"]
 ---
 
 # Retargeting Matters: General Motion Retargeting for Humanoid Motion Tracking
@@ -39,7 +40,10 @@ paper_order: 1
 
 ## 🎯 一句话总结
 
-GMR 把"人类动作重定向到人形机器人"这件过去被各家方法**藏在附录里**的事情单独做成一个**通用、快速、CPU-only**的库，一条管线支持 18+ 款人形硬件与 4+ 种人体运动格式，让下游的 RL tracking / 遥操 / 模仿学习研究者可以**不重新造轮子**就拿到高质量的机器人参考动作。
+GMR 把"人类动作重定向到人形机器人"这件过去被各家方法**藏在附录里**的事情单独做成一个**通用、快速、CPU-only**的库，一条管线支持 18+ 款人形硬件与 5 种人体运动格式，让下游的 RL tracking / 遥操 / 模仿学习研究者可以**不重新造轮子**就拿到高质量的机器人参考动作。
+
+> 🎮 **本文内嵌 1 段讲解动画**（不用装任何东西）：
+> [七幕动画：GMR 全流程](#gmr-explainer-anim) —— 约 90 秒串完「retargeting 被当成前处理脚本 → 一条管线接 5 种格式 × 18+ 款机器人 → 论文的五步显式流程 → 非均匀局部缩放为什么是关键 → mink + DAQP 的两阶段约束 IK → Retargeting Matters 的定量论据 → 闭环、已知失败与源码落点」。空格播放/暂停，← → 换幕，也可以直接点分幕标签跳着看。
 
 ---
 
@@ -63,11 +67,23 @@ GMR 把"人类动作重定向到人形机器人"这件过去被各家方法**藏
 
 ---
 
+## 🎬 七幕动画：GMR 全流程 {#gmr-explainer-anim}
+
+<div class="paper-demo" data-demo="gmr-explainer"><p class="demo-fallback">（本节含动画演示，需要启用 JavaScript）</p></div>
+
+> 📖 **动画之后的正文默认全部折叠**：动画覆盖到的那几节（问题定义、方法详解、实验结果）按小节收起，再往后的具体实例、工程价值、源码对照、面试参考、讨论记录与附录各整块收起。想细读哪一块就点开对应的折叠条，内容一字未删；两阶段 IK 的流程图留在外面，目录里的标题依旧可以直接点，会自动展开所在折叠块，左侧目录顶部还有「展开全部文字」一键铺开。
+
+---
+
 ## ❓ Retargeting Matters 要解决什么问题？
 
 这篇论文标题里的 "Matters" 有点叫板味道。在 humanoid RL tracking 这条技术主线上：
 
 ### 问题 1：大家都把 retargeting 当"前处理脚本"，但它其实是瓶颈
+
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：默认流程长什么样，以及为什么这一步的质量决定下游 RL 跟不跟得上</summary>
+
 很多 humanoid tracking 论文（OmniH2O / ExBody2 / OmniXtreme / GentleHumanoid 等）都有一条默认流程：
 
 ```
@@ -76,27 +92,50 @@ GMR 把"人类动作重定向到人形机器人"这件过去被各家方法**藏
 
 作者观察到的痛点：**retargeting 这一步的质量直接决定下游 RL 能否跟得上**。如果翻译的参考动作本身就不可行（超过关节限制、脚穿地板、手臂自碰撞），RL 训练要么跟不上、要么跟上了但 sim-to-real 崩掉。
 
+</details>
+
 ### 问题 2：每家论文都自己写 retargeting，配方互不兼容
+
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：OmniH2O / ExBody2 / OmniXtreme 各一套配方，换机器人就得重写</summary>
+
 - OmniH2O 的 retargeting 参数化是自家定制的；
 - ExBody2 的有自己的 loss；
 - OmniXtreme 的又是另一套；
 - 搞到研究者每做一个新机器人 / 新数据集，都要重新写一遍。
 
+</details>
+
 ### 问题 3：很多实现要 GPU 甚至 CUDA，部署不方便
+
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：遥操现场带台笔记本就办不成事</summary>
+
 在"带笔记本到实验室做遥操 demo"这种场景里，GPU 依赖是个障碍。
 
+</details>
+
 ### GMR 的回答
+
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：通用 / 快速 / CPU-only / 全开源：一条命令、18+ 款机器人、60–70 FPS</summary>
+
 一套**通用、快速、CPU-only、全开源**的管线：
 
 - 一条命令把 SMPL-X / BVH / FBX / Xsens / GVHMR 的人体动作翻译到 18+ 款人形机器人。
 - 单 CPU 60–70 FPS（Ryzen Threadripper） / 35–45 FPS（i9-13900K），实时遥操没压力。
 - MIT 协议，配合 TWIST 遥操系统发布，后续 GentleHumanoid / OmniXtreme 等都把 GMR 作为默认 retargeting 工具。
 
+</details>
+
 ---
 
 ## 🔧 方法详解
 
 ### 论文官方五步流程（arXiv 全文）
+
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：五步各做什么，以及为什么第 ③ 步非均匀局部缩放是关键创新</summary>
 
 GMR 把 retargeting 分解为**五个显式步骤**，与大多数隐式 IK 脚本相比，每一步的目标和约束都可单独检查：
 
@@ -110,9 +149,14 @@ GMR 把 retargeting 分解为**五个显式步骤**，与大多数隐式 IK 脚�
 
 > **关键创新点**：步骤 3 的**非均匀局部缩放（non-uniform local scaling）**。传统方法常用全局缩放因子或直接忽略比例差异，导致手臂短的机器人被要求"摆到人手那个位置"时解出极端关节角。GMR 分骨骼链各自估计比例，从根源上减少 IK 求解时的残差。
 
+</details>
+
 ---
 
 ### 输入输出
+
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：输入格式、机器人规格、输出 .pkl 的三张表</summary>
 
 | 部件 | 内容 |
 |------|------|
@@ -120,9 +164,16 @@ GMR 把 retargeting 分解为**五个显式步骤**，与大多数隐式 IK 脚�
 | 机器人规格 | URDF / MJCF + 关节限位 + IK 配置表（18+ 款已内置于 `general_motion_retargeting/ik_configs/`） |
 | 输出 | `.pkl` 文件：每帧的 `root_pos / root_quat / dof_pos`（关节角），可直接喂给 RL tracking 策略或 PD 控制器 |
 
+</details>
+
 ### 核心管线：基于 mink 的两阶段约束 IK
 
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：求解器是谁、底层 QP 用什么</summary>
+
 GMR 的 retargeting **不是黑盒**，而是一个**两阶段 IK 优化**，求解器是 [`mink`](https://github.com/kevinzakka/mink)（Kevin Zakka 的 MuJoCo IK 库），底层 QP 用 **DAQP**（默认）或 **quadprog**。
+
+</details>
 
 ```
 人体 motion 帧 (SMPL-X / BVH / ...)
@@ -143,9 +194,17 @@ GMR 的 retargeting **不是黑盒**，而是一个**两阶段 IK 优化**，求
 机器人关节角序列 (dof_pos)
 ```
 
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：为什么非要分两阶段，不能一个 QP 解完</summary>
+
 **两阶段的好处**：先锁定 root + 躯干的位姿，再去拟合手脚。如果一次性把所有 task 塞进同一个 QP，远端误差会拉着 root 漂移；分两步可以避免"为了把手放对而牺牲躯干姿态"。
 
+</details>
+
 ### 关键超参（写死在 `motion_retarget.py`）
+
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：lm_damping 0.5 / 3π rad/s / max_iters 10 / err < 0.001 / DAQP 五项</summary>
 
 | 参数 | 取值 | 含义 |
 |------|------|------|
@@ -155,7 +214,12 @@ GMR 的 retargeting **不是黑盒**，而是一个**两阶段 IK 优化**，求
 | 收敛阈值 | **error < 0.001** | 提前停止（10 步内达到即跳出） |
 | QP 求解器 | `daqp` (默认) 或 `quadprog` | DAQP 在多约束下更快 |
 
+</details>
+
 ### IK 配置表的 schema（DOC.md）
+
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：接一款新机器人要手写的那 10–20 行 YAML 长什么样</summary>
 
 每款机器人的 `ik_configs/*.yaml` 把"人体哪个骨骼 → 机器人哪个 body → 用多大权重对齐"写成一张表：
 
@@ -171,14 +235,24 @@ GMR 的 retargeting **不是黑盒**，而是一个**两阶段 IK 优化**，求
 
 → **接入新机器人的"一次性手工活"** 就是写这张表（每个机器人 ~10–20 行 YAML）。
 
+</details>
+
 ### Forward kinematics：自研 PyTorch FK
+
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：为什么不用 MuJoCo 自带的 FK，自研那套支持哪些关节</summary>
 
 `kinematics_model.py` 没有用 MuJoCo 自带的 FK，而是**自己实现了一套 PyTorch 版前向运动学**：
 - 支持 0-DOF 固定关节、1-DOF hinge、3-DOF ball joint；
 - 全程可微（虽然 retargeting 本身不需要梯度，但便于后续接其他可微管线）；
 - CPU 上 batch 跑得动整段 motion，与 mink 的 Jacobian 求解互不打架。
 
+</details>
+
 ### 与其他 retargeting 思路的对比
+
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：一次 IK 全解 / 学习式 / 物理仿真 / 自写 LM 四条路线的差异</summary>
 
 | 思路 | 代表工作 | GMR 的差异 |
 |------|---------|-----------|
@@ -187,7 +261,12 @@ GMR 的 retargeting **不是黑盒**，而是一个**两阶段 IK 优化**，求
 | 物理仿真 + 策略跟随 | PHC 等把 RL 和 retargeting 混在一起 | GMR 只做 kinematic retargeting，RL 留给下游 |
 | 自写 LM / SLSQP | OmniH2O 等的内嵌脚本 | GMR 复用 mink + DAQP，求解器经过 robotics 社区打磨 |
 
+</details>
+
 ### 已知失败模式（来自仓库 `TEST_MOTIONS.md`）
+
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：五类跟不好的动作，以及「接触丰富 + 大幅旋转」这个共性</summary>
 
 仓库专门维护了一份"哪些 motion 当前 retarget 不好"的清单，是诚意满满的工程文档：
 
@@ -201,11 +280,16 @@ GMR 的 retargeting **不是黑盒**，而是一个**两阶段 IK 优化**，求
 
 → 共性：**接触丰富 + 大幅旋转**的动作。这是显式 IK retargeting 的固有局限——没有物理一致性约束，碰到地面 / 自碰撞场景容易解出"几何上对、物理上崩"的姿态。论文层面的解法仍以孔后续的 RL tracking 阶段去补救为主。
 
+</details>
+
 ---
 
 ## 🚶 具体实例（仓库脚本走通）
 
-### 例 1：把 AMASS 中的一段 SMPL-X 动作重定向到 Unitree G1
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：三条可复制的命令（SMPL-X → G1 / BVH → H1 / 可视化）与典型下游串接</summary>
+
+<h3 id="例-1把-amass-中的一段-smpl-x-动作重定向到-unitree-g1">例 1：把 AMASS 中的一段 SMPL-X 动作重定向到 Unitree G1</h3>
 
 ```bash
 conda create -n gmr python=3.10 -y
@@ -221,7 +305,7 @@ python scripts/smplx_to_robot.py \
 
 输出：`outputs/g1_dance_01.pkl`，内容是一段与输入同帧率的 G1 关节角 + root 轨迹。
 
-### 例 2：把 LAFAN1 的 BVH 翻译成 Unitree H1 的参考动作
+<h3 id="例-2把-lafan1-的-bvh-翻译成-unitree-h1-的参考动作">例 2：把 LAFAN1 的 BVH 翻译成 Unitree H1 的参考动作</h3>
 
 ```bash
 python scripts/bvh_to_robot.py \
@@ -231,7 +315,7 @@ python scripts/bvh_to_robot.py \
     --format lafan1
 ```
 
-### 例 3：可视化
+<h3 id="例-3可视化">例 3：可视化</h3>
 
 ```bash
 python scripts/vis_robot_motion.py \
@@ -239,7 +323,7 @@ python scripts/vis_robot_motion.py \
     --robot_motion_path outputs/g1_dance_01.pkl
 ```
 
-### 典型下游串接
+<h3 id="典型下游串接">典型下游串接</h3>
 
 ```
 (手机 RGB 视频) --GVHMR--> (SMPL-X) --GMR--> (G1 关节角)
@@ -247,11 +331,16 @@ python scripts/vis_robot_motion.py \
                                               └─► 真机 PD 控制器
 ```
 
+</details>
+
 ---
 
 ## 📊 实验结果（arXiv 全文）
 
 ### 实验设置
+
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：BeyondMimic 这个中性框架、LAFAN1 的 21 段、三个对比基线</summary>
 
 | 项目 | 内容 |
 |------|------|
@@ -263,7 +352,12 @@ python scripts/vis_robot_motion.py \
 
 > BeyondMimic 是刻意选择的"中性框架"——不针对特定 retargeter 调奖励，使 retargeting 质量的差异在 tracking 结果上被放大。
 
+</details>
+
 ### 主要结论
+
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：GMR ≈ Unitree、21 段只有 3 段全对、三类 artifact、初始帧差 50+ 个百分点</summary>
 
 | 结论 | 详情 |
 |------|------|
@@ -273,13 +367,23 @@ python scripts/vis_robot_motion.py \
 | **初始参考帧选择影响巨大** | 同一段动作，不同初始 reference frame 可导致成功率差 **50+ 个百分点**（令人意外的发现） |
 | **用户研究** | 20 名参与者打分：GMR 感知保真度介于 PHC 和 Unitree 基线之间，与定量结果一致 |
 
+</details>
+
 ### "Retargeting Matters"的定量论据
 
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：论文核心主张那一句，以及它是怎么被验证的</summary>
+
 > 论文核心主张："在不做大量 reward 工程的前提下，retargeting artifact 会实质性地阻碍策略跟踪某些动作。" 实验通过 BeyondMimic 框架验证了这一点——相同 RL 训练，换 retargeter 后成功率差异显著。
+
+</details>
 
 ---
 
 ## 🤖 工程价值
+
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：对研究者 / 对 sim-to-real / 对整个 stack 的三层意义，以及本仓库里已引用 GMR 的笔记</summary>
 
 1. **对研究者**：做人形 tracking / 遥操时**不再需要从零写 retargeting**，也不用从同行那里 copy 个别人自用的脚本。`pip install -e .` + 一行命令就能产出训练可用的参考动作。
 2. **对 sim-to-real**：GMR 内置了关节限位 / 自碰撞等 feasibility 约束，比"一把 IK 解完就用"的脚本更容易让下游 RL 收敛，也更不容易在真机上崩。
@@ -292,9 +396,14 @@ python scripts/vis_robot_motion.py \
 | `04_Loco-Manipulation_and_WBC/GentleHumanoid` | 全部训练 / 视频 → 机器人链路使用 GMR 做 retargeting |
 | `04_Loco-Manipulation_and_WBC/OmniXtreme` | 在"重定向工具"表中显式列 GMR |
 
+</details>
+
 ---
 
 ## 📁 源码对照
+
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：仓库目录树、三个入口脚本、.pkl 字段表、性能基准与支持的机器人 / 格式清单</summary>
 
 仓库目录（实地核对）：
 
@@ -349,9 +458,14 @@ Unitree G1 (29 DOF) · Unitree H1 (19 DOF) · Unitree H1-2 (27 DOF) · Booster T
 - **Xsens MVN**
 - **GVHMR**（单目视频）
 
+</details>
+
 ---
 
 ## 🎤 面试高频问题 & 参考回答
+
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：六问六答：为什么值得单独发、为什么 CPU-only、和 PHC 的区别、为什么用 mink、为什么非均匀缩放是关键</summary>
 
 **Q1：为什么 retargeting 这件事值得单独发一篇论文？它不就是一个 IK 脚本吗？**
 A：两点。一是**通用性**——过去每家工作都自己写，兼容一款机器人、一种输入格式，换个机器人就要重写；GMR 把 18+ 款人形 + 5 种格式做成一个库。二是**feasibility 约束的工程价值**——很多下游 RL 训练失败的根本原因是参考动作本身不可行（关节超限、自碰撞、脚穿地板），把这些约束做对，下游 RL 就好收敛、sim-to-real 更稳。
@@ -374,9 +488,14 @@ A：人类和机器人的四肢比例差异是**非均匀的**——手臂可能
 **Q5：GMR 支持手指 / SMPL-X 表情吗？**
 A：输入格式里 SMPL-X 原生有手指，但是否真的被重定向到机器人手上取决于机器人自由度——G1 / H1 等主流人形大多只到手腕，GMR 会截断到这些关节；支持灵巧手的平台（如 ByteDexter、Galaxea R1）可以通过扩展 `robot_cfgs/` 加入。
 
+</details>
+
 ---
 
 ## 💬 讨论记录
+
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：两条：kinematic retargeting 怎么影响 sim-to-real、接新人形需要哪些信息</summary>
 
 - **Q**（2026-04-19）：GMR 是 kinematic retargeting，为什么 OmniXtreme / GentleHumanoid 的 Q&A 里还说它"影响 sim-to-real"？
   A：**间接影响**。GMR 本身不做物理；但它产出的参考动作是 RL tracking 的 target。如果 retargeting 就不 feasible，RL 要么追不上要么追上了也无法在真机复现。**Sim-to-real 的起点是 feasible 的参考动作**。
@@ -384,11 +503,16 @@ A：输入格式里 SMPL-X 原生有手指，但是否真的被重定向到机�
 - **Q**：如果要给一个新的人形（比如 Fourier GR3）接入 GMR，需要哪些信息？
   A：URDF / MJCF 模型、关节限位表、人体骨骼到机器人关节的手动映射表（一次性工作）、可选的接触 / 自碰撞配置。按 `robot_cfgs/` 里现有的条目抄一份即可。
 
+</details>
+
 ---
 
 ## 📎 附录
 
-### A. BibTeX
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：BibTeX、与其他方向的关联、六条开放问题、GitHub 关键文件指引</summary>
+
+<h3 id="a-bibtex">A. BibTeX</h3>
 
 ```bibtex
 @article{joao2025gmr,
@@ -406,7 +530,7 @@ A：输入格式里 SMPL-X 原生有手指，但是否真的被重定向到机�
 }
 ```
 
-### B. 与其他方向的关联
+<h3 id="b-与其他方向的关联">B. 与其他方向的关联</h3>
 
 | 方向 | 关系 |
 |------|------|
@@ -416,7 +540,7 @@ A：输入格式里 SMPL-X 原生有手指，但是否真的被重定向到机�
 | PHC / ExBody2 | retargeting 思路的前辈，GMR 走的是"显式、通用、CPU"路线 |
 | GVHMR / PromptHMR | 视频 → SMPL-X 的上游，GVHMR 已作为 GMR 的一种输入格式 |
 
-### C. 开放问题
+<h3 id="c-开放问题">C. 开放问题</h3>
 
 1. ~~GMR 的 IK 用的是哪个 solver？~~ → 已确认：`mink` + DAQP（默认） / quadprog。
 2. ~~显式 IK 在接触丰富动作上是否稳定？~~ → 已确认：`TEST_MOTIONS.md` 列 5 类失败案例；论文层面以 RL tracking 阶段补救为主。
@@ -425,10 +549,13 @@ A：输入格式里 SMPL-X 原生有手指，但是否真的被重定向到机�
 5. **仍待确认**：非均匀局部缩放步骤的消融实验（单独去掉 step 3 后成功率下降多少）——HTML 版未给出逐步 ablation 数字，需查 PDF 附录。
 6. **仍待确认**：灵巧手扩展是否在论文中有专节讨论。
 
-### D. 关键文件指引（GitHub）
+<h3 id="d-关键文件指引github">D. 关键文件指引（GitHub）</h3>
 
 - 求解器与两阶段 IK：[`general_motion_retargeting/motion_retarget.py`](https://github.com/YanjieZe/GMR/blob/main/general_motion_retargeting/motion_retarget.py)
 - IK 配置 schema：[`DOC.md`](https://github.com/YanjieZe/GMR/blob/main/DOC.md)
 - 已知失败动作清单：[`TEST_MOTIONS.md`](https://github.com/YanjieZe/GMR/blob/main/TEST_MOTIONS.md)
 - 自研 PyTorch FK：[`general_motion_retargeting/kinematics_model.py`](https://github.com/YanjieZe/GMR/blob/main/general_motion_retargeting/kinematics_model.py)
 - 数据 IO 与 `.pkl` 字段：[`general_motion_retargeting/data_loader.py`](https://github.com/YanjieZe/GMR/blob/main/general_motion_retargeting/data_loader.py)
+
+</details>
+

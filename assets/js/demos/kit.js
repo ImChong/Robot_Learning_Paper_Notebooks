@@ -60,7 +60,8 @@
 
   /* Enough of a TeX subset for the fallback to stay readable: the demos only
      ever write single-level formulas. */
-  var TEX_FRAC = /\\frac\s*\{([^{}]*)\}\s*\{([^{}]*)\}/g;
+  var TEX_FRAC = /\\[tdc]?frac\s*\{([^{}]*)\}\s*\{([^{}]*)\}/g;
+  var TEX_FRAC_ANY = /\\[tdc]?frac/;
 
   var TEX_PLAIN = [
     [/_\s*\{([^{}]*)\}/g, '_$1'], [/\^\s*\{([^{}]*)\}/g, '^$1'],
@@ -76,8 +77,10 @@
     [/\\to(?![A-Za-z])/g, '→'], [/\\rightarrow(?![A-Za-z])/g, '→'], [/\\leftarrow(?![A-Za-z])/g, '←'],
     [/\\in(?![A-Za-z])/g, '∈'], [/\\sum(?![A-Za-z])/g, 'Σ'], [/\\infty(?![A-Za-z])/g, '∞'],
     [/\\mid(?![A-Za-z])/g, '|'], [/\\sim(?![A-Za-z])/g, '~'], [/\\pm(?![A-Za-z])/g, '±'],
-    /* ‖·‖ 与 KL 里的分隔符：没有这一条，\|a - b\|^2 会把原始 TeX 漏出来。 */
-    [/\\\|/g, '‖'],
+    /* ‖·‖ 与 KL 里的分隔符：没有这一条，\|a - b\|^2 会把原始 TeX 漏出来。
+       \lVert / \rVert 与 \lvert / \rvert 是同两个符号的「成对」写法，一起认掉。 */
+    [/\\\|/g, '‖'], [/\\[lr]Vert(?![A-Za-z])/g, '‖'], [/\\[lr]vert(?![A-Za-z])/g, '|'],
+    [/\\bar\s*\{?([A-Za-z])\}?/g, '$1\u0304'], [/\\ell(?![A-Za-z])/g, 'ℓ'],
     [/\\propto(?![A-Za-z])/g, '∝'],
     [/\\min(?![A-Za-z])/g, 'min'], [/\\max(?![A-Za-z])/g, 'max'], [/\\exp(?![A-Za-z])/g, 'exp'], [/\\log(?![A-Za-z])/g, 'log'],
     [/\\alpha/g, 'α'], [/\\beta/g, 'β'], [/\\gamma/g, 'γ'], [/\\delta/g, 'δ'],
@@ -99,7 +102,7 @@
     for (var sub = 0; sub < 3 && /[_^]\s*\{/.test(s); sub++) {
       s = s.replace(TEX_PLAIN[0][0], TEX_PLAIN[0][1]).replace(TEX_PLAIN[1][0], TEX_PLAIN[1][1]);
     }
-    for (var pass = 0; pass < 3 && s.indexOf('\\frac') !== -1; pass++) {
+    for (var pass = 0; pass < 3 && TEX_FRAC_ANY.test(s); pass++) {
       s = s.replace(TEX_FRAC, '($1)/($2)');
     }
     for (var i = 2; i < TEX_PLAIN.length; i++) s = s.replace(TEX_PLAIN[i][0], TEX_PLAIN[i][1]);
