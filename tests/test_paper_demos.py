@@ -144,6 +144,7 @@ def test_notes_declare_their_demos_in_reading_order():
                 "deepmimic-explainer",
                 "deepmimic-reward",
                 "deepmimic-rsi",
+                "deepmimic-curves",
                 "deepmimic-pd",
             ],
         ),
@@ -515,6 +516,37 @@ def test_awr_explainer_numbers_come_from_the_shared_helpers():
     note = AWR_NOTE.read_text(encoding="utf-8")
     assert "ESS ≈ 1.05" in note
     assert "## 🎬 六幕动画：AWR 全流程" in note
+
+
+def test_deepmimic_curves_demo_matches_the_note():
+    """示意曲线的锚点必须和第 4 步回报表、Q7 / Table 4 的消融数字是同一组。"""
+    js = (DEMO_JS_DIR / "deepmimic.js").read_text(encoding="utf-8")
+    assert "CURVE_RETURN_XS = [0, 500, 2000, 3500, 5000]" in js
+    assert "CURVE_RETURN_YS = [0.08, 0.2, 0.45, 0.66, 0.791]" in js
+    assert "CURVE_HEALTHY = 0.791" in js
+    assert "CURVE_ET_ONLY = 0.73" in js
+    assert "CURVE_RSI_ONLY = 0.379" in js
+    assert "CURVE_STRIKE_BOTH = 0.99" in js
+    assert "CURVE_STRIKE_IMIT = 0.19" in js
+    assert "CURVE_CLIP_STEPS = 53" in js
+    for scene in ("healthy", "norsi", "noet", "imbalance", "imitate", "taskonly"):
+        assert f"id: '{scene}'" in js, f"缺少病历 {scene}"
+
+    note = DEEPMIMIC_NOTE.read_text(encoding="utf-8")
+    assert 'data-demo="deepmimic-curves"' in note
+    assert "## 📈 训练曲线怎么读" in note
+    assert "| 归一化回报 | 0.08 | 0.20 | 0.45 | 0.66 | 0.791 |" in note
+    assert "| Backflip | **0.791** | 0.730 | 0.379 |" in note
+    assert "Strike" in note and "19%" in note and "99%" in note
+    for title in (
+        "病历-健康",
+        "病历-关掉rsi",
+        "病历-关掉et",
+        "病历-权重失衡",
+        "病历-只有模仿",
+        "病历-只有任务",
+    ):
+        assert f'id="{title}"' in note
 
 
 def test_deepmimic_reward_demo_matches_the_worked_example():
