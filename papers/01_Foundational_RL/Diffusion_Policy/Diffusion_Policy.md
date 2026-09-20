@@ -36,6 +36,12 @@ demos: ["diffusion_policy"]
 
 > Diffusion Policy 将机器人策略表示为条件去噪扩散过程，将动作生成从"单步回归"升级为"多步轨迹生成"，从而完美处理模仿学习中的多模态分布挑战。
 
+> 🎮 **本文内嵌 1 段动画 + 3 个可交互演示**（不用装任何东西）：
+> 1. [七幕动画：Diffusion Policy 全流程](#dp-explainer-anim) —— 约 86 秒串完「平均动作撞障 → 条件扩散 → action chunking → 视觉条件 + FiLM → DDIM 加速 → receding horizon → 为什么成了 IL 标准」
+> 2. [「平均动作」为什么会撞上障碍](#dp-multimodal-demo) —— 演示一半上绕一半下绕，MSE 给出的是两峰均值
+> 3. [去噪：从噪声里捞出整条 chunk](#dp-denoise-demo) —— 浏览器里真的在跑 DDIM，整条 16 步一起锁模式
+> 4. [Receding Horizon：预测 16，执行 8](#dp-rhc-demo) —— 拖 $T_a$，看反应延迟和推理开销怎么此消彼长
+
 ---
 
 ## 📌 英文缩写速查
@@ -49,28 +55,80 @@ demos: ["diffusion_policy"]
 
 ---
 
+## 🎬 七幕动画：Diffusion Policy 全流程 {#dp-explainer-anim}
+
+<div class="paper-demo" data-demo="dp-explainer"><p class="demo-fallback">（本节含动画演示，需要启用 JavaScript）</p></div>
+
+> 📖 **动画之后的正文默认全部折叠**：前半部分（「要解决什么问题」「是怎么做的」）按小节收起，后面的具体实例、工程价值、源码对照、面试问题与附录整块收起。想细读哪一块就点开对应的折叠条，内容一字未删；流程图、交互演示留在外面。目录里的标题依旧可以直接点，会自动展开所在折叠块，左侧目录顶部还有「展开全部文字」一键铺开。
+
+---
+
 ## ❓ Diffusion Policy 要解决什么问题？
+
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：多模态下 MSE 给出「平均动作」，GMM / VAE 撑不住高维，GAN / EBM 又不好训</summary>
 
 - **多模态挑战 (Multimodality)**：传统 BC（Behavior Cloning）使用 MLP 直接回归动作，在遇到人类演示中有多种解法时（例如从左绕开或从右绕开障碍），会因均方误差（MSE）损失而产生"平均动作"，导致机器人撞上障碍。
 - **高维连续空间建模**：传统方案如 GMM 或 VAE 在高维复杂动作序列上的表现力不足。
 - **训练稳定性**：相比于 GAN 或 EBM（能量模型），扩散模型的训练过程更加稳定且可扩展。
 
+</details>
+
 「平均动作会撞上障碍」这句话值得亲眼看一次。下面这个实验台里，人类演示一半从上绕、一半从下绕——MSE 回归给出的是两峰的**均值**，正好是障碍所在的位置；扩散策略采的是分布，每次落在某一侧：
 
-<div class="paper-demo" data-demo="dp-multimodal"><p class="demo-fallback">（本节含交互演示，需要启用 JavaScript）</p></div>
+<div class="paper-demo" data-demo="dp-multimodal" id="dp-multimodal-demo"><p class="demo-fallback">（本节含交互演示，需要启用 JavaScript）</p></div>
 
 ---
 
 ## 🔧 方法详解
 
-1. **Action Chunking**：不再预测单步动作，而是预测一个长度为 $H$ 的动作序列。
-2. **Conditional Denoising**：
-   - 输入：当前视觉观测 $O$（ResNet/ViT 提取）和包含高斯噪声的动作序列 $A_k$。
-   - 目标：通过网络 $f_\theta$ 预测噪声 $\epsilon$，逐步剔除噪声还原真实动作。
-3. **网络结构**：
-   - **CNN-based**：使用 1D 时序卷积，推理延迟低。
-   - **Transformer-based**：擅长处理长序列，能建模更复杂的交互。
-4. **推理优化**：通过 DDIM 采样，将训练时的数百步扩散压缩至推理时的 10-20 步。
+### Action Chunking：预测整条 horizon
+
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：不再预测单步，而是一次吐出长度 H 的动作序列</summary>
+
+不再预测单步动作，而是预测一个长度为 $H$ 的动作序列。默认 $H = 16$。
+
+整条 chunk 一起去噪，责任权重按**全部 16 步**计算：左绕和右绕不会在中间某一帧串味。chunking 不只是为了预测得远，也是为了让多模态的选择在时间上保持一致。
+
+</details>
+
+### 条件扩散：从噪声还原动作序列
+
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：学的是 p(A|O)，网络预测噪声 ε，逐步剔除噪声还原真实动作</summary>
+
+策略不再回归一个动作向量，而是把动作生成写成条件去噪扩散过程：
+
+- **输入**：当前视觉观测 $O$（ResNet/ViT 提取）和包含高斯噪声的动作序列 $A_k$。
+- **目标**：通过网络 $f_\theta$ 预测噪声 $\epsilon$，逐步剔除噪声还原真实动作 $A_0$。
+
+正向过程把干净轨迹加噪到高斯；反向过程从 $A_K$ 一步步还原。得分函数能收敛到分布的多个局部极大值，这就是它擅长多模态的原因。
+
+</details>
+
+### 视觉条件与 FiLM
+
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：编码器抽出观测特征，FiLM 调制去噪网络；CNN 与 Transformer 两种骨干</summary>
+
+去噪不是无条件的。视觉观测先经编码器，再用 **FiLM**（Feature-wise Linear Modulation）把特征焊进每一步去噪。官方 rollout 喂最近 $n _ {\text{obs\_steps}} = 2$ 帧，不是单张图。
+
+两种骨干：
+
+- **CNN-based**：使用 1D 时序卷积，推理延迟低。
+- **Transformer-based**：擅长处理长序列，能建模更复杂的交互。
+
+</details>
+
+### 网络结构与 DDIM 加速
+
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：训练上百步 DDPM，部署用 DDIM 压到 10–20 步</summary>
+
+通过 DDIM 采样，将训练时的数百步扩散压缩至推理时的 10-20 步。控制回路等不起完整的百步反向过程；10~20 步是实现里常用的落点。
+
+</details>
 
 ### 📊 条件扩散策略与 RHC 执行流程
 
@@ -88,7 +146,7 @@ flowchart TB
 
 下面这个演示真的在浏览器里跑 DDIM：拖动步数滑块，看长度 16 的动作 chunk 怎么从一团高斯噪声收敛成一条平滑轨迹。注意**整条 chunk 是一起锁定模式的**——这正是 action chunking 除了「预测得远」之外的另一半价值：
 
-<div class="paper-demo" data-demo="dp-denoise"><p class="demo-fallback">（本节含交互演示，需要启用 JavaScript）</p></div>
+<div class="paper-demo" data-demo="dp-denoise" id="dp-denoise-demo"><p class="demo-fallback">（本节含交互演示，需要启用 JavaScript）</p></div>
 
 ---
 
@@ -101,28 +159,42 @@ flowchart TB
     X --> O
 </div>
 
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：抓取方块时，观测 / 10 步去噪 / 预测 16 执行 8</summary>
+
 在一个"抓取方块"的任务中：
+
 - **观测**：双目摄像头画面 + 机械臂关节角。
 - **去噪**：模型从随机轨迹开始，经过 10 步迭代，逐渐形成一条平滑的抓取路径。
 - **执行**：预测未来 16 步，实际执行前 8 步，随后接收新观测再次预测。
 
+</details>
+
 「预测 16 步、执行前 8 步」这个配置背后是一个取舍。拖动 $T_a$，看反应延迟和推理开销怎么此消彼长：
 
-<div class="paper-demo" data-demo="dp-rhc"><p class="demo-fallback">（本节含交互演示，需要启用 JavaScript）</p></div>
+<div class="paper-demo" data-demo="dp-rhc" id="dp-rhc-demo"><p class="demo-fallback">（本节含交互演示，需要启用 JavaScript）</p></div>
 
 ---
 
 ## 🤖 工程价值
 
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：15 个任务平均提升 46.9%，成了端到端模仿学习的事实标准</summary>
+
 - **行业标准**：已成为现代端到端模仿学习（Imitation Learning）的事实标准。
 - **鲁棒性**：在 15 个复杂操作任务中，成功率平均提升 46.9%。
 - **通用性**：支持多种传感器输入（RGB、Depth、Proprioception），并能轻松扩展到双臂甚至全身控制。
+
+</details>
 
 ---
 
 ## 📁 官方源码对照
 
 Diffusion Policy **不在 MimicKit 内**；官方实现为 [columbia-ai-robotics/diffusion_policy](https://github.com/columbia-ai-robotics/diffusion_policy)。
+
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：UNet / Transformer / workspace 与论文概念的对照表</summary>
 
 | 论文概念 | 官方路径 | 说明 |
 |----------|----------|------|
@@ -131,7 +203,9 @@ Diffusion Policy **不在 MimicKit 内**；官方实现为 [columbia-ai-robotics
 | 训练工作区 | `diffusion_policy/workspace/` | 各 benchmark 的训练脚本与配置 |
 | 推理与 RHC | workspace 内 rollout 逻辑 | 预测 $H$ 步、执行前 $k$ 步、滑动重规划 |
 
-### 源码运行时序图
+</details>
+
+<h3 id="源码运行时序图">源码运行时序图</h3>
 
 官方仓库训练入口是 `train.py`（Hydra 按 `--config-name` 实例化对应 Workspace），评估入口是 `eval.py`。训练与推理（RHC 滚动执行）的时序如下：
 
@@ -171,16 +245,29 @@ sequenceDiagram
     end
 </div>
 
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：训练学的是预测噪声，推理用 DDIM + RHC 滚动执行</summary>
+
 - 训练阶段的核心就是 ⑤–⑥：不回归动作本身，而是学"从加噪 chunk 里预测噪声"；EMA（⑦）是复现成功率的关键工程细节。
 - 推理阶段对应上文 RHC 流程图：⑬–⑮ 用 DDIM 把训练时的百步扩散压到 ~10 步，⑯–⑰ 只执行 chunk 前段就滑动重规划，兼顾平滑与反应速度。
 
-### MimicKit 关系
+</details>
+
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：MimicKit 没有接入 Columbia Diffusion Policy</summary>
+
+<h3 id="mimickit-关系">MimicKit 关系</h3>
 
 > ❌ MimicKit 面向物理仿真 RL 与运动模仿（PPO/AMP/ASE 等），**未集成视觉-运动扩散策略**。MimicKit 仓库中有 `mimickit/learning/tinymdm/` 子目录，属于另一套运动扩散实验，**不是** Columbia Diffusion Policy 实现。
+
+</details>
 
 ---
 
 ## 🎤 面试高频问题 & 参考回答
+
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：多模态 / 预测噪声还是动作 / 和 ACT 的差别</summary>
 
 1. **为什么扩散模型擅长处理多模态？**
    - 因为它不直接预测均值，而是学习梯度的得分函数（Score function），能收敛到分布的多个局部极大值。
@@ -189,18 +276,25 @@ sequenceDiagram
 3. **Diffusion Policy vs ACT (Action Chunking Transformer)？**
    - ACT 侧重于 CVAE 框架，而 Diffusion Policy 利用扩散过程提供了更强的表达能力和训练稳定性。
 
+</details>
+
 ---
 
 ## 📎 附录
 
-### A. 与路线图的关系
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：与路线图的关系、参考来源</summary>
+
+<h3 id="a-与路线图的关系">A. 与路线图的关系</h3>
 
 | 论文 | 关系 |
 |------|------|
 | **Diffusion Policy (2023)** | 扩散 + 控制主线的**起点** |
 | BeyondMimic (2025) | 扩散控制在人形机器人全身动态运动上的突破性应用 |
 
-### B. 参考来源
+<h3 id="b-参考来源">B. 参考来源</h3>
 
 - [arXiv:2303.04137](https://arxiv.org/abs/2303.04137)
 - [Project Website](https://diffusion-policy.cs.columbia.edu/)
+
+</details>

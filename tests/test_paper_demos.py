@@ -174,7 +174,7 @@ def test_notes_declare_their_demos_in_reading_order():
         ),
         DIFFUSION_POLICY_NOTE: (
             "diffusion_policy",
-            ["dp-multimodal", "dp-denoise", "dp-rhc"],
+            ["dp-explainer", "dp-multimodal", "dp-denoise", "dp-rhc"],
         ),
         BEYONDMIMIC_NOTE: (
             "beyondmimic",
@@ -228,7 +228,7 @@ def test_demo_assets_are_theme_aware():
 
 EXPLAINER_BUNDLES = (
     "ppo", "awr", "deepmimic", "amp", "add", "ase", "calm", "pulse", "sonic", "gmr",
-    "omniretarget",
+    "omniretarget", "diffusion_policy",
 )
 
 # 幕数由论文决定，不是统一模板：PPO / DeepMimic / AMP / ADD 的核心概念正好各 5 个，
@@ -249,6 +249,9 @@ EXPLAINER_BUNDLES = (
 # Delaunay 四面体 / Laplacian 形变能 / 序贯 SOCP 硬约束 / 一条演示四路扩增 /
 # 极简 RL 与 Table II / 数据工厂到 G1 真机的闭环），「网格保形」是目标、「硬约束」
 # 是可行域，合成一幕会让能量和 SDF/脚粘地抢同一块画面；扩增与下游 RL 也是两件独立的事。
+# Diffusion Policy 也是七件（平均动作撞障 / 条件扩散 / action chunking / 视觉条件 + FiLM /
+# DDIM 加速 / receding horizon / 为什么成了 IL 标准），「扩散过程」和「一次吐多长」
+# 是两件独立的事，视觉条件与 DDIM 加速也是，压进五幕会让 chunking、FiLM 和 RHC 抢同一帧。
 EXPLAINER_SCENES = {
     "ppo": (PPO_NOTE, 5),
     "awr": (AWR_NOTE, 6),
@@ -262,6 +265,7 @@ EXPLAINER_SCENES = {
     "sonic": (SONIC_NOTE, 7),
     "gmr": (GMR_NOTE, 7),
     "omniretarget": (OMNI_NOTE, 7),
+    "diffusion_policy": (DIFFUSION_POLICY_NOTE, 7),
 }
 CN_NUMERALS = {4: "四", 5: "五", 6: "六", 7: "七"}
 
@@ -729,3 +733,28 @@ def test_omniretarget_explainer_numbers_come_from_the_config():
     assert "82.20%±9.74%" in note
     assert "2.78 h" in note and "4.6 h" in note and "8.38 h" in note
     assert "## 🎬 七幕动画：OmniRetarget 全流程" in note
+
+
+def test_diffusion_policy_explainer_numbers_come_from_the_config():
+    """七幕动画不许手写换算结果：丢掉的步数、DDIM 加速倍数都得现算。"""
+    js = (DEMO_JS_DIR / "diffusion_policy.js").read_text(encoding="utf-8")
+    note = DIFFUSION_POLICY_NOTE.read_text(encoding="utf-8")
+
+    assert "var H = 16;" in js
+    assert "var TA = 8;" in js
+    assert "var DISCARD = H - TA;" in js
+    assert 16 - 8 == 8
+
+    assert "var TRAIN_K = 100;" in js
+    assert "var INFER_K = 10;" in js
+    assert "var INFER_HI = 20;" in js
+    assert "var SPEEDUP = TRAIN_K / INFER_K;" in js
+    assert 100 / 10 == 10
+
+    assert "var N_OBS = 2;" in js
+    assert "var N_TASKS = 15;" in js
+    assert "var LIFT_PCT = 46.9;" in js
+
+    assert "46.9%" in note
+    assert "15 个" in note
+    assert "## 🎬 七幕动画：Diffusion Policy 全流程" in note
