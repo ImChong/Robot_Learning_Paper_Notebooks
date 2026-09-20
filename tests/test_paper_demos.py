@@ -136,7 +136,7 @@ def test_every_placeholder_has_a_builder_and_a_declared_bundle():
 
 def test_notes_declare_their_demos_in_reading_order():
     expected = {
-        PPO_NOTE: ("ppo", ["ppo-explainer", "ppo-gae", "ppo-clip", "ppo-epochs"]),
+        PPO_NOTE: ("ppo", ["ppo-explainer", "ppo-gae", "ppo-clip", "ppo-epochs", "ppo-curves"]),
         AWR_NOTE: ("awr", ["awr-explainer", "awr-weights", "awr-buffer", "awr-regression"]),
         DEEPMIMIC_NOTE: (
             "deepmimic",
@@ -428,6 +428,38 @@ def test_ppo_gae_demo_matches_the_numbers_in_the_note():
     # Same numbers appear in the hand-worked GAE example above the demo.
     assert "δ₂ = 1  + 0.99×40 - 50 = -9.4" in note
     assert "Â₀ = +0.5  + 0.9405×(-52.9) = -49.3" in note
+
+
+def test_ppo_curves_demo_matches_the_note():
+    """示意曲线的锚点必须和第 4 步回报表、附录 E 的 clip 比例是同一组数。"""
+    js = (DEMO_JS_DIR / "ppo.js").read_text(encoding="utf-8")
+    assert "CURVE_REWARD_XS = [0, 100, 300, 800, 2000, 3000]" in js
+    assert "CURVE_REWARD_YS = [30, 50, 200, 1000, 3000, 5000]" in js
+    assert "CURVE_CLIP_EARLY = 0.3" in js
+    assert "CURVE_CLIP_MID = 0.1" in js
+    assert "CURVE_KL_LO = 0.008" in js
+    assert "CURVE_KL_HI = 0.025" in js
+    for scene in ("healthy", "bigstep", "tinystep", "entropy", "critic", "hack"):
+        assert f"id: '{scene}'" in js, f"缺少病历 {scene}"
+
+    note = PPO_NOTE.read_text(encoding="utf-8")
+    assert 'data-demo="ppo-curves"' in note
+    assert "## 📈 训练曲线怎么读" in note
+    # 第 4 步那张表 / mermaid 学习曲线
+    assert "line [30, 50, 200, 1000, 3000, 5000]" in note
+    assert "| 平均回报 | 30 | 50 | 200 | 1000 | 3000 | 5000 |" in note
+    # 附录 E
+    assert "Clip 生效约 ~30%" in note
+    assert "Clip 生效约 ~10%" in note
+    for title in (
+        "病历-健康",
+        "病历-更新过大",
+        "病历-几乎没学",
+        "病历-熵塌缩",
+        "病历-critic失灵",
+        "病历-奖励在骗你",
+    ):
+        assert f'id="{title}"' in note
 
 
 def test_awr_weights_demo_matches_the_numbers_in_the_note():

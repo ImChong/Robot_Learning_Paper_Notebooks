@@ -13,6 +13,7 @@
  *   ppo-clip   — L^CLIP(r) curve: when does a sample still learn, when is it frozen
  *   ppo-gae    — GAE playground: how λ interpolates between one-step TD and Monte Carlo
  *   ppo-epochs — why clipping is what makes K-epoch reuse of one batch safe
+ *   ppo-curves — how to read the TensorBoard traces (reward / KL / clipfrac / entropy / EV)
  *   ppo-explainer — five-scene narrated animation of the whole algorithm
  */
 
@@ -29,10 +30,12 @@
     slider = K.slider,
     button = K.button,
     checkbox = K.checkbox,
+    buttonGroup = K.buttonGroup,
     statsRow = K.statsRow,
     verdictBox = K.verdictBox,
     legend = K.legend,
     note = K.note,
+    table = K.table,
     stage = K.stage,
     stageGrid = K.stageGrid,
     begin = K.begin,
@@ -1040,7 +1043,471 @@
     iterSlider.refresh();
   }
 
-  // ─── demo 4: the five-scene explainer animation ──────────────────────────
+  // ─── demo 4: reading the training curves ────────────────────────────────
+  /* Schematic TensorBoard traces for Humanoid-v4, anchored to the note's
+     「第 4 步：训练进展」table and appendix E clip fractions. These are toy
+     shapes that teach the *reading*, not dumps from a real run. */
+  var CURVE_ITERS = 3000;
+  var CURVE_REWARD_XS = [0, 100, 300, 800, 2000, 3000];
+  var CURVE_REWARD_YS = [30, 50, 200, 1000, 3000, 5000];
+  var CURVE_LEN_YS = [47, 60, 180, 600, 950, 1000];
+  var CURVE_CLIP_EARLY = 0.3;
+  var CURVE_CLIP_MID = 0.1;
+  var CURVE_KL_LO = 0.008;
+  var CURVE_KL_HI = 0.025;
+  var CURVE_SCENES = [
+    { id: 'healthy', label: '健康' },
+    { id: 'bigstep', label: '更新过大' },
+    { id: 'tinystep', label: '几乎没学' },
+    { id: 'entropy', label: '熵塌缩' },
+    { id: 'critic', label: 'Critic 失灵' },
+    { id: 'hack', label: '奖励在骗你' }
+  ];
+
+  function curveLerp(a, b, t) {
+    return a + (b - a) * t;
+  }
+  function curveSmooth(t) {
+    t = clamp(t, 0, 1);
+    return t * t * (3 - 2 * t);
+  }
+  function curvePiece(xs, ys, x) {
+    if (x <= xs[0]) return ys[0];
+    for (var ci = 1; ci < xs.length; ci++) {
+      if (x <= xs[ci]) {
+        var u = curveSmooth((x - xs[ci - 1]) / (xs[ci] - xs[ci - 1]));
+        return curveLerp(ys[ci - 1], ys[ci], u);
+      }
+    }
+    return ys[ys.length - 1];
+  }
+  function curveWave(iter, period, phase) {
+    return Math.sin((iter / period) * Math.PI * 2 + phase);
+  }
+  function curveGate(iter, start, width) {
+    return curveSmooth((iter - start) / width);
+  }
+
+  function curveAt(scene, iter) {
+    var t = iter / CURVE_ITERS;
+    var reward = curvePiece(CURVE_REWARD_XS, CURVE_REWARD_YS, iter);
+    var length = curvePiece(CURVE_REWARD_XS, CURVE_LEN_YS, iter);
+    var kl = 0.016 + 0.005 * curveWave(iter, 240, 0.3) * Math.exp(-iter / 2800);
+    if (iter < 80) kl = 0.022;
+    var clip =
+      curveLerp(CURVE_CLIP_EARLY, CURVE_CLIP_MID, curveSmooth(iter / 1000)) +
+      0.025 * curveWave(iter, 190, 1.2) * Math.exp(-iter / 2200);
+    var entropy = curveLerp(2.8, 1.05, curveSmooth(t));
+    var ev = curveLerp(-0.15, 0.86, curveSmooth((iter - 80) / 1800));
+    var vloss = curveLerp(180, 22, curveSmooth(iter / 1200)) + 8 * curveWave(iter, 400, 0.5);
+    var speed = 4.5 * (reward / 5000);
+
+    if (scene === 'bigstep') {
+      var crash = curveGate(iter, 260, 200);
+      reward = curveLerp(reward * 1.15, 28 + 10 * Math.abs(curveWave(iter, 70, 0.8)), crash);
+      length = curveLerp(length * 1.05, 42 + 6 * Math.abs(curveWave(iter, 55, 1.4)), crash);
+      kl = curveLerp(kl, 0.11 + 0.02 * curveWave(iter, 90, 0.2), crash);
+      clip = curveLerp(clip, 0.52 + 0.05 * curveWave(iter, 80, 0.6), crash);
+      entropy = curveLerp(entropy, 0.12, curveSmooth((iter - 200) / 400));
+      ev = curveLerp(ev, -0.45 + 0.08 * curveWave(iter, 120, 0.9), crash);
+      vloss = curveLerp(vloss, 420 + 40 * Math.abs(curveWave(iter, 100, 0.4)), crash);
+      speed = 4.5 * Math.max(0, reward / 5000);
+    } else if (scene === 'tinystep') {
+      reward = 30 + 42 * curveSmooth(t);
+      length = 47 + 10 * curveSmooth(t);
+      kl = 0.0016 + 0.0004 * curveWave(iter, 300, 0.1);
+      clip = 0.018 + 0.006 * Math.abs(curveWave(iter, 260, 0.7));
+      entropy = 2.8 - 0.12 * curveSmooth(t);
+      ev = -0.12 + 0.22 * curveSmooth(t);
+      vloss = 180 - 28 * curveSmooth(t);
+      speed = 0.08 + 0.12 * curveSmooth(t);
+    } else if (scene === 'entropy') {
+      var freeze = curveSmooth(iter / 380);
+      entropy = curveLerp(2.8, 0.08, freeze);
+      reward = curvePiece([0, 150, 420, 3000], [30, 180, 420, 460], iter);
+      length = curvePiece([0, 150, 420, 3000], [47, 170, 1000, 1000], iter);
+      kl = curveLerp(0.02, 0.002, freeze);
+      clip = curveLerp(0.28, 0.03, freeze);
+      ev = curveLerp(-0.1, 0.72, curveSmooth(iter / 700));
+      vloss = curveLerp(160, 18, curveSmooth(iter / 800));
+      speed = 0.35 + 0.15 * curveSmooth(t);
+    } else if (scene === 'critic') {
+      reward = 30 + 220 * curveSmooth(t) + 90 * curveWave(iter, 160, 0.4);
+      length = 47 + 140 * curveSmooth(t) + 40 * curveWave(iter, 140, 1.1);
+      kl = 0.012 + 0.028 * Math.abs(curveWave(iter, 110, 0.3));
+      clip = 0.14 + 0.22 * Math.abs(curveWave(iter, 95, 1.7));
+      entropy = 2.55 + 0.18 * curveWave(iter, 280, 0.5);
+      ev = -0.28 + 0.22 * curveWave(iter, 210, 1.3);
+      vloss = 210 + 45 * curveWave(iter, 150, 0.8);
+      speed = Math.max(0, 0.4 + 0.5 * curveSmooth(t) + 0.25 * curveWave(iter, 160, 0.4));
+    } else if (scene === 'hack') {
+      reward = curvePiece([0, 80, 250, 700, 3000], [40, 180, 900, 2200, 2800], iter);
+      length = curvePiece([0, 80, 250, 700, 3000], [50, 400, 1000, 1000, 1000], iter);
+      kl = 0.014 + 0.004 * curveWave(iter, 260, 0.5) * Math.exp(-iter / 2500);
+      clip = curveLerp(0.24, 0.11, curveSmooth(iter / 900));
+      entropy = curveLerp(2.7, 1.4, curveSmooth(t));
+      ev = curveLerp(0.05, 0.81, curveSmooth(iter / 1400));
+      vloss = curveLerp(90, 16, curveSmooth(iter / 1000));
+      speed = 0.12 + 0.08 * curveSmooth(t);
+    }
+
+    return {
+      reward: Math.max(0, reward),
+      length: clamp(length, 1, 1000),
+      kl: Math.max(0, kl),
+      clip: clamp(clip, 0, 0.95),
+      entropy: Math.max(0.01, entropy),
+      ev: clamp(ev, -1, 1),
+      vloss: Math.max(1, vloss),
+      speed: Math.max(0, speed)
+    };
+  }
+
+  function curveSeries(scene) {
+    var n = 80,
+      xs = [],
+      rows = [];
+    for (var i = 0; i <= n; i++) {
+      var it = (i / n) * CURVE_ITERS;
+      xs.push(it);
+      rows.push(curveAt(scene, it));
+    }
+    return { xs: xs, rows: rows };
+  }
+
+  function toneOf(kind) {
+    if (kind === 'ok') return 'good';
+    if (kind === 'warn') return 'warn';
+    return 'bad';
+  }
+
+  function judgeCurves(m, scene, iter) {
+    var j = {};
+    if (scene === 'hack') {
+      j.reward = { kind: 'warn', text: '回报在涨，先别信' };
+    } else if (m.reward >= 2500) {
+      j.reward = { kind: 'ok', text: '已经走起来了' };
+    } else if (m.reward >= 150) {
+      j.reward = { kind: 'ok', text: '在爬' };
+    } else if (iter > 800) {
+      j.reward = { kind: 'bad', text: '长期停在随机水平' };
+    } else {
+      j.reward = { kind: 'warn', text: '还早，先看斜率' };
+    }
+
+    if (m.length >= 900) j.length = { kind: scene === 'hack' || scene === 'entropy' ? 'warn' : 'ok', text: '活到超时' };
+    else if (m.length >= 150) j.length = { kind: 'ok', text: '越摔越少' };
+    else if (iter > 600) j.length = { kind: 'bad', text: '还在秒摔' };
+    else j.length = { kind: 'warn', text: '前期秒摔正常' };
+
+    if (m.kl > 0.05) j.kl = { kind: 'bad', text: '步子太大' };
+    else if (m.kl < 0.003) j.kl = { kind: iter > 200 ? 'bad' : 'warn', text: '几乎没更新' };
+    else j.kl = { kind: 'ok', text: '落在 ~0.01 带里' };
+
+    if (m.clip > 0.4) j.clip = { kind: 'bad', text: '护栏一直在挡' };
+    else if (m.clip < 0.03) j.clip = { kind: iter > 200 ? 'warn' : 'ok', text: '几乎没碰到裁剪' };
+    else j.clip = { kind: 'ok', text: iter < 400 ? '前期偏高正常' : '后期回落到 ~10%' };
+
+    if (m.entropy < 0.2) j.entropy = { kind: 'bad', text: '塌成确定性策略' };
+    else if (m.entropy > 2.5 && iter > 1200) j.entropy = { kind: 'warn', text: '探索一直不收' };
+    else j.entropy = { kind: 'ok', text: '慢慢降' };
+
+    if (m.ev < 0) j.ev = { kind: 'bad', text: '还不如猜均值' };
+    else if (m.ev < 0.4) j.ev = { kind: iter > 800 ? 'warn' : 'ok', text: 'Critic 还在学' };
+    else j.ev = { kind: 'ok', text: '拟合得上回报' };
+
+    if (m.vloss > 300) j.vloss = { kind: 'bad', text: '价值损失炸了' };
+    else if (m.vloss < 12 && m.reward < 200) j.vloss = { kind: 'warn', text: '过拟合旧回报？' };
+    else j.vloss = { kind: 'ok', text: '量级说得通' };
+
+    return j;
+  }
+
+  function curveVerdict(scene) {
+    if (scene === 'healthy') {
+      return {
+        tone: 'learning',
+        text:
+          '**健康**：回报走 S 形（先慢后陡再平台），KL 贴在 0.01 附近，clip 从约 **30%** 降到约 **10%**，熵慢慢降、解释方差爬向 0.8。六条线对得上，才是真的在学走路。'
+      };
+    }
+    if (scene === 'bigstep') {
+      return {
+        tone: 'frozen',
+        text:
+          '**更新过大**：前期回报涨得比健康曲线还快，但 KL 冲出 0.05、clip 卡在 50% 左右 —— 护栏已经挡不住了。接着熵塌缩、回报腰斩。典型原因：学习率太大、同一批数据 epoch 太多、或 $\\varepsilon$ 太松。回滚 checkpoint，把 lr / `actor_epochs` 降下来。'
+      };
+    }
+    if (scene === 'tinystep') {
+      return {
+        tone: 'frozen',
+        text:
+          '**几乎没学**：KL ≈ 0、clip ≈ 0，策略每轮几乎没动，回报在随机水平横盘。典型原因：学习率太小、clip $\\varepsilon$ 过紧、梯度被 clip 掉、或者观测没归一化导致信号被淹没。先确认 `obs` 标准化和 lr 量级。'
+      };
+    }
+    if (scene === 'entropy') {
+      return {
+        tone: 'frozen',
+        text:
+          '**熵塌缩**：熵几百轮就掉到 0，策略变成「只会站着」的确定性动作。回合长度能撑满 1000 步（不摔），但前进速度起不来，回报卡在站立局部最优。典型原因：熵系数太小 / 为 0、过早把 `std` 学死。把熵奖励加回来，或给动作标准差设下限。'
+      };
+    }
+    if (scene === 'critic') {
+      return {
+        tone: 'frozen',
+        text:
+          '**Critic 失灵**：解释方差长期为负（预测还不如猜均值），价值损失不降，优势 $\\hat{A}$ 就是噪声，Actor 跟着抖。回报曲线毛刺大、KL/clip 乱跳。典型原因：价值网络太弱、观测没归一化、Critic 学习率不合适、或 GAE $\\lambda$ 极端。先把 $V(s)$ 拟合好再谈策略。'
+      };
+    }
+    return {
+      tone: 'frozen',
+      text:
+        '**奖励在骗你**：TensorBoard 上回报、KL、clip、EV **看起来都健康**，机器人也活到了 1000 步 —— 但它是站着混「存活奖励」，前进速度几乎是 0。这种病**只看曲线看不出来**，必须打开仿真回放。改奖励（削弱 alive bonus、突出 $v_x$），或盯一条真正的任务指标。'
+    };
+  }
+
+  function buildCurvesDemo(host) {
+    var root = card(host, {
+      title: '训练曲线怎么读：点一种病历，对照 TensorBoard 上那几条线',
+      sub:
+        '示意曲线锚定「第 4 步：训练进展」的 Humanoid-v4 回报表（30 → 50 → 200 → 1000 → 3000 → 5000）和附录 E 的 clip 比例（前期约 30%，千轮约 10%）。' +
+        '这是为了讲机制画的示意图，数值不能和某一次真实训练直接比。'
+    });
+
+    var state = { scene: 'healthy', iter: 800 };
+    var cache = {};
+
+    var ctrls = controlsRow(root);
+    buttonGroup(ctrls, {
+      label: '病历',
+      value: 'healthy',
+      items: CURVE_SCENES.map(function (s) {
+        return { label: s.label, value: s.id };
+      }),
+      onPick: function (v) {
+        state.scene = v;
+        render();
+      }
+    });
+    var iterSlider = slider(ctrls, {
+      label: '看第几轮迭代',
+      min: 0,
+      max: CURVE_ITERS,
+      step: 20,
+      value: state.iter,
+      format: function (v) {
+        return String(Math.round(v));
+      },
+      onInput: function (v) {
+        state.iter = v;
+        render();
+      }
+    });
+
+    var setLegend = legend(root, [
+      { key: 'accent', text: '当前病历' },
+      { key: 'good', text: '健康对照（虚线）' },
+      { key: 'warn', text: '前进速度（奖励欺骗时，×1000 画在回报轴上）' },
+      { key: 'muted', text: 'KL 健康带 [0.008, 0.025]' }
+    ]);
+
+    var grid = stageGrid(root);
+    var rewardStage = stage(grid, 200);
+    var lengthStage = stage(grid, 200);
+    var trustStage = stage(grid, 200);
+    var criticStage = stage(grid, 200);
+
+    var stats = statsRow(root);
+    var sRew = stats.add('回合回报');
+    var sLen = stats.add('存活步数');
+    var sKl = stats.add('近似 KL');
+    var sClip = stats.add('clip 比例');
+    var sEnt = stats.add('策略熵');
+    var sEv = stats.add('解释方差');
+    var sV = stats.add('价值损失');
+    var sSp = stats.add('前进速度（任务）');
+    var verdict = verdictBox(root);
+    var tb = table(root);
+
+    note(root, [
+      '**怎么用**：先点「健康」看六条线的标准形态，再换病历 —— 回报突然腰斩时，下面的 KL / clip 一定先炸；回报横盘时，KL 一定先接近 0。**奖励在骗你**那张是特例：上面四张图都好看，只有前进速度这条任务指标揭穿它。',
+      '**健康带**：KL 图画了 $[0.008,\\ 0.025]$ 的色带，clip 图画了前期 30% → 后期 10% 会落入的区间。线跑出色带，比盯某一个 loss 数字更有用。',
+      '**这是简化模型**：曲线形状按笔记里的 Humanoid 阶段表手绘，用来练「几条线一起看」；真实 TensorBoard 噪声更大，而且 `policy_loss` 的正负号因实现而异，所以这里故意不画它。'
+    ]);
+
+    function ptsOf(series, key, scale) {
+      var s = scale || 1;
+      return series.xs.map(function (x, i) {
+        return [x, series.rows[i][key] * s];
+      });
+    }
+
+    function drawLinePlot(st, title, yDomain, series, specs, cursorY, yFmtDigits, band) {
+      var g = begin(st);
+      var P = g.P;
+      var p = plot(g, { l: 44, r: 12, t: 18, b: 30 }, [0, CURVE_ITERS], yDomain);
+      if (band) {
+        g.ctx.save();
+        g.ctx.globalAlpha = 0.12;
+        g.ctx.fillStyle = P.good;
+        var yTop = p.sy(band[1]);
+        g.ctx.fillRect(p.x0, yTop, p.x1 - p.x0, p.sy(band[0]) - yTop);
+        g.ctx.restore();
+      }
+      axes(g, p, {
+        xTicks: [0, 1000, 2000, 3000],
+        yTicks: niceTicks(yDomain[0], yDomain[1], 4),
+        xFmt: function (v) {
+          return String(v);
+        },
+        yFmt: function (v) {
+          return fmt(v, yFmtDigits);
+        },
+        xLabel: '迭代'
+      });
+      text(g.ctx, title, p.x0, p.y1 - 6, P.muted, 'left', '11px sans-serif');
+      if (yDomain[0] < 0 && yDomain[1] > 0) {
+        line(g.ctx, [[p.x0, p.sy(0)], [p.x1, p.sy(0)]], P.border, 1, [4, 4]);
+      }
+      specs.forEach(function (sp) {
+        var src = sp.series || series;
+        var raw = ptsOf(src, sp.key, sp.scale);
+        line(
+          g.ctx,
+          raw.map(function (q) {
+            return [p.sx(q[0]), p.sy(q[1])];
+          }),
+          P[sp.color] || sp.color,
+          sp.width || 2.2,
+          sp.dash
+        );
+      });
+      var x = state.iter;
+      line(g.ctx, [[p.sx(x), p.y0], [p.sx(x), p.y1]], P.text, 1, [3, 3]);
+      if (cursorY != null) {
+        dot(g.ctx, p.sx(x), p.sy(cursorY), 4.5, P.accent, P.surface2);
+      }
+      return P;
+    }
+
+    var render = registerRenderer(function () {
+      if (!cache[state.scene]) cache[state.scene] = curveSeries(state.scene);
+      if (!cache.healthy) cache.healthy = curveSeries('healthy');
+      var series = cache[state.scene];
+      var healthy = cache.healthy;
+      var m = curveAt(state.scene, state.iter);
+      var judge = judgeCurves(m, state.scene, state.iter);
+      var P0 = null;
+
+      P0 = drawLinePlot(
+        rewardStage,
+        '回合回报（越高越好，前提是奖励没写歪）',
+        [-80, 5600],
+        series,
+        [{ key: 'reward', color: 'accent', width: 2.4 }].concat(
+          state.scene === 'healthy'
+            ? []
+            : [{ key: 'reward', color: 'good', width: 1.5, dash: [5, 4], series: healthy }]
+        ).concat(
+          state.scene === 'hack'
+            ? [{ key: 'speed', color: 'warn', width: 2, dash: [4, 3], scale: 1000 }]
+            : []
+        ),
+        m.reward,
+        0
+      );
+      drawLinePlot(
+        lengthStage,
+        '存活步数（Humanoid 上通常越长越好，直到 1000）',
+        [0, 1100],
+        series,
+        [{ key: 'length', color: 'accent', width: 2.4 }].concat(
+          state.scene === 'healthy' ? [] : [{ key: 'length', color: 'good', width: 1.5, dash: [5, 4], series: healthy }]
+        ),
+        m.length,
+        0
+      );
+      drawLinePlot(
+        trustStage,
+        '近似 KL（看区间，不是越高越好）',
+        [0, 0.14],
+        series,
+        [{ key: 'kl', color: 'accent', width: 2.4 }],
+        m.kl,
+        3,
+        [CURVE_KL_LO, CURVE_KL_HI]
+      );
+      drawLinePlot(
+        criticStage,
+        'clip 比例（蓝）与解释方差（绿）—— 都在 0～1 附近读',
+        [-0.5, 1.05],
+        series,
+        [
+          { key: 'clip', color: 'accent', width: 2.3 },
+          { key: 'ev', color: 'good', width: 2.1 }
+        ],
+        m.ev,
+        2
+      );
+
+      sRew.set(fmt(m.reward, 0), toneOf(judge.reward.kind));
+      sLen.set(fmt(m.length, 0), toneOf(judge.length.kind));
+      sKl.set(fmt(m.kl, 3), toneOf(judge.kl.kind));
+      sClip.set(Math.round(m.clip * 100) + '%', toneOf(judge.clip.kind));
+      sEnt.set(fmt(m.entropy, 2), toneOf(judge.entropy.kind));
+      sEv.set(fmt(m.ev, 2), toneOf(judge.ev.kind));
+      sV.set(fmt(m.vloss, 0), toneOf(judge.vloss.kind));
+      sSp.set(fmt(m.speed, 2), state.scene === 'hack' || state.scene === 'entropy' ? 'warn' : 'good');
+
+      var v = curveVerdict(state.scene);
+      verdict.set(v.text, v.tone);
+
+      tb.clear();
+      tb.row(
+        [
+          { text: '指标' },
+          { text: '当前值' },
+          { text: '好方向' },
+          { text: '这一刻' }
+        ],
+        true
+      );
+      var rows = [
+        ['回合回报', fmt(m.reward, 0), '越高越好*', judge.reward],
+        ['存活步数', fmt(m.length, 0), '本任务：越长越好', judge.length],
+        ['近似 KL', fmt(m.kl, 3), '看区间 ~0.01', judge.kl],
+        ['clip 比例', Math.round(m.clip * 100) + '%', '看区间 10%–30%', judge.clip],
+        ['策略熵', fmt(m.entropy, 2), '慢慢变低，别到 0', judge.entropy],
+        ['解释方差', fmt(m.ev, 2), '越接近 1 越好', judge.ev],
+        ['价值损失', fmt(m.vloss, 0), '总体走低，允许反弹', judge.vloss]
+      ];
+      rows.forEach(function (r) {
+        tb.row([
+          { text: r[0] },
+          { text: r[1], cls: 'is-' + toneOf(r[3].kind) },
+          { text: r[2] },
+          { text: r[3].text, cls: 'is-' + toneOf(r[3].kind) }
+        ]);
+      });
+
+      if (P0) setLegend(P0);
+      rewardStage.canvas.setAttribute(
+        'aria-label',
+        '回合回报曲线，当前迭代 ' + Math.round(state.iter) + '，回报 ' + fmt(m.reward, 0)
+      );
+      lengthStage.canvas.setAttribute('aria-label', '存活步数曲线，当前 ' + fmt(m.length, 0) + ' 步');
+      trustStage.canvas.setAttribute('aria-label', '近似 KL 曲线，当前 ' + fmt(m.kl, 3));
+      criticStage.canvas.setAttribute(
+        'aria-label',
+        'clip 比例 ' + Math.round(m.clip * 100) + '%，解释方差 ' + fmt(m.ev, 2) + '，熵 ' + fmt(m.entropy, 2)
+      );
+    });
+
+    render();
+    iterSlider.refresh();
+  }
+
+  // ─── demo 5: the five-scene explainer animation ──────────────────────────
   /* A narrated storyboard of the whole algorithm — step size → probability
      ratio → GAE → clipping → the four-step loop. Every number on screen is one
      the note derives elsewhere (the 5-step GAE walk-through, cases A and B),
@@ -1595,6 +2062,7 @@
     'ppo-clip': buildClipDemo,
     'ppo-gae': buildGaeDemo,
     'ppo-epochs': buildEpochsDemo,
+    'ppo-curves': buildCurvesDemo,
     'ppo-explainer': buildExplainerDemo
   });
 })();

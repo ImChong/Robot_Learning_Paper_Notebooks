@@ -305,6 +305,7 @@
 
 .demo-card table.demo-table td.is-good { color: var(--demo-good); }
 .demo-card table.demo-table td.is-bad { color: var(--demo-bad); }
+.demo-card table.demo-table td.is-warn { color: var(--demo-warn); }
 
 .demo-stepper {
   display: inline-flex;
