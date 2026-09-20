@@ -810,10 +810,18 @@
 
   <script>
     // KaTeX auto-render with HTML entity fix (math inside Mermaid is rendered by Mermaid itself).
-    window.initKaTeX = function initKaTeX() {
-      if (window.__katexInitialized) return true;
-      if (typeof renderMathInElement === 'undefined') return false;
+    var KATEX_DELIMITERS = [
+      {left: "$$", right: "$$", display: true},
+      {left: "\\[", right: "\\]", display: true},
+      {left: "$", right: "$", display: false},
+      {left: "\\(", right: "\\)", display: false}
+    ];
+    var KATEX_IGNORED_TAGS = ['script', 'style', 'pre', 'code', 'textarea', 'annotation'];
+    var KATEX_IGNORED_CLASSES = ['mermaid', 'mermaid-container'];
+    var KATEX_ENTITY_REGEX = /(\$\$[\s\S]*?\$\$|\\\[[\s\S]*?\\\]|\$[\s\S]*?\$|\\\([\s\S]*?\\\))/g;
 
+    function fixMathEntitiesIn(container) {
+      if (!container) return;
       // Fix HTML entities inside math delimiters before KaTeX scans the DOM.
       //
       // SECURITY: the previous version did `el.innerHTML = ...` after
@@ -824,17 +832,8 @@
       // Walk text nodes only and mutate ``nodeValue`` in place. ``nodeValue``
       // is plain string data — assigning to it never re-parses HTML, so even
       // if the unescape introduces ``<`` characters they remain literal text.
-      var mathRegex = /(\$\$[\s\S]*?\$\$|\\\[[\s\S]*?\\\]|\$[\s\S]*?\$|\\\([\s\S]*?\\\))/g;
-
-      // ⚡ Bolt Optimization: Restrict KaTeX DOM parsing exclusively to the main content area
-      // (like #paper-body) rather than the entire document.body. This entirely skips thousands
-      // of irrelevant nodes in the TOC sidebar, header, and footer, preventing main thread blocking.
-      var mathContainer = document.getElementById('paper-body') || document.body;
-
-      // ⚡ Bolt Optimization: Include SHOW_ELEMENT to proactively prune irrelevant subtrees
-      // (like code blocks) by returning FILTER_REJECT, avoiding deep DOM traversal.
       var walker = document.createTreeWalker(
-        mathContainer, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT, {
+        container, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT, {
           acceptNode: function(node) {
             if (node.nodeType === 1) { // Element node
               var tag = node.tagName;
@@ -855,25 +854,39 @@
         var v = textNode.nodeValue;
         if (!v || (v.indexOf('$') === -1 && v.indexOf('\\(') === -1 && v.indexOf('\\[') === -1)) continue;
         if (v.indexOf('&gt;') === -1 && v.indexOf('&lt;') === -1 && v.indexOf('&amp;') === -1) continue;
-        var fixed = v.replace(mathRegex, function (match) {
+        var fixed = v.replace(KATEX_ENTITY_REGEX, function (match) {
           return match.replace(/&gt;/g, '>').replace(/&lt;/g, '<').replace(/&amp;/g, '&');
         });
         if (fixed !== v) textNode.nodeValue = fixed;
       }
+    }
 
-      renderMathInElement(mathContainer, {
-        delimiters: [
-          {left: "$$", right: "$$", display: true},
-          {left: "\\[", right: "\\]", display: true},
-          {left: "$", right: "$", display: false},
-          {left: "\\(", right: "\\)", display: false}
-        ],
-        ignoredTags: ['script', 'style', 'pre', 'code', 'textarea', 'annotation'],
-        ignoredClasses: ['mermaid', 'mermaid-container'],
+    /* Render $…$ / $$…$$ in a subtree. Safe to call on #toc-nav or .demo-table
+       after paper.js / demo bundles inject their markup. */
+    window.renderKaTeXIn = function renderKaTeXIn(container) {
+      if (!container || typeof renderMathInElement === 'undefined') return false;
+      fixMathEntitiesIn(container);
+      renderMathInElement(container, {
+        delimiters: KATEX_DELIMITERS,
+        ignoredTags: KATEX_IGNORED_TAGS,
+        ignoredClasses: KATEX_IGNORED_CLASSES,
         throwOnError: false,
         strict: false
       });
+      return true;
+    };
+
+    window.initKaTeX = function initKaTeX() {
+      if (window.__katexInitialized) return true;
+      if (typeof renderMathInElement === 'undefined') return false;
+
+      // ⚡ Bolt Optimization: Restrict KaTeX DOM parsing exclusively to the main content area
+      // (like #paper-body) rather than the entire document.body. This entirely skips thousands
+      // of irrelevant nodes in the TOC sidebar, header, and footer, preventing main thread blocking.
+      var mathContainer = document.getElementById('paper-body') || document.body;
+      window.renderKaTeXIn(mathContainer);
       window.__katexInitialized = true;
+      document.dispatchEvent(new CustomEvent('katex-ready'));
       return true;
     };
 
