@@ -327,6 +327,19 @@ def test_demo_strings_render_backticks_as_inline_code():
     assert "code.demo-code" in css, "demo-code 需要在 paper-demos.css 里定义"
 
 
+def test_demo_table_cells_support_latex():
+    """表格单元格里的 `$…$` 应走 el()/table().row() → rich() → KaTeX。"""
+    kit = DEMO_KIT.read_text(encoding="utf-8")
+    assert "function needsRichMarkup(str)" in kit
+    assert "needsRichMarkup(c.text)" in kit
+    assert "needsRichMarkup(String(c))" in kit
+    assert "data-tex" in kit
+    assert "rerenderDemoTex" in kit
+
+    css = DEMO_CSS.read_text(encoding="utf-8")
+    assert "table.demo-table .demo-tex .katex" in css
+
+
 def _ase_channels(js: str) -> list[tuple[float, float, float]]:
     """The four hand-written behaviour channels the ASE latent demo decodes into."""
     block = js[js.index("var CHANNELS = [") : js.index("function decode(")]

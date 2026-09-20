@@ -187,7 +187,7 @@
       });
       tb.row(head, true);
       var tr = el('tr');
-      tr.appendChild(el('th', null, 'cos(z, z_技能)'));
+      tr.appendChild(el('th', null, '$\\cos(z, z_{\\text{技能}})$'));
       SKILLS.forEach(function () {
         var td = el('td', null, '—');
         cosCells.push(td);

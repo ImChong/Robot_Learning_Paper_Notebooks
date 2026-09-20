@@ -161,9 +161,9 @@
         });
         tb.node.appendChild(tr);
       }
-      valueRow('原始 Δo', rawCells);
-      valueRow('归一化 Δô', normCells);
-      valueRow('占 ‖Δô‖² 的比例', shareCells);
+      valueRow('原始 $\\Delta o$', rawCells);
+      valueRow('归一化 $\\Delta \\hat o$', normCells);
+      valueRow('占 $\\lVert \\Delta \\hat o \\rVert^2$ 的比例', shareCells);
     })();
 
     var setLegend = legend(root, [

@@ -307,6 +307,10 @@
 .demo-card table.demo-table td.is-bad { color: var(--demo-bad); }
 .demo-card table.demo-table td.is-warn { color: var(--demo-warn); }
 
+.demo-card table.demo-table .demo-tex .katex {
+  font-size: 0.95em;
+}
+
 .demo-stepper {
   display: inline-flex;
   align-items: center;
