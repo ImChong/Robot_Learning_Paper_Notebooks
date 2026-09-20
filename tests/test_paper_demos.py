@@ -150,7 +150,7 @@ def test_notes_declare_their_demos_in_reading_order():
         ),
         AMP_NOTE: (
             "amp",
-            ["amp-explainer", "amp-disc", "amp-reward", "amp-style"],
+            ["amp-explainer", "amp-disc", "amp-reward", "amp-style", "amp-curves"],
         ),
         ADD_NOTE: (
             "add",
@@ -578,6 +578,37 @@ def test_amp_disc_demo_matches_the_numbers_in_the_note():
     # 风格奖励用的是论文实现的 LSGAN 形式
     assert "r^S(s_t, s _ {t+1}) = \\max\\left[0, \\; 1 - 0.25(D(s_t, s _ {t+1}) - 1)^2\\right]" in note
     assert "max(0, 1 - 0.25 * (d - 1) * (d - 1))" in js
+
+
+def test_amp_curves_demo_matches_the_note():
+    """示意曲线的锚点必须和第 4 步阶段表、LSGAN 风格奖励是同一组数。"""
+    js = (DEMO_JS_DIR / "amp.js").read_text(encoding="utf-8")
+    assert "CURVE_XS = [0, 10, 50, 200]" in js
+    assert "CURVE_D_AGENT = [-1.0, -0.55, -0.15, 0.0]" in js
+    assert "CURVE_D_DEMO = [1.0, 0.92, 0.68, 0.35]" in js
+    assert "CURVE_TASK = [0.12, 0.32, 0.62, 0.88]" in js
+    assert "CURVE_AGENT_ACC = [0.99, 0.9, 0.72, 0.55]" in js
+    assert "CURVE_WS = 0.5" in js
+    assert "CURVE_WG = 0.5" in js
+    assert "var rS = styleReward(dAgent);" in js
+    for scene in ("healthy", "discstrong", "discweak", "collapse", "taskwin", "styleonly"):
+        assert f"id: '{scene}'" in js, f"缺少病历 {scene}"
+
+    note = AMP_NOTE.read_text(encoding="utf-8")
+    assert 'data-demo="amp-curves"' in note
+    assert "## 📈 训练曲线怎么读" in note
+    assert "| $D$(假) | −1.0 | −0.55 | −0.15 | 0.00 |" in note
+    assert "| $r^S$ | 0.00 | 0.40 | 0.67 | 0.75 |" in note
+    assert "line [0.00, 0.40, 0.67, 0.75]" in note
+    for title in (
+        "病历-健康",
+        "病历-判别器过强",
+        "病历-判别器过弱",
+        "病历-模式崩塌",
+        "病历-任务压垮风格",
+        "病历-只有风格",
+    ):
+        assert f'id="{title}"' in note
 
 
 def test_sonic_explainer_numbers_come_from_the_config():

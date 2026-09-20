@@ -11,6 +11,7 @@
  *   amp-reward — 判别器打分怎么变成风格奖励：LSGAN 形式 vs log 形式
  *   amp-disc   — 判别器 loss 实验台（正文那 4 个样本的数值例子）
  *   amp-style  — 风格 × 任务：同一个任务奖励，换数据集就换风格
+ *   amp-curves — 训练曲线怎么读：风格/任务奖励、D 的 logit、准确率、梯度惩罚
  *   amp-explainer — 五幕讲解动画：逐帧 vs 分布 → 判别器 loss → LSGAN 风格奖励
  *                   → 换数据集就换风格 → 训练闭环
  */
@@ -26,6 +27,7 @@
     controlsRow = K.controlsRow,
     slider = K.slider,
     button = K.button,
+    buttonGroup = K.buttonGroup,
     checkbox = K.checkbox,
     statsRow = K.statsRow,
     verdictBox = K.verdictBox,
@@ -980,7 +982,491 @@
     recompute();
   }
 
-  // ─── demo 4: the five-scene explainer animation ──────────────────────────
+  // ─── demo 4: reading the training curves ────────────────────────────────
+  /* Schematic TensorBoard traces for AMP Target Heading, anchored to the
+     note's 「第 4 步：训练进展」table. r^S is computed from D(假) with the
+     same styleReward() as the reward demo. These are toy shapes that teach
+     the *reading*, not dumps from a real run. */
+  var CURVE_ITERS = 200;
+  var CURVE_XS = [0, 10, 50, 200];
+  var CURVE_D_AGENT = [-1.0, -0.55, -0.15, 0.0];
+  var CURVE_D_DEMO = [1.0, 0.92, 0.68, 0.35];
+  var CURVE_TASK = [0.12, 0.32, 0.62, 0.88];
+  var CURVE_AGENT_ACC = [0.99, 0.9, 0.72, 0.55];
+  var CURVE_DEMO_ACC = [0.99, 0.94, 0.82, 0.7];
+  var CURVE_COVER = [0.18, 0.35, 0.72, 0.94];
+  var CURVE_GP_LO = 0.6;
+  var CURVE_GP_HI = 1.6;
+  var CURVE_WS = 0.5;
+  var CURVE_WG = 0.5;
+  var CURVE_SCENES = [
+    { id: 'healthy', label: '健康' },
+    { id: 'discstrong', label: '判别器过强' },
+    { id: 'discweak', label: '判别器过弱' },
+    { id: 'collapse', label: '模式崩塌' },
+    { id: 'taskwin', label: '任务压垮风格' },
+    { id: 'styleonly', label: '只有风格' }
+  ];
+
+  function curveLerp(a, b, t) {
+    return a + (b - a) * t;
+  }
+  function curveSmooth(t) {
+    t = clamp(t, 0, 1);
+    return t * t * (3 - 2 * t);
+  }
+  function curvePiece(xs, ys, x) {
+    if (x <= xs[0]) return ys[0];
+    for (var ci = 1; ci < xs.length; ci++) {
+      if (x <= xs[ci]) {
+        var u = curveSmooth((x - xs[ci - 1]) / (xs[ci] - xs[ci - 1]));
+        return curveLerp(ys[ci - 1], ys[ci], u);
+      }
+    }
+    return ys[ys.length - 1];
+  }
+  function curveWave(iter, period, phase) {
+    return Math.sin((iter / period) * Math.PI * 2 + phase);
+  }
+  function curveGate(iter, start, width) {
+    return curveSmooth((iter - start) / width);
+  }
+
+  function curveAt(scene, iter) {
+    var t = iter / CURVE_ITERS;
+    var dAgent = curvePiece(CURVE_XS, CURVE_D_AGENT, iter);
+    var dDemo = curvePiece(CURVE_XS, CURVE_D_DEMO, iter);
+    var rG = curvePiece(CURVE_XS, CURVE_TASK, iter);
+    var agentAcc = curvePiece(CURVE_XS, CURVE_AGENT_ACC, iter);
+    var demoAcc = curvePiece(CURVE_XS, CURVE_DEMO_ACC, iter);
+    var gp = 1.05 + 0.12 * curveWave(iter, 28, 0.4);
+    var cover = curvePiece(CURVE_XS, CURVE_COVER, iter);
+
+    if (scene === 'discstrong') {
+      dAgent = -1.02 + 0.04 * curveWave(iter, 18, 0.2);
+      dDemo = 0.98 + 0.02 * curveWave(iter, 22, 1.1);
+      agentAcc = 0.985 + 0.008 * curveWave(iter, 20, 0.5);
+      demoAcc = 0.99 + 0.006 * curveWave(iter, 24, 0.8);
+      rG = curvePiece([0, 10, 50, 200], [0.12, 0.2, 0.3, 0.36], iter);
+      gp = 5.4 + 0.7 * Math.abs(curveWave(iter, 16, 0.3));
+      cover = curvePiece([0, 10, 50, 200], [0.18, 0.22, 0.26, 0.3], iter);
+    } else if (scene === 'discweak') {
+      var melt = curveGate(iter, 4, 18);
+      dAgent = curveLerp(dAgent, 0.02 * curveWave(iter, 14, 0.4), melt);
+      dDemo = curveLerp(dDemo, -0.02 * curveWave(iter, 16, 1.2), melt);
+      agentAcc = curveLerp(agentAcc, 0.5 + 0.03 * curveWave(iter, 12, 0.2), melt);
+      demoAcc = curveLerp(demoAcc, 0.5 + 0.03 * curveWave(iter, 13, 0.9), melt);
+      rG = curvePiece(CURVE_XS, [0.12, 0.34, 0.66, 0.86], iter);
+      gp = 0.08 + 0.04 * Math.abs(curveWave(iter, 20, 0.6));
+      cover = curvePiece(CURVE_XS, [0.18, 0.4, 0.7, 0.88], iter);
+    } else if (scene === 'collapse') {
+      rG = curvePiece([0, 10, 50, 200], [0.12, 0.3, 0.46, 0.5], iter);
+      cover = curvePiece([0, 10, 50, 200], [0.18, 0.32, 0.38, 0.4], iter);
+    } else if (scene === 'taskwin') {
+      dAgent = curvePiece([0, 10, 50, 200], [-1.0, -0.82, -0.72, -0.68], iter);
+      dDemo = curvePiece([0, 10, 50, 200], [1.0, 0.96, 0.94, 0.93], iter);
+      agentAcc = curvePiece([0, 10, 50, 200], [0.99, 0.94, 0.9, 0.88], iter);
+      demoAcc = curvePiece([0, 10, 50, 200], [0.99, 0.97, 0.96, 0.95], iter);
+      rG = curvePiece([0, 10, 50, 200], [0.14, 0.48, 0.78, 0.92], iter);
+      gp = 1.15 + 0.1 * curveWave(iter, 26, 0.2);
+      cover = curvePiece([0, 10, 50, 200], [0.2, 0.55, 0.85, 0.95], iter);
+    } else if (scene === 'styleonly') {
+      rG = curvePiece([0, 10, 50, 200], [0.12, 0.16, 0.19, 0.2], iter);
+      cover = curvePiece([0, 10, 50, 200], [0.2, 0.45, 0.54, 0.58], iter);
+    }
+
+    var rS = styleReward(dAgent);
+    return {
+      dAgent: clamp(dAgent, -1.4, 1.4),
+      dDemo: clamp(dDemo, -1.4, 1.4),
+      rS: clamp(rS, 0, 1),
+      rG: clamp(rG, 0, 1),
+      total: clamp(CURVE_WS * rS + CURVE_WG * rG, 0, 1),
+      agentAcc: clamp(agentAcc, 0, 1),
+      demoAcc: clamp(demoAcc, 0, 1),
+      gp: Math.max(0, gp),
+      cover: clamp(cover, 0, 1)
+    };
+  }
+
+  function curveSeries(scene) {
+    var n = 80,
+      xs = [],
+      rows = [];
+    for (var i = 0; i <= n; i++) {
+      var it = (i / n) * CURVE_ITERS;
+      xs.push(it);
+      rows.push(curveAt(scene, it));
+    }
+    return { xs: xs, rows: rows };
+  }
+
+  function toneOf(kind) {
+    if (kind === 'ok') return 'good';
+    if (kind === 'warn') return 'warn';
+    return 'bad';
+  }
+
+  function judgeCurves(m, scene, iter) {
+    var j = {};
+    if (scene === 'discweak') {
+      j.rS = { kind: 'warn', text: '假饱和：D ≈ 0 就会给 0.75' };
+    } else if (scene === 'taskwin') {
+      j.rS = { kind: 'bad', text: '风格分贴地' };
+    } else if (m.rS >= 0.7) {
+      j.rS = { kind: scene === 'collapse' || scene === 'styleonly' ? 'warn' : 'ok', text: '接近均衡 0.75' };
+    } else if (m.rS >= 0.3) {
+      j.rS = { kind: 'ok', text: '在爬' };
+    } else if (iter > 40) {
+      j.rS = { kind: 'bad', text: '奖励消失（D ≤ −1）' };
+    } else {
+      j.rS = { kind: 'warn', text: '前期贴地正常' };
+    }
+
+    if (scene === 'styleonly') {
+      j.rG = { kind: 'bad', text: '任务分几乎没动' };
+    } else if (scene === 'taskwin') {
+      j.rG = { kind: 'warn', text: '任务成了，先别信风格' };
+    } else if (scene === 'collapse' && m.rG >= 0.45) {
+      j.rG = { kind: 'warn', text: '只会走路速度' };
+    } else if (m.rG >= 0.7) {
+      j.rG = { kind: 'ok', text: '跟得上 v*' };
+    } else if (m.rG >= 0.3) {
+      j.rG = { kind: 'ok', text: '在爬' };
+    } else if (iter > 50) {
+      j.rG = { kind: 'bad', text: '长期停在随机水平' };
+    } else {
+      j.rG = { kind: 'warn', text: '还早，先看斜率' };
+    }
+
+    if (scene === 'discstrong' || m.dAgent < -0.85) {
+      j.dAgent = { kind: iter > 20 ? 'bad' : 'ok', text: iter > 20 ? '钉在 −1' : '前期 ≈ −1 正常' };
+    } else if (scene === 'discweak') {
+      j.dAgent = { kind: 'bad', text: '真假都塌到 0' };
+    } else if (m.dAgent > -0.25) {
+      j.dAgent = { kind: 'ok', text: '在往 0 靠' };
+    } else {
+      j.dAgent = { kind: 'ok', text: '策略在追判别器' };
+    }
+
+    if (scene === 'discstrong') {
+      j.acc = { kind: iter > 20 ? 'bad' : 'ok', text: '准确率钉在 99%' };
+    } else if (scene === 'discweak') {
+      j.acc = { kind: 'bad', text: '两边都 ≈ 50%' };
+    } else if (scene === 'taskwin') {
+      j.acc = { kind: 'warn', text: '判别器一直轻易分清' };
+    } else if (m.agentAcc <= 0.65 && m.demoAcc <= 0.8) {
+      j.acc = { kind: 'ok', text: '对抗均衡附近' };
+    } else if (iter > 80) {
+      j.acc = { kind: 'warn', text: '策略还没追上' };
+    } else {
+      j.acc = { kind: 'ok', text: '前期高正常' };
+    }
+
+    if (m.gp > 3) j.gp = { kind: 'bad', text: '判别器太尖，GP 系数太小' };
+    else if (m.gp < 0.25) j.gp = { kind: 'bad', text: '判别器被抹平' };
+    else j.gp = { kind: 'ok', text: '落在 ~1 附近' };
+
+    if (scene === 'collapse') j.cover = { kind: 'bad', text: '速度覆盖卡住' };
+    else if (scene === 'styleonly') j.cover = { kind: 'warn', text: '只停在数据集的峰' };
+    else if (m.cover >= 0.7) j.cover = { kind: 'ok', text: '1–5 m/s 铺得开' };
+    else if (iter > 80) j.cover = { kind: 'warn', text: '高速段还没跟上' };
+    else j.cover = { kind: 'ok', text: '前期窄正常' };
+
+    return j;
+  }
+
+  function curveVerdict(scene) {
+    if (scene === 'healthy') {
+      return {
+        tone: 'learning',
+        text:
+          '**健康**：D(假) 从 −1 爬到 **0**，风格奖励 $r^S = \\max[0,\\ 1-0.25(D-1)^2]$ 从 0 升到 **0.75**；D(真) 从 1 降到 ~0.35，准确率从 99% 降到对抗均衡附近。任务奖励同步爬到 ~0.88，$w^S=w^G=0.5$。对照的是第 4 步 Target Heading 的三阶段。'
+      };
+    }
+    if (scene === 'discstrong') {
+      return {
+        tone: 'frozen',
+        text:
+          '**判别器过强**：D(假) 钉在 −1，$r^S$ 被 $\\max(0,\\cdot)$ 压成 0，准确率 99% —— 策略拿不到风格梯度。`disc_grad_penalty` 太小（IsaacGymEnvs 说这是新动作最该调的旋钮），或判别器 lr 比策略快太多。把 GP 系数从 0.1 往 5–10 试，确认回放池还在。'
+      };
+    }
+    if (scene === 'discweak') {
+      return {
+        tone: 'frozen',
+        text:
+          '**判别器过弱**：真假 logit 很快都塌到 0，准确率两边 ≈ 50%。$r^S$ 一上来就 **0.75**（$D=0$ 时代入 LSGAN 式），看起来像学会了，其实判别器已经不会打分。GP 系数太大把判别器抹平了。减小 `disc_grad_penalty`，先让它能分开真假。'
+      };
+    }
+    if (scene === 'collapse') {
+      return {
+        tone: 'frozen',
+        text:
+          '**模式崩塌**：$r^S$、D、准确率都走健康曲线，任务分却停在 ~0.5，速度覆盖卡在 ~0.40 —— 策略只会数据集里最好学的那种走。TensorBoard 上看不出来，要打开回放或盯 $v^*$ 扫描。混入更多片段、定期重采样，或把多样性惩罚（ASE 会做）加上。'
+      };
+    }
+    if (scene === 'taskwin') {
+      return {
+        tone: 'frozen',
+        text:
+          '**任务压垮风格**：$r^G$ 可以到 0.92，速度覆盖也铺开，但 $r^S$ 贴地、D(假) 停在 −0.7，判别器一直轻易分清。$w^G$ 太大或 `task_reward_weight` 把风格项挤没了。策略用怪动作跟住了 $v^*$。把 $w^S$ 拉回 0.5，从第一天起同时记两条奖励。'
+      };
+    }
+    return {
+      tone: 'frozen',
+      text:
+        '**只有风格**：$r^S$ 和 D 都健康，但 $r^G$ 停在 ~0.20，速度覆盖停在数据集的几个峰上 —— 跟不住随机 $v^*$。MimicKit 默认 `task_reward_weight: 0.0` 就是这个模式；Target Heading 要把 $w^G$ 拨到 0.5。和 DeepMimic 的「只有模仿」是同一类事故。'
+    };
+  }
+
+  function buildCurvesDemo(host) {
+    var root = card(host, {
+      title: '训练曲线怎么读：点一种病历，对照 TensorBoard 上那几条线',
+      sub:
+        '示意曲线锚定「第 4 步：训练进展」的 Target Heading 阶段表（D(假) −1 → 0，$r^S$ 0 → 0.75，$r^G$ 0.12 → 0.88）。' +
+        '风格奖励用和上面那个演示同一个 `styleReward()`。这是为了讲机制画的示意图，数值不能和某一次真实训练直接比。'
+    });
+
+    var state = { scene: 'healthy', iter: 50 };
+    var cache = {};
+
+    var ctrls = controlsRow(root);
+    buttonGroup(ctrls, {
+      label: '病历',
+      value: 'healthy',
+      items: CURVE_SCENES.map(function (s) {
+        return { label: s.label, value: s.id };
+      }),
+      onPick: function (v) {
+        state.scene = v;
+        render();
+      }
+    });
+    var ctrls2 = controlsRow(root);
+    var iterSlider = slider(ctrls2, {
+      label: '看第几百万样本',
+      min: 0,
+      max: CURVE_ITERS,
+      step: 2,
+      value: state.iter,
+      format: function (v) {
+        return String(Math.round(v));
+      },
+      onInput: function (v) {
+        state.iter = v;
+        render();
+      }
+    });
+
+    var setLegend = legend(root, [
+      { key: 'accent', text: '当前病历' },
+      { key: 'good', text: '健康对照 / D(真) / 任务奖励（虚线）' },
+      { key: 'warn', text: '速度覆盖' },
+      { key: 'muted', text: 'GP 健康带 [0.6, 1.6] · D = 0 均衡' }
+    ]);
+
+    var grid = stageGrid(root);
+    var rewardStage = stage(grid, 200);
+    var logitStage = stage(grid, 200);
+    var accStage = stage(grid, 200);
+    var gpStage = stage(grid, 200);
+
+    var stats = statsRow(root);
+    var sRs = stats.add('风格奖励 r^S');
+    var sRg = stats.add('任务奖励 r^G');
+    var sDa = stats.add('D(假)');
+    var sDd = stats.add('D(真)');
+    var sAa = stats.add('agent 准确率');
+    var sDaAcc = stats.add('demo 准确率');
+    var sGp = stats.add('梯度惩罚');
+    var sCv = stats.add('速度覆盖');
+    var verdict = verdictBox(root);
+    var tb = table(root);
+
+    note(root, [
+      '**怎么用**：先点「健康」看四张图的标准形态，再换病历 —— $r^S$ 贴地时，D(假) 一定先钉在 −1；$r^S$ 一上来就是 0.75 时，准确率一定先变成 50%。**模式崩塌**是特例：上面三张图都好看，只有速度覆盖揭穿它。',
+      '**健康带**：logit 图画了 $D=0$ 的均衡线（LSGAN 真假目标是 +1 / −1，Nash 均衡在中点）；GP 图画了 $[0.6,\\ 1.6]$。线跑出色带，比盯某一个 loss 数字更有用。',
+      '**这是简化模型**：曲线形状按笔记里的三阶段表手绘，用来练「几条线一起看」；真实 TensorBoard 噪声更大。PPO 的 KL / clip 读法见 PPO 笔记，AMP 的 clip 是 **0.02**。'
+    ]);
+
+    function ptsOf(series, key) {
+      return series.xs.map(function (x, i) {
+        return [x, series.rows[i][key]];
+      });
+    }
+
+    function drawLinePlot(st, title, yDomain, series, specs, cursorY, yFmtDigits, band, zeroLine) {
+      var g = begin(st);
+      var P = g.P;
+      var p = plot(g, { l: 44, r: 12, t: 18, b: 30 }, [0, CURVE_ITERS], yDomain);
+      if (band) {
+        g.ctx.save();
+        g.ctx.globalAlpha = 0.12;
+        g.ctx.fillStyle = P.good;
+        var yTop = p.sy(band[1]);
+        g.ctx.fillRect(p.x0, yTop, p.x1 - p.x0, p.sy(band[0]) - yTop);
+        g.ctx.restore();
+      }
+      axes(g, p, {
+        xTicks: [0, 50, 100, 150, 200],
+        yTicks: niceTicks(yDomain[0], yDomain[1], 4),
+        xFmt: function (v) {
+          return String(v);
+        },
+        yFmt: function (v) {
+          return fmt(v, yFmtDigits);
+        },
+        xLabel: '样本（百万）'
+      });
+      text(g.ctx, title, p.x0, p.y1 - 6, P.muted, 'left', '11px sans-serif');
+      if (zeroLine && yDomain[0] < 0 && yDomain[1] > 0) {
+        line(g.ctx, [[p.x0, p.sy(0)], [p.x1, p.sy(0)]], P.border, 1, [4, 4]);
+      }
+      specs.forEach(function (sp) {
+        var src = sp.series || series;
+        var raw = ptsOf(src, sp.key);
+        line(
+          g.ctx,
+          raw.map(function (q) {
+            return [p.sx(q[0]), p.sy(q[1])];
+          }),
+          P[sp.color] || sp.color,
+          sp.width || 2.2,
+          sp.dash
+        );
+      });
+      var x = state.iter;
+      line(g.ctx, [[p.sx(x), p.y0], [p.sx(x), p.y1]], P.text, 1, [3, 3]);
+      if (cursorY != null) {
+        dot(g.ctx, p.sx(x), p.sy(cursorY), 4.5, P.accent, P.surface2);
+      }
+      return P;
+    }
+
+    var render = registerRenderer(function () {
+      if (!cache[state.scene]) cache[state.scene] = curveSeries(state.scene);
+      if (!cache.healthy) cache.healthy = curveSeries('healthy');
+      var series = cache[state.scene];
+      var healthy = cache.healthy;
+      var m = curveAt(state.scene, state.iter);
+      var judge = judgeCurves(m, state.scene, state.iter);
+      var P0 = null;
+      var dashH =
+        state.scene === 'healthy'
+          ? []
+          : [{ key: 'rS', color: 'good', width: 1.5, dash: [5, 4], series: healthy }];
+
+      P0 = drawLinePlot(
+        rewardStage,
+        '风格奖励（蓝）与任务奖励（绿）',
+        [0, 1.05],
+        series,
+        [{ key: 'rS', color: 'accent', width: 2.4 }]
+          .concat(dashH)
+          .concat([{ key: 'rG', color: 'good', width: 2, dash: [4, 3] }]),
+        m.rS,
+        2
+      );
+
+      drawLinePlot(
+        logitStage,
+        'D(假)（蓝）与 D(真)（绿）；虚线 = 均衡 0',
+        [-1.35, 1.25],
+        series,
+        [
+          { key: 'dAgent', color: 'accent', width: 2.4 },
+          { key: 'dDemo', color: 'good', width: 2 }
+        ].concat(
+          state.scene === 'healthy'
+            ? []
+            : [{ key: 'dAgent', color: 'muted', width: 1.3, dash: [5, 4], series: healthy }]
+        ),
+        m.dAgent,
+        2,
+        null,
+        true
+      );
+
+      drawLinePlot(
+        accStage,
+        'agent 准确率（蓝）与 demo 准确率（绿）',
+        [0.4, 1.05],
+        series,
+        [
+          { key: 'agentAcc', color: 'accent', width: 2.3 },
+          { key: 'demoAcc', color: 'good', width: 2 }
+        ],
+        m.agentAcc,
+        2
+      );
+
+      var gpHi = state.scene === 'discstrong' ? 8 : 2.4;
+      drawLinePlot(
+        gpStage,
+        '梯度惩罚（蓝）与速度覆盖（橙）',
+        [0, gpHi],
+        series,
+        [
+          { key: 'gp', color: 'accent', width: 2.3 },
+          { key: 'cover', color: 'warn', width: 2, dash: [4, 3] }
+        ],
+        m.gp,
+        2,
+        state.scene === 'discstrong' ? null : [CURVE_GP_LO, CURVE_GP_HI]
+      );
+
+      sRs.set(fmt(m.rS, 2), toneOf(judge.rS.kind));
+      sRg.set(fmt(m.rG, 2), toneOf(judge.rG.kind));
+      sDa.set(fmt(m.dAgent, 2), toneOf(judge.dAgent.kind));
+      sDd.set(fmt(m.dDemo, 2), 'good');
+      sAa.set(Math.round(m.agentAcc * 100) + '%', toneOf(judge.acc.kind));
+      sDaAcc.set(Math.round(m.demoAcc * 100) + '%', toneOf(judge.acc.kind));
+      sGp.set(fmt(m.gp, 2), toneOf(judge.gp.kind));
+      sCv.set(Math.round(m.cover * 100) + '%', toneOf(judge.cover.kind));
+
+      var v = curveVerdict(state.scene);
+      verdict.set(v.text, v.tone);
+
+      tb.clear();
+      tb.row([{ text: '指标' }, { text: '当前值' }, { text: '好方向' }, { text: '这一刻' }], true);
+      var rows = [
+        ['风格奖励 r^S', fmt(m.rS, 2), '0 → 0.75（D→0）', judge.rS],
+        ['任务奖励 r^G', fmt(m.rG, 2), '越高越好* → ~0.88', judge.rG],
+        ['D(假)', fmt(m.dAgent, 2), '−1 → 0', judge.dAgent],
+        ['agent 准确率', Math.round(m.agentAcc * 100) + '%', '99% → ~55%', judge.acc],
+        ['梯度惩罚', fmt(m.gp, 2), '看区间 ~1', judge.gp],
+        ['速度覆盖', Math.round(m.cover * 100) + '%', '1–5 m/s 铺开', judge.cover]
+      ];
+      rows.forEach(function (r) {
+        tb.row([
+          { text: r[0] },
+          { text: r[1], cls: 'is-' + toneOf(r[3].kind) },
+          { text: r[2] },
+          { text: r[3].text, cls: 'is-' + toneOf(r[3].kind) }
+        ]);
+      });
+
+      if (P0) setLegend(P0);
+      rewardStage.canvas.setAttribute(
+        'aria-label',
+        '风格与任务奖励曲线，当前 ' + Math.round(state.iter) + ' 百万样本，rS ' + fmt(m.rS, 2)
+      );
+      logitStage.canvas.setAttribute('aria-label', '判别器 logit，D假 ' + fmt(m.dAgent, 2) + '，D真 ' + fmt(m.dDemo, 2));
+      accStage.canvas.setAttribute(
+        'aria-label',
+        '判别器准确率，agent ' + Math.round(m.agentAcc * 100) + '%，demo ' + Math.round(m.demoAcc * 100) + '%'
+      );
+      gpStage.canvas.setAttribute(
+        'aria-label',
+        '梯度惩罚 ' + fmt(m.gp, 2) + '，速度覆盖 ' + Math.round(m.cover * 100) + '%'
+      );
+    });
+
+    render();
+    iterSlider.refresh();
+  }
+
+  // ─── demo 5: the five-scene explainer animation ──────────────────────────
   /* A narrated storyboard of the whole method — 逐帧 vs 分布 → 判别器 loss →
      LSGAN 风格奖励 → 换数据集就换风格 → 训练闭环. Every number on screen comes
      from somewhere else in this note: the loss row reuses DISC_SAMPLES above
@@ -1738,6 +2224,7 @@
     'amp-explainer': buildExplainerDemo,
     'amp-reward': buildRewardDemo,
     'amp-disc': buildDiscDemo,
-    'amp-style': buildStyleDemo
+    'amp-style': buildStyleDemo,
+    'amp-curves': buildCurvesDemo
   });
 })();
