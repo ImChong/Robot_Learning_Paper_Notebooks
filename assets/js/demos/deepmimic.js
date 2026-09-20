@@ -11,6 +11,7 @@
  *   deepmimic-reward — 四维模仿奖励：k 决定严格程度，w 决定谁说了算
  *   deepmimic-rsi    — RSI × ET 消融：采样预算花在哪，决定高动态技能学不学得会
  *   deepmimic-pd     — 策略输出目标角度：PD 增益、等效惯量与 Stable PD
+ *   deepmimic-curves — 训练曲线怎么读：归一化回报 / 四维分项 / ET 率 / 相位覆盖
  *   deepmimic-explainer — 五幕讲解动画：为什么模仿 → 四维奖励 → RSI → ET → 训练闭环
  */
 
@@ -25,6 +26,7 @@
     controlsRow = K.controlsRow,
     slider = K.slider,
     button = K.button,
+    buttonGroup = K.buttonGroup,
     checkbox = K.checkbox,
     statsRow = K.statsRow,
     verdictBox = K.verdictBox,
@@ -966,7 +968,494 @@
     render();
   }
 
-  // ─── demo 4: the five-scene explainer animation ──────────────────────────
+  // ─── demo 4: reading the training curves ────────────────────────────────
+  /* Schematic TensorBoard traces for Humanoid Backflip, anchored to the
+     note's 「第 4 步：训练进展」table and Q7 / Table 4 numbers. These are toy
+     shapes that teach the *reading*, not dumps from a real run. */
+  var CURVE_ITERS = 5000;
+  var CURVE_RETURN_XS = [0, 500, 2000, 3500, 5000];
+  var CURVE_RETURN_YS = [0.08, 0.2, 0.45, 0.66, 0.791];
+  var CURVE_LEN_YS = [8, 14, 28, 44, 52];
+  var CURVE_ET_YS = [0.94, 0.82, 0.55, 0.28, 0.14];
+  var CURVE_CLIP_STEPS = 53;
+  var CURVE_HEALTHY = 0.791;
+  var CURVE_ET_ONLY = 0.73;
+  var CURVE_RSI_ONLY = 0.379;
+  var CURVE_STRIKE_BOTH = 0.99;
+  var CURVE_STRIKE_IMIT = 0.19;
+  var CURVE_PHASES = ['助跑', '蓄力', '起跳', '团身', '倒立', '展开', '落地'];
+  var CURVE_SCENES = [
+    { id: 'healthy', label: '健康' },
+    { id: 'norsi', label: '关掉 RSI' },
+    { id: 'noet', label: '关掉 ET' },
+    { id: 'imbalance', label: '权重失衡' },
+    { id: 'imitate', label: '只有模仿' },
+    { id: 'taskonly', label: '只有任务' }
+  ];
+
+  function curveLerp(a, b, t) {
+    return a + (b - a) * t;
+  }
+  function curveSmooth(t) {
+    t = clamp(t, 0, 1);
+    return t * t * (3 - 2 * t);
+  }
+  function curvePiece(xs, ys, x) {
+    if (x <= xs[0]) return ys[0];
+    for (var ci = 1; ci < xs.length; ci++) {
+      if (x <= xs[ci]) {
+        var u = curveSmooth((x - xs[ci - 1]) / (xs[ci] - xs[ci - 1]));
+        return curveLerp(ys[ci - 1], ys[ci], u);
+      }
+    }
+    return ys[ys.length - 1];
+  }
+  function curveWave(iter, period, phase) {
+    return Math.sin((iter / period) * Math.PI * 2 + phase);
+  }
+  function rIOf(rp, rv, re, rc) {
+    return TERMS[0].w * rp + TERMS[1].w * rv + TERMS[2].w * re + TERMS[3].w * rc;
+  }
+  function normShares(raw) {
+    var sum = 0;
+    for (var i = 0; i < raw.length; i++) sum += raw[i];
+    return raw.map(function (v) {
+      return v / Math.max(sum, 1e-6);
+    });
+  }
+  function phaseShares(scene, iter) {
+    var n = CURVE_PHASES.length;
+    var t = curveSmooth(iter / CURVE_ITERS);
+    var i;
+    var raw = [];
+    if (scene === 'norsi') {
+      // 没开 RSI：练习次数递减，后期略微往后渗一点
+      var decay = 0.48 - 0.12 * t;
+      for (i = 0; i < n; i++) raw.push(Math.pow(decay, i));
+      return normShares(raw);
+    }
+    // RSI 开着：接近均匀，前期略有抖动
+    for (i = 0; i < n; i++) {
+      raw.push(1 + 0.18 * (1 - t) * curveWave(iter, 900, i * 0.9));
+    }
+    return normShares(raw);
+  }
+
+  function curveAt(scene, iter) {
+    var t = iter / CURVE_ITERS;
+    var ret = curvePiece(CURVE_RETURN_XS, CURVE_RETURN_YS, iter);
+    var length = curvePiece(CURVE_RETURN_XS, CURVE_LEN_YS, iter);
+    var et = curvePiece(CURVE_RETURN_XS, CURVE_ET_YS, iter);
+    var rp = curveLerp(0.3, 0.84, curveSmooth(t));
+    var rv = curveLerp(0.52, 0.91, curveSmooth(t));
+    var re = curveLerp(0.14, 0.75, curveSmooth((iter - 200) / 4200));
+    var rc = curveLerp(0.2, 0.67, curveSmooth((iter - 120) / 4000));
+    var task = 0;
+
+    if (scene === 'norsi') {
+      ret = curvePiece([0, 500, 2000, 5000], [0.08, 0.18, 0.4, CURVE_ET_ONLY], iter);
+      length = curvePiece([0, 500, 2000, 5000], [8, 16, 30, 40], iter);
+      et = curvePiece([0, 500, 2000, 5000], [0.94, 0.78, 0.48, 0.32], iter);
+      rp = curveLerp(0.28, 0.78, curveSmooth(t));
+      rv = curveLerp(0.5, 0.86, curveSmooth(t));
+      re = curveLerp(0.12, 0.48, curveSmooth(t));
+      rc = curveLerp(0.18, 0.5, curveSmooth(t));
+    } else if (scene === 'noet') {
+      ret = curvePiece([0, 800, 2500, 5000], [0.08, 0.16, 0.28, CURVE_RSI_ONLY], iter);
+      length = curveLerp(12, CURVE_CLIP_STEPS, curveSmooth(iter / 600));
+      et = 0.008 + 0.004 * Math.abs(curveWave(iter, 400, 0.2));
+      rp = curveLerp(0.26, 0.42, curveSmooth(t));
+      rv = curveLerp(0.48, 0.55, curveSmooth(t));
+      re = curveLerp(0.12, 0.28, curveSmooth(t));
+      rc = curveLerp(0.18, 0.3, curveSmooth(t));
+    } else if (scene === 'imbalance') {
+      ret = curvePiece([0, 500, 2000, 5000], [0.1, 0.28, 0.52, 0.66], iter);
+      length = curvePiece([0, 500, 2000, 5000], [8, 18, 36, 50], iter);
+      et = curvePiece([0, 500, 2000, 5000], [0.9, 0.7, 0.4, 0.2], iter);
+      rp = curveLerp(0.32, 0.9, curveSmooth(t));
+      rv = curveLerp(0.55, 0.88, curveSmooth(t));
+      re = curveLerp(0.14, 0.24, curveSmooth(t));
+      rc = curveLerp(0.2, 0.26, curveSmooth(t));
+    } else if (scene === 'imitate') {
+      task = curveLerp(0.04, CURVE_STRIKE_IMIT, curveSmooth(t));
+    } else if (scene === 'taskonly') {
+      ret = curveLerp(0.08, 0.25, curveSmooth(t));
+      length = curvePiece([0, 400, 1600, 5000], [8, 22, 40, 50], iter);
+      et = curvePiece([0, 400, 1600, 5000], [0.9, 0.55, 0.28, 0.16], iter);
+      rp = curveLerp(0.28, 0.34, curveSmooth(t));
+      rv = curveLerp(0.5, 0.48, curveSmooth(t));
+      re = curveLerp(0.14, 0.22, curveSmooth(t));
+      rc = curveLerp(0.2, 0.24, curveSmooth(t));
+      task = curveLerp(0.08, 0.9, curveSmooth(t));
+    }
+
+    var rI = rIOf(rp, rv, re, rc);
+    var len = clamp(length, 1, CURVE_CLIP_STEPS);
+    return {
+      ret: clamp(ret, 0, 1),
+      length: len,
+      lenNorm: len / CURVE_CLIP_STEPS,
+      et: clamp(et, 0, 1),
+      rp: clamp(rp, 0, 1),
+      rv: clamp(rv, 0, 1),
+      re: clamp(re, 0, 1),
+      rc: clamp(rc, 0, 1),
+      rI: clamp(rI, 0, 1),
+      task: clamp(task, 0, 1),
+      phases: phaseShares(scene, iter)
+    };
+  }
+
+  function curveSeries(scene) {
+    var n = 80,
+      xs = [],
+      rows = [];
+    for (var i = 0; i <= n; i++) {
+      var it = (i / n) * CURVE_ITERS;
+      xs.push(it);
+      rows.push(curveAt(scene, it));
+    }
+    return { xs: xs, rows: rows };
+  }
+
+  function toneOf(kind) {
+    if (kind === 'ok') return 'good';
+    if (kind === 'warn') return 'warn';
+    return 'bad';
+  }
+
+  function judgeCurves(m, scene, iter) {
+    var j = {};
+    if (scene === 'imitate') {
+      j.ret = { kind: 'warn', text: '模仿分在涨，先别信任务' };
+    } else if (scene === 'imbalance') {
+      j.ret = { kind: 'warn', text: '总分被姿态项撑住了' };
+    } else if (scene === 'taskonly') {
+      j.ret = { kind: 'bad', text: '模仿分几乎没动' };
+    } else if (m.ret >= 0.7) {
+      j.ret = { kind: 'ok', text: '接近 0.791' };
+    } else if (m.ret >= 0.35) {
+      j.ret = { kind: 'ok', text: '在爬' };
+    } else if (iter > 1500) {
+      j.ret = { kind: 'bad', text: '长期停在随机水平' };
+    } else {
+      j.ret = { kind: 'warn', text: '还早，先看斜率' };
+    }
+
+    if (scene === 'imbalance' && m.re < 0.35) {
+      j.terms = { kind: 'bad', text: '末端 / 质心掉队' };
+    } else if (scene === 'taskonly') {
+      j.terms = { kind: 'bad', text: '四条都低：动作是怪的' };
+    } else if (m.re >= 0.55 && m.rp >= 0.6) {
+      j.terms = { kind: 'ok', text: '四条都在爬' };
+    } else if (iter > 2000) {
+      j.terms = { kind: 'warn', text: '末端还没跟上' };
+    } else {
+      j.terms = { kind: 'ok', text: '前期末端慢是正常的' };
+    }
+
+    if (scene === 'noet') j.et = { kind: 'bad', text: '开关没开' };
+    else if (m.et > 0.85 && iter > 800) j.et = { kind: 'bad', text: '还在秒摔' };
+    else if (m.et > 0.7) j.et = { kind: iter > 400 ? 'warn' : 'ok', text: '前期高正常' };
+    else j.et = { kind: 'ok', text: '在往下降' };
+
+    if (scene === 'noet') j.length = { kind: 'warn', text: '步数被撑满，在地上挣扎' };
+    else if (m.length >= 48) j.length = { kind: scene === 'norsi' ? 'warn' : 'ok', text: '接近 clip 长' };
+    else if (m.length >= 20) j.length = { kind: 'ok', text: '越摔越少' };
+    else if (iter > 1200) j.length = { kind: 'bad', text: '还在秒摔' };
+    else j.length = { kind: 'warn', text: '前期秒摔正常' };
+
+    var last = m.phases[m.phases.length - 1];
+    var first = m.phases[0];
+    if (scene === 'norsi' || first > 0.35) {
+      j.phase = { kind: 'bad', text: '全压在前两段' };
+    } else if (last < 0.08) {
+      j.phase = { kind: 'warn', text: '落地练得太少' };
+    } else {
+      j.phase = { kind: 'ok', text: '七段铺得开' };
+    }
+
+    if (scene === 'imitate') j.task = { kind: 'bad', text: 'Strike 停在 19%' };
+    else if (scene === 'taskonly') j.task = { kind: 'warn', text: '任务成了，动作丑' };
+    else j.task = { kind: 'ok', text: '纯模仿技能不看这条' };
+
+    return j;
+  }
+
+  function curveVerdict(scene) {
+    if (scene === 'healthy') {
+      return {
+        tone: 'learning',
+        text:
+          '**健康（RSI + ET）**：归一化回报走 S 形（0.08 → 0.20 → 0.45 → 0.66 → **0.791**），四维分项都在爬，$r^e$ 最慢但不会停在 0.3 以下。ET 率从 ~0.94 降到 ~0.14，七个相位接近均匀。对照的是 Section 10.4 的 Backflip，不是 Table 2 的 0.729。'
+      };
+    }
+    if (scene === 'norsi') {
+      return {
+        tone: 'frozen',
+        text:
+          '**关掉 RSI**：回报还能涨到 **0.730**（Section 10.4「仅 ET」），看起来不惨。右边柱状图却递减 —— 落地几乎没人练，回放是「小幅向后跳」。Walk 上这个开关几乎没影响（0.980 vs 0.981）。打开 `sample_time()` 均匀抽相位。'
+      };
+    }
+    if (scene === 'noet') {
+      return {
+        tone: 'frozen',
+        text:
+          '**关掉 ET**：回报腰斩到 **0.379**（「仅 RSI」），比关掉 RSI 惨得多。ET 率钉在 0，存活步数被拉满 —— 不是活得好，是摔了也不停，地上挣扎占满 batch。打开 `enable_early_termination`，确认第一步不会被误杀。'
+      };
+    }
+    if (scene === 'imbalance') {
+      return {
+        tone: 'frozen',
+        text:
+          '**权重失衡**：加权总分可以到 0.65+（$w_p=0.65$ 把窟窿填平了），但 $r^e$、$r^c$ 停在 ~0.25。回放里关节角度对、脚在滑、质心后坐。分开画四条线，别只盯 $r^I$。这是简化模型，数值不能和论文直接比。'
+      };
+    }
+    if (scene === 'imitate') {
+      return {
+        tone: 'frozen',
+        text:
+          '**只有模仿**：四维分项和归一化回报都走健康曲线，但任务成功率卡在 Table 4 的 Strike **19%**（两者都有时是 **99%**）。$\\omega_G=0$ 或任务奖励没接到 `compute_reward()`。纯 Backflip 没有这条病；Strike / Throw 才有。'
+      };
+    }
+    return {
+      tone: 'frozen',
+      text:
+        '**只有任务**：任务成功率可以到 90%，模仿分却停在 ~0.25。策略找到了怪异但功能性的解（抱着球跑）。和 PPO 笔记里「奖励在骗你」是同一类事故，只是这里骗你的不是 alive bonus，是 $r^G$。加回 $r^I$（$\\omega_I=0.7$）。'
+    };
+  }
+
+  function buildCurvesDemo(host) {
+    var root = card(host, {
+      title: '训练曲线怎么读：点一种病历，对照日志上那几条线',
+      sub:
+        '示意曲线锚定「第 4 步：训练进展」的 Backflip 回报表（0.08 → 0.20 → 0.45 → 0.66 → 0.791）和 Q7 / Table 4 的消融数字。' +
+        '这是为了讲机制画的示意图，数值不能和某一次真实训练直接比。'
+    });
+
+    var state = { scene: 'healthy', iter: 2000 };
+    var cache = {};
+
+    var ctrls = controlsRow(root);
+    buttonGroup(ctrls, {
+      label: '病历',
+      value: 'healthy',
+      items: CURVE_SCENES.map(function (s) {
+        return { label: s.label, value: s.id };
+      }),
+      onPick: function (v) {
+        state.scene = v;
+        render();
+      }
+    });
+    var ctrls2 = controlsRow(root);
+    var iterSlider = slider(ctrls2, {
+      label: '看第几轮迭代',
+      min: 0,
+      max: CURVE_ITERS,
+      step: 20,
+      value: state.iter,
+      format: function (v) {
+        return String(Math.round(v));
+      },
+      onInput: function (v) {
+        state.iter = v;
+        render();
+      }
+    });
+
+    var setLegend = legend(root, [
+      { key: 'accent', text: '当前病历' },
+      { key: 'good', text: '健康对照（虚线）' },
+      { key: 'warn', text: '任务成功率（Strike）' },
+      { key: 'muted', text: '四维分项 / 相位' }
+    ]);
+
+    var grid = stageGrid(root);
+    var returnStage = stage(grid, 200);
+    var termStage = stage(grid, 200);
+    var etStage = stage(grid, 200);
+    var phaseStage = stage(grid, 200);
+
+    var stats = statsRow(root);
+    var sRet = stats.add('归一化回报');
+    var sRI = stats.add('加权 r^I');
+    var sEt = stats.add('ET 率');
+    var sLen = stats.add('存活步数');
+    var sEe = stats.add('末端 r^e');
+    var sCom = stats.add('质心 r^c');
+    var sPhase = stats.add('落地占比');
+    var sTask = stats.add('任务成功率');
+    var verdict = verdictBox(root);
+    var tb = table(root);
+
+    note(root, [
+      '**怎么用**：先点「健康」看四张图的标准形态，再换病历 —— 回报停在 0.73 时，右边相位一定全压在前两段；回报腰斩到 0.38 时，ET 率一定先变成 0。**权重失衡**和**只有模仿**是特例：上面的总分都好看，只有四维分项或任务成功率揭穿它。',
+      '**和上面那个 RSI 消融演示的分工**：那个演示讲的是「采样预算花在哪个阶段」；这里讲的是你真正训练时日志上会长什么样。两套数字对得上：关掉 RSI → 0.730，关掉 ET → 0.379。',
+      '**这是简化模型**：曲线形状按笔记里的 Backflip 阶段表和 Q7 / Table 4 手绘，用来练「几条线一起看」。真实 TensorBoard 噪声更大；MimicKit 默认只记加权奖励之和，四维分项和相位直方图要自己加。'
+    ]);
+
+    function ptsOf(series, key) {
+      return series.xs.map(function (x, i) {
+        return [x, series.rows[i][key]];
+      });
+    }
+
+    function drawLinePlot(st, title, yDomain, series, specs, cursorY, yFmtDigits) {
+      var g = begin(st);
+      var P = g.P;
+      var p = plot(g, { l: 44, r: 12, t: 18, b: 30 }, [0, CURVE_ITERS], yDomain);
+      axes(g, p, {
+        xTicks: [0, 1000, 2000, 3500, 5000],
+        yTicks: niceTicks(yDomain[0], yDomain[1], 4),
+        xFmt: function (v) {
+          return String(v);
+        },
+        yFmt: function (v) {
+          return fmt(v, yFmtDigits);
+        },
+        xLabel: '迭代'
+      });
+      text(g.ctx, title, p.x0, p.y1 - 6, P.muted, 'left', '11px sans-serif');
+      specs.forEach(function (sp) {
+        var src = sp.series || series;
+        var raw = ptsOf(src, sp.key);
+        line(
+          g.ctx,
+          raw.map(function (q) {
+            return [p.sx(q[0]), p.sy(q[1])];
+          }),
+          P[sp.color] || sp.color,
+          sp.width || 2.2,
+          sp.dash
+        );
+      });
+      var x = state.iter;
+      line(g.ctx, [[p.sx(x), p.y0], [p.sx(x), p.y1]], P.text, 1, [3, 3]);
+      if (cursorY != null) {
+        dot(g.ctx, p.sx(x), p.sy(cursorY), 4.5, P.accent, P.surface2);
+      }
+      return P;
+    }
+
+    var render = registerRenderer(function () {
+      if (!cache[state.scene]) cache[state.scene] = curveSeries(state.scene);
+      if (!cache.healthy) cache.healthy = curveSeries('healthy');
+      var series = cache[state.scene];
+      var healthy = cache.healthy;
+      var m = curveAt(state.scene, state.iter);
+      var judge = judgeCurves(m, state.scene, state.iter);
+      var P0 = null;
+
+      var returnSpecs = [{ key: 'ret', color: 'accent', width: 2.4 }].concat(
+        state.scene === 'healthy'
+          ? []
+          : [{ key: 'ret', color: 'good', width: 1.5, dash: [5, 4], series: healthy }]
+      );
+      if (state.scene === 'imitate' || state.scene === 'taskonly') {
+        returnSpecs.push({ key: 'task', color: 'warn', width: 2, dash: [4, 3] });
+      }
+      P0 = drawLinePlot(returnStage, '归一化回报（越高越好）', [0, 1.05], series, returnSpecs, m.ret, 2);
+
+      var termColors = [
+        { key: 'rp', color: 'accent', width: 2.3 },
+        { key: 'rv', color: 'good', width: 1.8 },
+        { key: 're', color: 'bad', width: 2.3 },
+        { key: 'rc', color: 'warn', width: 2.1 }
+      ];
+      drawLinePlot(termStage, '四维分项（红 = 末端，最不该被总分盖住）', [0, 1.05], series, termColors, m.re, 2);
+
+      drawLinePlot(
+        etStage,
+        'ET 率（蓝）与存活 / 53 步（绿）',
+        [0, 1.08],
+        series,
+        [
+          { key: 'et', color: 'accent', width: 2.3 },
+          { key: 'lenNorm', color: 'good', width: 1.8, dash: [4, 3] }
+        ],
+        m.et,
+        2
+      );
+
+      // Phase bars
+      var gP = begin(phaseStage);
+      var PP = gP.P;
+      var nPh = CURVE_PHASES.length;
+      var pPh = plot(gP, { l: 36, r: 12, t: 18, b: 36 }, [0, nPh], [0, 0.55]);
+      axes(gP, pPh, {
+        yTicks: [0, 0.15, 0.3, 0.45],
+        yFmt: function (v) {
+          return fmt(v, 2);
+        }
+      });
+      text(gP.ctx, '相位覆盖（各阶段被练到的占比）', pPh.x0, pPh.y1 - 6, PP.muted, 'left', '11px sans-serif');
+      var slot = (pPh.x1 - pPh.x0) / nPh;
+      var healthyPh = curveAt('healthy', state.iter).phases;
+      for (var pi = 0; pi < nPh; pi++) {
+        var x0 = pPh.x0 + slot * pi + slot * 0.18;
+        var bw = slot * 0.64;
+        if (state.scene !== 'healthy') {
+          gP.ctx.globalAlpha = 0.22;
+          gP.ctx.fillStyle = PP.good;
+          gP.ctx.fillRect(x0, pPh.sy(healthyPh[pi]), bw, pPh.y0 - pPh.sy(healthyPh[pi]));
+          gP.ctx.globalAlpha = 1;
+        }
+        gP.ctx.fillStyle = PP.accent;
+        gP.ctx.fillRect(x0, pPh.sy(m.phases[pi]), bw, pPh.y0 - pPh.sy(m.phases[pi]));
+        text(gP.ctx, CURVE_PHASES[pi], pPh.x0 + slot * (pi + 0.5), pPh.y0 + 14, PP.muted, 'center', '10px sans-serif');
+      }
+
+      sRet.set(fmt(m.ret, 3), toneOf(judge.ret.kind));
+      sRI.set(fmt(m.rI, 3), toneOf(judge.terms.kind));
+      sEt.set(Math.round(m.et * 100) + '%', toneOf(judge.et.kind));
+      sLen.set(fmt(m.length, 0) + ' / ' + CURVE_CLIP_STEPS, toneOf(judge.length.kind));
+      sEe.set(fmt(m.re, 2), m.re < 0.35 && state.iter > 800 ? 'bad' : 'accent');
+      sCom.set(fmt(m.rc, 2), m.rc < 0.35 && state.iter > 800 ? 'bad' : 'warn');
+      sPhase.set(Math.round(m.phases[nPh - 1] * 100) + '%', toneOf(judge.phase.kind));
+      sTask.set(
+        state.scene === 'imitate' || state.scene === 'taskonly' ? Math.round(m.task * 100) + '%' : '—',
+        state.scene === 'imitate' || state.scene === 'taskonly' ? toneOf(judge.task.kind) : ''
+      );
+
+      var v = curveVerdict(state.scene);
+      verdict.set(v.text, v.tone);
+
+      tb.clear();
+      tb.row([{ text: '指标' }, { text: '当前值' }, { text: '好方向' }, { text: '这一刻' }], true);
+      var rows = [
+        ['归一化回报', fmt(m.ret, 3), '越高越好* → 0.791', judge.ret],
+        ['加权 r^I', fmt(m.rI, 3), '四条都爬，别只看它', judge.terms],
+        ['ET 率', Math.round(m.et * 100) + '%', '从 ~94% 降到 ~14%', judge.et],
+        ['存活步数', fmt(m.length, 0) + ' / ' + CURVE_CLIP_STEPS, '拉到 clip 长 ≈ 53', judge.length],
+        ['末端 r^e', fmt(m.re, 2), '最严，爬得慢但要爬', { kind: m.re < 0.35 && state.iter > 800 ? 'bad' : 'ok', text: m.re < 0.35 && state.iter > 800 ? '被总分盖住了' : '还在爬' }],
+        ['相位覆盖', '落地 ' + Math.round(m.phases[nPh - 1] * 100) + '%', '七段铺匀', judge.phase],
+        ['任务成功率', state.scene === 'imitate' || state.scene === 'taskonly' ? Math.round(m.task * 100) + '%' : '—', 'Strike 两者都有时 99%', judge.task]
+      ];
+      rows.forEach(function (r) {
+        tb.row([
+          { text: r[0] },
+          { text: r[1], cls: 'is-' + toneOf(r[3].kind) },
+          { text: r[2] },
+          { text: r[3].text, cls: 'is-' + toneOf(r[3].kind) }
+        ]);
+      });
+
+      if (P0) setLegend(P0);
+      returnStage.canvas.setAttribute(
+        'aria-label',
+        '归一化回报曲线，当前迭代 ' + Math.round(state.iter) + '，回报 ' + fmt(m.ret, 3)
+      );
+      termStage.canvas.setAttribute('aria-label', '四维分项曲线，末端 r^e = ' + fmt(m.re, 2));
+      etStage.canvas.setAttribute('aria-label', 'ET 率 ' + Math.round(m.et * 100) + '%，存活 ' + fmt(m.length, 0) + ' 步');
+      phaseStage.canvas.setAttribute('aria-label', '七个相位的练习占比，落地 ' + Math.round(m.phases[nPh - 1] * 100) + '%');
+    });
+
+    render();
+    iterSlider.refresh();
+  }
+
+  // ─── demo 5: the five-scene explainer animation ──────────────────────────
   /* A narrated storyboard of the whole method — 为什么要模仿 → 四维奖励 → RSI →
      ET → 训练闭环. Every number on screen comes from somewhere else in this
      note: the reward row reuses TERMS above (so it can never drift from the
@@ -1557,6 +2046,7 @@
     'deepmimic-reward': buildRewardDemo,
     'deepmimic-rsi': buildRsiDemo,
     'deepmimic-pd': buildPdDemo,
+    'deepmimic-curves': buildCurvesDemo,
     'deepmimic-explainer': buildExplainerDemo
   });
 })();
