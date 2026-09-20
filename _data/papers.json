@@ -1353,6 +1353,17 @@
     "display_name": "Manipulation",
     "papers": [
       {
+        "title": "Blind Dexterity: Whole-Body Humanoid Manipulation via Pure Proprioception",
+        "path": "papers/06_Manipulation/Blind_Dexterity__Whole-Body_Humanoid_Manipulation_via_Pure_Proprioception/Blind_Dexterity__Whole-Body_Humanoid_Manipulation_via_Pure_Proprioception.md",
+        "url": "/papers/06_Manipulation/Blind_Dexterity__Whole-Body_Humanoid_Manipulation_via_Pure_Proprioception/Blind_Dexterity__Whole-Body_Humanoid_Manipulation_via_Pure_Proprioception.html",
+        "dir": "Blind_Dexterity__Whole-Body_Humanoid_Manipulation_via_Pure_Proprioception",
+        "arxiv": "2608.29487",
+        "published_date_zh": "2026年8月30日（v1）",
+        "published_date_en": "Aug 30, 2026 (v1)",
+        "zhname": "Blind Dexterity：仅靠本体感受实现人形全身灵巧操作",
+        "zh_title": "Blind Dexterity：仅靠本体感受实现人形全身灵巧操作"
+      },
+      {
         "title": "AnyWorld: Factorized Egocentric World Models for Cross-Embodiment Generalization",
         "path": "papers/06_Manipulation/AnyWorld__Factorized_Egocentric_World_Models_for_Cross-Embodiment_Generalization/AnyWorld__Factorized_Egocentric_World_Models_for_Cross-Embodiment_Generalization.md",
         "url": "/papers/06_Manipulation/AnyWorld__Factorized_Egocentric_World_Models_for_Cross-Embodiment_Generalization/AnyWorld__Factorized_Egocentric_World_Models_for_Cross-Embodiment_Generalization.html",
