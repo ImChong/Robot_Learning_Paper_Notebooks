@@ -356,7 +356,7 @@
     var tb = table(root);
     var cells = [];
     (function () {
-      tb.row(['', 'λ_gp = 0', '当前 λ_gp'], true);
+      tb.row(['', '$\\lambda_{\\mathrm{gp}} = 0$', '当前 $\\lambda_{\\mathrm{gp}}$'], true);
       ['学到的 K', '任务表现', '真机抖动 std'].forEach(function (lab) {
         var tr = el('tr');
         tr.appendChild(el('th', null, lab));

@@ -285,6 +285,14 @@
   }
 
   // ─── Build TOC + scroll-spy active highlighting ───────────────────────────
+  function fillTocLink(a, h) {
+    if (h.querySelector('.katex, .katex-mathml')) {
+      a.innerHTML = h.innerHTML;
+    } else {
+      a.textContent = h.textContent;
+    }
+  }
+
   function initToc() {
     var body = document.getElementById('paper-body');
     var nav = document.getElementById('toc-nav');
@@ -306,12 +314,24 @@
       li.className = 'toc-item toc-' + h.tagName.toLowerCase();
       var a = document.createElement('a');
       a.href = '#' + h.id;
-      a.textContent = h.textContent;
       a.className = 'toc-link';
+      fillTocLink(a, h);
       li.appendChild(a);
       ul.appendChild(li);
     });
     nav.appendChild(ul);
+
+    function renderTocMath() {
+      if (typeof window.renderKaTeXIn === 'function') window.renderKaTeXIn(nav);
+    }
+    renderTocMath();
+    document.addEventListener('katex-ready', function () {
+      var links = nav.querySelectorAll('.toc-link');
+      headings.forEach(function (h, idx) {
+        if (links[idx]) fillTocLink(links[idx], h);
+      });
+      renderTocMath();
+    });
 
     var links = nav.querySelectorAll('.toc-link');
     var headingArr = Array.from(headings);
@@ -636,6 +656,9 @@
 
   function init() {
     initPaperNav();
+    /* Typeset #paper-body before the TOC clones heading markup — this
+       listener runs before initKaTeX's inline DOMContentLoaded hook. */
+    if (typeof window.initKaTeX === 'function') window.initKaTeX();
     initTableWrappers();
     initFolds();
     initToc();

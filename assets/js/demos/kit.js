@@ -13,8 +13,9 @@
  *
  * Formulas: write LaTeX and let the KaTeX the page already loads typeset it —
  * `$…$` inside any demo string (card title/sub, note(), verdictBox, explainer
- * cues) and K.svgMath() on an SVG storyboard. See AGENTS.md, and texToPlain()
- * below for what a reader sees when that CDN is blocked.
+ * cues, demo-table cells via el()/table().row()) and K.svgMath() on an SVG
+ * storyboard. See AGENTS.md, and texToPlain() below for what a reader sees when
+ * that CDN is blocked.
  *
  * Usage from a bundle:
  *
@@ -29,10 +30,17 @@
   'use strict';
 
   // ─── tiny DOM kit ────────────────────────────────────────────────────────
+  function needsRichMarkup(str) {
+    return typeof str === 'string' && (/\$[^$]+\$/.test(str) || /\*\*/.test(str) || /`[^`]+`/.test(str));
+  }
+
   function el(tag, cls, text) {
     var node = document.createElement(tag);
     if (cls) node.className = cls;
-    if (text != null) node.textContent = text;
+    if (text != null && text !== '') {
+      if (needsRichMarkup(text)) rich(node, text);
+      else node.textContent = text;
+    }
     return node;
   }
 
@@ -173,10 +181,23 @@
   /* An inline formula for the HTML parts of a demo (titles, cues, notes). */
   function tex(str, opts) {
     var o = opts || {};
-    var span = el('span', 'demo-tex' + (o.cls ? ' ' + o.cls : ''));
-    renderTex(span, str, { display: o.display });
+    var cls = 'demo-tex' + (o.display ? ' demo-tex-display' : '') + (o.cls ? ' ' + o.cls : '');
+    var span = el('span', cls);
+    span.setAttribute('data-tex', String(str));
+    renderTex(span, str, { display: o.display, output: o.output });
     return span;
   }
+
+  function rerenderDemoTex() {
+    document.querySelectorAll('.demo-tex[data-tex]').forEach(function (span) {
+      renderTex(span, span.getAttribute('data-tex'), {
+        display: span.classList.contains('demo-tex-display'),
+        output: isIos() ? 'mathml' : 'htmlAndMathml'
+      });
+    });
+  }
+
+  document.addEventListener('katex-ready', rerenderDemoTex);
 
   /* The tiny markup every human-readable demo string may use:
      `**bold**`, `` `code` `` and `$LaTeX$`. A code run and a formula never
@@ -610,7 +631,18 @@
       row: function (cells, isHead) {
         var tr = el('tr');
         cells.forEach(function (c, i) {
-          var cell = el(i === 0 || isHead ? 'th' : 'td', c && c.cls, c == null ? '' : c.text != null ? c.text : c);
+          var tag = i === 0 || isHead ? 'th' : 'td';
+          var cls = c && typeof c === 'object' ? c.cls : null;
+          var cell = el(tag, cls);
+          if (c == null) {
+            /* empty cell */
+          } else if (typeof c === 'object' && c.text != null) {
+            if (needsRichMarkup(c.text)) rich(cell, c.text);
+            else cell.textContent = c.text;
+          } else if (typeof c === 'string' || typeof c === 'number') {
+            if (needsRichMarkup(String(c))) rich(cell, String(c));
+            else cell.textContent = String(c);
+          }
           tr.appendChild(cell);
         });
         node.appendChild(tr);
