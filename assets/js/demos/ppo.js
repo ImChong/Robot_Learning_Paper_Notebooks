@@ -1289,7 +1289,8 @@
         render();
       }
     });
-    var iterSlider = slider(ctrls, {
+    var ctrls2 = controlsRow(root);
+    var iterSlider = slider(ctrls2, {
       label: '看第几轮迭代',
       min: 0,
       max: CURVE_ITERS,
@@ -1401,7 +1402,7 @@
 
       P0 = drawLinePlot(
         rewardStage,
-        '回合回报（越高越好，前提是奖励没写歪）',
+        '回合回报（越高越好）',
         [-80, 5600],
         series,
         [{ key: 'reward', color: 'accent', width: 2.4 }].concat(
@@ -1418,7 +1419,7 @@
       );
       drawLinePlot(
         lengthStage,
-        '存活步数（Humanoid 上通常越长越好，直到 1000）',
+        '存活步数（本任务越长越好）',
         [0, 1100],
         series,
         [{ key: 'length', color: 'accent', width: 2.4 }].concat(
@@ -1427,10 +1428,11 @@
         m.length,
         0
       );
+      var klHi = state.scene === 'bigstep' ? 0.14 : state.scene === 'critic' ? 0.08 : 0.046;
       drawLinePlot(
         trustStage,
-        '近似 KL（看区间，不是越高越好）',
-        [0, 0.14],
+        '近似 KL（看 0.01 附近）',
+        [0, klHi],
         series,
         [{ key: 'kl', color: 'accent', width: 2.4 }],
         m.kl,
@@ -1439,7 +1441,7 @@
       );
       drawLinePlot(
         criticStage,
-        'clip 比例（蓝）与解释方差（绿）—— 都在 0～1 附近读',
+        'clip 比例（蓝）与解释方差（绿）',
         [-0.5, 1.05],
         series,
         [
