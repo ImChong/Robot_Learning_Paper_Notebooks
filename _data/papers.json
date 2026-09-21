@@ -1956,6 +1956,17 @@
     "display_name": "Teleoperation",
     "papers": [
       {
+        "title": "Gated Residual Body-Hand Coordination for Whole-Body Humanoid Teleoperation",
+        "path": "papers/07_Teleoperation/Gated_Residual_Body-Hand_Coordination_for_Whole-Body_Humanoid_Teleoperation/Gated_Residual_Body-Hand_Coordination_for_Whole-Body_Humanoid_Teleoperation.md",
+        "url": "/papers/07_Teleoperation/Gated_Residual_Body-Hand_Coordination_for_Whole-Body_Humanoid_Teleoperation/Gated_Residual_Body-Hand_Coordination_for_Whole-Body_Humanoid_Teleoperation.html",
+        "dir": "Gated_Residual_Body-Hand_Coordination_for_Whole-Body_Humanoid_Teleoperation",
+        "arxiv": "2609.18763",
+        "published_date_zh": "2026年9月16日（v1）",
+        "published_date_en": "Sep 16, 2026 (v1)",
+        "zhname": "门控残差的身-手协调：全身人形遥操作",
+        "zh_title": "门控残差的身-手协调：全身人形遥操作"
+      },
+      {
         "title": "Teleopit: A Full-Embodiment Humanoid Teleoperation System",
         "path": "papers/07_Teleoperation/Teleopit__A_Full-Embodiment_Humanoid_Teleoperation_System/Teleopit__A_Full-Embodiment_Humanoid_Teleoperation_System.md",
         "url": "/papers/07_Teleoperation/Teleopit__A_Full-Embodiment_Humanoid_Teleoperation_System/Teleopit__A_Full-Embodiment_Humanoid_Teleoperation_System.html",
