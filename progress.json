@@ -41,15 +41,15 @@
         "13_Physics-Based_Animation",
         "14_Human_Motion"
       ],
-      "last_module": "06_Manipulation",
-      "last_index": 594,
-      "last_title": "Blind Dexterity: Whole-Body Humanoid Manipulation via Pure Proprioception (arXiv:2608.29487)",
-      "next_module": "07_Teleoperation",
-      "last_completed_date": "2026-09-20",
-      "note": "06_Manipulation 模块推进《Blind Dexterity: Whole-Body Humanoid Manipulation via Pure Proprioception》(arXiv:2608.29487, v1 2026-08-30, Jan Peters/TU Darmstadt IAS 组)。只用机身关节编码器(无相机/IMU/力矩/触觉)在 Unitree G1 上学出全身灵巧操作：策略主动以顺应性接触「扫/拍/拖/滑」探测环境，关节编码器随接触的演化形成一条「全身触觉通道」，物体位姿从而可从很短的本体感受历史里解码；再用与策略分开训练的任务专用状态估计器把状态读出，信息量大的接触后估计误差骤降，印证「编码器=隐式触觉」。四任务(抗推双足行走无 IMU / 用脚接停足球 / 拎起箱子 / 踩上随机滑板)在仿真中从零 RL 训练后零样本迁移真机。含整体流程 mermaid；官方标注代码待释出，暂无源码时序图。该论文当前未收录于上游 awesome-humanoid-robot-learning（上游 Manipulation 章节最新为 2603，已明显滞后），系为满足「优先推进模块最新发表论文」而先行补录，与本模块 AnyWorld/RoboEdit/RoboTacDex 等既有超前条目做法一致，待上游更新后可对齐。",
-      "last_date": "2026-09-20",
+      "last_module": "07_Teleoperation",
+      "last_index": 595,
+      "last_title": "Gated Residual Body-Hand Coordination for Whole-Body Humanoid Teleoperation (arXiv:2609.18763)",
+      "next_module": "08_Navigation",
+      "last_completed_date": "2026-09-21",
+      "note": "07_Teleoperation 模块推进《Gated Residual Body-Hand Coordination for Whole-Body Humanoid Teleoperation》(arXiv:2609.18763, v1 2026-09-16, Ruiming Wu/Shuang Li/Alois Knoll/Zhaopeng Chen)。针对「身体跟踪策略 + 独立灵巧手重定向器」两块拼接时不显式保持身-手几何关系、双手交互时相对腕位姿与指尖位置错位的问题：冻结这两个现成模块，只在其输出上叠加有界的门控残差修正——动作门(motion-conditioned action gate)按动作把修正权限分配到不同关节组，奖励门(reference-geometry-dependent reward gate)训练期依参考几何在交互阶段才强调相应目标；残差仅吃人体动作参考+初始指令+机器人本体感受，不需物体/接触观测。为在 Agile One 上立名义身体控制器，引入多姿态形态标定(联合估计三轴缩放+末端本地偏移)与分阶段数据清洗训一个基于 SONIC 的跟踪器。仿真中相对直接拼接在 GRAB 留出动作上腕/指尖几何误差降 39.2-56.3%，AMASS 全身跟踪成功率 89.03%→89.29% 基本无损。含整体流程 mermaid；论文未公开代码仓库，故无源码时序图。该论文为 07_Teleoperation 模块 arXiv 最新发表(2609.18763, 2026-09-16)且尚无笔记者，符合「优先推进模块最新发表论文」；当前未收录于上游 awesome-humanoid-robot-learning，系先行补录，待上游更新后可对齐。",
+      "last_date": "2026-09-21",
       "next_candidate": null,
-      "last_completed": "Blind Dexterity: Whole-Body Humanoid Manipulation via Pure Proprioception (arXiv:2608.29487)"
+      "last_completed": "Gated Residual Body-Hand Coordination for Whole-Body Humanoid Teleoperation (arXiv:2609.18763)"
     },
     "last_summary_index": 532,
     "last_summary_date": "2026-09-18",
