@@ -178,7 +178,7 @@ def test_notes_declare_their_demos_in_reading_order():
         ),
         BEYONDMIMIC_NOTE: (
             "beyondmimic",
-            ["bm-anchor", "bm-sampling", "bm-guidance"],
+            ["bm-explainer", "bm-anchor", "bm-sampling", "bm-guidance"],
         ),
         LCP_NOTE: ("lcp", ["lcp-sensitivity", "lcp-gp", "lcp-vs-filter"]),
         DR_VISION_NOTE: (
@@ -228,7 +228,7 @@ def test_demo_assets_are_theme_aware():
 
 EXPLAINER_BUNDLES = (
     "ppo", "awr", "deepmimic", "amp", "add", "ase", "calm", "pulse", "sonic", "gmr",
-    "omniretarget", "diffusion_policy",
+    "omniretarget", "diffusion_policy", "beyondmimic",
 )
 
 # 幕数由论文决定，不是统一模板：PPO / DeepMimic / AMP / ADD 的核心概念正好各 5 个，
@@ -252,6 +252,13 @@ EXPLAINER_BUNDLES = (
 # Diffusion Policy 也是七件（平均动作撞障 / 条件扩散 / action chunking / 视觉条件 + FiLM /
 # DDIM 加速 / receding horizon / 为什么成了 IL 标准），「扩散过程」和「一次吐多长」
 # 是两件独立的事，视觉条件与 DDIM 加速也是，压进五幕会让 chunking、FiLM 和 RHC 抢同一帧。
+# BeyondMimic 是目前唯一的八幕：它本身就是两篇论文订在一起（阶段 1 的跟踪 + 阶段 2 的
+# 引导扩散），两个阶段各自都有三件独立的事 —— 两个缺口 / 锚定跟踪 / 紧凑 MDP /
+# 自适应采样 / VAE 潜空间 / 状态-潜动作扩散 / Classifier Guidance / 真机与闭环。
+# 「锚定跟踪」是跟踪目标的定义、「紧凑 MDP」是 PD 与奖励的取舍、「自适应采样」是
+# 分钟级长参考才会遇到的问题，三者合并会让公式与那张分箱图抢同一块画面；
+# 「VAE 潜空间」与「联合扩散」更是两个独立训练阶段（前者决定扩散的动作是什么，
+# 后者决定轨迹怎么排布），压成一幕会让 DAgger、β、τ 的结构和 25 Hz 挤在一起。
 EXPLAINER_SCENES = {
     "ppo": (PPO_NOTE, 5),
     "awr": (AWR_NOTE, 6),
@@ -266,8 +273,9 @@ EXPLAINER_SCENES = {
     "gmr": (GMR_NOTE, 7),
     "omniretarget": (OMNI_NOTE, 7),
     "diffusion_policy": (DIFFUSION_POLICY_NOTE, 7),
+    "beyondmimic": (BEYONDMIMIC_NOTE, 8),
 }
-CN_NUMERALS = {4: "四", 5: "五", 6: "六", 7: "七"}
+CN_NUMERALS = {4: "四", 5: "五", 6: "六", 7: "七", 8: "八"}
 
 
 def test_explainer_scene_count_matches_the_title_and_note():
@@ -758,3 +766,78 @@ def test_diffusion_policy_explainer_numbers_come_from_the_config():
     assert "46.9%" in note
     assert "15 个" in note
     assert "## 🎬 七幕动画：Diffusion Policy 全流程" in note
+
+
+def test_beyondmimic_explainer_numbers_come_from_the_config():
+    """八幕动画不许手写换算结果：视野秒数、PD 时间常数、参数量、偏好差值都得现算。"""
+    js = (DEMO_JS_DIR / "beyondmimic.js").read_text(encoding="utf-8")
+    note = BEYONDMIMIC_NOTE.read_text(encoding="utf-8")
+
+    # 阶段 1 的 MDP：ω_n / ζ 是论文给的，k_d/k_p 必须现除（ω_n 要先换成 rad/s）
+    assert "var OMEGA_HZ = 10," in js
+    assert "ZETA = 2;" in js
+    assert "var PD_RATIO_S = (2 * ZETA) / (2 * Math.PI * OMEGA_HZ);" in js
+    assert _fmt(4 / (2 * math.pi * 10), 3) == "0.064"
+
+    # 奖励项数：4 项跟踪 + 3 项正则，总数现加
+    assert "var N_TRACK = 4," in js
+    assert "N_REG = 3;" in js
+    assert "var N_TERMS = N_TRACK + N_REG;" in js
+    assert "var N_DR = 3;" in js
+    assert 4 + 3 == 7
+
+    # 自适应采样：分钟级参考的箱数与均匀概率现算
+    assert "var REF_MIN = 3," in js
+    assert "BIN_S = 1;" in js
+    assert "var REF_BINS = (REF_MIN * 60) / BIN_S;" in js
+    assert "var UNIFORM_PCT = 100 / REF_BINS;" in js
+    assert (3 * 60) // 1 == 180
+    assert _fmt(100 / 180, 2) == "0.56"
+
+    # 阶段 2：H / f 现除。论文把跟踪策略降到 25 Hz 部署，所以 16/25 才是 0.64 s
+    assert "var HZ = 16;" in js, "视野应复用 guidance 演示里的 H"
+    assert "var CTRL_HZ = 25;" in js
+    assert "var HORIZON_S = HZ / CTRL_HZ;" in js
+    assert 16 / 25 == 0.64
+    assert "var DENOISE_K = 20;" in js
+    assert "var INFER_MS = 20;" in js
+    assert "var CTRL_MS = 1000 / CTRL_HZ;" in js
+    assert "var INFER_LOAD = INFER_MS / CTRL_MS;" in js
+    assert 1000 / 25 == 40 and 20 / 40 == 0.5
+
+    # Transformer：层数 × 12d²（注意力 4d² + FFN 8d²），只含隐层权重
+    assert "var TF_LAYERS = 6," in js
+    assert "TF_HEADS = 8," in js
+    assert "TF_DIM = 512;" in js
+    assert "var TF_PARAM_M = (TF_LAYERS * 12 * TF_DIM * TF_DIM) / 1e6;" in js
+    assert _fmt(6 * 12 * 512 * 512 / 1e6, 2) == "18.87"
+    assert "**只含注意力与 FFN 的权重**" in js, "动画要说明这不是论文那个 ≈19.8M"
+
+    # 状态表示消融：摇杆任务上的差值现减
+    assert "var BP_PERTURB = 100," in js
+    assert "BP_JOY = 80," in js
+    assert "JR_PERTURB = 72," in js
+    assert "JR_JOY = 0;" in js
+    assert "var JOY_GAP = BP_JOY - JR_JOY;" in js
+    assert 80 - 0 == 80
+
+    # 用户研究：偏好差值是 2p − 100 现减，不是抄一份
+    assert "var PREF_ALL = 70.8," in js
+    assert "PREF_WALK = 57.0," in js
+    assert "PREF_RUN = 84.7;" in js
+    assert "var GAP_ALL = PREF_ALL - (100 - PREF_ALL);" in js
+    assert "var GAP_WALK = PREF_WALK - (100 - PREF_WALK);" in js
+    assert "var GAP_RUN = PREF_RUN - (100 - PREF_RUN);" in js
+    assert _fmt(70.8 - 29.2, 1) == "41.6"
+    assert _fmt(57.0 - 43.0, 1) == "14.0"
+    assert _fmt(84.7 - 15.3, 1) == "69.4"
+
+    # 笔记必须和动画说同一套数
+    assert "## 🎬 八幕动画：BeyondMimic 全流程" in note
+    assert "$16/25 = $ 约 **0.64 s**" in note
+    assert "**25 Hz**" in note
+    assert "约 **19.8M** 参数" in note
+    assert "**8** 头" in note
+    assert "Transformer **encoder**" in note
+    assert "走路 57.0% vs 43.0%" in note
+    assert "潜维度 | **32**" in note
