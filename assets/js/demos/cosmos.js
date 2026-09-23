@@ -57,11 +57,26 @@
       hArrow(svg, 262, 284, 136, head),
       hArrow(svg, 516, 538, 136, head)
     ];
-    var note = T(400, 268, '虚线框在管线外：生成视频 ≠ 关节指令', 'demo-x-mut', 13, 'middle');
+    // What the world model actually emits: a strip of future frames, not commands.
+    var outArrow = vArrow(svg, 400, 200, 226, head);
+    var futures = ['t+1', 't+2', 't+3'].map(function (label, i) {
+      var g = E('g', {});
+      g.appendChild(P(E('rect', { x: 314 + i * 62, y: 232, width: 50, height: 40, rx: 6, 'stroke-width': 2 }),
+        X.surface2, X.warn));
+      g.appendChild(T(339 + i * 62, 257, label, 'demo-x-mono', 12, 'middle'));
+      svg.appendChild(g);
+      return g;
+    });
+    var futureCap = T(400, 296, '输出：预测的未来帧（视频）', 'demo-x-mut', 12, 'middle');
+    svg.appendChild(futureCap);
+    var note = T(400, 350, '虚线框在管线外：生成视频 ≠ 关节指令', 'demo-x-mut', 13, 'middle');
     svg.appendChild(note);
     return { el: svg, draw: function (t) {
       groups.forEach(function (g, i) { K.setOpacity(g, K.seg(t, 0.3 + i * 2.2, 1.2 + i * 2.2)); });
       arrows.forEach(function (a, i) { K.setOpacity(a, K.seg(t, 1.8 + i * 2.2, 2.5 + i * 2.2)); });
+      K.setOpacity(outArrow, K.seg(t, 3.0, 3.4));
+      futures.forEach(function (g, i) { K.setOpacity(g, K.seg(t, 3.3 + i * 0.4, 3.8 + i * 0.4)); });
+      K.setOpacity(futureCap, K.seg(t, 4.4, 5.0));
       K.setOpacity(note, K.seg(t, 7.2, 8.2));
     }};
   }
@@ -94,11 +109,23 @@
     svg.appendChild(T(400, 34, '当前帧的 token 不看未来帧', 'demo-x-ink2', 14, 'middle'));
     var frames = ['过去帧', '当前帧', '未来帧'].map(function (label, i) {
       var color = i === 2 ? X.muted : X.accent;
-      var g = panel(svg, 150 + i * 170, 58, 150, 62, label, [], color, i === 2);
+      var g = panel(svg, 150 + i * 175, 58, 150, 62, label, [], color, i === 2);
       return g;
     });
     var tok = panel(svg, 250, 158, 300, 72, '因果视频 tokenizer', ['单帧时同一套就是图像 tokenizer'], X.warn);
-    var down = vArrow(svg, 400, 124, 152, head);
+    // Past and current frames both feed the encoder; the future frame is cut off.
+    var inputs = [
+      P(E('path', { d: 'M 225 124 C 225 146, 340 130, 340 152', 'stroke-width': 2.5, fill: 'none', 'marker-end': head }),
+        null, X.muted),
+      vArrow(svg, 400, 124, 152, head)
+    ];
+    svg.appendChild(inputs[0]);
+    var blocked = E('g', {});
+    blocked.appendChild(P(E('path', { d: 'M 575 124 C 575 140, 520 142, 500 150', 'stroke-width': 2,
+      fill: 'none', 'stroke-dasharray': '4 4' }), null, X.bad));
+    blocked.appendChild(P(E('path', { d: 'M 530 132 L 546 148 M 546 132 L 530 148', 'stroke-width': 2.5 }), null, X.bad));
+    blocked.appendChild(P(T(560, 150, '不输入', null, 12), X.bad));
+    svg.appendChild(blocked);
     var outs = [
       panel(svg, 36, 268, 340, 92, '连续潜变量', ['维度 16 · 普通自编码器', '供给扩散式世界模型'], X.accent),
       panel(svg, 424, 268, 340, 92, '离散 token', ['FSQ · 6 个量化层级', '供给自回归世界模型'], X.good)
@@ -113,10 +140,11 @@
     });
     return { el: svg, draw: function (t) {
       frames.forEach(function (g, i) { K.setOpacity(g, K.seg(t, 0.2 + i * 0.6, 0.9 + i * 0.6)); });
-      K.setOpacity(down, K.seg(t, 2.2, 2.8));
-      K.setOpacity(tok, K.seg(t, 2.6, 3.4));
-      split.forEach(function (a, i) { K.setOpacity(a, K.seg(t, 4.2 + i * 0.4, 4.9 + i * 0.4)); });
-      outs.forEach(function (g, i) { K.setOpacity(g, K.seg(t, 4.8 + i * 0.5, 5.7 + i * 0.5)); });
+      K.setOpacity(tok, K.seg(t, 2.4, 3.2));
+      inputs.forEach(function (a, i) { K.setOpacity(a, K.seg(t, 3.2 + i * 0.3, 3.8 + i * 0.3)); });
+      K.setOpacity(blocked, K.seg(t, 4.4, 5.0));
+      split.forEach(function (a, i) { K.setOpacity(a, K.seg(t, 6.6 + i * 0.3, 7.2 + i * 0.3)); });
+      outs.forEach(function (g, i) { K.setOpacity(g, K.seg(t, 7.0 + i * 0.5, 7.8 + i * 0.5)); });
     }};
   }
 
@@ -124,14 +152,14 @@
     var svg = K.sceneSvg('扩散式与自回归式是两条并列的预训练路线');
     svg.appendChild(T(400, 32, '两条路线都预测未来视频，中间没有箭头', 'demo-x-ink2', 14, 'middle'));
     var cols = [
-      panel(svg, 28, 64, 348, 250, '扩散式', [
+      panel(svg, 28, 64, 348, 156, '扩散式', [
         '连续潜变量，迭代去噪',
         '7B 与 14B',
         '先 Text2World',
         '再微调成 Video2World',
         '条件是文字，或再加视频'
       ], X.accent),
-      panel(svg, 424, 64, 348, 250, '自回归式', [
+      panel(svg, 424, 64, 348, 156, '自回归式', [
         '离散 token，逐个生成',
         '4B 与 12B 只看视频',
         '不含语言理解',
@@ -139,19 +167,60 @@
         'Llama 式 Transformer'
       ], X.good)
     ];
-    var gap = T(400, 196, '并列', 'demo-x-mut', 14, 'middle');
+    var gap = T(400, 148, '并列', 'demo-x-mut', 14, 'middle');
     svg.appendChild(gap);
-    var formula = M(400, 352, '8\\times 8\\times 8\\times 5\\times 5\\times 5 = 64000',
+
+    /* How each family fills the future: diffusion updates every latent at once
+       over several denoising steps; autoregression emits one token id at a time.
+       Cell shades and token ids are illustrative, not model outputs. */
+    var noise = [0.9, 0.2, 0.7, 0.4, 0.1, 0.8, 0.3, 0.6, 0.5];
+    var cells = [];
+    var diffStrip = E('g', {});
+    for (var c = 0; c < 4; c++) {
+      for (var k = 0; k < 9; k++) {
+        var sq = P(E('rect', {
+          x: 56 + c * 76 + (k % 3) * 16, y: 238 + Math.floor(k / 3) * 16, width: 14, height: 14, rx: 2
+        }), X.accent);
+        diffStrip.appendChild(sq);
+        // Denoised target: one bright blob drifting left to right across the four frames.
+        var d = Math.hypot(k % 3 - c * 2 / 3, Math.floor(k / 3) - 1);
+        cells.push({ node: sq, from: noise[(k + c * 2) % 9], to: Math.max(0.12, 1 - 0.5 * d) });
+      }
+    }
+    var diffCap = T(193, 306, '所有位置一起、分多步去噪（步数为示意）', 'demo-x-mut', 12, 'middle');
+    svg.appendChild(diffStrip);
+    svg.appendChild(diffCap);
+
+    var ids = ['731', '12', '5904', '88', '2047', '16'];
+    var tokens = ids.map(function (id, i) {
+      var g = E('g', {});
+      g.appendChild(P(E('rect', { x: 444 + i * 52, y: 244, width: 46, height: 34, rx: 6, 'stroke-width': 2 }),
+        X.surface2, X.good));
+      g.appendChild(T(467 + i * 52, 266, id, 'demo-x-mono', 12, 'middle'));
+      svg.appendChild(g);
+      return g;
+    });
+    var arCap = T(598, 306, '从左到右，一次生成一个编号', 'demo-x-mut', 12, 'middle');
+    svg.appendChild(arCap);
+
+    var formula = M(400, 350, '8\\times 8\\times 8\\times 5\\times 5\\times 5 = 64000',
       { size: 16, anchor: 'middle', w: 460 });
     svg.appendChild(formula);
-    var cap = T(400, 392, '自回归词表：tokenizer DV8×16×16 的 FSQ 层级乘积', 'demo-x-mut', 12, 'middle');
+    var cap = T(400, 390, '自回归词表：tokenizer DV8×16×16 的 FSQ 层级乘积', 'demo-x-mut', 12, 'middle');
     svg.appendChild(cap);
     return { el: svg, draw: function (t) {
       K.setOpacity(cols[0], K.seg(t, 0.3, 1.3));
       K.setOpacity(gap, K.seg(t, 1.6, 2.4));
       K.setOpacity(cols[1], K.seg(t, 2.2, 3.2));
-      K.setOpacity(formula, K.seg(t, 6.4, 7.4));
-      K.setOpacity(cap, K.seg(t, 7.2, 8.2));
+      K.setOpacity(diffStrip, K.seg(t, 1.0, 1.5));
+      K.setOpacity(diffCap, K.seg(t, 1.0, 1.5));
+      var step = Math.min(4, Math.floor(K.seg(t, 1.6, 5.6) * 5));
+      var p = step / 4;
+      cells.forEach(function (cell) { K.setOpacity(cell.node, cell.from + (cell.to - cell.from) * p); });
+      tokens.forEach(function (g, i) { K.setOpacity(g, K.seg(t, 3.4 + i * 0.5, 3.7 + i * 0.5)); });
+      K.setOpacity(arCap, K.seg(t, 3.2, 3.8));
+      K.setOpacity(formula, K.seg(t, 6.8, 7.6));
+      K.setOpacity(cap, K.seg(t, 7.4, 8.2));
     }};
   }
 
