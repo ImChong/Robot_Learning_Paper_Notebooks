@@ -504,6 +504,7 @@
             "url": "/papers/03_High_Impact_Selection/GR00T_N1_Humanoid_Foundation_Model/GR00T_N1_Humanoid_Foundation_Model.html",
             "dir": "GR00T_N1_Humanoid_Foundation_Model",
             "arxiv": "2503.14734",
+            "has_open_source": true,
             "published_date_zh": "2025年3月（arXiv）",
             "published_date_en": "Mar 2025 (arXiv)",
             "zhname": "GR00T N1：面向通用人形机器人的开放基础模型",

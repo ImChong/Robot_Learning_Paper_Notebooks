@@ -66,10 +66,6 @@ OMNI_NOTE = (
     / "OmniRetarget__Interaction-Preserving_Data_Generation_for_Humanoid_Whole-Body_Loc"
     / "OmniRetarget__Interaction-Preserving_Data_Generation_for_Humanoid_Whole-Body_Loc.md"
 )
-GR00T_NOTE = (
-    ROOT / "papers" / "03_High_Impact_Selection"
-    / "GR00T_N1_Humanoid_Foundation_Model" / "GR00T_N1_Humanoid_Foundation_Model.md"
-)
 COSMOS_NOTE = (
     ROOT / "papers" / "03_High_Impact_Selection"
     / "Cosmos_World_Foundation_Model_Platform_for_Physical_AI"
@@ -81,6 +77,13 @@ SONIC_NOTE = (
     / "03_High_Impact_Selection"
     / "SONIC_Supersizing_Motion_Tracking_for_Natural_Humanoid_Control"
     / "SONIC_Supersizing_Motion_Tracking_for_Natural_Humanoid_Control.md"
+)
+GROOT_NOTE = (
+    ROOT
+    / "papers"
+    / "03_High_Impact_Selection"
+    / "GR00T_N1_Humanoid_Foundation_Model"
+    / "GR00T_N1_Humanoid_Foundation_Model.md"
 )
 
 PLACEHOLDER_RE = re.compile(r'<div class="paper-demo" data-demo="([a-z0-9-]+)"')
@@ -200,7 +203,7 @@ def test_notes_declare_their_demos_in_reading_order():
             ["mimickit-family", "mimickit-reward", "mimickit-config"],
         ),
         SONIC_NOTE: ("sonic", ["sonic-explainer"]),
-        GR00T_NOTE: ("gr00t", ["gr00t-explainer"]),
+        GROOT_NOTE: ("groot", ["groot-explainer"]),
         COSMOS_NOTE: ("cosmos", ["cosmos-explainer"]),
         GMR_NOTE: ("gmr", ["gmr-explainer"]),
         OMNI_NOTE: ("omniretarget", ["omniretarget-explainer"]),
@@ -238,8 +241,8 @@ def test_demo_assets_are_theme_aware():
 
 
 EXPLAINER_BUNDLES = (
-    "ppo", "awr", "deepmimic", "amp", "add", "ase", "calm", "pulse", "sonic", "gmr",
-    "omniretarget", "diffusion_policy", "beyondmimic", "gr00t", "cosmos",
+    "ppo", "awr", "deepmimic", "amp", "add", "ase", "calm", "pulse", "sonic", "groot",
+    "gmr", "omniretarget", "diffusion_policy", "beyondmimic", "cosmos",
 )
 
 # 幕数由论文决定，不是统一模板：PPO / DeepMimic / AMP / ADD 的核心概念正好各 5 个，
@@ -251,7 +254,12 @@ EXPLAINER_BUNDLES = (
 # 阶段 3 下游只搜 32 维 / 闭环与源码落点）；SONIC 是七件（任务选错了 / 三轴一起放大 /
 # universal token space / 五项 aux loss 焊住潜空间 / 实时 kinematic planner /
 # System-1 + System-2 / 数据到实机的闭环），token space 与把三路 latent 焊在一起
-# 是两件独立的事，规划器与 VLA 也是，压进六幕会有两幕各塞两件事；GMR 也是七件
+# 是两件独立的事，规划器与 VLA 也是，压进六幕会有两幕各塞两件事；
+# GR00T N1 也是七件（没有人形互联网 / 10 Hz 的第 12 层与 63.9 ms 的动作块 /
+# 流匹配路径和 K=4 欧拉 / 数据金字塔三层 / 潜动作与 IDM 补标签 /
+# 一套权重加按本体的 MLP / Table 2–3 的任务加权平均和短程桌面的边界）。
+# 「频率」和「流匹配公式」是两件事，金字塔回答数据放哪一层、潜动作回答标签从哪来，
+# 压进六幕会有两幕各塞两件；GMR 也是七件
 # （retargeting 被当成前处理脚本 / 一条管线接 5 种格式 × 18+ 款机器人 / 论文的五步显式流程 /
 # 非均匀局部缩放为什么是关键 / mink + DAQP 的两阶段约束 IK / Retargeting Matters 的定量论据 /
 # 闭环与源码落点），「五步流程」是论文层面的分解、「两阶段 IK」是代码层面的两张 match table，
@@ -284,7 +292,7 @@ EXPLAINER_SCENES = {
     "calm": (CALM_NOTE, 5),
     "pulse": (PULSE_NOTE, 6),
     "sonic": (SONIC_NOTE, 7),
-    "gr00t": (GR00T_NOTE, 6),
+    "groot": (GROOT_NOTE, 7),
     "cosmos": (COSMOS_NOTE, 5),
     "gmr": (GMR_NOTE, 7),
     "omniretarget": (OMNI_NOTE, 7),
@@ -857,3 +865,46 @@ def test_beyondmimic_explainer_numbers_come_from_the_config():
     assert "Transformer **encoder**" in note
     assert "走路 57.0% vs 43.0%" in note
     assert "潜维度 | **32**" in note
+
+
+def test_groot_explainer_uses_the_paper_tables_and_the_code_sign():
+    """GR00T 的动画数字必须从论文表格和开源流匹配符号现算，不能回到旧提纲。
+
+    旧笔记把仿真写成 Isaac Lab、把 120 Hz 写成整网前向、把例子写成去厨房拿苹果。
+    现在的笔记和动画要钉住：动作块 63.9 ms、速度目标是 A−ε、Table 2/3 按任务数加权。
+    """
+    js = (DEMO_JS_DIR / "groot.js").read_text(encoding="utf-8")
+    note = GROOT_NOTE.read_text(encoding="utf-8")
+
+    assert "var SYS2_HZ = 10," in js
+    assert "SYS1_HZ = 120," in js
+    assert "CHUNK = 16," in js
+    assert "INFER_MS = 63.9;" in js
+    assert "var CHUNK_MS = CHUNK * ACTION_MS;" in js
+    assert "var TOY_V = TOY_A - TOY_EPS;" in js
+    assert "velocity = actions - noise" in js
+    assert "function wavg(rates, counts)" in js
+    assert "var GR1_GAP = GR_SIM[2] - DP_SIM[2];" in js
+    assert "var GAP_DATA = PAPER_REAL.dpFull - PAPER_REAL.gr10;" in js
+
+    assert abs((16 * (1000 / 120)) - (16 / 120 * 1000)) < 1e-9
+    assert _fmt(50.0 - 32.7, 1) == "17.3"
+    assert _fmt(46.4 - 42.6, 1) == "3.8"
+    assert _fmt(42.6 - 10.2, 1) == "32.4"
+    assert _fmt(76.8 - 46.4, 1) == "30.4"
+    gr_w = (32.1 * 24 + 66.5 * 9 + 50.0 * 24) / 57
+    assert _fmt(gr_w, 2) == "45.07"
+    real_w = (82.0 * 5 + 70.9 * 3 + 70.0 * 3 + 82.5 * 2) / 13
+    assert _fmt(real_w, 2) == "76.75"
+    assert _fmt(827 / 88, 1) == "9.4"
+    assert _fmt(6500 / 11, 0) == "591"
+
+    assert "63.9" in note
+    assert "第 12 层" in note
+    assert "DexMimicGen" in note
+    assert "76.8" in note
+    assert "Fourier GR-1" in note
+    assert "actions - noise" in note
+    assert "去厨房" not in note
+    assert "Jetson" not in note
+    assert "120 Hz 是动作率" in note or "120 Hz 是这 16 步的播放节拍" in note
