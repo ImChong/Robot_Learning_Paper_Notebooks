@@ -66,6 +66,11 @@ OMNI_NOTE = (
     / "OmniRetarget__Interaction-Preserving_Data_Generation_for_Humanoid_Whole-Body_Loc"
     / "OmniRetarget__Interaction-Preserving_Data_Generation_for_Humanoid_Whole-Body_Loc.md"
 )
+COSMOS_NOTE = (
+    ROOT / "papers" / "03_High_Impact_Selection"
+    / "Cosmos_World_Foundation_Model_Platform_for_Physical_AI"
+    / "Cosmos_World_Foundation_Model_Platform_for_Physical_AI.md"
+)
 SONIC_NOTE = (
     ROOT
     / "papers"
@@ -199,6 +204,7 @@ def test_notes_declare_their_demos_in_reading_order():
         ),
         SONIC_NOTE: ("sonic", ["sonic-explainer"]),
         GROOT_NOTE: ("groot", ["groot-explainer"]),
+        COSMOS_NOTE: ("cosmos", ["cosmos-explainer"]),
         GMR_NOTE: ("gmr", ["gmr-explainer"]),
         OMNI_NOTE: ("omniretarget", ["omniretarget-explainer"]),
     }
@@ -236,7 +242,7 @@ def test_demo_assets_are_theme_aware():
 
 EXPLAINER_BUNDLES = (
     "ppo", "awr", "deepmimic", "amp", "add", "ase", "calm", "pulse", "sonic", "groot",
-    "gmr", "omniretarget", "diffusion_policy", "beyondmimic",
+    "gmr", "omniretarget", "diffusion_policy", "beyondmimic", "cosmos",
 )
 
 # 幕数由论文决定，不是统一模板：PPO / DeepMimic / AMP / ADD 的核心概念正好各 5 个，
@@ -272,6 +278,9 @@ EXPLAINER_BUNDLES = (
 # 分钟级长参考才会遇到的问题，三者合并会让公式与那张分箱图抢同一块画面；
 # 「VAE 潜空间」与「联合扩散」更是两个独立训练阶段（前者决定扩散的动作是什么，
 # 后者决定轨迹怎么排布），压成一幕会让 DAgger、β、τ 的结构和 25 Hz 挤在一起。
+# Cosmos 是五件（为什么要世界模型 / 视频整理 / 因果 tokenizer / 扩散与自回归并列预训练 /
+# 三类后训练示例）。扩散和自回归是两条预训练路线，画成前后两级会把 Table 10 的模型地图读反，
+# 所以第 4 幕必须是并排的两列，不能并进「一个生成模型」里。
 EXPLAINER_SCENES = {
     "ppo": (PPO_NOTE, 5),
     "awr": (AWR_NOTE, 6),
@@ -284,6 +293,7 @@ EXPLAINER_SCENES = {
     "pulse": (PULSE_NOTE, 6),
     "sonic": (SONIC_NOTE, 7),
     "groot": (GROOT_NOTE, 7),
+    "cosmos": (COSMOS_NOTE, 5),
     "gmr": (GMR_NOTE, 7),
     "omniretarget": (OMNI_NOTE, 7),
     "diffusion_policy": (DIFFUSION_POLICY_NOTE, 7),

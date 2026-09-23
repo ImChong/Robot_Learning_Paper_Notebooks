@@ -477,6 +477,16 @@
             "zh_title": "ANYmal 敏捷运动技能学习（sim-to-real RL 奠基作）"
           },
           {
+            "title": "Cosmos World Foundation Model Platform for Physical AI",
+            "path": "papers/03_High_Impact_Selection/Cosmos_World_Foundation_Model_Platform_for_Physical_AI/Cosmos_World_Foundation_Model_Platform_for_Physical_AI.md",
+            "url": "/papers/03_High_Impact_Selection/Cosmos_World_Foundation_Model_Platform_for_Physical_AI/Cosmos_World_Foundation_Model_Platform_for_Physical_AI.html",
+            "dir": "Cosmos_World_Foundation_Model_Platform_for_Physical_AI",
+            "arxiv": "2501.03575",
+            "has_open_source": true,
+            "zhname": "Cosmos：面向物理 AI 的世界基础模型平台",
+            "zh_title": "Cosmos：面向物理 AI 的世界基础模型平台"
+          },
+          {
             "title": "ASAP: Aligning Simulation and Real-World Physics for Learning Agile Humanoid Whole-Body Skills",
             "path": "papers/03_High_Impact_Selection/ASAP_Aligning_Simulation_and_Real-World_Physics_for_Agile_Humanoid_Skills/ASAP_Aligning_Simulation_and_Real-World_Physics_for_Agile_Humanoid_Skills.md",
             "url": "/papers/03_High_Impact_Selection/ASAP_Aligning_Simulation_and_Real-World_Physics_for_Agile_Humanoid_Skills/ASAP_Aligning_Simulation_and_Real-World_Physics_for_Agile_Humanoid_Skills.html",
