@@ -688,8 +688,8 @@
           '\\ \\text{Hz}$、一块 $' + CHUNK + '$ 步 $' + INFER_MS + '\\ \\text{ms}$（L40，bf16）都是论文 §2 的原话。' +
           '播放时长 $' + fmt(CHUNK_MS, 0) + '\\ \\text{ms}=' + CHUNK + '\\times 1000/' + SYS1_HZ + '$ 是按动作率换算的，论文没有单独报这个毫秒数。',
         '流匹配跟 [Isaac-GR00T](https://github.com/NVIDIA/Isaac-GR00T) 的实现：' +
-          '`noisy = (1-t)·noise + t·actions`，`velocity = actions - noise`，推理 `A ← A + dt·v`，默认 $K=' +
-          K_STEPS + '$。玩具 $\\epsilon=' + TOY_EPS + '$、$A=' + TOY_A + '$ 只用来把四步走完，不是论文里的关节角。' +
+          '`noisy = (1-t)·noise + t·actions`，`velocity = actions - noise`，推理 `A ← A + dt·v`，$K=' +
+          K_STEPS + '$ 取论文和评测脚本的 `--denoising_steps` 默认值（checkpoint 的 `config.json` 写的是 16）。玩具 $\\epsilon=' + TOY_EPS + '$、$A=' + TOY_A + '$ 只用来把四步走完，不是论文里的关节角。' +
           'ar5iv 排版的 Eq.(1) 写成 $\\epsilon-A$，与这条更新矛盾。',
         'Table 2 的 Average 按任务数加权（$' + SIM_N.join('+') + '=' + SIM_TASKS +
           '$）。GR00T 复核 $' + fmt(GR_SIM_W, 2) + '\\%$，论文印 $' + fmt(PAPER_SIM_AVG.gr, 1) +
