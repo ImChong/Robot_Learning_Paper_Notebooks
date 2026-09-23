@@ -614,3 +614,19 @@
     min-height: 9em;
   }
 }
+
+/* Cosmos: compact, responsive charts inside the shared paper-demo cards. */
+.cosmos-bars { display: grid; gap: .55rem; padding: 1rem; }
+.cosmos-category { display: block; width: 100%; border: 1px solid transparent; border-radius: 8px; background: transparent; color: var(--text); font: inherit; text-align: left; cursor: pointer; padding: .25rem .45rem; }
+.cosmos-category:hover, .cosmos-category:focus-visible, .cosmos-category.is-selected { border-color: var(--demo-accent); background: var(--demo-surface-2); }
+.cosmos-category:focus-visible { outline: 2px solid var(--demo-accent); outline-offset: 1px; }
+.cosmos-bar-row { display: grid; grid-template-columns: minmax(7.5rem, 11rem) minmax(2rem, 1fr) 4.2rem; gap: .75rem; align-items: center; font-size: .86rem; }
+.cosmos-bar-label { overflow-wrap: anywhere; }
+.cosmos-bar-track { height: 1rem; background: var(--demo-surface-2); border: 1px solid var(--demo-border); border-radius: 999px; overflow: hidden; }
+.cosmos-bar-fill { height: 100%; border-radius: 999px; transition: width .2s ease; }
+.cosmos-bar-value { font-variant-numeric: tabular-nums; text-align: right; }
+.cosmos-selection { margin: .2rem 1rem 1rem; color: var(--text); min-height: 1.4rem; }
+@media (max-width: 600px) {
+  .cosmos-bars { padding: .75rem .4rem; }
+  .cosmos-bar-row { grid-template-columns: minmax(5.6rem, 8rem) minmax(2rem, 1fr) 3.9rem; gap: .35rem; font-size: .78rem; }
+}

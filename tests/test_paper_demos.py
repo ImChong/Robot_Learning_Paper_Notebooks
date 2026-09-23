@@ -204,7 +204,7 @@ def test_notes_declare_their_demos_in_reading_order():
         ),
         SONIC_NOTE: ("sonic", ["sonic-explainer"]),
         GROOT_NOTE: ("groot", ["groot-explainer"]),
-        COSMOS_NOTE: ("cosmos", ["cosmos-explainer"]),
+        COSMOS_NOTE: ("cosmos", ["cosmos-explainer", "cosmos-data", "cosmos-tokens", "cosmos-physics"]),
         GMR_NOTE: ("gmr", ["gmr-explainer"]),
         OMNI_NOTE: ("omniretarget", ["omniretarget-explainer"]),
     }
