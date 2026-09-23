@@ -57,7 +57,7 @@
    ├─ ⑥ 移动操作 Loco-Manipulation： HOMIE (2025) → ULTRA (2026) → Ψ₀ (2026)
    │                                （外骨骼遥操作 → 多模态全身控制 → loco-manip 基础模型）
    │
-   └─ ⑦ 世界模型 World Model：       DreamDojo (2026) → 1X World Model (2025)；HAIC (2026)（动力学感知 WM）
+   └─ ⑦ 世界模型 World Model：       Cosmos (2025) → DreamDojo (2026) → 1X World Model (2025)；HAIC (2026)（动力学感知 WM）
             ↓（世界模型"会做梦"预测未来 / 动力学，再升级为可直接当策略的模型）
        ⑧ 世界-动作模型 WAM：         DreamZero (2026)（World Action Models are Zero-shot Policies）
        ↓
