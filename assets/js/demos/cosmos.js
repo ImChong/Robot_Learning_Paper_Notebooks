@@ -183,7 +183,126 @@
     }};
   }
 
-  K.mount({ 'cosmos-explainer': function (host) {
+  // Paper-backed charts and a teaching-only token-count calculator.
+  function bar(parent, label, value, max, color, suffix) {
+    var row = K.el('div', 'cosmos-bar-row');
+    row.appendChild(K.el('span', 'cosmos-bar-label', label));
+    var track = K.el('div', 'cosmos-bar-track');
+    var fill = K.el('div', 'cosmos-bar-fill');
+    fill.style.width = (100 * value / max) + '%';
+    fill.style.background = color;
+    track.appendChild(fill);
+    row.appendChild(track);
+    row.appendChild(K.el('strong', 'cosmos-bar-value', String(value) + (suffix || '')));
+    parent.appendChild(row);
+    return row;
+  }
+
+  function buildData(host) {
+    var root = K.card(host, {
+      title: '论文数据：训练视频来自哪些类别？',
+      sub: '点击一类，读它为世界模型提供了哪种变化。下列百分比来自论文 §3.1，合计 100%。'
+    });
+    var categories = [
+      ['自然动态', 20, '水流、天气等自然场景的时间变化。'],
+      ['手部与物体操作', 16, '接触、移动物体和手部动作。'],
+      ['空间感知与导航', 16, '视角变化以及环境中的空间关系。'],
+      ['驾驶', 11, '道路交通里的物体与相机运动。'],
+      ['人类动作与活动', 10, '人体姿态及日常活动的时间变化。'],
+      ['第一人称视角', 8, '移动视点观察到的场景变化。'],
+      ['动态相机', 8, '运动镜头和视角变化。'],
+      ['合成渲染', 4, '人工生成的视觉场景。'],
+      ['其他', 7, '不属于以上类别的剩余片段。']
+    ];
+    var chart = K.el('div', 'cosmos-bars');
+    chart.setAttribute('role', 'group');
+    chart.setAttribute('aria-label', '视频类别占比，点击条目查看说明');
+    root.appendChild(chart);
+    var detail = K.el('p', 'cosmos-selection', '选择一类查看说明。');
+    categories.forEach(function (item) {
+      var btn = K.el('button', 'cosmos-category');
+      btn.type = 'button';
+      btn.setAttribute('aria-label', item[0] + '，' + item[1] + '%：查看解释');
+      bar(btn, item[0], item[1], 20, 'var(--demo-accent)', '%');
+      btn.addEventListener('click', function () {
+        chart.querySelectorAll('.cosmos-category').forEach(function (b) { b.classList.remove('is-selected'); });
+        btn.classList.add('is-selected');
+        detail.textContent = item[0] + ' · ' + item[1] + '%：' + item[2];
+      });
+      chart.appendChild(btn);
+    });
+    root.appendChild(detail);
+    K.note(root, ['**读图边界**：这是视频类别的样本构成，不是机器人专属数据占比，也不是训练成功率。来源：论文 §3.1。']);
+  }
+
+  function buildTokens(host) {
+    var root = K.card(host, {
+      title: '拖动帧数和画面尺寸，看 token 位置怎么变',
+      sub: '按论文图 7 的首帧单列公式，比较 CV8×8×8 与 DV8×16×16 的**时空位置数**。输入不是论文 benchmark。'
+    });
+    var state = { frames: 33, size: 128 };
+    var controls = K.controlsRow(root);
+    K.slider(controls, { label: '输入帧数（1 + 8n）', min: 1, max: 65, step: 8, value: 33,
+      format: function (v) { return v + ' 帧'; }, onInput: function (v) { state.frames = v; render(); } });
+    K.slider(controls, { label: '方形画面边长', min: 64, max: 256, step: 64, value: 128,
+      format: function (v) { return v + ' px'; }, onInput: function (v) { state.size = v; render(); } });
+    var chart = K.el('div', 'cosmos-bars');
+    root.appendChild(chart);
+    var stats = K.statsRow(root);
+    var tStat = stats.add('时间位置');
+    var cvStat = stats.add('连续位置（每个含 16 维）');
+    var dvStat = stats.add('离散位置（每个是编号）');
+    function render() {
+      var time = 1 + (state.frames - 1) / 8;
+      var cv = time * Math.pow(state.size / 8, 2);
+      var dv = time * Math.pow(state.size / 16, 2);
+      chart.replaceChildren();
+      bar(chart, '连续 CV', cv, cv, 'var(--demo-accent)');
+      bar(chart, '离散 DV', dv, cv, 'var(--demo-good)');
+      tStat.set('1 + (' + state.frames + ' − 1) / 8 = ' + time);
+      cvStat.set(cv.toLocaleString());
+      dvStat.set(dv.toLocaleString());
+    }
+    render();
+    K.note(root, ['**教学算例**：画面为方形、维度恰好可整除。连续和离散每个位置承载的信息不同，柱长只比较位置个数，**不能**解读为重建质量、实际字节数、推理速度或 4 倍压缩性能。']);
+  }
+
+  function buildPhysics(host) {
+    var root = K.card(host, {
+      title: '给更多过去帧，预测物体位置会更准吗？',
+      sub: '切换论文表 20 的 7B/14B 扩散 Video2World。横条是物体掩码平均 IoU，0–1 全刻度；同一模型比较“文字 + 1 帧”和“文字 + 9 帧”。'
+    });
+    var controls = K.controlsRow(root);
+    var buttons = K.el('div', 'demo-control demo-buttons');
+    controls.appendChild(buttons);
+    var chart = K.el('div', 'cosmos-bars');
+    root.appendChild(chart);
+    var detail = K.el('p', 'cosmos-selection');
+    root.appendChild(detail);
+    var models = [ ['7B', 0.332, 0.592], ['14B', 0.338, 0.598] ];
+    var active = 0;
+    models.forEach(function (model, i) {
+      var b = K.button(buttons, model[0], function () { active = i; render(); });
+      b.setAttribute('aria-label', '查看 ' + model[0] + ' 的物理对齐指标');
+      model.button = b;
+    });
+    function render() {
+      var model = models[active];
+      chart.replaceChildren();
+      bar(chart, '文字 + 1 帧', model[1], 1, 'var(--demo-warn)');
+      bar(chart, '文字 + 9 帧', model[2], 1, 'var(--demo-good)');
+      detail.textContent = model[0] + '：9 帧比 1 帧高 ' + (model[2] - model[1]).toFixed(3) + ' IoU；14B 不明显优于 7B。';
+      models.forEach(function (m, j) { m.button.setAttribute('aria-pressed', j === active ? 'true' : 'false'); });
+    }
+    render();
+    K.note(root, ['**论文原始指标**：PhysX / Isaac Sim 的 8 类测试场景；9 帧让模型有机会估计运动趋势。IoU 只看物体预测与参考的重合，不保证遵守重力、接触或长期动力学。']);
+  }
+
+  K.mount({
+    'cosmos-data': buildData,
+    'cosmos-tokens': buildTokens,
+    'cosmos-physics': buildPhysics,
+    'cosmos-explainer': function (host) {
     K.explainer(host, {
       title: '五幕动画：Cosmos 如何构建世界模型',
       sub: '约 60 秒自动播放。空格暂停，← → 换幕；图形与时长均为教学示意。',
