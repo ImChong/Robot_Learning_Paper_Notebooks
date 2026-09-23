@@ -1,0 +1,680 @@
+/* Interactive GR00T N1 demos for
+ * papers/03_High_Impact_Selection/GR00T_N1_Humanoid_Foundation_Model.
+ *
+ * Loaded by _layouts/paper.html when the note's front matter declares
+ * `demos: ["groot"]`, after assets/js/demos/kit.js. The note itself may only
+ * contain empty placeholders, because scripts/sanitize_paper_html.py strips
+ * <script>/<canvas>/<input> from #paper-body before publish.
+ *
+ * Demos:
+ *   groot-explainer — 七幕讲解动画：没有人形数据的互联网 → 10 Hz 的视觉语言与
+ *                     63.9 ms 的动作块 → 流匹配路径与 K=4 欧拉 → 数据金字塔 →
+ *                     潜动作 / IDM 补标签 → 一套权重、按本体的 MLP → 表上的数字与边界
+ *
+ * 流匹配的速度目标与开源实现对齐，不跟 ar5iv 上 Eq.(1) 印出来的相反符号：
+ *   noisy = (1 - t) * noise + t * actions
+ *   velocity = actions - noise
+ */
+
+(function () {
+  'use strict';
+
+  var K = window.PaperDemoKit;
+  var fmt = K.fmt,
+    svgEl = K.svgEl,
+    svgText = K.svgText,
+    svgMath = K.svgMath,
+    paint = K.paint,
+    seg = K.seg,
+    ease = K.ease,
+    setOpacity = K.setOpacity,
+    sceneSvg = K.sceneSvg;
+
+  var X = K.xColors;
+  var C_ACCENT = X.accent,
+    C_GOOD = X.good,
+    C_BAD = X.bad,
+    C_WARN = X.warn,
+    C_MUTED = X.muted,
+    C_BORDER = X.border,
+    C_SURFACE = X.surface,
+    C_SURFACE2 = X.surface2;
+
+  // ─── 画面上的数字从这里现算，不手写 ───────────────────────────────────
+  /* 论文 §2：System 2 在 L40 上 10 Hz；System 1 的动作率写成 120 Hz；
+     一块 16 步动作的采样耗时 63.9 ms（L40，bf16）。120 Hz 是播动作的节拍，
+     不是 DiT 每 8.3 ms 做一次完整前向。 */
+  var SYS2_HZ = 10,
+    SYS1_HZ = 120,
+    CHUNK = 16,
+    INFER_MS = 63.9;
+  var SYS2_MS = 1000 / SYS2_HZ; // 100 ms，10 Hz 的周期
+  var ACTION_MS = 1000 / SYS1_HZ; // 8.33 ms，120 Hz 的动作间隔
+  var CHUNK_MS = CHUNK * ACTION_MS; // 133.33 ms，16 步按 120 Hz 要播多久
+  var INFER_FITS = INFER_MS < CHUNK_MS;
+
+  var TOTAL_B = 2.2,
+    VLM_B = 1.34;
+  var HEAD_B = TOTAL_B - VLM_B; // 0.86，VLM 以外的 DiT 与投影
+  var IMG = 224,
+    IMG_TOKENS = 64,
+    LLM_LAYER = 12,
+    K_STEPS = 4;
+
+  /* 数据金字塔上的原文数字。神经轨迹「约 10×」是 827/88 的口语，画面写比值。 */
+  var TELEOP_H = 88,
+    NEURAL_H = 827;
+  var NEURAL_X = NEURAL_H / TELEOP_H; // 9.40
+  var SIM_TRAJ = 780000,
+    SIM_H = 6500,
+    SIM_WALL_H = 11;
+  var SIM_X = SIM_H / SIM_WALL_H; // 590.9，11 小时墙钟生成 6500 小时数据
+  var PAIRS = 54,
+    DEMOS_PER = 10000;
+  var PRETRAIN_SIM = PAIRS * DEMOS_PER; // 540000，预训练仿真这一截
+  var AGIBOT = 140000,
+    GPU_H = 50000;
+
+  /* 玩具标量，用来把欧拉积分走完。ε=-1、A=1 时 v=A-ε=2，四步正好落回 1。 */
+  var TOY_EPS = -1,
+    TOY_A = 1;
+  var TOY_V = TOY_A - TOY_EPS; // 2，对应开源代码的 actions - noise
+  var EULER = [TOY_EPS];
+  for (var step = 0; step < K_STEPS; step++) EULER.push(EULER[step] + TOY_V / K_STEPS);
+
+  /* Table 2（100 条演示）三列不是简单平均。Average 按任务数加权：
+     RoboCasa 24 + DexMG 9 + GR-1 24 = 57。 */
+  var SIM_N = [24, 9, 24];
+  var DP_SIM = [25.6, 56.1, 32.7];
+  var GR_SIM = [32.1, 66.5, 50.0];
+  var PAPER_SIM_AVG = { dp: 33.4, gr: 45.0 };
+
+  function wavg(rates, counts) {
+    var s = 0, n = 0, i;
+    for (i = 0; i < rates.length; i++) {
+      s += rates[i] * counts[i];
+      n += counts[i];
+    }
+    return s / n;
+  }
+  var SIM_TASKS = SIM_N[0] + SIM_N[1] + SIM_N[2]; // 57
+  var GR_SIM_W = wavg(GR_SIM, SIM_N); // 45.07，表上印 45.0
+  var DP_SIM_W = wavg(DP_SIM, SIM_N); // 33.41，表上印 33.4
+  var GR1_GAP = GR_SIM[2] - DP_SIM[2]; // 17.3，论文说 GR-1 超过 17 个点
+
+  /* Table 3 的总平均同样按任务数加权：取放 5 + 关节物体 3 + 工业 3 + 协作 2 = 13。
+     下面的差值用论文印出来的平均，和正文那句 32.4 / 30.4 / 3.8 对齐。 */
+  var REAL_N = [5, 3, 3, 2];
+  var GR_FULL = [82.0, 70.9, 70.0, 82.5];
+  var PAPER_REAL = { dp10: 10.2, dpFull: 46.4, gr10: 42.6, grFull: 76.8 };
+  var REAL_TASKS = REAL_N[0] + REAL_N[1] + REAL_N[2] + REAL_N[3]; // 13
+  var GR_FULL_W = wavg(GR_FULL, REAL_N); // 76.75，表上印 76.8
+  var GAP_LOW = PAPER_REAL.gr10 - PAPER_REAL.dp10; // 32.4
+  var GAP_FULL = PAPER_REAL.grFull - PAPER_REAL.dpFull; // 30.4
+  var GAP_DATA = PAPER_REAL.dpFull - PAPER_REAL.gr10; // 3.8
+
+  var PRE_HAND_OK = 11.5,
+    PRE_TRIALS = 15,
+    PRE_NOVEL_OK = 11;
+  var PRE_HAND = 76.6,
+    PRE_NOVEL = 73.3; // 论文印的成功率；11.5/15 与 11/15 是同一次评估的分子
+
+  function panel(svg, x, y, w, h, fill, stroke, dash) {
+    var node = paint(svgEl('rect', {
+      x: x, y: y, width: w, height: h, rx: 8, 'stroke-width': 1.25
+    }), fill, stroke);
+    if (dash) node.setAttribute('stroke-dasharray', '5 4');
+    svg.appendChild(node);
+    return node;
+  }
+
+  function group() {
+    return svgEl('g', {});
+  }
+
+  // ─── 第 1 幕：没有人形数据的互联网 ────────────────────────────────────
+  var S1 = [
+    { t: '① 单台人形的真机数据差几个数量级', d: '不存在一份「人形互联网」，单机数据撑不起通用模型' },
+    { t: '② 把各家机器人拼在一起仍是孤岛', d: '本体、传感器、自由度、控制模式对不齐，Open X 也没拼成一张网' },
+    { t: '③ 把 VLM 当黑盒规划器', d: '得先假定低层技能和接口都有了，推理和执行没有一起训练' }
+  ];
+
+  function buildSceneIslands() {
+    var s = sceneSvg(
+      'GR00T N1 面对的三个缺口：没有人形互联网、跨本体数据仍是孤岛、' +
+        '把视觉语言模型当黑盒规划器就接不上执行'
+    );
+    s.appendChild(svgText(40, 32, '通用人形缺的不是一句口号，是数据和一条训得通的接口', 'demo-x-ink2', 13.5));
+
+    var walls = S1.map(function (w, i) {
+      var g = group();
+      var y = 52 + i * 78;
+      g.appendChild(panel(g, 36, y, 400, 68, C_SURFACE, C_BAD, true));
+      g.appendChild(paint(svgText(52, y + 26, w.t, null, 13), C_BAD));
+      g.appendChild(svgText(52, y + 48, w.d, 'demo-x-mut', 11));
+      s.appendChild(g);
+      return { g: g, at: 0.7 + i * 1.5 };
+    });
+
+    var claim = group();
+    claim.appendChild(panel(claim, 456, 52, 308, 148, C_SURFACE2, C_ACCENT));
+    claim.appendChild(paint(svgText(610, 82, '论文实际要做的', null, 13, 'middle'), C_ACCENT));
+    claim.appendChild(svgText(476, 112, '一个 VLA，视觉语言和动作头', 'demo-x-ink2', 12));
+    claim.appendChild(svgText(476, 134, '端到端一起训，而不是', 'demo-x-ink2', 12));
+    claim.appendChild(svgText(476, 156, '「规划器 + 现成的低层控制器」。', 'demo-x-ink2', 12));
+    claim.appendChild(svgText(476, 180, '评测落在短程桌面操作。', 'demo-x-mut', 12));
+    s.appendChild(claim);
+
+    var foot = group();
+    foot.appendChild(panel(foot, 456, 214, 308, 72, C_SURFACE, C_WARN, true));
+    foot.appendChild(paint(svgText(610, 244, '不是移动导航', null, 13, 'middle'), C_WARN));
+    foot.appendChild(svgText(610, 266, '局限写明了：还做不了长程 loco-manipulation', 'demo-x-mut', 11, 'middle'));
+    s.appendChild(foot);
+
+    var band = group();
+    band.appendChild(paint(svgText(400, 330, '所以后面每一幕都在补这两件事', null, 15, 'middle'), C_ACCENT));
+    band.appendChild(svgText(400, 356, '异构数据怎么变成同一条监督，推理和关节动作怎么接到一个模型里', 'demo-x-mut', 12, 'middle'));
+    s.appendChild(band);
+
+    function draw(t) {
+      walls.forEach(function (w) { setOpacity(w.g, seg(t, w.at, w.at + 0.45)); });
+      setOpacity(claim, seg(t, 5.4, 6.1));
+      setOpacity(foot, seg(t, 7.6, 8.3));
+      setOpacity(band, seg(t, 9.8, 10.6));
+    }
+    return { el: s, draw: draw };
+  }
+
+  // ─── 第 2 幕：10 Hz 与 63.9 ms ─────────────────────────────────────────
+  function buildSceneClocks() {
+    var s = sceneSvg(
+      'System 2 是 Eagle-2 的第 12 层，L40 上 10 Hz；System 1 用 63.9 ms 采样 16 步动作，' +
+        '120 Hz 是这 16 步的播放节拍'
+    );
+    s.appendChild(svgText(40, 30, '两个频率说的不是同一件事', 'demo-x-ink2', 13.5));
+
+    var left = group();
+    left.appendChild(panel(left, 36, 48, 352, 168, C_SURFACE2, C_ACCENT));
+    left.appendChild(paint(svgText(52, 74, 'System 2 · Eagle-2', null, 14), C_ACCENT));
+    left.appendChild(svgText(52, 100, IMG + '×' + IMG + '，pixel shuffle 后 ' + IMG_TOKENS + ' 个图像 token', 'demo-x-ink2', 12));
+    left.appendChild(svgText(52, 122, '取 LLM 第 ' + LLM_LAYER + ' 层，不用最后一层', 'demo-x-ink2', 12));
+    left.appendChild(svgText(52, 144, 'VLM ' + fmt(VLM_B, 2) + ' B / 全模型 ' + fmt(TOTAL_B, 1) + ' B', 'demo-x-ink2', 12));
+    left.appendChild(svgText(52, 170, '论文给的运行频率：' + SYS2_HZ + ' Hz @ L40', 'demo-x-mut', 12));
+    left.appendChild(svgText(52, 192, '周期 ' + fmt(SYS2_MS, 0) + ' ms', 'demo-x-mut', 12));
+    s.appendChild(left);
+
+    var right = group();
+    right.appendChild(panel(right, 412, 48, 352, 168, C_SURFACE2, C_GOOD));
+    right.appendChild(paint(svgText(428, 74, 'System 1 · DiT 动作头', null, 14), C_GOOD));
+    right.appendChild(svgText(428, 100, '交叉注意力读 VLM token，不是 π₀ 那种 MoE', 'demo-x-ink2', 12));
+    right.appendChild(svgText(428, 122, '一次采样 ' + CHUNK + ' 步，耗时 ' + INFER_MS + ' ms', 'demo-x-ink2', 12));
+    right.appendChild(svgText(428, 144, '去噪 ' + K_STEPS + ' 步；DiT 侧约 ' + fmt(HEAD_B, 2) + ' B', 'demo-x-ink2', 12));
+    right.appendChild(svgText(428, 170, '动作率 ' + SYS1_HZ + ' Hz → 一步 ' + fmt(ACTION_MS, 1) + ' ms', 'demo-x-mut', 12));
+    right.appendChild(svgText(428, 192, CHUNK + ' 步要播 ' + fmt(CHUNK_MS, 0) + ' ms', 'demo-x-mut', 12));
+    s.appendChild(right);
+
+    var axisY = 248;
+    s.appendChild(paint(svgEl('line', {
+      x1: 48, y1: axisY, x2: 752, y2: axisY, 'stroke-width': 1.2
+    }), null, C_BORDER));
+    [0, 50, 100, 150, 200].forEach(function (ms) {
+      var x = 48 + (ms / 200) * 704;
+      s.appendChild(paint(svgEl('line', {
+        x1: x, y1: axisY - 4, x2: x, y2: axisY + 4, 'stroke-width': 1
+      }), null, C_MUTED));
+      s.appendChild(svgText(x, axisY + 16, String(ms), 'demo-x-mut', 10, 'middle'));
+    });
+    s.appendChild(svgText(752, axisY + 16, 'ms', 'demo-x-mut', 10, 'end'));
+
+    function bar(y, color) {
+      var node = paint(svgEl('rect', { x: 168, y: y, width: 1, height: 14, rx: 3 }), color, color);
+      s.appendChild(node);
+      return node;
+    }
+    var bInfer = bar(278, C_GOOD);
+    var bPlay = bar(302, C_ACCENT);
+    var bVlm = bar(326, C_WARN);
+    var labels = group();
+    labels.appendChild(paint(svgText(40, 290, '采样一块', null, 11), C_GOOD));
+    labels.appendChild(paint(svgText(40, 314, '16 步播放', null, 11), C_ACCENT));
+    labels.appendChild(paint(svgText(40, 338, 'VLM 周期', null, 11), C_WARN));
+    s.appendChild(labels);
+
+    var play = paint(svgEl('line', {
+      x1: 168, y1: 270, x2: 168, y2: 348, 'stroke-width': 1.4
+    }), null, C_BAD);
+    s.appendChild(play);
+
+    var verdict = group();
+    verdict.appendChild(paint(svgText(400, 396, INFER_FITS
+      ? '63.9 ms 算完的 16 步，按 120 Hz 要播 ' + fmt(CHUNK_MS, 0) + ' ms，算得比播得快'
+      : '采样比播放慢', null, 14, 'middle'), C_ACCENT));
+    s.appendChild(verdict);
+
+    function xMs(ms) { return 168 + (ms / 200) * 560; }
+    function draw(t) {
+      setOpacity(left, seg(t, 0.4, 1.0));
+      setOpacity(right, seg(t, 2.2, 2.8));
+      var u = ease(seg(t, 4.4, 8.2));
+      bInfer.setAttribute('width', Math.max(1, (xMs(INFER_MS) - 168) * u));
+      bPlay.setAttribute('width', Math.max(1, (xMs(CHUNK_MS) - 168) * u));
+      bVlm.setAttribute('width', Math.max(1, (xMs(SYS2_MS) - 168) * u));
+      var head = 168 + ease(seg(t, 4.4, 11.2)) * 560;
+      play.setAttribute('x1', head);
+      play.setAttribute('x2', head);
+      setOpacity(labels, seg(t, 4.6, 5.2));
+      setOpacity(verdict, seg(t, 10.6, 11.4));
+    }
+    return { el: s, draw: draw };
+  }
+
+  // ─── 第 3 幕：流匹配 ───────────────────────────────────────────────────
+  function buildSceneFlow() {
+    var s = sceneSvg(
+      '动作块沿直线从噪声走到数据，网络预测的速度是动作减去噪声；' +
+        '推理用 4 步欧拉，玩具标量从 -1 落到 1'
+    );
+    s.appendChild(svgText(40, 28, '流匹配：直线路径，网络学的是速度', 'demo-x-ink2', 13.5));
+    s.appendChild(svgMath(40, 58, 'A^{\\tau}=(1-\\tau)\\epsilon+\\tau A', { size: 15, w: 280, h: 36 }));
+    s.appendChild(svgMath(340, 58, 'v=A-\\epsilon', { size: 15, w: 140, h: 36 }));
+    s.appendChild(svgMath(500, 58, 'A\\leftarrow A+\\tfrac{1}{K}v', { size: 15, w: 230, h: 36 }));
+
+    var y = 168;
+    s.appendChild(paint(svgEl('line', {
+      x1: 70, y1: y, x2: 730, y2: y, 'stroke-width': 1.4
+    }), null, C_BORDER));
+    s.appendChild(paint(svgText(70, y + 28, 'τ = 0  纯噪声', null, 11, 'start'), C_MUTED));
+    s.appendChild(paint(svgText(730, y + 28, 'τ = 1  数据', null, 11, 'end'), C_GOOD));
+
+    var dot = paint(svgEl('circle', { r: 7 }), C_ACCENT, C_ACCENT);
+    s.appendChild(dot);
+    var tauTxt = svgText(400, y - 18, '', 'demo-x-ink2', 13, 'middle');
+    s.appendChild(tauTxt);
+
+    var steps = EULER.map(function (val, i) {
+      var g = group();
+      var x = 70 + (i / K_STEPS) * 660;
+      g.appendChild(paint(svgEl('circle', { cx: x, cy: 250, r: 6 }), i === K_STEPS ? C_GOOD : C_ACCENT));
+      g.appendChild(svgText(x, 274, fmt(val, 1), 'demo-x-ink2', 12, 'middle'));
+      g.appendChild(svgText(x, 292, i === 0 ? 'A₀' : '第 ' + i + ' 步', 'demo-x-mut', 10, 'middle'));
+      s.appendChild(g);
+      return g;
+    });
+
+    var note = group();
+    note.appendChild(panel(note, 36, 318, 728, 78, C_SURFACE, C_WARN, true));
+    note.appendChild(paint(svgText(52, 344, '符号以开源代码为准：velocity = actions − noise', null, 13), C_WARN));
+    note.appendChild(svgText(52, 368, '玩具：ε = ' + TOY_EPS + '，A = ' + TOY_A + '，v = ' + fmt(TOY_V, 0) +
+      '，K = ' + K_STEPS + '，四步落在 ' + fmt(EULER[K_STEPS], 0), 'demo-x-ink2', 12));
+    note.appendChild(svgText(52, 388, 'ar5iv 上 Eq.(1) 印成 ε−A，和插值、欧拉更新、仓库实现都相反', 'demo-x-mut', 11));
+    s.appendChild(note);
+
+    function draw(t) {
+      var u = ease(seg(t, 1.2, 6.4));
+      var x = 70 + u * 660;
+      dot.setAttribute('cx', x.toFixed(1));
+      dot.setAttribute('cy', y);
+      var tau = u;
+      var aval = (1 - tau) * TOY_EPS + tau * TOY_A;
+      tauTxt.textContent = 'τ = ' + fmt(tau, 2) + '    Aτ = ' + fmt(aval, 2);
+      setOpacity(tauTxt, seg(t, 1.0, 1.5));
+      steps.forEach(function (g, i) {
+        setOpacity(g, seg(t, 7.0 + i * 0.7, 7.4 + i * 0.7));
+      });
+      setOpacity(note, seg(t, 10.4, 11.2));
+    }
+    return { el: s, draw: draw };
+  }
+
+  // ─── 第 4 幕：数据金字塔 ───────────────────────────────────────────────
+  function buildScenePyramid() {
+    var s = sceneSvg(
+      '训练数据按数量和具身特异性分成三层：人类视频在底座，仿真和神经轨迹在中层，真机轨迹在顶层'
+    );
+    s.appendChild(svgText(40, 30, '越往上越少，也越像目标机器人', 'demo-x-ink2', 13.5));
+
+    var layers = [
+      {
+        y: 48, w: 280, h: 70, c: C_GOOD,
+        t: '顶层 · 真机',
+        d: 'GR-1 · Open X · AgiBot ' + (AGIBOT / 1000) + 'k'
+      },
+      {
+        y: 128, w: 460, h: 70, c: C_ACCENT,
+        t: '中层 · 仿真 + 神经轨迹',
+        d: (SIM_TRAJ / 10000) + ' 万条仿真，墙钟 ' + SIM_WALL_H + ' h'
+      },
+      {
+        y: 208, w: 680, h: 70, c: C_WARN,
+        t: '底座 · 人类视频 + 网络数据',
+        d: 'Ego4D、EPIC-KITCHENS、Ego-Exo4D …'
+      }
+    ];
+    var nodes = layers.map(function (L) {
+      var g = group();
+      var x = 400 - L.w / 2;
+      g.appendChild(panel(g, x, L.y, L.w, L.h, C_SURFACE2, L.c));
+      g.appendChild(paint(svgText(400, L.y + 28, L.t, null, 14, 'middle'), L.c));
+      g.appendChild(svgText(400, L.y + 52, L.d, 'demo-x-ink2', 12, 'middle'));
+      s.appendChild(g);
+      return g;
+    });
+
+    var extra = group();
+    extra.appendChild(svgText(400, 312, '神经轨迹：' + TELEOP_H + ' h → ' + NEURAL_H + ' h，比值 ' +
+      fmt(NEURAL_X, 1) + '×（论文写作约 10×）', 'demo-x-ink2', 13, 'middle'));
+    extra.appendChild(svgText(400, 338, '预训练仿真 ' + PAIRS + ' 组容器 × ' + (DEMOS_PER / 1000) +
+      'k = ' + (PRETRAIN_SIM / 1000) + 'k 条，含在 ' + (SIM_TRAJ / 10000) + ' 万条里面', 'demo-x-mut', 12, 'middle'));
+    extra.appendChild(svgText(400, 364, '仿真数据量 / 墙钟 = ' + SIM_H + ' / ' + SIM_WALL_H + ' ≈ ' +
+      fmt(SIM_X, 0) + ' 倍', 'demo-x-mut', 12, 'middle'));
+    extra.appendChild(paint(svgText(400, 396, '预训练大约 ' + (GPU_H / 1000) + ',000 H100·h', null, 14, 'middle'), C_ACCENT));
+    s.appendChild(extra);
+
+    function draw(t) {
+      nodes.forEach(function (g, i) {
+        setOpacity(g, seg(t, 0.6 + i * 1.6, 1.2 + i * 1.6));
+      });
+      setOpacity(extra, seg(t, 6.4, 7.2));
+    }
+    return { el: s, draw: draw };
+  }
+
+  // ─── 第 5 幕：没有动作标签 ─────────────────────────────────────────────
+  function buildSceneLatent() {
+    var s = sceneSvg(
+      '人类视频和神经轨迹没有关节动作，用 VQ-VAE 潜动作或逆动力学模型补标签，再走同一条流匹配损失'
+    );
+    s.appendChild(svgText(40, 30, '没有 a_t 的视频，先补一个动作标签再进同一条 loss', 'demo-x-ink2', 13.5));
+
+    var frames = [
+      { x: 40, t: '当前帧', sub: '画面 x_t' },
+      { x: 210, t: '未来帧', sub: '固定窗之后' }
+    ];
+    var boxes = frames.map(function (f) {
+      var g = group();
+      g.appendChild(panel(g, f.x, 58, 150, 72, C_SURFACE, C_BORDER));
+      g.appendChild(svgText(f.x + 75, 90, f.t, 'demo-x-ink2', 14, 'middle'));
+      g.appendChild(svgText(f.x + 75, 112, f.sub, 'demo-x-mut', 11, 'middle'));
+      s.appendChild(g);
+      return g;
+    });
+
+    var code = group();
+    code.appendChild(panel(code, 400, 58, 360, 72, C_SURFACE2, C_ACCENT));
+    code.appendChild(paint(svgText(580, 88, 'VQ-VAE 码本 → 潜动作 z_t', null, 14, 'middle'), C_ACCENT));
+    code.appendChild(svgText(580, 112, '当作一种新本体，名叫 LAPA', 'demo-x-mut', 12, 'middle'));
+    s.appendChild(code);
+
+    s.appendChild(paint(svgEl('path', {
+      d: 'M 190 94 H 400', fill: 'none', 'stroke-width': 1.3
+    }), null, C_MUTED));
+
+    var rows = [
+      { t: '真机轨迹', d: '真值动作 + 潜动作，两条都做流匹配目标', c: C_GOOD },
+      { t: '神经轨迹', d: '潜动作，外加在真机数据上训的 IDM 伪动作', c: C_ACCENT },
+      { t: '人类视频', d: '只有潜动作。后训练与真机轨迹 1:1 混采', c: C_WARN }
+    ];
+    var lines = rows.map(function (r, i) {
+      var g = group();
+      var y = 160 + i * 58;
+      g.appendChild(panel(g, 40, y, 720, 50, C_SURFACE, r.c));
+      g.appendChild(paint(svgText(56, y + 22, r.t, null, 13), r.c));
+      g.appendChild(svgText(168, y + 22, r.d, 'demo-x-ink2', 13));
+      s.appendChild(g);
+      return g;
+    });
+
+    var foot = group();
+    foot.appendChild(svgText(400, 360, '数据少的时候 LAPA 略好；演示变多以后 IDM 的伪动作更接近真值，差距拉开', 'demo-x-ink2', 12, 'middle'));
+    foot.appendChild(paint(svgText(400, 388, '同一条 flow-matching loss，换的是标签从哪来', null, 14, 'middle'), C_ACCENT));
+    s.appendChild(foot);
+
+    function draw(t) {
+      boxes.forEach(function (g, i) { setOpacity(g, seg(t, 0.4 + i * 0.6, 0.9 + i * 0.6)); });
+      setOpacity(code, seg(t, 2.2, 2.8));
+      lines.forEach(function (g, i) { setOpacity(g, seg(t, 4.0 + i * 1.3, 4.5 + i * 1.3)); });
+      setOpacity(foot, seg(t, 8.8, 9.6));
+    }
+    return { el: s, draw: draw };
+  }
+
+  // ─── 第 6 幕：一套权重 ─────────────────────────────────────────────────
+  function buildSceneEmbodiment() {
+    var s = sceneSvg(
+      '视觉语言骨干和 DiT 共享，每个本体各有一套状态/动作 MLP；' +
+        '仿真覆盖单臂、双臂和 GR-1，真机表只报了 Fourier GR-1'
+    );
+    s.appendChild(svgText(40, 30, '共享的是骨干，不是把同一组关节角写进两台机器人', 'demo-x-ink2', 13.5));
+
+    var trunk = group();
+    trunk.appendChild(panel(trunk, 250, 52, 300, 64, C_SURFACE2, C_ACCENT));
+    trunk.appendChild(paint(svgText(400, 78, 'Eagle-2 + DiT', null, 15, 'middle'), C_ACCENT));
+    trunk.appendChild(svgText(400, 100, '预训练是一套权重', 'demo-x-mut', 12, 'middle'));
+    s.appendChild(trunk);
+
+    var bodies = [
+      { t: 'Franka 单臂', d: 'RoboCasa 24 个厨房原子技能', c: C_WARN },
+      { t: '双臂 Panda', d: '夹爪或灵巧手，DexMG 里的 6 个任务', c: C_ACCENT },
+      { t: 'GR-1 人形', d: '双臂 + 腰 + 颈，仿真 24 任务', c: C_GOOD }
+    ];
+    var cards = bodies.map(function (b, i) {
+      var g = group();
+      var x = 36 + i * 252;
+      g.appendChild(paint(svgEl('line', {
+        x1: 400, y1: 116, x2: x + 118, y2: 168, 'stroke-width': 1.2
+      }), null, C_BORDER));
+      g.appendChild(panel(g, x, 168, 236, 88, C_SURFACE, b.c));
+      g.appendChild(paint(svgText(x + 118, 202, b.t, null, 14, 'middle'), b.c));
+      g.appendChild(svgText(x + 118, 228, b.d, 'demo-x-mut', 11, 'middle'));
+      s.appendChild(g);
+      return g;
+    });
+
+    var foot = group();
+    foot.appendChild(panel(foot, 36, 278, 728, 112, C_SURFACE, C_WARN, true));
+    foot.appendChild(paint(svgText(52, 306, '表 2 的数字是按本体后训练之后的', null, 14), C_WARN));
+    foot.appendChild(svgText(52, 330, '后训练冻结语言模型，其余（含视觉编码器、DiT、各本体 MLP）继续训。', 'demo-x-ink2', 12));
+    foot.appendChild(svgText(52, 352, '真机成功率只报了 Fourier GR-1。致谢里的 1X 没有出现在实验表里。', 'demo-x-ink2', 12));
+    foot.appendChild(svgText(52, 374, '预训练权重本身的真机数字，是下面那两个不微调的桌面任务。', 'demo-x-mut', 12));
+    s.appendChild(foot);
+
+    function draw(t) {
+      setOpacity(trunk, seg(t, 0.4, 1.0));
+      cards.forEach(function (g, i) { setOpacity(g, seg(t, 2.0 + i * 1.1, 2.5 + i * 1.1)); });
+      setOpacity(foot, seg(t, 6.2, 7.0));
+    }
+    return { el: s, draw: draw };
+  }
+
+  // ─── 第 7 幕：数字与边界 ───────────────────────────────────────────────
+  function buildSceneNumbers() {
+    var s = sceneSvg(
+      '真机 GR-1 上，10% 数据的 GR00T 平均 42.6%，只比全量 Diffusion Policy 的 46.4% 低 3.8 个点；' +
+        '全量则到 76.8%。模型仍限于短程桌面操作'
+    );
+    s.appendChild(svgText(40, 28, '真机 GR-1，Table 3 的四档平均', 'demo-x-ink2', 13.5));
+
+    var rows = [
+      { n: 'DP · 10% 数据', v: PAPER_REAL.dp10, c: C_BAD },
+      { n: 'GR00T · 10% 数据', v: PAPER_REAL.gr10, c: C_WARN },
+      { n: 'DP · 全量数据', v: PAPER_REAL.dpFull, c: C_MUTED },
+      { n: 'GR00T · 全量数据', v: PAPER_REAL.grFull, c: C_GOOD }
+    ];
+    var bars = rows.map(function (r, i) {
+      var y = 46 + i * 36;
+      s.appendChild(svgText(36, y + 14, r.n, 'demo-x-mut', 12));
+      s.appendChild(paint(svgEl('rect', {
+        x: 220, y: y, width: 460, height: 16, rx: 4
+      }), C_SURFACE, C_BORDER));
+      var bar = paint(svgEl('rect', {
+        x: 220, y: y, width: 1, height: 16, rx: 4
+      }), r.c, r.c);
+      s.appendChild(bar);
+      s.appendChild(svgText(690, y + 13, fmt(r.v, 1) + '%', 'demo-x-ink2', 12));
+      return { bar: bar, v: r.v };
+    });
+
+    var calls = group();
+    calls.appendChild(svgText(40, 214, '10% 数据比同量 DP 高 ' + fmt(GAP_LOW, 1) +
+      ' 个点；全量高 ' + fmt(GAP_FULL, 1) + ' 个点', 'demo-x-ink2', 13));
+    calls.appendChild(paint(svgText(40, 238, '只用 10% 数据，比 DP 的全量低 ' + fmt(GAP_DATA, 1) + ' 个点', null, 14), C_ACCENT));
+    calls.appendChild(svgText(40, 262, '仿真 100 条/任务：GR-1 列 ' + fmt(GR_SIM[2], 1) + '% − DP ' +
+      fmt(DP_SIM[2], 1) + '% = ' + fmt(GR1_GAP, 1) + ' 个点', 'demo-x-mut', 12));
+    calls.appendChild(svgText(40, 282, SIM_TASKS + ' 个仿真任务加权后 GR00T ' + fmt(GR_SIM_W, 2) +
+      '%（表上 ' + fmt(PAPER_SIM_AVG.gr, 1) + '%），DP ' + fmt(DP_SIM_W, 2) + '%', 'demo-x-mut', 12));
+    s.appendChild(calls);
+
+    var pre = group();
+    pre.appendChild(panel(pre, 36, 300, 350, 58, C_SURFACE2, C_GOOD));
+    pre.appendChild(svgText(52, 324, '预训练、不微调', 'demo-x-mut', 11));
+    pre.appendChild(svgText(52, 344, '换手 ' + fmt(PRE_HAND_OK, 1) + '/' + PRE_TRIALS +
+      '（论文 ' + fmt(PRE_HAND, 1) + '%）', 'demo-x-ink2', 13));
+    s.appendChild(pre);
+    var pre2 = group();
+    pre2.appendChild(panel(pre2, 414, 300, 350, 58, C_SURFACE2, C_GOOD));
+    pre2.appendChild(svgText(430, 324, '新物体放进没见过的容器', 'demo-x-mut', 11));
+    pre2.appendChild(svgText(430, 344, PRE_NOVEL_OK + '/' + PRE_TRIALS +
+      '（论文 ' + fmt(PRE_NOVEL, 1) + '%）', 'demo-x-ink2', 13));
+    s.appendChild(pre2);
+
+    var end = group();
+    end.appendChild(paint(svgText(400, 386, '苹果那个例子是桌面上的换手，不是走到厨房', null, 14, 'middle'), C_WARN));
+    end.appendChild(svgText(400, 408, '后训练数据若只有右手，换手会忘掉 · 真机平均按 ' +
+      REAL_TASKS + ' 个任务加权，复核 ' + fmt(GR_FULL_W, 2) + '%', 'demo-x-mut', 11, 'middle'));
+    s.appendChild(end);
+
+    function draw(t) {
+      var u = ease(seg(t, 0.8, 4.2));
+      bars.forEach(function (b) {
+        b.bar.setAttribute('width', Math.max(1, 460 * (b.v / 100) * u));
+      });
+      setOpacity(calls, seg(t, 4.6, 5.4));
+      setOpacity(pre, seg(t, 7.4, 8.1));
+      setOpacity(pre2, seg(t, 8.4, 9.1));
+      setOpacity(end, seg(t, 11.0, 11.8));
+    }
+    return { el: s, draw: draw };
+  }
+
+  var GROOT_SCENES = [
+    {
+      title: '没有人形数据的互联网',
+      dur: 12,
+      build: buildSceneIslands,
+      cues: [
+        { at: 0.4, s: '论文开头就说：没有一份人形机器人的互联网。单机数据小几个数量级。' },
+        { at: 2.2, s: 'Open X-Embodiment 把很多机器人拼在一起，本体和传感器仍然对不齐，还是孤岛。' },
+        { at: 5.2, s: '另一条老路是把现成 VLM 当黑盒规划器。那得先有低层技能，而且规划和执行不一起训。' },
+        { at: 7.6, s: 'GR00T N1 要的是一个端到端的 VLA。评测是短程桌面操作。' },
+        { at: 9.8, s: '**局限写在第 4.6 节：长程 loco-manipulation 还做不了。**' }
+      ]
+    },
+    {
+      title: '10 Hz 与 63.9 ms',
+      dur: 13,
+      build: buildSceneClocks,
+      cues: [
+        { at: 0.4, s: 'System 2 是 Eagle-2。图像 $' + IMG + '\\times' + IMG + '$，打乱像素后剩 $' + IMG_TOKENS + '$ 个 token。' },
+        { at: 2.2, s: '用的是 LLM **第 ' + LLM_LAYER + ' 层**，不是最后一层：论文说又快、下游成功率又高。' },
+        { at: 3.8, s: 'VLM $' + fmt(VLM_B, 2) + '$ B，全模型 $' + fmt(TOTAL_B, 1) + '$ B。L40 上这篇的运行频率写成 **' + SYS2_HZ + ' Hz**。' },
+        { at: 5.6, s: 'System 1 一次吐 $H=' + CHUNK + '$ 步，L40、bf16 下 **' + INFER_MS + ' ms**，去噪 $K=' + K_STEPS + '$ 步。' },
+        { at: 7.6, s: '**' + SYS1_HZ + ' Hz 是动作率**：一步 $' + fmt(ACTION_MS, 1) + '$ ms，16 步要播 $' + fmt(CHUNK_MS, 0) + '$ ms。' },
+        { at: 10.6, s: '采样比播放短，所以这块动作算得完。不是整网每 8 ms 前向一次。' }
+      ]
+    },
+    {
+      title: '流匹配的直线',
+      dur: 13,
+      build: buildSceneFlow,
+      cues: [
+        { at: 0.4, s: '动作块走直线：$A^{\\tau}=(1-\\tau)\\epsilon+\\tau A$。$\\tau=0$ 是噪声，$\\tau=1$ 是数据。' },
+        { at: 2.4, s: '网络预测的速度是 **$v=A-\\epsilon$**，也就是仓库里的 `velocity = actions - noise`。' },
+        { at: 4.6, s: '推理从噪声出发，欧拉更新 $A\\leftarrow A+\\frac{1}{K}v$，这里 $K=' + K_STEPS + '$。' },
+        { at: 7.2, s: '玩具标量 $\\epsilon=' + TOY_EPS + '$、$A=' + TOY_A + '$、$v=' + fmt(TOY_V, 0) + '$，四步是 ' +
+            EULER.map(function (v) { return fmt(v, 1); }).join(' → ') + '。' },
+        { at: 10.4, s: 'ar5iv 的 Eq.(1) 印成 $\\epsilon-A$，和这条路径、和开源代码都相反。动画跟代码。' }
+      ]
+    },
+    {
+      title: '数据金字塔',
+      dur: 12,
+      build: buildScenePyramid,
+      cues: [
+        { at: 0.4, s: '数据不倒进一个池子。数量向下增加，具身特异性向上增加。' },
+        { at: 2.2, s: '底座是人类第一视角视频，加上 VLM 预训练用过的网络数据。' },
+        { at: 4.0, s: '中层：DexMimicGen 在 **' + SIM_WALL_H + ' 小时**里生成 ' + SIM_H + ' 小时仿真，约 **' + fmt(SIM_X, 0) + ' 倍**。' },
+        { at: 6.4, s: '同一层还有神经轨迹：' + TELEOP_H + ' h 遥操扩成 ' + NEURAL_H + ' h，比值 **' + fmt(NEURAL_X, 1) + '×**。' },
+        { at: 8.6, s: '顶层才是真机：GR-1 遥操、Open X 的若干子集、AgiBot 当时可用的 ' + (AGIBOT / 1000) + 'k 条。' },
+        { at: 10.2, s: 'GR00T-N1-2B 的预训练大约 **' + (GPU_H / 1000) + ',000 H100·h**。' }
+      ]
+    },
+    {
+      title: '潜动作与 IDM',
+      dur: 12,
+      build: buildSceneLatent,
+      cues: [
+        { at: 0.4, s: '人类视频和生成的视频没有关节动作，不能直接当模仿学习的标签。' },
+        { at: 2.2, s: 'VQ-VAE 吃 $x_t$ 和 $x_{t+H}$，抽出潜动作 $z_t$，再当成一种叫 LAPA 的本体。' },
+        { at: 4.4, s: '真机数据两条标签都用：真值动作，以及同一个潜动作。损失仍是流匹配。' },
+        { at: 6.6, s: '神经轨迹再用一个逆动力学模型补伪动作。后训练和真数据 **1:1** 混着采。' },
+        { at: 8.8, s: '演示很少时 LAPA 略好；数据多了，IDM 更贴近真值，优势反过来变大。' },
+        { at: 10.4, s: '**金字塔回答数据放哪一层，这一幕回答标签从哪来。** 两件事合成一幕会叠在一起。' }
+      ]
+    },
+    {
+      title: '一套权重，多套 MLP',
+      dur: 11,
+      build: buildSceneEmbodiment,
+      cues: [
+        { at: 0.4, s: '状态和动作的维度随本体变。每个本体一套 MLP，投到 DiT 的同一宽度。' },
+        { at: 2.2, s: '仿真三条身体：Franka 单臂、双臂 Panda、Fourier GR-1。' },
+        { at: 4.4, s: '「一套权重」指的是预训练骨干。表 2 是**按本体后训练**之后的成功率。' },
+        { at: 6.4, s: '后训练冻结语言模型。真机表只报了 **Fourier GR-1**。' },
+        { at: 8.4, s: '致谢里的 1X 提供过硬件支持，实验数字里没有它。' }
+      ]
+    },
+    {
+      title: '表上的数字',
+      dur: 14,
+      build: buildSceneNumbers,
+      cues: [
+        { at: 0.4, s: '真机四类任务，Diffusion Policy 用 10% 数据平均只有 **' + fmt(PAPER_REAL.dp10, 1) + '%**。' },
+        { at: 2.4, s: '同样 10% 数据，GR00T 到 **' + fmt(PAPER_REAL.gr10, 1) + '%**，高出 ' + fmt(GAP_LOW, 1) + ' 个点。' },
+        { at: 4.6, s: '这档只比 DP 的**全量**（' + fmt(PAPER_REAL.dpFull, 1) + '%）低 ' + fmt(GAP_DATA, 1) + ' 个点。' },
+        { at: 6.6, s: '全量数据 GR00T **' + fmt(PAPER_REAL.grFull, 1) + '%**，比全量 DP 高 ' + fmt(GAP_FULL, 1) + ' 个点。' },
+        { at: 8.6, s: '仿真里最显眼的是 GR-1 列：' + fmt(GR_SIM[2], 1) + '% 对 ' + fmt(DP_SIM[2], 1) + '%，差 ' + fmt(GR1_GAP, 1) + ' 个点。' },
+        { at: 10.4, s: '不微调的预训练权重：换手 ' + fmt(PRE_HAND_OK, 1) + '/' + PRE_TRIALS + '，新物体 ' + PRE_NOVEL_OK + '/' + PRE_TRIALS + '。' },
+        { at: 12.2, s: '**苹果是桌面上的换手。** 后训练若只见过右手，这个换手会消失。' }
+      ]
+    }
+  ];
+
+  function buildExplainerDemo(host) {
+    K.explainer(host, {
+      title: '七幕动画：GR00T N1 全流程速览',
+      sub: '约 87 秒自动播放。空格播放/暂停，← → 换幕；成功率、时长和流匹配的玩具步都由上面的常数现算。',
+      ariaLabel: 'GR00T N1 七幕讲解动画',
+      notes: [
+        '频率：System 2 的 $' + SYS2_HZ + '\\ \\text{Hz}$、System 1 的动作率 $' + SYS1_HZ +
+          '\\ \\text{Hz}$、一块 $' + CHUNK + '$ 步 $' + INFER_MS + '\\ \\text{ms}$（L40，bf16）都是论文 §2 的原话。' +
+          '播放时长 $' + fmt(CHUNK_MS, 0) + '\\ \\text{ms}=' + CHUNK + '\\times 1000/' + SYS1_HZ + '$ 是按动作率换算的，论文没有单独报这个毫秒数。',
+        '流匹配跟 [Isaac-GR00T](https://github.com/NVIDIA/Isaac-GR00T) 的实现：' +
+          '`noisy = (1-t)·noise + t·actions`，`velocity = actions - noise`，推理 `A ← A + dt·v`，默认 $K=' +
+          K_STEPS + '$。玩具 $\\epsilon=' + TOY_EPS + '$、$A=' + TOY_A + '$ 只用来把四步走完，不是论文里的关节角。' +
+          'ar5iv 排版的 Eq.(1) 写成 $\\epsilon-A$，与这条更新矛盾。',
+        'Table 2 的 Average 按任务数加权（$' + SIM_N.join('+') + '=' + SIM_TASKS +
+          '$）。GR00T 复核 $' + fmt(GR_SIM_W, 2) + '\\%$，论文印 $' + fmt(PAPER_SIM_AVG.gr, 1) +
+          '\\%$；DP 复核 $' + fmt(DP_SIM_W, 2) + '\\%$，印 $' + fmt(PAPER_SIM_AVG.dp, 1) +
+          '\\%$。Table 3 同样按 $' + REAL_N.join('+') + '=' + REAL_TASKS +
+          '$ 个任务加权，全量 GR00T 复核 $' + fmt(GR_FULL_W, 2) + '\\%$，印 $' +
+          fmt(PAPER_REAL.grFull, 1) + '\\%$。差值 ' + fmt(GAP_LOW, 1) + ' / ' + fmt(GAP_FULL, 1) +
+          ' / ' + fmt(GAP_DATA, 1) + ' 用的是论文印出来的平均。DexMG 一列正文与附录 Table 4 的任务平均不一致，画面采用正文 Table 2。'
+      ],
+      scenes: GROOT_SCENES
+    });
+  }
+
+  K.mount({
+    'groot-explainer': buildExplainerDemo
+  });
+})();
