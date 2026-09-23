@@ -7,6 +7,7 @@
  * <script>/<canvas>/<input> from #paper-body before publish.
  *
  * Demos:
+ *   groot-timing / groot-flow / groot-results — 可操作的时间、流匹配与加权实验图
  *   groot-explainer — 七幕讲解动画：没有人形数据的互联网 → 10 Hz 的视觉语言与
  *                     63.9 ms 的动作块 → 流匹配路径与 K=4 欧拉 → 数据金字塔 →
  *                     潜动作 / IDM 补标签 → 一套权重、按本体的 MLP → 表上的数字与边界
@@ -674,7 +675,119 @@
     });
   }
 
+  // These three small experiments complement the fixed seven-scene explainer.
+  // Their inputs are explicitly illustrative; published constants stay fixed.
+  function buildTiming(host) {
+    var root = K.card(host, { title: '16 步动作块的时间预算', sub: '拖动 **假设的采样耗时**，比较它与论文 $H=16$、$f=120\\,\\mathrm{Hz}$ 的播放窗口。' });
+    var controls = K.controlsRow(root);
+    var sample = K.slider(controls, { label: '假设的采样耗时', min: 20, max: 180, step: 1, value: INFER_MS,
+      format: function (v) { return fmt(v, 1) + ' ms'; }, onInput: draw });
+    var stats = K.statsRow(root);
+    var budget = stats.add('16 步播放时长'), remaining = stats.add('预算余量');
+    var st = K.stage(root, 168);
+    var verdict = K.verdictBox(root);
+    K.note(root, ['**63.9 ms** 是论文报告的 L40 / bf16 采样值；滑块其余位置是反事实预算练习。没有包括通信、控制或重规划开销。']);
+    function draw() {
+      var g = K.begin(st), ctx = g.ctx, p = g.P;
+      var left = 92, right = 20, width = Math.max(90, g.w - left - right), max = 200;
+      var rows = [{ label: '动作块播放', ms: CHUNK_MS, color: p.accent },
+        { label: '采样耗时', ms: sample.get(), color: p.good }];
+      rows.forEach(function (row, i) {
+        var y = 39 + i * 55;
+        ctx.fillStyle = p.text;
+        ctx.fillText(row.label, 8, y + 12);
+        ctx.fillStyle = p.grid;
+        ctx.fillRect(left, y, width, 23);
+        ctx.fillStyle = row.color;
+        ctx.fillRect(left, y, width * row.ms / max, 23);
+        ctx.fillStyle = p.text;
+        ctx.fillText(fmt(row.ms, 1) + ' ms', left + 5, y + 12);
+      });
+      ctx.fillStyle = p.muted;
+      ctx.fillText('同一尺度：0–200 ms；动作间隔约 ' + fmt(ACTION_MS, 2) + ' ms', 8, 148);
+      var spare = CHUNK_MS - sample.get();
+      budget.set(fmt(CHUNK_MS, 1) + ' ms');
+      remaining.set((spare >= 0 ? '+' : '') + fmt(spare, 1) + ' ms', spare >= 0 ? 'good' : 'bad');
+      verdict.set(spare >= 0 ? '只比较两段时长：采样能装进理想的播放窗口；实际系统仍需测量其他开销。' :
+        '假设耗时超过播放窗口；若整块播放、没有流水线或重规划优化，就无法按此预算连续供给动作。', spare >= 0 ? 'good' : 'bad');
+    }
+    K.registerRenderer(draw);
+    draw();
+  }
+
+  function buildFlow(host) {
+    var root = K.card(host, { title: '从噪声到动作：四步积分', sub: '选第几步，观察玩具标量 $\\epsilon=-1$、$A=1$ 的 $A^\\tau$。' });
+    var controls = K.controlsRow(root);
+    var position = K.slider(controls, { label: '欧拉步数', min: 0, max: K_STEPS, step: 1, value: 0,
+      format: function (v) { return v + ' / ' + K_STEPS; }, onInput: draw });
+    var st = K.stage(root, 156);
+    var verdict = K.verdictBox(root);
+    K.note(root, ['**一维教学例子**：假定速度始终是 $v=A-\\epsilon=2$，每步加 $v/4=0.5$。真实 DiT 每步都会根据当前状态重新预测速度。']);
+    function draw() {
+      var g = K.begin(st), ctx = g.ctx, p = g.P;
+      var left = 28, right = g.w - 28, y = 80, selected = position.get();
+      ctx.strokeStyle = p.border;
+      ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.moveTo(left, y); ctx.lineTo(right, y); ctx.stroke();
+      for (var i = 0; i <= K_STEPS; i++) {
+        var x = left + (right - left) * i / K_STEPS;
+        ctx.fillStyle = i <= selected ? p.accent : p.muted;
+        ctx.beginPath(); ctx.arc(x, y, i === selected ? 9 : 5, 0, Math.PI * 2); ctx.fill();
+        ctx.textAlign = i === 0 ? 'left' : i === K_STEPS ? 'right' : 'center';
+        ctx.fillStyle = p.text;
+        ctx.fillText(fmt(EULER[i], 1), x, 111);
+        ctx.fillStyle = p.muted;
+        ctx.fillText('τ=' + fmt(i / K_STEPS, 2), x, 45);
+      }
+      ctx.textAlign = 'left';
+      verdict.set('第 ' + selected + ' 步：$A^\\tau=' + fmt(EULER[selected], 1) + '$；更新 = 上一步 $+\\,2/4$。');
+    }
+    K.registerRenderer(draw);
+    draw();
+  }
+
+  function buildResults(host) {
+    var root = K.card(host, { title: 'Table 2：为什么三列不是直接平均？', sub: '切换模型，查看每组任务对 **57 个任务加权平均** 的贡献。' });
+    var controls = K.controlsRow(root);
+    var model = K.slider(controls, { label: '模型', min: 0, max: 2, step: 1, value: 2,
+      format: function (v) { return ['BC Transformer', 'Diffusion Policy', 'GR00T N1'][v]; }, onInput: draw });
+    var st = K.stage(root, 236);
+    var stats = K.statsRow(root);
+    var result = stats.add('用分项重算'), reported = stats.add('论文主表 Average');
+    var verdict = K.verdictBox(root);
+    K.note(root, ['论文 Table 2：每任务 100 条演示，后训练仿真成功率。分项只印到一位小数，重算与原表可能有舍入差；**不能**当作零样本真机性能。']);
+    function draw() {
+      var g = K.begin(st), ctx = g.ctx, p = g.P;
+      var rates = [[26.3, 53.9, 16.1], DP_SIM, GR_SIM][model.get()];
+      var published = [26.4, PAPER_SIM_AVG.dp, PAPER_SIM_AVG.gr][model.get()];
+      var names = ['RoboCasa', 'DexMG', 'GR-1'];
+      var left = 98, width = Math.max(90, g.w - 172);
+      rates.forEach(function (rate, i) {
+        var y = 30 + i * 62;
+        ctx.fillStyle = p.text;
+        ctx.fillText(names[i], 8, y + 10);
+        ctx.fillStyle = p.grid;
+        ctx.fillRect(left, y, width, 20);
+        ctx.fillStyle = [p.accent, p.warn, p.good][i];
+        ctx.fillRect(left, y, width * rate / 100, 20);
+        ctx.fillStyle = p.text;
+        ctx.fillText(fmt(rate, 1) + '%', left + width + 5, y + 10);
+        ctx.fillStyle = p.muted;
+        ctx.fillText(SIM_N[i] + '/57 个任务 → ' + fmt(rate * SIM_N[i] / SIM_TASKS, 2) + ' 个百分点', left, y + 40);
+      });
+      var average = wavg(rates, SIM_N);
+      result.set(fmt(average, 2) + '%');
+      reported.set(fmt(published, 1) + '%');
+      verdict.set('按任务数算：(' + rates.map(function (rate, i) { return fmt(rate, 1) + '×' + SIM_N[i]; }).join(' + ') + ') / 57 = ' + fmt(average, 2) + '%。');
+    }
+    K.registerRenderer(draw);
+    draw();
+  }
+
   K.mount({
-    'groot-explainer': buildExplainerDemo
+    'groot-explainer': buildExplainerDemo,
+    'groot-timing': buildTiming,
+    'groot-flow': buildFlow,
+    'groot-results': buildResults
   });
 })();

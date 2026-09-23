@@ -203,7 +203,7 @@ def test_notes_declare_their_demos_in_reading_order():
             ["mimickit-family", "mimickit-reward", "mimickit-config"],
         ),
         SONIC_NOTE: ("sonic", ["sonic-explainer"]),
-        GROOT_NOTE: ("groot", ["groot-explainer"]),
+        GROOT_NOTE: ("groot", ["groot-explainer", "groot-timing", "groot-flow", "groot-results"]),
         COSMOS_NOTE: ("cosmos", ["cosmos-explainer", "cosmos-data", "cosmos-tokens", "cosmos-physics"]),
         GMR_NOTE: ("gmr", ["gmr-explainer"]),
         OMNI_NOTE: ("omniretarget", ["omniretarget-explainer"]),
