@@ -66,6 +66,10 @@ OMNI_NOTE = (
     / "OmniRetarget__Interaction-Preserving_Data_Generation_for_Humanoid_Whole-Body_Loc"
     / "OmniRetarget__Interaction-Preserving_Data_Generation_for_Humanoid_Whole-Body_Loc.md"
 )
+GR00T_NOTE = (
+    ROOT / "papers" / "03_High_Impact_Selection"
+    / "GR00T_N1_Humanoid_Foundation_Model" / "GR00T_N1_Humanoid_Foundation_Model.md"
+)
 SONIC_NOTE = (
     ROOT
     / "papers"
@@ -191,6 +195,7 @@ def test_notes_declare_their_demos_in_reading_order():
             ["mimickit-family", "mimickit-reward", "mimickit-config"],
         ),
         SONIC_NOTE: ("sonic", ["sonic-explainer"]),
+        GR00T_NOTE: ("gr00t", ["gr00t-explainer"]),
         GMR_NOTE: ("gmr", ["gmr-explainer"]),
         OMNI_NOTE: ("omniretarget", ["omniretarget-explainer"]),
     }
@@ -228,7 +233,7 @@ def test_demo_assets_are_theme_aware():
 
 EXPLAINER_BUNDLES = (
     "ppo", "awr", "deepmimic", "amp", "add", "ase", "calm", "pulse", "sonic", "gmr",
-    "omniretarget", "diffusion_policy", "beyondmimic",
+    "omniretarget", "diffusion_policy", "beyondmimic", "gr00t",
 )
 
 # 幕数由论文决定，不是统一模板：PPO / DeepMimic / AMP / ADD 的核心概念正好各 5 个，
@@ -270,6 +275,7 @@ EXPLAINER_SCENES = {
     "calm": (CALM_NOTE, 5),
     "pulse": (PULSE_NOTE, 6),
     "sonic": (SONIC_NOTE, 7),
+    "gr00t": (GR00T_NOTE, 6),
     "gmr": (GMR_NOTE, 7),
     "omniretarget": (OMNI_NOTE, 7),
     "diffusion_policy": (DIFFUSION_POLICY_NOTE, 7),
