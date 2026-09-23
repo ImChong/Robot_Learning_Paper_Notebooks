@@ -30,7 +30,7 @@ demos: ["cosmos"]
 
 <div class="paper-demo" data-demo="cosmos-explainer"><p class="demo-fallback">（本节含动画演示，需要启用 JavaScript）</p></div>
 
-> 📖 动画后的长文按主题折叠，交互图保持可见。点击展开可以核对公式、条件和论文中的实验。
+> 📖 动画之后的正文默认全部折叠，按主题逐节展开；交互图保持可见。点击展开可以核对公式、条件和论文中的实验。
 
 ## ❓ 为什么需要世界模型？
 
