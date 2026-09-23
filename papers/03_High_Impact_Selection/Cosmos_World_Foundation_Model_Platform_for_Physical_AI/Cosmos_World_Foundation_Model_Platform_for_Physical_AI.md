@@ -28,7 +28,7 @@ demos: ["cosmos"]
 
 <div class="paper-demo" data-demo="cosmos-explainer"><p class="demo-fallback">（本节含动画演示，需要启用 JavaScript）</p></div>
 
-> 📖 动画之后的正文默认折叠。点开对应部分可读细节；目录跳转会自动展开对应折叠块。
+> 📖 动画之后的正文默认全部折叠。点开对应部分可读细节；目录跳转会自动展开对应折叠块。
 
 ## 🔧 核心管线
 
