@@ -106,6 +106,13 @@ PHP_NOTE = (
     / "Perceptive_Humanoid_Parkour__Chaining_Dynamic_Human_Skills_via_Motion_Matching"
     / "Perceptive_Humanoid_Parkour__Chaining_Dynamic_Human_Skills_via_Motion_Matching.md"
 )
+GENTLE_NOTE = (
+    ROOT
+    / "papers"
+    / "04_Loco-Manipulation_and_WBC"
+    / "GentleHumanoid__Learning_Upper-body_Compliance_for_Contact-rich_Human_and_Object"
+    / "GentleHumanoid__Learning_Upper-body_Compliance_for_Contact-rich_Human_and_Object.md"
+)
 
 PLACEHOLDER_RE = re.compile(r'<div class="paper-demo" data-demo="([a-z0-9-]+)"')
 FRONTMATTER_DEMOS_RE = re.compile(r'^demos:\s*\[(.+)\]\s*$', re.MULTILINE)
@@ -231,6 +238,7 @@ def test_notes_declare_their_demos_in_reading_order():
         UMR_NOTE: ("umr", ["umr-explainer"]),
         PHP_NOTE: ("php", ["php-explainer"]),
         PBFM_NOTE: ("pbfm", ["pbfm-explainer"]),
+        GENTLE_NOTE: ("gentle", ["gentle-explainer"]),
     }
     for note, (bundle, placeholders) in expected.items():
         text = note.read_text(encoding="utf-8")
@@ -267,6 +275,7 @@ def test_demo_assets_are_theme_aware():
 EXPLAINER_BUNDLES = (
     "ppo", "awr", "deepmimic", "amp", "add", "ase", "calm", "pulse", "sonic", "groot",
     "gmr", "omniretarget", "diffusion_policy", "beyondmimic", "cosmos", "umr", "php", "pbfm",
+    "gentle",
 )
 
 # 幕数由论文决定，不是统一模板：PPO / DeepMimic / AMP / ADD 的核心概念正好各 5 个，
@@ -320,6 +329,10 @@ EXPLAINER_BUNDLES = (
 # 目标系动作对齐 / 恒等门控残差 / 定量证据与边界）。TCRS 的四步里「脚怎么走」与
 # 「身体怎么跟」各是一组公式（式 4–6 vs 式 7、12），合成一幕会让 MPPI 候选表和
 # 根高度滤波抢画面；对齐与门控是论文两条独立的消融，也各占一幕。
+# GentleHumanoid 是七件（跟踪策略把外力当扰动 / 阻抗参考动力学 / 抵抗与引导两种交互弹簧 /
+# 受力暴露的多样性 / 安全力阈值 / 教师—学生与柔顺奖励 / 定量证据与局限）。「交互力长什么样」
+# 与「什么时候、在哪几个 link、多硬」是两件事（式 3–4 vs 附录 A 的调度），阈值又有自己的
+# 截断公式与 ISO 换算，合并会让 4 个子步的积分表、平衡点表与压强换算挤在同一帧。
 EXPLAINER_SCENES = {
     "ppo": (PPO_NOTE, 5),
     "awr": (AWR_NOTE, 6),
@@ -340,6 +353,7 @@ EXPLAINER_SCENES = {
     "umr": (UMR_NOTE, 8),
     "php": (PHP_NOTE, 8),
     "pbfm": (PBFM_NOTE, 7),
+    "gentle": (GENTLE_NOTE, 7),
 }
 CN_NUMERALS = {4: "四", 5: "五", 6: "六", 7: "七", 8: "八"}
 
@@ -1240,5 +1254,89 @@ def test_pbfm_explainer_and_worked_example_share_the_same_numbers():
     for s in ("**248 / 450 = 55.1%**", "**123 / 450 = 27.3%**", "**45 vs 111**", "$-56.6\\%$"):
         assert s in note, s
     assert "## 🎬 七幕动画：Perceptive BFM 全流程" in note
+    assert "## 🚶 具体实例" in note
+    assert "## 📁 源码对照" in note
+
+
+def test_gentle_explainer_and_worked_example_share_the_same_numbers():
+    """GentleHumanoid 七幕动画与笔记「🚶 具体实例」是同一组数：参考动力学积分、平衡点、阈值与奖励都现算。"""
+    js = (DEMO_JS_DIR / "gentle.js").read_text(encoding="utf-8")
+    note = GENTLE_NOTE.read_text(encoding="utf-8")
+
+    # 附录 Table II / III 与训练仓库的参数
+    for line in (
+        "var MASS = 0.1; // kg",
+        "var DAMP = 2.0;",
+        "var DT = 0.005;",
+        "var SUBSTEPS = 4;",
+        "var KP_DIST = 0.05;",
+        "var F_MAX = 30;",
+        "var DELTA_TOL = 10;",
+        "var N_POSTURES = 5414;",
+        "var MODE_P = [0.4, 0.15, 0.15, 0.15, 0.15];",
+        "var ANCHOR = 0.15; // m（示意）",
+        "var KS = 150; // N/m（示意，在 5–250 范围内）",
+    ):
+        assert line in js, line
+
+    mass, damp, dt, anchor, ks = 0.1, 2.0, 0.005, 0.15, 150.0
+
+    def kp(tau):
+        return tau / 0.05
+
+    def kd(tau):
+        return 2 * math.sqrt(mass * kp(tau))
+
+    def clip(f, m):
+        return max(-m, min(m, f))
+
+    def simulate(tau, steps):
+        x = v = 0.0
+        out = []
+        for _ in range(steps):
+            fd = clip(kp(tau) * (0 - x) + kd(tau) * (0 - v), tau)
+            fe = clip(ks * max(anchor - x, 0.0), 30.0)
+            a = clip((fd + fe - damp * v) / mass, 1000.0)
+            v = clip(v + a * dt, 4.0)
+            x = x + v * dt
+            out.append((fd, fe, a, v, x))
+        return out
+
+    assert _fmt(kp(10), 0) == "200" and _fmt(kd(10), 3) == "8.944"
+    step1 = simulate(10, 4)
+    assert [_fmt(r[1], 2) for r in step1] == ["22.50", "21.66", "20.46", "18.99"]
+    assert [_fmt(r[3], 3) for r in step1] == ["1.125", "1.595", "1.959", "2.212"]
+    assert [_fmt(r[4], 4) for r in step1] == ["0.0056", "0.0136", "0.0234", "0.0345"]
+    assert _fmt(-200 * 0.005625 - kd(10) * 1.125, 2) == "-11.19"
+    run = simulate(10, 400)
+    assert _fmt(run[7][4] * 100, 2) == "8.11" and _fmt(run[11][4] * 100, 2) == "11.27"
+    assert _fmt(run[-1][4] * 100, 2) == "8.33"
+    for s in ("**0.0345**", "−11.19", "8.11 cm", "11.27 cm", "**8.33 cm**"):
+        assert s in note, s
+
+    # 平衡点：驱动力截断后接触力 = τ_safe
+    def eq(tau):
+        free = ks * anchor / (kp(tau) + ks)
+        return free if kp(tau) * free <= tau + 1e-9 else anchor - tau / ks
+
+    assert [_fmt(eq(t) * 100, 1) for t in (5, 10, 15)] == ["11.7", "8.3", "5.0"]
+    assert _fmt(ks * anchor / (kp(10) + ks) * 100, 2) == "6.43"
+    assert _fmt(kp(10) * ks * anchor / (kp(10) + ks), 2) == "12.86"
+    assert _fmt(ks * anchor, 1) == "22.5"
+    for s in ("**11.7 cm**", "**8.3 cm**", "**5.0 cm**", "**22.5 N**", "6.43 cm", "12.86 N"):
+        assert s in note, s
+
+    # 奖励核（代码是 exp(-e/σ)，多个 σ 取平均）与压强换算
+    assert _fmt(math.exp(-0.02 / 0.3), 3) == "0.936"
+    assert _fmt((math.exp(-2 / 8) + math.exp(-2 / 4)) / 2, 3) == "0.693"
+    assert _fmt(15 / 0.25, 0) == "60"
+    assert (_fmt(5 / 16 * 10, 1), _fmt(15 / 16 * 10, 1)) == ("3.1", "9.4")
+    assert _fmt(100e3 * 36e-6, 1) == "3.6"
+    assert _fmt(51.14 / 24.59, 2) == "2.08"
+    assert _fmt(0.15 * 6 + 0.30 * 3 + 0.15 * 1, 2) == "1.95"
+    assert _fmt(0.15 * 6 + 0.15 * 3 * 2 + 0.15 * 6 * 0.5, 2) == "2.25"
+    for s in ("0.936", "0.693", "60 N/cm²", "3.1–9.4 kPa", "3.6 N", "2.08 倍", "| 1.95 |", "| 2.25 |"):
+        assert s in note, s
+    assert "## 🎬 七幕动画：GentleHumanoid 全流程" in note
     assert "## 🚶 具体实例" in note
     assert "## 📁 源码对照" in note
