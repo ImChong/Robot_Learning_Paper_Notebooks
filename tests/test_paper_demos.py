@@ -66,6 +66,13 @@ OMNI_NOTE = (
     / "OmniRetarget__Interaction-Preserving_Data_Generation_for_Humanoid_Whole-Body_Loc"
     / "OmniRetarget__Interaction-Preserving_Data_Generation_for_Humanoid_Whole-Body_Loc.md"
 )
+UMR_NOTE = (
+    ROOT
+    / "papers"
+    / "02_Motion_Retargeting"
+    / "UMR__Unified_Motion_Retargeting_with_Learned_Point_Cloud_Correspondence"
+    / "UMR__Unified_Motion_Retargeting_with_Learned_Point_Cloud_Correspondence.md"
+)
 COSMOS_NOTE = (
     ROOT / "papers" / "03_High_Impact_Selection"
     / "Cosmos_World_Foundation_Model_Platform_for_Physical_AI"
@@ -207,6 +214,7 @@ def test_notes_declare_their_demos_in_reading_order():
         COSMOS_NOTE: ("cosmos", ["cosmos-explainer", "cosmos-data", "cosmos-tokens", "cosmos-physics"]),
         GMR_NOTE: ("gmr", ["gmr-explainer"]),
         OMNI_NOTE: ("omniretarget", ["omniretarget-explainer"]),
+        UMR_NOTE: ("umr", ["umr-explainer"]),
     }
     for note, (bundle, placeholders) in expected.items():
         text = note.read_text(encoding="utf-8")
@@ -242,7 +250,7 @@ def test_demo_assets_are_theme_aware():
 
 EXPLAINER_BUNDLES = (
     "ppo", "awr", "deepmimic", "amp", "add", "ase", "calm", "pulse", "sonic", "groot",
-    "gmr", "omniretarget", "diffusion_policy", "beyondmimic", "cosmos",
+    "gmr", "omniretarget", "diffusion_policy", "beyondmimic", "cosmos", "umr",
 )
 
 # 幕数由论文决定，不是统一模板：PPO / DeepMimic / AMP / ADD 的核心概念正好各 5 个，
@@ -271,7 +279,7 @@ EXPLAINER_BUNDLES = (
 # Diffusion Policy 也是七件（平均动作撞障 / 条件扩散 / action chunking / 视觉条件 + FiLM /
 # DDIM 加速 / receding horizon / 为什么成了 IL 标准），「扩散过程」和「一次吐多长」
 # 是两件独立的事，视觉条件与 DDIM 加速也是，压进五幕会让 chunking、FiLM 和 RHC 抢同一帧。
-# BeyondMimic 是目前唯一的八幕：它本身就是两篇论文订在一起（阶段 1 的跟踪 + 阶段 2 的
+# BeyondMimic 是八幕：它本身就是两篇论文订在一起（阶段 1 的跟踪 + 阶段 2 的
 # 引导扩散），两个阶段各自都有三件独立的事 —— 两个缺口 / 锚定跟踪 / 紧凑 MDP /
 # 自适应采样 / VAE 潜空间 / 状态-潜动作扩散 / Classifier Guidance / 真机与闭环。
 # 「锚定跟踪」是跟踪目标的定义、「紧凑 MDP」是 PD 与奖励的取舍、「自适应采样」是
@@ -281,6 +289,11 @@ EXPLAINER_BUNDLES = (
 # Cosmos 是五件（为什么要世界模型 / 视频整理 / 因果 tokenizer / 扩散与自回归并列预训练 /
 # 三类后训练示例）。扩散和自回归是两条预训练路线，画成前后两级会把 Table 10 的模型地图读反，
 # 所以第 4 幕必须是并排的两列，不能并进「一个生成模型」里。
+# UMR 也是八件（骨架中心的对应一款机器人一套配方 / 体表点云当接口、形变而非匹配 /
+# 三项损失与测地图 / 绑定与位姿残差 / 接触图共用环境点 / 阻尼约束 GN QP /
+# 三个尺度的定量证据 / 闭环与源码落点）。「位姿残差」与「接触残差」是论文里两条独立的残差，
+# 前者是点对本身、后者是指向环境点的向量和活跃集；「怎么学对应」与「损失为什么要 Edge 项」
+# 也是两件事，压进七幕就会让翻转算例和形变动画抢同一块画面。
 EXPLAINER_SCENES = {
     "ppo": (PPO_NOTE, 5),
     "awr": (AWR_NOTE, 6),
@@ -298,6 +311,7 @@ EXPLAINER_SCENES = {
     "omniretarget": (OMNI_NOTE, 7),
     "diffusion_policy": (DIFFUSION_POLICY_NOTE, 7),
     "beyondmimic": (BEYONDMIMIC_NOTE, 8),
+    "umr": (UMR_NOTE, 8),
 }
 CN_NUMERALS = {4: "四", 5: "五", 6: "六", 7: "七", 8: "八"}
 
@@ -765,6 +779,94 @@ def test_omniretarget_explainer_numbers_come_from_the_config():
     assert "82.20%±9.74%" in note
     assert "2.78 h" in note and "4.6 h" in note and "8.38 h" in note
     assert "## 🎬 七幕动画：OmniRetarget 全流程" in note
+
+
+def test_umr_explainer_and_worked_examples_share_the_same_numbers():
+    """八幕动画与笔记「🧮 数据计算实例」是同一组数：这里按同样的公式在 Python 里复算。"""
+    js = (DEMO_JS_DIR / "umr.js").read_text(encoding="utf-8")
+    note = UMR_NOTE.read_text(encoding="utf-8")
+
+    # 仓库默认参数
+    for line in (
+        "var N_POINTS = 4096;",
+        "var LAMBDA_E = 0.4;",
+        "var REP_R = 0.035; // m",
+        "var TAU_C = 0.1; // m",
+        "var MU = 0.01;",
+        "var ETA = 0.15;",
+    ):
+        assert line in js
+
+    # 例 1：Edge 项，正确对应 vs 左右翻转（Chamfer 都是 0）
+    assert "var TOY_H = [[0, 0], [0.1, 0], [0.2, 0]];" in js
+    assert "var TOY_R = [[0, 0], [0.1, 0.02], [0.2, 0.02]];" in js
+    h = [(0, 0), (0.1, 0), (0.2, 0)]
+    r = [(0, 0), (0.1, 0.02), (0.2, 0.02)]
+
+    def edge(d):
+        return sum((d[a][0] - d[b][0]) ** 2 + (d[a][1] - d[b][1]) ** 2 for a, b in ((0, 1), (1, 2))) / 2
+
+    ok = edge([(r[i][0] - h[i][0], r[i][1] - h[i][1]) for i in range(3)])
+    flip = edge([(r[2 - i][0] - h[i][0], r[2 - i][1] - h[i][1]) for i in range(3)])
+    assert _fmt(ok, 4) == "0.0002" and _fmt(flip, 4) == "0.0402"
+    assert _fmt(0.4 * flip, 5) == "0.01608"
+    assert _fmt(flip / ok, 0) == "201"
+    assert "0.0402/0.0002=201" in note
+    assert _fmt(math.exp(-((0.01 / 0.035) ** 2)), 3) == "0.922"
+    assert _fmt(math.exp(-4), 3) == "0.018"
+
+    # 例 2：位置 + 法向
+    assert "var POSE_DX = [-0.02, 0.03, -0.05];" in js
+    pos = 0.02**2 + 0.03**2 + 0.05**2
+    nrm = 2 * (1 - math.cos(math.radians(10)))
+    assert _fmt(pos, 4) == "0.0038" and _fmt(nrm, 4) == "0.0304"
+    assert _fmt(pos + 0.1 * nrm, 5) == "0.00684"
+    assert _fmt(math.sqrt(0.1 * nrm) * 100, 1) == "5.5"
+    assert "=0.00684" in note and "5.5 cm" in note
+
+    # 例 3：接触
+    assert "var CT_XR = [0.5, 0.09, 0.84];" in js
+    assert _fmt(math.hypot(0.06, 0.04), 4) == "0.0721"
+    assert "$0.0721$ m" in note
+
+    # 例 4：一步阻尼约束 GN
+    assert "var GN_J = [[0.4, 0.1], [0.0, 0.3]];" in js
+    assert "var GN_R = [0.06, -0.03];" in js
+
+    def step(lam):
+        a, b, d = 0.16 + lam, 0.04, 0.10 + lam
+        g0, g1 = 0.024, -0.003
+        det = a * d - b * b
+        return (-(d * g0 - b * g1) / det, -(-b * g0 + a * g1) / det)
+
+    def res(dq):
+        return math.hypot(0.06 + 0.4 * dq[0] + 0.1 * dq[1], -0.03 + 0.3 * dq[1])
+
+    lo, hi = 0.0, 10.0
+    for _ in range(100):
+        mid = (lo + hi) / 2
+        lo, hi = (mid, hi) if math.hypot(*step(0.01 + mid)) > 0.15 else (lo, mid)
+    damp, tr = step(0.01), step(0.01 + hi)
+    assert (_fmt(damp[0], 4), _fmt(damp[1], 4)) == ("-0.1614", "0.0860")
+    assert (_fmt(tr[0], 4), _fmt(tr[1], 4)) == ("-0.1362", "0.0628")
+    assert _fmt(hi, 4) == "0.0246"
+    assert _fmt(res(damp), 4) == "0.0058" and _fmt(res(tr), 4) == "0.0162"
+    assert _fmt(-(0.2 * tr[0] - 0.1 * tr[1]), 4) == "0.0335"
+    for s in ("$(-0.1362,\\ 0.0628)$", "\\lambda\\approx0.0246", "$0.0162$", "0.0335"):
+        assert s in note, s
+
+    # 例 5：Table I 串行合成、Table IV 降幅
+    assert "var E2E_FPS = 1000 / (PREP_MS + SOLVE_MS);" in js
+    assert _fmt(9.83 + 5.58 + 10.38, 2) == "25.79"
+    assert _fmt(1000 / (1000 / 141.46 + 1000 / 121.26), 2) == "65.29"
+    assert _fmt(1800 / 65.29, 1) == "27.6"
+    assert _fmt((1.030 - 0.570) / 1.030 * 100, 1) == "44.7"
+    assert _fmt((1.396 - 0.619) / 1.396 * 100, 1) == "55.7"
+    assert _fmt((1.043 - 0.630) / 1.043 * 100, 1) == "39.6"
+    for s in ("$25.79$ s", "$65.29$ FPS", "$44.7\\%$", "$55.7\\%$", "$39.6\\%$"):
+        assert s in note, s
+    assert "## 🎬 八幕动画：UMR 全流程" in note
+    assert "## 🧮 数据计算实例" in note
 
 
 def test_diffusion_policy_explainer_numbers_come_from_the_config():

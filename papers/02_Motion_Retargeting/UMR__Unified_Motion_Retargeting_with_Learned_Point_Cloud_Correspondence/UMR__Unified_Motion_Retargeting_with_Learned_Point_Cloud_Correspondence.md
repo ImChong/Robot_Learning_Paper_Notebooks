@@ -5,6 +5,7 @@ zhname: "UMR：基于学习点云对应的人形统一动作重定向"
 category: "Motion Retargeting"
 paper_order: 5
 arxiv: "2609.02134"
+demos: ["umr"]
 ---
 
 # Unified Motion Retargeting for Humanoids with Learned Point Cloud Correspondence
@@ -68,33 +69,64 @@ arxiv: "2609.02134"
 
 ---
 
+## 🎬 八幕动画：UMR 全流程 {#umr-explainer-anim}
+
+<div class="paper-demo" data-demo="umr-explainer"><p class="demo-fallback">（本节含动画演示，需要启用 JavaScript）</p></div>
+
+> 📖 **动画之后的正文默认全部折叠**：动画覆盖到的那几节（问题定义、方法详解、实验结果）按小节收起，再往后的数据计算实例、源码对照、与其他笔记的关系、核心贡献、局限、面试参考与引用各整块收起。想细读哪一块就点开对应的折叠条，内容一字未删；整体框架图与源码时序图留在外面，目录里的标题依旧可以直接点，会自动展开所在折叠块，左侧目录顶部还有「展开全部文字」一键铺开。
+>
+> 动画第 3–8 幕里的小算例，和下文「🧮 数据计算实例」是同一组数字。
+
+---
+
 ## ❓ 论文要解决什么问题？
 
 ### 问题 1：骨架中心的对应是「一款机器人一套配方」
+
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：手工挑出的关节 / 刚体对继承了骨架语义，换机器人、换动作源都要重来</summary>
 
 不管是几何优化（GMR）、学习式适配（ReActor 这类）还是交互感知约束（OmniRetarget），对应关系都建立在**人手工挑出来的关节 / 刚体对**上。这张表继承了两副骨架的拓扑与语义，所以：
 
 - 换一款目标机器人 → 重新定义身体部位映射、重新调拟合权重；
 - 换一种动作源（SMPL-X / BVH / 角色动画）→ 骨架语义又不一样，还得再适配一遍。
 
+</details>
+
 ### 问题 2：稀疏关节只约束了身体几何的一小撮点
+
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：关节之间的大片体表没人管：细粒度姿态对不齐，接触这种「面」的信息丢了</summary>
 
 关节是离散的点，**关节与关节之间的那一大片体表没人管**。于是：
 
 - 细粒度姿态对不齐（肩背、胯部这种"面"上的姿态全靠插值出来）；
 - 接触没法可靠迁移——手掌贴在箱子哪一块、脚掌压在台阶哪个位置，这些都是**面**的信息，骨架表示里根本没有。
 
+</details>
+
 ### 问题 3：接触迁移目前靠手工规则
+
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：支撑相检测 + 脚部硬粘，跨动作分布会失配（Stair 只有 11.01%）</summary>
 
 OmniRetarget 这类交互感知方法要靠**启发式的支撑相检测 + 脚部硬约束粘地**。论文在 GRAIL 实验里点出了它的代价：这类启发式**跨动作分布时会失配**，把不该保持的接触一直粘住（这也是 OmniRetarget 在 Stair 上只有 11.01% 成功率的一个可能原因）。
 
+</details>
+
 ### UMR 的回答
+
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：体表是唯一公共接口：对应从几何里学、稠密 4096 点、接触走同一套点</summary>
 
 把**体表**当成人和机器人之间唯一的公共接口：
 
 - 对应关系从**几何**里学出来，不是从**语义**里指定出来 → 不挑源骨架、不挑机器人拓扑；
 - 对应是**稠密**的（默认 4096 点）→ 姿态对齐落在表面级别；
 - 接触是**同一套点**上的向量场 → 接触图可以零额外配置地搬过去。
+
+</details>
+
 
 ---
 
@@ -145,6 +177,9 @@ flowchart TB
 
 ### 阶段一：点云对应学习（在 T-pose 上学一次）
 
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：形变而非匹配的网络结构、三项损失与默认权重、为什么 Edge 走测地图</summary>
+
 记人体 T-pose 上采出的**有序**外表面点云为 $\mathbf{X}^{h}=\lbrace\mathbf{x}^{h} _ {i}\rbrace _ {i=1}^{N}$，机器人 T-pose 上采出的**无序**点云为 $\mathbf{X}^{r}=\lbrace\mathbf{x}^{r} _ {j}\rbrace _ {j=1}^{N}$。PointNet 编码器 $E _ {\theta}$ 把机器人点云压成一个潜向量，MLP 解码器 $D _ {\theta}$ 为**每个人点**吐一个形变向量：
 
 $$
@@ -165,7 +200,12 @@ $$
 
 学完之后还有一个白送的好处：**机器人点云继承了人体的身体分区标签**。于是「哪块表面该加重权重」这种参数可以定义在人体模板上，**在不同机器人之间直接复用**（仓库里 `retarget_body_segment_surface*.py` 正是这么组织的：权重按动作源分文件，不按机器人分）。
 
+</details>
+
 ### 阶段二：对应引导的重定向（逐帧求解）
+
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：重心坐标 / FK 绑定、位置 + 法向残差（tpose_offset）、接触向量与活跃集</summary>
 
 点对被绑定后就变成了运动目标：人点通过**重心坐标**跟着源网格走，机器人点通过**连杆局部绑定 + FK** 跟着关节角走。每帧求解
 
@@ -191,7 +231,12 @@ $$
 
 > 这一步是 UMR 相对 OmniRetarget 的结构性差别：接触不是「检测到支撑相就硬粘住脚」，而是**每帧算出来的一个向量残差**，人手离开箱子时残差自然退出活跃集，不需要相位状态机。
 
+</details>
+
 ### 约束更新：阻尼 Gauss-Newton + QP
+
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：线性化后的阻尼 QP、三条硬约束、μ = 0.01 / η = 0.15，以及与 GMR 求解器的对照</summary>
 
 残差通过 FK 非线性依赖 $\mathbf{q} _ {t}$，所以线性化 $\mathbf{r}(\mathbf{q} _ {t}+\Delta\mathbf{q})\approx\mathbf{r}(\mathbf{q} _ {t})+\mathbf{J}(\mathbf{q} _ {t})\Delta\mathbf{q}$，每步解一个凸 QP：
 
@@ -211,11 +256,111 @@ $$
 
 > 与 GMR 对照着看会更清楚：GMR 是 mink + DAQP 解**关节层面**的 IK task（每个 task 盯一个 body 的位姿），UMR 是 Clarabel 解**表面层面**的最小二乘（几千条点残差），并且把地面不穿透从"事后修"变成了 QP 的**硬不等式**。
 
+</details>
+
+
+---
+
+## 🧮 数据计算实例（把公式代入数字走一遍）
+
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：五个手算例子 —— Edge 项认出左右翻转、位置 / 法向残差、接触活跃集、一步约束 GN、Table I–IV 换算</summary>
+
+> ⚠️ 例 1–4 的点坐标、雅可比与权重 $w^p, w^n$ 是**我构造的示意数字**，只为把机制算清楚，不是论文或仓库里的值；用到的超参（$\lambda_e=0.4$、$r=0.035$、$\tau_c=0.1$、$\mu=0.01$、$\eta=0.15$）取自仓库 `humanoid_retarget_defaults.json`，损失按论文的**均值**写法（$\mathcal{L}_c$ 两个方向各除以 $N$，$\mathcal{L}_e$ 除以边数 $\lvert\mathcal{E}\rvert$）。例 5 只用论文 Table I / II / III / IV 的原值做换算。动画第 3–8 幕用的是同一组数字。
+
+<h3 id="例-1edge-项为什么是关键左右翻转的对应">例 1：Edge 项为什么是「关键」——左右翻转的对应</h3>
+
+人体一条手臂上取 3 个有序点（单位 m）：$\mathbf{x}_1=(0,0)$、$\mathbf{x}_2=(0.1,0)$、$\mathbf{x}_3=(0.2,0)$；机器人表面上对应区域的 3 个点：$\mathbf{y}_a=(0,0)$、$\mathbf{y}_b=(0.1,0.02)$、$\mathbf{y}_c=(0.2,0.02)$。测地图的边是 $(1,2)$、$(2,3)$。
+
+| | 正确对应 | 左右翻转 |
+|---|---|---|
+| 形变向量 $\mathbf{d}_1,\mathbf{d}_2,\mathbf{d}_3$ | $(0,0)$、$(0,0.02)$、$(0,0.02)$ | $(0.2,0.02)$、$(0,0.02)$、$(-0.2,0)$ |
+| 形变后点集 | $\lbrace\mathbf{y}_a,\mathbf{y}_b,\mathbf{y}_c\rbrace$ | $\lbrace\mathbf{y}_c,\mathbf{y}_b,\mathbf{y}_a\rbrace$（**同一个集合**） |
+| $\mathcal{L}_c$（Chamfer） | $0$ | $0$ |
+| $\mathcal{L}_e=\frac{1}{2}\left(\lVert\mathbf{d}_1-\mathbf{d}_2\rVert^2+\lVert\mathbf{d}_2-\mathbf{d}_3\rVert^2\right)$ | $\frac{0.0004+0}{2}=0.0002$ | $\frac{0.04+0.0404}{2}=0.0402$ |
+| $\lambda_e\mathcal{L}_e$（$\lambda_e=0.4$） | $0.00008$ | $0.01608$ |
+
+**读法**：Chamfer 只看「形变后的点集盖没盖住机器人表面」，点集相同它就给 0，**完全分不出左右手接反了**；Edge 项在翻转时大了 $0.0402/0.0002=201$ 倍。这就是论文说 $\mathcal{L}_e$ 是「学到连贯对应的关键」的算术含义。
+
+Repulsion 的核 $\exp(-d^2/r^2)$，$r=0.035$ m：
+
+| 两点间距 $d$ | 1 cm | 3.5 cm（$=r$） | 7 cm（$=2r$） |
+|---|---|---|---|
+| 核值 | $e^{-0.0816}=0.922$ | $e^{-1}=0.368$ | $e^{-4}=0.018$ |
+
+只在几厘米内有劲，再乘上 $\lambda_r=0.002$，它的角色只是「别扎堆」，不会跟 Chamfer 抢主导。
+
+<h3 id="例-2一对点的位姿残差位置--法向">例 2：一对点的位姿残差（位置 + 法向）</h3>
+
+某帧第 $i$ 对点：$\mathbf{x}^r_i(\mathbf{q}_t)-\mathbf{x}^h _ {t,i}=(-0.02,\,0.03,\,-0.05)$ m。
+
+- 位置项：$0.02^2+0.03^2+0.05^2=0.0004+0.0009+0.0025=0.0038$（距离 $6.16$ cm）。
+- 法向项：人点相对 T-pose 绑定转了 $30^\circ$，机器人点只转了 $20^\circ$。单位向量之差满足 $\lVert\bar{\mathbf{n}}^r-\bar{\mathbf{n}}^h\rVert^2=2(1-\cos\Delta\theta)$，所以 $2(1-\cos 10^\circ)=0.0304$。
+- 取示意权重 $w^p=1$、$w^n=0.1$：$\lVert\mathbf{r} _ {p,i}\rVert^2=1\times0.0038+0.1\times0.0304=0.0038+0.00304=0.00684$。
+
+**读法**：$\sqrt{0.00304}=0.055$ m，即在这组权重下，**10° 的朝向偏差和 5.5 cm 的位置偏差一样贵**。$w^n/w^p$ 就是「姿态朝向 vs 位置」的汇率，所以仓库把它们按身体分区给，而不是全身一个数。
+
+<h3 id="例-3接触向量与活跃集">例 3：接触向量与活跃集</h3>
+
+箱子表面上离人手最近的环境点 $\mathbf{y} _ {t,\pi_t(i)}=(0.50,\,0.00,\,0.80)$，人手点 $\mathbf{x}^h=(0.50,\,0.03,\,0.80)$，机器人手点 $\mathbf{x}^r=(0.50,\,0.09,\,0.84)$。
+
+| 量 | 数值 | 说明 |
+|---|---|---|
+| $\mathbf{c}^h=\mathbf{x}^h-\mathbf{y}$ | $(0,\,0.03,\,0)$，$\lVert\mathbf{c}^h\rVert=0.03$ m | $\le\tau_c=0.1$ → **活跃** |
+| $\mathbf{c}^r=\mathbf{x}^r-\mathbf{y}$ | $(0,\,0.09,\,0.04)$ | 用的是**同一个** $\mathbf{y}$ |
+| $\mathbf{c}^r-\mathbf{c}^h$ | $(0,\,0.06,\,0.04)$，平方和 $0.0052$，模长 $0.0721$ m | 乘 $\sqrt{w^c_i}$ 进残差 |
+| 人手抬起后 | $\lVert\mathbf{c}^h\rVert=0.12$ m | $>\tau_c$ → **自动退出**活跃集 |
+
+**一点推导（我按论文式子推的，论文没有这样表述）**：因为两边减的是同一个 $\mathbf{y}$，$\mathbf{c}^r-\mathbf{c}^h=\mathbf{x}^r-\mathbf{x}^h$，和位姿残差的位置部分是同一个向量。所以接触项的实际作用是：**对「贴着环境」的那几个点再额外加一份权重 $w^c$**，而「哪些点贴着」由环境几何每帧决定——这正是它不需要支撑相状态机的原因。
+
+<h3 id="例-4一步阻尼约束-gauss-newton">例 4：一步阻尼约束 Gauss-Newton</h3>
+
+2 个关节、2 条残差：$\mathbf{J}$ 的两行是 $(0.4,\,0.1)$ 与 $(0,\,0.3)$，$\mathbf{r}=(0.06,\,-0.03)$，$\lVert\mathbf{r}\rVert=0.0671$。先算 $\mathbf{J}^\top\mathbf{J}$ 的两行 $(0.16,\,0.04)$、$(0.04,\,0.10)$，$\mathbf{J}^\top\mathbf{r}=(0.024,\,-0.003)$。无约束时 $\Delta\mathbf{q}=-(\mathbf{J}^\top\mathbf{J}+\mu\mathbf{I})^{-1}\mathbf{J}^\top\mathbf{r}$。
+
+| 设定 | $\Delta\mathbf{q}$ | $\lVert\Delta\mathbf{q}\rVert$ | 线性化残差 $\lVert\mathbf{r}+\mathbf{J}\Delta\mathbf{q}\rVert$ |
+|---|---|---|---|
+| 纯 GN（$\mu=0$，即 $-\mathbf{J}^{-1}\mathbf{r}$） | $(-0.175,\ 0.100)$ | $0.202$ | $0$ |
+| 加阻尼 $\mu=0.01$（$\det=0.17\times0.11-0.04^2=0.0171$） | $(-0.1614,\ 0.0860)$ | $0.183$ | $0.0058$ |
+| 再加信赖域 $\eta=0.15$ | $(-0.1362,\ 0.0628)$ | $0.150$ | $0.0162$ |
+| 对照：把第二行直接等比缩到 0.15 | $(-0.1324,\ 0.0705)$ | $0.150$ | $0.0166$ |
+
+**读法**：
+
+1. 阻尼 $\mu=0.01$ 只把步长从 0.202 缩到 0.183，仍超出 $\eta=0.15$，信赖域约束被激活。
+2. 由 KKT 条件，信赖域激活时的解满足 $(\mathbf{J}^\top\mathbf{J}+(\mu+\lambda)\mathbf{I})\Delta\mathbf{q}=-\mathbf{J}^\top\mathbf{r}$，这里 $\lambda\approx0.0246$ 使 $\lVert\Delta\mathbf{q}\rVert$ 恰为 0.15——**信赖域 ≈ 自适应地加大阻尼**，步子不但变短，方向也往梯度方向偏了（和简单等比缩放相比残差略小：0.0162 vs 0.0166）。
+3. 剩下的 0.0162 留给下一次迭代，线性化失效时也不会一步跳飞。
+4. 地面约束检查：设某个近地表面点 $\mathbf{J}^z_i=(0.2,\,-0.1)$、离地 $z_i-z_f=0.05$ m，则 $-\mathbf{J}^z_i\Delta\mathbf{q}=0.0335\le0.05$，满足；若该点只离地 3 cm，$0.0335>0.03$ 就会违反，此时 Clarabel 要在信赖域和地面两条约束同时起作用的地方另找解（这里不再手算）。
+
+<h3 id="例-5从论文表格里算出来的几个数">例 5：从论文表格里算出来的几个数</h3>
+
+| 换算 | 算式 | 结果 |
+|---|---|---|
+| 阶段一总耗时（Table I） | $9.83+5.58+10.38$ | $25.79$ s，与论文合计一致 |
+| 阶段二单帧耗时（Table I） | $1000/141.46+1000/121.26=7.07+8.25$ | $15.32$ ms / 帧 |
+| 端到端吞吐 | $1000/15.32$ | $65.29$ FPS，**正好等于**论文报的端到端数字 → 可见两段是串行叠加（这是我从数字反推的） |
+| 一分钟动作要跑多久 | $60\times30/65.29$（**假设源动作 30 fps**） | $\approx27.6$ s |
+| Table II：Fall and GetUp（Sim 无 DR） | $96.98-84.72$ | UMR 比 GMR 高 $12.26$ pp |
+| Table II：Fight（Sim 无 DR） | $99.94-87.60$ | 高 $12.34$ pp |
+| Table II：Sprint（Sim2Sim） | $86.43-71.46$ | 高 $14.97$ pp |
+| Table III：全局部位误差（Sim 无 DR） | $(198.89-89.61)/198.89$ | 比 GMR 低 $54.9\%$ |
+| Table III：关节角误差（Sim 无 DR） | $(758.52-610.19)/758.52$ | 比 GMR 低 $19.6\%$ |
+| Table IV：Carry 关节误差 | $(1.030-0.570)/1.030$ | 比 OmniRetarget 低 $44.7\%$ |
+| Table IV：Kick 关节误差 | $(1.396-0.619)/1.396$ | 低 $55.7\%$ |
+| Table IV：Push 关节误差 | $(1.043-0.630)/1.043$ | 低 $39.6\%$ |
+| Table IV：Stair 成功率 | $43.53/11.01$ | 约 $3.95$ 倍 |
+
+后三行 Table IV 的降幅就是正文「关节误差降低约 40%–56%」的出处。
+
+</details>
+
 ---
 
 ## 📊 实验与结果
 
 ### 1. 计算开销（Table I，LAFAN1 上平均）
+
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：Table I —— 阶段一 25.79 s 一次性，阶段二端到端 65.29 FPS</summary>
 
 > 硬件：NVIDIA RTX 4070 Ti SUPER + Intel Core Ultra 7 265KF；下游 RL 策略在 RTX 4090 上训练。
 
@@ -231,7 +376,12 @@ $$
 
 半分钟的一次性准备 + 65 FPS 的端到端吞吐——对"把 AMASS / BONES-SEED 整库翻译一遍"这种规模是够用的。
 
+</details>
+
 ### 2. 单段跟踪质量（Table II / III，Unitree G1 + BeyondMimic）
+
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：Table II / III —— 对 GMR 全面压制、对 Unitree 官方打平，差距在 DR 与 Sim2Sim 下放大</summary>
 
 评测方式：跟着 GMR 的协议，取 40 段有 Unitree 官方参考的 LAFAN1 序列，用 **BeyondMimic** 训跟踪策略，每格 4096 次 trial，跑完整个参考窗口且不触发终止判据算成功。三种设定：无域随机化仿真、带域随机化仿真、Sim2Sim。
 
@@ -262,7 +412,12 @@ $$
 3. 差距在**带域随机化和 Sim2Sim 下被放大**（GMR 在 Sprint 的 Sim2Sim 掉到 71.46%，UMR 还有 86.43%）——论文的解释是 UMR 的参考本身更「可信服（plausible）」，策略不需要为了追一个物理上别扭的姿态而把自己逼到鲁棒性边缘。
 4. **Fall and GetUp 的 Sim2Sim 是三方共同的坑**（34.92 / 32.10 / 46.90），躺地起身这类动作的 sim2sim 差距不是重定向能补的。
 
+</details>
+
 ### 3. 大规模策略学习（SONIC + BONES-SEED）
+
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：带 SMPL encoder 时打平，不带时三项指标一致更好、后期约 +10%</summary>
 
 BONES-SEED 已发布的 G1 参考是**用 GMR 从 SOMA-Uniform 重定向**的；UMR 直接重定向**演员自身体型的 SOMA-Proportional** 动作——**不需要为不同演员准备不同配置**，这是稠密对应带来的直接好处（Fig. 6 展示 GMR 在这里出现下肢姿态畸变与地面接触伪影）。
 
@@ -271,7 +426,12 @@ BONES-SEED 已发布的 G1 参考是**用 GMR 从 SOMA-Uniform 重定向**的；
 - **带 SMPL encoder** 时，UMR 与已发布参考**打平**——因为此时源人体动作和潜空间对齐提供了额外引导，掩盖了机器人参考本身的质量差异；
 - **不带 SMPL encoder** 时（更直接地反映参考质量），UMR 在总奖励、锚点位置误差、平均关节角误差**三项上一致更好，训练后期约有 10% 的相对提升**。
 
+</details>
+
 ### 4. 接触密集交互（Table IV）
+
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：Table IV —— 人-物关节误差降约 40%–56%，Stair 11.01% → 43.53%，Chair 略输</summary>
 
 协议：完全沿用 OmniContact / OmniRetarget 的下游训练流程，**只换重定向出来的参考**。
 
@@ -291,18 +451,29 @@ BONES-SEED 已发布的 G1 参考是**用 GMR 从 SOMA-Uniform 重定向**的；
 - 人-场景部分的源数据（GRAIL）本身是从 VFM 生成视频经 4D 人体重建得到的，**噪声比动捕大得多**；即便如此 UMR 在 Stair 上把成功率从 11.01% 拉到 43.53%。论文归因于 OmniRetarget 的**启发式支撑相检测 + 脚部硬粘**在跨动作分布时失配，把不该保持的接触一直粘着；UMR 没有这类手工启发式。
 - **Chair 上 OmniRetarget 略优**——论文如实报了这一格，没有回避。
 
+</details>
+
 ### 5. 跨源 / 跨机器人 + 真机（Fig. 3 / Fig. 5）
+
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：四种动作源 × 五款人形流程不变，G1 真机三类部署</summary>
 
 - **四种动作源**：MimicKit 的角色动画、BONES-SEED 的 SOMA、LAFAN1 的 SMPL-X、自采扫描人体网格；**五款人形**，身高 0.75 m – 1.83 m。对应学习与重定向流程**完全不变**，源之间的差别只在于「有没有身体分区定义」——SMPL-X 与 SOMA 共用一套分区，角色动画用它自己简化几何的分区，**没有分区的扫描网格就当成一整块全身区域**处理。
 - **真机部署**（Unitree G1）：(a) 旋风踢（源自 MimicKit 的高动态角色动画）；(b) 捡球 + 带转向的倒着走（配动捕系统）；(c) 上楼梯 + 跳下。
+
+</details>
+
 
 ---
 
 ## 📁 源码对照
 
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：目录结构、配置切成正交两半、关键默认参数表、README 的运行命令</summary>
+
 仓库：[hanyang9/UMR](https://github.com/hanyang9/UMR)（2026-09-07 建库，随论文 v2 一起放出）。
 
-### 目录结构（实地核对）
+<h3 id="目录结构实地核对">目录结构（实地核对）</h3>
 
 ```text
 UMR/
@@ -333,7 +504,7 @@ UMR/
 
 **架构上最值得抄的一点**：配置被切成**正交的两半** —— `robot_configs/*.json` 只描述机器人（T-pose、限位、MJCF），`humanoid_retarget_defaults*.json` 只描述动作源与任务（采样、损失、求解器参数）。接一款新机器人**只动前者**，而且前者里唯一需要人工产出的东西就是 `tpose_qpos`——用 UMR Studio 在浏览器里把机器人摆成 T-pose 点一下「Copy T-pose Config」就有了。对比 GMR 每款机器人要手写 10–20 行「人体骨骼 ↔ 机器人 body + 权重 + 偏移」的 YAML，**手工语义设计这一步真的被删掉了**。
 
-### 关键默认参数（`humanoid_retarget_defaults.json`）
+<h3 id="关键默认参数humanoid_retarget_defaultsjson">关键默认参数（<code>humanoid_retarget_defaults.json</code>）</h3>
 
 | 组 | 参数 | 默认值 | 对应论文里的什么 |
 |---|---|---|---|
@@ -353,7 +524,7 @@ UMR/
 | 求解 | `temporal_smooth_cost` | 0.5 | 帧间时序一致性 |
 | 求解 | `trajectory_filter_mode` | `lqr` | 轨迹后处理（加速度 0.1 / jerk 0.01 代价） |
 
-### 跑起来（README 实录）
+<h3 id="跑起来readme-实录">跑起来（README 实录）</h3>
 
 ```bash
 conda create -n umr python=3.12 pip -y && conda activate umr
@@ -367,6 +538,8 @@ python scripts/humanoid_retarget_pipeline.py \
 ```
 
 换机器人的完整流程（README 原话的压缩版）：**复制一份 `robot_configs/` 里的样例 → 改名字和 MJCF 路径 → 在 UMR Studio 里摆好 T-pose 并粘贴 `tpose_qpos` → 用新 config 跑同一条命令**。原文强调：*No manual human-robot mapping is required.*
+
+</details>
 
 ### 源码运行时序（mermaid）
 
@@ -408,6 +581,9 @@ sequenceDiagram
 
 ## 🧩 与本仓库其他重定向笔记的关系
 
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：GMR / OmniRetarget / ReActor / NMR / SONIC 各自怎么定对应、怎么处理接触</summary>
+
 | 笔记 | 对应关系怎么定 | 接触怎么处理 | 与 UMR 的关系 |
 |---|---|---|---|
 | [GMR（Retargeting Matters）](../Retargeting_Matters__General_Motion_Retargeting_for_Humanoid_Motion_Tracking/Retargeting_Matters__General_Motion_Retargeting_for_Humanoid_Motion_Tracking.html) | 每款机器人手写 IK YAML（人体骨骼 ↔ body + 权重 + 偏移） | 无显式接触项，靠下游 RL 补 | UMR 的**主要定量基线**，两者都是纯运动学优化 |
@@ -418,17 +594,29 @@ sequenceDiagram
 
 一句话串起来：**ReActor 把物理放进回路、UMR 把几何放稠密**，两者都在回答「GMR 那张手写映射表能不能不要」，但一个靠 RL 在仿真里试出来，一个靠体表对应在 T-pose 上学出来。
 
+</details>
+
+
 ---
 
 ## 💡 核心贡献
+
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：表面中心的统一框架、对应复用的高效管线、三个尺度的下游评估</summary>
 
 1. **表面中心的统一重定向框架**：从体表点云里**学**出稠密人—机对应，取代手工骨架/身体映射，同时支持异构动作表示与机器人形态。
 2. **高效的重定向管线**：同一套对应既做表面级位姿匹配、又做接触图直接迁移；对应本身可在同一「源模板 × 机器人」下复用，端到端 65 FPS。
 3. **系统性的下游评估**：从单段跟踪（BeyondMimic）、大规模策略学习（SONIC）到接触密集交互（OmniContact / GRAIL）三个尺度上验证参考质量，并完成真机部署。
 
+</details>
+
+
 ---
 
 ## ⚠️ 局限与可改进点
+
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：要网格化源几何、OmniContact 的 BVH 转换器未开源、纯运动学、Chair 略输、无 License</summary>
 
 - **必须有网格化的源几何与标准模板**：论文自己列的头号限制。只有骨架的 BVH 需要先转成 SMPL-X（README 给的路子是 `lafan_to_smplx`），视频重建这类"不太结构化"的观测目前进不来。
 - **OmniContact 的 BVH 走不通**：论文数据是用**内部开发版**的 BVH→SMPL-X 转换器做的，那个转换器**没有放进开源仓库**，所以当前 release 不能直接吃 OmniContact 的 BVH。复现这块要留意。
@@ -438,9 +626,15 @@ sequenceDiagram
 - **尚未覆盖灵巧手与多智能体**：论文把「更精细的形态（灵巧手）+ 多人交互」列为未来工作。
 - **代码仓库没有 License 文件**：商用/二次分发前需要先问作者。
 
+</details>
+
+
 ---
 
 ## 🎤 面试参考
+
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：八个高频问题：为什么不要映射表、只用 Chamfer 会怎样、测地图、接触迁移、信赖域……</summary>
 
 **Q：UMR 为什么可以不要人工的关节映射？**
 A：因为它把对应关系建立在**几何**而不是**语义**上。网络不做"配对"，而是把人体 T-pose 点云整体形变成机器人形状，索引天然从人点云继承到机器人点云——第 $i$ 个人点和第 $i$ 个机器人点就是一对。人只需要提供两个 T-pose。
@@ -466,6 +660,9 @@ A：好在**接触密集与大幅翻滚的动作**（Fall and GetUp、Fight 成�
 **Q：SONIC 实验里"带 SMPL encoder 时打平"说明了什么？**
 A：说明当训练框架本身能拿到源人体动作并做潜空间对齐时，它会**补偿掉**机器人参考的质量差异。所以要测参考质量，得关掉这个补偿通道——关掉之后 UMR 一致好约 10%。这也是评估重定向方法时值得注意的方法论陷阱。
 
+</details>
+
+
 ---
 
 ## 🔗 相关笔记与外链
@@ -482,6 +679,9 @@ A：说明当训练框架本身能拿到源人体动作并做潜空间对齐时�
 
 ## 📚 引用（BibTeX 备忘）
 
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：BibTeX</summary>
+
 ```bibtex
 @misc{cao2026unifiedmotionretargetinghumanoids,
   title={Unified Motion Retargeting for Humanoids with Learned Point Cloud Correspondence},
@@ -493,6 +693,9 @@ A：说明当训练框架本身能拿到源人体动作并做潜空间对齐时�
   url={https://arxiv.org/abs/2609.02134},
 }
 ```
+
+</details>
+
 
 ---
 
