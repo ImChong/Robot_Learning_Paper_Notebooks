@@ -519,7 +519,7 @@
 | 587  | [KILVO: Kinematic-Inertial-LiDAR-Visual Odometry with Robust Multimodal Adaptation for Humanoid Robots](https://arxiv.org/abs/2608.05647) ✅ [笔记](09_State_Estimation/KILVO__Kinematic-Inertial-LiDAR-Visual_Odometry_for_Humanoid_Robots/KILVO__Kinematic-Inertial-LiDAR-Visual_Odometry_for_Humanoid_Robots.md) | 2026-08-06 | 2026-09-12 | ✅ 已总结 |
 | 375  | GTSAM: Factor graphs for Sensor Fusion in Robotics                                                                                       | -       |     | ⏳ 待读 |
 | 376  | Kimera: an Open-Source Library for Real-Time Metric-Semantic Localization and Mapping                                                    | -       |     | ⏳ 待读 |
-| 377  | ORB-SLAM3: An Accurate Open-Source Library for Visual, Visual-Inertial and Multi-Map SLAM                                                | -       |     | ⏳ 待读 |
+| 377  | [ORB-SLAM3: An Accurate Open-Source Library for Visual, Visual-Inertial and Multi-Map SLAM](https://arxiv.org/abs/2007.11898) ✅ [笔记](09_State_Estimation/ORB-SLAM3__Visual_Visual-Inertial_and_Multi-Map_SLAM/ORB-SLAM3__Visual_Visual-Inertial_and_Multi-Map_SLAM.md) | 2020-07-23 | 🌟 | ✅ 已总结 |
 | 378  | VINS-Fusion: An optimization-based multi-sensor state estimator | - |  | ⏳ 待读 |
 
 
