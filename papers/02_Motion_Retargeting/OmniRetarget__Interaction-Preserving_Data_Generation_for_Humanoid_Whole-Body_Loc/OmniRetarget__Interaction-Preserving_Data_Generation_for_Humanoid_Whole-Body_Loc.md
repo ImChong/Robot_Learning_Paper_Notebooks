@@ -47,6 +47,8 @@ OmniRetarget 把重定向从「关键点匹配 + 软惩罚」升级为「**inter
 > 🎮 **本文内嵌 1 段讲解动画**（不用装任何东西）：
 > [七幕动画：OmniRetarget 全流程](#omniretarget-explainer-anim) —— 约 90 秒串完「现有 retargeting 只盯人体关键点 → interaction mesh 的 Delaunay 四面体 → Laplacian 形变能 → 序贯 SOCP 硬约束 → 一条演示四路扩增 → 极简 RL 与 Table II 定量论据 → 数据工厂到 G1 真机的闭环」。空格播放/暂停，← → 换幕，也可以直接点分幕标签跳着看。
 
+> 🚶 [具体实例](#实例-环境设定)用 Holosoma 自带的 OMOMO 搬箱 demo，把一条演示从缩放、15 个关键点 + 100 个箱面点建网格、一次 SQP 迭代的代价与约束、五种箱子位姿扩增，到 50 fps 转换和 RL 奖励逐步走一遍，最后列出论文与开源代码的出入（支撑相阈值、求解器、自碰撞默认关闭）。
+
 ---
 
 ## 📌 英文缩写速查
@@ -69,7 +71,7 @@ OmniRetarget 把重定向从「关键点匹配 + 软惩罚」升级为「**inter
 
 <div class="paper-demo" data-demo="omniretarget-explainer"><p class="demo-fallback">（本节含动画演示，需要启用 JavaScript）</p></div>
 
-> 📖 **动画之后的正文默认全部折叠**：动画覆盖到的那几节（问题定义、方法详解、实验结果）按小节收起，再往后的主线关系、代码入口、个人笔记与参考文献各整块收起。想细读哪一块就点开对应的折叠条，内容一字未删；系统总览、网格构建、扩增与 RL 配方等流程图留在外面，目录里的标题依旧可以直接点，会自动展开所在折叠块，左侧目录顶部还有「展开全部文字」一键铺开。
+> 📖 **动画之后的正文默认全部折叠**：动画覆盖到的那几节（问题定义、方法详解、实验结果）按小节收起，具体实例、主线关系、代码入口、个人笔记与参考文献各整块收起。想细读哪一块就点开对应的折叠条，内容一字未删；系统总览、网格构建、扩增与 RL 配方等流程图留在外面，目录里的标题依旧可以直接点，会自动展开所在折叠块，左侧目录顶部还有「展开全部文字」一键铺开。
 
 ---
 
@@ -445,6 +447,245 @@ flowchart TB
 
 - 所有搬箱动作 → **单一多任务策略**；
 - 爬平台 → **每条参考一个策略**。
+
+</details>
+
+---
+
+## 🚶 具体实例：一条 OMOMO 搬箱演示怎么变成 G1 参考轨迹
+
+<div class="mermaid">
+flowchart LR
+    PT["sub3_largebox_003.pt<br/>52 个人体关节 + 箱子位姿"] --> S1["① 缩放到 G1 身高<br/>1.32 / 人身高"]
+    S1 --> S2["② 15 个关键点 + 100 个箱面点<br/>换到箱子坐标系"]
+    S2 --> S3["③ Delaunay → 邻接表<br/>→ 目标 Laplacian"]
+    S3 --> S4["④ 每帧 SQP<br/>cvxpy + Clarabel"]
+    S4 --> ORI["_original.npz<br/>qpos (T, 43)"]
+    ORI --> S5["⑤ 5 种扩增<br/>平移 ×3 · 旋转 ×2"]
+    ORI --> S6["⑥ 转 50 fps<br/>→ exp:g1-29dof-wbt-w-object"]
+    S5 --> S6
+
+    style S4 fill:#fdebd0,stroke:#e67e22
+    style S6 fill:#e8f8e8,stroke:#27ae60
+</div>
+
+<details class="paper-fold" markdown="1">
+<summary>📖 展开全文（9 节）：环境设定 / 四条命令 / 第 1 步：读数据、缩放 / 第 2 步：15 个关键点与 100 个箱面点 / 第 3 步：箱子坐标系里的 interaction mesh / 第 4 步：一次 SQP 迭代 / 第 5 步：五种扩增 / 第 6 步：输出与 RL 训练 / 论文与代码对照</summary>
+
+> 💡 **说明**：下面用 [amazon-far/holosoma](https://github.com/amazon-far/holosoma) 仓库 `src/holosoma_retargeting/` 自带的 demo 数据 `demo_data/OMOMO_new/sub3_largebox_003.pt`（OMOMO 搬大箱子，InterMimic 处理后的格式）走一遍。函数名、超参数、张量形状都读自源码（`examples/robot_retarget.py`、`examples/parallel_robot_retarget.py`、`src/interaction_mesh_retargeter.py`、`src/utils.py`、`config_types/*.py`，2026-09 的 `main`）。
+>
+> **我没有实际运行这条管线**（需要 MuJoCo / cvxpy，训练还要 IsaacSim）。文中的人身高、坐标、距离这类数都是**我为了手算取的示例值**，会逐处标出；只有带代码出处的数才是仓库里的真实值。
+
+<h3 id="实例-环境设定">环境设定</h3>
+
+| 项目 | 具体值 | 出处 |
+|------|--------|------|
+| **输入** | `sub3_largebox_003.pt`：每帧一行，第 162–317 列是 52 个 SMPL-H 关节的世界坐标，第 318–324 列是箱子位姿 | `load_intermimic_data()` |
+| **任务类型** | `object_interaction`（另有 `robot_only`、`climbing`） | `config_types/retargeting.py` |
+| **机器人** | Unitree G1，29 自由度，`ROBOT_HEIGHT = 1.32` m | `config_types/robot.py` |
+| **物体** | `models/largebox/largebox.obj`，包围盒约 0.47 × 0.46 × 0.41 m（按 obj 顶点坐标的最大值减最小值算） | 模型文件 |
+| **优化变量** | 浮动基 7 维（位置 + 四元数）+ 29 个关节 = 36 维（`q_a_init_idx = -7`） | `config_types/retargeter.py` |
+| **保存帧率** | `fps=30`（写死在 `np.savez` 里） | `retarget_motion()` |
+
+<h3 id="实例-四条命令">四条命令</h3>
+
+```bash
+cd src/holosoma_retargeting/holosoma_retargeting
+
+# ① 原始序列：人-物交互重定向（README 原命令）
+python examples/robot_retarget.py --data_path demo_data/OMOMO_new \
+    --task-type object_interaction --task-name sub3_largebox_003 --data_format smplh
+#    → demo_results/g1/object_interaction/omomo/sub3_largebox_003_original.npz
+
+# ② 批量 + 扩增：先跑 original，再在它的基础上跑 5 种箱子位姿扩增
+python examples/parallel_robot_retarget.py --data-dir demo_data/OMOMO_new \
+    --task-type object_interaction --data_format smplh --augmentation \
+    --save_dir demo_results_parallel/g1/object_interaction/omomo \
+    --task-config.object-name largebox
+
+# ③ 转成 RL 训练用的格式：30 fps → 50 fps，带动态物体（README 原命令）
+python data_conversion/convert_data_format_mj.py \
+    --input_file ./demo_results/g1/object_interaction/omomo/sub3_largebox_003_original.npz \
+    --output_fps 50 --output_name converted_res/object_interaction/sub3_largebox_003_mj_w_obj.npz \
+    --data_format smplh --object_name "largebox" --has_dynamic_object --once
+
+# ④ 训练带物体的全身跟踪策略（回到仓库根目录）
+python src/holosoma/holosoma/train_agent.py exp:g1-29dof-wbt-w-object \
+    --command.setup_terms.motion_command.params.motion_config.motion_file=<③ 的输出>
+```
+
+④ 是我把两处文档拼起来的：`exp:g1-29dof-wbt-w-object` 来自 `config_values/wbt/g1/experiment.py` 末尾的示例，`--command...motion_file=` 来自 `demo_scripts/demo_omomo_wb_tracking.sh`（那个脚本跑的是 robot-only）。这条组合命令我没跑过。
+
+<h3 id="实例-第-1-步读数据缩放">第 1 步：读数据、缩放到 G1 的身高</h3>
+
+`load_intermimic_data()` 取出 `human_joints`（T × 52 × 3）和 `object_poses`（T × 7，四元数顺序从 `[qx,qy,qz,qw]` 改成 `[qw,qx,qy,qz]`）。缩放系数按受试者身高算：
+
+$$
+s = \frac{\text{ROBOT\_HEIGHT}}{h_{\text{sub3}}} = \frac{1.32}{h_{\text{sub3}}}
+$$
+
+$h _ {\text{sub3}}$ 存在 `demo_data/height_dict.pkl` 里（我没读这个文件）。**假设** $h=1.75$ m，那么 $s = 1.32/1.75 = 0.754$。
+
+`preprocess_motion_data()` 接着做三件事：
+
+1. **落地**：用两只脚趾（`L_Toe` / `R_Toe`）在整段里的最低 $z$ 当地面，全体关节减掉它；如果这个最低值 ≥ 0.1 m，就认为人站在垫子上，少减 0.1 m。
+2. **人整体乘 $s$**。
+3. **箱子只缩一部分**：$xy$ 乘 $s$，$z$ 只缩「相对第一帧的抬升量」：
+
+$$
+z'_t = z_0 + s\,(z_t - z_0)
+$$
+
+**示例值**：箱子初始中心在 $(0.60,\,0.80,\,0.20)$，被抬到 $z=1.00$ 时，机器人这边的箱子在 $(0.453,\,0.603,\,0.20+0.754\times0.80)=(0.453,\,0.603,\,0.803)$。
+
+为什么 $z_0$ 不缩（**这是我的理解**）：机器人场景 `g1_29dof_w_largebox.xml` 里的箱子是**原尺寸**（`scale="1 1 1"`），中心离底面约 0.198 m。要是把 $z_0=0.20$ 也乘 0.754 变成 0.151，箱子就会插进地面约 4.7 cm。
+
+<h3 id="实例-第-2-步15-个关键点与-100-个箱面点">第 2 步：15 个关键点与 100 个箱面点</h3>
+
+**人 ↔ 机器人关键点**：`JOINTS_MAPPINGS[("smplh", "g1")]` 从 52 个 SMPL-H 关节里只挑 15 个。手指、胸椎、头都不用：
+
+| SMPL-H | G1 link | SMPL-H | G1 link |
+|--------|---------|--------|---------|
+| `Pelvis` | `pelvis_contour_link` | `L/R_Elbow` | `left/right_elbow_link` |
+| `L/R_Hip` | `left/right_hip_pitch_link` | `L/R_Wrist` | `left/right_rubber_hand_link` |
+| `L/R_Knee` | `left/right_knee_link` | `L/R_Ankle` | `left/right_ankle_intermediate_1_link` |
+| `L/R_Shoulder` | `left/right_shoulder_roll_link` | `L/R_Toe` | `left/right_ankle_roll_sphere_5_link` |
+
+**箱面采样**：`load_object_data(..., sample_count=100)` 用 `trimesh.sample.sample_surface_even`（`seed=42`）在箱子表面均匀撒 100 个点。它返回两份：
+
+- `object_local_pts_demo = 点 × s`：跟缩小后的人配套，用来建**源**网格；
+- `object_local_pts = 原始点`：跟原尺寸的机器人箱子配套，用来建**目标**网格。
+
+所以源场景是「缩小的人抱缩小的箱子」（箱子约 $0.355\times0.346\times0.308$ m，按上面的示例 $s$ 算），目标场景是「G1 抱原尺寸箱子」。Laplacian 坐标不随平移变，但会随尺度变，所以两边的尺寸差最后由优化来折中（**这是我的推断**）。
+
+<h3 id="实例-第-3-步箱子坐标系里的-interaction-mesh">第 3 步：箱子坐标系里的 interaction mesh</h3>
+
+`retarget_motion()` 对第 $t$ 帧：
+
+1. 用 `transform_points_world_to_local()` 把 15 个人体关键点变到**箱子局部坐标系**。在箱子坐标系里建网格，箱子被搬着走的时候，手和箱面的相对关系才不会因为整体运动而变（`robot_only` 任务没有箱子，直接用世界系）。
+2. 15 + 100 = **115 个顶点**，交给 `scipy.spatial.Delaunay` 剖分成四面体，`get_adjacency_list()` 把每个四面体的 6 条边记成邻接关系。
+3. `calculate_laplacian_coordinates(uniform_weight=True)` 算出每个顶点的目标 Laplacian 坐标，权重取均匀的 $w _ {ij}=1/\|\mathcal N(i) \mid $，和论文一致。
+
+**手算一个顶点（坐标都是示例值，单位 m，箱子坐标系）**。左手腕 $p=(-0.10,\,0.25,\,0.05)$，Delaunay 给它连了 4 个邻居：三个箱面点 $(0,\,0.23,\,0.10)$、$(-0.15,\,0.23,\,0)$、$(-0.10,\,0.23,\,-0.10)$，以及左肘 $(-0.25,\,0.40,\,0.10)$。
+
+$$
+\bar p = \tfrac14\big(\textstyle\sum p_j\big) = (-0.125,\;0.2725,\;0.025),\qquad
+\delta = p-\bar p = (0.025,\;-0.0225,\;0.025)
+$$
+
+这个 $\delta$ 就是要在机器人身上复现的目标。设机器人的手腕在 $y$ 方向多离开箱面 5 cm（其余顶点先当作不动），$\delta$ 的 $y$ 分量就差 0.05，这一项代价是
+
+$$
+w\,\|\Delta\delta\|^2 = 10\times0.05^2 = 0.025
+$$
+
+（`laplacian_weights = 10`，所有 115 个顶点用同一个权重）。反过来，如果人和箱子一起平移，$\delta$ 不变，所以这项代价只管「相对关系」，不管绝对位置。箱面点也有自己的 $\delta$，它的邻居里有手腕，所以箱子那一侧也在把手往回拉。
+
+<h3 id="实例-第-4-步一次-sqp-迭代">第 4 步：一次 SQP 迭代</h3>
+
+对应函数 `solve_single_iteration()`。
+
+决策变量有两组：36 维的 $\Delta q$ 和 345 维（= 115 × 3）的 Laplacian 辅助变量 `lap_var`。用 cvxpy 建模、**Clarabel** 求解。第 0 帧最多迭代 50 次，之后每帧最多 10 次，代价不再变化（`np.isclose`）就提前停；每帧从上一帧的解热启动。
+
+**代价**（四项相加）：
+
+| 项 | 写法 | 权重 |
+|----|------|------|
+| Laplacian 形变 | $\sum_i 10\,\lVert \text{lap}_i - \delta_i^{\text{src}}\rVert^2$ | 10 |
+| 时间平滑 | $0.2\,\lVert \Delta q - (q _ {t-1}-q)\rVert^2$ | `smooth_weight = 0.2` |
+| 限制腰部扭转 | 只罚 qpos 第 19、20 维（腰 yaw、腰 roll）的绝对值 | 0.2（`MANUAL_COST`） |
+| 下身锚定 | 只在扩增时开，见第 5 步 | $5e^{-t/\tau}$ |
+
+**约束**（全部线性化到 $\Delta q$）：
+
+| 约束 | 线性化形式 | 默认参数 |
+|------|-----------|---------|
+| Laplacian 定义 | $J_L\,\Delta q - \text{lap} = -L\,V$ | $J_L = (L\otimes I_3)\,J_V$ |
+| 脚粘地 | $\lvert J _ {xy}\Delta q - (p _ {t-1} - p)\rvert \le \epsilon$ | $\epsilon = 1$ mm，每脚 4 个接触球 |
+| 不穿透 | $J_n\,\Delta q \ge -\phi - 0.001$ | 只查 < 0.1 m 的箱子 / 地面对 |
+| 关节限位 | $q _ {lb} - q \le \Delta q \le q _ {ub} - q$ | URDF 范围 + 手工收紧 |
+| 信赖域 | $\lVert\Delta q\rVert_2 \le 0.2$ | `step_size = 0.2` |
+
+脚粘地只约束 $xy$，每个接触球占 4 行不等式。不穿透只查箱子和地面，距离阈值是 `collision_detection_threshold = 0.1`。关节限位在 URDF 的基础上又手工收紧了一些，例如腰 roll 从 ±0.52 收到 ±0.3（`MANUAL_LB / MANUAL_UB`）。信赖域是一个二阶锥约束，半径和论文的 $\epsilon = 0.2$ 一样，这就是论文说的「SOCP」。求完之后 `q[3:7]` 重新归一化成单位四元数。
+
+**手算两条约束（数值是示例值）**：
+
+- **不穿透**：右手和箱面的有向距离 $\phi = 0.03$ m，约束是 $J_n\Delta q \ge -0.031$，这一步最多让手朝箱子走 3.1 cm，走完还允许 1 mm 的穿透。如果已经插进去 5 mm（$\phi=-0.005$），约束变成 $J_n\Delta q \ge 0.004$，这一步必须至少退出 4 mm。
+- **脚粘地**：左脚处于支撑相，某个接触球上一帧在 $(0.312,\,0.105)$，当前迭代在 $(0.318,\,0.105)$。于是 $-0.007 \le J_x\Delta q \le -0.005$、$-0.001 \le J_y\Delta q \le 0.001$，这一步必须把球往回拉 5–7 mm。
+
+**支撑相怎么判定**：`extract_foot_sticking_sequence_velocity()` 看人体脚趾相邻两帧的 $xy$ 位移是否 ≤ 0.01。第 0 帧强制判成「不粘」，`object_interaction` 在主流程里也会再把第 0 帧关掉一次。
+
+<h3 id="实例-第-5-步五种扩增">第 5 步：五种扩增</h3>
+
+对应函数 `generate_augmentation_configs()`。
+
+`--augmentation` 必须在 `_original.npz` 已经存在之后才能跑：扩增拿原始解的 `qpos` 当名义轨迹 $\bar q^\star$，第 0 帧直接从 $\bar q^\star_0$ 出发。人体源网格不变，只改机器人这边的箱子轨迹：
+
+| 名字 | 平移（人体坐标系） | 绕 $z$ 旋转 |
+|------|------------------|-------------|
+| `original` | 0 | 0 |
+| `trans_0` | $(0.2,\,0,\,0)$，往前 | 0 |
+| `trans_1` | $(0,\,0.2,\,0)$，往左 | 0 |
+| `trans_2` | $(0,\,-0.2,\,0)$，往右 | 0 |
+| `rot_0` | $(0,\,0.2,\,0)$ | $+\pi/4$ |
+| `rot_1` | $(0,\,-0.2,\,0)$ | $-\pi/4$ |
+
+「人体坐标系」由 `transform_from_human_to_world()` 定义：$x$ 轴从人的初始骨盆指向箱子（水平投影），$z$ 轴朝上。
+
+**手算 `trans_0`（示例值）**：骨盆在原点，箱子在 $(0.6,\,0.8)$，$x$ 轴就是 $(0.6,\,0.8)$，世界系偏移 $=0.2\times(0.6,\,0.8)=(0.12,\,0.16)$。`augment_object_poses()` 的做法：
+
+- 箱子开始动之前（`extract_object_first_moving_frame`：相邻帧位姿差的范数第一次超过 0.0025），整段加满偏移；
+- 开始动之后第 $k$ 帧，偏移乘 $e^{-k/50}$：$k=50$ 时剩 $(0.044,\,0.059)$，$k=150$ 时剩 $(0.006,\,0.008)$。
+
+也就是说，箱子起点挪远了 20 cm，被搬起来以后会逐渐回到原轨迹。旋转同理，衰减常数是 25：$45°$ 在 $k=25$ 时剩 $16.6°$，$k=75$ 时剩 $2.2°$。
+
+**下身锚定**：`NOMINAL_TRACKING_INDICES` 对 G1 是 `np.arange(19)`，也就是浮动基 7 维加两条腿 12 个关节。代价是 $w\,\lVert q _ {[0:19]} - \bar q^\star _ {[0:19]}\rVert^2$，权重 $w = 5\,e^{-t/\tau}$。
+
+- `object_interaction` 没有把配置里的 `nominal_tracking_tau = 1e6` 传进去，用的是构造函数默认的 $\tau = 10$：$t=10$ 时 $w=1.84$，$t=30$ 时 $w=0.25$。等于只在开头约 1 秒（30 fps）拉住下身。
+- `climbing` 会传 $\tau=10^6$，锚定基本一直满权重。
+
+这是我从代码读出来的行为，论文只写了「惩罚下身偏离原动作 + 约束初始脚位」，没给 $\tau$。
+
+**爬平台的扩增**换成地形：`z_scale ∈ {0.8, 0.9, 1.1, 1.2}` 把平台按高度缩放，同时往网格里加一张 8 × 8、覆盖 $[-2,\,2]^2$ m 的地面点阵（`climbing_ground_size / range`）。
+
+<h3 id="实例-第-6-步输出与-rl-训练">第 6 步：输出与 RL 训练</h3>
+
+**重定向输出** `sub3_largebox_003_original.npz`：
+
+| 字段 | 形状 | 内容 |
+|------|------|------|
+| `qpos` | $(T,\,43)$ | `[0:3]` 基座位置、`[3:7]` 基座四元数 wxyz、`[7:36]` 29 个关节、`[36:43]` 箱子位姿 |
+| `human_joints` | $(T,\,52,\,3)$ | 缩放后的人体关节 |
+| `fps` | 标量 | 30 |
+| `cost` | 标量 | 最后一帧的优化代价 |
+
+**转换**：`convert_data_format_mj.py` 对基座位置做线性插值、对旋转做 slerp，重采样到 50 fps，再在 MuJoCo 里前向算出 `joint_pos / joint_vel / body_pos_w / body_quat_w / body_lin_vel_w / body_ang_vel_w`；带 `--has_dynamic_object` 时再加 `object_pos_w / object_quat_w / object_lin_vel_w / object_ang_vel_w`。
+
+**奖励**（`g1_29dof_wbt_reward_w_object`）和论文的 5 项对得上：
+
+| 论文 | Holosoma 里的项 | 权重 |
+|------|----------------|------|
+| Body Tracking | 全局参考位置 / 朝向（σ = 0.3 / 0.4）；相对身体位置 / 朝向（σ = 0.3 / 0.4）；身体线速度 / 角速度（σ = 1.0 / 3.14） | 0.5、0.5、1.0、1.0、1.0、1.0 |
+| Object Tracking | 物体全局位置 / 朝向（σ = 0.3 / 0.4） | 1.0、1.0 |
+| Action Rate | `penalty_action_rate` | −0.1 |
+| Soft Joint Limit | `limits_dof_pos`（`soft_dof_pos_limit = 0.9`） | −10.0 |
+| Self-Collision | `UndesiredContacts`：除脚底、手腕、踝以外的任何 link 接触力 > 1 N 就计数 | −0.1 |
+
+最后一行按代码看，罚的是「不该碰的部位的任何接触」，比论文字面上的「自碰撞」宽（**我读 `UndesiredContacts` 实现得出的结论**）。
+
+<h3 id="实例-论文与代码对照">论文与代码对照</h3>
+
+| 细节 | 论文 | 开源代码 |
+|------|------|---------|
+| Laplacian 权重 | 均匀 $1/\lvert\mathcal N(i)\rvert$ | 一致（`uniform_weight=True`） |
+| 信赖域 | $\epsilon = 0.2$ | 一致（`step_size = 0.2`，`cp.SOC`） |
+| 求解器与微分 | 自定义 SQP + Drake 自动微分 | cvxpy + Clarabel，雅可比由 MuJoCo 解析计算 |
+| 支撑相阈值 | 源动作脚的水平速度 < 1 cm/s | 相邻帧位移 ≤ 0.01（按 30 fps 相当于 30 cm/s）；README 还建议 LAFAN 放宽 `--retargeter.foot-sticking-tolerance 0.02` |
+| 关键点 / 采样点数 | 没给 | 15 个关键点 + 100 个箱面点 |
+| 自碰撞硬约束 | 列在约束里 | 默认关闭（`SelfCollisionConfig.enable = False`），需要手动配几何对 |
+| 扩增衰减 | 只说「指数衰减」 | 平移 $\tau=50$、旋转 $\tau=25$、下身锚定 $\tau=10$（人-物）或 $10^6$（爬平台） |
+
+支撑相阈值那一行：代码按帧算位移，论文写的是每秒速度，两边差了一个帧率因子。我猜是论文里的单位写法问题，但没法验证。
 
 </details>
 
