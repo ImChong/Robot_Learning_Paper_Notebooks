@@ -70,6 +70,7 @@
 | H18 | [ASAP: Aligning Simulation and Real-World Physics for Agile Humanoid Skills](https://arxiv.org/abs/2502.01143) ✅ [笔记](03_High_Impact_Selection/ASAP_Aligning_Simulation_and_Real-World_Physics_for_Agile_Humanoid_Skills/ASAP_Aligning_Simulation_and_Real-World_Physics_for_Agile_Humanoid_Skills.md) | S2R   | sim-real 物理对齐（delta 动作对齐 + 仿真回灌微调） |
 | H19 | [GR00T N1: An Open Foundation Model for Generalist Humanoid Robots](https://arxiv.org/abs/2503.14734) ✅ [笔记](03_High_Impact_Selection/GR00T_N1_Humanoid_Foundation_Model/GR00T_N1_Humanoid_Foundation_Model.md) | Manip | 双系统 VLA + 数据金字塔，开放权重 |
 | H20 | [Behavior Foundation Model for Humanoid Robots](https://arxiv.org/abs/2509.13780) ✅ [笔记](03_High_Impact_Selection/Behavior_Foundation_Model_for_Humanoid_Robots/Behavior_Foundation_Model_for_Humanoid_Robots.md) | WBC   | 行为基础模型                      |
+| H24 | [Perceptive Behavior Foundation Model: Adapting Human Motion Priors to Robot-Centric Terrain](https://arxiv.org/abs/2606.08059) 🌟 ✅ [笔记](03_High_Impact_Selection/Perceptive_BFM_Adapting_Human_Motion_Priors_to_Robot-Centric_Terrain/Perceptive_BFM_Adapting_Human_Motion_Priors_to_Robot-Centric_Terrain.md) | WBC   | 地形感知的行为基础模型，训练代码与 TCRS 开源 |
 
 
 #### 仿真平台 & 工具
@@ -107,7 +108,7 @@
 | 31   | LessMimic: Long-Horizon Humanoid Interaction with Unified Distance Field Representations                                                                         | -          |     | ⏳ 待读 |
 | 32   | Learning Humanoid End-Effector Control for Open-Vocabulary Visual Loco-Manipulation                                                                              | -          |     | ⏳ 待读 |
 | 33   | VIGOR: Visual Goal-In-Context Inference for Unified Humanoid Fall Safety                                                                                         | -          |     | ⏳ 待读 |
-| 34   | [Perceptive Humanoid Parkour: Chaining Dynamic Human Skills via Motion Matching](https://arxiv.org/abs/2602.15827)                                               | 2026.02    |     | ⏳ 待读 |
+| 34   | [Perceptive Humanoid Parkour: Chaining Dynamic Human Skills via Motion Matching](https://arxiv.org/abs/2602.15827) ✅ [笔记](04_Loco-Manipulation_and_WBC/Perceptive_Humanoid_Parkour__Chaining_Dynamic_Human_Skills_via_Motion_Matching/Perceptive_Humanoid_Parkour__Chaining_Dynamic_Human_Skills_via_Motion_Matching.md) | 2026-09-24 |     | ✅ 完成 |
 | 35   | [MeshMimic: Geometry-Aware Humanoid Motion Learning through 3D Scene Reconstruction](https://arxiv.org/abs/2602.15733)                                           | 2026-04-29 |     | ✅ 完成 |
 | 36   | [General Humanoid Whole-Body Control via Pretraining and Fast Adaptation](https://arxiv.org/abs/2602.11929)                                                      | 2026-04-29 |     | ✅ 完成 |
 | 37   | [HAIC: Humanoid Agile Object Interaction Control via Dynamics-Aware World Model](https://arxiv.org/abs/2602.11758)                                               | 2026-04-29 |     | ✅ 完成 |

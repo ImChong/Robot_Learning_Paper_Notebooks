@@ -520,6 +520,18 @@
             "published_date_en": "Sep 17, 2025 (arXiv)",
             "zhname": "BFM：面向人形全身控制的行为基础模型",
             "zh_title": "BFM：面向人形全身控制的行为基础模型"
+          },
+          {
+            "title": "Perceptive Behavior Foundation Model: Adapting Human Motion Priors to Robot-Centric Terrain",
+            "path": "papers/03_High_Impact_Selection/Perceptive_BFM_Adapting_Human_Motion_Priors_to_Robot-Centric_Terrain/Perceptive_BFM_Adapting_Human_Motion_Priors_to_Robot-Centric_Terrain.md",
+            "url": "/papers/03_High_Impact_Selection/Perceptive_BFM_Adapting_Human_Motion_Priors_to_Robot-Centric_Terrain/Perceptive_BFM_Adapting_Human_Motion_Priors_to_Robot-Centric_Terrain.html",
+            "dir": "Perceptive_BFM_Adapting_Human_Motion_Priors_to_Robot-Centric_Terrain",
+            "arxiv": "2606.08059",
+            "has_open_source": true,
+            "published_date_zh": "2026年6月6日（arXiv v1），CoRL 2026",
+            "published_date_en": "Jun 6, 2026 (arXiv v1), CoRL 2026",
+            "zhname": "Perceptive BFM：让人类动作先验适应机器人所处地形的感知行为基础模型",
+            "zh_title": "Perceptive BFM：让人类动作先验适应机器人所处地形的感知行为基础模型"
           }
         ],
         "zhname": "仿真到现实与基座模型",
@@ -764,8 +776,8 @@
         "url": "/papers/04_Loco-Manipulation_and_WBC/Perceptive_Humanoid_Parkour__Chaining_Dynamic_Human_Skills_via_Motion_Matching/Perceptive_Humanoid_Parkour__Chaining_Dynamic_Human_Skills_via_Motion_Matching.html",
         "dir": "Perceptive_Humanoid_Parkour__Chaining_Dynamic_Human_Skills_via_Motion_Matching",
         "arxiv": "2602.15827",
-        "published_date_zh": "2026年2月17日（arXiv）",
-        "published_date_en": "Feb 17, 2026 (arXiv)",
+        "published_date_zh": "2026年2月17日（arXiv v1），RSS 2026",
+        "published_date_en": "Feb 17, 2026 (arXiv v1), RSS 2026",
         "zhname": "Perceptive Humanoid Parkour：通过动作匹配串联动态人类技能",
         "zh_title": "Perceptive Humanoid Parkour：通过动作匹配串联动态人类技能"
       },

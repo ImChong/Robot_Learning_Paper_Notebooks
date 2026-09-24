@@ -92,6 +92,20 @@ GROOT_NOTE = (
     / "GR00T_N1_Humanoid_Foundation_Model"
     / "GR00T_N1_Humanoid_Foundation_Model.md"
 )
+PBFM_NOTE = (
+    ROOT
+    / "papers"
+    / "03_High_Impact_Selection"
+    / "Perceptive_BFM_Adapting_Human_Motion_Priors_to_Robot-Centric_Terrain"
+    / "Perceptive_BFM_Adapting_Human_Motion_Priors_to_Robot-Centric_Terrain.md"
+)
+PHP_NOTE = (
+    ROOT
+    / "papers"
+    / "04_Loco-Manipulation_and_WBC"
+    / "Perceptive_Humanoid_Parkour__Chaining_Dynamic_Human_Skills_via_Motion_Matching"
+    / "Perceptive_Humanoid_Parkour__Chaining_Dynamic_Human_Skills_via_Motion_Matching.md"
+)
 
 PLACEHOLDER_RE = re.compile(r'<div class="paper-demo" data-demo="([a-z0-9-]+)"')
 FRONTMATTER_DEMOS_RE = re.compile(r'^demos:\s*\[(.+)\]\s*$', re.MULTILINE)
@@ -215,6 +229,8 @@ def test_notes_declare_their_demos_in_reading_order():
         GMR_NOTE: ("gmr", ["gmr-explainer"]),
         OMNI_NOTE: ("omniretarget", ["omniretarget-explainer"]),
         UMR_NOTE: ("umr", ["umr-explainer"]),
+        PHP_NOTE: ("php", ["php-explainer"]),
+        PBFM_NOTE: ("pbfm", ["pbfm-explainer"]),
     }
     for note, (bundle, placeholders) in expected.items():
         text = note.read_text(encoding="utf-8")
@@ -250,7 +266,7 @@ def test_demo_assets_are_theme_aware():
 
 EXPLAINER_BUNDLES = (
     "ppo", "awr", "deepmimic", "amp", "add", "ase", "calm", "pulse", "sonic", "groot",
-    "gmr", "omniretarget", "diffusion_policy", "beyondmimic", "cosmos", "umr",
+    "gmr", "omniretarget", "diffusion_policy", "beyondmimic", "cosmos", "umr", "php", "pbfm",
 )
 
 # 幕数由论文决定，不是统一模板：PPO / DeepMimic / AMP / ADD 的核心概念正好各 5 个，
@@ -294,6 +310,16 @@ EXPLAINER_BUNDLES = (
 # 三个尺度的定量证据 / 闭环与源码落点）。「位姿残差」与「接触残差」是论文里两条独立的残差，
 # 前者是点对本身、后者是指向环境点的向量和活跃集；「怎么学对应」与「损失为什么要 Edge 项」
 # 也是两件事，压进七幕就会让翻转算例和形变动画抢同一块画面。
+# PHP 也是八件（跑酷四关 / 动作匹配的最近邻 / 临界阻尼弹簧把命令变成查询 /
+# Loco → Skill → Loco 的拼接与入口密度 / 单技能专家 / DAgger 盲区与 PPO 课程 /
+# 深度学生只拿速度命令 / 定量证据与真机）。「怎么找帧」和「查询从哪来」是论文附录 A
+# 里分开的两节，弹簧与 inertialization 撑得起一幕；「专家」与「蒸馏」是两个训练阶段，
+# 深度相机建模又是 sim-to-real 的主要工作量，合并会让课程曲线与相机噪声抢同一帧。
+# Perceptive BFM 是七件（操作者—环境错配 / PMT 四阶段与「TCRS 只教不用」的契约 /
+# TCRS 摆腿：接触、中足、MPPI / TCRS 身体：根高度、碰撞修复、多点 IK /
+# 目标系动作对齐 / 恒等门控残差 / 定量证据与边界）。TCRS 的四步里「脚怎么走」与
+# 「身体怎么跟」各是一组公式（式 4–6 vs 式 7、12），合成一幕会让 MPPI 候选表和
+# 根高度滤波抢画面；对齐与门控是论文两条独立的消融，也各占一幕。
 EXPLAINER_SCENES = {
     "ppo": (PPO_NOTE, 5),
     "awr": (AWR_NOTE, 6),
@@ -312,6 +338,8 @@ EXPLAINER_SCENES = {
     "diffusion_policy": (DIFFUSION_POLICY_NOTE, 7),
     "beyondmimic": (BEYONDMIMIC_NOTE, 8),
     "umr": (UMR_NOTE, 8),
+    "php": (PHP_NOTE, 8),
+    "pbfm": (PBFM_NOTE, 7),
 }
 CN_NUMERALS = {4: "四", 5: "五", 6: "六", 7: "七", 8: "八"}
 
@@ -1010,3 +1038,207 @@ def test_groot_explainer_uses_the_paper_tables_and_the_code_sign():
     assert "去厨房" not in note
     assert "Jetson" not in note
     assert "120 Hz 是动作率" in note or "120 Hz 是这 16 步的播放节拍" in note
+
+
+def test_php_explainer_and_worked_example_share_the_same_numbers():
+    """PHP 八幕动画与笔记「🚶 具体实例」是同一组数：弹簧、最近邻、课程、延迟与表格均值都现算。"""
+    js = (DEMO_JS_DIR / "php.js").read_text(encoding="utf-8")
+    note = PHP_NOTE.read_text(encoding="utf-8")
+
+    # 论文给的量（附录 A-1、§III-B、Table VI）
+    for line in (
+        "var FEAT_TRAJ = 12;",
+        "var FEAT_FOOT = 12;",
+        "var FEAT_ROOT = 3;",
+        "var HORIZONS = [0.33, 0.67, 1.0];",
+        "var TOTAL_ITERS = 20000;",
+        "var LAMBDA_FLOOR = 0.1;",
+        "var DEPTH_H = 58,",
+        "var SPRING_Y = 4;",
+        "var QUERY = [FUT_P[2], 3.0, V0];",
+    ):
+        assert line in js, line
+    assert 12 + 12 + 3 == 27
+
+    # 例 1：临界阻尼弹簧（式 4 / 5），y = 4 是示意值
+    y = 4.0
+
+    def val(s0, sd0, goal, tau):
+        j0 = s0 - goal
+        j1 = sd0 + y * j0
+        return math.exp(-y * tau) * (j0 + tau * j1) + goal
+
+    def pos(s0, sd0, goal, tau):
+        j0 = s0 - goal
+        j1 = sd0 + y * j0
+        e = math.exp(-y * tau)
+        return -j1 / y**2 * e + (-j0 - tau * j1) / y * e + j1 / y**2 + j0 / y + goal * tau
+
+    taus = (0.33, 0.67, 1.0)
+    assert [_fmt(val(1, 0, 2, t), 2) for t in taus] == ["1.38", "1.75", "1.91"]
+    assert [_fmt(pos(1, 0, 2, t), 2) for t in taus] == ["0.38", "0.92", "1.53"]
+    assert _fmt(pos(1, 0, 2, 0.33), 4) == "0.3817"
+    assert [_fmt(val(0, 0, 45, t), 1) for t in taus] == ["17.1", "33.6", "40.9"]
+    assert "=0.3817$ m" in note
+    assert "17.1°、33.6°、40.9°" in note
+
+    # 例 2：三维玩具特征上的最近邻
+    q = (pos(1, 0, 2, 1.0), 3.0, 1.0)
+
+    def d2(a, b):
+        return sum((x - z) ** 2 for x, z in zip(a, b, strict=True))
+
+    assert _fmt(d2(q, (1.0, 2.6, 1.0)), 4) == "0.4382"
+    assert _fmt(d2(q, (1.55, 3.1, 1.2)), 4) == "0.0505"
+    assert _fmt(d2((2.0, 4.3, 2.0), (2.0, 4.8, 2.0)), 2) == "0.25"
+    assert _fmt(d2((2.0, 4.3, 2.0), (2.0, 0.4, 2.0)), 2) == "15.21"
+    assert _fmt(d2((2.0, 0.3, 2.0), (2.0, 4.8, 2.0)), 2) == "20.25"
+    assert _fmt(d2((2.0, 0.3, 2.0), (2.0, 0.4, 2.0)), 2) == "0.01"
+    for s in ("=0.4382$", "**0.0505**", "**0.25**", "15.21", "20.25", "**0.01**"):
+        assert s in note, s
+
+    # Table III：技能库时长
+    skills = (2.2, 12.1, 8.8, 10.3, 1.6, 6.1, 4.4, 5.2, 5.9, 5.0, 3.1, 1.5)
+    assert _fmt(sum(skills), 1) == "66.2"
+    assert _fmt(sum(skills) / (sum(skills) + 495.5) * 100, 1) == "11.8"
+    assert "=11.8\\%$" in note
+
+    # 例 3：高斯跟踪奖励（Table IV，σ = 0.3）
+    assert _fmt(math.exp(-(0.15**2) / 0.3**2), 3) == "0.779"
+    assert _fmt(math.exp(-1), 3) == "0.368"
+
+    # 例 4：课程 λ_D(k) = max(0.1, 1 − k/(K/2))；λ_PPO > 0.1 ⇔ k > 1000，与 Table VI 对上
+    def lam(k):
+        return max(0.1, 1 - k / 10000)
+
+    assert [round(lam(k), 3) for k in (0, 1000, 5000, 9000, 20000)] == [1.0, 0.9, 0.5, 0.1, 0.1]
+    assert "var ADAPT_ITER = Math.round((TOTAL_ITERS / 2) * LAMBDA_FLOOR);" in js
+    assert round(10000 * 0.1) == 1000
+    assert "adaptive after 1000 iterations" in note
+    assert _fmt((1.2 - 1.0) ** 2, 2) == _fmt((0.8 - 1.0) ** 2, 2) == "0.04"
+
+    # 例 5：深度与延迟
+    assert 58 * 87 == 5046
+    assert (_fmt(3 * 0.06, 2), _fmt(3 * 0.08, 2)) == ("0.18", "0.24")
+    assert "0.18–0.24 m" in note and "5046" in note
+
+    # Table I / II 的六任务平均；0.735、0.925、0.615 正好落在舍入边界，所以 Table II 用三位
+    t1 = {
+        "vel": (1, 0, 0, 1, 0, 0),
+        "e2e": (0.95, 0.07, 0.08, 0.78, 0.19, 0.14),
+        "ours": (1, 0.99, 0.95, 1, 0.99, 0.95),
+    }
+    assert [_fmt(sum(v) / 6, 2) for v in t1.values()] == ["0.33", "0.37", "0.98"]
+    assert _fmt(sum((0.16, 0.03, 0.12, 0.63, 0.09, 0.10)) / 6, 3) == "0.188"
+    assert _fmt(sum((0.99, 0.95, 1.00, 1.00, 0.98, 0.90)) / 6, 3) == "0.970"
+    assert "fmt(T2_MEAN[k], 3)" in js
+    for s in ("**0.98**", "**只用 DAgger 0.188**", "**PHP 0.970**", "0.925"):
+        assert s in note, s
+
+    # 真机换算
+    assert _fmt(2.53 * 0.8, 2) == "2.02"
+    assert _fmt(2 / 1.3 * 100, 0) == "154"
+    assert _fmt(1.25 / 1.3 * 100, 0) == "96"
+    assert "## 🎬 八幕动画：PHP 全流程" in note
+    assert "## 🚶 具体实例" in note
+
+
+def test_pbfm_explainer_and_worked_example_share_the_same_numbers():
+    """Perceptive BFM 七幕动画与笔记「🚶 具体实例」是同一组数：MPPI、根高度、对齐与 Table IV 都现算。"""
+    js = (DEMO_JS_DIR / "pbfm.js").read_text(encoding="utf-8")
+    note = PBFM_NOTE.read_text(encoding="utf-8")
+
+    # 观测契约与仓库默认参数
+    for line in (
+        "var SCAN_X = 1.6,",
+        "var CONTACT_Z = 0.06; // m",
+        "var CONTACT_V = 0.5; // m/s",
+        "var MPPI_SAMPLES = 128;",
+        "var MPPI_TEMP = 0.1;",
+        "var W_TRACK = 10;",
+        "var W_TERRAIN = 1000;",
+        "var W_SMOOTH = 10;",
+        "var H_CLEAR = 0.03;",
+        "var ALPHA_UP = 0.5,",
+        "MAX_DZ = 0.035;",
+        "var LEG_JOINTS = 12;",
+    ):
+        assert line in js, line
+    assert (round(1.6 / 0.1) + 1) * (round(1.0 / 0.1) + 1) == 187
+    assert 3 + 3 + 3 + 29 == 38 and 3 + 3 + 3 * 29 == 93
+    assert "17\\times11=187" in note
+
+    # 例 1：五个密集点上的 MPPI 打分
+    phi = (0, 0.25, 0.5, 0.75, 1)
+    terr = (0, 0, 0.15, 0.15, 0.15)
+    bump = (0, 0.05, 0.08, 0.05, 0)
+    ref = [0.15 * p + b for p, b in zip(phi, bump, strict=True)]
+    floor = [t + 2 * 0.03 * math.sin(math.pi * p) ** 2 for t, p in zip(terr, phi, strict=True)]
+    cands = [ref, [0, 0.11, 0.215, 0.19, 0.15], [0, 0.16, 0.30, 0.25, 0.15]]
+    assert "var BUMP = [0, 0.05, 0.08, 0.05, 0];" in js
+    assert "{ id: 'B', t: '抬高一些', z: [0, 0.11, 0.215, 0.19, 0.15] }" in js
+
+    def cost(z):
+        track = 10 * sum((a - b) ** 2 for a, b in zip(z, ref, strict=True))
+        terrain = 1000 * sum(max(f - a, 0) ** 2 for f, a in zip(floor, z, strict=True))
+        smooth = 10 * sum((z[i + 1] - 2 * z[i] + z[i - 1]) ** 2 for i in range(1, 4))
+        return track + terrain + smooth
+
+    costs = [cost(z) for z in cands]
+    assert [_fmt(c, 3) for c in costs] == ["3.375", "0.220", "0.729"]
+
+    def weights(temp):
+        w = [math.exp(-(c - min(costs)) / temp) for c in costs]
+        return [x / sum(w) for x in w]
+
+    assert [_fmt(w, 3) for w in weights(0.1)] == ["0.000", "0.994", "0.006"]
+    assert [_fmt(w, 3) for w in weights(1.0)] == ["0.026", "0.608", "0.366"]
+    mid1 = sum(w * z[2] for w, z in zip(weights(1.0), cands, strict=True))
+    assert _fmt(mid1, 3) == "0.245"
+    assert _fmt(floor[2] - ref[2], 3) == "0.055"
+    for s in ("**3.375**", "**0.220**", "**0.729**", "0.994", "36.6%", "0.245 m", "低 5.5 cm"):
+        assert s in note, s
+
+    # 例 2：支撑感知根高度 + 规划器里的限速滤波
+    def root(wl, wr):
+        return (wl * (0.15 + 0.72) + wr * 0.72) / (wl + wr)
+
+    assert (_fmt(root(0.5, 0.5), 3), _fmt(root(0.8, 0.2), 3)) == ("0.795", "0.840")
+    z, seq = 0.72, []
+    for _ in range(5):
+        a = 0.5 if 0.795 > z else 0.35
+        z += max(-0.035, min(0.035, a * (0.795 - z)))
+        seq.append(_fmt(z, 4))
+    assert seq == ["0.7550", "0.7750", "0.7850", "0.7900", "0.7925"]
+    assert _fmt(0.035 * 30, 2) == "1.05"
+    assert _fmt(0.251 + 0.494 + 0.06, 3) == "0.805"
+    for s in ("**0.795 m**", "**0.840 m**", "**0.755**", "**0.7925**", "1.05", "**18 行**"):
+        assert s in note, s
+
+    # 例 3：目标系对齐（式 10）
+    assert "var A_STAR = Q_TCRS + MU_TEA - Q_RAW;" in js
+    assert _fmt(0.62 + 0.05 - 0.30, 2) == "0.37"
+    assert _fmt((0.62 + 0.05) - (0.30 + 0.05), 2) == "0.32"
+    assert "**0.37 rad**" in note and "**差 0.32 rad**" in note
+
+    # 例 4：门控
+    assert [_fmt(math.tanh(a), 3) for a in (0.25, 0.5, 1.0)] == ["0.245", "0.462", "0.762"]
+
+    # Table I / IV 换算：每类地形 90 次，合计 248 / 123，碰撞 45 / 111
+    assert _fmt((5.48 - 2.38) / 5.48 * 100, 1) == "56.6"
+    assert _fmt((14.3 - 7.4) / 14.3 * 100, 1) == "48.3"
+    pmt = ((53.3, 25.6, 21.1, 11.1), (66.7, 15.6, 17.8, 5.6), (42.2, 33.3, 24.4, 15.6),
+           (52.2, 26.7, 21.1, 10.0), (61.1, 17.8, 21.1, 7.8))
+    raw = ((24.4, 47.8, 27.8, 26.7), (35.6, 37.8, 26.7, 17.8), (17.8, 55.6, 26.7, 33.3),
+           (25.6, 46.7, 27.8, 24.4), (33.3, 41.1, 25.6, 21.1))
+    for row in pmt + raw:
+        assert sum(round(x * 0.9) for x in row[:3]) == 90
+    assert sum(round(r[0] * 0.9) for r in pmt) == 248
+    assert sum(round(r[0] * 0.9) for r in raw) == 123
+    assert sum(round(r[3] * 0.9) for r in pmt) == 45
+    assert sum(round(r[3] * 0.9) for r in raw) == 111
+    for s in ("**248 / 450 = 55.1%**", "**123 / 450 = 27.3%**", "**45 vs 111**", "$-56.6\\%$"):
+        assert s in note, s
+    assert "## 🎬 七幕动画：Perceptive BFM 全流程" in note
+    assert "## 🚶 具体实例" in note
+    assert "## 📁 源码对照" in note
