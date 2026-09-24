@@ -101,7 +101,7 @@
 - **全身控制核心**：[Expressive WBC](https://arxiv.org/abs/2402.16796) · [HOVER](https://arxiv.org/abs/2410.21229) · [ExBody2](https://arxiv.org/abs/2412.13196) · [UH-1](https://arxiv.org/abs/2412.14172) · [HugWBC](https://arxiv.org/abs/2502.03206) · [SONIC](https://arxiv.org/abs/2511.07820)
 - **遥操作与模仿学习**：[OmniH2O](https://arxiv.org/abs/2406.08858) · [iDP3](https://arxiv.org/abs/2410.10803) · [HOMIE](https://arxiv.org/abs/2502.13013)
 - **行走经典**：Learning Quadrupedal Locomotion · [Real-World Humanoid Locomotion](https://arxiv.org/abs/2303.03381) · [Locomotion as Next Token Prediction](https://arxiv.org/abs/2402.19469) · [Humanoid Parkour](https://arxiv.org/abs/2406.10759) · [15-Minute Sim-to-Real](https://arxiv.org/abs/2512.01996) · [ECO](https://arxiv.org/abs/2602.06445)
-- **仿真到现实与基座模型**：[Agile Motor Skills (ANYmal)](https://arxiv.org/abs/1901.08652) · [ASAP](https://arxiv.org/abs/2502.01143) · [GR00T N1](https://arxiv.org/abs/2503.14734) · [Behavior Foundation Model](https://arxiv.org/abs/2509.13780)
+- **仿真到现实与基座模型**：[Agile Motor Skills (ANYmal)](https://arxiv.org/abs/1901.08652) · [ASAP](https://arxiv.org/abs/2502.01143) · [GR00T N1](https://arxiv.org/abs/2503.14734) · [Behavior Foundation Model](https://arxiv.org/abs/2509.13780) · [Perceptive BFM](https://arxiv.org/abs/2606.08059)
 - **仿真平台与工具**：[Humanoid-Gym](https://arxiv.org/abs/2404.05695) · [BEHAVIOR Robot Suite](https://arxiv.org/abs/2503.05652) · Isaac Lab · [ProtoMotions3](https://arxiv.org/abs/2409.14393)
 
 ## 笔记说明
