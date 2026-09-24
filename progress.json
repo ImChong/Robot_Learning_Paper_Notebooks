@@ -41,15 +41,15 @@
         "13_Physics-Based_Animation",
         "14_Human_Motion"
       ],
-      "last_module": "07_Teleoperation",
-      "last_index": 595,
-      "last_title": "Gated Residual Body-Hand Coordination for Whole-Body Humanoid Teleoperation (arXiv:2609.18763)",
-      "next_module": "08_Navigation",
-      "last_completed_date": "2026-09-21",
-      "note": "07_Teleoperation 模块推进《Gated Residual Body-Hand Coordination for Whole-Body Humanoid Teleoperation》(arXiv:2609.18763, v1 2026-09-16, Ruiming Wu/Shuang Li/Alois Knoll/Zhaopeng Chen)。针对「身体跟踪策略 + 独立灵巧手重定向器」两块拼接时不显式保持身-手几何关系、双手交互时相对腕位姿与指尖位置错位的问题：冻结这两个现成模块，只在其输出上叠加有界的门控残差修正——动作门(motion-conditioned action gate)按动作把修正权限分配到不同关节组，奖励门(reference-geometry-dependent reward gate)训练期依参考几何在交互阶段才强调相应目标；残差仅吃人体动作参考+初始指令+机器人本体感受，不需物体/接触观测。为在 Agile One 上立名义身体控制器，引入多姿态形态标定(联合估计三轴缩放+末端本地偏移)与分阶段数据清洗训一个基于 SONIC 的跟踪器。仿真中相对直接拼接在 GRAB 留出动作上腕/指尖几何误差降 39.2-56.3%，AMASS 全身跟踪成功率 89.03%→89.29% 基本无损。含整体流程 mermaid；论文未公开代码仓库，故无源码时序图。该论文为 07_Teleoperation 模块 arXiv 最新发表(2609.18763, 2026-09-16)且尚无笔记者，符合「优先推进模块最新发表论文」；当前未收录于上游 awesome-humanoid-robot-learning，系先行补录，待上游更新后可对齐。",
-      "last_date": "2026-09-21",
+      "last_module": "09_State_Estimation",
+      "last_index": 377,
+      "last_title": "ORB-SLAM3: An Accurate Open-Source Library for Visual, Visual-Inertial and Multi-Map SLAM (arXiv:2007.11898)",
+      "next_module": "10_Sim-to-Real",
+      "last_completed_date": "2026-09-24",
+      "note": "本日轮转应到 08_Navigation，但该模块中上游 awesome-humanoid-robot-learning 收录的论文已全部有笔记；按 AGENTS.md「模块 04–14 只为上游已收录论文建笔记」的约束，不补录上游之外的新论文，顺延到 09_State_Estimation。09 模块上游仅剩 GTSAM / Kimera / ORB-SLAM3 / VINS-Fusion 四个库类条目，取其中发表最新的 ORB-SLAM3 (arXiv:2007.11898, v1 2020-07-23, IEEE T-RO 2021, Campos/Elvira/Gómez Rodríguez/Montiel/Tardós)。在 ORB-SLAM2 跟踪/局部建图/闭环三线程上加入：① 全程 MAP 的紧耦合视觉-惯性 SLAM，IMU 初始化先纯惯性 MAP 优化尺度/重力/速度/零偏再联合 VI-BA；② Atlas 多地图 + 高召回位置识别(DBoW2 取 3 候选 + 共视几何验证)，跟丢新开地图、重访时 welding BA 合并。EuRoC 双目-惯性 3.6 cm、TUM-VI room 9 mm。含整体流程 mermaid 与基于 UZ-SLAMLab/ORB_SLAM3 源码(System/Tracking/LocalMapping/LoopClosing)的运行时序图。",
+      "last_date": "2026-09-24",
       "next_candidate": null,
-      "last_completed": "Gated Residual Body-Hand Coordination for Whole-Body Humanoid Teleoperation (arXiv:2609.18763)"
+      "last_completed": "ORB-SLAM3: An Accurate Open-Source Library for Visual, Visual-Inertial and Multi-Map SLAM (arXiv:2007.11898)"
     },
     "last_summary_index": 532,
     "last_summary_date": "2026-09-18",
@@ -1519,6 +1519,17 @@
         "module": "02_Motion_Retargeting",
         "arxiv": "2605.06593",
         "has_open_source": false
+      },
+      {
+        "date": "2026-09-24",
+        "index": 377,
+        "title": "ORB-SLAM3: An Accurate Open-Source Library for Visual, Visual-Inertial and Multi-Map SLAM",
+        "folder": "papers/09_State_Estimation/ORB-SLAM3__Visual_Visual-Inertial_and_Multi-Map_SLAM",
+        "module": "09_State_Estimation",
+        "arxiv": "2007.11898",
+        "project_page": "https://github.com/UZ-SLAMLab/ORB_SLAM3",
+        "code": "https://github.com/UZ-SLAMLab/ORB_SLAM3 (C++, GPLv3)",
+        "source": "✅ 已开源(含源码运行时序图) · 全程 MAP 紧耦合 VI-SLAM + Atlas 多地图 + 高召回位置识别；单目/双目/RGB-D × 针孔/鱼眼 · EuRoC 双目-惯性 3.6 cm、TUM-VI room 9 mm · 萨拉戈萨大学 · IEEE T-RO 2021"
       }
     ],
     "last_completed_index": 588,
@@ -6000,6 +6011,16 @@
       "done_date": "2026-09-16",
       "route": "物理动画",
       "title_cn": "SLMP：面向物理仿真人形控制的球面隐空间运动先验"
+    },
+    {
+      "title": "ORB-SLAM3: An Accurate Open-Source Library for Visual, Visual-Inertial and Multi-Map SLAM",
+      "folder": "papers/09_State_Estimation/ORB-SLAM3__Visual_Visual-Inertial_and_Multi-Map_SLAM",
+      "note_file": "ORB-SLAM3__Visual_Visual-Inertial_and_Multi-Map_SLAM.md",
+      "status": "done",
+      "arxiv": "2007.11898",
+      "pdf_file": "",
+      "route": "State Estimation",
+      "title_cn": "ORB-SLAM3：视觉、视觉-惯性与多地图 SLAM 的高精度开源库"
     }
   ]
 }

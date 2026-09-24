@@ -1972,8 +1972,8 @@
         "url": "/papers/07_Teleoperation/Gated_Residual_Body-Hand_Coordination_for_Whole-Body_Humanoid_Teleoperation/Gated_Residual_Body-Hand_Coordination_for_Whole-Body_Humanoid_Teleoperation.html",
         "dir": "Gated_Residual_Body-Hand_Coordination_for_Whole-Body_Humanoid_Teleoperation",
         "arxiv": "2609.18763",
-        "published_date_zh": "2026年9月16日（v1）",
-        "published_date_en": "Sep 16, 2026 (v1)",
+        "published_date_zh": "2026年9月16日（arXiv v1）",
+        "published_date_en": "Sep 16, 2026 (arXiv v1)",
         "zhname": "门控残差的身-手协调：全身人形遥操作",
         "zh_title": "门控残差的身-手协调：全身人形遥操作"
       },
@@ -2937,6 +2937,18 @@
         "published_date_en": "Jul 14, 2022 (arXiv)",
         "zhname": "四款商用视觉-惯性里程计系统的实证评估",
         "zh_title": "四款商用视觉-惯性里程计系统的实证评估"
+      },
+      {
+        "title": "ORB-SLAM3: An Accurate Open-Source Library for Visual, Visual-Inertial and Multi-Map SLAM",
+        "path": "papers/09_State_Estimation/ORB-SLAM3__Visual_Visual-Inertial_and_Multi-Map_SLAM/ORB-SLAM3__Visual_Visual-Inertial_and_Multi-Map_SLAM.md",
+        "url": "/papers/09_State_Estimation/ORB-SLAM3__Visual_Visual-Inertial_and_Multi-Map_SLAM/ORB-SLAM3__Visual_Visual-Inertial_and_Multi-Map_SLAM.html",
+        "dir": "ORB-SLAM3__Visual_Visual-Inertial_and_Multi-Map_SLAM",
+        "arxiv": "2007.11898",
+        "has_open_source": true,
+        "published_date_zh": "2020年7月23日（arXiv v1） · 2021年4月23日（IEEE T-RO）",
+        "published_date_en": "Jul 23, 2020 (arXiv v1) · Apr 23, 2021 (IEEE T-RO)",
+        "zhname": "ORB-SLAM3：视觉、视觉-惯性与多地图 SLAM 的高精度开源库",
+        "zh_title": "ORB-SLAM3：视觉、视觉-惯性与多地图 SLAM 的高精度开源库"
       },
       {
         "title": "Contact-Aided Invariant Extended Kalman Filtering for Legged Robot State Estimation",
