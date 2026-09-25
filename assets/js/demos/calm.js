@@ -357,7 +357,7 @@
       }
     });
     slider(ctrls, {
-      label: '方向奖励权重 cos(z_target, z)',
+      label: '方向奖励权重 $\\cos(z_{target}, z)$',
       min: 0,
       max: 2,
       step: 0.05,
@@ -371,7 +371,7 @@
       }
     });
     buttonGroup(ctrls, {
-      label: '这一段要求的风格 z_target',
+      label: '这一段要求的风格 $z_{target}$',
       value: 'crouch',
       items: SKILLS.map(function (s) {
         return { label: s.name, value: s.id };
@@ -394,7 +394,7 @@
 
     var setLegend = legend(root, [
       { key: 'accent', text: 'HLC 实际选中的 z' },
-      { key: 'good', text: 'z_target（这一段要求的风格）' },
+      { key: 'good', text: '$z_{target}$（这一段要求的风格）' },
       { key: 'warn', text: '任务奖励最喜欢的方向' }
     ]);
 
@@ -404,7 +404,7 @@
 
     var stats = statsRow(root);
     var sPick = stats.add('HLC 选中的技能');
-    var sCos = stats.add('cos(z_target, z)');
+    var sCos = stats.add('$\\cos(z_{target}, z)$');
     var sTask = stats.add('任务奖励');
     var sTotal = stats.add('总奖励');
     var verdict = verdictBox(root);

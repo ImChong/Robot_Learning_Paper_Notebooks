@@ -170,8 +170,8 @@
     });
 
     var setLegend = legend(root, [
-      { key: 'good', text: 'P¹ 学会的（第 1 轮，全量数据）' },
-      { key: 'accent', text: 'P² / P³ 学会的（只打难例）' },
+      { key: 'good', text: '$P^1$ 学会的（第 1 轮，全量数据）' },
+      { key: 'accent', text: '$P^2$ / $P^3$ 学会的（只打难例）' },
       { key: 'warn', text: 'Pᶠ 那一轮才收住的' },
       { key: 'bad', text: '还是不会' }
     ]);
@@ -184,7 +184,7 @@
     var sRound = stats.add('已训练的 primitive');
     var sCov = stats.add('PHC 覆盖率');
     var sFt = stats.add('单网络微调覆盖率');
-    var sHard = stats.add('Q_hard 还剩');
+    var sHard = stats.add('$Q_{hard}$ 还剩');
     var verdict = verdictBox(root);
 
     note(root, [
@@ -408,9 +408,9 @@
     });
 
     var setLegend = legend(root, [
-      { key: 'good', text: 'P¹ 的权重' },
-      { key: 'accent', text: 'P² 的权重' },
-      { key: 'warn', text: 'P³ 的权重' },
+      { key: 'good', text: '$P^1$ 的权重' },
+      { key: 'accent', text: '$P^2$ 的权重' },
+      { key: 'warn', text: '$P^3$ 的权重' },
       { key: 'bad', text: '硬切换（argmax）时的输出' }
     ]);
 
@@ -824,6 +824,7 @@
   var svgEl = K.svgEl,
     svgText = K.svgText,
     svgMath = K.svgMath,
+    svgRich = K.svgRich,
     paint = K.paint,
     seg = K.seg,
     ease = K.ease,
@@ -931,7 +932,7 @@
       return { node: node, p: p, ph: k * 1.7 };
     });
     var cap3a = paint(svgText(645, 292, 'rotation 输入对噪声很敏感', null, 11.5, 'middle'), C_BAD);
-    var cap3b = svgText(645, 310, 'PHC 额外提供 keypoint 版本 s_kp', 'demo-x-mut', 10.5, 'middle');
+    var cap3b = svgRich(645, 310, 'PHC 额外提供 keypoint 版本 $s_{kp}$', { size: 10.5, cls: 'demo-x-mut', anchor: 'middle' });
     s.appendChild(cap3a);
     s.appendChild(cap3b);
 
@@ -1063,7 +1064,7 @@
       { tTex: '\\text{第 1 轮 } \\cdot\\ P^1', a: '训练集：全部 240 条', b: '覆盖 77.1% → 冻结', c: C_GOOD, at: 2.0 },
       { tTex: '\\text{第 2 轮 } \\cdot\\ P^2', aTex: '\\text{只训 } Q_{hard}^2 = 55 \\text{ 条}', b: '覆盖 95.0% → 冻结', c: C_ACCENT, at: 5.0 },
       { tTex: '\\text{第 3 轮 } \\cdot\\ P^3', aTex: '\\text{只训 } Q_{hard}^3 = 12 \\text{ 条}', b: '覆盖 98.3% → 冻结', c: C_ACCENT, at: 7.8 },
-      { tTex: '\\text{第 F 轮 } \\cdot\\ P^F', a: '不打难例：用 Q_loco 训恢复', b: '不在这条曲线上（见第 4 幕）', c: C_WARN, at: 13.0 }
+      { tTex: '\\text{第 F 轮 } \\cdot\\ P^F', aTex: '\\text{不打难例：用 } Q_{loco} \\text{ 训恢复}', b: '不在这条曲线上（见第 4 幕）', c: C_WARN, at: 13.0 }
     ];
     var cards = CARDS.map(function (cd, k) {
       var x = 26 + k * 190;

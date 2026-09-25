@@ -58,7 +58,7 @@
     var root = card(host, {
       title: '抖动是怎么来的：观测噪声 × 策略敏感度',
       sub:
-        '‖f(x₁) − f(x₂)‖ ≤ K‖x₁ − x₂‖ 里的那个 K，在真机上就是「观测噪声被放大多少倍送进关节」。' +
+        '$\\lVert f(x_1) - f(x_2) \\rVert \\le K \\lVert x_1 - x_2 \\rVert$ 里的那个 $K$，在真机上就是「观测噪声被放大多少倍送进关节」。' +
         '拖动 K 和噪声，看右边的动作序列什么时候开始发毛。'
     });
 
@@ -80,7 +80,7 @@
       }
     });
     slider(ctrls, {
-      label: '观测噪声 σ（编码器 / IMU）',
+      label: '观测噪声 $\\sigma$（编码器 / IMU）',
       min: 0,
       max: 0.12,
       step: 0.002,
@@ -95,11 +95,11 @@
     });
     var btns = el('div', 'demo-control demo-buttons');
     ctrls.appendChild(btns);
-    button(btns, '仿真里的理想传感器（σ = 0）', function () {
+    button(btns, '仿真里的理想传感器（$\\sigma$ = 0）', function () {
       state.noise = 0;
       render();
     });
-    button(btns, '真机的传感器（σ ≈ 0.045）', function () {
+    button(btns, '真机的传感器（$\\sigma$ ≈ 0.045）', function () {
       state.noise = 0.045;
       render();
     });
@@ -111,7 +111,7 @@
     var setLegend = legend(root, [
       { key: 'muted', text: '真实状态（无噪）' },
       { key: 'accent', text: '策略实际输出的动作' },
-      { key: 'good', text: '策略函数 π(o)' },
+      { key: 'good', text: '策略函数 $\\pi(o)$' },
       { key: 'bad', text: '噪声被放大的那一段' }
     ]);
 
@@ -120,21 +120,21 @@
     var seqStage = stage(grid, 240);
 
     var stats = statsRow(root);
-    var sK = stats.add('‖∇_o π‖ 的上界');
+    var sK = stats.add('$\\lVert \\nabla_o \\pi \\rVert$ 的上界');
     var sJit = stats.add('动作抖动 std');
-    var sPred = stats.add('上界 K × σ');
+    var sPred = stats.add('上界 $K \\times \\sigma$');
     var sRate = stats.add('动作变化率峰值');
     var verdict = verdictBox(root);
 
     note(root, [
-      '**这就是整篇论文的出发点**：动作抖动的上界是 K × σ。σ 是硬件决定的，你改不了；' +
+      '**这就是整篇论文的出发点**：动作抖动的上界是 $K \\times \\sigma$。$\\sigma$ 是硬件决定的，你改不了；' +
         '能改的只有 K —— 所以「让动作平滑」这件事，等价于「把策略对观测的敏感度压下来」。',
       '**仿真里看不出问题**：把噪声拖到 0，K = 14 的策略输出也是完全干净的。' +
-        '这解释了为什么很多 policy 在 sim 里好好的，一上真机就嗡嗡响 —— 差别不在策略，在 σ。',
+        '这解释了为什么很多 policy 在 sim 里好好的，一上真机就嗡嗡响 —— 差别不在策略，在 $\\sigma$。',
       '**低通滤波治的是症状**：它在输出端把高频削掉，但那个 K 还在。' +
         '一旦遇到滤波器跟不上的扰动，尖峰照样出来，而且还多了一份延迟（第三个演示会画）。',
       '**这是简化模型**：真实策略是 MLP、观测是几十维、动作是 12~29 个关节。' +
-        '这里用一维的 π(o) = o + b·sin(ωo) 把「斜率 = 放大倍数」这件事画出来，数值不能和论文比。'
+        '这里用一维的 $\\pi(o) = o + b \\sin(\\omega o)$ 把「斜率 = 放大倍数」这件事画出来，数值不能和论文比。'
     ]);
 
     var render = registerRenderer(function () {
@@ -173,7 +173,7 @@
 
       if (state.noise < 0.002) {
         verdict.set(
-          '🧪 σ = 0：仿真里的理想传感器。K = ' +
+          '🧪 $\\sigma$ = 0：仿真里的理想传感器。K = ' +
             fmt(state.kLip, 1) +
             ' 这么高的敏感度，输出依然完全干净 —— **仿真根本测不出这个问题**。' +
             '把噪声拖到 0.045（真机量级）再看同一个策略。',
@@ -183,11 +183,11 @@
         verdict.set(
           '📳 K = ' +
             fmt(state.kLip, 1) +
-            '、σ = ' +
+            '、$\\sigma$ = ' +
             fmt(state.noise, 3) +
             '：抖动 std 达到 ' +
             fmt(jit, 3) +
-            '，上界 K×σ = ' +
+            '，上界 $K \\times \\sigma$ = ' +
             fmt(state.kLip * state.noise, 3) +
             '（实际抖动落在上界之内，因为 K 是**最大**斜率，不是平均斜率）。' +
             '这个量级的高频指令送进 PD，电机会发热、发出可听见的嗡嗡声。',
@@ -199,7 +199,7 @@
             fmt(state.kLip, 1) +
             ' 时抖动只有 ' +
             fmt(jit, 3) +
-            '。注意左图：K 小的时候 π(o) 是一条平缓的线，噪声进去出来还是那么大；' +
+            '。注意左图：K 小的时候 $\\pi(o)$ 是一条平缓的线，噪声进去出来还是那么大；' +
             'K 大的时候它满是褶皱，输入挪一点点就跳到另一个值。',
           'learning'
         );
@@ -295,17 +295,17 @@
 
   function buildGpDemo(host) {
     var root = card(host, {
-      title: 'λ_gp：把「别一惊一乍」写进损失函数',
+      title: '$\\lambda_{\\mathrm{gp}}$：把「别一惊一乍」写进损失函数',
       sub:
-        'L_total = L_RL − λ_gp · E[‖∇_o π(o)‖²]。PPO 想要更高的 reward，GP 项想要更小的敏感度。' +
-        '拖动 λ_gp，看最优 K 怎么被压下去，以及什么时候压过头。'
+        '$L_{\\mathrm{total}} = L_{\\mathrm{RL}} - \\lambda_{\\mathrm{gp}}\\, \\mathbb{E}[\\lVert \\nabla_o \\pi(o) \\rVert^2]$。PPO 想要更高的 reward，GP 项想要更小的敏感度。' +
+        '拖动 $\\lambda_{\\mathrm{gp}}$，看最优 K 怎么被压下去，以及什么时候压过头。'
     });
 
     var state = { lambda: 0.012, noise: 0.045 };
 
     var ctrls = controlsRow(root);
     slider(ctrls, {
-      label: 'λ_gp（梯度惩罚权重）',
+      label: '$\\lambda_{\\mathrm{gp}}$（梯度惩罚权重）',
       min: 0,
       max: 0.1,
       step: 0.001,
@@ -319,7 +319,7 @@
       }
     });
     slider(ctrls, {
-      label: '真机的观测噪声 σ',
+      label: '真机的观测噪声 $\\sigma$',
       min: 0.005,
       max: 0.12,
       step: 0.002,
@@ -334,19 +334,19 @@
     });
     var btns = el('div', 'demo-control demo-buttons');
     ctrls.appendChild(btns);
-    button(btns, 'λ_gp = 0（纯 PPO）', function () {
+    button(btns, '$\\lambda_{\\mathrm{gp}}$ = 0（纯 PPO）', function () {
       state.lambda = 0;
       render();
     });
-    button(btns, '压过头（λ_gp = 0.1）', function () {
+    button(btns, '压过头（$\\lambda_{\\mathrm{gp}}$ = 0.1）', function () {
       state.lambda = 0.1;
       render();
     });
 
     var setLegend = legend(root, [
       { key: 'good', text: '任务表现 J(K)' },
-      { key: 'bad', text: '梯度惩罚 λ·K²' },
-      { key: 'accent', text: '总目标 J − λK²' }
+      { key: 'bad', text: '梯度惩罚 $\\lambda K^2$' },
+      { key: 'accent', text: '总目标 $J - \\lambda K^2$' }
     ]);
 
     var grid = stageGrid(root);
@@ -372,7 +372,7 @@
     var stats = statsRow(root);
     var sK = stats.add('最优敏感度 K*');
     var sJ = stats.add('任务表现');
-    var sJit = stats.add('真机抖动 K*×σ');
+    var sJit = stats.add('真机抖动 $K^* \\times \\sigma$');
     var sLoss = stats.add('比纯 PPO 损失的表现');
     var verdict = verdictBox(root);
 
@@ -381,7 +381,7 @@
         '论文自己也承认这一点 —— 它的说法是「仍要调 GP 系数」，而不是「一劳永逸」。',
       '**但它比调 reward 便宜**：平滑 reward 要在环境里加项、要配权重、还会和别的 reward 项互相打架；' +
         'GP 只是在更新策略时多算一次对观测的梯度，几行代码，和 PPO / teacher-student / ROA 都不冲突。',
-      '**λ 的合适范围和 σ 有关**：把噪声拖大，同一个 λ 下的真机抖动跟着涨 —— ' +
+      '**$\\lambda$ 的合适范围和 $\\sigma$ 有关**：把噪声拖大，同一个 $\\lambda$ 下的真机抖动跟着涨 —— ' +
         '换一台传感器更差的机器，这个系数就得重调。这是它作为正则项的本性，不是 bug。',
       '**这是简化模型**：J(K) 那条饱和曲线是编的，真实的任务表现随敏感度的关系要复杂得多。' +
         '这里只复现「二次惩罚 → 最优 K 单调下降 → 表现有代价」这条链，数值不能和论文比。'
@@ -408,7 +408,7 @@
 
       if (state.lambda < 0.0005) {
         verdict.set(
-          '📳 λ_gp = 0：纯 PPO 会一路把 K 推到 ' +
+          '📳 $\\lambda_{\\mathrm{gp}}$ = 0：纯 PPO 会一路把 K 推到 ' +
             fmt(k0, 1) +
             ' —— 因为在仿真里，更灵敏永远意味着更高的 reward，没有任何东西拦着它。' +
             '真机抖动 ' +
@@ -418,7 +418,7 @@
         );
       } else if (j0 - j > 0.25) {
         verdict.set(
-          '🐢 λ_gp = ' +
+          '🐢 $\\lambda_{\\mathrm{gp}}$ = ' +
             fmt(state.lambda, 3) +
             ' 压过头了：K 被摁到 ' +
             fmt(k, 2) +
@@ -431,7 +431,7 @@
         );
       } else {
         verdict.set(
-          '✅ λ_gp = ' +
+          '✅ $\\lambda_{\\mathrm{gp}}$ = ' +
             fmt(state.lambda, 3) +
             '：K 从 ' +
             fmt(k0, 1) +
@@ -531,7 +531,7 @@
 
     var ctrls = controlsRow(root);
     slider(ctrls, {
-      label: '低通滤波系数 α（越小越平滑）',
+      label: '低通滤波系数 $\\alpha$（越小越平滑）',
       min: 0.04,
       max: 1,
       step: 0.02,
@@ -559,7 +559,7 @@
       }
     });
     slider(ctrls, {
-      label: '观测噪声 σ',
+      label: '观测噪声 $\\sigma$',
       min: 0,
       max: 0.12,
       step: 0.002,
@@ -592,8 +592,8 @@
     var verdict = verdictBox(root);
 
     note(root, [
-      '**滤波器的延迟是物理的**：一阶低通的群延迟大约是 (1−α)/α 个控制步。' +
-        '把 α 拖到 0.05，抖动几乎没了，但阶跃响应要等十几步才跟上 —— 在平衡控制里，十几步的延迟足够摔一次。',
+      '**滤波器的延迟是物理的**：一阶低通的群延迟大约是 $(1-\\alpha)/\\alpha$ 个控制步。' +
+        '把 $\\alpha$ 拖到 0.05，抖动几乎没了，但阶跃响应要等十几步才跟上 —— 在平衡控制里，十几步的延迟足够摔一次。',
       '**LCP 没有这个延迟**：它改的是策略函数本身的斜率，不在信号链上加任何状态。' +
         '输出该跟的时候照样立刻跟，只是不再对噪声过激反应。',
       '**平滑 reward 的问题是另一类**：它也能压住抖动，但要在环境里加项、配权重，' +
@@ -652,7 +652,7 @@
 
       if (lag > 6) {
         verdict.set(
-          '🐌 α = ' +
+          '🐌 $\\alpha$ = ' +
             fmt(state.alpha, 2) +
             '：低通把抖动压到 ' +
             fmt(jFil, 3) +
@@ -668,7 +668,7 @@
             fmt(state.kLip, 1) +
             '，抖动 ' +
             fmt(jLcp, 3) +
-            '，低通在 α = ' +
+            '，低通在 $\\alpha$ = ' +
             fmt(state.alpha, 2) +
             ' 下是 ' +
             fmt(jFil, 3) +
@@ -685,7 +685,7 @@
             fmt(jFil, 3) +
             '），但低通那条仍然带着 ' +
             fmt(lag, 1) +
-            ' 步延迟。把 α 调小去追平 LCP 的平滑度，延迟就会涨上来 —— 这是它绕不开的取舍。',
+            ' 步延迟。把 $\\alpha$ 调小去追平 LCP 的平滑度，延迟就会涨上来 —— 这是它绕不开的取舍。',
           'frozen'
         );
       }

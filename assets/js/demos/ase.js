@@ -164,13 +164,13 @@
 
     var stats = statsRow(root);
     var sZ = stats.add('z（2 维示意）');
-    var sNorm = stats.add('‖z‖');
+    var sNorm = stats.add('$\\lVert z \\rVert$');
     var sTime = stats.add('episode 时间');
     var sSkill = stats.add('当前最像的技能');
     var verdict = verdictBox(root);
 
     note(root, [
-      '**为什么一定要归一化到球面**：`_sample_latents` 里 `normalize(torch.normal(...))` 保证 ‖z‖ ≡ 1。' +
+      '**为什么一定要归一化到球面**：`_sample_latents` 里 `normalize(torch.normal(...))` 保证 $\\lVert z \\rVert \\equiv 1$。' +
         '如果让 z 自由取值，策略可以靠「把 z 缩小」来削弱它的影响；钉在球面上以后，z 之间只剩方向差别，' +
         'encoder 要恢复的也只是方向 —— 这也是为什么 encoder loss 写成余弦相似度 `−sum(z · ẑ)`。',
       '**重采样是在造「切换」训练数据**：`latent_time_min: 0.0` / `latent_time_max: 5.0`，每个 episode 内部就会换好几次技能。' +
@@ -368,7 +368,7 @@
       }
     });
     slider(ctrls, {
-      label: '动作噪声 σ（策略的探索方差）',
+      label: '动作噪声 $\\sigma$（策略的探索方差）',
       min: 0.05,
       max: 1,
       step: 0.05,
@@ -618,7 +618,7 @@
     var setLegend = legend(root, [
       { key: 'accent', text: 'diversity_ratio = a_diff / z_diff' },
       { key: 'warn', text: '目标值 diversity_tar' },
-      { key: 'bad', text: 'diversity_loss = (tar − ratio)²' }
+      { key: 'bad', text: 'diversity_loss = $(\\mathrm{tar} - \\mathrm{ratio})^2$' }
     ]);
 
     var grid = stageGrid(root);
@@ -776,6 +776,7 @@
   var svgEl = K.svgEl,
     svgText = K.svgText,
     svgMath = K.svgMath,
+    svgRich = K.svgRich,
     paint = K.paint,
     seg = K.seg,
     ease = K.ease,
@@ -1194,7 +1195,7 @@
       d: polyPath(S4_BACK), fill: 'none', 'stroke-width': 1.6,
       'stroke-dasharray': '5 4', 'marker-end': backArrow
     }), null, C_WARN));
-    back.appendChild(paint(svgText(400, 158, 'encoder 猜不对 → r_enc 低 → 策略被罚：z 的信息必须真的进到动作里', null, 11, 'middle'), C_WARN));
+    back.appendChild(svgRich(400, 158, 'encoder 猜不对 → $r_{enc}$ 低 → 策略被罚：$z$ 的信息必须真的进到动作里', { size: 11, anchor: 'middle' }).setTone(C_WARN));
     s.appendChild(back);
 
     var formula = svgMath(400, 188,
@@ -1515,7 +1516,7 @@
 
     var down = svgEl('g', {});
     down.appendChild(paint(svgEl('line', { x1: 60, y1: 272, x2: 760, y2: 272, 'stroke-width': 1, 'stroke-dasharray': '5 4' }), null, C_BORDER));
-    down.appendChild(paint(svgText(60, 296, '预训练完成 → 冻结 π(a｜s, z)，下游任务只学「选 z」', null, 12.5), C_GOOD));
+    down.appendChild(svgRich(60, 296, '预训练完成 → 冻结 $\\pi(a \\mid s, z)$，下游任务只学「选 $z$」', { size: 12.5 }).setTone(C_GOOD));
     s.appendChild(down);
     var hlc = S6_HLC.map(function (str, i) {
       var cx = 170 + i * 215;

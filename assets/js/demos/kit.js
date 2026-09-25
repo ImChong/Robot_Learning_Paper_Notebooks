@@ -13,9 +13,10 @@
  *
  * Formulas: write LaTeX and let the KaTeX the page already loads typeset it —
  * `$…$` inside any demo string (card title/sub, note(), verdictBox, explainer
- * cues, demo-table cells via el()/table().row()) and K.svgMath() on an SVG
- * storyboard. See AGENTS.md, and texToPlain() below for what a reader sees when
- * that CDN is blocked.
+ * cues, demo-table cells via el()/table().row()), K.svgMath() for a bare
+ * formula on an SVG storyboard and K.svgRich() for a storyboard label that
+ * mixes prose with `$…$`. See AGENTS.md, and texToPlain() below for what a
+ * reader sees when that CDN is blocked.
  *
  * Usage from a bundle:
  *
@@ -73,12 +74,19 @@
 
   var TEX_PLAIN = [
     [/_\s*\{([^{}]*)\}/g, '_$1'], [/\^\s*\{([^{}]*)\}/g, '^$1'],
-    [/\\(?:text|mathrm|mathbf|mathit|mathbb|mathcal|mathsf|operatorname)\s*\{([^{}]*)\}/g, '$1'],
+    [/\\(?:text|texttt|mathrm|mathbf|mathit|mathbb|mathcal|mathsf|operatorname|bm|boldsymbol|overline)\s*\{([^{}]*)\}/g, '$1'],
+    [/\\\{/g, '｛'], [/\\\}/g, '｝'], [/\\_/g, '_'],
+    [/\\[tdc]?frac\s*(\d)\s*(\d)/g, '$1/$2'],
+    [/\\sqrt\s*\{([^{}]*)\}/g, '√($1)'],
+    [/\\begin\{[bp]?matrix\}([\s\S]*?)\\end\{[bp]?matrix\}/g, function (m, body) {
+      return '[' + body.replace(/\\\\/g, '; ').replace(/&/g, ',') + ']';
+    }],
+    [/\\([%#&])/g, '$1'],
     [/\\(?:qquad|quad)/g, '  '],
     [/\\(?:bigg?|Bigg?)[lr]?/g, ''],
     [/\\hat\s*\{?([A-Za-z])\}?/g, '$1̂'],
     [/\\dot\s*\{?([A-Za-z])\}?/g, '$1̇'],
-    [/\\(?:left|right|,|;|!|\s)/g, ' '],
+    [/\\(?:left(?!arrow)|right(?!arrow)|,|;|!|\s)/g, ' '],
     [/\\(?:cdots|ldots|dots)/g, '⋯'],
     [/\\cdot/g, '·'], [/\\times/g, '×'], [/\\approx/g, '≈'],
     [/\\le(?:q)?(?![A-Za-z])/g, '≤'], [/\\ge(?:q)?(?![A-Za-z])/g, '≥'], [/\\neq(?![A-Za-z])/g, '≠'],
@@ -87,17 +95,29 @@
     [/\\mid(?![A-Za-z])/g, '|'], [/\\sim(?![A-Za-z])/g, '~'], [/\\pm(?![A-Za-z])/g, '±'],
     /* ‖·‖ 与 KL 里的分隔符：没有这一条，\|a - b\|^2 会把原始 TeX 漏出来。
        \lVert / \rVert 与 \lvert / \rvert 是同两个符号的「成对」写法，一起认掉。 */
-    [/\\\|/g, '‖'], [/\\[lr]Vert(?![A-Za-z])/g, '‖'], [/\\[lr]vert(?![A-Za-z])/g, '|'],
+    [/\\\|/g, '‖'], [/\\[lr]Vert/g, '‖'], [/\\[lr]?vert(?![A-Za-z])/g, '|'],
     [/\\bar\s*\{?([A-Za-z])\}?/g, '$1\u0304'], [/\\ell(?![A-Za-z])/g, 'ℓ'],
     [/\\propto(?![A-Za-z])/g, '∝'],
+    [/\\(cos|sin|tanh|tan|arg)(?![a-z])/g, '$1'],
     [/\\min(?![A-Za-z])/g, 'min'], [/\\max(?![A-Za-z])/g, 'max'], [/\\exp(?![A-Za-z])/g, 'exp'], [/\\log(?![A-Za-z])/g, 'log'],
+    [/\\partial/g, '∂'], [/\\nabla/g, '∇'], [/\\odot(?![A-Za-z])/g, '⊙'], [/\\div(?![A-Za-z])/g, '÷'],
+    [/\\ast(?![A-Za-z])/g, '*'], [/\\longrightarrow(?![A-Za-z])/g, '⟶'],
+    [/\\star(?![A-Za-z])/g, '⋆'], [/\\equiv(?![A-Za-z])/g, '≡'], [/\\Leftrightarrow(?![A-Za-z])/g, '⇔'],
+    [/\\(?:Longrightarrow|Rightarrow)(?![A-Za-z])/g, '⇒'], [/\\textstyle(?![A-Za-z])/g, ''],
     [/\\alpha/g, 'α'], [/\\beta/g, 'β'], [/\\gamma/g, 'γ'], [/\\delta/g, 'δ'],
     [/\\epsilon/g, 'ε'], [/\\varepsilon/g, 'ε'], [/\\theta/g, 'θ'], [/\\lambda/g, 'λ'],
     [/\\mu/g, 'μ'], [/\\pi/g, 'π'], [/\\sigma/g, 'σ'], [/\\tau/g, 'τ'],
+    [/\\eta/g, 'η'], [/\\zeta/g, 'ζ'], [/\\xi/g, 'ξ'], [/\\rho/g, 'ρ'], [/\\kappa/g, 'κ'], [/\\nu/g, 'ν'], [/\\chi/g, 'χ'],
     [/\\phi/g, 'φ'], [/\\varphi/g, 'φ'], [/\\psi/g, 'ψ'], [/\\omega/g, 'ω'],
     [/\\Delta/g, 'Δ'], [/\\Gamma/g, 'Γ'], [/\\Lambda/g, 'Λ'], [/\\Theta/g, 'Θ'], [/\\Pi/g, 'Π'],
     [/\\Phi/g, 'Φ'], [/\\Psi/g, 'Ψ'], [/\\Sigma/g, 'Σ'], [/\\Omega/g, 'Ω'],
     [/\^\{?\\?circ\}?/g, '°'],
+    /* Accents and roots over a Greek letter: only a single glyph is left by now. */
+    [/\\hat\s*\{?([^{}\s\\])\}?/g, '$1\u0302'], [/\\bar\s*\{?([^{}\s\\])\}?/g, '$1\u0304'],
+    [/\\dot\s*\{?([^{}\s\\])\}?/g, '$1\u0307'], [/\\ddot\s*\{?([^{}\s\\])\}?/g, '$1\u0308'],
+    [/\\sqrt\s*\{([^{}]*)\}/g, '√($1)'],
+    /* A fraction whose parts only lost their braces above. */
+    [/_\s*\{([^{}]*)\}/g, '_$1'], [/\^\s*\{([^{}]*)\}/g, '^$1'], [TEX_FRAC, '($1)/($2)'],
     [/[{}]/g, ''], [/\s{2,}/g, ' ']
   ];
 
@@ -203,7 +223,7 @@
      `**bold**`, `` `code` `` and `$LaTeX$`. A code run and a formula never
      nest inside each other, but either can sit inside a bold run
      (`**$r_t(\theta)$**`, ``**`disc_reward_weight: 1.0`**``). */
-  function rich(parent, str) {
+  function rich(parent, str, opts) {
     var s = String(str);
     var re = /\*\*|`[^`]+`|\$[^$]+\$/g;
     var target = parent, at = 0, m;
@@ -220,11 +240,20 @@
       } else if (m[0].charAt(0) === '`') {
         target.appendChild(el('code', 'demo-code', m[0].slice(1, -1)));
       } else {
-        target.appendChild(tex(m[0].slice(1, -1)));
+        target.appendChild(tex(m[0].slice(1, -1), opts));
       }
     }
     if (at < s.length) target.appendChild(document.createTextNode(s.slice(at)));
     return parent;
+  }
+
+  /* What a screen reader (an aria-label) should hear for a rich() string:
+     the markup comes off and each `$…$` reads as its texToPlain(). */
+  function richToPlain(str) {
+    return String(str)
+      .replace(/\$([^$]+)\$/g, function (m, t) { return texToPlain(t); })
+      .replace(/\*\*/g, '')
+      .replace(/`([^`]+)`/g, '$1');
   }
 
   function card(host, opts) {
@@ -260,7 +289,7 @@
     input.max = String(opts.max);
     input.step = String(opts.step);
     input.value = String(opts.value);
-    if (opts.ariaLabel || opts.label) input.setAttribute('aria-label', opts.ariaLabel || opts.label);
+    if (opts.ariaLabel || opts.label) input.setAttribute('aria-label', opts.ariaLabel || richToPlain(opts.label));
     wrap.appendChild(input);
     parent.appendChild(wrap);
 
@@ -301,7 +330,7 @@
     input.type = 'checkbox';
     input.checked = !!checked;
     label.appendChild(input);
-    label.appendChild(document.createTextNode(text));
+    label.appendChild(el('span', null, text));
     parent.appendChild(label);
     input.addEventListener('change', function () {
       onChange(input.checked);
@@ -322,7 +351,9 @@
         row.appendChild(box);
         return {
           set: function (text, tone) {
-            v.textContent = text;
+            v.textContent = '';
+            if (needsRichMarkup(text)) rich(v, text);
+            else v.textContent = text;
             v.className = 'demo-stat-v' + (tone ? ' is-' + tone : '');
           }
         };
@@ -712,14 +743,15 @@
      `y` is the baseline svgText would use, so a label and a formula on the
      same row line up.
 
-     Returns the <foreignObject>, with `setTex` for formulas whose numbers
-     change while the scene plays, and `setCls` / `setTone` for its colour —
-     `paint()` cannot help here, HTML takes `color`, not `fill`.
-     Options: { size, anchor, cls, w, h, display }. */
-  function svgMath(x, y, str, opts) {
-    var o = opts || {};
+     svgMath returns the <foreignObject>, with `setTex` for formulas whose
+     numbers change while the scene plays, `setX` / `setY` for a label that
+     follows something around the scene, and `setCls` / `setTone` for its
+     colour — `paint()` cannot help here, HTML takes `color`, not `fill`.
+     Options: { size, anchor, cls, w, h, display }. svgBox is the part it
+     shares with svgRich below. */
+  function svgBox(x, y, o, defaultW, baseCls) {
     var size = o.size || 12;
-    var w = o.w || 300;
+    var w = o.w || defaultW;
     var h = o.h || size * (o.display ? 3.4 : 2.4);
     var anchor = o.anchor || 'start';
     var fo = svgEl('foreignObject', {
@@ -736,7 +768,6 @@
     box.style.justifyContent = anchor === 'middle' ? 'center' : anchor === 'end' ? 'flex-end' : 'flex-start';
     fo.appendChild(box);
 
-    var output = isIos() ? 'mathml' : 'htmlAndMathml';
     fo.texBox = box;
     /* The box is wider than the formula, so a call site that moves a label
        around (a band that follows the camera) must go through this rather
@@ -745,22 +776,61 @@
       fo.setAttribute('x', anchor === 'middle' ? nx - w / 2 : anchor === 'end' ? nx - w : nx);
       return fo;
     };
+    /* `ny` is a baseline, like svgText's `y`. */
+    fo.setY = function (ny) {
+      fo.setAttribute('y', ny - 0.34 * size - h / 2);
+      return fo;
+    };
     fo.setCls = function (cls) {
-      box.className = 'demo-x-tex' + (cls ? ' ' + cls : '');
+      box.className = baseCls + (cls ? ' ' + cls : '');
       return fo;
     };
     fo.setTone = function (color) {
       box.style.color = color || '';
       return fo;
     };
+    fo.setCls(o.cls);
+    return fo;
+  }
+
+  function svgMath(x, y, str, opts) {
+    var o = opts || {};
+    var fo = svgBox(x, y, o, 300, 'demo-x-tex');
+    var output = isIos() ? 'mathml' : 'htmlAndMathml';
     fo.setTex = function (next) {
       if (fo.texSource === next) return fo;
       fo.texSource = next;
-      renderTex(box, next, { display: o.display, output: output });
+      renderTex(fo.texBox, next, { display: o.display, output: output });
       return fo;
     };
-    fo.setCls(o.cls);
     fo.setTex(str);
+    return fo;
+  }
+
+  /* A storyboard label that mixes prose and formulas — the svgText of a line
+     like "在 $\mathcal{D}_{\text{loco}}$ 里检索". It takes the same markup as
+     rich() (`$…$`, `**bold**`, `` `code` ``) in svgMath's <foreignObject>,
+     so the prose keeps the scene's own font (inside KaTeX's \text{} it
+     inherits `KaTeX_Main, Times New Roman, serif`, which turns CJK into a
+     serif face wherever one is installed) and only the `$…$` runs are typeset.
+     Same call shape and methods as svgMath, with `setText` for a label whose
+     numbers change while the scene plays. */
+  function svgRich(x, y, str, opts) {
+    var o = opts || {};
+    var fo = svgBox(x, y, o, 760, 'demo-x-tex demo-x-rich');
+    var output = isIos() ? 'mathml' : 'htmlAndMathml';
+    /* The flex box would trim the spaces around each formula (every text run
+       becomes its own flex item), so the runs sit in one inline span. */
+    var line = document.createElement('span');
+    fo.texBox.appendChild(line);
+    fo.setText = function (next) {
+      if (fo.textSource === next) return fo;
+      fo.textSource = next;
+      line.textContent = '';
+      rich(line, next, { output: output });
+      return fo;
+    };
+    fo.setText(str);
     return fo;
   }
 
@@ -1203,9 +1273,11 @@
     tex: tex,
     texToPlain: texToPlain,
     rich: rich,
+    richToPlain: richToPlain,
     svgEl: svgEl,
     svgText: svgText,
     svgMath: svgMath,
+    svgRich: svgRich,
     paint: paint,
     seg: seg,
     ease: ease,

@@ -65,10 +65,10 @@
   /* 四个维度取自笔记里 spinkick 的例子。scale 是 DiffNormalizer 里那一维的
      典型尺度：不归一化时角速度（rad/s）会把只有几厘米的末端误差整个淹掉。 */
   var DIMS = [
-    { key: 'pose', label: '髋关节角 Δθ', unit: 'rad', max: 1.2, scale: 0.15 },
-    { key: 'vel', label: '躯干角速度 Δω', unit: 'rad/s', max: 12, scale: 2.0 },
-    { key: 'end', label: '踢腿末端 Δp', unit: 'm', max: 0.6, scale: 0.05 },
-    { key: 'root', label: '根部位置 Δroot', unit: 'm', max: 1.2, scale: 0.12 }
+    { key: 'pose', label: '髋关节角 $\\Delta\\theta$', unit: 'rad', max: 1.2, scale: 0.15 },
+    { key: 'vel', label: '躯干角速度 $\\Delta\\omega$', unit: 'rad/s', max: 12, scale: 2.0 },
+    { key: 'end', label: '踢腿末端 $\\Delta p$', unit: 'm', max: 0.6, scale: 0.05 },
+    { key: 'root', label: '根部位置 $\\Delta\\mathrm{root}$', unit: 'm', max: 1.2, scale: 0.12 }
   ];
 
   var DIFF_PRESETS = [
@@ -109,7 +109,7 @@
       );
     });
     slider(ctrls, {
-      label: '判别器的严格程度 τ（越小越挑剔）',
+      label: '判别器的严格程度 $\\tau$（越小越挑剔）',
       min: 0.3,
       max: 3,
       step: 0.05,
@@ -167,7 +167,7 @@
     })();
 
     var setLegend = legend(root, [
-      { key: 'accent', text: '归一化后的各维误差 Δô' },
+      { key: 'accent', text: '归一化后的各维误差 $\\Delta\\hat{o}$' },
       { key: 'bad', text: '不归一化时的各维误差（量纲被角速度吃掉）' },
       { key: 'good', text: '判别器打分 D（+1 = 判成「零误差」）' }
     ]);
@@ -177,9 +177,9 @@
     var curveStage = stage(grid, 210);
 
     var stats = statsRow(root);
-    var sNorm = stats.add('‖Δô‖');
-    var sD = stats.add('判别器 D(Δo)');
-    var sR = stats.add('r_disc');
+    var sNorm = stats.add('$\\lVert \\Delta\\hat{o} \\rVert$');
+    var sD = stats.add('判别器 $D(\\Delta o)$');
+    var sR = stats.add('$r_{disc}$');
     var sScaled = stats.add('× disc_reward_scale 2');
     var verdict = verdictBox(root);
 
@@ -282,7 +282,7 @@
         g.ctx.fillStyle = state.norm ? P.accent : P.bad;
         g.ctx.fillRect(cx - bw / 2, p.sy(v), bw, p.y0 - p.sy(v));
         barLabel(g, p, cx, p.sy(v), fmt(v, 2), state.norm ? P.accent : P.bad);
-        text(g.ctx, dim.label.replace(/ Δ.*/, ''), cx, p.y0 + 14, P.muted, 'center', '10px sans-serif');
+        text(g.ctx, K.richToPlain(dim.label).replace(/ Δ.*/, ''), cx, p.y0 + 14, P.muted, 'center', '10px sans-serif');
       });
 
       // ── 右：D 与 r 随 ‖Δô‖ 的变化 ──
@@ -434,7 +434,7 @@
     var sensStage = stage(grid, 215);
 
     var stats = statsRow(root);
-    var sHand = stats.add('手写 reward r_I');
+    var sHand = stats.add('手写 reward $r_I$');
     var sHandW = stats.add('手写权重给关键维');
     var sDiscW = stats.add('判别器给关键维');
     var sGap = stats.add('注意力差距');
@@ -531,7 +531,7 @@
         yFmt: function (t) {
           return fmt(t, 2);
         },
-        xLabel: DIMS[ci].label + ' 的误差'
+        xLabel: K.richToPlain(DIMS[ci].label) + ' 的误差'
       });
       text(g2.ctx, '只动这一维时，reward 掉得有多快', p2.x0, p2.y1 - 8, P2.muted, 'left', '11px sans-serif');
       var handPts = [],
@@ -592,7 +592,7 @@
     var root = card(host, {
       title: '判别器会跟着策略一起变严：自动课程',
       sub:
-        '手写的 exp(−k·e²) 里那个 k 是常数：k 小了，动作还很烂 reward 就已经接近满分；k 大了，' +
+        '手写的 $\\exp(-k e^2)$ 里那个 $k$ 是常数：$k$ 小了，动作还很烂 reward 就已经接近满分；$k$ 大了，' +
         '一开始 reward 恒等于 0，策略压根收不到信号。判别器不是常数 —— 它每一轮都重新学「多小才算小」。'
     });
 
@@ -657,9 +657,9 @@
     });
 
     var setLegend = legend(root, [
-      { key: 'accent', text: 'ADD：判别器 τ 自适应' },
-      { key: 'warn', text: '固定核 exp(−k·e²)' },
-      { key: 'good', text: '判别器当前的标准 τ' }
+      { key: 'accent', text: 'ADD：判别器 $\\tau$ 自适应' },
+      { key: 'warn', text: '固定核 $\\exp(-k e^2)$' },
+      { key: 'good', text: '判别器当前的标准 $\\tau$' }
     ]);
 
     var grid = stageGrid(root);
@@ -669,7 +669,7 @@
     var stats = statsRow(root);
     var sAdd = stats.add('ADD 末期误差');
     var sFix = stats.add('固定核末期误差');
-    var sTau = stats.add('判别器最终标准 τ');
+    var sTau = stats.add('判别器最终标准 $\\tau$');
     var sGrad = stats.add('固定核此刻的梯度');
     var verdict = verdictBox(root);
 
@@ -827,6 +827,7 @@
   var svgEl = K.svgEl,
     svgText = K.svgText,
     svgMath = K.svgMath,
+    svgRich = K.svgRich,
     paint = K.paint,
     seg = K.seg,
     ease = K.ease,
@@ -956,7 +957,7 @@
      四个数就是上面「Δo 实验台」的预设「旋转慢了半拍」。 */
   var S2_E = DIFF_PRESETS[1].e;
   var S2_UNITS = ['rad', 'rad·s⁻¹', 'm', 'm'];
-  var S2_SHORT = ['Δθ  髋关节角', 'Δω  躯干角速度', 'Δp  踢腿末端', 'Δroot 根部位置'];
+  var S2_SHORT = ['$\\Delta\\theta$　髋关节角', '$\\Delta\\omega$　躯干角速度', '$\\Delta p$　踢腿末端', '$\\Delta\\mathrm{root}$　根部位置'];
   var S2_AX0 = 70, S2_AX1 = 730, S2_AXMAX = 6;
 
   function s2x(v) {
@@ -988,7 +989,7 @@
     var vals = S2_E.map(function (v, i) {
       var y = 184 + i * 30;
       var g = svgEl('g', {});
-      g.appendChild(svgText(374, y, S2_SHORT[i], 'demo-x-mut', 10.5));
+      g.appendChild(svgRich(374, y, S2_SHORT[i], { size: 10.5, cls: 'demo-x-mut', w: 180 }));
       var tx = paint(svgText(556, y, '', 'demo-x-mono', 11.5, 'end'), C_BAD);
       g.appendChild(tx);
       s.appendChild(g);
@@ -1025,7 +1026,7 @@
     var mag = Math.sqrt(normed.reduce(function (a, b) { return a + b * b; }, 0));
     var negDot = paint(svgEl('circle', { cx: 465, cy: 294, r: 6 }), C_BAD);
     s.appendChild(negDot);
-    var negTx = paint(svgText(s2x(mag), 328, '当前这条差分 ‖Δô‖ = ' + fmt(mag, 2), null, 10.5, 'middle'), C_BAD);
+    var negTx = svgRich(s2x(mag), 328, '当前这条差分 $\\lVert \\Delta\\hat{o} \\rVert = ' + fmt(mag, 2) + '$', { size: 10.5, anchor: 'middle' }).setTone(C_BAD);
     s.appendChild(negTx);
 
     var foot = paint(svgText(400, 402, '判别器要回答的只有一句：这条差分，看起来像不像「零」', null, 15, 'middle'), C_ACCENT);
@@ -1062,7 +1063,7 @@
   /* ── scene 3: 归一化 → 判别器打分 → 奖励，以及它自己收紧的合格线 ──
      曲线与两个读数都来自上面两个演示用的同一对 discScore / discReward。 */
   var S3_TAU0 = 1.0, S3_TAU1 = 0.45;
-  var S3_SYM = ['Δθ', 'Δω', 'Δp', 'Δroot'];
+  var S3_SYM = ['$\\Delta\\theta$', '$\\Delta\\omega$', '$\\Delta p$', '$\\Delta\\mathrm{root}$'];
   var S3_GOOD_E = DIFF_PRESETS[0].e, S3_BAD_E = DIFF_PRESETS[1].e;
   var S3_X0 = 500, S3_X1 = 758, S3_Y0 = 300, S3_YH = 160, S3_XMAX = 6;
 
@@ -1098,7 +1099,7 @@
     var nRows = S3_BAD_E.map(function (v, i) {
       var y = 120 + i * 34;
       var g = svgEl('g', {});
-      g.appendChild(svgText(58, y, S3_SYM[i] + '  ' + fmt(v, v >= 1 ? 2 : 3) + ' ' + S2_UNITS[i], 'demo-x-mono demo-x-ink2', 10.5));
+      g.appendChild(svgRich(58, y, S3_SYM[i] + '　' + fmt(v, v >= 1 ? 2 : 3) + ' ' + S2_UNITS[i], { size: 10.5, cls: 'demo-x-mono demo-x-ink2', w: 150 }));
       g.appendChild(svgText(225, y, '÷ ' + DIMS[i].scale, 'demo-x-mut', 10.5, 'middle'));
       g.appendChild(paint(svgText(305, y, fmt(normed[i], 2), 'demo-x-mono', 12, 'middle'), C_ACCENT));
       g.appendChild(svgText(412, y, fmt((100 * normed[i] * normed[i]) / sq, 1) + '%', 'demo-x-mono demo-x-ink2', 10.5, 'end'));
@@ -1112,7 +1113,7 @@
     var offG = svgEl('g', {});
     var rawSq = S3_BAD_E.reduce(function (a, v) { return a + v * v; }, 0);
     offG.appendChild(paint(svgText(58, 288, '关掉 DiffNormalizer', null, 11), C_BAD));
-    offG.appendChild(paint(svgText(412, 288, 'Δω 一维占 ' + fmt((100 * S3_BAD_E[1] * S3_BAD_E[1]) / rawSq, 1) + '%', 'demo-x-mono', 10.5, 'end'), C_BAD));
+    offG.appendChild(svgRich(412, 288, '$\\Delta\\omega$ 一维占 ' + fmt((100 * S3_BAD_E[1] * S3_BAD_E[1]) / rawSq, 1) + '%', { size: 10.5, cls: 'demo-x-mono', anchor: 'end' }).setTone(C_BAD));
     var segX = 58;
     S3_BAD_E.forEach(function (v, i) {
       var w = ((v * v) / rawSq) * 354;
@@ -1135,13 +1136,16 @@
     [0, 0.5, 1].forEach(function (r) {
       plotG.appendChild(svgText(S3_X0 - 6, s3y(r) + 4, fmt(r, 1), 'demo-x-mut', 10, 'end'));
     });
-    plotG.appendChild(svgText(629, 336, '‖Δô‖（归一化后的差分模长）', 'demo-x-mut', 10, 'middle'));
-    plotG.appendChild(svgText(S3_X0 + 6, s3y(1.05) - 6, '奖励 r', 'demo-x-mut', 10));
+    plotG.appendChild(svgRich(629, 336, '$\\lVert \\Delta\\hat{o} \\rVert$（归一化后的差分模长）', { size: 10, cls: 'demo-x-mut', anchor: 'middle' }));
+    plotG.appendChild(svgRich(S3_X0 + 6, s3y(1.05) - 6, '奖励 $r$', { size: 10, cls: 'demo-x-mut' }));
     var curve = paint(svgEl('path', { fill: 'none', 'stroke-width': 2.4 }), null, C_ACCENT);
     var ghost = paint(svgEl('path', { fill: 'none', 'stroke-width': 1.3, 'stroke-dasharray': '4 4' }), null, C_MUTED);
     plotG.appendChild(ghost);
     plotG.appendChild(curve);
+    /* τ 逐帧在变：公式只画一次，数字交给 svgText */
+    var tauLbl = svgMath(S3_X1 - 32, s3y(1.05) - 6, '\\tau =', { size: 11.5, w: 40, anchor: 'end' }).setTone(C_GOOD);
     var tauTx = paint(svgText(S3_X1, s3y(1.05) - 6, '', 'demo-x-mono', 11.5, 'end'), C_GOOD);
+    plotG.appendChild(tauLbl);
     plotG.appendChild(tauTx);
     var dots = [
       { e: S3_GOOD_E, c: C_GOOD, name: '跟得很准' },
@@ -1187,7 +1191,7 @@
       var tau = S3_TAU0 + (S3_TAU1 - S3_TAU0) * ease(seg(t, 10.8, 14.4));
       curve.setAttribute('d', curvePath(tau));
       setOpacity(ghost, seg(t, 11.0, 11.6) * 0.8);
-      tauTx.textContent = 'τ = ' + fmt(tau, 2);
+      tauTx.textContent = fmt(tau, 2);
 
       dots.forEach(function (d, i) {
         var on = seg(t, 8.0 + i * 1.4, 8.6 + i * 1.4);
@@ -1303,7 +1307,7 @@
     { x: 640, y: 140, w: 190, t: '③ DiffNormalizer', s: '米 / 弧度 / rad·s⁻¹ 分量纲' },
     { x: 640, y: 280, w: 190, t: '④ 判别器更新', s: '正 = 全 0，负 = 当前 + replay' },
     { x: 400, y: 280, w: 190, tTex: '\\text{⑤ 奖励 } r = r_{disc}', s: 'task 0.0 / disc 1.0，scale 2' },
-    { x: 160, y: 280, w: 190, t: '⑥ PPO 更新 π', s: 'clip 0.2 / λ 0.95 / γ 0.99' }
+    { x: 160, y: 280, w: 190, tTex: '\\text{⑥ PPO 更新 } \\pi', s: 'clip 0.2 / $\\lambda$ 0.95 / $\\gamma$ 0.99' }
   ];
 
   var ADD_EDGES = [
@@ -1359,7 +1363,7 @@
       g.appendChild(n.tTex
         ? svgMath(n.x, n.y - 4, n.tTex, { size: 11.5, anchor: 'middle', w: n.w })
         : svgText(n.x, n.y - 4, n.t, 'demo-x-mono', 12, 'middle'));
-      g.appendChild(svgText(n.x, n.y + 14, n.s, 'demo-x-mut', 10, 'middle'));
+      g.appendChild(svgRich(n.x, n.y + 14, n.s, { size: 10, cls: 'demo-x-mut', anchor: 'middle', w: n.w }));
       s.appendChild(g);
       return { g: g, rect: rect };
     });

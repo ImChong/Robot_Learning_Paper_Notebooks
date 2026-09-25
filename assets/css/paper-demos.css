@@ -522,6 +522,12 @@
   pointer-events: auto;
 }
 
+/* svgRich: the prose around the `$…$` runs is an ordinary label, so it keeps
+   the scene's font (or .demo-x-mono) instead of the fallback stack above. */
+.demo-x-rich:not(.demo-x-mono) {
+  font-family: inherit;
+}
+
 .demo-x-band {
   fill: var(--demo-accent);
   fill-opacity: 0.1;

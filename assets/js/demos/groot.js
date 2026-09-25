@@ -25,6 +25,7 @@
     svgEl = K.svgEl,
     svgText = K.svgText,
     svgMath = K.svgMath,
+    svgRich = K.svgRich,
     paint = K.paint,
     seg = K.seg,
     ease = K.ease,
@@ -207,7 +208,7 @@
     var right = group();
     right.appendChild(panel(right, 412, 48, 352, 168, C_SURFACE2, C_GOOD));
     right.appendChild(paint(svgText(428, 74, 'System 1 · DiT 动作头', null, 14), C_GOOD));
-    right.appendChild(svgText(428, 100, '交叉注意力读 VLM token，不是 π₀ 那种 MoE', 'demo-x-ink2', 12));
+    right.appendChild(svgRich(428, 100, '交叉注意力读 VLM token，不是 $\\pi_0$ 那种 MoE', { size: 12, cls: 'demo-x-ink2' }));
     right.appendChild(svgText(428, 122, '一次采样 ' + CHUNK + ' 步，耗时 ' + INFER_MS + ' ms', 'demo-x-ink2', 12));
     right.appendChild(svgText(428, 144, '去噪 ' + K_STEPS + ' 步；DiT 侧约 ' + fmt(HEAD_B, 2) + ' B', 'demo-x-ink2', 12));
     right.appendChild(svgText(428, 170, '动作率 ' + SYS1_HZ + ' Hz → 一步 ' + fmt(ACTION_MS, 1) + ' ms', 'demo-x-mut', 12));
@@ -290,12 +291,15 @@
     s.appendChild(paint(svgEl('line', {
       x1: 70, y1: y, x2: 730, y2: y, 'stroke-width': 1.4
     }), null, C_BORDER));
-    s.appendChild(paint(svgText(70, y + 28, 'τ = 0  纯噪声', null, 11, 'start'), C_MUTED));
-    s.appendChild(paint(svgText(730, y + 28, 'τ = 1  数据', null, 11, 'end'), C_GOOD));
+    s.appendChild(svgRich(70, y + 28, '$\\tau = 0$　纯噪声', { size: 11 }).setTone(C_MUTED));
+    s.appendChild(svgRich(730, y + 28, '$\\tau = 1$　数据', { size: 11, anchor: 'end' }).setTone(C_GOOD));
 
     var dot = paint(svgEl('circle', { r: 7 }), C_ACCENT, C_ACCENT);
     s.appendChild(dot);
-    var tauTxt = svgText(400, y - 18, '', 'demo-x-ink2', 13, 'middle');
+    /* 数字逐帧在变：公式只画一次，数字交给 svgText */
+    var tauLbl = svgMath(350, y - 18, '\\tau =', { size: 13, w: 40, anchor: 'end', cls: 'demo-x-ink2' });
+    var tauTxt = svgText(354, y - 18, '', 'demo-x-ink2', 13);
+    s.appendChild(tauLbl);
     s.appendChild(tauTxt);
 
     var steps = EULER.map(function (val, i) {
@@ -303,7 +307,7 @@
       var x = 70 + (i / K_STEPS) * 660;
       g.appendChild(paint(svgEl('circle', { cx: x, cy: 250, r: 6 }), i === K_STEPS ? C_GOOD : C_ACCENT));
       g.appendChild(svgText(x, 274, fmt(val, 1), 'demo-x-ink2', 12, 'middle'));
-      g.appendChild(svgText(x, 292, i === 0 ? 'A₀' : '第 ' + i + ' 步', 'demo-x-mut', 10, 'middle'));
+      g.appendChild(svgRich(x, 292, i === 0 ? '$A_0$' : '第 ' + i + ' 步', { size: 10, cls: 'demo-x-mut', anchor: 'middle', w: 80 }));
       s.appendChild(g);
       return g;
     });
@@ -311,9 +315,9 @@
     var note = group();
     note.appendChild(panel(note, 36, 318, 728, 78, C_SURFACE, C_WARN, true));
     note.appendChild(paint(svgText(52, 344, '符号以开源代码为准：velocity = actions − noise', null, 13), C_WARN));
-    note.appendChild(svgText(52, 368, '玩具：ε = ' + TOY_EPS + '，A = ' + TOY_A + '，v = ' + fmt(TOY_V, 0) +
-      '，K = ' + K_STEPS + '，四步落在 ' + fmt(EULER[K_STEPS], 0), 'demo-x-ink2', 12));
-    note.appendChild(svgText(52, 388, 'ar5iv 上 Eq.(1) 印成 ε−A，和插值、欧拉更新、仓库实现都相反', 'demo-x-mut', 11));
+    note.appendChild(svgRich(52, 368, '玩具：$\\epsilon = ' + TOY_EPS + '$，$A = ' + TOY_A + '$，$v = ' + fmt(TOY_V, 0) +
+      '$，$K = ' + K_STEPS + '$，四步落在 ' + fmt(EULER[K_STEPS], 0), { size: 12, cls: 'demo-x-ink2' }));
+    note.appendChild(svgRich(52, 388, 'ar5iv 上 Eq.(1) 印成 $\\epsilon - A$，和插值、欧拉更新、仓库实现都相反', { size: 11, cls: 'demo-x-mut' }));
     s.appendChild(note);
 
     function draw(t) {
@@ -323,7 +327,8 @@
       dot.setAttribute('cy', y);
       var tau = u;
       var aval = (1 - tau) * TOY_EPS + tau * TOY_A;
-      tauTxt.textContent = 'τ = ' + fmt(tau, 2) + '，当前值 ' + fmt(aval, 2);
+      tauTxt.textContent = fmt(tau, 2) + '，当前值 ' + fmt(aval, 2);
+      setOpacity(tauLbl, seg(t, 1.0, 1.5));
       setOpacity(tauTxt, seg(t, 1.0, 1.5));
       steps.forEach(function (g, i) {
         setOpacity(g, seg(t, 7.0 + i * 0.7, 7.4 + i * 0.7));

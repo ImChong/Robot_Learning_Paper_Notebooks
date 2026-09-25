@@ -24,6 +24,7 @@
     svgEl = K.svgEl,
     svgText = K.svgText,
     svgMath = K.svgMath,
+    svgRich = K.svgRich,
     paint = K.paint,
     seg = K.seg,
     ease = K.ease,
@@ -361,7 +362,7 @@
 
     var feat = svgEl('g', {});
     box(feat, 40, 92, 350, 200, C_SURFACE, C_BORDER, 1.2);
-    feat.appendChild(svgText(56, 114, '每一帧的特征 x_i ∈ R^' + FEAT_DIM + '（角色局部坐标系）', 'demo-x-ink2', 10.5));
+    feat.appendChild(svgRich(56, 114, '每一帧的特征 $\\mathbf{x}_i \\in \\mathbb{R}^{' + FEAT_DIM + '}$（角色局部坐标系）', { size: 10.5, cls: 'demo-x-ink2' }));
     var groups = [
       { n: FEAT_TRAJ, c: C_ACCENT, t: '未来根轨迹', d: HORIZONS.join(' / ') + ' s × (位置2 + 朝向2)' },
       { n: FEAT_FOOT, c: C_GOOD, t: '双脚状态', d: '左右脚 × (位置3 + 速度3)' },
@@ -400,13 +401,13 @@
     qg.appendChild(paint(svgEl('line', { x1: qx, y1: qy, x2: scX(l1[0]), y2: scY(l1[1]), 'stroke-width': 1.2, 'stroke-dasharray': '4 3' }), null, C_MUTED));
     qg.appendChild(paint(svgEl('line', { x1: qx, y1: qy, x2: scX(l3[0]), y2: scY(l3[1]), 'stroke-width': 2 }), null, C_GOOD));
     qg.appendChild(paint(svgEl('rect', { x: qx - 5, y: qy - 5, width: 10, height: 10, 'stroke-width': 2 }), 'none', C_BAD));
-    qg.appendChild(paint(svgText(qx - 10, qy - 10, '查询 x̂', null, 9.5, 'end'), C_BAD));
+    qg.appendChild(svgRich(qx - 10, qy - 10, '查询 $\\hat{\\mathbf{x}}$', { size: 9.5, anchor: 'end' }).setTone(C_BAD));
     s.appendChild(qg);
 
     var tab = svgEl('g', {});
-    tab.appendChild(svgText(56, 318, '三维玩具特征（未标准化）：查询 x̂ = (' + fmt(QUERY[0], 2) + ', ' + fmt(QUERY[1], 1) + ', ' + fmt(QUERY[2], 1) + ')', 'demo-x-ink2', 10));
+    tab.appendChild(svgRich(56, 318, '三维玩具特征（未标准化）：查询 $\\hat{\\mathbf{x}} = (' + fmt(QUERY[0], 2) + ', ' + fmt(QUERY[1], 1) + ', ' + fmt(QUERY[2], 1) + ')$', { size: 10, cls: 'demo-x-ink2' }));
     tab.appendChild(
-      svgText(56, 338, 'd²(x̂, L1 慢走) = ' + fmt(D_L1, 4) + '；d²(x̂, L3 小跑) = ' + fmt(NN_LOCO.d, 4) + ' → 选 ' + NN_LOCO.id, 'demo-x-mono', 10)
+      svgRich(56, 338, '$d^2(\\hat{\\mathbf{x}}, \\mathrm{L1}) = ' + fmt(D_L1, 4) + '$（慢走）；$d^2(\\hat{\\mathbf{x}}, \\mathrm{L3}) = ' + fmt(NN_LOCO.d, 4) + '$（小跑）→ 选 ' + NN_LOCO.id, { size: 10 })
     );
     s.appendChild(tab);
 
@@ -457,7 +458,7 @@
     );
     plot.appendChild(svgText(SP.x0 + SP.w, spY(V_CMD) - 6, '命令 ' + V_CMD + ' m/s', 'demo-x-mut', 9, 'end'));
     plot.appendChild(svgText(SP.x0 - 6, spY(V0) + 4, V0 + '', 'demo-x-mono', 9, 'end'));
-    plot.appendChild(svgText(SP.x0 + SP.w / 2, SP.y0 + SP.h + 22, 'τ (s)：速度沿弹簧追命令（y = ' + SPRING_Y + '，示意值）', 'demo-x-mut', 9, 'middle'));
+    plot.appendChild(svgRich(SP.x0 + SP.w / 2, SP.y0 + SP.h + 22, '$\\tau$ (s)：速度沿弹簧追命令（$y = ' + SPRING_Y + '$，示意值）', { size: 9, cls: 'demo-x-mut', anchor: 'middle' }));
     var curvePts = [];
     for (var i = 0; i <= 50; i++) {
       var tau = i / 50;
@@ -478,8 +479,8 @@
     box(tab, 410, 80, 350, 210, C_SURFACE, C_BORDER, 1.2);
     tab.appendChild(svgText(426, 102, '位置对速度积分（式 5），朝向直接用式 4', 'demo-x-ink2', 10.5));
     var cols = [426, 520, 600, 690];
-    ['τ (s)', '弹簧 p(τ)', '按命令 2τ', '按当前 1·τ'].forEach(function (h, k) {
-      tab.appendChild(svgText(cols[k], 126, h, 'demo-x-mut', 9.5));
+    ['$\\tau$ (s)', '弹簧 $p(\\tau)$', '按命令 $2\\tau$', '按当前 $1 \\cdot \\tau$'].forEach(function (h, k) {
+      tab.appendChild(svgRich(cols[k], 126, h, { size: 9.5, cls: 'demo-x-mut' }));
     });
     HORIZONS.forEach(function (tau, k) {
       var y = 150 + k * 24;
@@ -488,11 +489,11 @@
       tab.appendChild(svgText(cols[2], y, fmt(V_CMD * tau, 2) + ' m', 'demo-x-mono', 10));
       tab.appendChild(svgText(cols[3], y, fmt(V0 * tau, 2) + ' m', 'demo-x-mono', 10));
     });
-    tab.appendChild(svgText(426, 238, '朝向命令 ' + HEAD_CMD + '°：ψ = ' + FUT_PSI.map(function (p) {
-      return fmt(p, 1) + '°';
-    }).join(' / '), 'demo-x-mono', 9.5));
-    tab.appendChild(svgText(426, 262, '三个时刻 × (x, y, cosψ, sinψ) = 12 维，转到局部坐标系', 'demo-x-mut', 9));
-    tab.appendChild(svgText(426, 278, '再拼上当前的双脚状态与根速度，就是查询 x̂', 'demo-x-mut', 9));
+    tab.appendChild(svgRich(426, 238, '朝向命令 ' + HEAD_CMD + '°：$\\psi = ' + FUT_PSI.map(function (p) {
+      return fmt(p, 1) + '^\\circ';
+    }).join(' \\,/\\, ') + '$', { size: 9.5 }));
+    tab.appendChild(svgRich(426, 262, '三个时刻 × $(x, y, \\cos\\psi, \\sin\\psi)$ = 12 维，转到局部坐标系', { size: 9, cls: 'demo-x-mut' }));
+    tab.appendChild(svgRich(426, 278, '再拼上当前的双脚状态与根速度，就是查询 $\\hat{\\mathbf{x}}$', { size: 9, cls: 'demo-x-mut' }));
     s.appendChild(tab);
 
     /* inertialization：切换瞬间记下两段动作的差，之后用同一个弹簧把差衰减到 0 */
@@ -556,15 +557,15 @@
 
     var tl = svgEl('g', {});
     var segs = [
-      { x: 40, w: 230, c: C_ACCENT, t: 'Locomotion', d: '在 D_loco 里检索' },
-      { x: 270, w: 110, c: C_WARN, t: '入口窗口 E_k', d: '[s_k − H_k, s_k]' },
-      { x: 380, w: 220, c: C_BAD, t: '技能片段', d: '顺序播放到 e_k，不再检索' },
+      { x: 40, w: 230, c: C_ACCENT, t: 'Locomotion', d: '在 $\\mathcal{D}_{\\mathrm{loco}}$ 里检索' },
+      { x: 270, w: 110, c: C_WARN, t: '入口窗口 $E_k$', d: '$[s_k - H_k,\\, s_k]$' },
+      { x: 380, w: 220, c: C_BAD, t: '技能片段', d: '顺序播放到 $e_k$，不再检索' },
       { x: 600, w: 160, c: C_ACCENT, t: 'Locomotion', d: '再走 2 s 后停下' }
     ];
     segs.forEach(function (sg) {
       tl.appendChild(paint(svgEl('rect', { x: sg.x, y: 48, width: sg.w - 3, height: 26, rx: 4 }), sg.c));
-      tl.appendChild(svgText(sg.x + sg.w / 2, 66, sg.t, null, 10.5, 'middle'));
-      tl.appendChild(svgText(sg.x + sg.w / 2, 90, sg.d, 'demo-x-mut', 9, 'middle'));
+      tl.appendChild(svgRich(sg.x + sg.w / 2, 66, sg.t, { size: 10.5, anchor: 'middle' }));
+      tl.appendChild(svgRich(sg.x + sg.w / 2, 90, sg.d, { size: 9, cls: 'demo-x-mut', anchor: 'middle' }));
     });
     var head = paint(svgEl('line', { x1: 40, y1: 42, x2: 40, y2: 80, 'stroke-width': 2.5 }), null, C_GOOD);
     tl.appendChild(head);
@@ -591,7 +592,7 @@
       }
       g.appendChild(svgText(490, ln.y + 14, '到窗口时查询 = (' + ln.q.map(function (v) { return fmt(v, 1); }).join(', ') + ')', 'demo-x-mono', 9));
       g.appendChild(
-        svgText(490, ln.y + 32, 'd²(S1) = ' + fmt(d2(ln.q, ENTRY_DB[0].x), 2) + '；d²(S2) = ' + fmt(d2(ln.q, ENTRY_DB[1].x), 2), 'demo-x-mono', 9)
+        svgRich(490, ln.y + 32, '$d^2(S1) = ' + fmt(d2(ln.q, ENTRY_DB[0].x), 2) + '$；$d^2(S2) = ' + fmt(d2(ln.q, ENTRY_DB[1].x), 2) + '$', { size: 9 })
       );
       g.appendChild(paint(svgText(490, ln.y + 50, '→ ' + ln.nn.id + '：' + ln.lead, null, 10.5), k === 0 ? C_ACCENT : C_GOOD));
       s.appendChild(g);
@@ -677,7 +678,7 @@
       rew.appendChild(paint(svgEl('circle', { cx: x, cy: y, r: 4 }), C_BAD));
       rew.appendChild(svgText(x + 6, y - 6, fmt(p[1], 3), 'demo-x-mono', 9));
     });
-    rew.appendChild(svgText(px0 + pw / 2, py0 + ph + 16, '锚点位置误差 e (m)，σ = ' + SIG_ANCHOR, 'demo-x-mut', 8.5, 'middle'));
+    rew.appendChild(svgRich(px0 + pw / 2, py0 + ph + 16, '锚点位置误差 $e$ (m)，$\\sigma = ' + SIG_ANCHOR + '$', { size: 8.5, cls: 'demo-x-mut', anchor: 'middle' }));
     rew.appendChild(svgText(306, 250, '6 个跟踪项权重都是 1.0', 'demo-x-mut', 9));
     rew.appendChild(svgText(306, 266, '+ 动作平滑 / 关节限位 / 自碰撞罚项', 'demo-x-mut', 9));
     s.appendChild(rew);
@@ -767,12 +768,12 @@
     var arcE = arc(36, C_MUTED, '5 4');
     var arcH = arc(52, C_GOOD);
     var arcL = arc(16, C_BAD);
-    toy.appendChild(svgText(92, 124, '专家 a* = ' + fmt(A_EXPERT, 1), 'demo-x-mut', 9));
+    toy.appendChild(svgRich(92, 124, '专家 $a^* = ' + fmt(A_EXPERT, 1) + '$', { size: 9, cls: 'demo-x-mut' }));
     toy.appendChild(paint(svgText(92, 140, '学生 A = ' + fmt(A_HIGH, 1) + '：骨盆更高，越过', null, 9), C_GOOD));
     toy.appendChild(paint(svgText(92, 156, '学生 B = ' + fmt(A_LOW, 1) + '：骨盆更低，撞上', null, 9), C_BAD));
     s.appendChild(toy);
     var toyTxt = svgEl('g', {});
-    toyTxt.appendChild(svgText(56, 268, 'DAgger：(' + fmt(A_HIGH, 1) + ' − 1)² = (' + fmt(A_LOW, 1) + ' − 1)² = ' + fmt(DAGGER_HIGH, 2) + '，分不出好坏', 'demo-x-mono', 9.5));
+    toyTxt.appendChild(svgRich(56, 268, 'DAgger：$(' + fmt(A_HIGH, 1) + ' - 1)^2 = (' + fmt(A_LOW, 1) + ' - 1)^2 = ' + fmt(DAGGER_HIGH, 2) + '$，分不出好坏', { size: 9.5 }));
     s.appendChild(toyTxt);
 
     /* 右：课程 */
@@ -790,9 +791,9 @@
     var pathP = paint(svgEl('path', { d: polyPath(lp), fill: 'none', 'stroke-width': 2.2 }), null, C_WARN);
     cur.appendChild(pathD);
     cur.appendChild(pathP);
-    cur.appendChild(paint(svgText(CU.x0 + CU.w, cuY(LAMBDA_FLOOR) - 6, 'λ_D → ' + LAMBDA_FLOOR, null, 9, 'end'), C_ACCENT));
-    cur.appendChild(paint(svgText(CU.x0 + CU.w, cuY(1 - LAMBDA_FLOOR) + 14, 'λ_PPO → ' + fmt(1 - LAMBDA_FLOOR, 1), null, 9, 'end'), C_WARN));
-    cur.appendChild(svgText(CU.x0 + CU.w / 2, CU.y0 + CU.h + 28, '迭代 k（K = ' + TOTAL_ITERS + '）；虚线：1k 处 λ_PPO 超过 0.1，9k 处 λ_D 触底', 'demo-x-mut', 8.5, 'middle'));
+    cur.appendChild(svgRich(CU.x0 + CU.w, cuY(LAMBDA_FLOOR) - 6, '$\\lambda_D \\to ' + LAMBDA_FLOOR + '$', { size: 9, anchor: 'end' }).setTone(C_ACCENT));
+    cur.appendChild(svgRich(CU.x0 + CU.w, cuY(1 - LAMBDA_FLOOR) + 14, '$\\lambda_{\\mathrm{PPO}} \\to ' + fmt(1 - LAMBDA_FLOOR, 1) + '$', { size: 9, anchor: 'end' }).setTone(C_WARN));
+    cur.appendChild(svgRich(CU.x0 + CU.w / 2, CU.y0 + CU.h + 28, '迭代 $k$（$K = ' + TOTAL_ITERS + '$）；虚线：1k 处 $\\lambda_{\\mathrm{PPO}}$ 超过 0.1，9k 处 $\\lambda_D$ 触底', { size: 8.5, cls: 'demo-x-mut', anchor: 'middle' }));
     var mk = svgEl('g', {});
     [ADAPT_ITER, FLOOR_ITER].forEach(function (k) {
       mk.appendChild(paint(svgEl('line', { x1: cuX(k), y1: CU.y0, x2: cuX(k), y2: CU.y0 + CU.h, 'stroke-dasharray': '3 3' }), null, C_BAD));
@@ -802,7 +803,7 @@
     s.appendChild(cur);
 
     var extra = svgEl('g', {});
-    extra.appendChild(svgText(56, 300, '• λ_PPO 超过 0.1 才打开自适应学习率与 KL 控制 —— 算下来正是第 ' + ADAPT_ITER + ' 次迭代，与 Table VI「1000 次后 adaptive」对上', 'demo-x-mut', 9.5));
+    extra.appendChild(svgRich(56, 300, '• $\\lambda_{\\mathrm{PPO}}$ 超过 0.1 才打开自适应学习率与 KL 控制 —— 算下来正是第 ' + ADAPT_ITER + ' 次迭代，与 Table VI「1000 次后 adaptive」对上', { size: 9.5, cls: 'demo-x-mut' }));
     extra.appendChild(svgText(56, 318, '• 左右镜像也算完成：跟踪终止阈值从 ' + TERM_EXPERT + ' m 放宽到 ' + TERM_STUDENT + ' m；超出专家阈值的那些步只用 PPO，不给 DAgger 标签', 'demo-x-mut', 9.5));
     s.appendChild(extra);
 
@@ -884,7 +885,7 @@
     var dr = svgEl('g', {});
     box(dr, 40, 262, 720, 76, C_SURFACE, C_WARN, 1.2);
     dr.appendChild(paint(svgText(56, 282, '相机建模（sim-to-real 的主要工作量）', null, 10.5), C_WARN));
-    dr.appendChild(svgText(56, 302, '外参在标定值附近 ±2.5 cm / ±2.5° 随机；深度加 ±3 cm 偏移与 σ = 3 cm 高斯噪声，故意不加模糊（高速时会糊掉障碍）', 'demo-x-mut', 9));
+    dr.appendChild(svgRich(56, 302, '外参在标定值附近 ±2.5 cm / ±2.5° 随机；深度加 ±3 cm 偏移与 $\\sigma = 3$ cm 高斯噪声，故意不加模糊（高速时会糊掉障碍）', { size: 9, cls: 'demo-x-mut' }));
     dr.appendChild(
       svgText(56, 320, '观测延迟 ' + DELAY_MS.join('–') + ' ms：3 m/s 时相当于晚看 ' + fmt(LAG_3[0], 2) + '–' + fmt(LAG_3[1], 2) + ' m；相机 ' + CAM_HZ + ' Hz，3 m/s 时两帧之间跑 ' + fmt(FRAME_3, 2) + ' m', 'demo-x-mono', 9)
     );

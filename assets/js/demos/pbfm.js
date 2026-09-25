@@ -23,6 +23,7 @@
     svgEl = K.svgEl,
     svgText = K.svgText,
     svgMath = K.svgMath,
+    svgRich = K.svgRich,
     paint = K.paint,
     seg = K.seg,
     ease = K.ease,
@@ -457,8 +458,8 @@
     box(tab, 440, 80, 320, 250, C_SURFACE, C_BORDER, 1.2);
     tab.appendChild(svgText(456, 100, '三条候选（5 个密集点，示意）', 'demo-x-ink2', 10));
     var cols = [456, 506, 560, 614, 668, 718];
-    ['', '跟踪', '地形', '平滑', '总代价', 'η=0.1'].forEach(function (h, k) {
-      tab.appendChild(svgText(cols[k], 122, h, 'demo-x-mut', 9));
+    ['', '跟踪', '地形', '平滑', '总代价', '$\\eta = 0.1$'].forEach(function (h, k) {
+      tab.appendChild(svgRich(cols[k], 122, h, { size: 9, cls: 'demo-x-mut' }));
     });
     CANDS.forEach(function (c, k) {
       var y = 144 + k * 22;
@@ -470,9 +471,9 @@
       tab.appendChild(svgText(cols[4] + 12, y, fmt(c.cost.total, 3), 'demo-x-mono', 9));
       tab.appendChild(paint(svgText(cols[5] + 6, y, fmt(W_T01[k], 3), null, 9), col));
     });
-    tab.appendChild(svgText(456, 222, '权重 w_track / w_terrain / w_smooth = ' + W_TRACK + ' / ' + W_TERRAIN + ' / ' + W_SMOOTH, 'demo-x-mono', 8.5));
-    tab.appendChild(svgText(456, 242, '温度 η = ' + MPPI_TEMP + '：几乎就是取最小值', 'demo-x-mut', 9));
-    tab.appendChild(svgText(456, 258, '若 η = 1：权重 ' + W_T1.map(function (w) { return fmt(w, 3); }).join(' / ') + '，中点 ' + fmt(Z_T1[2], 3) + ' m', 'demo-x-mono', 8.5));
+    tab.appendChild(svgRich(456, 222, '权重 $w_{\\mathrm{track}} / w_{\\mathrm{terrain}} / w_{\\mathrm{smooth}} = ' + W_TRACK + ' / ' + W_TERRAIN + ' / ' + W_SMOOTH + '$', { size: 8.5 }));
+    tab.appendChild(svgRich(456, 242, '温度 $\\eta = ' + MPPI_TEMP + '$：几乎就是取最小值', { size: 9, cls: 'demo-x-mut' }));
+    tab.appendChild(svgRich(456, 258, '若 $\\eta = 1$：权重 ' + W_T1.map(function (w) { return fmt(w, 3); }).join(' / ') + '，中点 ' + fmt(Z_T1[2], 3) + ' m', { size: 8.5, cls: 'demo-x-mono' }));
     tab.appendChild(svgText(456, 282, '开源默认：' + MPPI_SAMPLES + ' 个样本 × ' + MPPI_ITERS + ' 次迭代、' + MPPI_KNOTS + ' 个控制点', 'demo-x-mut', 9));
     tab.appendChild(svgText(456, 300, '三次样条（clamped）连成轨迹，起落点固定', 'demo-x-mut', 9));
     tab.appendChild(svgText(456, 318, '在中足点（脚尖与脚跟的中点）上规划', 'demo-x-mut', 9));
@@ -526,7 +527,7 @@
       rt.appendChild(svgText(56, 132 + k * 20, r[0], 'demo-x-mut', 9.5));
       rt.appendChild(svgText(260, 132 + k * 20, r[1], 'demo-x-mono', 9.5));
     });
-    rt.appendChild(svgText(56, 206, '规划器里的平滑：上升 α = ' + ALPHA_UP + '、下降 ' + ALPHA_DOWN + '，每帧最多 ' + MAX_DZ + ' m', 'demo-x-mut', 9));
+    rt.appendChild(svgRich(56, 206, '规划器里的平滑：上升 $\\alpha = ' + ALPHA_UP + '$、下降 ' + ALPHA_DOWN + '，每帧最多 ' + MAX_DZ + ' m', { size: 9, cls: 'demo-x-mut' }));
     var bars = EMA.map(function (z, k) {
       var h = (z - 0.7) * 800;
       var r = paint(svgEl('rect', { x: 70 + k * 56, y: 300 - h, width: 34, height: h, rx: 2 }), k < 2 ? C_WARN : C_ACCENT);
@@ -551,7 +552,7 @@
     ik.appendChild(svgText(426, 238, '根平移：取上一步重建的高度，IK 时固定', 'demo-x-mut', 9));
     ik.appendChild(paint(svgText(426, 258, '根朝向 + 其余 ' + KEPT_JOINTS + ' 个关节：原样照抄参考', null, 10), C_GOOD));
     ik.appendChild(svgText(426, 280, '误差大或关节跳变 → 换种子重解（多种子兜底）', 'demo-x-mut', 9));
-    ik.appendChild(svgText(426, 302, '→ 成对数据 (q_raw, q_tcrs, τ)', 'demo-x-mono', 9.5));
+    ik.appendChild(svgRich(426, 302, '→ 成对数据 $(q^{\\mathrm{raw}}, q^{\\mathrm{tcrs}}, \\tau)$', { size: 9.5 }));
     s.appendChild(ik);
 
     var foot = paint(svgText(400, 352, '限速 ' + MAX_DZ + ' m/帧 × ' + MOTION_FPS + ' fps = ' + fmt(MAX_VZ, 2) + ' m/s：骨盆不会因为台阶一下子「弹」上去', null, 12, 'middle'), C_ACCENT);
@@ -603,24 +604,24 @@
     function mark(q, color, label, dx) {
       var g = svgEl('g', {});
       g.appendChild(paint(svgEl('circle', { cx: AX.x, cy: axY(q), r: 5 }), color));
-      g.appendChild(paint(svgText(AX.x + (dx || 14), axY(q) + 4, label, null, 9.5), color));
+      g.appendChild(svgRich(AX.x + (dx || 14), axY(q) + 4, label, { size: 9.5 }).setTone(color));
       s.appendChild(g);
       return g;
     }
-    var mRaw = mark(Q_RAW, C_MUTED, 'q_raw = ' + fmt(Q_RAW, 2) + '（学生的命令）');
-    var mTc = mark(Q_TCRS, C_WARN, 'q_tcrs = ' + fmt(Q_TCRS, 2) + '（教师的命令）');
+    var mRaw = mark(Q_RAW, C_MUTED, '$q^{\\mathrm{raw}} = ' + fmt(Q_RAW, 2) + '$（学生的命令）');
+    var mTc = mark(Q_TCRS, C_WARN, '$q^{\\mathrm{tcrs}} = ' + fmt(Q_TCRS, 2) + '$（教师的命令）');
     var mTea = mark(Q_TCRS + MU_TEA, C_GOOD, '教师 PD 目标 ' + fmt(Q_TCRS + MU_TEA, 2));
-    var mBad = mark(NAIVE_TARGET, C_BAD, '直接抄 μ_tea → ' + fmt(NAIVE_TARGET, 2));
+    var mBad = mark(NAIVE_TARGET, C_BAD, '直接抄 $\\mu^{\\mathrm{tea}}$ → ' + fmt(NAIVE_TARGET, 2));
     var brace = svgEl('g', {});
     brace.appendChild(paint(svgEl('line', { x1: AX.x - 30, y1: axY(Q_RAW), x2: AX.x - 30, y2: axY(Q_TCRS + MU_TEA), 'stroke-width': 3 }), null, C_ACCENT));
-    brace.appendChild(paint(svgText(AX.x - 36, axY((Q_RAW + Q_TCRS + MU_TEA) / 2), 'a* = ' + fmt(A_STAR, 2), null, 10, 'end'), C_ACCENT));
+    brace.appendChild(svgMath(AX.x - 36, axY((Q_RAW + Q_TCRS + MU_TEA) / 2), 'a^\\star = ' + fmt(A_STAR, 2), { size: 10, w: 90, anchor: 'end' }).setTone(C_ACCENT));
     s.appendChild(brace);
 
     var right = svgEl('g', {});
     box(right, 390, 84, 370, 250, C_SURFACE, C_BORDER, 1.2);
     right.appendChild(svgText(406, 106, '换算', 'demo-x-ink2', 10.5));
     right.appendChild(svgText(406, 128, '教师 PD 目标 = ' + fmt(Q_TCRS, 2) + ' + ' + fmt(MU_TEA, 2) + ' = ' + fmt(Q_TCRS + MU_TEA, 2) + ' rad', 'demo-x-mono', 9.5));
-    right.appendChild(svgText(406, 148, '对齐标签 a* = ' + fmt(Q_TCRS + MU_TEA, 2) + ' − ' + fmt(Q_RAW, 2) + ' = ' + fmt(A_STAR, 2) + ' rad', 'demo-x-mono', 9.5));
+    right.appendChild(svgRich(406, 148, '对齐标签 $a^\\star$ = ' + fmt(Q_TCRS + MU_TEA, 2) + ' − ' + fmt(Q_RAW, 2) + ' = ' + fmt(A_STAR, 2) + ' rad', { size: 9.5, cls: 'demo-x-mono' }));
     right.appendChild(paint(svgText(406, 170, '不对齐：学生学到 ' + fmt(MU_TEA, 2) + '，PD 目标 ' + fmt(NAIVE_TARGET, 2) + '，差 ' + fmt(NAIVE_ERR, 2) + ' rad', null, 9.5), C_BAD));
     right.appendChild(svgText(406, 198, '开源代码（_teacher_alignment.py）：', 'demo-x-mut', 9));
     right.appendChild(svgText(406, 216, 'aligned = teacher_actions', 'demo-x-mono', 9));
@@ -664,15 +665,15 @@
       { x: 40, y: 58, w: 150, t: '命令窗口 + 本体历史', d: '21 × 38 / 10 步' },
       { x: 220, y: 58, w: 150, t: 'Transformer 骨干', d: '交叉注意力编码' },
       { x: 40, y: 150, w: 150, t: '高度图 17 × 11 + 掩码', d: '机器人中心' },
-      { x: 220, y: 150, w: 150, t: 'Map CNN → MapTransformer', d: 'query = 本体 + u_t' },
-      { x: 420, y: 58, w: 150, t: '意图门', d: "u' = u + tanh(α_u)·Δu" },
-      { x: 420, y: 150, w: 150, t: '动作残差门', d: 'μ = μ_base + tanh(α_a)·r' },
-      { x: 610, y: 104, w: 150, t: '关节残差动作', d: 'q_pd = q_raw + a' }
+      { x: 220, y: 150, w: 150, t: 'Map CNN → MapTransformer', d: 'query = 本体 + $u_t$' },
+      { x: 420, y: 58, w: 150, t: '意图门', d: "$u' = u + \\tanh(\\alpha_u)\\,\\Delta u$" },
+      { x: 420, y: 150, w: 150, t: '动作残差门', d: '$\\mu = \\mu^{\\mathrm{base}} + \\tanh(\\alpha_a)\\, r$' },
+      { x: 610, y: 104, w: 150, t: '关节残差动作', d: '$q^{\\mathrm{pd}} = q^{\\mathrm{raw}} + a$' }
     ];
     nodes.forEach(function (n, k) {
       box(net, n.x, n.y, n.w, 50, k >= 4 && k <= 5 ? C_SURFACE2 : C_SURFACE, k >= 4 && k <= 5 ? C_ACCENT : C_BORDER, 1.2);
       net.appendChild(svgText(n.x + n.w / 2, n.y + 21, n.t, null, 9.5, 'middle'));
-      net.appendChild(svgText(n.x + n.w / 2, n.y + 39, n.d, 'demo-x-mono', 8.5, 'middle'));
+      net.appendChild(svgRich(n.x + n.w / 2, n.y + 39, n.d, { size: 8.5, cls: 'demo-x-mono', anchor: 'middle' }));
     });
     arrowLine(net, [192, 83], [218, 83], arrow, C_BORDER);
     arrowLine(net, [192, 175], [218, 175], arrow, C_BORDER);
@@ -685,12 +686,12 @@
 
     var gate = svgEl('g', {});
     box(gate, 40, 222, 350, 110, C_SURFACE, C_ACCENT, 1.2);
-    gate.appendChild(paint(svgText(56, 244, 'α 从 0 开始：tanh(0) = 0 → 输出与盲跟踪器完全一样', null, 10), C_ACCENT));
+    gate.appendChild(svgRich(56, 244, '$\\alpha$ 从 0 开始：$\\tanh(0) = 0$ → 输出与盲跟踪器完全一样', { size: 10 }).setTone(C_ACCENT));
     var cols = [56, 136, 216, 296];
     ALPHAS.forEach(function (a, k) {
-      gate.appendChild(svgText(cols[k], 270, 'α = ' + a, 'demo-x-mut', 9));
-      gate.appendChild(svgText(cols[k], 290, 'tanh = ' + fmt(Math.tanh(a), 3), 'demo-x-mono', 9));
-      gate.appendChild(svgText(cols[k], 310, "tanh' = " + fmt(1 - Math.tanh(a) * Math.tanh(a), 3), 'demo-x-mono', 9));
+      gate.appendChild(svgMath(cols[k], 270, '\\alpha = ' + a, { size: 9, w: 76, cls: 'demo-x-mut' }));
+      gate.appendChild(svgMath(cols[k], 290, '\\tanh\\alpha = ' + fmt(Math.tanh(a), 3), { size: 9, w: 76 }));
+      gate.appendChild(svgMath(cols[k], 310, "\\tanh'\\alpha = " + fmt(1 - Math.tanh(a) * Math.tanh(a), 3), { size: 9, w: 76 }));
     });
     s.appendChild(gate);
 
@@ -699,7 +700,7 @@
     dead.appendChild(paint(svgText(426, 244, '论文 vs 开源代码的一处差别', null, 10), C_WARN));
     dead.appendChild(svgText(426, 264, '论文：门向量与残差末层都零初始化', 'demo-x-mut', 9));
     dead.appendChild(svgText(426, 282, '代码：有门时残差支路保持随机初始化', 'demo-x-mut', 9));
-    dead.appendChild(svgText(426, 300, '否则 ∂L/∂α ∝ Δu = 0、∂L/∂Δu ∝ tanh(α) = 0', 'demo-x-mono', 8.5));
+    dead.appendChild(svgRich(426, 300, '否则 $\\partial\\mathcal{L}/\\partial\\alpha \\propto \\Delta u = 0$、$\\partial\\mathcal{L}/\\partial\\Delta u \\propto \\tanh\\alpha = 0$', { size: 8.5 }));
     dead.appendChild(svgText(426, 318, '→ 梯度互锁，门永远打不开（注释引 ReZero）', 'demo-x-mut', 9));
     s.appendChild(dead);
 

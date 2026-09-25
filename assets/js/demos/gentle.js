@@ -23,6 +23,7 @@
     svgEl = K.svgEl,
     svgText = K.svgText,
     svgMath = K.svgMath,
+    svgRich = K.svgRich,
     paint = K.paint,
     seg = K.seg,
     ease = K.ease,
@@ -291,21 +292,21 @@
     box(par, 40, 80, 370, 190, C_SURFACE, C_BORDER, 1.2);
     par.appendChild(svgText(56, 102, '参数（附录 Table III + 训练代码）', 'demo-x-ink2', 10.5));
     [
-      ['虚拟质量 M', MASS + ' kg'],
-      ['K_p = τ_safe / ' + KP_DIST, fmt(kp(TAU_DEF), 0) + ' N/m（τ = ' + TAU_DEF + ' N）'],
-      ['K_d = 2√(M·K_p)（临界阻尼）', fmt(kd(TAU_DEF), 2) + ' N·s/m'],
-      ['积分阻尼 D', DAMP + ''],
+      ['虚拟质量 $M$', MASS + ' kg'],
+      ['$K_p = \\tau_{\\mathrm{safe}} / ' + KP_DIST + '$', fmt(kp(TAU_DEF), 0) + ' N/m（$\\tau = ' + TAU_DEF + '$ N）'],
+      ['$K_d = 2\\sqrt{M K_p}$（临界阻尼）', fmt(kd(TAU_DEF), 2) + ' N·s/m'],
+      ['积分阻尼 $D$', DAMP + ''],
       ['子步', SUBSTEPS + ' × ' + DT + ' s = 1 个策略步'],
-      ['截断', '|v| ≤ ' + V_CLIP + ' m/s，|a| ≤ ' + A_CLIP + ' m/s²']
+      ['截断', '$|v| \\le ' + V_CLIP + '$ m/s，$|a| \\le ' + A_CLIP + '$ m/s²']
     ].forEach(function (r, k) {
-      par.appendChild(svgText(56, 128 + k * 22, r[0], 'demo-x-mut', 9.5));
-      par.appendChild(svgText(394, 128 + k * 22, r[1], 'demo-x-mono', 9.5, 'end'));
+      par.appendChild(svgRich(56, 128 + k * 22, r[0], { size: 9.5, cls: 'demo-x-mut' }));
+      par.appendChild(svgRich(394, 128 + k * 22, r[1], { size: 9.5, cls: 'demo-x-mono', anchor: 'end' }));
     });
     s.appendChild(par);
 
     var plot = svgEl('g', {});
     box(plot, 420, 80, 340, 190, C_SURFACE, C_BORDER, 1.2);
-    plot.appendChild(svgText(436, 100, '手腕被拉：锚点 +0.15 m、K_s = ' + KS + '（示意）', 'demo-x-mut', 9));
+    plot.appendChild(svgRich(436, 100, '手腕被拉：锚点 +0.15 m、$K_s = ' + KS + '$（示意）', { size: 9, cls: 'demo-x-mut' }));
     line(plot, [RP.x0, RP.y0 + RP.h], [RP.x0 + RP.w, RP.y0 + RP.h], C_BORDER, 1);
     line(plot, [RP.x0, RP.y0], [RP.x0, RP.y0 + RP.h], C_BORDER, 1);
     var eq10 = EQ[1];
@@ -317,7 +318,7 @@
     });
     var curve = paint(svgEl('path', { d: polyPath(pts), fill: 'none', 'stroke-width': 2.4 }), null, C_ACCENT);
     plot.appendChild(curve);
-    plot.appendChild(svgText(RP.x0 + RP.w / 2, RP.y0 + RP.h + 16, 't (s)，0–0.5 s；纵轴：参考点偏离目标 (m)', 'demo-x-mut', 8.5, 'middle'));
+    plot.appendChild(svgRich(RP.x0 + RP.w / 2, RP.y0 + RP.h + 16, '$t$ (s)，0–0.5 s；纵轴：参考点偏离目标 (m)', { size: 8.5, cls: 'demo-x-mut', anchor: 'middle' }));
     var s1 = STEP1[SUBSTEPS - 1];
     var mark1 = paint(svgEl('circle', { cx: rpX(SUBSTEPS * DT), cy: rpY(s1.x), r: 4.5 }), C_BAD);
     plot.appendChild(mark1);
@@ -325,11 +326,11 @@
 
     var tab = svgEl('g', {});
     box(tab, 40, 284, 720, 76, C_SURFACE2, C_WARN, 1.2);
-    tab.appendChild(paint(svgText(56, 304, '第一个策略步的 4 个子步（τ = 10 N，从静止开始）', null, 10), C_WARN));
+    tab.appendChild(svgRich(56, 304, '第一个策略步的 4 个子步（$\\tau = 10$ N，从静止开始）', { size: 10 }).setTone(C_WARN));
     STEP1.forEach(function (r, k) {
       var x = 56 + k * 176;
-      tab.appendChild(svgText(x, 326, '子步 ' + (k + 1) + '：f_d = ' + fmt(r.fd, 1) + '，f_i = ' + fmt(r.fe, 2), 'demo-x-mono', 8.5));
-      tab.appendChild(svgText(x, 344, 'v = ' + fmt(r.v, 3) + '，x = ' + fmt(r.x, 4), 'demo-x-mono', 8.5));
+      tab.appendChild(svgRich(x, 326, '子步 ' + (k + 1) + '：$f_d = ' + fmt(r.fd, 1) + '$，$f_i = ' + fmt(r.fe, 2) + '$', { size: 8.5, w: 170 }));
+      tab.appendChild(svgRich(x, 344, '$v = ' + fmt(r.v, 3) + '$，$x = ' + fmt(r.x, 4) + '$', { size: 8.5, w: 170 }));
     });
     s.appendChild(tab);
 
@@ -458,16 +459,19 @@
     ks.appendChild(knob);
     ks.appendChild(svgText(kx0, 112, KS_LO + '', 'demo-x-mono', 9, 'middle'));
     ks.appendChild(svgText(kx0 + kw, 112, KS_HI + ' N/m', 'demo-x-mono', 9, 'middle'));
-    var knobTxt = svgText(kx0 + kw / 2, 80, '', 'demo-x-mono', 9.5, 'middle');
+    /* 数字逐帧在变：公式只画一次，数字交给 svgText */
+    var knobLbl = svgMath(kx0 + kw / 2, 80, 'K_s =', { size: 9.5, w: 40, anchor: 'end' });
+    var knobTxt = svgText(kx0 + kw / 2, 80, '', 'demo-x-mono', 9.5);
+    ks.appendChild(knobLbl);
     ks.appendChild(knobTxt);
     [
-      '左右臂各抽一个 K_s，之后按 ±5 / 步的斜率慢慢漂',
+      '左右臂各抽一个 $K_s$，之后按 ±5 / 步的斜率慢慢漂',
       '一段受力持续 20–200 步（0.4–4 s），结束时渐退到 0',
       '锚点在 25–100 步内线性挪到新位置，不跳变',
-      '安全阈值 τ_safe 每 100–200 步重采样，渐变过去',
+      '安全阈值 $\\tau_{\\mathrm{safe}}$ 每 100–200 步重采样，渐变过去',
       '躯干处净力 ≤ ' + NET_F + ' N、净力矩 ≤ ' + NET_M + ' N·m，超了在躯干补反向力'
     ].forEach(function (l, k) {
-      ks.appendChild(svgText(456, 136 + k * 22, '• ' + l, 'demo-x-mut', 8.8));
+      ks.appendChild(svgRich(456, 136 + k * 22, '• ' + l, { size: 8.8, cls: 'demo-x-mut' }));
     });
     s.appendChild(ks);
 
@@ -488,8 +492,9 @@
       var u = 0.5 + 0.5 * Math.sin(t * 1.3);
       var kv = KS_LO + (KS_HI - KS_LO) * u;
       knob.setAttribute('cx', (kx0 + kw * u).toFixed(1));
-      knobTxt.setAttribute('x', (kx0 + kw * u).toFixed(1));
-      knobTxt.textContent = 'K_s = ' + fmt(kv, 0);
+      knobLbl.setX(kx0 + kw * u - 2);
+      knobTxt.setAttribute('x', (kx0 + kw * u + 1).toFixed(1));
+      knobTxt.textContent = fmt(kv, 0);
       setOpacity(dist, seg(t, 8.0, 8.7));
       setOpacity(foot, seg(t, 9.8, 10.4));
       setOpacity(foot2, seg(t, 10.6, 11.2));
@@ -510,7 +515,7 @@
     var s = sceneSvg(
       '驱动力超过安全阈值就按比例缩到阈值；刚度取阈值除以 5 厘米，所以三档阈值都在偏离 5 厘米时封顶；同一个外拉下，阈值越低手臂让得越多、接触力越小'
     );
-    s.appendChild(svgText(56, 26, '一个旋钮调软硬：τ_safe 从 5 N 到 15 N，部署时每按一次 ±1 N', 'demo-x-ink2', 13.5));
+    s.appendChild(svgRich(56, 26, '一个旋钮调软硬：$\\tau_{\\mathrm{safe}}$ 从 5 N 到 15 N，部署时每按一次 ±1 N', { size: 13.5, cls: 'demo-x-ink2' }));
     var eq = svgMath(400, 58, 'f^{\\mathrm{limited}}_{\\mathrm{drive}} = \\min\\!\\left(1,\\ \\frac{\\tau_{\\mathrm{safe}}}{\\lVert f_{\\mathrm{drive}}\\rVert}\\right) f_{\\mathrm{drive}}, \\qquad K_p = \\tau_{\\mathrm{safe}} / 0.05', {
       size: 14,
       w: 640,
@@ -540,9 +545,9 @@
 
     var eqt = svgEl('g', {});
     box(eqt, 420, 80, 340, 196, C_SURFACE, C_BORDER, 1.2);
-    eqt.appendChild(svgText(436, 100, '同一个外拉（锚点 0.15 m、K_s = ' + KS + '）下的平衡', 'demo-x-ink2', 9.5));
-    ['τ_safe', '让开', '接触力'].forEach(function (h, k) {
-      eqt.appendChild(svgText([436, 540, 640][k], 124, h, 'demo-x-mut', 9.5));
+    eqt.appendChild(svgRich(436, 100, '同一个外拉（锚点 0.15 m、$K_s = ' + KS + '$）下的平衡', { size: 9.5, cls: 'demo-x-ink2' }));
+    ['$\\tau_{\\mathrm{safe}}$', '让开', '接触力'].forEach(function (h, k) {
+      eqt.appendChild(svgRich([436, 540, 640][k], 124, h, { size: 9.5, cls: 'demo-x-mut' }));
     });
     EQ.forEach(function (e, k) {
       var y = 148 + k * 24;
@@ -553,7 +558,7 @@
     eqt.appendChild(paint(svgText(436, 222, '完全不让（刚性跟踪）', null, 10), C_BAD));
     eqt.appendChild(svgText(540, 222, '0.0 cm', 'demo-x-mono', 10));
     eqt.appendChild(svgText(640, 222, fmt(RIGID_F, 1) + ' N', 'demo-x-mono', 10));
-    eqt.appendChild(svgText(436, 250, '截断后平衡条件：K_s·(0.15 − x) = τ_safe', 'demo-x-mut', 9));
+    eqt.appendChild(svgRich(436, 250, '截断后平衡条件：$K_s\\,(0.15 - x) = \\tau_{\\mathrm{safe}}$', { size: 9, cls: 'demo-x-mut' }));
     eqt.appendChild(svgText(436, 266, '→ 接触力就等于你设的阈值', 'demo-x-mut', 9));
     s.appendChild(eqt);
 
@@ -592,16 +597,16 @@
     var tea = svgEl('g', {});
     box(tea, 40, 44, 350, 124, C_SURFACE, C_WARN, 1.2);
     tea.appendChild(paint(svgText(56, 66, '教师（仿真里才有的特权）', null, 11), C_WARN));
-    ['参考动力学状态 x_ref、ẋ_ref', '参考交互力 f_interact 与仿真实测 f_sim', 'link 离地高度、上一步关节力矩、累计跟踪误差'].forEach(function (l, k) {
-      tea.appendChild(svgText(56, 90 + k * 22, '• ' + l, 'demo-x-mut', 9.5));
+    ['参考动力学状态 $x_{\\mathrm{ref}}$、$\\dot{x}_{\\mathrm{ref}}$', '参考交互力 $f_{\\mathrm{interact}}$ 与仿真实测 $f_{\\mathrm{sim}}$', 'link 离地高度、上一步关节力矩、累计跟踪误差'].forEach(function (l, k) {
+      tea.appendChild(svgRich(56, 90 + k * 22, '• ' + l, { size: 9.5, cls: 'demo-x-mut' }));
     });
     s.appendChild(tea);
 
     var stu = svgEl('g', {});
     box(stu, 410, 44, 350, 124, C_SURFACE, C_ACCENT, 1.2);
     stu.appendChild(paint(svgText(426, 66, '学生（真机可得）', null, 11), C_ACCENT));
-    ['τ_safe（用户可调）+ 目标动作（未来根位姿、目标关节）', '根角速度、投影重力', '关节位置历史 [0,1,2,3,4,8] 步 + 最近 3 步动作'].forEach(function (l, k) {
-      stu.appendChild(svgText(426, 90 + k * 22, '• ' + l, 'demo-x-mut', 9.5));
+    ['$\\tau_{\\mathrm{safe}}$（用户可调）+ 目标动作（未来根位姿、目标关节）', '根角速度、投影重力', '关节位置历史 [0,1,2,3,4,8] 步 + 最近 3 步动作'].forEach(function (l, k) {
+      stu.appendChild(svgRich(426, 90 + k * 22, '• ' + l, { size: 9.5, cls: 'demo-x-mut' }));
     });
     stu.appendChild(svgText(426, 158, '→ 29 维关节位置目标，' + POLICY_HZ + ' Hz，交给底层 PD', 'demo-x-mono', 9));
     s.appendChild(stu);
@@ -613,15 +618,15 @@
     box(rw, 40, 180, 720, 124, C_SURFACE, C_BORDER, 1.2);
     rw.appendChild(svgText(56, 200, '柔顺奖励（Table I 权重）与一个算例', 'demo-x-ink2', 10.5));
     var rows = [
-      ['参考状态跟踪 × 2.0', '仿真 link 与 x_ref 差 2 cm：exp(−0.02 / 0.3) = ' + fmt(R_POS, 3)],
-      ['参考力跟踪 × 2.0', '实测力比参考大 2 N：[exp(−2/8) + exp(−2/4)] / 2 = ' + fmt(R_FORCE, 3)],
-      ['不安全力惩罚 × 6.0', '‖f‖ > τ_safe + ' + DELTA_TOL + ' N 才罚：τ = ' + TAU_DEF + ' 时门槛 ' + PEN_LINE + ' N（代码还要求超出参考 5 N）']
+      ['参考状态跟踪 × 2.0', '仿真 link 与 $x_{\\mathrm{ref}}$ 差 2 cm：$\\exp(-0.02 / 0.3) = ' + fmt(R_POS, 3) + '$'],
+      ['参考力跟踪 × 2.0', '实测力比参考大 2 N：$[\\exp(-2/8) + \\exp(-2/4)] / 2 = ' + fmt(R_FORCE, 3) + '$'],
+      ['不安全力惩罚 × 6.0', '$\\lVert f\\rVert > \\tau_{\\mathrm{safe}} + ' + DELTA_TOL + '$ N 才罚：$\\tau = ' + TAU_DEF + '$ 时门槛 ' + PEN_LINE + ' N（代码还要求超出参考 5 N）']
     ];
     rows.forEach(function (r, k) {
       rw.appendChild(paint(svgText(56, 226 + k * 24, r[0], null, 10), k === 2 ? C_BAD : C_ACCENT));
-      rw.appendChild(svgText(200, 226 + k * 24, r[1], 'demo-x-mono', 9));
+      rw.appendChild(svgRich(200, 226 + k * 24, r[1], { size: 9, cls: 'demo-x-mono' }));
     });
-    rw.appendChild(svgText(56, 296, '论文把核写成 exp(−‖·‖²/σ)；开源代码是 exp(−‖·‖/σ)，并对几个 σ 取平均 —— 上面按代码算', 'demo-x-mut', 8.8));
+    rw.appendChild(svgRich(56, 296, '论文把核写成 $\\exp(-\\lVert\\cdot\\rVert^2/\\sigma)$；开源代码是 $\\exp(-\\lVert\\cdot\\rVert/\\sigma)$，并对几个 $\\sigma$ 取平均 —— 上面按代码算', { size: 8.8, cls: 'demo-x-mut' }));
     s.appendChild(rw);
 
     var foot = paint(svgText(400, 334, '其余奖励照搬全身跟踪：根 / 关节跟踪、存活 5.0、落地冲击、打滑、动作变化率、关节限位', null, 11.5, 'middle'), C_ACCENT);
@@ -672,7 +677,7 @@
 
     var g3 = svgEl('g', {});
     box(g3, 40, 206, 720, 88, C_SURFACE, C_BORDER, 1.2);
-    g3.appendChild(svgText(56, 226, '拥抱人台（τ = 10 N）+ 气球（τ = 5 N）', 'demo-x-ink2', 10));
+    g3.appendChild(svgRich(56, 226, '拥抱人台（$\\tau = 10$ N）+ 气球（$\\tau = 5$ N）', { size: 10, cls: 'demo-x-ink2' }));
     g3.appendChild(svgText(56, 246, '人台腰上贴 40 个电容 taxel 的压力垫；每个 taxel 按 6 × 6 mm 算面积：100 kPa ≈ ' + fmt(TAXEL_N_100KPA, 1) + ' N', 'demo-x-mono', 9));
     g3.appendChild(svgText(56, 264, '对齐 / 故意错位两种条件下，GentleHumanoid 的力都有界且平稳；基线出现局部高压峰值或抱不住', 'demo-x-mut', 9.5));
     g3.appendChild(svgText(56, 282, '气球：GentleHumanoid 托住不破；两个基线越挤越狠，最后 G1 失衡把气球弄掉', 'demo-x-mut', 9.5));
@@ -717,7 +722,7 @@
       build: buildSceneRefDyn,
       cues: [
         { at: 0.4, s: '每个关键点是一个虚拟质量：$M\\ddot{x} = f_{\\mathrm{drive}} + f_{\\mathrm{interact}} - D\\dot{x}$，$M = ' + MASS + '$ kg。' },
-        { at: 2.0, s: '驱动力是朝目标动作的弹簧阻尼：$K_p = \\tau_{\\mathrm{safe}}/0.05$，τ = 10 N 时 **' + fmt(kp(TAU_DEF), 0) + ' N/m**，$K_d = 2\\sqrt{MK_p} = ' + fmt(kd(TAU_DEF), 2) + '$。' },
+        { at: 2.0, s: '驱动力是朝目标动作的弹簧阻尼：$K_p = \\tau_{\\mathrm{safe}}/0.05$，$\\tau = 10$ N 时 **' + fmt(kp(TAU_DEF), 0) + ' N/m**，$K_d = 2\\sqrt{MK_p} = ' + fmt(kd(TAU_DEF), 2) + '$。' },
         { at: 4.2, s: '每个 50 Hz 策略步积 **' + SUBSTEPS + ' × ' + DT + ' s** 子步（先更新速度再更新位置）。' },
         { at: 6.2, s: '算例：手腕被拉向 +0.15 m 的锚点，$K_s = ' + KS + '$；第一个策略步后参考点已偏出 ' + fmt(STEP1[SUBSTEPS - 1].x * 100, 2) + ' cm。' },
         { at: 9.6, s: '驱动力第 2 个子步就撞上 10 N 上限；参考先冲过头，最后停在 **' + fmt(EQ[1].x * 100, 1) + ' cm**。' },
@@ -756,7 +761,7 @@
       cues: [
         { at: 0.4, s: '驱动力超过阈值就等比例缩到阈值：$f = \\min(1, \\tau_{\\mathrm{safe}}/\\lVert f\\rVert)\\,f$。' },
         { at: 2.0, s: '代码里 $K_p = \\tau_{\\mathrm{safe}}/0.05$：三档阈值都在**偏离 5 cm** 时封顶，阈值只改变「多早开始让」。' },
-        { at: 5.6, s: '同一个外拉下：τ = 5 / 10 / 15 N 时分别让开 ' + EQ.map(function (e) { return fmt(e.x * 100, 1); }).join(' / ') + ' cm。' },
+        { at: 5.6, s: '同一个外拉下：$\\tau = 5 / 10 / 15$ N 时分别让开 ' + EQ.map(function (e) { return fmt(e.x * 100, 1); }).join(' / ') + ' cm。' },
         { at: 7.6, s: '截断后平衡时**接触力正好等于阈值**；完全不让的刚性跟踪是 ' + fmt(RIGID_F, 1) + ' N。' },
         { at: 9.6, s: '最坏 0.25 cm² 接触：15 N → ' + fmt(P_MIN_AREA, 0) + ' N/cm²，低于 ISO/TS 15066 的胸 120、背肩 160。' },
         { at: 11.2, s: '拥抱约 16 cm²：5–15 N 是 ' + fmt(P_HUG_LO, 1) + '–' + fmt(P_HUG_HI, 1) + ' kPa，落在舒适区间。' }
@@ -770,7 +775,7 @@
         { at: 0.4, s: '教师看得到参考动力学状态、参考力与仿真实测力等特权信息。' },
         { at: 2.4, s: '学生只看 $\\tau_{\\mathrm{safe}}$、目标动作、角速度、重力与关节 / 动作历史，输出 29 维关节目标。' },
         { at: 5.2, s: '柔顺奖励三项：参考状态跟踪（2.0）、参考力跟踪（2.0）、不安全力惩罚（6.0）。' },
-        { at: 7.2, s: '算例：位置差 2 cm 得 ' + fmt(R_POS, 3) + '；力差 2 N 得 ' + fmt(R_FORCE, 3) + '；τ = 10 时超过 **' + PEN_LINE + ' N** 才罚。' },
+        { at: 7.2, s: '算例：位置差 2 cm 得 ' + fmt(R_POS, 3) + '；力差 2 N 得 ' + fmt(R_FORCE, 3) + '；$\\tau = 10$ 时超过 **' + PEN_LINE + ' N** 才罚。' },
         { at: 9.4, s: '注意：论文写的核是 $\\exp(-\\lVert\\cdot\\rVert^2/\\sigma)$，开源代码是 $\\exp(-\\lVert\\cdot\\rVert/\\sigma)$。' },
         { at: 11.0, s: '对照组 Vanilla-RL 不加力，Extreme-RL 在末端加最高 30 N 的随机扰动。' }
       ]

@@ -391,11 +391,11 @@ def test_explainer_formulas_go_through_katex():
     kit = DEMO_KIT.read_text(encoding="utf-8")
     assert "window.katex" in kit, "公式必须走页面已加载的 KaTeX，不要再引第二份"
     assert "texToPlain" in kit, "KaTeX 取不到时要降级成可读的纯文本"
-    for helper in ("tex:", "rich:", "svgMath:"):
+    for helper in ("tex:", "rich:", "svgMath:", "svgRich:"):
         assert helper in kit, f"kit.js 必须导出 {helper} 供各 bundle 复用"
 
     css = DEMO_CSS.read_text(encoding="utf-8")
-    for cls in (".demo-tex", ".demo-x-fo", ".demo-x-tex"):
+    for cls in (".demo-tex", ".demo-x-fo", ".demo-x-tex", ".demo-x-rich"):
         assert cls in css, f"{cls} 需要在 paper-demos.css 里定义"
 
     for name in EXPLAINER_BUNDLES:
@@ -405,6 +405,54 @@ def test_explainer_formulas_go_through_katex():
         assert re.search(r"s: '[^']*\$\\\\", js), f"{name}.js 的字幕应包含 $LaTeX$ 公式"
 
 
+# 分镜里「写成纯文本的公式」：希腊字母接下标（λ_PPO）、组合帽（x̂）、Unicode 下标（A₀）、
+# 范数号（‖c‖）。代码标识符（z_diff、tpose_qpos）是拉丁字母，不在此列。
+PLAIN_FORMULA = re.compile(r"[\u0370-\u03ff]_|\u0302|[\u2080-\u2089\u1d62-\u1d6a]|‖")
+
+
+def _svg_text_literals(js: str):
+    """svgText(...) 调用里的每个字符串字面量（跨行调用也算）。"""
+    for m in re.finditer(r"svgText\(", js):
+        depth, i = 1, m.end()
+        while depth and i < len(js):
+            depth += {"(": 1, ")": -1}.get(js[i], 0)
+            i += 1
+        yield from re.findall(r"'((?:[^'\\]|\\.)*)'", js[m.end() : i])
+
+
+def test_storyboard_formulas_are_not_spelled_in_plain_text():
+    """分镜里的公式走 svgMath / svgRich，不在 svgText 里用纯文本拼。
+
+    svgText 是原生 SVG 文字，KaTeX 到不了：`D_loco`、`[s_k − H_k, s_k]`、`λ_PPO`
+    这类写法会原样显示在页面上。混着中文的一行用 svgRich，把公式部分写成 `$…$`。
+    """
+    for name in EXPLAINER_BUNDLES:
+        js = (DEMO_JS_DIR / f"{name}.js").read_text(encoding="utf-8")
+        bad = [lit for lit in _svg_text_literals(js) if PLAIN_FORMULA.search(lit)]
+        assert not bad, f"{name}.js 的 svgText 里有纯文本公式，应改用 svgRich / svgMath：{bad}"
+        if "svgRich(" in js:
+            assert "svgRich = K.svgRich" in js, f"{name}.js 用了 svgRich 却没从 kit 取出来"
+
+
+def test_php_loco_skill_timeline_labels_are_latex():
+    """issue 截图那一幕：Loco → Skill → Loco 时间线下的标注必须是 LaTeX。"""
+    js = (DEMO_JS_DIR / "php.js").read_text(encoding="utf-8")
+    block = js[js.index("function buildSceneCompose()") : js.index("/* 两条助跑道")]
+    for tex in ("$\\\\mathcal{D}_{\\\\mathrm{loco}}$", "$E_k$", "$[s_k - H_k,\\\\, s_k]$", "$e_k$"):
+        assert tex in block, tex
+    assert "tl.appendChild(svgRich(sg.x + sg.w / 2, 90, sg.d," in block
+    assert "D_loco" not in block
+
+
+def test_rich_widgets_keep_plain_aria_labels():
+    """滑块标签可以写 `$…$`，但 aria-label 要给读屏器念降级后的纯文本。"""
+    kit = DEMO_KIT.read_text(encoding="utf-8")
+    assert "function richToPlain(str)" in kit
+    assert "richToPlain(opts.label)" in kit
+    assert "label.appendChild(el('span', null, text));" in kit, "checkbox 的文字也要走 rich()"
+    assert "if (needsRichMarkup(text)) rich(v, text);" in kit, "统计读数也要认 $…$"
+
+
 def test_demo_strings_render_backticks_as_inline_code():
     """演示里的 awrWeights() 这类标识符（字符串里用反引号包着）要渲染成 inline code。
 
@@ -412,7 +460,7 @@ def test_demo_strings_render_backticks_as_inline_code():
     渲染入口，所以反引号只需要在那里认一次，各 bundle 原样写 markdown 即可。
     """
     kit = DEMO_KIT.read_text(encoding="utf-8")
-    rich = kit[kit.index("function rich(parent, str)") : kit.index("function card(host, opts)")]
+    rich = kit[kit.index("function rich(parent, str") : kit.index("function card(host, opts)")]
     assert "`[^`]+`" in rich, "rich() 的 re 要把一对反引号认成一段 code"
     assert "el('code', 'demo-code'" in rich, "反引号里的内容要渲染成 <code class=\"demo-code\">"
 
