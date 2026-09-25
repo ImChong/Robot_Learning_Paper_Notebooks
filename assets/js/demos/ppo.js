@@ -105,7 +105,7 @@
       }
     });
     slider(ctrls, {
-      label: '裁剪范围 ε',
+      label: '裁剪范围 $\\varepsilon$',
       min: 0.05,
       max: 0.5,
       step: 0.01,
@@ -147,7 +147,7 @@
       { key: 'muted', text: '未裁剪 r·Â' },
       { key: 'warn', text: '裁剪 clip(r)·Â' },
       { key: 'accent', text: 'PPO 实际优化的 min(·)' },
-      { key: 'good', text: '安全带 [1−ε, 1+ε]' },
+      { key: 'good', text: '安全带 $[1-\\varepsilon, 1+\\varepsilon]$' },
       { key: 'bad', text: '冻结区（梯度 = 0）' }
     ]);
 
@@ -156,7 +156,7 @@
     var sUnclipped = stats.add('未裁剪项 r·Â');
     var sClipped = stats.add('裁剪项 clip(r)·Â');
     var sPicked = stats.add('min 选中');
-    var sGrad = stats.add('∂L/∂r（这条样本）');
+    var sGrad = stats.add('$\\partial L / \\partial r$（这条样本）');
     var verdict = verdictBox(root);
 
     note(root, [
@@ -373,7 +373,7 @@
 
     var ctrls = controlsRow(root);
     var lamSlider = slider(ctrls, {
-      label: 'GAE λ',
+      label: 'GAE $\\lambda$',
       min: 0,
       max: 1,
       step: 0.01,
@@ -387,7 +387,7 @@
       }
     });
     slider(ctrls, {
-      label: '折扣 γ',
+      label: '折扣 $\\gamma$',
       min: 0.8,
       max: 1,
       step: 0.01,
@@ -457,7 +457,7 @@
       table.appendChild(head);
 
       var rowR = el('tr');
-      rowR.appendChild(el('th', null, '奖励 r_t'));
+      rowR.appendChild(el('th', null, '奖励 $r_t$'));
       state.steps.forEach(function (s, i) {
         var td = el('td');
         stepper(
@@ -476,7 +476,7 @@
       table.appendChild(rowR);
 
       var rowV = el('tr');
-      rowV.appendChild(el('th', null, 'Critic V(s_t)'));
+      rowV.appendChild(el('th', null, 'Critic $V(s_t)$'));
       state.steps.forEach(function (s, i) {
         var td = el('td');
         stepper(
@@ -495,7 +495,7 @@
       table.appendChild(rowV);
 
       var rowD = el('tr');
-      rowD.appendChild(el('th', null, 'TD 误差 δ_t'));
+      rowD.appendChild(el('th', null, 'TD 误差 $\\delta_t$'));
       state.steps.forEach(function () {
         var td = el('td', null, '—');
         deltaCells.push(td);
@@ -515,9 +515,9 @@
     renderTable();
 
     var setLegend = legend(root, [
-      { key: 'muted', text: 'λ=0（一步 TD）' },
-      { key: 'accent', text: '当前 λ' },
-      { key: 'warn', text: 'λ=1（蒙特卡洛）' }
+      { key: 'muted', text: '$\\lambda=0$（一步 TD）' },
+      { key: 'accent', text: '当前 $\\lambda$' },
+      { key: 'warn', text: '$\\lambda=1$（蒙特卡洛）' }
     ]);
 
     var grid = stageGrid(root);
@@ -525,10 +525,10 @@
     var curveStage = stage(grid, 210);
 
     var stats = statsRow(root);
-    var sA0Zero = stats.add('Â₀（λ=0，一步 TD）');
-    var sA0Cur = stats.add('Â₀（当前 λ）');
-    var sA0One = stats.add('Â₀（λ=1，蒙特卡洛）');
-    var sDecay = stats.add('每往前一步的衰减 γλ');
+    var sA0Zero = stats.add('$\\hat{A}_0$（$\\lambda=0$，一步 TD）');
+    var sA0Cur = stats.add('$\\hat{A}_0$（当前 $\\lambda$）');
+    var sA0One = stats.add('$\\hat{A}_0$（$\\lambda=1$，蒙特卡洛）');
+    var sDecay = stats.add('每往前一步的衰减 $\\gamma\\lambda$');
     var verdict = verdictBox(root);
 
     note(root, [
@@ -797,7 +797,7 @@
 
     var ctrls = controlsRow(root);
     var epsSlider = slider(ctrls, {
-      label: '裁剪范围 ε',
+      label: '裁剪范围 $\\varepsilon$',
       min: 0.05,
       max: 0.6,
       step: 0.05,
@@ -844,7 +844,7 @@
       state.seed = Math.floor(Math.random() * 100000);
       recompute();
     });
-    button(btns, '↺ 回到默认（ε=0.2, K=10）', function () {
+    button(btns, '↺ 回到默认（$\\varepsilon=0.2$, $K=10$）', function () {
       epsSlider.set(0.2, true);
       epochSlider.set(10, true);
       state.eps = 0.2;
@@ -856,7 +856,7 @@
       { key: 'accent', text: 'PPO-Clip' },
       { key: 'bad', text: '无裁剪（其它完全相同）' },
       { key: 'good', text: '最优策略的回报 1.0' },
-      { key: 'warn', text: '右图虚线：ε 本身' }
+      { key: 'warn', text: '右图虚线：$\\varepsilon$ 本身' }
     ]);
 
     var grid = stageGrid(root);
@@ -1521,6 +1521,7 @@
   var svgEl = K.svgEl,
     svgText = K.svgText,
     svgMath = K.svgMath,
+    svgRich = K.svgRich,
     paint = K.paint,
     seg = K.seg,
     ease = K.ease,
@@ -1576,7 +1577,7 @@
       { size: 12, anchor: 'middle', cls: 'demo-x-acc', w: 300 });
     var tag = svgText(740, 44, '', 'demo-x-mono', 15, 'end');
     tag.setAttribute('font-weight', '700');
-    var sub = svgText(740, 64, '', 'demo-x-ink2', 12.5, 'end');
+    var sub = svgRich(740, 64, '', { size: 12.5, cls: 'demo-x-ink2', anchor: 'end' });
     [band, hill, trail, ghosts, ball,
       svgMath(60, 44, 'J(\\theta)', { size: 13, cls: 'demo-x-mut', w: 60 }),
       svgText(106, 44, '策略的真实表现', 'demo-x-mut', 13),
@@ -1600,7 +1601,7 @@
         cls = 'demo-x-mut';
       } else {
         label = '③ PPO';
-        hint = '护栏跟着 θ_old 走，小步但一直在爬';
+        hint = '护栏跟着 $\\theta_{old}$ 走，小步但一直在爬';
         if (t < 8.4) {
           x = 260 + 70 * ease(seg(t, 6.9, 8.1));
         } else if (t < 10.0) {
@@ -1626,7 +1627,7 @@
       });
       tag.textContent = label;
       tag.setAttribute('class', 'demo-x-mono ' + cls);
-      sub.textContent = hint;
+      sub.setText(hint);
       setOpacity(tag, label ? 1 : 0);
       setOpacity(sub, label ? 1 : 0);
     }

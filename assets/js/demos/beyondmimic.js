@@ -55,7 +55,7 @@
     var root = card(host, {
       title: '锚定跟踪：允许它在地上漂，但不许它走歪',
       sub:
-        'T̂_b = T_anchor · T_ref⁻¹ · T_motion。锚点保留机器人当前的 xy、参考的高度，只对齐 yaw。' +
+        '$\\hat{T}_b = T_{\\text{anchor}}\\, T_{b_{\\text{ref}}}^{-1}\\, T_{b,\\text{motion}}$。锚点保留机器人当前的 xy、参考的高度，只对齐 yaw。' +
         '拖动漂移量，看两种跟踪方式下「策略认为自己错了多少」差多少。'
     });
 
@@ -120,7 +120,7 @@
         '如果把这份漂移写进奖励，策略就会一直用大幅动作往回拽 —— 结果是动作僵硬、能耗高、接触不柔顺。',
       '**但 yaw 不能放**：锚点只对齐 yaw（`R_z(yaw(...))`），朝向错了仍然算误差。' +
         '把 yaw 滑块拉开，会看到两种模式下这一项都在涨 —— 该修的还是要修。',
-      '**高度也不放**：p_anchor 的 z 取的是**参考的高度**，不是机器人的。' +
+      '**高度也不放**：$p_{\\text{anchor}}$ 的 $z$ 取的是**参考的高度**，不是机器人的。' +
         '所以蹲下去、跳起来这些竖直方向的东西照样被跟踪，只有水平面被放开。',
       '**这是简化模型**：真实的锚定是在 SE(3) 上做的，误差还包括各刚体的相对位姿。' +
         '这里只画水平面的位置和 yaw，用来解释「放开什么、保留什么」，数值不能和论文比。'
@@ -293,7 +293,7 @@
       title: '起始相位不能均匀采：简单片段会把预算吃光',
       sub:
         '一条 3 分钟的多技能参考里，走路占了绝大部分。均匀采样的结果是「大部分预算花在已经会的地方」。' +
-        'BeyondMimic 按 1 秒分箱、按失败率加权，再用 λ 掺一点均匀分布防遗忘。'
+        'BeyondMimic 按 1 秒分箱、按失败率加权，再用 $\\lambda$ 掺一点均匀分布防遗忘。'
     });
 
     var state = { lambda: 0.25, gamma: 0.8, rounds: 10, uniform: false };
@@ -301,7 +301,7 @@
 
     var ctrls = controlsRow(root);
     slider(ctrls, {
-      label: 'λ（掺多少均匀分布，防灾难性遗忘）',
+      label: '$\\lambda$（掺多少均匀分布，防灾难性遗忘）',
       min: 0,
       max: 1,
       step: 0.02,
@@ -315,7 +315,7 @@
       }
     });
     slider(ctrls, {
-      label: '非因果核 γ（往前看几秒）',
+      label: '非因果核 $\\gamma$（往前看几秒）',
       min: 0,
       max: 0.98,
       step: 0.02,
@@ -357,8 +357,8 @@
 
     var setLegend = legend(root, [
       { key: 'bad', text: '这一秒的失败率' },
-      { key: 'accent', text: '下一轮会从这里起步的概率 p_s′' },
-      { key: 'muted', text: 'λ 掺进来的均匀底噪' }
+      { key: 'accent', text: '下一轮会从这里起步的概率 $p_{s\'}$' },
+      { key: 'muted', text: '$\\lambda$ 掺进来的均匀底噪' }
     ]);
 
     var grid = stageGrid(root);
@@ -373,13 +373,13 @@
     var verdict = verdictBox(root);
 
     note(root, [
-      '**λ 是保险，不是调味**：把 λ 拖到 0，采样会全压在最难的那两段上，' +
+      '**$\\lambda$ 是保险，不是调味**：把 $\\lambda$ 拖到 0，采样会全压在最难的那两段上，' +
         '走路那部分长时间一次都采不到 —— 于是它慢慢被忘掉（看左图两侧的红柱重新长回来）。' +
         '论文那句「防止灾难性遗忘」就是这个意思。',
-      '**γ 决定「提前多久开始练」**：失败往往发生在某个动作的中段，但问题可能出在进入姿势上。' +
-        '非因果核 γ^τ 把失败的权重往前摊，让采样点落在失败**之前**那几秒。把 γ 拖到 0，只会盯着失败那一秒本身。',
+      '**$\\gamma$ 决定「提前多久开始练」**：失败往往发生在某个动作的中段，但问题可能出在进入姿势上。' +
+        '非因果核 $\\gamma^{\\tau}$ 把失败的权重往前摊，让采样点落在失败**之前**那几秒。把 $\\gamma$ 拖到 0，只会盯着失败那一秒本身。',
       '**这和 PHC 的 PMCP 是两种思路**：PHC 遇到难例是**加一列网络**，BeyondMimic 是**改采样分布**。' +
-        '前者不会遗忘但要多跑几份前向，后者是单策略、单 MDP，代价就是这个 λ 要调。',
+        '前者不会遗忘但要多跑几份前向，后者是单策略、单 MDP，代价就是这个 $\\lambda$ 要调。',
       '**这是简化模型**：真实的失败率来自并行环境的终止统计，学习速度也不是线性的。' +
         '这里只复现「预算分配 → 失败率下降 → 预算转移」这个闭环，数值不能和论文比。'
     ]);
@@ -414,7 +414,7 @@
         );
       } else if (state.lambda < 0.06) {
         verdict.set(
-          '⚠️ λ = ' +
+          '⚠️ $\\lambda$ = ' +
             fmt(state.lambda, 2) +
             '：采样几乎全压在难段上，最冷门那一秒只剩 ' +
             fmt(floor, 2) +
@@ -423,7 +423,7 @@
         );
       } else {
         verdict.set(
-          '✅ λ = ' +
+          '✅ $\\lambda$ = ' +
             fmt(state.lambda, 2) +
             '：两段高动态拿到 ' +
             fmt(hardBudget, 1) +
@@ -639,8 +639,8 @@
     var root = card(host, {
       title: 'Classifier Guidance：任务代价直接加进去，不用重训',
       sub:
-        '∇log p(τ|τ*) = ∇log p(τ) + ∇log p(τ*|τ)。前一项是扩散模型学到的「人类会怎么动」，' +
-        '后一项就是 −∇G。避障和路点是两个独立的 G，相加即可 —— 训练时根本不需要枚举组合。'
+        '$\\nabla \\log p(\\tau \\mid \\tau^*) = \\nabla \\log p(\\tau) + \\nabla \\log p(\\tau^* \\mid \\tau)$。前一项是扩散模型学到的「人类会怎么动」，' +
+        '后一项就是 $-\\nabla G$。避障和路点是两个独立的 $G$，相加即可 —— 训练时根本不需要枚举组合。'
     });
 
     var state = { scale: 0.09, avoid: true, waypoint: true, obsY: -0.15, obsR: 0.65, goalY: 1.1, seed: 12, steps: 20 };
@@ -690,11 +690,11 @@
     });
     var togBox = el('div', 'demo-control demo-buttons');
     ctrls.appendChild(togBox);
-    checkbox(togBox, '避障代价 G_avoid', state.avoid, function (on) {
+    checkbox(togBox, '避障代价 $G_{\\text{avoid}}$', state.avoid, function (on) {
       state.avoid = on;
       render();
     });
-    checkbox(togBox, '路点代价 G_waypoint', state.waypoint, function (on) {
+    checkbox(togBox, '路点代价 $G_{\\text{waypoint}}$', state.waypoint, function (on) {
       state.waypoint = on;
       render();
     });
@@ -725,7 +725,7 @@
         '论文里提到在 Joint-Rot 表示上加 guidance 会「迅速 OOD 失稳」，说的就是这件事。',
       '**这也是 motion inpainting 的同一套机制**：把「某些帧必须等于关键帧」写成一个 G，' +
         '扩散就会把中间那段补出来 —— 论文里每 0.2 s 注入一帧侧手翻关键帧，靠的就是这个。',
-      '**这是简化模型**：真实的 τ 是 16 步状态-动作序列，梯度用 CppAD 自动求导，先验是一个 19.95M 的 Transformer。' +
+      '**这是简化模型**：真实的 $\\tau$ 是 16 步状态-动作序列，梯度用 CppAD 自动求导，先验是一个 19.95M 的 Transformer。' +
         '这里的先验是「自然直行 + 高斯」，反向过程本身是真的带引导 DDIM。'
     ]);
 
@@ -765,7 +765,7 @@
 
       if (state.scale < 0.005) {
         verdict.set(
-          '😐 引导强度 0：这就是纯 p(τ)，扩散模型只会输出它见过的「自然直行」。' +
+          '😐 引导强度 0：这就是纯 $p(\\tau)$，扩散模型只会输出它见过的「自然直行」。' +
             '任务信息一点都没进来 —— 障碍和路点它根本不知道。',
           'frozen'
         );
@@ -893,6 +893,7 @@
   var svgEl = K.svgEl,
     svgText = K.svgText,
     svgMath = K.svgMath,
+    svgRich = K.svgRich,
     paint = K.paint,
     seg = K.seg,
     ease = K.ease,
@@ -1102,15 +1103,15 @@
     s.appendChild(errLabel);
 
     var cards = [
-      { t: '放开：水平 xy', d: 'p_anchor 取机器人当前的 x, y', c: C_GOOD },
-      { t: '保留：高度 z', d: 'z 取参考的高度 —— 蹲、跳照样跟', c: C_WARN },
-      { t: '保留：yaw', d: 'R_anchor 只对齐 yaw，走歪仍算误差', c: C_ACCENT }
+      { t: '放开：水平 xy', d: '$p_{\\text{anchor}}$ 取机器人当前的 $x, y$', c: C_GOOD },
+      { t: '保留：高度 z', d: '$z$ 取参考的高度 —— 蹲、跳照样跟', c: C_WARN },
+      { t: '保留：yaw', d: '$R_{\\text{anchor}}$ 只对齐 yaw，走歪仍算误差', c: C_ACCENT }
     ].map(function (p, k) {
       var g = svgEl('g', {});
       var y = 84 + k * 54;
       g.appendChild(paint(svgEl('rect', { x: 420, y: y, width: 344, height: 46, rx: 7, 'stroke-width': 1.3 }), C_SURFACE2, p.c));
       g.appendChild(paint(svgText(436, y + 20, p.t, null, 11.5), p.c));
-      g.appendChild(svgText(436, y + 37, p.d, 'demo-x-mut', 9.5));
+      g.appendChild(svgRich(436, y + 37, p.d, { size: 9.5, cls: 'demo-x-mut' }));
       s.appendChild(g);
       return { g: g, at: 2.6 + k * 1.3 };
     });
@@ -1186,15 +1187,12 @@
     var pd = svgEl('g', {});
     pd.appendChild(paint(svgEl('rect', { x: 36, y: 80, width: 356, height: 126, rx: 8, 'stroke-width': 1.5 }), C_SURFACE2, C_ACCENT));
     pd.appendChild(paint(svgText(54, 104, '低阻抗 PD：故意不做运动学跟踪', null, 12.5), C_ACCENT));
-    pd.appendChild(svgText(54, 126, '自然频率 ω_n = ' + OMEGA_HZ + ' Hz（偏低，促柔顺）', 'demo-x-mut', 10));
-    pd.appendChild(svgText(54, 145, '阻尼比 ζ = ' + ZETA + '（过阻尼，补偿惯量低估）', 'demo-x-mut', 10));
+    pd.appendChild(svgRich(54, 126, '自然频率 $\\omega_n = ' + OMEGA_HZ + '$ Hz（偏低，促柔顺）', { size: 10, cls: 'demo-x-mut' }));
+    pd.appendChild(svgRich(54, 145, '阻尼比 $\\zeta = ' + ZETA + '$（过阻尼，补偿惯量低估）', { size: 10, cls: 'demo-x-mut' }));
     pd.appendChild(
-      paint(
-        svgText(54, 168, 'k_d / k_p = 2ζ / ω_n ≈ ' + fmt(PD_RATIO_S, 3) + ' s', 'demo-x-mono', 12),
-        C_ACCENT
-      )
+      svgRich(54, 168, '$k_d / k_p = 2\\zeta / \\omega_n \\approx ' + fmt(PD_RATIO_S, 3) + '$ s', { size: 12 }).setTone(C_ACCENT)
     );
-    pd.appendChild(svgText(54, 190, '动作是归一化关节位置，α_j = ' + ACT_SCALE + ' τ_max / k_p', 'demo-x-mut', 10));
+    pd.appendChild(svgRich(54, 190, '动作是归一化关节位置，$\\alpha_j = ' + ACT_SCALE + '\\, \\tau_{\\max} / k_p$', { size: 10, cls: 'demo-x-mut' }));
     s.appendChild(pd);
 
     var rw = svgEl('g', {});
@@ -1349,10 +1347,10 @@
 
     var arrow = K.arrowMarker(s, 'bm-x-arrow-vae', C_BORDER);
     var pipe = [
-      { tex: '\\text{参考动作分量 } \\bm{\\psi}', d: '+ 锚定误差 e_anchor', c: C_MUTED, w: 168 },
+      { tex: '\\text{参考动作分量 } \\bm{\\psi}', d: '+ 锚定误差 $e_{\\text{anchor}}$', c: C_MUTED, w: 168 },
       { t: 'Encoder MLP', d: '[2048, 1024, 512]', c: C_ACCENT, w: 158 },
       { tex: '\\bm{z} \\in \\mathbb{R}^{' + LATENT_DIM + '}', d: '动作意图，不是动作本身', c: C_GOOD, w: 168 },
-      { t: 'Decoder MLP', d: '+ 本体感知 → 动作 â', c: C_ACCENT, w: 168 }
+      { t: 'Decoder MLP', d: '+ 本体感知 → 动作 $\\hat{a}$', c: C_ACCENT, w: 168 }
     ];
     var x = 36;
     var nodes = pipe.map(function (p, k) {
@@ -1363,7 +1361,7 @@
       } else {
         g.appendChild(paint(svgText(x + p.w / 2, 78, p.t, null, 11.5, 'middle'), p.c));
       }
-      g.appendChild(svgText(x + p.w / 2, 97, p.d, 'demo-x-mut', 9, 'middle'));
+      g.appendChild(svgRich(x + p.w / 2, 97, p.d, { size: 9, cls: 'demo-x-mut', anchor: 'middle', w: 200 }));
       s.appendChild(g);
       if (k < pipe.length - 1) {
         s.appendChild(

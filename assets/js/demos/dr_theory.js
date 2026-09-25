@@ -51,8 +51,8 @@
     var root = card(host, {
       title: '随机化区间：太窄覆盖不到，太宽学不动',
       sub:
-        '论文的界是 gap ≤ ε_approx（覆盖误差）+ ε_stat（样本复杂度）。' +
-        '笔记里的默认例子是 μ ~ U(0.3, 1.2)、真实 μ* ≈ 0.6。拖动区间和真实值，看这两项怎么反向变化。'
+        '论文的界是 gap $\\le \\varepsilon_{\\mathrm{approx}}$（覆盖误差）+ $\\varepsilon_{\\mathrm{stat}}$（样本复杂度）。' +
+        '笔记里的默认例子是 $\\mu \\sim U(0.3, 1.2)$、真实 $\\mu^*$ ≈ 0.6。拖动区间和真实值，看这两项怎么反向变化。'
     });
 
     var state = { lo: 0.3, hi: 1.2, muStar: MU_STAR_DEFAULT, n: 3000 };
@@ -87,7 +87,7 @@
       }
     });
     slider(ctrls, {
-      label: '真实世界的摩擦 μ*（未知）',
+      label: '真实世界的摩擦 $\\mu^*$（未知）',
       min: MU_LO,
       max: MU_HI,
       step: 0.01,
@@ -116,7 +116,7 @@
     });
     var btns = el('div', 'demo-control demo-buttons');
     ctrls.appendChild(btns);
-    button(btns, '笔记的例子（0.3~1.2，μ*=0.6）', function () {
+    button(btns, '笔记的例子（0.3~1.2，$\\mu^*=0.6$）', function () {
       state.lo = 0.3;
       state.hi = 1.2;
       state.muStar = 0.6;
@@ -124,15 +124,15 @@
       hiSlider.set(1.2, true);
       render();
     });
-    button(btns, '真实值比训练分布还滑（μ*=0.1）', function () {
+    button(btns, '真实值比训练分布还滑（$\\mu^*=0.1$）', function () {
       state.muStar = 0.1;
       render();
     });
 
     var setLegend = legend(root, [
-      { key: 'accent', text: '随机化分布 p(θ)' },
-      { key: 'good', text: '真实 μ*（落在分布内）' },
-      { key: 'bad', text: '真实 μ*（落在分布外）' }
+      { key: 'accent', text: '随机化分布 $p(\\theta)$' },
+      { key: 'good', text: '真实 $\\mu^*$（落在分布内）' },
+      { key: 'bad', text: '真实 $\\mu^*$（落在分布外）' }
     ]);
 
     var grid = stageGrid(root);
@@ -140,23 +140,23 @@
     var gapStage = stage(grid, 240);
 
     var stats = statsRow(root);
-    var sIn = stats.add('μ* 在分布内吗');
-    var sApprox = stats.add('ε_approx');
-    var sStat = stats.add('ε_stat');
+    var sIn = stats.add('$\\mu^*$ 在分布内吗');
+    var sApprox = stats.add('$\\varepsilon_{\\mathrm{approx}}$');
+    var sStat = stats.add('$\\varepsilon_{\\mathrm{stat}}$');
     var sGap = stats.add('gap 上界');
     var verdict = verdictBox(root);
 
     note(root, [
-      '**两项是反向的，所以有最优宽度**：区间越宽，覆盖误差越小（ε_approx ↓），' +
-        '但要在整个 MDP 集合上都学好需要更多样本（ε_stat ↑）。论文的贡献就是把这件事写成了一个可以讨论的界，' +
+      '**两项是反向的，所以有最优宽度**：区间越宽，覆盖误差越小（$\\varepsilon_{\\mathrm{approx}}$ ↓），' +
+        '但要在整个 MDP 集合上都学好需要更多样本（$\\varepsilon_{\\mathrm{stat}}$ ↑）。论文的贡献就是把这件事写成了一个可以讨论的界，' +
         '而不是「试试这个范围、不行再调」。',
       '**但两种失败不对称**：覆盖不到是断崖式的（策略从没见过这么滑的地面），' +
         '样本不够只是慢一点、保守一点。所以笔记里那条实战推论「宁可偏大」是对的 —— 它说的是**风险不对称**，' +
-        '不是说 ε_stat 不存在。',
-      '**样本量能买回一部分宽度**：把 N 拖大，ε_stat 按 √N 下降，宽区间的代价就变小了。' +
+        '不是说 $\\varepsilon_{\\mathrm{stat}}$ 不存在。',
+      '**样本量能买回一部分宽度**：把 N 拖大，$\\varepsilon_{\\mathrm{stat}}$ 按 $\\sqrt{N}$ 下降，宽区间的代价就变小了。' +
         '这也是为什么并行仿真（几千个 env）出来以后，大家敢把随机化范围开得更大。',
       '**这是简化模型**：论文的界是关于无限时域 MDP 学习复杂度的，形式比这复杂得多。' +
-        '这里用 ε_approx ∝ 越界距离²、ε_stat ∝ 区间宽度/√N 复现它的形状，数值不能和论文比。'
+        '这里用 $\\varepsilon_{\\mathrm{approx}} \\propto$ 越界距离²、$\\varepsilon_{\\mathrm{stat}} \\propto$ 区间宽度 / $\\sqrt{N}$ 复现它的形状，数值不能和论文比。'
     ]);
 
     function terms(lo, hi, muStar, n) {
@@ -177,7 +177,7 @@
 
       if (!inside) {
         verdict.set(
-          '💥 μ* = ' +
+          '💥 $\\mu^*$ = ' +
             fmt(state.muStar, 2) +
             ' 落在 [' +
             fmt(state.lo, 2) +
@@ -185,7 +185,7 @@
             fmt(state.hi, 2) +
             '] 之外 ' +
             fmt(t.out, 2) +
-            '：ε_approx 冲到 ' +
+            '：$\\varepsilon_{\\mathrm{approx}}$ 冲到 ' +
             fmt(t.eApprox, 3) +
             '，整个界直接失效。策略在仿真里从没踩过这么滑的地，它在真机上会做什么没人知道。',
           'frozen'
@@ -196,14 +196,14 @@
             fmt(state.hi - state.lo, 2) +
             ' 而样本只有 ' +
             fmt(state.n / 1000, 1) +
-            'k：ε_stat = ' +
+            'k：$\\varepsilon_{\\mathrm{stat}}$ = ' +
             fmt(t.eStat, 3) +
             ' 成了主要项。要在整个 MDP 集合上都学好，样本量得跟上 —— 把 N 拖大看它怎么降。',
           'frozen'
         );
       } else {
         verdict.set(
-          '✅ μ* 落在区间内，gap ≤ ' +
+          '✅ $\\mu^*$ 落在区间内，gap ≤ ' +
             fmt(t.gap, 3) +
             '（覆盖 ' +
             fmt(t.eApprox, 3) +
@@ -312,8 +312,8 @@
     var root = card(host, {
       title: '历史不是锦上添花：它是在做在线系统辨识',
       sub:
-        '同一个姿态、同一个观测，在 μ = 0.3 和 μ = 1.2 下需要的力矩完全不同。' +
-        'Markov 策略只能给一个折中值；带历史的策略可以先从打滑信号把 μ 认出来。'
+        '同一个姿态、同一个观测，在 $\\mu$ = 0.3 和 $\\mu$ = 1.2 下需要的力矩完全不同。' +
+        'Markov 策略只能给一个折中值；带历史的策略可以先从打滑信号把 $\\mu$ 认出来。'
     });
 
     var state = { hist: 8, noise: 0.42, lo: 0.3, hi: 1.2, muStar: 0.45, seed: 15 };
@@ -348,7 +348,7 @@
       }
     });
     slider(ctrls, {
-      label: '这一集抽到的真实 μ',
+      label: '这一集抽到的真实 $\\mu$',
       min: 0.3,
       max: 1.2,
       step: 0.01,
@@ -373,7 +373,7 @@
     });
 
     var setLegend = legend(root, [
-      { key: 'accent', text: 'H 步历史之后对 μ 的后验' },
+      { key: 'accent', text: 'H 步历史之后对 $\\mu$ 的后验' },
       { key: 'muted', text: '先验 U(0.3, 1.2)' },
       { key: 'good', text: '带历史的策略' },
       { key: 'bad', text: 'Markov 策略' }
@@ -387,7 +387,7 @@
     var cells = [];
     (function () {
       tb.row(['', 'Markov 策略', '带 H 步历史'], true);
-      ['它认为的 μ', '它发出的动作', '在真实 μ 下的回报'].forEach(function (lab) {
+      ['它认为的 $\\mu$', '它发出的动作', '在真实 $\\mu$ 下的回报'].forEach(function (lab) {
         var tr = el('tr');
         tr.appendChild(el('th', null, lab));
         var a = el('td', null, '—'),
@@ -408,10 +408,10 @@
 
     note(root, [
       '**这就是论文那条结论的机制**：DR 把环境变成了部分可观测问题 —— ' +
-        '真实的 θ 藏在动力学里，当前状态一个人说不清。历史把它显式地暴露出来，策略才可能「对症下药」。',
-      '**Markov 策略不是学得不好，是信息不够**：它的最优解就是对整个 θ 分布取平均。' +
+        '真实的 $\\theta$ 藏在动力学里，当前状态一个人说不清。历史把它显式地暴露出来，策略才可能「对症下药」。',
+      '**Markov 策略不是学得不好，是信息不够**：它的最优解就是对整个 $\\theta$ 分布取平均。' +
         '区间越宽，这个平均越保守 —— 把随机化区间拉宽而不给历史，只会让策略越来越畏手畏脚。',
-      '**噪声大的时候历史更值钱**：把噪声拖大，后验收敛得慢，需要更多步才认得出 μ。' +
+      '**噪声大的时候历史更值钱**：把噪声拖大，后验收敛得慢，需要更多步才认得出 $\\mu$。' +
         '这也解释了为什么工程上常见的做法是 LSTM/GRU 或者堆一段观测窗口，而不是只给一帧。',
       '**这是简化模型**：真实策略不会显式算后验，它是把辨识隐式地学进网络权重里的（ROA、teacher-student 都是这条路）。' +
         '这里用一个高斯后验把「历史 → 辨识 → 对症动作」这条链画出来，数值不能和论文比。'
@@ -448,11 +448,11 @@
 
       if (state.hist === 0) {
         verdict.set(
-          '🙈 Markov 策略：它只能假设 μ 等于先验均值 ' +
+          '🙈 Markov 策略：它只能假设 $\\mu$ 等于先验均值 ' +
             fmt(priorMean, 2) +
             '，发出动作 ' +
             fmt(aMk, 3) +
-            '。这一集真实的 μ 是 ' +
+            '。这一集真实的 $\\mu$ 是 ' +
             fmt(state.muStar, 2) +
             '，回报只有 ' +
             fmt(vMk, 3) +
@@ -463,7 +463,7 @@
         verdict.set(
           '✅ ' +
             state.hist +
-            ' 步历史把 μ 的后验收窄到 ±' +
+            ' 步历史把 $\\mu$ 的后验收窄到 ±' +
             fmt(postSd, 2) +
             '，策略据此把动作从 ' +
             fmt(aMk, 3) +
@@ -478,11 +478,11 @@
         );
       } else {
         verdict.set(
-          '➖ 这一集抽到的 μ 离先验均值很近（' +
+          '➖ 这一集抽到的 $\\mu$ 离先验均值很近（' +
             fmt(state.muStar, 2) +
             ' vs ' +
             fmt(priorMean, 2) +
-            '），Markov 策略碰巧也够用。把真实 μ 拖到区间两端再看 —— 那才是历史真正救命的地方。',
+            '），Markov 策略碰巧也够用。把真实 $\\mu$ 拖到区间两端再看 —— 那才是历史真正救命的地方。',
           'frozen'
         );
       }
@@ -568,7 +568,7 @@
     var root = card(host, {
       title: 'DR 还是 System Identification：峰值高的那个，窄',
       sub:
-        'SysID 先把 μ 估准再针对它训一个策略：估对了很强，估偏了掉得也快。' +
+        'SysID 先把 $\\mu$ 估准再针对它训一个策略：估对了很强，估偏了掉得也快。' +
         'DR 训的是对整个区间都过得去的策略：峰值低一点，但平。真机参数还会随时间漂 —— 这才是胜负手。'
     });
 
@@ -631,9 +631,9 @@
     });
 
     var setLegend = legend(root, [
-      { key: 'warn', text: 'SysID：针对估出来的 μ̂ 训一个策略' },
+      { key: 'warn', text: 'SysID：针对估出来的 $\\hat{\\mu}$ 训一个策略' },
       { key: 'accent', text: 'DR：对整个区间鲁棒' },
-      { key: 'good', text: '真机当前的 μ' }
+      { key: 'good', text: '真机当前的 $\\mu$' }
     ]);
 
     var grid = stageGrid(root);

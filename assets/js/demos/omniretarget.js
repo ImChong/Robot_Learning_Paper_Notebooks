@@ -20,6 +20,7 @@
     svgEl = K.svgEl,
     svgText = K.svgText,
     svgMath = K.svgMath,
+    svgRich = K.svgRich,
     paint = K.paint,
     seg = K.seg,
     ease = K.ease,
@@ -252,7 +253,7 @@
     var core = svgEl('g', {});
     core.appendChild(paint(svgEl('rect', { x: 170, y: 130, width: 460, height: 64, rx: 10, 'stroke-width': 1.8 }), C_SURFACE2, C_GOOD));
     core.appendChild(paint(svgText(400, 156, 'Delaunay 四面体剖分 → volumetric interaction mesh', null, 13.5, 'middle'), C_GOOD));
-    core.appendChild(svgText(400, 178, '源侧 P_source 固定；目标侧 P_target(q_t) 随机器人构型变', 'demo-x-mut', 10, 'middle'));
+    core.appendChild(svgRich(400, 178, '源侧 $\\mathcal{P}^{\\mathrm{source}}$ 固定；目标侧 $\\mathcal{P}^{\\mathrm{target}}(q_t)$ 随机器人构型变', { size: 10, cls: 'demo-x-mut', anchor: 'middle' }));
     s.appendChild(core);
 
     var tet = svgEl('g', {});
@@ -336,20 +337,20 @@
     var left = svgEl('g', {});
     left.appendChild(paint(svgEl('rect', { x: 40, y: 110, width: 350, height: 196, rx: 8, 'stroke-width': 1.4, 'stroke-dasharray': '5 4' }), C_SURFACE, C_BAD));
     left.appendChild(paint(svgText(58, 134, '只匹配关键点（示意）', null, 12), C_BAD));
-    left.appendChild(svgText(58, 156, '身体按 s = ' + fmt(LAP_SCALE, 2) + ' 缩放，物体留在原处', 'demo-x-mut', 9.5));
+    left.appendChild(svgRich(58, 156, '身体按 $s = ' + fmt(LAP_SCALE, 2) + '$ 缩放，物体留在原处', { size: 9.5, cls: 'demo-x-mut' }));
     left.appendChild(svgText(58, 176, '手-物距离 ' + fmt(DIST_SRC, 1) + ' → ' + fmt(DIST_KP, 1) + '，撑开 ' + fmt(DIST_GROW, 1), 'demo-x-mono', 10));
     var kpMath = svgMath(58, 206, '\\lVert L_{\\mathrm{kp}} - L_{\\mathrm{src}} \\rVert = ' + fmt(LAP_ERR, 2), { size: 12, w: 300 });
     kpMath.setTone('var(--demo-bad)');
     left.appendChild(kpMath);
-    left.appendChild(svgText(58, 236, 'L_src = (' + fmt(LAP_SRC[0], 2) + ', ' + fmt(LAP_SRC[1], 2) + ')', 'demo-x-mono', 9.5));
-    left.appendChild(svgText(58, 254, 'L_kp  = (' + fmt(LAP_KP[0], 2) + ', ' + fmt(LAP_KP[1], 2) + ')', 'demo-x-mono', 9.5));
+    left.appendChild(svgMath(58, 236, 'L_{\\mathrm{src}} = (' + fmt(LAP_SRC[0], 2) + ', ' + fmt(LAP_SRC[1], 2) + ')', { size: 9.5 }));
+    left.appendChild(svgMath(58, 254, 'L_{\\mathrm{kp}} = (' + fmt(LAP_KP[0], 2) + ', ' + fmt(LAP_KP[1], 2) + ')', { size: 9.5 }));
     left.appendChild(paint(svgText(58, 284, '手漂离箱子，grasp 在几何上就断了', null, 10.5), C_BAD));
     s.appendChild(left);
 
     var right = svgEl('g', {});
     right.appendChild(paint(svgEl('rect', { x: 410, y: 110, width: 350, height: 196, rx: 8, 'stroke-width': 1.5 }), C_SURFACE2, C_GOOD));
     right.appendChild(paint(svgText(428, 134, '对齐 Laplacian（OmniRetarget）', null, 12), C_GOOD));
-    right.appendChild(svgText(428, 156, '最小化 E_L，邻域相对关系被钉住', 'demo-x-mut', 9.5));
+    right.appendChild(svgRich(428, 156, '最小化 $E_L$，邻域相对关系被钉住', { size: 9.5, cls: 'demo-x-mut' }));
     var okMath = svgMath(428, 186, '\\min_{q_t}\\ E_L + \\lVert q_t - q_{t-1} \\rVert_Q^2', { size: 12, w: 310 });
     okMath.setTone('var(--demo-good)');
     right.appendChild(okMath);
@@ -382,9 +383,9 @@
 
   // ─── 第 4 幕：序贯 SOCP 硬约束 ───────────────────────────────────────
   var S4_CONS = [
-    { t: '非穿透 SDF', d: 'φ_j(q_t) ≥ 0', d2: '碰撞对写成硬约束', c: C_BAD },
-    { t: '关节限位', d: 'q_min ≤ q_t ≤ q_max', d2: '解不出超限姿态', c: C_WARN },
-    { t: '速度限位', d: 'v_min dt ≤ Δq ≤ v_max dt', d2: '相邻帧不能瞬移', c: C_ACCENT },
+    { t: '非穿透 SDF', d: '\\phi_j(q_t) \\ge 0', d2: '碰撞对写成硬约束', c: C_BAD },
+    { t: '关节限位', d: 'q_{\\min} \\le q_t \\le q_{\\max}', d2: '解不出超限姿态', c: C_WARN },
+    { t: '速度限位', d: 'v_{\\min}\\,dt \\le \\Delta q \\le v_{\\max}\\,dt', d2: '相邻帧不能瞬移', c: C_ACCENT },
     { t: 'stance 脚粘地', d: 'p_t^F = p_{t-1}^F', d2: 'xy 速度 < ' + STANCE_CM_S + ' cm/s', c: C_GOOD }
   ];
 
@@ -406,9 +407,9 @@
       var x = 40 + k * 186;
       g.appendChild(paint(svgEl('rect', { x: x, y: 48, width: 174, height: 118, rx: 8, 'stroke-width': 1.4 }), C_SURFACE2, c0.c));
       g.appendChild(paint(svgText(x + 87, 72, c0.t, null, 12, 'middle'), c0.c));
-      g.appendChild(svgText(x + 87, 98, c0.d, 'demo-x-mono', 10, 'middle'));
+      g.appendChild(svgMath(x + 87, 98, c0.d, { size: 10, w: 170, anchor: 'middle' }));
       g.appendChild(svgText(x + 87, 122, c0.d2, 'demo-x-mut', 9, 'middle'));
-      g.appendChild(svgText(x + 87, 146, '硬约束，不是 λ 权重', 'demo-x-mut', 8.5, 'middle'));
+      g.appendChild(svgRich(x + 87, 146, '硬约束，不是 $\\lambda$ 权重', { size: 8.5, cls: 'demo-x-mut', anchor: 'middle' }));
       s.appendChild(g);
       return { g: g, at: 0.5 + k * 1.0 };
     });
@@ -416,9 +417,9 @@
     var loop = svgEl('g', {});
     loop.appendChild(paint(svgEl('rect', { x: 40, y: 182, width: 460, height: 118, rx: 8, 'stroke-width': 1.3 }), C_SURFACE, C_BORDER));
     loop.appendChild(svgText(58, 206, '帧 t 的自定义 SQP（序贯 SOCP）', 'demo-x-ink2', 12));
-    loop.appendChild(svgText(58, 228, '1. warm-start 上一帧 q*', 'demo-x-mut', 10));
+    loop.appendChild(svgRich(58, 228, '1. warm-start 上一帧 $q^\\star$', { size: 10, cls: 'demo-x-mut' }));
     loop.appendChild(svgText(58, 248, '2. 目标二次近似 · 约束线性化', 'demo-x-mut', 10));
-    loop.appendChild(svgText(58, 268, '3. Drake 自动微分处理四元数浮基 S³', 'demo-x-mut', 10));
+    loop.appendChild(svgRich(58, 268, '3. Drake 自动微分处理四元数浮基 $S^3$', { size: 10, cls: 'demo-x-mut' }));
     loop.appendChild(svgText(58, 288, '线性化会留下毫米级穿透，下游 RL 补得掉', 'demo-x-mut', 9.5));
     s.appendChild(loop);
 
@@ -471,7 +472,7 @@
     var src = svgEl('g', {});
     src.appendChild(paint(svgEl('rect', { x: 40, y: 44, width: 200, height: 64, rx: 8, 'stroke-width': 1.5 }), C_SURFACE2, C_ACCENT));
     src.appendChild(paint(svgText(140, 70, '单条人体演示', null, 13, 'middle'), C_ACCENT));
-    src.appendChild(svgText(140, 92, 'P_source 全程固定', 'demo-x-mut', 9.5, 'middle'));
+    src.appendChild(svgRich(140, 92, '$\\mathcal{P}^{\\mathrm{source}}$ 全程固定', { size: 9.5, cls: 'demo-x-mut', anchor: 'middle' }));
     s.appendChild(src);
 
     var reopt = svgEl('g', {});
@@ -503,7 +504,7 @@
     var anchor = svgEl('g', {});
     anchor.appendChild(paint(svgEl('rect', { x: 40, y: 206, width: 720, height: 70, rx: 8, 'stroke-width': 1.3 }), C_SURFACE2, C_WARN));
     anchor.appendChild(paint(svgText(58, 230, '防平凡解锚定：否则整机跟着物体做一次刚体平移，扩增等于没扩', null, 12), C_WARN));
-    anchor.appendChild(svgText(58, 254, '物体局部系建 mesh · 下身锚定名义轨迹 q̄* · 初始双脚位置与名义轨迹一致（pick-up 加重下身偏离惩罚）', 'demo-x-mut', 10));
+    anchor.appendChild(svgRich(58, 254, '物体局部系建 mesh · 下身锚定名义轨迹 $\\bar{q}_t^\\star$ · 初始双脚位置与名义轨迹一致（pick-up 加重下身偏离惩罚）', { size: 10, cls: 'demo-x-mut' }));
     s.appendChild(anchor);
 
     var nums = svgEl('g', {});

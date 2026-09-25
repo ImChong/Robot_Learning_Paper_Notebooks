@@ -204,11 +204,11 @@
 
     note(root, [
       '**MSE 的最优解就是条件均值**：这不是网络没训好，是损失函数决定的 —— ' +
-        '给定同一个观测，`argmin E[(a − f(o))²]` 的解永远是 E[a|o]。演示越是「多解」，这个均值越危险。',
+        '给定同一个观测，`argmin E[(a − f(o))²]` 的解永远是 $\\mathbb{E}[a \\mid o]$。演示越是「多解」，这个均值越危险。',
       '**把上绕的比例拖到 100%**：分布变成单峰，MSE 立刻就不撞了。所以问题从来不是「BC 不行」，' +
         '而是「BC 在多模态数据上不行」—— 这也是为什么很多简单任务上 MLP + MSE 依然够用。',
       '**这里的扩散是真在跑**：左边每条轨迹都由一次 10 步 DDIM 采出来（数据分布是双高斯，' +
-        'x̂₀ = E[x₀|x_k] 有闭式解）。换一批噪声，落到哪一侧就会变 —— 采的是分布，不是均值。',
+        '$\\hat{x}_0 = \\mathbb{E}[x_0 \\mid x_k]$ 有闭式解）。换一批噪声，落到哪一侧就会变 —— 采的是分布，不是均值。',
       '**这是简化模型**：真实的动作是 16 × 7 维的序列、条件是 ResNet 编码的图像，数据分布也不是两个高斯。' +
         '这里把「绕哪边」压成一个标量，只为把多模态这件事画清楚。'
     ]);
@@ -429,8 +429,8 @@
     void stepSlider;
 
     var setLegend = legend(root, [
-      { key: 'accent', text: '当前的动作 chunk x_k' },
-      { key: 'good', text: '模型此刻预测的干净动作 x̂₀' },
+      { key: 'accent', text: '当前的动作 chunk $x_k$' },
+      { key: 'good', text: '模型此刻预测的干净动作 $\\hat{x}_0$' },
       { key: 'muted', text: '两条演示模式' }
     ]);
 
@@ -439,7 +439,7 @@
     var schedStage = stage(grid, 245);
 
     var stats = statsRow(root);
-    var sNoise = stats.add('当前噪声水平 √(1−ᾱ)');
+    var sNoise = stats.add('当前噪声水平 $\\sqrt{1-\\bar{\\alpha}}$');
     var sR = stats.add('模式归属（上 / 下）');
     var sErr = stats.add('离最终结果还差');
     var sSmooth = stats.add('曲线的粗糙度');
@@ -449,12 +449,12 @@
       '**整条 chunk 一起去噪，才不会串味**：责任权重是拿**整条 16 步序列**算出来的。' +
         '如果逐帧独立采样，前 8 帧可能选了「上绕」、后 8 帧选了「下绕」，拼出来是一条穿过障碍的轨迹。' +
         'action chunking 不只是为了预测得远，也是为了让多模态的选择保持一致。',
-      '**看右边那条噪声表**：前几步 √(1−ᾱ) 还很大，x̂₀ 的预测非常模糊（左图绿线在两条演示中间摇摆）；' +
+      '**看右边那条噪声表**：前几步 $\\sqrt{1-\\bar{\\alpha}}$ 还很大，$\\hat{x}_0$ 的预测非常模糊（左图绿线在两条演示中间摇摆）；' +
         '一旦噪声降到某个位置，归属就锁死了，剩下的步骤只是在把细节磨出来。',
       '**K 从 100 压到 10 靠的是 DDIM**：把总步数滑块拖到 2，会看到轨迹还没收干净；' +
         '拖到 40 也不会更好多少。10~20 步是实现里常用的落点，因为机器人控制回路等不起。',
-      '**这是简化模型**：真实的 x̂₀ 由一个 1D 卷积 UNet 预测，条件是视觉特征；这里数据分布取成两条演示 + 高斯抖动，' +
-        '所以 x̂₀ 有闭式解，浏览器里才跑得动。反向过程本身是真的 DDIM。'
+      '**这是简化模型**：真实的 $\\hat{x}_0$ 由一个 1D 卷积 UNet 预测，条件是视觉特征；这里数据分布取成两条演示 + 高斯抖动，' +
+        '所以 $\\hat{x}_0$ 有闭式解，浏览器里才跑得动。反向过程本身是真的 DDIM。'
     ]);
 
     var render = registerRenderer(function () {
@@ -486,7 +486,7 @@
       if (idx === 0) {
         verdict.set(
           '🌫 第 0 步：这就是一团纯高斯噪声，和动作没有任何关系。' +
-            '注意此刻模型预测的 x̂₀（绿线）几乎是两条演示的平均 —— 它还看不出该走哪边。',
+            '注意此刻模型预测的 $\\hat{x}_0$（绿线）几乎是两条演示的平均 —— 它还看不出该走哪边。',
           'frozen'
         );
       } else if (Math.max(r[0], r[1]) > 0.9) {
@@ -599,8 +599,8 @@
     var root = card(host, {
       title: 'Receding Horizon：预测 16 步，只执行 8 步',
       sub:
-        '每次推理吐一整条 chunk，但只执行前 T_a 步就丢掉重来。' +
-        'T_a 太大，对突发扰动反应慢；T_a 太小，推理频率上去了、块与块的接缝也多了。'
+        '每次推理吐一整条 chunk，但只执行前 $T_a$ 步就丢掉重来。' +
+        '$T_a$ 太大，对突发扰动反应慢；$T_a$ 太小，推理频率上去了、块与块的接缝也多了。'
     });
 
     var state = { horizon: 16, exec: 8, disturbAt: 34, latency: 1, seed: 5 };
@@ -622,7 +622,7 @@
       }
     });
     slider(ctrls, {
-      label: '实际执行 T_a',
+      label: '实际执行 $T_a$',
       min: 1,
       max: 32,
       step: 1,
@@ -656,18 +656,18 @@
       state.exec = 8;
       render();
     });
-    button(btns, '每步都重规划（T_a = 1）', function () {
+    button(btns, '每步都重规划（$T_a = 1$）', function () {
       state.exec = 1;
       render();
     });
-    button(btns, '开环跑完整条（T_a = H）', function () {
+    button(btns, '开环跑完整条（$T_a = H$）', function () {
       state.exec = state.horizon;
       render();
     });
 
     var setLegend = legend(root, [
       { key: 'muted', text: '预测出来但被丢掉的部分' },
-      { key: 'accent', text: '真正执行的那 T_a 步' },
+      { key: 'accent', text: '真正执行的那 $T_a$ 步' },
       { key: 'bad', text: '扰动发生的时刻' },
       { key: 'good', text: '目标轨迹' }
     ]);
@@ -684,13 +684,13 @@
     var verdict = verdictBox(root);
 
     note(root, [
-      '**两头都不能取极端**：T_a = H 是纯开环，扰动来了要等一整条 chunk 跑完才可能修正；' +
-        'T_a = 1 每步都重规划，反应最快，但推理要跑满每个控制周期，而且相邻两次采样可能落到不同模态上 —— ' +
+      '**两头都不能取极端**：$T_a = H$ 是纯开环，扰动来了要等一整条 chunk 跑完才可能修正；' +
+        '$T_a = 1$ 每步都重规划，反应最快，但推理要跑满每个控制周期，而且相邻两次采样可能落到不同模态上 —— ' +
         '接缝处的动作会不连续。',
       '**这也是 action chunking 的隐藏收益**：一次预测 16 步，等于给策略一个「短期计划」，' +
         '比逐步预测更不容易在同一个位置反复抖。代价就是这里画的反应延迟。',
-      '**延迟不是白等**：反应延迟的上界是 T_a 步 —— 扰动最坏发生在一个 chunk 刚开始执行的时候。' +
-        '拖动扰动时刻能看到这个延迟在 0 到 T_a 之间来回跳。',
+      '**延迟不是白等**：反应延迟的上界是 $T_a$ 步 —— 扰动最坏发生在一个 chunk 刚开始执行的时候。' +
+        '拖动扰动时刻能看到这个延迟在 0 到 $T_a$ 之间来回跳。',
       '**这是简化模型**：真实系统里还有相机延迟、推理耗时、控制周期，这里只画了 chunk 的调度关系，' +
         '偏差是按「没修正的步数」线性累加的。数值不能和论文比。'
     ]);
@@ -719,7 +719,7 @@
 
       if (state.exec >= state.horizon) {
         verdict.set(
-          '🚫 T_a = H：纯开环。扰动在第 ' +
+          '🚫 $T_a = H$：纯开环。扰动在第 ' +
             state.disturbAt +
             ' 步发生，要等 ' +
             react +
@@ -730,7 +730,7 @@
         );
       } else if (state.exec === 1) {
         verdict.set(
-          '⚡ T_a = 1：每一步都重新推理，反应延迟 ' +
+          '⚡ $T_a = 1$：每一步都重新推理，反应延迟 ' +
             react +
             ' 步（最快），但一条 80 步的轨迹上有 ' +
             chunks.length +
@@ -742,7 +742,7 @@
         verdict.set(
           '✅ H = ' +
             state.horizon +
-            ' / T_a = ' +
+            ' / $T_a$ = ' +
             state.exec +
             '：推理频率降到每 ' +
             state.exec +
@@ -826,6 +826,7 @@
   var svgEl = K.svgEl,
     svgText = K.svgText,
     svgMath = K.svgMath,
+    svgRich = K.svgRich,
     paint = K.paint,
     seg = K.seg,
     ease = K.ease,
@@ -963,17 +964,17 @@
 
     var arrow = K.arrowMarker(s, 'dp-x-arrow-diff', C_BORDER);
     var stages = [
-      { t: '干净动作 A₀', d: '演示轨迹', c: C_GOOD },
-      { t: '加噪 → A_k', d: '正向扩散', c: C_WARN },
-      { t: '纯噪声 A_K', d: '标准高斯', c: C_BAD },
-      { t: '去噪 f_θ', d: '预测 ε 或 x₀', c: C_ACCENT },
-      { t: '还原 A₀', d: '条件于观测 O', c: C_GOOD }
+      { t: '干净动作 $A_0$', d: '演示轨迹', c: C_GOOD },
+      { t: '加噪 → $A_k$', d: '正向扩散', c: C_WARN },
+      { t: '纯噪声 $A_K$', d: '标准高斯', c: C_BAD },
+      { t: '去噪 $f_\\theta$', d: '预测 $\\epsilon$ 或 $x_0$', c: C_ACCENT },
+      { t: '还原 $A_0$', d: '条件于观测 $O$', c: C_GOOD }
     ].map(function (p, k) {
       var g = svgEl('g', {});
       var x = 36 + k * 154;
       g.appendChild(paint(svgEl('rect', { x: x, y: 96, width: 140, height: 58, rx: 8, 'stroke-width': 1.3 }), C_SURFACE2, p.c));
-      g.appendChild(paint(svgText(x + 70, 120, p.t, null, 11.5, 'middle'), p.c));
-      g.appendChild(svgText(x + 70, 140, p.d, 'demo-x-mut', 9, 'middle'));
+      g.appendChild(svgRich(x + 70, 120, p.t, { size: 11.5, anchor: 'middle', w: 140 }).setTone(p.c));
+      g.appendChild(svgRich(x + 70, 140, p.d, { size: 9, cls: 'demo-x-mut', anchor: 'middle', w: 140 }));
       s.appendChild(g);
       if (k < 4) {
         s.appendChild(
@@ -990,13 +991,13 @@
     var vs = svgEl('g', {});
     vs.appendChild(paint(svgEl('rect', { x: 40, y: 176, width: 350, height: 120, rx: 8, 'stroke-width': 1.4, 'stroke-dasharray': '5 4' }), C_SURFACE, C_BAD));
     vs.appendChild(paint(svgText(58, 202, '旧写法：单步回归', null, 12), C_BAD));
-    vs.appendChild(svgText(58, 226, 'f(O) → 一个动作向量', 'demo-x-mut', 10.5));
-    vs.appendChild(svgText(58, 248, '学的是条件均值 E[a | O]', 'demo-x-mut', 10.5));
+    vs.appendChild(svgRich(58, 226, '$f(O)$ → 一个动作向量', { size: 10.5, cls: 'demo-x-mut' }));
+    vs.appendChild(svgRich(58, 248, '学的是条件均值 $\\mathbb{E}[a \\mid O]$', { size: 10.5, cls: 'demo-x-mut' }));
     vs.appendChild(paint(svgText(58, 276, '多峰一平均，就走进障碍', null, 11), C_BAD));
     vs.appendChild(paint(svgEl('rect', { x: 410, y: 176, width: 350, height: 120, rx: 8, 'stroke-width': 1.5 }), C_SURFACE2, C_GOOD));
     vs.appendChild(paint(svgText(428, 202, 'Diffusion Policy', null, 12), C_GOOD));
-    vs.appendChild(svgText(428, 226, '学 p(A | O)，从噪声反向采样', 'demo-x-mut', 10.5));
-    vs.appendChild(svgText(428, 248, '网络 f_θ 预测噪声 ε，逐步剔除', 'demo-x-mut', 10.5));
+    vs.appendChild(svgRich(428, 226, '学 $p(A \\mid O)$，从噪声反向采样', { size: 10.5, cls: 'demo-x-mut' }));
+    vs.appendChild(svgRich(428, 248, '网络 $f_\\theta$ 预测噪声 $\\epsilon$，逐步剔除', { size: 10.5, cls: 'demo-x-mut' }));
     vs.appendChild(paint(svgText(428, 276, '能停在多个局部极大值上', null, 11), C_GOOD));
     s.appendChild(vs);
 
@@ -1089,17 +1090,17 @@
 
     var arrow = K.arrowMarker(s, 'dp-x-arrow-cond', C_BORDER);
     var pipe = [
-      { t: '观测 O', d: 'RGB / Depth / 本体', c: C_MUTED, w: 150 },
+      { t: '观测 $O$', d: 'RGB / Depth / 本体', c: C_MUTED, w: 150 },
       { t: '视觉编码器', d: 'ResNet / ViT', c: C_ACCENT, w: 160 },
-      { t: 'FiLM 调制', d: 'γ(O) ⊙ h + β(O)', c: C_WARN, w: 170 },
-      { t: '去噪网络 f_θ', d: 'UNet / Transformer', c: C_GOOD, w: 168 }
+      { t: 'FiLM 调制', d: '$\\gamma(O) \\odot h + \\beta(O)$', c: C_WARN, w: 170 },
+      { t: '去噪网络 $f_\\theta$', d: 'UNet / Transformer', c: C_GOOD, w: 168 }
     ];
     var x = 40;
     var nodes = pipe.map(function (p, k) {
       var g = svgEl('g', {});
       g.appendChild(paint(svgEl('rect', { x: x, y: 48, width: p.w, height: 58, rx: 8, 'stroke-width': 1.3 }), C_SURFACE2, p.c));
-      g.appendChild(paint(svgText(x + p.w / 2, 70, p.t, null, 12, 'middle'), p.c));
-      g.appendChild(svgText(x + p.w / 2, 90, p.d, 'demo-x-mut', 9, 'middle'));
+      g.appendChild(svgRich(x + p.w / 2, 70, p.t, { size: 12, anchor: 'middle', w: 200 }).setTone(p.c));
+      g.appendChild(svgRich(x + p.w / 2, 90, p.d, { size: 9, cls: 'demo-x-mut', anchor: 'middle', w: 200 }));
       s.appendChild(g);
       if (k < pipe.length - 1) {
         s.appendChild(
@@ -1183,9 +1184,9 @@
     var train = svgEl('g', {});
     train.appendChild(paint(svgEl('rect', { x: 40, y: 48, width: 350, height: 130, rx: 8, 'stroke-width': 1.4 }), C_SURFACE, C_WARN));
     train.appendChild(paint(svgText(58, 76, '训练：DDPM 上百步', null, 13), C_WARN));
-    train.appendChild(svgText(58, 102, '随机采样扩散步 k，加噪 A₀ → A_k', 'demo-x-mut', 10.5));
-    train.appendChild(svgText(58, 124, '学的是预测噪声 ε̂，损失是 MSE', 'demo-x-mut', 10.5));
-    train.appendChild(paint(svgText(58, 154, '示意 K_train = ' + TRAIN_K, 'demo-x-mono', 13), C_WARN));
+    train.appendChild(svgRich(58, 102, '随机采样扩散步 $k$，加噪 $A_0 \\to A_k$', { size: 10.5, cls: 'demo-x-mut' }));
+    train.appendChild(svgRich(58, 124, '学的是预测噪声 $\\hat{\\epsilon}$，损失是 MSE', { size: 10.5, cls: 'demo-x-mut' }));
+    train.appendChild(svgRich(58, 154, '示意 $K_{\\text{train}} = ' + TRAIN_K + '$', { size: 13 }).setTone(C_WARN));
     s.appendChild(train);
 
     var infer = svgEl('g', {});
@@ -1263,14 +1264,14 @@
     s.appendChild(rhcMath);
 
     var trade = [
-      { t: 'T_a = H 开环', d: '整条跑完才可能看见扰动', c: C_BAD },
+      { t: '$T_a = H$ 开环', d: '整条跑完才可能看见扰动', c: C_BAD },
       { t: '论文落点 ' + H + ' / ' + TA, d: '反应延迟最多 ' + TA + ' 步', c: C_GOOD },
-      { t: 'T_a = 1 每步重规划', d: '最快，但接缝多、算力贵', c: C_WARN }
+      { t: '$T_a = 1$ 每步重规划', d: '最快，但接缝多、算力贵', c: C_WARN }
     ].map(function (p, k) {
       var g = svgEl('g', {});
       var px = 40 + k * 246;
       g.appendChild(paint(svgEl('rect', { x: px, y: 150, width: 234, height: 72, rx: 8, 'stroke-width': 1.3 }), C_SURFACE, p.c));
-      g.appendChild(paint(svgText(px + 117, 176, p.t, null, 12, 'middle'), p.c));
+      g.appendChild(svgRich(px + 117, 176, p.t, { size: 12, anchor: 'middle', w: 230 }).setTone(p.c));
       g.appendChild(svgText(px + 117, 200, p.d, 'demo-x-mut', 10, 'middle'));
       s.appendChild(g);
       return { g: g, at: 3.2 + k * 1.1 };

@@ -114,8 +114,8 @@
     });
 
     var setLegend = legend(root, [
-      { key: 'accent', text: 'LSGAN：max[0, 1 − 0.25(D−1)²]' },
-      { key: 'warn', text: 'log 形式：−log(1 − D)（D∈(0,1)）' },
+      { key: 'accent', text: 'LSGAN：$\\max[0,\\ 1 - 0.25(D-1)^2]$' },
+      { key: 'warn', text: 'log 形式：$-\\log(1 - D)$（$D \\in (0,1)$）' },
       { key: 'bad', text: '零奖励区（梯度也没了）' },
       { key: 'good', text: '判别器分不出来的位置' }
     ]);
@@ -125,9 +125,9 @@
     var logStage = stage(grid, 230);
 
     var stats = statsRow(root);
-    var sR = stats.add('风格奖励 r^S');
+    var sR = stats.add('风格奖励 $r^S$');
     var sScaled = stats.add('× disc_reward_scale');
-    var sSlope = stats.add('∂r^S/∂D（推策略的力度）');
+    var sSlope = stats.add('$\\partial r^S / \\partial D$（推策略的力度）');
     var sState = stats.add('相当于训练的哪个阶段');
     var verdict = verdictBox(root);
 
@@ -733,7 +733,7 @@
       }
     });
     slider(ctrls, {
-      label: '风格权重 w^S（任务权重 = 1 − w^S）',
+      label: '风格权重 $w^S$（任务权重 = $1 - w^S$）',
       min: 0,
       max: 1,
       step: 0.05,
@@ -747,7 +747,7 @@
       }
     });
     slider(ctrls, {
-      label: '梯度惩罚 w_gp（MimicKit 默认 5，论文 10）',
+      label: '梯度惩罚 $w_{gp}$（MimicKit 默认 5，论文 10）',
       min: 0,
       max: 12,
       step: 0.5,
@@ -770,8 +770,8 @@
     var setLegend = legend(root, [
       { key: 'muted', text: '参考数据分布' },
       { key: 'accent', text: '学到的策略' },
-      { key: 'good', text: '风格奖励 r^S(x)' },
-      { key: 'warn', text: '任务奖励 r^G(x)' }
+      { key: 'good', text: '风格奖励 $r^S(x)$' },
+      { key: 'warn', text: '任务奖励 $r^G(x)$' }
     ]);
 
     var grid = stageGrid(root);
@@ -779,9 +779,9 @@
     var sweepStage = stage(grid, 240);
 
     var stats = statsRow(root);
-    var sMu = stats.add('学到的速度 μ');
-    var sStyle = stats.add('风格奖励 r^S(μ)');
-    var sTask = stats.add('任务奖励 r^G(μ)');
+    var sMu = stats.add('学到的速度 $\\mu$');
+    var sStyle = stats.add('风格奖励 $r^S(\\mu)$');
+    var sTask = stats.add('任务奖励 $r^G(\\mu)$');
     var sGap = stats.add('离目标速度差');
     var verdict = verdictBox(root);
 
@@ -1272,8 +1272,8 @@
     var gpStage = stage(grid, 200);
 
     var stats = statsRow(root);
-    var sRs = stats.add('风格奖励 r^S');
-    var sRg = stats.add('任务奖励 r^G');
+    var sRs = stats.add('风格奖励 $r^S$');
+    var sRg = stats.add('任务奖励 $r^G$');
     var sDa = stats.add('D(假)');
     var sDd = stats.add('D(真)');
     var sAa = stats.add('agent 准确率');
@@ -1430,8 +1430,8 @@
       tb.clear();
       tb.row([{ text: '指标' }, { text: '当前值' }, { text: '好方向' }, { text: '这一刻' }], true);
       var rows = [
-        ['风格奖励 r^S', fmt(m.rS, 2), '0 → 0.75（D→0）', judge.rS],
-        ['任务奖励 r^G', fmt(m.rG, 2), '越高越好* → ~0.88', judge.rG],
+        ['风格奖励 $r^S$', fmt(m.rS, 2), '0 → 0.75（D→0）', judge.rS],
+        ['任务奖励 $r^G$', fmt(m.rG, 2), '越高越好* → ~0.88', judge.rG],
         ['D(假)', fmt(m.dAgent, 2), '−1 → 0', judge.dAgent],
         ['agent 准确率', Math.round(m.agentAcc * 100) + '%', '99% → ~55%', judge.acc],
         ['梯度惩罚', fmt(m.gp, 2), '看区间 ~1', judge.gp],

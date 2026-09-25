@@ -94,9 +94,9 @@
 
   function buildWeightsDemo(host) {
     var root = card(host, {
-      title: '权重是怎么算出来的：exp(A/β) → 截断 → 除以 Z',
+      title: '权重是怎么算出来的：$\\exp(A/\\beta)$ → 截断 → 除以 $Z$',
       sub:
-        '默认就是正文那个 4 样本的例子（A = +5 / +1 / 0 / −3，β = 1）。拖动温度 β 和权重上限 a_weight_clip，' +
+        '默认就是正文那个 4 样本的例子（$A = +5 / +1 / 0 / -3$，$\\beta = 1$）。拖动温度 $\\beta$ 和权重上限 a_weight_clip，' +
         '看这一批数据里「到底还有几条样本在说话」。'
     });
 
@@ -109,7 +109,7 @@
 
     var ctrls = controlsRow(root);
     slider(ctrls, {
-      label: '温度 β（awr_temp）',
+      label: '温度 $\\beta$（awr_temp）',
       min: 0.1,
       max: 3,
       step: 0.05,
@@ -205,7 +205,7 @@
         });
         tb.node.appendChild(tr);
       }
-      valueRow('exp(A/β)', rawCells);
+      valueRow('$\\exp(A/\\beta)$', rawCells);
       valueRow('截断后', clipCells);
       valueRow('归一化 w', wCells);
     }
@@ -230,8 +230,8 @@
 
     note(root, [
       '**Z 只是个除法**：它不改变样本之间的相对大小，只把一组「未归一化的得分」变成和为 1 的分布。正文里 Z ≈ 152.2，其中 148.4 来自 A=+5 那一条 —— **一条样本占了 97.5%**，剩下三条加起来不到 3%。',
-      '**β 才是真正的旋钮**：β 越小，exp 把好坏拉得越开，最后几乎只剩最好的一条样本在说话（ESS → 1，等于「只模仿这一条」）；β 越大，权重越平，AWR 退化成对整批数据做行为克隆（ESS → N，好坏一起学）。正文 Q3 说的「激进 / 保守」就是这条 ESS 曲线。',
-      '**上限 20 是在救数值**：`a_weight_clip: 20.0` 不是为了改变谁重要，而是防止 exp(A/β) 在优势没归一化、或 β 很小时直接溢出。勾上它再把 β 拖到 0.1，会看到几条样本一起顶到上限、权重被强行拉平 —— 这就是它在训练里干的事。',
+      '**$\\beta$ 才是真正的旋钮**：$\\beta$ 越小，exp 把好坏拉得越开，最后几乎只剩最好的一条样本在说话（ESS → 1，等于「只模仿这一条」）；$\\beta$ 越大，权重越平，AWR 退化成对整批数据做行为克隆（ESS → N，好坏一起学）。正文 Q3 说的「激进 / 保守」就是这条 ESS 曲线。',
+      '**上限 20 是在救数值**：`a_weight_clip: 20.0` 不是为了改变谁重要，而是防止 $\\exp(A/\\beta)$ 在优势没归一化、或 $\\beta$ 很小时直接溢出。勾上它再把 $\\beta$ 拖到 0.1，会看到几条样本一起顶到上限、权重被强行拉平 —— 这就是它在训练里干的事。',
       '**所以 AWR 不需要 clip 概率比**：差动作的权重本身就趋近 0，它对 loss 的贡献可以忽略；PPO 要靠 min(·) 把梯度手动掐掉，AWR 是让权重自己消失。'
     ]);
 
@@ -283,12 +283,12 @@
             fmt(essVal, 2) +
             ' / ' +
             n +
-            '，好动作和差动作的权重差不多，策略被拉向整批数据的平均行为 —— β 太大就学不动了。',
+            '，好动作和差动作的权重差不多，策略被拉向整批数据的平均行为 —— $\\beta$ 太大就学不动了。',
           'frozen'
         );
       } else {
         verdict.set(
-          '✅ β = ' +
+          '✅ $\\beta$ = ' +
             fmt(state.beta, 2) +
             ' 时 ESS ≈ ' +
             fmt(essVal, 2) +
@@ -432,9 +432,9 @@
     var root = card(host, {
       title: '加权回归到底更新了什么：新策略的均值 = 样本的加权平均',
       sub:
-        '一个状态、一个连续动作 a（「这一步迈多大」）。策略是高斯 N(μ, σ)，用它采 ' +
+        '一个状态、一个连续动作 $a$（「这一步迈多大」）。策略是高斯 $\\mathcal{N}(\\mu, \\sigma)$，用它采 ' +
         REG.batch +
-        ' 个动作，按 A = r − V 算权重，再做一次加权最大似然 —— 对高斯策略来说它有闭式解：μ_new = Σ wᵢaᵢ。'
+        ' 个动作，按 $A = r - V$ 算权重，再做一次加权最大似然 —— 对高斯策略来说它有闭式解：$\\mu_{\\mathrm{new}} = \\sum_i w_i a_i$。'
     });
 
     var state = { beta: 0.3, seed: 7, learnSigma: true, mu: -0.3, sigma: 0.8 };
@@ -442,7 +442,7 @@
 
     var ctrls = controlsRow(root);
     slider(ctrls, {
-      label: '温度 β',
+      label: '温度 $\\beta$',
       min: 0.05,
       max: 2,
       step: 0.05,
@@ -456,7 +456,7 @@
       }
     });
     slider(ctrls, {
-      label: '旧策略均值 μ_old',
+      label: '旧策略均值 $\\mu_{\\mathrm{old}}$',
       min: -2,
       max: 2.5,
       step: 0.1,
@@ -470,7 +470,7 @@
       }
     });
     slider(ctrls, {
-      label: '旧策略标准差 σ_old（探索幅度）',
+      label: '旧策略标准差 $\\sigma_{\\mathrm{old}}$（探索幅度）',
       min: 0.1,
       max: 1.5,
       step: 0.05,
@@ -489,14 +489,14 @@
       state.seed = (state.seed * 7919 + 13) % 100000;
       render();
     });
-    checkbox(btns, 'σ 也跟着回归更新（关掉＝配置里的 FIXED 方差）', state.learnSigma, function (on) {
+    checkbox(btns, '$\\sigma$ 也跟着回归更新（关掉＝配置里的 FIXED 方差）', state.learnSigma, function (on) {
       state.learnSigma = on;
       render();
     });
 
     var setLegend = legend(root, [
       { key: 'muted', text: '真实回报 r(a)' },
-      { key: 'warn', text: '旧策略 π_old' },
+      { key: 'warn', text: '旧策略 $\\pi_{\\mathrm{old}}$' },
       { key: 'accent', text: '回归出的新策略' },
       { key: 'good', text: '样本（圆点越大权重越高）' }
     ]);
@@ -507,16 +507,16 @@
 
     var stats = statsRow(root);
     var sV = stats.add('Critic 的 V = batch 均值');
-    var sMu = stats.add('μ_old → μ_new');
-    var sSigma = stats.add('σ_old → σ_new');
+    var sMu = stats.add('$\\mu_{\\mathrm{old}}$ → $\\mu_{\\mathrm{new}}$');
+    var sSigma = stats.add('$\\sigma_{\\mathrm{old}}$ → $\\sigma_{\\mathrm{new}}$');
     var sEss = stats.add('有效样本数 ESS');
     var verdict = verdictBox(root);
 
     note(root, [
-      '**为什么说「加权监督学习」**：高斯策略的 −Σ wᵢ·log π(aᵢ) 最小值有闭式解，就是**用权重做一次加权平均**。没有概率比、没有裁剪、没有 KL —— 一次更新就是「把均值挪到好样本那边」。',
-      '**β 小 = 只信最好的一条**：把 β 拖到 0.05，权重几乎全压在单个样本上，μ_new 直接跳到那个样本的位置，σ_new 塌到 0.05 上下 —— **策略基本不再探索**。默认这批采样已经罩住了最优动作，所以看起来「一步到位」；可探索一停，策略就只能在已有样本里打转：把 μ_old 拖到 −0.9、σ_old 拖到 0.2（相当于策略已经缩在左边那个小峰附近），右图三条线就再也找不到 a = 1 的真正高峰了 —— 这正是正文 Q5 说的「缓冲区里好样本太少时学习效率下降」。',
-      '**β 大 = 行为克隆**：β 拖到 2，权重接近均匀，μ_new ≈ 样本均值 ≈ μ_old，策略几乎不动。学得稳，但也几乎学不动。',
-      '**σ 为什么要固定**：勾掉「σ 也跟着更新」，就是 `actor_std_type: FIXED` / `action_std: 0.05` 的做法 —— 加权回归天然会把方差往小了收（它在拟合一小撮好样本），固定方差是防止策略提前停止探索的最省事办法。'
+      '**为什么说「加权监督学习」**：高斯策略的 $-\\sum_i w_i \\log \\pi(a_i)$ 最小值有闭式解，就是**用权重做一次加权平均**。没有概率比、没有裁剪、没有 KL —— 一次更新就是「把均值挪到好样本那边」。',
+      '**$\\beta$ 小 = 只信最好的一条**：把 $\\beta$ 拖到 0.05，权重几乎全压在单个样本上，$\\mu_{\\mathrm{new}}$ 直接跳到那个样本的位置，$\\sigma_{\\mathrm{new}}$ 塌到 0.05 上下 —— **策略基本不再探索**。默认这批采样已经罩住了最优动作，所以看起来「一步到位」；可探索一停，策略就只能在已有样本里打转：把 $\\mu_{\\mathrm{old}}$ 拖到 −0.9、$\\sigma_{\\mathrm{old}}$ 拖到 0.2（相当于策略已经缩在左边那个小峰附近），右图三条线就再也找不到 a = 1 的真正高峰了 —— 这正是正文 Q5 说的「缓冲区里好样本太少时学习效率下降」。',
+      '**$\\beta$ 大 = 行为克隆**：$\\beta$ 拖到 2，权重接近均匀，$\\mu_{\\mathrm{new}}$ ≈ 样本均值 ≈ $\\mu_{\\mathrm{old}}$，策略几乎不动。学得稳，但也几乎学不动。',
+      '**$\\sigma$ 为什么要固定**：勾掉「$\\sigma$ 也跟着更新」，就是 `actor_std_type: FIXED` / `action_std: 0.05` 的做法 —— 加权回归天然会把方差往小了收（它在拟合一小撮好样本），固定方差是防止策略提前停止探索的最省事办法。'
     ]);
 
     var render = registerRenderer(function () {
@@ -614,11 +614,11 @@
       var landed = Math.abs(fit.mu - 1) < 0.4;
       if (essVal < 2) {
         verdict.set(
-          '🎯 β = ' +
+          '🎯 $\\beta$ = ' +
             fmt(state.beta, 2) +
             ' 时 ESS ≈ ' +
             fmt(essVal, 1) +
-            '：这次更新基本只参考了一条样本，μ 直接跳到 ' +
+            '：这次更新基本只参考了一条样本，$\\mu$ 直接跳到 ' +
             fmt(fit.mu, 2) +
             '。运气好就是一步到位，运气差就是把一次噪声当成了最优动作。',
           'frozen'
@@ -626,9 +626,9 @@
       } else {
         verdict.set(
           (landed ? '✅ ' : '↔️ ') +
-            'μ_new = ' +
+            '$\\mu_{\\mathrm{new}}$ = ' +
             fmt(fit.mu, 2) +
-            ' = Σ wᵢaᵢ：' +
+            ' = $\\sum_i w_i a_i$：' +
             fmt(essVal, 1) +
             ' 条样本合力把均值从 ' +
             fmt(state.mu, 2) +
@@ -827,7 +827,7 @@
       }
     });
     slider(ctrls, {
-      label: '温度 β',
+      label: '温度 $\\beta$',
       min: 0.1,
       max: 2,
       step: 0.05,
@@ -867,7 +867,7 @@
     note(root, [
       '**赚在方差，不一定赚在速度**：N = 1 时每次更新只看 8 条带噪样本，细线抖得很凶；把 N 拖到 4~8，每轮抖动和种子间标准差都会明显下降（看上面两个读数），但平均回报未必更高 —— 这个玩具任务本来就不难。论文说的「历史经验可以反复被采样学习」，先兑现的是稳定性。',
       '**代价是数据变旧**：继续往 15、20 拖，buffer 里大半是好几轮前那个更差的策略产生的动作。优势还是按当前 Critic 算的，但**动作分布已经不是当前策略的了**，于是策略被旧行为往回拽，平均回报稳定地掉下去。AWR 不算概率比，也就没有重要性采样来纠正这件事 —— 所以 N 不是越大越好。',
-      '**这正是 PPO 做不到的那一半**：PPO 的 min(r·Â, clip(r)·Â) 依赖 r = π_new/π_old，数据一旦太旧，r 会大到没法用，所以只能 on-policy。AWR 换成权重之后，旧数据至少还能用 —— 代价就是上面那条「拽回去」的曲线。',
+      '**这正是 PPO 做不到的那一半**：PPO 的 $\\min(r\\hat{A},\\ \\mathrm{clip}(r)\\hat{A})$ 依赖 $r = \\pi_{\\mathrm{new}}/\\pi_{\\mathrm{old}}$，数据一旦太旧，r 会大到没法用，所以只能 on-policy。AWR 换成权重之后，旧数据至少还能用 —— 代价就是上面那条「拽回去」的曲线。',
       '**为什么画的是平均曲线**：这么小的任务里单条曲线几乎全是运气，所以左图画的是 24 个种子的平均（细线是单个种子），右图是它们最终回报的分布。「换一组随机种子」换的是整组 —— 结论稳不稳，一按就知道。'
     ]);
 
@@ -1008,6 +1008,7 @@
   var svgEl = K.svgEl,
     svgText = K.svgText,
     svgMath = K.svgMath,
+    svgRich = K.svgRich,
     paint = K.paint,
     seg = K.seg,
     ease = K.ease,
@@ -1031,9 +1032,9 @@
   var S1_PAINS = [
     { t: '① 重要性采样方差大', d: '新旧策略一拉开，概率比不是爆炸就是塌成 0' },
     { t: '② 数据用完即丢', d: 'on-policy：这一轮采的样本只够更新这一轮' },
-    { t: '③ 裁剪阈值要调', d: 'ε 换个任务就得重调一遍' }
+    { t: '③ 裁剪阈值要调', d: '$\\varepsilon$ 换个任务就得重调一遍' }
   ];
-  var S1_GAINS = ['不需要概率比：只剩 log π 和一个权重', '旧数据能留在 buffer 里反复刷', '没有 ε：exp 自己把差动作压到 0'];
+  var S1_GAINS = ['不需要概率比：只剩 $\\log\\pi$ 和一个权重', '旧数据能留在 buffer 里反复刷', '没有 $\\varepsilon$：exp 自己把差动作压到 0'];
 
   function buildScenePain() {
     var s = sceneSvg(
@@ -1056,7 +1057,7 @@
       var g = svgEl('g', {});
       g.appendChild(paint(svgEl('rect', { x: 62, y: y - 18, width: 306, height: 38, rx: 6, 'stroke-width': 1 }), C_SURFACE, C_BAD));
       g.appendChild(paint(svgText(78, y - 1, p.t, null, 11.5), C_BAD));
-      g.appendChild(svgText(78, y + 14, p.d, 'demo-x-mut', 10));
+      g.appendChild(svgRich(78, y + 14, p.d, { size: 10, cls: 'demo-x-mut' }));
       s.appendChild(g);
       return { g: g, at: 1.2 + i * 1.1 };
     });
@@ -1078,7 +1079,7 @@
       var y = 206 + i * 34;
       var g = svgEl('g', {});
       g.appendChild(paint(svgEl('rect', { x: 432, y: y - 13, width: 306, height: 26, rx: 6, 'stroke-width': 1 }), C_SURFACE, C_GOOD));
-      g.appendChild(paint(svgText(446, y + 4, '✓ ' + txt, null, 10.5), C_GOOD));
+      g.appendChild(svgRich(446, y + 4, '✓ ' + txt, { size: 10.5 }).setTone(C_GOOD));
       s.appendChild(g);
       return { g: g, at: 7.4 + i * 0.8 };
     });
@@ -1163,7 +1164,7 @@
     s.appendChild(band);
 
     var foot = svgEl('g', {});
-    foot.appendChild(paint(svgText(400, 400, '源码只有两行：adv = new_vals − vals，再按 batch 归一化成 Â', 'demo-x-mono', 12.5, 'middle'), C_ACCENT));
+    foot.appendChild(svgRich(400, 400, '源码只有两行：adv = new_vals − vals，再按 batch 归一化成 $\\hat{A}$', { size: 12.5, cls: 'demo-x-mono', anchor: 'middle' }).setTone(C_ACCENT));
     s.appendChild(foot);
 
     function draw(t) {
@@ -1205,13 +1206,13 @@
     });
     s.appendChild(formula);
 
-    s.appendChild(svgText(64, 108, '样本（β = 1）', 'demo-x-mut', 10.5));
+    s.appendChild(svgRich(64, 108, '样本（$\\beta = 1$）', { size: 10.5, cls: 'demo-x-mut' }));
     S3_CX.forEach(function (cx, i) {
-      s.appendChild(svgText(cx, 108, 'a' + (i + 1), 'demo-x-mut', 10.5, 'middle'));
+      s.appendChild(svgMath(cx, 108, 'a_' + (i + 1), { size: 10.5, cls: 'demo-x-mut', anchor: 'middle', w: 40 }));
     });
-    s.appendChild(svgText(64, 142, '优势 A', 'demo-x-ink2', 11));
-    s.appendChild(svgText(64, 180, 'exp(A / β)', 'demo-x-ink2', 11));
-    s.appendChild(svgText(64, 218, '权重 w', 'demo-x-ink2', 11));
+    s.appendChild(svgRich(64, 142, '优势 $A$', { size: 11, cls: 'demo-x-ink2' }));
+    s.appendChild(svgMath(64, 180, '\\exp(A / \\beta)', { size: 11, cls: 'demo-x-ink2', w: 90 }));
+    s.appendChild(svgRich(64, 218, '权重 $w$', { size: 11, cls: 'demo-x-ink2' }));
 
     var advCells = S3_ADVS.map(function (a, i) {
       var n = paint(svgText(S3_CX[i], 142, (a > 0 ? '+' : '') + fmt(a, 0), 'demo-x-mono', 13, 'middle'),
@@ -1233,7 +1234,7 @@
 
     var zBox = svgEl('g', {});
     zBox.appendChild(paint(svgEl('rect', { x: 628, y: 160, width: 132, height: 40, rx: 8, 'stroke-width': 1.4 }), C_SURFACE2, C_ACCENT));
-    zBox.appendChild(svgText(694, 176, '配分函数 Z', 'demo-x-mut', 10, 'middle'));
+    zBox.appendChild(svgRich(694, 176, '配分函数 $Z$', { size: 10, cls: 'demo-x-mut', anchor: 'middle', w: 130 }));
     zBox.appendChild(paint(svgText(694, 192, fmt(S3_W.Z, 2), 'demo-x-mono', 12.5, 'middle'), C_ACCENT));
     s.appendChild(zBox);
 
@@ -1259,7 +1260,7 @@
 
     var foot = svgEl('g', {});
     foot.appendChild(paint(svgText(400, 374, '这一批里实际只有一条样本在训练策略', null, 15, 'middle'), C_ACCENT));
-    foot.appendChild(svgText(400, 400, 'β 越小越像「只模仿最好的一条」（ESS → 1）；β = 3 时 ESS 回到 ' + fmt(S3_FLAT_ESS, 2) + ' / 4，好坏一起学', 'demo-x-mut', 11.5, 'middle'));
+    foot.appendChild(svgRich(400, 400, '$\\beta$ 越小越像「只模仿最好的一条」（ESS → 1）；$\\beta = 3$ 时 ESS 回到 ' + fmt(S3_FLAT_ESS, 2) + ' / 4，好坏一起学', { size: 11.5, cls: 'demo-x-mut', anchor: 'middle' }));
     s.appendChild(foot);
 
     function draw(t) {
@@ -1337,14 +1338,14 @@
     }
     var rCurve = paint(svgEl('path', { d: polyPath(rPts), fill: 'none', 'stroke-width': 1.4, 'stroke-dasharray': '4 4' }), null, C_MUTED);
     s.appendChild(rCurve);
-    var rLabel = svgText(s4x(1.5), S4_BASE - reward(1.5) * 78 - 10, '真实回报 r(a)，最优在 a = 1', 'demo-x-mut', 10.5);
+    var rLabel = svgRich(s4x(1.5), S4_BASE - reward(1.5) * 78 - 10, '真实回报 $r(a)$，最优在 $a = 1$', { size: 10.5, cls: 'demo-x-mut' });
     s.appendChild(rLabel);
 
     s.appendChild(paint(svgEl('line', { x1: S4_X0, y1: S4_BASE, x2: S4_X1, y2: S4_BASE, 'stroke-width': 1 }), null, C_BORDER));
     [-2, -1, 0, 1, 2, 3].forEach(function (a) {
       s.appendChild(svgText(s4x(a), S4_BASE + 16, fmt(a, 0), 'demo-x-mono', 10, 'middle'));
     });
-    s.appendChild(svgText(S4_X1, S4_BASE + 34, '动作 a（这一步迈多大）', 'demo-x-mut', 10.5, 'end'));
+    s.appendChild(svgRich(S4_X1, S4_BASE + 34, '动作 $a$（这一步迈多大）', { size: 10.5, cls: 'demo-x-mut', anchor: 'end' }));
 
     var maxSoft = Math.max.apply(null, S4_SOFT.w),
       maxHard = Math.max.apply(null, S4_HARD.w);
@@ -1359,39 +1360,42 @@
     s.appendChild(oldCurve);
     var oldLine = paint(svgEl('line', { x1: s4x(S4_MU0), y1: S4_TOP, x2: s4x(S4_MU0), y2: S4_BASE, 'stroke-width': 1.2, 'stroke-dasharray': '3 3' }), null, C_WARN);
     s.appendChild(oldLine);
-    var oldLabel = paint(svgText(s4x(S4_MU0), S4_TOP - 8, '旧策略 μ = ' + fmt(S4_MU0, 2) + '，σ = ' + fmt(S4_SIG0, 2), null, 10.5, 'middle'), C_WARN);
+    var oldLabel = svgRich(s4x(S4_MU0), S4_TOP - 8, '旧策略 $\\mu = ' + fmt(S4_MU0, 2) + '$，$\\sigma = ' + fmt(S4_SIG0, 2) + '$', { size: 10.5, anchor: 'middle' }).setTone(C_WARN);
     s.appendChild(oldLabel);
 
     var newCurve = paint(svgEl('path', { d: polyPath(s4curve(S4_SOFT.mu, S4_SOFT.sigma)), fill: 'none', 'stroke-width': 2.4 }), null, C_ACCENT);
     s.appendChild(newCurve);
     var newLine = paint(svgEl('line', { x1: s4x(S4_SOFT.mu), y1: S4_TOP, x2: s4x(S4_SOFT.mu), y2: S4_BASE, 'stroke-width': 1.4 }), null, C_ACCENT);
     s.appendChild(newLine);
-    var newLabel = paint(svgText(s4x(S4_SOFT.mu), S4_TOP - 26, '新策略', null, 11, 'middle'), C_ACCENT);
+    /* 均值与标准差逐帧在变：公式只画一次，数字交给 svgText */
+    var newLabel = svgRich(s4x(S4_SOFT.mu) + 8, S4_TOP - 26, '新策略 $\\mu, \\sigma$ =', { size: 11, anchor: 'end', w: 160 }).setTone(C_ACCENT);
+    var newNums = paint(svgText(s4x(S4_SOFT.mu) + 12, S4_TOP - 26, '', null, 11), C_ACCENT);
     s.appendChild(newLabel);
+    s.appendChild(newNums);
 
     var readouts = [
       { cx: 128, label: 'Critic 的 V', get: function () { return fmt(S4_SOFT.v, 3); }, tone: function () { return C_ACCENT; } },
-      { cx: 318, label: 'μ：旧 → 新', get: function (hard) { return fmt(S4_MU0, 2) + ' → ' + fmt(hard ? S4_HARD.mu : S4_SOFT.mu, 2); }, tone: function () { return C_ACCENT; } },
-      { cx: 508, label: 'σ：旧 → 新', get: function (hard) { return fmt(S4_SIG0, 2) + ' → ' + fmt(hard ? S4_HARD.sigma : S4_SOFT.sigma, 2); }, tone: function (hard) { return hard ? C_BAD : C_ACCENT; } },
+      { cx: 318, label: '$\\mu$：旧 → 新', get: function (hard) { return fmt(S4_MU0, 2) + ' → ' + fmt(hard ? S4_HARD.mu : S4_SOFT.mu, 2); }, tone: function () { return C_ACCENT; } },
+      { cx: 508, label: '$\\sigma$：旧 → 新', get: function (hard) { return fmt(S4_SIG0, 2) + ' → ' + fmt(hard ? S4_HARD.sigma : S4_SOFT.sigma, 2); }, tone: function (hard) { return hard ? C_BAD : C_ACCENT; } },
       { cx: 690, label: 'ESS', get: function (hard) { return fmt(hard ? S4_HARD_ESS : S4_SOFT_ESS, 1) + ' / ' + REG.batch; }, tone: function (hard) { return hard ? C_BAD : C_ACCENT; } }
     ].map(function (r) {
       var g = svgEl('g', {});
       g.appendChild(paint(svgEl('rect', { x: r.cx - 86, y: 346, width: 172, height: 34, rx: 6, 'stroke-width': 1 }), C_SURFACE2, C_BORDER));
-      g.appendChild(svgText(r.cx - 74, 360, r.label, 'demo-x-mut', 10));
+      g.appendChild(svgRich(r.cx - 74, 360, r.label, { size: 10, cls: 'demo-x-mut', w: 140 }));
       var val = paint(svgText(r.cx + 74, 360, r.get(false), 'demo-x-mono', 11, 'end'), C_ACCENT);
       g.appendChild(val);
       s.appendChild(g);
       return { g: g, val: val, get: r.get, tone: r.tone };
     });
 
-    var betaTag = paint(svgText(70, 108, 'β = 0.30', 'demo-x-mono', 13), C_ACCENT);
+    var betaTag = svgMath(70, 108, '\\beta = 0.30', { size: 13, w: 110 }).setTone(C_ACCENT);
     s.appendChild(betaTag);
 
     var clipChip = svgEl('g', {});
     clipChip.appendChild(paint(svgEl('rect', { x: 84, y: 384, width: 632, height: 26, rx: 13, 'stroke-width': 1, 'stroke-dasharray': '5 4' }), C_SURFACE, C_WARN));
-    clipChip.appendChild(paint(svgText(400, 401,
-      '打开源码的 a_weight_clip = 20：' + S4_CLIPPED + ' 条样本一起顶到上限，σ 又被拉回 ' + fmt(S4_CLIP.sigma, 2) + ' —— 上限救的是数值，代价是权重被拉平',
-      null, 10.5, 'middle'), C_WARN));
+    clipChip.appendChild(svgRich(400, 401,
+      '打开源码的 a_weight_clip = 20：' + S4_CLIPPED + ' 条样本一起顶到上限，$\\sigma$ 又被拉回 ' + fmt(S4_CLIP.sigma, 2) + ' —— 上限救的是数值，代价是权重被拉平',
+      { size: 10.5, anchor: 'middle' }).setTone(C_WARN));
     s.appendChild(clipChip);
 
     function draw(t) {
@@ -1415,12 +1419,14 @@
       newCurve.setAttribute('d', polyPath(s4curve(mu, sigma)));
       newLine.setAttribute('x1', s4x(mu).toFixed(1));
       newLine.setAttribute('x2', s4x(mu).toFixed(1));
-      newLabel.setAttribute('x', s4x(mu).toFixed(1));
-      newLabel.textContent = '新策略 μ = ' + fmt(mu, 2) + '，σ = ' + fmt(sigma, 2);
+      newLabel.setX(s4x(mu) + 8);
+      newNums.setAttribute('x', (s4x(mu) + 12).toFixed(1));
+      newNums.textContent = fmt(mu, 2) + ', ' + fmt(sigma, 2);
       var on = seg(t, 5.2, 6.2);
       setOpacity(newCurve, on);
       setOpacity(newLine, on);
       setOpacity(newLabel, on);
+      setOpacity(newNums, on);
 
       var hard = u2 > 0.5;
       readouts.forEach(function (r) {
@@ -1428,8 +1434,7 @@
         r.val.textContent = r.get(hard);
         r.val.style.fill = r.tone(hard);
       });
-      betaTag.textContent = 'β = ' + fmt(hard ? 0.05 : 0.3, 2);
-      betaTag.style.fill = hard ? C_BAD : C_ACCENT;
+      betaTag.setTex('\\beta = ' + fmt(hard ? 0.05 : 0.3, 2)).setTone(hard ? C_BAD : C_ACCENT);
       setOpacity(clipChip, seg(t, 11.6, 12.4));
     }
 
@@ -1486,7 +1491,7 @@
     });
 
     s.appendChild(paint(svgEl('rect', { x: S5_X0, y: S5_Y1 - 14, width: S5_X1 - S5_X0, height: S5_Y0 - S5_Y1 + 14, rx: 6, 'stroke-width': 1 }), 'none', C_BORDER));
-    s.appendChild(svgText(S5_X0 + 8, S5_Y1 - 22, '真实回报 J(π)：24 个种子的平均', 'demo-x-mut', 10.5));
+    s.appendChild(svgRich(S5_X0 + 8, S5_Y1 - 22, '真实回报 $J(\\pi)$：24 个种子的平均', { size: 10.5, cls: 'demo-x-mut' }));
     [0.6, 0.8, 1.0].forEach(function (j) {
       var y = S5_Y0 - ((j - S5_JLO) / (S5_JHI - S5_JLO)) * (S5_Y0 - S5_Y1);
       s.appendChild(paint(svgEl('line', { x1: S5_X0, y1: y, x2: S5_X1, y2: y, 'stroke-width': 1, 'stroke-dasharray': '3 4' }), null, C_BORDER));
@@ -1538,10 +1543,10 @@
   var S6_STEPS = [
     { t: '① rollout 收集', d: '当前策略跑环境，样本写进 buffer（旧的不删）', src: '_rollout_train()', cx: 160, cy: 84 },
     { t: '② 从 buffer 采样', d: '新旧数据混在一起，batch = 256', src: 'ExperienceBuffer', cx: 400, cy: 84 },
-    { t: '③ 更新 Critic', d: 'MSE 拟合 TD-λ 回报，critic_epochs = 2', src: '_compute_critic_loss()', cx: 640, cy: 84 },
-    { t: '④ 算优势', d: 'A = R − V(s)，再按 batch 归一化成 Â', src: '_build_train_data()', cx: 640, cy: 204 },
-    { t: '⑤ 变权重', d: 'w = clamp(exp(Â/β), max = 20)', src: '_build_train_data()', cx: 400, cy: 204 },
-    { t: '⑥ 加权回归', d: '−mean(w · log π(a|s))，actor_epochs = 5', src: '_compute_actor_loss()', cx: 160, cy: 204 }
+    { t: '③ 更新 Critic', d: 'MSE 拟合 TD-$\\lambda$ 回报，critic_epochs = 2', src: '_compute_critic_loss()', cx: 640, cy: 84 },
+    { t: '④ 算优势', d: '$A = R - V(s)$，再按 batch 归一化成 $\\hat{A}$', src: '_build_train_data()', cx: 640, cy: 204 },
+    { t: '⑤ 变权重', d: '$w = \\mathrm{clamp}(\\exp(\\hat{A}/\\beta),\\ \\max = 20)$', src: '_build_train_data()', cx: 400, cy: 204 },
+    { t: '⑥ 加权回归', d: '$-\\mathrm{mean}(w \\log \\pi(a \\mid s))$，actor_epochs = 5', src: '_compute_actor_loss()', cx: 160, cy: 204 }
   ];
   /* 每条连线是「上一个框的出口 → 下一个框的入口」，token 就在这 30~46 px 上滑。 */
   var S6_LINKS = [
@@ -1575,7 +1580,7 @@
       g.appendChild(rect);
       var title = paint(svgText(st.cx, st.cy + 22, st.t, null, 12.5, 'middle'), C_ACCENT);
       g.appendChild(title);
-      g.appendChild(svgText(st.cx, st.cy + 41, st.d, 'demo-x-mut', 9.5, 'middle'));
+      g.appendChild(svgRich(st.cx, st.cy + 41, st.d, { size: 9.5, cls: 'demo-x-mut', anchor: 'middle', w: 220 }));
       g.appendChild(paint(svgText(st.cx, st.cy + 61, st.src, 'demo-x-mono', 10, 'middle'), C_GOOD));
       s.appendChild(g);
       return { g: g, rect: rect, at: 0.6 + i * 0.55 };
@@ -1657,7 +1662,7 @@
       ]
     },
     {
-      title: '② 改进：exp(A/β)/Z',
+      title: '② 改进：$\\exp(A/\\beta)/Z$',
       dur: 16,
       build: buildSceneWeights,
       cues: [
@@ -1711,7 +1716,7 @@
         { at: 0.3, s: '把前面五幕接起来，AWR 的一整轮长这样。' },
         { at: 0.6, s: '**① rollout**：当前策略跑环境，样本写进 replay buffer —— 旧的**不删**。' },
         { at: 1.8, s: '**② 采样**：从 buffer 抽 batch，新旧数据混在一起。' },
-        { at: 3.0, s: '**③ 更新 Critic**：MSE 拟合 TD-λ 回报，`critic_epochs: 2`。' },
+        { at: 3.0, s: '**③ 更新 Critic**：MSE 拟合 TD-$\\lambda$ 回报，`critic_epochs: 2`。' },
         { at: 4.8, s: '**④ 算优势**：$A = R - V_\\phi(s)$，再按 batch 归一化成 $\\hat{A}$。' },
         { at: 6.0, s: '**⑤ 变权重**：$w = \\mathrm{clamp}(\\exp(\\hat{A}/\\beta),\\, 20)$ —— 对应 `awr_temp: 1.0` 与 `a_weight_clip: 20.0`。' },
         { at: 7.2, s: '**⑥ 加权回归**：$-\\mathrm{mean}(w \\cdot \\log \\pi(a \\mid s))$，`actor_epochs: 5`，同一批权重被 Actor 刷 5 遍。' },

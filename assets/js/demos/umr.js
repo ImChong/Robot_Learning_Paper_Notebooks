@@ -24,6 +24,7 @@
     svgEl = K.svgEl,
     svgText = K.svgText,
     svgMath = K.svgMath,
+    svgRich = K.svgRich,
     paint = K.paint,
     seg = K.seg,
     ease = K.ease,
@@ -326,11 +327,11 @@
     var R = tposePoints(ROBOT_DIMS, 620, 262);
 
     var hLabel = svgEl('g', {});
-    hLabel.appendChild(svgText(170, 380, '人体 T-pose（有序 X^h）', 'demo-x-mut', 10.5, 'middle'));
+    hLabel.appendChild(svgRich(170, 380, '人体 T-pose（有序 $\\mathbf{X}^h$）', { size: 10.5, cls: 'demo-x-mut', anchor: 'middle' }));
     hLabel.appendChild(svgText(170, 398, 'SMPL-X / SOMA / 角色 / 扫描网格', 'demo-x-mono', 9, 'middle'));
     s.appendChild(hLabel);
     var rLabel = svgEl('g', {});
-    rLabel.appendChild(svgText(620, 380, '机器人 T-pose（无序 X^r）', 'demo-x-mut', 10.5, 'middle'));
+    rLabel.appendChild(svgRich(620, 380, '机器人 T-pose（无序 $\\mathbf{X}^r$）', { size: 10.5, cls: 'demo-x-mut', anchor: 'middle' }));
     rLabel.appendChild(svgText(620, 398, 'MJCF 几何 first-hit 采样', 'demo-x-mono', 9, 'middle'));
     s.appendChild(rLabel);
 
@@ -372,9 +373,9 @@
 
     var note = svgEl('g', {});
     box(note, 290, 150, 220, 74, C_SURFACE, C_BORDER, 1.2);
-    note.appendChild(svgText(400, 172, '默认 N = ' + N_POINTS + ' 点 / 侧', 'demo-x-ink2', 11, 'middle'));
+    note.appendChild(svgRich(400, 172, '默认 $N = ' + N_POINTS + '$ 点 / 侧', { size: 11, cls: 'demo-x-ink2', anchor: 'middle' }));
     note.appendChild(svgText(400, 192, 'PointNet 编码机器人点云', 'demo-x-mut', 9.5, 'middle'));
-    note.appendChild(svgText(400, 210, 'MLP 为每个人点吐一个 d_i', 'demo-x-mut', 9.5, 'middle'));
+    note.appendChild(svgRich(400, 210, 'MLP 为每个人点吐一个 $\\mathbf{d}_i$', { size: 9.5, cls: 'demo-x-mut', anchor: 'middle' }));
     s.appendChild(note);
 
     function draw(t) {
@@ -416,7 +417,7 @@
     function panel(y0, dirs, color, marker, title, val, good) {
       var g = svgEl('g', {});
       box(g, 40, y0, 420, 118, C_SURFACE, good ? C_GOOD : C_BAD, 1.2);
-      g.appendChild(paint(svgText(56, y0 + 20, title, null, 11), good ? C_GOOD : C_BAD));
+      g.appendChild(svgRich(56, y0 + 20, title, { size: 11 }).setTone(good ? C_GOOD : C_BAD));
       var sx = 1200,
         ox = 110,
         hy = y0 + 92,
@@ -439,14 +440,14 @@
           paint(svgEl('circle', { cx: ox + p[0] * sx, cy: ry - p[1] * sx * 0.6, r: 4.5, 'stroke-width': 1.4 }), 'none', C_ACCENT)
         );
       });
-      g.appendChild(svgText(410, y0 + 46, 'L_c = 0', 'demo-x-mono', 10, 'middle'));
-      g.appendChild(paint(svgText(410, y0 + 70, 'L_e = ' + fmt(val, 4), null, 11, 'middle'), good ? C_GOOD : C_BAD));
-      g.appendChild(svgText(410, y0 + 90, 'λ_e·L_e = ' + fmt(LAMBDA_E * val, 5), 'demo-x-mut', 9, 'middle'));
+      g.appendChild(svgMath(410, y0 + 46, '\\mathcal{L}_c = 0', { size: 10, w: 100, anchor: 'middle' }));
+      g.appendChild(svgMath(410, y0 + 70, '\\mathcal{L}_e = ' + fmt(val, 4), { size: 11, w: 100, anchor: 'middle' }).setTone(good ? C_GOOD : C_BAD));
+      g.appendChild(svgMath(410, y0 + 90, '\\lambda_e \\mathcal{L}_e = ' + fmt(LAMBDA_E * val, 5), { size: 9, w: 100, anchor: 'middle', cls: 'demo-x-mut' }));
       s.appendChild(g);
       return g;
     }
-    var pOk = panel(80, D_OK, C_BORDER, arrow, '正确对应：d_i 几乎一样', LE_OK, true);
-    var pFlip = panel(210, D_FLIP, C_BAD, arrowBad, '左右翻转：点集一样，d_i 互相打架', LE_FLIP, false);
+    var pOk = panel(80, D_OK, C_BORDER, arrow, '正确对应：$\\mathbf{d}_i$ 几乎一样', LE_OK, true);
+    var pFlip = panel(210, D_FLIP, C_BAD, arrowBad, '左右翻转：点集一样，$\\mathbf{d}_i$ 互相打架', LE_FLIP, false);
 
     var ratio = svgEl('g', {});
     ratio.appendChild(paint(svgText(250, 350, 'Edge 项差 ' + fmt(LE_RATIO, 0) + ' 倍，Chamfer 一样是 0', null, 13, 'middle'), C_BAD));
@@ -455,7 +456,7 @@
     /* 右侧：Repulsion 核 exp(-d²/r²) */
     var rep = svgEl('g', {});
     box(rep, 480, 80, 280, 150, C_SURFACE, C_BORDER, 1.2);
-    rep.appendChild(svgText(496, 100, 'Repulsion 核：r = ' + REP_R + ' m，K_r = ' + REP_K, 'demo-x-ink2', 10.5));
+    rep.appendChild(svgRich(496, 100, 'Repulsion 核：$r = ' + REP_R + '$ m，$K_r = ' + REP_K + '$', { size: 10.5, cls: 'demo-x-ink2' }));
     var px0 = 500,
       py0 = 210,
       pw = 240,
@@ -482,9 +483,9 @@
 
     var geo = svgEl('g', {});
     box(geo, 480, 244, 280, 88, C_SURFACE2, C_GOOD, 1.2);
-    geo.appendChild(paint(svgText(496, 266, 'Edge 为什么走测地图（k = ' + EDGE_K + '）', null, 11), C_GOOD));
+    geo.appendChild(svgRich(496, 266, 'Edge 为什么走测地图（$k = ' + EDGE_K + '$）', { size: 11 }).setTone(C_GOOD));
     geo.appendChild(svgText(496, 288, 'T-pose 下手臂贴躯干：欧氏近、体表远', 'demo-x-mut', 9.5));
-    geo.appendChild(svgText(496, 306, '欧氏近邻会把手臂和躯干的 d_i 绑死', 'demo-x-mut', 9.5));
+    geo.appendChild(svgRich(496, 306, '欧氏近邻会把手臂和躯干的 $\\mathbf{d}_i$ 绑死', { size: 9.5, cls: 'demo-x-mut' }));
     geo.appendChild(svgText(496, 324, '测地距离沿体表走，跨不过这道缝', 'demo-x-mut', 9.5));
     s.appendChild(geo);
 
@@ -545,12 +546,12 @@
 
     var num = svgEl('g', {});
     box(num, 40, 258, 460, 120, C_SURFACE, C_BORDER, 1.2);
-    num.appendChild(svgText(56, 280, '算一对点（示意权重 w^p = ' + W_P + '，w^n = ' + W_N + '）', 'demo-x-ink2', 11));
+    num.appendChild(svgRich(56, 280, '算一对点（示意权重 $w^p = ' + W_P + '$，$w^n = ' + W_N + '$）', { size: 11, cls: 'demo-x-ink2' }));
     num.appendChild(
-      svgText(56, 302, '位置差 (' + POSE_DX.map(function (v) { return fmt(v, 2); }).join(', ') + ') m → ‖·‖² = ' + fmt(POSE_POS_SQ, 4), 'demo-x-mono', 9.5)
+      svgRich(56, 302, '位置差 $(' + POSE_DX.map(function (v) { return fmt(v, 2); }).join(', ') + ')$ m → $\\lVert\\cdot\\rVert^2 = ' + fmt(POSE_POS_SQ, 4) + '$', { size: 9.5 })
     );
     num.appendChild(
-      svgText(56, 322, '法向：人转 ' + NORMAL_H_DEG + '°、机器人转 ' + NORMAL_R_DEG + '° → 2(1−cos10°) = ' + fmt(NORMAL_SQ, 4), 'demo-x-mono', 9.5)
+      svgRich(56, 322, '法向：人转 ' + NORMAL_H_DEG + '°、机器人转 ' + NORMAL_R_DEG + '° → $2(1 - \\cos 10^\\circ) = ' + fmt(NORMAL_SQ, 4) + '$', { size: 9.5 })
     );
     num.appendChild(
       paint(svgText(56, 346, '合计 ' + fmt(W_P * POSE_POS_SQ, 4) + ' + ' + fmt(W_N * NORMAL_SQ, 5) + ' = ' + fmt(POSE_COST, 5), null, 11), C_ACCENT)
@@ -601,7 +602,7 @@
     env.appendChild(paint(svgEl('rect', { x: 120, y: boxTop, width: 260, height: 120, 'stroke-width': 1.4 }), C_SURFACE2, C_BORDER));
     env.appendChild(svgText(250, 320, '物体 / 场景 / 地面', 'demo-x-mut', 10, 'middle'));
     env.appendChild(paint(svgEl('circle', { cx: yPt[0], cy: yPt[1], r: 5 }), C_GOOD));
-    env.appendChild(paint(svgText(262, boxTop + 18, 'y_π(i)', null, 10), C_GOOD));
+    env.appendChild(svgMath(262, boxTop + 18, '\\mathbf{y}_{\\pi(i)}', { size: 10, w: 60 }).setTone(C_GOOD));
     s.appendChild(env);
 
     var ring = paint(
@@ -610,19 +611,22 @@
       C_MUTED
     );
     s.appendChild(ring);
-    var ringLbl = svgText(yPt[0] - TAU_C * sc - 4, yPt[1] - 8, 'τ_c = ' + TAU_C + ' m', 'demo-x-mono', 9, 'end');
+    var ringLbl = svgRich(yPt[0] - TAU_C * sc - 4, yPt[1] - 8, '$\\tau_c = ' + TAU_C + '$ m', { size: 9, anchor: 'end', w: 120 });
     s.appendChild(ringLbl);
 
     var hDot = paint(svgEl('circle', { r: 5 }), C_WARN);
     var hVec = paint(svgEl('path', { fill: 'none', 'stroke-width': 1.6, 'marker-end': arrH }), null, C_WARN);
     var rDot = paint(svgEl('circle', { r: 5 }), C_ACCENT);
     var rVec = paint(svgEl('path', { fill: 'none', 'stroke-width': 1.6, 'marker-end': arrR }), null, C_ACCENT);
-    var hLbl = paint(svgText(0, 0, 'c^h', null, 10.5), C_WARN);
-    var rLbl = paint(svgText(0, 0, 'c^r', null, 10.5), C_ACCENT);
+    var hLbl = svgMath(0, 0, '\\mathbf{c}^h', { size: 10.5, w: 30 }).setTone(C_WARN);
+    var rLbl = svgMath(0, 0, '\\mathbf{c}^r', { size: 10.5, w: 30 }).setTone(C_ACCENT);
     [hVec, rVec, hDot, rDot, hLbl, rLbl].forEach(function (n) {
       s.appendChild(n);
     });
-    var state = svgText(250, 390, '', 'demo-x-ink2', 11, 'middle');
+    /* 数字逐帧在变：公式只画一次，数字与状态交给 svgText */
+    var stateLbl = svgMath(196, 390, '\\lVert\\mathbf{c}^h\\rVert =', { size: 11, w: 80, anchor: 'end', cls: 'demo-x-ink2' });
+    var state = svgText(200, 390, '', 'demo-x-ink2', 11);
+    s.appendChild(stateLbl);
     s.appendChild(state);
 
     var eq = svgMath(600, 70, '\\mathbf{c}^h_{t,i} = \\mathbf{x}^h_{t,i} - \\mathbf{y}_{t,\\pi_t(i)},\\ \\ \\mathbf{c}^r_i = \\mathbf{x}^r_i(\\mathbf{q}_t) - \\mathbf{y}_{t,\\pi_t(i)}', {
@@ -642,17 +646,17 @@
     var num = svgEl('g', {});
     box(num, 440, 132, 320, 110, C_SURFACE, C_BORDER, 1.2);
     num.appendChild(svgText(456, 154, '算一对手点（m）', 'demo-x-ink2', 11));
-    num.appendChild(svgText(456, 176, 'c^h = (0, ' + fmt(CT_CH[1], 2) + ', 0)，‖c^h‖ = ' + fmt(CT_CH_NORM, 2) + ' ≤ ' + TAU_C + ' → 活跃', 'demo-x-mono', 9));
-    num.appendChild(svgText(456, 196, 'c^r = (0, ' + fmt(CT_CR[1], 2) + ', ' + fmt(CT_CR[2], 2) + ')', 'demo-x-mono', 9));
-    num.appendChild(paint(svgText(456, 220, '残差 ‖c^r − c^h‖ = ' + fmt(CT_RES, 4) + ' m', null, 10.5), C_ACCENT));
+    num.appendChild(svgRich(456, 176, '$\\mathbf{c}^h = (0, ' + fmt(CT_CH[1], 2) + ', 0)$，$\\lVert\\mathbf{c}^h\\rVert = ' + fmt(CT_CH_NORM, 2) + ' \\le ' + TAU_C + '$ → 活跃', { size: 9 }));
+    num.appendChild(svgMath(456, 196, '\\mathbf{c}^r = (0, ' + fmt(CT_CR[1], 2) + ', ' + fmt(CT_CR[2], 2) + ')', { size: 9 }));
+    num.appendChild(svgRich(456, 220, '残差 $\\lVert\\mathbf{c}^r - \\mathbf{c}^h\\rVert = ' + fmt(CT_RES, 4) + '$ m', { size: 10.5 }).setTone(C_ACCENT));
     s.appendChild(num);
 
     var why = svgEl('g', {});
     box(why, 440, 256, 320, 114, C_SURFACE2, C_GOOD, 1.2);
-    why.appendChild(paint(svgText(456, 278, '代数上 c^r − c^h = x^r − x^h', null, 11), C_GOOD));
+    why.appendChild(svgRich(456, 278, '代数上 $\\mathbf{c}^r - \\mathbf{c}^h = \\mathbf{x}^r - \\mathbf{x}^h$', { size: 11 }).setTone(C_GOOD));
     why.appendChild(svgText(456, 300, '（按论文式子推导）接触项的作用是：', 'demo-x-mut', 9.5));
-    why.appendChild(svgText(456, 318, '对「贴着环境」的那几个点再加一份权重 w^c，', 'demo-x-mut', 9.5));
-    why.appendChild(svgText(456, 336, '且只在活跃集里生效；自接触把 y 换成', 'demo-x-mut', 9.5));
+    why.appendChild(svgRich(456, 318, '对「贴着环境」的那几个点再加一份权重 $w^c$，', { size: 9.5, cls: 'demo-x-mut' }));
+    why.appendChild(svgRich(456, 336, '且只在活跃集里生效；自接触把 $\\mathbf{y}$ 换成', { size: 9.5, cls: 'demo-x-mut' }));
     why.appendChild(svgText(456, 354, '另一个不相邻身体分区上的对应点', 'demo-x-mut', 9.5));
     s.appendChild(why);
 
@@ -682,13 +686,12 @@
       rDot.setAttribute('cy', rp[1].toFixed(1));
       hVec.setAttribute('d', polyPath([hp, [yPt[0] - 3, yPt[1] - 4]]));
       rVec.setAttribute('d', polyPath([rp, [yPt[0] + 3, yPt[1] - 4]]));
-      hLbl.setAttribute('x', (hp[0] - 34).toFixed(1));
-      hLbl.setAttribute('y', (hp[1] + 4).toFixed(1));
-      rLbl.setAttribute('x', (rp[0] + 10).toFixed(1));
-      rLbl.setAttribute('y', (rp[1] + 4).toFixed(1));
+      hLbl.setX(hp[0] - 34).setY(hp[1] + 4);
+      rLbl.setX(rp[0] + 10).setY(rp[1] + 4);
       var cNorm = Math.hypot(hOff[0], hOff[1]);
       var active = cNorm <= TAU_C;
-      state.textContent = t < 2.2 ? '' : '‖c^h‖ = ' + fmt(cNorm, 3) + ' m → ' + (active ? '活跃接触' : '退出活跃集');
+      setOpacity(stateLbl, t < 2.2 ? 0 : 1);
+      state.textContent = t < 2.2 ? '' : fmt(cNorm, 3) + ' m → ' + (active ? '活跃接触' : '退出活跃集');
       paint(hVec, null, active ? C_WARN : C_MUTED);
       paint(rVec, null, active ? C_ACCENT : C_MUTED);
       setOpacity(num, seg(t, 3.6, 4.3));
@@ -716,40 +719,39 @@
     var cons = svgEl('g', {});
     box(cons, 40, 92, 360, 96, C_SURFACE, C_BORDER, 1.2);
     cons.appendChild(svgText(56, 114, '约束（论文 Eq. 13–15）', 'demo-x-ink2', 11));
-    cons.appendChild(svgText(56, 136, '关节限位  q⁻ ≤ q + Δq ≤ q⁺', 'demo-x-mono', 9.5));
-    cons.appendChild(svgText(56, 156, '地面净空  −J^z_i Δq ≤ z_i − z_f（近地表面点）', 'demo-x-mono', 9.5));
-    cons.appendChild(svgText(56, 176, '信赖域    ‖Δq‖₂ ≤ η = ' + ETA + '；阻尼 μ = ' + MU, 'demo-x-mono', 9.5));
+    cons.appendChild(svgRich(56, 136, '关节限位　$\\mathbf{q}^- \\le \\mathbf{q} + \\Delta\\mathbf{q} \\le \\mathbf{q}^+$', { size: 9.5 }));
+    cons.appendChild(svgRich(56, 156, '地面净空　$-\\mathbf{J}^z_i \\Delta\\mathbf{q} \\le z_i - z_f$（近地表面点）', { size: 9.5 }));
+    cons.appendChild(svgRich(56, 176, '信赖域　　$\\lVert\\Delta\\mathbf{q}\\rVert_2 \\le \\eta = ' + ETA + '$；阻尼 $\\mu = ' + MU + '$', { size: 9.5 }));
     s.appendChild(cons);
 
     var num = svgEl('g', {});
     box(num, 40, 202, 360, 180, C_SURFACE2, C_ACCENT, 1.2);
     num.appendChild(svgText(56, 224, '算一步：2 个关节、2 条残差（示意数字）', 'demo-x-ink2', 11));
-    num.appendChild(svgText(56, 246, 'J = [[0.4, 0.1], [0, 0.3]]，r = (0.06, −0.03)，‖r‖ = ' + fmt(GN_R0, 4), 'demo-x-mono', 9));
+    num.appendChild(svgRich(56, 246, '$\\mathbf{J} = \\begin{bmatrix}0.4 & 0.1 \\\\ 0 & 0.3\\end{bmatrix}$，$\\mathbf{r} = (0.06, -0.03)$，$\\lVert\\mathbf{r}\\rVert = ' + fmt(GN_R0, 4) + '$', { size: 9, h: 30 }));
     var rows = [
-      { t: '纯 GN（μ = 0）', dq: DQ_GN, res: 0, c: C_MUTED },
-      { t: '加阻尼 μ = ' + MU, dq: DQ_DAMP, res: RES_DAMP, c: C_WARN },
-      { t: '再加信赖域 η = ' + ETA, dq: DQ_TR, res: RES_TR, c: C_GOOD }
+      { t: '纯 GN（$\\mu = 0$）', dq: DQ_GN, res: 0, c: C_MUTED },
+      { t: '加阻尼 $\\mu = ' + MU + '$', dq: DQ_DAMP, res: RES_DAMP, c: C_WARN },
+      { t: '再加信赖域 $\\eta = ' + ETA + '$', dq: DQ_TR, res: RES_TR, c: C_GOOD }
     ];
     var rowEls = rows.map(function (r, k) {
       var g = svgEl('g', {});
       var y = 270 + k * 22;
-      g.appendChild(paint(svgText(56, y, r.t, null, 9.5), r.c));
+      g.appendChild(svgRich(56, y, r.t, { size: 9.5 }).setTone(r.c));
       g.appendChild(
-        svgText(
+        svgMath(
           190,
           y,
-          'Δq = (' + fmt(r.dq[0], 3) + ', ' + fmt(r.dq[1], 3) + ')  ‖Δq‖ = ' + fmt(norm2(r.dq), 3),
-          'demo-x-mono',
-          9
+          '\\Delta\\mathbf{q} = (' + fmt(r.dq[0], 3) + ', ' + fmt(r.dq[1], 3) + '),\\ \\ \\lVert\\Delta\\mathbf{q}\\rVert = ' + fmt(norm2(r.dq), 3),
+          { size: 9, w: 220 }
         )
       );
       num.appendChild(g);
       return g;
     });
     var tail = svgEl('g', {});
-    tail.appendChild(svgText(56, 342, '信赖域激活 ⇔ 阻尼再加 λ = ' + fmt(TR_LAMBDA, 4) + '（KKT）', 'demo-x-mut', 9.5));
+    tail.appendChild(svgRich(56, 342, '信赖域激活 $\\Leftrightarrow$ 阻尼再加 $\\lambda = ' + fmt(TR_LAMBDA, 4) + '$（KKT）', { size: 9.5, cls: 'demo-x-mut' }));
     tail.appendChild(
-      svgText(56, 362, '线性化残差 ' + fmt(GN_R0, 4) + ' → ' + fmt(RES_TR, 4) + '；地面项 J^zΔq = ' + fmt(FLOOR_DZ, 4) + ' ≥ −' + GN_Z_GAP, 'demo-x-mut', 9)
+      svgRich(56, 362, '线性化残差 ' + fmt(GN_R0, 4) + ' → ' + fmt(RES_TR, 4) + '；地面项 $\\mathbf{J}^z \\Delta\\mathbf{q} = ' + fmt(FLOOR_DZ, 4) + ' \\ge -' + GN_Z_GAP + '$', { size: 9, cls: 'demo-x-mut' })
     );
     num.appendChild(tail);
     s.appendChild(num);
@@ -764,8 +766,8 @@
     var plane = svgEl('g', {});
     plane.appendChild(paint(svgEl('path', { d: polyPath([[430, oy], [770, oy]]), fill: 'none', 'stroke-width': 1 }), null, C_BORDER));
     plane.appendChild(paint(svgEl('path', { d: polyPath([[ox, 380], [ox, 120]]), fill: 'none', 'stroke-width': 1 }), null, C_BORDER));
-    plane.appendChild(svgText(436, oy + 16, 'Δq₁ (rad)', 'demo-x-mono', 9));
-    plane.appendChild(svgText(ox - 6, 128, 'Δq₂', 'demo-x-mono', 9, 'end'));
+    plane.appendChild(svgRich(436, oy + 16, '$\\Delta q_1$ (rad)', { size: 9 }));
+    plane.appendChild(svgMath(ox - 6, 128, '\\Delta q_2', { size: 9, w: 40, anchor: 'end' }));
     plane.appendChild(
       paint(
         svgEl('path', {
@@ -778,7 +780,7 @@
         C_GOOD
       )
     );
-    plane.appendChild(paint(svgText(ox - ETA * sc * 0.72 - 6, oy - ETA * sc * 0.72 - 6, '‖Δq‖ = ' + ETA, null, 9.5, 'end'), C_GOOD));
+    plane.appendChild(svgMath(ox - ETA * sc * 0.72 - 6, oy - ETA * sc * 0.72 - 6, '\\lVert\\Delta\\mathbf{q}\\rVert = ' + ETA, { size: 9.5, w: 100, anchor: 'end' }).setTone(C_GOOD));
     s.appendChild(plane);
 
     var marks = rows.map(function (r) {
@@ -929,7 +931,7 @@
     box(cfgB, 410, 244, 350, 86, C_SURFACE2, C_GOOD, 1.3);
     cfgB.appendChild(paint(svgText(426, 266, 'humanoid_retarget_defaults*.json', null, 11), C_GOOD));
     cfgB.appendChild(svgText(426, 288, '只描述动作源与任务：采样 / 损失 / 求解器', 'demo-x-mut', 9.5));
-    cfgB.appendChild(svgText(426, 306, 'N = ' + N_POINTS + '，τ_c = ' + TAU_C + '，μ = ' + MU + '，η = ' + ETA, 'demo-x-mono', 9));
+    cfgB.appendChild(svgRich(426, 306, '$N = ' + N_POINTS + '$，$\\tau_c = ' + TAU_C + '$，$\\mu = ' + MU + '$，$\\eta = ' + ETA + '$', { size: 9 }));
     cfgB.appendChild(svgText(426, 322, '身体分区权重按动作源分文件，不按机器人', 'demo-x-mut', 9.5));
     s.appendChild(cfgB);
 

@@ -82,7 +82,7 @@
       pos: '—',
       reward: '沿用环境奖励',
       lookahead: '看环境而定',
-      one: '只换更新规则：把 PPO 的 clip 换成 exp(A/β) 加权回归'
+      one: '只换更新规则：把 PPO 的 clip 换成 $\\exp(A/\\beta)$ 加权回归'
     },
     {
       id: 'amp',
@@ -114,7 +114,7 @@
       name: 'ADD',
       touch: [0.5, 0.4, 0.2, 0.3, 0.4],
       file: 'mimickit/learning/add_agent.py',
-      disc: '差分 Δo = o^demo − o',
+      disc: '差分 $\\Delta o = o^{demo} - o$',
       pos: '零向量（一个点）',
       reward: '纯 disc 奖励（task 权重 0）',
       lookahead: '有（tar_obs_steps）',
@@ -207,7 +207,8 @@
       sHeavy.set(MODULES[heavy], 'accent');
       sYear.set(String(a.year));
       [a.disc, a.pos, a.reward, a.lookahead, a.file].forEach(function (v, i) {
-        rows[i].textContent = v;
+        rows[i].textContent = '';
+        K.rich(rows[i], v);
       });
 
       verdict.set('📌 ' + a.name + '：' + a.one + '。', total < 2 ? 'learning' : 'frozen');
@@ -353,7 +354,7 @@
         head.push(t.name);
       });
       tb.row(head, true);
-      [['权重 w', 'w'], ['scale α', 'a'], ['exp(−α·e)', null], ['w × exp', null]].forEach(function (spec) {
+      [['权重 $w$', 'w'], ['scale $\\alpha$', 'a'], ['$\\exp(-\\alpha e)$', null], ['$w \\times \\exp$', null]].forEach(function (spec) {
         var tr = el('tr');
         tr.appendChild(el('th', null, spec[0]));
         var row = [];
@@ -368,7 +369,7 @@
     })();
 
     var stats = statsRow(root);
-    var sR = stats.add('这一帧的 r_t');
+    var sR = stats.add('这一帧的 $r_t$');
     var sTop = stats.add('贡献最大的一项');
     var sLoss = stats.add('损失最多的一项');
     var sRet = stats.add('50 步 episode return');
@@ -376,11 +377,11 @@
 
     note(root, [
       '**权重和 scale 是两个旋钮，别混**：w 决定这一项最多能拿多少分（五个 w 加起来是 1），' +
-        'α 决定误差多大就把这一项打掉。pose 的 w 最大但 α 只有 0.25 —— 它是「主轴但宽容」；' +
-        'key_pos 的 w 只有 0.15 而 α 是 10.0 —— 它是「占比小但苛刻」。',
-      '**这就是为什么手调奖励难**：五项之间是加法关系，任何一项的 α 调错都会改变策略的优先级排序。' +
+        '$\\alpha$ 决定误差多大就把这一项打掉。pose 的 w 最大但 $\\alpha$ 只有 0.25 —— 它是「主轴但宽容」；' +
+        'key_pos 的 w 只有 0.15 而 $\\alpha$ 是 10.0 —— 它是「占比小但苛刻」。',
+      '**这就是为什么手调奖励难**：五项之间是加法关系，任何一项的 $\\alpha$ 调错都会改变策略的优先级排序。' +
         'AMP / ADD 那条线想解决的正是这件事 —— 把这十个数交给判别器去学。',
-      '**vel 的 α 故意最小**：0.01 意味着关节速度差到 30 (rad/s)² 也只掉 26%。' +
+      '**vel 的 $\\alpha$ 故意最小**：0.01 意味着关节速度差到 30 (rad/s)² 也只掉 26%。' +
         '速度项如果太敏感，策略会为了压速度误差而输出高频动作 —— 反而抖。',
       '**这一帧的 0.893 乘 50 步 ≈ 40+**：这就是笔记里那个 return 量级的来源，也是 PPO 实际在最大化的东西。'
     ]);
@@ -411,7 +412,7 @@
 
       if (Math.abs(r - 0.893) < 0.004) {
         verdict.set(
-          '✅ 这就是笔记里手推的那一帧：r_t ≈ ' +
+          '✅ 这就是笔记里手推的那一帧：$r_t$ ≈ ' +
             fmt(r, 3) +
             '。五项分别是 ' +
             parts
@@ -426,15 +427,15 @@
         );
       } else if (r > 0.97) {
         verdict.set(
-          '🎯 几乎完美跟踪：r_t = ' +
+          '🎯 几乎完美跟踪：$r_t$ = ' +
             fmt(r, 3) +
             '。注意五项的上限加起来正好是 1（0.5 + 0.1 + 0.15 + 0.1 + 0.15），' +
-            '所以 r_t 天然落在 [0, 1] 里 —— 这让不同动作、不同角色之间的 return 有可比性。',
+            '所以 $r_t$ 天然落在 [0, 1] 里 —— 这让不同动作、不同角色之间的 return 有可比性。',
           'learning'
         );
       } else {
         verdict.set(
-          '📉 r_t = ' +
+          '📉 $r_t$ = ' +
             fmt(r, 3) +
             '，掉得最多的是「' +
             TERMS[worst].name +

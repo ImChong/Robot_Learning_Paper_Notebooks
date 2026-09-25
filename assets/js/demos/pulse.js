@@ -67,17 +67,17 @@
 
   function buildVibDemo(host) {
     var root = card(host, {
-      title: 'VIB：β 决定潜空间是「一本查找表」还是「一片连续的技能」',
+      title: 'VIB：$\\beta$ 决定潜空间是「一本查找表」还是「一片连续的技能」',
       sub:
-        '蒸馏损失里那一项 KL(q(z|s,ref) ‖ p(z|s)) 前面的系数就是瓶颈宽度。β = 0 时 latent 只是把 AMASS 背下来；' +
-        'β 太大又会 posterior collapse。拖动它，看三条曲线怎么打架。'
+        '蒸馏损失里那一项 $\\mathrm{KL}(q(z \\mid s, \\mathrm{ref}) \\,\\|\\, p(z \\mid s))$ 前面的系数就是瓶颈宽度。$\\beta = 0$ 时 latent 只是把 AMASS 背下来；' +
+        '$\\beta$ 太大又会 posterior collapse。拖动它，看三条曲线怎么打架。'
     });
 
     var state = { beta: 0.35, seed: 9 };
 
     var ctrls = controlsRow(root);
     var bSlider = slider(ctrls, {
-      label: 'KL 权重 β（信息瓶颈的窄度）',
+      label: 'KL 权重 $\\beta$（信息瓶颈的窄度）',
       min: 0,
       max: 4,
       step: 0.01,
@@ -92,17 +92,17 @@
     });
     var btns = el('div', 'demo-control demo-buttons');
     ctrls.appendChild(btns);
-    button(btns, 'β = 0：纯蒸馏，不压缩', function () {
+    button(btns, '$\\beta$ = 0：纯蒸馏，不压缩', function () {
       state.beta = 0;
       bSlider.set(0, true);
       render();
     });
-    button(btns, 'β ≈ 0.35：平衡', function () {
+    button(btns, '$\\beta$ ≈ 0.35：平衡', function () {
       state.beta = 0.35;
       bSlider.set(0.35, true);
       render();
     });
-    button(btns, 'β = 4：posterior collapse', function () {
+    button(btns, '$\\beta$ = 4：posterior collapse', function () {
       state.beta = 4;
       bSlider.set(4, true);
       render();
@@ -127,10 +127,10 @@
     var verdict = verdictBox(root);
 
     note(root, [
-      '**β = 0 时 latent 是一本查找表**：每段动作被编到一个尖峰上，互相之间全是空隙。' +
+      '**$\\beta$ = 0 时 latent 是一本查找表**：每段动作被编到一个尖峰上，互相之间全是空隙。' +
         '蒸馏误差确实最低（学生完美复刻教师），但从先验里采一个 z 多半落在空隙里 —— 解码出来不是任何一个动作。' +
         'PULSE 要的恰恰是「随便采一个 z 都能跑」，所以这条路走不通。',
-      '**β 太大就 posterior collapse**：后验被压得和先验一模一样，latent 里不再含有「这是哪段动作」的信息，' +
+      '**$\\beta$ 太大就 posterior collapse**：后验被压得和先验一模一样，latent 里不再含有「这是哪段动作」的信息，' +
         '解码器只能输出一个平均动作。KL 是 0 了，但整个潜空间也废了。',
       '**中间那一段才是 PULSE 的落点**：后验之间刚好连成一片、聚合起来又接近先验 —— ' +
         '这时候「采样 → 连贯动作」和「编码 → 复刻动作」两件事才能同时成立。',
@@ -148,7 +148,7 @@
 
       if (state.beta < 0.05) {
         verdict.set(
-          '📚 β = 0：后验缩成五个尖峰，中间全是空隙。蒸馏误差最低（' +
+          '📚 $\\beta$ = 0：后验缩成五个尖峰，中间全是空隙。蒸馏误差最低（' +
             fmt(v.distort, 2) +
             '），但先验采样的可用度只有 ' +
             fmt(v.sample, 2) +
@@ -166,7 +166,7 @@
         );
       } else {
         verdict.set(
-          '✅ β = ' +
+          '✅ $\\beta$ = ' +
             fmt(state.beta, 2) +
             '：五个后验刚好连成一片又没糊在一起。先验采样可用度 ' +
             fmt(v.sample, 2) +
@@ -351,7 +351,7 @@
     note(root, [
       '**这就是 PULSE 相对 ASE 的关键补丁**：ASE 的 latent 是从固定球面均匀采的，' +
         '它默认「任何技能在任何状态下都能启动」。人形不是这样 —— 你在空中的时候没法起跳。',
-      '**发散是指数级的**：单步可行率 0.9 看起来不错，连滚 40 步只剩 0.9⁴⁰ ≈ 1.5%。' +
+      '**发散是指数级的**：单步可行率 0.9 看起来不错，连滚 40 步只剩 $0.9^{40} \\approx 1.5\\%$。' +
         '长序列稳定性对先验的要求比单步苛刻得多，这也是为什么论文特别强调「长时间序列下依然物理可行」。',
       '**它同时也让下游更好训**：高层策略不需要从零学「现在能不能起跳」，' +
         '它在 p(z|s) 的基础上输出一个残差就够了 —— 相当于先验已经替它排除了大部分废动作。',
@@ -723,6 +723,7 @@
   var svgEl = K.svgEl,
     svgText = K.svgText,
     svgMath = K.svgMath,
+    svgRich = K.svgRich,
     paint = K.paint,
     seg = K.seg,
     ease = K.ease,
@@ -904,7 +905,7 @@
       'VIB 蒸馏：KL 项前面的 β 太小，潜空间只是把 AMASS 背下来；太大，后验塌成先验。' +
         '三列分别是 β = 0、0.35、4 下五段动作的后验形状与读数'
     );
-    s.appendChild(svgText(60, 30, '阶段 2：把教师蒸馏进潜空间，β 决定潜空间长什么样', 'demo-x-ink2', 13.5));
+    s.appendChild(svgRich(60, 30, '阶段 2：把教师蒸馏进潜空间，$\\beta$ 决定潜空间长什么样', { size: 13.5, cls: 'demo-x-ink2' }));
     var formula = svgMath(400, 60,
       '\\mathcal{L} = \\|a_{student} - a_{teacher}\\|^2 + \\beta \\cdot \\mathrm{KL}\\big(q(z \\mid s, ref) \\,\\|\\, p(z \\mid s)\\big)',
       { size: 12.5, anchor: 'middle', cls: 'demo-x-ink2', w: 700 });
@@ -1069,7 +1070,7 @@
     s.appendChild(readout);
 
     var chip = svgEl('g', {});
-    chip.appendChild(svgText(400, 356, '单步 0.9 看着不错，连滚 40 步只剩 0.9⁴⁰ ≈ 1.5% —— 长序列对先验的要求苛刻得多', 'demo-x-mut', 11, 'middle'));
+    chip.appendChild(svgRich(400, 356, '单步 0.9 看着不错，连滚 40 步只剩 $0.9^{40} \\approx 1.5\\%$ —— 长序列对先验的要求苛刻得多', { size: 11, cls: 'demo-x-mut', anchor: 'middle' }));
     s.appendChild(chip);
 
     var foot = paint(svgText(400, 392, '「随便采一个 z 都能跑」靠的不是维度低，是先验知道你此刻在空中', null, 15, 'middle'), C_ACCENT);
@@ -1111,12 +1112,12 @@
     [
       { x: 40, w: 118, t: '任务观测', sub: '目标速度 / 目标点', c: C_MUTED },
       { x: 178, w: 148, t: '高层策略', sub: 'PPO 只更新这里', c: C_ACCENT },
-      { x: 346, w: 148, t: 'p(z|s) + Δz', sub: '32 维 latent', c: C_GOOD },
+      { x: 346, w: 148, t: '$p(z \\mid s) + \\Delta z$', sub: '32 维 latent', c: C_GOOD },
       { x: 514, w: 128, t: '冻结 Decoder', sub: '物理可行性保底', c: C_GOOD },
       { x: 662, w: 98, t: '关节动作', sub: '69 维', c: C_MUTED }
     ].forEach(function (b, k) {
       chain.appendChild(paint(svgEl('rect', { x: b.x, y: 54, width: b.w, height: 52, rx: 8, 'stroke-width': 1.3, 'stroke-dasharray': k === 3 ? '5 4' : '' }), C_SURFACE2, b.c));
-      chain.appendChild(paint(svgText(b.x + b.w / 2, 76, b.t, null, 11.5, 'middle'), b.c));
+      chain.appendChild(svgRich(b.x + b.w / 2, 76, b.t, { size: 11.5, anchor: 'middle', w: b.w }).setTone(b.c));
       chain.appendChild(svgText(b.x + b.w / 2, 93, b.sub, 'demo-x-mut', 9.5, 'middle'));
       if (k < 4) {
         chain.appendChild(paint(svgEl('line', { x1: b.x + b.w + 3, y1: 80, x2: b.x + b.w + 17, y2: 80, 'stroke-width': 1.4 }), null, C_BORDER));

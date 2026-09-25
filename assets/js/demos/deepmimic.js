@@ -52,7 +52,7 @@
   var TERMS = [
     {
       key: 'pose',
-      name: 'r^p 关节姿态',
+      name: '$r^p$ 关节姿态',
       nameTex: 'r^p \\text{ 关节姿态}',
       w: 0.65,
       k: 2,
@@ -65,7 +65,7 @@
     },
     {
       key: 'vel',
-      name: 'r^v 关节速度',
+      name: '$r^v$ 关节速度',
       nameTex: 'r^v \\text{ 关节速度}',
       w: 0.1,
       k: 0.1,
@@ -77,7 +77,7 @@
     },
     {
       key: 'ee',
-      name: 'r^e 末端位置',
+      name: '$r^e$ 末端位置',
       nameTex: 'r^e \\text{ 末端位置}',
       w: 0.15,
       k: 40,
@@ -90,7 +90,7 @@
     },
     {
       key: 'com',
-      name: 'r^c 质心位置',
+      name: '$r^c$ 质心位置',
       nameTex: 'r^c \\text{ 质心位置}',
       w: 0.1,
       k: 10,
@@ -108,7 +108,7 @@
       title: '模仿奖励的四个分量：k 决定「多严格」，w 决定「谁说了算」',
       sub:
         '每个分量都是 exp(−k·误差)，默认误差就是正文 t=15（空中团身）那个例子。' +
-        '拖动误差看四项各掉多少分，再看它们按 0.65 / 0.1 / 0.15 / 0.1 加权后的模仿奖励 r_I。'
+        '拖动误差看四项各掉多少分，再看它们按 0.65 / 0.1 / 0.15 / 0.1 加权后的模仿奖励 $r_I$。'
     });
 
     var state = {
@@ -140,7 +140,7 @@
       );
     });
     slider(ctrls, {
-      label: '任务奖励 r^G（前进速度等）',
+      label: '任务奖励 $r^G$（前进速度等）',
       min: 0,
       max: 1,
       step: 0.01,
@@ -225,8 +225,8 @@
     var barStage = stage(grid, 220);
 
     var stats = statsRow(root);
-    var sImit = stats.add('模仿奖励 r_I');
-    var sTotal = stats.add('总奖励 0.7·r^I + 0.3·r^G');
+    var sImit = stats.add('模仿奖励 $r_I$');
+    var sTotal = stats.add('总奖励 $0.7\\,r^I + 0.3\\,r^G$');
     var sWeak = stats.add('掉分最多的分量');
     var verdict = verdictBox(root);
 
@@ -328,7 +328,7 @@
         g2.ctx.globalAlpha = 1;
         g2.ctx.fillStyle = colors2[i];
         g2.ctx.fillRect(x, p2.sy(contrib[i]), bw, p2.y0 - p2.sy(contrib[i]));
-        text(g2.ctx, t.name.split(' ')[0], p2.x0 + slot * (i + 0.5), p2.y0 + 13, P2.muted, 'center', '10px monospace');
+        text(g2.ctx, K.richToPlain(t.name).split(' ')[0], p2.x0 + slot * (i + 0.5), p2.y0 + 13, P2.muted, 'center', '10px monospace');
         barLabel(g2, p2, p2.x0 + slot * (i + 0.5), p2.sy(contrib[i]), fmt(contrib[i], 2));
         acc += contrib[i];
       });
@@ -336,7 +336,7 @@
       text(g2.ctx, 'r_I = ' + fmt(rI, 3), p2.x1 - 4, p2.sy(rI) - 9, P2.text, 'right', '11px monospace');
 
       verdict.set(
-        'r_I = ' +
+        '$r_I$ = ' +
           fmt(rI, 3) +
           '（淡色 = 该分量的满分上限 w，实色 = 实际拿到的 w·r）。现在最拖后腿的是 **' +
           TERMS[worst].name +
@@ -721,7 +721,7 @@
       title: '策略输出的不是扭矩，是目标角度：PD 增益、等效惯量与 Stable PD',
       sub:
         '一个关节跟踪一段参考角度。策略以控制频率写下目标角（论文 30 Hz），PD 控制器以仿真频率把它换成扭矩（论文 1200 Hz）。' +
-        'τ = k_p(q̂ − q) + k_d(0 − q̇)。'
+        '$\\tau = k_p(\\hat{q} - q) + k_d(0 - \\dot{q})$。'
     });
 
     var state = { kp: 1600, kd: 25, inertia: 0.12, simHz: 1200, ctrlHz: 30, stable: true };
@@ -732,7 +732,7 @@
 
     var ctrls = controlsRow(root);
     slider(ctrls, {
-      label: '比例增益 k_p',
+      label: '比例增益 $k_p$',
       min: 50,
       max: 4000,
       step: 50,
@@ -746,7 +746,7 @@
       }
     });
     slider(ctrls, {
-      label: '阻尼增益 k_d',
+      label: '阻尼增益 $k_d$',
       min: 0,
       max: 90,
       step: 1,
@@ -760,7 +760,7 @@
       }
     });
     slider(ctrls, {
-      label: '关节等效转动惯量 M（kg·m²）',
+      label: '关节等效转动惯量 $M$（kg·m²）',
       min: 0.02,
       max: 1,
       step: 0.01,
@@ -824,10 +824,10 @@
     }
 
     var setLegend = legend(root, [
-      { key: 'muted', text: '参考角度 q̂(t)' },
+      { key: 'muted', text: '参考角度 $\\hat{q}(t)$' },
       { key: 'warn', text: '策略写下的目标角（阶梯）' },
       { key: 'accent', text: '实际关节角 q(t)' },
-      { key: 'bad', text: '扭矩 τ' }
+      { key: 'bad', text: '扭矩 $\\tau$' }
     ]);
 
     var grid = stageGrid(root);
@@ -1279,11 +1279,11 @@
 
     var stats = statsRow(root);
     var sRet = stats.add('归一化回报');
-    var sRI = stats.add('加权 r^I');
+    var sRI = stats.add('加权 $r^I$');
     var sEt = stats.add('ET 率');
     var sLen = stats.add('存活步数');
-    var sEe = stats.add('末端 r^e');
-    var sCom = stats.add('质心 r^c');
+    var sEe = stats.add('末端 $r^e$');
+    var sCom = stats.add('质心 $r^c$');
     var sPhase = stats.add('落地占比');
     var sTask = stats.add('任务成功率');
     var verdict = verdictBox(root);
@@ -1425,10 +1425,10 @@
       tb.row([{ text: '指标' }, { text: '当前值' }, { text: '好方向' }, { text: '这一刻' }], true);
       var rows = [
         ['归一化回报', fmt(m.ret, 3), '越高越好* → 0.791', judge.ret],
-        ['加权 r^I', fmt(m.rI, 3), '四条都爬，别只看它', judge.terms],
+        ['加权 $r^I$', fmt(m.rI, 3), '四条都爬，别只看它', judge.terms],
         ['ET 率', Math.round(m.et * 100) + '%', '从 ~94% 降到 ~14%', judge.et],
         ['存活步数', fmt(m.length, 0) + ' / ' + CURVE_CLIP_STEPS, '拉到 clip 长 ≈ 53', judge.length],
-        ['末端 r^e', fmt(m.re, 2), '最严，爬得慢但要爬', { kind: m.re < 0.35 && state.iter > 800 ? 'bad' : 'ok', text: m.re < 0.35 && state.iter > 800 ? '被总分盖住了' : '还在爬' }],
+        ['末端 $r^e$', fmt(m.re, 2), '最严，爬得慢但要爬', { kind: m.re < 0.35 && state.iter > 800 ? 'bad' : 'ok', text: m.re < 0.35 && state.iter > 800 ? '被总分盖住了' : '还在爬' }],
         ['相位覆盖', '落地 ' + Math.round(m.phases[nPh - 1] * 100) + '%', '七段铺匀', judge.phase],
         ['任务成功率', state.scene === 'imitate' || state.scene === 'taskonly' ? Math.round(m.task * 100) + '%' : '—', 'Strike 两者都有时 99%', judge.task]
       ];

@@ -21,6 +21,7 @@
     svgEl = K.svgEl,
     svgText = K.svgText,
     svgMath = K.svgMath,
+    svgRich = K.svgRich,
     paint = K.paint,
     seg = K.seg,
     ease = K.ease,
@@ -456,7 +457,7 @@
   // ─── 第 5 幕：mink + DAQP 的两阶段约束 IK ─────────────────────────────
   var S5_HYPERS = [
     { k: 'lm_damping', v: fmt(LM_DAMPING, 1), d: 'Levenberg-Marquardt 阻尼，越大越稳越慢' },
-    { k: '关节速度限位', v: '3π rad/s', d: '≈ ' + fmt(VEL_LIMIT, 2) + ' rad/s；' + MOCAP_FPS + ' fps 下单帧最多转 ' + fmt(STEP_LIMIT_DEG, 0) + '°' },
+    { k: '关节速度限位', v: '$3\\pi$ rad/s', d: '≈ ' + fmt(VEL_LIMIT, 2) + ' rad/s；' + MOCAP_FPS + ' fps 下单帧最多转 ' + fmt(STEP_LIMIT_DEG, 0) + '°' },
     { k: 'max_iters', v: String(MAX_ITERS), d: '单帧最多 ' + MAX_ITERS + ' 步 Newton 迭代' },
     { k: '收敛阈值', v: 'err < ' + IK_TOL, d: '提前停止，10 步内达到即跳出' },
     { k: 'QP 求解器', v: 'daqp', d: '默认 DAQP，可切 quadprog；多约束下更快' }
@@ -500,7 +501,7 @@
     S5_HYPERS.forEach(function (h, k) {
       var y = 94 + k * 34;
       table.appendChild(svgText(410, y, h.k, 'demo-x-mono', 10));
-      table.appendChild(paint(svgText(620, y, h.v, 'demo-x-mono', 10.5, 'end'), C_ACCENT));
+      table.appendChild(svgRich(620, y, h.v, { size: 10.5, cls: 'demo-x-mono', anchor: 'end', w: 200 }).setTone(C_ACCENT));
       table.appendChild(svgText(410, y + 15, h.d, 'demo-x-mut', 8.5));
     });
     s.appendChild(table);
