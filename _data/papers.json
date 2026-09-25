@@ -3615,6 +3615,18 @@
         "zh_title": "DexMimicGen：经由模仿学习的双手灵巧操作自动数据生成"
       },
       {
+        "title": "ManiSkill3: GPU Parallelized Robotics Simulation and Rendering for Generalizable Embodied AI",
+        "path": "papers/11_Simulation_Benchmark/ManiSkill3__GPU_Parallelized_Robotics_Simulation_and_Rendering/ManiSkill3__GPU_Parallelized_Robotics_Simulation_and_Rendering.md",
+        "url": "/papers/11_Simulation_Benchmark/ManiSkill3__GPU_Parallelized_Robotics_Simulation_and_Rendering/ManiSkill3__GPU_Parallelized_Robotics_Simulation_and_Rendering.html",
+        "dir": "ManiSkill3__GPU_Parallelized_Robotics_Simulation_and_Rendering",
+        "arxiv": "2410.00425",
+        "has_open_source": true,
+        "published_date_zh": "2024年10月1日（arXiv v1） · 2025年5月30日（arXiv v2）",
+        "published_date_en": "Oct 1, 2024 (arXiv v1) · May 30, 2025 (arXiv v2)",
+        "zhname": "ManiSkill3：面向可泛化具身智能的 GPU 并行机器人仿真与渲染",
+        "zh_title": "ManiSkill3：面向可泛化具身智能的 GPU 并行机器人仿真与渲染"
+      },
+      {
         "title": "GRUtopia: Dream General Robots in a City at Scale",
         "path": "papers/11_Simulation_Benchmark/GRUtopia__Dream_General_Robots_in_a_City_at_Scale/GRUtopia__Dream_General_Robots_in_a_City_at_Scale.md",
         "url": "/papers/11_Simulation_Benchmark/GRUtopia__Dream_General_Robots_in_a_City_at_Scale/GRUtopia__Dream_General_Robots_in_a_City_at_Scale.html",
