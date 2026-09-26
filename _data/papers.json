@@ -3354,6 +3354,17 @@
         "published_date_en": "Oct 3, 2025 (arXiv v1)",
         "zhname": "拥抱进化：面向具身人形机器人的「身体-控制」协同设计倡议",
         "zh_title": "拥抱进化：面向具身人形机器人的「身体-控制」协同设计倡议"
+      },
+      {
+        "title": "Evolutionary Continuous Adaptive RL-Powered Co-Design for Humanoid Chin-Up Performance",
+        "path": "papers/12_Hardware_Design/EA-CoRL_Evolutionary_Continuous_Adaptive_RL_Co-Design_for_Humanoid_Chin-Up/EA-CoRL_Evolutionary_Continuous_Adaptive_RL_Co-Design_for_Humanoid_Chin-Up.md",
+        "url": "/papers/12_Hardware_Design/EA-CoRL_Evolutionary_Continuous_Adaptive_RL_Co-Design_for_Humanoid_Chin-Up/EA-CoRL_Evolutionary_Continuous_Adaptive_RL_Co-Design_for_Humanoid_Chin-Up.html",
+        "dir": "EA-CoRL_Evolutionary_Continuous_Adaptive_RL_Co-Design_for_Humanoid_Chin-Up",
+        "arxiv": "2509.26082",
+        "published_date_zh": "2025年9月30日（arXiv）",
+        "published_date_en": "Sep 30, 2025 (arXiv)",
+        "zhname": "EA-CoRL：面向人形引体向上的进化式连续自适应强化学习协同设计",
+        "zh_title": "EA-CoRL：面向人形引体向上的进化式连续自适应强化学习协同设计"
       }
     ],
     "zhname": "硬件设计",
