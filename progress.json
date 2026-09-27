@@ -41,15 +41,15 @@
         "13_Physics-Based_Animation",
         "14_Human_Motion"
       ],
-      "last_module": "12_Hardware_Design",
-      "last_index": 420,
-      "last_title": "Evolutionary Continuous Adaptive RL-Powered Co-Design for Humanoid Chin-Up Performance (arXiv:2509.26082)",
-      "next_module": "13_Physics-Based_Animation",
-      "last_completed_date": "2026-09-26",
-      "note": "本日轮转到 12_Hardware_Design。_data/papers.json 中该模块已收录的 14 篇均有笔记，按 AGENTS.md 对照上游 awesome-humanoid-robot-learning Hardware Design 章节，取上游已收录且无笔记的最新论文 EA-CoRL (arXiv:2509.26082, 2025-09-30, DFKI / ETH Zurich)。外环 CMA-ES 进化 RH5 腿/肩/肘/腕四组减速比系数，内环在 Isaac Gym 4000 并行环境里让 PPO 策略随设计连续自适应（每代从当前最优策略微调，刷新即替换），对比冻结预训练策略的 PT-FT 基线获得更低适应度与更广的设计探索；引体向上任务中腿/腕减速比大幅提高、肩部基本不变。论文未公开源码，含方法流程 mermaid，无源码时序图。",
-      "last_date": "2026-09-26",
+      "last_module": "13_Physics-Based_Animation",
+      "last_index": 472,
+      "last_title": "Feature-Based vs. GAN-Based Learning from Demonstrations: When and Why (arXiv:2507.05906)",
+      "next_module": "14_Human_Motion",
+      "last_completed_date": "2026-09-27",
+      "note": "本日轮转到 13_Physics-Based_Animation。PROGRESS 中最新的 InterPrior (2602.06035) 实际已有笔记，跳过；按 AGENTS.md 对照上游 awesome-humanoid-robot-learning Physics-Based Character Animation 章节，取上游已收录且无笔记的最新论文 Feature-Based vs. GAN-Based Learning from Demonstrations (arXiv:2507.05906, 2025-07-08, ETH Zurich)。短综述：按奖励结构把基于状态参考的示范学习分为特征式（DeepMimic 系）与 GAN 式（AMP 系），比较取舍、澄清常见误解，结论是两派向结构化运动表征收敛。综述无源码，故只含内容框架 mermaid。",
+      "last_date": "2026-09-27",
       "next_candidate": null,
-      "last_completed": "Evolutionary Continuous Adaptive RL-Powered Co-Design for Humanoid Chin-Up Performance (arXiv:2509.26082)"
+      "last_completed": "Feature-Based vs. GAN-Based Learning from Demonstrations: When and Why (arXiv:2507.05906)"
     },
     "last_summary_index": 532,
     "last_summary_date": "2026-09-18",
@@ -1552,6 +1552,17 @@
         "project_page": "",
         "code": "",
         "source": "⏳ 未公开源码 · CMA-ES 进化减速比 + PPO 策略连续自适应 · RH5 引体向上 · DFKI / ETH Zurich"
+      },
+      {
+        "date": "2026-09-27",
+        "index": 472,
+        "title": "Feature-Based vs. GAN-Based Learning from Demonstrations: When and Why",
+        "folder": "papers/13_Physics-Based_Animation/Feature-Based_vs_GAN-Based_Learning_from_Demonstrations__When_and_Why",
+        "module": "13_Physics-Based_Animation",
+        "arxiv": "2507.05906",
+        "project_page": "",
+        "code": "",
+        "source": "⏳ 综述无源码 · 特征式 vs GAN 式示范学习 · 奖励结构对比 + 常见误解澄清 · ETH Zurich"
       }
     ],
     "last_completed_index": 588,
@@ -6063,6 +6074,16 @@
       "pdf_file": "",
       "route": "Hardware Design",
       "title_cn": "EA-CoRL：面向人形引体向上的进化式连续自适应强化学习协同设计"
+    },
+    {
+      "title": "Feature-Based vs. GAN-Based Learning from Demonstrations: When and Why",
+      "folder": "papers/13_Physics-Based_Animation/Feature-Based_vs_GAN-Based_Learning_from_Demonstrations__When_and_Why",
+      "note_file": "Feature-Based_vs_GAN-Based_Learning_from_Demonstrations__When_and_Why.md",
+      "status": "done",
+      "arxiv": "2507.05906",
+      "pdf_file": "",
+      "route": "Physics-Based Animation",
+      "title_cn": "基于特征与基于 GAN 的示范学习：何时用、为什么"
     }
   ]
 }

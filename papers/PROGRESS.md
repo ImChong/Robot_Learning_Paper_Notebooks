@@ -662,9 +662,9 @@
 | 467  | [Multi-task Deep Reinforcement Learning with PopArt](https://arxiv.org/abs/1809.04474)                                                           | 2018.09 |     | ⏳ 待读 |
 | 468  | [Learning Symmetric and Low-energy Locomotion](https://arxiv.org/abs/1801.08093)                                                                 | 2018.01 |     | ⏳ 待读 |
 | 469  | Composite Motion Learning with Task Control                                                                                                      | -       |     | ⏳ 待读 |
-| 470  | [InterPrior: Scaling Generative Control for Physics-Based Human-Object Interactions](https://arxiv.org/abs/2602.06035) | 2026.02 |  | ⏳ 待读 |
+| 470  | [InterPrior: Scaling Generative Control for Physics-Based Human-Object Interactions](https://arxiv.org/abs/2602.06035) ✅ [笔记](13_Physics-Based_Animation/InterPrior__Scaling_Generative_Control_for_Physics-Based_Human-Object_Inter/InterPrior__Scaling_Generative_Control_for_Physics-Based_Human-Object_Inter.md) | 2026.02 |  | ✅ 已总结 |
 | 471  | [FARM: Frame-Accelerated Augmentation and Residual Mixture-of-Experts for Physics-Based High-Dynamic Humanoid Control](https://arxiv.org/abs/2508.19926) [笔记](13_Physics-Based_Animation/FARM__Frame-Accelerated_Augmentation_and_Residual_MoE_for_High-Dynamic_Humanoid/FARM__Frame-Accelerated_Augmentation_and_Residual_MoE_for_High-Dynamic_Humanoid.md) | 2025.08 |  | ✅ 完成 |
-| 472  | [Feature-Based vs. GAN-Based Learning from Demonstrations: When and Why](https://arxiv.org/abs/2507.05906) | 2025.07 |  | ⏳ 待读 |
+| 472  | [Feature-Based vs. GAN-Based Learning from Demonstrations: When and Why](https://arxiv.org/abs/2507.05906) ✅ [笔记](13_Physics-Based_Animation/Feature-Based_vs_GAN-Based_Learning_from_Demonstrations__When_and_Why/Feature-Based_vs_GAN-Based_Learning_from_Demonstrations__When_and_Why.md) | 2025-07-08 |  | ✅ 已总结 |
 | 473  | [InterMimic: Towards Universal Whole-Body Control for Physics-Based Human-Object Interactions](https://arxiv.org/abs/2502.20390) | 2025.02 | 🌟 | ⏳ 待读 |
 | 474  | [MaskedMimic: Unified Physics-Based Character Control Through Masked Motion Inpainting](https://arxiv.org/abs/2409.14393) | 2024.09 | 🌟 | ⏳ 待读 |
 | 475  | AdaptNet: Policy Adaptation for Physics-Based Character Control | - |  | ⏳ 待读 |

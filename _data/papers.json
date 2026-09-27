@@ -3841,6 +3841,17 @@
         "zh_title": "利用完整多刚体动力学的人形机器人杂技动作"
       },
       {
+        "title": "Feature-Based vs. GAN-Based Learning from Demonstrations: When and Why",
+        "path": "papers/13_Physics-Based_Animation/Feature-Based_vs_GAN-Based_Learning_from_Demonstrations__When_and_Why/Feature-Based_vs_GAN-Based_Learning_from_Demonstrations__When_and_Why.md",
+        "url": "/papers/13_Physics-Based_Animation/Feature-Based_vs_GAN-Based_Learning_from_Demonstrations__When_and_Why/Feature-Based_vs_GAN-Based_Learning_from_Demonstrations__When_and_Why.html",
+        "dir": "Feature-Based_vs_GAN-Based_Learning_from_Demonstrations__When_and_Why",
+        "arxiv": "2507.05906",
+        "published_date_zh": "2025年7月8日（arXiv）",
+        "published_date_en": "Jul 8, 2025 (arXiv)",
+        "zhname": "基于特征与基于 GAN 的示范学习：何时用、为什么",
+        "zh_title": "基于特征与基于 GAN 的示范学习：何时用、为什么"
+      },
+      {
         "title": "Spatial Relationship Preserving Character Motion Adaptation",
         "path": "papers/13_Physics-Based_Animation/Spatial_Relationship_Preserving_Character_Motion_Adaptation/Spatial_Relationship_Preserving_Character_Motion_Adaptation.md",
         "url": "/papers/13_Physics-Based_Animation/Spatial_Relationship_Preserving_Character_Motion_Adaptation/Spatial_Relationship_Preserving_Character_Motion_Adaptation.html",
