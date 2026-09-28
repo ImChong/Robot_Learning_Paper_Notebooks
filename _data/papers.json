@@ -704,6 +704,18 @@
         "zh_title": "ZeroWBC：直接从人类第一人称视频中学出\"零遥操作\"的人形视触运动控制"
       },
       {
+        "title": "FAME: Force-Adaptive RL for Expanding the Manipulation Envelope of a Full-Scale Humanoid",
+        "path": "papers/04_Loco-Manipulation_and_WBC/FAME__Force-Adaptive_RL_for_Expanding_the_Manipulation_Envelope_of_a_Full-Scale_Humanoid/FAME__Force-Adaptive_RL_for_Expanding_the_Manipulation_Envelope_of_a_Full-Scale_Humanoid.md",
+        "url": "/papers/04_Loco-Manipulation_and_WBC/FAME__Force-Adaptive_RL_for_Expanding_the_Manipulation_Envelope_of_a_Full-Scale_Humanoid/FAME__Force-Adaptive_RL_for_Expanding_the_Manipulation_Envelope_of_a_Full-Scale_Humanoid.html",
+        "dir": "FAME__Force-Adaptive_RL_for_Expanding_the_Manipulation_Envelope_of_a_Full-Scale_Humanoid",
+        "arxiv": "2603.08961",
+        "has_open_source": true,
+        "published_date_zh": "2026年3月9日（arXiv v1）",
+        "published_date_en": "Mar 9, 2026 (arXiv v1)",
+        "zhname": "FAME：扩展全尺寸人形操作包络的力自适应强化学习",
+        "zh_title": "FAME：扩展全尺寸人形操作包络的力自适应强化学习"
+      },
+      {
         "title": "Embedding Classical Balance Control Principles in Reinforcement Learning for Humanoid Recovery",
         "path": "papers/04_Loco-Manipulation_and_WBC/Embedding_Classical_Balance_Control_Principles_in_RL_for_Humanoid_Recovery/Embedding_Classical_Balance_Control_Principles_in_RL_for_Humanoid_Recovery.md",
         "url": "/papers/04_Loco-Manipulation_and_WBC/Embedding_Classical_Balance_Control_Principles_in_RL_for_Humanoid_Recovery/Embedding_Classical_Balance_Control_Principles_in_RL_for_Humanoid_Recovery.html",

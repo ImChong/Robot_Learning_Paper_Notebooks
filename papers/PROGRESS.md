@@ -704,7 +704,7 @@
 | 498  | [Ψ₀: An Open Foundation Model Towards Universal Humanoid Loco-Manipulation](https://arxiv.org/abs/2603.12263)                        | 2026.03 |     | ⏳ 待读 |
 | 499  | [SteadyTray: Learning Object Balancing Tasks in Humanoid Tray Transport via Residual RL](https://arxiv.org/abs/2603.10306)           | 2026.03 |     | ⏳ 待读 |
 | 500  | [ZeroWBC: Learning Natural Visuomotor Humanoid Control from Human Egocentric Video](https://arxiv.org/abs/2603.09170)                | 2026.03 |     | ⏳ 待读 |
-| 501  | [FAME: Force-Adaptive RL for Expanding the Manipulation Envelope of a Full-Scale Humanoid](https://arxiv.org/abs/2603.08961)         | 2026.03 |     | ⏳ 待读 |
+| 501  | [FAME: Force-Adaptive RL for Expanding the Manipulation Envelope of a Full-Scale Humanoid](https://arxiv.org/abs/2603.08961) ✅ [笔记](04_Loco-Manipulation_and_WBC/FAME__Force-Adaptive_RL_for_Expanding_the_Manipulation_Envelope_of_a_Full-Scale_Humanoid/FAME__Force-Adaptive_RL_for_Expanding_the_Manipulation_Envelope_of_a_Full-Scale_Humanoid.md) | 2026-03-09 | 🌟 | ✅ 已总结 |
 | 502  | [Embedding Classical Balance Control Principles in RL for Humanoid Recovery](https://arxiv.org/abs/2603.08619)                       | 2026.03 |     | ⏳ 待读 |
 | 503  | [ULTRA: Unified Multimodal Control for Autonomous Humanoid Whole-Body Loco-Manipulation](https://arxiv.org/abs/2603.03279)           | 2026.03 |     | ⏳ 待读 |
 | 504  | [OmniXtreme: Breaking the Generality Barrier in High-Dynamic Humanoid Control](https://arxiv.org/abs/2602.23843)                     | 2026.02 |     | ⏳ 待读 |
