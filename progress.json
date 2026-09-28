@@ -41,15 +41,15 @@
         "13_Physics-Based_Animation",
         "14_Human_Motion"
       ],
-      "last_module": "13_Physics-Based_Animation",
-      "last_index": 472,
-      "last_title": "Feature-Based vs. GAN-Based Learning from Demonstrations: When and Why (arXiv:2507.05906)",
-      "next_module": "14_Human_Motion",
-      "last_completed_date": "2026-09-27",
-      "note": "本日轮转到 13_Physics-Based_Animation。PROGRESS 中最新的 InterPrior (2602.06035) 实际已有笔记，跳过；按 AGENTS.md 对照上游 awesome-humanoid-robot-learning Physics-Based Character Animation 章节，取上游已收录且无笔记的最新论文 Feature-Based vs. GAN-Based Learning from Demonstrations (arXiv:2507.05906, 2025-07-08, ETH Zurich)。短综述：按奖励结构把基于状态参考的示范学习分为特征式（DeepMimic 系）与 GAN 式（AMP 系），比较取舍、澄清常见误解，结论是两派向结构化运动表征收敛。综述无源码，故只含内容框架 mermaid。",
-      "last_date": "2026-09-27",
+      "last_module": "04_Loco-Manipulation_and_WBC",
+      "last_index": 501,
+      "last_title": "FAME: Force-Adaptive RL for Expanding the Manipulation Envelope of a Full-Scale Humanoid (arXiv:2603.08961)",
+      "next_module": "05_Locomotion",
+      "last_completed_date": "2026-09-28",
+      "note": "本日轮转应到 14_Human_Motion，但该模块中上游 awesome-humanoid-robot-learning 收录的论文已全部有笔记；按 AGENTS.md「模块 04–14 只为上游已收录论文建笔记」的约束顺延到 04_Loco-Manipulation_and_WBC，取上游已收录且无笔记的最新论文 FAME (arXiv:2603.08961, 2026-03-09, University of Colorado Boulder, 🌟)。上半身上下文编码器把 15 维腰臂关节角 + 双手腕 3D 力编码成 8 维潜变量，条件化 PPO 下肢站立策略；训练期球面采样手部力 + OpenHomie 上半身姿态课程，部署期由关节力矩与雅可比反解手腕力、无需 F/T 传感器；仿真平均站立成功率 73.84%（只加课程 51.40%、Base 29.44%），Unitree H12 真机单臂偏载 / 双臂负重验证。含整体流程 mermaid 与基于 correlllab/h12_adaptive_policy（manip_ik_demo_dds.py 的 run_manip_dds）的运行时序图。",
+      "last_date": "2026-09-28",
       "next_candidate": null,
-      "last_completed": "Feature-Based vs. GAN-Based Learning from Demonstrations: When and Why (arXiv:2507.05906)"
+      "last_completed": "FAME: Force-Adaptive RL for Expanding the Manipulation Envelope of a Full-Scale Humanoid (arXiv:2603.08961)"
     },
     "last_summary_index": 532,
     "last_summary_date": "2026-09-18",
@@ -1563,6 +1563,17 @@
         "project_page": "",
         "code": "",
         "source": "⏳ 综述无源码 · 特征式 vs GAN 式示范学习 · 奖励结构对比 + 常见误解澄清 · ETH Zurich"
+      },
+      {
+        "date": "2026-09-28",
+        "index": 501,
+        "title": "FAME: Force-Adaptive RL for Expanding the Manipulation Envelope of a Full-Scale Humanoid",
+        "folder": "papers/04_Loco-Manipulation_and_WBC/FAME__Force-Adaptive_RL_for_Expanding_the_Manipulation_Envelope_of_a_Full-Scale_Humanoid",
+        "module": "04_Loco-Manipulation_and_WBC",
+        "arxiv": "2603.08961",
+        "project_page": "https://fame10.github.io/Fame/",
+        "code": "https://github.com/correlllab/h12_adaptive_policy (Python，部署代码 + 编码器/策略权重，未含训练代码)",
+        "source": "✅ 已开源部署代码(含源码运行时序图) · 上半身上下文编码器 + PPO 站立策略 · 无传感器手腕力估计 · Unitree H12 · CU Boulder"
       }
     ],
     "last_completed_index": 588,
@@ -6084,6 +6095,16 @@
       "pdf_file": "",
       "route": "Physics-Based Animation",
       "title_cn": "基于特征与基于 GAN 的示范学习：何时用、为什么"
+    },
+    {
+      "title": "FAME: Force-Adaptive RL for Expanding the Manipulation Envelope of a Full-Scale Humanoid",
+      "folder": "papers/04_Loco-Manipulation_and_WBC/FAME__Force-Adaptive_RL_for_Expanding_the_Manipulation_Envelope_of_a_Full-Scale_Humanoid",
+      "note_file": "FAME__Force-Adaptive_RL_for_Expanding_the_Manipulation_Envelope_of_a_Full-Scale_Humanoid.md",
+      "status": "done",
+      "arxiv": "2603.08961",
+      "pdf_file": "",
+      "route": "Loco-Manipulation and WBC",
+      "title_cn": "FAME：扩展全尺寸人形操作包络的力自适应强化学习"
     }
   ]
 }
