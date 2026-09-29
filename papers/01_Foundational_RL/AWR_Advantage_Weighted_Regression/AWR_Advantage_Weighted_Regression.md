@@ -34,6 +34,8 @@ AWR 把强化学习变成了一个**加权监督学习**问题——从经验中
 
 > 🎬 **本文开头有一段六幕讲解动画**（约 90 秒，自动播放）：把 AWR 的全流程从「PPO 留下什么麻烦」一路演到「一整轮在源码里落在哪两个函数」，画面里的数字与下面三个演示同源。
 >
+> 📺 **紧接着是同样六幕的[配音讲解视频](#awr-video)**：加中文配音与字幕，5 分 23 秒竖屏，可下载。
+>
 > 🎮 **另有 3 个可交互演示**（滑块拖一拖就能看结果，无需安装任何东西）：
 > 1. 权重是怎么算出来的 —— 拖温度 $\beta$，看正文那 4 个样本里「还剩几条在说话」
 > 2. 加权回归到底更新了什么 —— 一次更新就是一次加权平均，$\beta$ 太小会让策略停止探索
@@ -58,7 +60,11 @@ AWR 把强化学习变成了一个**加权监督学习**问题——从经验中
 <div class="paper-demo" data-demo="awr-explainer"><p class="demo-fallback">（本节含动画演示，需要启用 JavaScript）</p></div>
 
 > 🎞️ 六幕分别对应下文的六件事：PPO 留下的三个麻烦 → ① 评估 $A = R - V$ → ② 指数权重 $\exp(A/\beta)/Z$ → 加权回归就是一次加权平均 → off-policy 的赚与亏 → 一整轮的闭环与源码落点。
->
+
+## 📺 配音讲解视频（可下载） {#awr-video}
+
+<div class="paper-demo" data-demo="awr-video" data-src="media/awr_explainer_video.mp4" data-poster="media/awr_explainer_video_poster.jpg"><p class="demo-fallback">（本节含讲解视频播放器，需要启用 JavaScript；也可以直接<a href="media/awr_explainer_video.mp4" download="AWR_讲解视频.mp4">下载 mp4（7.6 MB）</a>）</p></div>
+
 > 📖 **动画之后的正文默认全部折叠**：前半部分（「要解决什么问题」「是怎么做的」）按小节收起，后面的具体实例、源码对照、面试问题、讨论记录与附录整块收起。想细读哪一块就点开对应的折叠条，内容一字未删；目录里的标题依旧可以直接点，会自动展开所在折叠块，左侧目录顶部还有「展开全部文字」一键铺开。
 
 ---

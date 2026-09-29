@@ -15,6 +15,7 @@
  *   awr-weights    — exp(A/β)/Z：温度、权重上限与「还剩几条样本在说话」(ESS)
  *   awr-regression — 加权回归就是加权平均：一个 1D 动作上的完整 AWR 更新
  *   awr-buffer     — off-policy 的代价与收益：旧数据复用多少轮才划算
+ *   awr-video      — 同样六幕的配音竖屏视频（可下载）
  */
 
 (function () {
@@ -1746,8 +1747,21 @@
     });
   }
 
+  // ─── demo 5: the narrated vertical video of the same six scenes ──────────
+  /* Rendered offline by scripts/paper_video/ from the storyboard above plus a
+     voice-over; the files sit next to the note (see its placeholder). */
+  function buildVideoDemo(host) {
+    K.video(host, {
+      title: '配音讲解视频：AWR 六幕全流程',
+      sub: '5 分 23 秒竖屏视频（1080×1920），中文配音 + 字幕。画面就是上面的六幕动画，旁白把每一幕讲细；适合手机上看或转发。',
+      size: '7.6 MB',
+      fileName: 'AWR_讲解视频.mp4'
+    });
+  }
+
   K.mount({
     'awr-explainer': buildExplainerDemo,
+    'awr-video': buildVideoDemo,
     'awr-weights': buildWeightsDemo,
     'awr-regression': buildRegressionDemo,
     'awr-buffer': buildBufferDemo

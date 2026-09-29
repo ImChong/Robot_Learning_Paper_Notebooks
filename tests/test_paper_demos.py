@@ -177,7 +177,7 @@ def test_every_placeholder_has_a_builder_and_a_declared_bundle():
 def test_notes_declare_their_demos_in_reading_order():
     expected = {
         PPO_NOTE: ("ppo", ["ppo-explainer", "ppo-video", "ppo-gae", "ppo-clip", "ppo-epochs", "ppo-curves"]),
-        AWR_NOTE: ("awr", ["awr-explainer", "awr-weights", "awr-buffer", "awr-regression"]),
+        AWR_NOTE: ("awr", ["awr-explainer", "awr-video", "awr-weights", "awr-buffer", "awr-regression"]),
         DEEPMIMIC_NOTE: (
             "deepmimic",
             [
