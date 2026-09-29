@@ -18,7 +18,7 @@ const tl = JSON.parse(fs.readFileSync(path.join(OUT, 'timeline.json'), 'utf8'));
 const html = fs.readFileSync(path.join(HERE, 'stage.html'), 'utf8')
   .replaceAll('REPO/', 'file://' + REPO + '/')
   .replaceAll('BUNDLE', name).replaceAll('DEMO_ID', name + '-explainer').replaceAll('PAPER', name);
-const built = path.join(HERE, 'stage.built.html');
+const built = path.join(HERE, `stage.${name}.built.html`);  // one per paper, so several can render at once
 fs.writeFileSync(built, html);
 
 const browser = await chromium.launch({ executablePath: process.env.CHROME || undefined });

@@ -33,11 +33,12 @@ demos: ["phc"]
 
 PHC 通过**渐进式乘法控制策略（PMCP）**，让仿真人形角色能模仿上万条动作序列、从摔倒中自然恢复、永不需要 reset——是从 DeepMimic "单动作模仿"迈向"大规模通用控制"的关键一步。
 
-> 🎮 **本文内嵌 1 段动画 + 3 个可交互演示**（不用装任何东西）：
+> 🎮 **本文内嵌 1 段动画 + 1 段配音视频 + 3 个可交互演示**（不用装任何东西）：
 > 1. [六幕动画：PHC 全流程](#phc-explainer-anim) —— 约 96 秒串完「DeepMimic 之后的三堵墙 → PMCP 渐进扩容 → Composer 连续混合 → 摔倒恢复 → 噪声输入换成关键点 → 两阶段训练闭环」（三堵墙各有一幕交代，所以比其余几篇多一幕）
-> 2. PMCP 实验台 —— 点一次「训练下一轮」就新增一列 primitive，对照单网络微调怎么被洗掉
-> 3. Composer 演示 —— 只有一个温度旋钮，拉满就能看到连续混合退化成硬切换那一跳
-> 4. 摔倒恢复实验台 —— 画出一整条 episode，右边那根短柱是「没有 Pᶠ 时会在第几步结束」
+> 2. [配音讲解视频](#phc-video) —— 同样六幕，加中文配音与字幕，6 分 12 秒竖屏，可下载
+> 3. PMCP 实验台 —— 点一次「训练下一轮」就新增一列 primitive，对照单网络微调怎么被洗掉
+> 4. Composer 演示 —— 只有一个温度旋钮，拉满就能看到连续混合退化成硬切换那一跳
+> 5. 摔倒恢复实验台 —— 画出一整条 episode，右边那根短柱是「没有 Pᶠ 时会在第几步结束」
 
 ---
 
@@ -62,6 +63,10 @@ PHC 通过**渐进式乘法控制策略（PMCP）**，让仿真人形角色能�
 ## 🎬 六幕动画：PHC 全流程 {#phc-explainer-anim}
 
 <div class="paper-demo" data-demo="phc-explainer"><p class="demo-fallback">（本节含动画演示，需要启用 JavaScript）</p></div>
+
+## 📺 配音讲解视频（可下载） {#phc-video}
+
+<div class="paper-demo" data-demo="phc-video" data-src="media/phc_explainer_video.mp4" data-poster="media/phc_explainer_video_poster.jpg"><p class="demo-fallback">（本节含讲解视频播放器，需要启用 JavaScript；也可以直接<a href="media/phc_explainer_video.mp4" download="PHC_讲解视频.mp4">下载 mp4（8.7 MB）</a>）</p></div>
 
 > 📖 **动画之后的正文默认全部折叠**：前半部分（「要解决什么问题」「是怎么做的」）按小节收起，后面的具体实例、源码对照、面试问题、讨论记录与附录整块收起。想细读哪一块就点开对应的折叠条，内容一字未删；目录里的标题依旧可以直接点，会自动展开所在折叠块，左侧目录顶部还有「展开全部文字」一键铺开。
 

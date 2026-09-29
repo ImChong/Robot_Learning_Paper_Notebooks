@@ -10,6 +10,7 @@
  *   phc-pmcp     — 渐进式训练：一轮一个 primitive，旧的冻结，所以不会被洗掉
  *   phc-mcp      — Composer 的连续混合：把温度拉满，它就退化成硬切换
  *   phc-recovery — 摔倒恢复：P^F 把「摔了就结束」变成「摔了再爬起来」
+ *   phc-video    — 六幕讲解动画的配音竖屏视频（可下载）
  */
 
 (function () {
@@ -1840,9 +1841,21 @@
     });
   }
 
+  // ─── the narrated vertical video of the same six scenes ──────────────
+  /* Rendered offline by scripts/paper_video/ from the storyboard above plus a
+     voice-over; the files sit next to the note (see its placeholder). */
+  function buildVideoDemo(host) {
+    K.video(host, {
+      title: '配音讲解视频：PHC 六幕全流程',
+      sub: '6 分 12 秒竖屏视频（1080×1920），中文配音 + 字幕。画面就是上面的六幕动画，旁白把每一幕讲细；适合手机上看或转发。',
+      size: '8.7 MB',
+      fileName: 'PHC_讲解视频.mp4'
+    });
+  }
 
   K.mount({
     'phc-explainer': buildExplainerDemo,
+    'phc-video': buildVideoDemo,
     'phc-pmcp': buildPmcpDemo,
     'phc-mcp': buildMcpDemo,
     'phc-recovery': buildRecoveryDemo

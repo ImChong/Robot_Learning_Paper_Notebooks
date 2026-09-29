@@ -14,6 +14,7 @@
  *   amp-curves — 训练曲线怎么读：风格/任务奖励、D 的 logit、准确率、梯度惩罚
  *   amp-explainer — 五幕讲解动画：逐帧 vs 分布 → 判别器 loss → LSGAN 风格奖励
  *                   → 换数据集就换风格 → 训练闭环
+ *   amp-video     — 同样五幕的配音竖屏视频（可下载）
  */
 
 (function () {
@@ -2220,8 +2221,21 @@
     });
   }
 
+  // ─── the narrated vertical video of the same five scenes ─────────────
+  /* Rendered offline by scripts/paper_video/ from the storyboard above plus a
+     voice-over; the files sit next to the note (see its placeholder). */
+  function buildVideoDemo(host) {
+    K.video(host, {
+      title: '配音讲解视频：AMP 五幕全流程',
+      sub: '4 分 45 秒竖屏视频（1080×1920），中文配音 + 字幕。画面就是上面的五幕动画，旁白把每一幕讲细；适合手机上看或转发。',
+      size: '6.6 MB',
+      fileName: 'AMP_讲解视频.mp4'
+    });
+  }
+
   K.mount({
     'amp-explainer': buildExplainerDemo,
+    'amp-video': buildVideoDemo,
     'amp-reward': buildRewardDemo,
     'amp-disc': buildDiscDemo,
     'amp-style': buildStyleDemo,
