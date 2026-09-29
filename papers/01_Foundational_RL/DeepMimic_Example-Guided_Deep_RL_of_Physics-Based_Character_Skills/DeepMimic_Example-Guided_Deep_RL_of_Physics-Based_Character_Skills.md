@@ -33,12 +33,13 @@ demos: ["deepmimic"]
 
 DeepMimic 让物理仿真角色通过**模仿动作捕捉数据**来学习技能——给一段人类翻跟斗的动作录像，RL 智能体就能在物理仿真中学会翻跟斗，同时保持物理真实性（不穿模、不悬浮）。
 
-> 🎮 **本文内嵌 1 段动画 + 4 个可交互演示**（不用装任何东西）：
+> 🎮 **本文内嵌 1 段动画 + 1 段配音视频 + 4 个可交互演示**（不用装任何东西）：
 > 1. [五幕动画：DeepMimic 全流程](#deepmimic-explainer-anim) —— 约 76 秒串完「为什么模仿 → 四维奖励 → RSI → ET → 训练闭环」
-> 2. 四维模仿奖励 —— 拖各分量的误差，看 $k$（多严格）和 $w$（占多少分）分别在管什么
-> 3. RSI × ET 消融 —— 同样的采样预算，花在哪个阶段决定了后空翻学不学得会
-> 4. 目标角度 + PD 控制 —— 为什么策略输出的是姿态而不是扭矩，以及 Stable PD 在救什么
-> 5. [训练曲线怎么读](#deepmimic-curves-guide) —— 归一化回报、四维分项、ET 率、相位覆盖：六种常见病历
+> 2. [配音讲解视频](#deepmimic-video) —— 同样五幕，加中文配音与字幕，4 分 30 秒竖屏，可下载
+> 3. 四维模仿奖励 —— 拖各分量的误差，看 $k$（多严格）和 $w$（占多少分）分别在管什么
+> 4. RSI × ET 消融 —— 同样的采样预算，花在哪个阶段决定了后空翻学不学得会
+> 5. 目标角度 + PD 控制 —— 为什么策略输出的是姿态而不是扭矩，以及 Stable PD 在救什么
+> 6. [训练曲线怎么读](#deepmimic-curves-guide) —— 归一化回报、四维分项、ET 率、相位覆盖：六种常见病历
 
 ---
 
@@ -66,6 +67,10 @@ DeepMimic 让物理仿真角色通过**模仿动作捕捉数据**来学习技能
 ## 🎬 五幕动画：DeepMimic 全流程 {#deepmimic-explainer-anim}
 
 <div class="paper-demo" data-demo="deepmimic-explainer"><p class="demo-fallback">（本节含动画演示，需要启用 JavaScript）</p></div>
+
+## 📺 配音讲解视频（可下载） {#deepmimic-video}
+
+<div class="paper-demo" data-demo="deepmimic-video" data-src="media/deepmimic_explainer_video.mp4" data-poster="media/deepmimic_explainer_video_poster.jpg"><p class="demo-fallback">（本节含讲解视频播放器，需要启用 JavaScript；也可以直接<a href="media/deepmimic_explainer_video.mp4" download="DeepMimic_讲解视频.mp4">下载 mp4（6.6 MB）</a>）</p></div>
 
 > 📖 **动画之后的正文默认全部折叠**：前半部分（「要解决什么问题」「是怎么做的」）按小节收起，后面的具体实例、源码对照、面试问题、讨论记录与附录整块收起。想细读哪一块就点开对应的折叠条，内容一字未删；目录里的标题依旧可以直接点，会自动展开所在折叠块，左侧目录顶部还有「展开全部文字」一键铺开。
 
