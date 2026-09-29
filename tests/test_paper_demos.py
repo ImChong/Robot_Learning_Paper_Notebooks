@@ -191,15 +191,15 @@ def test_notes_declare_their_demos_in_reading_order():
         ),
         AMP_NOTE: (
             "amp",
-            ["amp-explainer", "amp-disc", "amp-reward", "amp-style", "amp-curves"],
+            ["amp-explainer", "amp-video", "amp-disc", "amp-reward", "amp-style", "amp-curves"],
         ),
         ADD_NOTE: (
             "add",
-            ["add-explainer", "add-diff", "add-reward", "add-curriculum"],
+            ["add-explainer", "add-video", "add-diff", "add-reward", "add-curriculum"],
         ),
         ASE_NOTE: (
             "ase",
-            ["ase-explainer", "ase-latent", "ase-encoder", "ase-diversity"],
+            ["ase-explainer", "ase-video", "ase-latent", "ase-encoder", "ase-diversity"],
         ),
         CALM_NOTE: (
             "calm",
@@ -211,7 +211,7 @@ def test_notes_declare_their_demos_in_reading_order():
         ),
         PHC_NOTE: (
             "phc",
-            ["phc-explainer", "phc-pmcp", "phc-mcp", "phc-recovery"],
+            ["phc-explainer", "phc-video", "phc-pmcp", "phc-mcp", "phc-recovery"],
         ),
         DIFFUSION_POLICY_NOTE: (
             "diffusion_policy",

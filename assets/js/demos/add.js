@@ -13,6 +13,7 @@
  * Demos:
  *   add-explainer  — 五幕讲解动画：手写加权和的困境 → 改判 Δo → 打分变奖励 →
  *                    四阶段的注意力转移 → 训练闭环
+ *   add-video      — 同样五幕的配音竖屏视频（可下载）
  *   add-diff       — Δo = o^demo − o：判别器看的是「误差」，正样本恒为 0
  *   add-reward     — 手写 5 项加权 reward vs 判别器自己学出来的权重
  *   add-curriculum — 判别器会跟着策略一起变严：自动课程 vs 固定核宽度
@@ -1525,8 +1526,21 @@
     });
   }
 
+  // ─── the narrated vertical video of the same five scenes ─────────────
+  /* Rendered offline by scripts/paper_video/ from the storyboard above plus a
+     voice-over; the files sit next to the note (see its placeholder). */
+  function buildVideoDemo(host) {
+    K.video(host, {
+      title: '配音讲解视频：ADD 五幕全流程',
+      sub: '5 分 16 秒竖屏视频（1080×1920），中文配音 + 字幕。画面就是上面的五幕动画，旁白把每一幕讲细；适合手机上看或转发。',
+      size: '7.2 MB',
+      fileName: 'ADD_讲解视频.mp4'
+    });
+  }
+
   K.mount({
     'add-explainer': buildExplainerDemo,
+    'add-video': buildVideoDemo,
     'add-diff': buildDiffDemo,
     'add-reward': buildRewardWeightDemo,
     'add-curriculum': buildCurriculumDemo

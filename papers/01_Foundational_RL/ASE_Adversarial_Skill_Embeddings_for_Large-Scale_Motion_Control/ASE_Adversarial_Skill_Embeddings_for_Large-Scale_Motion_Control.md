@@ -33,11 +33,12 @@ demos: ["ase"]
 
 ASE 在 AMP 的基础上往前迈了一大步：**不只是学“自然动作先验”，而是把海量技能压进一个连续潜空间 $z$ 里。** 这样底层控制器预训练一次，后面高层策略只需要学“什么时候切哪个 $z$”，就能组合出大量复杂行为。
 
-> 🎮 **本文内嵌 1 段动画 + 3 个可交互演示**（不用装任何东西）：
+> 🎮 **本文内嵌 1 段动画 + 1 段配音视频 + 3 个可交互演示**（不用装任何东西）：
 > 1. [六幕动画：ASE 全流程](#ase-explainer-anim) —— 约 90 秒串完「技能被绑死 → 技能是球面上的方向 → latent collapse → encoder 把 z 逼回动作 → diversity 让空间等速 → 训练闭环与下游只选 z」
-> 2. latent 实验台 —— 拖动角度看同一个策略怎么变成不同技能，按播放还能看到每 0~5 秒重采样一次 $z$ 的效果
-> 3. 为什么非要加一个 encoder —— 把 `enc_reward_weight` 拖到 0，亲眼看 latent collapse 怎么成为最优解
-> 4. diversity loss 实验台 —— 拖两个 latent 的夹角，看 `diversity_ratio` 为什么应该是一条水平线
+> 2. [配音讲解视频](#ase-video) —— 同样六幕，加中文配音与字幕，6 分 28 秒竖屏，可下载
+> 3. latent 实验台 —— 拖动角度看同一个策略怎么变成不同技能，按播放还能看到每 0~5 秒重采样一次 $z$ 的效果
+> 4. 为什么非要加一个 encoder —— 把 `enc_reward_weight` 拖到 0，亲眼看 latent collapse 怎么成为最优解
+> 5. diversity loss 实验台 —— 拖两个 latent 的夹角，看 `diversity_ratio` 为什么应该是一条水平线
 
 ---
 
@@ -58,6 +59,10 @@ ASE 在 AMP 的基础上往前迈了一大步：**不只是学“自然动作先
 ## 🎬 六幕动画：ASE 全流程 {#ase-explainer-anim}
 
 <div class="paper-demo" data-demo="ase-explainer"><p class="demo-fallback">（本节含动画演示，需要启用 JavaScript）</p></div>
+
+## 📺 配音讲解视频（可下载） {#ase-video}
+
+<div class="paper-demo" data-demo="ase-video" data-src="media/ase_explainer_video.mp4" data-poster="media/ase_explainer_video_poster.jpg"><p class="demo-fallback">（本节含讲解视频播放器，需要启用 JavaScript；也可以直接<a href="media/ase_explainer_video.mp4" download="ASE_讲解视频.mp4">下载 mp4（8.5 MB）</a>）</p></div>
 
 > 📖 **动画之后的正文默认全部折叠**：前半部分（「要解决什么问题」「是怎么做的」）按小节收起，后面的具体实例、源码对照、面试问题、讨论记录与附录整块收起。想细读哪一块就点开对应的折叠条，内容一字未删；目录里的标题依旧可以直接点，会自动展开所在折叠块，左侧目录顶部还有「展开全部文字」一键铺开。
 

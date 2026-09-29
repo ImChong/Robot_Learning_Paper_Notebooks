@@ -9,6 +9,7 @@
  * Demos:
  *   ase-explainer — 五幕讲解动画：技能被绑死 → z 是球面上的方向 → latent collapse →
  *                   encoder + diversity 两道锁 → 训练闭环与下游只选 z
+ *   ase-video     — 六幕讲解动画的配音竖屏视频（可下载）
  *   ase-latent    — z ~ Uniform(S^63)：技能是球面上的一个方向，每 0~5s 重采样
  *   ase-encoder   — 没有 encoder reward，策略就把 z 当噪声忽略掉（latent collapse）
  *   ase-diversity — diversity_ratio = a_diff / z_diff，为什么目标值是 1.0
@@ -1690,8 +1691,21 @@
     });
   }
 
+  // ─── the narrated vertical video of the same six scenes ──────────────
+  /* Rendered offline by scripts/paper_video/ from the storyboard above plus a
+     voice-over; the files sit next to the note (see its placeholder). */
+  function buildVideoDemo(host) {
+    K.video(host, {
+      title: '配音讲解视频：ASE 六幕全流程',
+      sub: '6 分 28 秒竖屏视频（1080×1920），中文配音 + 字幕。画面就是上面的六幕动画，旁白把每一幕讲细；适合手机上看或转发。',
+      size: '8.5 MB',
+      fileName: 'ASE_讲解视频.mp4'
+    });
+  }
+
   K.mount({
     'ase-explainer': buildExplainerDemo,
+    'ase-video': buildVideoDemo,
     'ase-latent': buildLatentDemo,
     'ase-encoder': buildEncoderDemo,
     'ase-diversity': buildDiversityDemo
