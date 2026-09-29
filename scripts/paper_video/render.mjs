@@ -1,6 +1,7 @@
-// node render.mjs stills 1,20,40   -> out/still_<t>.png
-// node render.mjs video [fps]       -> out/ppo_video.mp4
-// node render.mjs cover             -> out/cover.png
+// node render.mjs <paper> stills 1,20,40   -> out/<paper>/still_<t>.png
+// node render.mjs <paper> video [fps]       -> out/<paper>/<paper>_video.mp4
+// node render.mjs <paper> cover             -> out/<paper>/cover.png
+// <paper> names papers/<paper>.{py,js} and the storyboard assets/js/demos/<paper>.js (<paper>-explainer).
 import { chromium } from 'playwright-core';
 import { spawn, execFileSync } from 'node:child_process';
 import fs from 'node:fs';
@@ -10,10 +11,13 @@ import { fileURLToPath } from 'node:url';
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const REPO = path.resolve(HERE, '../..');
 const FFMPEG = execFileSync('python3', ['-c', 'import imageio_ffmpeg;print(imageio_ffmpeg.get_ffmpeg_exe())']).toString().trim();
-const OUT = path.join(HERE, 'out');
+const [name, mode, arg] = process.argv.slice(2);
+const OUT = path.join(HERE, 'out', name);
 const tl = JSON.parse(fs.readFileSync(path.join(OUT, 'timeline.json'), 'utf8'));
 
-const html = fs.readFileSync(path.join(HERE, 'stage.html'), 'utf8').replaceAll('REPO/', 'file://' + REPO + '/');
+const html = fs.readFileSync(path.join(HERE, 'stage.html'), 'utf8')
+  .replaceAll('REPO/', 'file://' + REPO + '/')
+  .replaceAll('BUNDLE', name).replaceAll('DEMO_ID', name + '-explainer').replaceAll('PAPER', name);
 const built = path.join(HERE, 'stage.built.html');
 fs.writeFileSync(built, html);
 
@@ -28,7 +32,6 @@ await page.evaluate(() => document.fonts.ready);
 for (const s of tl.segments) await page.evaluate((t) => window.renderAt(t), s.t0 + 0.5);
 await page.evaluate(() => document.fonts.ready);
 
-const [mode, arg] = process.argv.slice(2);
 if (mode === 'stills') {
   for (const t of arg.split(',').map(Number)) {
     await page.evaluate((x) => window.renderAt(x), t);
@@ -42,7 +45,7 @@ if (mode === 'stills') {
 } else {
   const fps = Number(arg || 30);
   const n = Math.ceil(tl.total * fps);
-  const mp4 = path.join(OUT, 'ppo_video.mp4');
+  const mp4 = path.join(OUT, name + '_video.mp4');
   const ff = spawn(FFMPEG, ['-y', '-loglevel', 'error',
     '-f', 'image2pipe', '-framerate', String(fps), '-c:v', 'mjpeg', '-i', '-',
     '-i', path.join(OUT, 'narration.wav'),

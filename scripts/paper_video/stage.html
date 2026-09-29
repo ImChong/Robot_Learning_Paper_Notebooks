@@ -2,7 +2,7 @@
 <html lang="zh-CN" data-theme="dark">
 <head>
 <meta charset="utf-8">
-<title>PPO 视频舞台</title>
+<title>论文视频舞台</title>
 <link rel="stylesheet" href="node_modules/katex/dist/katex.min.css">
 <link rel="stylesheet" href="node_modules/@fontsource/noto-sans-sc/400.css">
 <link rel="stylesheet" href="node_modules/@fontsource/noto-sans-sc/700.css">
@@ -70,11 +70,11 @@ html, body { width: 1080px; height: 1920px; overflow: hidden; background: var(--
 </head>
 <body>
 <div id="app">
-  <div class="brand"><span><b>论文精读</b> · 机器人学习</span><span class="pill">arXiv 1707.06347</span></div>
+  <div class="brand"><span><b>论文精读</b> · 机器人学习</span><span class="pill" id="arxiv"></span></div>
   <div id="scene"></div>
   <div class="sub" id="sub"></div>
 </div>
-<div class="paper-demo" data-demo="ppo-explainer" style="display:none"></div>
+<div class="paper-demo" data-demo="DEMO_ID" style="display:none"></div>
 
 <script src="node_modules/katex/dist/katex.min.js"></script>
 <script src="REPO/assets/js/demos/kit.js"></script>
@@ -82,12 +82,13 @@ html, body { width: 1080px; height: 1920px; overflow: hidden; background: var(--
   // Capture the storyboard instead of mounting the interactive player.
   window.PaperDemoKit.explainer = function (host, opts) { window.__story = opts; };
 </script>
-<script src="REPO/assets/js/demos/ppo.js"></script>
+<script src="REPO/assets/js/demos/BUNDLE.js"></script>
+<script src="papers/PAPER.js"></script>
 <script>
 (function () {
   var K = window.PaperDemoKit;
   var TL = null, built = {}, current = null, lastSub = null;
-  var ACC = 'var(--demo-accent)', GOOD = 'var(--demo-good)', BAD = 'var(--demo-bad)', WARN = 'var(--demo-warn)';
+  var N = 0;  // scene count; the storyboard is captured on DOMContentLoaded, after this script
 
   function h(tag, cls, parent, html) {
     var n = document.createElement(tag);
@@ -109,10 +110,10 @@ html, body { width: 1080px; height: 1920px; overflow: hidden; background: var(--
     var sc = window.__story.scenes[i];
     var root = h('div', 'card');
     var head = h('div', 'head', root);
-    h('div', 'act', head, '第 ' + (i + 1) + ' / 5 幕');
+    h('div', 'act', head, '第 ' + (i + 1) + ' / ' + N + ' 幕');
     richInto(h('div', 'title', head), sc.title);
     var prog = h('div', 'prog', root), bars = [];
-    for (var k = 0; k < 5; k++) bars.push(h('b', '', h('i', '', prog)));
+    for (var k = 0; k < N; k++) bars.push(h('b', '', h('i', '', prog)));
     var stage = h('div', 'stage', root);
     var story = sc.build();
     stage.appendChild(story.el);
@@ -126,84 +127,26 @@ html, body { width: 1080px; height: 1920px; overflow: hidden; background: var(--
         var j = 0;
         sc.cues.forEach(function (c, n) { if (st >= c.at - 1e-6) j = n; });
         if (j !== cueIdx) { cueIdx = j; richInto(cueText, sc.cues[j].s); }
-        for (var k = 0; k < 5; k++) bars[k].style.width = (k < i ? 100 : k > i ? 0 : 100 * seg) + '%';
+        for (var k = 0; k < N; k++) bars[k].style.width = (k < i ? 100 : k > i ? 0 : 100 * seg) + '%';
       }
     };
   }
 
-  /* ── intro ── */
-  function buildIntro() {
-    var root = h('div', 'card');
-    var a = h('div', 'big', root, '<div style="font-size:250px;font-weight:900;letter-spacing:16px;color:var(--demo-accent);line-height:1">PPO</div>');
-    a.style.top = '190px';
-    var b = h('div', 'big', root, '<div style="font-size:70px;font-weight:900">近端策略优化</div>' +
-      '<div style="font-size:40px;color:var(--text-secondary);margin-top:18px">人形机器人强化学习最常用的基础算法</div>');
-    b.style.top = '470px';
-    var m = h('div', 'meta', root,
-      '<b>Proximal Policy Optimization Algorithms</b><br>Schulman, Wolski, Dhariwal, Radford, Klimov<br>OpenAI · 2017 · arXiv 1707.06347');
-    m.style.top = '680px';
-    var toc = h('div', 'toc', root,
-      '<div><span>01</span>步子迈多大</div><div><span>02</span>第一把尺子：概率比 r</div>' +
-      '<div><span>03</span>第二把尺子：优势 A 与 GAE</div><div><span>04</span>核心机制：裁剪与冻结</div>' +
-      '<div><span>05</span>合起来：四步循环</div>');
-    toc.style.top = '950px';
-    var rows = toc.children;
-    return {
-      root: root,
-      draw: function (st, t) {
-        fadeUp(a, t, 0.1); fadeUp(b, t, 0.6); fadeUp(m, t, 1.4);
-        for (var k = 0; k < rows.length; k++) fadeUp(rows[k], t, 7.0 + k * 0.45, 0.5);
-      }
-    };
-  }
-
-  /* ── outro ── */
-  function buildOutro() {
-    var root = h('div', 'card');
-    var head = h('div', 'head', root, '<div class="act">三句话记住 PPO</div><div class="title">每一步，都在护栏之内</div>');
-    var items = [
-      [ACC, '① 概率比', '$r = \\pi_\\theta(a \\mid s) / \\pi_{old}(a \\mid s)$<br>新策略相对旧策略变了多少'],
-      [GOOD, '② 优势（GAE）', '$\\hat{A}_t = \\delta_t + \\gamma\\lambda\\,\\hat{A}_{t+1}$<br>这个动作比平均水平好多少'],
-      [WARN, '③ 裁剪 + 取 min', '$\\min\\big(r\\hat{A},\\ \\mathrm{clip}(r, 1-\\varepsilon, 1+\\varepsilon)\\,\\hat{A}\\big)$<br>冲出 $[0.8,\\ 1.2]$ 就冻结']
-    ];
-    var pts = items.map(function (it, k) {
-      var p = h('div', 'pt', root);
-      p.style.top = (420 + k * 265) + 'px';
-      p.style.borderLeft = '10px solid ' + it[0];
-      var n = h('div', 'n', p, it[1]); n.style.color = it[0];
-      var body = h('div', '', p);
-      it[2].split('<br>').forEach(function (line, q) {
-        if (q) body.appendChild(document.createElement('br'));
-        var span = h('span', '', body); K.rich(span, line);
-        if (q) { span.style.fontSize = '36px'; span.style.color = 'var(--text-secondary)'; }
-      });
-      return p;
-    });
-    var foot = h('div', 'meta', root,
-      '<b>完整笔记 · 4 个交互演示 · MimicKit 源码对照</b><br>imchong.github.io/Robot_Learning_Paper_Notebooks');
-    foot.style.top = '1225px';
-    foot.style.textAlign = 'center';
-    foot.style.fontSize = '32px';
-    return {
-      root: root,
-      draw: function (st, t) {
-        fadeUp(head, t, 0.0);
-        pts.forEach(function (p, k) { fadeUp(p, t, [1.2, 3.2, 5.6][k]); });
-        fadeUp(foot, t, 10.2);
-      }
-    };
-  }
+  // helpers handed to papers/<name>.js for the intro / outro cards
+  var V = { K: K, h: h, fadeUp: fadeUp, clamp: clamp,
+    ACC: 'var(--demo-accent)', GOOD: 'var(--demo-good)', BAD: 'var(--demo-bad)', WARN: 'var(--demo-warn)' };
+  document.getElementById('arxiv').textContent = 'arXiv ' + window.PaperVideo.arxiv;
 
   function get(key) {
     if (!built[key]) {
-      built[key] = key === 'intro' ? buildIntro() : key === 'outro' ? buildOutro() : buildStory(+key);
+      built[key] = key === 'intro' ? window.PaperVideo.intro(V) : key === 'outro' ? window.PaperVideo.outro(V) : buildStory(+key);
     }
     return built[key];
   }
 
   var sceneHost = document.getElementById('scene'), subEl = document.getElementById('sub');
 
-  window.setup = function (tl) { TL = tl; };
+  window.setup = function (tl) { TL = tl; N = window.__story.scenes.length; };
 
   window.renderAt = function (t) {
     var segs = TL.segments, s = segs[segs.length - 1];
@@ -214,7 +157,8 @@ html, body { width: 1080px; height: 1920px; overflow: hidden; background: var(--
     while (idx > 0 && String(segs[idx - 1].scene) === key) first = segs[--idx];
     var last = s; idx = segs.indexOf(s);
     while (idx < segs.length - 1 && String(segs[idx + 1].scene) === key) last = segs[++idx];
-    var local = t - first.t0, st = s.from + Math.min(Math.max(t - s.t0 - s.lead, 0), s.to - s.from);
+    // hold just before `to`, so the cue / element that starts at `to` waits for the next line
+    var local = t - first.t0, st = s.from + Math.min(Math.max(t - s.t0 - s.lead, 0), Math.max(s.to - s.from - 1e-3, 0));
     var sc = get(key);
     if (current !== sc) { sceneHost.textContent = ''; sceneHost.appendChild(sc.root); current = sc; }
     sc.draw(st, local, clamp((t - first.t0) / (last.t1 - first.t0), 0, 1));
