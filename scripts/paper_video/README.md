@@ -6,6 +6,7 @@
 |-----------|------|------|
 | `ppo` | `assets/js/demos/ppo.js` 五幕 | 约 3 分 50 秒 |
 | `awr` | `assets/js/demos/awr.js` 六幕 | 约 5 分 25 秒 |
+| `deepmimic` | `assets/js/demos/deepmimic.js` 五幕 | 约 4 分 30 秒 |
 
 - 画面：直接复用 `<paper>.js` 分镜的 `draw(t)`，数字与笔记算例一致；前后加片头、总结页（`papers/<paper>.js`）。
 - 配音：`edge-tts`（`zh-CN-YunxiNeural`，需联网），旁白在 `papers/<paper>.py`。
@@ -27,4 +28,4 @@ node render.mjs awr cover             # 封面（片头、无字幕）-> out/awr
 - Chromium：设置 `CHROME=/path/to/chrome`，否则用 playwright-core 默认路径。
 - 走 TLS 代理时设置 `SSL_CERT_FILE`，`build.py` 会让 edge-tts 用这份 CA。
 - 新增一篇：写 `papers/<paper>.py`（`SCRIPT` / `DISPLAY`）和 `papers/<paper>.js`（`window.PaperVideo` 的 `arxiv` / `intro` / `outro`），`<paper>` 需与 `assets/js/demos/<paper>.js` 及其 `<paper>-explainer` 同名。
-- 放进笔记：网页版再压一次（`-crf 27 -tune stillimage -b:a 64k -ac 1 -movflags +faststart`；PPO 5.6 MB，更长的 AWR 用 `-crf 30` 压到 7.6 MB），海报由 `cover.png` 缩到 540×960 的 jpg，与海报一起放到笔记目录的 `media/`，接线方式见 `AGENTS.md`「配音讲解视频（`K.video`）」。
+- 放进笔记：网页版再压一次（`-crf 27 -tune stillimage -b:a 64k -ac 1 -movflags +faststart`；PPO 5.6 MB，更长的 AWR 用 `-crf 30` 压到 7.6 MB，DeepMimic 用 `-crf 29` 压到 6.6 MB），海报由 `cover.png` 缩到 540×960 的 jpg，与海报一起放到笔记目录的 `media/`，接线方式见 `AGENTS.md`「配音讲解视频（`K.video`）」。

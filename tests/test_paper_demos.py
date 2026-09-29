@@ -182,6 +182,7 @@ def test_notes_declare_their_demos_in_reading_order():
             "deepmimic",
             [
                 "deepmimic-explainer",
+                "deepmimic-video",
                 "deepmimic-reward",
                 "deepmimic-rsi",
                 "deepmimic-curves",

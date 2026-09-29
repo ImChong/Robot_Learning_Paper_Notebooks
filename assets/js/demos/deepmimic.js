@@ -13,6 +13,7 @@
  *   deepmimic-pd     — 策略输出目标角度：PD 增益、等效惯量与 Stable PD
  *   deepmimic-curves — 训练曲线怎么读：归一化回报 / 四维分项 / ET 率 / 相位覆盖
  *   deepmimic-explainer — 五幕讲解动画：为什么模仿 → 四维奖励 → RSI → ET → 训练闭环
+ *   deepmimic-video     — 同样五幕的配音竖屏视频（可下载）
  */
 
 (function () {
@@ -2042,11 +2043,24 @@
     });
   }
 
+  // ─── demo 6: the narrated vertical video of the same five scenes ─────────
+  /* Rendered offline by scripts/paper_video/ from the storyboard above plus a
+     voice-over; the files sit next to the note (see its placeholder). */
+  function buildVideoDemo(host) {
+    K.video(host, {
+      title: '配音讲解视频：DeepMimic 五幕全流程',
+      sub: '4 分 30 秒竖屏视频（1080×1920），中文配音 + 字幕。画面就是上面的五幕动画，旁白把每一幕讲细；适合手机上看或转发。',
+      size: '6.6 MB',
+      fileName: 'DeepMimic_讲解视频.mp4'
+    });
+  }
+
   K.mount({
     'deepmimic-reward': buildRewardDemo,
     'deepmimic-rsi': buildRsiDemo,
     'deepmimic-pd': buildPdDemo,
     'deepmimic-curves': buildCurvesDemo,
-    'deepmimic-explainer': buildExplainerDemo
+    'deepmimic-explainer': buildExplainerDemo,
+    'deepmimic-video': buildVideoDemo
   });
 })();
