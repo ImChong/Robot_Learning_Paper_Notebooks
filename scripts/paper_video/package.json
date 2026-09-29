@@ -1,0 +1,11 @@
+{
+  "name": "paper-video",
+  "private": true,
+  "type": "module",
+  "description": "Render a paper note's K.explainer storyboard into a narrated vertical video.",
+  "dependencies": {
+    "@fontsource/noto-sans-sc": "^5.0.0",
+    "katex": "0.16.9",
+    "playwright-core": "^1.55.0"
+  }
+}
