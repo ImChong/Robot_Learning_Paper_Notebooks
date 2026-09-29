@@ -8,6 +8,7 @@
  * Demos:
  *   bm-explainer — 八幕讲解动画：两个缺口 → 锚定跟踪 → 紧凑 MDP → 自适应采样 →
  *     VAE 潜空间 → 状态-潜动作扩散 → Classifier Guidance → 真机与闭环
+ *   bm-video     — 同样八幕的配音竖屏视频（可下载）
  *   bm-anchor   — 锚定跟踪：让机器人在水平面上「随便漂」，只对齐 yaw 和相对协调
  *   bm-sampling — 按失败率加权的起始相位采样，以及那个防遗忘的 λ 混合项
  *   bm-guidance — Classifier Guidance：代价直接相加，不用为组合重新训练
@@ -1899,8 +1900,21 @@
     });
   }
 
+  // ─── the narrated vertical video of the same eight scenes ─────────────
+  /* Rendered offline by scripts/paper_video/ from the storyboard above plus a
+     voice-over; the files sit next to the note (see its placeholder). */
+  function buildVideoDemo(host) {
+    K.video(host, {
+      title: '配音讲解视频：BeyondMimic 八幕全流程',
+      sub: '7 分 2 秒竖屏视频（1080×1920），中文配音 + 字幕。画面就是上面的八幕动画，旁白把每一幕讲细；适合手机上看或转发。',
+      size: '9.4 MB',
+      fileName: 'BeyondMimic_讲解视频.mp4'
+    });
+  }
+
   K.mount({
     'bm-explainer': buildExplainerDemo,
+    'bm-video': buildVideoDemo,
     'bm-anchor': buildAnchorDemo,
     'bm-sampling': buildSamplingDemo,
     'bm-guidance': buildGuidanceDemo

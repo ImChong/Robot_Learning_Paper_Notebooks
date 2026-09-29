@@ -9,6 +9,7 @@
  * Demos:
  *   pulse-explainer  — 六幕讲解动画：缺一个通用表示 → 阶段1 大规模模仿 → 阶段2 VIB 瓶颈 →
  *                      本体感受先验 → 阶段3 下游只搜 32 维 → 闭环与源码落点
+ *   pulse-video      — 同样六幕的配音竖屏视频（可下载）
  *   pulse-vib        — 变分信息瓶颈：β 在「记住每个片段」和「什么都没学到」之间的取舍
  *   pulse-prior      — 本体感受先验 p(z|s)：为什么固定的 N(0, I) 会让长序列发散
  *   pulse-downstream — 32 维潜空间 vs 69 维关节空间：下游 RL 到底省在哪
@@ -1398,8 +1399,21 @@
     });
   }
 
+  // ─── the narrated vertical video of the same six scenes ─────────────
+  /* Rendered offline by scripts/paper_video/ from the storyboard above plus a
+     voice-over; the files sit next to the note (see its placeholder). */
+  function buildVideoDemo(host) {
+    K.video(host, {
+      title: '配音讲解视频：PULSE 六幕全流程',
+      sub: '5 分 16 秒竖屏视频（1080×1920），中文配音 + 字幕。画面就是上面的六幕动画，旁白把每一幕讲细；适合手机上看或转发。',
+      size: '7.6 MB',
+      fileName: 'PULSE_讲解视频.mp4'
+    });
+  }
+
   K.mount({
     'pulse-explainer': buildExplainerDemo,
+    'pulse-video': buildVideoDemo,
     'pulse-vib': buildVibDemo,
     'pulse-prior': buildPriorDemo,
     'pulse-downstream': buildDownstreamDemo

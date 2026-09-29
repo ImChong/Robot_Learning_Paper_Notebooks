@@ -9,6 +9,7 @@
  * Demos:
  *   dp-explainer  — 七幕讲解动画：平均动作撞障 → 条件扩散 → action chunking →
  *     视觉条件 + FiLM → DDIM 加速 → receding horizon → 为什么成了 IL 标准
+ *   dp-video      — 同样七幕的配音竖屏视频（可下载）
  *   dp-multimodal — 演示里左绕右绕各一半，MSE 回归的「平均动作」正好撞上障碍
  *   dp-denoise    — 从高斯噪声一步步去噪出一整条 action chunk（真的在跑 DDIM）
  *   dp-rhc        — 预测 16 步、只执行 8 步：receding horizon 的那个取舍
@@ -1512,8 +1513,21 @@
     });
   }
 
+  // ─── the narrated vertical video of the same seven scenes ─────────────
+  /* Rendered offline by scripts/paper_video/ from the storyboard above plus a
+     voice-over; the files sit next to the note (see its placeholder). */
+  function buildVideoDemo(host) {
+    K.video(host, {
+      title: '配音讲解视频：Diffusion Policy 七幕全流程',
+      sub: '4 分 7 秒竖屏视频（1080×1920），中文配音 + 字幕。画面就是上面的七幕动画，旁白把每一幕讲细；适合手机上看或转发。',
+      size: '6.0 MB',
+      fileName: 'Diffusion_Policy_讲解视频.mp4'
+    });
+  }
+
   K.mount({
     'dp-explainer': buildExplainerDemo,
+    'dp-video': buildVideoDemo,
     'dp-multimodal': buildMultimodalDemo,
     'dp-denoise': buildDenoiseDemo,
     'dp-rhc': buildRhcDemo

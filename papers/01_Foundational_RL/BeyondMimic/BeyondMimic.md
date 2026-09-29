@@ -34,11 +34,12 @@ demos: ["beyondmimic"]
 
 > BeyondMimic 用**一套统一 MDP + 共享超参**在真机上实现高动态全身跟踪，再把跟踪策略先经 **VAE 蒸馏成 32 维潜空间**、在其上训练 **状态-潜动作联合扩散模型**（Diffuse-CLoC 式），推理时以 **Classifier Guidance** 对未见任务做零样本引导——无需为每个新任务重训 RL。
 
-> 🎮 **本文内嵌 1 段动画 + 3 个可交互演示**（不用装任何东西）：
+> 🎮 **本文内嵌 1 段动画 + 1 段配音视频 + 3 个可交互演示**（不用装任何东西）：
 > 1. [八幕动画：BeyondMimic 全流程](#bm-explainer-anim) —— 约 103 秒串完「两个缺口 → 锚定跟踪 → 紧凑 MDP → 自适应采样 → VAE 潜空间 → 状态-潜动作扩散 → Classifier Guidance → 真机与闭环」
-> 2. [锚定跟踪：允许它漂，不许它走歪](#bm-anchor-demo) —— 拖漂移量，看刚性跟踪怎么把动作风格吃掉
-> 3. [起始相位不能均匀采](#bm-sampling-demo) —— 把 $\lambda$ 拖到 0，看简单片段被慢慢忘掉
-> 4. [Classifier Guidance：代价直接相加](#bm-guidance-demo) —— 两个勾选框各是一个 $G$，同时勾上就是零样本组合
+> 2. [配音讲解视频](#bm-video) —— 同样八幕，加中文配音与字幕，7 分 2 秒竖屏，可下载
+> 3. [锚定跟踪：允许它漂，不许它走歪](#bm-anchor-demo) —— 拖漂移量，看刚性跟踪怎么把动作风格吃掉
+> 4. [起始相位不能均匀采](#bm-sampling-demo) —— 把 $\lambda$ 拖到 0，看简单片段被慢慢忘掉
+> 5. [Classifier Guidance：代价直接相加](#bm-guidance-demo) —— 两个勾选框各是一个 $G$，同时勾上就是零样本组合
 
 ---
 
@@ -64,6 +65,10 @@ demos: ["beyondmimic"]
 ## 🎬 八幕动画：BeyondMimic 全流程 {#bm-explainer-anim}
 
 <div class="paper-demo" data-demo="bm-explainer"><p class="demo-fallback">（本节含动画演示，需要启用 JavaScript）</p></div>
+
+## 📺 配音讲解视频（可下载） {#bm-video}
+
+<div class="paper-demo" data-demo="bm-video" data-src="media/bm_explainer_video.mp4" data-poster="media/bm_explainer_video_poster.jpg"><p class="demo-fallback">（本节含讲解视频播放器，需要启用 JavaScript；也可以直接<a href="media/bm_explainer_video.mp4" download="BeyondMimic_讲解视频.mp4">下载 mp4（9.4 MB）</a>）</p></div>
 
 > 📖 **动画之后的正文默认全部折叠**：前半部分（「要解决什么问题」「方法详解」的各小节）按小节收起，后面的具体实例、实验结果、工程价值、局限、源码对照、面试问题与附录整块收起。想细读哪一块就点开对应的折叠条，内容一字未删；流程图、交互演示、代码块留在外面。目录里的标题依旧可以直接点，会自动展开所在折叠块，左侧目录顶部还有「展开全部文字」一键铺开。
 

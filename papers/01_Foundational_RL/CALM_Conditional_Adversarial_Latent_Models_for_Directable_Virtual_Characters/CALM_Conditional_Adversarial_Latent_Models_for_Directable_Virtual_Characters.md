@@ -34,11 +34,12 @@ demos: ["calm"]
 
 CALM 在 ASE 的基础上加了一层"方向控制"能力——训练一个高层策略学"朝哪个 latent 方向走"来完成指定任务，底层负责动作质量；两者组合起来，用一个简单的状态机就能编出复杂的组合动作，不用额外训练。
 
-> 🎮 **本文内嵌 1 段动画 + 3 个可交互演示**（不用装任何东西）：
+> 🎮 **本文内嵌 1 段动画 + 1 段配音视频 + 3 个可交互演示**（不用装任何东西）：
 > 1. [五幕动画：CALM 全流程](#calm-explainer-anim) —— 约 76 秒串完「ASE 缺方向 → LLC 编 latent → HLC 方向奖励 → FSM 零训练组合 → 三阶段训练闭环」
-> 2. latent 实验台 —— CALM 的 $z = E(\text{动捕})$ 与 ASE 随机采 $z$ 并排对比，看「点名技能」为什么重要
-> 3. 方向奖励实验台 —— 拖 $r _ {dir}=\cos(z _ {target},z_t)$ 权重，看 HLC 怎么被关进一个锥里
-> 4. FSM 实验台 —— 跑一遍 HumanoidStrike 式状态机，注意换的只是 $z$ 的来源
+> 2. [配音讲解视频](#calm-video) —— 同样五幕，加中文配音与字幕，4 分 19 秒竖屏，可下载
+> 3. latent 实验台 —— CALM 的 $z = E(\text{动捕})$ 与 ASE 随机采 $z$ 并排对比，看「点名技能」为什么重要
+> 4. 方向奖励实验台 —— 拖 $r _ {dir}=\cos(z _ {target},z_t)$ 权重，看 HLC 怎么被关进一个锥里
+> 5. FSM 实验台 —— 跑一遍 HumanoidStrike 式状态机，注意换的只是 $z$ 的来源
 
 ---
 
@@ -59,6 +60,10 @@ CALM 在 ASE 的基础上加了一层"方向控制"能力——训练一个高�
 ## 🎬 五幕动画：CALM 全流程 {#calm-explainer-anim}
 
 <div class="paper-demo" data-demo="calm-explainer"><p class="demo-fallback">（本节含动画演示，需要启用 JavaScript）</p></div>
+
+## 📺 配音讲解视频（可下载） {#calm-video}
+
+<div class="paper-demo" data-demo="calm-video" data-src="media/calm_explainer_video.mp4" data-poster="media/calm_explainer_video_poster.jpg"><p class="demo-fallback">（本节含讲解视频播放器，需要启用 JavaScript；也可以直接<a href="media/calm_explainer_video.mp4" download="CALM_讲解视频.mp4">下载 mp4（5.8 MB）</a>）</p></div>
 
 > 📖 **动画之后的正文默认全部折叠**：前半部分（「要解决什么问题」「是怎么做的」）按小节收起，后面的具体实例、源码对照、面试问题、讨论记录与附录整块收起。想细读哪一块就点开对应的折叠条，内容一字未删；目录里的标题依旧可以直接点，会自动展开所在折叠块，左侧目录顶部还有「展开全部文字」一键铺开。
 

@@ -203,11 +203,11 @@ def test_notes_declare_their_demos_in_reading_order():
         ),
         CALM_NOTE: (
             "calm",
-            ["calm-explainer", "calm-encoder", "calm-hlc", "calm-fsm"],
+            ["calm-explainer", "calm-video", "calm-encoder", "calm-hlc", "calm-fsm"],
         ),
         PULSE_NOTE: (
             "pulse",
-            ["pulse-explainer", "pulse-vib", "pulse-prior", "pulse-downstream"],
+            ["pulse-explainer", "pulse-video", "pulse-vib", "pulse-prior", "pulse-downstream"],
         ),
         PHC_NOTE: (
             "phc",
@@ -215,13 +215,13 @@ def test_notes_declare_their_demos_in_reading_order():
         ),
         DIFFUSION_POLICY_NOTE: (
             "diffusion_policy",
-            ["dp-explainer", "dp-multimodal", "dp-denoise", "dp-rhc"],
+            ["dp-explainer", "dp-video", "dp-multimodal", "dp-denoise", "dp-rhc"],
         ),
         BEYONDMIMIC_NOTE: (
             "beyondmimic",
-            ["bm-explainer", "bm-anchor", "bm-sampling", "bm-guidance"],
+            ["bm-explainer", "bm-video", "bm-anchor", "bm-sampling", "bm-guidance"],
         ),
-        LCP_NOTE: ("lcp", ["lcp-sensitivity", "lcp-gp", "lcp-vs-filter"]),
+        LCP_NOTE: ("lcp", ["lcp-explainer", "lcp-video", "lcp-sensitivity", "lcp-gp", "lcp-vs-filter"]),
         DR_VISION_NOTE: (
             "domain_randomization",
             ["dr-scene", "dr-coverage", "dr-ablation"],
@@ -276,7 +276,7 @@ def test_demo_assets_are_theme_aware():
 EXPLAINER_BUNDLES = (
     "ppo", "awr", "deepmimic", "amp", "add", "ase", "calm", "pulse", "sonic", "groot",
     "gmr", "omniretarget", "diffusion_policy", "beyondmimic", "cosmos", "umr", "php", "pbfm",
-    "gentle",
+    "gentle", "lcp",
 )
 
 # 幕数由论文决定，不是统一模板：PPO / DeepMimic / AMP / ADD 的核心概念正好各 5 个，
@@ -330,6 +330,10 @@ EXPLAINER_BUNDLES = (
 # 目标系动作对齐 / 恒等门控残差 / 定量证据与边界）。TCRS 的四步里「脚怎么走」与
 # 「身体怎么跟」各是一组公式（式 4–6 vs 式 7、12），合成一幕会让 MPPI 候选表和
 # 根高度滤波抢画面；对齐与门控是论文两条独立的消融，也各占一幕。
+# LCP 是五件（抖动 = K × σ / 梯度惩罚约束敏感度 / λ_gp 的取舍 / 对比低通滤波 /
+# 接进 PPO 只多一项 loss）。前三件对应笔记里的三个概念与三个演示，「λ_gp 取舍」不并进
+# 「梯度惩罚」是因为前者要并排看三档 K*、表现与抖动，后者要画 J(K) − λK² 的整条曲线，
+# 塞进同一帧会让两组读数互相盖住；低通滤波要付的延迟与接进 PPO 的源码是两件独立的事。
 # GentleHumanoid 是七件（跟踪策略把外力当扰动 / 阻抗参考动力学 / 抵抗与引导两种交互弹簧 /
 # 受力暴露的多样性 / 安全力阈值 / 教师—学生与柔顺奖励 / 定量证据与局限）。「交互力长什么样」
 # 与「什么时候、在哪几个 link、多硬」是两件事（式 3–4 vs 附录 A 的调度），阈值又有自己的
@@ -355,6 +359,7 @@ EXPLAINER_SCENES = {
     "php": (PHP_NOTE, 8),
     "pbfm": (PBFM_NOTE, 7),
     "gentle": (GENTLE_NOTE, 7),
+    "lcp": (LCP_NOTE, 5),
 }
 CN_NUMERALS = {4: "四", 5: "五", 6: "六", 7: "七", 8: "八"}
 
@@ -1389,3 +1394,29 @@ def test_gentle_explainer_and_worked_example_share_the_same_numbers():
     assert "## 🎬 七幕动画：GentleHumanoid 全流程" in note
     assert "## 🚶 具体实例" in note
     assert "## 📁 源码对照" in note
+
+
+VIDEO_PLACEHOLDER_RE = re.compile(r'<div class="paper-demo" data-demo="([\w-]+-video)" data-src="([^"]+)" data-poster="([^"]+)">(.*?)</div>')
+
+
+def test_narrated_video_placeholders_point_at_files_that_exist():
+    """每个 `*-video` 占位符的 mp4 / 海报必须真的躺在笔记同目录，兜底下载链接指向同一个文件。
+
+    播放器是 kit.js 的 K.video 在运行时生成的（<video> 过不了 nh3），bundle 里必须注册同名构建函数；
+    无 JS 时读者只剩兜底文案里的 <a download>，路径写错就成了死链。
+    """
+    seen = set()
+    for path in (ROOT / "papers").rglob("*.md"):
+        text = path.read_text(encoding="utf-8")
+        for demo, src, poster, fallback in VIDEO_PLACEHOLDER_RE.findall(text):
+            seen.add(demo)
+            assert (path.parent / src).is_file(), f"{path.name}: {demo} 的视频 {src} 不存在"
+            assert (path.parent / poster).is_file(), f"{path.name}: {demo} 的海报 {poster} 不存在"
+            assert f'href="{src}" download=' in fallback, f"{path.name}: {demo} 的兜底下载链接应指向 {src}"
+            assert text.count(f'data-demo="{demo}"') == 1, f"{path.name}: {demo} 占位符应只出现一次"
+            declared = FRONTMATTER_DEMOS_RE.search(text)
+            bundles = re.findall(r'"([a-z0-9_-]+)"', declared.group(1))
+            js = "".join((DEMO_JS_DIR / f"{b}.js").read_text(encoding="utf-8") for b in bundles)
+            assert f"'{demo}': buildVideoDemo" in js and "K.video(host" in js, f"{demo} 没有通过 K.video 注册"
+    for demo in ("calm-video", "pulse-video", "dp-video", "bm-video", "lcp-video"):
+        assert demo in seen, f"{demo} 应该挂在对应的论文笔记里"
