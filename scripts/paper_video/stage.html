@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<title>PPO 视频舞台</title>
+<link rel="stylesheet" href="node_modules/katex/dist/katex.min.css">
+<link rel="stylesheet" href="node_modules/@fontsource/noto-sans-sc/400.css">
+<link rel="stylesheet" href="node_modules/@fontsource/noto-sans-sc/700.css">
+<link rel="stylesheet" href="node_modules/@fontsource/noto-sans-sc/900.css">
+<link rel="stylesheet" href="REPO/assets/css/paper-demos.css">
+<style>
+:root {
+  --bg: #16161a; --text: #e6e6e6; --text-secondary: #a8a8a8;
+  --demo-surface: #1f1f24; --demo-surface-2: #2a2a30; --demo-border: #3a3a42;
+  --hi: #ffd166;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { width: 1080px; height: 1920px; overflow: hidden; background: var(--bg); color: var(--text);
+  font-family: 'Noto Sans SC', 'WenQuanYi Zen Hei', sans-serif; }
+#app { position: relative; width: 1080px; height: 1920px; overflow: hidden;
+  background: radial-gradient(1200px 700px at 50% 30%, #1f2330 0%, var(--bg) 70%); }
+.brand { position: absolute; top: 70px; left: 60px; right: 60px; display: flex; justify-content: space-between;
+  align-items: center; font-size: 30px; color: var(--text-secondary); }
+.brand b { color: var(--demo-accent); font-weight: 900; }
+.pill { border: 2px solid var(--demo-border); border-radius: 999px; padding: 6px 22px; font-size: 26px; }
+
+/* ── scene chrome ── */
+#scene { position: absolute; inset: 0; }
+.head { position: absolute; top: 185px; left: 60px; right: 60px; }
+.act { font-size: 34px; color: var(--demo-accent); font-weight: 700; letter-spacing: 2px; }
+.title { font-size: 64px; font-weight: 900; line-height: 1.25; margin-top: 12px; }
+.title .katex { font-size: 1em; }
+.prog { position: absolute; top: 395px; left: 60px; right: 60px; display: flex; gap: 12px; }
+.prog i { flex: 1; height: 8px; border-radius: 4px; background: var(--demo-grid); overflow: hidden; }
+.prog i b { display: block; height: 100%; width: 0; background: var(--demo-accent); }
+.stage { position: absolute; top: 455px; left: 10px; width: 1060px; height: 560px;
+  background: var(--demo-surface); border-radius: 24px; border: 2px solid var(--demo-border); overflow: hidden; }
+.stage > svg { position: absolute; left: 0; top: 0; width: 1060px; height: 556.5px; }
+.stage .demo-x-svg text { font-family: 'Noto Sans SC', sans-serif; }
+.stage .demo-x-mono { font-family: 'DejaVu Sans Mono', monospace; }
+.stage .demo-x-svg text.demo-x-mut { fill: var(--demo-muted); }
+.stage .demo-x-svg text.demo-x-ink2 { fill: var(--text-secondary); }
+.stage .demo-x-svg text.demo-x-acc { fill: var(--demo-accent); }
+.stage .demo-x-svg text.demo-x-good { fill: var(--demo-good); }
+.stage .demo-x-svg text.demo-x-bad { fill: var(--demo-bad); }
+.stage .demo-x-svg text.demo-x-warn { fill: var(--demo-warn); }
+.cue { position: absolute; top: 1060px; left: 60px; right: 60px; min-height: 250px;
+  border-left: 10px solid var(--demo-accent); background: rgba(86,156,214,.08);
+  border-radius: 0 20px 20px 0; padding: 30px 36px; font-size: 44px; line-height: 1.55; }
+.cue .tag { font-size: 28px; color: var(--demo-accent); font-weight: 700; letter-spacing: 4px; margin-bottom: 10px; }
+.cue b { color: var(--hi); font-weight: 700; }
+.cue .katex { font-size: 1.02em; }
+.sub { position: absolute; top: 1420px; left: 50px; right: 50px; text-align: center;
+  font-size: 58px; font-weight: 900; line-height: 1.35; color: #fff;
+  text-shadow: 0 3px 0 #000, 0 0 18px rgba(0,0,0,.85); }
+
+/* ── intro / outro cards ── */
+.card { position: absolute; inset: 0; }
+.big { position: absolute; left: 0; right: 0; text-align: center; }
+.meta { position: absolute; left: 90px; right: 90px; border: 2px solid var(--demo-border); border-radius: 24px;
+  background: var(--demo-surface); padding: 34px 40px; font-size: 34px; line-height: 1.7; color: var(--text-secondary); }
+.meta b { color: var(--text); }
+.toc { position: absolute; left: 90px; right: 90px; font-size: 40px; line-height: 1.9; }
+.toc span { color: var(--demo-accent); font-weight: 900; margin-right: 20px; font-family: 'DejaVu Sans Mono', monospace; }
+.pt { position: absolute; left: 70px; right: 70px; border-radius: 24px; padding: 24px 36px;
+  background: var(--demo-surface); border: 2px solid var(--demo-border); font-size: 42px; line-height: 1.5; }
+.pt .n { font-weight: 900; font-size: 34px; margin-bottom: 6px; }
+.pt .katex { font-size: 1em; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="brand"><span><b>论文精读</b> · 机器人学习</span><span class="pill">arXiv 1707.06347</span></div>
+  <div id="scene"></div>
+  <div class="sub" id="sub"></div>
+</div>
+<div class="paper-demo" data-demo="ppo-explainer" style="display:none"></div>
+
+<script src="node_modules/katex/dist/katex.min.js"></script>
+<script src="REPO/assets/js/demos/kit.js"></script>
+<script>
+  // Capture the storyboard instead of mounting the interactive player.
+  window.PaperDemoKit.explainer = function (host, opts) { window.__story = opts; };
+</script>
+<script src="REPO/assets/js/demos/ppo.js"></script>
+<script>
+(function () {
+  var K = window.PaperDemoKit;
+  var TL = null, built = {}, current = null, lastSub = null;
+  var ACC = 'var(--demo-accent)', GOOD = 'var(--demo-good)', BAD = 'var(--demo-bad)', WARN = 'var(--demo-warn)';
+
+  function h(tag, cls, parent, html) {
+    var n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (html !== undefined) n.innerHTML = html;
+    if (parent) parent.appendChild(n);
+    return n;
+  }
+  function richInto(node, str) { node.textContent = ''; K.rich(node, str); }
+  function clamp(x, a, b) { return Math.max(a, Math.min(b, x)); }
+  function fadeUp(node, t, a, d) {
+    var p = K.ease(clamp((t - a) / (d || 0.6), 0, 1));
+    node.style.opacity = p;
+    node.style.transform = 'translateY(' + ((1 - p) * 40).toFixed(1) + 'px)';
+  }
+
+  /* ── storyboard scene ── */
+  function buildStory(i) {
+    var sc = window.__story.scenes[i];
+    var root = h('div', 'card');
+    var head = h('div', 'head', root);
+    h('div', 'act', head, '第 ' + (i + 1) + ' / 5 幕');
+    richInto(h('div', 'title', head), sc.title);
+    var prog = h('div', 'prog', root), bars = [];
+    for (var k = 0; k < 5; k++) bars.push(h('b', '', h('i', '', prog)));
+    var stage = h('div', 'stage', root);
+    var story = sc.build();
+    stage.appendChild(story.el);
+    var cue = h('div', 'cue', root);
+    h('div', 'tag', cue, '要点');
+    var cueText = h('div', '', cue), cueIdx = -1;
+    return {
+      root: root,
+      draw: function (st, t, seg) {
+        story.draw(st);
+        var j = 0;
+        sc.cues.forEach(function (c, n) { if (st >= c.at - 1e-6) j = n; });
+        if (j !== cueIdx) { cueIdx = j; richInto(cueText, sc.cues[j].s); }
+        for (var k = 0; k < 5; k++) bars[k].style.width = (k < i ? 100 : k > i ? 0 : 100 * seg) + '%';
+      }
+    };
+  }
+
+  /* ── intro ── */
+  function buildIntro() {
+    var root = h('div', 'card');
+    var a = h('div', 'big', root, '<div style="font-size:250px;font-weight:900;letter-spacing:16px;color:var(--demo-accent);line-height:1">PPO</div>');
+    a.style.top = '190px';
+    var b = h('div', 'big', root, '<div style="font-size:70px;font-weight:900">近端策略优化</div>' +
+      '<div style="font-size:40px;color:var(--text-secondary);margin-top:18px">人形机器人强化学习最常用的基础算法</div>');
+    b.style.top = '470px';
+    var m = h('div', 'meta', root,
+      '<b>Proximal Policy Optimization Algorithms</b><br>Schulman, Wolski, Dhariwal, Radford, Klimov<br>OpenAI · 2017 · arXiv 1707.06347');
+    m.style.top = '680px';
+    var toc = h('div', 'toc', root,
+      '<div><span>01</span>步子迈多大</div><div><span>02</span>第一把尺子：概率比 r</div>' +
+      '<div><span>03</span>第二把尺子：优势 A 与 GAE</div><div><span>04</span>核心机制：裁剪与冻结</div>' +
+      '<div><span>05</span>合起来：四步循环</div>');
+    toc.style.top = '950px';
+    var rows = toc.children;
+    return {
+      root: root,
+      draw: function (st, t) {
+        fadeUp(a, t, 0.1); fadeUp(b, t, 0.6); fadeUp(m, t, 1.4);
+        for (var k = 0; k < rows.length; k++) fadeUp(rows[k], t, 7.0 + k * 0.45, 0.5);
+      }
+    };
+  }
+
+  /* ── outro ── */
+  function buildOutro() {
+    var root = h('div', 'card');
+    var head = h('div', 'head', root, '<div class="act">三句话记住 PPO</div><div class="title">每一步，都在护栏之内</div>');
+    var items = [
+      [ACC, '① 概率比', '$r = \\pi_\\theta(a \\mid s) / \\pi_{old}(a \\mid s)$<br>新策略相对旧策略变了多少'],
+      [GOOD, '② 优势（GAE）', '$\\hat{A}_t = \\delta_t + \\gamma\\lambda\\,\\hat{A}_{t+1}$<br>这个动作比平均水平好多少'],
+      [WARN, '③ 裁剪 + 取 min', '$\\min\\big(r\\hat{A},\\ \\mathrm{clip}(r, 1-\\varepsilon, 1+\\varepsilon)\\,\\hat{A}\\big)$<br>冲出 $[0.8,\\ 1.2]$ 就冻结']
+    ];
+    var pts = items.map(function (it, k) {
+      var p = h('div', 'pt', root);
+      p.style.top = (420 + k * 265) + 'px';
+      p.style.borderLeft = '10px solid ' + it[0];
+      var n = h('div', 'n', p, it[1]); n.style.color = it[0];
+      var body = h('div', '', p);
+      it[2].split('<br>').forEach(function (line, q) {
+        if (q) body.appendChild(document.createElement('br'));
+        var span = h('span', '', body); K.rich(span, line);
+        if (q) { span.style.fontSize = '36px'; span.style.color = 'var(--text-secondary)'; }
+      });
+      return p;
+    });
+    var foot = h('div', 'meta', root,
+      '<b>完整笔记 · 4 个交互演示 · MimicKit 源码对照</b><br>imchong.github.io/Robot_Learning_Paper_Notebooks');
+    foot.style.top = '1225px';
+    foot.style.textAlign = 'center';
+    foot.style.fontSize = '32px';
+    return {
+      root: root,
+      draw: function (st, t) {
+        fadeUp(head, t, 0.0);
+        pts.forEach(function (p, k) { fadeUp(p, t, [1.2, 3.2, 5.6][k]); });
+        fadeUp(foot, t, 10.2);
+      }
+    };
+  }
+
+  function get(key) {
+    if (!built[key]) {
+      built[key] = key === 'intro' ? buildIntro() : key === 'outro' ? buildOutro() : buildStory(+key);
+    }
+    return built[key];
+  }
+
+  var sceneHost = document.getElementById('scene'), subEl = document.getElementById('sub');
+
+  window.setup = function (tl) { TL = tl; };
+
+  window.renderAt = function (t) {
+    var segs = TL.segments, s = segs[segs.length - 1];
+    for (var i = 0; i < segs.length; i++) if (t < segs[i].t1) { s = segs[i]; break; }
+    var key = String(s.scene);
+    // time inside this scene (from the first segment of the same scene)
+    var first = s, idx = segs.indexOf(s);
+    while (idx > 0 && String(segs[idx - 1].scene) === key) first = segs[--idx];
+    var last = s; idx = segs.indexOf(s);
+    while (idx < segs.length - 1 && String(segs[idx + 1].scene) === key) last = segs[++idx];
+    var local = t - first.t0, st = s.from + Math.min(Math.max(t - s.t0 - s.lead, 0), s.to - s.from);
+    var sc = get(key);
+    if (current !== sc) { sceneHost.textContent = ''; sceneHost.appendChild(sc.root); current = sc; }
+    sc.draw(st, local, clamp((t - first.t0) / (last.t1 - first.t0), 0, 1));
+    // cross-fade at scene edges
+    var fin = clamp(local / 0.35, 0, 1), fout = clamp((last.t1 - t) / 0.3, 0, 1);
+    sc.root.style.opacity = Math.min(fin, t > TL.total - 1 ? 1 : fout);
+
+    var sub = '';
+    for (var k = 0; k < TL.subs.length; k++) {
+      var x = TL.subs[k];
+      if (t >= x.t0 && t < x.t1 + 0.15) { sub = x.text; }
+    }
+    if (sub !== lastSub) { subEl.textContent = sub; lastSub = sub; }
+  };
+})();
+</script>
+</body>
+</html>
