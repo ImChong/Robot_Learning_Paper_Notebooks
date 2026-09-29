@@ -36,11 +36,12 @@ demos: ["diffusion_policy"]
 
 > Diffusion Policy 将机器人策略表示为条件去噪扩散过程，将动作生成从"单步回归"升级为"多步轨迹生成"，从而完美处理模仿学习中的多模态分布挑战。
 
-> 🎮 **本文内嵌 1 段动画 + 3 个可交互演示**（不用装任何东西）：
+> 🎮 **本文内嵌 1 段动画 + 1 段配音视频 + 3 个可交互演示**（不用装任何东西）：
 > 1. [七幕动画：Diffusion Policy 全流程](#dp-explainer-anim) —— 约 86 秒串完「平均动作撞障 → 条件扩散 → action chunking → 视觉条件 + FiLM → DDIM 加速 → receding horizon → 为什么成了 IL 标准」
-> 2. [「平均动作」为什么会撞上障碍](#dp-multimodal-demo) —— 演示一半上绕一半下绕，MSE 给出的是两峰均值
-> 3. [去噪：从噪声里捞出整条 chunk](#dp-denoise-demo) —— 浏览器里真的在跑 DDIM，整条 16 步一起锁模式
-> 4. [Receding Horizon：预测 16，执行 8](#dp-rhc-demo) —— 拖 $T_a$，看反应延迟和推理开销怎么此消彼长
+> 2. [配音讲解视频](#dp-video) —— 同样七幕，加中文配音与字幕，4 分 7 秒竖屏，可下载
+> 3. [「平均动作」为什么会撞上障碍](#dp-multimodal-demo) —— 演示一半上绕一半下绕，MSE 给出的是两峰均值
+> 4. [去噪：从噪声里捞出整条 chunk](#dp-denoise-demo) —— 浏览器里真的在跑 DDIM，整条 16 步一起锁模式
+> 5. [Receding Horizon：预测 16，执行 8](#dp-rhc-demo) —— 拖 $T_a$，看反应延迟和推理开销怎么此消彼长
 
 ---
 
@@ -58,6 +59,10 @@ demos: ["diffusion_policy"]
 ## 🎬 七幕动画：Diffusion Policy 全流程 {#dp-explainer-anim}
 
 <div class="paper-demo" data-demo="dp-explainer"><p class="demo-fallback">（本节含动画演示，需要启用 JavaScript）</p></div>
+
+## 📺 配音讲解视频（可下载） {#dp-video}
+
+<div class="paper-demo" data-demo="dp-video" data-src="media/dp_explainer_video.mp4" data-poster="media/dp_explainer_video_poster.jpg"><p class="demo-fallback">（本节含讲解视频播放器，需要启用 JavaScript；也可以直接<a href="media/dp_explainer_video.mp4" download="Diffusion_Policy_讲解视频.mp4">下载 mp4（6.0 MB）</a>）</p></div>
 
 > 📖 **动画之后的正文默认全部折叠**：前半部分（「要解决什么问题」「是怎么做的」）按小节收起，后面的具体实例、工程价值、源码对照、面试问题与附录整块收起。想细读哪一块就点开对应的折叠条，内容一字未删；流程图、交互演示留在外面。目录里的标题依旧可以直接点，会自动展开所在折叠块，左侧目录顶部还有「展开全部文字」一键铺开。
 

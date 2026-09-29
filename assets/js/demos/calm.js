@@ -9,6 +9,7 @@
  * Demos:
  *   calm-explainer — 五幕讲解动画：ASE 缺方向 → LLC 编 latent → HLC 方向奖励 →
  *                    FSM 零训练组合 → 三阶段训练闭环
+ *   calm-video     — 同样五幕的配音竖屏视频（可下载）
  *   calm-encoder   — z = E(motion clip)：latent 有名字了，这才有后面的免训练组合
  *   calm-hlc       — 方向奖励 r_dir = cos(z_target, z_t)：把高层策略关进一个锥里
  *   calm-fsm       — 推理期 FSM：换的只是 z 的来源，三段技能零训练拼起来
@@ -1369,8 +1370,21 @@
     });
   }
 
+  // ─── the narrated vertical video of the same five scenes ─────────────
+  /* Rendered offline by scripts/paper_video/ from the storyboard above plus a
+     voice-over; the files sit next to the note (see its placeholder). */
+  function buildVideoDemo(host) {
+    K.video(host, {
+      title: '配音讲解视频：CALM 五幕全流程',
+      sub: '4 分 19 秒竖屏视频（1080×1920），中文配音 + 字幕。画面就是上面的五幕动画，旁白把每一幕讲细；适合手机上看或转发。',
+      size: '5.8 MB',
+      fileName: 'CALM_讲解视频.mp4'
+    });
+  }
+
   K.mount({
     'calm-explainer': buildExplainerDemo,
+    'calm-video': buildVideoDemo,
     'calm-encoder': buildEncoderDemo,
     'calm-hlc': buildHlcDemo,
     'calm-fsm': buildFsmDemo

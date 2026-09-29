@@ -34,6 +34,13 @@ demos: ["lcp"]
 
 LCP 的核心主张很硬：**与其在 reward 里拧各种“平滑惩罚”旋钮，或者在输出后面再塞低通滤波器，不如直接约束策略本身对输入的敏感度**——用一个可微的梯度惩罚，把策略训练成“天生不抖”。
 
+> 🎮 **本文内嵌 1 段动画 + 1 段配音视频 + 3 个可交互演示**（不用装任何东西）：
+> 1. [五幕动画：LCP 全流程](#lcp-explainer-anim) —— 约 69 秒串完「抖动 = $K \times \sigma$ → 梯度惩罚约束敏感度 → $\lambda _ {gp}$ 的取舍 → 对比低通滤波 → 接进 PPO 只多一项 loss」
+> 2. [配音讲解视频](#lcp-video) —— 同样五幕，加中文配音与字幕，4 分 35 秒竖屏，可下载
+> 3. 抖动实验台 —— 拖策略敏感度 $K$ 和观测噪声 $\sigma$，看仿真里「一切正常」的策略怎么在真机上发毛
+> 4. $\lambda _ {gp}$ 实验台 —— 画出 $J(K) - \lambda _ {gp}K^2$ 的总目标曲线，看最优 $K$ 被压到哪、压过头要付多少
+> 5. 平滑办法对比 —— 同一段带噪指令交给「什么都不做 / 低通滤波 / LCP」，看滤波要付的延迟
+
 ---
 
 ## 🔤 英文缩写速查
@@ -50,7 +57,22 @@ LCP 的核心主张很硬：**与其在 reward 里拧各种“平滑惩罚”旋
 
 ---
 
+## 🎬 五幕动画：LCP 全流程 {#lcp-explainer-anim}
+
+<div class="paper-demo" data-demo="lcp-explainer"><p class="demo-fallback">（本节含动画演示，需要启用 JavaScript）</p></div>
+
+## 📺 配音讲解视频（可下载） {#lcp-video}
+
+<div class="paper-demo" data-demo="lcp-video" data-src="media/lcp_explainer_video.mp4" data-poster="media/lcp_explainer_video_poster.jpg"><p class="demo-fallback">（本节含讲解视频播放器，需要启用 JavaScript；也可以直接<a href="media/lcp_explainer_video.mp4" download="LCP_讲解视频.mp4">下载 mp4（6.3 MB）</a>）</p></div>
+
+> 📖 **动画之后的正文默认全部折叠**：前半部分（「要解决什么问题」「是怎么做的」「具体实例」）按小节收起，后面的工程价值、面试问题、讨论记录、附录、源码对照与参考来源整块收起。想细读哪一块就点开对应的折叠条，内容一字未删；流程图、三个交互演示留在外面，目录里的标题依旧可以直接点，会自动展开所在折叠块，左侧目录顶部还有「展开全部文字」一键铺开。
+
+---
+
 ## ❓ 这篇论文要解决什么问题？
+
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：仿真里的策略太「理想化」，平滑 reward 与低通滤波都不够优雅</summary>
 
 Sim-to-Real 里有个很烦但很真实的问题：
 
@@ -85,12 +107,16 @@ Sim-to-Real 里有个很烦但很真实的问题：
 这篇论文要解决的就是：
 
 **能不能用一种简单、通用、可微、容易塞进现有 RL pipeline 的方法，让 policy 自己学会平滑，而不是靠一堆外部补丁？**
+</details>
 
 ---
 
 ## 🔧 LCP 是怎么做的？
 
 ### 第一个概念：平滑，本质上就是“别对输入太敏感”
+
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：平滑就是「别对输入太敏感」—— Lipschitz 连续与最大敏感度 $K$</summary>
 
 如果一个 policy 的输入状态只变了一点点，输出动作就剧烈乱跳，那它大概率不适合真机。
 
@@ -116,12 +142,16 @@ $$
 > **观测 $o$ 稍微动一下，动作 $a$ 不要炸。**
 
 这句话在真机上有一个非常具体的形式：**动作抖动 ≈ K × 观测噪声**。下面这个实验台把两个旋钮都给你——先把噪声拖到 0 看看「仿真里一切正常」，再拖到真机量级：
+</details>
 
 <div class="paper-demo" data-demo="lcp-sensitivity"><p class="demo-fallback">（本节含交互演示，需要启用 JavaScript）</p></div>
 
 ---
 
 ### 第二个概念：约束梯度，就等于约束敏感度
+
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：梯度有界 ⇒ Lipschitz 连续，所以给目标加一项梯度惩罚</summary>
 
 论文用到一个关键事实：
 
@@ -147,12 +177,16 @@ $$
 > PPO 在学“做什么动作更赚”；LCP 在学“别一惊一乍地做”。
 
 $\lambda _ {gp}$ 不是越大越好。下面这个演示画出 $J(K) - \lambda _ {gp}K^2$ 这条总目标曲线，峰值落在哪里就是训出来的敏感度——顺便看看压过头时任务表现要付多少：
+</details>
 
 <div class="paper-demo" data-demo="lcp-gp"><p class="demo-fallback">（本节含交互演示，需要启用 JavaScript）</p></div>
 
 ---
 
 ### 第三个概念：它和平滑 reward/低通滤波器到底差在哪？
+
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：平滑 reward、低通滤波、LCP 的作用位置与代价</summary>
 
 | 方法 | 作用位置 | 优点 | 缺点 |
 |------|----------|------|------|
@@ -167,12 +201,16 @@ LCP 的优势不是“数学更炫”，而是：
 这点非常适合工程落地。因为一旦你把“平滑”做成 policy regularizer，它就能比较自然地迁移到不同机器人、不同任务、不同训练框架里。
 
 这张表里「低通滤波：可能拖慢反应」具体是多慢？下面这个实验台把三条曲线画在一起，第 80 步有一个阶跃——低通那条要爬很久才追上，而 LCP 那条是立刻跟的：
+</details>
 
 <div class="paper-demo" data-demo="lcp-vs-filter"><p class="demo-fallback">（本节含交互演示，需要启用 JavaScript）</p></div>
 
 ---
 
 ### 训练框架：不是只靠 LCP，还是标准 humanoid sim-to-real 套路 + LCP
+
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：LCP 建立在 PPO + 域随机化 + teacher-student + ROA 之上</summary>
 
 论文不是说“只加个 GP 就完事”。它依然建立在成熟的人形 RL 训练管线上：
 
@@ -182,6 +220,7 @@ LCP 的优势不是“数学更炫”，而是：
 - **ROA（Regularized Online Adaptation）** 做在线适应
 
 也就是说，LCP 的定位不是替代整个 sim-to-real framework，而是：
+</details>
 
 <div class="mermaid">
 flowchart TB
@@ -191,9 +230,13 @@ flowchart TB
     ROA --> LCP["+ LCP 梯度惩罚（几行代码）"]
 </div>
 
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：只多几行代码就能接进现有 pipeline 的平滑正则项</summary>
+
 > **在现有 pipeline 里，加一个几乎几行代码就能接进去的平滑正则项。**
 
 这点很重要。因为真正有价值的方法，不只是 paper 里好看，而是你能不改天换地地接到现有工程里。
+</details>
 
 ### 📊 LCP 接入 PPO 的训练回路
 
@@ -217,9 +260,16 @@ flowchart TB
 
 ## 🚶 具体实例：LCP 怎么让 humanoid 动作不抖？
 
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：用人形速度跟踪的例子，走一遍 LCP 的直觉流程</summary>
+
 下面用一个人形机器人跟踪速度指令的例子，走一遍 LCP 的直觉流程。
+</details>
 
 ### 任务设定
+
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：任务设定：policy 的输入是什么、输出是什么</summary>
 
 机器人需要根据指令：
 - 向前走 / 后退
@@ -236,12 +286,17 @@ policy 输入通常包括：
 policy 输出：
 - 每个关节的目标角度或动作指令
 - 再通过 PD controller 转成扭矩
+</details>
 
 ---
 
 ### 没有 LCP 时会发生什么？
 
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：观测几乎不变，动作却大跳</summary>
+
 假设两个连续时刻观测非常接近：
+</details>
 
 <div class="mermaid">
 flowchart TB
@@ -258,6 +313,9 @@ flowchart TB
     obs --> bad
 </div>
 
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：动作大跳 → action rate 大、jitter 大，真机开始抖</summary>
+
 观测几乎没变，动作却大跳。结果就是：
 - action rate 大
 - jitter 大
@@ -265,12 +323,17 @@ flowchart TB
 - 真机开始抖
 
 这就是很多 sim policy 上真机翻车的根源之一。
+</details>
 
 ---
 
 ### 加了 LCP 后会发生什么？
 
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：训练时对每个采样观测多算一项 GP</summary>
+
 训练时，对每个 sampled observation，额外算一项：
+</details>
 
 <div class="mermaid">
 flowchart LR
@@ -278,14 +341,21 @@ flowchart LR
     SMOOTH --> A["a_t ≈ a_{t+1} 小步修正"]
 </div>
 
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：动作还是会变，但变得连续、有边界、有物理感</summary>
+
 动作还是会变，但变得更连续、更像真实控制器该有的样子。
 
 > 💡 **关键点**：
 > LCP 不是让动作“不变”，而是让动作变化**有边界、有节奏、有物理感**。
+</details>
 
 ---
 
 ### 一个更工程化的理解
+
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：LCP 是 policy 外面的「灵敏度预算」</summary>
 
 你可以把 LCP 理解成在 policy 外面加了一个“灵敏度预算”：
 
@@ -296,12 +366,16 @@ flowchart LR
 这对真机特别重要，因为真机上的 actuator、传动链、结构柔性、延迟，全都不喜欢高频抽搐式控制。
 
 LCP 本质上就是把“适合真实机器人执行”这件事，往 policy 里面硬塞了一步。
+</details>
 
 ---
 
 ## 🤖 这篇论文的工程价值在哪？
 
-### 1. 它解决的是一个特别工程、特别烦的问题
+<details class="paper-fold" markdown="1">
+<summary>📖 展开全文：1. 解决特别工程的问题 / 2. 比调 reward 更像通用组件 / 3. 把后处理滤波前移成训练期约束 / 4. 不神化自己</summary>
+
+<h3 id="1-它解决的是一个特别工程特别烦的问题">1. 它解决的是一个特别工程、特别烦的问题</h3>
 
 很多 RL 论文喜欢卷回报、卷花活，但真部署时最先杀人的往往不是回报低，而是：
 
@@ -311,7 +385,7 @@ LCP 瞄准的就是这个非常真实的问题。它不是 flashy contribution�
 
 ---
 
-### 2. 它比“调 reward”更像一类通用组件
+<h3 id="2-它比调-reward更像一类通用组件">2. 它比“调 reward”更像一类通用组件</h3>
 
 平滑 reward 往往跟任务、机器人、动作空间强耦合。你换个平台，很多权重就得重调。
 
@@ -330,7 +404,7 @@ LCP 的优点是：
 
 ---
 
-### 3. 它把“后处理滤波”前移成了“训练期结构约束”
+<h3 id="3-它把后处理滤波前移成了训练期结构约束">3. 它把“后处理滤波”前移成了“训练期结构约束”</h3>
 
 这是我觉得最值钱的一点。
 
@@ -345,7 +419,7 @@ LCP 的优点是：
 
 ---
 
-### 4. 它不神化自己，这反而更可信
+<h3 id="4-它不神化自己这反而更可信">4. 它不神化自己，这反而更可信</h3>
 
 论文没有吹成“万能平滑神器”。它很老实：
 - GP 系数 $\lambda _ {gp}$ 还是要调
@@ -355,34 +429,42 @@ LCP 的优点是：
 这反而靠谱。因为控制里就没有免费午餐。
 
 如果一个方法号称“零调参、全平台乱杀”，大概率在胡扯。
+</details>
 
 ---
 
 ## 🎤 面试高频问题 & 参考回答
 
-### Q1: LCP 和普通 smoothness reward 的区别是什么？
+<details class="paper-fold" markdown="1">
+<summary>📖 展开全文：Q1: 和 smoothness reward 的区别 / Q2: 为什么约束梯度会更平滑 / Q3: 能替代低通滤波吗 / Q4: 代价 / Q5: 为什么适合 sim-to-real / Q6: 只对 locomotion 有用吗</summary>
+
+<h3 id="q1-lcp-和普通-smoothness-reward-的区别是什么">Q1: LCP 和普通 smoothness reward 的区别是什么？</h3>
 **A**：smoothness reward 是在环境回报里额外惩罚动作变化、关节速度或能耗；LCP 是直接对 policy 关于 observation 的梯度加 penalty，从函数层面约束 policy 的敏感度。前者更像任务工程，后者更像策略正则化。
 
-### Q2: 为什么约束 policy 梯度会让动作更平滑？
+<h3 id="q2-为什么约束-policy-梯度会让动作更平滑">Q2: 为什么约束 policy 梯度会让动作更平滑？</h3>
 **A**：因为 policy 对输入 observation 的梯度越大，说明输入微小变化会引起输出大幅变化。限制这个梯度，相当于限制 policy 的局部 Lipschitz 常数，让动作对状态扰动不那么过激，从而减少 jitter。
 
-### Q3: LCP 能替代低通滤波器吗？
+<h3 id="q3-lcp-能替代低通滤波器吗">Q3: LCP 能替代低通滤波器吗？</h3>
 **A**：论文结论是很多情况下可以作为替代方案，而且更优雅。因为低通滤波器会抑制探索，也可能削弱策略反应速度；LCP 是训练阶段直接塑造平滑 policy，而不是部署时再补滤波。
 
-### Q4: LCP 的代价是什么？
+<h3 id="q4-lcp-的代价是什么">Q4: LCP 的代价是什么？</h3>
 **A**：主要是多了一项 gradient penalty，需要计算 policy 对 observation 的梯度；另外 GP 系数要调。太弱没效果，太强会让策略学得慢、动作太钝。
 
-### Q5: LCP 为什么适合 sim-to-real？
+<h3 id="q5-lcp-为什么适合-sim-to-real">Q5: LCP 为什么适合 sim-to-real？</h3>
 **A**：因为 sim policy 常见问题就是动作跳变太大，而真机 actuator 无法理想跟随。LCP 通过降低策略敏感度，让动作序列更连续、更接近真实系统能执行的控制模式，所以更容易零样本部署。
 
-### Q6: LCP 是不是只对 locomotion 有用？
+<h3 id="q6-lcp-是不是只对-locomotion-有用">Q6: LCP 是不是只对 locomotion 有用？</h3>
 **A**：论文主要验证在 humanoid locomotion 上，但思路本身更通用。只要你的策略输出需要连续、平滑、可执行，Lipschitz-style regularization 都值得试。
+</details>
 
 ---
 
 ## 💬 讨论记录
 
-### 2026-04-06：LCP 和 PPO 的关系
+<details class="paper-fold" markdown="1">
+<summary>📖 展开全文：2026-04-06：LCP 和 PPO 的关系 / LCP 的核心是策略敏感度控制</summary>
+
+<h3 id="2026-04-06lcp-和-ppo-的关系">2026-04-06：LCP 和 PPO 的关系</h3>
 
 **Q: LCP 是不是一种新的 RL 算法？**
 
@@ -400,7 +482,7 @@ LCP 的优点是：
 
 ---
 
-### 2026-04-06：LCP 的核心不是“动作平滑”，而是“策略敏感度控制”
+<h3 id="2026-04-06lcp-的核心不是动作平滑而是策略敏感度控制">2026-04-06：LCP 的核心不是“动作平滑”，而是“策略敏感度控制”</h3>
 
 很多人第一次看会把它理解成“又一个 action smoothing 技巧”。
 
@@ -413,12 +495,16 @@ LCP 真正做的是：
 动作平滑只是表象；本质是**让 observation → action 这张映射更稳**。
 
 这个视角更有价值，因为它说明 LCP 不只是 locomotion trick，而是一个更一般的策略正则化思路。
+</details>
 
 ---
 
 ## 📎 附录
 
-### A. 方法核心公式
+<details class="paper-fold" markdown="1">
+<summary>📖 展开全文：A. 方法核心公式 / B. 训练设置要点 / C. 对比基线 / D. 验证的机器人平台 / E. 怎么用到自己的项目 / F. 相关工作</summary>
+
+<h3 id="a-方法核心公式">A. 方法核心公式</h3>
 
 论文核心可概括为：
 
@@ -433,7 +519,7 @@ $$
 
 ---
 
-### B. 训练设置要点
+<h3 id="b-训练设置要点">B. 训练设置要点</h3>
 
 根据论文描述，训练设置包含：
 
@@ -448,7 +534,7 @@ $$
 
 ---
 
-### C. 对比基线
+<h3 id="c-对比基线">C. 对比基线</h3>
 
 论文主要和三类方法比较：
 
@@ -467,7 +553,7 @@ $$
 
 ---
 
-### D. 论文里验证的机器人平台
+<h3 id="d-论文里验证的机器人平台">D. 论文里验证的机器人平台</h3>
 
 | 平台 | 说明 |
 |------|------|
@@ -479,7 +565,7 @@ $$
 
 ---
 
-### E. 你可以怎么把它用到自己的人形项目里？
+<h3 id="e-你可以怎么把它用到自己的人形项目里">E. 你可以怎么把它用到自己的人形项目里？</h3>
 
 如果你在做人形 locomotion / imitation / RL control，这篇 paper 最值得带走的不是某个数字，而是这几个工程建议：
 
@@ -497,7 +583,7 @@ $$
 
 ---
 
-### F. 相关工作
+<h3 id="f-相关工作">F. 相关工作</h3>
 
 | 论文/方向 | 关系 |
 |-----------|------|
@@ -506,12 +592,16 @@ $$
 | **ROA / adaptation-based sim-to-real** | 论文使用的迁移框架组成部分 |
 | **Smoothness rewards / low-pass filters** | LCP 直接对标替代的传统方法 |
 | **AMP / ASE / CALM** | 文中提到梯度惩罚此前常用于 discriminator regularization |
+</details>
 
 ## 📁 MimicKit 源码对照
 
+<details class="paper-fold" markdown="1">
+<summary>📖 展开全文：源码类图 / 运行时序图 / 1. LCP Agent / 2. LCPModel / 3. 梯度惩罚损失 / 4. Actor Loss / 5. 完整训练目标 / 6. 超参数 / 7. 训练命令</summary>
+
 以下代码块对应 [MimicKit](https://github.com/xbpeng/MimicKit) 中 LCP 的实现，与上述讲解的各模块一一对应。
 
-### 源码类图：LCP 是最薄的一层
+<h3 id="源码类图lcp-是最薄的一层">源码类图：LCP 是最薄的一层</h3>
 
 先看静态结构（接着 PPO 笔记的类图往下长）。整个 MimicKit 里 LCP 是**改动最小**的算法——`lcp_agent.py` 全文不到 50 行，`LCPModel` 只是改名，真正的新东西只有一个方法：
 
@@ -541,7 +631,7 @@ classDiagram
 - 这张图本身就是论文卖点的证明：**平滑性约束不需要新网络、不需要新奖励项**，一个对观测的梯度惩罚就够——所以类图上只多了 `_compute_lcp_loss()` 一个成员。
 - 对照 AMP/ASE 的类图看：同样继承 `PPOAgent`，AMP 加了一整个判别器分支，LCP 只加了一项 loss——继承树上的"层厚"直接反映论文改动量。
 
-### 源码运行时序图
+<h3 id="源码运行时序图">源码运行时序图</h3>
 
 以第 7 节的训练命令 `python mimickit/run.py --mode train --agent_config lcp_g1_agent.yaml` 为入口。`LCPAgent` 继承 `PPOAgent`，整条训练时序与 PPO 完全一致，**唯一的差别发生在 Actor 更新这一步**——多算一次对观测的梯度惩罚：
 
@@ -581,7 +671,7 @@ sequenceDiagram
 - ⑤–⑨ 与 PPO 完全相同：LCP 不改 rollout、不改奖励、不改网络结构。
 - ⑪–⑭ 是 LCP 的全部增量（对应下面第 3、4 节）：在 PPO actor loss 之外，对 `log π(a|o)` 关于观测求梯度、取范数平方作为 Lipschitz 惩罚，再按 `lcp_weight` 加权合入——`create_graph=True` 让这个"梯度的梯度"能继续反向传播到策略参数。
 
-### 1. LCP Agent（LCP 作为 PPO 的 wrapper）
+<h3 id="1-lcp-agentlcp-作为-ppo-的-wrapper">1. LCP Agent（LCP 作为 PPO 的 wrapper）</h3>
 
 ```python
 # mimickit/learning/lcp_agent.py
@@ -603,7 +693,7 @@ class LCPAgent(ppo_agent.PPOAgent):
 
 > 🔑 **关键理解**：LCP 继承自 PPOAgent，不改动 PPO 的训练循环，只在 `_compute_actor_loss` 里额外加一项 loss。
 
-### 2. LCPModel（几乎等价于 PPOModel）
+<h3 id="2-lcpmodel几乎等价于-ppomodel">2. LCPModel（几乎等价于 PPOModel）</h3>
 
 ```python
 # mimickit/learning/lcp_model.py
@@ -615,7 +705,7 @@ class LCPModel(ppo_model.PPOModel):
 
 > 网络架构和 PPO 完全一样（FC 两层 1024 units），LCP 的平滑约束不依赖新的网络结构。
 
-### 3. LCP 梯度惩罚损失（核心！）
+<h3 id="3-lcp-梯度惩罚损失核心">3. LCP 梯度惩罚损失（核心！）</h3>
 
 ```python
 # mimickit/learning/lcp_agent.py - _compute_lcp_loss()
@@ -643,7 +733,7 @@ def _compute_lcp_loss(self, norm_obs, norm_a):
 > 💡 **为什么用 `log_prob` 而不是 `mean`？**
 > log prob 的梯度恰好等价于 policy 对 observation 的敏感度度量——观测微扰 → 动作概率变化有多大。而且 log prob 本身参与 PPO 的 policy gradient 计算，复用已有计算图，几乎没有额外开销。
 
-### 4. 在 Actor Loss 里加入 LCP 项
+<h3 id="4-在-actor-loss-里加入-lcp-项">4. 在 Actor Loss 里加入 LCP 项</h3>
 
 ```python
 # mimickit/learning/lcp_agent.py - _compute_actor_loss()
@@ -665,7 +755,7 @@ def _compute_actor_loss(self, batch):
 lcp_weight: 0.002   # λ_gp = 0.002，核心超参——太大动作太钝，太小没效果
 ```
 
-### 5. 完整训练目标
+<h3 id="5-完整训练目标">5. 完整训练目标</h3>
 
 LCP 并不修改 PPO 的优化框架，只是在 actor loss 后面追加一项：
 
@@ -677,7 +767,7 @@ info["actor_loss"] += self._lcp_weight * lcp_loss
 # actor_loss = L_RL + lcp_weight * L_LCP
 ```
 
-### 6. LCP 超参数一览
+<h3 id="6-lcp-超参数一览">6. LCP 超参数一览</h3>
 
 ```yaml
 # data/agents/lcp_g1_agent.yaml
@@ -711,7 +801,7 @@ lcp_weight: 0.002   # ← 关键超参，需根据任务/机器人调
 
 > ⚠️ **注意**：LCP 论文使用 SGD（lr=1e-4）而非 Adam，这是为了让 GP 正则项和 PPO 策略项的优化节奏更匹配——SGD 比 Adam 更"线性"，对加在 loss 上的正则项响应更稳定。
 
-### 7. 训练 / 测试命令
+<h3 id="7-训练--测试命令">7. 训练 / 测试命令</h3>
 
 ```bash
 # 训练
@@ -732,12 +822,17 @@ python mimickit/run.py --mode test \
   --visualize true \
   --model_file data/models/lcp_g1_walk_model.pt
 ```
+</details>
 
 ---
 
 ## 参考来源
 
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：arXiv 与项目页；本文的直觉解释与类比属于整理者的归纳</summary>
+
 - arXiv: https://arxiv.org/abs/2410.11825  
 - Project Page: https://lipschitz-constrained-policy.github.io/  
 
 > 注：本文内容基于论文与项目页整理；其中部分直觉解释、类比和工程解读属于我的归纳，不是论文原文直述。
+</details>
