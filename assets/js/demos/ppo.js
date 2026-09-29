@@ -15,6 +15,7 @@
  *   ppo-epochs — why clipping is what makes K-epoch reuse of one batch safe
  *   ppo-curves — how to read the TensorBoard traces (reward / KL / clipfrac / entropy / EV)
  *   ppo-explainer — five-scene narrated animation of the whole algorithm
+ *   ppo-video     — the same five scenes as a downloadable voiced video
  */
 
 (function () {
@@ -2060,12 +2061,25 @@
     });
   }
 
+  // ─── demo 6: the narrated vertical video of the same five scenes ─────────
+  /* Rendered offline by scripts/paper_video/ from the storyboard above plus a
+     voice-over; the files sit next to the note (see its placeholder). */
+  function buildVideoDemo(host) {
+    K.video(host, {
+      title: '配音讲解视频：PPO 五幕全流程',
+      sub: '3 分 47 秒竖屏视频（1080×1920），中文配音 + 字幕。画面就是上面的五幕动画，旁白把每一幕讲细；适合手机上看或转发。',
+      size: '5.6 MB',
+      fileName: 'PPO_讲解视频.mp4'
+    });
+  }
+
   // ─── bootstrap ───────────────────────────────────────────────────────────
   K.mount({
     'ppo-clip': buildClipDemo,
     'ppo-gae': buildGaeDemo,
     'ppo-epochs': buildEpochsDemo,
     'ppo-curves': buildCurvesDemo,
-    'ppo-explainer': buildExplainerDemo
+    'ppo-explainer': buildExplainerDemo,
+    'ppo-video': buildVideoDemo
   });
 })();
