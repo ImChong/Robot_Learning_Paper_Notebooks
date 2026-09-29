@@ -260,12 +260,46 @@
     host.innerHTML = '';
     var root = el('div', 'demo-card');
     var head = el('div', 'demo-head');
-    head.appendChild(el('span', 'demo-badge', '交互演示'));
+    head.appendChild(el('span', 'demo-badge', opts.badge || '交互演示'));
     head.appendChild(rich(el('h4', 'demo-title'), opts.title));
     if (opts.sub) head.appendChild(rich(el('p', 'demo-sub'), opts.sub));
     root.appendChild(head);
     host.appendChild(root);
     return root;
+  }
+
+  /* A recorded explainer video with a download button. `<video>` never survives
+     scripts/sanitize_paper_html.py, so the note ships a placeholder whose
+     `data-src` / `data-poster` (relative to the note page) point at the files
+     and whose fallback is a plain download link; this builds the player.
+     Options: { title, sub, src, poster, size, fileName }. */
+  function video(host, opts) {
+    var o = opts || {};
+    var src = o.src || host.getAttribute('data-src');
+    var poster = o.poster || host.getAttribute('data-poster');
+    var fileName = o.fileName || src.split('/').pop();
+    var root = card(host, { title: o.title, sub: o.sub, badge: '讲解视频' });
+    var frame = el('div', 'demo-video');
+    var player = document.createElement('video');
+    player.controls = true;
+    player.preload = 'none';
+    player.setAttribute('playsinline', '');
+    if (poster) player.poster = poster;
+    player.setAttribute('aria-label', richToPlain(o.title || fileName));
+    var source = document.createElement('source');
+    source.src = src;
+    source.type = 'video/mp4';
+    player.appendChild(source);
+    frame.appendChild(player);
+    root.appendChild(frame);
+
+    var row = el('div', 'demo-buttons demo-video-actions');
+    var link = el('a', 'demo-btn', '下载视频' + (o.size ? '（mp4，' + o.size + '）' : '（mp4）'));
+    link.href = src;
+    link.setAttribute('download', fileName);
+    row.appendChild(link);
+    root.appendChild(row);
+    return player;
   }
 
   function controlsRow(parent) {
@@ -1246,6 +1280,7 @@
     fmt: fmt,
     clamp: clamp,
     card: card,
+    video: video,
     controlsRow: controlsRow,
     slider: slider,
     button: button,

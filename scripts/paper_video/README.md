@@ -22,3 +22,4 @@ node render.mjs cover            # 封面（片头、无字幕）-> out/cover.pn
 - Chromium：设置 `CHROME=/path/to/chrome`，否则用 playwright-core 默认路径。
 - 走 TLS 代理时设置 `SSL_CERT_FILE`，`build.py` 会让 edge-tts 用这份 CA。
 - 改旁白只改 `build.py` 的 `SCRIPT`；改排版改 `stage.html`。
+- 放进笔记：网页版再压一次（`-crf 27 -tune stillimage -b:a 64k -ac 1 -movflags +faststart`，约 5.6 MB），与海报一起放到笔记目录的 `media/`，接线方式见 `AGENTS.md`「配音讲解视频（`K.video`）」。

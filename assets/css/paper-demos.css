@@ -84,6 +84,29 @@
   font-size: 0.86rem;
 }
 
+/* ── recorded explainer video (K.video) ──────────────────────────────── */
+/* The videos are 9:16 portrait: cap the width so the player never grows
+   taller than a laptop screen, and centre it in the card. */
+.demo-video video {
+  display: block;
+  width: 100%;
+  max-width: 360px;
+  aspect-ratio: 9 / 16;
+  margin: 0 auto;
+  border-radius: 8px;
+  background: #000;
+}
+
+.demo-video-actions {
+  justify-content: center;
+  margin-top: 0.75rem;
+}
+
+a.demo-btn {
+  display: inline-block;
+  text-decoration: none;
+}
+
 /* ── controls ─────────────────────────────────────────────────────────── */
 .demo-controls {
   display: flex;
