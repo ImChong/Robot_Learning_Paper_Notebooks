@@ -1,7 +1,7 @@
 // node render.mjs <paper> stills 1,20,40   -> out/<paper>/still_<t>.png
 // node render.mjs <paper> video [fps]       -> out/<paper>/<paper>_video.mp4
 // node render.mjs <paper> cover             -> out/<paper>/cover.png
-// <paper> names papers/<paper>.{py,js} and the storyboard assets/js/demos/<paper>.js (<paper>-explainer).
+// <paper> names papers/<paper>.{py,js} and the storyboard bundle assets/js/demos/<paper>.js (its `*-explainer` demo id is read from the bundle).
 import { chromium } from 'playwright-core';
 import { spawn, execFileSync } from 'node:child_process';
 import fs from 'node:fs';
@@ -15,9 +15,14 @@ const [name, mode, arg] = process.argv.slice(2);
 const OUT = path.join(HERE, 'out', name);
 const tl = JSON.parse(fs.readFileSync(path.join(OUT, 'timeline.json'), 'utf8'));
 
+// The explainer's demo id is whatever the bundle mounts (`dp-explainer` in diffusion_policy.js,
+// `bm-explainer` in beyondmimic.js), so read it from the bundle instead of assuming <name>-explainer.
+const bundleSrc = fs.readFileSync(path.join(REPO, 'assets/js/demos', name + '.js'), 'utf8');
+const demoId = (bundleSrc.match(/'([\w-]+-explainer)'\s*:/) || [])[1] || name + '-explainer';
+
 const html = fs.readFileSync(path.join(HERE, 'stage.html'), 'utf8')
   .replaceAll('REPO/', 'file://' + REPO + '/')
-  .replaceAll('BUNDLE', name).replaceAll('DEMO_ID', name + '-explainer').replaceAll('PAPER', name);
+  .replaceAll('BUNDLE', name).replaceAll('DEMO_ID', demoId).replaceAll('PAPER', name);
 const built = path.join(HERE, `stage.${name}.built.html`);  // one per paper, so several can render at once
 fs.writeFileSync(built, html);
 
