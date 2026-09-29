@@ -445,7 +445,9 @@
   height: auto;
 }
 
-.demo-x-svg text {
+/* Default ink only: :where() keeps this at element specificity, so a tone
+   class on the <text> (.demo-x-bad …) still wins. */
+:where(.demo-x-svg) text {
   fill: var(--text);
 }
 
