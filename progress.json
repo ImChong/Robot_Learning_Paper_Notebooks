@@ -41,15 +41,15 @@
         "13_Physics-Based_Animation",
         "14_Human_Motion"
       ],
-      "last_module": "04_Loco-Manipulation_and_WBC",
-      "last_index": 501,
-      "last_title": "FAME: Force-Adaptive RL for Expanding the Manipulation Envelope of a Full-Scale Humanoid (arXiv:2603.08961)",
-      "next_module": "05_Locomotion",
-      "last_completed_date": "2026-09-28",
-      "note": "本日轮转应到 14_Human_Motion，但该模块中上游 awesome-humanoid-robot-learning 收录的论文已全部有笔记；按 AGENTS.md「模块 04–14 只为上游已收录论文建笔记」的约束顺延到 04_Loco-Manipulation_and_WBC，取上游已收录且无笔记的最新论文 FAME (arXiv:2603.08961, 2026-03-09, University of Colorado Boulder, 🌟)。上半身上下文编码器把 15 维腰臂关节角 + 双手腕 3D 力编码成 8 维潜变量，条件化 PPO 下肢站立策略；训练期球面采样手部力 + OpenHomie 上半身姿态课程，部署期由关节力矩与雅可比反解手腕力、无需 F/T 传感器；仿真平均站立成功率 73.84%（只加课程 51.40%、Base 29.44%），Unitree H12 真机单臂偏载 / 双臂负重验证。含整体流程 mermaid 与基于 correlllab/h12_adaptive_policy（manip_ik_demo_dds.py 的 run_manip_dds）的运行时序图。",
-      "last_date": "2026-09-28",
+      "last_module": "05_Locomotion",
+      "last_index": 202,
+      "last_title": "E-SDS: Environment-aware See it, Do it, Sorted - Automated Environment-Aware Reinforcement Learning for Humanoid Locomotion (arXiv:2512.16446)",
+      "next_module": "06_Manipulation",
+      "last_completed_date": "2026-09-29",
+      "note": "本日轮转到 05_Locomotion。上游 awesome-humanoid-robot-learning Locomotion 章节 2026.01–02 与 2025.12 较新的 Freestyle、RoboMirror 均已有笔记，取上游已收录且无笔记的最新论文 E-SDS (arXiv:2512.16446, 2025-12-18, UCL, RiTA 2025)。在 SDS 视频→VLM 奖励代码管线上新增环境分析智能体(1000 台 G1 跑 10 s 统计缺口比例/障碍密度/粗糙度)，条件化 GPT-5 生成使用高度扫描与 LiDAR 的奖励；2 候选 × 500 次 PPO 迭代 × 3 轮闭环，每地形约 99 分钟；仿真 G1 四种地形上唯一学会下楼梯，速度跟踪误差比手工奖励基线低 51.9–82.6%。论文未开源（前作 SDS 已开源），故只含整体流程 mermaid，无源码运行时序图。",
+      "last_date": "2026-09-29",
       "next_candidate": null,
-      "last_completed": "FAME: Force-Adaptive RL for Expanding the Manipulation Envelope of a Full-Scale Humanoid (arXiv:2603.08961)"
+      "last_completed": "E-SDS: Environment-aware See it, Do it, Sorted - Automated Environment-Aware Reinforcement Learning for Humanoid Locomotion (arXiv:2512.16446)"
     },
     "last_summary_index": 532,
     "last_summary_date": "2026-09-18",
@@ -1574,6 +1574,17 @@
         "project_page": "https://fame10.github.io/Fame/",
         "code": "https://github.com/correlllab/h12_adaptive_policy (Python，部署代码 + 编码器/策略权重，未含训练代码)",
         "source": "✅ 已开源部署代码(含源码运行时序图) · 上半身上下文编码器 + PPO 站立策略 · 无传感器手腕力估计 · Unitree H12 · CU Boulder"
+      },
+      {
+        "date": "2026-09-29",
+        "index": 202,
+        "title": "E-SDS: Environment-aware See it, Do it, Sorted - Automated Environment-Aware Reinforcement Learning for Humanoid Locomotion",
+        "folder": "papers/05_Locomotion/E-SDS__Environment-Aware_Automated_Reward_Generation_for_Humanoid_Locomotion",
+        "module": "05_Locomotion",
+        "arxiv": "2512.16446",
+        "project_page": "",
+        "code": "",
+        "source": "⏳ 未开源（前作 SDS: https://github.com/RPL-CS-UCL/SDS）· VLM 环境感知奖励生成 · 感知式行走 · Unitree G1 仿真 · UCL"
       }
     ],
     "last_completed_index": 588,
@@ -6105,6 +6116,16 @@
       "pdf_file": "",
       "route": "Loco-Manipulation and WBC",
       "title_cn": "FAME：扩展全尺寸人形操作包络的力自适应强化学习"
+    },
+    {
+      "title": "E-SDS: Environment-aware See it, Do it, Sorted - Automated Environment-Aware Reinforcement Learning for Humanoid Locomotion",
+      "folder": "papers/05_Locomotion/E-SDS__Environment-Aware_Automated_Reward_Generation_for_Humanoid_Locomotion",
+      "note_file": "E-SDS__Environment-Aware_Automated_Reward_Generation_for_Humanoid_Locomotion.md",
+      "status": "done",
+      "arxiv": "2512.16446",
+      "pdf_file": "",
+      "route": "Locomotion",
+      "title_cn": "E-SDS：面向人形行走的环境感知自动奖励生成强化学习"
     }
   ]
 }

@@ -2528,6 +2528,17 @@
         "zh_title": "RoboMirror：先理解再模仿的视频驱动人形运动框架"
       },
       {
+        "title": "E-SDS: Environment-aware See it, Do it, Sorted - Automated Environment-Aware Reinforcement Learning for Humanoid Locomotion",
+        "path": "papers/05_Locomotion/E-SDS__Environment-Aware_Automated_Reward_Generation_for_Humanoid_Locomotion/E-SDS__Environment-Aware_Automated_Reward_Generation_for_Humanoid_Locomotion.md",
+        "url": "/papers/05_Locomotion/E-SDS__Environment-Aware_Automated_Reward_Generation_for_Humanoid_Locomotion/E-SDS__Environment-Aware_Automated_Reward_Generation_for_Humanoid_Locomotion.html",
+        "dir": "E-SDS__Environment-Aware_Automated_Reward_Generation_for_Humanoid_Locomotion",
+        "arxiv": "2512.16446",
+        "published_date_zh": "2025年12月18日（arXiv v1）",
+        "published_date_en": "Dec 18, 2025 (arXiv v1)",
+        "zhname": "E-SDS：面向人形行走的环境感知自动奖励生成强化学习",
+        "zh_title": "E-SDS：面向人形行走的环境感知自动奖励生成强化学习"
+      },
+      {
         "title": "Extreme Parkour with Legged Robots",
         "path": "papers/05_Locomotion/Extreme_Parkour_with_Legged_Robots/Extreme_Parkour_with_Legged_Robots.md",
         "url": "/papers/05_Locomotion/Extreme_Parkour_with_Legged_Robots/Extreme_Parkour_with_Legged_Robots.html",
