@@ -50,6 +50,8 @@ html, body { width: 1080px; height: 1920px; overflow: hidden; background: var(--
 .cue .tag { font-size: 28px; color: var(--demo-accent); font-weight: 700; letter-spacing: 4px; margin-bottom: 10px; }
 .cue b { color: var(--hi); font-weight: 700; }
 .cue .katex { font-size: 1.02em; }
+.cue code.demo-code, .pt code.demo-code { font-family: 'DejaVu Sans Mono', monospace; font-size: .74em; letter-spacing: 0;
+  padding: .06em .32em; border-radius: 8px; background: rgba(127,127,127,.16); color: var(--text); overflow-wrap: anywhere; }
 .sub { position: absolute; top: 1420px; left: 50px; right: 50px; text-align: center;
   font-size: 58px; font-weight: 900; line-height: 1.35; color: #fff;
   text-shadow: 0 3px 0 #000, 0 0 18px rgba(0,0,0,.85); }
@@ -131,14 +133,37 @@ html, body { width: 1080px; height: 1920px; overflow: hidden; background: var(--
         story.draw(st);
         var j = 0;
         sc.cues.forEach(function (c, n) { if (st >= c.at - 1e-6) j = n; });
-        if (j !== cueIdx) { cueIdx = j; richInto(cueText, sc.cues[j].s); }
+        if (j !== cueIdx) {
+          cueIdx = j; richInto(cueText, sc.cues[j].s);
+          /* 要点太长时逐级缩字号，框底不越过字幕区（top 1420px） */
+          for (var fs = 44; fs >= 34; fs -= 2) {
+            cue.style.fontSize = fs + 'px';
+            if (cue.offsetTop + cue.offsetHeight <= 1405) break;
+          }
+        }
         for (var k = 0; k < N; k++) bars[k].style.width = (k < i ? 100 : k > i ? 0 : 100 * seg) + '%';
       }
     };
   }
 
   // helpers handed to papers/<name>.js for the intro / outro cards
-  var V = { K: K, h: h, fadeUp: fadeUp, clamp: clamp,
+  /* 片头 / 总结页的纵向排版：按各块实际高度自上而下排，块间距为 gaps[k]，整组在 [top, bottom] 里垂直居中；
+     放不下就等比压缩间距（不压内容），保证块与块永不重叠。挂到 DOM 之后才量得到高度，所以在 draw 里调。
+     封面（render.mjs cover 置 window.__cover）没有字幕，改用整屏到 1800px，间距最多放大到 1.8 倍把下方留白吃掉。 */
+  function stack(els, gaps, top, bottom) {
+    var hs = els.map(function (e) { return e.offsetHeight; });
+    if (!hs.every(function (x) { return x > 0; })) return false;
+    if (window.__cover) bottom = 1800;
+    var body = hs.reduce(function (a, b) { return a + b; }, 0);
+    var gap = gaps.reduce(function (a, b) { return a + b; }, 0);
+    var room = bottom - top, k = Math.max(0, (room - body) / gap);
+    k = Math.min(k, window.__cover ? 1.8 : 1);
+    var y = top + Math.max(0, (room - body - gap * k) / 2);
+    els.forEach(function (e, i) { if (i) y += gaps[i - 1] * k; e.style.top = Math.round(y) + 'px'; y += hs[i]; });
+    return true;
+  }
+
+  var V = { K: K, h: h, fadeUp: fadeUp, clamp: clamp, stack: stack,
     ACC: 'var(--demo-accent)', GOOD: 'var(--demo-good)', BAD: 'var(--demo-bad)', WARN: 'var(--demo-warn)' };
   document.getElementById('arxiv').textContent = 'arXiv ' + window.PaperVideo.arxiv;
 
