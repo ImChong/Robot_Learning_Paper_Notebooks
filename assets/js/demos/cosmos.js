@@ -367,7 +367,20 @@
     K.note(root, ['**论文原始指标**：PhysX / Isaac Sim 的 8 类测试场景；9 帧让模型有机会估计运动趋势。IoU 只看物体预测与参考的重合，不保证遵守重力、接触或长期动力学。']);
   }
 
+  // ─── the narrated vertical video of the same five scenes ─────────────
+  /* Rendered offline by scripts/paper_video/ from the storyboard above plus a
+     voice-over; the files sit next to the note (see its placeholder). */
+  function buildVideoDemo(host) {
+    K.video(host, {
+      title: '配音讲解视频：Cosmos 五幕全流程',
+      sub: '2 分 55 秒竖屏视频（1080×1920），中文配音 + 字幕。画面就是上面的五幕动画，旁白把每一幕讲细；适合手机上看或转发。',
+      size: '4.3 MB',
+      fileName: 'Cosmos_讲解视频.mp4'
+    });
+  }
+
   K.mount({
+    'cosmos-video': buildVideoDemo,
     'cosmos-data': buildData,
     'cosmos-tokens': buildTokens,
     'cosmos-physics': buildPhysics,

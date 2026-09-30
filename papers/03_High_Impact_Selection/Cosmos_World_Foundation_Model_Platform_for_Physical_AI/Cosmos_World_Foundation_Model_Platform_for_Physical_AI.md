@@ -24,11 +24,15 @@ demos: ["cosmos"]
 
 给模型看大量视频，让它学习“接下来可能出现什么画面”；再用指定领域的视频与条件微调，让它预测该任务下可能的未来。**模型生成的是视频，不是机器人关节命令**。预测结果可以辅助数据生成或规划，但真实机器人仍需要策略、控制器和安全验证。
 
-> 🎮 **本页有五幕动画 + 3 个交互图**：视频类别占比、token 压缩量、1 帧与 9 帧条件下的物理预测指标。演示图只解释机制；图表标明的论文数值均来自 [§3.1、图 7、表 10 与表 20](https://arxiv.org/html/2501.03575v3)。想动手读，可直接跳到[逐步案例](#cosmos-case-study)和[官方源码参考](#cosmos-source-guide)。
+> 🎮 **本页有五幕动画 + [配音讲解视频](#cosmos-video) + 3 个交互图**：视频类别占比、token 压缩量、1 帧与 9 帧条件下的物理预测指标。演示图只解释机制；图表标明的论文数值均来自 [§3.1、图 7、表 10 与表 20](https://arxiv.org/html/2501.03575v3)。想动手读，可直接跳到[逐步案例](#cosmos-case-study)和[官方源码参考](#cosmos-source-guide)。
 
 ## 🎬 五幕动画：Cosmos 如何构建世界模型 {#cosmos-explainer-anim}
 
 <div class="paper-demo" data-demo="cosmos-explainer"><p class="demo-fallback">（本节含动画演示，需要启用 JavaScript）</p></div>
+
+## 📺 配音讲解视频（可下载） {#cosmos-video}
+
+<div class="paper-demo" data-demo="cosmos-video" data-src="media/cosmos_explainer_video.mp4" data-poster="media/cosmos_explainer_video_poster.jpg"><p class="demo-fallback">（本节含讲解视频播放器，需要启用 JavaScript；也可以直接<a href="media/cosmos_explainer_video.mp4" download="Cosmos_讲解视频.mp4">下载 mp4（4.3 MB）</a>）</p></div>
 
 > 📖 动画之后的正文默认全部折叠，按主题逐节展开；交互图保持可见。点击展开可以核对公式、条件和论文中的实验。
 
