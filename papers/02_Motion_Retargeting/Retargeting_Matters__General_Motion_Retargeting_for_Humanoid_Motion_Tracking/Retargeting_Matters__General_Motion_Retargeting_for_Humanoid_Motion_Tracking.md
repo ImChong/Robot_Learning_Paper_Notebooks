@@ -42,8 +42,11 @@ demos: ["gmr"]
 
 GMR 把"人类动作重定向到人形机器人"这件过去被各家方法**藏在附录里**的事情单独做成一个**通用、快速、CPU-only**的库，一条管线支持 18+ 款人形硬件与 5 种人体运动格式，让下游的 RL tracking / 遥操 / 模仿学习研究者可以**不重新造轮子**就拿到高质量的机器人参考动作。
 
-> 🎮 **本文内嵌 1 段讲解动画**（不用装任何东西）：
+> 🎮 **本文内嵌 1 段讲解动画和 1 段配音视频**（不用装任何东西）：
 > [七幕动画：GMR 全流程](#gmr-explainer-anim) —— 约 90 秒串完「retargeting 被当成前处理脚本 → 一条管线接 5 种格式 × 18+ 款机器人 → 论文的五步显式流程 → 非均匀局部缩放为什么是关键 → mink + DAQP 的两阶段约束 IK → Retargeting Matters 的定量论据 → 闭环、已知失败与源码落点」。空格播放/暂停，← → 换幕，也可以直接点分幕标签跳着看。
+> [配音讲解视频](#gmr-video) —— 同样七幕，加中文配音与字幕，5 分 25 秒竖屏，可下载
+
+> 🚶 [具体实例](#例-4一帧动作的数字手算)除了三条可复制的命令，还把一帧动作手算一遍：90 条通路、全局缩放残差 13.7 cm、单帧最多转 18°、15.4 / 25.0 ms 每帧、21 段里 3 段全对。
 
 ---
 
@@ -70,6 +73,10 @@ GMR 把"人类动作重定向到人形机器人"这件过去被各家方法**藏
 ## 🎬 七幕动画：GMR 全流程 {#gmr-explainer-anim}
 
 <div class="paper-demo" data-demo="gmr-explainer"><p class="demo-fallback">（本节含动画演示，需要启用 JavaScript）</p></div>
+
+## 📺 配音讲解视频（可下载） {#gmr-video}
+
+<div class="paper-demo" data-demo="gmr-video" data-src="media/gmr_explainer_video.mp4" data-poster="media/gmr_explainer_video_poster.jpg"><p class="demo-fallback">（本节含讲解视频播放器，需要启用 JavaScript；也可以直接<a href="media/gmr_explainer_video.mp4" download="GMR_讲解视频.mp4">下载 mp4（7.7 MB）</a>）</p></div>
 
 > 📖 **动画之后的正文默认全部折叠**：动画覆盖到的那几节（问题定义、方法详解、实验结果）按小节收起，再往后的具体实例、工程价值、源码对照、面试参考、讨论记录与附录各整块收起。想细读哪一块就点开对应的折叠条，内容一字未删；两阶段 IK 的流程图留在外面，目录里的标题依旧可以直接点，会自动展开所在折叠块，左侧目录顶部还有「展开全部文字」一键铺开。
 
@@ -284,10 +291,10 @@ GMR 的 retargeting **不是黑盒**，而是一个**两阶段 IK 优化**，求
 
 ---
 
-## 🚶 具体实例（仓库脚本走通）
+## 🚶 具体实例（仓库脚本走通 + 一帧数字手算）
 
 <details class="paper-fold" markdown="1">
-<summary>📖 展开文字：三条可复制的命令（SMPL-X → G1 / BVH → H1 / 可视化）与典型下游串接</summary>
+<summary>📖 展开文字：三条可复制的命令（SMPL-X → G1 / BVH → H1 / 可视化）、典型下游串接，以及一帧动作从缩放到 IK 的数字手算</summary>
 
 <h3 id="例-1把-amass-中的一段-smpl-x-动作重定向到-unitree-g1">例 1：把 AMASS 中的一段 SMPL-X 动作重定向到 Unitree G1</h3>
 
@@ -330,6 +337,41 @@ python scripts/vis_robot_motion.py \
                                               └─► RL tracking policy
                                               └─► 真机 PD 控制器
 ```
+
+<h3 id="例-4一帧动作的数字手算">例 4：一帧动作的数字手算</h3>
+
+> 💡 **说明**：超参（`lm_damping`、速度上限、迭代次数、容差）读自 `motion_retarget.py`，吞吐与实验计数取自论文 / README；**三条链的比例 0.80 / 0.85 / 1.00 与链长是我取的量级示意**，不是论文测得的数值。七幕动画第 2、4、5、6 幕的数字与这里相同。
+
+**① 通路数**：输入 5 种格式（SMPL-X / BVH / FBX / Xsens MVN / GVHMR）× 输出 18 款机器人 = **90 条**「格式 → 机器人」通路，GMR 用一份实现覆盖。
+
+**② 全局等比例 vs 非均匀缩放**：设三条链的「机器人 / 人」长度比与人体链长如下，全局等比例只能取一个因子，这里取平均
+
+$$
+s = \frac{0.80 + 0.85 + 1.00}{3} \approx 0.883
+$$
+
+| 链 | 真实比例 | 人体链长 | 全局缩放残差 $\lvert r - s \rvert \times L$ | 非均匀缩放残差 |
+|---|---|---|---|---|
+| 手臂 | 0.80 | 60 cm | $0.083 \times 60 \approx 5.0$ cm | 0 |
+| 腿 | 0.85 | 85 cm | $0.033 \times 85 \approx 2.8$ cm | 0 |
+| 躯干 | 1.00 | 50 cm | $0.117 \times 50 \approx 5.8$ cm | 0 |
+| **合计** | | | **13.7 cm** | **0** |
+
+13.7 cm 的末端目标偏差会逼 IK 用极端关节角去够；第 ③ 步让每条链各用自己的比例，IK 的起点就落在可达范围内。
+
+**③ 单帧能转多少**：关节速度上限 $3\pi \approx 9.42$ rad/s，30 fps 的 mocap 一帧 $1/30$ s：
+
+$$
+\frac{3\pi}{30} \approx 0.314\ \text{rad} \approx 18^\circ / \text{帧}
+$$
+
+所以相邻两帧之间任何关节都不可能「瞬移」超过 18°。
+
+**④ 一帧 IK 的预算**：Stage 1 先锁 `root / pelvis / torso / head`，Stage 2 再修 `hands / feet / elbows / knees`；每个阶段单帧最多 10 次带阻尼（`lm_damping = 0.5`）的 QP 迭代，误差 $< 0.001$ 提前跳出。
+
+**⑤ 吞吐**：Threadripper 7960X 60–70 fps，取中值 65 → $1000 / 65 \approx 15.4$ ms/帧；i9-13900K 35–45 fps，取中值 40 → $25.0$ ms/帧。对 30 fps 的 mocap 都 $\ge 1$ 倍实时。
+
+**⑥ 实验计数**：LAFAN1 的 21 段里，所有方法都跟得完美的只有 3 段，$3 / 21 \approx 14.3\%$；剩下 18 段至少一种方法失败。
 
 </details>
 

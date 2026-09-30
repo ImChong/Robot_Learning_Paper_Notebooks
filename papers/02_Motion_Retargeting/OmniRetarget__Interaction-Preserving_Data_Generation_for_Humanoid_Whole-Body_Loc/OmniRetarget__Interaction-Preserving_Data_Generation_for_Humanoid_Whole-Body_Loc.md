@@ -44,8 +44,9 @@ demos: ["omniretarget"]
 
 OmniRetarget 把重定向从「关键点匹配 + 软惩罚」升级为「**interaction mesh 保形 + 序贯 SOCP 硬约束**」：在保持人与物体/地形相对空间关系的同时，消除脚滑与穿透；并能把一条 OMOMO / LAFAN1 / 自采 MoCap 演示扩成覆盖多物体配置、地形与机器人本体的数据集，使 proprioceptive RL 跟踪器无需课程学习与繁重 reward 工程即可跟住长时程动态交互。
 
-> 🎮 **本文内嵌 1 段讲解动画**（不用装任何东西）：
+> 🎮 **本文内嵌 1 段讲解动画和 1 段配音视频**（不用装任何东西）：
 > [七幕动画：OmniRetarget 全流程](#omniretarget-explainer-anim) —— 约 90 秒串完「现有 retargeting 只盯人体关键点 → interaction mesh 的 Delaunay 四面体 → Laplacian 形变能 → 序贯 SOCP 硬约束 → 一条演示四路扩增 → 极简 RL 与 Table II 定量论据 → 数据工厂到 G1 真机的闭环」。空格播放/暂停，← → 换幕，也可以直接点分幕标签跳着看。
+> [配音讲解视频](#omniretarget-video) —— 同样七幕，加中文配音与字幕，5 分 7 秒竖屏，可下载
 
 > 🚶 [具体实例](#实例-环境设定)用 Holosoma 自带的 OMOMO 搬箱 demo，把一条演示从缩放、15 个关键点 + 100 个箱面点建网格、一次 SQP 迭代的代价与约束、五种箱子位姿扩增，到 50 fps 转换和 RL 奖励逐步走一遍，最后列出论文与开源代码的出入（支撑相阈值、求解器、自碰撞默认关闭）。
 
@@ -70,6 +71,10 @@ OmniRetarget 把重定向从「关键点匹配 + 软惩罚」升级为「**inter
 ## 🎬 七幕动画：OmniRetarget 全流程 {#omniretarget-explainer-anim}
 
 <div class="paper-demo" data-demo="omniretarget-explainer"><p class="demo-fallback">（本节含动画演示，需要启用 JavaScript）</p></div>
+
+## 📺 配音讲解视频（可下载） {#omniretarget-video}
+
+<div class="paper-demo" data-demo="omniretarget-video" data-src="media/omniretarget_explainer_video.mp4" data-poster="media/omniretarget_explainer_video_poster.jpg"><p class="demo-fallback">（本节含讲解视频播放器，需要启用 JavaScript；也可以直接<a href="media/omniretarget_explainer_video.mp4" download="OmniRetarget_讲解视频.mp4">下载 mp4（7.1 MB）</a>）</p></div>
 
 > 📖 **动画之后的正文默认全部折叠**：动画覆盖到的那几节（问题定义、方法详解、实验结果）按小节收起，具体实例、主线关系、代码入口、个人笔记与参考文献各整块收起。想细读哪一块就点开对应的折叠条，内容一字未删；系统总览、网格构建、扩增与 RL 配方等流程图留在外面，目录里的标题依旧可以直接点，会自动展开所在折叠块，左侧目录顶部还有「展开全部文字」一键铺开。
 

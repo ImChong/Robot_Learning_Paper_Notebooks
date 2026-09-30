@@ -939,7 +939,20 @@
     });
   }
 
+  // ─── the narrated vertical video of the same seven scenes ────────────
+  /* Rendered offline by scripts/paper_video/ from the storyboard above plus a
+     voice-over; the files sit next to the note (see its placeholder). */
+  function buildVideoDemo(host) {
+    K.video(host, {
+      title: '配音讲解视频：OmniRetarget 七幕全流程',
+      sub: '5 分 7 秒竖屏视频（1080×1920），中文配音 + 字幕。画面就是上面的七幕动画，旁白把每一幕讲细；适合手机上看或转发。',
+      size: '7.1 MB',
+      fileName: 'OmniRetarget_讲解视频.mp4'
+    });
+  }
+
   K.mount({
-    'omniretarget-explainer': buildExplainerDemo
+    'omniretarget-explainer': buildExplainerDemo,
+    'omniretarget-video': buildVideoDemo
   });
 })();

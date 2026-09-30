@@ -42,8 +42,11 @@ demos: ["sonic"]
 
 SONIC 把"动作跟踪 (motion tracking)"明确当作人形控制的**可扩展基础任务**，沿数据 (100M+ 帧)、参数 (1.2M→42M)、算力 (9k GPU·h) 三个轴一起放大，再用一个**统一 token 空间**把 VR 遥操作 / 视频 / 文本 / 音乐 / VLA 各种输入接入同一策略，让 Unitree G1 在仿真和实机都做到对未见动作的零样本跟踪与交互式全身控制。
 
-> 🎮 **本文内嵌 1 段讲解动画**（不用装任何东西）：
+> 🎮 **本文内嵌 1 段讲解动画和 1 段配音视频**（不用装任何东西）：
 > [七幕动画：SONIC 全流程](#sonic-explainer-anim) —— 约 90 秒串完「任务选错了 → 三轴一起放大 → Universal token space → 五项 aux loss 焊住潜空间 → 实时 Kinematic Planner → System-1 + System-2 → 数据到实机的闭环」。空格播放/暂停，← → 换幕，也可以直接点分幕标签跳着看。
+> [配音讲解视频](#sonic-video) —— 同样七幕，加中文配音与字幕，5 分 32 秒竖屏，可下载
+
+> 🚶 [具体实例](#sonic-实例-环境设定)把一条「往右转、走快点」的手柄命令走完：40–120 步的参考片段、100 ms = 5 步的重规划、FSQ 每帧 64 维 / 320 bit、`g1_dyn` 解出 29 个关节目标，以及隐层权重 27.79 M 的参数账。
 
 ---
 
@@ -65,6 +68,10 @@ SONIC 把"动作跟踪 (motion tracking)"明确当作人形控制的**可扩展�
 ## 🎬 七幕动画：SONIC 全流程 {#sonic-explainer-anim}
 
 <div class="paper-demo" data-demo="sonic-explainer"><p class="demo-fallback">（本节含动画演示，需要启用 JavaScript）</p></div>
+
+## 📺 配音讲解视频（可下载） {#sonic-video}
+
+<div class="paper-demo" data-demo="sonic-video" data-src="media/sonic_explainer_video.mp4" data-poster="media/sonic_explainer_video_poster.jpg"><p class="demo-fallback">（本节含讲解视频播放器，需要启用 JavaScript；也可以直接<a href="media/sonic_explainer_video.mp4" download="SONIC_讲解视频.mp4">下载 mp4（7.5 MB）</a>）</p></div>
 
 > 📖 **动画之后的正文默认全部折叠**：动画覆盖到的那几节（问题定义、方法详解、模型架构、实验亮点）按小节收起，再往后的源码对照、训练 & 评估速查、面试参考与附录各整块收起。想细读哪一块就点开对应的折叠条，内容一字未删；两张流程图留在外面，目录里的标题依旧可以直接点，会自动展开所在折叠块，左侧目录顶部还有「展开全部文字」一键铺开。
 
@@ -357,6 +364,84 @@ flowchart TB
 - **离散 token 已经做了"序列瓶颈"**：FSQ 把每帧潜空间压成 2 个 token，相当于把"长上下文压缩"的活外包给了量化器，decoder 只需做单帧 control。
 - **Scaling law 仍然成立**：论文 Fig.2 显示 MPJPE 随宽度 + 数据 + GPU 时长单调下降——证明在 motion tracking 这种 dense 监督任务上，MLP 也有"放大就涨"的红利，没必要立刻上 Transformer。
 - **训练稳定**：PPO + 5 项 aux loss（见 §源码对照③）已经够"挑战"，再加 attention 容易引入额外的稳定性问题。
+
+</details>
+
+---
+
+## 🚶 具体实例：一条「往右转、走快点」的命令怎么走完 SONIC
+
+<details class="paper-fold" markdown="1">
+<summary>📖 展开全文（7 节）：环境设定 / 第 1 步：命令变成参考片段 / 第 2 步：中途改命令 / 第 3 步：encoder 与 FSQ / 第 4 步：decoder 解出 29 个关节目标 / 第 5 步：参数账 / 第 6 步：换成 VLA 来下命令</summary>
+
+> 💡 **说明**：结构、配置常量（FSQ 档位、`hidden_dims`、$dt$）取自官方 `gear_sonic/` 的 `sonic_release` 配置；延迟、成功率取自论文。**「往右转、走快点」这条命令和 FSQ 取整那个 0.37 是我为了能手算而取的**，不是论文或代码里的例子。七幕动画第三、五、六、七幕的数字与这里完全相同。
+
+<h3 id="sonic-实例-环境设定">环境设定</h3>
+
+| 项 | 值 | 出处 |
+|---|---|---|
+| 机器人 | Unitree G1，29 个关节目标 | 论文 / `g1_dyn` 输出维度 |
+| 控制频率 | 50 Hz，$dt = 0.02\ \text{s}$ | Isaac Lab 设定，部署同频 |
+| 参考输入 | 机器人本体未来 $N = 10$ 帧 | G1 encoder 配置 |
+| FSQ | 每维 32 档、latent 32 维、每帧 2 个 token | `quantizers/fsq.yaml` |
+
+<h3 id="sonic-实例-第-1-步命令变成参考片段">第 1 步：命令变成参考片段</h3>
+
+操作者在手柄上推一下：**往右转、走快点**。这不是逐帧动作，SONIC 的实时 kinematic planner 把它自回归展开成一段参考动作：
+
+- 片段长度 0.8 – 2.4 s，按 50 Hz 换算是 $0.8 / 0.02 = 40$ 到 $2.4 / 0.02 = 120$ 个控制步；
+- 推理耗时：笔记本 < 5 ms、Jetson Orin GPU 12 ms，都小于一个片段的长度，所以规划器跟得上。
+
+<h3 id="sonic-实例-第-2-步中途改命令">第 2 步：中途改命令</h3>
+
+片段走到一半，操作者改成「停下」。规划器在 $\le 100\ \text{ms}$ 内重新规划：
+
+$$
+\frac{100\ \text{ms}}{20\ \text{ms/步}} = 5\ \text{个控制步}
+$$
+
+也就是说，最多再执行 5 步旧参考就切到新片段。速度、方向、风格的变化都只是「规划器给了什么参考」，控制器这一侧没有新增任何 reward。
+
+<h3 id="sonic-实例-第-3-步encoder-与-fsq">第 3 步：encoder 与 FSQ</h3>
+
+参考片段里接下来 10 帧的目标送进 G1 encoder（`[2048, 1024, 512, 512]`，SiLU），输出 $2 \times 32 = 64$ 个实数，再交给 FSQ 逐维取整到 32 个档位之一。
+
+以其中一维为例（示意）：设档位均匀铺在 $[-1, 1]$ 上，间隔 $2 / 31 \approx 0.0645$；encoder 输出 0.37，则
+
+$$
+\text{档位} = \operatorname{round}\!\left(\frac{0.37 + 1}{0.0645}\right) = \operatorname{round}(21.2) = 21
+$$
+
+$$
+\text{取整后的值} = 21 \times 0.0645 - 1 \approx 0.355
+$$
+
+每维 32 档 = $\log_2 32 = 5$ bit，一帧 $64 \times 5 = 320$ bit；按 50 Hz，控制器每秒只收到 $320 \times 50 = 16000$ bit 的「意图」。这就是为什么 decoder 不需要 Transformer 去压缩长上下文——量化器已经把它压完了。
+
+> FSQ 的实际实现（有界函数、奇偶档位的偏移）比这里的均匀取整细一些，这一步只演示「连续值 → 有限档位」的含义。
+
+<h3 id="sonic-实例-第-4-步decoder-解出-29-个关节目标">第 4 步：decoder 解出 29 个关节目标</h3>
+
+64 维 token 拼上本体感觉，进唯一的动力学 decoder `g1_dyn`（`[2048, 2048, 1024, 1024, 512, 512]`），输出 29 个关节的 PD 目标，50 Hz 下发。若换成 VR 三点或 SMPL 输入，只是换一条 encoder，`g1_dyn` 完全不变——训练时五项 aux loss（`g1_recon` 系数 0.01、三项两两对齐系数 1.0、一项 cycle consistency）保证三路 token 落在同一空间。
+
+<h3 id="sonic-实例-第-5-步参数账">第 5 步：参数账</h3>
+
+只算隐层之间的权重（相邻两层相乘再求和，不含输入层与输出头）：
+
+| 网络 | 隐层 | 计算 | 权重数 |
+|---|---|---|---|
+| 单路 encoder | `[2048, 1024, 512, 512]` | $2048 \cdot 1024 + 1024 \cdot 512 + 512 \cdot 512$ | 2,883,584 |
+| 三路 encoder | ×3 | | 8,650,752（8.65 M） |
+| `g1_dyn` | `[2048, 2048, 1024, 1024, 512, 512]` | $2048^2 + 2048 \cdot 1024 + 1024^2 + 1024 \cdot 512 + 512^2$ | 8,126,464（8.13 M） |
+| `g1_kin` | 同 encoder | | 2,883,584（2.88 M） |
+| critic | 同 `g1_dyn` | | 8,126,464（8.13 M） |
+| **合计** | | | **27,787,264（27.79 M）** |
+
+比论文报告的 42 M 小一截，差额是输入层和输出头（要知道 obs 维度才算得出来），两者不矛盾。
+
+<h3 id="sonic-实例-第-6-步换成-vla-来下命令">第 6 步：换成 VLA 来下命令</h3>
+
+把手柄换成 GR00T N1.5：用 300 条 VR 三点遥操数据微调，让它输出**和 teleop 相同格式**的命令，下游第 3–4 步一字不改。苹果取放 20 次试验成功 $20 \times 0.95 = 19$ 次。VR 遥操端到端延迟 121.9 ms，按 20 ms 一步约合 $121.9 / 20 \approx 6$ 个控制步（我的换算）。
 
 </details>
 

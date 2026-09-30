@@ -111,7 +111,12 @@ html, body { width: 1080px; height: 1920px; overflow: hidden; background: var(--
     var root = h('div', 'card');
     var head = h('div', 'head', root);
     h('div', 'act', head, '第 ' + (i + 1) + ' / ' + N + ' 幕');
-    richInto(h('div', 'title', head), sc.title);
+    var titleEl = h('div', 'title', head);
+    richInto(titleEl, sc.title);
+    /* 一行放不下的分镜标题按估算宽度缩字号，免得折行压住进度条（汉字约 1em，其余约 0.55em）。 */
+    var est = 0;
+    for (var c = 0; c < sc.title.length; c++) est += /[\u2E80-\uFFEF]/.test(sc.title[c]) ? 1 : 0.55;
+    if (est * 64 > 960) titleEl.style.fontSize = Math.floor(960 / est) + 'px';
     var prog = h('div', 'prog', root), bars = [];
     for (var k = 0; k < N; k++) bars.push(h('b', '', h('i', '', prog)));
     var stage = h('div', 'stage', root);
