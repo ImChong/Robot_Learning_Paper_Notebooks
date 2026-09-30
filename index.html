@@ -491,12 +491,11 @@ title: "Home"
         if (subcatCache.el.style.display !== targetSubcatDisplay) subcatCache.el.style.display = targetSubcatDisplay;
         if (subcatCache.tocItem) {
           if (subcatCache.tocItem.style.display !== targetSubcatDisplay) subcatCache.tocItem.style.display = targetSubcatDisplay;
-          if (isSearching) {
-            var countEl = subcatCache.tocItem.querySelector('.toc-count');
-            if (countEl) {
-              var targetText = '(' + subcatMatchCount + ')';
-              if (countEl.textContent !== targetText) countEl.textContent = targetText;
-            }
+          var countEl = subcatCache.tocItem.querySelector('.toc-count');
+          if (countEl) {
+            if (countEl.dataset.origCount === undefined) countEl.dataset.origCount = countEl.textContent;
+            var targetText = isSearching ? '(' + subcatMatchCount + ')' : countEl.dataset.origCount;
+            if (countEl.textContent !== targetText) countEl.textContent = targetText;
           }
         }
         if (isSearching) catTotalMatch += subcatMatchCount;
@@ -523,12 +522,11 @@ title: "Home"
       if (catCache.el.style.display !== targetCatDisplay) catCache.el.style.display = targetCatDisplay;
       if (catCache.tocItem) {
         if (catCache.tocItem.style.display !== targetCatDisplay) catCache.tocItem.style.display = targetCatDisplay;
-        if (isSearching) {
-          var countEl = catCache.tocItem.querySelector('.toc-count');
-          if (countEl) {
-            var targetText = '(' + catTotalMatch + ')';
-            if (countEl.textContent !== targetText) countEl.textContent = targetText;
-          }
+        var countEl = catCache.tocItem.querySelector('.toc-count');
+        if (countEl) {
+          if (countEl.dataset.origCount === undefined) countEl.dataset.origCount = countEl.textContent;
+          var targetText = isSearching ? '(' + catTotalMatch + ')' : countEl.dataset.origCount;
+          if (countEl.textContent !== targetText) countEl.textContent = targetText;
         }
       }
     });
