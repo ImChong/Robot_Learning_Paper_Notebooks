@@ -2049,8 +2049,8 @@
   function buildVideoDemo(host) {
     K.video(host, {
       title: '配音讲解视频：DeepMimic 五幕全流程',
-      sub: '4 分 30 秒竖屏视频（1080×1920），中文配音 + 字幕。画面就是上面的五幕动画，旁白把每一幕讲细；适合手机上看或转发。',
-      size: '6.6 MB',
+      sub: '4 分 35 秒竖屏视频（1080×1920），中文配音 + 字幕。画面就是上面的五幕动画，旁白把每一幕讲细；适合手机上看或转发。',
+      size: '6.2 MB',
       fileName: 'DeepMimic_讲解视频.mp4'
     });
   }

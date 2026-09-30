@@ -5,8 +5,8 @@
 | `<paper>` | 分镜 | 时长 |
 |-----------|------|------|
 | `ppo` | `assets/js/demos/ppo.js` 五幕 | 约 3 分 50 秒 |
-| `awr` | `assets/js/demos/awr.js` 六幕 | 约 5 分 25 秒 |
-| `deepmimic` | `assets/js/demos/deepmimic.js` 五幕 | 约 4 分 30 秒 |
+| `awr` | `assets/js/demos/awr.js` 六幕 | 约 5 分 31 秒 |
+| `deepmimic` | `assets/js/demos/deepmimic.js` 五幕 | 约 4 分 35 秒 |
 | `amp` | `assets/js/demos/amp.js` 五幕 | 约 4 分 46 秒 |
 | `phc` | `assets/js/demos/phc.js` 六幕 | 约 6 分 12 秒 |
 | `add` | `assets/js/demos/add.js` 五幕 | 约 5 分 16 秒 |
@@ -69,4 +69,4 @@ node check_layout.mjs awr cover       # 封面排版检查，输出 no overlap �
 - Chromium：设置 `CHROME=/path/to/chrome`，否则用 playwright-core 默认路径。几篇可以同时渲染（各自写 `stage.<paper>.built.html`）。
 - 走 TLS 代理时设置 `SSL_CERT_FILE`，`build.py` 会让 edge-tts 用这份 CA。
 - 新增一篇：写 `papers/<paper>.py`（`SCRIPT` / `DISPLAY`）和 `papers/<paper>.js`（`window.PaperVideo` 的 `arxiv` / `intro` / `outro`），`<paper>` 是 `assets/js/demos/<paper>.js` 的 bundle 名；讲解动画的演示 id 不必叫 `<paper>-explainer`（`diffusion_policy.js` 里是 `dp-explainer`、`beyondmimic.js` 里是 `bm-explainer`），`render.mjs` 会从 bundle 里读出 `'…-explainer'` 那个 id。
-- 放进笔记：网页版再压一次（`-crf 27 -tune stillimage -b:a 64k -ac 1 -movflags +faststart`；PPO 5.6 MB，更长的 AWR 用 `-crf 30` 压到 7.6 MB，DeepMimic 用 `-crf 29` 压到 6.6 MB；AMP / ADD 用 `-crf 31` 压到 6.4 / 7.2 MB，六分多钟的 PHC / ASE 用 `-crf 32` 压到 8.7 / 8.5 MB；四五分钟的 CALM / Diffusion Policy / LCP 用 `-preset slow -crf 30` 压到 5.8 / 6.0 / 6.3 MB，PULSE 同参数 7.6 MB，七分钟的 BeyondMimic 用 `-crf 33` 压到 9.4 MB；约三分钟的 Cosmos 用 `-preset slow -crf 30` 压到 4.3 MB，GR00T N1 用 `-preset slow -crf 31` 压到 7.0 MB；六分钟上下的 Transformer / π₀ / π₀.₅ / OP3 足球同参数压到 7.7 / 8.2 / 8.7 / 9.2 MB，SONIC / GMR / OmniRetarget 同参数压到 7.0 / 7.3 / 6.7 MB），海报由 `cover.png` 缩到 540×960 的 jpg，与海报一起放到笔记目录的 `media/`，接线方式见 `AGENTS.md`「配音讲解视频（`K.video`）」。
+- 放进笔记：网页版再压一次（`-crf 27 -tune stillimage -b:a 64k -ac 1 -movflags +faststart`；PPO 5.2 MB，更长的 AWR 用 `-crf 30` 压到 7.1 MB，DeepMimic 用 `-crf 29` 压到 6.2 MB；AMP / ADD 用 `-crf 31` 压到 6.4 / 7.2 MB，六分多钟的 PHC / ASE 用 `-crf 32` 压到 8.7 / 8.5 MB；四五分钟的 CALM / Diffusion Policy / LCP 用 `-preset slow -crf 30` 压到 5.8 / 6.0 / 6.3 MB，PULSE 同参数 7.6 MB，七分钟的 BeyondMimic 用 `-crf 33` 压到 9.4 MB；约三分钟的 Cosmos 用 `-preset slow -crf 30` 压到 4.3 MB，GR00T N1 用 `-preset slow -crf 31` 压到 7.0 MB；六分钟上下的 Transformer / π₀ / π₀.₅ / OP3 足球同参数压到 7.7 / 8.2 / 8.7 / 9.2 MB，SONIC / GMR / OmniRetarget 同参数压到 7.0 / 7.3 / 6.7 MB），海报由 `cover.png` 缩到 540×960 的 jpg，与海报一起放到笔记目录的 `media/`，接线方式见 `AGENTS.md`「配音讲解视频（`K.video`）」。
