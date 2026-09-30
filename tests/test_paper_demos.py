@@ -47,6 +47,7 @@ PHC_NOTE = _note("PHC_Perpetual_Humanoid_Control")
 DIFFUSION_POLICY_NOTE = _note("Diffusion_Policy")
 BEYONDMIMIC_NOTE = _note("BeyondMimic")
 LCP_NOTE = _note("LCP_Sim-to-Real_Action_Smoothing")
+TRANSFORMER_NOTE = _note("Transformer_Attention_Is_All_You_Need")
 DR_VISION_NOTE = _note(
     "Domain_Randomization_for_Transferring_Deep_Neural_Networks_from_Simulation_to_the_Real_World"
 )
@@ -99,6 +100,16 @@ PBFM_NOTE = (
     / "Perceptive_BFM_Adapting_Human_Motion_Priors_to_Robot-Centric_Terrain"
     / "Perceptive_BFM_Adapting_Human_Motion_Priors_to_Robot-Centric_Terrain.md"
 )
+
+
+def _high_impact_note(folder: str) -> Path:
+    """papers/03_High_Impact_Selection/<folder>/<folder>.md"""
+    return ROOT / "papers" / "03_High_Impact_Selection" / folder / f"{folder}.md"
+
+
+PI0_NOTE = _high_impact_note("Pi0_A_Vision-Language-Action_Flow_Model_for_General_Robot_Control")
+PI05_NOTE = _high_impact_note("Pi05_A_Vision-Language-Action_Model_with_Open-World_Generalization")
+SOCCER_NOTE = _high_impact_note("Learning_Agile_Soccer_Skills_for_a_Bipedal_Robot_with_Deep_RL")
 PHP_NOTE = (
     ROOT
     / "papers"
@@ -240,6 +251,10 @@ def test_notes_declare_their_demos_in_reading_order():
         PHP_NOTE: ("php", ["php-explainer"]),
         PBFM_NOTE: ("pbfm", ["pbfm-explainer"]),
         GENTLE_NOTE: ("gentle", ["gentle-explainer"]),
+        TRANSFORMER_NOTE: ("transformer", ["tf-explainer", "tf-video"]),
+        PI0_NOTE: ("pi0", ["pi0-explainer", "pi0-video"]),
+        PI05_NOTE: ("pi05", ["pi05-explainer", "pi05-video"]),
+        SOCCER_NOTE: ("op3soccer", ["soccer-explainer", "soccer-video"]),
     }
     for note, (bundle, placeholders) in expected.items():
         text = note.read_text(encoding="utf-8")
@@ -276,7 +291,7 @@ def test_demo_assets_are_theme_aware():
 EXPLAINER_BUNDLES = (
     "ppo", "awr", "deepmimic", "amp", "add", "ase", "calm", "pulse", "sonic", "groot",
     "gmr", "omniretarget", "diffusion_policy", "beyondmimic", "cosmos", "umr", "php", "pbfm",
-    "gentle", "lcp",
+    "gentle", "lcp", "transformer", "pi0", "pi05", "op3soccer",
 )
 
 # 幕数由论文决定，不是统一模板：PPO / DeepMimic / AMP / ADD 的核心概念正好各 5 个，
@@ -338,6 +353,18 @@ EXPLAINER_BUNDLES = (
 # 受力暴露的多样性 / 安全力阈值 / 教师—学生与柔顺奖励 / 定量证据与局限）。「交互力长什么样」
 # 与「什么时候、在哪几个 link、多硬」是两件事（式 3–4 vs 附录 A 的调度），阈值又有自己的
 # 截断公式与 ISO 换算，合并会让 4 个子步的积分表、平衡点表与压强换算挤在同一帧。
+# Transformer 是七件（RNN 的串行瓶颈 / 缩放点积注意力手算 / 为什么除以 √d_k / 多头 /
+# 位置编码 / 编码器—解码器与因果掩码 / 训练配方与结果）。「一次注意力怎么算」与「为什么要缩放」
+# 是两组数（d_k = 4 的手算 vs d_k = 64 的饱和），合成一幕会让权重条和梯度对比抢同一块画面。
+# π₀ 是七件（三道坎 / 两套权重 / 分块掩码与 KV 缓存 / 流匹配 / 动作块与推理预算 / 数据与配方 /
+# 实验与边界）。「两套权重」回答参数怎么分，「掩码」回答注意力怎么连，二者在附录 B 是分开的两段；
+# 「流匹配」和「推理预算」也各有一张图（积分路径 vs 附录 D 的耗时表）。
+# π₀.₅ 是七件（开放世界的难题 / 异构数据 / 两层推理 / 离散 + 连续两阶段 / 输入输出与部署 /
+# 训练地点数 / 消融）。「两层推理」是推理时的分解，「两阶段」是训练时的分解，合并会把式 (1)
+# 和子任务示例挤进一帧；地点数实验与配方消融是论文 §V-B 与 §V-C–E 的两组独立实验。
+# OP3 足球是七件（任务与机器人 / 技能教师 / 自适应蒸馏 / 自博弈 / 奖励与安全 / sim-to-real /
+# 实验）。蒸馏与自博弈同在阶段 2，但一个回答「向谁学」（λ 的自动开关），一个回答「和谁踢」
+# （对手池），论文也是分开的两段与两组消融。
 EXPLAINER_SCENES = {
     "ppo": (PPO_NOTE, 5),
     "awr": (AWR_NOTE, 6),
@@ -360,6 +387,10 @@ EXPLAINER_SCENES = {
     "pbfm": (PBFM_NOTE, 7),
     "gentle": (GENTLE_NOTE, 7),
     "lcp": (LCP_NOTE, 5),
+    "transformer": (TRANSFORMER_NOTE, 7),
+    "pi0": (PI0_NOTE, 7),
+    "pi05": (PI05_NOTE, 7),
+    "op3soccer": (SOCCER_NOTE, 7),
 }
 CN_NUMERALS = {4: "四", 5: "五", 6: "六", 7: "七", 8: "八"}
 
@@ -1418,5 +1449,41 @@ def test_narrated_video_placeholders_point_at_files_that_exist():
             bundles = re.findall(r'"([a-z0-9_-]+)"', declared.group(1))
             js = "".join((DEMO_JS_DIR / f"{b}.js").read_text(encoding="utf-8") for b in bundles)
             assert f"'{demo}': buildVideoDemo" in js and "K.video(host" in js, f"{demo} 没有通过 K.video 注册"
-    for demo in ("calm-video", "pulse-video", "dp-video", "bm-video", "lcp-video"):
+    for demo in ("calm-video", "pulse-video", "dp-video", "bm-video", "lcp-video",
+                 "tf-video", "pi0-video", "pi05-video", "soccer-video"):
         assert demo in seen, f"{demo} 应该挂在对应的论文笔记里"
+
+
+def test_vla_and_soccer_explainers_share_numbers_with_their_notes():
+    """Transformer / π₀ / π₀.₅ / OP3 足球的动画算例与笔记「🚶 具体实例」共用同一组数。
+
+    这些数由各自 bundle 里的小函数现算（softmax、Beta CDF、n^0.43、分桶、1 − 0.8^n ……），
+    笔记里是手算结果；改了一边忘了另一边，这里会拦下来。
+    """
+    cases = {
+        TRANSFORMER_NOTE: ("transformer", ["q = [1, 0, 1, 0]", "[0.548,\\ 0.726]", "0.274", "0.452", "6.99", "89 倍"]),
+        PI0_NOTE: ("pi0", ["64.7%", "7.24", "816", "73", "−1.2", "0.8"]),
+        PI05_NOTE: ("pi05", ["97.6%", "**166**", "280k", "80k", "11%"]),
+        SOCCER_NOTE: ("op3soccer", ["275", "0.674", "0.745", "0.905", "29/50", "1/11"]),
+    }
+    for note, (_bundle, needles) in cases.items():
+        text = note.read_text(encoding="utf-8")
+        for needle in needles:
+            assert needle in text, f"{note.name} 的具体实例应包含 {needle}"
+        assert "## 🚶 具体实例" in text and "## 🎬 七幕动画" in text
+
+    # 动画里现算的关键数字：直接复算一遍，确保与笔记里的手算一致
+    w = [math.exp(x) for x in (0.5, 1.0, 0.5)]
+    assert [round(x / sum(w), 3) for x in w] == [0.274, 0.452, 0.274]
+    assert round(512 ** -0.5 * 4000 ** -0.5 * 1e4, 2) == 6.99
+    assert round((1 - ((0.999 - 0.5) / 0.999) ** 1.5) * 100, 1) == 64.7
+    assert round(100 ** 0.43, 2) == 7.24
+    assert sum(1 for k in range(256) if -1 + 2 * k / 256 <= 0.3) - 1 == 166
+    assert next(n for n in range(1, 30) if 1 - 0.8 ** n >= 0.9) * 25 == 275
+    assert round((math.pi - 0.8) / math.pi * (math.pi - 0.3) / math.pi, 3) == 0.674
+
+    js = (DEMO_JS_DIR / "pi0.js").read_text(encoding="utf-8")
+    assert "eps = -1.2, a = 0.8, steps = 10" in js
+    assert "nBig = 100, nSmall = 1, p = 0.43" in js
+    js = (DEMO_JS_DIR / "op3soccer.js").read_text(encoding="utf-8")
+    assert "0.8 * u + 0.2 * 1" in js and "jointErr = 0.8, gravAng = 0.3" in js

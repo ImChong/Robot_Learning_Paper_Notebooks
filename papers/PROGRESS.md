@@ -18,6 +18,7 @@
 | 11  | BeyondMimic: From Motion Tracking to Versatile Humanoid Control via Guided Diffusion         | ⏳ 待读   | -          | 扩散+控制       |
 | 12  | Domain Randomization for Transferring Deep Neural Networks from Simulation to the Real World | ⏳ 待读   | -          | Sim-to-Real |
 | 13  | LCP: Sim-to-Real Action Smoothing                                                            | ⏳ 待读   | -          | 基础RL        |
+| 14  | Transformer: Attention Is All You Need                                                       | ✅ 完成   | 2026-09-30 | 基础架构        |
 
 
 ### ⭐ 高影响力精选（基础路线图之后优先读）
@@ -71,6 +72,9 @@
 | H19 | [GR00T N1: An Open Foundation Model for Generalist Humanoid Robots](https://arxiv.org/abs/2503.14734) ✅ [笔记](03_High_Impact_Selection/GR00T_N1_Humanoid_Foundation_Model/GR00T_N1_Humanoid_Foundation_Model.md) | Manip | 双系统 VLA + 数据金字塔，开放权重 |
 | H20 | [Behavior Foundation Model for Humanoid Robots](https://arxiv.org/abs/2509.13780) ✅ [笔记](03_High_Impact_Selection/Behavior_Foundation_Model_for_Humanoid_Robots/Behavior_Foundation_Model_for_Humanoid_Robots.md) | WBC   | 行为基础模型                      |
 | H24 | [Perceptive Behavior Foundation Model: Adapting Human Motion Priors to Robot-Centric Terrain](https://arxiv.org/abs/2606.08059) 🌟 ✅ [笔记](03_High_Impact_Selection/Perceptive_BFM_Adapting_Human_Motion_Priors_to_Robot-Centric_Terrain/Perceptive_BFM_Adapting_Human_Motion_Priors_to_Robot-Centric_Terrain.md) | WBC   | 地形感知的行为基础模型，训练代码与 TCRS 开源 |
+| H25 | [π0: A Vision-Language-Action Flow Model for General Robot Control](https://arxiv.org/abs/2410.24164) 🌟 ✅ [笔记](03_High_Impact_Selection/Pi0_A_Vision-Language-Action_Flow_Model_for_General_Robot_Control/Pi0_A_Vision-Language-Action_Flow_Model_for_General_Robot_Control.md) | Manip | 流匹配 VLA，openpi 开源权重 |
+| H26 | [π0.5: a Vision-Language-Action Model with Open-World Generalization](https://arxiv.org/abs/2504.16054) 🌟 ✅ [笔记](03_High_Impact_Selection/Pi05_A_Vision-Language-Action_Model_with_Open-World_Generalization/Pi05_A_Vision-Language-Action_Model_with_Open-World_Generalization.md) | Manip | 异构协同训练，陌生家庭里做长程家务 |
+| H27 | [Learning Agile Soccer Skills for a Bipedal Robot with Deep Reinforcement Learning](https://arxiv.org/abs/2304.13653) ✅ [笔记](03_High_Impact_Selection/Learning_Agile_Soccer_Skills_for_a_Bipedal_Robot_with_Deep_RL/Learning_Agile_Soccer_Skills_for_a_Bipedal_Robot_with_Deep_RL.md) | S2R | DeepMind OP3 足球，小人形零样本 sim-to-real |
 
 
 #### 仿真平台 & 工具
