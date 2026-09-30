@@ -40,8 +40,9 @@ demos: ["groot"]
 
 GR00T N1 是一个开放权重的视觉-语言-动作模型：Eagle-2 读图像和语言，扩散 Transformer 用流匹配一次生成 16 步动作，两条网络端到端一起训练。数据按「人类视频 → 仿真 / 神经轨迹 → 真机」堆成金字塔，用来缓解「没有人形互联网」这件事。论文给出的强结果是**短程桌面操作**上的数据效率，不是行走，也不是移动到另一个房间取物。
 
-> 🎮 **本文内嵌 1 段讲解动画和 3 个交互图**（不用装任何东西）：
+> 🎮 **本文内嵌 1 段讲解动画、1 段配音视频和 3 个交互图**（不用装任何东西）：
 > [七幕动画：GR00T N1 全流程](#groot-explainer-anim) —— 约 87 秒串完「数据孤岛 → 10 Hz 与 63.9 ms → 流匹配 → 数据金字塔 → 潜动作 / IDM → 一套权重多套 MLP → 表上的数字」。空格播放/暂停，← → 换幕，也可以点分幕标签跳着看。
+> [配音讲解视频](#groot-video) —— 同样七幕，加中文配音与字幕，5 分 38 秒竖屏，可下载
 
 > 🧪 [动作块时间尺](#动作块和推理预算)、[四步流匹配](#四步流匹配动手走一遍)、[按任务加权的实验表](#实验数字自己算)可拖动或点击，分别解释频率、生成过程和成功率。
 
@@ -65,6 +66,10 @@ GR00T N1 是一个开放权重的视觉-语言-动作模型：Eagle-2 读图像�
 ## 🎬 七幕动画：GR00T N1 全流程 {#groot-explainer-anim}
 
 <div class="paper-demo" data-demo="groot-explainer"><p class="demo-fallback">（本节含动画演示，需要启用 JavaScript）</p></div>
+
+## 📺 配音讲解视频（可下载） {#groot-video}
+
+<div class="paper-demo" data-demo="groot-video" data-src="media/groot_explainer_video.mp4" data-poster="media/groot_explainer_video_poster.jpg"><p class="demo-fallback">（本节含讲解视频播放器，需要启用 JavaScript；也可以直接<a href="media/groot_explainer_video.mp4" download="GR00T_N1_讲解视频.mp4">下载 mp4（7.0 MB）</a>）</p></div>
 
 > 📖 **动画之后的正文默认全部折叠**：问题、双系统、流匹配、数据金字塔、潜动作、跨本体、实验数字和边界按小节收起，具体实例、源码对照、面试和附录各收成一块。想细读哪一块就点开，内容一字未删；下面那张流程图留在外面。目录里的标题可以直接点，会自动展开所在折叠块，左侧目录顶部还有「展开全部文字」。
 
