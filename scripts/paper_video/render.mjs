@@ -36,6 +36,10 @@ await page.evaluate(() => document.fonts.ready);
 // warm every scene once so KaTeX + fonts are laid out before the first real frame
 for (const s of tl.segments) await page.evaluate((t) => window.renderAt(t), s.t0 + 0.5);
 await page.evaluate(() => document.fonts.ready);
+// zoom each storyboard to what it draws, now that formulas have their real widths
+for (const [i, f] of (await page.evaluate(() => window.fitStages())).entries()) {
+  console.error(`scene ${i + 1}: viewBox ${f.viewBox}  zoom ${f.zoom.toFixed(3)}`);
+}
 
 if (mode === 'stills') {
   for (const t of arg.split(',').map(Number)) {

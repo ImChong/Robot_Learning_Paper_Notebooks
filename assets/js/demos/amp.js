@@ -1487,7 +1487,6 @@
     setOpacity = K.setOpacity,
     sceneSvg = K.sceneSvg,
     stickFigure = K.stickFigure,
-    poseWalk = K.poseWalk,
     polyPath = K.polyPath,
     pointOn = K.pointOn;
 
@@ -1611,7 +1610,7 @@
   }
 
   /* ── scene 2: the discriminator loss on the note's 4-sample example ── */
-  var L_BAR_X = 452, L_BAR_W = 190, L_ROW_Y = [132, 176, 220, 264];
+  var L_BAR_X = 452, L_BAR_W = 170, L_ROW_Y = [132, 176, 220, 264];  // 170: the 1.204 row's label still ends inside the table
 
   function buildSceneLoss() {
     var s = sceneSvg('正文那 4 个样本的判别器 loss：真样本贡献 −log D，假样本贡献 −log(1−D)，两项平均后总 loss ≈ 1.147');
@@ -1698,9 +1697,10 @@
         row.tx.setX(L_BAR_X + w + 8);
         row.tx.setTex(u > 0.9 ? row.expr : '');
       });
-      setOpacity(sums[0], seg(t, 10.4, 11.2));
-      setOpacity(sums[1], seg(t, 11.6, 12.4));
-      setOpacity(totalG, seg(t, 12.8, 13.6));
+      /* the total is on screen before the 13.0 cue, while 1.147 is being read out */
+      setOpacity(sums[0], seg(t, 10.4, 11.0));
+      setOpacity(sums[1], seg(t, 11.2, 11.8));
+      setOpacity(totalG, seg(t, 12.0, 12.7));
       setOpacity(spot, worst.real ? 0 : seg(t, 8.4, 9.0) * (0.55 + 0.45 * Math.sin(t * 3)));
     }
 
@@ -1831,52 +1831,108 @@
   /* ── scene 4: same task reward, different dataset, different style ──
      The three behaviours are the note's 第 0 步 table (Locomotion / Zombie /
      Stealthy); the gait bands are the 1–2 / 2–3 / 3–5 m/s split quoted from
-     论文 Figure 4. The figures themselves are schematic, not simulated. */
-  function poseRun(ph) {
-    var s = Math.sin(ph * TAU), c = Math.cos(ph * TAU);
-    return {
-      lean: 17,
-      armA: [-44 * s - 10, -44 * s - 52],
-      armB: [44 * s + 10, 44 * s + 66],
-      legA: [40 * s, 40 * s - 66 * Math.max(0, c)],
-      legB: [-40 * s, -40 * s - 66 * Math.max(0, -c)]
-    };
+     论文 Figure 4. The figures themselves are schematic, not simulated.
+
+     Each figure is on a treadmill: the hip stays put, the ground scrolls back
+     at the figure's speed and a stance foot moves with it, so feet neither
+     skate nor sink. A gait is a handful of numbers — cadence f (cycles/s),
+     duty factor beta (the share of a cycle one foot is on the ground: above
+     0.5 both feet overlap on the ground = walking, below 0.5 there is a
+     flight phase = running), swing clearance, heel kick, hip bob, lean, arm
+     swing and elbow bend. Knees come from two-bone IK and always point
+     forward; elbows always bend forward. */
+  var PX_PER_M = 40, LEG = 24, REACH = 2 * LEG - 0.6;
+
+  /* hip → foot offset (dy downwards) → global [thigh, shin] angles, knee forward */
+  function legIK(dx, dy) {
+    var d = Math.min(Math.hypot(dx, dy), REACH);
+    var a = Math.atan2(dx, dy) * 180 / Math.PI;
+    var k = Math.acos(d / (2 * LEG)) * 180 / Math.PI;
+    return [a + k, a - k];
   }
 
-  function poseJog(ph) {
-    var s = Math.sin(ph * TAU), c = Math.cos(ph * TAU);
-    return {
-      lean: 11,
-      armA: [-32 * s - 9, -32 * s - 18],
-      armB: [32 * s + 9, 32 * s + 48],
-      legA: [30 * s, 30 * s - 46 * Math.max(0, c)],
-      legB: [-30 * s, -30 * s - 46 * Math.max(0, -c)]
-    };
+  /* stride = how far a stance foot travels under the hip */
+  function strideOf(g, v) {
+    return v * PX_PER_M * g.beta / g.f;
   }
 
-  /* 僵尸：手臂僵直前伸、膝盖几乎不弯、拖着脚走。 */
-  function poseZombie(ph) {
-    var s = Math.sin(ph * TAU);
-    return {
-      lean: -4,
-      armA: [88, 92],
-      armB: [92, 96],
-      legA: [11 * s, 11 * s - 4],
-      legB: [-11 * s, -11 * s - 4]
-    };
+  /* foot at phase ph (0 = touch-down): [x from hip, height above ground];
+     `fx` shifts the footprints forward (a crouch keeps its feet under the
+     leaning torso, not under the hip) */
+  function footAt(g, L, ph, lift) {
+    var fx = g.fx || 0;
+    if (ph < g.beta) return [fx + L / 2 - (L * ph) / g.beta, 0];
+    var u = (ph - g.beta) / (1 - g.beta);
+    var q = 1 - 0.4 * Math.min(1, g.kick / 6);  // running: the heel snaps up right after toe-off
+    return [
+      fx - L / 2 + (L * (1 - Math.cos(Math.PI * u))) / 2 - g.kick * Math.sin(Math.PI * u) * (1 - u),
+      lift * Math.sin(Math.PI * Math.pow(u, q))
+    ];
   }
 
-  /* 潜行：弯腰压低重心、膝盖一直半蹲、步子小。 */
-  function poseStealth(ph) {
-    var s = Math.sin(ph * TAU);
-    return {
-      lean: 38,
-      armA: [56, 96],
-      armB: [40, 88],
-      legA: [30 + 14 * s, -18 + 14 * s],
-      legB: [-6 + 14 * s, -52 + 14 * s]
-    };
+  /* hip height: walking vaults over the stance leg and is lowest with both
+     feet down; running sinks through stance and rises through flight */
+  function hipAt(g, L, ph) {
+    var p = ph % 0.5, b = g.beta;
+    if (b >= 0.5) {
+      var lo = g.hip || Math.sqrt(REACH * REACH - (L * L) / 4);
+      var hi = g.hip ? g.hip + g.bob : Math.min(REACH - 0.8, lo + g.bob);
+      var ds = b - 0.5;
+      if (p < ds) return lo;
+      var sn = Math.sin((Math.PI * (p - ds)) / (0.5 - ds));
+      return lo + (hi - lo) * sn * sn;
+    }
+    var td = Math.sqrt(REACH * REACH - (L * L) / 4) - 0.3;
+    return td + g.bob * (Math.cos(2 * Math.PI * b) - Math.cos(4 * Math.PI * (p - b / 2)));
   }
+
+  /* +1 when this side's foot is furthest forward (touch-down), −1 at lift-off;
+     the arm on the same side swings the other way */
+  function swingOf(ph, b) {
+    return ph < b ? Math.cos((Math.PI * ph) / b) : -Math.cos((Math.PI * (ph - b)) / (1 - b));
+  }
+
+  function gaitPose(g, v, ph) {
+    var L = strideOf(g, v), H = hipAt(g, L, ph);
+    var P = { hip: H, lean: g.lean + (g.sway || 0) * Math.sin(4 * Math.PI * ph) };
+    [['legA', 'armA', ph, g.lift], ['legB', 'armB', (ph + 0.5) % 1, g.liftB == null ? g.lift : g.liftB]].forEach(function (side) {
+      var foot = footAt(g, L, side[2], side[3]);
+      P[side[0]] = legIK(foot[0], H - foot[1]);
+      var up = g.armBias - g.arm * swingOf(side[2], g.beta);
+      P[side[1]] = [up, up + g.elbow];
+    });
+    if (g.arms) {
+      P.armA = g.arms.slice(0, 2);
+      P.armB = g.arms.slice(2, 4);
+    }
+    return P;
+  }
+
+  /* 走跑混合：按速度插值，2 m/s、3 m/s 附近换步态（beta 越过 0.5 就有了腾空期） */
+  var LOCO_GAITS = [
+    { v: 1.0, f: 0.95, beta: 0.62, lift: 5, kick: 0, bob: 1.5, lean: 5, arm: 16, armBias: 0, elbow: 22 },
+    { v: 1.95, f: 1.1, beta: 0.58, lift: 7, kick: 0, bob: 3, lean: 7, arm: 22, armBias: 2, elbow: 30 },
+    { v: 2.05, f: 1.3, beta: 0.44, lift: 14, kick: 6, bob: 2, lean: 9, arm: 26, armBias: 6, elbow: 75 },
+    { v: 2.95, f: 1.36, beta: 0.4, lift: 18, kick: 9, bob: 2.5, lean: 11, arm: 30, armBias: 6, elbow: 78 },
+    { v: 3.05, f: 1.4, beta: 0.36, lift: 22, kick: 12, bob: 3, lean: 13, arm: 34, armBias: 8, elbow: 82 },
+    { v: 5.0, f: 1.55, beta: 0.3, lift: 28, kick: 16, bob: 3.5, lean: 17, arm: 40, armBias: 8, elbow: 85 }
+  ];
+
+  function locoGait(v) {
+    var i = 0;
+    while (i < LOCO_GAITS.length - 2 && v > LOCO_GAITS[i + 1].v) i++;
+    var a = LOCO_GAITS[i], b = LOCO_GAITS[i + 1], u = clamp((v - a.v) / (b.v - a.v), 0, 1), g = {};
+    Object.keys(a).forEach(function (k) { g[k] = a[k] + (b[k] - a[k]) * u; });
+    return g;
+  }
+
+  /* 僵尸：手臂僵直前伸、膝盖几乎不弯（步子小，髋部够高）、一只脚拖着地走、身体左右晃。 */
+  var ZOMBIE_GAIT = { f: 1.05, beta: 0.68, lift: 3, liftB: 0.6, kick: 0, bob: 0.8, lean: -3, sway: 2.5,
+    arm: 0, armBias: 0, elbow: 0, arms: [86, 90, 90, 94] };
+
+  /* 潜行：弯腰压低重心、膝盖一直半蹲（髋部压到 33）、步子慢而轻、手臂收在身前。 */
+  var STEALTH_GAIT = { f: 0.8, beta: 0.7, lift: 7, kick: 0, hip: 33, bob: 1, lean: 36, fx: 7,
+    arm: 10, armBias: 28, elbow: 60 };
 
   var STYLE_LANES = [
     { cx: 158, name: 'Locomotion（走 + 跑混合）', goal: 'v^* \\in [1, 5]\\ \\mathrm{m/s}', color: C_ACCENT,
@@ -1910,15 +1966,21 @@
       g.appendChild(paint(svgText(lane.cx, 114, lane.name, null, 12.5, 'middle'), lane.color));
       g.appendChild(svgMath(lane.cx, 133, lane.goal, { size: 11, anchor: 'middle', w: 200 }).setTone(C_MUTED));
       g.appendChild(paint(svgEl('line', { x1: lane.cx - 96, y1: GROUND, x2: lane.cx + 96, y2: GROUND, 'stroke-width': 1.4 }), null, C_BORDER));
+      /* the treadmill: ground texture scrolling back at the figure's speed */
+      var tread = paint(svgEl('line', {
+        x1: lane.cx - 96, y1: GROUND + 5, x2: lane.cx + 96, y2: GROUND + 5,
+        'stroke-width': 2, 'stroke-dasharray': '3 9', 'stroke-linecap': 'round', opacity: 0.8
+      }), null, C_MUTED);
+      g.appendChild(tread);
       g.appendChild(paint(svgText(lane.cx, 302, lane.tag, null, 10.5, 'middle'), lane.color));
       s.appendChild(g);
-      var fig = stickFigure(lane.color, 2.4);
+      var fig = stickFigure(lane.color, 2.4, false, 0.45);
       var zoomed = svgEl('g', {
         transform: 'translate(' + lane.cx + ' ' + GROUND + ') scale(1.25) translate(' + -lane.cx + ' ' + -GROUND + ')'
       });
       zoomed.appendChild(fig.el);
       s.appendChild(zoomed);
-      return { g: g, wrap: zoomed, fig: fig, cx: lane.cx, at: 1.0 + i * 1.5 };
+      return { g: g, wrap: zoomed, fig: fig, tread: tread, cx: lane.cx, at: [3.4, 5.0, 6.0][i], ph: 0, off: 0 };  // each style shows up with its cue
     });
 
     var gaitLab = svgMath(60, 340, '\\text{混合数据集下，目标速度 } v^* \\text{ 一扫，步态自己换（论文 Figure 4 右图）}',
@@ -1953,27 +2015,40 @@
     var foot = paint(svgText(60, 412, '换数据集 = 换风格；判别器就是「风格编码器」，不用往奖励里写一句「膝盖该弯多少」。', null, 12), C_ACCENT);
     s.appendChild(foot);
 
-    function draw(t) {
-      var sweepOn = t >= 8.0;
-      var v = SWEEP_LO + (SWEEP_HI - SWEEP_LO) * (sweepOn ? ease(seg(t, 8.0, 13.4)) : 0);
-      var ph;
+    /* Gait phase and ground scroll are integrated over time (cadence changes
+       during the sweep; phase = t × cadence would spin the legs). `clock` is
+       wall time when the video stage passes one, so the figures keep walking
+       while the narration holds the storyboard on one frame. */
+    var last = null;
 
-      lanes.forEach(function (lane) {
+    function draw(t, clock) {
+      var now = clock == null ? t : clock;
+      var dt = last == null ? 0 : now - last;
+      last = now;
+      if (!(dt > 0 && dt < 0.25)) dt = 0;
+
+      /* lane 0 walks at 1 m/s, then its target speed is swept 1 → 5 m/s so
+         步态切换 is visible — linearly, one second per band edge, so the
+         voice-over's 「1 到 2 走路，2 到 3 慢跑，3 到 5 跑步」 lands on the
+         matching gait; the other two are fixed-speed styles (v* = 1 m/s in
+         the paper). */
+      var v = 1 + 4 * seg(t, 8.3, 12.0);
+      var gaits = [[locoGait(v), v], [ZOMBIE_GAIT, 1], [STEALTH_GAIT, 1]];
+
+      lanes.forEach(function (lane, i) {
         setOpacity(lane.g, seg(t, lane.at - 0.4, lane.at + 0.3));
         setOpacity(lane.wrap, seg(t, lane.at, lane.at + 0.6));
+        var g = gaits[i][0], sp = gaits[i][1];
+        lane.ph = (lane.ph + g.f * dt) % 1;
+        lane.off = (lane.off + sp * PX_PER_M * dt) % 1200;
+        var P = gaitPose(g, sp, lane.ph);
+        lane.fig.pose(lane.cx, GROUND - P.hip, P);
+        lane.tread.setAttribute('stroke-dashoffset', (lane.off * 1.25).toFixed(1));  // 1.25 = the figures' zoom
       });
 
-      /* lane 0 runs at the swept speed, so 步态切换 is visible; the other two
-         are fixed-speed styles (v* = 1 m/s in the paper). */
-      ph = (t * (sweepOn ? 0.55 + v * 0.3 : 1.0)) % 1;
-      lanes[0].fig.pose(lanes[0].cx, GROUND - (v > 3 ? 48 : v > 2 ? 46 : 44),
-        v > 3 ? poseRun(ph) : v > 2 ? poseJog(ph) : poseWalk(ph));
-      lanes[1].fig.pose(lanes[1].cx, GROUND - 42, poseZombie((t * 0.55) % 1));
-      lanes[2].fig.pose(lanes[2].cx, GROUND - 34, poseStealth((t * 0.6) % 1));
-
       setOpacity(gaitLab, seg(t, 7.2, 7.9));
-      setOpacity(bandG, seg(t, 7.4, 8.1));
-      var on = seg(t, 7.8, 8.3);
+      setOpacity(bandG, seg(t, 7.4, 7.9));
+      var on = seg(t, 7.4, 7.9);
       setOpacity(marker, on);
       setOpacity(markerLab, on);
       setOpacity(markerTx, on);
@@ -2184,7 +2259,7 @@
         { at: 3.4, s: 'Locomotion（走跑混合）：低速走路、中速慢跑、高速跑步。' },
         { at: 5.0, s: 'Zombie：拖着脚、手臂僵直前伸；Stealthy：弯腰压低重心、脚步轻柔。都是 $v^* = 1\\ \\mathrm{m/s}$。' },
         { at: 7.4, s: '混合数据集还有个额外好处：把 $v^*$ 从低扫到高，**步态自己换** —— 1~2 走路、2~3 慢跑、3~5 跑步。' },
-        { at: 11.0, s: '只用走路数据训的策略在高速段拉不上去，只用跑步数据的在低速段下不来（论文 Figure 4 右图）。' },
+        { at: 12.0, s: '只用走路数据训的策略在高速段拉不上去，只用跑步数据的在低速段下不来（论文 Figure 4 右图）。' },
         { at: 13.6, s: '**判别器就是「风格编码器」**：换一份数据就换一种风格，奖励函数一行不用改。' }
       ]
     },
@@ -2215,7 +2290,7 @@
         '取数依据：第二幕的四个打分就是上面「判别器 loss 实验台」的默认值（正文「数值例子」，总 loss ≈ 1.147）；' +
           '第三幕的曲线和「判别器打分 → 风格奖励」演示用的是同一个 styleReward()；' +
           '$w^S = w^G = 0.5$、$w_{GP} = 10$、$\\mathrm{clip} = 0.02$、回放池 $10^5$、4096 / 256 这些来自论文 Table 4 与正文第 2、3 步。',
-        '第四幕的三个小人只是示意姿态，不是论文的仿真结果；1~2 / 2~3 / 3~5 m/s 的步态分段引自正文「多数据集的自动步态切换」。'
+        '第四幕的三个小人是示意步态（跑步机式：脚踩在随速度后移的地面上，膝、肘按两段 IK 摆放、只会向前弯），不是论文的仿真结果；1~2 / 2~3 / 3~5 m/s 的步态分段引自正文「多数据集的自动步态切换」。'
       ],
       scenes: AMP_SCENES
     });
@@ -2227,8 +2302,8 @@
   function buildVideoDemo(host) {
     K.video(host, {
       title: '配音讲解视频：AMP 五幕全流程',
-      sub: '4 分 45 秒竖屏视频（1080×1920），中文配音 + 字幕。画面就是上面的五幕动画，旁白把每一幕讲细；适合手机上看或转发。',
-      size: '6.6 MB',
+      sub: '4 分 46 秒竖屏视频（1080×1920），中文配音 + 字幕。画面就是上面的五幕动画，旁白把每一幕讲细；适合手机上看或转发。',
+      size: '6.4 MB',
       fileName: 'AMP_讲解视频.mp4'
     });
   }

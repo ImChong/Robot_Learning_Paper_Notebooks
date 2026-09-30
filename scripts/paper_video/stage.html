@@ -19,23 +19,29 @@ html, body { width: 1080px; height: 1920px; overflow: hidden; background: var(--
   font-family: 'Noto Sans SC', 'WenQuanYi Zen Hei', sans-serif; }
 #app { position: relative; width: 1080px; height: 1920px; overflow: hidden;
   background: radial-gradient(1200px 700px at 50% 30%, #1f2330 0%, var(--bg) 70%); }
-.brand { position: absolute; top: 70px; left: 60px; right: 60px; display: flex; justify-content: space-between;
+/* Safe area: 视频号 / 抖音 play 9:16 aspect-fill, so a taller phone crops up to ~97 px
+   off each side, and the status bar / nav icons (top ~200 px) and the title / progress
+   bar (bottom ~290 px) sit on top of the video. Everything that must be read stays
+   inside x 96–984, y 215–1630. */
+.brand { position: absolute; top: 215px; left: 96px; right: 96px; display: flex; justify-content: space-between;
   align-items: center; font-size: 30px; color: var(--text-secondary); }
 .brand b { color: var(--demo-accent); font-weight: 900; }
 .pill { border: 2px solid var(--demo-border); border-radius: 999px; padding: 6px 22px; font-size: 26px; }
 
-/* ── scene chrome ── */
+/* ── storyboard scene ── */
 #scene { position: absolute; inset: 0; }
-.head { position: absolute; top: 185px; left: 60px; right: 60px; }
+.story .shead { position: absolute; top: 300px; left: 96px; right: 96px; }
 .act { font-size: 34px; color: var(--demo-accent); font-weight: 700; letter-spacing: 2px; }
 .title { font-size: 64px; font-weight: 900; line-height: 1.25; margin-top: 12px; }
+.story .title { font-size: 60px; margin-top: 6px; }
 .title .katex { font-size: 1em; }
-.prog { position: absolute; top: 395px; left: 60px; right: 60px; display: flex; gap: 12px; }
+.prog { position: absolute; top: 462px; left: 96px; right: 96px; display: flex; gap: 12px; }
 .prog i { flex: 1; height: 8px; border-radius: 4px; background: var(--demo-grid); overflow: hidden; }
 .prog i b { display: block; height: 100%; width: 0; background: var(--demo-accent); }
-.stage { position: absolute; top: 455px; left: 10px; width: 1060px; height: 560px;
+/* height, and the svg's viewBox, are set per scene by fitStory() */
+.stage { position: absolute; top: 494px; left: 96px; width: 888px; height: 480px;
   background: var(--demo-surface); border-radius: 24px; border: 2px solid var(--demo-border); overflow: hidden; }
-.stage > svg { position: absolute; left: 0; top: 0; width: 1060px; height: 556.5px; }
+.stage > svg { position: absolute; left: 10px; top: 10px; width: 864px; height: 456px; }
 .stage .demo-x-svg text { font-family: 'Noto Sans SC', sans-serif; }
 .stage .demo-x-mono { font-family: 'DejaVu Sans Mono', monospace; }
 .stage .demo-x-svg text.demo-x-mut { fill: var(--demo-muted); }
@@ -44,18 +50,23 @@ html, body { width: 1080px; height: 1920px; overflow: hidden; background: var(--
 .stage .demo-x-svg text.demo-x-good { fill: var(--demo-good); }
 .stage .demo-x-svg text.demo-x-bad { fill: var(--demo-bad); }
 .stage .demo-x-svg text.demo-x-warn { fill: var(--demo-warn); }
-.cue { position: absolute; top: 1060px; left: 60px; right: 60px; min-height: 250px;
+.cue { position: absolute; top: 1004px; left: 96px; right: 96px; min-height: 230px;
   border-left: 10px solid var(--demo-accent); background: rgba(86,156,214,.08);
-  border-radius: 0 20px 20px 0; padding: 30px 36px; font-size: 44px; line-height: 1.55; }
-.cue .tag { font-size: 28px; color: var(--demo-accent); font-weight: 700; letter-spacing: 4px; margin-bottom: 10px; }
+  border-radius: 0 20px 20px 0; padding: 24px 32px; font-size: 40px; line-height: 1.5; }
+.cue .tag { font-size: 26px; color: var(--demo-accent); font-weight: 700; letter-spacing: 4px; margin-bottom: 8px; }
 .cue b { color: var(--hi); font-weight: 700; }
 .cue .katex { font-size: 1.02em; }
-.sub { position: absolute; top: 1420px; left: 50px; right: 50px; text-align: center;
-  font-size: 58px; font-weight: 900; line-height: 1.35; color: #fff;
+.sub { position: absolute; top: 1450px; left: 96px; right: 96px; text-align: center;
+  font-size: 50px; font-weight: 900; line-height: 1.35; color: #fff;
   text-shadow: 0 3px 0 #000, 0 0 18px rgba(0,0,0,.85); }
 
-/* ── intro / outro cards ── */
+/* ── intro / outro cards ──
+   papers/<name>.js still lays these out on the full 1080×1920 grid (.head at 185 px,
+   content down to ~1400 px, 60–90 px side margins); .fit scales that grid by 0.9 about
+   the top centre and drops it 120 px, which lands the content inside the safe area. */
 .card { position: absolute; inset: 0; }
+.card.fit { transform-origin: 540px 0; transform: translateY(120px) scale(0.9); }
+.head { position: absolute; top: 185px; left: 60px; right: 60px; }
 .big { position: absolute; left: 0; right: 0; text-align: center; }
 .meta { position: absolute; left: 90px; right: 90px; border: 2px solid var(--demo-border); border-radius: 24px;
   background: var(--demo-surface); padding: 34px 40px; font-size: 34px; line-height: 1.7; color: var(--text-secondary); }
@@ -106,10 +117,12 @@ html, body { width: 1080px; height: 1920px; overflow: hidden; background: var(--
   }
 
   /* ── storyboard scene ── */
+  var STAGE_TOP = 494, STAGE_PAD = 10, SVG_W = 864, SVG_H_MIN = 360, SVG_H_MAX = 540, CUE_GAP = 30;
+
   function buildStory(i) {
     var sc = window.__story.scenes[i];
-    var root = h('div', 'card');
-    var head = h('div', 'head', root);
+    var root = h('div', 'card story');
+    var head = h('div', 'shead', root);
     h('div', 'act', head, '第 ' + (i + 1) + ' / ' + N + ' 幕');
     richInto(h('div', 'title', head), sc.title);
     var prog = h('div', 'prog', root), bars = [];
@@ -121,15 +134,65 @@ html, body { width: 1080px; height: 1920px; overflow: hidden; background: var(--
     h('div', 'tag', cue, '要点');
     var cueText = h('div', '', cue), cueIdx = -1;
     return {
-      root: root,
+      root: root, spec: sc, story: story, stage: stage, cue: cue,
+      /* `t` is wall time inside the scene; while the narration holds the storyboard
+         on one frame it keeps running, so looping motion (a gait) does not freeze. */
       draw: function (st, t, seg) {
-        story.draw(st);
+        story.draw(st, t);
         var j = 0;
         sc.cues.forEach(function (c, n) { if (st >= c.at - 1e-6) j = n; });
         if (j !== cueIdx) { cueIdx = j; richInto(cueText, sc.cues[j].s); }
         for (var k = 0; k < N; k++) bars[k].style.width = (k < i ? 100 : k > i ? 0 : 100 * seg) + '%';
       }
     };
+  }
+
+  /* The storyboards are drawn on an 800×420 grid for the web page, and most leave
+     empty margins; zoom the viewBox to what a scene actually draws (every element,
+     sampled across the scene so moving ones count too), so the safe-area stage
+     loses as little size as possible. Never zooms out past the original grid. */
+  function fitStory(sc) {
+    var svg = sc.story.el, vb = svg.viewBox.baseVal;
+    var full = { x: vb.x, y: vb.y, w: vb.width, h: vb.height };
+    svg.style.width = full.w + 'px'; svg.style.height = full.h + 'px';  // 1 px = 1 unit while measuring
+    var box = null;
+    function add(r, o) {
+      if (!(r.width > 0 || r.height > 0)) return;
+      var x0 = r.left - o.left + full.x, y0 = r.top - o.top + full.y;
+      var x1 = x0 + r.width, y1 = y0 + r.height;
+      box = box ? { x0: Math.min(box.x0, x0), y0: Math.min(box.y0, y0), x1: Math.max(box.x1, x1), y1: Math.max(box.y1, y1) }
+        : { x0: x0, y0: y0, x1: x1, y1: y1 };
+    }
+    var times = [];
+    for (var k = 0; k <= 30; k++) times.push(sc.spec.dur * k / 30);
+    sc.spec.cues.forEach(function (c) { times.push(c.at); });
+    times.forEach(function (tt) {
+      sc.story.draw(tt, tt);
+      var o = svg.getBoundingClientRect();
+      svg.querySelectorAll('rect, circle, ellipse, line, path, polyline, polygon, text').forEach(function (n) {
+        if (!n.closest('defs, marker')) add(n.getBoundingClientRect(), o);
+      });
+      // a formula counts by its glyphs, not by its (wider) box; skip KaTeX's hidden MathML copy
+      svg.querySelectorAll('foreignObject').forEach(function (fo) {
+        var walk = document.createTreeWalker(fo, NodeFilter.SHOW_TEXT), range = document.createRange();
+        for (var n = walk.nextNode(); n; n = walk.nextNode()) {
+          if (!n.nodeValue.trim() || n.parentElement.closest('.katex-mathml')) continue;
+          range.selectNodeContents(n);
+          Array.prototype.forEach.call(range.getClientRects(), function (r) { add(r, o); });
+        }
+      });
+    });
+    if (!box) box = { x0: full.x, y0: full.y, x1: full.x + full.w, y1: full.y + full.h };
+    var PAD = 8;
+    var x0 = Math.max(full.x, box.x0 - PAD), y0 = Math.max(full.y, box.y0 - PAD);
+    var x1 = Math.min(full.x + full.w, box.x1 + PAD), y1 = Math.min(full.y + full.h, box.y1 + PAD);
+    svg.setAttribute('viewBox', [x0, y0, x1 - x0, y1 - y0].map(function (v) { return v.toFixed(1); }).join(' '));
+    var hSvg = clamp(SVG_W * (y1 - y0) / (x1 - x0), SVG_H_MIN, SVG_H_MAX);
+    svg.style.width = SVG_W + 'px';
+    svg.style.height = hSvg.toFixed(0) + 'px';
+    sc.stage.style.height = (hSvg + 2 * STAGE_PAD + 4).toFixed(0) + 'px';
+    sc.cue.style.top = (STAGE_TOP + hSvg + 2 * STAGE_PAD + 4 + CUE_GAP).toFixed(0) + 'px';
+    return { zoom: Math.min(SVG_W / (x1 - x0), hSvg / (y1 - y0)), viewBox: svg.getAttribute('viewBox') };
   }
 
   // helpers handed to papers/<name>.js for the intro / outro cards
@@ -140,6 +203,7 @@ html, body { width: 1080px; height: 1920px; overflow: hidden; background: var(--
   function get(key) {
     if (!built[key]) {
       built[key] = key === 'intro' ? window.PaperVideo.intro(V) : key === 'outro' ? window.PaperVideo.outro(V) : buildStory(+key);
+      if (key === 'intro' || key === 'outro') built[key].root.classList.add('fit');
     }
     return built[key];
   }
@@ -147,6 +211,17 @@ html, body { width: 1080px; height: 1920px; overflow: hidden; background: var(--
   var sceneHost = document.getElementById('scene'), subEl = document.getElementById('sub');
 
   window.setup = function (tl) { TL = tl; N = window.__story.scenes.length; };
+
+  // after fonts / KaTeX have loaded: fit every storyboard scene once (render.mjs calls this)
+  window.fitStages = function () {
+    var out = [];
+    for (var i = 0; i < N; i++) {
+      var sc = get(String(i));
+      sceneHost.textContent = ''; sceneHost.appendChild(sc.root); current = sc;
+      out.push(fitStory(sc));
+    }
+    return out;
+  };
 
   window.renderAt = function (t) {
     var segs = TL.segments, s = segs[segs.length - 1];

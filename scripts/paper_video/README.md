@@ -7,7 +7,7 @@
 | `ppo` | `assets/js/demos/ppo.js` 五幕 | 约 3 分 50 秒 |
 | `awr` | `assets/js/demos/awr.js` 六幕 | 约 5 分 25 秒 |
 | `deepmimic` | `assets/js/demos/deepmimic.js` 五幕 | 约 4 分 30 秒 |
-| `amp` | `assets/js/demos/amp.js` 五幕 | 约 4 分 45 秒 |
+| `amp` | `assets/js/demos/amp.js` 五幕 | 约 4 分 46 秒 |
 | `phc` | `assets/js/demos/phc.js` 六幕 | 约 6 分 12 秒 |
 | `add` | `assets/js/demos/add.js` 五幕 | 约 5 分 16 秒 |
 | `ase` | `assets/js/demos/ase.js` 六幕 | 约 6 分 28 秒 |
@@ -24,6 +24,8 @@
 | `op3soccer` | `assets/js/demos/op3soccer.js` 七幕（`soccer-explainer`） | 约 6 分 45 秒 |
 
 - 画面：直接复用 `<paper>.js` 分镜的 `draw(t)`，数字与笔记算例一致；前后加片头、总结页（`papers/<paper>.js`）。
+- 安全区：视频号 / 抖音按 9:16 铺满屏幕（aspect-fill），长屏手机每侧会裁掉约 50–100 px，顶部约 200 px 压着状态栏和返回键，底部约 290 px 压着标题和进度条。所以要读的东西都放在 x 96–984、y 215–1630 以内：分镜按实际画到的范围缩放 viewBox（`fitStages()`，只放大不缩小），片头 / 总结页仍按 1080×1920 排版，由 `.card.fit` 整体缩 0.9 放进安全区。
+- 分镜 `draw(t, clock)` 的第二个参数是这一幕的真实时间：旁白比动画长、画面停在 `to` 之前时它照样往前走，步态这类循环动作可以用它继续动（网页播放器只传 `t`）。
 - 配音：`edge-tts`（`zh-CN-YunxiNeural`，需联网），旁白在 `papers/<paper>.py`。
 - 同步：每句旁白对应分镜的一段 `[from, to]`，旁白比动画长时画面停在 `to` 之前一刻。`[from, to]` 最好对齐分镜 cue 的 `at`，「要点」框才会和旁白同步。
 - 输出：`out/<paper>/<paper>_video.mp4`（H.264 + AAC，30 fps），不入库。
@@ -43,4 +45,4 @@ node render.mjs awr cover             # 封面（片头、无字幕）-> out/awr
 - Chromium：设置 `CHROME=/path/to/chrome`，否则用 playwright-core 默认路径。几篇可以同时渲染（各自写 `stage.<paper>.built.html`）。
 - 走 TLS 代理时设置 `SSL_CERT_FILE`，`build.py` 会让 edge-tts 用这份 CA。
 - 新增一篇：写 `papers/<paper>.py`（`SCRIPT` / `DISPLAY`）和 `papers/<paper>.js`（`window.PaperVideo` 的 `arxiv` / `intro` / `outro`），`<paper>` 是 `assets/js/demos/<paper>.js` 的 bundle 名；讲解动画的演示 id 不必叫 `<paper>-explainer`（`diffusion_policy.js` 里是 `dp-explainer`、`beyondmimic.js` 里是 `bm-explainer`），`render.mjs` 会从 bundle 里读出 `'…-explainer'` 那个 id。
-- 放进笔记：网页版再压一次（`-crf 27 -tune stillimage -b:a 64k -ac 1 -movflags +faststart`；PPO 5.6 MB，更长的 AWR 用 `-crf 30` 压到 7.6 MB，DeepMimic 用 `-crf 29` 压到 6.6 MB；AMP / ADD 用 `-crf 31` 压到 6.6 / 7.2 MB，六分多钟的 PHC / ASE 用 `-crf 32` 压到 8.7 / 8.5 MB；四五分钟的 CALM / Diffusion Policy / LCP 用 `-preset slow -crf 30` 压到 5.8 / 6.0 / 6.3 MB，PULSE 同参数 7.6 MB，七分钟的 BeyondMimic 用 `-crf 33` 压到 9.4 MB；约三分钟的 Cosmos 用 `-preset slow -crf 30` 压到 4.3 MB，GR00T N1 用 `-preset slow -crf 31` 压到 7.0 MB；六分钟上下的 Transformer / π₀ / π₀.₅ / OP3 足球同参数压到 7.7 / 8.2 / 8.7 / 9.2 MB），海报由 `cover.png` 缩到 540×960 的 jpg，与海报一起放到笔记目录的 `media/`，接线方式见 `AGENTS.md`「配音讲解视频（`K.video`）」。
+- 放进笔记：网页版再压一次（`-crf 27 -tune stillimage -b:a 64k -ac 1 -movflags +faststart`；PPO 5.6 MB，更长的 AWR 用 `-crf 30` 压到 7.6 MB，DeepMimic 用 `-crf 29` 压到 6.6 MB；AMP / ADD 用 `-crf 31` 压到 6.4 / 7.2 MB，六分多钟的 PHC / ASE 用 `-crf 32` 压到 8.7 / 8.5 MB；四五分钟的 CALM / Diffusion Policy / LCP 用 `-preset slow -crf 30` 压到 5.8 / 6.0 / 6.3 MB，PULSE 同参数 7.6 MB，七分钟的 BeyondMimic 用 `-crf 33` 压到 9.4 MB；约三分钟的 Cosmos 用 `-preset slow -crf 30` 压到 4.3 MB，GR00T N1 用 `-preset slow -crf 31` 压到 7.0 MB；六分钟上下的 Transformer / π₀ / π₀.₅ / OP3 足球同参数压到 7.7 / 8.2 / 8.7 / 9.2 MB），海报由 `cover.png` 缩到 540×960 的 jpg，与海报一起放到笔记目录的 `media/`，接线方式见 `AGENTS.md`「配音讲解视频（`K.video`）」。

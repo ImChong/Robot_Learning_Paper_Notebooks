@@ -930,13 +930,15 @@
      Angles are global and measured in degrees from straight-down, positive
      towards +x (the direction the character faces), so a limb is one call.
      `pose(x, y, P)` puts the hip at (x, y); P holds the five global angles
-     { lean, armA: [shoulder, elbow], armB, legA: [hip, knee], legB }. */
+     { lean, armA: [shoulder, elbow], armB, legA: [hip, knee], legB }.
+     `farAlpha` (optional) fades armB / legB, so in a gait you can tell the
+     far-side limbs from the near ones. */
   function limbPt(x, y, len, ang) {
     var r = (ang * Math.PI) / 180;
     return [x + len * Math.sin(r), y + len * Math.cos(r)];
   }
 
-  function stickFigure(color, w, dashed) {
+  function stickFigure(color, w, dashed, farAlpha) {
     var g = svgEl('g', {});
     function bone() {
       var ln = paint(svgEl('line', { 'stroke-width': w, 'stroke-linecap': 'round' }), null, color);
@@ -947,6 +949,9 @@
     var spine = bone(),
       armA1 = bone(), armA2 = bone(), armB1 = bone(), armB2 = bone(),
       legA1 = bone(), legA2 = bone(), legB1 = bone(), legB2 = bone();
+    if (farAlpha != null) {
+      [armB1, armB2, legB1, legB2].forEach(function (ln) { ln.style.opacity = farAlpha; });
+    }
     var head = paint(svgEl('circle', { r: 8.5, fill: 'none', 'stroke-width': w }), null, color);
     if (dashed) head.setAttribute('stroke-dasharray', '5 4');
     g.appendChild(head);
