@@ -243,8 +243,8 @@ def test_notes_declare_their_demos_in_reading_order():
             ["mimickit-family", "mimickit-reward", "mimickit-config"],
         ),
         SONIC_NOTE: ("sonic", ["sonic-explainer"]),
-        GROOT_NOTE: ("groot", ["groot-explainer", "groot-timing", "groot-flow", "groot-results"]),
-        COSMOS_NOTE: ("cosmos", ["cosmos-explainer", "cosmos-data", "cosmos-tokens", "cosmos-physics"]),
+        GROOT_NOTE: ("groot", ["groot-explainer", "groot-video", "groot-timing", "groot-flow", "groot-results"]),
+        COSMOS_NOTE: ("cosmos", ["cosmos-explainer", "cosmos-video", "cosmos-data", "cosmos-tokens", "cosmos-physics"]),
         GMR_NOTE: ("gmr", ["gmr-explainer"]),
         OMNI_NOTE: ("omniretarget", ["omniretarget-explainer"]),
         UMR_NOTE: ("umr", ["umr-explainer"]),
@@ -1449,7 +1449,7 @@ def test_narrated_video_placeholders_point_at_files_that_exist():
             bundles = re.findall(r'"([a-z0-9_-]+)"', declared.group(1))
             js = "".join((DEMO_JS_DIR / f"{b}.js").read_text(encoding="utf-8") for b in bundles)
             assert f"'{demo}': buildVideoDemo" in js and "K.video(host" in js, f"{demo} 没有通过 K.video 注册"
-    for demo in ("calm-video", "pulse-video", "dp-video", "bm-video", "lcp-video",
+    for demo in ("calm-video", "pulse-video", "dp-video", "bm-video", "lcp-video", "cosmos-video", "groot-video",
                  "tf-video", "pi0-video", "pi05-video", "soccer-video"):
         assert demo in seen, f"{demo} 应该挂在对应的论文笔记里"
 
