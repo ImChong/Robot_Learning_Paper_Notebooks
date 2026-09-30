@@ -1704,7 +1704,7 @@
         { at: 1.2, s: '玩具任务和 PPO 笔记第 3 个演示同一个：4 个动作，每轮只采 ' + SIM.batch + ' 条样本 —— 故意采少，好让方差看得见。' },
         { at: 4.8, s: '留最近 **4 轮**，每次更新就有 **' + S5_REUSE.last.samples + ' 条**样本；画的是 ' + SWEEP_SEEDS + ' 个种子的平均曲线，单条曲线在这种小任务里几乎全是运气。' },
         { at: 7.0, s: '赚在哪：种子间最终回报的标准差从 **' + fmt(S5_FRESH.sd, 3) + '** 降到 **' + fmt(S5_REUSE.sd, 3) + '**，每轮抖动 **' + fmt(S5_FRESH.jitter, 3) + ' → ' + fmt(S5_REUSE.jitter, 3) + '** —— 买到的是「稳」。' },
-        { at: 8.4, s: '亏在哪：把 N 拖到 **20**，buffer 里的样本平均已经 **' + fmt(S5_STALE.last.staleness, 1) + ' 轮**旧，平均回报反而回落到 **' + fmt(S5_STALE.fMean, 3) + '**。' },
+        { at: 8.4, s: '亏在哪：把 N 拖到 **20**，buffer 里的样本平均已经 **' + fmt(S5_STALE.last.staleness, 1) + ' 轮**旧，平均回报反而从 **' + fmt(S5_REUSE.fMean, 3) + '** 回落到 **' + fmt(S5_STALE.fMean, 3) + '**，比用完即丢的 ' + fmt(S5_FRESH.fMean, 3) + ' 还低。' },
         { at: 11.0, s: '旧样本是旧策略采的，优势却按**当前** Critic 算 —— AWR 没有概率比，也就没有重要性采样来纠正这件事。' },
         { at: 13.0, s: '所以 off-policy 不是白赚：**复用旧数据买的是方差，不是速度**，前提是别放太久。' }
       ]
