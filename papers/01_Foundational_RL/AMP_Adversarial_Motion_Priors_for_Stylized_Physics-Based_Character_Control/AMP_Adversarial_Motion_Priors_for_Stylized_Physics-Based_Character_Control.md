@@ -35,7 +35,7 @@ AMP 用 GAN 的思想替代了 DeepMimic 的手工模仿奖励——训练一个
 
 > 🎮 **本文内嵌 1 段动画 + 1 段配音视频 + 4 个可交互演示**（不用装任何东西）：
 > 1. [五幕动画：AMP 全流程](#amp-explainer-anim) —— 约 76 秒串完「逐帧 vs 分布 → 判别器 loss → LSGAN 风格奖励 → 换数据集就换风格 → 训练闭环」
-> 2. [配音讲解视频](#amp-video) —— 同样五幕，加中文配音与字幕，4 分 45 秒竖屏，可下载
+> 2. [配音讲解视频](#amp-video) —— 同样五幕，加中文配音与字幕，4 分 46 秒竖屏，可下载
 > 3. 判别器 loss 实验台 —— 正文那 4 个样本的数值例子，改一个打分看两项 loss 怎么动
 > 4. 判别器打分 → 风格奖励 —— LSGAN 形式和 log 形式画在一起，一眼看出论文为什么换了形式
 > 5. 风格 × 任务 —— 同一个任务奖励换数据集就换风格，还能看到「混合数据集才有步态切换」
@@ -63,7 +63,7 @@ AMP 用 GAN 的思想替代了 DeepMimic 的手工模仿奖励——训练一个
 
 ## 📺 配音讲解视频（可下载） {#amp-video}
 
-<div class="paper-demo" data-demo="amp-video" data-src="media/amp_explainer_video.mp4" data-poster="media/amp_explainer_video_poster.jpg"><p class="demo-fallback">（本节含讲解视频播放器，需要启用 JavaScript；也可以直接<a href="media/amp_explainer_video.mp4" download="AMP_讲解视频.mp4">下载 mp4（6.6 MB）</a>）</p></div>
+<div class="paper-demo" data-demo="amp-video" data-src="media/amp_explainer_video.mp4" data-poster="media/amp_explainer_video_poster.jpg"><p class="demo-fallback">（本节含讲解视频播放器，需要启用 JavaScript；也可以直接<a href="media/amp_explainer_video.mp4" download="AMP_讲解视频.mp4">下载 mp4（6.4 MB）</a>）</p></div>
 
 > 📖 **动画之后的正文默认全部折叠**：前半部分（「要解决什么问题」「是怎么做的」）按小节收起，后面的具体实例、源码对照、面试问题、讨论记录与附录整块收起。想细读哪一块就点开对应的折叠条，内容一字未删；目录里的标题依旧可以直接点，会自动展开所在折叠块，左侧目录顶部还有「展开全部文字」一键铺开。
 

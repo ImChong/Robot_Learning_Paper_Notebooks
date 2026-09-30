@@ -38,7 +38,9 @@ html, body { width: 1080px; height: 1920px; overflow: hidden; background: var(--
 .prog i b { display: block; height: 100%; width: 0; background: var(--demo-accent); }
 .stage { position: absolute; top: 504px; left: 58px; width: 964px; height: 508px;
   background: var(--demo-surface); border-radius: 24px; border: 2px solid var(--demo-border); overflow: hidden; }
-.stage > svg { position: absolute; left: 0; top: 0; width: 960px; height: 504px; }
+/* the svg's viewBox is zoomed to what each scene draws (fitStory); the 12 px inset keeps it ≥ 72 px from the
+   frame edge, clear of the ~47 px 视频号 trims off each side when it fills a taller phone */
+.stage > svg { position: absolute; left: 12px; top: 10px; width: 936px; height: 484px; }
 .stage .demo-x-svg text { font-family: 'Noto Sans SC', sans-serif; }
 .stage .demo-x-mono { font-family: 'DejaVu Sans Mono', monospace; }
 .stage .demo-x-svg text.demo-x-mut { fill: var(--demo-muted); }
@@ -131,9 +133,11 @@ html, body { width: 1080px; height: 1920px; overflow: hidden; background: var(--
     h('div', 'tag', cue, '要点');
     var cueText = h('div', '', cue), cueIdx = -1;
     return {
-      root: root,
+      root: root, spec: sc, story: story,
+      /* `t` is wall time inside the scene; while the narration holds the storyboard
+         on one frame it keeps running, so looping motion (a gait) does not freeze. */
       draw: function (st, t, seg) {
-        story.draw(st);
+        story.draw(st, t);
         var j = 0;
         sc.cues.forEach(function (c, n) { if (st >= c.at - 1e-6) j = n; });
         if (j !== cueIdx) {
@@ -149,23 +153,122 @@ html, body { width: 1080px; height: 1920px; overflow: hidden; background: var(--
     };
   }
 
+  /* The storyboards are drawn on an 800×420 grid for the web page, and most leave
+     empty margins; zoom the viewBox to what a scene actually draws (every element,
+     sampled across the scene so moving ones count too), so the stage shows it as
+     large as it fits. Never zooms out past the original grid. */
+  function fitStory(sc) {
+    var svg = sc.story.el, vb = svg.viewBox.baseVal;
+    var full = { x: vb.x, y: vb.y, w: vb.width, h: vb.height };
+    var W = 936, H = 484;
+    svg.style.width = full.w + 'px'; svg.style.height = full.h + 'px';  // 1 px = 1 unit while measuring
+    var box = null;
+    function add(r, o) {
+      if (!(r.width > 0 || r.height > 0)) return;
+      var x0 = r.left - o.left + full.x, y0 = r.top - o.top + full.y, x1 = x0 + r.width, y1 = y0 + r.height;
+      box = box ? { x0: Math.min(box.x0, x0), y0: Math.min(box.y0, y0), x1: Math.max(box.x1, x1), y1: Math.max(box.y1, y1) }
+        : { x0: x0, y0: y0, x1: x1, y1: y1 };
+    }
+    var times = [];
+    for (var k = 0; k <= 30; k++) times.push(sc.spec.dur * k / 30);
+    sc.spec.cues.forEach(function (c) { times.push(c.at); });
+    times.forEach(function (tt) {
+      sc.story.draw(tt, tt);
+      var o = svg.getBoundingClientRect();
+      svg.querySelectorAll('rect, circle, ellipse, line, path, polyline, polygon, text').forEach(function (n) {
+        if (!n.closest('defs, marker')) add(n.getBoundingClientRect(), o);
+      });
+      // a formula counts by its glyphs, not by its (wider) box; skip KaTeX's hidden MathML copy
+      svg.querySelectorAll('foreignObject').forEach(function (fo) {
+        var walk = document.createTreeWalker(fo, NodeFilter.SHOW_TEXT), range = document.createRange();
+        for (var n = walk.nextNode(); n; n = walk.nextNode()) {
+          if (!n.nodeValue.trim() || n.parentElement.closest('.katex-mathml')) continue;
+          range.selectNodeContents(n);
+          Array.prototype.forEach.call(range.getClientRects(), function (r) { add(r, o); });
+        }
+      });
+    });
+    if (!box) box = { x0: full.x, y0: full.y, x1: full.x + full.w, y1: full.y + full.h };
+    var PAD = 8;
+    var x0 = Math.max(full.x, box.x0 - PAD), y0 = Math.max(full.y, box.y0 - PAD);
+    var x1 = Math.min(full.x + full.w, box.x1 + PAD), y1 = Math.min(full.y + full.h, box.y1 + PAD);
+    svg.setAttribute('viewBox', [x0, y0, x1 - x0, y1 - y0].map(function (v) { return v.toFixed(1); }).join(' '));
+    svg.style.width = W + 'px'; svg.style.height = H + 'px';
+    return { zoom: Math.min(W / (x1 - x0), H / (y1 - y0)), viewBox: svg.getAttribute('viewBox') };
+  }
+
+  /* 视频号封面（render.mjs cover）沿用最初的片头设计，和 PPO / AWR / DeepMimic / AMP 那几张封面一致：
+     整张 1080×1920、不缩放；品牌角标在顶上；英文大标题 250px、字距 16px（名字长就改 4px 字距、等比缩小到宽 ≤ 980，
+     并在 190–440 这一带里垂直居中）；中文名 70px + 一句话 40px 从 470 起；论文信息框从 680 起（34px）；
+     目录紧跟信息框（40px，行距随条数收紧：≤5 条 1.9、6 条 1.75、7 条 1.55、8 条及以上 1.5 / 38px）。
+     每块都在上一块底下留出间距，内容比原设计高就整体往下推，永不重叠；目录底超过 1820 再压行距、字号。
+     片头在视频里另有自己的安全区排版（V.stack），这里只在封面帧上重新排。 */
+  function classicCover(root) {
+    var bigs = root.querySelectorAll('.big'), m = root.querySelector('.meta'), toc = root.querySelector('.toc');
+    if (bigs.length < 2 || !m || !toc) return;
+    var a = bigs[0], b = bigs[1], title = a.firstElementChild;
+    [a, b, m, toc].forEach(function (e) { e.style.opacity = 1; e.style.transform = 'none'; });
+    [].forEach.call(toc.children, function (e) { e.style.opacity = 1; e.style.transform = 'none'; });
+
+    // English title: 250px / 16px spacing; a name too long for that tightens to 4px spacing and
+    // shrinks to 980px wide (DeepMimic → 170px, as in the original), centred in the 190–440 band
+    var size = 250, range = document.createRange();
+    function titleWidth() { range.selectNodeContents(title); return range.getBoundingClientRect().width; }
+    title.style.cssText += ';font-size:250px;letter-spacing:16px;line-height:1;white-space:nowrap';
+    if (titleWidth() > 980) {
+      title.style.letterSpacing = '4px';
+      size = Math.min(250, Math.floor(250 * 980 / titleWidth()));
+      title.style.fontSize = size + 'px';
+    }
+    a.style.top = (190 + Math.round((250 - size) / 2)) + 'px';
+
+    // Chinese name + one-line pitch
+    var zh = b.children[0], pitch = b.children[1];
+    if (zh) zh.style.cssText += ';font-size:70px;font-weight:900;line-height:normal;white-space:nowrap';
+    if (pitch) pitch.style.cssText += ';font-size:40px;line-height:normal;margin-top:18px;white-space:nowrap';
+    [[zh, 70, 52], [pitch, 40, 32]].forEach(function (x) {  // one line each: a long one shrinks instead of wrapping
+      if (!x[0]) return;
+      for (var fs = x[1]; fs > x[2]; fs -= 2) {
+        range.selectNodeContents(x[0]);
+        if (range.getBoundingClientRect().width <= 980) break;
+        x[0].style.fontSize = (fs - 2) + 'px';
+      }
+    });
+    b.style.top = Math.max(470, a.offsetTop + a.offsetHeight + 30) + 'px';
+
+    // paper info box
+    m.style.fontSize = '34px'; m.style.padding = '34px 40px'; m.style.lineHeight = '1.7';
+    m.style.top = Math.max(680, b.offsetTop + b.offsetHeight + 36) + 'px';
+
+    // table of contents, right under the box
+    var rows = toc.children.length;
+    toc.style.fontSize = (rows >= 8 ? 38 : 40) + 'px';
+    toc.style.lineHeight = rows <= 5 ? '1.9' : rows === 6 ? '1.75' : rows === 7 ? '1.55' : '1.5';
+    toc.style.top = (m.offsetTop + m.offsetHeight + 24) + 'px';
+    for (var lh = parseFloat(toc.style.lineHeight), fs = parseFloat(toc.style.fontSize);
+      toc.offsetTop + toc.offsetHeight > 1820 && fs >= 32;) {
+      if (lh > 1.35) lh -= 0.05; else fs -= 2;
+      toc.style.lineHeight = lh.toFixed(2); toc.style.fontSize = fs + 'px';
+    }
+  }
+
   // helpers handed to papers/<name>.js for the intro / outro cards
   /* 片头 / 总结页的纵向排版：按各块实际高度自上而下排，块间距为 gaps[k]，整组在 [top, bottom] 里垂直居中；
      放不下就等比压缩间距（不压内容），保证块与块永不重叠。挂到 DOM 之后才量得到高度，所以在 draw 里调。
-     封面与视频同一个安全区（视频号的封面同样会被上下裁切、底部压着标题与互动信息），没有字幕，间距最多放大 1.6 倍。 */
+     只管视频里的片头 / 片尾；封面帧由 classicCover() 按最初的片头设计重新排。 */
   function stack(els, gaps, top, bottom) {
     var hs = els.map(function (e) { return e.offsetHeight; });
     if (!hs.every(function (x) { return x > 0; })) return false;
     var body = hs.reduce(function (a, b) { return a + b; }, 0);
     var gap = gaps.reduce(function (a, b) { return a + b; }, 0);
-    var room = bottom - top, k = Math.min(window.__cover ? 1.6 : 1, Math.max(0, (room - body) / gap));
+    var room = bottom - top, k = Math.min(1, Math.max(0, (room - body) / gap));
     var y = top + Math.max(0, (room - body - gap * k) / 2);
     els.forEach(function (e, i) { if (i) y += gaps[i - 1] * k; e.style.top = Math.round(y) + 'px'; y += hs[i]; });
     return true;
   }
 
-  /* 片头 / 片尾在视频里要让出字幕（top 1318px），封面没有字幕，可以用到安全区底线 */
-  function contentBottom() { return window.__cover ? 1440 : 1300; }
+  /* 片头 / 片尾在视频里要让出字幕（top 1318px） */
+  function contentBottom() { return 1300; }
   var V = { K: K, h: h, fadeUp: fadeUp, clamp: clamp, stack: stack, contentBottom: contentBottom, SAFE_TOP: 330, SAFE_BOTTOM: 1440,
     ACC: 'var(--demo-accent)', GOOD: 'var(--demo-good)', BAD: 'var(--demo-bad)', WARN: 'var(--demo-warn)' };
   document.getElementById('arxiv').textContent = 'arXiv ' + window.PaperVideo.arxiv;
@@ -181,6 +284,17 @@ html, body { width: 1080px; height: 1920px; overflow: hidden; background: var(--
 
   window.setup = function (tl) { TL = tl; N = window.__story.scenes.length; };
 
+  // after fonts / KaTeX have loaded: fit every storyboard scene once (render.mjs calls this)
+  window.fitStages = function () {
+    var out = [];
+    for (var i = 0; i < N; i++) {
+      var sc = get(String(i));
+      sceneHost.textContent = ''; sceneHost.appendChild(sc.root); current = sc;
+      out.push(fitStory(sc));
+    }
+    return out;
+  };
+
   window.renderAt = function (t) {
     var segs = TL.segments, s = segs[segs.length - 1];
     for (var i = 0; i < segs.length; i++) if (t < segs[i].t1) { s = segs[i]; break; }
@@ -195,6 +309,7 @@ html, body { width: 1080px; height: 1920px; overflow: hidden; background: var(--
     var sc = get(key);
     if (current !== sc) { sceneHost.textContent = ''; sceneHost.appendChild(sc.root); current = sc; }
     sc.draw(st, local, clamp((t - first.t0) / (last.t1 - first.t0), 0, 1));
+    if (window.__cover && key === 'intro') classicCover(sc.root);
     // cross-fade at scene edges
     var fin = clamp(local / 0.35, 0, 1), fout = clamp((last.t1 - t) / 0.3, 0, 1);
     sc.root.style.opacity = Math.min(fin, t > TL.total - 1 ? 1 : fout);

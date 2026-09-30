@@ -13,7 +13,12 @@ const REPO = path.resolve(HERE, '../..');
 const FFMPEG = execFileSync('python3', ['-c', 'import imageio_ffmpeg;print(imageio_ffmpeg.get_ffmpeg_exe())']).toString().trim();
 const [name, mode, arg] = process.argv.slice(2);
 const OUT = path.join(HERE, 'out', name);
-const tl = JSON.parse(fs.readFileSync(path.join(OUT, 'timeline.json'), 'utf8'));
+// a cover needs no narration: without build.py's timeline, fake a 30 s intro so every line has faded in
+const tlPath = path.join(OUT, 'timeline.json');
+const tl = fs.existsSync(tlPath) ? JSON.parse(fs.readFileSync(tlPath, 'utf8'))
+  : mode === 'cover' ? { total: 30, segments: [{ scene: 'intro', t0: 0, t1: 30, from: 0, to: 30, lead: 0 }], subs: [] }
+  : JSON.parse(fs.readFileSync(tlPath, 'utf8'));
+fs.mkdirSync(OUT, { recursive: true });
 
 // The explainer's demo id is whatever the bundle mounts (`dp-explainer` in diffusion_policy.js,
 // `bm-explainer` in beyondmimic.js), so read it from the bundle instead of assuming <name>-explainer.
@@ -36,6 +41,10 @@ await page.evaluate(() => document.fonts.ready);
 // warm every scene once so KaTeX + fonts are laid out before the first real frame
 for (const s of tl.segments) await page.evaluate((t) => window.renderAt(t), s.t0 + 0.5);
 await page.evaluate(() => document.fonts.ready);
+// zoom each storyboard to what it draws, now that formulas have their real widths
+for (const [i, f] of (await page.evaluate(() => window.fitStages())).entries()) {
+  console.error(`scene ${i + 1}: viewBox ${f.viewBox}  zoom ${f.zoom.toFixed(3)}`);
+}
 
 if (mode === 'stills') {
   for (const t of arg.split(',').map(Number)) {
@@ -43,7 +52,7 @@ if (mode === 'stills') {
     await page.screenshot({ path: path.join(OUT, `still_${t}.png`) });
   }
 } else if (mode === 'cover') {
-  // intro frame with every line shown, no subtitle -> out/cover.png
+  // intro frame with every line shown, no subtitle, laid out by stage.html's classicCover() -> out/cover.png
   const intro = tl.segments.filter((s) => s.scene === 'intro').pop();
   await page.evaluate((x) => { window.__cover = true; window.renderAt(x); document.getElementById('sub').textContent = ''; }, intro.t1 - 0.5);
   await page.screenshot({ path: path.join(OUT, 'cover.png') });
