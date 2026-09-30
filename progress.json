@@ -41,15 +41,15 @@
         "13_Physics-Based_Animation",
         "14_Human_Motion"
       ],
-      "last_module": "05_Locomotion",
-      "last_index": 202,
-      "last_title": "E-SDS: Environment-aware See it, Do it, Sorted - Automated Environment-Aware Reinforcement Learning for Humanoid Locomotion (arXiv:2512.16446)",
-      "next_module": "06_Manipulation",
-      "last_completed_date": "2026-09-29",
-      "note": "本日轮转到 05_Locomotion。上游 awesome-humanoid-robot-learning Locomotion 章节 2026.01–02 与 2025.12 较新的 Freestyle、RoboMirror 均已有笔记，取上游已收录且无笔记的最新论文 E-SDS (arXiv:2512.16446, 2025-12-18, UCL, RiTA 2025)。在 SDS 视频→VLM 奖励代码管线上新增环境分析智能体(1000 台 G1 跑 10 s 统计缺口比例/障碍密度/粗糙度)，条件化 GPT-5 生成使用高度扫描与 LiDAR 的奖励；2 候选 × 500 次 PPO 迭代 × 3 轮闭环，每地形约 99 分钟；仿真 G1 四种地形上唯一学会下楼梯，速度跟踪误差比手工奖励基线低 51.9–82.6%。论文未开源（前作 SDS 已开源），故只含整体流程 mermaid，无源码运行时序图。",
-      "last_date": "2026-09-29",
+      "last_module": "06_Manipulation",
+      "last_index": 301,
+      "last_title": "DexUMI: Using Human Hand as the Universal Manipulation Interface for Dexterous Manipulation (arXiv:2505.21864)",
+      "next_module": "07_Teleoperation",
+      "last_completed_date": "2026-09-30",
+      "note": "本日轮转到 06_Manipulation。上游 awesome-humanoid-robot-learning Manipulation 章节带 arXiv 链接的条目均已有笔记，取上游已收录且无笔记的最新论文 DexUMI (arXiv:2505.21864, 2025-05-28, Stanford/Columbia/J.P. Morgan/CMU/NVIDIA, CoRL 2025 Best Paper Finalist)。硬件适配：为每款灵巧手以指尖工作空间相似度为目标、可穿戴性为约束优化外骨骼；软件适配：SAM2 分割 + ProPainter 修补 + 真手回放 + 遮挡感知合成把视频中的人手换成机器人手；扩散策略输出 16 步相对动作。Inspire/XHand 四任务平均成功率 86%，采数效率为遥操作 3.2×。官方开源 real-stanford/DexUMI，含整体流程 mermaid + 源码运行时序图。",
+      "last_date": "2026-09-30",
       "next_candidate": null,
-      "last_completed": "E-SDS: Environment-aware See it, Do it, Sorted - Automated Environment-Aware Reinforcement Learning for Humanoid Locomotion (arXiv:2512.16446)"
+      "last_completed": "DexUMI: Using Human Hand as the Universal Manipulation Interface for Dexterous Manipulation (arXiv:2505.21864)"
     },
     "last_summary_index": 532,
     "last_summary_date": "2026-09-18",
@@ -1585,6 +1585,17 @@
         "project_page": "",
         "code": "",
         "source": "⏳ 未开源（前作 SDS: https://github.com/RPL-CS-UCL/SDS）· VLM 环境感知奖励生成 · 感知式行走 · Unitree G1 仿真 · UCL"
+      },
+      {
+        "date": "2026-09-30",
+        "index": 301,
+        "title": "DexUMI: Using Human Hand as the Universal Manipulation Interface for Dexterous Manipulation",
+        "folder": "papers/06_Manipulation/DexUMI__Using_Human_Hand_as_the_Universal_Manipulation_Interface",
+        "module": "06_Manipulation",
+        "arxiv": "2505.21864",
+        "project_page": "https://dex-umi.github.io/",
+        "code": "https://github.com/real-stanford/DexUMI",
+        "source": "🌟 官方开源，已附源码运行时序图"
       }
     ],
     "last_completed_index": 588,

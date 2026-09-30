@@ -399,7 +399,7 @@
 | 298  | [Vision in Action: Learning Active Perception from Human Demonstrations](https://arxiv.org/abs/2506.15666)                                                | 2025.06 |     | ⏳ 待读 |
 | 299  | [DreamGen: Unlocking Generalization in Robot Learning through Neural Trajectories](https://arxiv.org/abs/2505.12705)                                      | 2025.05 |     | ⏳ 待读 |
 | 300  | [EgoDex: Learning Dexterous Manipulation from Large-Scale Egocentric Video](https://arxiv.org/abs/2505.11709)                                             | 2025.05 |     | ⏳ 待读 |
-| 301  | DexUMI: Using Human Hand as the Universal Manipulation Interface for Dexterous Manipulation                                                               | 2025.05 |     | ⏳ 待读 |
+| 301  | [DexUMI: Using Human Hand as the Universal Manipulation Interface for Dexterous Manipulation](https://arxiv.org/abs/2505.21864) ✅ [笔记](06_Manipulation/DexUMI__Using_Human_Hand_as_the_Universal_Manipulation_Interface/DexUMI__Using_Human_Hand_as_the_Universal_Manipulation_Interface.md) | 2025.05 |     | ⏳ 待读 |
 | 302  | [GR00T N1: An Open Foundation Model for Generalist Humanoid Robots](https://arxiv.org/abs/2503.14734)                                                     | 2025.03 |     | ⏳ 待读 |
 | 303  | [Humanoid Policy ~ Human Policy](https://arxiv.org/abs/2503.13441)                                                                                        | 2025.03 |     | ⏳ 待读 |
 | 304  | [Humanoids in Hospitals: A Technical Study of Humanoid Surrogates for Dexterous Medical Interventions](https://arxiv.org/abs/2503.12725)                  | 2025.03 |     | ⏳ 待读 |
