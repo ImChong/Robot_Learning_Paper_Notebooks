@@ -180,6 +180,18 @@
         "published_date_en": "Oct 15, 2025 initial release; v4 Jan 18, 2026 (arXiv)",
         "zhname": "MimicKit：运动模仿与控制的强化学习框架",
         "zh_title": "MimicKit：运动模仿与控制的强化学习框架"
+      },
+      {
+        "title": "Attention Is All You Need (Transformer)",
+        "path": "papers/01_Foundational_RL/Transformer_Attention_Is_All_You_Need/Transformer_Attention_Is_All_You_Need.md",
+        "url": "/papers/01_Foundational_RL/Transformer_Attention_Is_All_You_Need/Transformer_Attention_Is_All_You_Need.html",
+        "dir": "Transformer_Attention_Is_All_You_Need",
+        "arxiv": "1706.03762",
+        "has_open_source": true,
+        "published_date_zh": "2017年6月12日（arXiv v1），NIPS 2017",
+        "published_date_en": "Jun 12, 2017 (arXiv v1), NIPS 2017",
+        "zhname": "Transformer：注意力就是你所需要的一切",
+        "zh_title": "Transformer：注意力就是你所需要的一切"
       }
     ],
     "subtitle": "Foundational RL theory and classic algorithms — essential prerequisites for understanding subsequent research",
@@ -477,6 +489,29 @@
             "zh_title": "ANYmal 敏捷运动技能学习（sim-to-real RL 奠基作）"
           },
           {
+            "title": "Learning Agile Soccer Skills for a Bipedal Robot with Deep Reinforcement Learning",
+            "path": "papers/03_High_Impact_Selection/Learning_Agile_Soccer_Skills_for_a_Bipedal_Robot_with_Deep_RL/Learning_Agile_Soccer_Skills_for_a_Bipedal_Robot_with_Deep_RL.md",
+            "url": "/papers/03_High_Impact_Selection/Learning_Agile_Soccer_Skills_for_a_Bipedal_Robot_with_Deep_RL/Learning_Agile_Soccer_Skills_for_a_Bipedal_Robot_with_Deep_RL.html",
+            "dir": "Learning_Agile_Soccer_Skills_for_a_Bipedal_Robot_with_Deep_RL",
+            "arxiv": "2304.13653",
+            "published_date_zh": "2023年4月26日（arXiv v1），Science Robotics 2024",
+            "published_date_en": "Apr 26, 2023 (arXiv v1), Science Robotics 2024",
+            "zhname": "OP3 足球：用深度强化学习让双足机器人学会敏捷踢球",
+            "zh_title": "OP3 足球：用深度强化学习让双足机器人学会敏捷踢球"
+          },
+          {
+            "title": "π0: A Vision-Language-Action Flow Model for General Robot Control",
+            "path": "papers/03_High_Impact_Selection/Pi0_A_Vision-Language-Action_Flow_Model_for_General_Robot_Control/Pi0_A_Vision-Language-Action_Flow_Model_for_General_Robot_Control.md",
+            "url": "/papers/03_High_Impact_Selection/Pi0_A_Vision-Language-Action_Flow_Model_for_General_Robot_Control/Pi0_A_Vision-Language-Action_Flow_Model_for_General_Robot_Control.html",
+            "dir": "Pi0_A_Vision-Language-Action_Flow_Model_for_General_Robot_Control",
+            "arxiv": "2410.24164",
+            "has_open_source": true,
+            "published_date_zh": "2024年10月31日（arXiv v1）",
+            "published_date_en": "Oct 31, 2024 (arXiv v1)",
+            "zhname": "π₀：面向通用机器人控制的视觉-语言-动作流模型",
+            "zh_title": "π₀：面向通用机器人控制的视觉-语言-动作流模型"
+          },
+          {
             "title": "Cosmos World Foundation Model Platform for Physical AI",
             "path": "papers/03_High_Impact_Selection/Cosmos_World_Foundation_Model_Platform_for_Physical_AI/Cosmos_World_Foundation_Model_Platform_for_Physical_AI.md",
             "url": "/papers/03_High_Impact_Selection/Cosmos_World_Foundation_Model_Platform_for_Physical_AI/Cosmos_World_Foundation_Model_Platform_for_Physical_AI.html",
@@ -509,6 +544,18 @@
             "published_date_en": "Mar 2025 (arXiv)",
             "zhname": "GR00T N1：面向通用人形机器人的开放基础模型",
             "zh_title": "GR00T N1：面向通用人形机器人的开放基础模型"
+          },
+          {
+            "title": "π0.5: a Vision-Language-Action Model with Open-World Generalization",
+            "path": "papers/03_High_Impact_Selection/Pi05_A_Vision-Language-Action_Model_with_Open-World_Generalization/Pi05_A_Vision-Language-Action_Model_with_Open-World_Generalization.md",
+            "url": "/papers/03_High_Impact_Selection/Pi05_A_Vision-Language-Action_Model_with_Open-World_Generalization/Pi05_A_Vision-Language-Action_Model_with_Open-World_Generalization.html",
+            "dir": "Pi05_A_Vision-Language-Action_Model_with_Open-World_Generalization",
+            "arxiv": "2504.16054",
+            "has_open_source": true,
+            "published_date_zh": "2025年4月22日（arXiv v1）",
+            "published_date_en": "Apr 22, 2025 (arXiv v1)",
+            "zhname": "π₀.₅：具备开放世界泛化能力的视觉-语言-动作模型",
+            "zh_title": "π₀.₅：具备开放世界泛化能力的视觉-语言-动作模型"
           },
           {
             "title": "Behavior Foundation Model for Humanoid Robots",
