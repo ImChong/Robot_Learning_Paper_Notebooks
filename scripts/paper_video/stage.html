@@ -19,29 +19,28 @@ html, body { width: 1080px; height: 1920px; overflow: hidden; background: var(--
   font-family: 'Noto Sans SC', 'WenQuanYi Zen Hei', sans-serif; }
 #app { position: relative; width: 1080px; height: 1920px; overflow: hidden;
   background: radial-gradient(1200px 700px at 50% 30%, #1f2330 0%, var(--bg) 70%); }
-/* Safe area: 视频号 / 抖音 play 9:16 aspect-fill, so a taller phone crops up to ~97 px
-   off each side, and the status bar / nav icons (top ~200 px) and the title / progress
-   bar (bottom ~290 px) sit on top of the video. Everything that must be read stays
-   inside x 96–984, y 215–1630. */
-.brand { position: absolute; top: 215px; left: 96px; right: 96px; display: flex; justify-content: space-between;
+.brand { position: absolute; top: 70px; left: 60px; right: 60px; display: flex; justify-content: space-between;
   align-items: center; font-size: 30px; color: var(--text-secondary); }
 .brand b { color: var(--demo-accent); font-weight: 900; }
 .pill { border: 2px solid var(--demo-border); border-radius: 999px; padding: 6px 22px; font-size: 26px; }
 
-/* ── storyboard scene ── */
+/* ── scene chrome ── */
 #scene { position: absolute; inset: 0; }
-.story .shead { position: absolute; top: 300px; left: 96px; right: 96px; }
-.act { font-size: 34px; color: var(--demo-accent); font-weight: 700; letter-spacing: 2px; }
-.title { font-size: 64px; font-weight: 900; line-height: 1.25; margin-top: 12px; }
-.story .title { font-size: 60px; margin-top: 6px; }
+/* 视频号 / 公众号视频的安全区：9:16 画面在分享页、主页会被裁成居中的 6:7（y 330–1590），
+   播放页底部还压着作者、标题、转赞评与浮评。关键内容一律放在 SAFE_TOP–SAFE_BOTTOM（330–1440）之内，
+   上方只留品牌角标，下方 480px 不放任何要读的东西。 */
+.head { position: absolute; top: 330px; left: 60px; right: 60px; }
+.act { font-size: 30px; color: var(--demo-accent); font-weight: 700; letter-spacing: 2px; }
+.title { font-size: 60px; font-weight: 900; line-height: 1.22; margin-top: 8px; }
 .title .katex { font-size: 1em; }
-.prog { position: absolute; top: 462px; left: 96px; right: 96px; display: flex; gap: 12px; }
+.prog { position: absolute; top: 482px; left: 60px; right: 60px; display: flex; gap: 12px; }
 .prog i { flex: 1; height: 8px; border-radius: 4px; background: var(--demo-grid); overflow: hidden; }
 .prog i b { display: block; height: 100%; width: 0; background: var(--demo-accent); }
-/* height, and the svg's viewBox, are set per scene by fitStory() */
-.stage { position: absolute; top: 494px; left: 96px; width: 888px; height: 480px;
+.stage { position: absolute; top: 504px; left: 58px; width: 964px; height: 508px;
   background: var(--demo-surface); border-radius: 24px; border: 2px solid var(--demo-border); overflow: hidden; }
-.stage > svg { position: absolute; left: 10px; top: 10px; width: 864px; height: 456px; }
+/* the svg's viewBox is zoomed to what each scene draws (fitStory); the 12 px inset keeps it ≥ 72 px from the
+   frame edge, clear of the ~47 px 视频号 trims off each side when it fills a taller phone */
+.stage > svg { position: absolute; left: 12px; top: 10px; width: 936px; height: 484px; }
 .stage .demo-x-svg text { font-family: 'Noto Sans SC', sans-serif; }
 .stage .demo-x-mono { font-family: 'DejaVu Sans Mono', monospace; }
 .stage .demo-x-svg text.demo-x-mut { fill: var(--demo-muted); }
@@ -50,23 +49,20 @@ html, body { width: 1080px; height: 1920px; overflow: hidden; background: var(--
 .stage .demo-x-svg text.demo-x-good { fill: var(--demo-good); }
 .stage .demo-x-svg text.demo-x-bad { fill: var(--demo-bad); }
 .stage .demo-x-svg text.demo-x-warn { fill: var(--demo-warn); }
-.cue { position: absolute; top: 1004px; left: 96px; right: 96px; min-height: 230px;
+.cue { position: absolute; top: 1026px; left: 60px; right: 60px; min-height: 200px;
   border-left: 10px solid var(--demo-accent); background: rgba(86,156,214,.08);
-  border-radius: 0 20px 20px 0; padding: 24px 32px; font-size: 40px; line-height: 1.5; }
-.cue .tag { font-size: 26px; color: var(--demo-accent); font-weight: 700; letter-spacing: 4px; margin-bottom: 8px; }
+  border-radius: 0 20px 20px 0; padding: 24px 36px; font-size: 40px; line-height: 1.5; }
+.cue .tag { font-size: 26px; color: var(--demo-accent); font-weight: 700; letter-spacing: 4px; margin-bottom: 10px; }
 .cue b { color: var(--hi); font-weight: 700; }
 .cue .katex { font-size: 1.02em; }
-.sub { position: absolute; top: 1450px; left: 96px; right: 96px; text-align: center;
-  font-size: 50px; font-weight: 900; line-height: 1.35; color: #fff;
+.cue code.demo-code, .pt code.demo-code { font-family: 'DejaVu Sans Mono', monospace; font-size: .74em; letter-spacing: 0;
+  padding: .06em .32em; border-radius: 8px; background: rgba(127,127,127,.16); color: var(--text); overflow-wrap: anywhere; }
+.sub { position: absolute; top: 1318px; left: 50px; right: 50px; text-align: center;
+  font-size: 52px; font-weight: 900; line-height: 1.3; color: #fff;
   text-shadow: 0 3px 0 #000, 0 0 18px rgba(0,0,0,.85); }
 
-/* ── intro / outro cards ──
-   papers/<name>.js still lays these out on the full 1080×1920 grid (.head at 185 px,
-   content down to ~1400 px, 60–90 px side margins); .fit scales that grid by 0.9 about
-   the top centre and drops it 120 px, which lands the content inside the safe area. */
+/* ── intro / outro cards ── */
 .card { position: absolute; inset: 0; }
-.card.fit { transform-origin: 540px 0; transform: translateY(120px) scale(0.9); }
-.head { position: absolute; top: 185px; left: 60px; right: 60px; }
 .big { position: absolute; left: 0; right: 0; text-align: center; }
 .meta { position: absolute; left: 90px; right: 90px; border: 2px solid var(--demo-border); border-radius: 24px;
   background: var(--demo-surface); padding: 34px 40px; font-size: 34px; line-height: 1.7; color: var(--text-secondary); }
@@ -117,14 +113,17 @@ html, body { width: 1080px; height: 1920px; overflow: hidden; background: var(--
   }
 
   /* ── storyboard scene ── */
-  var STAGE_TOP = 494, STAGE_PAD = 10, SVG_W = 864, SVG_H_MIN = 360, SVG_H_MAX = 540, CUE_GAP = 30;
-
   function buildStory(i) {
     var sc = window.__story.scenes[i];
-    var root = h('div', 'card story');
-    var head = h('div', 'shead', root);
+    var root = h('div', 'card');
+    var head = h('div', 'head', root);
     h('div', 'act', head, '第 ' + (i + 1) + ' / ' + N + ' 幕');
-    richInto(h('div', 'title', head), sc.title);
+    var titleEl = h('div', 'title', head);
+    richInto(titleEl, sc.title);
+    /* 一行放不下的分镜标题按估算宽度缩字号，免得折行压住进度条（汉字约 1em，其余约 0.55em）。 */
+    var est = 0;
+    for (var c = 0; c < sc.title.length; c++) est += /[\u2E80-\uFFEF]/.test(sc.title[c]) ? 1 : 0.55;
+    if (est * 60 > 960) titleEl.style.fontSize = Math.floor(960 / est) + 'px';
     var prog = h('div', 'prog', root), bars = [];
     for (var k = 0; k < N; k++) bars.push(h('b', '', h('i', '', prog)));
     var stage = h('div', 'stage', root);
@@ -134,14 +133,21 @@ html, body { width: 1080px; height: 1920px; overflow: hidden; background: var(--
     h('div', 'tag', cue, '要点');
     var cueText = h('div', '', cue), cueIdx = -1;
     return {
-      root: root, spec: sc, story: story, stage: stage, cue: cue,
+      root: root, spec: sc, story: story,
       /* `t` is wall time inside the scene; while the narration holds the storyboard
          on one frame it keeps running, so looping motion (a gait) does not freeze. */
       draw: function (st, t, seg) {
         story.draw(st, t);
         var j = 0;
         sc.cues.forEach(function (c, n) { if (st >= c.at - 1e-6) j = n; });
-        if (j !== cueIdx) { cueIdx = j; richInto(cueText, sc.cues[j].s); }
+        if (j !== cueIdx) {
+          cueIdx = j; richInto(cueText, sc.cues[j].s);
+          /* 要点太长时逐级缩字号，框底不越过字幕（top 1318px） */
+          for (var fs = 40; fs >= 30; fs -= 2) {
+            cue.style.fontSize = fs + 'px';
+            if (cue.offsetTop + cue.offsetHeight <= 1304) break;
+          }
+        }
         for (var k = 0; k < N; k++) bars[k].style.width = (k < i ? 100 : k > i ? 0 : 100 * seg) + '%';
       }
     };
@@ -149,17 +155,17 @@ html, body { width: 1080px; height: 1920px; overflow: hidden; background: var(--
 
   /* The storyboards are drawn on an 800×420 grid for the web page, and most leave
      empty margins; zoom the viewBox to what a scene actually draws (every element,
-     sampled across the scene so moving ones count too), so the safe-area stage
-     loses as little size as possible. Never zooms out past the original grid. */
+     sampled across the scene so moving ones count too), so the stage shows it as
+     large as it fits. Never zooms out past the original grid. */
   function fitStory(sc) {
     var svg = sc.story.el, vb = svg.viewBox.baseVal;
     var full = { x: vb.x, y: vb.y, w: vb.width, h: vb.height };
+    var W = 936, H = 484;
     svg.style.width = full.w + 'px'; svg.style.height = full.h + 'px';  // 1 px = 1 unit while measuring
     var box = null;
     function add(r, o) {
       if (!(r.width > 0 || r.height > 0)) return;
-      var x0 = r.left - o.left + full.x, y0 = r.top - o.top + full.y;
-      var x1 = x0 + r.width, y1 = y0 + r.height;
+      var x0 = r.left - o.left + full.x, y0 = r.top - o.top + full.y, x1 = x0 + r.width, y1 = y0 + r.height;
       box = box ? { x0: Math.min(box.x0, x0), y0: Math.min(box.y0, y0), x1: Math.max(box.x1, x1), y1: Math.max(box.y1, y1) }
         : { x0: x0, y0: y0, x1: x1, y1: y1 };
     }
@@ -187,23 +193,89 @@ html, body { width: 1080px; height: 1920px; overflow: hidden; background: var(--
     var x0 = Math.max(full.x, box.x0 - PAD), y0 = Math.max(full.y, box.y0 - PAD);
     var x1 = Math.min(full.x + full.w, box.x1 + PAD), y1 = Math.min(full.y + full.h, box.y1 + PAD);
     svg.setAttribute('viewBox', [x0, y0, x1 - x0, y1 - y0].map(function (v) { return v.toFixed(1); }).join(' '));
-    var hSvg = clamp(SVG_W * (y1 - y0) / (x1 - x0), SVG_H_MIN, SVG_H_MAX);
-    svg.style.width = SVG_W + 'px';
-    svg.style.height = hSvg.toFixed(0) + 'px';
-    sc.stage.style.height = (hSvg + 2 * STAGE_PAD + 4).toFixed(0) + 'px';
-    sc.cue.style.top = (STAGE_TOP + hSvg + 2 * STAGE_PAD + 4 + CUE_GAP).toFixed(0) + 'px';
-    return { zoom: Math.min(SVG_W / (x1 - x0), hSvg / (y1 - y0)), viewBox: svg.getAttribute('viewBox') };
+    svg.style.width = W + 'px'; svg.style.height = H + 'px';
+    return { zoom: Math.min(W / (x1 - x0), H / (y1 - y0)), viewBox: svg.getAttribute('viewBox') };
+  }
+
+  /* 视频号封面（render.mjs cover）沿用最初的片头设计，和 PPO / AWR / DeepMimic / AMP 那几张封面一致：
+     整张 1080×1920、不缩放；品牌角标在顶上；英文大标题 250px、字距 16px（名字长就改 4px 字距、等比缩小到宽 ≤ 980，
+     并在 190–440 这一带里垂直居中）；中文名 70px + 一句话 40px 从 470 起；论文信息框从 680 起（34px）；
+     目录紧跟信息框（40px，行距随条数收紧：≤5 条 1.9、6 条 1.75、7 条 1.55、8 条及以上 1.5 / 38px）。
+     每块都在上一块底下留出间距，内容比原设计高就整体往下推，永不重叠；目录底超过 1820 再压行距、字号。
+     片头在视频里另有自己的安全区排版（V.stack），这里只在封面帧上重新排。 */
+  function classicCover(root) {
+    var bigs = root.querySelectorAll('.big'), m = root.querySelector('.meta'), toc = root.querySelector('.toc');
+    if (bigs.length < 2 || !m || !toc) return;
+    var a = bigs[0], b = bigs[1], title = a.firstElementChild;
+    [a, b, m, toc].forEach(function (e) { e.style.opacity = 1; e.style.transform = 'none'; });
+    [].forEach.call(toc.children, function (e) { e.style.opacity = 1; e.style.transform = 'none'; });
+
+    // English title: 250px / 16px spacing; a name too long for that tightens to 4px spacing and
+    // shrinks to 980px wide (DeepMimic → 170px, as in the original), centred in the 190–440 band
+    var size = 250, range = document.createRange();
+    function titleWidth() { range.selectNodeContents(title); return range.getBoundingClientRect().width; }
+    title.style.cssText += ';font-size:250px;letter-spacing:16px;line-height:1;white-space:nowrap';
+    if (titleWidth() > 980) {
+      title.style.letterSpacing = '4px';
+      size = Math.min(250, Math.floor(250 * 980 / titleWidth()));
+      title.style.fontSize = size + 'px';
+    }
+    a.style.top = (190 + Math.round((250 - size) / 2)) + 'px';
+
+    // Chinese name + one-line pitch
+    var zh = b.children[0], pitch = b.children[1];
+    if (zh) zh.style.cssText += ';font-size:70px;font-weight:900;line-height:normal;white-space:nowrap';
+    if (pitch) pitch.style.cssText += ';font-size:40px;line-height:normal;margin-top:18px;white-space:nowrap';
+    [[zh, 70, 52], [pitch, 40, 32]].forEach(function (x) {  // one line each: a long one shrinks instead of wrapping
+      if (!x[0]) return;
+      for (var fs = x[1]; fs > x[2]; fs -= 2) {
+        range.selectNodeContents(x[0]);
+        if (range.getBoundingClientRect().width <= 980) break;
+        x[0].style.fontSize = (fs - 2) + 'px';
+      }
+    });
+    b.style.top = Math.max(470, a.offsetTop + a.offsetHeight + 30) + 'px';
+
+    // paper info box
+    m.style.fontSize = '34px'; m.style.padding = '34px 40px'; m.style.lineHeight = '1.7';
+    m.style.top = Math.max(680, b.offsetTop + b.offsetHeight + 36) + 'px';
+
+    // table of contents, right under the box
+    var rows = toc.children.length;
+    toc.style.fontSize = (rows >= 8 ? 38 : 40) + 'px';
+    toc.style.lineHeight = rows <= 5 ? '1.9' : rows === 6 ? '1.75' : rows === 7 ? '1.55' : '1.5';
+    toc.style.top = (m.offsetTop + m.offsetHeight + 24) + 'px';
+    for (var lh = parseFloat(toc.style.lineHeight), fs = parseFloat(toc.style.fontSize);
+      toc.offsetTop + toc.offsetHeight > 1820 && fs >= 32;) {
+      if (lh > 1.35) lh -= 0.05; else fs -= 2;
+      toc.style.lineHeight = lh.toFixed(2); toc.style.fontSize = fs + 'px';
+    }
   }
 
   // helpers handed to papers/<name>.js for the intro / outro cards
-  var V = { K: K, h: h, fadeUp: fadeUp, clamp: clamp,
+  /* 片头 / 总结页的纵向排版：按各块实际高度自上而下排，块间距为 gaps[k]，整组在 [top, bottom] 里垂直居中；
+     放不下就等比压缩间距（不压内容），保证块与块永不重叠。挂到 DOM 之后才量得到高度，所以在 draw 里调。
+     只管视频里的片头 / 片尾；封面帧由 classicCover() 按最初的片头设计重新排。 */
+  function stack(els, gaps, top, bottom) {
+    var hs = els.map(function (e) { return e.offsetHeight; });
+    if (!hs.every(function (x) { return x > 0; })) return false;
+    var body = hs.reduce(function (a, b) { return a + b; }, 0);
+    var gap = gaps.reduce(function (a, b) { return a + b; }, 0);
+    var room = bottom - top, k = Math.min(1, Math.max(0, (room - body) / gap));
+    var y = top + Math.max(0, (room - body - gap * k) / 2);
+    els.forEach(function (e, i) { if (i) y += gaps[i - 1] * k; e.style.top = Math.round(y) + 'px'; y += hs[i]; });
+    return true;
+  }
+
+  /* 片头 / 片尾在视频里要让出字幕（top 1318px） */
+  function contentBottom() { return 1300; }
+  var V = { K: K, h: h, fadeUp: fadeUp, clamp: clamp, stack: stack, contentBottom: contentBottom, SAFE_TOP: 330, SAFE_BOTTOM: 1440,
     ACC: 'var(--demo-accent)', GOOD: 'var(--demo-good)', BAD: 'var(--demo-bad)', WARN: 'var(--demo-warn)' };
   document.getElementById('arxiv').textContent = 'arXiv ' + window.PaperVideo.arxiv;
 
   function get(key) {
     if (!built[key]) {
       built[key] = key === 'intro' ? window.PaperVideo.intro(V) : key === 'outro' ? window.PaperVideo.outro(V) : buildStory(+key);
-      if (key === 'intro' || key === 'outro') built[key].root.classList.add('fit');
     }
     return built[key];
   }
@@ -237,6 +309,7 @@ html, body { width: 1080px; height: 1920px; overflow: hidden; background: var(--
     var sc = get(key);
     if (current !== sc) { sceneHost.textContent = ''; sceneHost.appendChild(sc.root); current = sc; }
     sc.draw(st, local, clamp((t - first.t0) / (last.t1 - first.t0), 0, 1));
+    if (window.__cover && key === 'intro') classicCover(sc.root);
     // cross-fade at scene edges
     var fin = clamp(local / 0.35, 0, 1), fout = clamp((last.t1 - t) / 0.3, 0, 1);
     sc.root.style.opacity = Math.min(fin, t > TL.total - 1 ? 1 : fout);
@@ -246,7 +319,14 @@ html, body { width: 1080px; height: 1920px; overflow: hidden; background: var(--
       var x = TL.subs[k];
       if (t >= x.t0 && t < x.t1 + 0.15) { sub = x.text; }
     }
-    if (sub !== lastSub) { subEl.textContent = sub; lastSub = sub; }
+    if (sub !== lastSub) {
+      subEl.textContent = sub; lastSub = sub;
+      /* 一行放不下就缩字号，两行也不越过安全区底线 */
+      for (var fs = 52; fs >= 40; fs -= 4) {
+        subEl.style.fontSize = fs + 'px';
+        if (subEl.offsetTop + subEl.offsetHeight <= 1440) break;
+      }
+    }
   };
 })();
 </script>

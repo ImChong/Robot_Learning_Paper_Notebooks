@@ -4,23 +4,24 @@ window.PaperVideo = {
   intro: function (V) {
     var h = V.h, fadeUp = V.fadeUp;
     var root = h('div', 'card');
-    var a = h('div', 'big', root, '<div style="font-size:250px;font-weight:900;letter-spacing:16px;color:var(--demo-accent);line-height:1">PPO</div>');
-    a.style.top = '190px';
-    var b = h('div', 'big', root, '<div style="font-size:70px;font-weight:900">近端策略优化</div>' +
-      '<div style="font-size:40px;color:var(--text-secondary);margin-top:18px">人形机器人强化学习最常用的基础算法</div>');
-    b.style.top = '470px';
+    var a = h('div', 'big', root, '<div style="font-size:162px;font-weight:900;letter-spacing:16px;color:var(--demo-accent);line-height:1.08">PPO</div>');
+    var b = h('div', 'big', root, '<div style="font-size:52px;font-weight:900;line-height:1.2">近端策略优化</div>' +
+      '<div style="font-size:32px;color:var(--text-secondary);margin-top:8px">人形机器人强化学习最常用的基础算法</div>');
     var m = h('div', 'meta', root,
       '<b>Proximal Policy Optimization Algorithms</b><br>Schulman, Wolski, Dhariwal, Radford, Klimov<br>OpenAI · 2017 · arXiv 1707.06347');
-    m.style.top = '680px';
+    m.style.fontSize = '27px';
+    m.style.padding = '22px 34px';
     var toc = h('div', 'toc', root,
       '<div><span>01</span>步子迈多大</div><div><span>02</span>第一把尺子：概率比 r</div>' +
       '<div><span>03</span>第二把尺子：优势 A 与 GAE</div><div><span>04</span>核心机制：裁剪与冻结</div>' +
       '<div><span>05</span>合起来：四步循环</div>');
-    toc.style.top = '950px';
+    toc.style.fontSize = '31px';
+    toc.style.lineHeight = '1.55';
     var rows = toc.children;
     return {
       root: root,
       draw: function (st, t) {
+        V.stack([a, b, m, toc], [26, 40, 40], V.SAFE_TOP, V.contentBottom());
         fadeUp(a, t, 0.1); fadeUp(b, t, 0.6); fadeUp(m, t, 1.4);
         for (var k = 0; k < rows.length; k++) fadeUp(rows[k], t, 7.0 + k * 0.45, 0.5);
       }
@@ -38,28 +39,30 @@ window.PaperVideo = {
     ];
     var pts = items.map(function (it, k) {
       var p = h('div', 'pt', root);
-      p.style.top = (420 + k * 265) + 'px';
+      p.style.fontSize = '37px'; p.style.padding = '18px 32px';
       p.style.borderLeft = '10px solid ' + it[0];
       var n = h('div', 'n', p, it[1]); n.style.color = it[0];
       var body = h('div', '', p);
       it[2].split('<br>').forEach(function (line, q) {
         if (q) body.appendChild(document.createElement('br'));
         var span = h('span', '', body); K.rich(span, line);
-        if (q) { span.style.fontSize = '36px'; span.style.color = 'var(--text-secondary)'; }
+        if (q) { span.style.fontSize = '31px'; span.style.color = 'var(--text-secondary)'; }
       });
       return p;
     });
     var foot = h('div', 'meta', root,
       '<b>完整笔记 · 4 个交互演示 · MimicKit 源码对照</b><br>imchong.github.io/Robot_Learning_Paper_Notebooks');
-    foot.style.top = '1225px';
     foot.style.textAlign = 'center';
-    foot.style.fontSize = '32px';
+    foot.style.fontSize = '29px';
+    foot.style.padding = '22px 34px';
     return {
       root: root,
       draw: function (st, t) {
+        V.stack(pts.concat([foot]), [20, 20, 30], V.SAFE_TOP + 148, V.contentBottom());
         fadeUp(head, t, 0.0);
         pts.forEach(function (p, k) { fadeUp(p, t, [1.2, 3.2, 5.6][k]); });
         fadeUp(foot, t, 10.2);
+        foot.style.transform = 'none';  // 紧挨字幕，只淡入不上滑
       }
     };
   }

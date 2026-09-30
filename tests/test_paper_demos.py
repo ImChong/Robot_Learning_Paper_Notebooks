@@ -242,11 +242,11 @@ def test_notes_declare_their_demos_in_reading_order():
             "mimickit",
             ["mimickit-family", "mimickit-reward", "mimickit-config"],
         ),
-        SONIC_NOTE: ("sonic", ["sonic-explainer"]),
+        SONIC_NOTE: ("sonic", ["sonic-explainer", "sonic-video"]),
         GROOT_NOTE: ("groot", ["groot-explainer", "groot-video", "groot-timing", "groot-flow", "groot-results"]),
         COSMOS_NOTE: ("cosmos", ["cosmos-explainer", "cosmos-video", "cosmos-data", "cosmos-tokens", "cosmos-physics"]),
-        GMR_NOTE: ("gmr", ["gmr-explainer"]),
-        OMNI_NOTE: ("omniretarget", ["omniretarget-explainer"]),
+        GMR_NOTE: ("gmr", ["gmr-explainer", "gmr-video"]),
+        OMNI_NOTE: ("omniretarget", ["omniretarget-explainer", "omniretarget-video"]),
         UMR_NOTE: ("umr", ["umr-explainer"]),
         PHP_NOTE: ("php", ["php-explainer"]),
         PBFM_NOTE: ("pbfm", ["pbfm-explainer"]),
@@ -1450,7 +1450,8 @@ def test_narrated_video_placeholders_point_at_files_that_exist():
             js = "".join((DEMO_JS_DIR / f"{b}.js").read_text(encoding="utf-8") for b in bundles)
             assert f"'{demo}': buildVideoDemo" in js and "K.video(host" in js, f"{demo} 没有通过 K.video 注册"
     for demo in ("calm-video", "pulse-video", "dp-video", "bm-video", "lcp-video", "cosmos-video", "groot-video",
-                 "tf-video", "pi0-video", "pi05-video", "soccer-video"):
+                 "tf-video", "pi0-video", "pi05-video", "soccer-video", "sonic-video", "gmr-video",
+                 "omniretarget-video"):
         assert demo in seen, f"{demo} 应该挂在对应的论文笔记里"
 
 
@@ -1487,3 +1488,27 @@ def test_vla_and_soccer_explainers_share_numbers_with_their_notes():
     assert "nBig = 100, nSmall = 1, p = 0.43" in js
     js = (DEMO_JS_DIR / "op3soccer.js").read_text(encoding="utf-8")
     assert "0.8 * u + 0.2 * 1" in js and "jointErr = 0.8, gravAng = 0.3" in js
+
+
+def test_sonic_and_gmr_worked_examples_share_numbers_with_their_explainers():
+    """SONIC / GMR 的「🚶 具体实例」手算与七幕动画现算的是同一组数。"""
+    sonic = SONIC_NOTE.read_text(encoding="utf-8")
+    enc = 2048 * 1024 + 1024 * 512 + 512 * 512
+    dyn = 2048 * 2048 + 2048 * 1024 + 1024 * 1024 + 1024 * 512 + 512 * 512
+    total = 3 * enc + dyn + enc + dyn
+    assert (enc, dyn, total) == (2_883_584, 8_126_464, 27_787_264)
+    assert round(0.8 / 0.02) == 40 and round(2.4 / 0.02) == 120 and round(100 / 20) == 5
+    assert 64 * 5 * 50 == 16000 and round(20 * 0.95) == 19
+    for needle in ("## 🚶 具体实例", "2,883,584", "8,126,464", "27,787,264（27.79 M）", "320 \\times 50 = 16000",
+                   "= 5\\ \\text{个控制步}", "$20 \\times 0.95 = 19$"):
+        assert needle in sonic, needle
+
+    gmr = GMR_NOTE.read_text(encoding="utf-8")
+    s = (0.80 + 0.85 + 1.00) / 3
+    resid = [abs(r - s) * L for r, L in ((0.80, 60), (0.85, 85), (1.00, 50))]
+    assert [round(x, 1) for x in resid] == [5.0, 2.8, 5.8] and round(sum(resid), 1) == 13.7
+    assert round(math.degrees(3 * math.pi / 30)) == 18
+    assert (round(1000 / 65, 1), round(1000 / 40, 1), round(300 / 21, 1)) == (15.4, 25.0, 14.3)
+    for needle in ("## 🚶 具体实例", "s = \\frac{0.80 + 0.85 + 1.00}{3} \\approx 0.883", "**13.7 cm**",
+                   "18^\\circ", "15.4", "25.0", "14.3\\%", "**90 条**"):
+        assert needle in gmr, needle
