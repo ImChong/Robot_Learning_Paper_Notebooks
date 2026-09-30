@@ -4,24 +4,25 @@ window.PaperVideo = {
   intro: function (V) {
     var h = V.h, fadeUp = V.fadeUp;
     var root = h('div', 'card');
-    var a = h('div', 'big', root, '<div style="font-size:124px;font-weight:900;letter-spacing:2px;color:var(--demo-accent);line-height:1.08">OmniRetarget</div>');
-    var b = h('div', 'big', root, '<div style="font-size:64px;font-weight:900;line-height:1.2">保住交互的数据工厂</div>' +
-      '<div style="font-size:38px;color:var(--text-secondary);margin-top:14px">interaction mesh + 硬约束 + 系统性扩增</div>');
+    var a = h('div', 'big', root, '<div style="font-size:104px;font-weight:900;letter-spacing:2px;color:var(--demo-accent);line-height:1.08">OmniRetarget</div>');
+    var b = h('div', 'big', root, '<div style="font-size:52px;font-weight:900;line-height:1.2">保住交互的数据工厂</div>' +
+      '<div style="font-size:32px;color:var(--text-secondary);margin-top:8px">interaction mesh + 硬约束 + 系统性扩增</div>');
     var m = h('div', 'meta', root,
       '<b>OmniRetarget: Interaction-Preserving Data Generation for Humanoid Whole-Body Loco-Manipulation and Scene Interaction</b><br>Lujie Yang 等 · Amazon FAR 等五家机构');
-    m.style.fontSize = '32px';
+    m.style.fontSize = '27px';
+    m.style.padding = '22px 34px';
     var toc = h('div', 'toc', root,
       '<div><span>01</span>只盯人体关键点的代价</div><div><span>02</span>Interaction mesh</div>' +
       '<div><span>03</span>Laplacian 形变能</div><div><span>04</span>序贯 SOCP 硬约束</div>' +
       '<div><span>05</span>一条演示，四路扩增</div><div><span>06</span>极简 RL 与 Table II</div>' +
       '<div><span>07</span>数据工厂到 G1 真机</div>');
-    toc.style.fontSize = '38px';
-    toc.style.lineHeight = '1.7';
+    toc.style.fontSize = '31px';
+    toc.style.lineHeight = '1.55';
     var rows = toc.children;
     return {
       root: root,
       draw: function (st, t) {
-        V.stack([a, b, m, toc], [44, 60, 60], 170, 1400);
+        V.stack([a, b, m, toc], [26, 40, 40], V.SAFE_TOP, V.contentBottom());
         fadeUp(a, t, 0.1); fadeUp(b, t, 0.6); fadeUp(m, t, 1.4);
         for (var k = 0; k < rows.length; k++) fadeUp(rows[k], t, 7.0 + k * 0.35, 0.5);
       }
@@ -39,27 +40,30 @@ window.PaperVideo = {
     ];
     var pts = items.map(function (it, k) {
       var p = h('div', 'pt', root);
+      p.style.fontSize = '37px'; p.style.padding = '18px 32px';
       p.style.borderLeft = '10px solid ' + it[0];
       var n = h('div', 'n', p, it[1]); n.style.color = it[0];
       var body = h('div', '', p);
       it[2].split('<br>').forEach(function (line, q) {
         if (q) body.appendChild(document.createElement('br'));
         var span = h('span', '', body); K.rich(span, line);
-        if (q) { span.style.fontSize = '36px'; span.style.color = 'var(--text-secondary)'; }
+        if (q) { span.style.fontSize = '31px'; span.style.color = 'var(--text-secondary)'; }
       });
       return p;
     });
     var foot = h('div', 'meta', root,
       '<b>完整笔记 · 具体算例 · Holosoma 源码入口</b><br>imchong.github.io/Robot_Learning_Paper_Notebooks');
     foot.style.textAlign = 'center';
-    foot.style.fontSize = '32px';
+    foot.style.fontSize = '29px';
+    foot.style.padding = '22px 34px';
     return {
       root: root,
       draw: function (st, t) {
-        V.stack(pts.concat([foot]), [28, 28, 44], 360, 1400);
+        V.stack(pts.concat([foot]), [20, 20, 30], V.SAFE_TOP + 148, V.contentBottom());
         fadeUp(head, t, 0.0);
         pts.forEach(function (p, k) { fadeUp(p, t, [1.0, 3.4, 5.8][k]); });
         fadeUp(foot, t, 9.0);
+        foot.style.transform = 'none';  // 紧挨字幕，只淡入不上滑
       }
     };
   }

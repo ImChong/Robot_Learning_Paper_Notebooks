@@ -126,7 +126,7 @@ kramdown 在 `markdown="1"` 的 HTML 块里既不跑 GFM 的中文 id 生成器�
 <div class="paper-demo" data-demo="ppo-video" data-src="media/ppo_explainer_video.mp4" data-poster="media/ppo_explainer_video_poster.jpg"><p class="demo-fallback">（……也可以直接<a href="media/ppo_explainer_video.mp4" download="PPO_讲解视频.mp4">下载 mp4</a>）</p></div>
 ```
 
-`<video>` 过不了 nh3 清洗，所以播放器与「下载视频」按钮由 `kit.js` 的 `K.video(host, { title, sub, size, fileName })` 在运行时生成，bundle 里只需注册一个调用它的构建函数；无 JS 时兜底文案里的 `<a download>` 仍可下载。视频用 H.264 + AAC 的 mp4（`-movflags +faststart`），体积尽量压在 6 MB 左右（超过 5 分钟的 AWR 为 7.6 MB，六分多钟的 PHC / ASE 为 8.7 / 8.5 MB，CALM / Diffusion Policy / PULSE / LCP 为 5.8 / 6.0 / 7.6 / 6.3 MB，七分钟的 BeyondMimic 为 9.4 MB，GR00T N1 为 7.0 MB，六分钟上下的 Transformer / π₀ / π₀.₅ / OP3 足球用 `-preset slow -crf 31` 压到 7.7 / 8.2 / 8.7 / 9.2 MB，五分半上下的 SONIC / GMR / OmniRetarget 同参数压到 7.4 / 7.7 / 7.1 MB），`preload="none"` 不会拖慢页面。
+`<video>` 过不了 nh3 清洗，所以播放器与「下载视频」按钮由 `kit.js` 的 `K.video(host, { title, sub, size, fileName })` 在运行时生成，bundle 里只需注册一个调用它的构建函数；无 JS 时兜底文案里的 `<a download>` 仍可下载。视频用 H.264 + AAC 的 mp4（`-movflags +faststart`），体积尽量压在 6 MB 左右（超过 5 分钟的 AWR 为 7.6 MB，六分多钟的 PHC / ASE 为 8.7 / 8.5 MB，CALM / Diffusion Policy / PULSE / LCP 为 5.8 / 6.0 / 7.6 / 6.3 MB，七分钟的 BeyondMimic 为 9.4 MB，GR00T N1 为 7.0 MB，六分钟上下的 Transformer / π₀ / π₀.₅ / OP3 足球用 `-preset slow -crf 31` 压到 7.7 / 8.2 / 8.7 / 9.2 MB，五分半上下的 SONIC / GMR / OmniRetarget 同参数压到 7.0 / 7.3 / 6.7 MB），`preload="none"` 不会拖慢页面。
 
 ### 为什么不能直接在 Markdown 里写 `<script>`
 

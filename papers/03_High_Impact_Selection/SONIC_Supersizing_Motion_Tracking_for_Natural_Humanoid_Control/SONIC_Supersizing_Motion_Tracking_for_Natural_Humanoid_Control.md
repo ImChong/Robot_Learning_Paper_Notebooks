@@ -71,7 +71,7 @@ SONIC 把"动作跟踪 (motion tracking)"明确当作人形控制的**可扩展�
 
 ## 📺 配音讲解视频（可下载） {#sonic-video}
 
-<div class="paper-demo" data-demo="sonic-video" data-src="media/sonic_explainer_video.mp4" data-poster="media/sonic_explainer_video_poster.jpg"><p class="demo-fallback">（本节含讲解视频播放器，需要启用 JavaScript；也可以直接<a href="media/sonic_explainer_video.mp4" download="SONIC_讲解视频.mp4">下载 mp4（7.4 MB）</a>）</p></div>
+<div class="paper-demo" data-demo="sonic-video" data-src="media/sonic_explainer_video.mp4" data-poster="media/sonic_explainer_video_poster.jpg"><p class="demo-fallback">（本节含讲解视频播放器，需要启用 JavaScript；也可以直接<a href="media/sonic_explainer_video.mp4" download="SONIC_讲解视频.mp4">下载 mp4（7.0 MB）</a>）</p></div>
 
 > 📖 **动画之后的正文默认全部折叠**：动画覆盖到的那几节（问题定义、方法详解、模型架构、实验亮点）按小节收起，再往后的源码对照、训练 & 评估速查、面试参考与附录各整块收起。想细读哪一块就点开对应的折叠条，内容一字未删；两张流程图留在外面，目录里的标题依旧可以直接点，会自动展开所在折叠块，左侧目录顶部还有「展开全部文字」一键铺开。
 

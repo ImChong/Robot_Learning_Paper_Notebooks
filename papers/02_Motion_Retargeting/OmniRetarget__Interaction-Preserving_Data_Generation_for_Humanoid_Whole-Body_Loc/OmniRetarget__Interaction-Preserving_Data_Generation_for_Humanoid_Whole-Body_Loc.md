@@ -74,7 +74,7 @@ OmniRetarget 把重定向从「关键点匹配 + 软惩罚」升级为「**inter
 
 ## 📺 配音讲解视频（可下载） {#omniretarget-video}
 
-<div class="paper-demo" data-demo="omniretarget-video" data-src="media/omniretarget_explainer_video.mp4" data-poster="media/omniretarget_explainer_video_poster.jpg"><p class="demo-fallback">（本节含讲解视频播放器，需要启用 JavaScript；也可以直接<a href="media/omniretarget_explainer_video.mp4" download="OmniRetarget_讲解视频.mp4">下载 mp4（7.1 MB）</a>）</p></div>
+<div class="paper-demo" data-demo="omniretarget-video" data-src="media/omniretarget_explainer_video.mp4" data-poster="media/omniretarget_explainer_video_poster.jpg"><p class="demo-fallback">（本节含讲解视频播放器，需要启用 JavaScript；也可以直接<a href="media/omniretarget_explainer_video.mp4" download="OmniRetarget_讲解视频.mp4">下载 mp4（6.7 MB）</a>）</p></div>
 
 > 📖 **动画之后的正文默认全部折叠**：动画覆盖到的那几节（问题定义、方法详解、实验结果）按小节收起，具体实例、主线关系、代码入口、个人笔记与参考文献各整块收起。想细读哪一块就点开对应的折叠条，内容一字未删；系统总览、网格构建、扩增与 RL 配方等流程图留在外面，目录里的标题依旧可以直接点，会自动展开所在折叠块，左侧目录顶部还有「展开全部文字」一键铺开。
 
