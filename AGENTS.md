@@ -120,13 +120,13 @@ kramdown 在 `markdown="1"` 的 HTML 块里既不跑 GFM 的中文 id 生成器�
 
 ### 配音讲解视频（`K.video`）
 
-讲解动画也可以离线渲染成带配音的竖屏视频（流水线在 `scripts/paper_video/`），目前 PPO（`ppo-video`）、AWR（`awr-video`）、DeepMimic（`deepmimic-video`）、AMP（`amp-video`）、PHC（`phc-video`）、ADD（`add-video`）、ASE（`ase-video`）、CALM（`calm-video`）、PULSE（`pulse-video`）、Diffusion Policy（`dp-video`）、BeyondMimic（`bm-video`）与 LCP（`lcp-video`）十二篇接入。视频文件与海报放在笔记同目录的 `media/` 下，正文紧跟在 `🎬 N幕动画` 那一节之后，留在折叠块外面：
+讲解动画也可以离线渲染成带配音的竖屏视频（流水线在 `scripts/paper_video/`），目前 PPO（`ppo-video`）、AWR（`awr-video`）、DeepMimic（`deepmimic-video`）、AMP（`amp-video`）、PHC（`phc-video`）、ADD（`add-video`）、ASE（`ase-video`）、CALM（`calm-video`）、PULSE（`pulse-video`）、Diffusion Policy（`dp-video`）、BeyondMimic（`bm-video`）、LCP（`lcp-video`）与 GR00T N1（`groot-video`）十三篇接入。视频文件与海报放在笔记同目录的 `media/` 下，正文紧跟在 `🎬 N幕动画` 那一节之后，留在折叠块外面：
 
 ```html
 <div class="paper-demo" data-demo="ppo-video" data-src="media/ppo_explainer_video.mp4" data-poster="media/ppo_explainer_video_poster.jpg"><p class="demo-fallback">（……也可以直接<a href="media/ppo_explainer_video.mp4" download="PPO_讲解视频.mp4">下载 mp4</a>）</p></div>
 ```
 
-`<video>` 过不了 nh3 清洗，所以播放器与「下载视频」按钮由 `kit.js` 的 `K.video(host, { title, sub, size, fileName })` 在运行时生成，bundle 里只需注册一个调用它的构建函数；无 JS 时兜底文案里的 `<a download>` 仍可下载。视频用 H.264 + AAC 的 mp4（`-movflags +faststart`），体积尽量压在 6 MB 左右（超过 5 分钟的 AWR 为 7.6 MB，六分多钟的 PHC / ASE 为 8.7 / 8.5 MB，CALM / Diffusion Policy / PULSE / LCP 为 5.8 / 6.0 / 7.6 / 6.3 MB，七分钟的 BeyondMimic 为 9.4 MB），`preload="none"` 不会拖慢页面。
+`<video>` 过不了 nh3 清洗，所以播放器与「下载视频」按钮由 `kit.js` 的 `K.video(host, { title, sub, size, fileName })` 在运行时生成，bundle 里只需注册一个调用它的构建函数；无 JS 时兜底文案里的 `<a download>` 仍可下载。视频用 H.264 + AAC 的 mp4（`-movflags +faststart`），体积尽量压在 6 MB 左右（超过 5 分钟的 AWR 为 7.6 MB，六分多钟的 PHC / ASE 为 8.7 / 8.5 MB，CALM / Diffusion Policy / PULSE / LCP 为 5.8 / 6.0 / 7.6 / 6.3 MB，七分钟的 BeyondMimic 为 9.4 MB，GR00T N1 为 7.0 MB），`preload="none"` 不会拖慢页面。
 
 ### 为什么不能直接在 Markdown 里写 `<script>`
 

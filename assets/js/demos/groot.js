@@ -708,6 +708,18 @@
     });
   }
 
+  // ─── the narrated vertical video of the same seven scenes ────────────
+  /* Rendered offline by scripts/paper_video/ from the storyboard above plus a
+     voice-over; the files sit next to the note (see its placeholder). */
+  function buildVideoDemo(host) {
+    K.video(host, {
+      title: '配音讲解视频：GR00T N1 七幕全流程',
+      sub: '5 分 38 秒竖屏视频（1080×1920），中文配音 + 字幕。画面就是上面的七幕动画，旁白把每一幕讲细；适合手机上看或转发。',
+      size: '7.0 MB',
+      fileName: 'GR00T_N1_讲解视频.mp4'
+    });
+  }
+
   // These three small experiments complement the fixed seven-scene explainer.
   // Their inputs are explicitly illustrative; published constants stay fixed.
   function buildTiming(host) {
@@ -819,6 +831,7 @@
 
   K.mount({
     'groot-explainer': buildExplainerDemo,
+    'groot-video': buildVideoDemo,
     'groot-timing': buildTiming,
     'groot-flow': buildFlow,
     'groot-results': buildResults
