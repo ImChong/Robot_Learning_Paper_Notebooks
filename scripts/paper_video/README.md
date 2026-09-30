@@ -16,6 +16,7 @@
 | `diffusion_policy` | `assets/js/demos/diffusion_policy.js` 七幕（`dp-explainer`） | 约 4 分 7 秒 |
 | `beyondmimic` | `assets/js/demos/beyondmimic.js` 八幕（`bm-explainer`） | 约 7 分 2 秒 |
 | `lcp` | `assets/js/demos/lcp.js` 五幕 | 约 4 分 35 秒 |
+| `cosmos` | `assets/js/demos/cosmos.js` 五幕 | 约 2 分 55 秒 |
 
 - 画面：直接复用 `<paper>.js` 分镜的 `draw(t)`，数字与笔记算例一致；前后加片头、总结页（`papers/<paper>.js`）。
 - 配音：`edge-tts`（`zh-CN-YunxiNeural`，需联网），旁白在 `papers/<paper>.py`。
@@ -37,4 +38,4 @@ node render.mjs awr cover             # 封面（片头、无字幕）-> out/awr
 - Chromium：设置 `CHROME=/path/to/chrome`，否则用 playwright-core 默认路径。几篇可以同时渲染（各自写 `stage.<paper>.built.html`）。
 - 走 TLS 代理时设置 `SSL_CERT_FILE`，`build.py` 会让 edge-tts 用这份 CA。
 - 新增一篇：写 `papers/<paper>.py`（`SCRIPT` / `DISPLAY`）和 `papers/<paper>.js`（`window.PaperVideo` 的 `arxiv` / `intro` / `outro`），`<paper>` 是 `assets/js/demos/<paper>.js` 的 bundle 名；讲解动画的演示 id 不必叫 `<paper>-explainer`（`diffusion_policy.js` 里是 `dp-explainer`、`beyondmimic.js` 里是 `bm-explainer`），`render.mjs` 会从 bundle 里读出 `'…-explainer'` 那个 id。
-- 放进笔记：网页版再压一次（`-crf 27 -tune stillimage -b:a 64k -ac 1 -movflags +faststart`；PPO 5.6 MB，更长的 AWR 用 `-crf 30` 压到 7.6 MB，DeepMimic 用 `-crf 29` 压到 6.6 MB；AMP / ADD 用 `-crf 31` 压到 6.6 / 7.2 MB，六分多钟的 PHC / ASE 用 `-crf 32` 压到 8.7 / 8.5 MB；四五分钟的 CALM / Diffusion Policy / LCP 用 `-preset slow -crf 30` 压到 5.8 / 6.0 / 6.3 MB，PULSE 同参数 7.6 MB，七分钟的 BeyondMimic 用 `-crf 33` 压到 9.4 MB），海报由 `cover.png` 缩到 540×960 的 jpg，与海报一起放到笔记目录的 `media/`，接线方式见 `AGENTS.md`「配音讲解视频（`K.video`）」。
+- 放进笔记：网页版再压一次（`-crf 27 -tune stillimage -b:a 64k -ac 1 -movflags +faststart`；PPO 5.6 MB，更长的 AWR 用 `-crf 30` 压到 7.6 MB，DeepMimic 用 `-crf 29` 压到 6.6 MB；AMP / ADD 用 `-crf 31` 压到 6.6 / 7.2 MB，六分多钟的 PHC / ASE 用 `-crf 32` 压到 8.7 / 8.5 MB；四五分钟的 CALM / Diffusion Policy / LCP 用 `-preset slow -crf 30` 压到 5.8 / 6.0 / 6.3 MB，PULSE 同参数 7.6 MB，七分钟的 BeyondMimic 用 `-crf 33` 压到 9.4 MB；约三分钟的 Cosmos 用 `-preset slow -crf 30` 压到 4.3 MB），海报由 `cover.png` 缩到 540×960 的 jpg，与海报一起放到笔记目录的 `media/`，接线方式见 `AGENTS.md`「配音讲解视频（`K.video`）」。
