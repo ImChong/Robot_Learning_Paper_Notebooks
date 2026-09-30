@@ -1,20 +1,21 @@
-// PHC 视频的片头 / 总结页（stage.html 在 phc.js 分镜之后加载）
+// SONIC 视频的片头 / 总结页（stage.html 在 sonic.js 分镜之后加载）
 window.PaperVideo = {
-  arxiv: '2305.06456',
+  arxiv: '2511.07820',
   intro: function (V) {
     var h = V.h, fadeUp = V.fadeUp;
     var root = h('div', 'card');
-    var a = h('div', 'big', root, '<div style="font-size:162px;font-weight:900;letter-spacing:16px;color:var(--demo-accent);line-height:1.08">PHC</div>');
-    var b = h('div', 'big', root, '<div style="font-size:52px;font-weight:900;line-height:1.2">永续人形控制</div>' +
-      '<div style="font-size:32px;color:var(--text-secondary);margin-top:8px">一万条动作，摔了也能爬起来接着演</div>');
+    var a = h('div', 'big', root, '<div style="font-size:150px;font-weight:900;letter-spacing:6px;color:var(--demo-accent);line-height:1.08">SONIC</div>');
+    var b = h('div', 'big', root, '<div style="font-size:52px;font-weight:900;line-height:1.2">规模化运动跟踪</div>' +
+      '<div style="font-size:32px;color:var(--text-secondary);margin-top:8px">把 motion tracking 当基础任务放大</div>');
     var m = h('div', 'meta', root,
-      '<b>Perpetual Humanoid Control for Real-time Simulated Avatars</b><br>Luo, Cao, Winkler, Kitani, Xu<br>CMU · Meta Reality Labs · ICCV 2023');
+      '<b>SONIC: Supersizing Motion Tracking for Natural Humanoid Whole-Body Control</b><br>Zhengyi Luo、Ye Yuan、Jim Fan、Yuke Zhu 等<br>NVIDIA Research · arXiv 2025');
     m.style.fontSize = '27px';
     m.style.padding = '22px 34px';
     var toc = h('div', 'toc', root,
-      '<div><span>01</span>DeepMimic 之后的三堵墙</div><div><span>02</span>PMCP：加容量，不是加轮次</div>' +
-      '<div><span>03</span>Composer：连续混合</div><div><span>04</span>摔倒恢复：FAIL 变中间态</div>' +
-      '<div><span>05</span>噪声输入：换成关键点</div><div><span>06</span>两阶段训练闭环</div>');
+      '<div><span>01</span>任务选错了</div><div><span>02</span>三轴一起放大</div>' +
+      '<div><span>03</span>Universal token space</div><div><span>04</span>五项 aux loss 焊住潜空间</div>' +
+      '<div><span>05</span>实时 Kinematic Planner</div><div><span>06</span>System-1 + System-2</div>' +
+      '<div><span>07</span>闭环与源码落点</div>');
     toc.style.fontSize = '31px';
     toc.style.lineHeight = '1.55';
     var rows = toc.children;
@@ -23,7 +24,7 @@ window.PaperVideo = {
       draw: function (st, t) {
         V.stack([a, b, m, toc], [26, 40, 40], V.SAFE_TOP, V.contentBottom());
         fadeUp(a, t, 0.1); fadeUp(b, t, 0.6); fadeUp(m, t, 1.4);
-        for (var k = 0; k < rows.length; k++) fadeUp(rows[k], t, 7.0 + k * 0.4, 0.5);
+        for (var k = 0; k < rows.length; k++) fadeUp(rows[k], t, 7.0 + k * 0.35, 0.5);
       }
     };
   },
@@ -31,11 +32,11 @@ window.PaperVideo = {
     var h = V.h, fadeUp = V.fadeUp, K = V.K;
     var ACC = V.ACC, GOOD = V.GOOD, WARN = V.WARN;
     var root = h('div', 'card');
-    var head = h('div', 'head', root, '<div class="act">三句话记住 PHC</div><div class="title">在一万条动作里一直活着</div>');
+    var head = h('div', 'head', root, '<div class="act">三句话记住 SONIC</div><div class="title">任务选对了，规模才管用</div>');
     var items = [
-      [ACC, '① PMCP 渐进扩容', '旧列冻结，新列只打难例<br>加的是容量，不会遗忘'],
-      [GOOD, '② Composer + 恢复原语', '$a = \\sum_i w_i a_i$ 连续混合<br>摔倒不 reset，爬起来接着模仿'],
-      [WARN, '③ 关键点输入', '误差不沿运动链放大<br>$98.9\\% \\to 98.7\\%$，换来吃视频 / VR']
+      [ACC, '① 换任务，再放大', '动作跟踪：逐帧监督、不写 reward<br>数据 0.4 M → 100 M+ 帧，数据轴收益最大'],
+      [GOOD, '② 一个 token 空间', '三路 encoder → 一个 FSQ：$2 \\times 32 = 64$ 维<br>每帧 320 bit，五项 aux loss 焊住'],
+      [WARN, '③ 上层只说 teleop 语言', '规划器 0.8–2.4 s 片段、100 ms 重规划<br>300 条数据微调 VLA，20 次成功 19 次']
     ];
     var pts = items.map(function (it, k) {
       var p = h('div', 'pt', root);
@@ -51,7 +52,7 @@ window.PaperVideo = {
       return p;
     });
     var foot = h('div', 'meta', root,
-      '<b>完整笔记 · 3 个交互演示 · MimicKit 源码对照</b><br>imchong.github.io/Robot_Learning_Paper_Notebooks');
+      '<b>完整笔记 · 具体算例 · gear_sonic 源码对照</b><br>imchong.github.io/Robot_Learning_Paper_Notebooks');
     foot.style.textAlign = 'center';
     foot.style.fontSize = '29px';
     foot.style.padding = '22px 34px';

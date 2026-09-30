@@ -45,7 +45,7 @@ if (mode === 'stills') {
 } else if (mode === 'cover') {
   // intro frame with every line shown, no subtitle -> out/cover.png
   const intro = tl.segments.filter((s) => s.scene === 'intro').pop();
-  await page.evaluate((x) => { window.renderAt(x); document.getElementById('sub').textContent = ''; }, intro.t1 - 0.5);
+  await page.evaluate((x) => { window.__cover = true; window.renderAt(x); document.getElementById('sub').textContent = ''; }, intro.t1 - 0.5);
   await page.screenshot({ path: path.join(OUT, 'cover.png') });
 } else {
   const fps = Number(arg || 30);

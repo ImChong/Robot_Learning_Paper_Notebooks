@@ -1,21 +1,21 @@
-// GR00T N1 视频的片头 / 总结页（stage.html 在 groot.js 分镜之后加载）
+// OmniRetarget 视频的片头 / 总结页（stage.html 在 omniretarget.js 分镜之后加载）
 window.PaperVideo = {
-  arxiv: '2503.14734',
+  arxiv: '2509.26633',
   intro: function (V) {
     var h = V.h, fadeUp = V.fadeUp;
     var root = h('div', 'card');
-    var a = h('div', 'big', root, '<div style="font-size:110px;font-weight:900;letter-spacing:6px;color:var(--demo-accent);line-height:1.08">GR00T N1</div>');
-    var b = h('div', 'big', root, '<div style="font-size:52px;font-weight:900;line-height:1.2">开放的人形基础模型</div>' +
-      '<div style="font-size:32px;color:var(--text-secondary);margin-top:8px">双系统 VLA + 流匹配 + 数据金字塔</div>');
+    var a = h('div', 'big', root, '<div style="font-size:104px;font-weight:900;letter-spacing:2px;color:var(--demo-accent);line-height:1.08">OmniRetarget</div>');
+    var b = h('div', 'big', root, '<div style="font-size:52px;font-weight:900;line-height:1.2">保住交互的数据工厂</div>' +
+      '<div style="font-size:32px;color:var(--text-secondary);margin-top:8px">interaction mesh + 硬约束 + 系统性扩增</div>');
     var m = h('div', 'meta', root,
-      '<b>GR00T N1: An Open Foundation Model for Generalist Humanoid Robots</b><br>NVIDIA Project GR00T（Jim Fan、Yuke Zhu 等）<br>NVIDIA · arXiv 2025');
+      '<b>OmniRetarget: Interaction-Preserving Data Generation for Humanoid Whole-Body Loco-Manipulation and Scene Interaction</b><br>Lujie Yang 等 · Amazon FAR 等五家机构');
     m.style.fontSize = '27px';
     m.style.padding = '22px 34px';
     var toc = h('div', 'toc', root,
-      '<div><span>01</span>没有人形数据的互联网</div><div><span>02</span>10 Hz 与 63.9 ms</div>' +
-      '<div><span>03</span>流匹配的直线</div><div><span>04</span>数据金字塔</div>' +
-      '<div><span>05</span>潜动作与 IDM</div><div><span>06</span>一套权重，多套 MLP</div>' +
-      '<div><span>07</span>表上的数字</div>');
+      '<div><span>01</span>只盯人体关键点的代价</div><div><span>02</span>Interaction mesh</div>' +
+      '<div><span>03</span>Laplacian 形变能</div><div><span>04</span>序贯 SOCP 硬约束</div>' +
+      '<div><span>05</span>一条演示，四路扩增</div><div><span>06</span>极简 RL 与 Table II</div>' +
+      '<div><span>07</span>数据工厂到 G1 真机</div>');
     toc.style.fontSize = '31px';
     toc.style.lineHeight = '1.55';
     var rows = toc.children;
@@ -32,11 +32,11 @@ window.PaperVideo = {
     var h = V.h, fadeUp = V.fadeUp, K = V.K;
     var ACC = V.ACC, GOOD = V.GOOD, WARN = V.WARN;
     var root = h('div', 'card');
-    var head = h('div', 'head', root, '<div class="act">三句话记住 GR00T N1</div><div class="title">慢脑子接快手，数据堆成金字塔</div>');
+    var head = h('div', 'head', root, '<div class="act">三句话记住 OmniRetarget</div><div class="title">参考干净了，RL 才能极简</div>');
     var items = [
-      [ACC, '① 双系统', '10 Hz 的 Eagle-2 第 12 层特征<br>接 DiT：16 步动作块 63.9 ms，$K=4$ 步欧拉'],
-      [GOOD, '② 数据金字塔', '人类视频 → 仿真 / 神经轨迹 → 真机<br>潜动作与 IDM 给无标签视频补动作'],
-      [WARN, '③ 看清边界', '10% 数据比 DP 高 32.4 个点<br>强结果只在短程桌面操作，只报了 GR-1']
+      [ACC, '① 保形 + 硬约束', 'Delaunay 网格上最小化 Laplacian 形变能<br>非穿透 · 关节限位 · 速度 · 脚不滑，全是硬约束'],
+      [GOOD, '② 一条演示扩成一族', '物体位姿 / 形状 / 地形 / 本体四路扩增<br>全扩增 79.1% vs 仅名义 82.2%，只掉 3.1 pp'],
+      [WARN, '③ 极简 RL 就够', '5 项奖励 + 4 项域随机化<br>OMOMO 82.20%，比 GMR 高 31.4 pp，脚滑为 0']
     ];
     var pts = items.map(function (it, k) {
       var p = h('div', 'pt', root);
@@ -52,7 +52,7 @@ window.PaperVideo = {
       return p;
     });
     var foot = h('div', 'meta', root,
-      '<b>完整笔记 · 3 个交互演示 · Isaac-GR00T 源码对照</b><br>imchong.github.io/Robot_Learning_Paper_Notebooks');
+      '<b>完整笔记 · 具体算例 · Holosoma 源码入口</b><br>imchong.github.io/Robot_Learning_Paper_Notebooks');
     foot.style.textAlign = 'center';
     foot.style.fontSize = '29px';
     foot.style.padding = '22px 34px';
