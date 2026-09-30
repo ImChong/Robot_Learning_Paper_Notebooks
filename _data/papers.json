@@ -1805,6 +1805,18 @@
         "zh_title": "Vision in Action：从人类演示学习主动感知"
       },
       {
+        "title": "DexUMI: Using Human Hand as the Universal Manipulation Interface for Dexterous Manipulation",
+        "path": "papers/06_Manipulation/DexUMI__Using_Human_Hand_as_the_Universal_Manipulation_Interface/DexUMI__Using_Human_Hand_as_the_Universal_Manipulation_Interface.md",
+        "url": "/papers/06_Manipulation/DexUMI__Using_Human_Hand_as_the_Universal_Manipulation_Interface/DexUMI__Using_Human_Hand_as_the_Universal_Manipulation_Interface.html",
+        "dir": "DexUMI__Using_Human_Hand_as_the_Universal_Manipulation_Interface",
+        "arxiv": "2505.21864",
+        "has_open_source": true,
+        "published_date_zh": "2025年5月28日（v1）",
+        "published_date_en": "May 28, 2025 (v1)",
+        "zhname": "DexUMI：以人手作为灵巧操作的通用操作接口",
+        "zh_title": "DexUMI：以人手作为灵巧操作的通用操作接口"
+      },
+      {
         "title": "DreamGen: Unlocking Generalization in Robot Learning through Video World Models",
         "path": "papers/06_Manipulation/DreamGen__Unlocking_Generalization_in_Robot_Learning_through_Video_World_Models/DreamGen__Unlocking_Generalization_in_Robot_Learning_through_Video_World_Models.md",
         "url": "/papers/06_Manipulation/DreamGen__Unlocking_Generalization_in_Robot_Learning_through_Video_World_Models/DreamGen__Unlocking_Generalization_in_Robot_Learning_through_Video_World_Models.html",
