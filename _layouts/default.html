@@ -502,9 +502,10 @@
 
       var roadmapGraphs = {
         en: `graph TD
-    subgraph SG_Basic ["1 · Basic RL"]
+    subgraph SG_Basic ["1 · Basic RL and Transformer"]
         PPO(["PPO<br/><span class='roadmap-node-year'>2017</span>"]) --> AWR(["AWR<br/><span class='roadmap-node-year'>2019</span>"])
         AWR --> DM(["DeepMimic<br/><span class='roadmap-node-year'>2018</span>"])
+        Transformer(["Transformer<br/><span class='roadmap-node-year'>2017</span>"])
     end
     subgraph SG_Data ["Data and Retargeting"]
         DataNode(["AMASS / HumanML3D<br/><span class='roadmap-node-year'>2019 / 2022</span>"]) --> GMR(["GMR<br/><span class='roadmap-node-year'>2025</span>"])
@@ -543,11 +544,14 @@
         DreamZero(["DreamZero<br/><span class='roadmap-node-year'>2026</span>"])
     end
     subgraph SG_FM ["9 · Foundation Models"]
+        Pi0(["VLA — π₀<br/><span class='roadmap-node-year'>2024</span>"]) --> Pi05(["π₀.₅ — Open-World VLA<br/><span class='roadmap-node-year'>2025</span>"])
+        Pi0 --> VLA
         VLA(["VLA — GR00T N1<br/><span class='roadmap-node-year'>2025</span>"])
         BFM(["BFM — Behavior FM<br/><span class='roadmap-node-year'>2025</span>"])
     end
     subgraph SG_Eng ["Engineering"]
         DR(["Domain Randomization<br/><span class='roadmap-node-year'>2017</span>"]) --> LCP(["LCP<br/><span class='roadmap-node-year'>2024</span>"])
+        DR --> OP3Soccer(["OP3 Soccer<br/><span class='roadmap-node-year'>2023</span>"])
     end
     GMR -.-> DM
     GMR -.-> AMP
@@ -572,11 +576,15 @@
     DreamDojo --> DreamZero
     WM1X --> DreamZero
     DreamZero --> VLA
-    DreamZero --> BFM`,
+    DreamZero --> BFM
+    Transformer -.-> DP
+    Transformer -.-> Pi0
+    DP --> Pi0`,
         zh: `graph TD
-    subgraph SG_Basic ["1 · 基础 RL"]
+    subgraph SG_Basic ["1 · 基础 RL 与 Transformer"]
         PPO(["PPO<br/><span class='roadmap-node-year'>2017</span>"]) --> AWR(["AWR<br/><span class='roadmap-node-year'>2019</span>"])
         AWR --> DM(["DeepMimic<br/><span class='roadmap-node-year'>2018</span>"])
+        Transformer(["Transformer<br/><span class='roadmap-node-year'>2017</span>"])
     end
     subgraph SG_Data ["数据与重定向"]
         DataNode(["AMASS / HumanML3D<br/><span class='roadmap-node-year'>2019 / 2022</span>"]) --> GMR(["GMR<br/><span class='roadmap-node-year'>2025</span>"])
@@ -615,11 +623,14 @@
         DreamZero(["DreamZero<br/><span class='roadmap-node-year'>2026</span>"])
     end
     subgraph SG_FM ["9 · 基础模型 VLA / BFM"]
+        Pi0(["VLA — π₀<br/><span class='roadmap-node-year'>2024</span>"]) --> Pi05(["π₀.₅ — 开放世界 VLA<br/><span class='roadmap-node-year'>2025</span>"])
+        Pi0 --> VLA
         VLA(["VLA — GR00T N1<br/><span class='roadmap-node-year'>2025</span>"])
         BFM(["BFM — 行为基础模型<br/><span class='roadmap-node-year'>2025</span>"])
     end
     subgraph SG_Eng ["工程实践"]
         DR(["域随机化<br/><span class='roadmap-node-year'>2017</span>"]) --> LCP(["LCP<br/><span class='roadmap-node-year'>2024</span>"])
+        DR --> OP3Soccer(["OP3 足球<br/><span class='roadmap-node-year'>2023</span>"])
     end
     GMR -.-> DM
     GMR -.-> AMP
@@ -644,7 +655,10 @@
     DreamDojo --> DreamZero
     WM1X --> DreamZero
     DreamZero --> VLA
-    DreamZero --> BFM`
+    DreamZero --> BFM
+    Transformer -.-> DP
+    Transformer -.-> Pi0
+    DP --> Pi0`
       };
 
       function getRoadmapCacheKey(mode) {

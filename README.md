@@ -27,8 +27,8 @@
 > 💡 括号内为论文 arXiv 首次发布年份，与首页路线图节点下方的年份小字一致。
 
 ```
-① 【基础 RL】
-  PPO (2017) → AWR (2019)
+① 【基础 RL】                    【基础架构】
+  PPO (2017) → AWR (2019)          Transformer (2017)  ← 注意力；后文扩散策略 / VLA 的骨架
               ↓
    【人体动作数据层】        ← 模仿类方法开始需要参考数据
   AMASS (2019) / HumanML3D (2022)  →  人体 SMPL 动作数据集
@@ -62,16 +62,20 @@
        ⑧ 世界-动作模型 WAM：         DreamZero (2026)（World Action Models are Zero-shot Policies）
        ↓
 ⑨ 【基础模型终点 (VLA / BFM)】   ← 一路从 PPO 爬到这里
-  VLA：GR00T N1 (2025)                  ── 视觉-语言-动作，端到端通才策略
+  VLA：π₀ (2024) → π₀.₅ (2025)          ── 流匹配动作专家 → 异构协同训练、开放世界泛化
+       π₀ → GR00T N1 (2025)             ── 视觉-语言-动作，端到端通才策略
   BFM：Behavior Foundation Model (2025) ── 行为基础模型 / 全身控制先验
 
 【Sim-to-Real 工程层】  ← 横跨整个路线
   Domain Randomization (2017) → LCP (2024)
   ↑ sim环境随机化迁移        ↑ 动作平滑，替代低通滤波器
+  Domain Randomization (2017) → OP3 Soccer (2023)
+                               ↑ 小人形零样本 sim-to-real：技能蒸馏 + 自博弈 + 针对性随机化
 ```
 
 - **动作重定向单列一层**：精确模仿 / 风格学习 / 遥操作都依赖"人体动作 → 机器人可执行轨迹"的转换，重定向质量直接决定下游策略能学到什么动作。
-- **从 WBC 上行到基础模型**：全身控制把底层技能 / 扩散策略落到整机关节后，分出操作、移动操作、世界模型等支线，最终都汇聚到 VLA（GR00T N1）与 BFM（行为基础模型）这一顶点。
+- **从 WBC 上行到基础模型**：全身控制把底层技能 / 扩散策略落到整机关节后，分出操作、移动操作、世界模型等支线，最终都汇聚到 VLA（π₀ / π₀.₅ / GR00T N1）与 BFM（行为基础模型）这一顶点。
+- **Transformer 单列为基础架构**：它不是 RL 论文，但扩散策略的 Transformer 变体、π₀ 的 Gemma 主干、GR00T N1 的 DiT 动作头都直接用这套块，读 VLA 之前先读它。
 
 ### 基础强化学习 · 官方源码 / MimicKit
 
@@ -101,7 +105,7 @@
 - **全身控制核心**：[Expressive WBC](https://arxiv.org/abs/2402.16796) · [HOVER](https://arxiv.org/abs/2410.21229) · [ExBody2](https://arxiv.org/abs/2412.13196) · [UH-1](https://arxiv.org/abs/2412.14172) · [HugWBC](https://arxiv.org/abs/2502.03206) · [SONIC](https://arxiv.org/abs/2511.07820)
 - **遥操作与模仿学习**：[OmniH2O](https://arxiv.org/abs/2406.08858) · [iDP3](https://arxiv.org/abs/2410.10803) · [HOMIE](https://arxiv.org/abs/2502.13013)
 - **行走经典**：Learning Quadrupedal Locomotion · [Real-World Humanoid Locomotion](https://arxiv.org/abs/2303.03381) · [Locomotion as Next Token Prediction](https://arxiv.org/abs/2402.19469) · [Humanoid Parkour](https://arxiv.org/abs/2406.10759) · [15-Minute Sim-to-Real](https://arxiv.org/abs/2512.01996) · [ECO](https://arxiv.org/abs/2602.06445)
-- **仿真到现实与基座模型**：[Agile Motor Skills (ANYmal)](https://arxiv.org/abs/1901.08652) · [ASAP](https://arxiv.org/abs/2502.01143) · [GR00T N1](https://arxiv.org/abs/2503.14734) · [Behavior Foundation Model](https://arxiv.org/abs/2509.13780) · [Perceptive BFM](https://arxiv.org/abs/2606.08059)
+- **仿真到现实与基座模型**：[Agile Motor Skills (ANYmal)](https://arxiv.org/abs/1901.08652) · [OP3 Soccer](https://arxiv.org/abs/2304.13653) · [π₀](https://arxiv.org/abs/2410.24164) · [ASAP](https://arxiv.org/abs/2502.01143) · [GR00T N1](https://arxiv.org/abs/2503.14734) · [π₀.₅](https://arxiv.org/abs/2504.16054) · [Behavior Foundation Model](https://arxiv.org/abs/2509.13780) · [Perceptive BFM](https://arxiv.org/abs/2606.08059)
 - **仿真平台与工具**：[Humanoid-Gym](https://arxiv.org/abs/2404.05695) · [BEHAVIOR Robot Suite](https://arxiv.org/abs/2503.05652) · Isaac Lab · [ProtoMotions3](https://arxiv.org/abs/2409.14393)
 
 ## 笔记说明
