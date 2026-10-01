@@ -203,6 +203,7 @@ html, body { width: 1080px; height: 1920px; overflow: hidden; background: var(--
      目录紧跟信息框（40px，行距随条数收紧：≤5 条 1.9、6 条 1.75、7 条 1.55、8 条及以上 1.5 / 38px）。
      每块都在上一块底下留出间距，内容比原设计高就整体往下推，永不重叠；目录底超过 1820 再压行距、字号。
      片头在视频里另有自己的安全区排版（V.stack），这里只在封面帧上重新排。 */
+  var COVER_INK_BOTTOM = 1405;  // 3:4 置顶裁剪线 1440 往上留 35px（AMP 封面的余量）
   function classicCover(root) {
     var bigs = root.querySelectorAll('.big'), m = root.querySelector('.meta'), toc = root.querySelector('.toc');
     if (bigs.length < 2 || !m || !toc) return;
@@ -245,8 +246,11 @@ html, body { width: 1080px; height: 1920px; overflow: hidden; background: var(--
     toc.style.fontSize = (rows >= 8 ? 38 : 40) + 'px';
     toc.style.lineHeight = rows <= 5 ? '1.9' : rows === 6 ? '1.75' : rows === 7 ? '1.55' : '1.5';
     toc.style.top = (m.offsetTop + m.offsetHeight + 24) + 'px';
+    // 视频号「设置封面」按 3:4 置顶裁剪（只留 y 0–1440）：目录最后一行的字底不过 COVER_INK_BOTTOM，
+    // 和 AMP 一样离裁剪线留 35px；放不下先收行距、再缩字号
+    function inkBottom() { range.selectNodeContents(toc.lastElementChild); return range.getBoundingClientRect().bottom; }
     for (var lh = parseFloat(toc.style.lineHeight), fs = parseFloat(toc.style.fontSize);
-      toc.offsetTop + toc.offsetHeight > 1820 && fs >= 32;) {
+      inkBottom() > COVER_INK_BOTTOM && fs >= 32;) {
       if (lh > 1.35) lh -= 0.05; else fs -= 2;
       toc.style.lineHeight = lh.toFixed(2); toc.style.fontSize = fs + 'px';
     }
