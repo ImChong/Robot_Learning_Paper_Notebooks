@@ -425,10 +425,10 @@ flowchart TB
 <details class="paper-fold" markdown="1">
 <summary>📖 展开文字：三个概率开关分别对应什么</summary>
 
-对应逻辑是：
-- 有些 episode 从正常轨迹开始
-- 有些 episode 直接从摔倒状态开始
-- 在 recovery 窗口内，环境**禁止 reset**，强迫策略自己爬起来
+对应逻辑是（`humanoid_amp_getup.py` 的 `_reset_actors`）：
+- `recoveryEpisodeProb: 0.5`：被判终止（摔倒）的 episode 有一半**不重置**，原地接着爬
+- `fallInitProb: 0.3`：其余要重开的 episode 里，30% 直接从摔倒姿态库开局，剩下的从正常参考状态开始
+- `recoverySteps: 90`：前两种都进入 90 步的 recovery 窗口，窗口内环境**禁止 reset**，强迫策略自己爬起来
 </details>
 
 源码里这一句非常关键：
