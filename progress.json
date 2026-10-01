@@ -41,15 +41,15 @@
         "13_Physics-Based_Animation",
         "14_Human_Motion"
       ],
-      "last_module": "06_Manipulation",
-      "last_index": 301,
-      "last_title": "DexUMI: Using Human Hand as the Universal Manipulation Interface for Dexterous Manipulation (arXiv:2505.21864)",
-      "next_module": "07_Teleoperation",
-      "last_completed_date": "2026-09-30",
-      "note": "本日轮转到 06_Manipulation。上游 awesome-humanoid-robot-learning Manipulation 章节带 arXiv 链接的条目均已有笔记，取上游已收录且无笔记的最新论文 DexUMI (arXiv:2505.21864, 2025-05-28, Stanford/Columbia/J.P. Morgan/CMU/NVIDIA, CoRL 2025 Best Paper Finalist)。硬件适配：为每款灵巧手以指尖工作空间相似度为目标、可穿戴性为约束优化外骨骼；软件适配：SAM2 分割 + ProPainter 修补 + 真手回放 + 遮挡感知合成把视频中的人手换成机器人手；扩散策略输出 16 步相对动作。Inspire/XHand 四任务平均成功率 86%，采数效率为遥操作 3.2×。官方开源 real-stanford/DexUMI，含整体流程 mermaid + 源码运行时序图。",
-      "last_date": "2026-09-30",
+      "last_module": "07_Teleoperation",
+      "last_index": 319,
+      "last_title": "Open-TeleVision: Teleoperation with Immersive Active Visual Feedback (arXiv:2407.01512)",
+      "next_module": "08_Navigation",
+      "last_completed_date": "2026-10-01",
+      "note": "本日轮转到 07_Teleoperation。上游 awesome-humanoid-robot-learning Teleoperation 章节 2024.08 之后带 arXiv 链接的条目均已有笔记，取上游已收录且无笔记的最新论文 Open-TeleVision (arXiv:2407.01512, 2024-07-01, UCSD/MIT, CoRL 2024)。随操作员头部转动的双目主动相机 + Vision Pro 立体回传(60 Hz)，手臂 CLIK、手指 dex-retargeting 向量优化；改版 ACT(DINOv2 + 双目，颈部进动作空间)在 H1/GR-1 四个长时序任务上验证。官方开源 OpenTeleVision/TeleVision，含整体流程 mermaid + 源码运行时序图。",
+      "last_date": "2026-10-01",
       "next_candidate": null,
-      "last_completed": "DexUMI: Using Human Hand as the Universal Manipulation Interface for Dexterous Manipulation (arXiv:2505.21864)"
+      "last_completed": "Open-TeleVision: Teleoperation with Immersive Active Visual Feedback (arXiv:2407.01512)"
     },
     "last_summary_index": 532,
     "last_summary_date": "2026-09-18",
@@ -1595,6 +1595,17 @@
         "arxiv": "2505.21864",
         "project_page": "https://dex-umi.github.io/",
         "code": "https://github.com/real-stanford/DexUMI",
+        "source": "🌟 官方开源，已附源码运行时序图"
+      },
+      {
+        "date": "2026-10-01",
+        "index": 319,
+        "title": "Open-TeleVision: Teleoperation with Immersive Active Visual Feedback",
+        "folder": "papers/07_Teleoperation/Open-TeleVision__Teleoperation_with_Immersive_Active_Visual_Feedback",
+        "module": "07_Teleoperation",
+        "arxiv": "2407.01512",
+        "project_page": "https://robot-tv.github.io/",
+        "code": "https://github.com/OpenTeleVision/TeleVision",
         "source": "🌟 官方开源，已附源码运行时序图"
       }
     ],
