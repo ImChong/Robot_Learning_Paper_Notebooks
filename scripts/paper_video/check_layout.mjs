@@ -1,6 +1,6 @@
 // node check_layout.mjs <paper>        （先跑过 build.py，并用 render.mjs 生成过 stage.<paper>.built.html）
 // node check_layout.mjs <paper> cover  封面帧（stage.html 的 classicCover，最初的片头设计）：块互不重叠、都在画面里、
-//                                      大标题 / 中文名 / 一句话 / 每条目录各占一行（不需要 build.py）
+//                                      大标题 / 中文名 / 一句话 / 每条目录各占一行、3:4 置顶裁剪后目录不贴底（不需要 build.py）
 // 每 0.5 s 抽一帧，用 DOM 量各块位置：可见块之间不许重叠、不许压字幕，要读的东西必须在安全区 330–1440 之内
 // （视频号 9:16 画面会被裁成居中的 6:7，底部还压着作者、标题、转赞评与浮评）。
 import { chromium } from 'playwright-core';
@@ -51,6 +51,10 @@ if (mode === 'cover') {
     oneLine('title', bigs[0].firstElementChild);
     [...bigs[1].children].forEach((e, k) => oneLine(k ? 'pitch' : 'name', e));
     [...toc.children].forEach((e, k) => oneLine(`toc row ${k + 1}`, e));
+    // 视频号「设置封面」按 3:4 置顶裁剪到 y 1440：最后一行目录的字底要离裁剪线 ≥ 35px（同 AMP）
+    const g = document.createRange(); g.selectNodeContents(toc.lastElementChild);
+    const ink = Math.max(...[...g.getClientRects()].map((q) => q.bottom));
+    if (ink > 1405) out.push(`toc ink bottom ${Math.round(ink)} > 1405 (3:4 top crop at 1440 leaves < 35px)`);
     return out;
   }, intro.t1 - 0.5);
   console.log(name, 'cover', r.length ? '\n  ' + r.join('\n  ') : 'no overlap');
