@@ -34,8 +34,8 @@ demos: ["add"]
 ADD 的核心很狠：**把“精确运动跟踪”从手工 reward 工程问题，变成一个对抗判别问题。** 它不再像 DeepMimic / PHC 那样手调 pose、velocity、end-effector、CoM 各种权重，而是训练一个**只看“参考和当前的差值”**的判别器，直接告诉策略“你离目标还有多远、方向对不对”。
 
 > 🎮 **本文内嵌 1 段动画 + 1 段配音视频 + 3 个可交互演示**（不用装任何东西）：
-> 1. [五幕动画：ADD 全流程](#add-explainer-anim) —— 约 78 秒串完「手写加权和的困境 → 改判 Δo → 归一化/打分/奖励 → 四阶段的注意力转移 → 训练闭环」
-> 2. [配音讲解视频](#add-video) —— 同样五幕，加中文配音与字幕，5 分 16 秒竖屏，可下载
+> 1. [五幕动画：ADD 全流程](#add-explainer-anim) —— 约 84 秒串完「手写加权和的困境 → 改判 Δo → 归一化/打分/奖励 → 四阶段的注意力转移 → 训练闭环」
+> 2. [配音讲解视频](#add-video) —— 同样五幕，加中文配音与字幕，6 分 34 秒竖屏，可下载
 > 3. Δo 实验台 —— 拖四个维度的跟踪误差，看差分怎么被归一化、打分、变成 PPO 收到的奖励
 > 4. 谁来决定「先修哪一维」—— DeepMimic 写死的四项权重和判别器的隐含权重并排画，切换旋风踢的四个阶段
 > 5. 自动课程实验台 —— 判别器跟着策略一起变严，和一个固定核宽度的 reward 同台跑
@@ -63,7 +63,7 @@ ADD 的核心很狠：**把“精确运动跟踪”从手工 reward 工程问题
 
 ## 📺 配音讲解视频（可下载） {#add-video}
 
-<div class="paper-demo" data-demo="add-video" data-src="media/add_explainer_video.mp4" data-poster="media/add_explainer_video_poster.jpg"><p class="demo-fallback">（本节含讲解视频播放器，需要启用 JavaScript；也可以直接<a href="media/add_explainer_video.mp4" download="ADD_讲解视频.mp4">下载 mp4（7.2 MB）</a>）</p></div>
+<div class="paper-demo" data-demo="add-video" data-src="media/add_explainer_video.mp4" data-poster="media/add_explainer_video_poster.jpg"><p class="demo-fallback">（本节含讲解视频播放器，需要启用 JavaScript；也可以直接<a href="media/add_explainer_video.mp4" download="ADD_讲解视频.mp4">下载 mp4（8.3 MB）</a>）</p></div>
 
 > 📖 **动画之后的正文默认全部折叠**：前半部分（「要解决什么问题」「是怎么做的」）按小节收起，后面的具体实例、源码对照、面试问题、讨论记录与附录整块收起。想细读哪一块就点开对应的折叠条，内容一字未删；目录里的标题依旧可以直接点，会自动展开所在折叠块，左侧目录顶部还有「展开全部文字」一键铺开。
 
@@ -218,13 +218,23 @@ flowchart LR
 </div>
 
 <details class="paper-fold" markdown="1">
-<summary>📖 展开文字：总 reward 退化成 $r \approx r _ {disc}$</summary>
+<summary>📖 展开文字：总 reward 退化成 $r \approx r _ {disc}$，以及 $r _ {disc}$ 的式子与梯度惩罚</summary>
 
 所以总 reward 本质上变成：
 
 $$
 r \approx r_{disc}
 $$
+
+判别器奖励的具体形式是论文式 (10)，和标准 GAN 的判别器目标（式 8：$\max_D \log D(0) + \mathbb{E}[\log(1 - D(\Delta))]$）配套：
+
+$$
+r_t = -\log\big(1 - D(\Delta_t)\big)
+$$
+
+$D$ 是判别器认为「这条差分是零」的概率，越接近 1 奖励越大。MimicKit 的 `_calc_disc_rewards` 与之同式（$1 - D$ 截到 $10^{-4}$），之后再乘 `disc_reward_scale: 2`。
+
+只有一个正样本有个隐患：判别器最省事的解是一根「尖刺」—— $\Delta = 0$ 给 1、别处全给 0，奖励失去坡度。论文因此加梯度惩罚，并且**加在负样本上**（AMP 论文只加在正样本上，可 ADD 的正样本只有一个点）；第 8 节消融里，不加梯度惩罚或改用 WGAN-GP 的跟踪误差都明显更高。
 </details>
 
 在 MimicKit 的默认配置里，甚至直接把 task reward 权重设成 0：
@@ -330,7 +340,7 @@ flowchart TB
 | `tar_obs_steps` | **[1, 2, 3]** | AMP 没有（不喂未来参考） |
 | `num_phase_encoding` | 4 | AMP 没有 |
 | `num_disc_obs_steps` | **1** | AMP 是 10（ADD 看单步差，AMP 看 10 步窗口） |
-| `disc_grad_penalty` | **2** | AMP 是 5（ADD 判别器更"软"） |
+| `disc_grad_penalty` | **2** | AMP 是 5；论文把 GP 加在负样本上（AMP 论文只加在正样本上），MimicKit 实现正负两边都加 |
 | `disc_reward_scale` | 2 | 同 |
 | `task_reward_weight` / `disc_reward_weight` | 0.0 / 1.0 | 同（纯 disc reward） |
 | Actor / Critic / Disc | fc_2x1024 | 同（不像 ASE 的 3 层） |

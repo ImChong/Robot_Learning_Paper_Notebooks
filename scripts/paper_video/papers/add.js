@@ -34,8 +34,8 @@ window.PaperVideo = {
     var head = h('div', 'head', root, '<div class="act">三句话记住 ADD</div><div class="title">判别器吃「差」，不是「对」</div>');
     var items = [
       [ACC, '① 差分判别', '$\\Delta o = o^{demo} - o$<br>正样本只有 $\\Delta o = 0$ 一个点'],
-      [GOOD, '② 先归一化', 'DiffNormalizer 拉平量纲<br>判别器越来越严，自带课程'],
-      [WARN, '③ 自动权衡', '不再手写 $w_1 \\dots w_4$<br>每个阶段自己换注意力']
+      [GOOD, '② 归一化 + 梯度惩罚', 'DiffNormalizer 拉平量纲<br>GP 加在负样本，防判别器缩成尖刺'],
+      [WARN, '③ 自动权衡', '不再手写 $w_1 \\dots w_4$<br>判别器越来越严，自己换注意力']
     ];
     var pts = items.map(function (it, k) {
       var p = h('div', 'pt', root);

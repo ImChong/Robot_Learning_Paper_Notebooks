@@ -50,16 +50,18 @@
     mulberry32 = K.mulberry32,
     gauss = K.gauss;
 
-  /* 判别器 reward，和 AMP 完全同一份代码（ADDAgent 继承自 AMPAgent）：
-     LSGAN 形式 r = max[0, 1 − 0.25(D − 1)²]，D = +1 判成「零误差」。 */
+  /* 判别器 reward：论文式 (10) r = −log(1 − D(Δ))，D ∈ (0, 1) 是判成「零误差」
+     的概率。MimicKit 的 _calc_disc_rewards（ADDAgent 继承自 AMPAgent）与之同式，
+     1 − D 截到 1e-4 以免 log 发散，之后再乘 disc_reward_scale 2。 */
   function discReward(d) {
-    return Math.max(0, 1 - 0.25 * (d - 1) * (d - 1));
+    return -Math.log(Math.max(1 - d, 1e-4));
   }
 
   /* 一个「已经训好」的差分判别器：正样本是零向量，所以它的打分只依赖
-     归一化差分的模长 —— 离 0 越远越像负样本。τ 是它当前的「严格程度」。 */
+     归一化差分的模长 —— 离 0 越远越像负样本。τ 是它当前的「严格程度」
+     （玩具模型的参数，不是论文里的超参）。 */
   function discScore(normErr, tau) {
-    return 2 * Math.exp(-(normErr * normErr) / (2 * tau * tau)) - 1;
+    return Math.exp(-(normErr * normErr) / (2 * tau * tau));
   }
 
   // ─── demo 1: Δo = o^demo − o ─────────────────────────────────────────────
@@ -84,7 +86,7 @@
       title: 'ADD 的判别器看的是 $\\Delta o$，不是姿态本身',
       sub:
         '拖动四个维度上的跟踪误差，看 $\\Delta o = o^{demo} - o$ 怎么被 DiffNormalizer 拉到同一量纲，' +
-        '再被判别器打成一个分数 $D$，最后变成 $r = \\max[0,\\ 1 - 0.25(D - 1)^2]$。正样本永远只有一个：$\\Delta o = 0$。'
+        '再被判别器打成「像零」的概率 $D$，最后按论文式 (10) 变成 $r = -\\log(1 - D)$。正样本永远只有一个：$\\Delta o = 0$。'
     });
 
     var state = { e: DIFF_PRESETS[1].e.slice(), tau: 1.0, norm: true };
@@ -170,7 +172,7 @@
     var setLegend = legend(root, [
       { key: 'accent', text: '归一化后的各维误差 $\\Delta\\hat{o}$' },
       { key: 'bad', text: '不归一化时的各维误差（量纲被角速度吃掉）' },
-      { key: 'good', text: '判别器打分 D（+1 = 判成「零误差」）' }
+      { key: 'good', text: '判别器打分 $D$（1 = 判成「零误差」）' }
     ]);
 
     var grid = stageGrid(root);
@@ -189,8 +191,10 @@
         'AMP 需要一整个专家动作分布来当正类，ADD 的正类是「完全没有误差」这一个理想点 —— 这就是标题里 Differential Discriminator 的意思。',
       '**DiffNormalizer 不是可选项**：关掉它再拖角速度，会看到 $\\lVert \\Delta \\hat o \\rVert$ 几乎只由 $\\Delta \\omega$ 决定，末端那几厘米的误差完全没人管。' +
         '位置是米、角度是弧度、速度是 rad/s，不先拉到同一量纲，判别器就只会盯着尺度最大的那一维。',
-      '**$\\tau$ 是判别器学出来的，不是你调的**：这里把它做成滑块只是为了让你看见它的作用 —— 它决定「多大的误差才算不像 0」。' +
-        '真实训练里它随着策略变好自动变小（第三个演示就在演这件事）。',
+      '**$\\tau$ 是玩具模型的参数，不是论文的超参**：真实判别器没有这样一个旋钮，它的「严格程度」是训练出来的；这里做成滑块只是为了让你看见它的作用 —— 它决定「多大的误差才算不像 0」。' +
+        '真实训练里它随着策略变好自动变严（第三个演示就在演这件事）。',
+      '**奖励为什么是 $-\\log(1 - D)$**：这是论文式 (10)，和标准 GAN 的判别器损失配套（式 8 用的是 $\\log D(0) + \\log(1 - D(\\Delta))$）。' +
+        '$D \\to 1$ 时奖励迅速变大（源码把 $1 - D$ 截到 $10^{-4}$，上限约 9.2），$D \\to 0$ 时趋近 0；MimicKit 之后再乘 `disc_reward_scale: 2`。',
       '**这是简化模型**：真实判别器是 fc_2x1024，输入是整条差分向量而不是四个数，打分也不只依赖模长。' +
         '这里的数值不能和论文直接比，它只复现「判误差 → 打分 → 变成奖励」这条链路。'
     ]);
@@ -217,8 +221,8 @@
       });
 
       sNorm.set(fmt(mag, 2), mag < 1 ? 'good' : mag > 4 ? 'bad' : 'warn');
-      sD.set(fmt(d, 3), d > 0.3 ? 'good' : d < -0.5 ? 'bad' : 'warn');
-      sR.set(fmt(r, 3), r > 0.6 ? 'good' : r < 0.2 ? 'bad' : 'warn');
+      sD.set(fmt(d, 3), d > 0.5 ? 'good' : d < 0.1 ? 'bad' : 'warn');
+      sR.set(fmt(r, 3), d > 0.5 ? 'good' : d < 0.1 ? 'bad' : 'warn');
       sScaled.set(fmt(r * 2, 3));
 
       if (!state.norm) {
@@ -234,7 +238,7 @@
             '%。判别器现在只在跟这一维较劲，其他维度的误差它根本感觉不到 —— 这就是源码里必须有 DiffNormalizer 的原因。',
           'frozen'
         );
-      } else if (r > 0.7) {
+      } else if (d > 0.5) {
         verdict.set(
           '✅ D = ' +
             fmt(d, 2) +
@@ -290,30 +294,31 @@
       var g2 = begin(curveStage);
       var P2 = g2.P;
       var xMax = 6;
-      var p2 = plot(g2, { l: 42, r: 14, t: 22, b: 34 }, [0, xMax], [-1.15, 1.15]);
+      var yMax = 3.3; // r = −log(1 − D) 在 D → 1 时发散，画到 3.3 为止
+      var p2 = plot(g2, { l: 42, r: 14, t: 22, b: 34 }, [0, xMax], [0, yMax]);
       axes(g2, p2, {
         xTicks: [0, 2, 4, 6],
-        yTicks: [-1, -0.5, 0, 0.5, 1],
+        yTicks: [0, 1, 2, 3],
         yFmt: function (t) {
-          return fmt(t, 1);
+          return fmt(t, 0);
         },
         xLabel: '‖Δô‖'
       });
-      text(g2.ctx, '判别器打分 D 与奖励 r', p2.x0, p2.y1 - 8, P2.muted, 'left', '11px sans-serif');
+      text(g2.ctx, '判别器打分 D（0–1）与奖励 r = −log(1 − D)', p2.x0, p2.y1 - 8, P2.muted, 'left', '11px sans-serif');
       var dPts = [],
         rPts = [];
       for (var s = 0; s <= 100; s++) {
         var x = (xMax * s) / 100;
         var dv = discScore(x, state.tau);
         dPts.push([p2.sx(x), p2.sy(dv)]);
-        rPts.push([p2.sx(x), p2.sy(discReward(dv) * 2 - 1)]); // r∈[0,1] 映射到 [-1,1] 同轴显示
+        rPts.push([p2.sx(x), p2.sy(Math.min(discReward(dv), yMax))]);
       }
       line(g2.ctx, dPts, P2.good, 2.2);
       line(g2.ctx, rPts, P2.accent, 1.8, [5, 4]);
       line(g2.ctx, [[p2.x0, p2.sy(1)], [p2.x1, p2.sy(1)]], P2.muted, 1, [3, 3]);
-      text(g2.ctx, 'Δo = 0 的正样本在这里', p2.x0 + 6, p2.sy(1) + 10, P2.muted, 'left', '10px sans-serif');
+      text(g2.ctx, 'D = 1：Δo = 0 的正样本', p2.x1 - 4, p2.sy(1) - 6, P2.muted, 'right', '10px sans-serif');
       dot(g2.ctx, p2.sx(Math.min(effMag, xMax)), p2.sy(d), 4, P2.good, P2.surface2);
-      dot(g2.ctx, p2.sx(Math.min(effMag, xMax)), p2.sy(r * 2 - 1), 4, P2.accent, P2.surface2);
+      dot(g2.ctx, p2.sx(Math.min(effMag, xMax)), p2.sy(Math.min(r, yMax)), 4, P2.accent, P2.surface2);
 
       barStage.canvas.setAttribute('aria-label', '各维跟踪误差归一化后的柱状图');
       curveStage.canvas.setAttribute('aria-label', '判别器打分与奖励随差分模长变化的曲线');
@@ -534,7 +539,7 @@
         },
         xLabel: K.richToPlain(DIMS[ci].label) + ' 的误差'
       });
-      text(g2.ctx, '只动这一维时，reward 掉得有多快', p2.x0, p2.y1 - 8, P2.muted, 'left', '11px sans-serif');
+      text(g2.ctx, '只动这一维：手写 reward 与判别器 D 掉得多快', p2.x0, p2.y1 - 8, P2.muted, 'left', '11px sans-serif');
       var handPts = [],
         addPts = [];
       for (var s = 0; s <= 100; s++) {
@@ -549,14 +554,15 @@
           }, 0)
         );
         handPts.push([p2.sx(x), p2.sy(hr)]);
-        addPts.push([p2.sx(x), p2.sy(discReward(discScore(mag, 3.0)))]);
+        // 画 D 而不是 r = −log(1 − D)：两者单调对应，D 和手写 reward 一样落在 0–1，同轴才好比陡缓
+        addPts.push([p2.sx(x), p2.sy(discScore(mag, 3.0))]);
       }
       line(g2.ctx, handPts, P2.warn, 2.2);
       line(g2.ctx, addPts, P2.accent, 2.2);
       line(g2.ctx, [[p2.sx(state.e[ci]), p2.y0], [p2.sx(state.e[ci]), p2.y1]], P2.text, 1, [3, 3]);
 
       wStage.canvas.setAttribute('aria-label', '手写权重与判别器隐含权重的对比柱状图');
-      sensStage.canvas.setAttribute('aria-label', '两种奖励对关键维误差的敏感度曲线');
+      sensStage.canvas.setAttribute('aria-label', '手写奖励与判别器打分对关键维误差的敏感度曲线');
     });
 
     render();
@@ -566,8 +572,8 @@
   /* 玩具训练回路：策略误差 e 每轮按「当前 reward 的梯度」下降一点。
      - 固定 reward：exp(−k e²)，k 写死。k 太小 → 早就饱和，学不动；k 太大 → 一开始
        reward 恒为 0，同样学不动。
-     - ADD：判别器 τ 跟着当前误差分布走（τ ← 当前平均误差），reward 永远落在
-       「有梯度」的那一段，于是标准随着策略一起变严。 */
+     - ADD：判别器打分 D = exp(−e²/2τ²)，reward = −log(1 − D)；τ 跟着当前误差分布走
+       （τ ← 当前平均误差），reward 永远落在「有梯度」的那一段，于是标准随着策略一起变严。 */
   function runCurriculum(opts) {
     var rng = mulberry32(opts.seed);
     var eAdd = opts.e0,
@@ -579,7 +585,9 @@
 
       // ADD：τ 追着当前误差走，reward 的最陡区间永远压在当前误差附近
       tau = tau + opts.tauLr * (eAdd - tau);
-      var gAdd = (eAdd / (tau * tau)) * Math.exp(-(eAdd * eAdd) / (2 * tau * tau));
+      // d(−log(1 − D))/de = (dD/de) / (1 − D)，1 − D 与 discReward 一样截到 1e-4
+      var dAdd = Math.exp(-(eAdd * eAdd) / (2 * tau * tau));
+      var gAdd = ((eAdd / (tau * tau)) * dAdd) / Math.max(1 - dAdd, 1e-4);
       eAdd = Math.max(0.004, eAdd - opts.lr * gAdd + 0.004 * gauss(rng) * opts.noise);
 
       // 固定核：k 写死，梯度 2k·e·exp(−k e²)
@@ -678,8 +686,8 @@
       '**对抗训练自带课程**：策略变好 → 负样本离零向量更近 → 判别器必须更挑剔才分得开 → 奖励的「陡峭区」跟着往 0 挪。' +
         '手写 reward 做不到这件事，除非你自己写一个随训练衰减的 k。',
       '**这也是它最脆的地方**：判别器跟得太快（把 disc lr 拉到 0.4），标准一路追着策略跑，' +
-        '相当于永远在及格线上下，策略拿到的奖励信号会变得很吵。论文里 `disc_grad_penalty: 2` 比 AMP 的 5 更小，' +
-        '正是因为 ADD 的判别器任务更简单，不需要那么强的正则。',
+        '相当于永远在及格线上下，策略拿到的奖励信号会变得很吵。走到极端，判别器会缩成一根尖刺：只有 $\\Delta o = 0$ 给 1、别处全给 0，奖励没有坡度可爬。' +
+        '论文用梯度惩罚防这件事，而且加在**负样本**上（AMP 论文只加在正样本上，可 ADD 只有一个正样本）；第 8 节消融里不加它，跟踪误差明显更高。',
       '**这是简化模型**：真实训练是 4096 个并行环境跑 PPO，这里只有一个标量误差在做梯度下降。' +
         '换种子结论不变（ADD 这条线的末期误差始终低于极端 k 的固定核），但数值不能和论文的 tracking 指标比。'
     ]);
@@ -789,13 +797,14 @@
         },
         xLabel: '跟踪误差 e'
       });
-      text(g2.ctx, '奖励曲线：判别器的那条会往左挪', p2.x0, p2.y1 - 8, P2.muted, 'left', '11px sans-serif');
+      text(g2.ctx, '打分曲线：判别器 D 会往左挪，固定核不动', p2.x0, p2.y1 - 8, P2.muted, 'left', '11px sans-serif');
       var snaps = [trace[0], trace[Math.floor(state.iters / 3)], last];
       snaps.forEach(function (snap, idx) {
         var pts = [];
         for (var s = 0; s <= 100; s++) {
           var x = (1.2 * s) / 100;
-          pts.push([p2.sx(x), p2.sy(discReward(discScore(x, Math.max(0.03, snap.tau))))]);
+          // 画 D = exp(−e²/2τ²)：它和固定核 exp(−k e²) 同形，只是 k = 1/(2τ²) 会跟着训练变
+          pts.push([p2.sx(x), p2.sy(discScore(x, Math.max(0.03, snap.tau)))]);
         }
         line(g2.ctx, pts, P2.accent, idx === 2 ? 2.4 : 1.2, idx === 2 ? [] : [4, 4]);
       });
@@ -805,11 +814,11 @@
         fixPts.push([p2.sx(x2), p2.sy(Math.exp(-state.k * x2 * x2))]);
       }
       line(g2.ctx, fixPts, P2.warn, 2.2);
-      dot(g2.ctx, p2.sx(Math.min(1.2, last.add)), p2.sy(discReward(discScore(last.add, Math.max(0.03, last.tau)))), 4, P2.accent, P2.surface2);
+      dot(g2.ctx, p2.sx(Math.min(1.2, last.add)), p2.sy(discScore(last.add, Math.max(0.03, last.tau))), 4, P2.accent, P2.surface2);
       dot(g2.ctx, p2.sx(Math.min(1.2, last.fix)), p2.sy(Math.exp(-state.k * last.fix * last.fix)), 4, P2.warn, P2.surface2);
 
       curveStage.canvas.setAttribute('aria-label', 'ADD 与固定核 reward 的跟踪误差下降曲线');
-      rewardStage.canvas.setAttribute('aria-label', '奖励曲线随训练自动左移的示意图');
+      rewardStage.canvas.setAttribute('aria-label', '判别器打分曲线随训练自动左移的示意图');
     });
 
     render();
@@ -870,7 +879,7 @@
     s.appendChild(svgMath(400, 56,
       'r = w_1 r_{pose} + w_2 r_{vel} + w_3 r_{ee} + w_4 r_{com} + \\cdots',
       { size: 15, anchor: 'middle', cls: 'demo-x-ink2', w: 620 }));
-    var sub = svgText(400, 82, 'DeepMimic / PHC 这一路：tracking reward 是一个手写的加权和', 'demo-x-mut', 11.5, 'middle');
+    var sub = svgRich(400, 82, 'DeepMimic / PHC 这一路：每项 $r_i = \\exp(-k_i e_i^2)$，权重 $w_i$ 和核宽度 $k_i$ 都靠手调', { size: 11.5, cls: 'demo-x-mut', anchor: 'middle', w: 640 });
     s.appendChild(sub);
 
     [[40, C_SURFACE2], [410, C_SURFACE2]].forEach(function (p) {
@@ -888,7 +897,7 @@
       s.appendChild(g);
       return { g: g, at: 1.2 + i * 0.42 };
     });
-    var scNote = svgText(215, 308, 'DeepMimic 那一套写死的是 0.65 / 0.1 / 0.15 / 0.1', 'demo-x-mut', 10.5, 'middle');
+    var scNote = svgText(215, 308, '打分只是比方；DeepMimic 实际写死 0.65 / 0.1 / 0.15 / 0.1', 'demo-x-mut', 10.5, 'middle');
     s.appendChild(scNote);
 
     s.appendChild(svgText(585, 122, '而这三件麻烦事，全是人力', 'demo-x-ink2', 12, 'middle'));
@@ -923,7 +932,7 @@
 
     var foot = svgEl('g', {});
     foot.appendChild(paint(svgText(400, 372, '论文的关键洞察：精确 tracking 本质上也是一个多目标优化问题', null, 16.5, 'middle'), C_ACCENT));
-    foot.appendChild(svgText(400, 398, '而对抗学习，可以替代手工加权', 'demo-x-mut', 12, 'middle'));
+    foot.appendChild(svgText(400, 398, '把各项误差排成一条向量，交给判别器当「非线性的加权器」', 'demo-x-mut', 12, 'middle'));
     s.appendChild(foot);
 
     function draw(t) {
@@ -986,6 +995,7 @@
     var box = svgEl('g', {});
     box.appendChild(paint(svgEl('rect', { x: 360, y: 118, width: 210, height: 176, rx: 8, 'stroke-width': 1.4 }), C_SURFACE2, C_ACCENT));
     box.appendChild(svgMath(465, 148, '\\Delta o = o^{demo} - o', { size: 12.5, anchor: 'middle', w: 200 }).setTone(C_ACCENT));
+    box.appendChild(svgText(465, 167, '真实差分维度多得多，这里挑四维', 'demo-x-mut', 9.5, 'middle'));
     s.appendChild(box);
     var vals = S2_E.map(function (v, i) {
       var y = 184 + i * 30;
@@ -1066,7 +1076,9 @@
   var S3_TAU0 = 1.0, S3_TAU1 = 0.45;
   var S3_SYM = ['$\\Delta\\theta$', '$\\Delta\\omega$', '$\\Delta p$', '$\\Delta\\mathrm{root}$'];
   var S3_GOOD_E = DIFF_PRESETS[0].e, S3_BAD_E = DIFF_PRESETS[1].e;
-  var S3_X0 = 500, S3_X1 = 758, S3_Y0 = 300, S3_YH = 160, S3_XMAX = 6;
+  var S3_X0 = 500, S3_X1 = 758, S3_Y0 = 300, S3_YH = 160, S3_XMAX = 6, S3_RMAX = 3;
+  /* 不加梯度惩罚时判别器可能退化成的「尖刺」：τ 极小，0 点以外的奖励全是 0。 */
+  var S3_TAU_SPIKE = 0.1;
 
   function normMag(e) {
     return Math.sqrt(e.reduce(function (a, v, i) {
@@ -1080,7 +1092,7 @@
   }
 
   function s3y(r) {
-    return S3_Y0 - r * S3_YH;
+    return S3_Y0 - (r / S3_RMAX) * S3_YH;
   }
 
   function buildSceneScore() {
@@ -1107,7 +1119,7 @@
       s.appendChild(g);
       return { g: g, at: 1.0 + i * 0.5 };
     });
-    var nNote = svgText(235, 254, 'DiffNormalizer：位置 米 / 角度 弧度 / 速度 rad·s⁻¹', 'demo-x-mut', 10.5, 'middle');
+    var nNote = svgRich(235, 254, 'DiffNormalizer：除以这一维 $|\\Delta o|$ 的平均，只除不减，0 仍是 0', { size: 10.5, cls: 'demo-x-mut', anchor: 'middle', w: 380 });
     s.appendChild(nNote);
 
     /* 关掉归一化时，同一条 Δo 的份额：角速度一维吃掉 99.8%。 */
@@ -1124,28 +1136,32 @@
     offG.appendChild(svgText(235, 332, '开着的时候：12.1% / 56.9% / 27.3% / 3.7% —— 四维都说得上话', 'demo-x-mut', 10.5, 'middle'));
     s.appendChild(offG);
 
-    var formula = svgMath(612, 84, 'r = \\max\\!\\left[0,\\ 1 - 0.25\\,(D_\\psi - 1)^2\\right]',
-      { size: 12, anchor: 'middle', cls: 'demo-x-ink2', w: 330 });
+    var formula = svgEl('g', {});
+    formula.appendChild(svgMath(629, 80, 'r = -\\log\\big(1 - D(\\Delta\\hat o)\\big)',
+      { size: 12.5, anchor: 'middle', cls: 'demo-x-ink2', w: 300 }));
+    formula.appendChild(svgRich(629, 104, '$D \\in (0, 1)$：判成「零误差」的概率（论文式 10）', { size: 10, cls: 'demo-x-mut', anchor: 'middle', w: 300 }));
     s.appendChild(formula);
 
     var plotG = svgEl('g', {});
     plotG.appendChild(paint(svgEl('line', { x1: S3_X0, y1: S3_Y0, x2: S3_X1, y2: S3_Y0, 'stroke-width': 1.2 }), null, C_BORDER));
-    plotG.appendChild(paint(svgEl('line', { x1: S3_X0, y1: S3_Y0, x2: S3_X0, y2: s3y(1.05), 'stroke-width': 1.2 }), null, C_BORDER));
+    plotG.appendChild(paint(svgEl('line', { x1: S3_X0, y1: S3_Y0, x2: S3_X0, y2: s3y(S3_RMAX * 1.05), 'stroke-width': 1.2 }), null, C_BORDER));
     [0, 2, 4, 6].forEach(function (v) {
       plotG.appendChild(svgText(s3x(v), 316, String(v), 'demo-x-mut', 10, 'middle'));
     });
-    [0, 0.5, 1].forEach(function (r) {
-      plotG.appendChild(svgText(S3_X0 - 6, s3y(r) + 4, fmt(r, 1), 'demo-x-mut', 10, 'end'));
+    [0, 1, 2, 3].forEach(function (r) {
+      plotG.appendChild(svgText(S3_X0 - 6, s3y(r) + 4, String(r), 'demo-x-mut', 10, 'end'));
     });
     plotG.appendChild(svgRich(629, 336, '$\\lVert \\Delta\\hat{o} \\rVert$（归一化后的差分模长）', { size: 10, cls: 'demo-x-mut', anchor: 'middle' }));
-    plotG.appendChild(svgRich(S3_X0 + 6, s3y(1.05) - 6, '奖励 $r$', { size: 10, cls: 'demo-x-mut' }));
+    plotG.appendChild(svgRich(S3_X0 + 6, s3y(S3_RMAX * 1.05) - 6, '奖励 $r$', { size: 10, cls: 'demo-x-mut' }));
     var curve = paint(svgEl('path', { fill: 'none', 'stroke-width': 2.4 }), null, C_ACCENT);
     var ghost = paint(svgEl('path', { fill: 'none', 'stroke-width': 1.3, 'stroke-dasharray': '4 4' }), null, C_MUTED);
+    var spike = paint(svgEl('path', { fill: 'none', 'stroke-width': 2, 'stroke-dasharray': '5 3' }), null, C_BAD);
     plotG.appendChild(ghost);
+    plotG.appendChild(spike);
     plotG.appendChild(curve);
     /* τ 逐帧在变：公式只画一次，数字交给 svgText */
-    var tauLbl = svgMath(S3_X1 - 32, s3y(1.05) - 6, '\\tau =', { size: 11.5, w: 40, anchor: 'end' }).setTone(C_GOOD);
-    var tauTx = paint(svgText(S3_X1, s3y(1.05) - 6, '', 'demo-x-mono', 11.5, 'end'), C_GOOD);
+    var tauLbl = svgMath(S3_X1 - 32, s3y(S3_RMAX * 1.05) - 6, '\\tau =', { size: 11.5, w: 40, anchor: 'end' }).setTone(C_GOOD);
+    var tauTx = paint(svgText(S3_X1, s3y(S3_RMAX * 1.05) - 6, '', 'demo-x-mono', 11.5, 'end'), C_GOOD);
     plotG.appendChild(tauLbl);
     plotG.appendChild(tauTx);
     var dots = [
@@ -1163,15 +1179,23 @@
     });
     s.appendChild(plotG);
 
+    /* r = −log(1 − D) 在 0 点附近发散：曲线从 r = S3_RMAX 那一点画起。 */
     function curvePath(tau) {
-      var pts = [];
-      for (var i = 0; i <= 140; i++) {
-        var x = (S3_XMAX * i) / 140;
+      var xTop = tau * Math.sqrt(-2 * Math.log(1 - Math.exp(-S3_RMAX)));
+      var pts = [[s3x(xTop).toFixed(1), s3y(S3_RMAX).toFixed(1)]];
+      for (var i = 1; i <= 160; i++) {
+        var x = xTop + ((S3_XMAX - xTop) * i) / 160;
         pts.push([s3x(x).toFixed(1), s3y(discReward(discScore(x, tau))).toFixed(1)]);
       }
       return polyPath(pts);
     }
     ghost.setAttribute('d', curvePath(S3_TAU0));
+    spike.setAttribute('d', curvePath(S3_TAU_SPIKE));
+    var spikeG = svgEl('g', {});
+    spikeG.appendChild(paint(svgText(540, 180, '不加梯度惩罚：缩成一根尖刺', null, 10.5), C_BAD));
+    spikeG.appendChild(svgText(540, 197, '0 以外奖励全是 0，策略没有坡度可爬', 'demo-x-mut', 10));
+    spikeG.appendChild(paint(svgText(540, 214, '→ 论文把梯度惩罚加在负样本上', null, 10), C_GOOD));
+    s.appendChild(spikeG);
 
     var foot = svgEl('g', {});
     var footTx = paint(svgText(400, 374, '', null, 15, 'middle'), C_ACCENT);
@@ -1180,6 +1204,7 @@
     s.appendChild(foot);
 
     var goodMag = normMag(S3_GOOD_E);
+    var goodR0 = discReward(discScore(goodMag, S3_TAU0));
 
     function draw(t) {
       nRows.forEach(function (r) { setOpacity(r.g, seg(t, r.at, r.at + 0.4)); });
@@ -1207,8 +1232,10 @@
       });
 
       var rNow = discReward(discScore(goodMag, tau));
-      footTx.textContent = '同一个 ‖Δô‖ = ' + fmt(goodMag, 2) + '：τ 收到 ' + fmt(tau, 2) + '，奖励从 0.99 掉到 ' + fmt(rNow, 2);
+      footTx.textContent = '「跟得很准」那条：τ 收到 ' + fmt(tau, 2) + '，奖励从 ' + fmt(goodR0, 2) + ' 掉到 ' + fmt(rNow, 2);
       setOpacity(foot, seg(t, 11.6, 12.2));
+      setOpacity(spike, seg(t, 15.6, 16.2));
+      setOpacity(spikeG, seg(t, 15.8, 16.4));
     }
 
     return { el: s, draw: draw };
@@ -1260,6 +1287,11 @@
     var line2 = svgText(60, 400, '', 'demo-x-mut', 11.5);
     s.appendChild(line1);
     s.appendChild(line2);
+    /* 玩具模型之外的真实情况：论文 6.4 节自己承认的根部跟踪短板。 */
+    var caveat = svgEl('g', {});
+    caveat.appendChild(paint(svgText(60, 378, '论文 6.4 节的局限：跑步、行走这类前进运动，根部跟得不如 DeepMimic 准', null, 13), C_WARN));
+    caveat.appendChild(svgText(60, 400, '作者推测：根部位置只占差分向量 3 维，梯度惩罚又不让判别器过分偏重它', 'demo-x-mut', 11.5));
+    s.appendChild(caveat);
 
     var INTRO = 1.2, STEP = 3.2;
 
@@ -1294,8 +1326,10 @@
       line1.textContent = phase.name + '：真正吃紧的是「' + HAND[ci].label + '」 —— 手写只给 ' +
         fmt(HAND[ci].w * 100, 0) + '%，判别器给 ' + fmt(discWeights(phase.e, 1.0)[ci] * 100, 1) + '%';
       line2.textContent = '而手写 reward 的总分还有 ' + fmt(hand.r, 3) + '：这一维错得再多，总分也只掉一点点，策略就懒得修它';
-      setOpacity(line1, seg(t, INTRO + 0.3, INTRO + 0.9));
-      setOpacity(line2, seg(t, INTRO + 0.8, INTRO + 1.4));
+      var cav = seg(t, 15.0, 15.6);
+      setOpacity(line1, seg(t, INTRO + 0.3, INTRO + 0.9) * (1 - cav));
+      setOpacity(line2, seg(t, INTRO + 0.8, INTRO + 1.4) * (1 - cav));
+      setOpacity(caveat, cav);
     }
 
     return { el: s, draw: draw };
@@ -1348,7 +1382,7 @@
       'stroke-dasharray': '6 5', 'marker-end': etArrow
     }), null, C_BAD);
     s.appendChild(etPath);
-    var etLab = paint(svgText(246, 366, 'pose_termination：偏离参考 > 1.0 m 直接终止 —— DeepMimic 式的跟踪 anchor，AMP 没有', null, 11), C_BAD);
+    var etLab = paint(svgText(246, 366, 'pose_termination：任一部位偏离参考 > 1.0 m 就终止（MimicKit 里 AMP 不开）', null, 11), C_BAD);
     s.appendChild(etLab);
 
     var edges = ADD_EDGES.map(function (e) {
@@ -1370,12 +1404,12 @@
     });
 
     var chips = [
-      { y: 196, c: C_MUTED, tx: '\\text{AMP：真样本 = mocap 片段，10 步窗口，}w_{GP} = 5' },
-      { y: 226, c: C_GOOD, tx: '\\text{ADD：真样本 = 全 0 张量，1 步差，}w_{GP} = 2' }
+      { y: 196, c: C_MUTED, tx: 'AMP：正样本 = mocap 片段，10 步窗口，$w_{GP} = 5$' },
+      { y: 226, c: C_GOOD, tx: 'ADD：正样本 = 全 0 张量，1 步差，$w_{GP} = 2$' }
     ].map(function (c, i) {
       var g = svgEl('g', {});
       g.appendChild(paint(svgEl('rect', { x: 250, y: c.y - 12, width: 300, height: 24, rx: 12, 'stroke-width': 1, 'stroke-dasharray': '4 3' }), C_SURFACE, c.c));
-      g.appendChild(svgMath(400, c.y + 4, c.tx, { size: 10.5, anchor: 'middle', w: 296 }).setTone(c.c));
+      g.appendChild(svgRich(400, c.y + 4, c.tx, { size: 10.5, anchor: 'middle', w: 296 }).setTone(c.c));
       s.appendChild(g);
       return { g: g, at: 12.6 + i * 0.5 };
     });
@@ -1440,12 +1474,12 @@
       dur: 14,
       build: buildSceneHand,
       cues: [
-        { at: 0.3, s: '精确模仿一段动作，传统做法是写一个大 reward：**$r = w_1 r_{pose} + w_2 r_{vel} + w_3 r_{ee} + w_4 r_{com} + \\cdots$**。' },
-        { at: 1.2, s: '这就像给学生打总分：**姿态 30 分、速度 20 分、末端 25 分、质心 25 分** —— 每门课占多少，是人定的。' },
+        { at: 0.3, s: '精确模仿一段动作，传统做法是写一个大 reward：**$r = w_1 r_{pose} + w_2 r_{vel} + w_3 r_{ee} + w_4 r_{com} + \\cdots$**，每一项 $r_i = \\exp(-k_i e_i^2)$，权重 $w_i$ 和核宽度 $k_i$ 都要手调。' },
+        { at: 1.2, s: '打个比方，这就像给学生打总分：**姿态 30 分、速度 20 分、末端 25 分、质心 25 分** —— 每门课占多少，是人定的；DeepMimic 实际写死的是 0.65 / 0.1 / 0.15 / 0.1。' },
         { at: 4.4, s: '第一件麻烦：**权重很难调**。姿态权重开大，动作更像，但节奏可能乱；末端开大，手脚到位了，整体反而僵硬。' },
         { at: 5.3, s: '第二件：**换个技能就得重调**。走路、跑步、后空翻、旋风踢，最佳权重根本不是同一组。' },
         { at: 6.2, s: '第三件：**很耗人**。改权重要重训一轮才知道好不好 —— 最后你不是在研究方法，是在当调参工。' },
-        { at: 12.2, s: '论文的关键洞察：**精确 tracking 本质上也是一个多目标优化问题，而对抗学习可以替代手工加权。**' }
+        { at: 12.2, s: '论文的关键洞察：**精确 tracking 本质上是一个多目标优化问题** —— 把各项误差排成一条向量，交给判别器当非线性的「加权器」，权重就不用人写了。' }
       ]
     },
     {
@@ -1453,41 +1487,43 @@
       dur: 15,
       build: buildSceneDiff,
       cues: [
-        { at: 0.3, s: 'ADD 不把当前观测和参考观测分别喂给判别器，而是**先做差**：$\\Delta o = o^{demo} - o$。' },
-        { at: 3.2, s: '这一帧的差分：髋关节角差 **0.18 rad**、躯干角速度差 **5.2 rad/s**、踢腿末端差 **0.09 m**、根部差 **0.08 m**。' },
+        { at: 0.3, s: 'AMP 把专家片段当正样本、策略片段当负样本，分别喂给判别器；ADD **先做差**：$\\Delta o = o^{demo} - o$。' },
+        { at: 3.2, s: '真实的差分包含根部、各关节的位置、旋转和速度，这里只挑四维举例：髋关节角差 **0.18 rad**、躯干角速度差 **5.2 rad/s**、踢腿末端差 **0.09 m**、根部差 **0.08 m**。' },
         { at: 7.4, s: 'AMP 的正类是**一整段专家动作分布**（`num_disc_obs_steps: 10`，一个 10 步窗口）。' },
-        { at: 9.0, s: 'ADD 的正类只有**一个点**：完全匹配时 $\\Delta o = 0$ —— 源码里 `self._pos_diff` 就是一个全 0 张量。' },
-        { at: 11.4, s: '负样本则是实际跑出来的差分：归一化之后这条落在 **$\\lVert \\Delta \\hat o \\rVert = 3.45$**，离零点很远。' },
+        { at: 9.0, s: 'ADD 的正类只有**一个点**：完全匹配时 $\\Delta o = 0$ —— 源码里 `self._pos_diff` 就是一个全 0 张量。论文的关键发现之一：只靠这一个正样本也训得出来。' },
+        { at: 11.4, s: '负样本则是策略实际跑出来的差分：归一化之后这条落在 **$\\lVert \\Delta \\hat o \\rVert = 3.45$**，离零点很远。' },
         { at: 13.4, s: '所以判别器要回答的只有一句：**这条差分，看起来像不像「零」**。' }
       ]
     },
     {
       title: '归一化 → 打分 → 奖励',
-      dur: 18,
+      dur: 21,
       build: buildSceneScore,
       cues: [
         { at: 0.3, s: '差分向量里，位置是米、角度是弧度、速度是 rad/s —— **量纲不同，不能直接求模长**。' },
-        { at: 1.0, s: 'DiffNormalizer 把每一维除以它的典型尺度：0.18 ÷ 0.15 = **1.20**，5.2 ÷ 2.0 = **2.60**，0.09 ÷ 0.05 = **1.80**。' },
-        { at: 4.2, s: '不归一化会怎样？同一条 $\\Delta o$，**角速度一维就吃掉 99.8%** 的模长，末端那几厘米判别器根本感觉不到。' },
-        { at: 6.4, s: '归一化之后判别器给一个打分 $D_\\psi \\in [-1, 1]$，再换成奖励：**$r = \\max[0,\\ 1 - 0.25(D_\\psi - 1)^2]$**（和 AMP 同一式）。' },
-        { at: 8.0, s: '「跟得很准」这条 $\\lVert \\Delta \\hat o \\rVert = 0.50$，拿到 **$r = 0.99$**；「旋转慢了半拍」那条 $\\lVert \\Delta \\hat o \\rVert = 3.45$，**$r \\approx 0.01$**。' },
+        { at: 1.0, s: 'DiffNormalizer 给每一维记一个尺度（这一维 $|\\Delta o|$ 的平均），再把差分除以它：0.18 ÷ 0.15 = **1.20**，5.2 ÷ 2.0 = **2.60**，0.09 ÷ 0.05 = **1.80**。只除不减，零向量归一化后还是零。' },
+        { at: 4.2, s: '不归一化会怎样？同一条 $\\Delta o$，**角速度一维就占了模长平方的 99.8%**，末端那几厘米判别器根本感觉不到。' },
+        { at: 6.4, s: '判别器输出「像零」的概率 $D \\in (0, 1)$，奖励按论文式 (10)：**$r = -\\log(1 - D)$** —— $D$ 越接近 1，奖励越大（MimicKit 再乘 `disc_reward_scale: 2`）。' },
+        { at: 8.0, s: '「跟得很准」这条 $\\lVert \\Delta \\hat o \\rVert = 0.50$：$D = 0.88$，**$r = 2.13$**；「旋转慢了半拍」那条 $\\lVert \\Delta \\hat o \\rVert = 3.45$：$D < 0.003$，**$r \\approx 0$**。' },
         { at: 10.8, s: '关键的是：**判别器的标准会跟着策略一起变严**。策略越准，负样本越靠近 0，它必须更挑剔才分得开。' },
-        { at: 12.6, s: '于是整条奖励曲线往零点挪：**同一个 $\\lVert \\Delta \\hat o \\rVert = 0.50$，从 0.99 掉到 0.78** —— 对抗训练自带一条课程。' },
-        { at: 15.6, s: '手写的 $\\exp(-k e^2)$ 做不到这件事：$k$ 是常数，要么早早饱和，要么一开始奖励恒为 0。' }
+        { at: 12.6, s: '于是整条奖励曲线往零点挪：**同一个 $\\lVert \\Delta \\hat o \\rVert = 0.50$，从 2.13 掉到 0.76** —— 对抗训练自带一条课程（图里的 $\\tau$ 是玩具模型的严格程度，不是论文超参）。' },
+        { at: 15.6, s: '但不能收成**尖刺**：只有一个正样本，判别器最省事的解是 0 点给 1、别处全给 0，奖励没了坡度。论文的梯度惩罚**加在负样本上**（AMP 论文只加在正样本上），第 8 节消融里不加它，跟踪误差明显更高。' },
+        { at: 19.0, s: '手写的 $\\exp(-k e^2)$ 做不到前面那条课程：$k$ 是常数，要么早早饱和，要么一开始奖励恒为 0。' }
       ]
     },
     {
       title: '自动平衡多个目标',
-      dur: 15,
+      dur: 18,
       build: buildSceneWeights,
       cues: [
-        { at: 0.3, s: '为什么差分判别器能「自动平衡多个目标」？把旋风踢拆成四个阶段就看得很清楚。' },
+        { at: 0.3, s: '为什么差分判别器能「自动平衡多个目标」？论文的说法是判别器会动态盯住更难的那几项。这里的注意力是玩具代理：各维归一化误差做 softmax，哪维错得多就盯哪维。' },
         { at: 1.5, s: '**① 站稳蓄力**：姿态最要紧。手写给姿态 65%，判别器给 36% —— 这一幕手工 reward 是够用的。' },
         { at: 4.4, s: '**② 旋转启动**：角速度成了主角。手写还是只给速度 **10%**，判别器把 **76.1%** 的注意力挪了过去。' },
         { at: 7.6, s: '**③ 抬腿踢出**：末端偏了 30 cm。手写权重 **15%**，判别器 **98.5%** —— 差距最大的一幕。' },
         { at: 9.0, s: '注意手写 reward 的总分：这一幕仍有 **0.810**。末端错得再离谱，总分也只掉一点点，策略自然懒得修它。' },
-        { at: 10.8, s: '**④ 收腿落地**：轮到根部位置，判别器又把 **70.7%** 挪过去。' },
-        { at: 12.6, s: '手写的四根柱子**全程一动不动**，判别器的四根**每一幕都在换高峰** —— 这就是论文说的自动权衡。' }
+        { at: 10.8, s: '**④ 收腿落地**：轮到根部位置，判别器又把 **70.7%** 挪过去（手写那 10% 在 DeepMimic 里对应质心项）。' },
+        { at: 12.6, s: '手写的四根柱子**全程一动不动**，判别器的四根**每一幕都在换高峰** —— 这就是论文说的自动权衡。' },
+        { at: 15.0, s: '不过这是玩具模型的理想情况。论文 6.4 节承认：跑步、行走这类前进运动，ADD 的根部跟踪**不如 DeepMimic 准**；作者推测是根部位置只占差分向量 3 维，梯度惩罚又不让判别器过分偏重它。' }
       ]
     },
     {
@@ -1498,11 +1534,11 @@
         { at: 0.3, s: '把前四幕串起来，就是 ADD 的一次训练循环。`ADDAgent` 继承自 `AMPAgent`，骨架一模一样。' },
         { at: 0.8, s: '① 策略在 **4096 个并行环境**里跑一轮；观测里带着 `tar_obs_steps: [1, 2, 3]` 的前瞻参考帧。' },
         { at: 2.4, s: '② 算差：`diff_obs = tar_disc_obs − disc_obs`。③ DiffNormalizer 把四类量纲拉平。' },
-        { at: 5.7, s: '④ 更新判别器：**正样本是那个全 0 张量**，负样本是当前差分 + 回放池（`disc_replay_samples: 1000`，池子 20 万）。' },
-        { at: 7.0, s: '`disc_grad_penalty: 2` 比 AMP 的 5 更小，`disc_logit_reg: 0.01` —— ADD 的判别任务更简单，不需要那么强的正则。' },
-        { at: 8.7, s: '⑤ 奖励合成：**`task_reward_weight: 0.0`、`disc_reward_weight: 1.0`** —— 默认几乎完全靠判别器驱动。' },
+        { at: 5.7, s: '④ 更新判别器：**正样本是那个全 0 张量**，负样本是当前差分，再混进同样多条回放池里的旧差分（池子 20 万，每轮存 `disc_replay_samples: 1000` 条）。' },
+        { at: 7.0, s: '`disc_grad_penalty: 2`（AMP 默认 5）、`disc_logit_reg: 0.01`。梯度惩罚的位置：论文写的是负样本，MimicKit 的实现正负两边都加。' },
+        { at: 8.7, s: '⑤ 奖励合成：**`task_reward_weight: 0.0`、`disc_reward_weight: 1.0`**，判别器奖励再乘 `disc_reward_scale: 2` —— 默认完全靠判别器驱动。' },
         { at: 10.7, s: '⑥ PPO 更新策略：clip 0.2、$\\lambda$ = 0.95、$\\gamma$ = 0.99，然后回到 ①。' },
-        { at: 12.2, s: '中途偏离参考超过 **1.0 m** 就走 `pose_termination` 那条虚线 —— 这是 DeepMimic 留下的跟踪 anchor，AMP 没有。' },
+        { at: 12.2, s: '任一身体部位偏离参考超过 **1.0 m** 就提前终止，走 `pose_termination` 那条虚线 —— MimicKit 里 DeepMimic 的配置同样开着，AMP 的配置关着。' },
         { at: 14.2, s: '一句话：**ADD = DeepMimic 的骨架 + AMP 的判别器，只是判别器吃的是「差」而不是「对」。**' }
       ]
     }
@@ -1511,11 +1547,11 @@
   function buildExplainerDemo(host) {
     K.explainer(host, {
       title: '五幕动画：ADD 全流程速览',
-      sub: '约 78 秒自动播放。空格播放/暂停，← → 换幕；画面里的数字与下面三个演示用的是同一份函数。',
+      sub: '约 84 秒自动播放。空格播放/暂停，← → 换幕；画面里的数字与下面三个演示用的是同一份函数。',
       ariaLabel: 'ADD 五幕讲解动画',
       notes: [
         '取数依据：第二幕那四个差分就是下面「Δo 实验台」的预设「旋转慢了半拍」，归一化后的 1.20 / 2.60 / 1.80 / 0.67 与 $\\lVert \\Delta \\hat o \\rVert = 3.45$ 由同一组 `DIMS[i].scale` 现算；' +
-          '第三幕的曲线、两个读数点与 τ 收紧的效果用的是同一对 `discScore` / `discReward`；第四幕手写那四根柱子是 DeepMimic 的 0.65 / 0.1 / 0.15 / 0.1，' +
+          '第三幕的曲线、两个读数点与 τ 收紧的效果用的是同一对 `discScore` / `discReward`（奖励按论文式 (10) $r = -\\log(1 - D)$，τ 是玩具模型的严格程度，红色尖刺是 τ = 0.1 的样子）；第四幕手写那四根柱子是 DeepMimic 的 0.65 / 0.1 / 0.15 / 0.1，' +
           '判别器那四根是「谁来决定先修哪一维」演示里的 `discWeights()` 在默认分辨力 1.0 下算出来的。',
         '第五幕的 4096 env、`tar_obs_steps: [1, 2, 3]`、`disc_grad_penalty: 2`、`disc_logit_reg: 0.01`、回放池 20 万 / 1000、' +
           '`task_reward_weight: 0.0`、`disc_reward_weight: 1.0`、clip 0.2 / $\\lambda$ 0.95 / $\\gamma$ 0.99、`pose_termination` 1.0 m 来自正文的 MimicKit 默认 yaml 那两张表。',
@@ -1532,8 +1568,8 @@
   function buildVideoDemo(host) {
     K.video(host, {
       title: '配音讲解视频：ADD 五幕全流程',
-      sub: '5 分 16 秒竖屏视频（1080×1920），中文配音 + 字幕。画面就是上面的五幕动画，旁白把每一幕讲细；适合手机上看或转发。',
-      size: '7.2 MB',
+      sub: '6 分 34 秒竖屏视频（1080×1920），中文配音 + 字幕。画面就是上面的五幕动画，旁白把每一幕讲细；适合手机上看或转发。',
+      size: '8.3 MB',
       fileName: 'ADD_讲解视频.mp4'
     });
   }
