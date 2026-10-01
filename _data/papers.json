@@ -2363,6 +2363,18 @@
         "zh_title": "Bunny-VisionPro：面向模仿学习的实时双手灵巧遥操作"
       },
       {
+        "title": "Open-TeleVision: Teleoperation with Immersive Active Visual Feedback",
+        "path": "papers/07_Teleoperation/Open-TeleVision__Teleoperation_with_Immersive_Active_Visual_Feedback/Open-TeleVision__Teleoperation_with_Immersive_Active_Visual_Feedback.md",
+        "url": "/papers/07_Teleoperation/Open-TeleVision__Teleoperation_with_Immersive_Active_Visual_Feedback/Open-TeleVision__Teleoperation_with_Immersive_Active_Visual_Feedback.html",
+        "dir": "Open-TeleVision__Teleoperation_with_Immersive_Active_Visual_Feedback",
+        "arxiv": "2407.01512",
+        "has_open_source": true,
+        "published_date_zh": "2024年7月1日（v1）",
+        "published_date_en": "Jul 1, 2024 (v1)",
+        "zhname": "Open-TeleVision：带沉浸式主动视觉反馈的遥操作系统",
+        "zh_title": "Open-TeleVision：带沉浸式主动视觉反馈的遥操作系统"
+      },
+      {
         "title": "HumanPlus: Humanoid Shadowing and Imitation from Humans",
         "path": "papers/07_Teleoperation/HumanPlus_Humanoid_Shadowing_and_Imitation_from_Humans/HumanPlus_Humanoid_Shadowing_and_Imitation_from_Humans.md",
         "url": "/papers/07_Teleoperation/HumanPlus_Humanoid_Shadowing_and_Imitation_from_Humans/HumanPlus_Humanoid_Shadowing_and_Imitation_from_Humans.html",

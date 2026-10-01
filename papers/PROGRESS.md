@@ -421,7 +421,7 @@
 | 316  | Bimanual Dexterity for Complex Tasks                                                                                                                      | 2024.09 |     | ⏳ 待读 |
 | 317  | [ACE: A Cross-Platform Visual-Exoskeletons System for Low-Cost Dexterous Teleoperation](https://arxiv.org/abs/2408.11805)                                 | 2024.08 |     | ⏳ 待读 |
 | 318  | [Bunny-VisionPro: Real-Time Bimanual Dexterous Teleoperation for Imitation Learning](https://arxiv.org/abs/2407.03162)                                    | 2024.07 |     | ⏳ 待读 |
-| 319  | [Open-TeleVision: Teleoperation with Immersive Active Visual Feedback](https://arxiv.org/abs/2407.01512)                                                  | 2024.07 |     | ⏳ 待读 |
+| 319  | [Open-TeleVision: Teleoperation with Immersive Active Visual Feedback](https://arxiv.org/abs/2407.01512) ✅ [笔记](07_Teleoperation/Open-TeleVision__Teleoperation_with_Immersive_Active_Visual_Feedback/Open-TeleVision__Teleoperation_with_Immersive_Active_Visual_Feedback.md)                                                  | 2024.07 |     | ⏳ 待读 |
 | 320  | [Learning Visuotactile Skills with Two Multifingered Hands](https://arxiv.org/abs/2404.16823)                                                             | 2024.04 |     | ⏳ 待读 |
 | 321  | [DexCap: Scalable and Portable Mocap Data Collection System for Dexterous Manipulation](https://arxiv.org/abs/2403.07788)                                 | 2024.03 |     | ⏳ 待读 |
 | 322  | [DreamZero: World Action Models are Zero-shot Policies](https://arxiv.org/abs/2602.15922) ✅ [笔记](06_Manipulation/DreamZero_World_Action_Models_are_Zero-shot_Policies/DreamZero_World_Action_Models_are_Zero-shot_Policies.md) | 2026.02 |     | ✅ 完成 |
