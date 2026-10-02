@@ -133,8 +133,9 @@
         'PULSE 要的恰恰是「随便采一个 z 都能跑」，所以这条路走不通。',
       '**$\\beta$ 太大就 posterior collapse**：后验被压得和先验一模一样，latent 里不再含有「这是哪段动作」的信息，' +
         '解码器只能输出一个平均动作。KL 是 0 了，但整个潜空间也废了。',
-      '**中间那一段才是 PULSE 的落点**：后验之间刚好连成一片、聚合起来又接近先验 —— ' +
-        '这时候「采样 → 连贯动作」和「编码 → 复刻动作」两件事才能同时成立。',
+      '**中间那一段才是 PULSE 想要的**：后验之间刚好连成一片、聚合起来又接近先验 —— ' +
+        '这时候「采样 → 连贯动作」和「编码 → 复刻动作」两件事才能同时成立。' +
+        '这里的 $\\beta \\approx 0.35$ 只是玩具模型的刻度；论文的 $\\beta$ 从 0.01 退火到 0.001（附录 C.1、表 4），两者不能直接比。',
       '**这是简化模型**：真实的 latent 是 32 维、后验由一个 MLP 编码器输出，蒸馏误差是学生和 PHC 教师动作的差。' +
         '这里用一维高斯信道复现 rate–distortion 的取舍形状，数值不能和论文比。'
     ]);
@@ -279,7 +280,7 @@
     var root = card(host, {
       title: '本体感受先验：p(z|s) 知道你现在站着还是在空中',
       sub:
-        '`ar_prior.py` 学的就是这个条件分布。换个身体状态看两种先验的差别 —— ' +
+        '官方代码里 `amp_network_z_builder.py` 的 `compute_prior()` 学的就是这个条件分布。换个身体状态看两种先验的差别 —— ' +
         '固定的 N(0, I) 永远从同一个地方采样，而当前状态下真正做得出来的动作只占一小片。'
     });
 
@@ -477,7 +478,7 @@
   var LAT_DIM = 32,
     RAW_DIM = 69,
     LAT_USABLE = 0.9, // 先验 + 冻结 Decoder 兜底：采到的 z 基本都是自然动作
-    RAW_USABLE = 0.06; // 关节空间里随便采一组力矩，几乎必然当场倒地
+    RAW_USABLE = 0.4; // 关节空间里加噪声探索：不少 rollout 站不稳，但论文图 4 里从零训练最终回报最接近 PULSE，所以不能设得太低
 
   function dsCurve(dim, usable, iters, hard) {
     var rate = (usable * 12.0) / (dim * hard);
@@ -556,7 +557,7 @@
 
     var setLegend = legend(root, [
       { key: 'good', text: 'PULSE：32 维潜空间 + 冻结 Decoder' },
-      { key: 'bad', text: '从零开始：69 维关节力矩' },
+      { key: 'bad', text: '从零开始：69 维 PD 目标' },
       { key: 'warn', text: '残差太大：飘出先验，动作开始崩' }
     ]);
 
@@ -588,8 +589,8 @@
     var verdict = verdictBox(root);
 
     note(root, [
-      '**维度只是一半原因**：69 → 32 大约只省一倍。真正的差别是先验把「废动作」整个排除了 —— ' +
-        '在关节空间里随便采一组力矩，角色几乎必然当场倒地，这些 rollout 全是浪费。' +
+      '**维度只是一半原因**：69 → 32 大约只省一倍，另一半来自先验把「废动作」排除了 —— ' +
+        '在关节空间里加噪声探索，不少 rollout 一开始就站不稳。论文图 4 里从零训练的最终回报其实最接近 PULSE，差在收敛慢、动作不像人。' +
         '注意右图那条虚线是「没有先验时」的估计：就算把维度砍到 32，随机采一个点自然的概率也只有约 10%；' +
         'PULSE 的 90% 来自冻结的 Decoder 和 p(z|s)，不是来自降维。',
       '**残差幅度是个新旋钮**：高层在 p(z|s) 上偏得越远，能做的任务越多，但也越容易飘出潜空间里「自然」的那一片。' +
@@ -649,7 +650,7 @@
             fmt(tLat, 0) +
             ' 轮、后者约 ' +
             fmt(tRaw, 0) +
-            ' 轮 —— 差的这一大截，绝大部分来自「不用再学怎么站稳」。',
+            ' 轮 —— 降维只省约一倍，剩下的来自「不用再学怎么站稳」。',
           'learning'
         );
       }
@@ -747,15 +748,15 @@
 
   /* ── scene 1: ASE / CALM 之后还缺什么 ── */
   var S1_WALLS = [
-    { t: '① 覆盖率不足', d: 'ASE / CALM 的 latent 各自只覆盖一小撮动作' },
-    { t: '② 规模怎么压', d: '数万片段要进同一个可控的潜空间' },
-    { t: '③ 下游要免重训', d: '换任务不能重训底层控制器' }
+    { t: '① 覆盖率不足', d: 'ASE / CALM 只覆盖一小撮动作风格' },
+    { t: '② 规模怎么压', d: '一万多段动作进同一个可采样的潜空间' },
+    { t: '③ 下游要能复用', d: '换任务只训高层，低层不动' }
   ];
 
   function buildSceneGap() {
     var s = sceneSvg(
-      'ASE 与 CALM 的技能潜空间只覆盖自己训练用的那一小撮动作，而 AMASS 有数万片段；' +
-        'PULSE 要同时回答覆盖率、规模压缩、下游免重训三个问题'
+      'ASE 与 CALM 的技能潜空间只覆盖一小撮动作风格，而 AMASS 清洗后有 11313 段、约 40 小时；' +
+        'PULSE 要同时回答覆盖率、规模压缩、下游复用三个问题'
     );
     s.appendChild(svgText(60, 32, 'ASE → CALM → PULSE：技能 latent 早就有了，通用表示还没有', 'demo-x-ink2', 13.5));
 
@@ -783,13 +784,13 @@
         rr = R * (0.25 + 0.7 * rngW());
       wedge.appendChild(paint(svgEl('circle', { cx: (CX + rr * Math.cos(aa)).toFixed(1), cy: (CY - rr * Math.sin(aa)).toFixed(1), r: 2.6 }), C_ACCENT));
     }
-    wedge.appendChild(svgText(CX + 96, CY - 52, '训练用的那一小撮', 'demo-x-acc', 10, 'end'));
+    wedge.appendChild(svgText(CX, CY - R - 10, '只覆盖一小撮动作风格', 'demo-x-acc', 10, 'middle'));
     s.appendChild(wedge);
-    s.appendChild(svgText(210, 286, '换一批动作就得重训一套 latent', 'demo-x-mut', 10.5, 'middle'));
+    s.appendChild(svgText(210, 286, '论文把它们放到 AMASS 上训，也覆盖不住', 'demo-x-mut', 10.5, 'middle'));
 
     // 右：AMASS 的规模
     s.appendChild(paint(svgEl('rect', { x: 410, y: 54, width: 350, height: 246, rx: 8, 'stroke-width': 1 }), C_SURFACE2, C_BORDER));
-    s.appendChild(svgText(585, 78, 'AMASS：数万个动作片段', 'demo-x-ink2', 12, 'middle'));
+    s.appendChild(svgText(585, 78, 'AMASS：上万段动捕，约 40 小时', 'demo-x-ink2', 12, 'middle'));
     var cloud = [];
     for (var r0 = 0; r0 < 9; r0++) {
       for (var c0 = 0; c0 < 18; c0++) {
@@ -798,7 +799,7 @@
         cloud.push({ n: d, at: 1.2 + (r0 * 18 + c0) * 0.022 });
       }
     }
-    s.appendChild(svgText(585, 286, '覆盖人类 99.8% 的日常动作', 'demo-x-mut', 10.5, 'middle'));
+    s.appendChild(svgText(585, 286, '清洗后训练集 11313 段、测试集 138 段', 'demo-x-mut', 10.5, 'middle'));
 
     var walls = S1_WALLS.map(function (w, k) {
       var g = svgEl('g', {});
@@ -811,7 +812,7 @@
     });
 
     var foot = svgEl('g', {});
-    foot.appendChild(paint(svgText(400, 390, 'PULSE 要的是人形控制的「基础模型」：一个随便采一个 z 都能跑的 32 维通用潜空间', null, 14.5, 'middle'), C_ACCENT));
+    foot.appendChild(paint(svgText(400, 390, 'PULSE 要的是人形控制的「基础模型」：从先验里随便采 z 都动得像人的 32 维潜空间', null, 14.5, 'middle'), C_ACCENT));
     foot.appendChild(svgText(400, 411, '下游只学「何时用什么技能」，不再学「怎么动」', 'demo-x-mut', 11, 'middle'));
     s.appendChild(foot);
 
@@ -828,7 +829,7 @@
   /* ── scene 2: 阶段 1 —— 先训一个什么都跟得住的教师 ── */
   function buildSceneTeacher() {
     var s = sceneSvg(
-      '阶段一用 AMASS 训练一个高保真模仿器：给它参考帧，它就能跟住；但拿掉参考帧，它不知道该做什么'
+      '阶段一用 AMASS 训练教师 PHC+：给它参考帧，它就能跟住，训练集成功率 100%；但拿掉参考帧，它不知道该做什么'
     );
     s.appendChild(svgText(60, 32, '阶段 1：先训一个「什么都跟得住」的模仿器', 'demo-x-ink2', 13.5));
 
@@ -851,11 +852,12 @@
     s.appendChild(feedArrow);
 
     var box = svgEl('g', {});
-    box.appendChild(paint(svgEl('rect', { x: 292, y: 118, width: 186, height: 116, rx: 8, 'stroke-width': 1.4 }), C_SURFACE2, C_ACCENT));
-    box.appendChild(svgText(385, 144, '模仿器（PHC 栈）', 'demo-x-acc', 12, 'middle'));
-    box.appendChild(svgMath(385, 170, '\\pi_{teacher}(a_t \\mid s_t, ref_t)', { size: 11.5, anchor: 'middle', cls: 'demo-x-ink2', w: 180 }));
-    box.appendChild(svgText(385, 196, 'phc/env/tasks/humanoid_im.py', 'demo-x-mono', 9.5, 'middle'));
-    box.appendChild(svgText(385, 218, '奖励 = 跟得有多准', 'demo-x-mut', 10, 'middle'));
+    box.appendChild(paint(svgEl('rect', { x: 292, y: 108, width: 186, height: 140, rx: 8, 'stroke-width': 1.4 }), C_SURFACE2, C_ACCENT));
+    box.appendChild(svgText(385, 132, '教师 PHC+（PHC 改进版）', 'demo-x-acc', 12, 'middle'));
+    box.appendChild(svgMath(385, 158, '\\pi_{teacher}(a_t \\mid s_t, ref_{t+1})', { size: 11.5, anchor: 'middle', cls: 'demo-x-ink2', w: 180 }));
+    box.appendChild(svgText(385, 182, '奖励：跟踪 + AMP − 能耗', 'demo-x-mut', 10, 'middle'));
+    box.appendChild(paint(svgText(385, 204, '训练集跟踪成功率 100%', null, 10, 'middle'), C_GOOD));
+    box.appendChild(svgText(385, 228, 'phc/env/tasks/humanoid_im.py', 'demo-x-mono', 9.5, 'middle'));
     s.appendChild(box);
 
     var figs = svgEl('g', {});
@@ -896,20 +898,20 @@
      三列的数字就是上面 VIB 实验台的三个预设按钮，同一个 vib() 现算。 */
   var S3_BETAS = [
     { beta: 0, label: '\\beta = 0', tag: '纯蒸馏，不压缩', verdict: '把 AMASS 背下来', color: C_BAD },
-    { beta: 0.35, label: '\\beta \\approx 0.35', tag: 'PULSE 的落点', verdict: '采样能跑，编码认得出', color: C_GOOD },
+    { beta: 0.35, label: '\\beta \\approx 0.35', tag: '中间档（玩具刻度）', verdict: '采样能跑，编码认得出', color: C_GOOD },
     { beta: 4, label: '\\beta = 4', tag: 'posterior collapse', verdict: '什么也没记住', color: C_BAD }
   ];
   var S3_V = S3_BETAS.map(function (b) { return vib(b.beta); });
 
   function buildSceneVib() {
     var s = sceneSvg(
-      'VIB 蒸馏：KL 项前面的 β 太小，潜空间只是把 AMASS 背下来；太大，后验塌成先验。' +
-        '三列分别是 β = 0、0.35、4 下五段动作的后验形状与读数'
+      'VIB 蒸馏：损失 = 动作误差 + α 倍相邻帧平滑项 + β 倍 KL。β 太小，潜空间只是把 AMASS 背下来；太大，后验塌成先验。' +
+        '三列分别是玩具模型里 β = 0、0.35、4 下五段动作的后验形状与读数'
     );
     s.appendChild(svgRich(60, 30, '阶段 2：把教师蒸馏进潜空间，$\\beta$ 决定潜空间长什么样', { size: 13.5, cls: 'demo-x-ink2' }));
     var formula = svgMath(400, 60,
-      '\\mathcal{L} = \\|a_{student} - a_{teacher}\\|^2 + \\beta \\cdot \\mathrm{KL}\\big(q(z \\mid s, ref) \\,\\|\\, p(z \\mid s)\\big)',
-      { size: 12.5, anchor: 'middle', cls: 'demo-x-ink2', w: 700 });
+      '\\mathcal{L} = \\|a_{teacher} - a_{student}\\|^2 + \\alpha \\|\\mu_t - \\mu_{t-1}\\|^2 + \\beta \\cdot \\mathrm{KL}\\big(q(z \\mid s, ref) \\,\\|\\, p(z \\mid s)\\big)',
+      { size: 12.5, anchor: 'middle', cls: 'demo-x-ink2', w: 740 });
     s.appendChild(formula);
 
     var cols = S3_BETAS.map(function (b, k) {
@@ -967,8 +969,8 @@
     });
 
     var foot = svgEl('g', {});
-    foot.appendChild(paint(svgText(400, 374, '中间那一段才是 PULSE：后验刚好连成一片，聚合起来又接近先验', null, 15, 'middle'), C_ACCENT));
-    foot.appendChild(svgText(400, 398, '「采样 → 连贯动作」和「编码 → 复刻动作」这时候才能同时成立', 'demo-x-mut', 11, 'middle'));
+    foot.appendChild(paint(svgText(400, 374, '中间那一段才是 PULSE 要的：「采样 → 连贯动作」和「编码 → 复刻动作」同时成立', null, 14.5, 'middle'), C_ACCENT));
+    foot.appendChild(svgRich(400, 398, '这一幕是 1 维玩具模型；论文里 $\\alpha = 0.005$，$\\beta$ 从 0.01 退火到 0.001', { size: 11, cls: 'demo-x-mut', anchor: 'middle' }));
     s.appendChild(foot);
 
     function draw(t) {
@@ -995,7 +997,7 @@
       '腾空中这个状态下，固定先验 N(0, I) 采到的 z 只有 ' + fmt(S4_FIXED.rate * 100, 1) +
         '% 是这一步做得出来的；本体感受先验把采样中心搬到当前状态的可行区上'
     );
-    s.appendChild(svgText(60, 30, '命门二：固定的 N(0, I) 不知道你此刻站着还是在空中', 'demo-x-ink2', 13.5));
+    s.appendChild(svgRich(60, 30, '本体感受先验：固定的 $\\mathcal{N}(0, I)$ 不知道你此刻站着还是在空中', { size: 13.5, cls: 'demo-x-ink2' }));
 
     // 左：latent 平面
     s.appendChild(paint(svgEl('rect', { x: 40, y: 52, width: 360, height: 276, rx: 8, 'stroke-width': 1 }), C_SURFACE2, C_BORDER));
@@ -1074,7 +1076,7 @@
     chip.appendChild(svgRich(400, 356, '单步 0.9 看着不错，连滚 40 步只剩 $0.9^{40} \\approx 1.5\\%$ —— 长序列对先验的要求苛刻得多', { size: 11, cls: 'demo-x-mut', anchor: 'middle' }));
     s.appendChild(chip);
 
-    var foot = paint(svgText(400, 392, '「随便采一个 z 都能跑」靠的不是维度低，是先验知道你此刻在空中', null, 15, 'middle'), C_ACCENT);
+    var foot = paint(svgText(400, 392, '「随便采 z 都动得像人」靠的不是维度低，是先验知道你此刻在空中', null, 15, 'middle'), C_ACCENT);
     s.appendChild(foot);
 
     function draw(t) {
@@ -1115,7 +1117,7 @@
       { x: 178, w: 148, t: '高层策略', sub: 'PPO 只更新这里', c: C_ACCENT },
       { x: 346, w: 148, t: '$p(z \\mid s) + \\Delta z$', sub: '32 维 latent', c: C_GOOD },
       { x: 514, w: 128, t: '冻结 Decoder', sub: '物理可行性保底', c: C_GOOD },
-      { x: 662, w: 98, t: '关节动作', sub: '69 维', c: C_MUTED }
+      { x: 662, w: 98, t: 'PD 目标', sub: '69 维', c: C_MUTED }
     ].forEach(function (b, k) {
       chain.appendChild(paint(svgEl('rect', { x: b.x, y: 54, width: b.w, height: 52, rx: 8, 'stroke-width': 1.3, 'stroke-dasharray': k === 3 ? '5 4' : '' }), C_SURFACE2, b.c));
       chain.appendChild(svgRich(b.x + b.w / 2, 76, b.t, { size: 11.5, anchor: 'middle', w: b.w }).setTone(b.c));
@@ -1167,7 +1169,7 @@
     var cards = [
       { t: '跑满 ' + S5_ITERS + ' 轮', a: '32 维 ' + fmt(S5_LAT, 2) + ' 分', b: '69 维 ' + fmt(S5_RAW, 2) + ' 分', c: C_ACCENT },
       { t: '到 80% 分数要多少轮', a: '约 ' + fmt(S5_TLAT, 0) + ' 轮', b: '约 ' + fmt(S5_TRAW, 0) + ' 轮', c: C_GOOD },
-      { t: '快了多少', a: fmt(S5_TRAW / S5_TLAT, 1) + ' ×', b: '维度只省一倍（69 → 32）', c: C_WARN }
+      { t: '快了多少（玩具模型）', a: fmt(S5_TRAW / S5_TLAT, 1) + ' ×', b: '降维只占约一倍（69 → 32）', c: C_WARN }
     ].map(function (c, k) {
       var g = svgEl('g', {});
       var y = 124 + k * 68;
@@ -1179,7 +1181,7 @@
       return { g: g, at: 4.0 + k * 1.6 };
     });
 
-    var chip = svgText(400, 348, '剩下那一大截来自「不用再学怎么站稳」：关节空间里随便采一组力矩，角色几乎必然当场倒地', 'demo-x-mut', 11, 'middle');
+    var chip = svgText(400, 348, '论文图 4：四个生成任务 PULSE 都最高、收敛更快；从零训练回报最接近，但动作不像人', 'demo-x-mut', 11, 'middle');
     s.appendChild(chip);
 
     var foot = paint(svgText(400, 388, '高层学的是「何时用什么技能」，不是「怎么动」', null, 15, 'middle'), C_ACCENT);
@@ -1204,24 +1206,24 @@
   /* ── scene 6: 三阶段闭环与源码落点 ── */
   var S6_CARDS = [
     {
-      t: '阶段 1 · 大规模模仿',
+      t: '阶段 1 · PHC+ 教师',
       cmd: 'env.models=[phc_3, phc_comp_3]',
       file: 'phc/env/tasks/humanoid_im.py',
-      d: '训练好的 PHC 教师，跟得住 AMASS',
+      d: '3 个基元 + 组合器，含跌倒爬起',
       c: C_MUTED
     },
     {
       t: '阶段 2 · VIB 蒸馏',
       cmd: 'env.task=HumanoidImDistillGetup',
-      file: 'humanoid_im_distill.py + ar_prior.py',
+      file: 'humanoid_im_distill.py + amp_agent.py',
       d: '学生带瓶颈地模仿教师 → 32 维 z',
       c: C_ACCENT
     },
     {
       t: '阶段 3 · 下游任务',
       cmd: 'env.task=HumanoidSpeedZ',
-      file: 'amp_network_z_builder.py',
-      d: 'PPO 只更新高层，Decoder 冻结',
+      file: 'humanoid_z.py',
+      d: '先验均值 + 高层残差 → 冻结 Decoder',
       c: C_GOOD
     }
   ];
@@ -1255,7 +1257,7 @@
     var bottle = svgEl('g', {});
     bottle.appendChild(svgMath(400, 218, '+\\, \\beta \\cdot \\mathrm{KL}\\big(q(z \\mid s, ref) \\,\\|\\, p(z \\mid s)\\big)',
       { size: 11, anchor: 'middle', w: 260 }).setTone(C_ACCENT));
-    bottle.appendChild(svgText(400, 244, '瓶颈 + 先验一起学', 'demo-x-mut', 9.5, 'middle'));
+    bottle.appendChild(svgText(400, 244, '瓶颈 + 先验一起学，另有相邻帧平滑项', 'demo-x-mut', 9.5, 'middle'));
     s.appendChild(bottle);
 
     var freeze = svgEl('g', {});
@@ -1273,7 +1275,7 @@
     s.appendChild(tokenLbl);
 
     var foot = svgEl('g', {});
-    foot.appendChild(paint(svgText(400, 366, 'PULSE = 大规模模仿 + VIB 瓶颈 + 本体感受先验', null, 15.5, 'middle'), C_ACCENT));
+    foot.appendChild(paint(svgText(400, 366, 'PULSE = PHC+ 大规模模仿 + VIB 瓶颈 + 本体感受先验', null, 15.5, 'middle'), C_ACCENT));
     foot.appendChild(svgText(400, 390, '把「会动」压成一个可采样的表示，下游就只剩「何时用什么技能」这一件事', 'demo-x-mut', 11.5, 'middle'));
     foot.appendChild(svgText(400, 410, 'MimicKit 没有实现 VIB 蒸馏与 proprioceptive prior，读 PULSE 要用官方仓库', 'demo-x-mut', 10, 'middle'));
     s.appendChild(foot);
@@ -1301,12 +1303,12 @@
       dur: 13,
       build: buildSceneGap,
       cues: [
-        { at: 0.3, s: 'ASE 和 CALM 已经证明「技能可以压进 latent」—— 但它们的潜空间通常只针对特定任务或较小数据集。' },
-        { at: 1.2, s: '**AMASS 是数万个动作片段**，覆盖人类 99.8% 的日常动作 —— 这才是「通用」该有的量级。' },
-        { at: 5.6, s: '① **覆盖率不足**：之前的 latent skill 难以覆盖人类全谱系动作。' },
-        { at: 6.5, s: '② **规模怎么压**：如何把这么多片段压进一个统一且**可控**的潜空间？' },
-        { at: 7.4, s: '③ **下游要免重训**：高层策略得在不重训底层控制器的前提下直接用这个潜空间。' },
-        { at: 10.4, s: 'PULSE 要的是人形控制的**「基础模型」**：一个 32 维、随便采一个 $z$ 都能跑的通用潜空间。' }
+        { at: 0.3, s: 'ASE 和 CALM 已经证明「技能可以压进 latent」—— 但它们用的是小而专门的数据集（行走、挥剑）。' },
+        { at: 1.2, s: '**AMASS 清洗后训练集 11313 段、测试集 138 段，约 40 小时** —— 论文把 ASE / CALM 也放到 AMASS 上训，覆盖不住。' },
+        { at: 5.6, s: '① **覆盖率不足**：之前的技能潜空间只装得下一小撮动作风格。' },
+        { at: 6.5, s: '② **规模怎么压**：一万多段动作怎么进同一个潜空间，还要能从里面**采样**？' },
+        { at: 7.4, s: '③ **下游要能复用**：换任务只训一个高层策略，低层控制器不动。' },
+        { at: 10.4, s: 'PULSE 要的是人形控制的**「基础模型」**：一个 32 维潜空间，从先验里随便采 $z$ 都动得像人。' }
       ]
     },
     {
@@ -1314,10 +1316,10 @@
       dur: 12,
       build: buildSceneTeacher,
       cues: [
-        { at: 0.3, s: '第一阶段只做一件事：训练一个**高保真运动模仿器**，跟踪 AMASS 里极其多样且无结构的动作。' },
-        { at: 2.8, s: '它是有参考帧的：$\\pi_{teacher}(a_t \\mid s_t, ref_t)$，奖励就是「跟得有多准」（PULSE 直接用训练好的 PHC）。' },
-        { at: 4.4, s: '给它一段动捕，它能跟住 —— 走、跑、转圈、挥手、跌倒爬起都行。' },
-        { at: 7.4, s: '但**「跟得住」不等于「用得上」**：拿掉参考帧，教师不知道该做什么。' },
+        { at: 0.3, s: '第一阶段先训一个**教师**：能跟踪 AMASS 里所有动作。PULSE 用的是 PHC 的改进版 **PHC+**。' },
+        { at: 2.8, s: '每一帧看着下一帧参考动作输出 PD 目标；奖励 = 0.5 跟踪 + 0.5 AMP 判别器 − 能耗（附录式 5）。' },
+        { at: 4.4, s: 'PHC 训练集成功率 98.9%；PHC+ 清掉穿模 / 跳帧的坏数据、改了渐进训练，用 3 个基元 + 组合器做到 **100%**，还会跌倒爬起（表 1）。' },
+        { at: 7.4, s: '但**「跟得住」不等于「用得上」**：拿掉参考动作，教师不知道该做什么。' },
         { at: 8.6, s: '它没有一个可以采样、可以给高层策略当动作空间的**表示**。' },
         { at: 10.0, s: '所以阶段 1 交出的是**能力**，不是表示 —— 把能力变成表示，是阶段 2 的事。' }
       ]
@@ -1327,14 +1329,14 @@
       dur: 16,
       build: buildSceneVib,
       cues: [
-        { at: 0.3, s: '第二阶段用**变分信息瓶颈**把教师的技能蒸馏进一个概率潜空间。' },
-        { at: 0.8, s: '损失有两项：蒸馏项 $\\|a_{student} - a_{teacher}\\|^2$，加上 $\\beta$ 倍的 $\\mathrm{KL}(q(z \\mid s, ref) \\,\\|\\, p(z \\mid s))$。' },
-        { at: 1.4, s: '$\\beta = 0$：后验缩成五个尖峰，蒸馏误差 **' + fmt(S3_V[0].distort, 3) + '** —— 完美复刻，但那只是**把 AMASS 背下来**。' },
-        { at: 2.4, s: '代价是先验采样可用度只有 **' + fmt(S3_V[0].sample, 3) + '**：采到尖峰之间的空隙，解码出来什么都不是。' },
-        { at: 4.0, s: '$\\beta \\approx 0.35$：五段后验刚好连成一片又没糊在一起，采样可用度 **' + fmt(S3_V[1].sample, 3) + '**，蒸馏误差 **' + fmt(S3_V[1].distort, 3) + '**。' },
-        { at: 6.6, s: '$\\beta = 4$：**posterior collapse** —— latent 只记住了 **' + fmt(S3_V[2].a, 3) + '** 的片段信息，后验被压得和先验一模一样。' },
-        { at: 8.0, s: 'KL 降到 **' + fmt(S3_V[2].kl, 3) + '** 了，代价是解码器分不清你给的是「走」还是「跌倒爬起」。' },
-        { at: 12.4, s: '中间那一段才是 PULSE：**「采样 → 连贯动作」和「编码 → 复刻动作」这时候才能同时成立**。' }
+        { at: 0.3, s: '第二阶段用**变分信息瓶颈**把教师在线蒸馏进概率潜空间：编码器 $q(z \\mid s, ref)$ 给出 $z$ 的分布，解码器只看 $s$ 和 $z$ 出动作。' },
+        { at: 0.8, s: '损失三项（式 3）：动作误差 + $\\alpha$ 倍相邻帧平滑项 + $\\beta$ 倍 $\\mathrm{KL}$。去掉平滑项，下游 VR 跟踪成功率 93.4% → 60.8%（表 3）。' },
+        { at: 1.4, s: '玩具模型 $\\beta = 0$：每段动作缩成尖峰，蒸馏误差 **' + fmt(S3_V[0].distort, 3) + '** —— 完美复刻，但那只是**把 AMASS 背下来**。' },
+        { at: 2.4, s: '代价是先验采样可用度只有 **' + fmt(S3_V[0].sample, 3) + '**：采到的 $z$ 多半不在任何一段动作上。' },
+        { at: 4.0, s: '中间一档 $\\beta \\approx 0.35$：五段后验刚好连成一片又没糊在一起，采样可用度 **' + fmt(S3_V[1].sample, 3) + '**，蒸馏误差 **' + fmt(S3_V[1].distort, 3) + '**。' },
+        { at: 6.6, s: '$\\beta = 4$：**posterior collapse** —— latent 只记住了 **' + fmt(S3_V[2].a, 3) + '** 的片段信息，后验被压得和先验几乎一样。' },
+        { at: 8.0, s: 'KL 降到 **' + fmt(S3_V[2].kl, 3) + '** 了，代价是解码器分不清你要的是「走」还是「跌倒爬起」。' },
+        { at: 12.4, s: '论文 $\\beta$ 从 0.01 退火到 0.001；加了瓶颈，训练集成功率 100% → **99.8%**，是有损压缩的代价（表 1、第 6 节）。' }
       ]
     },
     {
@@ -1342,14 +1344,14 @@
       dur: 15,
       build: buildScenePrior,
       cues: [
-        { at: 0.3, s: '光有瓶颈还不够。**固定的 $\\mathcal{N}(0, I)$ 不知道你此刻是站着还是在空中** —— 每个身体状态只有一小片 latent 是做得出来的。' },
-        { at: 2.0, s: '拿「腾空中」这个状态试：从固定先验采 40 个 $z$……' },
-        { at: 4.4, s: '只有 **' + fmt(S4_FIXED.rate * 100, 1) + '%** 是这一步真做得出来的，其余全是**在空中起跳**这种废动作。' },
-        { at: 5.4, s: '而发散是**指数级**的：连滚 ' + S4_H + ' 步还不发散的概率只剩 **' + S4_SURV_FIXED.toExponential(1) + '** —— 几乎必然摔。' },
-        { at: 7.4, s: 'PULSE 学的是 $p(z \\mid s)$：以当前姿态、速度为条件的**本体感受先验**（`ar_prior.py`）。' },
+        { at: 0.3, s: '光有瓶颈还不够。**固定的 $\\mathcal{N}(0, I)$ 不知道你此刻站着还是在空中** —— 论文：站着不动和空中翻跟头，动作分布完全不同。' },
+        { at: 2.0, s: '（玩具模型）拿「腾空中」这个状态试：从固定先验采 40 个 $z$……' },
+        { at: 4.4, s: '只有 **' + fmt(S4_FIXED.rate * 100, 1) + '%** 是这一步真做得出来的，其余都是**在空中起跳**这类做不到的动作。' },
+        { at: 5.4, s: '错误会累积：连滚 ' + S4_H + ' 步都不出错的概率只剩 **' + S4_SURV_FIXED.toExponential(1) + '** —— 几乎必然摔。' },
+        { at: 7.4, s: 'PULSE 学的是 $p(z \\mid s)$：输入当前姿态、速度，输出 $z$ 的均值与方差，和编码器、解码器一起训（`compute_prior()`）。' },
         { at: 9.8, s: '采样中心搬到当前状态的可行区上，单步可行率 **' + fmt(S4_PROP.rate * 100, 1) + '%** —— 长序列这才稳得住。' },
-        { at: 11.6, s: '这也是论文特别强调「长时间序列下依然物理可行」的原因：单步 0.9 看着不错，40 步只剩 1.5%。' },
-        { at: 13.0, s: '**这是 PULSE 相对 ASE 的关键补丁**：ASE 从固定球面均匀采 $z$，默认「任何技能在任何状态都能启动」。' }
+        { at: 11.6, s: '所以论文说从先验随机滚动能生成又长又稳的动作：单步 0.9 看着不错，40 步只剩 1.5%。' },
+        { at: 13.0, s: '**消融对得上**：换成 ASE 式球面潜空间，模仿 100% 但随机采样不连贯（附录 C.3）；去掉可学先验，VR 跟踪 93.4% → 45.6%（表 3）。' }
       ]
     },
     {
@@ -1357,12 +1359,12 @@
       dur: 15,
       build: buildSceneDownstream,
       cues: [
-        { at: 0.3, s: '下游任务把 **Decoder 和先验整个冻结**，高层策略只在 $p(z \\mid s)$ 上输出一个 32 维残差 $\\Delta z$。' },
-        { at: 1.4, s: '同样跑 ' + S5_ITERS + ' 轮：潜空间拿到 **' + fmt(S5_LAT, 2) + '** 分，从零学 69 维关节只有 **' + fmt(S5_RAW, 2) + '** 分。' },
+        { at: 0.3, s: '下游把 **Decoder 和先验整个冻结**，高层输出相对先验均值的 32 维残差 $\\Delta z$，探索方差固定 0.22（式 4）。' },
+        { at: 1.4, s: '（玩具解析式）同样跑 ' + S5_ITERS + ' 轮：潜空间拿到 **' + fmt(S5_LAT, 2) + '** 分，从零学 69 维 PD 目标只有 **' + fmt(S5_RAW, 2) + '** 分。' },
         { at: 4.0, s: '要到 80% 分数，前者约 **' + fmt(S5_TLAT, 0) + ' 轮**，后者约 **' + fmt(S5_TRAW, 0) + ' 轮**。' },
-        { at: 5.6, s: '差了 **' + fmt(S5_TRAW / S5_TLAT, 1) + ' 倍** —— 但维度只从 69 降到 32，**降维本身只省一倍**。' },
-        { at: 7.2, s: '剩下那一大截来自先验：关节空间里随便采一组力矩，角色几乎必然当场倒地，那些 rollout 全是浪费。' },
-        { at: 10.2, s: '残差也不能随便拉大：偏出先验覆盖的那片，分数上去了，动作自然度会掉下来。' },
+        { at: 5.6, s: '差了 **' + fmt(S5_TRAW / S5_TLAT, 1) + ' 倍** —— 维度从 69 降到 32，**只贡献约两倍**。' },
+        { at: 7.2, s: '剩下的来自先验：关节空间加噪声探索常常站不稳。不用残差、直接输出 $z$，VR 跟踪只有 18.1%（表 3）。' },
+        { at: 10.2, s: '论文图 4：速度 / 伸手够点 / 击打 / 复杂地形，PULSE 都最高、收敛更快；从零训练回报最接近，但动作不像人。' },
         { at: 12.4, s: '一句话：**高层学的是「何时用什么技能」，不是「怎么动」**。' }
       ]
     },
@@ -1371,13 +1373,13 @@
       dur: 14,
       build: buildSceneLoop,
       cues: [
-        { at: 0.3, s: '官方仓库 `ZhengyiLuo/PULSE` 基于 PHC / IsaacGym 栈，三个阶段统一入口都是 `phc/run_hydra.py`。' },
-        { at: 0.8, s: '阶段 1 直接复用训练好的 PHC 教师：`env.models=[phc_3, phc_comp_3]`，对应 `humanoid_im.py`。' },
-        { at: 3.2, s: '阶段 2 `env.task=HumanoidImDistillGetup`：`humanoid_im_distill.py` 出蒸馏损失，`ar_prior.py` 同步学先验。' },
-        { at: 3.6, s: '蒸馏是 DAgger 式的在线过程：学生滚出新状态，同一状态再问教师要动作。' },
-        { at: 5.6, s: '阶段 3 `env.task=HumanoidSpeedZ`：`amp_network_z_builder.py` 搭 32 维 $z$ 的 actor-critic，配置在 `pulse_z_task.yaml`。' },
-        { at: 6.4, s: 'PPO **只更新高层**，物理可行性由冻结的 Decoder 保底。' },
-        { at: 11.2, s: '**PULSE = 大规模模仿 + VIB 瓶颈 + 本体感受先验** —— 把「会动」压成一个可采样的表示。' }
+        { at: 0.3, s: '官方仓库 `ZhengyiLuo/PULSE` 基于 PHC / IsaacGym 栈，命令入口都是 `phc/run_hydra.py`。' },
+        { at: 0.8, s: '阶段 1 的 PHC+ 是 3 个基元 + 组合器，蒸馏命令里用 `env.models=[phc_3, phc_comp_3]` 加载成教师。' },
+        { at: 3.2, s: '阶段 2 `env.task=HumanoidImDistillGetup`：编码器、解码器、先验一起训，损失在 `amp_agent.py` 的 `_optimize_kin()`。' },
+        { at: 3.6, s: 'DAgger 式在线蒸馏：学生滚出新状态，同一状态再问教师要动作；再混进 RL 目标反而 93.4% → 71.0%（表 3）。' },
+        { at: 5.6, s: '阶段 3 `env.task=HumanoidSpeedZ learning=pulse_z_task`：`humanoid_z.py` 里先验均值 + 高层残差，再交给冻结的 Decoder。' },
+        { at: 6.4, s: 'PPO **只更新高层**，动作像不像人由冻结的 Decoder 和先验兜底。' },
+        { at: 11.2, s: '**PULSE = PHC+ 大规模模仿 + VIB 瓶颈 + 本体感受先验** —— 把「会动」压成一个可采样的表示。' }
       ]
     }
   ];
@@ -1391,7 +1393,7 @@
         '取数依据：第三幕三列的蒸馏误差 / 采样可用度 / 保留的片段信息，由下面 VIB 实验台的同一个 `vib()` 在 $\\beta = 0 / 0.35 / 4$ 上现算（就是那三个预设按钮）；' +
           '第四幕的可行率与存活率来自同一个 `feasibleRate()`（状态 = 腾空中，seed = 4，40 次采样）；' +
           '第五幕的学习曲线与「到 80% 分数要多少轮」来自同一组 `dsCurve()` / `dsIters()`（残差 0.6、任务难度 1）。',
-        '第六幕的命令与文件路径来自笔记「PULSE 官方源码对照」与仓库 README：`humanoid_im.py` / `humanoid_im_distill.py` / `ar_prior.py` / `amp_network_z_builder.py` / `pulse_z_task.yaml`。',
+        '第六幕的命令与文件路径来自官方仓库 README 与源码：`humanoid_im.py` / `humanoid_im_distill.py` / `amp_agent.py`（`_optimize_kin()` 里的蒸馏损失与 $\\beta$ 退火）/ `amp_network_z_builder.py`（`compute_prior()`）/ `humanoid_z.py`（先验均值 + 残差）。论文数字出自 arXiv 2310.04582 的表 1 / 3、图 4、式 3 / 4 与附录 C。',
         '**这几幕里的玩具模型和下面三个演示同源**：latent 画成 1 维（第三幕）或 2 维平面（第四幕），可行区是一个圆，学习曲线是一条指数收敛的解析式。' +
           '定性结论（$\\beta$ 太小是查找表、太大是 collapse、固定先验在长序列上指数发散、下游省的主要不是维度）成立，**具体数值不能和论文直接比**。'
       ],
