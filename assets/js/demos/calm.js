@@ -7,11 +7,12 @@
  * <script>/<canvas>/<input> from #paper-body before publish.
  *
  * Demos:
- *   calm-explainer — 五幕讲解动画：ASE 缺方向 → LLC 编 latent → HLC 方向奖励 →
+ *   calm-explainer — 五幕讲解动画：ASE 缺什么 → LLC 编 latent → HLC 方向 + 风格 →
  *                    FSM 零训练组合 → 三阶段训练闭环
  *   calm-video     — 同样五幕的配音竖屏视频（可下载）
  *   calm-encoder   — z = E(motion clip)：latent 有名字了，这才有后面的免训练组合
- *   calm-hlc       — 方向奖励 r_dir = cos(z_target, z_t)：把高层策略关进一个锥里
+ *   calm-hlc       — 风格项（论文式 8 的 exp(-4|z_t - z_target|^2)，官方代码用余弦）：
+ *                    不让高层为了任务奖励换掉要求的动作
  *   calm-fsm       — 推理期 FSM：换的只是 z 的来源，三段技能零训练拼起来
  */
 
@@ -331,13 +332,14 @@
     render();
   }
 
-  // ─── demo 2: 方向奖励把 HLC 关进一个锥里 ─────────────────────────────────
+  // ─── demo 2: 风格项把 HLC 留在目标动作附近 ───────────────────────────────
   function buildHlcDemo(host) {
     var root = card(host, {
-      title: '方向奖励 $\\cos(z_{target}, z)$：不让高层策略「为了赢不择手段」',
+      title: '风格项：不让高层策略「为了赢不择手段」',
       sub:
-        'HLC 只输出 latent，不输出动作。如果只给任务奖励，它会挑一切能更快到达目标的 latent —— ' +
-        '包括那些看起来很怪的。加上 $\\cos$ 这一项，它就被限制在目标技能附近的一个锥里。'
+        'HLC 只输出 latent，不输出动作。论文式 (8) 的奖励是「方向项 + $\\exp(-4\\lVert z_t - z_{target} \\rVert^2)$」，' +
+        '官方代码把后一项写成 $(\\cos + 1)/2$。如果只给任务奖励，它会挑一切能更快完成任务的 latent；' +
+        '加上风格项，它就只在要求的动作附近挑。下面的玩具模型风格项直接用 $\\cos$。'
     });
 
     var state = { wTask: 1.0, wDir: 1.0, target: 'crouch', seed: 3 };
@@ -358,7 +360,7 @@
       }
     });
     slider(ctrls, {
-      label: '方向奖励权重 $\\cos(z_{target}, z)$',
+      label: '风格项权重 $\\cos(z_{target}, z)$',
       min: 0,
       max: 2,
       step: 0.05,
@@ -384,11 +386,11 @@
     });
     var btns = el('div', 'demo-control demo-buttons');
     ctrls.appendChild(btns);
-    button(btns, '只要任务奖励（去掉 cos）', function () {
+    button(btns, '只要任务奖励（去掉风格项）', function () {
       state.wDir = 0;
       render();
     });
-    button(btns, '只要方向奖励', function () {
+    button(btns, '只要风格项', function () {
       state.wTask = 0;
       render();
     });
@@ -411,14 +413,15 @@
     var verdict = verdictBox(root);
 
     note(root, [
-      '**HLC 的动作空间就是 latent 空间**：它一秒钟只需要吐一个几十维的 z，' +
-        '底下 28 个关节该怎么动完全交给 LLC。这是分层最实在的好处 —— 高层的搜索空间小了好几个数量级。',
-      '**$\\cos$ 这一项是「风格合同」**：任务奖励只在乎「有没有走到」，它会毫不犹豫地选一个跑得最快的 latent，' +
-        '哪怕这一段本来要求蹲着走。$\\cos$ 把选择限制在 $z_{target}$ 周围的锥内，风格才守得住。',
-      '**两边权重是个取舍**：$\\cos$ 权重拉满，HLC 就只会照抄 $z_{target}$，任务完成得再差也不改 —— ' +
-        '那还要高层干什么？拖动两个滑块看这条边界在哪里。',
-      '**这是简化模型**：真实的任务奖励是走向目标的速度投影，latent 也是高维的。' +
-        '这里把「任务最偏好的方向」写死成一个固定角度，只为把两项奖励的拉锯画出来，数值不能和论文比。'
+      '**HLC 的动作空间就是 latent 空间**：它每秒输出 6 个 64 维的 $z$（维度比 31 维的关节 PD 目标还高），' +
+        '关节怎么动完全交给每秒 30 次的 LLC。分层省事不在维度，而在决策频率更低、任何 $z$ 都被 LLC 解成像动捕的动作（论文第 6 节）。',
+      '**风格项是「风格合同」**：任务奖励只在乎「有没有完成」，它会毫不犹豫地选一个跑得最快的 latent，' +
+        '哪怕这一段本来要求蹲着走（论文附录 E.3.3：不加风格约束的 Location 任务，高层学出来的就是跑）。风格项把选择留在 $z_{target}$ 附近，风格才守得住。',
+      '**两边权重是个取舍**：风格项权重拉满，HLC 就只会照抄 $z_{target}$，任务完成得再差也不改 —— ' +
+        '那还要高层干什么？论文第 10 节也说，要同时做到「动作对、方向对」，奖励参数得仔细调。拖动两个滑块看这条边界在哪里。',
+      '**这是简化模型**：真实的任务项看的是实际移动方向与目标方向（官方代码还看速度），latent 也是 64 维的；' +
+        '绿色扇形（$\\cos \\ge 0.8$）只是示意，奖励里没有硬边界。' +
+        '这里把「任务最偏好的方向」写死成一个固定角度、风格项用 $\\cos$，只为把两项奖励的拉锯画出来，数值不能和论文比。'
     ]);
 
     var render = registerRenderer(function () {
@@ -454,7 +457,7 @@
 
       if (state.wDir < 0.05) {
         verdict.set(
-          '⚠️ 方向奖励关掉了：HLC 直接挑了任务奖励最高的 latent（「' +
+          '⚠️ 风格项关掉了：HLC 直接挑了任务奖励最高的 latent（「' +
             hit.skill.name +
             '」），$\\cos(z_{target}, z)$ 只有 ' +
             fmt(cosV, 2) +
@@ -541,8 +544,8 @@
       line(g2.ctx, [[p2.sx(pickDeg), p2.y0], [p2.sx(pickDeg), p2.y1]], P2.text, 1, [3, 3]);
       dot(g2.ctx, p2.sx(pickDeg), p2.sy(bestV), 4.5, P2.accent, P2.surface2);
 
-      circleStage.canvas.setAttribute('aria-label', 'latent 空间中方向奖励允许的锥形区域');
-      rewardStage.canvas.setAttribute('aria-label', '任务奖励与方向奖励随 latent 方向变化的曲线');
+      circleStage.canvas.setAttribute('aria-label', 'latent 空间中风格项得分高的扇形区域');
+      rewardStage.canvas.setAttribute('aria-label', '任务奖励与风格项随 latent 方向变化的曲线');
     });
 
     render();
@@ -696,13 +699,13 @@
 
     note(root, [
       '**FSM 只负责「什么时候换 $z$」**：它不生成动作、不做插值、也不知道关节长什么样。' +
-        '动作质量全部由 LLC 和它背后的判别器保证 —— 所以状态切换那一瞬间不会出现穿模或者抖动。',
+        '动作由 LLC 生成；LLC 训练时就在随机时刻换过条件动作（论文 5.1.2 节），所以 $z$ 跳变时它学过怎么过渡。',
       '**把攻击范围拖大**：角色还没走近就切进 STRIKE，会看到它在原地对空气挥剑。' +
         '这暴露了 FSM 的真实代价：**切换逻辑是人写的，写错了没有任何机制会纠正它**。',
       '**这也是 CALM 和后来工作的分界**：FSM 能组合，但组合规则要人来定；' +
         'PULSE 那一代开始把「什么时候用哪个技能」也交给下游 RL 去学。',
-      '**这是简化模型**：真实的 HumanoidStrikeFSM 跑在 Isaac Gym 里，切换条件还包括目标是否倒下等。' +
-        '这里只复现「状态 → $z$ 的来源 → 同一个 LLC」这条链路，数值不能和论文比。'
+      '**这是简化模型**：真实的 HumanoidStrikeFSM 跑在 Isaac Gym 里，攻击距离阈值按攻击种类与步态分别设定，目标倾倒后切到待机动作；' +
+        '这里按论文图 1 的例子（距离 < 1 m 踢、之后庆祝）只复现「状态 → $z$ 的来源 → 同一个 LLC」这条链路，数值不能和论文比。'
     ]);
 
     var render = registerRenderer(function () {
@@ -827,6 +830,7 @@
   var svgEl = K.svgEl,
     svgText = K.svgText,
     svgMath = K.svgMath,
+    svgRich = K.svgRich,
     paint = K.paint,
     seg = K.seg,
     ease = K.ease,
@@ -873,16 +877,19 @@
     return { angle: pick, total: bestV, cos: Math.cos(pick - tgtAngle), task: hlcTaskR(pick) };
   }
 
-  /* ── scene 1: ASE 有技能，但没有方向 ── */
+  /* ── scene 1: ASE 有技能，但点不了名、管不了方向 ──
+     「低层能被指示去走，却不能直观地控制往哪走」是论文第 4 节的原话（说的是 CALM 自己的低层，
+     ASE 的低层同样如此）；「给一段动捕找不到它的 z」是论文 2.2 节对 ASE 的批评；
+     「每个任务单独训、重挑数据」是 2.1 节对 AMP 式 direct prediction 的批评。 */
   function buildSceneProblem() {
     var s = sceneSvg(
-      'ASE 的 latent 能调出「走 / 蹲 / 踢」，但两个方向都没有「往哪走」的信息；' +
-        '下游任务却必须知道朝哪个目标点执行'
+      '低层策略的 z 只决定做什么，不管往哪走；ASE 还没法把一段动捕对应到 z；' +
+        '下游任务却既要指定动作、又要指定方向'
     );
-    s.appendChild(svgText(60, 32, 'ASE 之后：技能有了，方向还没有', 'demo-x-ink2', 13.5));
+    s.appendChild(svgText(60, 32, 'ASE 之后：技能有了，可点不了名，也管不了方向', 'demo-x-ink2', 13.5));
 
     s.appendChild(paint(svgEl('rect', { x: 40, y: 54, width: 340, height: 250, rx: 8, 'stroke-width': 1 }), C_SURFACE2, C_BORDER));
-    s.appendChild(svgMath(210, 78, '\\text{ASE：} z \\text{ 编码「做什么技能」}',
+    s.appendChild(svgMath(210, 78, '\\text{低层 } \\pi(a \\mid s, z)\\text{：} z \\text{ 只管「做什么」}',
       { size: 12, anchor: 'middle', cls: 'demo-x-ink2', w: 300 }));
     var cx = 210,
       cy = 188,
@@ -899,11 +906,13 @@
       s.appendChild(g);
       return { g: g, at: 1.0 + i * 0.8 };
     });
-    var qMark = svgText(210, 268, '❓ 往左？往右？朝目标？—— latent 里都没有', 'demo-x-bad', 11, 'middle');
+    var qMark = svgText(210, 270, '❓ 给「走」的 z 就只会走：往哪走，低层不管', 'demo-x-bad', 11, 'middle');
     s.appendChild(qMark);
+    var nameMark = svgText(210, 292, '而且 ASE：给一段动捕，找不到它对应的 z', 'demo-x-warn', 10.5, 'middle');
+    s.appendChild(nameMark);
 
     s.appendChild(paint(svgEl('rect', { x: 410, y: 54, width: 350, height: 250, rx: 8, 'stroke-width': 1 }), C_SURFACE2, C_BORDER));
-    s.appendChild(svgText(585, 78, '任务却需要「往哪做」', 'demo-x-ink2', 12, 'middle'));
+    s.appendChild(svgText(585, 78, '任务要的是「什么动作 + 往哪走」', 'demo-x-ink2', 12, 'middle'));
     var tasks = S1_TASKS.map(function (name, i) {
       var y = 108 + i * 44;
       var g = svgEl('g', {});
@@ -916,18 +925,19 @@
 
     var chip = svgEl('g', {});
     chip.appendChild(paint(svgEl('rect', { x: 90, y: 318, width: 620, height: 30, rx: 15, 'stroke-width': 1, 'stroke-dasharray': '5 4' }), C_SURFACE, C_MUTED));
-    chip.appendChild(svgText(400, 337, '传统做法：把目标信息塞进低层 → 每个新任务都得重训 LLC', 'demo-x-mut', 10.5, 'middle'));
+    chip.appendChild(svgText(400, 337, 'AMP 式做法：每个任务单独训一个策略、挑一份数据 → 换任务就从头再训', 'demo-x-mut', 10.5, 'middle'));
     s.appendChild(chip);
 
     var foot = svgEl('g', {});
-    foot.appendChild(paint(svgText(400, 378, 'CALM 的洞察：方向不必写进 latent，而是在 latent 空间里「选一个方向」', null, 15, 'middle'), C_ACCENT));
-    foot.appendChild(svgText(400, 402, '低层管质量，高层管方向 —— 各司其职', 'demo-x-mut', 11.5, 'middle'));
+    foot.appendChild(paint(svgText(400, 378, 'CALM：z 由动捕编码、可以点名；高层在目标 z 附近微调来定方向', null, 15, 'middle'), C_ACCENT));
+    foot.appendChild(svgText(400, 402, '做什么 → 点名 z；往哪走 → 高层每秒 6 次微调 z；何时换动作 → 状态机', 'demo-x-mut', 11.5, 'middle'));
     s.appendChild(foot);
 
     function draw(t) {
       zNodes.forEach(function (n) { setOpacity(n.g, seg(t, n.at, n.at + 0.45)); });
       setOpacity(qMark, seg(t, 2.6, 3.2));
       tasks.forEach(function (k) { setOpacity(k.g, seg(t, k.at, k.at + 0.45)); });
+      setOpacity(nameMark, seg(t, 5.0, 5.6));
       setOpacity(chip, seg(t, 6.2, 7.0));
       setOpacity(foot, seg(t, 9.8, 10.8));
     }
@@ -935,15 +945,18 @@
     return { el: s, draw: draw };
   }
 
-  /* ── scene 2: LLC —— latent 从动捕编出来 ── */
+  /* ── scene 2: LLC —— latent 从动捕编出来 ──
+     论文式 (2)–(4)、(7)、5.1.1–5.1.3 与附录 A.2–A.3：E 吃 2 秒（30 Hz 下 60 帧）片段、输出投到
+     64 维单位球；条件判别器看 (s, s') 与 z，真实动捕配错的 z 也算负样本；判别器的梯度不进 encoder，
+     encoder 只吃策略梯度 + 对齐 / 均匀正则（式 5–6）。表 1：人评可控性 ASE 35% → CALM 78%。 */
   function buildSceneLlc() {
     var s = sceneSvg(
-      'CALM 的 encoder 把每段动捕编到 latent 空间的一块区域；给定 z 就能点名技能，' +
+      'CALM 的 encoder 把每段 2 秒动捕编到 latent 空间的一块区域；条件判别器保证给定 z 就复现那段动捕，' +
         '这和 ASE 从球面随机采 z 完全不同'
     );
     s.appendChild(svgMath(60, 32, '\\text{第一层 LLC：} z = E(\\text{动捕片段}) \\text{，动作质量交给对抗模仿}',
       { size: 13, cls: 'demo-x-ink2', w: 520 }));
-    var formula = svgMath(400, 62, 'E(m) \\to z, \\qquad a_t \\sim \\pi_{LLC}(a_t \\mid s_t, z)',
+    var formula = svgMath(400, 62, 'a_t \\sim \\pi_{LLC}(a_t \\mid s_t, z), \\qquad r_t = -\\log\\big(1 - D(s_t, s_{t+1} \\mid z)\\big)',
       { size: 13, anchor: 'middle', cls: 'demo-x-ink2', w: 620 });
     s.appendChild(formula);
 
@@ -952,7 +965,8 @@
       R = 78;
     var ring = svgEl('g', {});
     ring.appendChild(paint(svgEl('circle', { cx: CX, cy: CY, r: R, fill: 'none', 'stroke-width': 1.2 }), null, C_BORDER));
-    ring.appendChild(svgText(CX, 132, 'latent 空间（2D 示意）', 'demo-x-mut', 10.5, 'middle'));
+    /* 标签放在「蹲走」那簇的标签（y≈142）上方留出一行，否则两行字贴在一起。 */
+    ring.appendChild(svgText(CX, 116, '64 维单位球（压成 2D 示意）', 'demo-x-mut', 10.5, 'middle'));
     s.appendChild(ring);
 
     var rng = mulberry32(11);
@@ -971,26 +985,29 @@
     });
 
     var clipBox = svgEl('g', {});
-    clipBox.appendChild(paint(svgEl('rect', { x: 430, y: 118, width: 310, height: 52, rx: 8, 'stroke-width': 1.2 }), C_SURFACE2, C_GOOD));
-    clipBox.appendChild(svgText(448, 140, '动捕：走 / 蹲 / 踢 / 庆祝', 'demo-x-ink2', 11.5));
-    clipBox.appendChild(svgMath(710, 140, 'E(m) \\to z', { size: 12, anchor: 'end', w: 140 }).setTone(C_GOOD));
+    clipBox.appendChild(paint(svgEl('rect', { x: 430, y: 118, width: 310, height: 58, rx: 8, 'stroke-width': 1.2 }), C_SURFACE2, C_GOOD));
+    clipBox.appendChild(svgText(448, 140, '动捕片段 M：2 秒 / 60 帧', 'demo-x-ink2', 11.5));
+    clipBox.appendChild(svgMath(722, 140, 'E(M) \\to z', { size: 12, anchor: 'end', w: 90 }).setTone(C_GOOD));
+    clipBox.appendChild(svgText(448, 163, '不吃判别器梯度：策略梯度 + 对齐 / 均匀两条正则', 'demo-x-mut', 10));
     /* 「动捕经 E 编码，落进 latent 空间」这一箭：走圆右侧 y=190 的空当（在「走」
        标签上方），带箭头停在圆边上。之前这条线拐进圆心竖着穿过整个 latent 圆、
        又在圆外下方收尾，看着像在指「庆祝」那一簇，而不是指 latent 空间。 */
     clipBox.appendChild(paint(svgEl('path', {
-      d: 'M 585 170 L 585 190 L ' + (CX + R - 4) + ' 190',
+      d: 'M 585 176 L 585 194 L ' + (CX + R - 4) + ' 194',
       fill: 'none', 'stroke-width': 1.6, 'stroke-dasharray': '5 4',
       'marker-end': K.arrowMarker(s, 'calm-x-arrow-clip', C_GOOD)
     }), null, C_GOOD));
     s.appendChild(clipBox);
 
     var aseBox = svgEl('g', {});
-    aseBox.appendChild(paint(svgEl('rect', { x: 430, y: 248, width: 310, height: 88, rx: 8, 'stroke-width': 1, 'stroke-dasharray': '4 3' }), C_SURFACE, C_MUTED));
-    aseBox.appendChild(svgMath(448, 272, '\\text{对比 ASE：} z \\sim \\text{Uniform}(S^{d})',
+    aseBox.appendChild(paint(svgEl('rect', { x: 430, y: 240, width: 310, height: 112, rx: 8, 'stroke-width': 1, 'stroke-dasharray': '4 3' }), C_SURFACE, C_MUTED));
+    aseBox.appendChild(svgMath(448, 264, '\\text{对比 ASE：} z \\sim \\text{Uniform}(S^{d})',
       { size: 11.5, cls: 'demo-x-mut', w: 282 }));
-    aseBox.appendChild(svgMath(448, 296, '\\text{随机采到的 } z \\text{ 没有「这是踢腿」的标签}',
+    aseBox.appendChild(svgMath(448, 288, '\\text{随机采到的 } z \\text{ 没有「这是踢腿」的标签}',
       { size: 11, cls: 'demo-x-mut', w: 282 }));
-    aseBox.appendChild(svgMath(448, 318, '\\text{CALM 可以直接写 } E(\\text{踢腿动作}) \\text{ 拿到踢的 latent}',
+    aseBox.appendChild(svgMath(448, 310, '\\text{CALM 可以直接写 } E(\\text{踢腿动作}) \\text{ 拿到踢的 latent}',
+      { size: 11, cls: 'demo-x-good', w: 282 }));
+    aseBox.appendChild(svgMath(448, 336, '\\text{表 1：按参考动作生成，人评可控性 } 35\\% \\to 78\\%',
       { size: 11, cls: 'demo-x-good', w: 282 }));
     s.appendChild(aseBox);
 
@@ -1009,7 +1026,11 @@
     return { el: s, draw: draw };
   }
 
-  /* ── scene 3: HLC —— 方向奖励 cos(z_target, z) ── */
+  /* ── scene 3: HLC —— 方向项 + 风格项 ──
+     论文 6.1 节「精确训练」式 (8)：r = exp(-0.25 |d* - v/|v||^2) + exp(-4 |z_t - ẑ|^2)，前一项管方向、
+     后一项管风格；官方 hrl_agent.py 的风格项是 max (cos + 1) / 2，与任务奖励各占 0.5
+     （hrl_humanoid_style_control.yaml），高层每输出一个 z 低层走 5 步（6 Hz / 30 Hz）。
+     玩具模型的风格项直接用 cos、两项权重都取 1；绿色扇形只是示意，奖励里没有硬边界。 */
   var S3_TGT = SKILLS[1].angle;
   var S3_W_TASK = 1.0;
   var S3_W_DIR = 1.0;
@@ -1024,12 +1045,15 @@
 
   function buildSceneHlc() {
     var s = sceneSvg(
-      'HLC 只输出 latent；方向奖励 r_dir = cos(z_target, z_t) 把选择限制在目标风格附近的锥里'
+      'HLC 只输出 latent；奖励 = 方向项 + 风格项，风格项让选出的 z 留在目标动作的编码附近'
     );
-    s.appendChild(svgText(60, 32, '第二层 HLC：在 latent 空间里选方向来完成任务', 'demo-x-ink2', 13.5));
-    var formula = svgMath(400, 62, 'z_t = \\text{HLC}(s_t, \\text{goal}), \\qquad r_{dir} = \\cos(z_{target}, z_t)',
+    s.appendChild(svgText(60, 32, '第二层 HLC：每秒挑 6 次 z，既走对方向又守住风格', 'demo-x-ink2', 13.5));
+    var formula = svgMath(400, 62, 'z_t = \\text{HLC}(s_t, d^*, z_{target}), \\qquad r_t = r_{\\text{方向}} + \\exp\\big(-4 \\lVert z_t - z_{target} \\rVert^2\\big)',
       { size: 12.5, anchor: 'middle', cls: 'demo-x-ink2', w: 660 });
     s.appendChild(formula);
+    var formulaNote = svgRich(400, 86, '论文式 (8)；官方代码的风格项是 $(\\cos + 1)/2$，与任务奖励各占 0.5；下面的玩具模型风格项直接用 $\\cos$',
+      { size: 10, anchor: 'middle', cls: 'demo-x-mut', w: 680 });
+    s.appendChild(formulaNote);
 
     var geom = svgEl('g', {});
     geom.appendChild(paint(svgEl('circle', { cx: S3_CX, cy: S3_CY, r: S3_R, fill: 'none', 'stroke-width': 1.2 }), null, C_BORDER));
@@ -1053,8 +1077,8 @@
     geom.appendChild(tgtArm);
     geom.appendChild(pickArm);
     geom.appendChild(pickDot);
-    geom.appendChild(svgMath(S3_CX, 124, '\\text{允许锥：} \\cos \\ge 0.8',
-      { size: 10.5, anchor: 'middle', cls: 'demo-x-mut', w: 200 }));
+    geom.appendChild(svgMath(S3_CX, 124, '\\text{示意：} \\cos \\ge 0.8 \\text{（无硬边界）}',
+      { size: 10.5, anchor: 'middle', cls: 'demo-x-mut', w: 240 }));
     /* 圆里只有两条线和一个扇形，谁是谁必须写出来：绿虚线 = 目标风格，蓝实线 =
        HLC 这一步选的 latent。没有这两个标注，读者只能靠下面的读数反推。 */
     geom.appendChild(svgMath(194, 148, 'z_{target}\\text{：' + skillByAngle(S3_TGT).skill.name + '}',
@@ -1067,7 +1091,7 @@
     var readouts = [
       { cx: 130, label: 'HLC 选中', sub: skillByAngle(S3_BEST.angle).skill.name },
       { cx: 310, tex: '\\cos(z_{target}, z)', label: 'cos(z_target, z)', sub: fmt(S3_BEST.cos, 3) },
-      { cx: 490, label: '任务奖励', sub: fmt(S3_BEST.task, 3) },
+      { cx: 490, label: '任务奖励（玩具）', sub: fmt(S3_BEST.task, 3) },
       { cx: 670, label: '总奖励', sub: fmt(S3_BEST.total, 3) }
     ].map(function (r) {
       var g = svgEl('g', {});
@@ -1081,18 +1105,20 @@
     });
 
     var warn = svgEl('g', {});
-    warn.appendChild(paint(svgEl('rect', { x: 430, y: 118, width: 330, height: 72, rx: 8, 'stroke-width': 1, 'stroke-dasharray': '4 3' }), C_SURFACE, C_WARN));
+    warn.appendChild(paint(svgEl('rect', { x: 430, y: 118, width: 330, height: 100, rx: 8, 'stroke-width': 1, 'stroke-dasharray': '4 3' }), C_SURFACE, C_WARN));
     warn.appendChild(svgText(448, 142, '只有任务奖励时：HLC 会挑跑得最快的 latent', 'demo-x-warn', 11.5));
     warn.appendChild(svgText(448, 164, '哪怕这一段要求的是「蹲走」—— 风格约束没了', 'demo-x-warn', 11));
-    warn.appendChild(svgMath(448, 182, 'r_{dir} \\text{ 权重拖到 } 0 \\Rightarrow \\cos = ' + fmt(hlcBestPick(S3_TGT, 1, 0).cos, 2),
+    warn.appendChild(svgMath(448, 184, '\\text{风格项权重拖到 } 0 \\Rightarrow \\cos = ' + fmt(hlcBestPick(S3_TGT, 1, 0).cos, 2),
       { size: 11, w: 300 }).setTone(C_BAD));
+    warn.appendChild(svgText(448, 206, '论文附录 E.3.3：不加风格约束，高层学出来的就是跑', 'demo-x-mut', 10.5));
     s.appendChild(warn);
 
-    var foot = paint(svgText(400, 396, 'HLC 的动作空间就是 latent 空间 —— 搜索空间比直接控关节小几个数量级', null, 14.5, 'middle'), C_ACCENT);
+    var foot = paint(svgText(400, 396, 'z 有 64 维、比 31 维关节动作还多 —— 省事在每秒只挑 6 次，且任何 z 都解成自然动作', null, 14.5, 'middle'), C_ACCENT);
     s.appendChild(foot);
 
     function draw(t) {
       setOpacity(formula, seg(t, 0.3, 0.9));
+      setOpacity(formulaNote, seg(t, 0.8, 1.4));
       setOpacity(geom, seg(t, 0.8, 1.4));
       var ang = S3_BEST.angle;
       var tp = s3Place(S3_TGT);
@@ -1112,7 +1138,11 @@
     return { el: s, draw: draw };
   }
 
-  /* ── scene 4: FSM —— 换的只是 z 的来源 ── */
+  /* ── scene 4: FSM —— 换的只是 z 的来源 ──
+     论文 6.2 节与 8.2.2 节：需要定向的阶段，FSM 把要求的动作编码和指向目标的方向（角色局部系）
+     交给 HLC；孤立动作（踢、挥剑）直接把编码交给 LLC。图 1 的例子是「蹲走到距离 < 1 m → 踢 →
+     举手庆祝」；官方 humanoid_strike_fsm.py 按攻击种类设距离阈值，目标倾倒后切到待机动作。
+     过渡之所以不崩，是因为 LLC 训练时就在随机时刻换过条件动作（5.1.2 节）。 */
   /* 与下面 FSM 实验台的默认参数完全一致（那边也是 steps: 200）：120 步只够走完
      WALK，STRIKE 才刚起头、CHEER 根本没出现，时间线就讲不出「跳变」这件事。 */
   var S4_FRAMES = simulateFSM({
@@ -1135,7 +1165,7 @@
     s.appendChild(svgText(60, 32, '第三层 FSM：三段技能拼起来，一次训练都不用加', 'demo-x-ink2', 13.5));
 
     var stateSpecs = [
-      { x: 140, name: 'WALK', tex: '\\text{HLC} \\to z_t', color: C_ACCENT },
+      { x: 140, name: 'WALK', tex: '\\text{HLC}(d^*, \\text{蹲走}) \\to z_t', color: C_ACCENT },
       { x: 400, name: 'STRIKE', tex: 'E(\\text{攻击})', color: C_BAD },
       { x: 660, name: 'CHEER', tex: 'E(\\text{庆祝})', color: C_WARN }
     ];
@@ -1194,7 +1224,7 @@
 
     var chip = svgEl('g', {});
     chip.appendChild(paint(svgEl('rect', { x: 120, y: 334, width: 560, height: 30, rx: 15, 'stroke-width': 1 }), C_SURFACE, C_GOOD));
-    chip.appendChild(paint(svgText(400, 353, '状态切换条件（距离、目标是否倒下）是人写的；动作质量全部由 LLC 保证', null, 11, 'middle'), C_GOOD));
+    chip.appendChild(paint(svgText(400, 353, '切换条件（距离、目标是否倒下）是人写的；过渡靠 LLC 训练时在随机时刻换过 z', null, 11, 'middle'), C_GOOD));
     s.appendChild(chip);
 
     var foot = paint(svgText(400, 396, '走 → 攻击 → 庆祝：整条序列跑完，新增训练量 = 0', null, 15, 'middle'), C_ACCENT);
@@ -1220,19 +1250,19 @@
     {
       title: '阶段一：训练 LLC',
       cmd: 'HumanoidAMPGetup',
-      detailTex: '\\text{Encoder } E + \\pi_{LLC} + \\text{条件判别器 } D(s, s\' \\| z)',
+      detailTex: '\\text{Encoder } E + \\pi_{LLC} + \\text{条件判别器 } D(s, s\' \\mid z) \\text{，同一个 loss 一起更新}',
       color: C_ACCENT
     },
     {
       title: '阶段二：训练 HLC',
       cmd: 'HumanoidHeadingConditioned',
-      detailTex: '\\text{冻结 LLC，PPO 只更新 HLC；奖励含 } \\cos(\\hat{z}, z_{target})',
+      detailTex: '\\text{冻结 LLC，PPO 只更新 HLC；奖励 } 0.5\\, r_{task} + 0.5\\, (\\cos + 1)/2',
       color: C_GOOD
     },
     {
       title: '阶段三：FSM 推理',
       cmd: 'HumanoidStrikeFSM --test',
-      detailTex: '\\texttt{FSMScheduler} \\text{ 调度 } z \\text{ 来源，零训练}',
+      detailTex: '\\text{按距离 / 目标是否倒下切状态；进攻击距离就用 } E(\\text{攻击}) \\text{ 换掉 HLC 的输出}',
       color: C_WARN
     }
   ];
@@ -1244,7 +1274,7 @@
     var phaseArrow = K.arrowMarker(s, 'calm-x-arrow-phase', C_MUTED);
     var cards = S5_PHASES.map(function (ph, i) {
       /* 三张卡 + 冻结说明 + 落款要挤进 420 的画布：卡高 80、间距 96，
-         第三张卡到 324 结束，下面的冻结说明（338 起）才不会压在它身上。 */
+         第三张卡到 324 结束，下面的冻结说明（332 起）才不会压在它身上，也和落款留出一点空。 */
       var y = 52 + i * 96;
       var g = svgEl('g', {});
       g.appendChild(paint(svgEl('rect', { x: 60, y: y, width: 680, height: 80, rx: 10, 'stroke-width': 1.6 }), C_SURFACE2, ph.color));
@@ -1263,14 +1293,14 @@
     });
 
     var freeze = svgEl('g', {});
-    freeze.appendChild(paint(svgEl('rect', { x: 120, y: 338, width: 560, height: 30, rx: 15, 'stroke-width': 1, 'stroke-dasharray': '5 4' }), C_SURFACE, C_GOOD));
-    freeze.appendChild(svgMath(400, 357,
+    freeze.appendChild(paint(svgEl('rect', { x: 120, y: 332, width: 560, height: 30, rx: 15, 'stroke-width': 1, 'stroke-dasharray': '5 4' }), C_SURFACE, C_GOOD));
+    freeze.appendChild(svgMath(400, 351,
       '\\text{阶段二起 LLC / Encoder 冻结 —— HLC 学的是「选哪个 } z \\text{」，不是关节怎么动}',
       { size: 11, anchor: 'middle', w: 540 }).setTone(C_GOOD));
     s.appendChild(freeze);
 
     var foot = svgEl('g', {});
-    foot.appendChild(paint(svgText(400, 384, 'CALM = ASE 的技能 latent + 方向舵 + FSM 组合', null, 15.5, 'middle'), C_ACCENT));
+    foot.appendChild(paint(svgText(400, 384, 'CALM = 能点名的技能 latent + 高层方向舵 + FSM 组合', null, 15.5, 'middle'), C_ACCENT));
     foot.appendChild(svgText(400, 408, '「做什么」由 latent 决定，「往哪做」由 HLC 决定，「什么时候换」由 FSM 决定', 'demo-x-mut', 11.5, 'middle'));
     s.appendChild(foot);
 
@@ -1285,18 +1315,17 @@
 
   var CALM_SCENES = [
     {
-      title: 'ASE 缺方向',
+      title: 'ASE 缺什么',
       dur: 14,
       build: buildSceneProblem,
       cues: [
-        { at: 0.3, s: 'ASE 已经能把大量技能压进连续 latent 空间 $z$ —— 高层策略只需要学「选哪个 $z$」。' },
-        { at: 0.8, s: '但它有一个关键缺陷：**只知道「选什么技能」，不知道怎么控制技能的「方向」。**' },
-        { at: 1.0, s: '给 $z_1$ = 冲刺、$z_2$ = 下蹲 —— 这两个 latent 都没有「朝左走」「朝目标走」的信息。' },
-        { at: 2.6, s: '下游任务却必须知道方向：**朝左走、朝右走、追着蓝球跑、朝目标点蹲走**。' },
-        { at: 3.4, s: '低层策略知道怎么跑，但不知道往哪跑 —— 传统做法是把目标信息塞进低层。' },
-        { at: 5.0, s: '那样每个新任务都得重训 LLC，低层也会变得很复杂。' },
-        { at: 6.2, s: 'CALM 的洞察：**方向可以不在 latent 里编码，而是在 latent 空间里选一个方向。**' },
-        { at: 9.8, s: '$z$ 编码「做什么」，选哪个 $z$ 决定「朝哪个方向执行」—— 低层管质量，高层管方向。' }
+        { at: 0.3, s: 'ASE 已经能把大量技能压进连续 latent 空间 $z$ —— 下游再训一个高层策略，按任务奖励去挑 $z$。' },
+        { at: 1.0, s: '可 $z$ 只决定「做什么」：给低层冲刺 / 下蹲的 $z$，它就冲刺 / 下蹲，**往哪个方向，$z$ 里没有**。' },
+        { at: 2.6, s: '论文第 4 节原话：低层能被指示去走，**却不能直观地控制往哪走**。' },
+        { at: 3.4, s: '下游任务两样都要：**朝左走、朝右走、追着蓝球跑、朝目标点蹲走** —— 既指定动作，又指定方向。' },
+        { at: 5.0, s: 'ASE 还有一个毛病：给一段动捕，**没法直接得到它对应的 $z$**，想要特定动作只能让高层按奖励摸索（论文 2.2 节）。' },
+        { at: 6.2, s: 'AMP 式的直接做法：每个任务单独训一个策略、挑一份数据，换任务就从头再训（论文 2.1 节）。' },
+        { at: 9.8, s: 'CALM 分三层：**$z$ 由动捕编码、可以点名**；高层每秒 6 次在目标 $z$ 附近微调来定方向；何时换动作交给状态机。' }
       ]
     },
     {
@@ -1304,26 +1333,25 @@
       dur: 15,
       build: buildSceneLlc,
       cues: [
-        { at: 0.3, s: '第一层 LLC 的目标：训练 encoder-decoder，让 latent 能编码动作风格。' },
-        { at: 0.8, s: '**Encoder** $E$ 把一段 motion clip 编码成 $z$；**Decoder** $\\pi_{LLC}$ 输入 $s_t + z$，输出 $a_t$。' },
-        { at: 1.2, s: '走 / 蹲走 / 踢 / 庆祝 —— 每类动捕在 latent 空间里占一块区域，**可以点名**。' },
-        { at: 3.8, s: '这和 ASE 的分水岭在这里：ASE 的 $z$ 从球面随机采；CALM 的 $z = E(\\text{动捕片段})$。' },
-        { at: 5.4, s: '对抗模仿（条件判别器 $D(s,s\' \\| z)$）保证给定 $z$ 就复现对应技能。' },
-        { at: 7.2, s: 'ASE 随机采的 $z$ 没有标签；CALM 可以直接写 **$E(\\text{踢腿动作})$** 拿到「踢」的 latent。' },
-        { at: 10.4, s: '**能点名，才能免训练组合** —— 后面 FSM 写「切到攻击状态」靠的就是这一句。' }
+        { at: 0.3, s: '第一层 LLC = **Encoder** $E$ + 以 $z$ 为条件的低层策略 $\\pi_{LLC}(a_t \\mid s_t, z)$。' },
+        { at: 1.2, s: '训完以后同类动捕的 $z$ 聚在一起：走 / 蹲走 / 踢 / 庆祝各占一块（64 维单位球，画面压成 2D 示意）。' },
+        { at: 3.8, s: '$E$ 吃 **2 秒 / 60 帧**的动捕片段，输出投到单位球上；它**不吃判别器梯度**，只靠策略梯度 + 对齐 / 均匀两条正则（式 5–6）。' },
+        { at: 5.4, s: '条件判别器 $D(s, s\' \\mid z)$：像这个 $z$ 对应的动捕才给高分，真实动捕配错的 $z$ 也算假；奖励 $r = -\\log(1 - D)$。' },
+        { at: 7.2, s: 'ASE 训练时从球面随机采 $z$，没有标签；CALM 直接写 **$E(\\text{踢腿动作})$** 拿到「踢」的 latent。表 1：人评可控性 **35% → 78%**。' },
+        { at: 10.4, s: '**能点名，才能免训练组合** —— 后面 FSM 写「切到攻击状态」靠的就是这一步。' }
       ]
     },
     {
-      title: 'HLC 方向奖励',
+      title: 'HLC 方向 + 风格',
       dur: 15,
       build: buildSceneHlc,
       cues: [
-        { at: 0.3, s: '第二层 HLC：输入当前状态 $s_t$ 和任务目标，**输出一个 latent $z_t$** —— 不是直接输出动作。' },
-        { at: 0.8, s: '方向奖励：**$r_{dir} = \\cos(z_{target}, z_t)$** —— 选出的 latent 和目标风格越接近，奖励越高。' },
-        { at: 2.0, s: '允许锥：$\\cos \\ge 0.8$ 的那一段 —— HLC 被限制在 $z_{target}$ 附近微调，而不是随便换技能。' },
-        { at: 4.0, s: '默认权重下 HLC 选中「' + skillByAngle(S3_BEST.angle).skill.name + '」，$\\cos$ = **' + fmt(S3_BEST.cos, 3) + '**，任务奖励 **' + fmt(S3_BEST.task, 3) + '**。' },
-        { at: 7.0, s: '如果把 $r_{dir}$ 权重拖到 0：HLC 会挑任务奖励最高的 latent，$\\cos$ 只有 **' + fmt(hlcBestPick(S3_TGT, 1, 0).cos, 2) + '** —— 风格约束没了。' },
-        { at: 10.2, s: 'HLC 的动作空间就是 latent 空间 —— 高层搜索空间比直接控几十个关节小几个数量级。' }
+        { at: 0.3, s: '第二层 HLC（论文叫「精确训练」）：看状态 $s_t$、目标方向 $d^*$ 和要求的动作，**输出一个 latent $z_t$** —— 不是关节动作。' },
+        { at: 0.8, s: '论文式 (8)：**$r_t = r_{\\text{方向}} + \\exp(-4\\lVert z_t - z_{target} \\rVert^2)$**；官方代码的风格项是 $(\\cos + 1)/2$，与任务奖励各占 0.5。' },
+        { at: 2.0, s: '绿色扇形是 $\\cos \\ge 0.8$ 的一段，**只是示意**，奖励里没有硬边界：风格项让 HLC 只在 $z_{target}$ 附近微调，而不是随便换技能。' },
+        { at: 4.0, s: '玩具模型（风格项用 $\\cos$，两项权重都取 1）：HLC 挑的是「' + skillByAngle(S3_BEST.angle).skill.name + '」，$\\cos$ = **' + fmt(S3_BEST.cos, 3) + '**，任务奖励 **' + fmt(S3_BEST.task, 3) + '**。' },
+        { at: 7.0, s: '风格项权重拖到 0：HLC 挑任务奖励最高的 latent，$\\cos$ 只有 **' + fmt(hlcBestPick(S3_TGT, 1, 0).cos, 2) + '** —— 蹲走变成了走（论文附录 E.3.3：不加风格约束，高层学出来就是跑）。' },
+        { at: 10.2, s: '$z$ 有 **64 维**，比 31 维关节动作还多；省事在每秒只挑 6 次（低层 30 次），且任何 $z$ 都被解成像动捕的动作。表 2：三种风格的方向余弦都在 0.91 以上。' }
       ]
     },
     {
@@ -1331,12 +1359,12 @@
       dur: 16,
       build: buildSceneFsm,
       cues: [
-        { at: 0.3, s: '推理期不需要再训练：用一个有限状态机组合 LLC 和 HLC。' },
-        { at: 0.8, s: '**WALK**：HLC 输出 $z_t$，朝目标走；**STRIKE**：$z = E(\\text{攻击动作})$；**CHEER**：$z = E(\\text{庆祝动作})$。' },
+        { at: 0.3, s: '推理期不需要再训练：用一个手写的有限状态机组合 LLC 和 HLC。' },
+        { at: 0.8, s: '**WALK**：把要的动作（蹲走）和指向目标的方向 $d^*$ 交给 HLC，由它输出 $z_t$；**STRIKE**：$z = E(\\text{攻击动作})$；**CHEER**：$z = E(\\text{庆祝动作})$。' },
         { at: 4.2, s: '下方 latent 时间线与下面 FSM 实验台用的是同一个 `simulateFSM()` —— 注意 **latent 是跳变的，不是渐变**。' },
-        { at: 6.4, s: '换的只是 $z$ 的来源，动作质量全部由同一个 LLC 保证 —— 切换瞬间不会穿模。' },
-        { at: 10.0, s: '状态切换条件（距离、目标是否倒下）是**手写的** —— 写错了没有任何机制会纠正它。' },
-        { at: 11.4, s: '整条 **走 → 攻击 → 庆祝** 序列跑完，**新增训练量 = 0**。' }
+        { at: 6.4, s: '换的只是 $z$ 的来源，动作都由同一个 LLC 生成；它训练时就在随机时刻换过条件动作（论文 5.1.2 节），**学过怎么过渡**。' },
+        { at: 10.0, s: '状态切换条件（距离、目标是否倒下）是**手写的** —— 写错了没有任何机制会纠正它；论文第 9 节也承认，楼梯、不平地面这类没见过的动力学未必管用。' },
+        { at: 11.4, s: '整条 **走 → 攻击 → 庆祝** 序列跑完，**新增训练量 = 0**；表 2 里攻击任务的完成评分在 0.96–1 之间。' }
       ]
     },
     {
@@ -1345,11 +1373,11 @@
       build: buildSceneLoop,
       cues: [
         { at: 0.3, s: 'CALM 官方仓库 `calm/run.py` 把三阶段串起来：**先 LLC，再 HLC，最后 FSM 推理**。' },
-        { at: 0.6, s: '阶段一 `HumanoidAMPGetup`：Encoder + $\\pi_{LLC}$ + **条件判别器** $D(s,s\' \\| z)$，PPO 更新三者。' },
+        { at: 0.6, s: '阶段一 `HumanoidAMPGetup`：Encoder + $\\pi_{LLC}$ + **条件判别器** $D(s, s\' \\mid z)$ 在同一个 loss 里更新 —— 策略走 PPO，判别器有自己的分类损失，encoder 的梯度从策略那头传回来。' },
         { at: 3.4, s: '阶段二 `HumanoidHeadingConditioned`：加载 LLC checkpoint 并**冻结**，PPO **只更新 HLC**。' },
-        { at: 5.0, s: '奖励 = 任务奖励 + **$\\cos(\\hat z, z_{target})$** —— HLC 学的是选 latent，不是关节怎么动。' },
-        { at: 7.8, s: '阶段三 `HumanoidStrikeFSM --test`：`FSMScheduler.step()` 按状态机选模式，**不再训练**。' },
-        { at: 11.0, s: '一句话：**CALM = ASE 的技能 latent + 方向舵 + FSM 组合** —— 「做什么」「往哪做」「什么时候换」三层解耦。' }
+        { at: 5.0, s: '官方配置：**$0.5\\, r_{task} + 0.5\\, (\\cos + 1)/2$**，`llc_steps: 5`（高层 6 Hz、低层 30 Hz）—— HLC 学的是挑 latent，不是关节怎么动。' },
+        { at: 7.8, s: '阶段三 `HumanoidStrikeFSM --test`：任务按距离、目标是否倒下切状态，`hrl_fsm_players.py` 用 $E(\\text{攻击})$ / $E(\\text{待机})$ 换掉 HLC 的输出，**不再训练**。' },
+        { at: 11.0, s: '一句话：**CALM = 能点名的技能 latent + 高层方向舵 + FSM 组合** —— 「做什么」「往哪走」「什么时候换」三层解耦。' }
       ]
     }
   ];
@@ -1360,11 +1388,12 @@
       sub: '约 76 秒自动播放。空格播放/暂停，← → 换幕；画面里的数字与下面三个演示用的是同一份函数。',
       ariaLabel: 'CALM 五幕讲解动画',
       notes: [
-        '取数依据：第三幕的 $\\cos$ / 任务奖励 / 总奖励由下面「方向奖励」演示里的同一套 `hlcTaskR` / `hlcBestPick` 现算（目标风格 = 蹲走，$w_{task}=w_{dir}=1$）；' +
+        '取数依据：第三幕的 $\\cos$ / 任务奖励 / 总奖励由下面「风格项」演示里的同一套 `hlcTaskR` / `hlcBestPick` 现算（目标风格 = 蹲走，$w_{task}=w_{style}=1$，风格项用 $\\cos$）；' +
           '第四幕 latent 时间线来自同一个 `simulateFSM()`（range = 1.0 m，styleAngle = 蹲走）。',
-        '第五幕的三条命令来自笔记「训练命令（NVIDIA 官方）」：`HumanoidAMPGetup` / `HumanoidHeadingConditioned` + `--llc_checkpoint` / `HumanoidStrikeFSM --test`。',
+        '论文出处：编码器 2 秒 / 60 帧、64 维单位球、判别器看 10 帧（附录 A）；条件判别器与负样本（式 7）；对齐 / 均匀正则（式 5–6）；HLC 奖励（式 8）；6 Hz / 30 Hz（第 7 节）；人评可控性 35% → 78%（表 1）；方向余弦与攻击完成评分（表 2）。' +
+          '官方代码：`hrl_agent.py` 的 `_calc_style_reward` / `_combine_rewards`、`hrl_humanoid_style_control.yaml`（任务 / 风格各 0.5、`llc_steps: 5`）、`humanoid_strike_fsm.py` 与 `hrl_fsm_players.py`。',
         '**这几幕里的玩具模型和下面三个演示同源**：latent 空间降到 2 维圆、四类技能占固定方向、任务奖励最偏好「走」、FSM 切换是俯视示意。' +
-          '定性结论（ASE 缺方向、CALM latent 可点名、$\\cos$ 是风格合同、FSM 只换 $z$ 来源、三阶段串行）成立，**具体数值不能和论文直接比**。'
+          '定性结论（$z$ 不管方向、CALM latent 可点名、风格项把 HLC 留在目标动作附近、FSM 只换 $z$ 来源、三阶段串行）成立，**具体数值不能和论文直接比**。'
       ],
       scenes: CALM_SCENES
     });
