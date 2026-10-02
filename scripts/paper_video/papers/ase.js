@@ -6,9 +6,9 @@ window.PaperVideo = {
     var root = h('div', 'card');
     var a = h('div', 'big', root, '<div style="font-size:162px;font-weight:900;letter-spacing:16px;color:var(--demo-accent);line-height:1.08">ASE</div>');
     var b = h('div', 'big', root, '<div style="font-size:52px;font-weight:900;line-height:1.2">对抗技能嵌入</div>' +
-      '<div style="font-size:32px;color:var(--text-secondary);margin-top:8px">把上千段动捕压成一个技能空间</div>');
+      '<div style="font-size:32px;color:var(--text-secondary);margin-top:8px">把 187 段动捕压成一个技能空间</div>');
     var m = h('div', 'meta', root,
-      '<b>Adversarial Skill Embeddings for Large-Scale Motion Control</b><br>Peng, Guo, Halper, Levine, Fidler<br>UC Berkeley · NVIDIA · SIGGRAPH 2022');
+      '<b>ASE: Large-Scale Reusable Adversarial Skill Embeddings for Physically Simulated Characters</b><br>Peng, Guo, Halper, Levine, Fidler<br>UC Berkeley · NVIDIA · U of Toronto<br>SIGGRAPH 2022 · ACM TOG');
     m.style.fontSize = '27px';
     m.style.padding = '22px 34px';
     var toc = h('div', 'toc', root,
@@ -34,8 +34,8 @@ window.PaperVideo = {
     var head = h('div', 'head', root, '<div class="act">三句话记住 ASE</div><div class="title">技能是方向，不是按钮</div>');
     var items = [
       [ACC, '① 球面 latent', '$\\pi(a \\mid s, z)$，$\\lVert z \\rVert = 1$<br>每 0~5 秒重采样一次'],
-      [GOOD, '② encoder 奖励', '$r = 0.5\\, r_{disc} + 0.5\\, r_{enc}$<br>逼策略真的用上 $z$，防止塌缩'],
-      [WARN, '③ diversity', '动作差异 ∝ latent 差异<br>空间等速，才能插值']
+      [GOOD, '② encoder 奖励', '$r = -\\log(1 - D) + 0.5\\, r_{enc}$<br>逼策略真的用上 $z$，防止塌缩'],
+      [WARN, '③ diversity', '动作差异 ∝ latent 差异，空间等速<br>加在 actor loss 上，不进奖励']
     ];
     var pts = items.map(function (it, k) {
       var p = h('div', 'pt', root);

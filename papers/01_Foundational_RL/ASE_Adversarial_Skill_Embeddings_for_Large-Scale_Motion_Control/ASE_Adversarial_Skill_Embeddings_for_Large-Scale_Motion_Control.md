@@ -35,7 +35,7 @@ ASE 在 AMP 的基础上往前迈了一大步：**不只是学“自然动作先
 
 > 🎮 **本文内嵌 1 段动画 + 1 段配音视频 + 3 个可交互演示**（不用装任何东西）：
 > 1. [六幕动画：ASE 全流程](#ase-explainer-anim) —— 约 90 秒串完「技能被绑死 → 技能是球面上的方向 → latent collapse → encoder 把 z 逼回动作 → diversity 让空间等速 → 训练闭环与下游只选 z」
-> 2. [配音讲解视频](#ase-video) —— 同样六幕，加中文配音与字幕，6 分 28 秒竖屏，可下载
+> 2. [配音讲解视频](#ase-video) —— 同样六幕，加中文配音与字幕，7 分 47 秒竖屏，可下载
 > 3. latent 实验台 —— 拖动角度看同一个策略怎么变成不同技能，按播放还能看到每 0~5 秒重采样一次 $z$ 的效果
 > 4. 为什么非要加一个 encoder —— 把 `enc_reward_weight` 拖到 0，亲眼看 latent collapse 怎么成为最优解
 > 5. diversity loss 实验台 —— 拖两个 latent 的夹角，看 `diversity_ratio` 为什么应该是一条水平线
@@ -62,7 +62,7 @@ ASE 在 AMP 的基础上往前迈了一大步：**不只是学“自然动作先
 
 ## 📺 配音讲解视频（可下载） {#ase-video}
 
-<div class="paper-demo" data-demo="ase-video" data-src="media/ase_explainer_video.mp4" data-poster="media/ase_explainer_video_poster.jpg"><p class="demo-fallback">（本节含讲解视频播放器，需要启用 JavaScript；也可以直接<a href="media/ase_explainer_video.mp4" download="ASE_讲解视频.mp4">下载 mp4（8.5 MB）</a>）</p></div>
+<div class="paper-demo" data-demo="ase-video" data-src="media/ase_explainer_video.mp4" data-poster="media/ase_explainer_video_poster.jpg"><p class="demo-fallback">（本节含讲解视频播放器，需要启用 JavaScript；也可以直接<a href="media/ase_explainer_video.mp4" download="ASE_讲解视频.mp4">下载 mp4（9.5 MB）</a>）</p></div>
 
 > 📖 **动画之后的正文默认全部折叠**：前半部分（「要解决什么问题」「是怎么做的」）按小节收起，后面的具体实例、源码对照、面试问题、讨论记录与附录整块收起。想细读哪一块就点开对应的折叠条，内容一字未删；目录里的标题依旧可以直接点，会自动展开所在折叠块，左侧目录顶部还有「展开全部文字」一键铺开。
 
@@ -329,22 +329,25 @@ ASE 不是每个 episode 固定一个技能到底，而是会隔一段时间随�
 flowchart TB
     A["latent z ~ Uniform(S^63)<br/>每 0~5s 重采样"] --> B["Actor pi(a #124; s, z)<br/>fc_3x1024"]
     B --> C["Isaac Gym<br/>4096 并行 env"]
-    C --> D["state-pairs (s, s')"]
-    D --> E["Encoder E(s, s')<br/>fc_2x1024 → z_hat ∈ S^63"]
-    D --> F["Discriminator D(s, s')<br/>fc_3x1024"]
+    C --> D["disc_obs 行为片段<br/>论文 (s, s')；MimicKit 最近 10 帧"]
+    D --> E["Encoder E(disc_obs)<br/>fc_2x1024 → z_hat ∈ S^63"]
+    D --> F["Discriminator D(disc_obs)<br/>fc_3x1024"]
     G["参考数据集<br/>dataset_humanoid_locomotion.yaml"] --> F
     A -. "input z" .-> E
-    E --> H["enc reward<br/>r_enc = z · z_hat"]
-    F --> I["disc reward<br/>r_disc = -log(1 - D)"]
-    H --> J["合成 reward<br/>0.5·r_enc + 0.5·r_disc + 0.01·diversity"]
+    E --> H["enc reward<br/>r_enc = max(0, z · z_hat)"]
+    F --> I["disc reward<br/>r_disc = -2·log(1 - D)"]
+    H --> J["合成 reward<br/>0.5·r_disc + 0.5·r_enc<br/>= -log(1 - D) + 0.5·r_enc"]
     I --> J
     J --> K["PPO Buffer<br/>4096 x 32 steps"]
     K --> L["4 个 Adam 优化器<br/>(Actor / Critic / Disc / Enc)"]
     L --> B
     L --> E
     L --> F
+    DV["diversity loss × 0.01<br/>（加在 actor loss，不进奖励）"] -.-> L
 </div>
 
+> 两处容易看错：① `disc_reward_scale: 2` 让 $r _ {disc} = -2\log(1-D)$，所以 0.5 / 0.5 合起来是 $-\log(1-D) + 0.5\, r _ {enc}$，正是论文式 (10) 取 $\beta = 0.5$；② diversity **不进奖励**，论文原话是奖励「只依赖 encoder 和判别器」，diversity 只在梯度更新时加到 actor loss 上（`_compute_actor_loss`）。
+>
 > 关键反差（vs AMP）：ASE 多了一个 **Encoder** 和一个 **latent z**，让 policy 同时学**一族**动作而不是一个；判别器只判"像不像参考数据"，编码器额外要求"不同 z 出来的轨迹要可被反向还原"，这就把 latent 空间训成了**可控的技能 embedding**。
 
 ### MimicKit 默认 yaml 关键超参
@@ -358,11 +361,12 @@ flowchart TB
 | `latent_dim` | **64** | latent z 维度 |
 | `latent_time_min` / `max` | 0.0 / 5.0 | latent 在每 episode 内每 0~5s 重采样一次 |
 | `actor_net` / `critic_net` / `disc_net` | `fc_3layers_1024units` | **3 层 1024**（比 AMP 深 1 层） |
-| `enc_net` | `fc_2layers_1024units` | encoder 单独一个 2×1024 MLP |
+| `enc_net` | `fc_2layers_1024units` | encoder 单独一个 2×1024 MLP（论文图 5 里判别器与 encoder 共用一个网络、两个输出头） |
 | 优化器 | **Adam**（actor 2e-5 / critic 5e-5 / disc 5e-5 / enc 5e-5） | 4 个独立 Adam |
 | `enc_reward_weight` | **0.5** | 一半 reward 来自 encoder |
-| `disc_reward_weight` | **0.5** | 另一半来自判别器（task 默认 0） |
-| `diversity_weight` | 0.01 | 鼓励同一 batch 内不同 z 出来的动作多样化 |
+| `disc_reward_weight` | **0.5** | 另一半来自判别器（task 默认 0）；判别器奖励先乘 `disc_reward_scale: 2` |
+| `diversity_weight` | 0.01 | 同一状态换一个新采的 z，动作均值差 / z 距离 → 目标 1.0；加在 actor loss 上，不进奖励 |
+| `num_disc_obs_steps` | 10 | 判别器与 encoder 共用的行为片段是最近 10 帧（论文写作 $(s, s')$） |
 | `disc_grad_penalty` | 5 | 与 AMP 同 |
 | `pose_termination` | False | 与 AMP 同（不强制跟参考帧） |
 
@@ -602,25 +606,25 @@ sequenceDiagram
             AG->>AG: _sample_latents(n)：z = normalize(N(0, I))，单位球均匀
             AG->>M: eval_actor(obs, z) → 采样 a_t（z 是策略输入的一等公民）
             AG->>E: _step_env(a_t)
-            E-->>AG: obs、done，并记录 disc/enc 观测 (s_t, s_t+1)
+            E-->>AG: obs、done，并记录 disc/enc 观测 disc_obs（最近 10 帧）
         end
-        AG->>M: eval_disc(disc_obs) → r_disc = −log(1−D)
-        AG->>M: eval_enc(enc_obs) → ẑ，r_enc = z · ẑ（余弦对齐）
+        AG->>M: eval_disc(disc_obs) → r_disc = −2·log(1−D)（disc_reward_scale 2）
+        AG->>M: eval_enc(enc_obs) → ẑ，r_enc = max(0, z · ẑ)（余弦，负数截 0）
         AG->>AG: 合成 r = 0.5·r_disc + 0.5·r_enc（task 权重默认 0）→ GAE
         loop mini-batch 更新 _update_model()
             AG->>D: 采样参考片段（判别器真样本）
             AG->>M: Disc 更新：真/假二分类 + grad penalty
             AG->>M: Enc 更新：最大化 z · E(enc_obs)（_calc_enc_error）
             AG->>M: Critic 更新：MSE；Actor 更新：PPO-Clip
-            AG->>M: Diversity loss：重采样 new_z，惩罚"z 差很远但动作差不多"
+            AG->>M: Actor loss 里加 0.01 × diversity loss：同一状态换 new_z，惩罚动作差 / z 差偏离 1
         end
     end
     R->>AG: 周期性 test_model() + 保存 checkpoint
 </div>
 
 - ⑤–⑥ 对应下面第 3 节：latent 不是固定的，训练中定期重采样以覆盖更多技能模式。
-- ⑩–⑫ 对应第 4 节：奖励 = 判别器的"自然度" + 编码器的"技能可识别度"各占一半。
-- ⑭–⑯ 是 4 套参数（Disc / Enc / Critic / Actor）各自更新；⑰ 对应第 6 节的 diversity loss，防止 latent collapse。
+- ⑩–⑫ 对应第 4 节：奖励 = 判别器的"自然度" + 编码器的"技能可识别度"，配置权重各 0.5（判别器奖励先乘了 2，实际是论文式 (10) 的 $\beta = 0.5$）。
+- ⑭–⑯ 是 4 套参数（Disc / Enc / Critic / Actor）各自更新；⑰ 对应第 6 节的 diversity loss —— 它是 actor loss 的一项，不进奖励。
 
 <h3 id="1-actor--critic-都显式接收-latent-z">1. Actor / Critic 都显式接收 latent z</h3>
 
@@ -715,6 +719,8 @@ enc_reward_weight: 0.5
 - disc reward 保证“动作自然”
 - enc reward 保证“技能可识别”
 
+两个细节：`_calc_disc_rewards`（`amp_agent.py`）算的是 $-\log(1-D)$ 再乘 `disc_reward_scale: 2`，`_calc_enc_rewards` 用 `torch.clamp_min(-err, 0.0)` 把负的余弦截成 0。所以默认配置实际是 $r = -\log(1-D) + 0.5 \max(0,\, z \cdot \hat z)$，对应论文式 (10) 的 $\beta = 0.5$。
+
 <h3 id="5-encoder-loss-本质上是-latent-对齐">5. Encoder loss 本质上是 latent 对齐</h3>
 
 ```python
@@ -758,6 +764,8 @@ diversity_tar: 1.0
 - 如果两个 latent 差很远
 - 那动作输出也应该差得足够远
 - 否则就惩罚
+
+它在 `_compute_actor_loss` 里乘 `diversity_weight` 加进 actor loss，**不进奖励**——论文原话："the reward for the policy at each time step depends only on the encoder q and discriminator D. The diversity objective is only applied during gradient updates."
 
 <h3 id="7-默认超参数">7. 默认超参数</h3>
 
