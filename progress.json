@@ -41,15 +41,15 @@
         "13_Physics-Based_Animation",
         "14_Human_Motion"
       ],
-      "last_module": "07_Teleoperation",
-      "last_index": 319,
-      "last_title": "Open-TeleVision: Teleoperation with Immersive Active Visual Feedback (arXiv:2407.01512)",
-      "next_module": "08_Navigation",
-      "last_completed_date": "2026-10-01",
-      "note": "本日轮转到 07_Teleoperation。上游 awesome-humanoid-robot-learning Teleoperation 章节 2024.08 之后带 arXiv 链接的条目均已有笔记，取上游已收录且无笔记的最新论文 Open-TeleVision (arXiv:2407.01512, 2024-07-01, UCSD/MIT, CoRL 2024)。随操作员头部转动的双目主动相机 + Vision Pro 立体回传(60 Hz)，手臂 CLIK、手指 dex-retargeting 向量优化；改版 ACT(DINOv2 + 双目，颈部进动作空间)在 H1/GR-1 四个长时序任务上验证。官方开源 OpenTeleVision/TeleVision，含整体流程 mermaid + 源码运行时序图。",
-      "last_date": "2026-10-01",
+      "last_module": "09_State_Estimation",
+      "last_index": 376,
+      "last_title": "Kimera: an Open-Source Library for Real-Time Metric-Semantic Localization and Mapping (arXiv:1910.02490)",
+      "next_module": "10_Sim-to-Real",
+      "last_completed_date": "2026-10-02",
+      "note": "本日轮转应到 08_Navigation，但该模块中上游 awesome-humanoid-robot-learning 收录的论文已全部有笔记；按 AGENTS.md「模块 04–14 只为上游已收录论文建笔记」的约束顺延到 09_State_Estimation。09 模块上游仅剩 GTSAM / Kimera / VINS-Fusion 三个库类条目，取其中发表最新的 Kimera (arXiv:1910.02490, v1 2019-10-06, ICRA 2020, Rosinol/Abate/Chang/Carlone, MIT SPARK Lab)。双目+IMU、纯 CPU 实时的度量-语义 SLAM 库：Kimera-VIO(GTSAM iSAM2 固定滞后平滑，预积分+无结构视觉因子)、Kimera-RPGO(改造 PCM 剔除错误闭环)、Kimera-Mesher(低延迟单帧/多帧网格)、Kimera-Semantics(TSDF + 语义贝叶斯更新的全局语义网格)，四线程运行。含整体流程 mermaid 与基于 MIT-SPARK/Kimera-VIO 源码(StereoImuPipeline / VioBackend / Mesher / LoopClosureDetector)的运行时序图。",
+      "last_date": "2026-10-02",
       "next_candidate": null,
-      "last_completed": "Open-TeleVision: Teleoperation with Immersive Active Visual Feedback (arXiv:2407.01512)"
+      "last_completed": "Kimera: an Open-Source Library for Real-Time Metric-Semantic Localization and Mapping (arXiv:1910.02490)"
     },
     "last_summary_index": 532,
     "last_summary_date": "2026-09-18",
@@ -1607,6 +1607,17 @@
         "project_page": "https://robot-tv.github.io/",
         "code": "https://github.com/OpenTeleVision/TeleVision",
         "source": "🌟 官方开源，已附源码运行时序图"
+      },
+      {
+        "date": "2026-10-02",
+        "index": 376,
+        "title": "Kimera: an Open-Source Library for Real-Time Metric-Semantic Localization and Mapping",
+        "folder": "papers/09_State_Estimation/Kimera__Open-Source_Library_for_Real-Time_Metric-Semantic_Localization_and_Mapping",
+        "module": "09_State_Estimation",
+        "arxiv": "1910.02490",
+        "project_page": "https://github.com/MIT-SPARK/Kimera",
+        "code": "https://github.com/MIT-SPARK/Kimera (C++, BSD；Kimera-VIO / Kimera-RPGO / Kimera-Mesher / Kimera-Semantics 分仓)",
+        "source": "✅ 已开源(含源码运行时序图) · 双目+IMU 纯 CPU 实时度量-语义 SLAM：VIO + 鲁棒 PGO(PCM) + 低延迟网格 + TSDF 语义网格 · MIT SPARK Lab · ICRA 2020"
       }
     ],
     "last_completed_index": 588,
@@ -6148,6 +6159,16 @@
       "pdf_file": "",
       "route": "Locomotion",
       "title_cn": "E-SDS：面向人形行走的环境感知自动奖励生成强化学习"
+    },
+    {
+      "title": "Kimera: an Open-Source Library for Real-Time Metric-Semantic Localization and Mapping",
+      "folder": "papers/09_State_Estimation/Kimera__Open-Source_Library_for_Real-Time_Metric-Semantic_Localization_and_Mapping",
+      "note_file": "Kimera__Open-Source_Library_for_Real-Time_Metric-Semantic_Localization_and_Mapping.md",
+      "status": "done",
+      "arxiv": "1910.02490",
+      "pdf_file": "",
+      "route": "State Estimation",
+      "title_cn": "Kimera：实时度量-语义定位与建图的开源库"
     }
   ]
 }
