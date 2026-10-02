@@ -3057,6 +3057,18 @@
         "zh_title": "ORB-SLAM3：视觉、视觉-惯性与多地图 SLAM 的高精度开源库"
       },
       {
+        "title": "Kimera: an Open-Source Library for Real-Time Metric-Semantic Localization and Mapping",
+        "path": "papers/09_State_Estimation/Kimera__Open-Source_Library_for_Real-Time_Metric-Semantic_Localization_and_Mapping/Kimera__Open-Source_Library_for_Real-Time_Metric-Semantic_Localization_and_Mapping.md",
+        "url": "/papers/09_State_Estimation/Kimera__Open-Source_Library_for_Real-Time_Metric-Semantic_Localization_and_Mapping/Kimera__Open-Source_Library_for_Real-Time_Metric-Semantic_Localization_and_Mapping.html",
+        "dir": "Kimera__Open-Source_Library_for_Real-Time_Metric-Semantic_Localization_and_Mapping",
+        "arxiv": "1910.02490",
+        "has_open_source": true,
+        "published_date_zh": "2019年10月6日（arXiv v1） · 2020年3月4日（arXiv v3）",
+        "published_date_en": "Oct 6, 2019 (arXiv v1) · Mar 4, 2020 (arXiv v3)",
+        "zhname": "Kimera：实时度量-语义定位与建图的开源库",
+        "zh_title": "Kimera：实时度量-语义定位与建图的开源库"
+      },
+      {
         "title": "Contact-Aided Invariant Extended Kalman Filtering for Legged Robot State Estimation",
         "path": "papers/09_State_Estimation/Contact-Aided_Invariant_EKF_for_Legged_Robots/Contact-Aided_Invariant_EKF_for_Legged_Robots.md",
         "url": "/papers/09_State_Estimation/Contact-Aided_Invariant_EKF_for_Legged_Robots/Contact-Aided_Invariant_EKF_for_Legged_Robots.html",
