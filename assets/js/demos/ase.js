@@ -7,7 +7,7 @@
  * <script>/<canvas>/<input> from #paper-body before publish.
  *
  * Demos:
- *   ase-explainer — 五幕讲解动画：技能被绑死 → z 是球面上的方向 → latent collapse →
+ *   ase-explainer — 六幕讲解动画：技能被绑死 → z 是球面上的方向 → latent collapse →
  *                   encoder + diversity 两道锁 → 训练闭环与下游只选 z
  *   ase-video     — 六幕讲解动画的配音竖屏视频（可下载）
  *   ase-latent    — z ~ Uniform(S^63)：技能是球面上的一个方向，每 0~5s 重采样
@@ -912,7 +912,7 @@
     var zTx = paint(svgText(766, 106, '', 'demo-x-mono', 11.5, 'end'), C_ACCENT);
     s.appendChild(zTx);
 
-    var barHead = svgText(340, 106, '同一个策略解码出的四个行为通道', 'demo-x-mut', 10.5);
+    var barHead = svgText(340, 106, '玩具解码器：同一个策略的四个行为通道（示意）', 'demo-x-mut', 10.5);
     s.appendChild(barHead);
     var zeroLine = paint(svgEl('line', { x1: S2_ZERO, y1: 122, x2: S2_ZERO, y2: 274, 'stroke-width': 1, 'stroke-dasharray': '3 3' }), null, C_BORDER);
     s.appendChild(zeroLine);
@@ -1054,7 +1054,7 @@
     });
 
     var plotG = svgEl('g', {});
-    plotG.appendChild(svgText(S3_PX0, 120, '只有 disc reward 时的奖励曲线（= AMP 里加个 z）', 'demo-x-mut', 10.5));
+    plotG.appendChild(svgText(S3_PX0, 120, '玩具模型：只有 disc reward 时的奖励曲线', 'demo-x-mut', 10.5));
     plotG.appendChild(paint(svgEl('line', { x1: S3_PX0, y1: S3_PY0, x2: S3_PX1, y2: S3_PY0, 'stroke-width': 1.2 }), null, C_BORDER));
     plotG.appendChild(paint(svgEl('line', { x1: S3_PX0, y1: S3_PY0, x2: S3_PX0, y2: s3y(1.06), 'stroke-width': 1.2 }), null, C_BORDER));
     [0, 1, 2, 3].forEach(function (v) {
@@ -1106,7 +1106,7 @@
       return { g: g, tx: tx };
     });
 
-    var foot = paint(svgText(400, 404, 'latent collapse 不是训练出 bug，而是这个奖励下的最优解', null, 15, 'middle'), C_BAD);
+    var foot = paint(svgText(400, 404, 'latent collapse 不是 bug：奖励里没有一项要求动作看得出 z', null, 15, 'middle'), C_BAD);
     s.appendChild(foot);
 
     /* 只有 disc reward 时 bestSens 返回 0：让一个点从 s = 1.2 顺着曲线爬到那里，
@@ -1146,9 +1146,9 @@
      三张结果卡的数字全部由 bestSens / discR / encR 在同一个噪声 σ = 0.35 下现算。 */
   var S4_NODES = [
     { x: 105, w: 150, tex: '\\pi(a \\mid s, z)', sub: '把 z 编进动作' },
-    { x: 300, w: 180, tex: '\\text{行为片段 } o_{disc}', sub: '相邻两帧 (s, s′)' },
+    { x: 300, w: 180, tex: '\\text{行为片段 } o_{disc}', sub: '论文 (s, s′) · MimicKit 10 帧' },
     { x: 500, w: 150, tex: 'E(o_{disc}) \\to \\hat z', sub: 'enc_net fc_2x1024' },
-    { x: 692, w: 150, tex: 'r_{enc} = z \\cdot \\hat z', sub: '余弦对齐，越大越好' }
+    { x: 692, w: 150, tex: 'r_{enc} = \\max(0,\\, z \\cdot \\hat z)', sub: '余弦，负数截成 0' }
   ];
   var S4_EDGES = [
     [[180, 98], [210, 98]],
@@ -1200,12 +1200,12 @@
     s.appendChild(back);
 
     var formula = svgMath(400, 188,
-      'r = w_{disc}\\, r_{disc} + w_{enc}\\, r_{enc} + w_{task}\\, r_{task} \\;\\Longrightarrow\\; r = 0.5\\, r_{disc} + 0.5\\, r_{enc}',
+      'r = 0.5\\, r_{disc} + 0.5\\, r_{enc}, \\quad r_{disc} = -2\\log(1 - D) \\;\\Longrightarrow\\; r = -\\log(1 - D) + 0.5\\, r_{enc}',
       { size: 12, anchor: 'middle', cls: 'demo-x-ink2', w: 700 });
     s.appendChild(formula);
 
     var plotG = svgEl('g', {});
-    plotG.appendChild(svgText(S4_PX0, 218, '两股力量的拉锯（横轴 = 敏感度 s）', 'demo-x-mut', 10.5));
+    plotG.appendChild(svgText(S4_PX0, 218, '玩具模型：两项按 0.5 / 0.5 配比（横轴 = 敏感度 s）', 'demo-x-mut', 10.5));
     plotG.appendChild(paint(svgEl('line', { x1: S4_PX0, y1: S4_PY0, x2: S4_PX1, y2: S4_PY0, 'stroke-width': 1.2 }), null, C_BORDER));
     plotG.appendChild(paint(svgEl('line', { x1: S4_PX0, y1: S4_PY0, x2: S4_PX0, y2: s4y(1.06), 'stroke-width': 1.2 }), null, C_BORDER));
     [0, 1, 2, 3].forEach(function (v) {
@@ -1251,7 +1251,7 @@
       },
       {
         y: 300, c: C_WARN, t: '只有 enc',
-        v: 's* = ' + fmt(S4_BEST_ENC, 2),
+        v: 's* = ' + fmt(S4_BEST_ENC, 2) + '（横轴尽头）',
         s: '怪异但好区分：已经飞出人类动作流形',
         v2: 'disc ' + fmt(discR(S4_BEST_ENC), 3)
       }
@@ -1266,7 +1266,7 @@
       return { g: g, at: 9.6 + i * 1.3 };
     });
 
-    var foot = paint(svgText(400, 396, 'encoder reward 就是在给「动作里含多少 z 的信息」定一个下界', null, 15, 'middle'), C_ACCENT);
+    var foot = svgRich(400, 396, '论文式 (8)：encoder 奖励推高的是互信息 $I(z;\\, s, s\')$ 的变分下界', { size: 15, anchor: 'middle', w: 700 }).setTone(C_ACCENT);
     s.appendChild(foot);
 
     function draw(t) {
@@ -1315,8 +1315,8 @@
       '左边两条实线是两个 latent，虚线是它们各自解码出的动作，红线是 a_diff；' +
         '右边把 z_diff、a_diff 与它们的比值一起画成随夹角变化的曲线，比值是一条水平线'
     );
-    s.appendChild(svgText(60, 32, '第二道锁：latent 差多远，动作就该差多远', 'demo-x-ink2', 13.5));
-    var f1 = svgMath(400, 62, 'z_{diff} = 0.5 - 0.5\\, z_1 \\!\\cdot\\! z_2, \\qquad a_{diff} = \\overline{(a_1 - a_2)^2}',
+    s.appendChild(svgText(60, 32, '第二道锁：latent 差多远，动作就该差多远（加在 actor loss 上，不进奖励）', 'demo-x-ink2', 13.5));
+    var f1 = svgMath(400, 62, 'z_{diff} = 0.5 - 0.5\\, z_1 \\!\\cdot\\! z_2, \\qquad a_{diff} = \\overline{(\\mu(s, z_1) - \\mu(s, z_2))^2}',
       { size: 12, anchor: 'middle', cls: 'demo-x-ink2', w: 560 });
     var f2 = svgMath(400, 88, '\\text{diversity\\_ratio} = a_{diff} \\,/\\, z_{diff} \\;\\longrightarrow\\; \\text{diversity\\_tar} = 1.0',
       { size: 12, anchor: 'middle', cls: 'demo-x-ink2', w: 560 });
@@ -1459,10 +1459,10 @@
   var S6_NODES = [
     { x: 140, y: 108, w: 200, tex: '\\text{① 采样 } z \\sim \\text{Uniform}(S^{63})', sub: 'latent_time 0.0 ~ 5.0 s 到期重采样' },
     { x: 400, y: 108, w: 210, tex: '\\text{② Actor } \\pi(a \\mid s, z)', sub: 'fc_3x1024，4096 并行 env' },
-    { x: 660, y: 108, w: 190, t: '③ state-pairs (s, s′)', sub: '判别 / 编码共用的观测' },
-    { x: 660, y: 226, w: 190, t: '④ Disc 判自然 · Enc 反推 ẑ', sub: 'disc 3x1024 / enc 2x1024' },
-    { x: 400, y: 226, w: 210, tex: '\\text{⑤ } r = 0.5\\, r_{disc} + 0.5\\, r_{enc}', sub: '+ 0.01 · diversity，task 权重 0.0' },
-    { x: 140, y: 226, w: 200, t: '⑥ PPO：4 个独立 Adam', sub: 'actor 2e-5 / critic·disc·enc 5e-5' }
+    { x: 660, y: 108, w: 190, t: '③ disc_obs 行为片段', sub: '论文 (s, s′)；MimicKit 最近 10 帧' },
+    { x: 660, y: 226, w: 190, t: '④ Disc 判自然 · Enc 反推 ẑ', sub: '两个 MLP；论文里共用一个网络' },
+    { x: 400, y: 226, w: 210, tex: '\\text{⑤ } r = -\\log(1 - D) + 0.5\\, r_{enc}', sub: 'task 权重 0.0；diversity 不进奖励' },
+    { x: 140, y: 226, w: 200, t: '⑥ PPO：4 个独立 Adam', sub: 'actor loss 另加 0.01 × diversity' }
   ];
   var S6_EDGES = [
     { pts: [[240, 108], [295, 108]] },
@@ -1486,7 +1486,8 @@
     { kind: 'node', i: 5, a: 9.1, b: 10.3 },
     { kind: 'edge', i: 5, a: 10.3, b: 10.8 }
   ];
-  var S6_HLC = ['敌人远 → 前进型 z', '敌人挥刀 → 闪避型 z', '露出破绽 → 攻击型 z'];
+  /* 论文 10.3 节 Strike 任务里高层学到的切换顺序。 */
+  var S6_HLC = ['离目标远 → 跑步的 z', '到了跟前 → 挥剑的 z', '目标倒下 → 站立的 z'];
 
   function buildSceneLoop() {
     var s = sceneSvg(
@@ -1517,7 +1518,7 @@
 
     var down = svgEl('g', {});
     down.appendChild(paint(svgEl('line', { x1: 60, y1: 272, x2: 760, y2: 272, 'stroke-width': 1, 'stroke-dasharray': '5 4' }), null, C_BORDER));
-    down.appendChild(svgRich(60, 296, '预训练完成 → 冻结 $\\pi(a \\mid s, z)$，下游任务只学「选 $z$」', { size: 12.5 }).setTone(C_GOOD));
+    down.appendChild(svgRich(60, 296, '预训练完成 → 冻结 $\\pi(a \\mid s, z)$，下游只学「选 $z$」（论文的 Strike 任务）', { size: 12.5 }).setTone(C_GOOD));
     s.appendChild(down);
     var hlc = S6_HLC.map(function (str, i) {
       var cx = 170 + i * 215;
@@ -1593,13 +1594,13 @@
       cues: [
         { at: 0.3, s: '第一步很朴素：策略多一个输入。从 $a_t \\sim \\pi(a_t \\mid s_t)$ 变成 **$a_t \\sim \\pi(a_t \\mid s_t, z)$**。' },
         { at: 0.9, s: '$z$ 不是离散 ID，而是**单位球面上的一个方向**：源码里就是 `normalize(torch.normal(...))`，所以 $\\lVert z \\rVert \\equiv 1$（`latent_dim: 64`）。' },
-        { at: 1.6, s: '这个方向解出来的是「快步前冲」：四个行为通道读数 **1.36 / 0.50 / −0.05 / 0.11**。' },
+        { at: 1.6, s: '右边四个通道是写死的**玩具解码器**（只为示意）。这个方向解出来的是「快步前冲」：读数 **1.36 / 0.50 / −0.05 / 0.11**。' },
         { at: 3.5, s: '往前转一点，到两个方向中间：**0.67 / 0.95 / 0.77 / −0.41** —— 边走边挥剑，一个**插值出来的**中间技能。' },
         { at: 5.4, s: '再转过去：**−0.11 / 0.61 / 1.32 / −0.17** —— 前进速度掉到几乎没有，挥剑幅度升到最高，变成原地大幅挥剑。' },
         { at: 7.4, s: '转到另一侧：**0.60 / −0.95 / −0.03 / 1.40** —— 转向翻了号、重心压到最低，压着身体往另一边绕。整圈转下来，行为是**连续**变化的。' },
-        { at: 10.4, s: '还有一件事：训练时 latent **不是一个 episode 用到底**。`latent_time_min: 0.0` / `latent_time_max: 5.0`。' },
-        { at: 11.2, s: '这颗种子下的四段就是 **2.39 s / 1.70 s / 2.59 s / 4.40 s** —— 一个 episode 内就换了四次技能。' },
-        { at: 13.4, s: '于是策略见过大量「从挥剑切到闪避」这种过渡，下游高层随便扔一个新 $z$ 过来才不会摔倒。' },
+        { at: 10.4, s: '还有一件事：训练时 latent **不是一个 episode 用到底**，每隔 0~5 秒随机重采样（`latent_time_min: 0.0` / `latent_time_max: 5.0`）。' },
+        { at: 11.2, s: '这颗种子下的四段就是 **2.39 s / 1.70 s / 2.59 s / 4.40 s** —— 这 11 秒里用了四个 $z$，切换了三次。' },
+        { at: 13.4, s: '论文 6.4 节的理由是**跟手**：只在开头给一个 $z_0$，策略可能只认它，中途换了新 $z$ 也照旧。定期重采样逼它学会在技能之间过渡、对新 $z$ 立刻有反应。' },
         { at: 15.6, s: '**技能不再是离散 ID，而是连续向量** —— 这是 ASE 全部后续能力的地基。' }
       ]
     },
@@ -1610,11 +1611,11 @@
       cues: [
         { at: 0.3, s: '但只把 $z$ 拼到输入里是**不够**的：策略很可能压根不理它。' },
         { at: 0.5, s: '网络的偷懒方式很多：只看当前状态、把所有技能混成一个平均策略、干脆把 $z$ 当噪声。' },
-        { at: 2.6, s: '为什么会这样？看只有 disc reward 时的奖励曲线：它只问「动作像不像动捕数据」。' },
-        { at: 4.6, s: '最自然的动作就是数据流形中心那一个。策略越听 $z$ 的话，动作铺得越开，**disc reward 反而越低**。' },
-        { at: 6.4, s: '所以梯度会一路把「对 $z$ 的敏感度」推到 **$s^* = 0.00$**：disc reward 拿满 **1.000**，encoder 能恢复的余弦是 **0.000**。' },
+        { at: 2.6, s: '为什么？判别器只问「动作像不像动捕数据」，**不管动作和 $z$ 有没有关系** —— 忽略 $z$ 照样能拿高分（论文 5.2 节）。' },
+        { at: 4.6, s: '再加上对抗训练本来就容易 **mode collapse**：只复现数据里很窄的一小撮动作（论文 5.2 节）。左图是**玩具模型**，把这股劲画成「越听 $z$、动作铺得越开，disc reward 越低」。' },
+        { at: 6.4, s: '于是在玩具模型里，梯度把「对 $z$ 的敏感度」一路推到 **$s^* = 0.00$**：disc reward 拿满 **1.000**，encoder 能恢复的余弦是 **0.000**。' },
         { at: 7.8, s: '右边四种颜色是四个不同的 $z$ 解码出的动作 —— 它们**堆成了一坨**。换任何 latent 都是同一个动作。' },
-        { at: 9.4, s: '所以关键一句：**latent collapse 不是训练出 bug，而是这个奖励下的最优解。**' },
+        { at: 9.4, s: '所以关键一句：**latent collapse 不是 bug —— 奖励里根本没有一项要求动作看得出 $z$。** 论文图 10 的消融：把后两幕的 encoder 与 diversity 都去掉，大部分轨迹都对上同一段「原地站立」的动捕。' },
         { at: 11.4, s: '换句话说，AMP 直接加一个 $z$ 输入，是学不出技能空间的 —— 得给「必须用 $z$」这件事本身发奖励。' }
       ]
     },
@@ -1624,16 +1625,16 @@
       build: buildSceneEncoder,
       cues: [
         { at: 0.3, s: 'ASE 的第一道锁很巧：**再训一个 encoder，要求它能从动作片段里把 $z$ 反推出来。**' },
-        { at: 0.5, s: '策略用 $z$ 产生动作，取相邻两帧作为行为片段 $o_{disc}$。' },
+        { at: 0.5, s: '策略用 $z$ 产生动作，截一小段状态作为行为片段 $o_{disc}$：论文里是相邻两帧 $(s, s\')$，MimicKit 默认取最近 **10 帧**（`num_disc_obs_steps: 10`），和判别器看的是同一份。' },
         { at: 2.2, s: 'encoder 吃这个片段，输出 $\\hat z$（`eval_enc` 最后也做了归一化，所以 $\\hat z$ 同样在球面上）。' },
-        { at: 3.9, s: '奖励就是两者的余弦：**$r_{enc} = z \\cdot \\hat z$**，源码 `_calc_enc_error` 里写成 `−sum(z · ẑ)`。' },
+        { at: 3.9, s: '奖励就是两者的余弦，负数截成 0：**$r_{enc} = \\max(0,\\, z \\cdot \\hat z)$**（`_calc_enc_rewards`）。论文写成 vMF 编码器的对数似然 $\\log q(z \\mid s, s\')$，只差一个系数和常数。' },
         { at: 4.4, s: 'encoder 猜不对，$r_{enc}$ 就低 —— 于是**策略只有把 $z$ 的信息真的编进动作里**才拿得到分。这条闭环就是关键。' },
-        { at: 5.8, s: 'ASE 的总奖励因此是两半：**$r = 0.5\\, r_{disc} + 0.5\\, r_{enc}$**（`task_reward_weight: 0.0`，预训练不看任务）。' },
-        { at: 7.8, s: '加上 enc 那一半之后，最优点从 **0.00 挪到 0.55**：disc 仍有 **0.873**，encoder 恢复 $z$ 的余弦到了 **0.844**。' },
+        { at: 5.8, s: '总奖励：配置里 **$w_{disc} = w_{enc} = 0.5$**、`task_reward_weight: 0.0`（预训练不看任务）；但 $r_{disc}$ 先乘了 `disc_reward_scale: 2`，合起来是 **$-\\log(1 - D) + 0.5\\, r_{enc}$** —— 正是论文式 (10)，$\\beta = 0.5$。' },
+        { at: 7.8, s: '回到玩具模型，两项按 0.5 / 0.5 配比，最优点从 **0.00 挪到 0.55**：disc 仍有 **0.873**，encoder 恢复 $z$ 的余弦到了 **0.844**。' },
         { at: 9.6, s: '对照三种配比：只有 disc（等于 AMP 加个 $z$）→ **$s^* = 0.00$、cos 0.000**，collapse。' },
         { at: 10.9, s: '默认的 0.5 / 0.5 → **$s^* = 0.55$**：既留在自然流形上，又认得出是哪个技能。' },
-        { at: 12.2, s: '只有 enc → **$s^* = 3.00$、disc 只剩 0.017**：技能是分开了，但动作已经飞出人类流形 —— 怪异但好区分。' },
-        { at: 13.8, s: '所以这两项谁都不能单独用。encoder reward 本质上是在给**「动作里含多少 $z$ 的信息」定一个下界**。' }
+        { at: 12.2, s: '只有 enc → **$s^*$ 一路顶到横轴尽头 3.00、disc 只剩 0.017**：技能是分开了，但动作已经飞出人类流形 —— 怪异但好区分。' },
+        { at: 13.8, s: '所以这两项谁都不能单独用。理论上 encoder 这一项来自论文式 (8)：$\\mathbb{E}[\\log q(z \\mid s, s\')]$ 是互信息 $I(z;\\, s, s\')$ 的**变分下界**，推高它就是推高动作里携带的 $z$ 信息。' }
       ]
     },
     {
@@ -1641,14 +1642,14 @@
       dur: 14,
       build: buildSceneDiversity,
       cues: [
-        { at: 0.3, s: '光有 encoder 还不够。可能出现：$z_1, z_2, z_3$ 明明不同，但动作**几乎一样**（encoder 靠一点点差别也能猜对）。' },
-        { at: 0.6, s: '所以再加一道锁。源码量的是两件事：$z_{diff} = 0.5 - 0.5\\, z_1 \\!\\cdot\\! z_2$，以及 $a_{diff} = \\overline{(a_1 - a_2)^2}$。' },
-        { at: 1.6, s: '把夹角从 **15° 开到 150°**：$z_{diff}$ 从 0.017 涨到 0.933，$a_{diff}$ 也从 0.017 涨到 0.933。' },
+        { at: 0.3, s: '光有 encoder 还不够。论文 6.4 节要的是**跟手**：不同的 $z$ 要真的给出不同的动作（缓解 mode collapse），所以在定期重采样之外再加一道锁。' },
+        { at: 0.6, s: '做法：**同一个状态 $s$** 下把当前 $z_1$ 换成新采的 $z_2$，量两件事：$z_{diff} = 0.5 - 0.5\\, z_1 \\!\\cdot\\! z_2$，以及两组动作均值的差 $a_{diff}$（论文用两个动作分布的 KL，MimicKit 方差固定，就化成均值差的平方）。' },
+        { at: 1.6, s: '玩具模型里（动作 = 敏感度 × $z$），把夹角从 **15° 开到 150°**：$z_{diff}$ 从 0.017 涨到 0.933，$a_{diff}$ 也从 0.017 涨到 0.933。' },
         { at: 4.6, s: '两者同步在涨，所以**比值是一条水平线** —— 这正是 `diversity_tar: 1.0` 想要的：动作差异和 latent 差异成正比。' },
         { at: 5.6, s: '现在把「用不用 $z$」拖到 0，模拟 collapse：$a_{diff} \\to 0$，**ratio 掉到 0.000**，loss 立刻变成 $(1-0)^2 = 1$。' },
         { at: 7.6, s: '反过来推太高也要罚：ratio **2.880** 时 loss 是 **3.534** —— latent 只挪一点，动作就面目全非，空间不连续、没法插值。' },
         { at: 9.6, s: '回到中间，ratio 落回 **1.000**，加权 loss 几乎为 0。平方误差把**两头**一起罚掉了。' },
-        { at: 11.8, s: '`diversity_weight: 0.01` 只是个正则项，不是主目标 —— 拉大它会挤占 disc / enc reward，策略为了凑比值会牺牲动作质量。' }
+        { at: 11.8, s: '注意它**不进奖励**：论文说每步奖励只看判别器和 encoder，diversity 只在梯度更新时乘 `diversity_weight: 0.01` 加进 actor loss。消融里去掉它，技能间的切换明显变少（图 9），但五个下游任务的回报差别不大（表 1）。' }
       ]
     },
     {
@@ -1659,12 +1660,12 @@
         { at: 0.3, s: '把前五幕串起来，就是 ASE 的一次训练循环。`ASEAgent` 继承自 `AMPAgent`，多出来的正好是 latent 管理和 Encoder。' },
         { at: 0.6, s: '① `_update_latents` 检查哪些环境的 latent 到期了，`_sample_latents` 给它们重新采一个球面方向。' },
         { at: 2.3, s: '② Actor 拿 $(s, z)$ 出动作 —— `eval_actor(obs, z)`，latent 是策略输入的**一等公民**，网络是 fc_3x1024、4096 个并行 env。' },
-        { at: 3.8, s: '③ 记下相邻两帧 $(s, s\')$：判别器和编码器吃的是同一份观测。' },
-        { at: 5.1, s: '④ 判别器判「像不像多段 locomotion 数据」，编码器反推 $\\hat z$。注意 **disc 是 3×1024、enc 是 2×1024**，encoder 单独一个 MLP。' },
-        { at: 7.3, s: '⑤ 合成奖励：**$r = 0.5\\, r_{disc} + 0.5\\, r_{enc}$**，再加 `diversity_weight: 0.01` 那一项；`task_reward_weight` 默认 **0.0**。' },
-        { at: 9.1, s: '⑥ 一轮要更新 **4 套参数**，各自一个 Adam：actor 2e-5，critic / disc / enc 都是 5e-5。然后回到 ①。' },
-        { at: 11.2, s: '预训练结束后才是重点：**底层 $\\pi(a \\mid s, z)$ 冻结**，下游任务一行 motor 都不用重训。' },
-        { at: 12.0, s: '高层策略只学「什么时候切哪个 $z$」：敌人远就选前进型，挥刀就选闪避型，露破绽就选攻击型。' },
+        { at: 3.8, s: '③ 记下行为片段 `disc_obs`：MimicKit 默认取最近 10 帧，论文里是相邻两帧 $(s, s\')$ 这一对。判别器和编码器吃的是同一份。' },
+        { at: 5.1, s: '④ 判别器判「像不像动捕数据」，编码器反推 $\\hat z$。MimicKit 里 **disc 3×1024、enc 2×1024** 是两个 MLP；论文图 5 是同一个网络、两个输出头。' },
+        { at: 7.3, s: '⑤ 合成奖励：**$r = 0.5\\, r_{disc} + 0.5\\, r_{enc}$**（$r_{disc}$ 已乘 2，即 $-\\log(1 - D) + 0.5\\, r_{enc}$），`task_reward_weight` 默认 **0.0**。diversity **不在这里**。' },
+        { at: 9.1, s: '⑥ 一轮更新 **4 套参数**，各自一个 Adam：actor 2e-5，critic / disc / enc 都是 5e-5；diversity loss 在这一步 ×0.01 加进 actor loss。然后回到 ①。' },
+        { at: 11.2, s: '预训练结束后：**底层 $\\pi(a \\mid s, z)$ 冻结**，每个下游任务只训一个高层策略 —— 它 6 Hz 输出 $z$，底层 30 Hz 出动作；冻结的判别器还能接着当风格奖励（论文式 16）。' },
+        { at: 12.0, s: '论文的 Strike 任务里，高层学会了：离目标远就切到跑步的 $z$，到了跟前切到挥剑，目标被击倒后切回站立（10.3 节）。' },
         { at: 14.0, s: '**决策空间从「直接控制几十个关节」变成「在 64 维球面上选一个方向」** —— 这就是 ASE 说的技能接口化。' }
       ]
     }
@@ -1682,7 +1683,9 @@
         '第三、四幕的曲线与 $s^*$（0.00 / 0.55 / 3.00）来自「为什么非要加一个 encoder」演示里的同一对 `discR` / `encR` 与共用的 `bestSens()`，噪声都取 $\\sigma = 0.35$；' +
           '第五幕的 $z_{diff}$ / $a_{diff}$ / ratio 走「diversity loss」演示里的同一个 `divParts()`。',
         '第六幕的 4096 env、`latent_dim: 64`、`latent_time` 0.0~5.0 s、actor·critic·disc fc_3x1024 / enc fc_2x1024、' +
-          '`disc_reward_weight` 0.5、`enc_reward_weight` 0.5、`task_reward_weight` 0.0、`diversity_weight` 0.01、四个 Adam（2e-5 / 5e-5）来自正文那张 MimicKit 默认 yaml 表。',
+          '`disc_reward_weight` 0.5、`enc_reward_weight` 0.5、`task_reward_weight` 0.0、`diversity_weight` 0.01、四个 Adam（2e-5 / 5e-5）来自正文那张 MimicKit 默认 yaml 表；' +
+          '`disc_reward_scale: 2`、`num_disc_obs_steps: 10`、$r_{enc}$ 截 0、diversity 加在 actor loss 上来自 `ase_agent.py` / `amp_agent.py`；' +
+          '6 Hz / 30 Hz、Strike 任务的切换顺序、图 9 / 图 10 / 表 1 的消融来自论文第 10 节。',
         '**这几幕里的玩具模型和下面三个演示同源**：latent 空间降到 2 维圆、行为由一个写死的线性矩阵解码、' +
           '「策略用不用 $z$」被压成一个标量 $s$、encoder 用最优线性解的闭式表达。定性结论（技能是连续方向、没有 encoder 就 collapse、' +
           '两项都不能单独用、ratio 应该是一条水平线）成立，**具体数值不能和论文直接比**。'
