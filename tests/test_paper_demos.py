@@ -124,6 +124,7 @@ GENTLE_NOTE = (
     / "GentleHumanoid__Learning_Upper-body_Compliance_for_Contact-rich_Human_and_Object"
     / "GentleHumanoid__Learning_Upper-body_Compliance_for_Contact-rich_Human_and_Object.md"
 )
+HUMANML3D_NOTE = ROOT / "papers" / "14_Human_Motion" / "HumanML3D" / "HumanML3D.md"
 
 PLACEHOLDER_RE = re.compile(r'<div class="paper-demo" data-demo="([a-z0-9-]+)"')
 FRONTMATTER_DEMOS_RE = re.compile(r'^demos:\s*\[(.+)\]\s*$', re.MULTILINE)
@@ -251,6 +252,7 @@ def test_notes_declare_their_demos_in_reading_order():
         PHP_NOTE: ("php", ["php-explainer"]),
         PBFM_NOTE: ("pbfm", ["pbfm-explainer"]),
         GENTLE_NOTE: ("gentle", ["gentle-explainer"]),
+        HUMANML3D_NOTE: ("humanml3d", ["humanml3d-explainer", "humanml3d-video"]),
         TRANSFORMER_NOTE: ("transformer", ["tf-explainer", "tf-video"]),
         PI0_NOTE: ("pi0", ["pi0-explainer", "pi0-video"]),
         PI05_NOTE: ("pi05", ["pi05-explainer", "pi05-video"]),
@@ -291,7 +293,7 @@ def test_demo_assets_are_theme_aware():
 EXPLAINER_BUNDLES = (
     "ppo", "awr", "deepmimic", "amp", "add", "ase", "calm", "pulse", "sonic", "groot",
     "gmr", "omniretarget", "diffusion_policy", "beyondmimic", "cosmos", "umr", "php", "pbfm",
-    "gentle", "lcp", "transformer", "pi0", "pi05", "op3soccer",
+    "gentle", "lcp", "transformer", "pi0", "pi05", "op3soccer", "humanml3d",
 )
 
 # 幕数由论文决定，不是统一模板：PPO / DeepMimic / AMP / ADD 的核心概念正好各 5 个，
@@ -365,6 +367,11 @@ EXPLAINER_BUNDLES = (
 # OP3 足球是七件（任务与机器人 / 技能教师 / 自适应蒸馏 / 自博弈 / 奖励与安全 / sim-to-real /
 # 实验）。蒸馏与自博弈同在阶段 2，但一个回答「向谁学」（λ 的自动开关），一个回答「和谁踢」
 # （对手池），论文也是分开的两段与两组消融。
+# HumanML3D 是九件（文本生成动作卡在哪 / 数据集怎么建 / 一帧 263 维 / 每 4 帧一个 snippet code /
+# Text2Length / 时序 VAE 的一步 / 三项损失与课程学习 / 评测器与 R-Precision / 结果、消融与遗产）。
+# 它一篇论文同时交了数据集、方法和评测协议三样东西：数据集的「怎么建」与「每帧存什么」是第 4 节与
+# 第 5 节两段；方法里自编码器（§3.1）、长度采样（§3.2）、VAE 结构与训练方案（§3.3 前后两半）各自
+# 独立；评测器（附录 B）又是后来被整个领域沿用的贡献，不能和 Table 2 的数字挤在一帧。
 EXPLAINER_SCENES = {
     "ppo": (PPO_NOTE, 5),
     "awr": (AWR_NOTE, 6),
@@ -391,8 +398,9 @@ EXPLAINER_SCENES = {
     "pi0": (PI0_NOTE, 7),
     "pi05": (PI05_NOTE, 7),
     "op3soccer": (SOCCER_NOTE, 7),
+    "humanml3d": (HUMANML3D_NOTE, 9),
 }
-CN_NUMERALS = {4: "四", 5: "五", 6: "六", 7: "七", 8: "八"}
+CN_NUMERALS = {4: "四", 5: "五", 6: "六", 7: "七", 8: "八", 9: "九"}
 
 
 def test_explainer_scene_count_matches_the_title_and_note():
@@ -1451,7 +1459,7 @@ def test_narrated_video_placeholders_point_at_files_that_exist():
             assert f"'{demo}': buildVideoDemo" in js and "K.video(host" in js, f"{demo} 没有通过 K.video 注册"
     for demo in ("calm-video", "pulse-video", "dp-video", "bm-video", "lcp-video", "cosmos-video", "groot-video",
                  "tf-video", "pi0-video", "pi05-video", "soccer-video", "sonic-video", "gmr-video",
-                 "omniretarget-video"):
+                 "omniretarget-video", "humanml3d-video"):
         assert demo in seen, f"{demo} 应该挂在对应的论文笔记里"
 
 
@@ -1512,3 +1520,115 @@ def test_sonic_and_gmr_worked_examples_share_numbers_with_their_explainers():
     for needle in ("## 🚶 具体实例", "s = \\frac{0.80 + 0.85 + 1.00}{3} \\approx 0.883", "**13.7 cm**",
                    "18^\\circ", "15.4", "25.0", "14.3\\%", "**90 条**"):
         assert needle in gmr, needle
+
+
+def test_humanml3d_explainer_and_worked_example_share_the_same_numbers():
+    """HumanML3D 九幕动画与笔记「🚶 具体实例」是同一组数：统计比例、263 维、snippet code、长度采样与结果都现算。"""
+    js = (DEMO_JS_DIR / "humanml3d.js").read_text(encoding="utf-8")
+    note = HUMANML3D_NOTE.read_text(encoding="utf-8")
+
+    # 论文 Table 1 / 2 / 4 与官方仓库的原值
+    for line in (
+        "var HML = { motions: 14616, texts: 44970, hours: 28.59, vocab: 5371 };",
+        "var KIT = { motions: 3911, texts: 6278, hours: 10.33, vocab: 1623 };",
+        "rows: 170,",
+        "wristFrame: 28,",
+        "var FOOT_THR = 0.002;",
+        "var UNIT = 4;",
+        "var CODE_DIM = 512;",
+        "var DIM_Z = 128;",
+        "var LAMBDA_KL = 0.01;",
+        "var P_TF = 0.4;",
+        "var CUR_START = 10;",
+        "var CUR_END = 49;",
+        "var POOL = 32;",
+        "var MARGIN = 10;",
+        "var SAMPLE_U = [0.2, 0.5, 0.9];",
+        "var ATT_EARLY = softmax([1.8, 1.5, 0.2, 0.1, 0.4]);",
+        "var ATT_SWING = softmax([0.2, 0.4, 2.0, 1.3, 1.1]);",
+    ):
+        assert line in js, line
+    assert "'demo-x-mono'" in js and "K.video(host" in js
+
+    # 第二幕：Table 1 的倍数与 index.csv 的来源
+    assert [_fmt(a / b, 2) for a, b in ((14616, 3911), (44970, 6278), (28.59, 10.33), (5371, 1623))] == [
+        "3.74", "7.16", "2.77", "3.31"]
+    assert 4648 + 2913 + 1839 + 1465 + 1191 + 2560 == 14616 and 14616 - 1191 == 13425
+    assert _fmt(44970 / 14616, 2) == "3.08" and _fmt(28.59 * 3600 / 14616, 2) == "7.04"
+
+    # 第三幕：263 维、触地阈值
+    def pose_dim(j):
+        return 1 + 2 + 1 + 3 * (j - 1) + 6 * (j - 1) + 3 * j + 4
+
+    assert (pose_dim(22), pose_dim(21), 4 + 3 * 22 + 6 * 22 + 3 * 22 + 4) == (263, 251, 272)
+    assert 170 * 263 == 44710
+    assert (_fmt(math.sqrt(0.002) * 100, 2), _fmt(math.sqrt(0.002) * 20, 3)) == ("4.47", "0.894")
+
+    # 第四幕：168 帧 → 84 → 42 个 code，参数量与感受野
+    def conv_len(n):
+        return (n + 2 - 4) // 2 + 1
+
+    frames = 170 // 4 * 4
+    assert (frames, conv_len(frames), conv_len(conv_len(frames))) == (168, 84, 42)
+    assert (168 * 263, 42 * 512, _fmt(168 * 263 / (42 * 512), 2)) == (44184, 21504, "2.05")
+    enc = 259 * 512 * 4 + 512 + 512 * 512 * 4 + 512 + 512 * 512 + 512
+    dec = 512 * 512 * 4 + 512 + 512 * 263 * 4 + 263 + 263 * 263 + 263
+    assert (enc, dec, 4 + 3 * 2) == (1842688, 1657407, 10)
+
+    # 第五幕：截在 [10, 49] 的示意分布，按累积概率取样
+    def length_dist(mu, sigma):
+        w = [math.exp(-((k - mu) ** 2) / (2 * sigma * sigma)) for k in range(10, 50)]
+        return [x / sum(w) for x in w]
+
+    def quantile(p, u):
+        acc = 0.0
+        for i, x in enumerate(p):
+            acc += x
+            if u <= acc:
+                return 10 + i
+        return 49
+
+    peak, flat = length_dist(42, 3), length_dist(30, 9)
+    assert [quantile(peak, u) for u in (0.2, 0.5, 0.9)] == [39, 42, 46]
+    assert [quantile(flat, u) for u in (0.2, 0.5, 0.9)] == [23, 30, 41]
+    assert (_fmt(peak[42 - 10], 3), _fmt(-math.log(peak[42 - 10]), 2)) == ("0.134", "2.01")
+    assert (_fmt(flat[42 - 10], 3), _fmt(-math.log(flat[42 - 10]), 2)) == ("0.019", "3.98")
+
+    # 第六幕：注意力示意、三个 GRU 的输入维数、到达倒计时、KL 算例
+    def softmax(x):
+        e = [math.exp(v - max(x)) for v in x]
+        return [v / sum(e) for v in e]
+
+    assert [_fmt(v, 3) for v in softmax([1.8, 1.5, 0.2, 0.1, 0.4])] == ["0.422", "0.312", "0.085", "0.077", "0.104"]
+    assert [_fmt(v, 3) for v in softmax([0.2, 0.4, 2.0, 1.3, 1.1])] == ["0.073", "0.089", "0.440", "0.219", "0.179"]
+    assert (512 + 512, 512 + 512 + 512, 512 + 512 + 128) == (1024, 1536, 1152)
+    assert 28 // 4 + 1 == 8 and 42 - 8 == 34 and _fmt(math.sqrt(512), 1) == "22.6"
+    kl = math.log(1 / 0.8) + (0.64 + 0.25) / 2 - 0.5
+    assert (_fmt(kl, 3), _fmt(kl * 128, 1), _fmt(kl * 128 * 0.01, 3)) == ("0.168", "21.5", "0.215")
+
+    # 第七—九幕：课程阶段、评测随机水平、Table 2 / 4 的比例
+    assert 49 - 10 + 1 == 40 and 42 - 10 + 1 == 33
+    assert (_fmt(100 / 32, 1), _fmt(300 / 32, 1)) == ("3.1", "9.4")
+    assert (_fmt(10 - 6, 0), (10 - 6) ** 2, 3 ** 2) == ("4", 16, 9)
+    assert (_fmt(0.455 / 0.511 * 100, 1), _fmt(0.736 / 0.797 * 100, 1)) == ("89.0", "92.3")
+    assert (_fmt(11.02 / 1.087, 1), _fmt((2.219 - 2.090) / 2.090 * 100, 1)) == ("10.1", "6.2")
+    assert [_fmt(0.455 - v, 3) for v in (0.370, 0.396, 0.443, 0.444)] == ["0.085", "0.059", "0.012", "0.011"]
+
+    for needle in (
+        "## 🎬 九幕动画：HumanML3D 全流程",
+        "## 🚶 具体实例",
+        "## 📁 源码对照",
+        "14,616", "44,970", "13,425", "4,648", "29,232", "4,384",
+        "$1+2+1+63+126+66+4 = 263$", "251 维", "272",
+        "$(170, 263)$", "−22.8°", "10.0 m/s", "第 28 帧",
+        "79.4%、81.2%、74.7%、74.7%", "0.894", "**−11.9**",
+        "**42 个 512 维 code**", "44{,}184", "21{,}504", "1{,}842{,}688", "1,657,407",
+        "39 / 42 / 46", "7.8 / 8.4 / 9.2", "23 / 30 / 41", "2.01", "3.98",
+        "0.422 / 0.312 / 0.085 / 0.077 / 0.104", "0.073 / 0.089 / 0.440 / 0.219 / 0.179",
+        "**1,024**", "**1,536**", "**1,152**", "$T-t = 34$", "0.168", "21.5", "0.215",
+        "**参加 33 个阶段**", "89.0\\%", "92.3\\%", "10.1", "+6.2%", "43,692",
+    ):
+        assert needle in note, needle
+    # 论文只发在 CVPR 2022；旧笔记里的 arXiv 2204.09419 是一篇天体物理论文，不能再当成出处链接
+    assert "arxiv.org/abs/2204.09419" not in note and "\narxiv:" not in note
+

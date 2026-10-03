@@ -4351,16 +4351,15 @@
         "zh_title": "AvatarPoser：从稀疏运动感知做关节化全身姿态跟踪"
       },
       {
-        "title": "Generating Diverse and Natural 3D Human Motions from Textual Descriptions",
+        "title": "Generating Diverse and Natural 3D Human Motions from Text",
         "path": "papers/14_Human_Motion/HumanML3D/HumanML3D.md",
         "url": "/papers/14_Human_Motion/HumanML3D/HumanML3D.html",
         "dir": "HumanML3D",
-        "arxiv": "2204.09419",
         "has_open_source": true,
-        "published_date_zh": "2022年4月（arXiv）",
-        "published_date_en": "Apr 2022 (arXiv)",
-        "zhname": "从文本描述生成多样化且自然的 3D 人体运动",
-        "zh_title": "从文本描述生成多样化且自然的 3D 人体运动"
+        "published_date_zh": "2022年6月（CVPR 2022）",
+        "published_date_en": "Jun 2022 (CVPR 2022)",
+        "zhname": "HumanML3D：从文本生成多样且自然的 3D 人体动作",
+        "zh_title": "HumanML3D：从文本生成多样且自然的 3D 人体动作"
       },
       {
         "title": "Control Operators for Interactive Character Animation",
