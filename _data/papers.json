@@ -370,6 +370,17 @@
         "name": "Teleoperation & Imitation Learning",
         "papers": [
           {
+            "title": "ACT: Learning Fine-Grained Bimanual Manipulation with Low-Cost Hardware",
+            "path": "papers/03_High_Impact_Selection/ACT_Learning_Fine-Grained_Bimanual_Manipulation_with_Low-Cost_Hardware/ACT_Learning_Fine-Grained_Bimanual_Manipulation_with_Low-Cost_Hardware.md",
+            "url": "/papers/03_High_Impact_Selection/ACT_Learning_Fine-Grained_Bimanual_Manipulation_with_Low-Cost_Hardware/ACT_Learning_Fine-Grained_Bimanual_Manipulation_with_Low-Cost_Hardware.html",
+            "dir": "ACT_Learning_Fine-Grained_Bimanual_Manipulation_with_Low-Cost_Hardware",
+            "arxiv": "2304.13705",
+            "published_date_zh": "2023年4月23日（arXiv）",
+            "published_date_en": "Apr 23, 2023 (arXiv)",
+            "zhname": "ACT / ALOHA：用低成本硬件学习精细双臂操作",
+            "zh_title": "ACT / ALOHA：用低成本硬件学习精细双臂操作"
+          },
+          {
             "title": "OmniH2O: Universal and Dexterous Human-to-Humanoid Whole-Body Teleoperation and Learning",
             "path": "papers/03_High_Impact_Selection/OmniH2O_Universal_Whole-Body_Teleoperation/OmniH2O_Universal_Whole-Body_Teleoperation.md",
             "url": "/papers/03_High_Impact_Selection/OmniH2O_Universal_Whole-Body_Teleoperation/OmniH2O_Universal_Whole-Body_Teleoperation.html",
@@ -510,6 +521,17 @@
             "published_date_en": "Apr 26, 2023 (arXiv v1), Science Robotics 2024",
             "zhname": "OP3 足球：用深度强化学习让双足机器人学会敏捷踢球",
             "zh_title": "OP3 足球：用深度强化学习让双足机器人学会敏捷踢球"
+          },
+          {
+            "title": "OpenVLA: An Open-Source Vision-Language-Action Model",
+            "path": "papers/03_High_Impact_Selection/OpenVLA_An_Open-Source_Vision-Language-Action_Model/OpenVLA_An_Open-Source_Vision-Language-Action_Model.md",
+            "url": "/papers/03_High_Impact_Selection/OpenVLA_An_Open-Source_Vision-Language-Action_Model/OpenVLA_An_Open-Source_Vision-Language-Action_Model.html",
+            "dir": "OpenVLA_An_Open-Source_Vision-Language-Action_Model",
+            "arxiv": "2406.09246",
+            "published_date_zh": "2024年6月13日（arXiv）",
+            "published_date_en": "Jun 13, 2024 (arXiv)",
+            "zhname": "OpenVLA：开源的视觉-语言-动作模型",
+            "zh_title": "OpenVLA：开源的视觉-语言-动作模型"
           },
           {
             "title": "π0: A Vision-Language-Action Flow Model for General Robot Control",
@@ -4329,16 +4351,15 @@
         "zh_title": "AvatarPoser：从稀疏运动感知做关节化全身姿态跟踪"
       },
       {
-        "title": "Generating Diverse and Natural 3D Human Motions from Textual Descriptions",
+        "title": "Generating Diverse and Natural 3D Human Motions from Text",
         "path": "papers/14_Human_Motion/HumanML3D/HumanML3D.md",
         "url": "/papers/14_Human_Motion/HumanML3D/HumanML3D.html",
         "dir": "HumanML3D",
-        "arxiv": "2204.09419",
         "has_open_source": true,
-        "published_date_zh": "2022年4月（arXiv）",
-        "published_date_en": "Apr 2022 (arXiv)",
-        "zhname": "从文本描述生成多样化且自然的 3D 人体运动",
-        "zh_title": "从文本描述生成多样化且自然的 3D 人体运动"
+        "published_date_zh": "2022年6月（CVPR 2022）",
+        "published_date_en": "Jun 2022 (CVPR 2022)",
+        "zhname": "HumanML3D：从文本生成多样且自然的 3D 人体动作",
+        "zh_title": "HumanML3D：从文本生成多样且自然的 3D 人体动作"
       },
       {
         "title": "Control Operators for Interactive Character Animation",

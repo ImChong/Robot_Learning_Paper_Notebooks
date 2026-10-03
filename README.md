@@ -2,8 +2,8 @@
 
 [![GitHub Pages](https://img.shields.io/badge/GitHub%20Pages-Live-brightgreen.svg)](https://imchong.github.io/Robot_Learning_Paper_Notebooks/)
 [![License](https://img.shields.io/badge/License-BSD_3--Clause-blue.svg)](LICENSE)
-[![Papers](https://img.shields.io/badge/Papers-777-orange.svg)](papers/PROGRESS.md)
-[![Notes](https://img.shields.io/badge/Notes-371-green.svg)](papers/)
+[![Papers](https://img.shields.io/badge/Papers-779-orange.svg)](papers/PROGRESS.md)
+[![Notes](https://img.shields.io/badge/Notes-374-green.svg)](papers/)
 
 人形机器人学习方向的每日论文精读笔记，逐篇部署为 [在线网页](https://imchong.github.io/Robot_Learning_Paper_Notebooks/)。
 
@@ -40,7 +40,8 @@
 ② 【精确模仿主线】        【风格学习主线】
   DeepMimic (2018)  →→→  AMP (2021)
        ↓                    ↓
-  PHC (2023)            ADD (2025)
+  PHC (2023)            ADD (2025) / SMP (2025)
+                        ↑ SMP：用预训练扩散模型的分数代替判别器，先验冻结后跨任务复用（⇠ Diffusion Policy）
        ↓
 ③ 【技能组合 / 扩散】
   ASE (2022) → CALM (2023) → PULSE (2023)
@@ -49,11 +50,13 @@
        ↓
 ④ 【全身控制 WBC】        ← 把技能 / 扩散策略落到整机关节
   Expressive WBC (2024) → HOVER (2024) / HugWBC (2025) / ExBody2 (2024) / SONIC (2025)
+  OmniH2O (2024) → HOVER              ← HOVER 统一的就是 ExBody / OmniH2O 等各自的命令空间
        ↓
    ┌── 从 WBC / 扩散分出多条上行支线，最终都汇聚到 ⑨ ──┐
    │
    ├─ ⑤ 操作 Manipulation：         iDP3 (2024) → EgoMimic (2024) → HumDex (2026)
    │                                （3D 扩散策略 / 自我中心视频 / 灵巧手）
+   │                                ACT / ALOHA (2023) → EgoMimic、π₀（动作块的来源；EgoMimic 的策略骨干）
    │
    ├─ ⑥ 移动操作 Loco-Manipulation： HOMIE (2025) → ULTRA (2026) → Ψ₀ (2026)
    │                                （外骨骼遥操作 → 多模态全身控制 → loco-manip 基础模型）
@@ -63,14 +66,19 @@
        ⑧ 世界-动作模型 WAM：         DreamZero (2026)（World Action Models are Zero-shot Policies）
        ↓
 ⑨ 【基础模型终点 (VLA / BFM)】   ← 一路从 PPO 爬到这里
-  VLA：π₀ (2024) → π₀.₅ (2025)          ── 流匹配动作专家 → 异构协同训练、开放世界泛化
+  VLA：OpenVLA (2024) → π₀ (2024)       ── 离散 token 自回归 → 流匹配动作块
+       π₀ (2024) → π₀.₅ (2025)          ── 流匹配动作专家 → 异构协同训练、开放世界泛化
        π₀ → GR00T N1 (2025)             ── 视觉-语言-动作，端到端通才策略
   BFM：Behavior Foundation Model (2025) ── 行为基础模型 / 全身控制先验
 
 【Sim-to-Real 工程层】  ← 横跨整个路线
   Domain Randomization (2017) → LCP (2024)
   ↑ sim环境随机化迁移        ↑ 动作平滑，替代低通滤波器
-  Domain Randomization (2017) → OP3 Soccer (2023)
+  LCP (2024) → ASAP (2025) ⇢ BeyondMimic
+               ↑ delta 动作对齐仿真与真机物理；BeyondMimic 以它为单动作专用方法的对照
+  Domain Randomization (2017) → 四足地形 · 教师-学生 (2020) ⇢ HOVER 等 WBC
+                               ↑ 特权教师 → 学生蒸馏的源头
+  四足地形 · 教师-学生 (2020) → OP3 Soccer (2023)
                                ↑ 小人形零样本 sim-to-real：技能蒸馏 + 自博弈 + 针对性随机化
 ```
 
@@ -91,7 +99,7 @@
 | AMP | [nv-tlabs/ASE](https://github.com/nv-tlabs/ASE)（含 AMP） | ✅ | `mimickit/learning/amp_agent.py` |
 | ASE | [nv-tlabs/ASE](https://github.com/nv-tlabs/ASE) | ✅ | `mimickit/learning/ase_agent.py` |
 | ADD | [xbpeng/MimicKit](https://github.com/xbpeng/MimicKit) | ✅ | `mimickit/learning/add_agent.py` |
-| SMP | [xbpeng/MimicKit](https://github.com/xbpeng/MimicKit) | ✅ | `mimickit/learning/smp_agent.py` + `tools/diffusion_model/train_tinymdm.py` |
+| SMP | [xbpeng/MimicKit](https://github.com/xbpeng/MimicKit) | ✅ | `mimickit/learning/smp_agent.py` + `tools/diffusion_model/train_tinymdm.py` （配置 `data/agents/smp_task_humanoid_agent.yaml`） |
 | LCP | [zixuan417/smooth-humanoid-locomotion](https://github.com/zixuan417/smooth-humanoid-locomotion) | ✅ | `mimickit/learning/lcp_agent.py` |
 | PHC | [ZhengyiLuo/PHC](https://github.com/ZhengyiLuo/PHC) | ❌ | `phc/learning/amp_network_pnn_builder.py`（独立仓库） |
 | CALM | [NVlabs/CALM](https://github.com/NVlabs/CALM) | ❌ | IsaacGym 独立实现，不在 MimicKit |
@@ -106,9 +114,9 @@
 主线之外的重点补充阅读，按子模块与发表时间（旧→新）排列，跟踪进度见 [PROGRESS.md](papers/PROGRESS.md)：
 
 - **全身控制核心**：[Expressive WBC](https://arxiv.org/abs/2402.16796) · [HOVER](https://arxiv.org/abs/2410.21229) · [ExBody2](https://arxiv.org/abs/2412.13196) · [UH-1](https://arxiv.org/abs/2412.14172) · [HugWBC](https://arxiv.org/abs/2502.03206) · [SONIC](https://arxiv.org/abs/2511.07820)
-- **遥操作与模仿学习**：[OmniH2O](https://arxiv.org/abs/2406.08858) · [iDP3](https://arxiv.org/abs/2410.10803) · [HOMIE](https://arxiv.org/abs/2502.13013)
+- **遥操作与模仿学习**：[ACT / ALOHA](https://arxiv.org/abs/2304.13705) · [OmniH2O](https://arxiv.org/abs/2406.08858) · [iDP3](https://arxiv.org/abs/2410.10803) · [HOMIE](https://arxiv.org/abs/2502.13013)
 - **行走经典**：Learning Quadrupedal Locomotion · [Real-World Humanoid Locomotion](https://arxiv.org/abs/2303.03381) · [Locomotion as Next Token Prediction](https://arxiv.org/abs/2402.19469) · [Humanoid Parkour](https://arxiv.org/abs/2406.10759) · [15-Minute Sim-to-Real](https://arxiv.org/abs/2512.01996) · [ECO](https://arxiv.org/abs/2602.06445)
-- **仿真到现实与基座模型**：[Agile Motor Skills (ANYmal)](https://arxiv.org/abs/1901.08652) · [OP3 Soccer](https://arxiv.org/abs/2304.13653) · [π₀](https://arxiv.org/abs/2410.24164) · [ASAP](https://arxiv.org/abs/2502.01143) · [GR00T N1](https://arxiv.org/abs/2503.14734) · [π₀.₅](https://arxiv.org/abs/2504.16054) · [Behavior Foundation Model](https://arxiv.org/abs/2509.13780) · [Perceptive BFM](https://arxiv.org/abs/2606.08059)
+- **仿真到现实与基座模型**：[Agile Motor Skills (ANYmal)](https://arxiv.org/abs/1901.08652) · [OP3 Soccer](https://arxiv.org/abs/2304.13653) · [OpenVLA](https://arxiv.org/abs/2406.09246) · [π₀](https://arxiv.org/abs/2410.24164) · [ASAP](https://arxiv.org/abs/2502.01143) · [GR00T N1](https://arxiv.org/abs/2503.14734) · [π₀.₅](https://arxiv.org/abs/2504.16054) · [Behavior Foundation Model](https://arxiv.org/abs/2509.13780) · [Perceptive BFM](https://arxiv.org/abs/2606.08059)
 - **仿真平台与工具**：[Humanoid-Gym](https://arxiv.org/abs/2404.05695) · [BEHAVIOR Robot Suite](https://arxiv.org/abs/2503.05652) · Isaac Lab · [ProtoMotions3](https://arxiv.org/abs/2409.14393)
 
 ## 笔记说明
