@@ -275,7 +275,8 @@ html, body { width: 1080px; height: 1920px; overflow: hidden; background: var(--
   function contentBottom() { return 1300; }
   var V = { K: K, h: h, fadeUp: fadeUp, clamp: clamp, stack: stack, contentBottom: contentBottom, SAFE_TOP: 330, SAFE_BOTTOM: 1440,
     ACC: 'var(--demo-accent)', GOOD: 'var(--demo-good)', BAD: 'var(--demo-bad)', WARN: 'var(--demo-warn)' };
-  document.getElementById('arxiv').textContent = 'arXiv ' + window.PaperVideo.arxiv;
+  // 没有 arXiv 版本的论文（HumanML3D 只发在 CVPR）用 `badge` 写会议名
+  document.getElementById('arxiv').textContent = window.PaperVideo.badge || 'arXiv ' + window.PaperVideo.arxiv;
 
   function get(key) {
     if (!built[key]) {
