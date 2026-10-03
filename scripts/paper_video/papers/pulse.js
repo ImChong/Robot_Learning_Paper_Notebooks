@@ -6,9 +6,9 @@ window.PaperVideo = {
     var root = h('div', 'card');
     var a = h('div', 'big', root, '<div style="font-size:150px;font-weight:900;letter-spacing:10px;color:var(--demo-accent);line-height:1.08">PULSE</div>');
     var b = h('div', 'big', root, '<div style="font-size:52px;font-weight:900;line-height:1.2">物理可行的通用潜在技能</div>' +
-      '<div style="font-size:32px;color:var(--text-secondary);margin-top:8px">把数万段人体动作压成一个 32 维潜空间</div>');
+      '<div style="font-size:32px;color:var(--text-secondary);margin-top:8px">把 40 小时人体动捕压成一个 32 维潜空间</div>');
     var m = h('div', 'meta', root,
-      '<b>Universal Humanoid Motion Representations for Physics-Based Control</b><br>Luo, Cao, Winkler, Hodgins, Xu, Kitani<br>CMU · Meta · ICLR 2024 Spotlight');
+      '<b>Universal Humanoid Motion Representations for Physics-Based Control</b><br>Luo, Cao, Merel, Winkler, Huang, Kitani, Xu<br>Meta Reality Labs · CMU · ICLR 2024 Spotlight');
     m.style.fontSize = '27px';
     m.style.padding = '22px 34px';
     var toc = h('div', 'toc', root,
@@ -33,9 +33,9 @@ window.PaperVideo = {
     var root = h('div', 'card');
     var head = h('div', 'head', root, '<div class="act">三句话记住 PULSE</div><div class="title">把「会动」压成可采样的表示</div>');
     var items = [
-      [ACC, '① 大规模模仿 + VIB', '$\\lVert a_{student} - a_{teacher} \\rVert^2 + \\beta \\cdot \\mathrm{KL}$<br>能力变成一个 32 维概率潜空间'],
-      [GOOD, '② 本体感受先验', '$p(z \\mid s)$ 以当前姿态、速度为条件<br>长序列采样才不会踩空'],
-      [WARN, '③ 下游只搜 32 维', '解码器与先验冻结，高层输出残差 $\\Delta z$<br>物理可行性由冻结的解码器保底']
+      [ACC, '① PHC+ 教师 + VIB 在线蒸馏', '动作误差 + 平滑项 + $\\beta \\cdot \\mathrm{KL}$<br>能力变成一个 32 维概率潜空间'],
+      [GOOD, '② 本体感受先验', '$p(z \\mid s)$ 以当前姿态、速度为条件<br>随机滚动才又长又稳'],
+      [WARN, '③ 下游只搜 32 维', '解码器与先验冻结，高层输出残差 $\\Delta z$<br>$z$ = 先验均值 + 残差，动作像人由先验兜底']
     ];
     var pts = items.map(function (it, k) {
       var p = h('div', 'pt', root);
