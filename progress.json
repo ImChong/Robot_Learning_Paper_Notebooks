@@ -41,15 +41,15 @@
         "13_Physics-Based_Animation",
         "14_Human_Motion"
       ],
-      "last_module": "09_State_Estimation",
-      "last_index": 376,
-      "last_title": "Kimera: an Open-Source Library for Real-Time Metric-Semantic Localization and Mapping (arXiv:1910.02490)",
-      "next_module": "10_Sim-to-Real",
-      "last_completed_date": "2026-10-02",
-      "note": "本日轮转应到 08_Navigation，但该模块中上游 awesome-humanoid-robot-learning 收录的论文已全部有笔记；按 AGENTS.md「模块 04–14 只为上游已收录论文建笔记」的约束顺延到 09_State_Estimation。09 模块上游仅剩 GTSAM / Kimera / VINS-Fusion 三个库类条目，取其中发表最新的 Kimera (arXiv:1910.02490, v1 2019-10-06, ICRA 2020, Rosinol/Abate/Chang/Carlone, MIT SPARK Lab)。双目+IMU、纯 CPU 实时的度量-语义 SLAM 库：Kimera-VIO(GTSAM iSAM2 固定滞后平滑，预积分+无结构视觉因子)、Kimera-RPGO(改造 PCM 剔除错误闭环)、Kimera-Mesher(低延迟单帧/多帧网格)、Kimera-Semantics(TSDF + 语义贝叶斯更新的全局语义网格)，四线程运行。含整体流程 mermaid 与基于 MIT-SPARK/Kimera-VIO 源码(StereoImuPipeline / VioBackend / Mesher / LoopClosureDetector)的运行时序图。",
-      "last_date": "2026-10-02",
+      "last_module": "11_Simulation_Benchmark",
+      "last_index": 400,
+      "last_title": "Genesis: A Generative and Universal Physics Engine for Robotics and Beyond (GitHub, no arXiv)",
+      "next_module": "12_Hardware_Design",
+      "last_completed_date": "2026-10-03",
+      "note": "本日轮转应到 10_Sim-to-Real，但该模块中上游 awesome-humanoid-robot-learning 收录的论文已全部有笔记(剩下的 Learning Agile and Dynamic Motor Skills for Legged Robots, arXiv:1901.08652 已在 03_High_Impact_Selection 有笔记，按「已有内容则跳过」不重复建)；顺延到 11_Simulation_Benchmark，上游仅剩 Genesis 无笔记，取之。Genesis 没有 arXiv 论文，以 GitHub 仓库(2024-12-18 开源，Apache-2.0)与 Genesis World 1.0 博客(2026-05-27)为准：8 类求解器 + Legacy/SAP/IPC 三种耦合器的多物理仿真、Quadrants 跨后端编译器(含反向自动微分)、Nyx 路径追踪渲染，以及「先用仿真做评测」的方法论(仿真-真机 Pearson 0.8996、MMRV 0.0166)。含整体流程 mermaid 与基于 genesis/engine/scene.py + simulator.py 的源码运行时序图。",
+      "last_date": "2026-10-03",
       "next_candidate": null,
-      "last_completed": "Kimera: an Open-Source Library for Real-Time Metric-Semantic Localization and Mapping (arXiv:1910.02490)"
+      "last_completed": "Genesis: A Generative and Universal Physics Engine for Robotics and Beyond (GitHub, no arXiv)"
     },
     "last_summary_index": 532,
     "last_summary_date": "2026-09-18",
@@ -1618,6 +1618,17 @@
         "project_page": "https://github.com/MIT-SPARK/Kimera",
         "code": "https://github.com/MIT-SPARK/Kimera (C++, BSD；Kimera-VIO / Kimera-RPGO / Kimera-Mesher / Kimera-Semantics 分仓)",
         "source": "✅ 已开源(含源码运行时序图) · 双目+IMU 纯 CPU 实时度量-语义 SLAM：VIO + 鲁棒 PGO(PCM) + 低延迟网格 + TSDF 语义网格 · MIT SPARK Lab · ICRA 2020"
+      },
+      {
+        "date": "2026-10-03",
+        "index": 400,
+        "title": "Genesis: A Generative and Universal Physics Engine for Robotics and Beyond",
+        "folder": "papers/11_Simulation_Benchmark/Genesis__A_Generative_and_Universal_Physics_Engine_for_Robotics_and_Beyond",
+        "module": "11_Simulation_Benchmark",
+        "arxiv": "",
+        "project_page": "https://genesis-embodied-ai.github.io/",
+        "code": "https://github.com/Genesis-Embodied-AI/genesis-world (Python，Apache-2.0；编译器 Quadrants、渲染器 genesis-nyx 分仓)",
+        "source": "✅ 已开源(含源码运行时序图) · 无 arXiv 论文，依据 GitHub 仓库与 Genesis World 1.0 博客 · 多物理 GPU 仿真 + 跨后端编译器 + 路径追踪渲染 + 仿真评测"
       }
     ],
     "last_completed_index": 588,
@@ -6169,6 +6180,16 @@
       "pdf_file": "",
       "route": "State Estimation",
       "title_cn": "Kimera：实时度量-语义定位与建图的开源库"
+    },
+    {
+      "title": "Genesis: A Generative and Universal Physics Engine for Robotics and Beyond",
+      "folder": "papers/11_Simulation_Benchmark/Genesis__A_Generative_and_Universal_Physics_Engine_for_Robotics_and_Beyond",
+      "note_file": "Genesis__A_Generative_and_Universal_Physics_Engine_for_Robotics_and_Beyond.md",
+      "status": "done",
+      "arxiv": "",
+      "pdf_file": "",
+      "route": "Simulation Benchmark",
+      "title_cn": "Genesis：面向机器人及更广领域的生成式通用物理引擎"
     }
   ]
 }

@@ -3788,6 +3788,17 @@
         "published_date_en": "Mar 2024 (arXiv)",
         "zhname": "HumanoidBench：全身运动与操作的人形机器人仿真基准",
         "zh_title": "HumanoidBench：全身运动与操作的人形机器人仿真基准"
+      },
+      {
+        "title": "Genesis: A Generative and Universal Physics Engine for Robotics and Beyond",
+        "path": "papers/11_Simulation_Benchmark/Genesis__A_Generative_and_Universal_Physics_Engine_for_Robotics_and_Beyond/Genesis__A_Generative_and_Universal_Physics_Engine_for_Robotics_and_Beyond.md",
+        "url": "/papers/11_Simulation_Benchmark/Genesis__A_Generative_and_Universal_Physics_Engine_for_Robotics_and_Beyond/Genesis__A_Generative_and_Universal_Physics_Engine_for_Robotics_and_Beyond.html",
+        "dir": "Genesis__A_Generative_and_Universal_Physics_Engine_for_Robotics_and_Beyond",
+        "has_open_source": true,
+        "published_date_zh": "2024年12月18日（GitHub · PyPI v0.2.0） · 2026年5月27日（Genesis World 1.0 blog）",
+        "published_date_en": "Dec 18, 2024 (GitHub · PyPI v0.2.0) · May 27, 2026 (Genesis World 1.0 blog)",
+        "zhname": "Genesis：面向机器人及更广领域的生成式通用物理引擎",
+        "zh_title": "Genesis：面向机器人及更广领域的生成式通用物理引擎"
       }
     ],
     "zhname": "仿真与基准",
