@@ -852,13 +852,19 @@
     s.appendChild(feedArrow);
 
     var box = svgEl('g', {});
-    box.appendChild(paint(svgEl('rect', { x: 292, y: 108, width: 186, height: 140, rx: 8, 'stroke-width': 1.4 }), C_SURFACE2, C_ACCENT));
-    box.appendChild(svgText(385, 132, '教师 PHC+（PHC 改进版）', 'demo-x-acc', 12, 'middle'));
-    box.appendChild(svgMath(385, 158, '\\pi_{teacher}(a_t \\mid s_t, ref_{t+1})', { size: 11.5, anchor: 'middle', cls: 'demo-x-ink2', w: 180 }));
-    box.appendChild(svgText(385, 182, '奖励：跟踪 + AMP − 能耗', 'demo-x-mut', 10, 'middle'));
-    box.appendChild(paint(svgText(385, 204, '训练集跟踪成功率 100%', null, 10, 'middle'), C_GOOD));
-    box.appendChild(svgText(385, 228, 'phc/env/tasks/humanoid_im.py', 'demo-x-mono', 9.5, 'middle'));
+    box.appendChild(paint(svgEl('rect', { x: 292, y: 100, width: 186, height: 160, rx: 8, 'stroke-width': 1.4 }), C_SURFACE2, C_ACCENT));
+    box.appendChild(svgText(385, 122, '教师 PHC+（PHC 改进版）', 'demo-x-acc', 12, 'middle'));
     s.appendChild(box);
+    var boxHow = svgEl('g', {});
+    boxHow.appendChild(svgMath(385, 148, '\\pi_{teacher}(a_t \\mid s_t, ref_{t+1})', { size: 11.5, anchor: 'middle', cls: 'demo-x-ink2', w: 180 }));
+    boxHow.appendChild(svgText(385, 172, '输出 69 维 PD 目标', 'demo-x-mut', 10, 'middle'));
+    boxHow.appendChild(svgText(385, 192, '奖励：跟踪 + AMP − 能耗', 'demo-x-mut', 10, 'middle'));
+    s.appendChild(boxHow);
+    var boxWhat = svgEl('g', {});
+    boxWhat.appendChild(paint(svgText(385, 214, '训练集成功率 98.9% → 100%', null, 10, 'middle'), C_GOOD));
+    boxWhat.appendChild(svgText(385, 234, '3 个基元 + 组合器，会爬起', 'demo-x-mut', 10, 'middle'));
+    boxWhat.appendChild(svgText(385, 252, 'phc/env/tasks/humanoid_im.py', 'demo-x-mono', 9, 'middle'));
+    s.appendChild(boxWhat);
 
     var figs = svgEl('g', {});
     var ref = stickFigure(C_MUTED, 2.2, true);
@@ -883,9 +889,11 @@
       ref.pose(568, 226, poseWalk(ph));
       sim.pose(676, 226, poseWalk(ph - 0.04));
       rows.forEach(function (r) { setOpacity(r.g, seg(t, r.at, r.at + 0.4)); });
-      var boxOn = seg(t, 2.8, 3.4);
+      var boxOn = seg(t, 1.0, 1.6);
       setOpacity(box, boxOn);
       setOpacity(feedArrow, boxOn);
+      setOpacity(boxHow, seg(t, 2.8, 3.4));
+      setOpacity(boxWhat, seg(t, 4.4, 5.0));
       setOpacity(figs, seg(t, 4.4, 5.2));
       setOpacity(chip, seg(t, 7.4, 8.2));
       setOpacity(foot, seg(t, 10.0, 10.8));
@@ -902,6 +910,7 @@
     { beta: 4, label: '\\beta = 4', tag: 'posterior collapse', verdict: '什么也没记住', color: C_BAD }
   ];
   var S3_V = S3_BETAS.map(function (b) { return vib(b.beta); });
+  var S3_SHIFT = 5; // 前 5 秒讲结构与三项损失，β 三列整体往后挪
 
   function buildSceneVib() {
     var s = sceneSvg(
@@ -913,6 +922,74 @@
       '\\mathcal{L} = \\|a_{teacher} - a_{student}\\|^2 + \\alpha \\|\\mu_t - \\mu_{t-1}\\|^2 + \\beta \\cdot \\mathrm{KL}\\big(q(z \\mid s, ref) \\,\\|\\, p(z \\mid s)\\big)',
       { size: 12.5, anchor: 'middle', cls: 'demo-x-ink2', w: 740 });
     s.appendChild(formula);
+
+    /* 前半段：网络怎么连、三项损失各管什么（旁白先讲这两件事，画面不能只剩一行公式）。
+       S3_SHIFT 秒后淡出，换成后半段的 β 三列。 */
+    var arch = svgEl('g', {});
+    s.appendChild(arch);
+    var archArrow = K.arrowMarker(s, 'pulse-x-arrow-vib', C_BORDER);
+    function archBox(x, y, w, h, head, math, sub, color) {
+      var g = svgEl('g', {});
+      g.appendChild(paint(svgEl('rect', { x: x, y: y, width: w, height: h, rx: 8, 'stroke-width': 1.3 }), C_SURFACE2, color));
+      g.appendChild(paint(svgText(x + w / 2, y + 18, head, null, 11.5, 'middle'), color));
+      if (math) g.appendChild(svgMath(x + w / 2, y + 37, math, { size: 11, anchor: 'middle', cls: 'demo-x-ink2', w: w - 8 }));
+      if (sub) g.appendChild(svgText(x + w / 2, y + h - 8, sub, 'demo-x-mut', 9, 'middle'));
+      arch.appendChild(g);
+      return g;
+    }
+    function archLink(pts, color, dashed) {
+      var a = { d: polyPath(pts), fill: 'none', 'stroke-width': 1.5, 'marker-end': archArrow };
+      if (dashed) a['stroke-dasharray'] = '4 3';
+      var n = paint(svgEl('path', a), null, color || C_BORDER);
+      arch.appendChild(n);
+      return n;
+    }
+    var aIn = archBox(40, 92, 118, 58, '输入', 's,\\ ref', '当前状态 + 下一帧参考', C_MUTED);
+    var aEnc = archBox(188, 92, 140, 58, '编码器', 'q(z \\mid s, ref)', '给出 z 的均值与方差', C_ACCENT);
+    var aZ = archBox(358, 92, 92, 58, '采样', 'z', '32 维', C_ACCENT);
+    var aDec = archBox(480, 92, 140, 58, '解码器', 'D(a \\mid s, z)', '看不到参考动作', C_GOOD);
+    var aStu = archBox(650, 92, 110, 58, '学生动作', 'a_{student}', '驱动仿真', C_GOOD);
+    var aPri = archBox(188, 172, 140, 58, '本体感受先验', 'p(z \\mid s)', '只看当前状态', C_WARN);
+    var aTea = archBox(480, 172, 140, 58, '教师 PHC+（冻结）', '\\pi_{teacher}', '同一状态标注动作', C_MUTED);
+    var aTeaA = archBox(650, 172, 110, 58, '教师动作', 'a_{teacher}', '监督信号', C_MUTED);
+    var archLinks = [
+      { n: archLink([[160, 121], [184, 121]]), at: 0.5 },
+      { n: archLink([[330, 121], [354, 121]]), at: 0.9 },
+      { n: archLink([[452, 121], [476, 121]]), at: 1.3 },
+      { n: archLink([[622, 121], [646, 121]]), at: 1.3 },
+      { n: archLink([[99, 152], [99, 201], [184, 201]], C_WARN), at: 1.7 },
+      { n: archLink([[622, 201], [646, 201]]), at: 2.1 }
+    ];
+    var klTie = svgEl('g', {});
+    klTie.appendChild(paint(svgEl('line', { x1: 258, y1: 152, x2: 258, y2: 170, 'stroke-width': 1.6, 'stroke-dasharray': '3 3' }), null, C_WARN));
+    klTie.appendChild(svgRich(266, 165, '$\\mathrm{KL}$ 把两者拉近', { size: 9.5, cls: 'demo-x-mut' }));
+    arch.appendChild(klTie);
+    var errTie = svgEl('g', {});
+    errTie.appendChild(paint(svgEl('line', { x1: 705, y1: 152, x2: 705, y2: 170, 'stroke-width': 1.6, 'stroke-dasharray': '3 3' }), null, C_BAD));
+    errTie.appendChild(paint(svgText(697, 165, '动作误差', null, 9.5, 'end'), C_BAD));
+    arch.appendChild(errTie);
+    var archParts = [
+      { n: aIn, at: 0.3 }, { n: aEnc, at: 0.5 }, { n: aZ, at: 0.9 }, { n: aDec, at: 1.3 }, { n: aStu, at: 1.3 },
+      { n: aPri, at: 1.7 }, { n: klTie, at: 1.9 }, { n: aTea, at: 2.1 }, { n: aTeaA, at: 2.1 }, { n: errTie, at: 2.3 }
+    ].concat(archLinks);
+
+    var S3_TERMS = [
+      { h: '① 动作误差', m: '\\|a_{teacher} - a_{student}\\|^2', d: 'DAgger 式在线蒸馏，不用 RL 奖励', c: C_BAD },
+      { h: '② 相邻帧平滑项', m: '\\alpha \\|\\mu_t - \\mu_{t-1}\\|^2', d: '$\\alpha = 0.005$；去掉后 VR 跟踪 93.4% → 60.8%', c: C_ACCENT },
+      { h: '③ KL 瓶颈', m: '\\beta \\cdot \\mathrm{KL}(q \\,\\|\\, p)', d: '$\\beta$ 从 0.01 退火到 0.001', c: C_WARN }
+    ];
+    var terms = S3_TERMS.map(function (tm, k) {
+      var g = svgEl('g', {});
+      var x = 40 + k * 244;
+      g.appendChild(paint(svgEl('rect', { x: x, y: 248, width: 232, height: 84, rx: 8, 'stroke-width': 1.4 }), C_SURFACE2, tm.c));
+      g.appendChild(paint(svgText(x + 116, 268, tm.h, null, 11.5, 'middle'), tm.c));
+      g.appendChild(svgMath(x + 116, 294, tm.m, { size: 12, anchor: 'middle', cls: 'demo-x-ink2', w: 220 }));
+      g.appendChild(svgRich(x + 116, 320, tm.d, { size: 9.5, cls: 'demo-x-mut', anchor: 'middle', w: 224 }));
+      arch.appendChild(g);
+      return { g: g, at: 2.6 + k * 1.0 };
+    });
+    var archFoot = svgText(400, 362, '解码器只看 s 和 z：参考动作的信息必须挤过 32 维的 z，这就是「瓶颈」', 'demo-x-mut', 11, 'middle');
+    arch.appendChild(archFoot);
 
     var cols = S3_BETAS.map(function (b, k) {
       var v = S3_V[k];
@@ -959,13 +1036,13 @@
         g.appendChild(paint(svgText(cx + 94, y, row[1], 'demo-x-mono', 10, 'end'), b.color));
       });
       s.appendChild(g);
-      return { g: g, at: 1.4 + k * 2.6 };
+      return { g: g, at: S3_SHIFT + 1.4 + k * 2.6 };
     });
 
     var verdicts = S3_BETAS.map(function (b, k) {
       var n = paint(svgText(178 + k * 222, 330, b.verdict, null, 11, 'middle'), b.color);
       s.appendChild(n);
-      return { n: n, at: 2.4 + k * 2.6 };
+      return { n: n, at: S3_SHIFT + 2.4 + k * 2.6 };
     });
 
     var foot = svgEl('g', {});
@@ -975,9 +1052,13 @@
 
     function draw(t) {
       setOpacity(formula, seg(t, 0.3, 1.0));
+      setOpacity(arch, 1 - seg(t, S3_SHIFT + 0.6, S3_SHIFT + 1.2));
+      archParts.forEach(function (p) { setOpacity(p.n, seg(t, p.at, p.at + 0.4)); });
+      terms.forEach(function (p) { setOpacity(p.g, seg(t, p.at, p.at + 0.5)); });
+      setOpacity(archFoot, seg(t, 4.8, 5.3));
       cols.forEach(function (c) { setOpacity(c.g, seg(t, c.at, c.at + 0.6)); });
       verdicts.forEach(function (v) { setOpacity(v.n, seg(t, v.at, v.at + 0.5)); });
-      setOpacity(foot, seg(t, 12.4, 13.4));
+      setOpacity(foot, seg(t, S3_SHIFT + 12.4, S3_SHIFT + 13.4));
     }
 
     return { el: s, draw: draw };
@@ -1060,17 +1141,21 @@
     var curveProp = paint(svgEl('path', { d: polyPath(survPath(S4_PROP.rate)), fill: 'none', 'stroke-width': 2.4 }), null, C_GOOD);
     s.appendChild(curveFixed);
     s.appendChild(curveProp);
-    var readout = svgEl('g', {});
+    var readFixed = [],
+      readProp = svgEl('g', {});
     [
-      ['单步可行率', fmt(S4_PROP.rate * 100, 1) + '%', fmt(S4_FIXED.rate * 100, 1) + '%'],
-      ['滚 ' + S4_H + ' 步不发散', fmt(Math.pow(S4_PROP.rate, S4_H) * 100, 1) + '%', S4_SURV_FIXED.toExponential(1)]
+      ['单步可行率', fmt(S4_PROP.rate * 100, 1) + '%', fmt(S4_FIXED.rate * 100, 1) + '%', 4.4],
+      ['滚 ' + S4_H + ' 步不出错', fmt(Math.pow(S4_PROP.rate, S4_H) * 100, 1) + '%', S4_SURV_FIXED.toExponential(1), 5.4]
     ].forEach(function (row, j) {
       var y = 296 + j * 19;
-      readout.appendChild(svgText(440, y, row[0], 'demo-x-mut', 10));
-      readout.appendChild(paint(svgText(640, y, 'p(z|s) ' + row[1], 'demo-x-mono', 10, 'end'), C_GOOD));
-      readout.appendChild(paint(svgText(748, y, row[2], 'demo-x-mono', 10, 'end'), C_BAD));
+      var g = svgEl('g', {});
+      g.appendChild(svgText(440, y, row[0], 'demo-x-mut', 10));
+      g.appendChild(paint(svgText(748, y, 'N(0, I) ' + row[2], 'demo-x-mono', 10, 'end'), C_BAD));
+      s.appendChild(g);
+      readFixed.push({ g: g, at: row[3] });
+      readProp.appendChild(paint(svgText(632, y, 'p(z|s) ' + row[1], 'demo-x-mono', 10, 'end'), C_GOOD));
     });
-    s.appendChild(readout);
+    s.appendChild(readProp);
 
     var chip = svgEl('g', {});
     chip.appendChild(svgRich(400, 356, '单步 0.9 看着不错，连滚 40 步只剩 $0.9^{40} \\approx 1.5\\%$ —— 长序列对先验的要求苛刻得多', { size: 11, cls: 'demo-x-mut', anchor: 'middle' }));
@@ -1081,13 +1166,14 @@
 
     function draw(t) {
       setOpacity(zone, seg(t, 0.4, 1.0));
-      setOpacity(fixedC, seg(t, 2.0, 2.6));
+      setOpacity(fixedC, seg(t, 0.8, 1.4));
       fixedDots.forEach(function (d) { setOpacity(d.n, seg(t, d.at, d.at + 0.25)); });
       setOpacity(curveFixed, seg(t, 5.4, 6.2));
       setOpacity(propC, seg(t, 7.4, 8.0));
       propDots.forEach(function (d) { setOpacity(d.n, seg(t, d.at, d.at + 0.25)); });
       setOpacity(curveProp, seg(t, 9.8, 10.4));
-      setOpacity(readout, seg(t, 10.4, 11.0));
+      readFixed.forEach(function (r) { setOpacity(r.g, seg(t, r.at, r.at + 0.5)); });
+      setOpacity(readProp, seg(t, 9.8, 10.4));
       setOpacity(chip, seg(t, 11.6, 12.2));
       setOpacity(foot, seg(t, 13.0, 13.8));
     }
@@ -1115,7 +1201,7 @@
     [
       { x: 40, w: 118, t: '任务观测', sub: '目标速度 / 目标点', c: C_MUTED },
       { x: 178, w: 148, t: '高层策略', sub: 'PPO 只更新这里', c: C_ACCENT },
-      { x: 346, w: 148, t: '$p(z \\mid s) + \\Delta z$', sub: '32 维 latent', c: C_GOOD },
+      { x: 346, w: 148, t: '$p(z \\mid s) + \\Delta z$', sub: '32 维，探索方差 0.22', c: C_GOOD },
       { x: 514, w: 128, t: '冻结 Decoder', sub: '物理可行性保底', c: C_GOOD },
       { x: 662, w: 98, t: 'PD 目标', sub: '69 维', c: C_MUTED }
     ].forEach(function (b, k) {
@@ -1178,8 +1264,19 @@
       g.appendChild(paint(svgText(508, y + 42, c.a, 'demo-x-mono', 12), c.c));
       g.appendChild(svgText(746, y + 42, c.b, 'demo-x-mut', 10, 'end'));
       s.appendChild(g);
-      return { g: g, at: 4.0 + k * 1.6 };
+      return { g: g, at: [1.8, 4.0, 5.6][k] }; // 与旁白同步：跑满 400 轮 / 到 80% 要多少轮 / 快了多少
     });
+
+    // 读数卡片出来之前（第 1.4 秒前），右半边先讲式 4：高层只给残差，先验给均值
+    var resid = svgEl('g', {});
+    resid.appendChild(paint(svgEl('rect', { x: 494, y: 124, width: 266, height: 200, rx: 8, 'stroke-width': 1.3 }), C_SURFACE2, C_GOOD));
+    resid.appendChild(paint(svgText(627, 148, '式 4：高层只给残差', null, 12, 'middle'), C_GOOD));
+    resid.appendChild(svgMath(627, 182, 'z_t = \\mu^{p}(s_t) + \\Delta z_t', { size: 13, anchor: 'middle', cls: 'demo-x-ink2', w: 250 }));
+    resid.appendChild(svgMath(627, 214, 'a_t = D(s_t, z_t)', { size: 13, anchor: 'middle', cls: 'demo-x-ink2', w: 250 }));
+    resid.appendChild(svgRich(627, 248, '均值 $\\mu^{p}$ 来自冻结的先验', { size: 10, cls: 'demo-x-mut', anchor: 'middle', w: 250 }));
+    resid.appendChild(svgRich(627, 270, '$\\Delta z$ 由高层输出，探索方差固定 0.22', { size: 10, cls: 'demo-x-mut', anchor: 'middle', w: 250 }));
+    resid.appendChild(svgRich(627, 300, '不用残差、直接输出 $z$：VR 跟踪 18.1%（表 3）', { size: 10, cls: 'demo-x-mut', anchor: 'middle', w: 250 }));
+    s.appendChild(resid);
 
     var chip = svgText(400, 348, '论文图 4：四个生成任务 PULSE 都最高、收敛更快；从零训练回报最接近，但动作不像人', 'demo-x-mut', 11, 'middle');
     s.appendChild(chip);
@@ -1189,6 +1286,7 @@
 
     function draw(t) {
       setOpacity(chain, seg(t, 0.3, 1.0));
+      setOpacity(resid, seg(t, 0.6, 1.2) * (1 - seg(t, 1.4, 1.8)));
       var u = ease(seg(t, 1.4, 4.2));
       latPath.setAttribute('d', polyPath(learnPts(LAT_DIM, LAT_USABLE, S5_REACH).slice(0, Math.max(2, Math.round(u * 61)))));
       rawPath.setAttribute('d', polyPath(learnPts(RAW_DIM, RAW_USABLE, 1).slice(0, Math.max(2, Math.round(u * 61)))));
@@ -1237,21 +1335,24 @@
 
     var arrow = K.arrowMarker(s, 'pulse-x-arrow-stage', C_BORDER);
     var cards = S6_CARDS.map(function (c, k) {
+      var frame = svgEl('g', {});
       var g = svgEl('g', {});
       var x = 40 + k * 252;
-      g.appendChild(paint(svgEl('rect', { x: x, y: 66, width: 216, height: 208, rx: 8, 'stroke-width': 1.4 }), C_SURFACE2, c.c));
-      g.appendChild(paint(svgText(x + 108, 92, c.t, null, 12, 'middle'), c.c));
+      frame.appendChild(paint(svgEl('rect', { x: x, y: 66, width: 216, height: 208, rx: 8, 'stroke-width': 1.4 }), C_SURFACE2, c.c));
+      frame.appendChild(paint(svgText(x + 108, 92, c.t, null, 12, 'middle'), c.c));
+      frame.appendChild(svgText(x + 108, 186, c.d, 'demo-x-mut', 10, 'middle'));
+      frame.appendChild(svgText(x + 108, 266, '入口：python phc/run_hydra.py', 'demo-x-mono', 8.5, 'middle'));
+      s.appendChild(frame);
       g.appendChild(paint(svgEl('rect', { x: x + 14, y: 106, width: 188, height: 30, rx: 6, 'stroke-width': 1 }), C_SURFACE, C_BORDER));
       g.appendChild(svgText(x + 108, 125, c.cmd, 'demo-x-mono', 8.5, 'middle'));
       g.appendChild(svgText(x + 108, 158, c.file, 'demo-x-mono', 8.5, 'middle'));
-      g.appendChild(svgText(x + 108, 186, c.d, 'demo-x-mut', 10, 'middle'));
       s.appendChild(g);
       if (k < 2) {
         s.appendChild(paint(svgEl('path', {
           d: polyPath([[x + 220, 170], [x + 248, 170]]), fill: 'none', 'stroke-width': 1.6, 'marker-end': arrow
         }), null, C_BORDER));
       }
-      return { g: g, at: 0.8 + k * 2.4 };
+      return { g: g, frame: frame, at: 0.8 + k * 2.4, frameAt: 0.1 + k * 0.15 };
     });
 
     var bottle = svgEl('g', {});
@@ -1281,7 +1382,10 @@
     s.appendChild(foot);
 
     function draw(t) {
-      cards.forEach(function (c) { setOpacity(c.g, seg(t, c.at, c.at + 0.7)); });
+      cards.forEach(function (c) {
+        setOpacity(c.frame, seg(t, c.frameAt, c.frameAt + 0.35));
+        setOpacity(c.g, seg(t, c.at, c.at + 0.7));
+      });
       setOpacity(bottle, seg(t, 3.6, 4.4));
       setOpacity(freeze, seg(t, 6.4, 7.2));
       var on = seg(t, 8.0, 8.6);
@@ -1326,17 +1430,19 @@
     },
     {
       title: '阶段2：VIB 瓶颈',
-      dur: 16,
+      dur: 21,
       build: buildSceneVib,
       cues: [
         { at: 0.3, s: '第二阶段用**变分信息瓶颈**把教师在线蒸馏进概率潜空间：编码器 $q(z \\mid s, ref)$ 给出 $z$ 的分布，解码器只看 $s$ 和 $z$ 出动作。' },
-        { at: 0.8, s: '损失三项（式 3）：动作误差 + $\\alpha$ 倍相邻帧平滑项 + $\\beta$ 倍 $\\mathrm{KL}$。去掉平滑项，下游 VR 跟踪成功率 93.4% → 60.8%（表 3）。' },
-        { at: 1.4, s: '玩具模型 $\\beta = 0$：每段动作缩成尖峰，蒸馏误差 **' + fmt(S3_V[0].distort, 3) + '** —— 完美复刻，但那只是**把 AMASS 背下来**。' },
-        { at: 2.4, s: '代价是先验采样可用度只有 **' + fmt(S3_V[0].sample, 3) + '**：采到的 $z$ 多半不在任何一段动作上。' },
-        { at: 4.0, s: '中间一档 $\\beta \\approx 0.35$：五段后验刚好连成一片又没糊在一起，采样可用度 **' + fmt(S3_V[1].sample, 3) + '**，蒸馏误差 **' + fmt(S3_V[1].distort, 3) + '**。' },
-        { at: 6.6, s: '$\\beta = 4$：**posterior collapse** —— latent 只记住了 **' + fmt(S3_V[2].a, 3) + '** 的片段信息，后验被压得和先验几乎一样。' },
-        { at: 8.0, s: 'KL 降到 **' + fmt(S3_V[2].kl, 3) + '** 了，代价是解码器分不清你要的是「走」还是「跌倒爬起」。' },
-        { at: 12.4, s: '论文 $\\beta$ 从 0.01 退火到 0.001；加了瓶颈，训练集成功率 100% → **99.8%**，是有损压缩的代价（表 1、第 6 节）。' }
+        { at: 2.6, s: '损失三项（式 3）：① 学生与教师的**动作误差**，教师是冻结的 PHC+。' },
+        { at: 3.6, s: '② $\\alpha$ 倍**相邻帧平滑项**，让 $z$ 别跳；去掉它，下游 VR 跟踪成功率 93.4% → 60.8%（表 3）。' },
+        { at: 4.6, s: '③ $\\beta$ 倍 $\\mathrm{KL}$ 把编码器拉向先验；解码器看不到参考动作，信息只能挤过 32 维的 $z$ —— 这就是**瓶颈**。' },
+        { at: S3_SHIFT + 1.4, s: '玩具模型 $\\beta = 0$：每段动作缩成尖峰，蒸馏误差 **' + fmt(S3_V[0].distort, 3) + '** —— 完美复刻，但那只是**把 AMASS 背下来**。' },
+        { at: S3_SHIFT + 2.4, s: '代价是先验采样可用度只有 **' + fmt(S3_V[0].sample, 3) + '**：采到的 $z$ 多半不在任何一段动作上。' },
+        { at: S3_SHIFT + 4.0, s: '中间一档 $\\beta \\approx 0.35$：五段后验刚好连成一片又没糊在一起，采样可用度 **' + fmt(S3_V[1].sample, 3) + '**，蒸馏误差 **' + fmt(S3_V[1].distort, 3) + '**。' },
+        { at: S3_SHIFT + 6.6, s: '$\\beta = 4$：**posterior collapse** —— latent 只记住了 **' + fmt(S3_V[2].a, 3) + '** 的片段信息，后验被压得和先验几乎一样。' },
+        { at: S3_SHIFT + 8.0, s: 'KL 降到 **' + fmt(S3_V[2].kl, 3) + '** 了，代价是解码器分不清你要的是「走」还是「跌倒爬起」。' },
+        { at: S3_SHIFT + 12.4, s: '论文 $\\beta$ 从 0.01 退火到 0.001；加了瓶颈，训练集成功率 100% → **99.8%**，是有损压缩的代价（表 1、第 6 节）。' }
       ]
     },
     {
@@ -1387,7 +1493,7 @@
   function buildExplainerDemo(host) {
     K.explainer(host, {
       title: '六幕动画：PULSE 全流程速览',
-      sub: '约 85 秒自动播放。空格播放/暂停，← → 换幕；画面里的数字与下面三个演示用的是同一份函数。',
+      sub: '约 90 秒自动播放。空格播放/暂停，← → 换幕；画面里的数字与下面三个演示用的是同一份函数。',
       ariaLabel: 'PULSE 六幕讲解动画',
       notes: [
         '取数依据：第三幕三列的蒸馏误差 / 采样可用度 / 保留的片段信息，由下面 VIB 实验台的同一个 `vib()` 在 $\\beta = 0 / 0.35 / 4$ 上现算（就是那三个预设按钮）；' +
