@@ -40,7 +40,8 @@
 ② 【精确模仿主线】        【风格学习主线】
   DeepMimic (2018)  →→→  AMP (2021)
        ↓                    ↓
-  PHC (2023)            ADD (2025)
+  PHC (2023)            ADD (2025) / SMP (2025)
+                        ↑ SMP：用预训练扩散模型的分数代替判别器，先验冻结后跨任务复用（⇠ Diffusion Policy）
        ↓
 ③ 【技能组合 / 扩散】
   ASE (2022) → CALM (2023) → PULSE (2023)
@@ -96,6 +97,7 @@
 | AMP | [nv-tlabs/ASE](https://github.com/nv-tlabs/ASE)（含 AMP） | ✅ | `mimickit/learning/amp_agent.py` |
 | ASE | [nv-tlabs/ASE](https://github.com/nv-tlabs/ASE) | ✅ | `mimickit/learning/ase_agent.py` |
 | ADD | [xbpeng/MimicKit](https://github.com/xbpeng/MimicKit) | ✅ | `mimickit/learning/add_agent.py` |
+| SMP | [xbpeng/MimicKit](https://github.com/xbpeng/MimicKit) | ✅ | `mimickit/learning/smp_agent.py`（配置 `data/agents/smp_task_humanoid_agent.yaml`） |
 | LCP | [zixuan417/smooth-humanoid-locomotion](https://github.com/zixuan417/smooth-humanoid-locomotion) | ✅ | `mimickit/learning/lcp_agent.py` |
 | PHC | [ZhengyiLuo/PHC](https://github.com/ZhengyiLuo/PHC) | ❌ | `phc/learning/amp_network_pnn_builder.py`（独立仓库） |
 | CALM | [NVlabs/CALM](https://github.com/NVlabs/CALM) | ❌ | IsaacGym 独立实现，不在 MimicKit |
