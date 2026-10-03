@@ -1237,7 +1237,7 @@
     var idle = svgEl('g', {});
     box(idle, 40, 280, 350, 76, C_WARN);
     idle.appendChild(paint(svgText(56, 302, '好处二：不怕停顿', null, 12), C_WARN));
-    idle.appendChild(svgText(56, 322, '演示里常有停顿（人遥控机器人时、舀酱时）', 'demo-x-mut', 10));
+    idle.appendChild(svgText(56, 322, '比如真机上用勺子从碗里舀番茄酱，得停住等酱装满', 'demo-x-mut', 10));
     idle.appendChild(svgText(56, 342, '单步策略易学成原地不动；真机上 LSTM-GMM、IBC 常停住', 'demo-x-mut', 10));
     s.appendChild(idle);
 
@@ -1768,7 +1768,7 @@
         { at: 0.3, s: '**动作分块**（action chunking）：一次预测一整段 $A_t = [a_t,\\ldots,a_{t+' + (H - 1) + '}]$，段长 **$T_p = ' + H + '$**（$p$ = prediction）。' },
         { at: 2.2, s: '逐步各采各的（LSTM-GMM、BET）：相邻两步可能来自不同的峰，来回抖。' },
         { at: 4.8, s: '整段一起去噪：峰一旦选定，' + H + ' 步都走同一侧。' },
-        { at: 7.4, s: '不怕停顿：人遥控时、舀酱时都会停，单步策略容易学成原地不动，LSTM-GMM / IBC 在真机上常停住。' },
+        { at: 7.4, s: '不怕停顿：比如真机上用勺子从碗里舀番茄酱，得停住等酱装满；单步策略容易学成原地不动，LSTM-GMM / IBC 在真机上常停住。' },
         { at: 9.6, s: '一整段动作维度很高：LSTM-GMM 要先定几个峰、IBC 采不动，扩散撑得住。' }
       ]
     },
