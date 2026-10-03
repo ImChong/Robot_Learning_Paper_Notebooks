@@ -46,6 +46,7 @@
 ③ 【技能组合 / 扩散】
   ASE (2022) → CALM (2023) → PULSE (2023)
   Diffusion Policy (2023) → BeyondMimic (2025)
+  AMP (2021) → SMP (2025)           ← 冻结的运动扩散模型当可复用风格奖励（读前先看 Diffusion Policy 的 DDPM 部分）
        ↓
 ④ 【全身控制 WBC】        ← 把技能 / 扩散策略落到整机关节
   Expressive WBC (2024) → HOVER (2024) / HugWBC (2025) / ExBody2 (2024) / SONIC (2025)
@@ -83,6 +84,7 @@
 
 - **动作重定向单列一层**：精确模仿 / 风格学习 / 遥操作都依赖"人体动作 → 机器人可执行轨迹"的转换，重定向质量直接决定下游策略能学到什么动作。
 - **从 WBC 上行到基础模型**：全身控制把底层技能 / 扩散策略落到整机关节后，分出操作、移动操作、世界模型等支线，最终都汇聚到 VLA（π₀ / π₀.₅ / GR00T N1）与 BFM（行为基础模型）这一顶点。
+- **SMP 放在扩散层**：它沿用 AMP 的「风格奖励 + 任务奖励」，但打分器换成预训练后冻结的运动扩散模型（SDS 噪声残差），一个先验可复用到多任务、多风格，训练策略时不再需要原始数据。
 - **Transformer 单列为基础架构**：它不是 RL 论文，但扩散策略的 Transformer 变体、π₀ 的 Gemma 主干、GR00T N1 的 DiT 动作头都直接用这套块，读 VLA 之前先读它。
 
 ### 基础强化学习 · 官方源码 / MimicKit
@@ -97,7 +99,7 @@
 | AMP | [nv-tlabs/ASE](https://github.com/nv-tlabs/ASE)（含 AMP） | ✅ | `mimickit/learning/amp_agent.py` |
 | ASE | [nv-tlabs/ASE](https://github.com/nv-tlabs/ASE) | ✅ | `mimickit/learning/ase_agent.py` |
 | ADD | [xbpeng/MimicKit](https://github.com/xbpeng/MimicKit) | ✅ | `mimickit/learning/add_agent.py` |
-| SMP | [xbpeng/MimicKit](https://github.com/xbpeng/MimicKit) | ✅ | `mimickit/learning/smp_agent.py`（配置 `data/agents/smp_task_humanoid_agent.yaml`） |
+| SMP | [xbpeng/MimicKit](https://github.com/xbpeng/MimicKit) | ✅ | `mimickit/learning/smp_agent.py` + `tools/diffusion_model/train_tinymdm.py` （配置 `data/agents/smp_task_humanoid_agent.yaml`） |
 | LCP | [zixuan417/smooth-humanoid-locomotion](https://github.com/zixuan417/smooth-humanoid-locomotion) | ✅ | `mimickit/learning/lcp_agent.py` |
 | PHC | [ZhengyiLuo/PHC](https://github.com/ZhengyiLuo/PHC) | ❌ | `phc/learning/amp_network_pnn_builder.py`（独立仓库） |
 | CALM | [NVlabs/CALM](https://github.com/NVlabs/CALM) | ❌ | IsaacGym 独立实现，不在 MimicKit |

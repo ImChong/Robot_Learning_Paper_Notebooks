@@ -123,18 +123,6 @@
         "zh_title": "Diffusion Policy：基于动作扩散的视觉运动策略学习"
       },
       {
-        "title": "SMP: Reusable Score-Matching Motion Priors for Physics-Based Character Control",
-        "path": "papers/01_Foundational_RL/SMP_Reusable_Score-Matching_Motion_Priors/SMP_Reusable_Score-Matching_Motion_Priors.md",
-        "url": "/papers/01_Foundational_RL/SMP_Reusable_Score-Matching_Motion_Priors/SMP_Reusable_Score-Matching_Motion_Priors.html",
-        "dir": "SMP_Reusable_Score-Matching_Motion_Priors",
-        "arxiv": "2512.03028",
-        "has_open_source": true,
-        "published_date_zh": "2025年12月2日（arXiv）",
-        "published_date_en": "Dec 2, 2025 (arXiv)",
-        "zhname": "SMP：面向物理角色控制的可复用分数匹配运动先验",
-        "zh_title": "SMP：面向物理角色控制的可复用分数匹配运动先验"
-      },
-      {
         "title": "BeyondMimic: From Motion Tracking to Versatile Humanoid Control via Guided Diffusion",
         "path": "papers/01_Foundational_RL/BeyondMimic/BeyondMimic.md",
         "url": "/papers/01_Foundational_RL/BeyondMimic/BeyondMimic.html",
@@ -145,6 +133,18 @@
         "published_date_en": "Aug 2025 (arXiv)",
         "zhname": "BeyondMimic：从运动跟踪到引导扩散的多功能人形控制",
         "zh_title": "BeyondMimic：从运动跟踪到引导扩散的多功能人形控制"
+      },
+      {
+        "title": "SMP: Reusable Score-Matching Motion Priors for Physics-Based Character Control",
+        "path": "papers/01_Foundational_RL/SMP_Reusable_Score-Matching_Motion_Priors/SMP_Reusable_Score-Matching_Motion_Priors.md",
+        "url": "/papers/01_Foundational_RL/SMP_Reusable_Score-Matching_Motion_Priors/SMP_Reusable_Score-Matching_Motion_Priors.html",
+        "dir": "SMP_Reusable_Score-Matching_Motion_Priors",
+        "arxiv": "2512.03028",
+        "has_open_source": true,
+        "published_date_zh": "2025年12月2日（arXiv），SIGGRAPH 2026（ACM TOG）",
+        "published_date_en": "Dec 2, 2025 (arXiv), SIGGRAPH 2026 (ACM TOG)",
+        "zhname": "SMP：面向物理角色控制的可复用分数匹配运动先验",
+        "zh_title": "SMP：面向物理角色控制的可复用分数匹配运动先验"
       },
       {
         "title": "Understanding Domain Randomization for Sim-to-real Transfer",

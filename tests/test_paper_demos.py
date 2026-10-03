@@ -48,6 +48,7 @@ DIFFUSION_POLICY_NOTE = _note("Diffusion_Policy")
 BEYONDMIMIC_NOTE = _note("BeyondMimic")
 LCP_NOTE = _note("LCP_Sim-to-Real_Action_Smoothing")
 TRANSFORMER_NOTE = _note("Transformer_Attention_Is_All_You_Need")
+SMP_NOTE = _note("SMP_Reusable_Score-Matching_Motion_Priors")
 DR_VISION_NOTE = _note(
     "Domain_Randomization_for_Transferring_Deep_Neural_Networks_from_Simulation_to_the_Real_World"
 )
@@ -234,6 +235,7 @@ def test_notes_declare_their_demos_in_reading_order():
             ["bm-explainer", "bm-video", "bm-anchor", "bm-sampling", "bm-guidance"],
         ),
         LCP_NOTE: ("lcp", ["lcp-explainer", "lcp-video", "lcp-sensitivity", "lcp-gp", "lcp-vs-filter"]),
+        SMP_NOTE: ("smp", ["smp-explainer", "smp-sds", "smp-esm", "smp-style"]),
         DR_VISION_NOTE: (
             "domain_randomization",
             ["dr-scene", "dr-coverage", "dr-ablation"],
@@ -293,7 +295,7 @@ def test_demo_assets_are_theme_aware():
 EXPLAINER_BUNDLES = (
     "ppo", "awr", "deepmimic", "amp", "add", "ase", "calm", "pulse", "sonic", "groot",
     "gmr", "omniretarget", "diffusion_policy", "beyondmimic", "cosmos", "umr", "php", "pbfm",
-    "gentle", "lcp", "transformer", "pi0", "pi05", "op3soccer", "humanml3d",
+    "gentle", "lcp", "transformer", "pi0", "pi05", "op3soccer", "smp", "humanml3d",
 )
 
 # 幕数由论文决定，不是统一模板：PPO / DeepMimic / AMP / ADD 的核心概念正好各 5 个，
@@ -367,6 +369,12 @@ EXPLAINER_BUNDLES = (
 # OP3 足球是七件（任务与机器人 / 技能教师 / 自适应蒸馏 / 自博弈 / 奖励与安全 / sim-to-real /
 # 实验）。蒸馏与自博弈同在阶段 2，但一个回答「向谁学」（λ 的自动开关），一个回答「和谁踢」
 # （对手池），论文也是分开的两段与两组消融。
+# SMP 是八件（对抗先验不能复用 / 预训练冻结的扩散模型 / SDS 残差当奖励 / ESM 固定三档 /
+# AdaNorm 按档归一化 / GSI 生成初始状态 / CFG 与上下半身组合 / 训练闭环、证据与边界）。
+# ESM 与 AdaNorm 在论文同属 5.1 节，但一个回答「抽哪一档」（方差，表 5 / 表 7），一个回答
+# 「三档怎么加」（量级，表 6），各有一组消融；合成一幕会让 50 档的对数曲线和三档占比条抢同一帧。
+# GSI 解决的是 RSI 也要读数据这件事，与奖励无关；风格的 CFG 与组合又是第 8.1 节单独的实验。
+
 # HumanML3D 是九件（文本生成动作卡在哪 / 数据集怎么建 / 一帧 263 维 / 每 4 帧一个 snippet code /
 # Text2Length / 时序 VAE 的一步 / 三项损失与课程学习 / 评测器与 R-Precision / 结果、消融与遗产）。
 # 它一篇论文同时交了数据集、方法和评测协议三样东西：数据集的「怎么建」与「每帧存什么」是第 4 节与
@@ -398,6 +406,8 @@ EXPLAINER_SCENES = {
     "pi0": (PI0_NOTE, 7),
     "pi05": (PI05_NOTE, 7),
     "op3soccer": (SOCCER_NOTE, 7),
+    "smp": (SMP_NOTE, 8),
+
     "humanml3d": (HUMANML3D_NOTE, 9),
 }
 CN_NUMERALS = {4: "四", 5: "五", 6: "六", 7: "七", 8: "八", 9: "九"}
@@ -1522,6 +1532,128 @@ def test_sonic_and_gmr_worked_examples_share_numbers_with_their_explainers():
         assert needle in gmr, needle
 
 
+def test_smp_explainer_and_worked_example_share_the_same_numbers():
+    """SMP 八幕动画第 3–5 幕、三个演示与笔记「🚶 具体实例」是同一个玩具模型：
+
+    二维高斯「动作流形」（左臂 × 右腿，ρ = 0.95），去噪器取闭式最优解，噪声表照抄 diffusers 的
+    squaredcos_cap_v2。这里用 Python 重算一遍，核对 bundle 里的常量和笔记里的每一个数。
+    """
+    js = (DEMO_JS_DIR / "smp.js").read_text(encoding="utf-8")
+    note = SMP_NOTE.read_text(encoding="utf-8")
+
+    for line in (
+        "var T_STEPS = 50;",
+        "var K_SET = [22, 15, 8];",
+        "var SDS_SCALE = 6;",
+        "var TASK_R = 0.8;",
+        "var FEAT_DIM = 1140;",
+        "var RHO = 0.95;",
+        "var SAMPLE_A = [0.8, 0.8];",
+        "var SAMPLE_B = [0.8, -0.8];",
+    ):
+        assert line in js, line
+    # MimicKit 默认 yaml：三档、sds_loss_scale 与奖励权重
+    for s in ("`diffusion_steps` | **[22, 15, 8]**", "`sds_loss_scale` | **6**", "`task_reward_weight` / `smp_reward_weight` | 0.5 / 0.5"):
+        assert s in note, s
+
+    def g(u):
+        return math.cos((u + 0.008) / 1.008 * math.pi / 2) ** 2
+
+    abar, p = [], 1.0
+    for i in range(50):
+        p *= 1 - min(1 - g((i + 1) / 50) / g(i / 50), 0.999)
+        abar.append(p)
+    lam = (1.95, 0.05)
+
+    def axes(x):
+        return ((x[0] + x[1]) / math.sqrt(2), (x[0] - x[1]) / math.sqrt(2))
+
+    def sds(t, d2):  # d2: E[d_k^2] per principal axis
+        a = abar[t]
+        return sum((a * (1 - a) * dk + a * a * lk * lk) / (a * lk + 1 - a) ** 2 for dk, lk in zip(d2, lam, strict=True)) / 2
+
+    def point(x):
+        return [v * v for v in axes(x)]
+
+    ks = (22, 15, 8)
+    assert [_fmt(abar[t], 3) for t in ks] == ["0.556", "0.761", "0.917"]
+    mu = [sds(t, (1, 1)) for t in ks]
+    la = [sds(t, point((0.8, 0.8))) for t in ks]
+    lb = [sds(t, point((0.8, -0.8))) for t in ks]
+    assert [_fmt(v, 3) for v in mu] == ["0.861", "1.595", "2.820"]
+    assert [_fmt(v, 3) for v in la] == ["0.321", "0.419", "0.533"]
+    assert [_fmt(v, 3) for v in lb] == ["0.963", "1.896", "3.451"]
+    na = [a / m for a, m in zip(la, mu, strict=True)]
+    nb = [b / m for b, m in zip(lb, mu, strict=True)]
+    assert [_fmt(v, 3) for v in na] == ["0.373", "0.263", "0.189"]
+    assert [_fmt(v, 3) for v in nb] == ["1.119", "1.189", "1.223"]
+    ma, mb = sum(na) / 3, sum(nb) / 3
+    ra, rb = math.exp(-6 * ma), math.exp(-6 * mb)
+    assert (_fmt(ma, 3), _fmt(mb, 3), _fmt(ra, 3), _fmt(rb, 4)) == ("0.275", "1.177", "0.192", "0.0009")
+    assert (_fmt(0.4 + 0.5 * ra, 3), _fmt(0.4 + 0.5 * rb, 3)) == ("0.496", "0.400")
+    assert (_fmt(math.exp(-6 * la[0]), 3), _fmt(math.exp(-6 * lb[0]), 3)) == ("0.146", "0.003")
+    raw_share = [round(v / sum(lb) * 100) for v in lb]
+    norm_share = [round(v / sum(nb) * 100) for v in nb]
+    assert raw_share == [15, 30, 55] and norm_share == [32, 34, 35]
+
+    # 伪目标与修正量（t = 22，顺拐 B 只偏在离流形的主轴上）
+    a = abar[22]
+    d2 = axes((0.8, -0.8))[1]
+    assert _fmt(d2, 3) == "1.131"
+    assert _fmt(math.sqrt(a) * 0.05 / (a * 0.05 + 1 - a) * math.sqrt(a) * d2, 3) == "0.067"
+    assert _fmt(math.sqrt(a * (1 - a)) / (a * 0.05 + 1 - a) * d2, 3) == "1.192"
+    assert _fmt(math.sqrt(a * (1 - a)) / (a * 1.95 + 1 - a) * axes((0.8, 0.8))[0], 3) == "0.368"
+
+    # 随机抽一档 vs ESM（每档 ε 的方差按 1140 维平均）
+    def var_t(t, x):
+        a = abar[t]
+        v = 0.0
+        for dk, lk in zip(axes(x), lam, strict=True):
+            c = math.sqrt(a * (1 - a)) / (a * lk + 1 - a)
+            gk = a * lk / (a * lk + 1 - a)
+            v += 2 * gk**4 + 4 * (c * dk) ** 2 * gk * gk
+        return v / (2 * 1140)
+
+    m = [sds(t, point((0.8, -0.8))) for t in range(50)]
+    mr = sum(m) / 50
+    vr = sum((v - mr) ** 2 for v in m) / 50 + sum(var_t(t, (0.8, -0.8)) for t in range(50)) / 50
+    me = sum(m[t] for t in ks) / 3
+    ve = sum(var_t(t, (0.8, -0.8)) for t in ks) / 9
+    assert (_fmt(mr, 3), _fmt(vr, 3), _fmt(me, 3), _fmt(ve * 1e4, 2)) == ("1.230", "1.567", "2.103", "3.17")
+    assert _fmt(max(m), 2) == "3.80" and m.index(max(m)) == 5
+
+    for s in (
+        "| 22（高） | 0.556 |",
+        "| 22 | 0.321 | 0.963 |",
+        "| 15 | 0.419 | 1.896 |",
+        "| 8 | 0.533 | 3.451 |",
+        "| 22 | 0.861 | 0.373 | 1.119 |",
+        "| 15 | 1.595 | 0.263 | 1.189 |",
+        "| 8 | 2.820 | 0.189 | 1.223 |",
+        "**0.275** | **1.177**",
+        "= 0.192",
+        "= 0.0009",
+        "0.496",
+        "0.400",
+        "0.146",
+        "15% / 30% / 55%",
+        "32% / 34% / 35%",
+        "**0.067**",
+        "1.192",
+        "0.368",
+        "| 随机抽一档 | 1.230 | 1.567 |",
+        "| 2.103 | $3.17 \\times 10^{-4}$ |",
+        "3.80（$t = 5$）",
+    ):
+        assert s in note, s
+    # 动画字幕里的同一组数
+    for s in ("0.321", "0.963", "0.146", "0.003", "1.131", "0.067", "0.861 / 1.595 / 2.820", "1.119 / 1.189 / 1.223",
+              "0.192", "0.0009", "0.496 vs 0.400", "1.567", "**32% / 34% / 35%**", "**55%**"):
+        assert s in js, s
+    assert "## 🎬 八幕动画：SMP 全流程" in note
+    assert "## 🚶 具体实例" in note
+    assert "## 📁 MimicKit 源码对照" in note
+
 def test_humanml3d_explainer_and_worked_example_share_the_same_numbers():
     """HumanML3D 九幕动画与笔记「🚶 具体实例」是同一组数：统计比例、263 维、snippet code、长度采样与结果都现算。"""
     js = (DEMO_JS_DIR / "humanml3d.js").read_text(encoding="utf-8")
@@ -1631,4 +1763,3 @@ def test_humanml3d_explainer_and_worked_example_share_the_same_numbers():
         assert needle in note, needle
     # 论文只发在 CVPR 2022；旧笔记里的 arXiv 2204.09419 是一篇天体物理论文，不能再当成出处链接
     assert "arxiv.org/abs/2204.09419" not in note and "\narxiv:" not in note
-

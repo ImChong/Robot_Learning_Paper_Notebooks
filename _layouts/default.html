@@ -522,6 +522,7 @@
     subgraph SG_Skills ["3 · Skills and Diffusion"]
         ASE(["ASE<br/><span class='roadmap-node-year'>2022</span>"]) --> CALM(["CALM<br/><span class='roadmap-node-year'>2023</span>"]) --> PULSE(["PULSE<br/><span class='roadmap-node-year'>2023</span>"])
         DP(["Diffusion Policy<br/><span class='roadmap-node-year'>2023</span>"]) --> BM(["BeyondMimic<br/><span class='roadmap-node-year'>2025</span>"])
+        DP -.-> SMP(["SMP<br/><span class='roadmap-node-year'>2025</span>"])
     end
     subgraph SG_WBC ["4 · Whole-Body Control"]
         EWBC(["Expressive WBC<br/><span class='roadmap-node-year'>2024</span>"]) --> HOVER(["HOVER<br/><span class='roadmap-node-year'>2024</span>"])
@@ -565,6 +566,7 @@
     NMR -.-> BM
     ReActor -.-> DM
     PHC --> ASE
+    AMP --> SMP
     PULSE --> DP
     PULSE --> EWBC
     BM --> EWBC
@@ -613,6 +615,7 @@
     subgraph SG_Skills ["3 · 技能与扩散"]
         ASE(["ASE<br/><span class='roadmap-node-year'>2022</span>"]) --> CALM(["CALM<br/><span class='roadmap-node-year'>2023</span>"]) --> PULSE(["PULSE<br/><span class='roadmap-node-year'>2023</span>"])
         DP(["扩散策略<br/><span class='roadmap-node-year'>2023</span>"]) --> BM(["BeyondMimic<br/><span class='roadmap-node-year'>2025</span>"])
+        DP -.-> SMP(["SMP<br/><span class='roadmap-node-year'>2025</span>"])
     end
     subgraph SG_WBC ["4 · 全身控制 WBC"]
         EWBC(["表达性 WBC<br/><span class='roadmap-node-year'>2024</span>"]) --> HOVER(["HOVER<br/><span class='roadmap-node-year'>2024</span>"])
@@ -656,6 +659,7 @@
     NMR -.-> BM
     ReActor -.-> DM
     PHC --> ASE
+    AMP --> SMP
     PULSE --> DP
     PULSE --> EWBC
     BM --> EWBC

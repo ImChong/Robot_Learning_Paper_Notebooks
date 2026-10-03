@@ -1,6 +1,6 @@
 ---
 layout: paper
-paper_order: 12
+paper_order: 13
 title: "Domain Randomization for Transferring Deep Neural Networks from Simulation to the Real World"
 category: "Sim-to-Real"
 zhname: "域随机化：从仿真到真实世界的深度神经网络迁移"

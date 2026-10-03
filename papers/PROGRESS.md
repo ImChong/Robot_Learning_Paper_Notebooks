@@ -19,6 +19,7 @@
 | 12  | Domain Randomization for Transferring Deep Neural Networks from Simulation to the Real World | ⏳ 待读   | -          | Sim-to-Real |
 | 13  | LCP: Sim-to-Real Action Smoothing                                                            | ⏳ 待读   | -          | 基础RL        |
 | 14  | Transformer: Attention Is All You Need                                                       | ✅ 完成   | 2026-09-30 | 基础架构        |
+| 15  | SMP: Reusable Score-Matching Motion Priors for Physics-Based Character Control               | ✅ 完成   | 2026-10-03 | 风格学习+扩散     |
 
 
 ### ⭐ 高影响力精选（基础路线图之后优先读）
