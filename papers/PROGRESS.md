@@ -568,7 +568,7 @@
 | 397  | [Humanoid World Models: Open World Foundation Models for Humanoid Robotics](https://arxiv.org/abs/2506.01182)                              | 2025.06 |     | ⏳ 待读 |
 | 398  | [Mimicking-Bench: A Benchmark for Generalizable Humanoid-Scene Interaction Learning via Human Mimicking](https://arxiv.org/abs/2412.17730) | 2024.12 |     | ⏳ 待读 |
 | 399  | [ManiSkill-HAB: A Benchmark for Low-Level Manipulation in Home Rearrangement Tasks](https://arxiv.org/abs/2412.13211)                      | 2024.12 |     | ⏳ 待读 |
-| 400  | Genesis: A Generative and Universal Physics Engine for Robotics and Beyond                                                                 | 2024.12 |     | ⏳ 待读 |
+| 400  | [Genesis: A Generative and Universal Physics Engine for Robotics and Beyond](https://github.com/Genesis-Embodied-AI/genesis-world) ✅ [笔记](11_Simulation_Benchmark/Genesis__A_Generative_and_Universal_Physics_Engine_for_Robotics_and_Beyond/Genesis__A_Generative_and_Universal_Physics_Engine_for_Robotics_and_Beyond.md) | 2024-12-18 | 🌟 | ✅ 已总结 |
 | 401  | [DexMimicGen: Automated Data Generation for Bimanual Dexterous Manipulation via Imitation Learning](https://arxiv.org/abs/2410.24185)      | 2024.10 |     | ⏳ 待读 |
 | 402  | [ManiSkill3: GPU Parallelized Robotics Simulation and Rendering for Generalizable Embodied AI](https://arxiv.org/abs/2410.00425) ✅ [笔记](11_Simulation_Benchmark/ManiSkill3__GPU_Parallelized_Robotics_Simulation_and_Rendering/ManiSkill3__GPU_Parallelized_Robotics_Simulation_and_Rendering.md) | 2024-10-01 | 🌟 | ✅ 已总结 |
 | 403  | [BiGym: A Demo-Driven Mobile Bi-Manual Manipulation Benchmark](https://arxiv.org/abs/2407.07788)                                           | 2024.07 |     | ⏳ 待读 |
