@@ -524,11 +524,13 @@
     end
     subgraph SG_WBC ["4 · Whole-Body Control"]
         EWBC(["Expressive WBC<br/><span class='roadmap-node-year'>2024</span>"]) --> HOVER(["HOVER<br/><span class='roadmap-node-year'>2024</span>"])
+        OmniH2O(["OmniH2O<br/><span class='roadmap-node-year'>2024</span>"]) --> HOVER
         EWBC --> HugWBC(["HugWBC<br/><span class='roadmap-node-year'>2025</span>"])
         EWBC --> ExBody2(["ExBody2<br/><span class='roadmap-node-year'>2024</span>"])
         EWBC --> SONIC(["SONIC<br/><span class='roadmap-node-year'>2025</span>"])
     end
     subgraph SG_Manip ["5 · Manipulation"]
+        ACT(["ACT / ALOHA<br/><span class='roadmap-node-year'>2023</span>"]) --> EgoMimic
         iDP3(["iDP3<br/><span class='roadmap-node-year'>2024</span>"]) --> EgoMimic(["EgoMimic<br/><span class='roadmap-node-year'>2024</span>"])
         EgoMimic --> HumDex(["HumDex<br/><span class='roadmap-node-year'>2026</span>"])
     end
@@ -544,6 +546,7 @@
         DreamZero(["DreamZero<br/><span class='roadmap-node-year'>2026</span>"])
     end
     subgraph SG_FM ["9 · Foundation Models"]
+        OpenVLA(["OpenVLA<br/><span class='roadmap-node-year'>2024</span>"]) --> Pi0
         Pi0(["VLA — π₀<br/><span class='roadmap-node-year'>2024</span>"]) --> Pi05(["π₀.₅ — Open-World VLA<br/><span class='roadmap-node-year'>2025</span>"])
         Pi0 --> VLA
         VLA(["VLA — GR00T N1<br/><span class='roadmap-node-year'>2025</span>"])
@@ -551,7 +554,9 @@
     end
     subgraph SG_Eng ["Engineering"]
         DR(["Domain Randomization<br/><span class='roadmap-node-year'>2017</span>"]) --> LCP(["LCP<br/><span class='roadmap-node-year'>2024</span>"])
-        DR --> OP3Soccer(["OP3 Soccer<br/><span class='roadmap-node-year'>2023</span>"])
+        DR --> QuadTerrain(["Quadruped Terrain · Teacher-Student<br/><span class='roadmap-node-year'>2020</span>"])
+        QuadTerrain --> OP3Soccer(["OP3 Soccer<br/><span class='roadmap-node-year'>2023</span>"])
+        LCP --> ASAP(["ASAP<br/><span class='roadmap-node-year'>2025</span>"])
     end
     GMR -.-> DM
     GMR -.-> AMP
@@ -579,6 +584,11 @@
     DreamZero --> BFM
     Transformer -.-> DP
     Transformer -.-> Pi0
+    Transformer -.-> ACT
+    Transformer -.-> OpenVLA
+    ACT --> Pi0
+    QuadTerrain -.-> HOVER
+    ASAP -.-> BM
     DP --> Pi0`,
         zh: `graph TD
     subgraph SG_Basic ["1 · 基础 RL 与 Transformer"]
@@ -603,11 +613,13 @@
     end
     subgraph SG_WBC ["4 · 全身控制 WBC"]
         EWBC(["表达性 WBC<br/><span class='roadmap-node-year'>2024</span>"]) --> HOVER(["HOVER<br/><span class='roadmap-node-year'>2024</span>"])
+        OmniH2O(["OmniH2O<br/><span class='roadmap-node-year'>2024</span>"]) --> HOVER
         EWBC --> HugWBC(["HugWBC<br/><span class='roadmap-node-year'>2025</span>"])
         EWBC --> ExBody2(["ExBody2<br/><span class='roadmap-node-year'>2024</span>"])
         EWBC --> SONIC(["SONIC<br/><span class='roadmap-node-year'>2025</span>"])
     end
     subgraph SG_Manip ["5 · 操作 Manipulation"]
+        ACT(["ACT / ALOHA<br/><span class='roadmap-node-year'>2023</span>"]) --> EgoMimic
         iDP3(["iDP3<br/><span class='roadmap-node-year'>2024</span>"]) --> EgoMimic(["EgoMimic<br/><span class='roadmap-node-year'>2024</span>"])
         EgoMimic --> HumDex(["HumDex<br/><span class='roadmap-node-year'>2026</span>"])
     end
@@ -623,6 +635,7 @@
         DreamZero(["DreamZero<br/><span class='roadmap-node-year'>2026</span>"])
     end
     subgraph SG_FM ["9 · 基础模型 VLA / BFM"]
+        OpenVLA(["OpenVLA<br/><span class='roadmap-node-year'>2024</span>"]) --> Pi0
         Pi0(["VLA — π₀<br/><span class='roadmap-node-year'>2024</span>"]) --> Pi05(["π₀.₅ — 开放世界 VLA<br/><span class='roadmap-node-year'>2025</span>"])
         Pi0 --> VLA
         VLA(["VLA — GR00T N1<br/><span class='roadmap-node-year'>2025</span>"])
@@ -630,7 +643,9 @@
     end
     subgraph SG_Eng ["工程实践"]
         DR(["域随机化<br/><span class='roadmap-node-year'>2017</span>"]) --> LCP(["LCP<br/><span class='roadmap-node-year'>2024</span>"])
-        DR --> OP3Soccer(["OP3 足球<br/><span class='roadmap-node-year'>2023</span>"])
+        DR --> QuadTerrain(["四足地形 · 教师-学生<br/><span class='roadmap-node-year'>2020</span>"])
+        QuadTerrain --> OP3Soccer(["OP3 足球<br/><span class='roadmap-node-year'>2023</span>"])
+        LCP --> ASAP(["ASAP<br/><span class='roadmap-node-year'>2025</span>"])
     end
     GMR -.-> DM
     GMR -.-> AMP
@@ -658,6 +673,11 @@
     DreamZero --> BFM
     Transformer -.-> DP
     Transformer -.-> Pi0
+    Transformer -.-> ACT
+    Transformer -.-> OpenVLA
+    ACT --> Pi0
+    QuadTerrain -.-> HOVER
+    ASAP -.-> BM
     DP --> Pi0`
       };
 
