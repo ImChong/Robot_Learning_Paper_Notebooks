@@ -16,6 +16,7 @@
  *   smp-sds       — SDS 奖励实验台：「左臂 × 右腿」二维玩具流形上的三档修正方向与 r_smp
  *   smp-esm       — 随机噪声档 vs 固定三档：同一个动作评估 1024 次的方差，以及 AdaNorm
  *   smp-style     — 一个先验，多种风格：无条件 / CFG / 上下半身组合的奖励地形
+ *   smp-video     — 同一组八幕的配音竖屏视频（scripts/paper_video/ 离线渲染，K.video 播放）
  *
  * 所有数字都来自同一个玩具模型（下面的 sdsExpected / smpBreakdown），
  * 与笔记「🚶 具体实例」那几张表共用：数据是相关系数 0.95 的二维高斯，
@@ -1212,7 +1213,7 @@
   /* ── scene 1: 对抗先验为什么不能复用 ── */
   var S1_BARS = [
     { title: '风格准确率（表 1，12 种风格平均）', rows: [['AMP', 0.962, C_MUTED], ['AMP-Frozen', 0.205, C_BAD], ['SMP', 0.962, C_GOOD]] },
-    { title: 'Target Location 任务回报（表 2）', rows: [['AMP', 0.737, C_MUTED], ['AMP-Frozen', 0.101, C_BAD], ['SMP', 0.793, C_GOOD]] }
+    { title: '走到目标点任务回报（表 2）', rows: [['AMP', 0.737, C_MUTED], ['AMP-Frozen', 0.101, C_BAD], ['SMP', 0.793, C_GOOD]] }
   ];
 
   function buildSceneReuse() {
@@ -1323,7 +1324,7 @@
   }
 
   function buildScenePretrain() {
-    var s = sceneSvg('第一步只用动作数据训一个扩散模型：10 帧窗口，前向加噪，2 层 DiT 约 3M 参数预测噪声；加噪让分数估计在数据稀疏处也可靠；训完冻结');
+    var s = sceneSvg('第一步只用动作数据训一个扩散模型：10 帧窗口，前向加噪，2 层 Transformer 约 300 万参数预测噪声；加噪让分数估计在数据稀疏处也可靠；训完冻结');
     s.appendChild(svgText(40, 36, '第一步与任务、策略都无关：只拿动作数据训一个扩散模型', 'demo-x-ink2', 13.5));
     var mk = K.arrowMarker(s, 'smp-x-arrow-s2', C_MUTED);
 
@@ -1354,10 +1355,10 @@
       g.appendChild(svgText(cx, 132, 'N = 50 档 · 余弦噪声表', 'demo-x-mut', 10, 'middle'));
     });
     stageBox(538, 124, C_ACCENT, function (g, cx) {
-      g.appendChild(svgText(cx, 82, 'DiT', 'demo-x-acc', 13, 'middle'));
+      g.appendChild(svgText(cx, 82, 'Transformer', 'demo-x-acc', 13, 'middle'));
       g.appendChild(svgText(cx, 102, '2 层 · 4 头 × 64', 'demo-x-ink2', 10.5, 'middle'));
-      g.appendChild(svgText(cx, 120, '约 3M 参数', 'demo-x-ink2', 10.5, 'middle'));
-      g.appendChild(svgText(cx, 138, 'adaLN 注入噪声档', 'demo-x-mut', 10, 'middle'));
+      g.appendChild(svgText(cx, 120, '约 300 万参数', 'demo-x-ink2', 10.5, 'middle'));
+      g.appendChild(svgText(cx, 138, '自适应归一化注入档位', 'demo-x-mut', 10, 'middle'));
     });
     stageBox(678, 96, C_ACCENT, function (g, cx) {
       g.appendChild(svgText(cx, 84, '预测噪声', null, 12, 'middle'));
@@ -1599,7 +1600,7 @@
     chip(paper, 450, 300, 326, 'Backflip：随机档 0.195 m → ESM **0.069 m**（表 5）', C_GOOD, { size: 11 });
 
     var foot = group(s);
-    chip(foot, 30, 350, 230, '高档：对 OOD 可靠，但抹平细节', C_WARN, { size: 10.5 });
+    chip(foot, 30, 350, 230, '高档：离数据远也可靠，但丢掉细节', C_WARN, { size: 10.5 });
     chip(foot, 285, 350, 230, '低档：修得细，但对抖动敏感', C_GOOD, { size: 10.5 });
     chip(foot, 540, 350, 236, '表 7：[22, 15, 8] 平均 **0.060 m** 最好', C_ACCENT, { size: 10.5 });
 
@@ -1877,7 +1878,7 @@
     s.appendChild(f1n);
 
     var tbl = group(s);
-    tbl.appendChild(svgText(390, 146, '表 1：12 种风格的 Target Location（平均）', 'demo-x-ink2', 11.5));
+    tbl.appendChild(svgText(390, 146, '表 1：12 种风格的走到目标点任务（平均）', 'demo-x-ink2', 11.5));
     [['', '任务回报', '风格准确率'], ['AMP（每种风格单独训）', '0.874', '0.962'], ['AMP-Frozen', '0.771', '0.205'], ['SMP（一个先验 + CFG）', '0.879', '0.962']].forEach(function (row, i) {
       var y = 170 + i * 24;
       var cls = i === 0 ? 'demo-x-mut' : i === 2 ? 'demo-x-bad' : i === 3 ? 'demo-x-good' : 'demo-x-ink2';
@@ -1929,10 +1930,10 @@
     ['PPO 更新', 'clip 0.2']
   ];
   var S8_TASKS = [
-    ['Steering', 0.914, 0.634],
-    ['Target Location', 0.793, 0.737],
-    ['Dodgeball', 0.733, 0.233],
-    ['Target Speed（3 秒数据）', 0.918, 0.904]
+    ['边跑边转向', 0.914, 0.634],
+    ['走到目标点', 0.793, 0.737],
+    ['躲避球', 0.733, 0.233],
+    ['变速跑（3 秒数据）', 0.918, 0.904]
   ];
 
   function buildSceneLoop() {
@@ -1981,10 +1982,10 @@
 
     var right = group(s);
     chip(right, 430, 162, 346, '单段模仿 6 个技能：平均 **0.046 m**，与 AMP 打平（表 4）', C_GOOD, { size: 11 });
-    chip(right, 430, 200, 346, 'Dodgeball：数据里只有跑步，策略自己长出跳跃闪躲', C_GOOD, { size: 11 });
+    chip(right, 430, 200, 346, '躲避球：数据里只有跑步，策略自己长出跳跃闪躲', C_GOOD, { size: 11 });
     chip(right, 430, 238, 346, 'Unitree G1 真机：行走、被推后恢复、spinkick', C_ACCENT, { size: 11 });
     var lim = group(s);
-    chip(lim, 430, 282, 346, '边界：mode-seeking 目标容易**模式坍缩**', C_BAD, { size: 11, dash: '4 3' });
+    chip(lim, 430, 282, 346, '边界：只追高峰的目标容易**模式坍缩**', C_BAD, { size: 11, dash: '4 3' });
     chip(lim, 430, 320, 346, 'GSI 偶尔采出非法状态；训练 11.5 h vs AMP 6.2 h', C_BAD, { size: 11, dash: '4 3' });
 
     var foot = svgRich(400, 384, '**SMP = AMP 的分布匹配 + 一个预训练、冻结、可分发的扩散模型当打分器**', { size: 13.5, anchor: 'middle', w: 760, cls: 'demo-x-acc' });
@@ -2030,10 +2031,10 @@
       dur: 15,
       build: buildSceneReuse,
       cues: [
-        { at: 0.3, s: 'AMP 的风格奖励来自判别器 $D$：它学的是「数据 vs **当前这个**策略」的分界线，所以必须和策略一起对抗训练，动作数据集全程在场。' },
+        { at: 0.3, s: 'AMP 的风格奖励来自**判别器** $D$：它学的是「数据 vs **正在训练的这个**策略」的分界线，所以必须和策略一起对抗训练，动作数据集全程在场。' },
         { at: 4.0, s: '换一个新策略、把判别器冻结（论文叫 **AMP-Frozen**），新策略很快就找到它判错的地方，用不自然的动作刷高分；论文观察到判别器准确率在训练中一路下降。' },
-        { at: 7.4, s: '代价写在表里：12 种风格平均**风格准确率 0.205**（AMP 0.962）；Target Location 任务回报 **0.101**（AMP 0.737）。' },
-        { at: 10.8, s: '论文要的运动先验是两条：**Modular**（训练策略时不碰原始数据）和 **Reusable**（建好之后不再训练，直接用于新任务、新策略）。' },
+        { at: 7.4, s: '代价写在表里：**风格准确率**（风格分类器认对的比例）12 种风格平均 **0.205**（AMP 0.962）；走到目标点（Target Location）的任务回报 **0.101**（AMP 0.737）。' },
+        { at: 10.8, s: '论文要的运动先验是两条：**模块化**（Modular：训练策略时不碰原始数据）和**可复用**（Reusable：建好之后不再训练，直接用于新任务、新策略）。' },
         { at: 12.8, s: 'SMP 两项都做到了，风格准确率同样 0.962。它的答案：先验不该是和策略博弈的判别器，而应该是一个**只看过数据的生成模型**。' }
       ]
     },
@@ -2042,11 +2043,11 @@
       dur: 16,
       build: buildScenePretrain,
       cues: [
-        { at: 0.3, s: '第一步和任何任务、任何策略都无关：只拿动作数据训一个扩散模型 —— 100STYLE 的 20 多小时可以，3 秒的三段走跑也可以。' },
+        { at: 0.3, s: '第一步和任何任务、任何策略都无关：只拿动作数据训一个扩散模型 —— **100STYLE**（100 种走路风格、20 多小时的动捕数据集）可以，3 秒的三段走跑也可以。' },
         { at: 2.4, s: '输入是连续 **10 帧**的动作窗口 $\\mathbf{x} = (\\mathbf{s}_{t-8}, \\ldots, \\mathbf{s}_{t+1})$：根部线 / 角速度、各关节 6D 旋转、手脚末端位置，都在最后一帧的局部坐标系里。' },
-        { at: 5.6, s: '训练是标准 DDPM：随机挑一档噪声，$\\mathbf{x}_i = \\sqrt{\\bar{\\alpha}_i}\\,\\mathbf{x}_0 + \\sqrt{1-\\bar{\\alpha}_i}\\,\\boldsymbol{\\epsilon}$，让网络猜出加进去的 $\\boldsymbol{\\epsilon}$，$N = 50$ 档。' },
-        { at: 8.6, s: '网络小得出奇：**2 层 Transformer、4 头 × 64 维、约 3M 参数**，就装得下 100STYLE 的 100 种风格；一张 4090 约 5 小时训完。' },
-        { at: 11.6, s: '为什么要「先加噪、再估分数」：数据稀疏处的分数估不准，而策略刚开始乱动时恰恰在那里；噪声够大时，被扰动的分布铺满整个空间，估计就稳了。' },
+        { at: 5.6, s: '训练是上一期讲过的标准 **DDPM**：从 $N = 50$ 档里随机选一档噪声，$\\mathbf{x}_i = \\sqrt{\\bar{\\alpha}_i}\\,\\mathbf{x}_0 + \\sqrt{1-\\bar{\\alpha}_i}\\,\\boldsymbol{\\epsilon}$，让网络猜出加进去的 $\\boldsymbol{\\epsilon}$。' },
+        { at: 8.6, s: '网络小得出奇：**2 层 Transformer、4 头 × 64 维、约 300 万（3M）参数**，就能学会 100STYLE 的 100 种风格；一张 4090 显卡约 5 小时训完。' },
+        { at: 11.6, s: '为什么要「先加噪、再估**分数**」（score：对数概率的梯度，指向数据更密的方向）：数据稀疏处的分数估不准，而策略刚开始乱动时恰恰在那里；噪声够大时，被扰动的分布铺满整个空间，估计就稳了。' },
         { at: 13.8, s: '训完就**冻结**。之后不管训多少个策略、什么任务，它一个参数都不再动。' }
       ]
     },
@@ -2055,12 +2056,12 @@
       dur: 17,
       build: buildSceneSds,
       cues: [
-        { at: 0.3, s: '用一个二维玩具看清 SDS：$x_1$ 左臂摆角、$x_2$ 右腿摆角（都已标准化）。自然走路是对侧协调，数据挤在一条相关系数 $\\rho = 0.95$ 的细椭圆上。' },
-        { at: 1.6, s: '绿点 A 是自然摆臂 (0.8, 0.8)；红点 B 是**顺拐** (0.8, −0.8)：左臂向前、右腿向后。离原点一样远，只是 B 横穿了流形。' },
+        { at: 0.3, s: '**SDS**（score distillation sampling，分数蒸馏采样）：给动作加噪，让冻结的扩散模型猜噪声。二维玩具：$x_1$ 左臂摆角、$x_2$ 右腿摆角（都已标准化），自然走路时数据挤在一条细椭圆上（$\\rho = 0.95$）。' },
+        { at: 1.6, s: '绿点 A 是自然摆臂 (0.8, 0.8)；红点 B 是**顺拐** (0.8, −0.8)：左臂向前、右腿向后。离原点一样远，只是 B 横穿了椭圆。' },
         { at: 5.2, s: '把 B 加噪到第 22 档（$\\bar{\\alpha}_{22} = 0.556$），再让冻结的扩散模型猜噪声 $\\hat{\\boldsymbol{\\epsilon}} = f(\\mathbf{x}_{22})$。' },
-        { at: 8.4, s: '扩散模型按「数据长什么样」去猜，会把偏离流形的那部分也当成噪声：反推出来的伪目标 $\\bar{\\mathbf{x}}_0$ 几乎落回椭圆，离流形从 **1.131** 变成 **0.067**。' },
-        { at: 10.8, s: '所以残差 $\\hat{\\boldsymbol{\\epsilon}} - \\boldsymbol{\\epsilon}$ 就是「往数据拉回去」的修正量。RL 不要梯度、只要一个标量：$r^{smp} = \\exp(-w_s \\lVert \\hat{\\boldsymbol{\\epsilon}} - \\boldsymbol{\\epsilon} \\rVert^2)$（论文式 7）。' },
-        { at: 14.0, s: '只用这一档、$w_s = 6$：自然摆臂 $\\mathcal{L} = 0.321$，奖励 **0.146**；顺拐 $\\mathcal{L} = 0.963$，奖励 **0.003**。这里的去噪器是高斯数据下的闭式最优解，是玩具模型。' }
+        { at: 8.4, s: '扩散模型按「数据长什么样」去猜，会把偏离椭圆的那部分也算进噪声：反推出来的伪目标 $\\bar{\\mathbf{x}}_0$ 基本落回椭圆，离椭圆从 **1.131** 变成 **0.067**。' },
+        { at: 10.8, s: '所以残差 $\\hat{\\boldsymbol{\\epsilon}} - \\boldsymbol{\\epsilon}$ 就是「往数据拉回去」的修正量。强化学习不要梯度、只要一个奖励数值：$r^{smp} = \\exp(-w_s \\lVert \\hat{\\boldsymbol{\\epsilon}} - \\boldsymbol{\\epsilon} \\rVert^2)$（论文式 7）。' },
+        { at: 14.0, s: '只用这一档、$w_s = 6$：自然摆臂 $\\mathcal{L} = 0.321$，奖励 **0.146**；顺拐 $\\mathcal{L} = 0.963$，奖励 **0.003**。这里的去噪器是高斯数据下的闭式最优解，是玩具模型，数值不能和论文直接比。' }
       ]
     },
     {
@@ -2068,12 +2069,12 @@
       dur: 16,
       build: buildSceneEsm,
       cues: [
-        { at: 0.3, s: '视觉里的 SDS 每次随机抽一档噪声。看顺拐 B 在 50 档上的 SDS 误差：高噪声档接近 0，低噪声档到 3 以上 —— 对数轴上跨了好几个数量级（论文图 4 也是对数轴）。' },
-        { at: 4.0, s: '在 RL 里这就不只是「梯度有噪声」了：误差就是奖励，**同一个动作这一步抽到高噪声奖励就高，下一步抽到低噪声就低**，价值函数学到的全是档位的噪声。' },
+        { at: 0.3, s: '图像里的 SDS 每次随机抽一档噪声。看顺拐 B 在 50 档上的 SDS 误差：高噪声档接近 0，低噪声档到 3 以上 —— 对数轴上跨了好几个数量级（论文图 4 也是对数轴）。' },
+        { at: 4.0, s: '在强化学习里这就不只是「梯度有噪声」了：误差就是奖励，**同一个动作这一步抽到高噪声奖励就高，下一步抽到低噪声就低**，价值函数学到的全是档位的噪声。' },
         { at: 6.8, s: '玩具里随机抽一档：均值 1.230、方差 **1.567**（散点是 1024 次评估里的前 60 次）。' },
-        { at: 8.4, s: 'ESM 不抽了：每次都在固定的 $\\mathcal{K} = \\{22, 15, 8\\}$ 上各算一次再平均。方差只剩每档那一次 $\\boldsymbol{\\epsilon}$ 的随机性，又被 1140 维平均掉，约 **$3 \\times 10^{-4}$**。' },
-        { at: 11.4, s: '论文同一段 HighKnees 评估 1024 次：方差 $1.140 \\to 9.964 \\times 10^{-6}$，均值几乎不变（1.309 vs 1.339）。Backflip 用随机档误差 0.195 m，固定三档 **0.069 m**。' },
-        { at: 13.8, s: '为什么是中间三档：高噪声档对离数据很远的动作可靠，但会抹平细节；低噪声档修得细，但对抖动非常敏感。表 7 里 [22, 15, 8] 平均 **0.060 m** 最好。' }
+        { at: 8.4, s: '**ESM**（ensemble score matching，集成分数匹配）不抽了：每次都在固定的 $\\mathcal{K} = \\{22, 15, 8\\}$ 上各算一次再平均。方差只剩每档那一次 $\\boldsymbol{\\epsilon}$ 的随机性，又被 1140 维平均掉，约 **$3 \\times 10^{-4}$**。' },
+        { at: 11.4, s: '论文同一段 HighKnees（高抬腿）评估 1024 次：方差 $1.140 \\to 9.964 \\times 10^{-6}$，均值基本不变（1.309 vs 1.339）。Backflip（后空翻）用随机档误差 0.195 m，固定三档 **0.069 m**。' },
+        { at: 13.8, s: '为什么是中间三档：高噪声档对离数据很远的动作也可靠，但会丢掉细节；低噪声档修得细，但对抖动非常敏感。表 7 里 [22, 15, 8] 平均 **0.060 m** 最好。' }
       ]
     },
     {
@@ -2082,11 +2083,11 @@
       build: buildSceneNorm,
       cues: [
         { at: 0.3, s: '固定三档还不够：三档误差的**量级**差很多。顺拐 B 的原始误差 0.963 / 1.896 / 3.451，直接平均的话，$t = 8$ 一档就占了 **55%**。' },
-        { at: 4.0, s: 'AdaNorm：每档记一个运行均值 $\\mu_i$，求和前各自除掉。手算时用训练初期「手脚各摆各的」当 $\\mu$：0.861 / 1.595 / 2.820（MimicKit 里是策略自己历史误差的累计均值）。' },
+        { at: 4.0, s: '**AdaNorm**（adaptive normalization，自适应归一化）：每档记一个运行均值 $\\mu_i$，求和前各自除掉。手算时用训练初期「手脚各摆各的」作为 $\\mu$：0.861 / 1.595 / 2.820（MimicKit 里是策略自己历史误差的累计均值）。' },
         { at: 7.4, s: 'B 归一化后是 1.119 / 1.189 / 1.223，三档占比变成 **32% / 34% / 35%**，谁也不压过谁；三个值都略大于 1，比训练初期乱摆还差一点。' },
         { at: 10.0, s: '平均后乘 $w_s = 6$ 取指数：自然摆臂 $\\exp(-6 \\times 0.275) = $ **0.192**，顺拐 $\\exp(-6 \\times 1.177) = $ **0.0009**。' },
         { at: 12.2, s: '接上任务奖励 $r = 0.5\\,r^{task} + 0.5\\,r^{smp}$，两种走法到目标的进度都是 0.8 时：**0.496 vs 0.400**，PPO 自然会把顺拐压下去。' },
-        { at: 14.2, s: '另一个好处是换先验不用重调：表 6 用 3 个独立训练的扩散模型，不加 AdaNorm 平均 0.176 m、方差很大，加上之后 **0.057 m**。' }
+        { at: 14.2, s: '另一个好处是换先验不用手动改参数：表 6 用 3 个独立训练的扩散模型，不加 AdaNorm 平均 0.176 m、方差很大，加上之后 **0.057 m**。' }
       ]
     },
     {
@@ -2094,11 +2095,11 @@
       dur: 15,
       build: buildSceneGsi,
       cues: [
-        { at: 0.3, s: '只换掉奖励还不够「模块化」：DeepMimic 以来的 **RSI** 要从数据里挑一帧当回合起点 —— 还是得带着数据集。' },
-        { at: 3.6, s: '可 SMP 本身就是生成模型。**GSI**：直接从同一个扩散模型里采 10 帧窗口，末帧当角色的初始状态，10 帧填满判别历史。' },
-        { at: 7.0, s: 'MimicKit 默认维护 4096 条的缓冲，每 50 轮迭代再采 1024 条；速度由相邻帧有限差分得到。' },
-        { at: 9.4, s: '采得像不像？4096 条对 4096 条：HighKnees / Aeroplane / SpinClock 的 FID **0.092 / 0.100 / 0.200**，Coverage@1 都在 **89%** 以上；训练曲线上 GSI 与 RSI 相当，明显好于从 T-pose 起步。' },
-        { at: 12.6, s: '于是同一个 SMP 身兼两职：**奖励函数 + 初始状态分布**，先验训好之后原始数据集可以彻底丢掉。代价是偶尔会采出自碰撞这类非法状态。' }
+        { at: 0.3, s: '只换掉奖励还不够「模块化」：DeepMimic 以来的 **RSI**（reference state initialization，参考状态初始化）要从数据里随机选一帧作为回合起点 —— 还是要带着数据集。' },
+        { at: 3.6, s: '可 SMP 本身就是生成模型。**GSI**（generative state initialization，生成式状态初始化）：直接从同一个扩散模型里采 10 帧窗口，末帧作为人形的初始状态，10 帧填满打分要用的历史。' },
+        { at: 7.0, s: 'MimicKit 默认维护 4096 条的缓冲，每 50 轮迭代再采 1024 条；速度由相邻两帧相减得到。' },
+        { at: 9.4, s: '采得像不像？4096 条对 4096 条：**FID**（两团样本的分布离得多远，越小越像）**0.092 / 0.100 / 0.200**，**Coverage@1**（真实样本附近能找到生成样本的比例）都在 **89%** 以上；训练曲线上 GSI 与 RSI 相当，明显好于从 **T-pose**（双臂平伸）起步。' },
+        { at: 12.6, s: '于是同一个 SMP 身兼两职：**奖励函数 + 初始状态分布**，先验训好之后原始数据集可以彻底丢掉。代价是偶尔会采出自碰撞（比如手穿进身体）这类非法状态。' }
       ]
     },
     {
@@ -2106,12 +2107,12 @@
       dur: 17,
       build: buildSceneStyle,
       cues: [
-        { at: 0.3, s: '在整个 100STYLE（100 种风格）上训一个**风格条件**扩散模型。玩具里只画三种：Neutral、AeroPlane（张开双臂）、HighKnees（高抬腿）。' },
-        { at: 3.0, s: '不给条件时，它奖励的是「随便哪种风格都行」：三个簇都亮。' },
-        { at: 5.0, s: '用 CFG 把它变成单一风格的先验：$f_{style} = f(\\varnothing) + w_{cfg}\\,(f(c) - f(\\varnothing))$。论文发现 $w_{cfg} = 1$ 就够了 —— 只剩 AeroPlane 那一簇亮。' },
-        { at: 8.4, s: '12 种风格的 Target Location：SMP 风格准确率平均 **0.962**，和每种风格单独整理数据、单独训判别器的 AMP 一样；冻结判别器的 AMP-Frozen 只有 0.205。' },
-        { at: 11.6, s: '更进一步：上半身取 AeroPlane 的预测、下半身取 HighKnees 的预测，$f_{comp} = M_{upper} \\odot f(c_1) + M_{lower} \\odot f(c_2)$。' },
-        { at: 14.0, s: '奖励的峰值落到了**数据里没有的地方**：张开双臂 + 高抬腿；它同时给 GSI 生成这种风格的初始状态。风格冲突大时，论文改用 3 步 DDIM 估 $\\hat{\\boldsymbol{\\epsilon}}$（MSM）。' }
+        { at: 0.3, s: '在整个 100STYLE 上训一个**风格条件**扩散模型（输入里带风格标签）。玩具里只画三种：Neutral（普通走路）、AeroPlane（张开双臂）、HighKnees（高抬腿）。' },
+        { at: 3.0, s: '不给风格标签时，它奖励的是「哪种风格都行」：三个簇都亮。' },
+        { at: 5.0, s: '用 **CFG**（classifier-free guidance，无分类器引导）把它变成单一风格的先验：$f_{style} = f(\\varnothing) + w_{cfg}\\,(f(c) - f(\\varnothing))$。论文发现 $w_{cfg} = 1$ 就够了 —— 只剩 AeroPlane 那一簇亮。' },
+        { at: 8.4, s: '12 种风格的走到目标点任务：SMP 风格准确率平均 **0.962**，和每种风格单独整理数据、单独训判别器的 AMP 一样；冻结判别器的 AMP-Frozen 只有 0.205。' },
+        { at: 11.6, s: '再进一步：上半身取 AeroPlane 的预测、下半身取 HighKnees 的预测，$f_{comp} = M_{upper} \\odot f(c_1) + M_{lower} \\odot f(c_2)$。' },
+        { at: 14.0, s: '奖励的峰值落到了**数据里没有的地方**：张开双臂 + 高抬腿；它同时给 GSI 生成这种风格的初始状态。风格冲突大时，论文改用 3 步 DDIM 估 $\\hat{\\boldsymbol{\\epsilon}}$（**MSM**，多步分数匹配）。' }
       ]
     },
     {
@@ -2119,12 +2120,12 @@
       dur: 16,
       build: buildSceneLoop,
       cues: [
-        { at: 0.3, s: '串起来就是一轮训练：策略在 4096 个环境里各跑 32 步，记下每一步的 10 帧窗口 `disc_obs`。' },
+        { at: 0.3, s: '串起来就是一轮训练：MimicKit 默认 4096 个并行环境各跑 32 步，记下每一步的 10 帧窗口 `disc_obs`。' },
         { at: 2.4, s: '`ESM_SDS_loss` 在 22 / 15 / 8 三档各算一次误差，`DiffNormalizer` 除以各档均值，平均后乘 6 取指数。' },
         { at: 5.0, s: '与任务奖励 0.5 / 0.5 组合后交给 PPO；扩散模型 `requires_grad=False`，全程一次都不更新。' },
-        { at: 7.0, s: '同一个 LaFAN1 跑步先验，原封不动训三个任务：Steering **0.914**、Target Location **0.793**、Dodgeball **0.733**（AMP 0.233）；Target Speed 的先验只看过 3 秒数据，也有 **0.918**。' },
-        { at: 10.0, s: '单段模仿 6 个技能，平均误差 **0.046 m**，和 AMP 打平，奖励全程不读参考数据；同一套方法训出的走路策略直接上了 Unitree G1。' },
-        { at: 12.6, s: '边界：mode-seeking 目标容易**模式坍缩**，数据越大越明显；GSI 偶尔采出非法状态；训练比 AMP 慢约一倍（11.5 h vs 6.2 h）。' },
+        { at: 7.0, s: '同一个 LaFAN1（公开动捕数据集）跑步先验，原封不动训三个任务：边跑边转向（Steering）**0.914**、走到目标点 **0.793**、躲避球（Dodgeball）**0.733**（AMP 0.233）；变速跑（Target Speed）的先验只看过 3 秒数据，也有 **0.918**。' },
+        { at: 10.0, s: '单段模仿 6 个技能，平均误差 **0.046 m**，和 AMP 打平，奖励全程不读参考数据；同一套方法训出的走路策略直接上了宇树 Unitree G1 人形机器人。' },
+        { at: 12.6, s: '边界：只追高峰（mode-seeking）的目标容易**模式坍缩**（只会少数几种动作），数据越大越明显；GSI 偶尔采出非法状态；训练比 AMP 慢约一倍（11.5 h vs 6.2 h）。' },
         { at: 14.6, s: '一句话：**SMP = AMP 的分布匹配 + 一个预训练、冻结、可分发的扩散模型当打分器。**' }
       ]
     }
@@ -2145,8 +2146,21 @@
     });
   }
 
+  // ─── the narrated vertical video of the same eight scenes ─────────────
+  /* Rendered offline by scripts/paper_video/ from the storyboard above plus a
+     voice-over; the files sit next to the note (see its placeholder). */
+  function buildVideoDemo(host) {
+    K.video(host, {
+      title: '配音讲解视频：SMP 八幕全流程',
+      sub: '8 分 37 秒竖屏视频（1080×1920），中文配音 + 字幕。画面就是上面的八幕动画，旁白把每一幕讲细；适合手机上看或转发。',
+      size: '9.7 MB',
+      fileName: 'SMP_讲解视频.mp4'
+    });
+  }
+
   K.mount({
     'smp-explainer': buildExplainerDemo,
+    'smp-video': buildVideoDemo,
     'smp-sds': buildSdsDemo,
     'smp-esm': buildEsmDemo,
     'smp-style': buildStyleDemo
