@@ -135,6 +135,18 @@
         "zh_title": "BeyondMimic：从运动跟踪到引导扩散的多功能人形控制"
       },
       {
+        "title": "SMP: Reusable Score-Matching Motion Priors for Physics-Based Character Control",
+        "path": "papers/01_Foundational_RL/SMP_Reusable_Score-Matching_Motion_Priors/SMP_Reusable_Score-Matching_Motion_Priors.md",
+        "url": "/papers/01_Foundational_RL/SMP_Reusable_Score-Matching_Motion_Priors/SMP_Reusable_Score-Matching_Motion_Priors.html",
+        "dir": "SMP_Reusable_Score-Matching_Motion_Priors",
+        "arxiv": "2512.03028",
+        "has_open_source": true,
+        "published_date_zh": "2025年12月2日（arXiv），SIGGRAPH 2026（ACM TOG）",
+        "published_date_en": "Dec 2, 2025 (arXiv), SIGGRAPH 2026 (ACM TOG)",
+        "zhname": "SMP：面向物理角色控制的可复用分数匹配运动先验",
+        "zh_title": "SMP：面向物理角色控制的可复用分数匹配运动先验"
+      },
+      {
         "title": "Understanding Domain Randomization for Sim-to-real Transfer",
         "path": "papers/01_Foundational_RL/Domain_Randomization_Understanding_Sim-to-Real_Transfer/Domain_Randomization_Understanding_Sim-to-Real_Transfer.md",
         "url": "/papers/01_Foundational_RL/Domain_Randomization_Understanding_Sim-to-Real_Transfer/Domain_Randomization_Understanding_Sim-to-Real_Transfer.html",
@@ -358,6 +370,17 @@
         "name": "Teleoperation & Imitation Learning",
         "papers": [
           {
+            "title": "ACT: Learning Fine-Grained Bimanual Manipulation with Low-Cost Hardware",
+            "path": "papers/03_High_Impact_Selection/ACT_Learning_Fine-Grained_Bimanual_Manipulation_with_Low-Cost_Hardware/ACT_Learning_Fine-Grained_Bimanual_Manipulation_with_Low-Cost_Hardware.md",
+            "url": "/papers/03_High_Impact_Selection/ACT_Learning_Fine-Grained_Bimanual_Manipulation_with_Low-Cost_Hardware/ACT_Learning_Fine-Grained_Bimanual_Manipulation_with_Low-Cost_Hardware.html",
+            "dir": "ACT_Learning_Fine-Grained_Bimanual_Manipulation_with_Low-Cost_Hardware",
+            "arxiv": "2304.13705",
+            "published_date_zh": "2023年4月23日（arXiv）",
+            "published_date_en": "Apr 23, 2023 (arXiv)",
+            "zhname": "ACT / ALOHA：用低成本硬件学习精细双臂操作",
+            "zh_title": "ACT / ALOHA：用低成本硬件学习精细双臂操作"
+          },
+          {
             "title": "OmniH2O: Universal and Dexterous Human-to-Humanoid Whole-Body Teleoperation and Learning",
             "path": "papers/03_High_Impact_Selection/OmniH2O_Universal_Whole-Body_Teleoperation/OmniH2O_Universal_Whole-Body_Teleoperation.md",
             "url": "/papers/03_High_Impact_Selection/OmniH2O_Universal_Whole-Body_Teleoperation/OmniH2O_Universal_Whole-Body_Teleoperation.html",
@@ -498,6 +521,17 @@
             "published_date_en": "Apr 26, 2023 (arXiv v1), Science Robotics 2024",
             "zhname": "OP3 足球：用深度强化学习让双足机器人学会敏捷踢球",
             "zh_title": "OP3 足球：用深度强化学习让双足机器人学会敏捷踢球"
+          },
+          {
+            "title": "OpenVLA: An Open-Source Vision-Language-Action Model",
+            "path": "papers/03_High_Impact_Selection/OpenVLA_An_Open-Source_Vision-Language-Action_Model/OpenVLA_An_Open-Source_Vision-Language-Action_Model.md",
+            "url": "/papers/03_High_Impact_Selection/OpenVLA_An_Open-Source_Vision-Language-Action_Model/OpenVLA_An_Open-Source_Vision-Language-Action_Model.html",
+            "dir": "OpenVLA_An_Open-Source_Vision-Language-Action_Model",
+            "arxiv": "2406.09246",
+            "published_date_zh": "2024年6月13日（arXiv）",
+            "published_date_en": "Jun 13, 2024 (arXiv)",
+            "zhname": "OpenVLA：开源的视觉-语言-动作模型",
+            "zh_title": "OpenVLA：开源的视觉-语言-动作模型"
           },
           {
             "title": "π0: A Vision-Language-Action Flow Model for General Robot Control",

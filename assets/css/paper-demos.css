@@ -226,7 +226,7 @@ a.demo-btn {
   margin-bottom: 0.7rem;
 }
 
-.demo-legend span::before {
+.demo-legend > span::before {
   content: '';
   display: inline-block;
   width: 0.85rem;
