@@ -38,7 +38,7 @@ demos: ["pulse"]
 
 > 🎮 **本文内嵌 1 段动画 + 1 段配音视频 + 3 个可交互演示**（不用装任何东西）：
 > 1. [六幕动画：PULSE 全流程](#pulse-explainer-anim) —— 约 90 秒串完「缺一个通用表示 → 阶段 1 大规模模仿 → 阶段 2 VIB 瓶颈 → 本体感受先验 → 阶段 3 下游只搜 32 维 → 闭环与源码落点」
-> 2. [配音讲解视频](#pulse-video) —— 同样六幕，加中文配音与字幕，6 分 51 秒竖屏，可下载
+> 2. [配音讲解视频](#pulse-video) —— 同样六幕，加中文配音与字幕，7 分 10 秒竖屏，可下载
 > 3. VIB 实验台 —— 拖 $\beta$，看潜空间在「把 AMASS 背下来」和「posterior collapse」之间怎么取舍
 > 4. 本体感受先验实验台 —— 换身体状态，看固定的 $\mathcal{N}(0, I)$ 采出来的 $z$ 有多少这一步根本执行不了
 > 5. 下游任务实验台 —— 32 维潜空间与 69 维关节空间的学习曲线并排，顺便看残差拉太大会发生什么
@@ -61,7 +61,7 @@ demos: ["pulse"]
 
 ## 📺 配音讲解视频（可下载） {#pulse-video}
 
-<div class="paper-demo" data-demo="pulse-video" data-src="media/pulse_explainer_video.mp4" data-poster="media/pulse_explainer_video_poster.jpg"><p class="demo-fallback">（本节含讲解视频播放器，需要启用 JavaScript；也可以直接<a href="media/pulse_explainer_video.mp4" download="PULSE_讲解视频.mp4">下载 mp4（8.9 MB）</a>）</p></div>
+<div class="paper-demo" data-demo="pulse-video" data-src="media/pulse_explainer_video.mp4" data-poster="media/pulse_explainer_video_poster.jpg"><p class="demo-fallback">（本节含讲解视频播放器，需要启用 JavaScript；也可以直接<a href="media/pulse_explainer_video.mp4" download="PULSE_讲解视频.mp4">下载 mp4（9.4 MB）</a>）</p></div>
 
 > 📖 **动画之后的正文默认全部折叠**：前半部分（「要解决什么问题」「方法详解」「具体实例」）按小节收起，后面的工程价值、源码对照、面试问题与附录整块收起。想细读哪一块就点开对应的折叠条，内容一字未删；流程图、三个交互演示留在外面，目录里的标题依旧可以直接点，会自动展开所在折叠块，左侧目录顶部还有「展开全部文字」一键铺开。
 
