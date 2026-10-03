@@ -1145,8 +1145,7 @@
     sceneSvg = K.sceneSvg,
     stickFigure = K.stickFigure,
     poseWalk = K.poseWalk,
-    polyPath = K.polyPath,
-    pointOn = K.pointOn;
+    polyPath = K.polyPath;
 
   var X = K.xColors;
   var C_ACCENT = X.accent,
@@ -1958,9 +1957,12 @@
     var backPath = arrowPath(s, back, C_MUTED, mk, '5 4');
     var frozen = svgText(BX0 + 2.5 * (BW + GAP) + BW / 2, BY + BH + 30, '❄ TinyMDMModel：requires_grad = False', 'demo-x-acc', 10.5, 'middle');
     s.appendChild(frozen);
-    var token = paint(svgEl('circle', { cx: -20, cy: -20, r: 5 }), C_ACCENT);
+    /* 蓝点是一批数据沿流水线往前走：只在已经出现的方框之间跑（跑多远随方框淡入连续变长，不会跳），
+       按真实时间 `clock` 循环，配音视频里旁白停住画面时它照样跑，不会卡在半路；每趟两头淡入淡出，回到起点不闪。 */
+    var BOX_AT = [0.3, 0.8, 2.4, 3.0, 3.6, 5.0, 5.6];
+    var TOKEN_PASS = 2.4;
+    var token = paint(svgEl('circle', { cx: BX0 + BW / 2, cy: BY + BH / 2, r: 5, opacity: 0 }), C_ACCENT);
     s.appendChild(token);
-    var path = [[BX0 + BW / 2, BY + BH / 2], [BX0 + 6 * (BW + GAP) + BW / 2, BY + BH / 2]];
 
     var ev = group(s);
     ev.appendChild(svgText(30, 166, '表 2：同一个 LaFAN1 跑步先验，原封不动训三个任务', 'demo-x-ink2', 11.5));
@@ -1991,19 +1993,19 @@
     var foot = svgRich(400, 384, '**SMP = AMP 的分布匹配 + 一个预训练、冻结、可分发的扩散模型当打分器**', { size: 13.5, anchor: 'middle', w: 760, cls: 'demo-x-acc' });
     s.appendChild(foot);
 
-    function draw(t) {
+    function draw(t, clock) {
+      var now = clock == null ? t : clock;
       boxes.forEach(function (b, i) {
-        var at = [0.3, 0.8, 2.4, 3.0, 3.6, 5.0, 5.6][i];
-        setOpacity(b.g, seg(t, at, at + 0.5));
+        setOpacity(b.g, seg(t, BOX_AT[i], BOX_AT[i] + 0.5));
       });
       setOpacity(backPath, seg(t, 5.8, 6.3));
       setOpacity(frozen, seg(t, 5.0, 5.6));
-      if (t > 0.8 && t < 7.0) {
-        var u = ((t - 0.8) / 2.2) % 1;
-        var p = pointOn(path, u);
-        token.setAttribute('cx', p[0].toFixed(1));
-        token.setAttribute('cy', p[1].toFixed(1));
-        setOpacity(token, 1);
+      var reach = 0;
+      for (var i = 1; i < BOX_AT.length; i++) reach += seg(t, BOX_AT[i], BOX_AT[i] + 0.5);
+      if (t < 7.0 && reach > 0) {
+        var u = ((((now - 0.8) / TOKEN_PASS) % 1) + 1) % 1;
+        token.setAttribute('cx', (BX0 + BW / 2 + u * reach * (BW + GAP)).toFixed(1));
+        setOpacity(token, Math.min(1, u / 0.08, (1 - u) / 0.08) * Math.min(1, reach));
       } else {
         setOpacity(token, 0);
       }

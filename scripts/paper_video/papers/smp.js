@@ -55,7 +55,7 @@ window.PaperVideo = {
     var next = h('div', 'pt', root);
     next.style.fontSize = '29px'; next.style.padding = '14px 30px';
     next.style.borderStyle = 'dashed';
-    K.rich(next, '**下一篇**：训练时把仿真随机打乱，让真实世界只是又一种变化 —— **域随机化**');
+    K.rich(next, '**下一篇**：训练时把仿真随机打乱 —— **域随机化**');
     var foot = h('div', 'meta', root,
       '<b>完整笔记 · 3 个交互演示 · MimicKit 源码对照</b><br>imchong.github.io/Robot_Learning_Paper_Notebooks');
     foot.style.textAlign = 'center';
