@@ -452,8 +452,8 @@
         'action chunking 不只是为了预测得远，也是为了让多模态的选择保持一致。',
       '**看右边那条噪声表**：前几步 $\\sqrt{1-\\bar{\\alpha}}$ 还很大，$\\hat{x}_0$ 的预测非常模糊（左图绿线在两条演示中间摇摆）；' +
         '一旦噪声降到某个位置，归属就锁死了，剩下的步骤只是在把细节磨出来。',
-      '**K 从 100 压到 10 靠的是 DDIM**：把总步数滑块拖到 2，会看到轨迹还没收干净；' +
-        '拖到 40 也不会更好多少。10~20 步是实现里常用的落点，因为机器人控制回路等不起。',
+      '**K 从 100 压到 10 靠的是 DDIM**：论文 3.4 节训练 100 步、推理 10 步，RTX 3080 上 0.1 s（表 7 的真机配置是 16 步）。' +
+        '在这个玩具模型里，把总步数拖到 2 会看到轨迹还没收干净，拖到 40 也不会好多少 —— 这是玩具模型的现象，不是论文的消融。',
       '**这是简化模型**：真实的 $\\hat{x}_0$ 由一个 1D 卷积 UNet 预测，条件是视觉特征；这里数据分布取成两条演示 + 高斯抖动，' +
         '所以 $\\hat{x}_0$ 有闭式解，浏览器里才跑得动。反向过程本身是真的 DDIM。'
     ]);
@@ -820,8 +820,9 @@
   }
 
   // ─── demo 4: 七幕讲解动画 ────────────────────────────────────────────
-  /* 全流程速览：多模态撞障 → 条件扩散 → chunking → 视觉条件 → DDIM → RHC → IL 标准。
-     画面上的换算（丢掉几步、加速几倍）都从本文件已有的 H=16 和下面这组配置现算。
+  /* 全流程速览：多模态撞障 → 条件扩散 → chunking → 视觉条件 → DDIM → RHC → 定量证据与局限。
+     画面上的换算（切掉几步、加速几倍、百分比）都从下面这组配置现算；配置取自论文 arXiv v5
+     （2024 期刊扩展版）的正文与附录表 7，以及官方仓库 real-stanford/diffusion_policy。
      播放器是共享的 K.explainer；这里只放分镜。 */
 
   var svgEl = K.svgEl,
@@ -846,17 +847,38 @@
     C_SURFACE = X.surface,
     C_SURFACE2 = X.surface2;
 
-  /* 与上文 denoise / RHC 演示同一组默认：预测 H=16、执行 T_a=8。 */
+  /* 与上文 denoise / RHC 演示同一组默认：预测 H = T_p = 16、执行 T_a = 8、看 T_o = 2 帧（表 7 仿真任务）。
+     源码 predict_action 从上一帧观测的时刻切起（start = To − 1），
+     所以这 16 步 = 已经过去的 1 步 + 执行 8 步 + 丢掉 7 步。 */
   var TA = 8;
-  var DISCARD = H - TA; // 8
   var N_OBS = 2;
+  var SKIP = N_OBS - 1; // 1
+  var DISCARD = H - SKIP - TA; // 7
+  var REAL_TA = 6; // 表 7：真机 Push-T 的 T_a
+  /* 3.4 节：训练 100 步、DDIM 推理 10 步，RTX 3080 上 0.1 s；表 7 真机配置与 eval_real_robot.py 是 16 步；
+     仿真基准用 iDDPM，推理也是 100 步（附录 A.4）。 */
   var TRAIN_K = 100;
   var INFER_K = 10;
-  var INFER_HI = 20;
+  var REAL_K = 16;
   var SPEEDUP = TRAIN_K / INFER_K; // 10
+  var LATENCY_S = 0.1;
+  var CTRL_HZ = 10;
+  var ROBOT_HZ = 125;
+  var LAT_OK = 4; // 图 5 右：模拟延迟 ≤ 4 步性能不掉
   var N_TASKS = 15;
-  var LIFT_PCT = 46.9;
-  var N_ARCH = 2;
+  var N_BENCH = 4;
+  var LIFT_PCT = 46.9; // 仿真基准（表 1、2、4）平均提升
+  var GAIN_BLOCK = 32; // Block Push p2
+  var GAIN_KITCHEN = 213; // Kitchen p4
+  var REAL_PUSHT = [
+    { name: 'Diffusion Policy', v: 95, c: C_GOOD },
+    { name: 'LSTM-GMM', v: 20, c: C_WARN },
+    { name: 'IBC', v: 0, c: C_BAD }
+  ]; // 表 6：真机 Push-T 成功率（%）
+  var MUG_OK = 18,
+    MUG_N = 20; // 翻杯子 90%，20 次
+  var VIT_SCRATCH = 22,
+    CLIP_FT = 98; // 表 5：Square（PH）编码器消融
 
   function quadPath(a, c, b) {
     return 'M ' + a[0] + ' ' + a[1] + ' Q ' + c[0] + ' ' + c[1] + ' ' + b[0] + ' ' + b[1];
@@ -875,10 +897,25 @@
     return pts;
   }
 
+  /* 一条折线画到第 u（0…1）比例为止：用 dasharray 露出前一段。 */
+  function revealPath(path, u) {
+    var len = path.getTotalLength ? path.getTotalLength() : 0;
+    if (!len) return;
+    path.setAttribute('stroke-dasharray', len.toFixed(1) + ' ' + len.toFixed(1));
+    path.setAttribute('stroke-dashoffset', (len * (1 - clamp(u, 0, 1))).toFixed(1));
+  }
+
+  function box(parent, x, y, w, h, stroke, fill, dashed) {
+    var r = paint(svgEl('rect', { x: x, y: y, width: w, height: h, rx: 8, 'stroke-width': 1.4 }), fill || C_SURFACE, stroke);
+    if (dashed) r.setAttribute('stroke-dasharray', '5 4');
+    parent.appendChild(r);
+    return r;
+  }
+
   // ─── 第 1 幕：平均动作撞上障碍 ──────────────────────────────────────
   function buildSceneProblem() {
     var s = sceneSvg(
-      '人类演示一半左绕一半右绕，MSE 回归的条件均值正好穿过障碍；扩散采的是分布，每次落在某一侧'
+      '人类演示一半从上绕、一半从下绕，均方误差回归的条件均值正好穿过障碍；扩散采的是分布，每次落在某一侧'
     );
     s.appendChild(svgText(56, 28, '多模态演示里，MSE 的最优解就是撞上障碍的那条「平均动作」', 'demo-x-ink2', 13.5));
 
@@ -894,55 +931,99 @@
     scene.appendChild(paint(svgText(obst[0], obst[1] + 4, '障碍', null, 10, 'middle'), C_WARN));
     scene.appendChild(paint(svgEl('path', { d: polyPath(up), fill: 'none', 'stroke-width': 2 }), null, C_GOOD));
     scene.appendChild(paint(svgEl('path', { d: polyPath(down), fill: 'none', 'stroke-width': 2 }), null, C_GOOD));
-    scene.appendChild(
-      paint(svgEl('path', { d: polyPath(mid), fill: 'none', 'stroke-width': 2.4, 'stroke-dasharray': '6 4' }), null, C_BAD)
-    );
+    scene.appendChild(paint(svgText(220, 112, '演示 ①：从上绕', null, 10, 'middle'), C_GOOD));
+    scene.appendChild(paint(svgText(220, 232, '演示 ②：从下绕', null, 10, 'middle'), C_GOOD));
     scene.appendChild(paint(svgEl('circle', { cx: start[0], cy: start[1], r: 5, 'stroke-width': 1.2 }), C_ACCENT, C_SURFACE2));
     scene.appendChild(paint(svgEl('circle', { cx: end[0], cy: end[1], r: 5, 'stroke-width': 1.2 }), C_ACCENT, C_SURFACE2));
     scene.appendChild(svgText(start[0], start[1] + 22, '起点', 'demo-x-mut', 9, 'middle'));
     scene.appendChild(svgText(end[0], end[1] + 22, '目标', 'demo-x-mut', 9, 'middle'));
-    scene.appendChild(paint(svgText(300, 96, '演示：上 / 下绕', null, 10), C_GOOD));
-    scene.appendChild(paint(svgText(300, 200, 'MSE：均值', null, 10), C_BAD));
-    var tok = paint(svgEl('circle', { r: 6, 'stroke-width': 1.6 }), C_BAD, C_SURFACE2);
-    scene.appendChild(tok);
     s.appendChild(scene);
 
-    var mseMath = svgMath(400, 58, '\\arg\\min_f\\ \\mathbb{E}[(a-f(o))^2] = \\mathbb{E}[a\\mid o]', {
+    var meanG = svgEl('g', {});
+    meanG.appendChild(
+      paint(svgEl('path', { d: polyPath(mid), fill: 'none', 'stroke-width': 2.4, 'stroke-dasharray': '6 4' }), null, C_BAD)
+    );
+    meanG.appendChild(paint(svgText(262, 188, 'MSE：均值', null, 10), C_BAD));
+    s.appendChild(meanG);
+    var tok = paint(svgEl('circle', { r: 6, 'stroke-width': 1.6 }), C_BAD, C_SURFACE2);
+    s.appendChild(tok);
+
+    /* 扩散采样：每条都落在上绕或下绕的某一侧（示意，侧别是固定的一组）。 */
+    var picks = [1, -1, 1, 1, -1, -1];
+    var samples = picks.map(function (side, k) {
+      var cy = 168 + side * (90 + ((k * 7) % 5) * 3);
+      var p = paint(svgEl('path', { d: quadPath(start, [220, cy], end), fill: 'none', 'stroke-width': 1.5 }), null, C_ACCENT);
+      p.style.strokeOpacity = 0.85;
+      s.appendChild(p);
+      return { p: p, at: 7.2 + k * 0.32 };
+    });
+    var sampleTag = paint(svgText(220, 300, '扩散采 6 次：上 3 次、下 3 次，没有一次走中间', null, 10, 'middle'), C_ACCENT);
+    s.appendChild(sampleTag);
+
+    var mseMath = svgMath(580, 50, '\\arg\\min_f\\ \\mathbb{E}[(a-f(o))^2] = \\mathbb{E}[a\\mid o]', {
       size: 13,
       w: 380,
-      anchor: 'start'
+      anchor: 'middle'
     });
     mseMath.setTone('var(--demo-bad)');
     s.appendChild(mseMath);
 
-    var pains = [
-      { t: '① 多模态', d: '同一观测，演示里有左绕也有右绕', c: C_WARN },
-      { t: '② MSE 给均值', d: '损失函数的最优解就是两峰平均', c: C_BAD },
-      { t: '③ 扩散采分布', d: '每次落到某一侧，不走中间', c: C_GOOD }
-    ].map(function (p, k) {
+    var cards = [
+      { y: 74, h: 60, t: '① 多模态', d: ['同一个观测：一半从上绕、一半从下绕'], c: C_WARN, at: 0.6 },
+      { y: 144, h: 78, t: '② MSE 只能给均值', d: ['最优解就是两峰的平均，正中障碍', '换更大的网络、训更久也一样'], c: C_BAD, at: 2.6 },
+      { y: 232, h: 60, t: '③ 扩散采分布', d: ['每次落到某一侧，不走中间'], c: C_GOOD, at: 7.0 }
+    ].map(function (p) {
       var g = svgEl('g', {});
-      var y = 88 + k * 70;
-      g.appendChild(paint(svgEl('rect', { x: 400, y: y, width: 360, height: 60, rx: 8, 'stroke-width': 1.3 }), C_SURFACE, p.c));
-      g.appendChild(paint(svgText(416, y + 24, p.t, null, 12), p.c));
-      g.appendChild(svgText(416, y + 44, p.d, 'demo-x-mut', 10));
+      box(g, 400, p.y, 360, p.h, p.c);
+      g.appendChild(paint(svgText(416, p.y + 24, p.t, null, 12), p.c));
+      var lines = p.d.map(function (d, q) {
+        var tx = svgText(416, p.y + 44 + q * 18, d, 'demo-x-mut', 10);
+        g.appendChild(tx);
+        return tx;
+      });
       s.appendChild(g);
-      return { g: g, at: 3.2 + k * 1.4 };
+      return { g: g, at: p.at, lines: lines };
     });
 
-    var foot = paint(svgText(400, 396, '问题从来不是「BC 不行」，而是「BC 在多模态数据上会给出平均动作」', null, 13.5, 'middle'), C_ACCENT);
+    /* 论文图 3：Push-T 上的真实证据。 */
+    var fig = svgEl('g', {});
+    box(fig, 40, 312, 720, 74, C_ACCENT, C_SURFACE2);
+    fig.appendChild(paint(svgText(56, 334, '论文图 3 · Push-T：末端从 T 块左边还是右边绕过去，两种都对', null, 11.5), C_ACCENT));
+    [
+      { t: 'Diffusion Policy', d: '两边都学到，每次只走一边', c: C_GOOD },
+      { t: 'LSTM-GMM', d: '偏向其中一边', c: C_WARN },
+      { t: 'IBC', d: '偏向其中一边', c: C_WARN },
+      { t: 'BET', d: '两边来回切，定不下来', c: C_BAD }
+    ].forEach(function (p, k) {
+      var x = 56 + k * 176;
+      fig.appendChild(paint(svgText(x, 356, p.t, null, 10.5), p.c));
+      fig.appendChild(svgText(x, 374, p.d, 'demo-x-mut', 9.5));
+    });
+    s.appendChild(fig);
+
+    var foot = paint(svgText(400, 410, '问题不是「BC 不行」，而是「BC 在多模态数据上会给出平均动作」', null, 13, 'middle'), C_ACCENT);
     s.appendChild(foot);
 
     function draw(t) {
-      var u = ease(seg(t, 0.4, 2.8));
+      var u = ease(seg(t, 2.4, 4.4));
       var pt = pointOn(mid, u);
       tok.setAttribute('cx', pt[0].toFixed(1));
       tok.setAttribute('cy', pt[1].toFixed(1));
-      setOpacity(tok, seg(t, 0.3, 0.8));
+      setOpacity(tok, seg(t, 2.2, 2.6));
+      setOpacity(meanG, seg(t, 2.2, 2.8));
       setOpacity(mseMath, seg(t, 2.4, 3.2));
-      pains.forEach(function (p) {
+      cards.forEach(function (p) {
         setOpacity(p.g, seg(t, p.at, p.at + 0.45));
       });
-      setOpacity(foot, seg(t, 8.2, 9.0));
+      setOpacity(cards[1].lines[1], seg(t, 4.6, 5.1));
+      samples.forEach(function (p) {
+        var v = seg(t, p.at, p.at + 0.5);
+        setOpacity(p.p, v ? 1 : 0);
+        revealPath(p.p, ease(v));
+      });
+      setOpacity(sampleTag, seg(t, 9.0, 9.4));
+      setOpacity(fig, seg(t, 9.4, 10.0));
+      setOpacity(foot, seg(t, 11.0, 11.6));
     }
 
     return { el: s, draw: draw };
@@ -951,70 +1032,113 @@
   // ─── 第 2 幕：动作是条件扩散过程 ────────────────────────────────────
   function buildSceneDiffusion() {
     var s = sceneSvg(
-      '策略不再回归一个动作，而是学条件分布 p(A|O)：从高斯噪声 A_K 一步步去噪，还原干净动作序列 A_0'
+      '策略学条件分布 p(A|O)：训练时随机加噪、让网络预测噪声；推理时从高斯噪声出发，减去预测的噪声再加扰动，重复 K 次'
     );
-    s.appendChild(svgText(56, 28, '把动作生成写成条件去噪：噪声进，干净轨迹出', 'demo-x-ink2', 13.5));
-
-    var fwdMath = svgMath(400, 64, 'A_k = \\sqrt{\\bar{\\alpha}_k}\\, A_0 + \\sqrt{1-\\bar{\\alpha}_k}\\,\\varepsilon', {
-      size: 14,
-      w: 560,
-      anchor: 'middle'
-    });
-    fwdMath.setTone('var(--demo-accent)');
-    s.appendChild(fwdMath);
+    s.appendChild(svgText(56, 26, '把动作生成写成条件去噪：训练学预测噪声，推理从噪声一步步还原', 'demo-x-ink2', 13.5));
 
     var arrow = K.arrowMarker(s, 'dp-x-arrow-diff', C_BORDER);
     var stages = [
-      { t: '干净动作 $A_0$', d: '演示轨迹', c: C_GOOD },
-      { t: '加噪 → $A_k$', d: '正向扩散', c: C_WARN },
-      { t: '纯噪声 $A_K$', d: '标准高斯', c: C_BAD },
-      { t: '去噪 $f_\\theta$', d: '预测 $\\epsilon$ 或 $x_0$', c: C_ACCENT },
-      { t: '还原 $A_0$', d: '条件于观测 $O$', c: C_GOOD }
+      { t: '干净动作 $A^0_t$', d: '一段演示', c: C_GOOD },
+      { t: '加噪 $A^k_t$', d: '随机选一步 $k$', c: C_WARN },
+      { t: '纯噪声 $A^K_t$', d: '标准高斯', c: C_BAD },
+      { t: '去噪 $\\varepsilon_\\theta$', d: '条件于观测 $O_t$', c: C_ACCENT },
+      { t: '还原 $A^0_t$', d: '重复 $K$ 次', c: C_GOOD }
     ].map(function (p, k) {
       var g = svgEl('g', {});
       var x = 36 + k * 154;
-      g.appendChild(paint(svgEl('rect', { x: x, y: 96, width: 140, height: 58, rx: 8, 'stroke-width': 1.3 }), C_SURFACE2, p.c));
-      g.appendChild(svgRich(x + 70, 120, p.t, { size: 11.5, anchor: 'middle', w: 140 }).setTone(p.c));
-      g.appendChild(svgRich(x + 70, 140, p.d, { size: 9, cls: 'demo-x-mut', anchor: 'middle', w: 140 }));
+      g.appendChild(paint(svgEl('rect', { x: x, y: 42, width: 140, height: 54, rx: 8, 'stroke-width': 1.3 }), C_SURFACE2, p.c));
+      g.appendChild(svgRich(x + 70, 64, p.t, { size: 11.5, anchor: 'middle', w: 140 }).setTone(p.c));
+      g.appendChild(svgRich(x + 70, 84, p.d, { size: 9, cls: 'demo-x-mut', anchor: 'middle', w: 140 }));
       s.appendChild(g);
       if (k < 4) {
         s.appendChild(
           paint(
-            svgEl('path', { d: polyPath([[x + 144, 125], [x + 150, 125]]), fill: 'none', 'stroke-width': 1.5, 'marker-end': arrow }),
+            svgEl('path', { d: polyPath([[x + 144, 69], [x + 150, 69]]), fill: 'none', 'stroke-width': 1.5, 'marker-end': arrow }),
             null,
             C_BORDER
           )
         );
       }
-      return { g: g, at: 0.5 + k * 0.7 };
+      return { g: g, at: 0.4 + k * 0.4 };
     });
 
-    var vs = svgEl('g', {});
-    vs.appendChild(paint(svgEl('rect', { x: 40, y: 176, width: 350, height: 120, rx: 8, 'stroke-width': 1.4, 'stroke-dasharray': '5 4' }), C_SURFACE, C_BAD));
-    vs.appendChild(paint(svgText(58, 202, '旧写法：单步回归', null, 12), C_BAD));
-    vs.appendChild(svgRich(58, 226, '$f(O)$ → 一个动作向量', { size: 10.5, cls: 'demo-x-mut' }));
-    vs.appendChild(svgRich(58, 248, '学的是条件均值 $\\mathbb{E}[a \\mid O]$', { size: 10.5, cls: 'demo-x-mut' }));
-    vs.appendChild(paint(svgText(58, 276, '多峰一平均，就走进障碍', null, 11), C_BAD));
-    vs.appendChild(paint(svgEl('rect', { x: 410, y: 176, width: 350, height: 120, rx: 8, 'stroke-width': 1.5 }), C_SURFACE2, C_GOOD));
-    vs.appendChild(paint(svgText(428, 202, 'Diffusion Policy', null, 12), C_GOOD));
-    vs.appendChild(svgRich(428, 226, '学 $p(A \\mid O)$，从噪声反向采样', { size: 10.5, cls: 'demo-x-mut' }));
-    vs.appendChild(svgRich(428, 248, '网络 $f_\\theta$ 预测噪声 $\\epsilon$，逐步剔除', { size: 10.5, cls: 'demo-x-mut' }));
-    vs.appendChild(paint(svgText(428, 276, '能停在多个局部极大值上', null, 11), C_GOOD));
-    s.appendChild(vs);
+    var trainG = svgEl('g', {});
+    trainG.appendChild(paint(svgText(40, 124, '训练（式 5）', null, 11), C_WARN));
+    trainG.appendChild(
+      svgMath(130, 124, '\\mathcal{L} = \\mathrm{MSE}\\big(\\varepsilon^k,\\ \\varepsilon_\\theta(O_t,\\ A^0_t + \\varepsilon^k,\\ k)\\big)', {
+        size: 13,
+        w: 560
+      }).setTone('var(--demo-warn)')
+    );
+    s.appendChild(trainG);
 
-    var foot = paint(svgText(400, 344, '训练稳、可扩展：比 GAN / EBM 好训，比 GMM / VAE 更能撑高维动作序列', null, 13, 'middle'), C_ACCENT);
-    s.appendChild(foot);
-    var foot2 = svgText(400, 372, '下一幕才说「一次吐多长」——先把生成过程从回归改成扩散', 'demo-x-mut', 11, 'middle');
-    s.appendChild(foot2);
+    var inferG = svgEl('g', {});
+    inferG.appendChild(paint(svgText(40, 158, '推理（式 4）', null, 11), C_ACCENT));
+    inferG.appendChild(
+      svgMath(130, 158, 'A^{k-1}_t = \\alpha\\big(A^k_t - \\gamma\\,\\varepsilon_\\theta(O_t, A^k_t, k) + \\mathcal{N}(0, \\sigma^2 I)\\big)', {
+        size: 13,
+        w: 620
+      }).setTone('var(--demo-accent)')
+    );
+    s.appendChild(inferG);
+
+    var ebm = svgEl('g', {});
+    box(ebm, 40, 182, 350, 108, C_BAD, C_SURFACE, true);
+    ebm.appendChild(paint(svgText(56, 204, '隐式策略 IBC（能量模型）', null, 12), C_BAD));
+    ebm.appendChild(svgMath(215, 238, 'p_\\theta(a\\mid o) = \\dfrac{e^{-E_\\theta(o,a)}}{Z(o,\\theta)}', { size: 12, w: 330, h: 50, anchor: 'middle' }));
+    ebm.appendChild(svgRich(56, 274, '$Z$ 要靠负样本估计 → 训练不稳（图 6）', { size: 10.5, cls: 'demo-x-mut', w: 330 }));
+    s.appendChild(ebm);
+
+    var dp = svgEl('g', {});
+    box(dp, 410, 182, 350, 108, C_GOOD, C_SURFACE2);
+    dp.appendChild(paint(svgText(426, 204, 'Diffusion Policy：学梯度', null, 12), C_GOOD));
+    dp.appendChild(svgMath(585, 238, '\\varepsilon_\\theta(a, o) \\approx -\\nabla_a \\log p(a\\mid o)', { size: 12, w: 330, anchor: 'middle' }));
+    dp.appendChild(svgRich(426, 274, '$\\nabla_a \\log Z(o,\\theta) = 0$：$Z$ 求导就消掉（式 8）', { size: 10.5, cls: 'demo-x-mut', w: 330 }));
+    s.appendChild(dp);
+
+    /* 多峰从哪来：粒子从不同的噪声位置出发，沿梯度滑进不同的峰（示意）。 */
+    var X0 = 120,
+      X1 = 700,
+      BASE = 392,
+      PEAKS = [300, 540];
+    function dens(x) {
+      return Math.exp(-Math.pow((x - PEAKS[0]) / 46, 2)) + Math.exp(-Math.pow((x - PEAKS[1]) / 46, 2));
+    }
+    var curvePts = [];
+    for (var i = 0; i <= 64; i++) {
+      var xx = X0 + ((X1 - X0) * i) / 64;
+      curvePts.push([xx, BASE - 44 * dens(xx)]);
+    }
+    var modeG = svgEl('g', {});
+    modeG.appendChild(svgRich(40, 314, '多峰从哪来：每次从不同的高斯噪声出发，每步再加随机扰动（4.1 节）', { size: 11, w: 720 }).setTone(C_ACCENT));
+    modeG.appendChild(paint(svgEl('path', { d: polyPath([[X0, BASE], [X1, BASE]]), fill: 'none', 'stroke-width': 1.2 }), null, C_BORDER));
+    modeG.appendChild(paint(svgEl('path', { d: polyPath(curvePts), fill: 'none', 'stroke-width': 1.8 }), null, C_GOOD));
+    modeG.appendChild(svgText(X1 + 6, BASE + 4, '动作', 'demo-x-mut', 9));
+    s.appendChild(modeG);
+    var starts = [150, 255, 400, 445, 600, 680];
+    var particles = starts.map(function (x0) {
+      var target = x0 < 420 ? PEAKS[0] : PEAKS[1];
+      var c = paint(svgEl('circle', { r: 4.5, 'stroke-width': 1.2 }), C_ACCENT, C_SURFACE2);
+      s.appendChild(c);
+      return { c: c, x0: x0, x1: target + (x0 % 3) * 4 - 4 };
+    });
 
     function draw(t) {
-      setOpacity(fwdMath, seg(t, 0.3, 1.0));
       stages.forEach(function (p) {
         setOpacity(p.g, seg(t, p.at, p.at + 0.4));
       });
-      setOpacity(vs, seg(t, 4.6, 5.4));
-      setOpacity(foot, seg(t, 8.4, 9.2));
-      setOpacity(foot2, seg(t, 9.6, 10.4));
+      setOpacity(trainG, seg(t, 2.2, 2.9));
+      setOpacity(inferG, seg(t, 4.6, 5.3));
+      setOpacity(ebm, seg(t, 7.0, 7.6));
+      setOpacity(dp, seg(t, 8.0, 8.6));
+      setOpacity(modeG, seg(t, 9.4, 9.9));
+      var u = ease(seg(t, 9.9, 11.6));
+      particles.forEach(function (p) {
+        var x = p.x0 + (p.x1 - p.x0) * u;
+        p.c.setAttribute('cx', x.toFixed(1));
+        p.c.setAttribute('cy', (BASE - 44 * dens(x) - 6).toFixed(1));
+        setOpacity(p.c, seg(t, 9.6, 10.0));
+      });
     }
 
     return { el: s, draw: draw };
@@ -1023,13 +1147,13 @@
   // ─── 第 3 幕：Action chunking ───────────────────────────────────────
   function buildSceneChunk() {
     var s = sceneSvg(
-      '不再预测单步动作，而是一次吐出长度 H=' +
+      '一次预测长度 ' +
         H +
-        ' 的动作序列；整条 chunk 一起去噪，左绕和右绕不会在中间某一帧串味'
+        ' 的动作序列，整段一起去噪：选定的峰整段一致；还不怕演示里的停顿，扩散也撑得住这么高维的输出'
     );
-    s.appendChild(svgText(56, 28, '预测的是一段 horizon，不是下一个关节角', 'demo-x-ink2', 13.5));
+    s.appendChild(svgText(56, 26, '一次预测一整段：选定的峰整段一致，还不怕演示里的停顿', 'demo-x-ink2', 13.5));
 
-    var chunkMath = svgMath(400, 62, 'A = [a_t,\\ a_{t+1},\\ \\ldots,\\ a_{t+' + (H - 1) + '}]\\quad (H=' + H + ')', {
+    var chunkMath = svgMath(400, 54, 'A_t = [a_t,\\ a_{t+1},\\ \\ldots,\\ a_{t+' + (H - 1) + '}]\\qquad T_p = ' + H, {
       size: 14,
       w: 620,
       anchor: 'middle'
@@ -1037,42 +1161,100 @@
     chunkMath.setTone('var(--demo-accent)');
     s.appendChild(chunkMath);
 
+    /* 开场：一次去噪吐出的整段 16 步（卡片出来时淡出）。 */
+    var strip = svgEl('g', {});
+    for (var c = 0; c < H; c++) {
+      var cx0 = 48 + c * 44;
+      strip.appendChild(paint(svgEl('rect', { x: cx0, y: 128, width: 40, height: 44, rx: 6, 'stroke-width': 1.3 }), C_SURFACE2, C_GOOD));
+      strip.appendChild(paint(svgText(cx0 + 20, 156, String(c + 1), 'demo-x-mono', 11, 'middle'), C_GOOD));
+    }
+    strip.appendChild(paint(svgText(400, 108, '一次去噪，整段 ' + H + ' 步一起出来', null, 13, 'middle'), C_GOOD));
+    strip.appendChild(svgText(400, 200, '不是「出一步、看一眼、再出一步」', 'demo-x-mut', 11, 'middle'));
+    s.appendChild(strip);
+
+    /* 每张卡里一个迷你绕障场景：H 个点，逐步各采各的会上下乱跳，整段去噪则整段走同一侧。 */
+    var pattern = [1, 1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, -1, -1, 1, 1];
+    function mini(x0, mode) {
+      var g = svgEl('g', {});
+      var a = [x0 + 34, 150],
+        b = [x0 + 316, 150],
+        cx = x0 + 175;
+      g.appendChild(paint(svgEl('circle', { cx: cx, cy: 150, r: 20, 'stroke-width': 1.4 }), C_SURFACE, C_WARN));
+      g.appendChild(paint(svgText(cx, 154, '障碍', null, 9, 'middle'), C_WARN));
+      var upP = sampleQuad(a, [cx, 92], b, H - 1),
+        dnP = sampleQuad(a, [cx, 208], b, H - 1);
+      [upP, dnP].forEach(function (pp) {
+        var ghost = paint(svgEl('path', { d: polyPath(pp), fill: 'none', 'stroke-width': 1.1, 'stroke-dasharray': '3 4' }), null, C_MUTED);
+        g.appendChild(ghost);
+      });
+      var pts = [];
+      for (var i = 0; i < H; i++) {
+        var side = mode === 'jitter' ? pattern[i] : 1;
+        pts.push(side > 0 ? upP[i] : dnP[i]);
+      }
+      var path = paint(svgEl('path', { d: polyPath(pts), fill: 'none', 'stroke-width': 2 }), null, mode === 'jitter' ? C_BAD : C_GOOD);
+      g.appendChild(path);
+      var dots = pts.map(function (p) {
+        var d = paint(svgEl('circle', { cx: p[0], cy: p[1], r: 2.8 }), mode === 'jitter' ? C_BAD : C_GOOD);
+        g.appendChild(d);
+        return d;
+      });
+      return { g: g, path: path, dots: dots };
+    }
+
     var left = svgEl('g', {});
-    left.appendChild(paint(svgEl('rect', { x: 40, y: 92, width: 350, height: 168, rx: 8, 'stroke-width': 1.4, 'stroke-dasharray': '5 4' }), C_SURFACE, C_BAD));
-    left.appendChild(paint(svgText(58, 118, '逐帧独立采样', null, 12.5), C_BAD));
-    left.appendChild(svgText(58, 144, '前 8 步可能锁「上绕」', 'demo-x-mut', 10.5));
-    left.appendChild(svgText(58, 166, '后 8 步又锁「下绕」', 'demo-x-mut', 10.5));
-    left.appendChild(svgText(58, 188, '拼出来的轨迹穿过障碍', 'demo-x-mut', 10.5));
-    left.appendChild(paint(svgText(58, 224, '多模态选择在时间上不一致', null, 11), C_BAD));
+    box(left, 40, 72, 350, 194, C_BAD, C_SURFACE, true);
+    left.appendChild(paint(svgText(56, 94, '逐步各采各的（LSTM-GMM、BET）', null, 12), C_BAD));
+    var mL = mini(40, 'jitter');
+    left.appendChild(mL.g);
+    left.appendChild(svgText(56, 234, '相邻两步可能来自不同的峰', 'demo-x-mut', 10.5));
+    left.appendChild(svgText(56, 254, '在两条可行轨迹之间来回抖（4.3 节）', 'demo-x-mut', 10.5));
     s.appendChild(left);
 
     var right = svgEl('g', {});
-    right.appendChild(paint(svgEl('rect', { x: 410, y: 92, width: 350, height: 168, rx: 8, 'stroke-width': 1.5 }), C_SURFACE2, C_GOOD));
-    right.appendChild(paint(svgText(428, 118, '整条 chunk 一起去噪', null, 12.5), C_GOOD));
-    right.appendChild(svgText(428, 144, '责任权重拿全部 ' + H + ' 步一起算', 'demo-x-mut', 10.5));
-    right.appendChild(svgText(428, 166, '模式一锁，整段走同一侧', 'demo-x-mut', 10.5));
-    right.appendChild(svgText(428, 188, '还自带一段短期计划', 'demo-x-mut', 10.5));
-    right.appendChild(paint(svgText(428, 224, 'chunking 的另一半价值：时间一致', null, 11), C_GOOD));
+    box(right, 410, 72, 350, 194, C_GOOD, C_SURFACE2);
+    right.appendChild(paint(svgText(426, 94, '整段一起去噪（Diffusion Policy）', null, 12), C_GOOD));
+    var mR = mini(410, 'chunk');
+    right.appendChild(mR.g);
+    right.appendChild(svgText(426, 234, '峰一旦选定，' + H + ' 步都走同一侧', 'demo-x-mut', 10.5));
+    right.appendChild(svgText(426, 254, '笔记里的演示按整段算峰的归属（玩具模型）', 'demo-x-mut', 10.5));
     s.appendChild(right);
 
-    var cells = svgEl('g', {});
-    for (var i = 0; i < H; i++) {
-      var x = 40 + i * 46;
-      cells.appendChild(paint(svgEl('rect', { x: x, y: 280, width: 40, height: 36, rx: 5, 'stroke-width': 1.2 }), C_SURFACE2, i < TA ? C_ACCENT : C_MUTED));
-      cells.appendChild(svgText(x + 20, 302, 'a' + i, 'demo-x-mono', 9, 'middle'));
-    }
-    cells.appendChild(svgText(40, 336, '一次吐 ' + H + ' 步；下一幕才说视觉怎么条件进去', 'demo-x-mut', 10));
-    s.appendChild(cells);
+    var idle = svgEl('g', {});
+    box(idle, 40, 280, 350, 76, C_WARN);
+    idle.appendChild(paint(svgText(56, 302, '好处二：不怕停顿', null, 12), C_WARN));
+    idle.appendChild(svgText(56, 322, '演示里常有停顿（遥操作、舀酱等）', 'demo-x-mut', 10));
+    idle.appendChild(svgText(56, 342, '单步策略易学成原地不动；真机上 LSTM-GMM、IBC 常停住', 'demo-x-mut', 10));
+    s.appendChild(idle);
 
-    var foot = paint(svgText(400, 384, 'action chunking 不只是「预测得远」，也是为了让多模态选择整段一致', null, 13.5, 'middle'), C_ACCENT);
+    var hd = svgEl('g', {});
+    box(hd, 410, 280, 350, 76, C_ACCENT);
+    hd.appendChild(paint(svgText(426, 302, '为什么以前少有人这样做：维度高', null, 12), C_ACCENT));
+    hd.appendChild(svgText(426, 322, '高斯混合要先定几个峰，IBC 在高维里采不动', 'demo-x-mut', 10));
+    hd.appendChild(svgText(426, 342, '扩散在图像生成里早已撑住高维输出', 'demo-x-mut', 10));
+    s.appendChild(hd);
+
+    var foot = paint(svgText(400, 388, 'chunking 不只是「预测得远」：选定的峰在时间上一致', null, 13.5, 'middle'), C_ACCENT);
     s.appendChild(foot);
 
     function draw(t) {
       setOpacity(chunkMath, seg(t, 0.3, 1.0));
-      setOpacity(left, seg(t, 1.8, 2.6));
-      setOpacity(right, seg(t, 4.4, 5.2));
-      setOpacity(cells, seg(t, 7.0, 7.8));
-      setOpacity(foot, seg(t, 9.4, 10.2));
+      setOpacity(strip, Math.min(seg(t, 0.5, 1.0), 1 - seg(t, 2.2, 2.5)));
+      setOpacity(left, seg(t, 2.2, 2.7));
+      var uL = seg(t, 2.6, 4.6);
+      revealPath(mL.path, uL);
+      mL.dots.forEach(function (d, i) {
+        setOpacity(d, uL >= i / (H - 1) - 1e-6 ? 1 : 0);
+      });
+      setOpacity(right, seg(t, 4.8, 5.3));
+      var uR = seg(t, 5.2, 7.0);
+      revealPath(mR.path, uR);
+      mR.dots.forEach(function (d, i) {
+        setOpacity(d, uR >= i / (H - 1) - 1e-6 ? 1 : 0);
+      });
+      setOpacity(idle, seg(t, 7.4, 7.9));
+      setOpacity(hd, seg(t, 9.6, 10.1));
+      setOpacity(foot, seg(t, 11.2, 11.7));
     }
 
     return { el: s, draw: draw };
@@ -1081,153 +1263,240 @@
   // ─── 第 4 幕：视觉条件 + FiLM ───────────────────────────────────────
   function buildSceneCondition() {
     var s = sceneSvg(
-      '视觉观测 O 经 ResNet / ViT 编码，用 FiLM 调制去噪网络；官方默认看最近 ' +
+      '观测只做条件：最近 ' +
         N_OBS +
-        ' 帧，骨干是 1D 卷积 UNet 或 Transformer，共 ' +
-        N_ARCH +
-        ' 种'
+        ' 帧图像经 ResNet-18 编成特征，每次推理只算一遍，K 步去噪都复用；去噪网络有卷积版（FiLM）与 Transformer 版（交叉注意力）'
     );
-    s.appendChild(svgText(56, 26, '去噪不是无条件的：图像特征焊进每一步', 'demo-x-ink2', 13.5));
+    s.appendChild(svgText(56, 24, '观测只做条件：图像特征每次推理算一遍，K 步去噪都复用', 'demo-x-ink2', 13.5));
+
+    var cond = svgRich(400, 50, '学 $p(A_t \\mid O_t)$，不学联合分布 $p(A_t, O_t)$：观测不参与生成（Diffuser 做规划时要连观测一起生成）', {
+      size: 11,
+      w: 740,
+      anchor: 'middle'
+    }).setTone(C_ACCENT);
+    s.appendChild(cond);
 
     var arrow = K.arrowMarker(s, 'dp-x-arrow-cond', C_BORDER);
     var pipe = [
-      { t: '观测 $O$', d: 'RGB / Depth / 本体', c: C_MUTED, w: 150 },
-      { t: '视觉编码器', d: 'ResNet / ViT', c: C_ACCENT, w: 160 },
-      { t: 'FiLM 调制', d: '$\\gamma(O) \\odot h + \\beta(O)$', c: C_WARN, w: 170 },
-      { t: '去噪网络 $f_\\theta$', d: 'UNet / Transformer', c: C_GOOD, w: 168 }
+      { t: '观测', d: '最近 $T_o = ' + N_OBS + '$ 帧图像 + 本体', c: C_MUTED, w: 168 },
+      { t: 'ResNet-18', d: '每个相机一个，从头训', c: C_ACCENT, w: 160 },
+      { t: '观测特征 $O_t$', d: '每次推理只算一遍', c: C_WARN, w: 160 },
+      { t: '去噪 $\\varepsilon_\\theta(O_t, A^k_t, k)$', d: '复用 $O_t$，重复 $K$ 次', c: C_GOOD, w: 184 }
     ];
     var x = 40;
     var nodes = pipe.map(function (p, k) {
       var g = svgEl('g', {});
-      g.appendChild(paint(svgEl('rect', { x: x, y: 48, width: p.w, height: 58, rx: 8, 'stroke-width': 1.3 }), C_SURFACE2, p.c));
-      g.appendChild(svgRich(x + p.w / 2, 70, p.t, { size: 12, anchor: 'middle', w: 200 }).setTone(p.c));
-      g.appendChild(svgRich(x + p.w / 2, 90, p.d, { size: 9, cls: 'demo-x-mut', anchor: 'middle', w: 200 }));
-      s.appendChild(g);
+      g.appendChild(paint(svgEl('rect', { x: x, y: 66, width: p.w, height: 54, rx: 8, 'stroke-width': 1.3 }), C_SURFACE2, p.c));
+      g.appendChild(svgRich(x + p.w / 2, 88, p.t, { size: 11.5, anchor: 'middle', w: 220 }).setTone(p.c));
+      g.appendChild(svgRich(x + p.w / 2, 108, p.d, { size: 9, cls: 'demo-x-mut', anchor: 'middle', w: 220 }));
       if (k < pipe.length - 1) {
-        s.appendChild(
+        g.appendChild(
           paint(
-            svgEl('path', { d: polyPath([[x + p.w + 4, 77], [x + p.w + 18, 77]]), fill: 'none', 'stroke-width': 1.5, 'marker-end': arrow }),
+            svgEl('path', { d: polyPath([[x + p.w + 3, 93], [x + p.w + 17, 93]]), fill: 'none', 'stroke-width': 1.5, 'marker-end': arrow }),
             null,
             C_BORDER
           )
         );
       }
-      x += p.w + 22;
-      return { g: g, at: 0.4 + k * 0.7 };
-    });
-
-    var film = svgMath(400, 140, '\\mathrm{FiLM}(h, O) = \\gamma(O)\\odot h + \\beta(O)', {
-      size: 14,
-      w: 520,
-      anchor: 'middle'
-    });
-    film.setTone('var(--demo-accent)');
-    s.appendChild(film);
-
-    var arch = [
-      { t: 'CNN-based', d: '1D 时序卷积 UNet', d2: '推理延迟低', c: C_ACCENT },
-      { t: 'Transformer-based', d: '自注意力建模长程依赖', d2: '更复杂的交互', c: C_GOOD }
-    ].map(function (p, k) {
-      var g = svgEl('g', {});
-      var px = 40 + k * 380;
-      g.appendChild(paint(svgEl('rect', { x: px, y: 168, width: 360, height: 88, rx: 8, 'stroke-width': 1.3 }), C_SURFACE, p.c));
-      g.appendChild(paint(svgText(px + 16, 194, p.t, null, 13), p.c));
-      g.appendChild(svgText(px + 16, 218, p.d, 'demo-x-mut', 10.5));
-      g.appendChild(svgText(px + 16, 238, p.d2, 'demo-x-mut', 10.5));
       s.appendChild(g);
-      return { g: g, at: 5.0 + k * 1.2 };
+      var node = { g: g, at: 0.5 + k * 0.45, x: x, w: p.w };
+      x += p.w + 20;
+      return node;
     });
-
-    var obs = svgEl('g', {});
-    obs.appendChild(paint(svgEl('rect', { x: 40, y: 274, width: 720, height: 52, rx: 8, 'stroke-width': 1.3 }), C_SURFACE2, C_WARN));
-    obs.appendChild(
+    var last = nodes[nodes.length - 1];
+    var loop = svgEl('g', {});
+    loop.appendChild(
       paint(
-        svgText(400, 296, '官方 rollout 喂最近 n_obs_steps = ' + N_OBS + ' 帧，不是单张图', null, 12.5, 'middle'),
-        C_WARN
+        svgEl('path', {
+          d: 'M ' + (last.x + 40) + ' 120 C ' + (last.x + 40) + ' 140, ' + (last.x + last.w - 40) + ' 140, ' + (last.x + last.w - 40) + ' 122',
+          fill: 'none',
+          'stroke-width': 1.6,
+          'marker-end': arrow
+        }),
+        null,
+        C_GOOD
       )
     );
-    obs.appendChild(svgText(400, 314, '源码落点 `conditional_unet1d.py` · `transformer_for_diffusion.py`', 'demo-x-mut', 10, 'middle'));
-    s.appendChild(obs);
+    loop.appendChild(svgRich(last.x + last.w / 2, 148, '$\\times K$', { size: 11, anchor: 'middle', w: 80 }).setTone(C_GOOD));
+    s.appendChild(loop);
 
-    var foot = paint(svgText(400, 368, '条件焊住之后，才能谈「推理怎么快到控制回路里」', null, 14, 'middle'), C_ACCENT);
-    s.appendChild(foot);
+    var enc = svgEl('g', {});
+    box(enc, 40, 158, 720, 50, C_ACCENT, C_SURFACE2);
+    enc.appendChild(paint(svgText(56, 178, 'ResNet-18 两处改动（3.2 节）', null, 11.5), C_ACCENT));
+    enc.appendChild(svgText(250, 178, '① 全局平均池化 → 空间 softmax：保留位置信息', 'demo-x-mut', 10));
+    enc.appendChild(svgText(250, 198, '② BatchNorm → GroupNorm：才能配合 EMA 权重', 'demo-x-mut', 10));
+    s.appendChild(enc);
+    var obsNote = svgRich(56, 198, '$T_o = ' + N_OBS + '$：一帧不够、太多下降（图 14）', { size: 9.5, cls: 'demo-x-mut', w: 190 });
+    s.appendChild(obsNote);
+
+    var arch = [
+      {
+        t: '卷积版 + FiLM',
+        d: '每层卷积按通道：$\\gamma(O_t, k) \\odot h + \\beta(O_t, k)$',
+        d2: '开箱即用、少调参；动作变化快时被卷积平滑掉',
+        c: C_ACCENT,
+        at: 7.0
+      },
+      {
+        t: 'Transformer 版：交叉注意力',
+        d: '带噪动作排成 token，$k$ 作第一个 token，因果掩码',
+        d2: '复杂、变化快的任务更好，但对超参数更敏感',
+        c: C_GOOD,
+        at: 9.6
+      }
+    ].map(function (p, k) {
+      var g = svgEl('g', {});
+      var px = 40 + k * 370;
+      box(g, px, 222, 350, 84, p.c);
+      g.appendChild(paint(svgText(px + 16, 244, p.t, null, 12.5), p.c));
+      g.appendChild(svgRich(px + 16, 268, p.d, { size: 10, cls: 'demo-x-mut', w: 330 }));
+      g.appendChild(svgText(px + 16, 292, p.d2, 'demo-x-mut', 10));
+      s.appendChild(g);
+      return { g: g, at: p.at };
+    });
+    var rec = paint(svgText(400, 326, '论文建议：新任务先试卷积版，表现不够再换 Transformer（3.1 节）', null, 12, 'middle'), C_WARN);
+    s.appendChild(rec);
+
+    var abl = svgEl('g', {});
+    box(abl, 40, 340, 720, 52, C_BORDER, C_SURFACE2);
+    abl.appendChild(svgText(56, 360, '编码器消融（Square，表 5）', 'demo-x-ink2', 10.5));
+    [
+      { t: 'ViT 从头训 ' + VIT_SCRATCH + '%', c: C_BAD },
+      { t: '冻结预训练：效果不好', c: C_WARN },
+      { t: '小学习率微调 CLIP ViT ' + CLIP_FT + '%', c: C_GOOD }
+    ].forEach(function (p, k) {
+      abl.appendChild(paint(svgText(56 + k * 236, 380, p.t, null, 11), p.c));
+    });
+    s.appendChild(abl);
 
     function draw(t) {
+      setOpacity(cond, seg(t, 0.3, 0.9));
       nodes.forEach(function (n) {
         setOpacity(n.g, seg(t, n.at, n.at + 0.4));
       });
-      setOpacity(film, seg(t, 3.4, 4.2));
+      setOpacity(loop, seg(t, 2.6, 3.2));
+      setOpacity(enc, seg(t, 4.6, 5.2));
+      setOpacity(obsNote, seg(t, 5.8, 6.3));
       arch.forEach(function (a) {
         setOpacity(a.g, seg(t, a.at, a.at + 0.45));
       });
-      setOpacity(obs, seg(t, 8.0, 8.8));
-      setOpacity(foot, seg(t, 10.4, 11.2));
+      setOpacity(rec, seg(t, 11.2, 11.7));
+      setOpacity(abl, seg(t, 12.2, 12.8));
     }
 
     return { el: s, draw: draw };
   }
 
-  // ─── 第 5 幕：DDIM 把百步压到十几步 ────────────────────────────────
+  // ─── 第 5 幕：DDIM —— 100 步训练，10 步推理 ──────────────────────────
   function buildSceneDdim() {
     var s = sceneSvg(
-      '训练用上百步 DDPM（这里取 ' +
+      '训练用 ' +
         TRAIN_K +
-        '），部署用 DDIM 压到 ' +
+        ' 步扩散；DDIM 把训练和推理的步数解耦，论文 3.4 节推理 ' +
         INFER_K +
-        '–' +
-        INFER_HI +
-        ' 步，加速约 ' +
+        ' 步、RTX 3080 上 ' +
+        LATENCY_S +
+        ' 秒，加速 ' +
         fmt(SPEEDUP, 0) +
-        ' 倍；控制回路等不起完整的百步反向过程'
+        ' 倍；真机配置写的是 ' +
+        REAL_K +
+        ' 步'
     );
     s.appendChild(svgText(56, 26, '训练可以慢，推理必须赶上控制周期', 'demo-x-ink2', 13.5));
 
     var train = svgEl('g', {});
-    train.appendChild(paint(svgEl('rect', { x: 40, y: 48, width: 350, height: 130, rx: 8, 'stroke-width': 1.4 }), C_SURFACE, C_WARN));
-    train.appendChild(paint(svgText(58, 76, '训练：DDPM 上百步', null, 13), C_WARN));
-    train.appendChild(svgRich(58, 102, '随机采样扩散步 $k$，加噪 $A_0 \\to A_k$', { size: 10.5, cls: 'demo-x-mut' }));
-    train.appendChild(svgRich(58, 124, '学的是预测噪声 $\\hat{\\epsilon}$，损失是 MSE', { size: 10.5, cls: 'demo-x-mut' }));
-    train.appendChild(svgRich(58, 154, '示意 $K_{\\text{train}} = ' + TRAIN_K + '$', { size: 13 }).setTone(C_WARN));
+    box(train, 40, 42, 350, 100, C_WARN);
+    train.appendChild(paint(svgText(56, 66, '训练：DDPM ' + TRAIN_K + ' 步', null, 13), C_WARN));
+    train.appendChild(svgRich(56, 92, '每个样本随机选一步 $k$，加噪后预测 $\\varepsilon$', { size: 10.5, cls: 'demo-x-mut', w: 330 }));
+    train.appendChild(svgText(56, 116, '噪声表：平方余弦（iDDPM，3.3 节）', 'demo-x-mut', 10.5));
     s.appendChild(train);
 
     var infer = svgEl('g', {});
-    infer.appendChild(paint(svgEl('rect', { x: 410, y: 48, width: 350, height: 130, rx: 8, 'stroke-width': 1.5 }), C_SURFACE2, C_GOOD));
-    infer.appendChild(paint(svgText(428, 76, '部署：DDIM ' + INFER_K + '–' + INFER_HI + ' 步', null, 13), C_GOOD));
-    infer.appendChild(svgText(428, 102, '非马尔可夫采样，跳着走反向过程', 'demo-x-mut', 10.5));
-    infer.appendChild(svgText(428, 124, '机器人控制回路等不起 ' + TRAIN_K + ' 步', 'demo-x-mut', 10.5));
-    infer.appendChild(paint(svgText(428, 154, '常用落点 ' + INFER_K + ' 步', 'demo-x-mono', 13), C_GOOD));
+    box(infer, 410, 42, 350, 100, C_GOOD, C_SURFACE2);
+    infer.appendChild(paint(svgText(426, 66, '推理：DDIM 跳着走', null, 13), C_GOOD));
+    infer.appendChild(svgText(426, 92, '训练、推理的步数解耦，反向过程可以跳步', 'demo-x-mut', 10.5));
+    infer.appendChild(svgText(426, 116, '同一个网络，不用重新训练', 'demo-x-mut', 10.5));
     s.appendChild(infer);
 
-    var barG = svgEl('g', {});
-    barG.appendChild(svgText(40, 206, '同一次去噪，步数差多少', 'demo-x-ink2', 11));
-    var trainW = 720;
-    var inferW = trainW * (INFER_K / TRAIN_K);
-    barG.appendChild(paint(svgEl('rect', { x: 40, y: 218, width: trainW, height: 22, rx: 4 }), C_SURFACE, C_WARN));
-    barG.appendChild(paint(svgText(52, 234, '训练 ' + TRAIN_K + ' 步', 'demo-x-mono', 10), C_WARN));
-    barG.appendChild(paint(svgEl('rect', { x: 40, y: 250, width: inferW, height: 22, rx: 4 }), C_SURFACE2, C_GOOD));
-    barG.appendChild(paint(svgText(52, 266, '推理 ' + INFER_K + ' 步', 'demo-x-mono', 10), C_GOOD));
-    s.appendChild(barG);
+    /* 两条步数轨：DDPM 一格一格走完 100 格，DDIM 只跳 10 次。 */
+    var BX0 = 130,
+      BX1 = 750;
+    var barA = svgEl('g', {}),
+      barB = svgEl('g', {});
+    barA.appendChild(paint(svgText(40, 172, 'DDPM ' + TRAIN_K + ' 步', 'demo-x-mono', 10.5), C_WARN));
+    barB.appendChild(paint(svgText(40, 206, 'DDIM ' + INFER_K + ' 步', 'demo-x-mono', 10.5), C_GOOD));
+    barA.appendChild(paint(svgEl('path', { d: polyPath([[BX0, 168], [BX1, 168]]), fill: 'none', 'stroke-width': 1.2 }), null, C_BORDER));
+    barB.appendChild(paint(svgEl('path', { d: polyPath([[BX0, 202], [BX1, 202]]), fill: 'none', 'stroke-width': 1.2 }), null, C_BORDER));
+    for (var i = 0; i <= TRAIN_K; i++) {
+      var tx = BX0 + ((BX1 - BX0) * i) / TRAIN_K;
+      barA.appendChild(paint(svgEl('path', { d: polyPath([[tx, 163], [tx, 173]]), fill: 'none', 'stroke-width': 0.8 }), null, C_WARN));
+    }
+    for (var j = 0; j <= INFER_K; j++) {
+      var jx = BX0 + ((BX1 - BX0) * j) / INFER_K;
+      barB.appendChild(paint(svgEl('path', { d: polyPath([[jx, 194], [jx, 210]]), fill: 'none', 'stroke-width': 1.6 }), null, C_GOOD));
+    }
+    s.appendChild(barA);
+    s.appendChild(barB);
+    var dotA = paint(svgEl('circle', { r: 5.5, 'stroke-width': 1.4 }), C_WARN, C_SURFACE2);
+    var dotB = paint(svgEl('circle', { r: 5.5, 'stroke-width': 1.4 }), C_GOOD, C_SURFACE2);
+    s.appendChild(dotA);
+    s.appendChild(dotB);
 
-    var speed = svgEl('g', {});
-    speed.appendChild(paint(svgEl('rect', { x: 40, y: 292, width: 720, height: 50, rx: 8, 'stroke-width': 1.3 }), C_SURFACE2, C_ACCENT));
-    speed.appendChild(
-      paint(
-        svgText(400, 314, TRAIN_K + ' ÷ ' + INFER_K + ' = ' + fmt(SPEEDUP, 0) + '×　（笔记写「数百步 → 10–20 步」，这里用 ' + TRAIN_K + ' / ' + INFER_K + ' 现除）', null, 12, 'middle'),
-        C_ACCENT
-      )
-    );
-    speed.appendChild(svgText(400, 332, '步数再少，轨迹没收干净；再多，对闭环也帮不上多少', 'demo-x-mut', 9.5, 'middle'));
-    s.appendChild(speed);
+    var nums = [
+      { t: '仿真基准：不用 DDIM', d: 'iDDPM，推理也是 ' + TRAIN_K + ' 步（附录 A.4）', c: C_MUTED },
+      { t: '3.4 节：' + TRAIN_K + ' ÷ ' + INFER_K + ' = ' + fmt(SPEEDUP, 0) + '×', d: 'DDIM ' + INFER_K + ' 步，RTX 3080 上 ' + LATENCY_S + ' s', c: C_GOOD },
+      { t: '真机配置：DDIM ' + REAL_K + ' 步', d: '表 7 与 eval_real_robot.py', c: C_ACCENT }
+    ].map(function (p, k) {
+      var g = svgEl('g', {});
+      var px = 40 + k * 246;
+      box(g, px, 226, 234, 58, p.c, C_SURFACE2);
+      g.appendChild(paint(svgText(px + 117, 248, p.t, null, 11.5, 'middle'), p.c));
+      g.appendChild(svgText(px + 117, 270, p.d, 'demo-x-mut', 9.5, 'middle'));
+      s.appendChild(g);
+      return { g: g, at: [5.8, 4.6, 6.6][k] };
+    });
 
-    var foot = paint(svgText(400, 380, '快了才能闭环。下一幕：吐出 ' + H + ' 步之后，到底执行几步？', null, 14, 'middle'), C_ACCENT);
-    s.appendChild(foot);
+    /* 1 秒里：策略出 10 次指令，插值成 125 个点交给机械臂。 */
+    var hz = svgEl('g', {});
+    var HX0 = 250,
+      HX1 = 750;
+    hz.appendChild(svgText(40, 306, '真机 Push-T：1 秒内', 'demo-x-ink2', 10.5));
+    hz.appendChild(paint(svgText(40, 326, '策略出 ' + CTRL_HZ + ' 次指令', null, 10.5), C_ACCENT));
+    hz.appendChild(paint(svgText(40, 346, '插值成 ' + ROBOT_HZ + ' Hz 给 UR5', null, 10.5), C_MUTED));
+    hz.appendChild(paint(svgEl('path', { d: polyPath([[HX0, 336], [HX1, 336]]), fill: 'none', 'stroke-width': 1 }), null, C_BORDER));
+    for (var r = 0; r <= ROBOT_HZ; r++) {
+      var rx = HX0 + ((HX1 - HX0) * r) / ROBOT_HZ;
+      hz.appendChild(paint(svgEl('path', { d: polyPath([[rx, 332], [rx, 340]]), fill: 'none', 'stroke-width': 0.6 }), null, C_MUTED));
+    }
+    for (var q = 0; q <= CTRL_HZ; q++) {
+      var qx = HX0 + ((HX1 - HX0) * q) / CTRL_HZ;
+      hz.appendChild(paint(svgEl('path', { d: polyPath([[qx, 316], [qx, 340]]), fill: 'none', 'stroke-width': 2 }), null, C_ACCENT));
+    }
+    s.appendChild(hz);
+
+    var lim = paint(svgText(400, 382, '局限：比 LSTM-GMM 算得慢；一次出一段能缓解，但不够做高频控制', null, 12.5, 'middle'), C_BAD);
+    s.appendChild(lim);
 
     function draw(t) {
-      setOpacity(train, seg(t, 0.3, 1.0));
-      setOpacity(infer, seg(t, 2.0, 2.8));
-      setOpacity(barG, seg(t, 4.4, 5.2));
-      setOpacity(speed, seg(t, 7.0, 7.8));
-      setOpacity(foot, seg(t, 9.6, 10.4));
+      setOpacity(train, seg(t, 0.3, 0.9));
+      setOpacity(infer, seg(t, 2.2, 2.8));
+      setOpacity(barA, seg(t, 0.8, 1.3));
+      setOpacity(barB, seg(t, 2.4, 2.9));
+      /* 同一段时间里：DDPM 走 100 格只走到一半多，DDIM 已经跳完 10 格。 */
+      var u = seg(t, 2.8, 7.2);
+      var ddpmK = Math.min(TRAIN_K, Math.floor(u * TRAIN_K * 1.0));
+      var ddimK = Math.min(INFER_K, Math.floor(seg(t, 2.8, 4.4) * INFER_K + 1e-9));
+      dotA.setAttribute('cx', (BX0 + ((BX1 - BX0) * ddpmK) / TRAIN_K).toFixed(1));
+      dotA.setAttribute('cy', 168);
+      dotB.setAttribute('cx', (BX0 + ((BX1 - BX0) * ddimK) / INFER_K).toFixed(1));
+      dotB.setAttribute('cy', 202);
+      setOpacity(dotA, seg(t, 1.0, 1.3));
+      setOpacity(dotB, seg(t, 2.6, 2.9));
+      nums.forEach(function (p) {
+        setOpacity(p.g, seg(t, p.at, p.at + 0.45));
+      });
+      setOpacity(hz, seg(t, 7.4, 8.0));
+      setOpacity(lim, seg(t, 9.6, 10.2));
     }
 
     return { el: s, draw: draw };
@@ -1236,150 +1505,210 @@
   // ─── 第 6 幕：Receding horizon ──────────────────────────────────────
   function buildSceneRhc() {
     var s = sceneSvg(
-      '每次预测长度 H=' +
+      '每次预测 ' +
         H +
-        ' 的 chunk，只执行前 T_a=' +
+        ' 步：源码从上一帧观测的时刻切起，跳过已经过去的 ' +
+        SKIP +
+        ' 步，执行 ' +
         TA +
-        ' 步，丢掉后 ' +
+        ' 步，丢掉 ' +
         DISCARD +
-        ' 步再规划；T_a 太大反应慢，太小则接缝多、推理更勤'
+        ' 步，再带着新观测规划；执行的是位置目标'
     );
-    s.appendChild(svgText(56, 26, '预测 ' + H + ' 步，只执行 ' + TA + ' 步，然后带着新观测重来', 'demo-x-ink2', 13.5));
+    s.appendChild(svgText(56, 24, '预测 ' + H + ' 步，只执行 ' + TA + ' 步，然后带着新观测再规划', 'demo-x-ink2', 13.5));
 
-    var cells = svgEl('g', {});
+    var obsG = svgEl('g', {});
+    var cells = [];
     for (var i = 0; i < H; i++) {
       var x = 48 + i * 46;
-      var exec = i < TA;
-      cells.appendChild(paint(svgEl('rect', { x: x, y: 52, width: 40, height: 44, rx: 6, 'stroke-width': 1.3 }), C_SURFACE2, exec ? C_ACCENT : C_MUTED));
-      cells.appendChild(paint(svgText(x + 20, 72, String(i), 'demo-x-mono', 11, 'middle'), exec ? C_ACCENT : C_MUTED));
-      cells.appendChild(svgText(x + 20, 88, exec ? '执行' : '丢掉', 'demo-x-mut', 8, 'middle'));
+      var g = svgEl('g', {});
+      var r = paint(svgEl('rect', { x: x, y: 64, width: 40, height: 44, rx: 6, 'stroke-width': 1.3 }), C_SURFACE2, C_BORDER);
+      g.appendChild(r);
+      var off = i - SKIP;
+      var lab = off === 0 ? 't' : off < 0 ? 't−' + -off : 't+' + off;
+      var num = svgText(x + 20, 84, lab, 'demo-x-mono', 9.5, 'middle');
+      g.appendChild(num);
+      var kind = i < SKIP ? 'past' : i < SKIP + TA ? 'exec' : 'drop';
+      var tag = svgText(x + 20, 100, kind === 'past' ? '过去' : kind === 'exec' ? '执行' : '丢掉', 'demo-x-mut', 8, 'middle');
+      g.appendChild(tag);
+      s.appendChild(g);
+      cells.push({ g: g, r: r, num: num, tag: tag, kind: kind });
+      if (i < N_OBS) {
+        obsG.appendChild(svgMath(x + 20, 50, i === N_OBS - 1 ? 'o_t' : 'o_{t-' + (N_OBS - 1 - i) + '}', { size: 11, anchor: 'middle', w: 60 }).setTone(C_WARN));
+      }
     }
-    s.appendChild(cells);
+    obsG.appendChild(svgRich(48 + N_OBS * 46 + 4, 50, '← 观测窗口 $T_o = ' + N_OBS + '$，预测窗口从这里排起', { size: 9.5, cls: 'demo-x-mut', w: 400 }));
+    s.appendChild(obsG);
 
-    var rhcMath = svgMath(400, 124, 'H = ' + H + '\\quad T_a = ' + TA + '\\quad H - T_a = ' + DISCARD, {
-      size: 14,
-      w: 480,
+    var rhcMath = svgRich(400, 132, '$' + H + ' = ' + SKIP + ' + ' + TA + ' + ' + DISCARD + '$：过去 ' + SKIP + ' 步 + 执行 ' + TA + ' 步 + 丢掉 ' + DISCARD + ' 步', {
+      size: 13,
+      w: 560,
       anchor: 'middle'
-    });
-    rhcMath.setTone('var(--demo-accent)');
+    }).setTone(C_ACCENT);
     s.appendChild(rhcMath);
+    var codeNote = svgText(400, 152, '源码 predict_action：start = To − 1，end = start + n_action_steps', 'demo-x-mono', 9.5, 'middle');
+    s.appendChild(codeNote);
 
     var trade = [
-      { t: '$T_a = H$ 开环', d: '整条跑完才可能看见扰动', c: C_BAD },
-      { t: '论文落点 ' + H + ' / ' + TA, d: '反应延迟最多 ' + TA + ' 步', c: C_GOOD },
-      { t: '$T_a = 1$ 每步重规划', d: '最快，但接缝多、算力贵', c: C_WARN }
+      { t: '$T_a = 1$：每步再规划', d: '相邻两次可能选到不同的峰', d2: '还容易被演示里的停顿带偏', c: C_WARN, at: 4.8 },
+      { t: '论文 $T_a = ' + TA + '$', d: '图 5：多数任务的最佳点', d2: '真机 Push-T 用 ' + REAL_TA + ' 步（表 7）', c: C_GOOD, at: 8.2 },
+      { t: '$T_a$ 太大：接近开环', d: '世界变了，要等很久才看得见', d2: '反应慢，成功率下降', c: C_BAD, at: 7.0 }
     ].map(function (p, k) {
       var g = svgEl('g', {});
       var px = 40 + k * 246;
-      g.appendChild(paint(svgEl('rect', { x: px, y: 150, width: 234, height: 72, rx: 8, 'stroke-width': 1.3 }), C_SURFACE, p.c));
-      g.appendChild(svgRich(px + 117, 176, p.t, { size: 12, anchor: 'middle', w: 230 }).setTone(p.c));
-      g.appendChild(svgText(px + 117, 200, p.d, 'demo-x-mut', 10, 'middle'));
+      box(g, px, 166, 234, 76, p.c);
+      g.appendChild(svgRich(px + 117, 188, p.t, { size: 11.5, anchor: 'middle', w: 230 }).setTone(p.c));
+      g.appendChild(svgText(px + 117, 210, p.d, 'demo-x-mut', 9.5, 'middle'));
+      g.appendChild(svgText(px + 117, 228, p.d2, 'demo-x-mut', 9.5, 'middle'));
       s.appendChild(g);
-      return { g: g, at: 3.2 + k * 1.1 };
+      return { g: g, at: p.at };
     });
 
+    var pos = svgEl('g', {});
+    box(pos, 40, 256, 350, 70, C_ACCENT, C_SURFACE2);
+    pos.appendChild(paint(svgText(56, 278, '执行的是位置目标，不是速度（图 4）', null, 11.5), C_ACCENT));
+    pos.appendChild(svgText(56, 298, '换成位置控制：Diffusion Policy 成功率上升', 'demo-x-mut', 10));
+    pos.appendChild(svgText(56, 316, 'LSTM-GMM、BET 反而下降', 'demo-x-mut', 10));
+    s.appendChild(pos);
+
+    var lat = svgEl('g', {});
+    box(lat, 410, 256, 350, 70, C_GOOD, C_SURFACE2);
+    lat.appendChild(paint(svgText(426, 278, '模拟延迟 ≤ ' + LAT_OK + ' 步，性能基本不掉（图 5 右）', null, 11.5), C_GOOD));
+    lat.appendChild(svgText(426, 298, '位置控制的误差不会一步步累积', 'demo-x-mut', 10));
+    lat.appendChild(svgText(426, 316, '速度控制受延迟影响更大', 'demo-x-mut', 10));
+    s.appendChild(lat);
+
     var loop = [
-      [80, 268],
-      [280, 268],
-      [520, 268],
-      [720, 268]
+      [80, 350],
+      [280, 350],
+      [520, 350],
+      [720, 350]
     ];
-    var labels = ['观测 O', 'DDIM → chunk', '执行前 ' + TA + ' 步', '新观测，重规划'];
-    var rail = paint(svgEl('path', { d: polyPath(loop), fill: 'none', 'stroke-width': 1.4, 'stroke-dasharray': '5 4' }), null, C_BORDER);
-    s.appendChild(rail);
+    var labels = ['观测 ' + N_OBS + ' 帧', '去噪出 ' + H + ' 步', '执行其中 ' + TA + ' 步', '新观测，再规划'];
+    var loopG = svgEl('g', {});
+    loopG.appendChild(paint(svgEl('path', { d: polyPath(loop), fill: 'none', 'stroke-width': 1.4, 'stroke-dasharray': '5 4' }), null, C_BORDER));
     loop.forEach(function (p, k) {
-      s.appendChild(paint(svgEl('circle', { cx: p[0], cy: p[1], r: 5, 'stroke-width': 1.2 }), C_SURFACE2, C_ACCENT));
-      s.appendChild(svgText(p[0], p[1] + 22, labels[k], 'demo-x-mut', 9.5, 'middle'));
+      loopG.appendChild(paint(svgEl('circle', { cx: p[0], cy: p[1], r: 5, 'stroke-width': 1.2 }), C_SURFACE2, C_ACCENT));
+      loopG.appendChild(svgText(p[0], p[1] + 22, labels[k], 'demo-x-mut', 9.5, 'middle'));
     });
+    s.appendChild(loopG);
     var tok = paint(svgEl('circle', { r: 7, 'stroke-width': 1.6 }), C_ACCENT, C_SURFACE2);
     s.appendChild(tok);
 
-    var foot = paint(svgText(400, 340, 'RHC 是闭环，不是把 ' + H + ' 步开环播完', null, 14, 'middle'), C_ACCENT);
+    var foot = paint(svgText(400, 400, '滚动时域：每次只兑现计划的前一段，这才是闭环', null, 13.5, 'middle'), C_ACCENT);
     s.appendChild(foot);
-    var foot2 = svgText(400, 366, '两头都不能取极端：开环看不见世界，每步重规划会在模态接缝上抖', 'demo-x-mut', 11, 'middle');
-    s.appendChild(foot2);
 
+    var COLORS = { past: C_MUTED, exec: C_ACCENT, drop: C_MUTED };
     function draw(t) {
-      setOpacity(cells, seg(t, 0.3, 1.0));
-      setOpacity(rhcMath, seg(t, 1.6, 2.4));
-      trade.forEach(function (p) {
-        setOpacity(p.g, seg(t, p.at, p.at + 0.4));
+      var lit = seg(t, 2.4, 3.0) > 0;
+      cells.forEach(function (c, i) {
+        setOpacity(c.g, seg(t, 0.2 + i * 0.08, 0.5 + i * 0.08));
+        c.r.style.stroke = lit ? COLORS[c.kind] : C_BORDER;
+        c.r.style.strokeDasharray = lit && c.kind === 'drop' ? '4 3' : '';
+        c.num.style.fill = lit && c.kind === 'exec' ? C_ACCENT : lit ? C_MUTED : '';
+        setOpacity(c.tag, lit ? 1 : 0);
+        if (lit && c.kind === 'past') setOpacity(c.g, 0.55);
       });
-      var on = seg(t, 7.0, 7.8);
-      setOpacity(rail, on);
-      setOpacity(tok, on);
-      var pt = pointOn(loop, ease(seg(t, 7.2, 11.4)));
+      setOpacity(obsG, seg(t, 2.4, 3.0));
+      setOpacity(rhcMath, seg(t, 2.6, 3.2));
+      setOpacity(codeNote, seg(t, 3.2, 3.7));
+      trade.forEach(function (p) {
+        setOpacity(p.g, seg(t, p.at, p.at + 0.45));
+      });
+      setOpacity(pos, seg(t, 9.4, 10.0));
+      setOpacity(lat, seg(t, 11.2, 11.7));
+      /* 开场先把闭环走一遍，讲到延迟时再走一遍 */
+      setOpacity(loopG, seg(t, 0.8, 1.3));
+      setOpacity(tok, seg(t, 0.8, 1.3));
+      var pt = pointOn(loop, t < 11.4 ? ease(seg(t, 1.0, 2.3)) : ease(seg(t, 11.6, 12.9)));
       tok.setAttribute('cx', pt[0].toFixed(1));
       tok.setAttribute('cy', pt[1].toFixed(1));
-      setOpacity(foot, seg(t, 10.0, 10.8));
-      setOpacity(foot2, seg(t, 11.0, 11.6));
+      setOpacity(foot, seg(t, 12.2, 12.7));
     }
 
     return { el: s, draw: draw };
   }
 
-  // ─── 第 7 幕：为什么成了 IL 标准 ───────────────────────────────────
-  function buildSceneStandard() {
+  // ─── 第 7 幕：定量证据与局限 ─────────────────────────────────────────
+  function buildSceneEvidence() {
     var s = sceneSvg(
-      '在 ' +
+      N_BENCH +
+        ' 个基准、' +
         N_TASKS +
-        ' 个复杂操作任务上平均成功率提升 ' +
+        ' 个任务；仿真基准平均提升 ' +
         fmt(LIFT_PCT, 1) +
-        '%；训练比 GAN / EBM 稳，表达力盖过 GMM / VAE，于是成了端到端模仿学习的事实标准'
+        '%，真机推 T 成功率 ' +
+        REAL_PUSHT[0].v +
+        '%；局限是继承行为克隆、推理比 LSTM-GMM 慢'
     );
-    s.appendChild(svgText(56, 26, '数字对得上，管线也接得上，所以后来的工作都从这儿分叉', 'demo-x-ink2', 13));
+    s.appendChild(svgText(56, 24, '证据看数字，局限也写在论文里', 'demo-x-ink2', 13.5));
 
     var nums = svgEl('g', {});
-    nums.appendChild(paint(svgEl('rect', { x: 40, y: 46, width: 350, height: 88, rx: 8, 'stroke-width': 1.5 }), C_SURFACE2, C_GOOD));
-    nums.appendChild(paint(svgText(215, 80, fmt(LIFT_PCT, 1) + '%', null, 28, 'middle'), C_GOOD));
-    nums.appendChild(svgText(215, 112, N_TASKS + ' 个任务上的平均成功率提升', 'demo-x-mut', 11, 'middle'));
-    nums.appendChild(paint(svgEl('rect', { x: 410, y: 46, width: 350, height: 88, rx: 8, 'stroke-width': 1.5 }), C_SURFACE2, C_ACCENT));
-    nums.appendChild(paint(svgText(585, 80, String(N_TASKS), null, 28, 'middle'), C_ACCENT));
-    nums.appendChild(svgText(585, 112, '复杂操作任务（笔记原数，不是另测）', 'demo-x-mut', 11, 'middle'));
+    box(nums, 40, 38, 350, 72, C_GOOD, C_SURFACE2);
+    nums.appendChild(paint(svgText(215, 70, '+' + fmt(LIFT_PCT, 1) + '%', null, 26, 'middle'), C_GOOD));
+    nums.appendChild(svgText(215, 96, '仿真基准平均提升（表 1、2、4）', 'demo-x-mut', 10.5, 'middle'));
+    box(nums, 410, 38, 350, 72, C_ACCENT, C_SURFACE2);
+    nums.appendChild(paint(svgText(585, 70, N_TASKS + ' 个任务', null, 24, 'middle'), C_ACCENT));
+    nums.appendChild(svgText(585, 96, N_BENCH + ' 个基准，仿真 + 真机（2024 扩展版）', 'demo-x-mut', 10.5, 'middle'));
     s.appendChild(nums);
 
-    var why = [
-      { t: '多模态', d: '采分布，不走均值', c: C_GOOD },
-      { t: '高维序列', d: 'GMM / VAE 撑不住的 chunk', c: C_ACCENT },
-      { t: '训练稳', d: '比 GAN / EBM 好扩', c: C_WARN },
-      { t: '传感器通用', d: 'RGB / Depth / 本体', c: C_MUTED }
-    ].map(function (p, k) {
-      var g = svgEl('g', {});
-      var x = 40 + k * 186;
-      g.appendChild(paint(svgEl('rect', { x: x, y: 154, width: 174, height: 64, rx: 8, 'stroke-width': 1.3 }), C_SURFACE, p.c));
-      g.appendChild(paint(svgText(x + 87, 178, p.t, null, 12, 'middle'), p.c));
-      g.appendChild(svgText(x + 87, 200, p.d, 'demo-x-mut', 9.5, 'middle'));
-      s.appendChild(g);
-      return { g: g, at: 3.0 + k * 0.7 };
+    var longG = svgEl('g', {});
+    longG.appendChild(svgText(40, 130, '子目标顺序随意的任务，差距更大：', 'demo-x-ink2', 11));
+    longG.appendChild(svgRich(270, 130, 'Block Push $p_2$：**+' + GAIN_BLOCK + '%**', { size: 11.5, w: 200 }).setTone(C_GOOD));
+    longG.appendChild(svgRich(480, 130, 'Kitchen $p_4$：**+' + GAIN_KITCHEN + '%**', { size: 11.5, w: 200 }).setTone(C_GOOD));
+    s.appendChild(longG);
+
+    var real = svgEl('g', {});
+    box(real, 40, 144, 720, 96, C_BORDER);
+    real.appendChild(svgText(56, 162, '真机 Push-T 成功率（表 6，各 20 次）', 'demo-x-ink2', 11));
+    var BAR0 = 200,
+      BARW = 420;
+    var barRects = REAL_PUSHT.map(function (p, k) {
+      var y = 170 + k * 22;
+      real.appendChild(paint(svgText(56, y + 13, p.name, null, 10.5), p.c));
+      real.appendChild(paint(svgEl('rect', { x: BAR0, y: y + 2, width: BARW, height: 14, rx: 3 }), C_SURFACE2));
+      var r = paint(svgEl('rect', { x: BAR0, y: y + 2, width: 0, height: 14, rx: 3 }), p.c);
+      real.appendChild(r);
+      real.appendChild(paint(svgText(BAR0 + BARW + 10, y + 13, p.v + '%', 'demo-x-mono', 10.5), p.c));
+      return { r: r, v: p.v };
     });
+    real.appendChild(svgText(700, 184, '翻杯子', 'demo-x-mut', 10, 'middle'));
+    real.appendChild(paint(svgText(700, 208, MUG_OK + ' / ' + MUG_N, null, 16, 'middle'), C_GOOD));
+    real.appendChild(svgText(700, 228, fmt((100 * MUG_OK) / MUG_N, 0) + '%', 'demo-x-mut', 10, 'middle'));
+    s.appendChild(real);
+
+    var lim = svgEl('g', {});
+    box(lim, 40, 252, 720, 46, C_BAD, C_SURFACE, true);
+    lim.appendChild(paint(svgText(56, 272, '局限（论文自述）', null, 11.5), C_BAD));
+    lim.appendChild(svgText(180, 272, '继承行为克隆：演示不够就学不好', 'demo-x-mut', 10.5));
+    lim.appendChild(svgText(180, 290, '算力与延迟高于 LSTM-GMM：动作序列能缓解，但不够做高频控制', 'demo-x-mut', 10.5));
+    s.appendChild(lim);
 
     var files = [
-      { f: 'conditional_unet1d.py', d: '1D 时序 UNet + FiLM' },
-      { f: 'transformer_for_diffusion.py', d: '长序列 Transformer 变体' },
-      { f: 'workspace/ + eval.py', d: '训练、EMA、RHC rollout' }
+      { f: 'conditional_unet1d.py', d: 'FiLM：cond_predict_scale 按通道出 scale / bias' },
+      { f: 'diffusion_unet_hybrid_image_policy.py', d: 'predict_action：切出执行的 ' + TA + ' 步' },
+      { f: 'eval_real_robot.py', d: '加载 EMA 权重；DDIM ' + REAL_K + ' 步' }
     ];
     var fileG = svgEl('g', {});
+    fileG.appendChild(svgText(40, 318, '官方源码 real-stanford/diffusion_policy（原 columbia-ai-robotics）', 'demo-x-ink2', 10.5));
     files.forEach(function (f, k) {
-      var y = 236 + k * 32;
-      fileG.appendChild(paint(svgEl('rect', { x: 40, y: y, width: 720, height: 28, rx: 6, 'stroke-width': 1.2 }), C_SURFACE2, C_BORDER));
-      fileG.appendChild(paint(svgText(56, y + 18, f.f, 'demo-x-mono', 11), C_ACCENT));
-      fileG.appendChild(svgText(744, y + 18, f.d, 'demo-x-mut', 10, 'end'));
+      var y = 326 + k * 24;
+      fileG.appendChild(paint(svgEl('rect', { x: 40, y: y, width: 720, height: 20, rx: 5, 'stroke-width': 1.1 }), C_SURFACE2, C_BORDER));
+      fileG.appendChild(paint(svgText(52, y + 14, f.f, 'demo-x-mono', 10), C_ACCENT));
+      fileG.appendChild(svgText(748, y + 14, f.d, 'demo-x-mut', 9.5, 'end'));
     });
     s.appendChild(fileG);
 
-    var foot = paint(svgText(400, 360, 'Diffusion Policy = 条件扩散动作生成，端到端模仿学习的默认起点', null, 14.5, 'middle'), C_ACCENT);
-    s.appendChild(foot);
-    var foot2 = svgText(400, 386, '人形全身动态要再往 BeyondMimic 走；本篇是扩散 + 控制主线的起点', 'demo-x-mut', 11, 'middle');
-    s.appendChild(foot2);
-
     function draw(t) {
-      setOpacity(nums, seg(t, 0.3, 1.1));
-      why.forEach(function (p) {
-        setOpacity(p.g, seg(t, p.at, p.at + 0.4));
+      setOpacity(nums, seg(t, 0.3, 1.0));
+      setOpacity(longG, seg(t, 2.4, 3.0));
+      setOpacity(real, seg(t, 4.8, 5.3));
+      var u = ease(seg(t, 5.1, 6.4));
+      barRects.forEach(function (b) {
+        b.r.setAttribute('width', ((BARW * b.v) / 100) * u);
       });
-      setOpacity(fileG, seg(t, 6.4, 7.2));
-      setOpacity(foot, seg(t, 9.2, 10.0));
-      setOpacity(foot2, seg(t, 10.4, 11.2));
+      setOpacity(lim, seg(t, 7.0, 7.6));
+      setOpacity(fileG, seg(t, 9.4, 10.0));
     }
 
     return { el: s, draw: draw };
@@ -1391,11 +1720,11 @@
       dur: 12,
       build: buildSceneProblem,
       cues: [
-        { at: 0.3, s: '同一观测，人类演示里一半左绕、一半右绕 —— 动作分布是**双峰**的。' },
+        { at: 0.3, s: '同一观测，人类演示一半从上绕、一半从下绕 —— 动作分布是**双峰**的。' },
         { at: 2.2, s: 'MSE 的最优解是条件均值 $\\mathbb{E}[a \\mid o]$，两峰一平均，轨迹正中障碍。' },
-        { at: 4.6, s: '这不是网络没训好，是损失函数决定的：`argmin E[(a − f(o))²]` 永远给均值。' },
-        { at: 7.0, s: '扩散采的是分布，每次落到某一侧，不走中间。' },
-        { at: 9.2, s: '问题从来不是「BC 不行」，而是「BC 在**多模态**数据上会给出平均动作」。' }
+        { at: 4.6, s: '不是网络没训好：只要损失是平方误差，最优解就是均值，换更大的网络也一样。' },
+        { at: 7.0, s: '扩散学整个分布：这次走上面，下次可能走下面，就是不走中间。' },
+        { at: 9.4, s: '论文**图 3**（Push-T）：Diffusion Policy 两边都学到、每次只走一边；LSTM-GMM / IBC 偏一边，BET 来回切。' }
       ]
     },
     {
@@ -1403,73 +1732,73 @@
       dur: 12,
       build: buildSceneDiffusion,
       cues: [
-        { at: 0.3, s: '策略不再回归一个向量，而是学条件分布 $p(A \\mid O)$。' },
-        { at: 2.0, s: '正向：$A_k = \\sqrt{\\bar{\\alpha}_k} A_0 + \\sqrt{1-\\bar{\\alpha}_k}\\,\\varepsilon$，把干净轨迹加噪到高斯。' },
-        { at: 4.4, s: '反向：网络 $f_\\theta$ 预测噪声 $\\varepsilon$，一步步把 $A_K$ 还原成 $A_0$。' },
-        { at: 7.0, s: '得分函数能停在多个局部极大值上，这就是它擅长多模态的原因。' },
-        { at: 9.4, s: '训练比 GAN / EBM 稳，表达力盖过 GMM / VAE。下一幕说一次吐多长。' }
+        { at: 0.3, s: '策略不再回归一个向量，而是学条件分布 $p(A_t \\mid O_t)$。' },
+        { at: 2.2, s: '训练（式 5）：随机选 $k$、加噪，让 $\\varepsilon_\\theta$ 预测加进去的噪声，损失是 MSE。' },
+        { at: 4.4, s: '推理（式 4）：从 $A^K_t \\sim \\mathcal{N}(0, I)$ 出发，减去预测噪声再加扰动，重复 $K$ 次。' },
+        { at: 7.0, s: '能量模型要估 $Z(o,\\theta)$，靠负样本、训练不稳；扩散学 $\\nabla_a \\log p$，$Z$ 求导就消掉（式 8）。' },
+        { at: 9.4, s: '多峰从哪来：不同的初始噪声 + 每步的随机扰动，样本停在不同的峰上。' }
       ]
     },
     {
-      title: 'Action chunking：一次吐 $H$ 步',
+      title: 'Action chunking：一次预测 $T_p$ 步',
       dur: 12,
       build: buildSceneChunk,
       cues: [
-        { at: 0.3, s: '不再预测单步，而是 $A = [a_t,\\ldots,a_{t+H-1}]$，默认 **$H = ' + H + '$**。' },
-        { at: 2.2, s: '若逐帧独立采样，前半段可能锁「上绕」、后半段锁「下绕」，拼出来穿过障碍。' },
-        { at: 4.8, s: '整条 chunk 一起去噪：责任权重拿全部 ' + H + ' 步算，模式一锁就整段一致。' },
-        { at: 7.4, s: '额外收益：一次预测等于一段短期计划，比逐步预测更少在原地抖。' },
-        { at: 9.6, s: 'chunking 不只是「预测得远」，也是为了让多模态选择在时间上不串味。' }
+        { at: 0.3, s: '不再逐步出动作，而是一次预测 $A_t = [a_t,\\ldots,a_{t+' + (H - 1) + '}]$，**$T_p = ' + H + '$**。' },
+        { at: 2.2, s: '逐步各采各的（LSTM-GMM、BET）：相邻两步可能来自不同的峰，来回抖。' },
+        { at: 4.8, s: '整段一起去噪：峰一旦选定，' + H + ' 步都走同一侧。' },
+        { at: 7.4, s: '不怕停顿：单步策略容易学成原地不动，LSTM-GMM / IBC 在真机上常停住。' },
+        { at: 9.6, s: '序列维度高：GMM 要先定峰数、IBC 采不动，扩散撑得住。' }
       ]
     },
     {
       title: '视觉条件 + FiLM',
-      dur: 13,
+      dur: 14,
       build: buildSceneCondition,
       cues: [
-        { at: 0.3, s: '输入是视觉观测 $O$ 和带噪动作 $A_k$，不是无条件生成。' },
-        { at: 2.0, s: 'ResNet / ViT 抽出特征，**FiLM** $\\gamma(O)\\odot h + \\beta(O)$ 焊进去噪网络。' },
-        { at: 4.6, s: '官方 rollout 喂最近 `n_obs_steps = ' + N_OBS + '` 帧，不是单张图。' },
-        { at: 7.0, s: N_ARCH + ' 种骨干：1D 卷积 UNet 延迟低，Transformer 更擅长长程交互。' },
-        { at: 9.6, s: '源码落点 `conditional_unet1d.py` 与 `transformer_for_diffusion.py`。' },
-        { at: 11.2, s: '条件焊住了，才能谈推理怎么快到控制回路里。' }
+        { at: 0.3, s: '学 $p(A_t \\mid O_t)$ 而不是 $p(A_t, O_t)$：观测只做条件，不参与生成。' },
+        { at: 2.0, s: '图像特征每次推理只算一遍，$K$ 步去噪都复用，编码器还能端到端一起训。' },
+        { at: 4.6, s: 'ResNet-18 从头训：空间 softmax 保留位置，GroupNorm 配合 EMA；看最近 $T_o = ' + N_OBS + '$ 帧。' },
+        { at: 7.0, s: '卷积版用 **FiLM**：每层按通道 $\\gamma \\odot h + \\beta$，开箱即用，但动作变化快时会被平滑掉。' },
+        { at: 9.6, s: 'Transformer 版用交叉注意力读 $O_t$，适合复杂任务，更难调；论文建议先试卷积版。' },
+        { at: 12.2, s: '编码器消融（表 5）：冻结预训练效果不好，小学习率微调 CLIP ViT 最好，Square 上 ' + CLIP_FT + '%。' }
       ]
     },
     {
-      title: 'DDIM：百步训练，十几步部署',
+      title: 'DDIM：' + TRAIN_K + ' 步训练，' + INFER_K + ' 步推理',
       dur: 12,
       build: buildSceneDdim,
       cues: [
-        { at: 0.3, s: '训练可以走完整 DDPM：随机采 $k$，加噪再预测 $\\hat{\\varepsilon}$。' },
-        { at: 2.2, s: '部署等不起。DDIM 用非马尔可夫采样，把反向过程跳着走。' },
-        { at: 4.6, s: '笔记原话：数百步压到 **' + INFER_K + '–' + INFER_HI + '** 步。这里用 $' + TRAIN_K + ' / ' + INFER_K + ' = ' + fmt(SPEEDUP, 0) + '\\times$ 现除。' },
-        { at: 7.4, s: '步数再少，轨迹没收干净；再多，对闭环也帮不上多少。' },
-        { at: 9.6, s: '快了才能闭环。下一幕：吐出 $H$ 步之后，到底执行几步。' }
+        { at: 0.3, s: '训练用 ' + TRAIN_K + ' 步扩散，噪声表是平方余弦（iDDPM）。' },
+        { at: 2.2, s: 'DDIM 把训练和推理的步数解耦，反向过程可以跳着走，网络不用重新训练。' },
+        { at: 4.6, s: '3.4 节：推理 ' + INFER_K + ' 步，RTX 3080 上 ' + LATENCY_S + ' s，$' + TRAIN_K + ' / ' + INFER_K + ' = ' + fmt(SPEEDUP, 0) + '\\times$；仿真基准推理仍是 ' + TRAIN_K + ' 步，真机配置 ' + REAL_K + ' 步。' },
+        { at: 7.4, s: '真机：每秒出 ' + CTRL_HZ + ' 次指令，插值到 ' + ROBOT_HZ + ' Hz 交给 UR5。' },
+        { at: 9.6, s: '局限：比 LSTM-GMM 算得慢，一次出一段能缓解，但不够做高频控制。' }
       ]
     },
     {
-      title: 'Receding horizon：预测 $H$，执行 $T_a$',
+      title: 'Receding horizon：预测 $T_p$，执行 $T_a$',
       dur: 13,
       build: buildSceneRhc,
       cues: [
-        { at: 0.3, s: '每次推理吐 $H = ' + H + '$ 步，只执行前 $T_a = ' + TA + '$ 步，丢掉后 ' + DISCARD + ' 步。' },
-        { at: 2.4, s: '$H - T_a = ' + H + ' - ' + TA + ' = ' + DISCARD + '$，这 ' + DISCARD + ' 步是计划，不是命令。' },
-        { at: 4.8, s: '$T_a = H$ 是纯开环，扰动要等整条 chunk 跑完才可能被看见。' },
-        { at: 7.0, s: '$T_a = 1$ 每步重规划，反应最快，但接缝多、还可能在两个模态之间跳。' },
-        { at: 9.4, s: '论文经验落点就是 **' + H + ' / ' + TA + '**：推理每 ' + TA + ' 步一次，延迟最多 ' + TA + ' 步。' },
-        { at: 11.2, s: '观测 → DDIM → 执行前段 → 新观测，这才是 RHC 闭环。' }
+        { at: 0.3, s: '预测 $T_p = ' + H + '$ 步，只执行 $T_a = ' + TA + '$ 步，带着新观测再规划。' },
+        { at: 2.4, s: '源码从上一帧观测的时刻切起：$' + H + ' = ' + SKIP + ' + ' + TA + ' + ' + DISCARD + '$，过去 1 步、执行 ' + TA + ' 步、丢掉 ' + DISCARD + ' 步。' },
+        { at: 4.8, s: '$T_a = 1$：相邻两次可能选到不同的峰，还容易被演示里的停顿带偏。' },
+        { at: 7.0, s: '$T_a$ 太大反应慢；**图 5**：多数任务最佳是 ' + TA + ' 步，真机推 T 用 ' + REAL_TA + ' 步。' },
+        { at: 9.4, s: '动作是**位置目标**（图 4）：换成位置控制，Diffusion Policy 上升，LSTM-GMM / BET 下降。' },
+        { at: 11.2, s: '误差不一步步累积：模拟延迟 ≤ ' + LAT_OK + ' 步性能基本不掉。观测 → 去噪 → 执行 → 再观测。' }
       ]
     },
     {
-      title: '为什么成了模仿学习的标准',
-      dur: 12,
-      build: buildSceneStandard,
+      title: '定量证据与局限',
+      dur: 13,
+      build: buildSceneEvidence,
       cues: [
-        { at: 0.3, s: '笔记里的旗舰数字：' + N_TASKS + ' 个复杂操作任务，平均成功率 **+' + fmt(LIFT_PCT, 1) + '%**。' },
-        { at: 2.4, s: '多模态采分布、高维 chunk 撑得住、训练比 GAN / EBM 稳。' },
-        { at: 4.8, s: 'RGB / Depth / 本体都能接，后面双臂、全身控制都从这条管线分叉。' },
-        { at: 7.0, s: '代码入口 `columbia-ai-robotics/diffusion_policy`，EMA 权重是复现成功率的关键。' },
-        { at: 9.4, s: '**Diffusion Policy = 条件扩散动作生成**，端到端模仿学习的默认起点。' }
+        { at: 0.3, s: N_BENCH + ' 个基准、' + N_TASKS + ' 个任务；仿真基准平均提升 **' + fmt(LIFT_PCT, 1) + '%**（表 1、2、4）。' },
+        { at: 2.4, s: '子目标顺序随意的任务差距更大：Block Push $p_2$ +' + GAIN_BLOCK + '%，Kitchen $p_4$ +' + GAIN_KITCHEN + '%。' },
+        { at: 4.8, s: '真机 Push-T：**' + REAL_PUSHT[0].v + '%** vs LSTM-GMM ' + REAL_PUSHT[1].v + '%、IBC ' + REAL_PUSHT[2].v + '%；翻杯子 ' + MUG_OK + ' / ' + MUG_N + '。' },
+        { at: 7.0, s: '局限：继承行为克隆的毛病，演示不够就学不好；推理比 LSTM-GMM 慢。' },
+        { at: 9.4, s: '源码：FiLM 在 `conditional_unet1d.py`，执行哪几步在 `predict_action`，评估加载 EMA 权重。' }
       ]
     }
   ];
@@ -1477,37 +1806,51 @@
   function buildExplainerDemo(host) {
     K.explainer(host, {
       title: '七幕动画：Diffusion Policy 全流程速览',
-      sub: '约 86 秒自动播放。空格播放/暂停，← → 换幕；画面里的换算数字都是现算的，不是手写。',
+      sub: '约 88 秒自动播放。空格播放/暂停，← → 换幕；画面里的换算数字都是现算的，不是手写。',
       ariaLabel: 'Diffusion Policy 七幕讲解动画',
       notes: [
-        '取数依据：预测长度 $H = ' +
+        '取数依据：$T_o = ' +
+          N_OBS +
+          '$、$T_p = ' +
           H +
-          '$、执行 $T_a = ' +
+          '$、$T_a = ' +
           TA +
-          '$ 与上文 DDIM / RHC 演示同一组默认，丢掉的步数 $H - T_a = ' +
+          '$ 是论文附录表 7 的仿真配置（真机 Push-T 的 $T_a = ' +
+          REAL_TA +
+          '$），与上文 DDIM / RHC 演示同一组默认；源码 `predict_action` 从 `To − 1` 切起，所以 $' +
+          H +
+          ' = ' +
+          SKIP +
+          ' + ' +
+          TA +
+          ' + ' +
           DISCARD +
-          '$ 现减。训练步数取笔记「上百步」的下沿 $' +
+          '$ 现减。扩散步数取 3.4 节：训练 $' +
           TRAIN_K +
-          '$，推理取常用落点 $' +
+          '$、DDIM 推理 $' +
           INFER_K +
-          '$（笔记写 ' +
-          INFER_K +
-          '–' +
-          INFER_HI +
-          '），加速 $' +
+          '$，加速 $' +
           TRAIN_K +
           ' / ' +
           INFER_K +
           ' = ' +
           fmt(SPEEDUP, 0) +
-          '\\times$ 现除。',
+          '\\times$ 现除；表 7 的真机推理是 ' +
+          REAL_K +
+          ' 步，仿真基准不用 DDIM、推理也是 ' +
+          TRAIN_K +
+          ' 步。',
         '第七幕的 **' +
           fmt(LIFT_PCT, 1) +
-          '%** 与 **' +
+          '%**（仿真基准，表 1、2、4）、**' +
           N_TASKS +
-          ' 个任务**是笔记「工程价值」里的原值，不是另测。`n_obs_steps = ' +
-          N_OBS +
-          '` 来自官方 rollout 时序图。第一幕的绕障是示意，数值不能和论文仿真比。'
+          ' 个任务**、真机 Push-T ' +
+          REAL_PUSHT[0].v +
+          '% 与翻杯子 ' +
+          MUG_OK +
+          ' / ' +
+          MUG_N +
+          ' 取自 arXiv v5（2024 期刊扩展版）；RSS 2023 版只统计了 12 个任务。第一幕的绕障与第二幕的粒子是示意，数值不能和论文仿真比。'
       ],
       scenes: DP_SCENES
     });
