@@ -39,7 +39,7 @@ demos: ["diffusion_policy"]
 
 > 🎮 **本文内嵌 1 段动画 + 1 段配音视频 + 3 个可交互演示**（不用装任何东西）：
 > 1. [七幕动画：Diffusion Policy 全流程](#dp-explainer-anim) —— 约 88 秒串完「平均动作撞障 → 条件扩散 → action chunking → 视觉条件 + FiLM → DDIM 加速 → receding horizon → 定量证据与局限」
-> 2. [配音讲解视频](#dp-video) —— 同样七幕，加中文配音与字幕，7 分 59 秒竖屏，可下载
+> 2. [配音讲解视频](#dp-video) —— 同样七幕，加中文配音与字幕，8 分 2 秒竖屏，可下载
 > 3. [「平均动作」为什么会撞上障碍](#dp-multimodal-demo) —— 演示一半上绕一半下绕，MSE 给出的是两峰均值
 > 4. [去噪：从噪声里捞出整条 chunk](#dp-denoise-demo) —— 浏览器里真的在跑 DDIM，整条 16 步一起锁模式
 > 5. [Receding Horizon：预测 16，执行 8](#dp-rhc-demo) —— 拖 $T_a$，看反应延迟和推理开销怎么此消彼长

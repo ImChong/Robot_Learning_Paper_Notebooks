@@ -13,7 +13,7 @@
 | `ase` | `assets/js/demos/ase.js` 六幕 | 约 7 分 47 秒 |
 | `calm` | `assets/js/demos/calm.js` 五幕 | 约 6 分 15 秒 |
 | `pulse` | `assets/js/demos/pulse.js` 六幕 | 约 7 分 10 秒 |
-| `diffusion_policy` | `assets/js/demos/diffusion_policy.js` 七幕（`dp-explainer`） | 约 7 分 59 秒 |
+| `diffusion_policy` | `assets/js/demos/diffusion_policy.js` 七幕（`dp-explainer`） | 约 8 分 2 秒 |
 | `beyondmimic` | `assets/js/demos/beyondmimic.js` 八幕（`bm-explainer`） | 约 7 分 2 秒 |
 | `lcp` | `assets/js/demos/lcp.js` 五幕 | 约 4 分 35 秒 |
 | `cosmos` | `assets/js/demos/cosmos.js` 五幕 | 约 2 分 55 秒 |
