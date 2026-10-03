@@ -235,7 +235,7 @@ def test_notes_declare_their_demos_in_reading_order():
             ["bm-explainer", "bm-video", "bm-anchor", "bm-sampling", "bm-guidance"],
         ),
         LCP_NOTE: ("lcp", ["lcp-explainer", "lcp-video", "lcp-sensitivity", "lcp-gp", "lcp-vs-filter"]),
-        SMP_NOTE: ("smp", ["smp-explainer", "smp-sds", "smp-esm", "smp-style"]),
+        SMP_NOTE: ("smp", ["smp-explainer", "smp-video", "smp-sds", "smp-esm", "smp-style"]),
         DR_VISION_NOTE: (
             "domain_randomization",
             ["dr-scene", "dr-coverage", "dr-ablation"],
@@ -1478,7 +1478,7 @@ def test_narrated_video_placeholders_point_at_files_that_exist():
             assert f"'{demo}': buildVideoDemo" in js and "K.video(host" in js, f"{demo} 没有通过 K.video 注册"
     for demo in ("calm-video", "pulse-video", "dp-video", "bm-video", "lcp-video", "cosmos-video", "groot-video",
                  "tf-video", "pi0-video", "pi05-video", "soccer-video", "sonic-video", "gmr-video",
-                 "omniretarget-video", "humanml3d-video"):
+                 "omniretarget-video", "humanml3d-video", "smp-video"):
         assert demo in seen, f"{demo} 应该挂在对应的论文笔记里"
 
 

@@ -1,7 +1,7 @@
 // node check_layout.mjs <paper>        （先跑过 build.py，并用 render.mjs 生成过 stage.<paper>.built.html）
 // node check_layout.mjs <paper> cover  封面帧（stage.html 的 classicCover，最初的片头设计）：块互不重叠、都在画面里、
 //                                      大标题 / 中文名 / 一句话 / 每条目录各占一行、3:4 置顶裁剪后目录不贴底（不需要 build.py）
-// 每 0.5 s 抽一帧，用 DOM 量各块位置：可见块之间不许重叠、不许压字幕，要读的东西必须在安全区 330–1440 之内
+// 每 0.5 s 抽一帧，用 DOM 量各块位置：可见块之间不许重叠、不许压字幕、片头 / 片尾相邻块间距 ≥ 10px，要读的东西必须在安全区 330–1440 之内
 // （视频号 9:16 画面会被裁成居中的 6:7，底部还压着作者、标题、转赞评与浮评）。
 import { chromium } from 'playwright-core';
 import fs from 'node:fs';
@@ -89,6 +89,17 @@ for (let t = 0.2; t < tl.total; t += 0.5) {
       if (+getComputedStyle(e).opacity < 0.05 || !e.offsetHeight) continue;
       const top = e.offsetTop, bot = e.offsetTop + e.offsetHeight;
       if (top < 328 || bot > 1442) out.push(e.className + ' outside safe zone (' + top + '–' + bot + ')');
+    }
+    // 片头 / 片尾的块由 V.stack 排：放不下时它会压缩间距，压到 10px 以下画面上就像贴在一起
+    // （SMP 片尾「下一篇」折成两行时只剩 6–8px）。用布局位置量，淡入位移不算。
+    const stacked = keys.filter((e) => e.matches('.big, .meta, .toc, .pt') && +getComputedStyle(e).opacity >= 0.05 && e.offsetHeight);
+    for (const a of stacked) {
+      for (const c of stacked) {
+        if (a === c || a.offsetParent !== c.offsetParent) continue;
+        const gap = c.offsetTop - (a.offsetTop + a.offsetHeight);
+        const xo = Math.min(a.offsetLeft + a.offsetWidth, c.offsetLeft + c.offsetWidth) - Math.max(a.offsetLeft, c.offsetLeft);
+        if (xo > 0 && gap >= -2 && gap < 10) out.push(a.className + ' / ' + c.className + ' too close (' + gap + 'px)');
+      }
     }
     const tt = sc.querySelector('.title');
     if (tt) { const r2 = tt.getBoundingClientRect(); if (r2.top < 328 || r2.bottom > 1442) out.push('title outside safe zone'); }

@@ -1,6 +1,6 @@
 # 视频号合集发布清单：从头学人形机器人算法
 
-[推荐学习路线图](../../README.md#学习路线图)里的 46 篇论文，按视频号发布顺序排好。已经发布的打勾；每发一集，把那一行的 `[ ]` 改成 `[x]`。截至 2026-10-03 已发布 001–009。
+[推荐学习路线图](../../README.md#学习路线图)里的 46 篇论文，按视频号发布顺序排好。已经发布的打勾；每发一集，把那一行的 `[ ]` 改成 `[x]`。截至 2026-10-03 已发布 001–010。
 
 - 🎬 `<paper>`：仓库里已有渲染好的配音视频，`<paper>` 就是本目录 `node render.mjs <paper>` 用的名字（见 [README](README.md)）
 - 🆕：还没有视频，要新做
@@ -23,8 +23,8 @@
 
 ## 第二季 · 走出仿真：生成式策略、Sim-to-Real 与动作数据
 
-- [ ] 010 [Diffusion Policy](../../papers/01_Foundational_RL/Diffusion_Policy/Diffusion_Policy.md)（2023）🎬 `diffusion_policy` — PULSE→DP；01 模块里紧接 PULSE 的就是它
-- [ ] 011 [SMP](../../papers/01_Foundational_RL/SMP_Reusable_Score-Matching_Motion_Priors/SMP_Reusable_Score-Matching_Motion_Priors.md)（2025）🆕 占位笔记待补充 — AMP→SMP、DP⇢SMP；MimicKit 里的算法。〔取舍〕紧跟 Diffusion Policy：它把 AMP 的对抗判别器换成预训练扩散模型的分数，得先懂扩散
+- [x] 010 [Diffusion Policy](../../papers/01_Foundational_RL/Diffusion_Policy/Diffusion_Policy.md)（2023）🎬 `diffusion_policy` — PULSE→DP；01 模块里紧接 PULSE 的就是它
+- [ ] 011 [SMP](../../papers/01_Foundational_RL/SMP_Reusable_Score-Matching_Motion_Priors/SMP_Reusable_Score-Matching_Motion_Priors.md)（2025）🎬 `smp` — AMP→SMP、DP⇢SMP；MimicKit 里的算法。〔取舍〕紧跟 Diffusion Policy：它把 AMP 的对抗判别器换成预训练扩散模型的分数，得先懂扩散
 - [ ] 012 [Domain Randomization](../../papers/01_Foundational_RL/Domain_Randomization_for_Transferring_Deep_Neural_Networks_from_Simulation_to_the_Real_World/Domain_Randomization_for_Transferring_Deep_Neural_Networks_from_Simulation_to_the_Real_World.md)（2017）🆕 — DR→OP3 足球、DR→LCP；〔取舍〕放在 BeyondMimic 前面，因为 BeyondMimic 是本系列第一篇人形真机，先把 sim-to-real 讲了
 - [ ] 013 [四足地形 · 教师-学生](../../papers/03_High_Impact_Selection/Learning_Quadrupedal_Locomotion_over_Challenging_Terrain/Learning_Quadrupedal_Locomotion_over_Challenging_Terrain.md)（2020）🆕 — DR→四足地形；笔记写明它「适合作为人形学习先修论文」，HOVER、ExBody2、BFM 等 WBC 笔记用到的特权教师 → 学生蒸馏从这里来
 - [ ] 014 [OP3 足球](../../papers/03_High_Impact_Selection/Learning_Agile_Soccer_Skills_for_a_Bipedal_Robot_with_Deep_RL/Learning_Agile_Soccer_Skills_for_a_Bipedal_Robot_with_Deep_RL.md)（2023）🎬 `op3soccer` — DR→OP3 足球
