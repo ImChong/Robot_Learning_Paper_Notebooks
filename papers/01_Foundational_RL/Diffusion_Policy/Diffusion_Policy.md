@@ -48,12 +48,28 @@ demos: ["diffusion_policy"]
 
 ## 📌 英文缩写速查
 
+> 从 PPO 到 PULSE 那几篇是在仿真里靠奖励做强化学习；这一篇是**照着演示学**（行为克隆），下面这些名词多半第一次见。
+
 | 缩写 | 全称 | 简单解释 |
 |------|------|----------|
-| DDPM | Denoising Diffusion Probabilistic Model | 去噪扩散概率模型 |
-| DDIM | Denoising Diffusion Implicit Model | 非马尔可夫采样的加速版本，大幅减少推理步数 |
-| FiLM | Feature-wise Linear Modulation | 用于视觉特征与扩散噪声融合的调制机制 |
-| RHC | Receding Horizon Control | 后退水平控制：预测序列，仅执行前段，滚动规划 |
+| BC | Behavior Cloning（行为克隆） | 把演示里「看到的观测 → 做出的动作」配成对，当监督学习来学，不需要奖励 |
+| MSE | Mean Squared Error（均方误差） | 预测与演示之差的平方再平均；用它回归，最优解是条件均值 |
+| Push-T | — | 用圆形末端把 T 形积木推进目标框的平面任务（IBC 论文提出），左绕右绕都对，是典型的多峰任务 |
+| LSTM-GMM | LSTM + Gaussian Mixture Model | 循环网络输出几个高斯叠加的分布，robomimic 里的 BC-RNN 基线；要预先定好峰的个数 |
+| IBC | Implicit Behavioral Cloning（隐式行为克隆） | 用能量模型（EBM）给每个动作打分，推理时找能量最低的动作；训练要靠负样本，不稳 |
+| BET | Behavior Transformer | 先把动作聚类成几类，再预测一个偏移；逐步采样，相邻两步可能换峰 |
+| EBM | Energy-Based Model（能量模型） | 给每个输入打能量分，变成概率要除以对所有动作求和的归一化常数 $Z$ |
+| Score | 分数 / 得分函数 | 对数概率对动作的梯度 $\nabla_a \log p(a \mid o)$；扩散网络学的就是它，$Z$ 求导后消失 |
+| DDPM | Denoising Diffusion Probabilistic Model | 去噪扩散概率模型：一步一步去噪的标准扩散 |
+| iDDPM | Improved DDPM | 改进版 DDPM（平方余弦噪声表），本文仿真基准用它推理 100 步 |
+| DDIM | Denoising Diffusion Implicit Model | 能跳步的采样方法，训练与推理步数解耦，大幅减少推理步数 |
+| UNet | — | 带跳连的卷积结构；本文的卷积版沿时间方向做一维卷积 |
+| FiLM | Feature-wise Linear Modulation | 用条件（观测特征、去噪步）算出每个通道的缩放与偏置，调制去噪网络 |
+| ResNet-18 | Residual Network, 18 层 | 常用的图像卷积网络，本文从头训练做视觉编码器 |
+| EMA | Exponential Moving Average（指数滑动平均） | 训练时额外维护一份平滑过的权重，评估用它 |
+| CLIP / ViT | Contrastive Language-Image Pre-training / Vision Transformer | 在海量图文配对上预训练的模型 / 用 Transformer 处理图像的网络 |
+| RHC | Receding Horizon Control（滚动时域控制） | 预测一段，只执行前一部分，带着新观测再规划 |
+| $T_o$ / $T_p$ / $T_a$ | observation / prediction / action horizon | 看几帧观测 / 一次预测几步 / 实际执行几步（默认 2 / 16 / 8） |
 
 ---
 

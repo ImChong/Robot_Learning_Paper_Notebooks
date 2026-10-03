@@ -13,8 +13,8 @@ window.PaperVideo = {
     m.style.padding = '22px 34px';
     var toc = h('div', 'toc', root,
       '<div><span>01</span>平均动作会撞上障碍</div><div><span>02</span>动作是条件扩散过程</div>' +
-      '<div><span>03</span>Action chunking</div><div><span>04</span>视觉条件 + FiLM</div>' +
-      '<div><span>05</span>DDIM：100 步训练，10 步推理</div><div><span>06</span>Receding horizon</div>' +
+      '<div><span>03</span>动作分块（action chunking）</div><div><span>04</span>视觉条件 + FiLM</div>' +
+      '<div><span>05</span>DDIM 跳步：100 步训练，10 步推理</div><div><span>06</span>滚动时域（receding horizon）</div>' +
       '<div><span>07</span>定量证据与局限</div>');
     toc.style.fontSize = '31px';
     toc.style.lineHeight = '1.55';
@@ -40,29 +40,35 @@ window.PaperVideo = {
     ];
     var pts = items.map(function (it, k) {
       var p = h('div', 'pt', root);
-      p.style.fontSize = '37px'; p.style.padding = '18px 32px';
+      p.style.fontSize = '33px'; p.style.padding = '14px 30px';
       p.style.borderLeft = '10px solid ' + it[0];
       var n = h('div', 'n', p, it[1]); n.style.color = it[0];
       var body = h('div', '', p);
       it[2].split('<br>').forEach(function (line, q) {
         if (q) body.appendChild(document.createElement('br'));
         var span = h('span', '', body); K.rich(span, line);
-        if (q) { span.style.fontSize = '34px'; span.style.color = 'var(--text-secondary)'; }
+        if (q) { span.style.fontSize = '30px'; span.style.color = 'var(--text-secondary)'; }
       });
       return p;
     });
+    /* 下一篇的主题（不写集数）：扩散模型的分数拿来当运动先验，替换 AMP 的判别器 */
+    var next = h('div', 'pt', root);
+    next.style.fontSize = '29px'; next.style.padding = '14px 30px';
+    next.style.borderStyle = 'dashed';
+    K.rich(next, '**下一篇**：用运动扩散模型的**分数**当奖励，替换 AMP 的判别器');
     var foot = h('div', 'meta', root,
       '<b>完整笔记 · 3 个交互演示 · 源码对照</b><br>imchong.github.io/Robot_Learning_Paper_Notebooks');
     foot.style.textAlign = 'center';
-    foot.style.fontSize = '29px';
-    foot.style.padding = '22px 34px';
+    foot.style.fontSize = '27px';
+    foot.style.padding = '16px 30px';
     return {
       root: root,
       draw: function (st, t) {
-        V.stack(pts.concat([foot]), [20, 20, 30], V.SAFE_TOP + 148, V.contentBottom());
+        V.stack(pts.concat([next, foot]), [14, 14, 20, 20], V.SAFE_TOP + 148, V.contentBottom());
         fadeUp(head, t, 0.0);
         pts.forEach(function (p, k) { fadeUp(p, t, [1.0, 3.4, 5.8][k]); });
-        fadeUp(foot, t, 9.0);
+        fadeUp(next, t, 7.0);
+        fadeUp(foot, t, 9.5);
         foot.style.transform = 'none';  // 紧挨字幕，只淡入不上滑
       }
     };
