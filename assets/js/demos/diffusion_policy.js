@@ -1886,8 +1886,8 @@
   function buildVideoDemo(host) {
     K.video(host, {
       title: '配音讲解视频：Diffusion Policy 七幕全流程',
-      sub: '6 分 51 秒竖屏视频（1080×1920），中文配音 + 字幕。画面就是上面的七幕动画，旁白把每一幕讲细；适合手机上看或转发。',
-      size: '8.9 MB',
+      sub: '7 分 59 秒竖屏视频（1080×1920），中文配音 + 字幕。画面就是上面的七幕动画，旁白把每一幕讲细；适合手机上看或转发。',
+      size: '9.9 MB',
       fileName: 'Diffusion_Policy_讲解视频.mp4'
     });
   }
