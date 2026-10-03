@@ -135,6 +135,18 @@
         "zh_title": "BeyondMimic：从运动跟踪到引导扩散的多功能人形控制"
       },
       {
+        "title": "SMP: Reusable Score-Matching Motion Priors for Physics-Based Character Control",
+        "path": "papers/01_Foundational_RL/SMP_Reusable_Score-Matching_Motion_Priors/SMP_Reusable_Score-Matching_Motion_Priors.md",
+        "url": "/papers/01_Foundational_RL/SMP_Reusable_Score-Matching_Motion_Priors/SMP_Reusable_Score-Matching_Motion_Priors.html",
+        "dir": "SMP_Reusable_Score-Matching_Motion_Priors",
+        "arxiv": "2512.03028",
+        "has_open_source": true,
+        "published_date_zh": "2025年12月2日（arXiv），SIGGRAPH 2026（ACM TOG）",
+        "published_date_en": "Dec 2, 2025 (arXiv), SIGGRAPH 2026 (ACM TOG)",
+        "zhname": "SMP：面向物理角色控制的可复用分数匹配运动先验",
+        "zh_title": "SMP：面向物理角色控制的可复用分数匹配运动先验"
+      },
+      {
         "title": "Understanding Domain Randomization for Sim-to-real Transfer",
         "path": "papers/01_Foundational_RL/Domain_Randomization_Understanding_Sim-to-Real_Transfer/Domain_Randomization_Understanding_Sim-to-Real_Transfer.md",
         "url": "/papers/01_Foundational_RL/Domain_Randomization_Understanding_Sim-to-Real_Transfer/Domain_Randomization_Understanding_Sim-to-Real_Transfer.html",

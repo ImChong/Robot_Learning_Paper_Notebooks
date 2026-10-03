@@ -29,6 +29,9 @@
 - short: ADD
   title: "Adversarial Disentanglement and Distillation (ADD)"
   path: /papers/01_Foundational_RL/ADD_Adversarial_Differential_Discriminators/ADD_Adversarial_Differential_Discriminators.html
+- short: SMP
+  title: "Score-Matching Motion Priors (SMP)"
+  path: /papers/01_Foundational_RL/SMP_Reusable_Score-Matching_Motion_Priors/SMP_Reusable_Score-Matching_Motion_Priors.html
 - short: Expressive
   title: "Expressive Whole-Body Control"
   path: /papers/03_High_Impact_Selection/Expressive_Whole-Body_Control_for_Humanoid_Robots/Expressive_Whole-Body_Control_for_Humanoid_Robots.html
