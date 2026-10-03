@@ -322,7 +322,7 @@ EXPLAINER_BUNDLES = (
 # 极简 RL 与 Table II / 数据工厂到 G1 真机的闭环），「网格保形」是目标、「硬约束」
 # 是可行域，合成一幕会让能量和 SDF/脚粘地抢同一块画面；扩增与下游 RL 也是两件独立的事。
 # Diffusion Policy 也是七件（平均动作撞障 / 条件扩散 / action chunking / 视觉条件 + FiLM /
-# DDIM 加速 / receding horizon / 为什么成了 IL 标准），「扩散过程」和「一次吐多长」
+# DDIM 加速 / receding horizon / 定量证据与局限），「扩散过程」和「一次吐多长」
 # 是两件独立的事，视觉条件与 DDIM 加速也是，压进五幕会让 chunking、FiLM 和 RHC 抢同一帧。
 # BeyondMimic 是八幕：它本身就是两篇论文订在一起（阶段 1 的跟踪 + 阶段 2 的
 # 引导扩散），两个阶段各自都有三件独立的事 —— 两个缺口 / 锚定跟踪 / 紧凑 MDP /
@@ -1015,27 +1015,36 @@ def test_umr_explainer_and_worked_examples_share_the_same_numbers():
 
 
 def test_diffusion_policy_explainer_numbers_come_from_the_config():
-    """七幕动画不许手写换算结果：丢掉的步数、DDIM 加速倍数都得现算。"""
+    """七幕动画不许手写换算结果：切掉的步数、DDIM 加速倍数、百分比都得现算。
+
+    取值对照论文 arXiv v5 与官方源码：表 7 的 T_o / T_p / T_a = 2 / 16 / 8（真机 Push-T 的 T_a = 6）；
+    predict_action 从 start = To − 1 切起，所以 16 步 = 过去 1 步 + 执行 8 步 + 丢掉 7 步；
+    3.4 节训练 100 步、DDIM 推理 10 步，表 7 真机推理 16 步。
+    """
     js = (DEMO_JS_DIR / "diffusion_policy.js").read_text(encoding="utf-8")
     note = DIFFUSION_POLICY_NOTE.read_text(encoding="utf-8")
 
     assert "var H = 16;" in js
     assert "var TA = 8;" in js
-    assert "var DISCARD = H - TA;" in js
-    assert 16 - 8 == 8
+    assert "var N_OBS = 2;" in js
+    assert "var SKIP = N_OBS - 1;" in js
+    assert "var DISCARD = H - SKIP - TA;" in js
+    assert 16 - (2 - 1) - 8 == 7
+    assert "var REAL_TA = 6;" in js
 
     assert "var TRAIN_K = 100;" in js
     assert "var INFER_K = 10;" in js
-    assert "var INFER_HI = 20;" in js
+    assert "var REAL_K = 16;" in js
     assert "var SPEEDUP = TRAIN_K / INFER_K;" in js
     assert 100 / 10 == 10
 
-    assert "var N_OBS = 2;" in js
     assert "var N_TASKS = 15;" in js
     assert "var LIFT_PCT = 46.9;" in js
+    assert "var MUG_OK = 18," in js and "MUG_N = 20;" in js
+    assert round(100 * 18 / 20) == 90
 
-    assert "46.9%" in note
-    assert "15 个" in note
+    for needle in ("46.9%", "15 个", "1 + 8 + 7", "start = To - 1", "0.1 s", "95%"):
+        assert needle in note, needle
     assert "## 🎬 七幕动画：Diffusion Policy 全流程" in note
 
 

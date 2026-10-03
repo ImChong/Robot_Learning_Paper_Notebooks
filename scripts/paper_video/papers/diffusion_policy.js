@@ -8,14 +8,14 @@ window.PaperVideo = {
     var b = h('div', 'big', root, '<div style="font-size:52px;font-weight:900;line-height:1.2">动作扩散策略</div>' +
       '<div style="font-size:32px;color:var(--text-secondary);margin-top:8px">让机器人从噪声里生成整段动作</div>');
     var m = h('div', 'meta', root,
-      '<b>Diffusion Policy: Visuomotor Policy Learning via Action Diffusion</b><br>Chi, Feng, Du, Xu, Cousineau, Burchfiel, Song<br>Columbia · MIT · TRI · RSS 2023');
+      '<b>Diffusion Policy: Visuomotor Policy Learning via Action Diffusion</b><br>Chi, Feng, Du, Xu, Cousineau, Burchfiel, Song<br>Columbia · TRI · MIT · RSS 2023 · 2024 扩展版');
     m.style.fontSize = '27px';
     m.style.padding = '22px 34px';
     var toc = h('div', 'toc', root,
       '<div><span>01</span>平均动作会撞上障碍</div><div><span>02</span>动作是条件扩散过程</div>' +
-      '<div><span>03</span>Action chunking</div><div><span>04</span>视觉条件 + FiLM</div>' +
-      '<div><span>05</span>DDIM：百步训练，十几步部署</div><div><span>06</span>Receding horizon</div>' +
-      '<div><span>07</span>为什么成了 IL 标准</div>');
+      '<div><span>03</span>动作分块（action chunking）</div><div><span>04</span>视觉条件 + FiLM</div>' +
+      '<div><span>05</span>DDIM 跳步：100 步训练，10 步推理</div><div><span>06</span>滚动时域（receding horizon）</div>' +
+      '<div><span>07</span>定量证据与局限</div>');
     toc.style.fontSize = '31px';
     toc.style.lineHeight = '1.55';
     var rows = toc.children;
@@ -35,34 +35,40 @@ window.PaperVideo = {
     var head = h('div', 'head', root, '<div class="act">三句话记住 Diffusion Policy</div><div class="title">学分布，不是学均值</div>');
     var items = [
       [ACC, '① 条件扩散', '学 $p(A \\mid O)$，不回归 $\\mathbb{E}[a \\mid o]$<br>多峰演示不会被平均成撞墙的直线'],
-      [GOOD, '② chunk 16 / 执行 8', '一次去噪整条 $H = 16$ 步，只执行前 $T_a = 8$ 步<br>模式在时间上不串味，还能滚动重规划'],
-      [WARN, '③ DDIM + FiLM', '视觉特征用 FiLM 焊进去噪网络<br>数百步压到 10–20 步，才进得了控制回路']
+      [GOOD, '② 预测 16 / 执行 8', '整段 $T_p = 16$ 步一起去噪，只执行 $T_a = 8$ 步<br>选定的峰整段一致，再带着新观测规划'],
+      [WARN, '③ 特征算一遍 + DDIM', '观测只做条件，图像特征每次推理算一遍<br>训练 100 步，推理 10 步：RTX 3080 上 0.1 s']
     ];
     var pts = items.map(function (it, k) {
       var p = h('div', 'pt', root);
-      p.style.fontSize = '37px'; p.style.padding = '18px 32px';
+      p.style.fontSize = '33px'; p.style.padding = '14px 30px';
       p.style.borderLeft = '10px solid ' + it[0];
       var n = h('div', 'n', p, it[1]); n.style.color = it[0];
       var body = h('div', '', p);
       it[2].split('<br>').forEach(function (line, q) {
         if (q) body.appendChild(document.createElement('br'));
         var span = h('span', '', body); K.rich(span, line);
-        if (q) { span.style.fontSize = '34px'; span.style.color = 'var(--text-secondary)'; }
+        if (q) { span.style.fontSize = '30px'; span.style.color = 'var(--text-secondary)'; }
       });
       return p;
     });
+    /* 下一篇的主题（不写集数）：扩散模型的分数拿来当运动先验，替换 AMP 的判别器 */
+    var next = h('div', 'pt', root);
+    next.style.fontSize = '29px'; next.style.padding = '14px 30px';
+    next.style.borderStyle = 'dashed';
+    K.rich(next, '**下一篇**：用运动扩散模型的**分数**当奖励，替换 AMP 的判别器');
     var foot = h('div', 'meta', root,
       '<b>完整笔记 · 3 个交互演示 · 源码对照</b><br>imchong.github.io/Robot_Learning_Paper_Notebooks');
     foot.style.textAlign = 'center';
-    foot.style.fontSize = '29px';
-    foot.style.padding = '22px 34px';
+    foot.style.fontSize = '27px';
+    foot.style.padding = '16px 30px';
     return {
       root: root,
       draw: function (st, t) {
-        V.stack(pts.concat([foot]), [20, 20, 30], V.SAFE_TOP + 148, V.contentBottom());
+        V.stack(pts.concat([next, foot]), [14, 14, 20, 20], V.SAFE_TOP + 148, V.contentBottom());
         fadeUp(head, t, 0.0);
         pts.forEach(function (p, k) { fadeUp(p, t, [1.0, 3.4, 5.8][k]); });
-        fadeUp(foot, t, 9.0);
+        fadeUp(next, t, 7.0);
+        fadeUp(foot, t, 9.5);
         foot.style.transform = 'none';  // 紧挨字幕，只淡入不上滑
       }
     };
