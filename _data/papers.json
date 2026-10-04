@@ -166,8 +166,8 @@
         "has_open_source": true,
         "published_date_zh": "2017年3月（arXiv）",
         "published_date_en": "Mar 2017 (arXiv)",
-        "zhname": "域随机化：从仿真到真实世界的深度神经网络迁移",
-        "zh_title": "域随机化：从仿真到真实世界的深度神经网络迁移"
+        "zhname": "域随机化：从仿真迁移到真实世界",
+        "zh_title": "域随机化：从仿真迁移到真实世界"
       },
       {
         "title": "Learning Smooth Humanoid Locomotion through Lipschitz-Constrained Policies (LCP)",
