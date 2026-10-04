@@ -8,7 +8,7 @@ demos: ["smp"]
 ---
 
 # SMP: Reusable Score-Matching Motion Priors for Physics-Based Character Control
-**把预训练好的运动扩散模型冻结成奖励函数：用 SDS 的噪声残差给动作的「自然度」打分，一个先验复用到多个任务、上百种风格，训练策略时连原始动作数据都不用留**
+**SMP：可复用的分数匹配运动先验**
 
 > 📅 阅读日期: 2026-10-03
 >
