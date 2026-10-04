@@ -3,7 +3,7 @@ layout: paper
 paper_order: 12
 title: "SMP: Reusable Score-Matching Motion Priors for Physics-Based Character Control"
 category: "Foundational RL"
-zhname: "SMP：面向物理角色控制的可复用分数匹配运动先验"
+zhname: "SMP：可复用的分数匹配运动先验"
 demos: ["smp"]
 ---
 

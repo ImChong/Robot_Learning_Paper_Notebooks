@@ -143,8 +143,8 @@
         "has_open_source": true,
         "published_date_zh": "2025年12月2日（arXiv），SIGGRAPH 2026（ACM TOG）",
         "published_date_en": "Dec 2, 2025 (arXiv), SIGGRAPH 2026 (ACM TOG)",
-        "zhname": "SMP：面向物理角色控制的可复用分数匹配运动先验",
-        "zh_title": "SMP：面向物理角色控制的可复用分数匹配运动先验"
+        "zhname": "SMP：可复用的分数匹配运动先验",
+        "zh_title": "SMP：可复用的分数匹配运动先验"
       },
       {
         "title": "Understanding Domain Randomization for Sim-to-real Transfer",
