@@ -1048,6 +1048,131 @@ def test_diffusion_policy_explainer_numbers_come_from_the_config():
     assert "## 🎬 七幕动画：Diffusion Policy 全流程" in note
 
 
+def _dp_alpha_bar(k: int, steps: int) -> float:
+    """diffusion_policy.js 的 alphaBar()：余弦噪声表，夹在 [1e-5, 1]。"""
+    f = math.cos(((k / steps + 0.008) / 1.008) * (math.pi / 2))
+    return min(max(f * f, 1e-5), 1.0)
+
+
+def _dp_ddim_1d(modes, weights, data_std, steps, x_start):
+    """diffusion_policy.js 的 ddimSample() 的一维版：理想去噪器 + 确定性 DDIM。"""
+    x, rows = x_start, []
+    for k in range(steps, 0, -1):
+        ab, ab_prev = _dp_alpha_bar(k, steps), _dp_alpha_bar(k - 1, steps)
+        sa, v = math.sqrt(ab), ab * data_std**2 + (1 - ab)
+        logs = [math.log(w + 1e-12) - (x - sa * mu) ** 2 / (2 * v) for mu, w in zip(modes, weights, strict=True)]
+        top = max(logs)
+        resp = [math.exp(lg - top) for lg in logs]
+        resp = [r / sum(resp) for r in resp]
+        x0 = sum(r * (sa * data_std**2 * x + (1 - ab) * mu) / v for r, mu in zip(resp, modes, strict=True))
+        eps = (x - sa * x0) / math.sqrt(1 - ab)
+        x_next = math.sqrt(ab_prev) * x0 + math.sqrt(1 - ab_prev) * eps
+        rows.append((k, x, resp[0], x0, x_next))
+        x = x_next
+    return rows
+
+
+def test_diffusion_policy_worked_example_reuses_the_demo_sampler():
+    """「具体实例」例 2–4 和「平均动作」实验台共用一组玩具数：两峰 ±1.05、σ = 0.18、10 步 DDIM。
+
+    表里每一行、手算那一步的中间量都按 JS 采样器的 Python 版现算，改了演示参数就得同步改正文。
+    """
+    js = (DEMO_JS_DIR / "diffusion_policy.js").read_text(encoding="utf-8")
+    note = DIFFUSION_POLICY_NOTE.read_text(encoding="utf-8")
+
+    assert "var LEFT_MU = 1.05,\n    RIGHT_MU = -1.05;" in js
+    assert "var state = { mix: 0.5, nSamples: 12, seed: 7, method: 'diffusion', steps: 10, dataStd: 0.18 };" in js
+    assert "var f = Math.cos(((t + 0.008) / 1.008) * (Math.PI / 2));" in js
+
+    # 例 2：MSE 的最优解是两峰均值
+    assert 0.5 * 1.05 + 0.5 * (-1.05) == 0
+    assert "$\\lvert 0 \\rvert \\lt 0.52$" in note and "var OBST = { x: 0, y: 0, r: 0.52 };" in js
+
+    # 例 3 / 例 4：余弦表与整条轨迹
+    for k in range(11):
+        assert f"{_dp_alpha_bar(k, 10):.5f}" in note, k
+    rows = _dp_ddim_1d([1.05, -1.05], [0.5, 0.5], 0.18, 10, 0.3)
+    for k, x, r_up, x0, x_next in rows:
+        line = f"| {k} | {_dp_alpha_bar(k, 10):.5f} | {x:.4f} | {r_up:.4f} | {x0:.4f} | {x_next:.4f} |"
+        assert line in note, line
+    assert f"{rows[-1][-1]:.4f}" == "0.9181" and "$-0.9181$" in note
+    mirrored = _dp_ddim_1d([1.05, -1.05], [0.5, 0.5], 0.18, 10, -0.3)
+    assert abs(mirrored[-1][-1] + rows[-1][-1]) < 1e-12
+
+    # 例 3 的手算一步（k = 4 → 3）
+    k, x4, r_up, x0, x3 = rows[6]
+    assert k == 4
+    ab4, ab3 = _dp_alpha_bar(4, 10), _dp_alpha_bar(3, 10)
+    sa, v = math.sqrt(ab4), ab4 * 0.18**2 + (1 - ab4)
+    d_up, d_down = x4 - sa * 1.05, x4 + sa * 1.05
+    logit = (d_down**2 - d_up**2) / (2 * v)
+    eps = (x4 - sa * x0) / math.sqrt(1 - ab4)
+    expected = {
+        "sqrt_ab4": (sa, 4), "v": (v, 4), "d_up": (d_up, 4), "d_up2": (d_up**2, 4), "d_down": (d_down, 4),
+        "d_down2": (d_down**2, 4), "two_v": (2 * v, 4), "logit": (logit, 4), "r_down": (1 - r_up, 4),
+        "film": (sa * 0.18**2 * x4, 4), "mix": ((1 - ab4) * (2 * r_up - 1) * 1.05, 4),
+        "sa_x0": (sa * x0, 4), "sqrt_1m_ab4": (math.sqrt(1 - ab4), 4), "eps": (eps, 4),
+        "sqrt_ab3": (math.sqrt(ab3), 4), "sqrt_1m_ab3": (math.sqrt(1 - ab3), 4), "one_m_ab4": (1 - ab4, 5),
+    }
+    for name, (val, digits) in expected.items():
+        assert _fmt(val, digits) in note, (name, _fmt(val, digits))
+    assert _fmt(math.sqrt(ab3) * x0 + math.sqrt(1 - ab3) * eps, 4) == _fmt(x3, 4) == "0.4612"
+
+    # 例 5：LQR，A = B = 1、K = 0.5、s = 2
+    a_k, b_k, gain, s0 = 1.0, 1.0, 0.5, 2.0
+    chunk = [-gain * (a_k - b_k * gain) ** t * s0 for t in range(3)]
+    assert chunk == [-1.0, -0.5, -0.25]
+    assert "(-1,\\ -0.5,\\ -0.25)" in note
+
+
+def test_pulse_worked_example_arithmetic():
+    """「具体实例」手算一帧蒸馏损失：KL 闭式解、式 3 合计、下游残差都得现算。
+
+    腾空状态的先验沿用「本体感受先验」演示里的那组数：中心 (1.35, −0.9)，标准差 r × 0.32。
+    """
+    js = (DEMO_JS_DIR / "pulse.js").read_text(encoding="utf-8")
+    note = PULSE_NOTE.read_text(encoding="utf-8")
+
+    assert "{ id: 'air', name: '腾空中', c: [1.35, -0.9], r: 0.6 }," in js
+    assert "var priorS = state.mode === 'prop' ? st.r * 0.32 : 1.0;" in js
+    s_p = 0.6 * 0.32
+    mu_p, mu_e, s_e = (1.35, -0.90), (1.45, -0.85), 0.15
+    mu_e_prev = (1.40, -0.88)
+    alpha = 0.005
+
+    def kl_dims(mu_q, s_q, mu_ref, s_ref):
+        return [math.log(s_ref / s_q) + (s_q**2 + (m - r) ** 2) / (2 * s_ref**2) - 0.5 for m, r in zip(mu_q, mu_ref, strict=True)]
+
+    learned = kl_dims(mu_e, s_e, mu_p, s_p)
+    fixed = kl_dims(mu_e, s_e, (0.0, 0.0), 1.0)
+    for val in (*learned, *fixed, sum(learned), sum(fixed), math.log(s_p / s_e), math.log(1 / s_e)):
+        assert _fmt(val, 4) in note, _fmt(val, 4)
+    assert f"{2 * s_p**2:.6f}" == "0.073728" and "0.073728" in note
+    assert f"**{sum(fixed) / sum(learned):.1f} 倍**" in note
+
+    l_action = sum((a - b) ** 2 for a, b in zip((0.30, -0.10, 0.50), (0.25, -0.05, 0.45), strict=True))
+    l_regu = sum((a - b) ** 2 for a, b in zip(mu_e, mu_e_prev, strict=True))
+    assert _fmt(l_action, 4) == "0.0075" and _fmt(l_regu, 4) == "0.0034"
+    assert _fmt(alpha * l_regu, 6) == "0.000017" and "0.000017" in note
+    for beta in (0.01, 0.001):
+        for kl in (sum(learned), sum(fixed)):
+            total = l_action + alpha * l_regu + beta * kl
+            assert _fmt(beta * kl, 6) in note, _fmt(beta * kl, 6)
+            assert _fmt(total, 6) in note, _fmt(total, 6)
+            assert f"{100 * beta * kl / total:.1f}%" in note, f"{100 * beta * kl / total:.1f}%"
+
+    # 源码写法：不平方的范数、AR(1) φ = 0.99
+    ar1 = [a - 0.99 * b for a, b in zip(mu_e, mu_e_prev, strict=True)]
+    assert _fmt(math.sqrt(l_action), 4) in note and _fmt(math.hypot(*ar1), 4) in note
+
+    # 下游残差与「不用残差」的起点
+    dz = (0.20, -0.10)
+    z = tuple(round(m + d, 2) for m, d in zip(mu_p, dz, strict=True))
+    assert z == (1.55, -1.0) and "(1.55,\\ -1.00)" in note
+    for val, digits in ((math.hypot(*dz), 3), (math.hypot(*mu_p), 2), (math.sqrt(0.22), 3)):
+        assert _fmt(val, digits) in note, _fmt(val, digits)
+
+
 def test_beyondmimic_explainer_numbers_come_from_the_config():
     """八幕动画不许手写换算结果：视野秒数、PD 时间常数、参数量、偏好差值都得现算。"""
     js = (DEMO_JS_DIR / "beyondmimic.js").read_text(encoding="utf-8")
