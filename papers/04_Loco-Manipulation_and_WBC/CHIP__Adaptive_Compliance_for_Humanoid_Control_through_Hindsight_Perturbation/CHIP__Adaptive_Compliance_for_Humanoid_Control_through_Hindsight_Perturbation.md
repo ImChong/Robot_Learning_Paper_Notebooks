@@ -123,5 +123,5 @@ flowchart LR
 
 ## 🔗 相关阅读
 
-- **同模块·柔顺 / 力自适应**：[SplitAdapter（负载自适应）](../SplitAdapter__Load-Aware_Humanoid_Loco-Manipulation_via_Factorized_Adaptation/SplitAdapter__Load-Aware_Humanoid_Loco-Manipulation_via_Factorized_Adaptation.md) · [HAIC（动力学感知物体交互）](../HAIC__Humanoid_Agile_Object_Interaction_Control_via_Dynamics-Aware_World_Model/HAIC__Humanoid_Agile_Object_Interaction_Control_via_Dynamics-Aware_World_Model.md)；
+- **同模块·柔顺 / 力自适应**：[SplitAdapter（负载自适应）](../SplitAdapter__Load-Aware_Humanoid_Loco-Manipulation_via_Factorized_Adaptation/SplitAdapter__Load-Aware_Humanoid_Loco-Manipulation_via_Factorized_Adaptation.html) · [HAIC（动力学感知物体交互）](../HAIC__Humanoid_Agile_Object_Interaction_Control_via_Dynamics-Aware_World_Model/HAIC__Humanoid_Agile_Object_Interaction_Control_via_Dynamics-Aware_World_Model.html)；
 - **发力 / 接触操作**：HAFO、FALCON 等力自适应 loco-manip 工作。

@@ -804,7 +804,7 @@ flowchart TB
 <details class="paper-fold" markdown="1">
 <summary>📖 展开文字：先读 GMR 理解「重定向质量决定下游 RL」，再看本文的交互保持</summary>
 
-**阅读顺序建议**：先读 [Retargeting Matters](Retargeting_Matters__General_Motion_Retargeting_for_Humanoid_Motion_Tracking/Retargeting_Matters__General_Motion_Retargeting_for_Humanoid_Motion_Tracking.md) 理解「重定向质量决定下游 RL」；再读本文看**交互保持 + 硬约束 + 数据扩增**如何把 loco-manipulation 参考做到 BeyondMimic 级简洁 RL 可跟踪。
+**阅读顺序建议**：先读 [Retargeting Matters](../Retargeting_Matters__General_Motion_Retargeting_for_Humanoid_Motion_Tracking/Retargeting_Matters__General_Motion_Retargeting_for_Humanoid_Motion_Tracking.html) 理解「重定向质量决定下游 RL」；再读本文看**交互保持 + 硬约束 + 数据扩增**如何把 loco-manipulation 参考做到 BeyondMimic 级简洁 RL 可跟踪。
 
 </details>
 

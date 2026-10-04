@@ -125,4 +125,4 @@ flowchart LR
 
 ## 🔗 相关阅读
 
-- **同模块·主动感知/第一视角**：[Vision in Action（从人类演示学主动感知）](../Vision_in_Action__Learning_Active_Perception_from_Human_Demonstrations/Vision_in_Action__Learning_Active_Perception_from_Human_Demonstrations.md) · [Learning to Look（信息寻求决策）](../Learning_to_Look__Seeking_Information_for_Decision_Making_via_Policy_Factorization/Learning_to_Look__Seeking_Information_for_Decision_Making_via_Policy_Factorization.md)。
+- **同模块·主动感知/第一视角**：[Vision in Action（从人类演示学主动感知）](../Vision_in_Action__Learning_Active_Perception_from_Human_Demonstrations/Vision_in_Action__Learning_Active_Perception_from_Human_Demonstrations.html) · [Learning to Look（信息寻求决策）](../Learning_to_Look__Seeking_Information_for_Decision_Making_via_Policy_Factorization/Learning_to_Look__Seeking_Information_for_Decision_Making_via_Policy_Factorization.html)。

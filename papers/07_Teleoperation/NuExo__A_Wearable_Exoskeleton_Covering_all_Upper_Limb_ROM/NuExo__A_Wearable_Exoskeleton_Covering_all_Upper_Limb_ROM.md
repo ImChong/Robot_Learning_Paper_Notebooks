@@ -125,4 +125,4 @@ flowchart LR
 
 ## 🔗 相关阅读
 
-- **同模块·外骨骼/可穿戴遥操作**：[ACE（跨平台视觉-外骨骼）](../ACE__A_Cross-Platform_Visual-Exoskeletons_System_for_Low-Cost_Dexterous_Teleoperation/ACE__A_Cross-Platform_Visual-Exoskeletons_System_for_Low-Cost_Dexterous_Teleoperation.md) · [CHILD（关节级全身）](../CHILD__a_Whole-Body_Humanoid_Teleoperation_System/CHILD__a_Whole-Body_Humanoid_Teleoperation_System.md)。
+- **同模块·外骨骼/可穿戴遥操作**：[ACE（跨平台视觉-外骨骼）](../ACE__A_Cross-Platform_Visual-Exoskeletons_System_for_Low-Cost_Dexterous_Teleoperation/ACE__A_Cross-Platform_Visual-Exoskeletons_System_for_Low-Cost_Dexterous_Teleoperation.html) · [CHILD（关节级全身）](../CHILD__a_Whole-Body_Humanoid_Teleoperation_System/CHILD__a_Whole-Body_Humanoid_Teleoperation_System.html)。

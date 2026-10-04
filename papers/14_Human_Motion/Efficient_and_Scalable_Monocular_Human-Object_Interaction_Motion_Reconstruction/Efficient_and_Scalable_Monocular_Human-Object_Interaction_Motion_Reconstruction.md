@@ -178,6 +178,6 @@ flowchart LR
 
 ## 🔗 相关阅读
 
-- **同模块野外重建**：[WHOLE](../WHOLE__World-Grounded_Hand-Object_Lifted_from_Egocentric_Videos/WHOLE__World-Grounded_Hand-Object_Lifted_from_Egocentric_Videos.md)（第一视角手-物重建）· [EmbodMocap](../EmbodMocap__In-the-Wild_4D_Human-Scene_Reconstruction_for_Embodied_Agents/EmbodMocap__In-the-Wild_4D_Human-Scene_Reconstruction_for_Embodied_Agents.md)（野外 4D 人-场景重建）；
-- **动作生成 / 重建作数据源**：[Kimodo](../Kimodo__Scaling_Controllable_Human_Motion_Generation/Kimodo__Scaling_Controllable_Human_Motion_Generation.md) · [ScaleMoGen](../ScaleMoGen__Autoregressive_Next-Scale_Prediction_for_Human_Motion_Generation/ScaleMoGen__Autoregressive_Next-Scale_Prediction_for_Human_Motion_Generation.md)；
+- **同模块野外重建**：[WHOLE](../WHOLE__World-Grounded_Hand-Object_Lifted_from_Egocentric_Videos/WHOLE__World-Grounded_Hand-Object_Lifted_from_Egocentric_Videos.html)（第一视角手-物重建）· [EmbodMocap](../EmbodMocap__In-the-Wild_4D_Human-Scene_Reconstruction_for_Embodied_Agents/EmbodMocap__In-the-Wild_4D_Human-Scene_Reconstruction_for_Embodied_Agents.html)（野外 4D 人-场景重建）；
+- **动作生成 / 重建作数据源**：[Kimodo](../Kimodo__Scaling_Controllable_Human_Motion_Generation/Kimodo__Scaling_Controllable_Human_Motion_Generation.html) · [ScaleMoGen](https://arxiv.org/abs/2605.11704)；
 - **接触引导控制对照**：物理动画模块的人形跟踪（接触约束 + RL 模仿）。

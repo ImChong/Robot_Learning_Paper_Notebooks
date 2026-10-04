@@ -171,6 +171,6 @@ flowchart LR
 
 ## 🔗 相关阅读
 
-- **同模块前作**：[Control Operators](../Control_Operators_for_Interactive_Character_Animation/Control_Operators_for_Interactive_Character_Animation.md)（可组合控制接口）· [MAGNet](../MAGNet__Diffusion_Forcing_for_Multi-Agent_Interaction_Sequence_Modeling/MAGNet__Diffusion_Forcing_for_Multi-Agent_Interaction_Sequence_Modeling.md) · [Learned Motion Matching](../Learned_Motion_Matching/Learned_Motion_Matching.md)；
+- **同模块前作**：[Control Operators](../Control_Operators_for_Interactive_Character_Animation/Control_Operators_for_Interactive_Character_Animation.html)（可组合控制接口）· [MAGNet](../MAGNet__Diffusion_Forcing_for_Multi-Agent_Interaction_Sequence_Modeling/MAGNet__Diffusion_Forcing_for_Multi-Agent_Interaction_Sequence_Modeling.html) · [Learned Motion Matching](../Learned_Motion_Matching/Learned_Motion_Matching.html)；
 - **生成式动作控制**：BeyondMimic（引导扩散）、OmniControl、Guided Motion Diffusion；
 - **人形动作跟踪用法对照**：GMT、HOVER、SONIC（消费参考动作的下游策略）。

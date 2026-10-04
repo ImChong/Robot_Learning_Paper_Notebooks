@@ -125,5 +125,5 @@ flowchart LR
 
 ## 🔗 相关阅读
 
-- **同模块·数据规模 / 语义控制**：[SUGAR（人类视频→技能流水线）](../SUGAR__A_Scalable_Human-Video-Driven_Generalizable_Humanoid_Loco-Manipulation_Learning_Framework/SUGAR__A_Scalable_Human-Video-Driven_Generalizable_Humanoid_Loco-Manipulation_Learning_Framework.md) · [SENTINEL（端到端语言-动作）](../SENTINEL__A_Fully_End-to-End_Language-Action_Model_for_Humanoid_Whole_Body_Control/SENTINEL__A_Fully_End-to-End_Language-Action_Model_for_Humanoid_Whole_Body_Control.md)；
+- **同模块·数据规模 / 语义控制**：[SUGAR（人类视频→技能流水线）](../SUGAR__A_Scalable_Human-Video-Driven_Generalizable_Humanoid_Loco-Manipulation_Learning_Framework/SUGAR__A_Scalable_Human-Video-Driven_Generalizable_Humanoid_Loco-Manipulation_Learning_Framework.html) · [SENTINEL（端到端语言-动作）](../SENTINEL__A_Fully_End-to-End_Language-Action_Model_for_Humanoid_Whole_Body_Control/SENTINEL__A_Fully_End-to-End_Language-Action_Model_for_Humanoid_Whole_Body_Control.html)；
 - **本仓 14 人体动作板块**（动作数据与生成）。

@@ -125,5 +125,5 @@ flowchart LR
 
 ## 🔗 相关阅读
 
-- **同模块·视触觉操作**：[Learning Visuotactile Skills with Two Multifingered Hands](../Learning_Visuotactile_Skills_with_Two_Multifingered_Hands/Learning_Visuotactile_Skills_with_Two_Multifingered_Hands.md)；
-- **柔顺/接触（本仓 04）**：[CHIP](../../04_Loco-Manipulation_and_WBC/CHIP__Adaptive_Compliance_for_Humanoid_Control_through_Hindsight_Perturbation/CHIP__Adaptive_Compliance_for_Humanoid_Control_through_Hindsight_Perturbation.md)。
+- **同模块·视触觉操作**：[Learning Visuotactile Skills with Two Multifingered Hands](../Learning_Visuotactile_Skills_with_Two_Multifingered_Hands/Learning_Visuotactile_Skills_with_Two_Multifingered_Hands.html)；
+- **柔顺/接触（本仓 04）**：[CHIP](../../04_Loco-Manipulation_and_WBC/CHIP__Adaptive_Compliance_for_Humanoid_Control_through_Hindsight_Perturbation/CHIP__Adaptive_Compliance_for_Humanoid_Control_through_Hindsight_Perturbation.html)。

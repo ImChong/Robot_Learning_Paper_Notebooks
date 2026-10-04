@@ -124,4 +124,4 @@ flowchart LR
 
 ## 🔗 相关阅读
 
-- **同模块·第一视角灵巧数据**：[Being-H0](../Being-H0__Vision-Language-Action_Pretraining_from_Large-Scale_Human_Videos/Being-H0__Vision-Language-Action_Pretraining_from_Large-Scale_Human_Videos.md) · [H-RDT](../H-RDT__Human_Manipulation_Enhanced_Bimanual_Robotic_Manipulation/H-RDT__Human_Manipulation_Enhanced_Bimanual_Robotic_Manipulation.md) · [Dexterity from Smart Lenses](../Dexterity_from_Smart_Lenses__Multi-Fingered_Manipulation_with_In-the-Wild_Human_Demos/Dexterity_from_Smart_Lenses__Multi-Fingered_Manipulation_with_In-the-Wild_Human_Demos.md)。
+- **同模块·第一视角灵巧数据**：[Being-H0](../Being-H0__Vision-Language-Action_Pretraining_from_Large-Scale_Human_Videos/Being-H0__Vision-Language-Action_Pretraining_from_Large-Scale_Human_Videos.html) · [H-RDT](../H-RDT__Human_Manipulation_Enhanced_Bimanual_Robotic_Manipulation/H-RDT__Human_Manipulation_Enhanced_Bimanual_Robotic_Manipulation.html) · [Dexterity from Smart Lenses](../Dexterity_from_Smart_Lenses__Multi-Fingered_Manipulation_with_In-the-Wild_Human_Demos/Dexterity_from_Smart_Lenses__Multi-Fingered_Manipulation_with_In-the-Wild_Human_Demos.html)。

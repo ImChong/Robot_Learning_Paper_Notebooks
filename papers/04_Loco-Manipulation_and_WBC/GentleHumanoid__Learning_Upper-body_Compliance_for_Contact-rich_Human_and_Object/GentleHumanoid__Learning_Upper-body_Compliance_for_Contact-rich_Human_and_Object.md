@@ -535,7 +535,7 @@ sequenceDiagram
 | [TWIST](../../07_Teleoperation/TWIST__Teleoperated_Whole-Body_Imitation_System/TWIST__Teleoperated_Whole-Body_Imitation_System.html) | 同组的全身遥操作；奖励设计参考了它，论文把与 TWIST 结合列为未来工作 |
 | [Retargeting Matters（GMR）](../../02_Motion_Retargeting/Retargeting_Matters__General_Motion_Retargeting_for_Humanoid_Motion_Tracking/Retargeting_Matters__General_Motion_Retargeting_for_Humanoid_Motion_Tracking.html) | 训练数据与视频 → G1 管线都用 GMR 重定向 |
 | [SafeHumanoid](../../06_Manipulation/SafeHumanoid__VLM-RAG-driven_Control_of_Upper_Body_Impedance/SafeHumanoid__VLM-RAG-driven_Control_of_Upper_Body_Impedance.html) / [HumanoidVLM](../../06_Manipulation/HumanoidVLM_Vision-Language-Guided_Impedance_Control_for_Contact-Rich_Humanoid_Manipulation/HumanoidVLM_Vision-Language-Guided_Impedance_Control_for_Contact-Rich_Humanoid_Manipulation.html) | 由 VLM 按场景选阻抗参数；GentleHumanoid 的 τ_safe 正是这类上层可以调的旋钮（论文也提到未来接视觉语言模型） |
-| [HumanPlus](../../03_High_Impact_Selection/HumanPlus_Humanoid_Shadowing_and_Imitation_from_Humans/HumanPlus_Humanoid_Shadowing_and_Imitation_from_Humans.html) / [OmniH2O](../../03_High_Impact_Selection/OmniH2O_Universal_Whole-Body_Teleoperation/OmniH2O_Universal_Whole-Body_Teleoperation.html) | 论文批评的「刚性跟踪」代表：全身跟踪做得好，但接触时把外力当扰动 |
+| [HumanPlus](../../07_Teleoperation/HumanPlus_Humanoid_Shadowing_and_Imitation_from_Humans/HumanPlus_Humanoid_Shadowing_and_Imitation_from_Humans.html) / [OmniH2O](../../03_High_Impact_Selection/OmniH2O_Universal_Whole-Body_Teleoperation/OmniH2O_Universal_Whole-Body_Teleoperation.html) | 论文批评的「刚性跟踪」代表：全身跟踪做得好，但接触时把外力当扰动 |
 
 </details>
 

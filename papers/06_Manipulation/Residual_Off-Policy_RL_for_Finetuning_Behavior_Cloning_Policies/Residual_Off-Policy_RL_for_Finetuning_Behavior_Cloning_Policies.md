@@ -116,5 +116,5 @@ flowchart LR
 
 ## 🔗 相关阅读
 
-- **同模块·残差/真机学习**：[MimicDroid（人类玩耍视频 ICL）](../MimicDroid__In-Context_Learning_for_Humanoid_Manipulation_from_Human_Play_Videos/MimicDroid__In-Context_Learning_for_Humanoid_Manipulation_from_Human_Play_Videos.md)；
-- **残差思路（本仓 04）**：[SteadyTray（残差 RL 托盘平衡）](../../04_Loco-Manipulation_and_WBC/SteadyTray__Learning_Object_Balancing_Tasks_in_Humanoid_Tray_Transport_via_Resid/SteadyTray__Learning_Object_Balancing_Tasks_in_Humanoid_Tray_Transport_via_Resid.md)。
+- **同模块·残差/真机学习**：[MimicDroid（人类玩耍视频 ICL）](../MimicDroid__In-Context_Learning_for_Humanoid_Manipulation_from_Human_Play_Videos/MimicDroid__In-Context_Learning_for_Humanoid_Manipulation_from_Human_Play_Videos.html)；
+- **残差思路（本仓 04）**：[SteadyTray（残差 RL 托盘平衡）](../../04_Loco-Manipulation_and_WBC/SteadyTray__Learning_Object_Balancing_Tasks_in_Humanoid_Tray_Transport_via_Resid/SteadyTray__Learning_Object_Balancing_Tasks_in_Humanoid_Tray_Transport_via_Resid.html)。

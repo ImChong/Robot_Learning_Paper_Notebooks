@@ -126,4 +126,4 @@ flowchart LR
 
 ## 🔗 相关阅读
 
-- **同模块·跌落安全**：[VIGOR（统一跌落安全）](../VIGOR_Visual_Goal-In-Context_Inference_for_Unified_Humanoid_Fall_Safety/VIGOR_Visual_Goal-In-Context_Inference_for_Unified_Humanoid_Fall_Safety.md)；后续将补 SafeFall、Robot Crash Course、Unified Fall-Safety Policy 等同簇工作。
+- **同模块·跌落安全**：[VIGOR（统一跌落安全）](../VIGOR_Visual_Goal-In-Context_Inference_for_Unified_Humanoid_Fall_Safety/VIGOR_Visual_Goal-In-Context_Inference_for_Unified_Humanoid_Fall_Safety.html)；后续将补 SafeFall、Robot Crash Course、Unified Fall-Safety Policy 等同簇工作。

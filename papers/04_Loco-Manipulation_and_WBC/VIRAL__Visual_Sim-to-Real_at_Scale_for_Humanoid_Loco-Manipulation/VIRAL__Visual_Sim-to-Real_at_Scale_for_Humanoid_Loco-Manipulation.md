@@ -129,5 +129,5 @@ flowchart LR
 
 ## 🔗 相关阅读
 
-- **同模块·视觉 loco-manip / sim-to-real**：[Opening the Sim-to-Real Door（纯 RGB 铰接操作）](../Opening_the_Sim-to-Real_Door_for_Humanoid_Pixel-to-Action_Policy_Transfer/Opening_the_Sim-to-Real_Door_for_Humanoid_Pixel-to-Action_Policy_Transfer.md) · [ZeroWBC](../ZeroWBC__Learning_Natural_Visuomotor_Humanoid_Control_Directly_from_Human_Egocen/ZeroWBC__Learning_Natural_Visuomotor_Humanoid_Control_Directly_from_Human_Egocen.md)；
+- **同模块·视觉 loco-manip / sim-to-real**：[Opening the Sim-to-Real Door（纯 RGB 铰接操作）](../Opening_the_Sim-to-Real_Door_for_Humanoid_Pixel-to-Action_Policy_Transfer/Opening_the_Sim-to-Real_Door_for_Humanoid_Pixel-to-Action_Policy_Transfer.html) · [ZeroWBC](../ZeroWBC__Learning_Natural_Visuomotor_Humanoid_Control_from_Egocentric_Video/ZeroWBC__Learning_Natural_Visuomotor_Humanoid_Control_from_Egocentric_Video.html)；
 - **本仓 10 Sim-to-Real 板块**。

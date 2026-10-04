@@ -136,4 +136,4 @@ flowchart LR
 
 ## 🔗 相关阅读
 
-- **同模块·可控动作扩散**：[Guided Motion Diffusion（GMD，骨盆轨迹/避障）](../Guided_Motion_Diffusion_for_Controllable_Human_Motion_Synthesis/Guided_Motion_Diffusion_for_Controllable_Human_Motion_Synthesis.md) · [Flexible Motion In-betweening](../Flexible_Motion_In-betweening_with_Diffusion_Models/Flexible_Motion_In-betweening_with_Diffusion_Models.md) · [PhysDiff（物理引导扩散）](../PhysDiff__Physics-Guided_Human_Motion_Diffusion_Model/PhysDiff__Physics-Guided_Human_Motion_Diffusion_Model.md)。
+- **同模块·可控动作扩散**：[Guided Motion Diffusion（GMD，骨盆轨迹/避障）](../Guided_Motion_Diffusion_for_Controllable_Human_Motion_Synthesis/Guided_Motion_Diffusion_for_Controllable_Human_Motion_Synthesis.html) · [Flexible Motion In-betweening](../Flexible_Motion_In-betweening_with_Diffusion_Models/Flexible_Motion_In-betweening_with_Diffusion_Models.html) · [PhysDiff（物理引导扩散）](../PhysDiff__Physics-Guided_Human_Motion_Diffusion_Model/PhysDiff__Physics-Guided_Human_Motion_Diffusion_Model.html)。

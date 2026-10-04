@@ -160,7 +160,7 @@ flowchart TB
 |---|---|
 | **重构 real-to-sim 的建模范式** | 从「正向预测 + 靠历史恢复隐藏因素」转向「反向提取 + 域翻译」，直击部分可观这一长期痛点 |
 | **借风格迁移的思路做动力学** | 把 CycleGAN 式非配对翻译引入动力学建模，动力学内容与域风格解耦 |
-| **与「辨识/随机化」互补** | 不同于 [SPI-Active](../SPI-Active__Sampling-Based_System_Identification_with_Active_Exploration/SPI-Active__Sampling-Based_System_Identification_with_Active_Exploration.md) 的参数辨识、[PolySim](../PolySim__Bridging_the_Sim-to-Real_Gap_for_Humanoid_Control_via_Multi-Simulato/PolySim__Bridging_the_Sim-to-Real_Gap_for_Humanoid_Control_via_Multi-Simulato.md) 的多仿真随机化，本文从「学习式世界模型」侧改进 |
+| **与「辨识/随机化」互补** | 不同于 [SPI-Active](../SPI-Active__Sampling-Based_System_Identification_with_Active_Exploration/SPI-Active__Sampling-Based_System_Identification_with_Active_Exploration.html) 的参数辨识、[PolySim](../PolySim__Bridging_the_Sim-to-Real_Gap_for_Humanoid_Control_via_Multi-Simulato/PolySim__Bridging_the_Sim-to-Real_Gap_for_Humanoid_Control_via_Multi-Simulato.html) 的多仿真随机化，本文从「学习式世界模型」侧改进 |
 | **跨本体通用** | 人形/四足/机械臂同一套方法，泛化性好 |
 
 ---
@@ -183,9 +183,9 @@ A：三者都在弥合 sim-real gap，但切入点不同。域随机化「盖住
 
 ## 🔗 相关阅读
 
-- [Sampling-Based System Identification with Active Exploration (SPI-Active, 2505.14266)](../SPI-Active__Sampling-Based_System_Identification_with_Active_Exploration/SPI-Active__Sampling-Based_System_Identification_with_Active_Exploration.md)：辨识优先路线，与本文「修真世界模型」思路对照，本仓库已有笔记
-- [PolySim: Multi-Simulator Domain Randomization (2510.01708)](../PolySim__Bridging_the_Sim-to-Real_Gap_for_Humanoid_Control_via_Multi-Simulato/PolySim__Bridging_the_Sim-to-Real_Gap_for_Humanoid_Control_via_Multi-Simulato.md)：仿真侧随机化路线，本仓库已有笔记
-- [Simulator Adaptation via Proprioceptive Distribution Matching (2604.11090)](../Simulator_Adaptation_via_Proprioceptive_Distribution_Matching/Simulator_Adaptation_via_Proprioceptive_Distribution_Matching.md)：同属「把仿真修得更像真机」的思路，本仓库已有笔记
+- [Sampling-Based System Identification with Active Exploration (SPI-Active, 2505.14266)](../SPI-Active__Sampling-Based_System_Identification_with_Active_Exploration/SPI-Active__Sampling-Based_System_Identification_with_Active_Exploration.html)：辨识优先路线，与本文「修真世界模型」思路对照，本仓库已有笔记
+- [PolySim: Multi-Simulator Domain Randomization (2510.01708)](../PolySim__Bridging_the_Sim-to-Real_Gap_for_Humanoid_Control_via_Multi-Simulato/PolySim__Bridging_the_Sim-to-Real_Gap_for_Humanoid_Control_via_Multi-Simulato.html)：仿真侧随机化路线，本仓库已有笔记
+- [Simulator Adaptation via Proprioceptive Distribution Matching (2604.11090)](../Simulator_Adaptation_via_Proprioceptive_Distribution_Matching/Simulator_Adaptation_via_Proprioceptive_Distribution_Matching.html)：同属「把仿真修得更像真机」的思路，本仓库已有笔记
 - [Closing the Sim-to-Real Loop: Adapting Simulation Randomization with Real World Experience (1810.05687)](https://arxiv.org/abs/1810.05687)：real-to-sim 自适应随机化经典
 
 ---

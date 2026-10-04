@@ -128,4 +128,4 @@ flowchart LR
 
 ## 🔗 相关阅读
 
-- **同模块·仿真平台/基准**：[ManiSkill-HAB（家务重排低层操作）](../ManiSkill-HAB__A_Benchmark_for_Low-Level_Manipulation_in_Home_Rearrangement_Tasks/ManiSkill-HAB__A_Benchmark_for_Low-Level_Manipulation_in_Home_Rearrangement_Tasks.md) · [RoboCasa（日常任务大规模仿真）](../RoboCasa__Large-Scale_Simulation_of_Everyday_Tasks_for_Generalist_Robots/RoboCasa__Large-Scale_Simulation_of_Everyday_Tasks_for_Generalist_Robots.md)。
+- **同模块·仿真平台/基准**：[ManiSkill-HAB（家务重排低层操作）](../ManiSkill-HAB__A_Benchmark_for_Low-Level_Manipulation_in_Home_Rearrangement_Tasks/ManiSkill-HAB__A_Benchmark_for_Low-Level_Manipulation_in_Home_Rearrangement_Tasks.html) · [RoboCasa（日常任务大规模仿真）](../RoboCasa__Large-Scale_Simulation_of_Everyday_Tasks_for_Generalist_Robots/RoboCasa__Large-Scale_Simulation_of_Everyday_Tasks_for_Generalist_Robots.html)。

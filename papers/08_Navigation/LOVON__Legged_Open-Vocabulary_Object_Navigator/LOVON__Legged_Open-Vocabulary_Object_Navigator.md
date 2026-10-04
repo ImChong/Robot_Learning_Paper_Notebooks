@@ -168,7 +168,7 @@ A：框架把高层规划/感知与底层运动解耦，运动目标通过 L2MM 
 
 - [LOVON arXiv](https://arxiv.org/abs/2507.06747) · [HTML](https://arxiv.org/html/2507.06747) · [PDF](https://arxiv.org/pdf/2507.06747) · [项目主页](https://daojiepeng.github.io/LOVON/) · [代码 DaojiePENG/LOVON](https://github.com/DaojiePENG/LOVON)
 - 同模块对照：
-  - [NaVILA](../NaVILA_Legged_Robot_Vision-Language-Action_Model_for_Navigation/NaVILA_Legged_Robot_Vision-Language-Action_Model_for_Navigation.md)（足式 VLA 导航模型）
-  - [EgoActor](../EgoActor__Grounding_Task_Planning_into_Spatial-aware_Egocentric_Actions_for_Hum/EgoActor__Grounding_Task_Planning_into_Spatial-aware_Egocentric_Actions_for_Hum.md)（VLM 任务规划落地到第一视角动作）
-  - [FocusNav](../FocusNav__Spatial_Selective_Attention_with_Waypoint_Guidance_for_Humanoid_Local/FocusNav__Spatial_Selective_Attention_with_Waypoint_Guidance_for_Humanoid_Local.md)（路径点引导的局部导航）
+  - [NaVILA](../NaVILA_Legged_Robot_Vision-Language-Action_Model_for_Navigation/NaVILA_Legged_Robot_Vision-Language-Action_Model_for_Navigation.html)（足式 VLA 导航模型）
+  - [EgoActor](../EgoActor__Grounding_Task_Planning_into_Spatial-aware_Egocentric_Actions_for_Hum/EgoActor__Grounding_Task_Planning_into_Spatial-aware_Egocentric_Actions_for_Hum.html)（VLM 任务规划落地到第一视角动作）
+  - [FocusNav](../FocusNav__Spatial_Selective_Attention_with_Waypoint_Guidance_for_Humanoid_Local/FocusNav__Spatial_Selective_Attention_with_Waypoint_Guidance_for_Humanoid_Local.html)（路径点引导的局部导航）
 - 方法线对照：LLM 分层规划 + 开放词汇检测，是「语言驱动开放世界导航」的代表工作

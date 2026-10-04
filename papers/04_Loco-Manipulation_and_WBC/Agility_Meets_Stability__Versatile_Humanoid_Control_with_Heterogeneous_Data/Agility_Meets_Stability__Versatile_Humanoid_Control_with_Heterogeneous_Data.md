@@ -129,4 +129,4 @@ flowchart LR
 
 ## 🔗 相关阅读
 
-- **同模块·多才/高动态控制**：[OmniXtreme（高动态通用性）](../OmniXtreme/OmniXtreme.md) · [EGM（数据高效高动态跟踪）](../EGM__Efficiently_Learning_General_Motion_Tracking_for_High_Dynamic_Humanoid_WBC/EGM__Efficiently_Learning_General_Motion_Tracking_for_High_Dynamic_Humanoid_WBC.md)。
+- **同模块·多才/高动态控制**：[OmniXtreme（高动态通用性）](../OmniXtreme_Breaking_the_Generality_Barrier_in_High-Dynamic_Humanoid_Control/OmniXtreme_Breaking_the_Generality_Barrier_in_High-Dynamic_Humanoid_Control.html) · [EGM（数据高效高动态跟踪）](../EGM__Efficiently_Learning_General_Motion_Tracking_for_High_Dynamic_Humanoid_WBC/EGM__Efficiently_Learning_General_Motion_Tracking_for_High_Dynamic_Humanoid_WBC.html)。

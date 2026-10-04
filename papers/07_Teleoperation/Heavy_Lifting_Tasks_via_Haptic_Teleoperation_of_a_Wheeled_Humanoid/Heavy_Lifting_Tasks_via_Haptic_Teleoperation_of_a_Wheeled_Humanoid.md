@@ -124,5 +124,5 @@ flowchart LR
 
 ## 🔗 相关阅读
 
-- **同模块·轮式/重载遥操作**：[Whole-Body Bilateral Teleop（多阶段物体参数估计）](../Whole-Body_Bilateral_Teleoperation_with_Multi-Stage_Object_Parameter_Estimation/Whole-Body_Bilateral_Teleoperation_with_Multi-Stage_Object_Parameter_Estimation.md)；
-- **负载搬运**：[SplitAdapter](../../04_Loco-Manipulation_and_WBC/SplitAdapter__Load-Aware_Humanoid_Loco-Manipulation_via_Factorized_Adaptation/SplitAdapter__Load-Aware_Humanoid_Loco-Manipulation_via_Factorized_Adaptation.md)。
+- **同模块·轮式/重载遥操作**：[Whole-Body Bilateral Teleop（多阶段物体参数估计）](../Whole-Body_Bilateral_Teleoperation_with_Multi-Stage_Object_Parameter_Estimation/Whole-Body_Bilateral_Teleoperation_with_Multi-Stage_Object_Parameter_Estimation.html)；
+- **负载搬运**：[SplitAdapter](../../04_Loco-Manipulation_and_WBC/SplitAdapter__Load-Aware_Humanoid_Loco-Manipulation_via_Factorized_Adaptation/SplitAdapter__Load-Aware_Humanoid_Loco-Manipulation_via_Factorized_Adaptation.html)。

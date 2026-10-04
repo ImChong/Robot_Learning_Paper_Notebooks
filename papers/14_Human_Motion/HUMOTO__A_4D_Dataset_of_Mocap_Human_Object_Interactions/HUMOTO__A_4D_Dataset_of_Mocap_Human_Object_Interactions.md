@@ -114,7 +114,7 @@ flowchart LR
 - **人-物交互数据稀缺**是人形「loco-manipulation」落地的关键瓶颈，HUMOTO 提供了带物体网格与接触细节的成对人-物运动，可作**重定向 / 模仿学习**的高质量素材；
 - **物理一致性（去脚滑/穿透）**对下游「人动作→机器人动作」迁移尤为重要，减少违反接触约束的坏样本；
 - **LLM 编剧的「目的性任务序列」**思路与人形「语言指令→长时程操作」高度契合，可为任务级数据合成提供范式；
-- 与本仓库 [WHOLE](../WHOLE__World-Grounded_Hand-Object_Lifted_from_Egocentric_Videos/WHOLE__World-Grounded_Hand-Object_Lifted_from_Egocentric_Videos.md)、[Efficient and Scalable Monocular HOI](../Efficient_and_Scalable_Monocular_Human-Object_Interaction_Motion_Reconstruction/Efficient_and_Scalable_Monocular_Human-Object_Interaction_Motion_Reconstruction.md) 的「人-物交互重建」形成数据侧互补。
+- 与本仓库 [WHOLE](../WHOLE__World-Grounded_Hand-Object_Lifted_from_Egocentric_Videos/WHOLE__World-Grounded_Hand-Object_Lifted_from_Egocentric_Videos.html)、[Efficient and Scalable Monocular HOI](../Efficient_and_Scalable_Monocular_Human-Object_Interaction_Motion_Reconstruction/Efficient_and_Scalable_Monocular_Human-Object_Interaction_Motion_Reconstruction.html) 的「人-物交互重建」形成数据侧互补。
 
 ---
 
@@ -132,5 +132,5 @@ flowchart LR
 
 ## 🔗 相关阅读
 
-- **同模块·人-物交互重建**：[WHOLE](../WHOLE__World-Grounded_Hand-Object_Lifted_from_Egocentric_Videos/WHOLE__World-Grounded_Hand-Object_Lifted_from_Egocentric_Videos.md) · [Efficient and Scalable Monocular HOI](../Efficient_and_Scalable_Monocular_Human-Object_Interaction_Motion_Reconstruction/Efficient_and_Scalable_Monocular_Human-Object_Interaction_Motion_Reconstruction.md) · [PICO](../PICO__Reconstructing_3D_People_In_Contact_with_Objects/PICO__Reconstructing_3D_People_In_Contact_with_Objects.md)。
-- **同模块·动作生成/通才模型**：[GENMO](../GENMO__A_Generalist_Model_for_Human_Motion/GENMO__A_Generalist_Model_for_Human_Motion.md) · [Go to Zero](../Go_to_Zero__Towards_Zero-shot_Motion_Generation_with_Million-scale_Data/Go_to_Zero__Towards_Zero-shot_Motion_Generation_with_Million-scale_Data.md)。
+- **同模块·人-物交互重建**：[WHOLE](../WHOLE__World-Grounded_Hand-Object_Lifted_from_Egocentric_Videos/WHOLE__World-Grounded_Hand-Object_Lifted_from_Egocentric_Videos.html) · [Efficient and Scalable Monocular HOI](../Efficient_and_Scalable_Monocular_Human-Object_Interaction_Motion_Reconstruction/Efficient_and_Scalable_Monocular_Human-Object_Interaction_Motion_Reconstruction.html) · [PICO](../PICO__Reconstructing_3D_People_In_Contact_with_Objects/PICO__Reconstructing_3D_People_In_Contact_with_Objects.html)。
+- **同模块·动作生成/通才模型**：[GENMO](../GENMO__A_Generalist_Model_for_Human_Motion/GENMO__A_Generalist_Model_for_Human_Motion.html) · [Go to Zero](../Go_to_Zero__Towards_Zero-shot_Motion_Generation_with_Million-scale_Data/Go_to_Zero__Towards_Zero-shot_Motion_Generation_with_Million-scale_Data.html)。

@@ -128,4 +128,4 @@ flowchart LR
 
 ## 🔗 相关阅读
 
-- **同模块·跌落安全**：[自保护跌落策略（深度 RL 涌现三角结构）](../Discovering_Self-Protective_Falling_Policy_for_Humanoid_Robot_via_Deep_RL/Discovering_Self-Protective_Falling_Policy_for_Humanoid_Robot_via_Deep_RL.md) · [VIGOR（统一跌落安全）](../VIGOR_Visual_Goal-In-Context_Inference_for_Unified_Humanoid_Fall_Safety/VIGOR_Visual_Goal-In-Context_Inference_for_Unified_Humanoid_Fall_Safety.md)。
+- **同模块·跌落安全**：[自保护跌落策略（深度 RL 涌现三角结构）](../Discovering_Self-Protective_Falling_Policy_for_Humanoid_Robot_via_Deep_RL/Discovering_Self-Protective_Falling_Policy_for_Humanoid_Robot_via_Deep_RL.html) · [VIGOR（统一跌落安全）](../VIGOR_Visual_Goal-In-Context_Inference_for_Unified_Humanoid_Fall_Safety/VIGOR_Visual_Goal-In-Context_Inference_for_Unified_Humanoid_Fall_Safety.html)。

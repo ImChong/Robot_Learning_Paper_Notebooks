@@ -178,4 +178,4 @@ flowchart LR
 
 - **特权信息 / teacher-student**：RMA、Concurrent SRL、特权蒸馏一类经典范式（本文的「非对称」与「对比」是其延伸）；
 - **对比 / 自监督表征**：SimSiam（本文骨架）、SPR（动力学预测式表征）、VAE（重建式表征）——SRL4Humanoid 把它们统一可比；
-- **同模块·表征 / 适配**：[SplitAdapter（因子化上下文适配）](../SplitAdapter__Load-Aware_Humanoid_Loco-Manipulation_via_Factorized_Adaptation/SplitAdapter__Load-Aware_Humanoid_Loco-Manipulation_via_Factorized_Adaptation.md) · [PvP-Privileged 思路可与动作跟踪类全身控制结合](../Robust_and_Generalized_Humanoid_Motion_Tracking/Robust_and_Generalized_Humanoid_Motion_Tracking.md)。
+- **同模块·表征 / 适配**：[SplitAdapter（因子化上下文适配）](../SplitAdapter__Load-Aware_Humanoid_Loco-Manipulation_via_Factorized_Adaptation/SplitAdapter__Load-Aware_Humanoid_Loco-Manipulation_via_Factorized_Adaptation.html) · [PvP-Privileged 思路可与动作跟踪类全身控制结合](../Robust_and_Generalized_Humanoid_Motion_Tracking/Robust_and_Generalized_Humanoid_Motion_Tracking.html)。

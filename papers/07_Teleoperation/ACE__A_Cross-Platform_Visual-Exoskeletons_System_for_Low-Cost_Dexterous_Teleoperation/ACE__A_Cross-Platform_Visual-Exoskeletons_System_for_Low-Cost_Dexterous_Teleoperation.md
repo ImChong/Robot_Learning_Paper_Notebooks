@@ -122,4 +122,4 @@ flowchart LR
 
 ## 🔗 相关阅读
 
-- **同模块·灵巧/外骨骼遥操作**：[Bunny-VisionPro（双手灵巧 VR 遥操作）](../Bunny-VisionPro__Real-Time_Bimanual_Dexterous_Teleoperation_for_Imitation_Learning/Bunny-VisionPro__Real-Time_Bimanual_Dexterous_Teleoperation_for_Imitation_Learning.md) · [NuExo（上肢外骨骼）](../NuExo__A_Wearable_Exoskeleton_Covering_all_Upper_Limb_ROM/NuExo__A_Wearable_Exoskeleton_Covering_all_Upper_Limb_ROM.md)。
+- **同模块·灵巧/外骨骼遥操作**：[Bunny-VisionPro（双手灵巧 VR 遥操作）](../Bunny-VisionPro__Real-Time_Bimanual_Dexterous_Teleoperation_for_Imitation_Learning/Bunny-VisionPro__Real-Time_Bimanual_Dexterous_Teleoperation_for_Imitation_Learning.html) · [NuExo（上肢外骨骼）](../NuExo__A_Wearable_Exoskeleton_Covering_all_Upper_Limb_ROM/NuExo__A_Wearable_Exoskeleton_Covering_all_Upper_Limb_ROM.html)。

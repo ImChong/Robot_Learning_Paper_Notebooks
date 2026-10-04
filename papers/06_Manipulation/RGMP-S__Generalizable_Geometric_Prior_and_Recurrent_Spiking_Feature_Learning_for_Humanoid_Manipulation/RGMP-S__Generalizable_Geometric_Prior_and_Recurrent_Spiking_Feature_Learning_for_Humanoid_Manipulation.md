@@ -226,6 +226,6 @@ A：① 重训 YOLOv8 适配新相机 / 新物体；② 重训 RASNet（或做�
 - 源码：[GitHub · xtli12/RGMP-S](https://github.com/xtli12/RGMP-S)
 - 后续工作（RGMP，2025-11）：[arXiv 2511.09141](https://arxiv.org/abs/2511.09141) — 把同一框架进一步扩展为更通用的"多模态策略"
 - 同模块对照：
-  - [HumanoidVLM](../HumanoidVLM_Vision-Language-Guided_Impedance_Control_for_Contact-Rich_Humanoid_Manipulation/HumanoidVLM_Vision-Language-Guided_Impedance_Control_for_Contact-Rich_Humanoid_Manipulation.md)（VLM + FAISS-RAG 选阻抗参数）
-  - [cuRoboV2](../cuRoboV2_Dynamics-Aware_Motion_Generation_with_Depth-Fused_Distance_Fields/cuRoboV2_Dynamics-Aware_Motion_Generation_with_Depth-Fused_Distance_Fields.md)（GPU 加速运动生成）
-  - [DreamDojo](../DreamDojo_A_Generalist_Robot_World_Model_from_Large-Scale_Human_Videos/DreamDojo_A_Generalist_Robot_World_Model_from_Large-Scale_Human_Videos.md)（视频扩散世界模型）
+  - [HumanoidVLM](../HumanoidVLM_Vision-Language-Guided_Impedance_Control_for_Contact-Rich_Humanoid_Manipulation/HumanoidVLM_Vision-Language-Guided_Impedance_Control_for_Contact-Rich_Humanoid_Manipulation.html)（VLM + FAISS-RAG 选阻抗参数）
+  - [cuRoboV2](../cuRoboV2_Dynamics-Aware_Motion_Generation_with_Depth-Fused_Distance_Fields/cuRoboV2_Dynamics-Aware_Motion_Generation_with_Depth-Fused_Distance_Fields.html)（GPU 加速运动生成）
+  - [DreamDojo](../DreamDojo_A_Generalist_Robot_World_Model_from_Large-Scale_Human_Videos/DreamDojo_A_Generalist_Robot_World_Model_from_Large-Scale_Human_Videos.html)（视频扩散世界模型）

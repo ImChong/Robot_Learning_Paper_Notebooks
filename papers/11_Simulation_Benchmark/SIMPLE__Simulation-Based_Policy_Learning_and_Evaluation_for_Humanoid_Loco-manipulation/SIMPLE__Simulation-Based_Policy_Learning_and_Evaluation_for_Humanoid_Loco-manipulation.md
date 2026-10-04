@@ -179,8 +179,8 @@ A：运动规划自动生成（CuRobo+BoDex）无需人力、可大规模跑，�
 ## 🔗 相关阅读
 
 - [SIMPLE 项目主页](https://psi-lab.ai/SIMPLE/) / [GitHub 仓库](https://github.com/physical-superintelligence-lab/SIMPLE)：内置对 Ψ₀ / π₀.₅ / GR00T / DreamZero 等主流 VLA 的支持
-- [Ψ₀（本仓库已有笔记）](../../04_Loco-Manipulation_and_WBC/Ψ₀__An_Open_Foundation_Model_Towards_Universal_Humanoid_Loco-Manipulation/Ψ₀__An_Open_Foundation_Model_Towards_Universal_Humanoid_Loco-Manipulation.md)：SIMPLE 里最强的开放全身移动操作基础模型
-- [Genie Sim 3.0（本仓库已有笔记）](../../06_Manipulation/Genie_Sim_3.0__A_High-Fidelity_Comprehensive_Simulation_Platform_for_Humanoid_Robot/Genie_Sim_3.0__A_High-Fidelity_Comprehensive_Simulation_Platform_for_Humanoid_Robot.md)：基于 Isaac Sim 的一体化人形操作仿真平台
+- [Ψ₀（本仓库已有笔记）](../../04_Loco-Manipulation_and_WBC/Ψ₀__An_Open_Foundation_Model_Towards_Universal_Humanoid_Loco-Manipulation/Ψ₀__An_Open_Foundation_Model_Towards_Universal_Humanoid_Loco-Manipulation.html)：SIMPLE 里最强的开放全身移动操作基础模型
+- [Genie Sim 3.0（本仓库已有笔记）](../../06_Manipulation/Genie_Sim_3.0__A_High-Fidelity_Comprehensive_Simulation_Platform_for_Humanoid_Robot/Genie_Sim_3.0__A_High-Fidelity_Comprehensive_Simulation_Platform_for_Humanoid_Robot.html)：基于 Isaac Sim 的一体化人形操作仿真平台
 - [HumanoidBench (arXiv 2403.10506)](https://arxiv.org/abs/2403.10506)：全身控制基准，本仓库已有笔记
 - [MolmoSpaces (arXiv 2602.11337)](https://arxiv.org/abs/2602.11337)：大规模室内仿真生态，本仓库已有笔记
 - [Objaverse](https://objaverse.allenai.org/) / [HSSD](https://3dlg-hcvc.github.io/hssd/)：SIMPLE 的物体与场景资产来源

@@ -128,5 +128,5 @@ flowchart LR
 
 ## 🔗 相关阅读
 
-- **同模块·重载/轮式遥操作**：[Heavy Lifting Tasks via Haptic Teleoperation of a Wheeled Humanoid](../Heavy_Lifting_Tasks_via_Haptic_Teleoperation_of_a_Wheeled_Humanoid/Heavy_Lifting_Tasks_via_Haptic_Teleoperation_of_a_Wheeled_Humanoid.md)；
-- **负载/物体动力学**：[SplitAdapter（负载自适应）](../../04_Loco-Manipulation_and_WBC/SplitAdapter__Load-Aware_Humanoid_Loco-Manipulation_via_Factorized_Adaptation/SplitAdapter__Load-Aware_Humanoid_Loco-Manipulation_via_Factorized_Adaptation.md)。
+- **同模块·重载/轮式遥操作**：[Heavy Lifting Tasks via Haptic Teleoperation of a Wheeled Humanoid](../Heavy_Lifting_Tasks_via_Haptic_Teleoperation_of_a_Wheeled_Humanoid/Heavy_Lifting_Tasks_via_Haptic_Teleoperation_of_a_Wheeled_Humanoid.html)；
+- **负载/物体动力学**：[SplitAdapter（负载自适应）](../../04_Loco-Manipulation_and_WBC/SplitAdapter__Load-Aware_Humanoid_Loco-Manipulation_via_Factorized_Adaptation/SplitAdapter__Load-Aware_Humanoid_Loco-Manipulation_via_Factorized_Adaptation.html)。

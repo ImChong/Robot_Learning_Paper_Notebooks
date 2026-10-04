@@ -267,8 +267,8 @@ flowchart TB
 |---|---|
 | **"特权信息蒸馏"路线的二阶进化** | 从 [RMA](https://arxiv.org/abs/2107.04034) 的 MSE 回归 → 本文的 InfoNCE，是同一思路在表征学习方法上的升级 |
 | **跟 [HIM / PIM](https://arxiv.org/abs/2411.14386) 互为镜像** | 内部模型路线强调"预测未来观测"，对比学习路线强调"对齐当下特权"；可融合 |
-| **跟 [PolySim](../PolySim__Bridging_the_Sim-to-Real_Gap_for_Humanoid_Control_via_Multi-Simulato/PolySim__Bridging_the_Sim-to-Real_Gap_for_Humanoid_Control_via_Multi-Simulato.md) 思路正交** | PolySim 在仿真侧压窄结构性 gap，本文在表征侧让策略"看得更远" |
-| **跟 [LIFT](../LIFT__Towards_Bridging_the_Gap_between_Large-Scale_Pretraining_and_Efficient_F/LIFT__Towards_Bridging_the_Gap_between_Large-Scale_Pretraining_and_Efficient_F.md) 互补** | LIFT 主打"超大规模预训练 + 高效微调"，本文用"表征学习"换取数据效率 |
+| **跟 [PolySim](../PolySim__Bridging_the_Sim-to-Real_Gap_for_Humanoid_Control_via_Multi-Simulato/PolySim__Bridging_the_Sim-to-Real_Gap_for_Humanoid_Control_via_Multi-Simulato.html) 思路正交** | PolySim 在仿真侧压窄结构性 gap，本文在表征侧让策略"看得更远" |
+| **跟 [LIFT](../LIFT__Towards_Bridging_the_Gap_between_Large-Scale_Pretraining_and_Efficient_F/LIFT__Towards_Bridging_the_Gap_between_Large-Scale_Pretraining_and_Efficient_F.html) 互补** | LIFT 主打"超大规模预训练 + 高效微调"，本文用"表征学习"换取数据效率 |
 | **降低硬件依赖** | 服务机器人 / 工业人形如能保持本体感知 baseline 性能，部署成本会显著下降 |
 
 ---
@@ -297,9 +297,9 @@ A：论文未给出细节，但常用做法是**跨 batch（跨并行环境 + �
 - [RMA: Rapid Motor Adaptation for Legged Robots (2107.04034)](https://arxiv.org/abs/2107.04034)：特权蒸馏路线奠基（MSE 回归）
 - [Learning Humanoid Locomotion with Perceptive Internal Model (2411.14386)](https://arxiv.org/abs/2411.14386)：同期"内部模型"路线，预测未来观测
 - [DreamWaQ (2301.10602)](https://arxiv.org/abs/2301.10602)：四足版本的"用本体感知重建特权"
-- [PolySim: Multi-Simulator Domain Randomization (2510.01708)](../PolySim__Bridging_the_Sim-to-Real_Gap_for_Humanoid_Control_via_Multi-Simulato/PolySim__Bridging_the_Sim-to-Real_Gap_for_Humanoid_Control_via_Multi-Simulato.md)：仿真侧 sim-to-real 路线，本仓库已有笔记
-- [LIFT: Large-Scale Pretraining + Efficient Finetuning (2601.21363)](../LIFT__Towards_Bridging_the_Gap_between_Large-Scale_Pretraining_and_Efficient_F/LIFT__Towards_Bridging_the_Gap_between_Large-Scale_Pretraining_and_Efficient_F.md)：另一条"提高数据效率"的路线，本仓库已有笔记
-- [RAPT: OOD Detection for Sim-to-Real Humanoids (2602.01515)](../RAPT__Model-Predictive_Out-of-Distribution_Detection_and_Failure_Diagnosis_for_/RAPT__Model-Predictive_Out-of-Distribution_Detection_and_Failure_Diagnosis_for_.md)：部署侧 sim-to-real 监控，本仓库已有笔记
+- [PolySim: Multi-Simulator Domain Randomization (2510.01708)](../PolySim__Bridging_the_Sim-to-Real_Gap_for_Humanoid_Control_via_Multi-Simulato/PolySim__Bridging_the_Sim-to-Real_Gap_for_Humanoid_Control_via_Multi-Simulato.html)：仿真侧 sim-to-real 路线，本仓库已有笔记
+- [LIFT: Large-Scale Pretraining + Efficient Finetuning (2601.21363)](../LIFT__Towards_Bridging_the_Gap_between_Large-Scale_Pretraining_and_Efficient_F/LIFT__Towards_Bridging_the_Gap_between_Large-Scale_Pretraining_and_Efficient_F.html)：另一条"提高数据效率"的路线，本仓库已有笔记
+- [RAPT: OOD Detection for Sim-to-Real Humanoids (2602.01515)](../RAPT__Model-Predictive_Out-of-Distribution_Detection_and_Failure_Diagnosis_for_/RAPT__Model-Predictive_Out-of-Distribution_Detection_and_Failure_Diagnosis_for_.html)：部署侧 sim-to-real 监控，本仓库已有笔记
 - [CMR: Contractive Mapping Embeddings for Robust Humanoid Locomotion (2602.03511)](https://arxiv.org/abs/2602.03511)：另一种表征学习路线（收缩映射）
 - [PvP: Proprioceptive-Privileged Contrastive Representations (2512.13093)](https://arxiv.org/abs/2512.13093)：后续在 WBC 上把同类思想推广到全身控制
 

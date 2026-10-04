@@ -124,4 +124,4 @@ flowchart LR
 
 ## 🔗 相关阅读
 
-- **同模块·仿真平台**：[Humanoid World Models（人形世界模型）](../Humanoid_World_Models__Open_World_Foundation_Models_for_Humanoid_Robotics/Humanoid_World_Models__Open_World_Foundation_Models_for_Humanoid_Robotics.md) · 本仓 11 其它仿真/基准工作。
+- **同模块·仿真平台**：[Humanoid World Models（人形世界模型）](../Humanoid_World_Models__Open_World_Foundation_Models_for_Humanoid_Robotics/Humanoid_World_Models__Open_World_Foundation_Models_for_Humanoid_Robotics.html) · 本仓 11 其它仿真/基准工作。

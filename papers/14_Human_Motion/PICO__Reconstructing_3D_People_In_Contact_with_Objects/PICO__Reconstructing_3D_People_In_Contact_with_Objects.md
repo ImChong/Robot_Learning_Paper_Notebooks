@@ -120,5 +120,5 @@ flowchart LR
 
 ## 🔗 相关阅读
 
-- **同模块·人体/交互重建**：[ClimbingCap（攀岩动捕）](../ClimbingCap__Multi-Modal_Dataset_and_Method_for_Rock_Climbing_in_World_Coordinate/ClimbingCap__Multi-Modal_Dataset_and_Method_for_Rock_Climbing_in_World_Coordinate.md)；
-- **接触为中心（本仓 04）**：[从人-人示范学人-人形交互（PAIR）](../../04_Loco-Manipulation_and_WBC/Learning_Whole-Body_Human-Humanoid_Interaction_from_Human-Human_Demonstrations/Learning_Whole-Body_Human-Humanoid_Interaction_from_Human-Human_Demonstrations.md)。
+- **同模块·人体/交互重建**：[ClimbingCap（攀岩动捕）](../ClimbingCap__Multi-Modal_Dataset_and_Method_for_Rock_Climbing_in_World_Coordinate/ClimbingCap__Multi-Modal_Dataset_and_Method_for_Rock_Climbing_in_World_Coordinate.html)；
+- **接触为中心（本仓 04）**：[从人-人示范学人-人形交互（PAIR）](../../04_Loco-Manipulation_and_WBC/Learning_Whole-Body_Human-Humanoid_Interaction_from_Human-Human_Demonstrations/Learning_Whole-Body_Human-Humanoid_Interaction_from_Human-Human_Demonstrations.html)。

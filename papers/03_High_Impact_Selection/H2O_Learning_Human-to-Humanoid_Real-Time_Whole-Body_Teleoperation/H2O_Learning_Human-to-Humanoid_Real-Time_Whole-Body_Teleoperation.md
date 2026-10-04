@@ -236,12 +236,12 @@ A：OmniH2O 把输入接口从 RGB 扩到 VR、语言、示范数据，把目标
 
 | 论文 | 关系 |
 |------|------|
-| [PHC](../../01_Foundational_RL/PHC_Perpetual_Humanoid_Control/PHC_Perpetual_Humanoid_Control.md) | 同组的仿真角色全身模仿器；成功率定义与特权模仿器思路的来源 |
-| [PULSE](../../01_Foundational_RL/PULSE_Physics-based_Universal_Latent_Space/PULSE_Physics-based_Universal_Latent_Space.md) | 特权模仿器按 PULSE 的状态空间与 hard-negative mining 训练 |
-| [Expressive WBC](../Expressive_Whole-Body_Control_for_Humanoid_Robots/Expressive_Whole-Body_Control_for_Humanoid_Robots.md) | 同期工作：上半身跟踪 + 根速度，离线动作 |
-| [OmniH2O](../OmniH2O_Universal_Whole-Body_Teleoperation/OmniH2O_Universal_Whole-Body_Teleoperation.md) | 直接后续：多输入接口、教师—学生、灵巧手 |
-| [HOVER](../HOVER_Versatile_Neural_Whole-Body_Controller/HOVER_Versatile_Neural_Whole-Body_Controller.md) | 把 ExBody / H2O / OmniH2O 的命令空间统一进一个策略 |
-| [TWIST](../../07_Teleoperation/TWIST__Teleoperated_Whole-Body_Imitation_System/TWIST__Teleoperated_Whole-Body_Imitation_System.md) | 改用光学动捕做全身遥操作，同样走教师—学生 |
+| [PHC](../../01_Foundational_RL/PHC_Perpetual_Humanoid_Control/PHC_Perpetual_Humanoid_Control.html) | 同组的仿真角色全身模仿器；成功率定义与特权模仿器思路的来源 |
+| [PULSE](../../01_Foundational_RL/PULSE_Physics-based_Universal_Latent_Space/PULSE_Physics-based_Universal_Latent_Space.html) | 特权模仿器按 PULSE 的状态空间与 hard-negative mining 训练 |
+| [Expressive WBC](../Expressive_Whole-Body_Control_for_Humanoid_Robots/Expressive_Whole-Body_Control_for_Humanoid_Robots.html) | 同期工作：上半身跟踪 + 根速度，离线动作 |
+| [OmniH2O](../OmniH2O_Universal_Whole-Body_Teleoperation/OmniH2O_Universal_Whole-Body_Teleoperation.html) | 直接后续：多输入接口、教师—学生、灵巧手 |
+| [HOVER](../HOVER_Versatile_Neural_Whole-Body_Controller/HOVER_Versatile_Neural_Whole-Body_Controller.html) | 把 ExBody / H2O / OmniH2O 的命令空间统一进一个策略 |
+| [TWIST](../../07_Teleoperation/TWIST__Teleoperated_Whole-Body_Imitation_System/TWIST__Teleoperated_Whole-Body_Imitation_System.html) | 改用光学动捕做全身遥操作，同样走教师—学生 |
 
 ---
 

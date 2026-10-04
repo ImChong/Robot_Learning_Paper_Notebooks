@@ -213,7 +213,7 @@ flowchart TD
 | **「为什么人形仍要做自研 / 多传感器融合」的硬证据** | 任何一款现成商用 VIO 都不足以独自撑起人形长程定位 —— 必须叠加 InEKF、AutoOdom、Kimera、ORB-SLAM3 等冗余手段 |
 | **给选型给硬性参考** | 工程团队在「T265 还是 ZED 2」「该不该上 iPhone 当备份」之间做决策，可以直接引用本文 |
 | **数据采集开源 = 复现成本极低** | 想自己复刻一次评测，只要按 [ARKit-Data-Logger](https://github.com/PyojinKim/ARKit-Data-Logger) / [ARCore-Data-Logger](https://github.com/PyojinKim/ARCore-Data-Logger) README 走一遍即可 |
-| **跟模块内其他笔记呼应** | 本系列已覆盖学习里程计（[AutoOdom #368](AutoOdom__Learning_Auto-regressive_Proprioceptive_Odometry_for_Legged_Locomotio)）、InEKF + 学习（[InEKFormer #369](../InEKFormer__A_Hybrid_State_Estimator_for_Humanoid_Robots)）、PINN + UKF 力矩估计（[PINN+UKF #370](../Physics-Informed_Neural_Networks_with_UKF_for_Sensorless_Joint_Torque_Estimation)）、经典 Contact-Aided InEKF（[#372 ↑](../Contact-Aided_Invariant_EKF_for_Legged_Robots)）；本文补上**「商用黑盒 VIO 横评」**这一拼图 |
+| **跟模块内其他笔记呼应** | 本系列已覆盖学习里程计（[AutoOdom #368](../AutoOdom__Learning_Auto-regressive_Proprioceptive_Odometry_for_Legged_Locomotio/AutoOdom__Learning_Auto-regressive_Proprioceptive_Odometry_for_Legged_Locomotio.html)）、InEKF + 学习（[InEKFormer #369](../InEKFormer__A_Hybrid_State_Estimator_for_Humanoid_Robots/InEKFormer__A_Hybrid_State_Estimator_for_Humanoid_Robots.html)）、PINN + UKF 力矩估计（[PINN+UKF #370](../Physics-Informed_Neural_Networks_with_UKF_for_Sensorless_Joint_Torque_Estimation/Physics-Informed_Neural_Networks_with_UKF_for_Sensorless_Joint_Torque_Estimation.html)）、经典 Contact-Aided InEKF（[#372 ↑](../Contact-Aided_Invariant_EKF_for_Legged_Robots/Contact-Aided_Invariant_EKF_for_Legged_Robots.html)）；本文补上**「商用黑盒 VIO 横评」**这一拼图 |
 
 ---
 

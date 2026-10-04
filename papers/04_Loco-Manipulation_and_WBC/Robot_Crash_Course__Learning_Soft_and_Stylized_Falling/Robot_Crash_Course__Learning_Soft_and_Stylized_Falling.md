@@ -127,4 +127,4 @@ flowchart LR
 
 ## 🔗 相关阅读
 
-- **同模块·跌落安全**：[SafeFall（GRU 预测 + RL 保护）](../SafeFall__Learning_Protective_Control_for_Humanoid_Robots/SafeFall__Learning_Protective_Control_for_Humanoid_Robots.md) · [自保护跌落策略](../Discovering_Self-Protective_Falling_Policy_for_Humanoid_Robot_via_Deep_RL/Discovering_Self-Protective_Falling_Policy_for_Humanoid_Robot_via_Deep_RL.md) · [统一跌落安全策略](../Unified_Humanoid_Fall-Safety_Policy_from_a_Few_Demonstrations/Unified_Humanoid_Fall-Safety_Policy_from_a_Few_Demonstrations.md)。
+- **同模块·跌落安全**：[SafeFall（GRU 预测 + RL 保护）](../SafeFall__Learning_Protective_Control_for_Humanoid_Robots/SafeFall__Learning_Protective_Control_for_Humanoid_Robots.html) · [自保护跌落策略](../Discovering_Self-Protective_Falling_Policy_for_Humanoid_Robot_via_Deep_RL/Discovering_Self-Protective_Falling_Policy_for_Humanoid_Robot_via_Deep_RL.html) · [统一跌落安全策略](../Unified_Humanoid_Fall-Safety_Policy_from_a_Few_Demonstrations/Unified_Humanoid_Fall-Safety_Policy_from_a_Few_Demonstrations.html)。

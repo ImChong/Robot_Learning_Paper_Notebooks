@@ -1,6 +1,6 @@
 ---
 layout: paper
-paper_order: 16
+paper_order: 17
 title: "Attention Is All You Need (Transformer)"
 category: "基础强化学习 Foundational RL"
 zhname: "Transformer：注意力就是你所需要的一切"
@@ -34,7 +34,7 @@ demos: ["transformer"]
 
 ## 🎯 一句话总结
 
-Transformer 把序列建模里的「时间步循环」换成「一层之内所有位置两两算注意力」：串行步数从 $O(n)$ 降到 $O(1)$，训练可以整句并行。核心公式只有一行 $\mathrm{softmax}(QK^\top/\sqrt{d_k})V$，再加多头、正弦位置编码、残差 + LayerNorm 和逐位置 FFN。它是一篇**机器翻译**论文，不含任何机器人或强化学习内容；放进本站基础板块，是因为后面读到的 [Diffusion Policy](../Diffusion_Policy/Diffusion_Policy.md) 的 Transformer 变体、[GR00T N1](../../03_High_Impact_Selection/GR00T_N1_Humanoid_Foundation_Model/GR00T_N1_Humanoid_Foundation_Model.md) 的 DiT 动作头、[π₀](../../03_High_Impact_Selection/Pi0_A_Vision-Language-Action_Flow_Model_for_General_Robot_Control/Pi0_A_Vision-Language-Action_Flow_Model_for_General_Robot_Control.md) 的 Gemma 主干都直接用这套块。
+Transformer 把序列建模里的「时间步循环」换成「一层之内所有位置两两算注意力」：串行步数从 $O(n)$ 降到 $O(1)$，训练可以整句并行。核心公式只有一行 $\mathrm{softmax}(QK^\top/\sqrt{d_k})V$，再加多头、正弦位置编码、残差 + LayerNorm 和逐位置 FFN。它是一篇**机器翻译**论文，不含任何机器人或强化学习内容；放进本站基础板块，是因为后面读到的 [Diffusion Policy](../Diffusion_Policy/Diffusion_Policy.html) 的 Transformer 变体、[GR00T N1](../../03_High_Impact_Selection/GR00T_N1_Humanoid_Foundation_Model/GR00T_N1_Humanoid_Foundation_Model.html) 的 DiT 动作头、[π₀](../../03_High_Impact_Selection/Pi0_A_Vision-Language-Action_Flow_Model_for_General_Robot_Control/Pi0_A_Vision-Language-Action_Flow_Model_for_General_Robot_Control.html) 的 Gemma 主干都直接用这套块。
 
 > 🎮 **本文内嵌 1 段讲解动画 + 1 段配音视频**（不用装任何东西）：
 > 1. [七幕动画：Transformer 全流程](#tf-explainer-anim) —— 约 87 秒串完「RNN 的串行瓶颈 → 缩放点积注意力手算 → 为什么除以 $\sqrt{d_k}$ → 多头 → 位置编码 → 编码器 / 解码器与因果掩码 → 训练配方与结果」
@@ -568,10 +568,10 @@ A：论文本身没有。后来的 VLA 用它做主干：π₀ 的 PaliGemma（G
 
 <h3 id="相关阅读">相关阅读</h3>
 
-- 本站 [Diffusion Policy](../Diffusion_Policy/Diffusion_Policy.md)：去噪网络除了 CNN 还有时序 Transformer 版本。
-- 本站 [GR00T N1](../../03_High_Impact_Selection/GR00T_N1_Humanoid_Foundation_Model/GR00T_N1_Humanoid_Foundation_Model.md)：Eagle-2 VLM + DiT 动作头，交叉注意力连接。
-- 本站 [π₀](../../03_High_Impact_Selection/Pi0_A_Vision-Language-Action_Flow_Model_for_General_Robot_Control/Pi0_A_Vision-Language-Action_Flow_Model_for_General_Robot_Control.md)：同一个 Transformer 里两套权重，只在自注意力层交互；位置编码的正弦函数被借来编码流匹配时间步。
-- 本站 [π₀.₅](../../03_High_Impact_Selection/Pi05_A_Vision-Language-Action_Model_with_Open-World_Generalization/Pi05_A_Vision-Language-Action_Model_with_Open-World_Generalization.md)：同一个模型先输出文本子任务，再输出连续动作。
+- 本站 [Diffusion Policy](../Diffusion_Policy/Diffusion_Policy.html)：去噪网络除了 CNN 还有时序 Transformer 版本。
+- 本站 [GR00T N1](../../03_High_Impact_Selection/GR00T_N1_Humanoid_Foundation_Model/GR00T_N1_Humanoid_Foundation_Model.html)：Eagle-2 VLM + DiT 动作头，交叉注意力连接。
+- 本站 [π₀](../../03_High_Impact_Selection/Pi0_A_Vision-Language-Action_Flow_Model_for_General_Robot_Control/Pi0_A_Vision-Language-Action_Flow_Model_for_General_Robot_Control.html)：同一个 Transformer 里两套权重，只在自注意力层交互；位置编码的正弦函数被借来编码流匹配时间步。
+- 本站 [π₀.₅](../../03_High_Impact_Selection/Pi05_A_Vision-Language-Action_Model_with_Open-World_Generalization/Pi05_A_Vision-Language-Action_Model_with_Open-World_Generalization.html)：同一个模型先输出文本子任务，再输出连续动作。
 - [Layer Normalization（Ba et al., 2016）](https://arxiv.org/abs/1607.06450)、[Deep Residual Learning（He et al., 2016）](https://arxiv.org/abs/1512.03385)：残差 + LayerNorm 的来源。
 
 </details>

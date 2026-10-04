@@ -168,7 +168,7 @@ sequenceDiagram
 - **数据侧的「补全」**：把机器人学习数据从「桌面机械臂」拉到「移动 + 双臂 + 灵巧手」的人形形态，是通向通用人形操作的必要地基。
 - **触觉 / LiDAR 值得纳入**：多模态（尤其触觉与 LiDAR）为接触密集、开放场景任务提供了额外监督信号。
 - **评测标准化**：云端统一评测缓解了人形研究「各测各」的复现难题，利于方法横向对比。
-- 与仓库中 [RoboTacDex](../RoboTacDex__A_Dexterous_Visual-Tactile-Action_Dataset_for_Humanoid_Manipulation/RoboTacDex__A_Dexterous_Visual-Tactile-Action_Dataset_for_Humanoid_Manipulation.md)、[A Humanoid Visual-Tactile-Action Dataset](../A_Humanoid_Visual-Tactile-Action_Dataset_for_Contact-Rich_Manipulation/A_Humanoid_Visual-Tactile-Action_Dataset_for_Contact-Rich_Manipulation.md) 同属「多模态人形操作数据集」路线，但本文任务面更广（含人-人形交互与 loco-manipulation）并自带云端评测。
+- 与仓库中 [RoboTacDex](../RoboTacDex__A_Dexterous_Visual-Tactile-Action_Dataset_for_Humanoid_Manipulation/RoboTacDex__A_Dexterous_Visual-Tactile-Action_Dataset_for_Humanoid_Manipulation.html)、[A Humanoid Visual-Tactile-Action Dataset](../A_Humanoid_Visual-Tactile-Action_Dataset_for_Contact-Rich_Manipulation/A_Humanoid_Visual-Tactile-Action_Dataset_for_Contact-Rich_Manipulation.html) 同属「多模态人形操作数据集」路线，但本文任务面更广（含人-人形交互与 loco-manipulation）并自带云端评测。
 
 ---
 
@@ -187,6 +187,6 @@ sequenceDiagram
 
 ## 🔗 相关阅读
 
-- **同模块 · 多模态操作数据集**：[RoboTacDex](../RoboTacDex__A_Dexterous_Visual-Tactile-Action_Dataset_for_Humanoid_Manipulation/RoboTacDex__A_Dexterous_Visual-Tactile-Action_Dataset_for_Humanoid_Manipulation.md) · [A Humanoid Visual-Tactile-Action Dataset](../A_Humanoid_Visual-Tactile-Action_Dataset_for_Contact-Rich_Manipulation/A_Humanoid_Visual-Tactile-Action_Dataset_for_Contact-Rich_Manipulation.md)
-- **同模块 · 人类视频/数据规模化**：[RoboEdit](../RoboEdit__Turning_Human_Manipulation_Videos_into_Scalable_Robot_Experience/RoboEdit__Turning_Human_Manipulation_Videos_into_Scalable_Robot_Experience.md) · [EgoDex](../EgoDex__Learning_Dexterous_Manipulation_from_Large-Scale_Egocentric_Video/EgoDex__Learning_Dexterous_Manipulation_from_Large-Scale_Egocentric_Video.md)
-- **同模块 · 仿真/评测平台**：[Genie Sim 3.0](../Genie_Sim_3.0__A_High-Fidelity_Comprehensive_Simulation_Platform_for_Humanoid_Robot/Genie_Sim_3.0__A_High-Fidelity_Comprehensive_Simulation_Platform_for_Humanoid_Robot.md)
+- **同模块 · 多模态操作数据集**：[RoboTacDex](../RoboTacDex__A_Dexterous_Visual-Tactile-Action_Dataset_for_Humanoid_Manipulation/RoboTacDex__A_Dexterous_Visual-Tactile-Action_Dataset_for_Humanoid_Manipulation.html) · [A Humanoid Visual-Tactile-Action Dataset](../A_Humanoid_Visual-Tactile-Action_Dataset_for_Contact-Rich_Manipulation/A_Humanoid_Visual-Tactile-Action_Dataset_for_Contact-Rich_Manipulation.html)
+- **同模块 · 人类视频/数据规模化**：[RoboEdit](../RoboEdit__Turning_Human_Manipulation_Videos_into_Scalable_Robot_Experience/RoboEdit__Turning_Human_Manipulation_Videos_into_Scalable_Robot_Experience.html) · [EgoDex](../EgoDex__Learning_Dexterous_Manipulation_from_Large-Scale_Egocentric_Video/EgoDex__Learning_Dexterous_Manipulation_from_Large-Scale_Egocentric_Video.html)
+- **同模块 · 仿真/评测平台**：[Genie Sim 3.0](../Genie_Sim_3.0__A_High-Fidelity_Comprehensive_Simulation_Platform_for_Humanoid_Robot/Genie_Sim_3.0__A_High-Fidelity_Comprehensive_Simulation_Platform_for_Humanoid_Robot.html)

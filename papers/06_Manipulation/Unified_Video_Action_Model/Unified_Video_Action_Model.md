@@ -125,4 +125,4 @@ flowchart LR
 
 ## 🔗 相关阅读
 
-- **同模块/相关·视频-动作/世界模型**：[DreamGen](../DreamGen__Unlocking_Generalization_in_Robot_Learning_through_Video_World_Models/DreamGen__Unlocking_Generalization_in_Robot_Learning_through_Video_World_Models.md) · [Humanoid World Models（本仓 11）](../../11_Simulation_Benchmark/Humanoid_World_Models__Open_World_Foundation_Models_for_Humanoid_Robotics/Humanoid_World_Models__Open_World_Foundation_Models_for_Humanoid_Robotics.md)。
+- **同模块/相关·视频-动作/世界模型**：[DreamGen](../DreamGen__Unlocking_Generalization_in_Robot_Learning_through_Video_World_Models/DreamGen__Unlocking_Generalization_in_Robot_Learning_through_Video_World_Models.html) · [Humanoid World Models（本仓 11）](../../11_Simulation_Benchmark/Humanoid_World_Models__Open_World_Foundation_Models_for_Humanoid_Robotics/Humanoid_World_Models__Open_World_Foundation_Models_for_Humanoid_Robotics.html)。

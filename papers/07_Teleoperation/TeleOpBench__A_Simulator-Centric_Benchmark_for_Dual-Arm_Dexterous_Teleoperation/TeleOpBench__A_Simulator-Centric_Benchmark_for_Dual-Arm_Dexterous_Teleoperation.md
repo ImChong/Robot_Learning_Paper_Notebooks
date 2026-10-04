@@ -123,5 +123,5 @@ flowchart LR
 
 ## 🔗 相关阅读
 
-- **同模块·遥操作系统/数据**：[TWIST2](../TWIST2__Scalable_Portable_and_Holistic_Humanoid_Data_Collection_System/TWIST2__Scalable_Portable_and_Holistic_Humanoid_Data_Collection_System.md) · [TeleOp 模态：动捕/VR/外骨骼/视觉]；
+- **同模块·遥操作系统/数据**：[TWIST2](../TWIST2__Scalable_Portable_and_Holistic_Humanoid_Data_Collection_System/TWIST2__Scalable_Portable_and_Holistic_Humanoid_Data_Collection_System.html) · [TeleOp 模态：动捕/VR/外骨骼/视觉]；
 - **仿真基准**：本仓 11 Simulation Benchmark 板块。

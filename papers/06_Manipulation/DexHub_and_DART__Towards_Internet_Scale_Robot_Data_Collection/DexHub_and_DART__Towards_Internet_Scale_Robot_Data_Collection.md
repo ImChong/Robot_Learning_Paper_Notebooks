@@ -120,4 +120,4 @@ flowchart LR
 
 ## 🔗 相关阅读
 
-- **同模块·数据采集**：[ARMADA（AR 无机器人采集）](../ARMADA__Augmented_Reality_for_Robot_Manipulation_and_Robot-Free_Data_Acquisition/ARMADA__Augmented_Reality_for_Robot_Manipulation_and_Robot-Free_Data_Acquisition.md) · [TWIST2（本仓 07）](../../07_Teleoperation/TWIST2__Scalable_Portable_and_Holistic_Humanoid_Data_Collection_System/TWIST2__Scalable_Portable_and_Holistic_Humanoid_Data_Collection_System.md)。
+- **同模块·数据采集**：[ARMADA（AR 无机器人采集）](../ARMADA__Augmented_Reality_for_Robot_Manipulation_and_Robot-Free_Data_Acquisition/ARMADA__Augmented_Reality_for_Robot_Manipulation_and_Robot-Free_Data_Acquisition.html) · [TWIST2（本仓 07）](../../07_Teleoperation/TWIST2__Scalable_Portable_and_Holistic_Humanoid_Data_Collection_System/TWIST2__Scalable_Portable_and_Holistic_Humanoid_Data_Collection_System.html)。

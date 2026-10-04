@@ -161,7 +161,7 @@ A：真实实验中机器人是**靠读天平示数来判断该继续加料还�
 ## 🔗 相关阅读
 
 - [Labimus 项目主页](https://labimus.github.io/)：资产、任务与演示视频
-- [SIMPLE（本仓库已有笔记）](../SIMPLE__Simulation-Based_Policy_Learning_and_Evaluation_for_Humanoid_Loco-manipulation/SIMPLE__Simulation-Based_Policy_Learning_and_Evaluation_for_Humanoid_Loco-manipulation.md)：面向全身移动操作的混合仿真评测平台
+- [SIMPLE（本仓库已有笔记）](../SIMPLE__Simulation-Based_Policy_Learning_and_Evaluation_for_Humanoid_Loco-manipulation/SIMPLE__Simulation-Based_Policy_Learning_and_Evaluation_for_Humanoid_Loco-manipulation.html)：面向全身移动操作的混合仿真评测平台
 - [HumanoidBench (arXiv 2403.10506)](https://arxiv.org/abs/2403.10506)：全身运动与操作的仿真基准，本仓库已有笔记
 - [ManiSkill-HAB (arXiv 2412.13211)](https://arxiv.org/abs/2412.13211)：家居重排低层操作基准，本仓库已有笔记
 

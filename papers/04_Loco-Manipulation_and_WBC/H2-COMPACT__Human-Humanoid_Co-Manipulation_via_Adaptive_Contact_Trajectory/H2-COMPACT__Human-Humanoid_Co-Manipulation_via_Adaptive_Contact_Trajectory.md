@@ -234,8 +234,8 @@ A：论文用**蒙眼人类跟随者**作对照——这是人机协同里很聪
 
 ## 🔗 相关阅读
 
-- [ZEST: Zero-shot Embodied Skill Transfer for Athletic Robot Control (2602.00401)](../ZEST__Zero-shot_Embodied_Skill_Transfer_for_Athletic_Robot_Control/ZEST__Zero-shot_Embodied_Skill_Transfer_for_Athletic_Robot_Control.md)：同属全身控制/loco-manipulation，运动模仿+跨形态迁移路线，本仓库已有笔记
-- [HOVER / 全身控制类论文](../)：全身控制模块下的多模态控制器与 loco-manipulation 相关笔记，可对照"上层意图 → 下层全身控制"的不同实现
+- [ZEST: Zero-shot Embodied Skill Transfer for Athletic Robot Control (2602.00401)](../ZEST__Zero-shot_Embodied_Skill_Transfer_for_Athletic_Robot_Control/ZEST__Zero-shot_Embodied_Skill_Transfer_for_Athletic_Robot_Control.html)：同属全身控制/loco-manipulation，运动模仿+跨形态迁移路线，本仓库已有笔记
+- [HOVER / 全身控制类论文](../../03_High_Impact_Selection/HOVER_Versatile_Neural_Whole-Body_Controller/HOVER_Versatile_Neural_Whole-Body_Controller.html)：全身控制模块下的多模态控制器与 loco-manipulation 相关笔记，可对照"上层意图 → 下层全身控制"的不同实现
 - [awesome-humanoid-robot-learning · Loco-Manipulation 章节](https://github.com/YanjieZe/awesome-humanoid-robot-learning#loco-manipulation-and-whole-body-control)：上游论文清单来源
 
 ---

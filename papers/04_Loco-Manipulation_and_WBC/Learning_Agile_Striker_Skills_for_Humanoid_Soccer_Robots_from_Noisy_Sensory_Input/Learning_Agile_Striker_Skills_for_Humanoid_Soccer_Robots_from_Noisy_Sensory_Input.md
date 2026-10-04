@@ -128,5 +128,5 @@ flowchart LR
 
 ## 🔗 相关阅读
 
-- **同模块·人形体育/运动技能**：[Learning Human-Like Badminton Skills](../Learning_Human-Like_Badminton_Skills_for_Humanoid_Robots/Learning_Human-Like_Badminton_Skills_for_Humanoid_Robots.md) · [RoboStriker（自主拳击分层决策）](../RoboStriker__Hierarchical_Decision-Making_for_Autonomous_Humanoid_Boxi/RoboStriker__Hierarchical_Decision-Making_for_Autonomous_Humanoid_Boxi.md)；
+- **同模块·人形体育/运动技能**：[Learning Human-Like Badminton Skills](../Learning_Human-Like_Badminton_Skills_for_Humanoid_Robots/Learning_Human-Like_Badminton_Skills_for_Humanoid_Robots.html) · [RoboStriker（自主拳击分层决策）](../RoboStriker__Hierarchical_Decision-Making_for_Autonomous_Humanoid_Boxing/RoboStriker__Hierarchical_Decision-Making_for_Autonomous_Humanoid_Boxing.html)；
 - **含噪感知 / 教师-学生**：经典特权蒸馏 sim-to-real 范式。

@@ -222,7 +222,7 @@ A：高层策略在冻结的球面先验上采样隐码，用自博弈（每 250
 
 ## 🔗 相关阅读
 
-- [PULSE: Physically Plausible Universal Latent Skill Extraction (本仓库进度列表)](../../PROGRESS.md) — VAE 类通用运动先验，SLMP 的重要对照基线
+- [PULSE: Physically Plausible Universal Latent Skill Extraction (本仓库笔记)](../../01_Foundational_RL/PULSE_Physics-based_Universal_Latent_Space/PULSE_Physics-based_Universal_Latent_Space.html) — VAE 类通用运动先验，SLMP 的重要对照基线
 - [ASE: Adversarial Skill Embeddings (2022)](https://arxiv.org/abs/2205.01906) — AMP/对抗类技能隐空间，SLMP 指出其模式崩塌问题
 - [PHC: Perpetual Humanoid Control (2023)](https://arxiv.org/abs/2305.06456) — 本文代码框架基础之一（动作跟踪）
 - [Learning to Ball (本仓库笔记)](../Learning_to_Ball__Composing_Policies_for_Long-Horizon_Basketball_Moves/Learning_to_Ball__Composing_Policies_for_Long-Horizon_Basketball_Moves.html) — 同为物理仿真角色的技能组合与长时程任务

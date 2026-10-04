@@ -174,7 +174,7 @@ flowchart TB
 | **"辨识 vs 随机化"再平衡** | 与 DR 主流互补：DR 盖住 gap，SPI-Active 量准 gap，且专门服务高精度任务 |
 | **把主动学习带进 SysID** | 用 Fisher 信息 / D-最优主动"设计实验"，而非被动采数据——数据效率与辨识精度双赢 |
 | **无梯度采样的工程友好** | CMA-ES 不要求可微仿真，天然适配富接触、真机零力矩传感器的现实约束 |
-| **与 PACE 同思潮** | 都主张"辨识优先"，[PACE](../PACE_Systematic_Sim-to-Real_Transfer_for_Diverse_Legged_Robots/PACE_Systematic_Sim-to-Real_Transfer_for_Diverse_Legged_Robots.md) 侧重跨机器人系统化标定，本文侧重高精度技能 + 主动探索 |
+| **与 PACE 同思潮** | 都主张"辨识优先"，[PACE](../PACE_Systematic_Sim-to-Real_Transfer_for_Diverse_Legged_Robots/PACE_Systematic_Sim-to-Real_Transfer_for_Diverse_Legged_Robots.html) 侧重跨机器人系统化标定，本文侧重高精度技能 + 主动探索 |
 
 ---
 
@@ -196,9 +196,9 @@ A：真实电机有**扭矩上限**，PD 控制器算出的期望扭矩超过上
 
 ## 🔗 相关阅读
 
-- [Towards Bridging the Gap: Systematic Sim-to-Real Transfer for Diverse Legged Robots (PACE, 2509.06342)](../PACE_Systematic_Sim-to-Real_Transfer_for_Diverse_Legged_Robots/PACE_Systematic_Sim-to-Real_Transfer_for_Diverse_Legged_Robots.md)：同属"辨识优先"思潮，跨机器人系统化标定，本仓库已有笔记
-- [PolySim: Multi-Simulator Domain Randomization (2510.01708)](../PolySim__Bridging_the_Sim-to-Real_Gap_for_Humanoid_Control_via_Multi-Simulato/PolySim__Bridging_the_Sim-to-Real_Gap_for_Humanoid_Control_via_Multi-Simulato.md)：仿真侧随机化路线，与本文思路对照，本仓库已有笔记
-- [Contrastive Representation Learning for Adaptive Humanoid Locomotion (2509.12858)](../Contrastive_Representation_Learning_for_Adaptive_Humanoid_Locomotion/Contrastive_Representation_Learning_for_Adaptive_Humanoid_Locomotion.md)：表征侧 sim-to-real 路线，本仓库已有笔记
+- [Towards Bridging the Gap: Systematic Sim-to-Real Transfer for Diverse Legged Robots (PACE, 2509.06342)](../PACE_Systematic_Sim-to-Real_Transfer_for_Diverse_Legged_Robots/PACE_Systematic_Sim-to-Real_Transfer_for_Diverse_Legged_Robots.html)：同属"辨识优先"思潮，跨机器人系统化标定，本仓库已有笔记
+- [PolySim: Multi-Simulator Domain Randomization (2510.01708)](../PolySim__Bridging_the_Sim-to-Real_Gap_for_Humanoid_Control_via_Multi-Simulato/PolySim__Bridging_the_Sim-to-Real_Gap_for_Humanoid_Control_via_Multi-Simulato.html)：仿真侧随机化路线，与本文思路对照，本仓库已有笔记
+- [Contrastive Representation Learning for Adaptive Humanoid Locomotion (2509.12858)](../Contrastive_Representation_Learning_for_Adaptive_Humanoid_Locomotion/Contrastive_Representation_Learning_for_Adaptive_Humanoid_Locomotion.html)：表征侧 sim-to-real 路线，本仓库已有笔记
 - [Learning Agile and Dynamic Motor Skills for Legged Robots (1901.08652)](https://arxiv.org/abs/1901.08652)：ANYmal Actuator Net 奠基，执行器建模经典
 
 ---

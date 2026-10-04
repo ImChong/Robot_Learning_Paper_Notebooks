@@ -126,5 +126,5 @@ flowchart LR
 
 ## 🔗 相关阅读
 
-- **同模块/相关·上下身解耦**：[Mobile-TeleVision（CVAE 上身先验 + RL 下身）](../../07_Teleoperation/Mobile-TeleVision__Predictive_Motion_Priors_for_Humanoid_Whole-Body_Control/Mobile-TeleVision__Predictive_Motion_Priors_for_Humanoid_Whole-Body_Control.md)；
+- **同模块/相关·上下身解耦**：[Mobile-TeleVision（CVAE 上身先验 + RL 下身）](../../07_Teleoperation/Mobile-TeleVision__Predictive_Motion_Priors_for_Humanoid_Whole-Body_Control/Mobile-TeleVision__Predictive_Motion_Priors_for_Humanoid_Whole-Body_Control.html)；
 - **站立/全身控制**：本仓 04 全身控制相关工作。

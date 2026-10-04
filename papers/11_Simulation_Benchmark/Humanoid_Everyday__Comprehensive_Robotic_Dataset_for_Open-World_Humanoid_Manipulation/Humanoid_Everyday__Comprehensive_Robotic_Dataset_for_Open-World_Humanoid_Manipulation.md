@@ -202,9 +202,9 @@ A：HumanoidBench / GRUtopia 偏**仿真**任务套件/环境，Humanoid Everyda
 
 ## 🔗 相关阅读
 
-- [HumanoidBench: Simulated Humanoid Benchmark for Whole-Body Locomotion and Manipulation](../HumanoidBench/HumanoidBench.md)：仿真侧的人形全身基准，与本文真机数据集互补，本仓库已有笔记
-- [MolmoSpaces: A Large-Scale Open Ecosystem for Robot Navigation and Manipulation](../MolmoSpaces__A_Large-Scale_Open_Ecosystem_for_Robot_Navigation_and_Manipulation/MolmoSpaces__A_Large-Scale_Open_Ecosystem_for_Robot_Navigation_and_Manipulation.md)：同为大规模开源具身数据/生态，本仓库已有笔记
-- [Benchmarking Humanoid Imitation Learning with Motion Difficulty](../Benchmarking_Humanoid_Imitation_Learning_with_Motion_Difficulty/Benchmarking_Humanoid_Imitation_Learning_with_Motion_Difficulty.md)：人形模仿学习评测的另一视角（动作难度标尺），本仓库已有笔记
+- [HumanoidBench: Simulated Humanoid Benchmark for Whole-Body Locomotion and Manipulation](../HumanoidBench/HumanoidBench.html)：仿真侧的人形全身基准，与本文真机数据集互补，本仓库已有笔记
+- [MolmoSpaces: A Large-Scale Open Ecosystem for Robot Navigation and Manipulation](../MolmoSpaces__A_Large-Scale_Open_Ecosystem_for_Robot_Navigation_and_Manipulation/MolmoSpaces__A_Large-Scale_Open_Ecosystem_for_Robot_Navigation_and_Manipulation.html)：同为大规模开源具身数据/生态，本仓库已有笔记
+- [Benchmarking Humanoid Imitation Learning with Motion Difficulty](../Benchmarking_Humanoid_Imitation_Learning_with_Motion_Difficulty/Benchmarking_Humanoid_Imitation_Learning_with_Motion_Difficulty.html)：人形模仿学习评测的另一视角（动作难度标尺），本仓库已有笔记
 
 ---
 

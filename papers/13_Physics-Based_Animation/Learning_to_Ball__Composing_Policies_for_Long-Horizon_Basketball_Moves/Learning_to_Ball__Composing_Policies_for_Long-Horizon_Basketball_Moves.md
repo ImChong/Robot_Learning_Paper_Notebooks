@@ -184,7 +184,7 @@ A：本文定位是**物理仿真角色 / 物理动画**（SIGGRAPH Asia / ACM T
 
 ## 🔗 相关阅读
 
-- [PhysHMR (#451)](../PhysHMR__Learning_Humanoid_Control_Policies_from_Vision_for_Physical_HMR/PhysHMR__Learning_Humanoid_Control_Policies_from_Vision_for_Physical_HMR.md)：同模块上一个推进，视觉条件的物理人体重建
+- [PhysHMR (#451)](../PhysHMR__Learning_Humanoid_Control_Policies_from_Vision_for_Physical_HMR/PhysHMR__Learning_Humanoid_Control_Policies_from_Vision_for_Physical_HMR.html)：同模块上一个推进，视觉条件的物理人体重建
 - [SkillMimic (#462)](https://arxiv.org/abs/2408.15270)：同样从篮球互动 demo 学技能，可对比「模仿 vs 组合」两条路
 - [Learning to Ball 项目页](https://pei-xu.github.io/basketball)：含连招视频演示
 - [Composite Motion Learning with Task Control](https://github.com/xupei0610/CompositeMotion)：本文方法的前身

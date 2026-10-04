@@ -125,4 +125,4 @@ flowchart LR
 ## 🔗 相关阅读
 
 - **同模块·运动/地形泛化**：本仓 05 Locomotion 其它行走工作；
-- **sim-to-real 评估 / 专家混合**：[EGM（CDMoE 高动态跟踪）](../../04_Loco-Manipulation_and_WBC/EGM__Efficiently_Learning_General_Motion_Tracking_for_High_Dynamic_Humanoid_WBC/EGM__Efficiently_Learning_General_Motion_Tracking_for_High_Dynamic_Humanoid_WBC.md) · 本仓 10 Sim-to-Real 板块。
+- **sim-to-real 评估 / 专家混合**：[EGM（CDMoE 高动态跟踪）](../../04_Loco-Manipulation_and_WBC/EGM__Efficiently_Learning_General_Motion_Tracking_for_High_Dynamic_Humanoid_WBC/EGM__Efficiently_Learning_General_Motion_Tracking_for_High_Dynamic_Humanoid_WBC.html) · 本仓 10 Sim-to-Real 板块。

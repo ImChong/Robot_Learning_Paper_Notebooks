@@ -154,6 +154,6 @@ flowchart LR
 
 ## 🔗 相关阅读
 
-- **同模块·运动重定向遥操作底座**：[TWIST: Teleoperated Whole-Body Imitation System](../TWIST__Teleoperated_Whole-Body_Imitation_System/TWIST__Teleoperated_Whole-Body_Imitation_System.md)；
-- **同模块·沉浸式视觉反馈**：[Mobile-TeleVision: Predictive Motion Priors for Humanoid Whole-Body Control](../Mobile-TeleVision__Predictive_Motion_Priors_for_Humanoid_Whole-Body_Control/Mobile-TeleVision__Predictive_Motion_Priors_for_Humanoid_Whole-Body_Control.md)；
-- **同模块·全体感遥操作系统**：[Teleopit: A Full-Embodiment Humanoid Teleoperation System](../Teleopit__A_Full-Embodiment_Humanoid_Teleoperation_System/Teleopit__A_Full-Embodiment_Humanoid_Teleoperation_System.md)。
+- **同模块·运动重定向遥操作底座**：[TWIST: Teleoperated Whole-Body Imitation System](../TWIST__Teleoperated_Whole-Body_Imitation_System/TWIST__Teleoperated_Whole-Body_Imitation_System.html)；
+- **同模块·沉浸式视觉反馈**：[Mobile-TeleVision: Predictive Motion Priors for Humanoid Whole-Body Control](../Mobile-TeleVision__Predictive_Motion_Priors_for_Humanoid_Whole-Body_Control/Mobile-TeleVision__Predictive_Motion_Priors_for_Humanoid_Whole-Body_Control.html)；
+- **同模块·全体感遥操作系统**：[Teleopit: A Full-Embodiment Humanoid Teleoperation System](../Teleopit__A_Full-Embodiment_Humanoid_Teleoperation_System/Teleopit__A_Full-Embodiment_Humanoid_Teleoperation_System.html)。

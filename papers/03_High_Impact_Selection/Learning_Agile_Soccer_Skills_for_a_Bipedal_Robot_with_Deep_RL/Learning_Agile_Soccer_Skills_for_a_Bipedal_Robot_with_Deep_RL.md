@@ -421,7 +421,7 @@ $$
 - **舵机没有建模**（仿真里当成理想执行器）：行为对电池电量非常敏感，一块电池实际只能用 5–10 分钟。
 - 自博弈**有时不稳定**，population-based training 可能更好；奖励权重靠大规模超参数搜索。
 
-笔者补充：这是 2023 年的工作，只有 1v1、全状态观测、小型人形；本站后面的 [Learning Agile Striker Skills](../../04_Loco-Manipulation_and_WBC/Learning_Agile_Striker_Skills_for_Humanoid_Soccer_Robots_from_Noisy_Sensory_Input/Learning_Agile_Striker_Skills_for_Humanoid_Soccer_Robots_from_Noisy_Sensory_Input.md)、[Learning Vision-Driven Reactive Soccer Skills](../../04_Loco-Manipulation_and_WBC/Learning_Vision-Driven_Reactive_Soccer_Skills_for_Humanoid_Robots/Learning_Vision-Driven_Reactive_Soccer_Skills_for_Humanoid_Robots.md) 等论文把这条线推向了带噪感知、视觉和全尺寸人形。
+笔者补充：这是 2023 年的工作，只有 1v1、全状态观测、小型人形；本站后面的 [Learning Agile Striker Skills](../../04_Loco-Manipulation_and_WBC/Learning_Agile_Striker_Skills_for_Humanoid_Soccer_Robots_from_Noisy_Sensory_Input/Learning_Agile_Striker_Skills_for_Humanoid_Soccer_Robots_from_Noisy_Sensory_Input.html)、[Learning Vision-Driven Reactive Soccer Skills](../../04_Loco-Manipulation_and_WBC/Learning_Vision-Driven_Reactive_Soccer_Skills_for_Humanoid_Robots/Learning_Vision-Driven_Reactive_Soccer_Skills_for_Humanoid_Robots.html) 等论文把这条线推向了带噪感知、视觉和全尺寸人形。
 
 </details>
 
@@ -553,8 +553,8 @@ A：不用任何人类动作参考。唯一的「动作先验」是起身技能�
 
 - [From Motor Control to Team Play in Simulated Humanoid Football（Liu et al., Science Robotics 2022）](https://www.science.org/doi/10.1126/scirobotics.abo0235)：同组在仿真人形上的足球工作，本文的技能复用和自博弈思路来自这里。
 - [MPO（Abdolmaleki et al., 2018）](https://arxiv.org/abs/1806.06920)：本文的策略优化算法。
-- 本站 [Learning Agile and Dynamic Motor Skills for Legged Robots](../Learning_Agile_and_Dynamic_Motor_Skills_for_Legged_Robots/Learning_Agile_and_Dynamic_Motor_Skills_for_Legged_Robots.md)：ANYmal 上的零样本 sim-to-real RL，对照本文「少量针对性随机化」的思路。
-- 本站 [Domain Randomization](../../01_Foundational_RL/Domain_Randomization_for_Transferring_Deep_Neural_Networks_from_Simulation_to_the_Real_World/Domain_Randomization_for_Transferring_Deep_Neural_Networks_from_Simulation_to_the_Real_World.md)：域随机化的起点。
-- 本站 [DeepMimic](../../01_Foundational_RL/DeepMimic_Example-Guided_Deep_RL_of_Physics-Based_Character_Skills/DeepMimic_Example-Guided_Deep_RL_of_Physics-Based_Character_Skills.md)：另一条路线——用参考动作约束风格，而不是纯任务奖励。
+- 本站 [Learning Agile and Dynamic Motor Skills for Legged Robots](../Learning_Agile_and_Dynamic_Motor_Skills_for_Legged_Robots/Learning_Agile_and_Dynamic_Motor_Skills_for_Legged_Robots.html)：ANYmal 上的零样本 sim-to-real RL，对照本文「少量针对性随机化」的思路。
+- 本站 [Domain Randomization](../../01_Foundational_RL/Domain_Randomization_for_Transferring_Deep_Neural_Networks_from_Simulation_to_the_Real_World/Domain_Randomization_for_Transferring_Deep_Neural_Networks_from_Simulation_to_the_Real_World.html)：域随机化的起点。
+- 本站 [DeepMimic](../../01_Foundational_RL/DeepMimic_Example-Guided_Deep_RL_of_Physics-Based_Character_Skills/DeepMimic_Example-Guided_Deep_RL_of_Physics-Based_Character_Skills.html)：另一条路线——用参考动作约束风格，而不是纯任务奖励。
 
 </details>

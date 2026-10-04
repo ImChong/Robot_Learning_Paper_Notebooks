@@ -27,7 +27,7 @@ arxiv: "2606.31836"
 | 作者 | Xinyi Wang、Donghan Li、Zi'Ang Chen、Chong Yu、Chen Xin、Peng Ye、Yingkai Sun、Tao Chen 等 |
 | 主题 | cs.RO · 人形操作数据集 / 触觉感知 / 灵巧手 / 模仿学习基准 |
 
-> 来源：YanjieZe/awesome-humanoid-robot-learning · Manipulation 模块。与仓库已有的 [A Humanoid Visual-Tactile-Action Dataset for Contact-Rich Manipulation](../A_Humanoid_Visual-Tactile-Action_Dataset_for_Contact-Rich_Manipulation/A_Humanoid_Visual-Tactile-Action_Dataset_for_Contact-Rich_Manipulation.md) 主题相近但为不同、更新的数据集工作。
+> 来源：YanjieZe/awesome-humanoid-robot-learning · Manipulation 模块。与仓库已有的 [A Humanoid Visual-Tactile-Action Dataset for Contact-Rich Manipulation](../A_Humanoid_Visual-Tactile-Action_Dataset_for_Contact-Rich_Manipulation/A_Humanoid_Visual-Tactile-Action_Dataset_for_Contact-Rich_Manipulation.html) 主题相近但为不同、更新的数据集工作。
 
 ---
 
@@ -137,7 +137,7 @@ flowchart TD
 - **数据是人形操作的地基**：真实人形 + 触觉的高质量数据集，直接决定模仿学习/VLA 的上限。
 - **触觉 + 视觉多模态**：接触丰富的灵巧任务里，指尖力与近距感知能补足纯视觉的盲区。
 - **VLA 需要「量」**：预训练 VLA 在常见任务泛化好，但少见任务仍受限于领域数据规模——继续「补数据」是务实路线。
-- 与仓库中 [RGMP](../RGMP__Recurrent_Geometric-prior_Multimodal_Policy_for_Generalizable_Humanoid_Manipulation/RGMP__Recurrent_Geometric-prior_Multimodal_Policy_for_Generalizable_Humanoid_Manipulation.md)、[HTD（Touch Dreaming）](../HTD__Learning_Versatile_Humanoid_Manipulation_with_Touch_Dreaming/HTD__Learning_Versatile_Humanoid_Manipulation_with_Touch_Dreaming.md) 等「触觉/多模态操作」路线互补。
+- 与仓库中 [RGMP](../RGMP__Recurrent_Geometric-prior_Multimodal_Policy_for_Generalizable_Humanoid_Manipulation/RGMP__Recurrent_Geometric-prior_Multimodal_Policy_for_Generalizable_Humanoid_Manipulation.html)、[HTD（Touch Dreaming）](https://arxiv.org/abs/2604.13015) 等「触觉/多模态操作」路线互补。
 
 ---
 
@@ -154,5 +154,5 @@ flowchart TD
 
 ## 🔗 相关阅读
 
-- **同模块 · 视觉-触觉-动作数据集**：[A Humanoid Visual-Tactile-Action Dataset for Contact-Rich Manipulation](../A_Humanoid_Visual-Tactile-Action_Dataset_for_Contact-Rich_Manipulation/A_Humanoid_Visual-Tactile-Action_Dataset_for_Contact-Rich_Manipulation.md)
-- **同模块 · 触觉/多模态操作**：[HTD：Touch Dreaming](../HTD__Learning_Versatile_Humanoid_Manipulation_with_Touch_Dreaming/HTD__Learning_Versatile_Humanoid_Manipulation_with_Touch_Dreaming.md) · [RGMP](../RGMP__Recurrent_Geometric-prior_Multimodal_Policy_for_Generalizable_Humanoid_Manipulation/RGMP__Recurrent_Geometric-prior_Multimodal_Policy_for_Generalizable_Humanoid_Manipulation.md) · [Visual-Tactile Pretraining](../Visual-Tactile_Pretraining_and_Online_Multitask_Learning_for_Humanlike_Manipulation_Dexterity/Visual-Tactile_Pretraining_and_Online_Multitask_Learning_for_Humanlike_Manipulation_Dexterity.md)
+- **同模块 · 视觉-触觉-动作数据集**：[A Humanoid Visual-Tactile-Action Dataset for Contact-Rich Manipulation](../A_Humanoid_Visual-Tactile-Action_Dataset_for_Contact-Rich_Manipulation/A_Humanoid_Visual-Tactile-Action_Dataset_for_Contact-Rich_Manipulation.html)
+- **同模块 · 触觉/多模态操作**：[HTD：Touch Dreaming](https://arxiv.org/abs/2604.13015) · [RGMP](../RGMP__Recurrent_Geometric-prior_Multimodal_Policy_for_Generalizable_Humanoid_Manipulation/RGMP__Recurrent_Geometric-prior_Multimodal_Policy_for_Generalizable_Humanoid_Manipulation.html) · [Visual-Tactile Pretraining](../Visual-Tactile_Pretraining_and_Online_Multitask_Learning_for_Humanlike_Manipulation_Dexterity/Visual-Tactile_Pretraining_and_Online_Multitask_Learning_for_Humanlike_Manipulation_Dexterity.html)

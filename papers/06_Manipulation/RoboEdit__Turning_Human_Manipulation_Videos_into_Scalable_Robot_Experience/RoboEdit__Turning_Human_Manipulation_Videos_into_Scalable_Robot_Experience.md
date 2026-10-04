@@ -27,7 +27,7 @@ arxiv: "2608.18948"
 | 作者 | Yaowei Guo、Zeng Tao、Yuxin Jiang、Yunuo Chen、Zhiyang Dou、Yuxiang Ma、Yin Yang、Demetri Terzopoulos、Ying Jiang、Chenfanfu Jiang（UCLA / Utah 等） |
 | 主题 | cs.RO · 人类视频到机器人数据 / 跨本体视频编辑 / 手-物交互重建 / 模仿学习数据 |
 
-> 来源：YanjieZe/awesome-humanoid-robot-learning · Manipulation 模块。与仓库已有的 [EgoMimic](../EgoMimic_Scaling_Imitation_Learning_via_Egocentric_Video/EgoMimic_Scaling_Imitation_Learning_via_Egocentric_Video.md)、[DreamDojo](../DreamDojo_A_Generalist_Robot_World_Model_from_Large-Scale_Human_Videos/DreamDojo_A_Generalist_Robot_World_Model_from_Large-Scale_Human_Videos.md) 同属「用人类/人手视频喂机器人学习」路线，但本文聚焦「把人手视频**直接改写成机器人视频**」这一数据侧问题。
+> 来源：YanjieZe/awesome-humanoid-robot-learning · Manipulation 模块。与仓库已有的 [EgoMimic](../EgoMimic_Scaling_Imitation_Learning_via_Egocentric_Video/EgoMimic_Scaling_Imitation_Learning_via_Egocentric_Video.html)、[DreamDojo](../DreamDojo_A_Generalist_Robot_World_Model_from_Large-Scale_Human_Videos/DreamDojo_A_Generalist_Robot_World_Model_from_Large-Scale_Human_Videos.html) 同属「用人类/人手视频喂机器人学习」路线，但本文聚焦「把人手视频**直接改写成机器人视频**」这一数据侧问题。
 
 ---
 
@@ -131,7 +131,7 @@ flowchart TD
 - **数据瓶颈的另一条解法**：与其「更便宜地采机器人数据」，不如「把已有海量人类视频改写成机器人数据」，对高自由度人形/灵巧手尤其划算。
 - **视频层监督 + 3D 状态**：像素改写叠加逐帧 3D 手部状态，比纯策略迁移提供更密、更结构化的监督，利于模仿学习与 VLA。
 - **跨本体是关键**：一次重建、多本体重定向，天然契合人形/灵巧手「本体多样」的现实。
-- 与仓库中 [EgoMimic](../EgoMimic_Scaling_Imitation_Learning_via_Egocentric_Video/EgoMimic_Scaling_Imitation_Learning_via_Egocentric_Video.md)、[Being-H0](../Being-H0__Vision-Language-Action_Pretraining_from_Large-Scale_Human_Videos/Being-H0__Vision-Language-Action_Pretraining_from_Large-Scale_Human_Videos.md)、[DreamDojo](../DreamDojo_A_Generalist_Robot_World_Model_from_Large-Scale_Human_Videos/DreamDojo_A_Generalist_Robot_World_Model_from_Large-Scale_Human_Videos.md) 等「人类视频驱动机器人学习」路线互补：本文补齐「视频数据改写」这一环。
+- 与仓库中 [EgoMimic](../EgoMimic_Scaling_Imitation_Learning_via_Egocentric_Video/EgoMimic_Scaling_Imitation_Learning_via_Egocentric_Video.html)、[Being-H0](../Being-H0__Vision-Language-Action_Pretraining_from_Large-Scale_Human_Videos/Being-H0__Vision-Language-Action_Pretraining_from_Large-Scale_Human_Videos.html)、[DreamDojo](../DreamDojo_A_Generalist_Robot_World_Model_from_Large-Scale_Human_Videos/DreamDojo_A_Generalist_Robot_World_Model_from_Large-Scale_Human_Videos.html) 等「人类视频驱动机器人学习」路线互补：本文补齐「视频数据改写」这一环。
 
 ---
 
@@ -149,5 +149,5 @@ flowchart TD
 
 ## 🔗 相关阅读
 
-- **同模块 · 人类/自我中心视频驱动**：[EgoMimic](../EgoMimic_Scaling_Imitation_Learning_via_Egocentric_Video/EgoMimic_Scaling_Imitation_Learning_via_Egocentric_Video.md) · [Being-H0](../Being-H0__Vision-Language-Action_Pretraining_from_Large-Scale_Human_Videos/Being-H0__Vision-Language-Action_Pretraining_from_Large-Scale_Human_Videos.md) · [EgoVLA](../EgoVLA__Learning_Vision-Language-Action_Models_from_Egocentric_Human_Videos/EgoVLA__Learning_Vision-Language-Action_Models_from_Egocentric_Human_Videos.md)
-- **同模块 · 世界模型 / 生成数据**：[DreamDojo](../DreamDojo_A_Generalist_Robot_World_Model_from_Large-Scale_Human_Videos/DreamDojo_A_Generalist_Robot_World_Model_from_Large-Scale_Human_Videos.md) · [DreamZero](../DreamZero_World_Action_Models_are_Zero-shot_Policies/DreamZero_World_Action_Models_are_Zero-shot_Policies.md)
+- **同模块 · 人类/自我中心视频驱动**：[EgoMimic](../EgoMimic_Scaling_Imitation_Learning_via_Egocentric_Video/EgoMimic_Scaling_Imitation_Learning_via_Egocentric_Video.html) · [Being-H0](../Being-H0__Vision-Language-Action_Pretraining_from_Large-Scale_Human_Videos/Being-H0__Vision-Language-Action_Pretraining_from_Large-Scale_Human_Videos.html) · [EgoVLA](../EgoVLA__Learning_Vision-Language-Action_Models_from_Egocentric_Human_Videos/EgoVLA__Learning_Vision-Language-Action_Models_from_Egocentric_Human_Videos.html)
+- **同模块 · 世界模型 / 生成数据**：[DreamDojo](../DreamDojo_A_Generalist_Robot_World_Model_from_Large-Scale_Human_Videos/DreamDojo_A_Generalist_Robot_World_Model_from_Large-Scale_Human_Videos.html) · [DreamZero](../DreamZero_World_Action_Models_are_Zero-shot_Policies/DreamZero_World_Action_Models_are_Zero-shot_Policies.html)

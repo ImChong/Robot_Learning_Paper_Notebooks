@@ -157,6 +157,6 @@ flowchart LR
 
 ## 🔗 相关阅读
 
-- **同模块·从人类视频学全身控制**：[ZeroWBC（从人类第一视角视频直接学）](../ZeroWBC__Learning_Natural_Visuomotor_Humanoid_Control_Directly_from_Human_Egocen/ZeroWBC__Learning_Natural_Visuomotor_Humanoid_Control_Directly_from_Human_Egocen.md) · [EgoHumanoid（in-the-wild 机器人无关的第一视角采集）](../EgoHumanoid__Unlocking_In-the-Wild_Loco-Manipulation_with_Robot-Free_Egocentric_/EgoHumanoid__Unlocking_In-the-Wild_Loco-Manipulation_with_Robot-Free_Egocentric_.md)；
-- **接触/物体交互**：[SteadyTray（残差 RL 托盘平衡）](../SteadyTray__Learning_Object_Balancing_Tasks_in_Humanoid_Tray_Transport_via_Resid/SteadyTray__Learning_Object_Balancing_Tasks_in_Humanoid_Tray_Transport_via_Resid.md) · [HAIC（动力学感知世界模型的敏捷物体交互）](../HAIC__Humanoid_Agile_Object_Interaction_Control_via_Dynamics-Aware_World_Model/HAIC__Humanoid_Agile_Object_Interaction_Control_via_Dynamics-Aware_World_Model.md)；
+- **同模块·从人类视频学全身控制**：[ZeroWBC（从人类第一视角视频直接学）](../ZeroWBC__Learning_Natural_Visuomotor_Humanoid_Control_from_Egocentric_Video/ZeroWBC__Learning_Natural_Visuomotor_Humanoid_Control_from_Egocentric_Video.html) · [EgoHumanoid（in-the-wild 机器人无关的第一视角采集）](../EgoHumanoid__Unlocking_In-the-Wild_Loco-Manipulation_with_Robot-Free_Egocentric_/EgoHumanoid__Unlocking_In-the-Wild_Loco-Manipulation_with_Robot-Free_Egocentric_.html)；
+- **接触/物体交互**：[SteadyTray（残差 RL 托盘平衡）](../SteadyTray__Learning_Object_Balancing_Tasks_in_Humanoid_Tray_Transport_via_Resid/SteadyTray__Learning_Object_Balancing_Tasks_in_Humanoid_Tray_Transport_via_Resid.html) · [HAIC（动力学感知世界模型的敏捷物体交互）](../HAIC__Humanoid_Agile_Object_Interaction_Control_via_Dynamics-Aware_World_Model/HAIC__Humanoid_Agile_Object_Interaction_Control_via_Dynamics-Aware_World_Model.html)；
 - **特权信息 / 蒸馏**：RMA、特权教师-学生蒸馏一类经典 sim-to-real 范式。

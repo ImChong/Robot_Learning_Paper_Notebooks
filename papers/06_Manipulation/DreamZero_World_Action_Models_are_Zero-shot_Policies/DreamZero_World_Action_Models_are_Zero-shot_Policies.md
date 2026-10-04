@@ -292,11 +292,11 @@ A：DreamDojo 用人类视频 + LAM 训**通用世界模型**（预测未来像�
 
 | 论文 | 关系 |
 |---|---|
-| [DreamDojo](../DreamDojo_A_Generalist_Robot_World_Model_from_Large-Scale_Human_Videos/DreamDojo_A_Generalist_Robot_World_Model_from_Large-Scale_Human_Videos.md) | 同 NVIDIA 线：DreamDojo 训 WM，DreamZero 升级为 WAM |
-| [GR00T N1](../../03_High_Impact_Selection/GR00T_N1_Humanoid_Foundation_Model/GR00T_N1_Humanoid_Foundation_Model.md) | VLA 代表；DreamZero 在未见动作上 >2× 泛化 |
-| [BFM](../../03_High_Impact_Selection/Behavior_Foundation_Model_for_Humanoid_Robots/Behavior_Foundation_Model_for_Humanoid_Robots.md) | 路线图「行为基础模型」顶点，与 WAM 并列的通才策略路线 |
-| [Diffusion Policy](../../01_Foundational_RL/Diffusion_Policy/Diffusion_Policy.md) | 扩散动作生成先驱；DreamZero 把扩散升到视频-动作联合 |
-| [HumDex](../HumDex_Humanoid_Dexterous_Manipulation_Made_Easy/HumDex_Humanoid_Dexterous_Manipulation_Made_Easy.md) | 人类视频→机器人；DreamZero 用异构机器人视频做跨本体迁移 |
+| [DreamDojo](../DreamDojo_A_Generalist_Robot_World_Model_from_Large-Scale_Human_Videos/DreamDojo_A_Generalist_Robot_World_Model_from_Large-Scale_Human_Videos.html) | 同 NVIDIA 线：DreamDojo 训 WM，DreamZero 升级为 WAM |
+| [GR00T N1](../../03_High_Impact_Selection/GR00T_N1_Humanoid_Foundation_Model/GR00T_N1_Humanoid_Foundation_Model.html) | VLA 代表；DreamZero 在未见动作上 >2× 泛化 |
+| [BFM](../../03_High_Impact_Selection/Behavior_Foundation_Model_for_Humanoid_Robots/Behavior_Foundation_Model_for_Humanoid_Robots.html) | 路线图「行为基础模型」顶点，与 WAM 并列的通才策略路线 |
+| [Diffusion Policy](../../01_Foundational_RL/Diffusion_Policy/Diffusion_Policy.html) | 扩散动作生成先驱；DreamZero 把扩散升到视频-动作联合 |
+| [HumDex](../HumDex_Humanoid_Dexterous_Manipulation_Made_Easy/HumDex_Humanoid_Dexterous_Manipulation_Made_Easy.html) | 人类视频→机器人；DreamZero 用异构机器人视频做跨本体迁移 |
 
 ---
 

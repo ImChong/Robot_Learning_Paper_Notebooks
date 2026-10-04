@@ -125,4 +125,4 @@ flowchart LR
 
 ## 🔗 相关阅读
 
-- **同模块·全身遥操作**：[TWIST（统一控制器全身模仿）](../TWIST__Teleoperated_Whole-Body_Imitation_System/TWIST__Teleoperated_Whole-Body_Imitation_System.md) · [Human-Robot Collaboration（躯干-手臂协调）](../Human-Robot_Collaboration_for_Remote_Control_of_Mobile_Humanoid_Robots/Human-Robot_Collaboration_for_Remote_Control_of_Mobile_Humanoid_Robots.md)。
+- **同模块·全身遥操作**：[TWIST（统一控制器全身模仿）](../TWIST__Teleoperated_Whole-Body_Imitation_System/TWIST__Teleoperated_Whole-Body_Imitation_System.html) · [Human-Robot Collaboration（躯干-手臂协调）](../Human-Robot_Collaboration_for_Remote_Control_of_Mobile_Humanoid_Robots/Human-Robot_Collaboration_for_Remote_Control_of_Mobile_Humanoid_Robots.html)。

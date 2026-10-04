@@ -31,7 +31,7 @@ category: "Locomotion"
 
 **机构**：北京智源 BAAI · 悉尼大学 · 香港科技大学 HKUST · 哈尔滨工业大学 HIT · 西安交通大学 XJTU · 中国科学院 CAS · 上海交通大学 SJTU · 北京大学 PKU
 
-> 📎 与本仓库已收录的 [Do You Have Freestyle?（RoboPerform，音频驱动）](../Do_You_Have_Freestyle__Expressive_Humanoid_Locomotion_via_Audio_Control/Do_You_Have_Freestyle__Expressive_Humanoid_Locomotion_via_Audio_Control.md) 为同一课题组姊妹工作：都采用「MoE 教师 + 扩散学生蒸馏」，区别在于 RoboPerform 用**音频**当风格信号、RoboMirror 用**视频**经 VLM 抽取**运动意图**。
+> 📎 与本仓库已收录的 [Do You Have Freestyle?（RoboPerform，音频驱动）](../Do_You_Have_Freestyle__Expressive_Humanoid_Locomotion_via_Audio_Control/Do_You_Have_Freestyle__Expressive_Humanoid_Locomotion_via_Audio_Control.html) 为同一课题组姊妹工作：都采用「MoE 教师 + 扩散学生蒸馏」，区别在于 RoboPerform 用**音频**当风格信号、RoboMirror 用**视频**经 VLM 抽取**运动意图**。
 
 ---
 
@@ -176,7 +176,7 @@ A：MoE 教师用 RL 训练，擅长把多样运动学得稳、物理可信；�
 
 ## 🔗 相关阅读
 
-- [Do You Have Freestyle?（RoboPerform，音频驱动）](../Do_You_Have_Freestyle__Expressive_Humanoid_Locomotion_via_Audio_Control/Do_You_Have_Freestyle__Expressive_Humanoid_Locomotion_via_Audio_Control.md)：同组姊妹工作，「MoE 教师 + 扩散学生」范式一致，风格信号换成音频
+- [Do You Have Freestyle?（RoboPerform，音频驱动）](../Do_You_Have_Freestyle__Expressive_Humanoid_Locomotion_via_Audio_Control/Do_You_Have_Freestyle__Expressive_Humanoid_Locomotion_via_Audio_Control.html)：同组姊妹工作，「MoE 教师 + 扩散学生」范式一致，风格信号换成音频
 - [Now You See That: End-to-End Humanoid Locomotion from Raw Pixels (2602.06382)](https://arxiv.org/abs/2602.06382)：另一条「感知直驱控制」路线（视觉像素直驱），可与本文「视频理解直驱」对照
 - [Humanoid Locomotion as Next Token Prediction (2402.19469)](https://arxiv.org/abs/2402.19469)：把人形控制重构为序列建模的另一新范式
 - [VideoMimic: Visual imitation enables contextual humanoid control (2505.03729)](https://arxiv.org/abs/2505.03729)：视觉模仿驱动人形控制的相关工作

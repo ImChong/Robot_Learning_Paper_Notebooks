@@ -205,4 +205,4 @@ A：cuRoboV2 不是通用刚体动力学库，而是**面向"GPU 原生运动生
 - [cuRobo v1 论文](https://arxiv.org/abs/2310.17274)：前作，最小-jerk 轨迹优化
 - [PDF-HR (2602.04851)](https://arxiv.org/abs/2602.04851)：把距离场思路用在人形姿态空间
 - [Isaac Sim cuRobo 文档](https://docs.isaacsim.omniverse.nvidia.com/6.0.0/manipulators/manipulators_curobo.html)：在 NVIDIA 仿真栈中的集成
-- 同模块对照：[HumDex](../HumDex_Humanoid_Dexterous_Manipulation_Made_Easy/HumDex_Humanoid_Dexterous_Manipulation_Made_Easy.md)（数据采集端） · [iDP3](../../03_High_Impact_Selection/iDP3_Generalizable_Humanoid_Manipulation_with_3D_Diffusion_Policies/iDP3_Generalizable_Humanoid_Manipulation_with_3D_Diffusion_Policies.md)（策略端）
+- 同模块对照：[HumDex](../HumDex_Humanoid_Dexterous_Manipulation_Made_Easy/HumDex_Humanoid_Dexterous_Manipulation_Made_Easy.html)（数据采集端） · [iDP3](../../03_High_Impact_Selection/iDP3_Generalizable_Humanoid_Manipulation_with_3D_Diffusion_Policies/iDP3_Generalizable_Humanoid_Manipulation_with_3D_Diffusion_Policies.html)（策略端）

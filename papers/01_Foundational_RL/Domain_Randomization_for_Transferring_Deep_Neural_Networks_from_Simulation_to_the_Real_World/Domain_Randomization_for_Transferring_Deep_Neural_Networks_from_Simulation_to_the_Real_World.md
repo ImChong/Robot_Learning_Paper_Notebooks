@@ -360,9 +360,9 @@ Fetch 机器人，检测器估出目标位置后交给现成的运动规划软�
 
 | 工作 | 随机化了什么 | 出处 |
 |------|------|------|
-| SMP（G1 真机） | 摩擦 0.1–2、连杆质量 ×0.9–1.1、质心偏移 ±0.1 m、$K_p$ / $K_d$ 缩放 0.8–1.25、推搡 ±0.5 m/s、关节角 / 速度噪声 | SMP 论文表 9（[SMP 笔记](../SMP_Reusable_Score-Matching_Motion_Priors/SMP_Reusable_Score-Matching_Motion_Priors.md)附录 B） |
-| BeyondMimic | 关节零位、躯干质心等（Isaac Lab `events.py`） | [BeyondMimic 笔记](../BeyondMimic/BeyondMimic.md)源码对照 |
-| OP3 足球 | 5 个随机化轴 + 随机推搡，配合 5 个参数的系统辨识；作者特意只选少数几个轴 | [OP3 足球笔记](../../03_High_Impact_Selection/Learning_Agile_Soccer_Skills_for_a_Bipedal_Robot_with_Deep_RL/Learning_Agile_Soccer_Skills_for_a_Bipedal_Robot_with_Deep_RL.md) |
+| SMP（G1 真机） | 摩擦 0.1–2、连杆质量 ×0.9–1.1、质心偏移 ±0.1 m、$K_p$ / $K_d$ 缩放 0.8–1.25、推搡 ±0.5 m/s、关节角 / 速度噪声 | SMP 论文表 9（[SMP 笔记](../SMP_Reusable_Score-Matching_Motion_Priors/SMP_Reusable_Score-Matching_Motion_Priors.html)附录 B） |
+| BeyondMimic | 关节零位、躯干质心等（Isaac Lab `events.py`） | [BeyondMimic 笔记](../BeyondMimic/BeyondMimic.html)源码对照 |
+| OP3 足球 | 5 个随机化轴 + 随机推搡，配合 5 个参数的系统辨识；作者特意只选少数几个轴 | [OP3 足球笔记](../../03_High_Impact_Selection/Learning_Agile_Soccer_Skills_for_a_Bipedal_Robot_with_Deep_RL/Learning_Agile_Soccer_Skills_for_a_Bipedal_Robot_with_Deep_RL.html) |
 
 <h3 id="2-和系统辨识是分工不是替代">2. 和系统辨识是分工，不是替代</h3>
 
@@ -370,7 +370,7 @@ Fetch 机器人，检测器估出目标位置后交给现成的运动规划软�
 
 <h3 id="3-它没回答的问题">3. 它没回答的问题</h3>
 
-- **范围怎么定？** 本文只测了「不够多样」这一侧（纹理少、没有干扰物），没测「太宽」会怎样；随机化范围全靠手调。后来 OpenAI 的 ADR 让范围随训练自动扩大，[Understanding DR](../Domain_Randomization_Understanding_Sim-to-Real_Transfer/Domain_Randomization_Understanding_Sim-to-Real_Transfer.md) 从理论上分析了随机化分布与 sim-to-real gap 的关系，并强调记忆（历史依赖的策略）的作用。
+- **范围怎么定？** 本文只测了「不够多样」这一侧（纹理少、没有干扰物），没测「太宽」会怎样；随机化范围全靠手调。后来 OpenAI 的 ADR 让范围随训练自动扩大，[Understanding DR](../Domain_Randomization_Understanding_Sim-to-Real_Transfer/Domain_Randomization_Understanding_Sim-to-Real_Transfer.html) 从理论上分析了随机化分布与 sim-to-real gap 的关系，并强调记忆（历史依赖的策略）的作用。
 - **动态任务怎么办？** 本文是一张图 → 一个位置的监督学习，没有闭环控制；把随机化用在强化学习策略、物理参数上，是后续工作的事。
 - **精度上限**：论文把更高分辨率、多视角 / 深度、与域适应结合列为未来方向。
 </details>
@@ -495,7 +495,7 @@ python3 run_training.py --num_files=100   # GTX 1080 Ti 上约 3 小时
 - **SMP**：上一篇。SMP 的 G1 真机实验随机化了摩擦、连杆质量、质心、PD 增益与推搡（SMP 表 9），是这个思路在人形上的直接用法。
 - **四足地形 · 教师-学生**：下一篇。在随机化的地形与动力学上训练有特权信息的教师，再蒸馏成只用本体感受的学生，是 DR 在足式机器人上的主力用法。
 - **OP3 足球 / LCP**：路线图上 DR → OP3 足球、DR → LCP。OP3 足球用「少量系统辨识 + 少数随机化轴 + 随机推搡」零样本上真机，并指出过度随机化会让策略变保守；LCP 建立在 PPO + 域随机化 + 教师—学生之上，再处理动作抖动。
-- **Understanding DR**：从理论上分析 DR 为什么能迁移，以及记忆（历史依赖策略）的必要性。
+- **Understanding DR**（01 模块选读，排在本文之后）：从理论上分析 DR 为什么能迁移，以及记忆（历史依赖策略）的必要性。它的结论在四足地形论文里有实证，可以读完那篇再看。
 
 <h3 id="b-本文与相关工作对比">B. 本文与相关工作对比（论文第 II 节）</h3>
 

@@ -123,4 +123,4 @@ flowchart LR
 
 ## 🔗 相关阅读
 
-- **同模块·可控动作扩散**：[Guided Motion Diffusion（空间约束）](../Guided_Motion_Diffusion_for_Controllable_Human_Motion_Synthesis/Guided_Motion_Diffusion_for_Controllable_Human_Motion_Synthesis.md) · [Taming Diffusion（实时角色控制）](../Taming_Diffusion_Probabilistic_Models_for_Character_Control/Taming_Diffusion_Probabilistic_Models_for_Character_Control.md)。
+- **同模块·可控动作扩散**：[Guided Motion Diffusion（空间约束）](../Guided_Motion_Diffusion_for_Controllable_Human_Motion_Synthesis/Guided_Motion_Diffusion_for_Controllable_Human_Motion_Synthesis.html) · [Taming Diffusion（实时角色控制）](../Taming_Diffusion_Probabilistic_Models_for_Character_Control/Taming_Diffusion_Probabilistic_Models_for_Character_Control.html)。

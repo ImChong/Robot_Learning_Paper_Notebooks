@@ -125,4 +125,4 @@ flowchart LR
 
 ## 🔗 相关阅读
 
-- **同模块·人形导航**：[Hand-Eye Autonomous Delivery（导航+运动+到达）](../HEAD__Hand-Eye_Autonomous_Delivery_Humanoid_Navigation_Locomotion_and_Reaching/HEAD__Hand-Eye_Autonomous_Delivery_Humanoid_Navigation_Locomotion_and_Reaching.md) · [NavDP（Sim-to-Real 导航扩散策略）](../NavDP__Learning_Sim-to-Real_Navigation_Diffusion_Policy/NavDP__Learning_Sim-to-Real_Navigation_Diffusion_Policy.md)。
+- **同模块·人形导航**：[Hand-Eye Autonomous Delivery（导航+运动+到达）](../HEAD__Hand-Eye_Autonomous_Delivery_Humanoid_Navigation_Locomotion_and_Reaching/HEAD__Hand-Eye_Autonomous_Delivery_Humanoid_Navigation_Locomotion_and_Reaching.html) · [NavDP（Sim-to-Real 导航扩散策略）](../NavDP__Learning_Sim-to-Real_Navigation_Diffusion_Policy/NavDP__Learning_Sim-to-Real_Navigation_Diffusion_Policy.html)。

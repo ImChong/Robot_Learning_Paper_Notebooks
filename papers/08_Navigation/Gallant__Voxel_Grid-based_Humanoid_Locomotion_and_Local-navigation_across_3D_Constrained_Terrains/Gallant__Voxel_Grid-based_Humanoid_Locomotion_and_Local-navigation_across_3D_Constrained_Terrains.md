@@ -197,8 +197,8 @@ A：一套 GPU 高保真 LiDAR 仿真（Warp 光线投射 + 逐 mesh BVH 预算�
 
 - [Gallant arXiv](https://arxiv.org/abs/2511.14625) · [HTML](https://arxiv.org/html/2511.14625) · [PDF](https://arxiv.org/pdf/2511.14625) · [代码 InternRobotics/Gallant](https://github.com/InternRobotics/Gallant) · [CVPR 2026 Poster](https://cvpr.thecvf.com/virtual/2026/poster/37444)
 - 同模块对照：
-  - [STATE-NAV](../STATE-NAV__Stability-Aware_Traversability_Estimation_for_Bipedal_Navigation_on_Rough_Terrain/STATE-NAV__Stability-Aware_Traversability_Estimation_for_Bipedal_Navigation_on_Rough_Terrain.md)（稳定性感知的可通过性估计）
-  - [FocusNav](../FocusNav__Spatial_Selective_Attention_with_Waypoint_Guidance_for_Humanoid_Local/FocusNav__Spatial_Selective_Attention_with_Waypoint_Guidance_for_Humanoid_Local.md)（路径点引导的局部导航）
-  - [LookOut](../LookOut__Real-World_Humanoid_Egocentric_Navigation/LookOut__Real-World_Humanoid_Egocentric_Navigation.md)（第一视角头部位姿预测导航）
-  - [Thinking in 360°](../Thinking_in_360__Humanoid_Visual_Search_in_the_Wild/Thinking_in_360__Humanoid_Visual_Search_in_the_Wild.md)（转头主动视觉搜索）
+  - [STATE-NAV](../STATE-NAV__Stability-Aware_Traversability_Estimation_for_Bipedal_Navigation_on_Rough_Terrain/STATE-NAV__Stability-Aware_Traversability_Estimation_for_Bipedal_Navigation_on_Rough_Terrain.html)（稳定性感知的可通过性估计）
+  - [FocusNav](../FocusNav__Spatial_Selective_Attention_with_Waypoint_Guidance_for_Humanoid_Local/FocusNav__Spatial_Selective_Attention_with_Waypoint_Guidance_for_Humanoid_Local.html)（路径点引导的局部导航）
+  - [LookOut](../LookOut__Real-World_Humanoid_Egocentric_Navigation/LookOut__Real-World_Humanoid_Egocentric_Navigation.html)（第一视角头部位姿预测导航）
+  - [Thinking in 360°](../Thinking_in_360__Humanoid_Visual_Search_in_the_Wild/Thinking_in_360__Humanoid_Visual_Search_in_the_Wild.html)（转头主动视觉搜索）
 - 感知线对照：体素占据 vs 高程图/深度图，是从 2.5D 走向完整 3D 感知的代表工作

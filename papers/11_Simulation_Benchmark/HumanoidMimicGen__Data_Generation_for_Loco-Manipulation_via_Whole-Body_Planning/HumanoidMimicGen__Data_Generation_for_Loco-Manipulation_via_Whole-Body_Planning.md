@@ -182,7 +182,7 @@ flowchart TB
 | **补齐人形数据瓶颈** | 遥操作贵、慢，自动放大是把人形模仿学习「喂饱」的关键路径 |
 | **规划 × 学习的分工** | 用全身规划保证「可行/稳定/无碰撞」，把学习留给视觉运动策略，二者各展所长 |
 | **走操一体的评测标准** | 9 任务基准让「行走+操作」耦合能力可被公平横比，而非各说各话 |
-| **与同模块数据生成呼应** | 与 [DexMimicGen](../DexMimicGen__Automated_Data_Generation_for_Bimanual_Dexterous_Manipulation/DexMimicGen__Automated_Data_Generation_for_Bimanual_Dexterous_Manipulation.md)、[HumanoidGen](../HumanoidGen__Data_Generation_for_Bimanual_Dexterous_Manipulation_via_LLM_Reasoning/HumanoidGen__Data_Generation_for_Bimanual_Dexterous_Manipulation_via_LLM_Reasoning.md) 共同壮大人形操作/移动操作的数据供给 |
+| **与同模块数据生成呼应** | 与 [DexMimicGen](../DexMimicGen__Automated_Data_Generation_for_Bimanual_Dexterous_Manipulation/DexMimicGen__Automated_Data_Generation_for_Bimanual_Dexterous_Manipulation.html)、[HumanoidGen](../HumanoidGen__Data_Generation_for_Bimanual_Dexterous_Manipulation_via_LLM_Reasoning/HumanoidGen__Data_Generation_for_Bimanual_Dexterous_Manipulation_via_LLM_Reasoning.html) 共同壮大人形操作/移动操作的数据供给 |
 
 ---
 
@@ -204,11 +204,11 @@ A：HumanoidMimicGen 走的是**几何/运动规划 + 源演示适配**路线（
 
 ## 🔗 相关阅读
 
-- [DexMimicGen: Automated Data Generation for Bimanual Dexterous Manipulation (2410.24185)](../DexMimicGen__Automated_Data_Generation_for_Bimanual_Dexterous_Manipulation/DexMimicGen__Automated_Data_Generation_for_Bimanual_Dexterous_Manipulation.md)：同谱系的双手灵巧数据生成前作，本仓库已有笔记
-- [HumanoidGen: Data Generation for Bimanual Dexterous Manipulation via LLM Reasoning (2507.00833)](../HumanoidGen__Data_Generation_for_Bimanual_Dexterous_Manipulation_via_LLM_Reasoning/HumanoidGen__Data_Generation_for_Bimanual_Dexterous_Manipulation_via_LLM_Reasoning.md)：LLM+MCTS 数据生成路线对照，本仓库已有笔记
-- [GRAIL: Generating Humanoid Loco-Manipulation from 3D Assets and Video Priors (2606.05160)](../GRAIL__Generating_Humanoid_Loco-Manipulation_from_3D_Assets_and_Video_Priors/GRAIL__Generating_Humanoid_Loco-Manipulation_from_3D_Assets_and_Video_Priors.md)：同为 loco-manipulation 数据生成，本仓库已有笔记
-- [SIMPLE: Simulation-Based Policy Learning and Evaluation for Humanoid Loco-manipulation (2606.08278)](../SIMPLE__Simulation-Based_Policy_Learning_and_Evaluation_for_Humanoid_Loco-manipulation/SIMPLE__Simulation-Based_Policy_Learning_and_Evaluation_for_Humanoid_Loco-manipulation.md)：走操一体的仿真评测平台，本仓库已有笔记
-- [BiGym: A Demo-Driven Mobile Bi-Manual Manipulation Benchmark (2407.07788)](../BiGym__A_Demo-Driven_Mobile_Bi-Manual_Manipulation_Benchmark/BiGym__A_Demo-Driven_Mobile_Bi-Manual_Manipulation_Benchmark.md)：作者之一 Nikita Chernyadev 的移动双臂基准，本仓库已有笔记
+- [DexMimicGen: Automated Data Generation for Bimanual Dexterous Manipulation (2410.24185)](../DexMimicGen__Automated_Data_Generation_for_Bimanual_Dexterous_Manipulation/DexMimicGen__Automated_Data_Generation_for_Bimanual_Dexterous_Manipulation.html)：同谱系的双手灵巧数据生成前作，本仓库已有笔记
+- [HumanoidGen: Data Generation for Bimanual Dexterous Manipulation via LLM Reasoning (2507.00833)](../HumanoidGen__Data_Generation_for_Bimanual_Dexterous_Manipulation_via_LLM_Reasoning/HumanoidGen__Data_Generation_for_Bimanual_Dexterous_Manipulation_via_LLM_Reasoning.html)：LLM+MCTS 数据生成路线对照，本仓库已有笔记
+- [GRAIL: Generating Humanoid Loco-Manipulation from 3D Assets and Video Priors (2606.05160)](../GRAIL__Generating_Humanoid_Loco-Manipulation_from_3D_Assets_and_Video_Priors/GRAIL__Generating_Humanoid_Loco-Manipulation_from_3D_Assets_and_Video_Priors.html)：同为 loco-manipulation 数据生成，本仓库已有笔记
+- [SIMPLE: Simulation-Based Policy Learning and Evaluation for Humanoid Loco-manipulation (2606.08278)](../SIMPLE__Simulation-Based_Policy_Learning_and_Evaluation_for_Humanoid_Loco-manipulation/SIMPLE__Simulation-Based_Policy_Learning_and_Evaluation_for_Humanoid_Loco-manipulation.html)：走操一体的仿真评测平台，本仓库已有笔记
+- [BiGym: A Demo-Driven Mobile Bi-Manual Manipulation Benchmark (2407.07788)](../BiGym__A_Demo-Driven_Mobile_Bi-Manual_Manipulation_Benchmark/BiGym__A_Demo-Driven_Mobile_Bi-Manual_Manipulation_Benchmark.html)：作者之一 Nikita Chernyadev 的移动双臂基准，本仓库已有笔记
 
 ---
 

@@ -124,5 +124,5 @@ flowchart LR
 
 ## 🔗 相关阅读
 
-- **同模块·VLM/规划**：[给 GPT-4 一具人形身体·BiBo](../Endowing_GPT-4_with_a_Humanoid_Body__Bridge_Between_VLMs_and_the_Physical_World/Endowing_GPT-4_with_a_Humanoid_Body__Bridge_Between_VLMs_and_the_Physical_World.md) · [Hierarchical Vision-Language Planning](../Hierarchical_Vision-Language_Planning_for_Multi-Step_Humanoid_Manipulation/Hierarchical_Vision-Language_Planning_for_Multi-Step_Humanoid_Manipulation.md)；
-- **DualTHOR 平台（本仓 11）**：[DualTHOR](../../11_Simulation_Benchmark/DualTHOR__A_Dual-Arm_Humanoid_Simulation_Platform_for_Contingency-Aware_Planning/DualTHOR__A_Dual-Arm_Humanoid_Simulation_Platform_for_Contingency-Aware_Planning.md)。
+- **同模块·VLM/规划**：[给 GPT-4 一具人形身体·BiBo](../Endowing_GPT-4_with_a_Humanoid_Body__Bridge_Between_VLMs_and_the_Physical_World/Endowing_GPT-4_with_a_Humanoid_Body__Bridge_Between_VLMs_and_the_Physical_World.html) · [Hierarchical Vision-Language Planning](../Hierarchical_Vision-Language_Planning_for_Multi-Step_Humanoid_Manipulation/Hierarchical_Vision-Language_Planning_for_Multi-Step_Humanoid_Manipulation.html)；
+- **DualTHOR 平台（本仓 11）**：[DualTHOR](../../11_Simulation_Benchmark/DualTHOR__A_Dual-Arm_Humanoid_Simulation_Platform_for_Contingency-Aware_Planning/DualTHOR__A_Dual-Arm_Humanoid_Simulation_Platform_for_Contingency-Aware_Planning.html)。

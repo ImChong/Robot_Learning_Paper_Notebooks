@@ -36,7 +36,7 @@ demos: ["pi05"]
 
 ## 🎯 一句话总结
 
-π₀.₅ 不换网络主干，换的是**训练配方**：绝大部分训练样本（预训练阶段 97.6%）都不是「家里的移动机械臂在做家务」，而是别的机器人、实验室数据、子任务标注和网页数据；模型学会先用文字说出下一步子任务，再按这个子任务出连续动作，高层和低层是**同一个模型**。结果是一台移动机械臂能在训练时从没见过的真实家里，只凭一句「收拾厨房」完成 10–15 分钟的多阶段家务。它回答的是**开放环境泛化**，而不是 [π₀](../Pi0_A_Vision-Language-Action_Flow_Model_for_General_Robot_Control/Pi0_A_Vision-Language-Action_Flow_Model_for_General_Robot_Control.md) 那种在熟悉场景里把灵巧长程任务做好。
+π₀.₅ 不换网络主干，换的是**训练配方**：绝大部分训练样本（预训练阶段 97.6%）都不是「家里的移动机械臂在做家务」，而是别的机器人、实验室数据、子任务标注和网页数据；模型学会先用文字说出下一步子任务，再按这个子任务出连续动作，高层和低层是**同一个模型**。结果是一台移动机械臂能在训练时从没见过的真实家里，只凭一句「收拾厨房」完成 10–15 分钟的多阶段家务。它回答的是**开放环境泛化**，而不是 [π₀](../Pi0_A_Vision-Language-Action_Flow_Model_for_General_Robot_Control/Pi0_A_Vision-Language-Action_Flow_Model_for_General_Robot_Control.html) 那种在熟悉场景里把灵巧长程任务做好。
 
 > 🎮 **本文内嵌 1 段讲解动画 + 1 段配音视频**（不用装任何东西）：
 > 1. [七幕动画：π₀.₅ 全流程](#pi05-explainer-anim) —— 约 87 秒串完「开放世界的难题 → 异构数据配方 → 一个模型两层推理 → 离散预训练 + 连续后训练 → 输入输出与部署 → 训练环境数量 → 消融：什么最重要」
@@ -534,9 +534,9 @@ A：陌生把手、难开的柜门、被手臂挡住的污渍会失败；高层�
 
 <h3 id="相关阅读">相关阅读</h3>
 
-- 本站 [π₀](../Pi0_A_Vision-Language-Action_Flow_Model_for_General_Robot_Control/Pi0_A_Vision-Language-Action_Flow_Model_for_General_Robot_Control.md)：主干、流匹配、动作专家的来源。
-- 本站 [Transformer](../../01_Foundational_RL/Transformer_Attention_Is_All_You_Need/Transformer_Attention_Is_All_You_Need.md)：前缀掩码、自回归与正弦时间编码的来源。
-- 本站 [GR00T N1](../GR00T_N1_Humanoid_Foundation_Model/GR00T_N1_Humanoid_Foundation_Model.md)：同期面向人形的 VLA，同样用异构数据（数据金字塔），但高层 / 低层是 System 2 / System 1 两个模块。
+- 本站 [π₀](../Pi0_A_Vision-Language-Action_Flow_Model_for_General_Robot_Control/Pi0_A_Vision-Language-Action_Flow_Model_for_General_Robot_Control.html)：主干、流匹配、动作专家的来源。
+- 本站 [Transformer](../../01_Foundational_RL/Transformer_Attention_Is_All_You_Need/Transformer_Attention_Is_All_You_Need.html)：前缀掩码、自回归与正弦时间编码的来源。
+- 本站 [GR00T N1](../GR00T_N1_Humanoid_Foundation_Model/GR00T_N1_Humanoid_Foundation_Model.html)：同期面向人形的 VLA，同样用异构数据（数据金字塔），但高层 / 低层是 System 2 / System 1 两个模块。
 - [FAST（Pertsch et al., 2025）](https://arxiv.org/abs/2501.09747)：预训练阶段的动作 tokenizer。
 - [SayCan（Ahn et al., 2022）](https://arxiv.org/abs/2204.01691)、[RT-H（Belkhale et al., 2024）](https://arxiv.org/abs/2403.01823)：用语言做层级动作的前作，π₀.₅ 把两层合进一个模型。
 

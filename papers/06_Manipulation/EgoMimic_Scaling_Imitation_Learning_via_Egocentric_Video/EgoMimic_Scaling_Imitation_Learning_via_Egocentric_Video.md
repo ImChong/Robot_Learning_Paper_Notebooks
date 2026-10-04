@@ -303,8 +303,8 @@ A：iDP3 聚焦人形 3D 扩散策略与单场景泛化；HumDex 聚焦便携 IM
 
 ## 🔗 相关阅读
 
-- [HumDex](../HumDex_Humanoid_Dexterous_Manipulation_Made_Easy/HumDex_Humanoid_Dexterous_Manipulation_Made_Easy.md)（人类视频→机器人数据另一路线）
-- [DreamDojo](../DreamDojo_A_Generalist_Robot_World_Model_from_Large-Scale_Human_Videos/DreamDojo_A_Generalist_Robot_World_Model_from_Large-Scale_Human_Videos.md)（大规模人类视频世界模型）
+- [HumDex](../HumDex_Humanoid_Dexterous_Manipulation_Made_Easy/HumDex_Humanoid_Dexterous_Manipulation_Made_Easy.html)（人类视频→机器人数据另一路线）
+- [DreamDojo](../DreamDojo_A_Generalist_Robot_World_Model_from_Large-Scale_Human_Videos/DreamDojo_A_Generalist_Robot_World_Model_from_Large-Scale_Human_Videos.html)（大规模人类视频世界模型）
 - [ALOHA](https://arxiv.org/abs/2304.13705)（leader-follower 双臂遥操作基线）
 - [MimicPlay](https://arxiv.org/abs/2303.05799)（人类视频分层规划对照）
 - [ACT](https://arxiv.org/abs/2304.13705)（Action Chunking Transformer 策略骨干）

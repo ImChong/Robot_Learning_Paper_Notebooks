@@ -123,4 +123,4 @@ flowchart LR
 
 ## 🔗 相关阅读
 
-- **同模块·数据生成/基准**：[DexMimicGen（自动双手灵巧数据生成）](../DexMimicGen__Automated_Data_Generation_for_Bimanual_Dexterous_Manipulation/DexMimicGen__Automated_Data_Generation_for_Bimanual_Dexterous_Manipulation.md) · [Mimicking-Bench](../Mimicking-Bench__A_Benchmark_for_Generalizable_Humanoid-Scene_Interaction_Learning/Mimicking-Bench__A_Benchmark_for_Generalizable_Humanoid-Scene_Interaction_Learning.md)。
+- **同模块·数据生成/基准**：[DexMimicGen（自动双手灵巧数据生成）](../DexMimicGen__Automated_Data_Generation_for_Bimanual_Dexterous_Manipulation/DexMimicGen__Automated_Data_Generation_for_Bimanual_Dexterous_Manipulation.html) · [Mimicking-Bench](../Mimicking-Bench__A_Benchmark_for_Generalizable_Humanoid-Scene_Interaction_Learning/Mimicking-Bench__A_Benchmark_for_Generalizable_Humanoid-Scene_Interaction_Learning.html)。

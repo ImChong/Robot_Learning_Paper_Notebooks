@@ -217,7 +217,7 @@ A：是。前端任何能给出 SMPL(-X) 轨迹的 HMR + 任何能给出 depth/n
 
 ## 🔗 相关阅读
 
-- [Iterative Closed-Loop Motion Synthesis (#448)](../Iterative_Closed-Loop_Motion_Synthesis/Iterative_Closed-Loop_Motion_Synthesis.md)：同模块上一个推进，"用仿真闭环造数据"的另一种路子
+- [Iterative Closed-Loop Motion Synthesis (#448)](../Iterative_Closed-Loop_Motion_Synthesis/Iterative_Closed-Loop_Motion_Synthesis.html)：同模块上一个推进，"用仿真闭环造数据"的另一种路子
 - [PhysHMR (#451)](https://arxiv.org/abs/2510.02566)：用人形控制策略反推物理合理人体运动（同模块下一个候选）
 - [Perpetual Humanoid Control (PHC, #465)](https://arxiv.org/abs/2305.06456)：CRISP 后端 RL 跟踪器的原型
 - [PROX 数据集](https://prox.is.tue.mpg.de/)：CRISP 评测的标杆 benchmark

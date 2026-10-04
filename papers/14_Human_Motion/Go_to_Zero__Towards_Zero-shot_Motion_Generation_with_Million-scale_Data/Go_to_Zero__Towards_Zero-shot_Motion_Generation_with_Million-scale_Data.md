@@ -128,4 +128,4 @@ flowchart LR
 
 ## 🔗 相关阅读
 
-- **同模块·动作生成/规模化**：[Scaling Large Motion Models](../Scaling_Large_Motion_Models_with_Million-Level_Human_Motions/Scaling_Large_Motion_Models_with_Million-Level_Human_Motions.md) · [Being-M0.5](../Being-M0.5__A_Real-Time_Controllable_Vision-Language-Motion_Model/Being-M0.5__A_Real-Time_Controllable_Vision-Language-Motion_Model.md)。
+- **同模块·动作生成/规模化**：[Scaling Large Motion Models](../Scaling_Large_Motion_Models_with_Million-Level_Human_Motions/Scaling_Large_Motion_Models_with_Million-Level_Human_Motions.html) · [Being-M0.5](../Being-M0.5__A_Real-Time_Controllable_Vision-Language-Motion_Model/Being-M0.5__A_Real-Time_Controllable_Vision-Language-Motion_Model.html)。

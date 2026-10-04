@@ -147,17 +147,6 @@
         "zh_title": "SMP：可复用的分数匹配运动先验"
       },
       {
-        "title": "Understanding Domain Randomization for Sim-to-real Transfer",
-        "path": "papers/01_Foundational_RL/Domain_Randomization_Understanding_Sim-to-Real_Transfer/Domain_Randomization_Understanding_Sim-to-Real_Transfer.md",
-        "url": "/papers/01_Foundational_RL/Domain_Randomization_Understanding_Sim-to-Real_Transfer/Domain_Randomization_Understanding_Sim-to-Real_Transfer.html",
-        "dir": "Domain_Randomization_Understanding_Sim-to-Real_Transfer",
-        "arxiv": "2110.03239",
-        "published_date_zh": "2021年10月（v1），2022年3月（v2）（arXiv）",
-        "published_date_en": "Oct 2021 (v1), Mar 2022 (v2) (arXiv)",
-        "zhname": "理解域随机化在仿真到现实迁移中的作用",
-        "zh_title": "理解域随机化在仿真到现实迁移中的作用"
-      },
-      {
         "title": "Domain Randomization for Transferring Deep Neural Networks from Simulation to the Real World",
         "path": "papers/01_Foundational_RL/Domain_Randomization_for_Transferring_Deep_Neural_Networks_from_Simulation_to_the_Real_World/Domain_Randomization_for_Transferring_Deep_Neural_Networks_from_Simulation_to_the_Real_World.md",
         "url": "/papers/01_Foundational_RL/Domain_Randomization_for_Transferring_Deep_Neural_Networks_from_Simulation_to_the_Real_World/Domain_Randomization_for_Transferring_Deep_Neural_Networks_from_Simulation_to_the_Real_World.html",
@@ -168,6 +157,17 @@
         "published_date_en": "Mar 2017 (arXiv)",
         "zhname": "域随机化：从仿真迁移到真实世界",
         "zh_title": "域随机化：从仿真迁移到真实世界"
+      },
+      {
+        "title": "Understanding Domain Randomization for Sim-to-real Transfer",
+        "path": "papers/01_Foundational_RL/Domain_Randomization_Understanding_Sim-to-Real_Transfer/Domain_Randomization_Understanding_Sim-to-Real_Transfer.md",
+        "url": "/papers/01_Foundational_RL/Domain_Randomization_Understanding_Sim-to-Real_Transfer/Domain_Randomization_Understanding_Sim-to-Real_Transfer.html",
+        "dir": "Domain_Randomization_Understanding_Sim-to-Real_Transfer",
+        "arxiv": "2110.03239",
+        "published_date_zh": "2021年10月（v1），2022年3月（v2）（arXiv）",
+        "published_date_en": "Oct 2021 (v1), Mar 2022 (v2) (arXiv)",
+        "zhname": "理解域随机化在仿真到现实迁移中的作用",
+        "zh_title": "理解域随机化在仿真到现实迁移中的作用"
       },
       {
         "title": "Learning Smooth Humanoid Locomotion through Lipschitz-Constrained Policies (LCP)",

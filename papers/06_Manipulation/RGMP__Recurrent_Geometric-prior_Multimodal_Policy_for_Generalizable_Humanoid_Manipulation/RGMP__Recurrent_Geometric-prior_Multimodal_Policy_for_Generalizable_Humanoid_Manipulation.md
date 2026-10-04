@@ -150,5 +150,5 @@ flowchart TB
 
 ## 🔗 相关阅读
 
-- **同组后续工作**：[RGMP-S：几何先验 + 递归脉冲特征学习](../RGMP-S__Generalizable_Geometric_Prior_and_Recurrent_Spiking_Feature_Learning_for_Humanoid_Manipulation/RGMP-S__Generalizable_Geometric_Prior_and_Recurrent_Spiking_Feature_Learning_for_Humanoid_Manipulation.md)
-- **数据高效视觉运动策略对照**：[Unified Video Action Model](../Unified_Video_Action_Model/Unified_Video_Action_Model.md) · [HumanoidVLM（接触富集 · VLM + 阻抗）](../HumanoidVLM_Vision-Language-Guided_Impedance_Control_for_Contact-Rich_Humanoid_Manipulation/HumanoidVLM_Vision-Language-Guided_Impedance_Control_for_Contact-Rich_Humanoid_Manipulation.md)
+- **同组后续工作**：[RGMP-S：几何先验 + 递归脉冲特征学习](../RGMP-S__Generalizable_Geometric_Prior_and_Recurrent_Spiking_Feature_Learning_for_Humanoid_Manipulation/RGMP-S__Generalizable_Geometric_Prior_and_Recurrent_Spiking_Feature_Learning_for_Humanoid_Manipulation.html)
+- **数据高效视觉运动策略对照**：[Unified Video Action Model](../Unified_Video_Action_Model/Unified_Video_Action_Model.html) · [HumanoidVLM（接触富集 · VLM + 阻抗）](../HumanoidVLM_Vision-Language-Guided_Impedance_Control_for_Contact-Rich_Humanoid_Manipulation/HumanoidVLM_Vision-Language-Guided_Impedance_Control_for_Contact-Rich_Humanoid_Manipulation.html)

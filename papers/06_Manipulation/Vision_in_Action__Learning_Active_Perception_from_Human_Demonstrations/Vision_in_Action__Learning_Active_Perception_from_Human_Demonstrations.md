@@ -126,4 +126,4 @@ flowchart LR
 
 ## 🔗 相关阅读
 
-- **同模块·主动感知**：[EgoMI（主动视觉头手协调）](../EgoMI__Learning_Active_Vision_and_Whole-Body_Manipulation_from_Egocentric_Human_Demos/EgoMI__Learning_Active_Vision_and_Whole-Body_Manipulation_from_Egocentric_Human_Demos.md) · [Learning to Look Around](../Learning_to_Look_Around__Enhancing_Teleoperation_and_Learning/Learning_to_Look_Around__Enhancing_Teleoperation_and_Learning.md)。
+- **同模块·主动感知**：[EgoMI（主动视觉头手协调）](../EgoMI__Learning_Active_Vision_and_Whole-Body_Manipulation_from_Egocentric_Human_Demos/EgoMI__Learning_Active_Vision_and_Whole-Body_Manipulation_from_Egocentric_Human_Demos.html) · [Learning to Look Around](../Learning_to_Look_Around__Enhancing_Teleoperation_and_Learning/Learning_to_Look_Around__Enhancing_Teleoperation_and_Learning.html)。

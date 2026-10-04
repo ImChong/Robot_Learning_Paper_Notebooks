@@ -131,4 +131,4 @@ flowchart LR
 
 ## 🔗 相关阅读
 
-- **同模块·人形体育**：[Learning Human-Like Badminton Skills](../Learning_Human-Like_Badminton_Skills_for_Humanoid_Robots/Learning_Human-Like_Badminton_Skills_for_Humanoid_Robots.md) · [人形足球敏捷射门](../Learning_Agile_Striker_Skills_for_Humanoid_Soccer_Robots_from_Noisy_Sensory_Input/Learning_Agile_Striker_Skills_for_Humanoid_Soccer_Robots_from_Noisy_Sensory_Input.md) · [RoboStriker（拳击）](../RoboStriker__Hierarchical_Decision-Making_for_Autonomous_Humanoid_Boxi/RoboStriker__Hierarchical_Decision-Making_for_Autonomous_Humanoid_Boxi.md)。
+- **同模块·人形体育**：[Learning Human-Like Badminton Skills](../Learning_Human-Like_Badminton_Skills_for_Humanoid_Robots/Learning_Human-Like_Badminton_Skills_for_Humanoid_Robots.html) · [人形足球敏捷射门](../Learning_Agile_Striker_Skills_for_Humanoid_Soccer_Robots_from_Noisy_Sensory_Input/Learning_Agile_Striker_Skills_for_Humanoid_Soccer_Robots_from_Noisy_Sensory_Input.html) · [RoboStriker（拳击）](../RoboStriker__Hierarchical_Decision-Making_for_Autonomous_Humanoid_Boxing/RoboStriker__Hierarchical_Decision-Making_for_Autonomous_Humanoid_Boxing.html)。

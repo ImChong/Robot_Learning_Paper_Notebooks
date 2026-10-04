@@ -119,4 +119,4 @@ flowchart LR
 
 ## 🔗 相关阅读
 
-- **同模块·感知式跑酷 / 高动态**：[Hiking in the Wild（可扩展感知式跑酷）](../Hiking_in_the_Wild__A_Scalable_Perceptive_Parkour_Framework_for_Humanoids/Hiking_in_the_Wild__A_Scalable_Perceptive_Parkour_Framework_for_Humanoids.md) · [OmniXtreme（高动态控制通用性）](../OmniXtreme/OmniXtreme.md) · [Perceptive Humanoid Parkour](../Perceptive_Humanoid_Parkour__Chaining_Dynamic_Human_Skills_via_Motion_/Perceptive_Humanoid_Parkour__Chaining_Dynamic_Human_Skills_via_Motion_.md)。
+- **同模块·感知式跑酷 / 高动态**：[Hiking in the Wild（可扩展感知式跑酷）](../Hiking_in_the_Wild__A_Scalable_Perceptive_Parkour_Framework_for_Humanoids/Hiking_in_the_Wild__A_Scalable_Perceptive_Parkour_Framework_for_Humanoids.html) · [OmniXtreme（高动态控制通用性）](../OmniXtreme_Breaking_the_Generality_Barrier_in_High-Dynamic_Humanoid_Control/OmniXtreme_Breaking_the_Generality_Barrier_in_High-Dynamic_Humanoid_Control.html) · [Perceptive Humanoid Parkour](../Perceptive_Humanoid_Parkour__Chaining_Dynamic_Human_Skills_via_Motion_Matching/Perceptive_Humanoid_Parkour__Chaining_Dynamic_Human_Skills_via_Motion_Matching.html)。

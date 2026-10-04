@@ -197,8 +197,8 @@ A：真实世界第一视角导航数据稀缺。AND 用 Aria 眼镜采 4 小时
 - [LookOut arXiv](https://arxiv.org/abs/2508.14466) · [HTML](https://arxiv.org/html/2508.14466v1) · [PDF](https://arxiv.org/pdf/2508.14466) · [项目主页](https://sites.google.com/stanford.edu/lookout)
 - 会议版本：[ICCV 2025（CVF）](https://openaccess.thecvf.com/content/ICCV2025/papers/Pan_LookOut_Real-World_Humanoid_Egocentric_Navigation_ICCV_2025_paper.pdf)
 - 同模块对照：
-  - [FocusNav](../FocusNav__Spatial_Selective_Attention_with_Waypoint_Guidance_for_Humanoid_Local/FocusNav__Spatial_Selective_Attention_with_Waypoint_Guidance_for_Humanoid_Local.md)（路径点引导的局部导航）
-  - [Thinking in 360°](../Thinking_in_360__Humanoid_Visual_Search_in_the_Wild/Thinking_in_360__Humanoid_Visual_Search_in_the_Wild.md)（转头看路 + 转头找物的视觉搜索）
-  - [STATE-NAV](../STATE-NAV__Stability-Aware_Traversability_Estimation_for_Bipedal_Navigation_on_Rough_Terrain/STATE-NAV__Stability-Aware_Traversability_Estimation_for_Bipedal_Navigation_on_Rough_Terrain.md)（稳定性感知的可通过性估计）
-  - [NaVILA](../NaVILA_Legged_Robot_Vision-Language-Action_Model_for_Navigation/NaVILA_Legged_Robot_Vision-Language-Action_Model_for_Navigation.md)（视觉-语言-动作导航）
+  - [FocusNav](../FocusNav__Spatial_Selective_Attention_with_Waypoint_Guidance_for_Humanoid_Local/FocusNav__Spatial_Selective_Attention_with_Waypoint_Guidance_for_Humanoid_Local.html)（路径点引导的局部导航）
+  - [Thinking in 360°](../Thinking_in_360__Humanoid_Visual_Search_in_the_Wild/Thinking_in_360__Humanoid_Visual_Search_in_the_Wild.html)（转头看路 + 转头找物的视觉搜索）
+  - [STATE-NAV](../STATE-NAV__Stability-Aware_Traversability_Estimation_for_Bipedal_Navigation_on_Rough_Terrain/STATE-NAV__Stability-Aware_Traversability_Estimation_for_Bipedal_Navigation_on_Rough_Terrain.html)（稳定性感知的可通过性估计）
+  - [NaVILA](../NaVILA_Legged_Robot_Vision-Language-Action_Model_for_Navigation/NaVILA_Legged_Robot_Vision-Language-Action_Model_for_Navigation.html)（视觉-语言-动作导航）
 - 自监督特征线：DINO 思想可对照视觉表征类工作在导航/操作中的迁移应用

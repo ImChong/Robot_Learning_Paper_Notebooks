@@ -122,5 +122,5 @@ flowchart LR
 
 ## 🔗 相关阅读
 
-- **同模块·人形导航**：[NavDP（Sim-to-Real 导航扩散）](../NavDP__Learning_Sim-to-Real_Navigation_Diffusion_Policy/NavDP__Learning_Sim-to-Real_Navigation_Diffusion_Policy.md) · [社交导航（正负示范+规则）](../Learning_Social_Navigation_from_Positive_and_Negative_Demonstrations_and_Rule-Based_Specifications/Learning_Social_Navigation_from_Positive_and_Negative_Demonstrations_and_Rule-Based_Specifications.md)；
+- **同模块·人形导航**：[NavDP（Sim-to-Real 导航扩散）](../NavDP__Learning_Sim-to-Real_Navigation_Diffusion_Policy/NavDP__Learning_Sim-to-Real_Navigation_Diffusion_Policy.html) · [社交导航（正负示范+规则）](../Learning_Social_Navigation_from_Positive_and_Negative_Demonstrations_and_Rule-Based_Specifications/Learning_Social_Navigation_from_Positive_and_Negative_Demonstrations_and_Rule-Based_Specifications.html)；
 - **第一视角学习**：本仓 04 模块 ZeroWBC、EgoHumanoid。
