@@ -3529,6 +3529,17 @@
         "published_date_en": "Sep 30, 2025 (arXiv)",
         "zhname": "EA-CoRL：面向人形引体向上的进化式连续自适应强化学习协同设计",
         "zh_title": "EA-CoRL：面向人形引体向上的进化式连续自适应强化学习协同设计"
+      },
+      {
+        "title": "A Framework for Optimal Ankle Design of Humanoid Robots",
+        "path": "papers/12_Hardware_Design/Framework_for_Optimal_Ankle_Design_of_Humanoid_Robots/Framework_for_Optimal_Ankle_Design_of_Humanoid_Robots.md",
+        "url": "/papers/12_Hardware_Design/Framework_for_Optimal_Ankle_Design_of_Humanoid_Robots/Framework_for_Optimal_Ankle_Design_of_Humanoid_Robots.html",
+        "dir": "Framework_for_Optimal_Ankle_Design_of_Humanoid_Robots",
+        "arxiv": "2509.16469",
+        "published_date_zh": "2025年9月19日（arXiv v1）",
+        "published_date_en": "Sep 19, 2025 (arXiv v1)",
+        "zhname": "人形机器人踝关节最优设计框架",
+        "zh_title": "人形机器人踝关节最优设计框架"
       }
     ],
     "zhname": "硬件设计",
