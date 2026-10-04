@@ -238,7 +238,7 @@ def test_notes_declare_their_demos_in_reading_order():
         SMP_NOTE: ("smp", ["smp-explainer", "smp-video", "smp-sds", "smp-esm", "smp-style"]),
         DR_VISION_NOTE: (
             "domain_randomization",
-            ["dr-scene", "dr-coverage", "dr-ablation"],
+            ["dr-explainer", "dr-video", "dr-scene", "dr-coverage", "dr-ablation"],
         ),
         DR_THEORY_NOTE: ("dr_theory", ["drt-gap", "drt-memory", "drt-sysid"]),
         MIMICKIT_NOTE: (
@@ -296,6 +296,7 @@ EXPLAINER_BUNDLES = (
     "ppo", "awr", "deepmimic", "amp", "add", "ase", "calm", "pulse", "sonic", "groot",
     "gmr", "omniretarget", "diffusion_policy", "beyondmimic", "cosmos", "umr", "php", "pbfm",
     "gentle", "lcp", "transformer", "pi0", "pi05", "op3soccer", "smp", "humanml3d",
+    "domain_randomization",
 )
 
 # 幕数由论文决定，不是统一模板：PPO / DeepMimic / AMP / ADD 的核心概念正好各 5 个，
@@ -374,6 +375,11 @@ EXPLAINER_BUNDLES = (
 # ESM 与 AdaNorm 在论文同属 5.1 节，但一个回答「抽哪一档」（方差，表 5 / 表 7），一个回答
 # 「三档怎么加」（量级，表 6），各有一组消融；合成一幕会让 50 档的对数曲线和三档占比条抢同一帧。
 # GSI 解决的是 RSI 也要读数据这件事，与奖励无关；风格的 CFG 与组合又是第 8.1 节单独的实验。
+# 域随机化（Tobin 2017）也是八件（现实鸿沟与第三条路 / 七项随机化与三种纹理 / 相机不标定 /
+# VGG-16 检测器与训练 / 真机定位精度 / 图 4–5 的张数与纹理种数 / 表 2 逐项拿掉 / 真机抓取与之后）。
+# 「随机什么」（III-A 的清单）与「相机怎么随机」是两件事：后者有自己的 10 × 5 × 10 cm / 0.1 rad / 5%
+# 和桌高固定；「要多少」（图 4、图 5 两条曲线）与「拿掉哪一项」（表 2 的四行三列）是论文 IV-C 里
+# 两组独立的消融，合成一幕会让两张对数轴曲线和分组柱抢同一帧。
 
 # HumanML3D 是九件（文本生成动作卡在哪 / 数据集怎么建 / 一帧 263 维 / 每 4 帧一个 snippet code /
 # Text2Length / 时序 VAE 的一步 / 三项损失与课程学习 / 评测器与 R-Precision / 结果、消融与遗产）。
@@ -407,6 +413,7 @@ EXPLAINER_SCENES = {
     "pi05": (PI05_NOTE, 7),
     "op3soccer": (SOCCER_NOTE, 7),
     "smp": (SMP_NOTE, 8),
+    "domain_randomization": (DR_VISION_NOTE, 8),
 
     "humanml3d": (HUMANML3D_NOTE, 9),
 }
@@ -1603,7 +1610,7 @@ def test_narrated_video_placeholders_point_at_files_that_exist():
             assert f"'{demo}': buildVideoDemo" in js and "K.video(host" in js, f"{demo} 没有通过 K.video 注册"
     for demo in ("calm-video", "pulse-video", "dp-video", "bm-video", "lcp-video", "cosmos-video", "groot-video",
                  "tf-video", "pi0-video", "pi05-video", "soccer-video", "sonic-video", "gmr-video",
-                 "omniretarget-video", "humanml3d-video", "smp-video"):
+                 "omniretarget-video", "humanml3d-video", "smp-video", "dr-video"):
         assert demo in seen, f"{demo} 应该挂在对应的论文笔记里"
 
 
@@ -1897,3 +1904,49 @@ def test_humanml3d_explainer_and_worked_example_share_the_same_numbers():
         assert needle in note, needle
     # 论文只发在 CVPR 2022；旧笔记里的 arXiv 2204.09419 是一篇天体物理论文，不能再当成出处链接
     assert "arxiv.org/abs/2204.09419" not in note and "\narxiv:" not in note
+
+
+def test_dr_explainer_demos_and_worked_example_share_the_paper_numbers():
+    """域随机化：八幕动画第 3、5–7 幕、三个演示与笔记「🚶 具体实例」用同一份论文数字。
+
+    表 1 / 表 2 照抄论文，图 4 / 图 5 是读图近似值；平均、倍数、像素在这些数上现算。
+    旧版笔记与演示里的「DR-only 78%、微调后 87%」论文里没有，这里也守着别再写回来。
+    """
+    js = (DEMO_JS_DIR / "domain_randomization.js").read_text(encoding="utf-8")
+    note = DR_VISION_NOTE.read_text(encoding="utf-8")
+
+    for line in (
+        "{ name: '完整方法', v: [1.3, 1.8, 2.4], sd: [0.6, 1.7, 3.0] },",
+        "{ name: '训练时去掉干扰物', v: [1.5, 7.2, 7.4], sd: [0.6, 4.5, 5.3] }",
+        "var FIG4_PRE = [3.8, 3.2, 2.1, 1.9, 1.8, 1.6, 1.6];",
+        "var FIG4_SCRATCH = [13.9, 11.2, 2.6, 2.0, 1.7, 1.5, 1.4];",
+        "var FIG5_ERR = [14.7, 12.5, 5.5, 1.9];",
+        "var GRASP_OK = 38, GRASP_N = 40, SPAM_OK = 9, SPAM_N = 10;",
+    ):
+        assert line in js, line
+
+    table1 = [
+        (1.3, 1.5, 1.4), (1.3, 1.8, 1.4), (1.1, 1.9, 1.9), (0.7, 0.6, 1.0),
+        (0.9, 1.0, 1.1), (1.3, 1.2, 0.9), (0.8, 1.0, 3.2), (0.9, 0.9, 1.9),
+    ]
+    cols = [sum(r[k] for r in table1) for k in range(3)]
+    assert [_fmt(c, 1) for c in cols] == ["8.3", "9.9", "12.8"]
+    assert [_fmt(c / 8, 2) for c in cols] == ["1.04", "1.24", "1.60"]
+    assert _fmt(sum(cols) / 24, 2) == "1.29"
+    assert [_fmt(d * 0.1 * 100, 2) for d in (0.7, 0.875, 1.05)] == ["7.00", "8.75", "10.50"]
+    assert _fmt(224 / 2 * 0.05, 1) == "5.6"
+    assert (_fmt(7.2 / 1.8, 1), _fmt(7.4 / 2.4, 1), _fmt(2.0 / 1.3, 1), _fmt(5.5 / 1.9, 1)) == ("4.0", "3.1", "1.5", "2.9")
+    assert _fmt(12.5 + 0.5 * (5.5 - 12.5), 1) == "9.0"
+    z, n, p = 1.96, 40, 38 / 40
+    center = (p + z * z / (2 * n)) / (1 + z * z / n)
+    half = z * math.sqrt(p * (1 - p) / n + z * z / (4 * n * n)) / (1 + z * z / n)
+    assert (_fmt(center - half, 2), _fmt(center + half, 2)) == ("0.83", "0.99")
+
+    for needle in (
+        "## 🎬 八幕动画：域随机化全流程", "## 🚶 具体实例", "| **列平均** | **1.04** | **1.24** | **1.60** |",
+        "**1.29 cm**", "**7.0 cm**", "**8.75 cm**", "**10.5 cm**", "**5.6 像素**", "**4.0 倍**", "**3.1 倍**",
+        "**9.0 cm**", "[0.83,\\ 0.99]", "**38 / 40 = 95%**", "**9 / 10 = 90%**",
+    ):
+        assert needle in note, needle
+    for stale in ("78%", "87%"):
+        assert stale not in js and stale not in note, f"论文里没有 {stale} 这个抓取成功率"
