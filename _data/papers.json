@@ -452,10 +452,12 @@
             "path": "papers/03_High_Impact_Selection/Learning_Quadrupedal_Locomotion_over_Challenging_Terrain/Learning_Quadrupedal_Locomotion_over_Challenging_Terrain.md",
             "url": "/papers/03_High_Impact_Selection/Learning_Quadrupedal_Locomotion_over_Challenging_Terrain/Learning_Quadrupedal_Locomotion_over_Challenging_Terrain.html",
             "dir": "Learning_Quadrupedal_Locomotion_over_Challenging_Terrain",
+            "arxiv": "2010.11251",
+            "has_open_source": true,
             "published_date_zh": "2020年10月21日",
             "published_date_en": "Oct 21, 2020",
-            "zhname": "挑战地形下的四足运动学习（ANYmal 里程碑）",
-            "zh_title": "挑战地形下的四足运动学习（ANYmal 里程碑）"
+            "zhname": "挑战地形上的四足运动学习",
+            "zh_title": "挑战地形上的四足运动学习"
           },
           {
             "title": "Real-World Humanoid Locomotion with Reinforcement Learning",

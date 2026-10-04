@@ -111,6 +111,7 @@ def _high_impact_note(folder: str) -> Path:
 PI0_NOTE = _high_impact_note("Pi0_A_Vision-Language-Action_Flow_Model_for_General_Robot_Control")
 PI05_NOTE = _high_impact_note("Pi05_A_Vision-Language-Action_Model_with_Open-World_Generalization")
 SOCCER_NOTE = _high_impact_note("Learning_Agile_Soccer_Skills_for_a_Bipedal_Robot_with_Deep_RL")
+QUAD_NOTE = _high_impact_note("Learning_Quadrupedal_Locomotion_over_Challenging_Terrain")
 PHP_NOTE = (
     ROOT
     / "papers"
@@ -259,6 +260,7 @@ def test_notes_declare_their_demos_in_reading_order():
         PI0_NOTE: ("pi0", ["pi0-explainer", "pi0-video"]),
         PI05_NOTE: ("pi05", ["pi05-explainer", "pi05-video"]),
         SOCCER_NOTE: ("op3soccer", ["soccer-explainer", "soccer-video"]),
+        QUAD_NOTE: ("quadterrain", ["qt-explainer", "qt-video", "qt-ftg", "qt-curriculum", "qt-memory"]),
     }
     for note, (bundle, placeholders) in expected.items():
         text = note.read_text(encoding="utf-8")
@@ -296,7 +298,7 @@ EXPLAINER_BUNDLES = (
     "ppo", "awr", "deepmimic", "amp", "add", "ase", "calm", "pulse", "sonic", "groot",
     "gmr", "omniretarget", "diffusion_policy", "beyondmimic", "cosmos", "umr", "php", "pbfm",
     "gentle", "lcp", "transformer", "pi0", "pi05", "op3soccer", "smp", "humanml3d",
-    "domain_randomization",
+    "domain_randomization", "quadterrain",
 )
 
 # 幕数由论文决定，不是统一模板：PPO / DeepMimic / AMP / ADD 的核心概念正好各 5 个，
@@ -381,6 +383,13 @@ EXPLAINER_BUNDLES = (
 # 和桌高固定；「要多少」（图 4、图 5 两条曲线）与「拿掉哪一项」（表 2 的四行三列）是论文 IV-C 里
 # 两组独立的消融，合成一幕会让两张对数轴曲线和分组柱抢同一帧。
 
+# 四足野外盲走（Lee 2020）也是九件（野外为什么难 / 相位振荡器 + 足端残差的动作空间 / 特权教师 / 本体学生 /
+# 自适应地形课程 / 野外零样本与表 1 / 室内对照 / 记忆长度与踩空反射 / 解码器与局限）。论文的三个支柱（TCN 记忆、
+# 特权训练、地形课程）各有一节方法和一组消融，再加上方法节单独的 Motion synthesis（式 11 的样条与 16 维动作），
+# 就是第 2–5 幕；结果里「野外 + 地下挑战赛」（表 1）与「室内台阶 / 负重 / 打滑」（图 3）是两类证据，
+# 「记忆要多长」（图 5B–D + 图 6 的显著性）与「记忆里装了什么」（图 S2 的解码器）是验证节和分析节的两段，
+# 合成一幕会让表 1 的柱子和图 3E 的折线、或者三档消融柱和摩擦曲线抢同一帧。
+
 # HumanML3D 是九件（文本生成动作卡在哪 / 数据集怎么建 / 一帧 263 维 / 每 4 帧一个 snippet code /
 # Text2Length / 时序 VAE 的一步 / 三项损失与课程学习 / 评测器与 R-Precision / 结果、消融与遗产）。
 # 它一篇论文同时交了数据集、方法和评测协议三样东西：数据集的「怎么建」与「每帧存什么」是第 4 节与
@@ -414,6 +423,7 @@ EXPLAINER_SCENES = {
     "op3soccer": (SOCCER_NOTE, 7),
     "smp": (SMP_NOTE, 8),
     "domain_randomization": (DR_VISION_NOTE, 8),
+    "quadterrain": (QUAD_NOTE, 9),
 
     "humanml3d": (HUMANML3D_NOTE, 9),
 }
@@ -1610,7 +1620,7 @@ def test_narrated_video_placeholders_point_at_files_that_exist():
             assert f"'{demo}': buildVideoDemo" in js and "K.video(host" in js, f"{demo} 没有通过 K.video 注册"
     for demo in ("calm-video", "pulse-video", "dp-video", "bm-video", "lcp-video", "cosmos-video", "groot-video",
                  "tf-video", "pi0-video", "pi05-video", "soccer-video", "sonic-video", "gmr-video",
-                 "omniretarget-video", "humanml3d-video", "smp-video", "dr-video"):
+                 "omniretarget-video", "humanml3d-video", "smp-video", "dr-video", "qt-video"):
         assert demo in seen, f"{demo} 应该挂在对应的论文笔记里"
 
 
@@ -1950,3 +1960,57 @@ def test_dr_explainer_demos_and_worked_example_share_the_paper_numbers():
         assert needle in note, needle
     for stale in ("78%", "87%"):
         assert stale not in js and stale not in note, f"论文里没有 {stale} 这个抓取成功率"
+
+
+def test_quadterrain_explainer_demos_and_worked_example_share_the_paper_numbers():
+    """四足野外盲走：九幕动画、三个演示与笔记「🚶 具体实例」用同一份论文数字。
+
+    正文、表 1 与补充材料照抄；图 3E、图 5、图 S2 是读图近似值；倍数、步数、功率在这些数上现算。
+    旧版笔记把教师写成 PPO，这里守着别再写回来（论文用的是 TRPO）。
+    """
+    js = (DEMO_JS_DIR / "quadterrain.js").read_text(encoding="utf-8")
+    note = QUAD_NOTE.read_text(encoding="utf-8")
+
+    for line in (
+        "var F0 = 1.25, FTG_H = 0.2, DT = 0.02;",
+        "var DIM_O = 121, DIM_X = 71, DIM_H = 60, DIM_A = 16, DIM_L = 64;",
+        "var V_CAP = 0.6, V_LABEL = 0.2, TR_LO = 0.5, TR_HI = 0.9;",
+        "var REWARD_W = [0.05, 0.05, 0.04, 0.01, 0.02, 0.025, 2e-5];",
+        "var N_PARTICLE = 10, N_TRAJ = 6, N_EVAL = 10, P_TRANS = 0.8, P_REPLAY = 0.05;",
+        "var T1_SPEED = [[0.452, 0.338, 0.248], [0.199, 0.197, null]];",
+        "var T1_COT = [[0.423, 0.692, 1.23], [0.625, 0.931, null]];",
+        "var PAYLOAD_KG = 10, PAYLOAD_FRAC = 0.227, PAYLOAD_STEP = 13.4;",
+        "var MEM_PARAMS = [161960, 158300, 158070];",
+        "var DEV_DROP = 0.355;",
+        "var FT_T = 2.1, SAL_T = 3.4;",
+        "var PROBE_FORCE = 80.1;",
+    ):
+        assert line in js, line
+
+    def ftg(k):
+        return 0.2 * (-2 * k**3 + 3 * k**2) if k <= 1 else 0.2 * (2 * k**3 - 9 * k**2 + 12 * k - 4)
+
+    assert [_fmt(ftg(k) * 100, 1) for k in (0.25, 0.5, 1, 1.5)] == ["3.1", "10.0", "20.0", "10.0"]
+    assert round(math.degrees(2 * math.pi * 1.25 * 0.02), 6) == 9 and round(1 / 1.25 / 0.02) == 40
+    assert [_fmt(math.exp(-2 * (v - 0.6) ** 2), 3) for v in (0, 0.2, 0.4)] == ["0.487", "0.726", "0.923"]
+    assert 2 + 1 + 3 + 3 + 3 + 24 + 8 + 4 + 1 + 24 + 24 + 24 == 121
+    assert 12 + 36 + 4 + 4 + 4 + 4 + 4 + 3 == 71 and 3 + 3 + 6 + 12 + 12 + 12 + 8 + 4 == 60
+    assert sum([1, 1, 0, 0, 1, 1, 1, 0, 1, 1]) / 10 == 0.7
+    pr = [9 / 60, 42 / 60, 39 / 60, 3 / 60]
+    assert [_fmt(p / sum(pr), 3) for p in pr] == ["0.097", "0.452", "0.419", "0.032"]
+    assert (_fmt(0.452 / 0.199, 2), _fmt(0.338 / 0.197, 2)) == ("2.27", "1.72")
+    assert (_fmt((1 - 0.423 / 0.625) * 100, 0), _fmt((1 - 0.692 / 0.931) * 100, 0)) == ("32", "26")
+    assert (_fmt(0.423 * 0.452 / (0.625 * 0.199), 2), _fmt(0.692 * 0.338 / (0.931 * 0.197), 2)) == ("1.54", "1.28")
+    assert _fmt(10 / 0.227, 0) == "44" and round((3.4 - 2.1) / 0.02) == 65
+    assert _fmt(0.46 * (1 - 0.355), 2) == "0.30" and _fmt(80.1 / 98.1 * 100, 0) == "82"
+    assert _fmt(22.5 - 12.9, 1) == "9.6" and _fmt((22.5 - 12.9) / 12.9 * 100, 0) == "74"
+    assert _fmt(10000 * 80000 * 0.02 / 86400, 0) == "185"
+
+    for needle in (
+        "## 🎬 九幕动画：ANYmal 野外盲走全流程", "## 🚶 具体实例", "**3.1 cm**", "**10 cm**", "**20 cm**", "**9°**",
+        "**40 步**", "**0.487**", "**0.726**", "**0.923**", "**121**", "**71**", "**60**", "**6000**",
+        "$w = 0.097,\\ 0.452,\\ 0.419,\\ 0.032$", "**2.27 倍**", "**1.72 倍**", "**32%**", "**26%**",
+        "**44 kg**", "**65 步**", "**0.30 rad**", "**9.6 cm**", "**82%**", "**185 天**", "TRPO",
+    ):
+        assert needle in note, needle
+    assert "用 PPO" not in note and "PPO 训练" not in note, "论文的教师用的是 TRPO"
