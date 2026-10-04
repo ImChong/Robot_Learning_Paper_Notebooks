@@ -124,4 +124,4 @@ flowchart LR
 
 ## 🔗 相关阅读
 
-- **同模块·灵巧遥操作/基准**：[ACE（跨平台视觉-外骨骼）](../ACE__A_Cross-Platform_Visual-Exoskeletons_System_for_Low-Cost_Dexterous_Teleoperation/ACE__A_Cross-Platform_Visual-Exoskeletons_System_for_Low-Cost_Dexterous_Teleoperation.md) · [TeleOpBench（双臂遥操作基准）](../TeleOpBench__A_Simulator-Centric_Benchmark_for_Dual-Arm_Dexterous_Teleoperation/TeleOpBench__A_Simulator-Centric_Benchmark_for_Dual-Arm_Dexterous_Teleoperation.md)。
+- **同模块·灵巧遥操作/基准**：[ACE（跨平台视觉-外骨骼）](../ACE__A_Cross-Platform_Visual-Exoskeletons_System_for_Low-Cost_Dexterous_Teleoperation/ACE__A_Cross-Platform_Visual-Exoskeletons_System_for_Low-Cost_Dexterous_Teleoperation.html) · [TeleOpBench（双臂遥操作基准）](../TeleOpBench__A_Simulator-Centric_Benchmark_for_Dual-Arm_Dexterous_Teleoperation/TeleOpBench__A_Simulator-Centric_Benchmark_for_Dual-Arm_Dexterous_Teleoperation.html)。

@@ -176,7 +176,7 @@ A：教师依赖部署时拿不到的特权信息，纯蒸馏在分布外场景�
 
 - [GuideWalk arXiv](https://arxiv.org/abs/2606.10449) · [HTML](https://arxiv.org/html/2606.10449) · [PDF](https://arxiv.org/pdf/2606.10449) · [项目主页](https://guide-walk.github.io/GuideWalk)
 - 同模块对照：
-  - [FocusNav](../FocusNav__Spatial_Selective_Attention_with_Waypoint_Guidance_for_Humanoid_Local/FocusNav__Spatial_Selective_Attention_with_Waypoint_Guidance_for_Humanoid_Local.md)（路径点引导的局部导航注意力）
-  - [Gallant](../Gallant__Voxel_Grid-based_Humanoid_Locomotion_and_Local-navigation_across_3D_Constrained_Terrains/Gallant__Voxel_Grid-based_Humanoid_Locomotion_and_Local-navigation_across_3D_Constrained_Terrains.md)（体素栅格局部导航 + 运动跨约束地形）
-  - [STATE-NAV](../STATE-NAV__Stability-Aware_Traversability_Estimation_for_Bipedal_Navigation_on_Rough_Terrain/STATE-NAV__Stability-Aware_Traversability_Estimation_for_Bipedal_Navigation_on_Rough_Terrain.md)（稳定性感知的可通过性估计）
+  - [FocusNav](../FocusNav__Spatial_Selective_Attention_with_Waypoint_Guidance_for_Humanoid_Local/FocusNav__Spatial_Selective_Attention_with_Waypoint_Guidance_for_Humanoid_Local.html)（路径点引导的局部导航注意力）
+  - [Gallant](../Gallant__Voxel_Grid-based_Humanoid_Locomotion_and_Local-navigation_across_3D_Constrained_Terrains/Gallant__Voxel_Grid-based_Humanoid_Locomotion_and_Local-navigation_across_3D_Constrained_Terrains.html)（体素栅格局部导航 + 运动跨约束地形）
+  - [STATE-NAV](../STATE-NAV__Stability-Aware_Traversability_Estimation_for_Bipedal_Navigation_on_Rough_Terrain/STATE-NAV__Stability-Aware_Traversability_Estimation_for_Bipedal_Navigation_on_Rough_Terrain.html)（稳定性感知的可通过性估计）
 - 方法线对照：可通过性感知导航 + 教师蒸馏 + RL 微调，是「导航-运动统一控制」的代表工作

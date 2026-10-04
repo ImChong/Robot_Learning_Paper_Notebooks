@@ -149,9 +149,9 @@ flowchart TB
 
 ## 🔗 相关阅读
 
-- [DexMimicGen: Automated Data Generation for Bimanual Dexterous Manipulation](../DexMimicGen__Automated_Data_Generation_for_Bimanual_Dexterous_Manipulation/DexMimicGen__Automated_Data_Generation_for_Bimanual_Dexterous_Manipulation.md)：另一条自动数据生成路线（双手灵巧操作），本仓库已有笔记
-- [HumanoidGen: Data Generation for Bimanual Dexterous Manipulation via LLM Reasoning](../HumanoidGen__Data_Generation_for_Bimanual_Dexterous_Manipulation_via_LLM_Reasoning/HumanoidGen__Data_Generation_for_Bimanual_Dexterous_Manipulation_via_LLM_Reasoning.md)：用 LLM 推理生成人形操作数据，与视频先验路线形成对照，本仓库已有笔记
-- [Humanoid Everyday: A Comprehensive Robotic Dataset for Open-World Humanoid Manipulation](../Humanoid_Everyday__Comprehensive_Robotic_Dataset_for_Open-World_Humanoid_Manipulation/Humanoid_Everyday__Comprehensive_Robotic_Dataset_for_Open-World_Humanoid_Manipulation.md)：真实采集的人形操作数据集，与全合成路线对照，本仓库已有笔记
+- [DexMimicGen: Automated Data Generation for Bimanual Dexterous Manipulation](../DexMimicGen__Automated_Data_Generation_for_Bimanual_Dexterous_Manipulation/DexMimicGen__Automated_Data_Generation_for_Bimanual_Dexterous_Manipulation.html)：另一条自动数据生成路线（双手灵巧操作），本仓库已有笔记
+- [HumanoidGen: Data Generation for Bimanual Dexterous Manipulation via LLM Reasoning](../HumanoidGen__Data_Generation_for_Bimanual_Dexterous_Manipulation_via_LLM_Reasoning/HumanoidGen__Data_Generation_for_Bimanual_Dexterous_Manipulation_via_LLM_Reasoning.html)：用 LLM 推理生成人形操作数据，与视频先验路线形成对照，本仓库已有笔记
+- [Humanoid Everyday: A Comprehensive Robotic Dataset for Open-World Humanoid Manipulation](../Humanoid_Everyday__Comprehensive_Robotic_Dataset_for_Open-World_Humanoid_Manipulation/Humanoid_Everyday__Comprehensive_Robotic_Dataset_for_Open-World_Humanoid_Manipulation.html)：真实采集的人形操作数据集，与全合成路线对照，本仓库已有笔记
 
 ---
 

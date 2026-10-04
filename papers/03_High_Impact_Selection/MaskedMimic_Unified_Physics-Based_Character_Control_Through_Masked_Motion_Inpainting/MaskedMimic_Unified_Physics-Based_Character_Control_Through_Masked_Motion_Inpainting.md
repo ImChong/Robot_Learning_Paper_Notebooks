@@ -23,7 +23,7 @@ zhname: "MaskedMimic：基于掩码动作补全的统一物理角色控制"
 |------|------|
 | **arXiv** | [2409.14393](https://arxiv.org/abs/2409.14393) |
 | **项目主页** | [research.nvidia.com/labs/par/maskedmimic](https://research.nvidia.com/labs/par/maskedmimic/) |
-| **代码** | 在 [NVlabs/ProtoMotions](https://github.com/NVlabs/ProtoMotions) 框架内实现（见本站 [ProtoMotions3 笔记](../ProtoMotions3_Open-source_Framework_for_Humanoid_Simulation_and_Control/ProtoMotions3_Open-source_Framework_for_Humanoid_Simulation_and_Control.md)） |
+| **代码** | 在 [NVlabs/ProtoMotions](https://github.com/NVlabs/ProtoMotions) 框架内实现（见本站 [ProtoMotions3 笔记](../ProtoMotions3_Open-source_Framework_for_Humanoid_Simulation_and_Control/ProtoMotions3_Open-source_Framework_for_Humanoid_Simulation_and_Control.html)） |
 | **作者** | Chen Tessler, Yunrong Guo, Ofir Nabati, Gal Chechik, Xue Bin Peng |
 | **机构** | NVIDIA；Bar-Ilan University；Simon Fraser University |
 | **发布时间** | 2024-09-22 |
@@ -246,13 +246,13 @@ A：PULSE / ASE 的潜变量是抽象的，换新任务要再训一个高层控�
 
 | 论文 | 关系 |
 |------|------|
-| [PHC](../../01_Foundational_RL/PHC_Perpetual_Humanoid_Control/PHC_Perpetual_Humanoid_Control.md) | 全身跟踪基线（PHC+），动作数据过滤沿用 PHC 的流程 |
-| [PULSE](../../01_Foundational_RL/PULSE_Physics-based_Universal_Latent_Space/PULSE_Physics-based_Universal_Latent_Space.md) | 同样是「跟踪老师 → 蒸馏潜空间」，但新任务需要另训高层；表 1、表 2 的主要对照 |
-| [ASE](../../01_Foundational_RL/ASE_Adversarial_Skill_Embeddings_for_Large-Scale_Motion_Control/ASE_Adversarial_Skill_Embeddings_for_Large-Scale_Motion_Control.md) / [CALM](../../01_Foundational_RL/CALM_Conditional_Adversarial_Latent_Models_for_Directable_Virtual_Characters/CALM_Conditional_Adversarial_Latent_Models_for_Directable_Virtual_Characters.md) | VR 跟踪任务上的对照方法 |
-| [OmniH2O](../OmniH2O_Universal_Whole-Body_Teleoperation/OmniH2O_Universal_Whole-Body_Teleoperation.md) | 人形侧的固定头手接口 |
-| [HOVER](../HOVER_Versatile_Neural_Whole-Body_Controller/HOVER_Versatile_Neural_Whole-Body_Controller.md) | 把掩码式多模式控制带到人形机器人 |
-| [HumanML3D](../../14_Human_Motion/HumanML3D/HumanML3D.md) | 文字条件训练所用的数据集 |
-| [ProtoMotions3](../ProtoMotions3_Open-source_Framework_for_Humanoid_Simulation_and_Control/ProtoMotions3_Open-source_Framework_for_Humanoid_Simulation_and_Control.md) | MaskedMimic 的开源实现所在框架 |
+| [PHC](../../01_Foundational_RL/PHC_Perpetual_Humanoid_Control/PHC_Perpetual_Humanoid_Control.html) | 全身跟踪基线（PHC+），动作数据过滤沿用 PHC 的流程 |
+| [PULSE](../../01_Foundational_RL/PULSE_Physics-based_Universal_Latent_Space/PULSE_Physics-based_Universal_Latent_Space.html) | 同样是「跟踪老师 → 蒸馏潜空间」，但新任务需要另训高层；表 1、表 2 的主要对照 |
+| [ASE](../../01_Foundational_RL/ASE_Adversarial_Skill_Embeddings_for_Large-Scale_Motion_Control/ASE_Adversarial_Skill_Embeddings_for_Large-Scale_Motion_Control.html) / [CALM](../../01_Foundational_RL/CALM_Conditional_Adversarial_Latent_Models_for_Directable_Virtual_Characters/CALM_Conditional_Adversarial_Latent_Models_for_Directable_Virtual_Characters.html) | VR 跟踪任务上的对照方法 |
+| [OmniH2O](../OmniH2O_Universal_Whole-Body_Teleoperation/OmniH2O_Universal_Whole-Body_Teleoperation.html) | 人形侧的固定头手接口 |
+| [HOVER](../HOVER_Versatile_Neural_Whole-Body_Controller/HOVER_Versatile_Neural_Whole-Body_Controller.html) | 把掩码式多模式控制带到人形机器人 |
+| [HumanML3D](../../14_Human_Motion/HumanML3D/HumanML3D.html) | 文字条件训练所用的数据集 |
+| [ProtoMotions3](../ProtoMotions3_Open-source_Framework_for_Humanoid_Simulation_and_Control/ProtoMotions3_Open-source_Framework_for_Humanoid_Simulation_and_Control.html) | MaskedMimic 的开源实现所在框架 |
 
 ---
 

@@ -132,5 +132,5 @@ flowchart LR
 
 ## 🔗 相关阅读
 
-- **同模块·通用动作跟踪**：[Robust and Generalized Humanoid Motion Tracking](../Robust_and_Generalized_Humanoid_Motion_Tracking/Robust_and_Generalized_Humanoid_Motion_Tracking.md) · [Heracles（跟踪 + 生成融合）](../Heracles__Bridging_Precise_Tracking_and_Generative_Synthesis_for_General_Humanoid_Control/Heracles__Bridging_Precise_Tracking_and_Generative_Synthesis_for_General_Humanoid_Control.md)；
-- **高动态控制**：[OmniXtreme](../OmniXtreme/OmniXtreme.md)。
+- **同模块·通用动作跟踪**：[Robust and Generalized Humanoid Motion Tracking](../Robust_and_Generalized_Humanoid_Motion_Tracking/Robust_and_Generalized_Humanoid_Motion_Tracking.html) · [Heracles（跟踪 + 生成融合）](../Heracles__Bridging_Precise_Tracking_and_Generative_Synthesis_for_General_Humanoid_Control/Heracles__Bridging_Precise_Tracking_and_Generative_Synthesis_for_General_Humanoid_Control.html)；
+- **高动态控制**：[OmniXtreme](../OmniXtreme_Breaking_the_Generality_Barrier_in_High-Dynamic_Humanoid_Control/OmniXtreme_Breaking_the_Generality_Barrier_in_High-Dynamic_Humanoid_Control.html)。

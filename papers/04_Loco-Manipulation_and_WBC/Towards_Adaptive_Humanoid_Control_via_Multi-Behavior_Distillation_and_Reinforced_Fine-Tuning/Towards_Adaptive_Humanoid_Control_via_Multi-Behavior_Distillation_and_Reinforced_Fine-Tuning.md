@@ -125,5 +125,5 @@ flowchart LR
 
 ## 🔗 相关阅读
 
-- **同模块·多技能/自适应控制**：[Agility Meets Stability（异构数据多才控制）](../Agility_Meets_Stability__Versatile_Humanoid_Control_with_Heterogeneous_Data/Agility_Meets_Stability__Versatile_Humanoid_Control_with_Heterogeneous_Data.md) · [Towards Adaptable Humanoid Control via Adaptive Motion Tracking（AdaMimic 同主题）]；
-- **测试时适应**：[TTT-Parkour](../TTT-Parkour__Rapid_Test-Time_Training_for_Perceptive_Robot_Parkour/TTT-Parkour__Rapid_Test-Time_Training_for_Perceptive_Robot_Parkour.md)。
+- **同模块·多技能/自适应控制**：[Agility Meets Stability（异构数据多才控制）](../Agility_Meets_Stability__Versatile_Humanoid_Control_with_Heterogeneous_Data/Agility_Meets_Stability__Versatile_Humanoid_Control_with_Heterogeneous_Data.html) · [Towards Adaptable Humanoid Control via Adaptive Motion Tracking（AdaMimic 同主题）]；
+- **测试时适应**：[TTT-Parkour](../TTT-Parkour__Rapid_Test-Time_Training_for_Perceptive_Robot_Parkour/TTT-Parkour__Rapid_Test-Time_Training_for_Perceptive_Robot_Parkour.html)。

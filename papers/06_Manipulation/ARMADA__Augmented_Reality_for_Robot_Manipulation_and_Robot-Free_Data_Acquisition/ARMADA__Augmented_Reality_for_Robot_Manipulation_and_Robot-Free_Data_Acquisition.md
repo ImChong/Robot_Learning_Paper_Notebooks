@@ -121,4 +121,4 @@ flowchart LR
 
 ## 🔗 相关阅读
 
-- **同模块·数据采集**：[DexHub and DART（云仿真 + AR 众包采集）](../DexHub_and_DART__Towards_Internet_Scale_Robot_Data_Collection/DexHub_and_DART__Towards_Internet_Scale_Robot_Data_Collection.md) · [EgoDex（Vision Pro 数据集）](../EgoDex__Learning_Dexterous_Manipulation_from_Large-Scale_Egocentric_Video/EgoDex__Learning_Dexterous_Manipulation_from_Large-Scale_Egocentric_Video.md)。
+- **同模块·数据采集**：[DexHub and DART（云仿真 + AR 众包采集）](../DexHub_and_DART__Towards_Internet_Scale_Robot_Data_Collection/DexHub_and_DART__Towards_Internet_Scale_Robot_Data_Collection.html) · [EgoDex（Vision Pro 数据集）](../EgoDex__Learning_Dexterous_Manipulation_from_Large-Scale_Egocentric_Video/EgoDex__Learning_Dexterous_Manipulation_from_Large-Scale_Egocentric_Video.html)。

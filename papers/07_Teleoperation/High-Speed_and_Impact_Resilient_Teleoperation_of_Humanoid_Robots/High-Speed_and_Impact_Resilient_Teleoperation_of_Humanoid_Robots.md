@@ -122,4 +122,4 @@ flowchart LR
 
 ## 🔗 相关阅读
 
-- **同模块·遥操作系统/硬件**：[NuExo（上肢外骨骼）](../NuExo__A_Wearable_Exoskeleton_Covering_all_Upper_Limb_ROM/NuExo__A_Wearable_Exoskeleton_Covering_all_Upper_Limb_ROM.md) · [CHILD（关节级全身）](../CHILD__a_Whole-Body_Humanoid_Teleoperation_System/CHILD__a_Whole-Body_Humanoid_Teleoperation_System.md)。
+- **同模块·遥操作系统/硬件**：[NuExo（上肢外骨骼）](../NuExo__A_Wearable_Exoskeleton_Covering_all_Upper_Limb_ROM/NuExo__A_Wearable_Exoskeleton_Covering_all_Upper_Limb_ROM.html) · [CHILD（关节级全身）](../CHILD__a_Whole-Body_Humanoid_Teleoperation_System/CHILD__a_Whole-Body_Humanoid_Teleoperation_System.html)。

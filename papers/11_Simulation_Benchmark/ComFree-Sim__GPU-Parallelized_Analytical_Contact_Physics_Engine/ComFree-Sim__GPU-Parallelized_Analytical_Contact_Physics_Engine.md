@@ -200,9 +200,9 @@ A：点接触只建切向滑动摩擦，但灵巧操作里指尖会**扭转（sp
 
 ## 🔗 相关阅读
 
-- [MolmoSpaces: A Large-Scale Open Ecosystem for Robot Navigation and Manipulation](../MolmoSpaces__A_Large-Scale_Open_Ecosystem_for_Robot_Navigation_and_Manipulation/MolmoSpaces__A_Large-Scale_Open_Ecosystem_for_Robot_Navigation_and_Manipulation.md)：同模块的大规模仿真生态/基准，本仓库已有笔记
-- [HumanoidBench: Simulated Humanoid Benchmark for Whole-Body Locomotion and Manipulation](../HumanoidBench/HumanoidBench.md)：人形全身仿真基准，本仓库已有笔记
-- [Generative World Modelling for Humanoids: 1X World Model Challenge](../Generative_World_Modelling_for_Humanoids__1X_World_Model_Challenge_Technical_Report/Generative_World_Modelling_for_Humanoids__1X_World_Model_Challenge_Technical_Report.md)：另一种"学习式模拟器"路线（世界模型），与解析物理引擎形成对照，本仓库已有笔记
+- [MolmoSpaces: A Large-Scale Open Ecosystem for Robot Navigation and Manipulation](../MolmoSpaces__A_Large-Scale_Open_Ecosystem_for_Robot_Navigation_and_Manipulation/MolmoSpaces__A_Large-Scale_Open_Ecosystem_for_Robot_Navigation_and_Manipulation.html)：同模块的大规模仿真生态/基准，本仓库已有笔记
+- [HumanoidBench: Simulated Humanoid Benchmark for Whole-Body Locomotion and Manipulation](../HumanoidBench/HumanoidBench.html)：人形全身仿真基准，本仓库已有笔记
+- [Generative World Modelling for Humanoids: 1X World Model Challenge](../Generative_World_Modelling_for_Humanoids__1X_World_Model_Challenge_Technical_Report/Generative_World_Modelling_for_Humanoids__1X_World_Model_Challenge_Technical_Report.html)：另一种"学习式模拟器"路线（世界模型），与解析物理引擎形成对照，本仓库已有笔记
 
 ---
 

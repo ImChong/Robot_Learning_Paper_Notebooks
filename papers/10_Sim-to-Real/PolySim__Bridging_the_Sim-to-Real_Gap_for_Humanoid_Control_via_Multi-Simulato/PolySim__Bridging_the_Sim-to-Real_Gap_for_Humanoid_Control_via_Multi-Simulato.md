@@ -226,8 +226,8 @@ flowchart TB
 | 方向 | 含义 |
 |---|---|
 | **DR 的"二阶升级"** | 单仿真器 DR 是一阶（参数级），PolySim 是二阶（结构级），等同于把"仿真器选择"也当成一个超参 |
-| **跟 [RAPT](../RAPT__Model-Predictive_Out-of-Distribution_Detection_and_Failure_Diagnosis_for_/RAPT__Model-Predictive_Out-of-Distribution_Detection_and_Failure_Diagnosis_for_.md) 互补** | PolySim 在仿真侧压窄结构性 gap，RAPT 在部署侧实时监控残余 gap |
-| **跟 [LIFT](../LIFT__Towards_Bridging_the_Gap_between_Large-Scale_Pretraining_and_Efficient_F/LIFT__Towards_Bridging_the_Gap_between_Large-Scale_Pretraining_and_Efficient_F.md) 思路不同** | LIFT 走"超大规模 SAC 预训练 + Dyna 微调"，PolySim 走"多仿真器并行喂数据"，两者可叠加 |
+| **跟 [RAPT](../RAPT__Model-Predictive_Out-of-Distribution_Detection_and_Failure_Diagnosis_for_/RAPT__Model-Predictive_Out-of-Distribution_Detection_and_Failure_Diagnosis_for_.html) 互补** | PolySim 在仿真侧压窄结构性 gap，RAPT 在部署侧实时监控残余 gap |
+| **跟 [LIFT](../LIFT__Towards_Bridging_the_Gap_between_Large-Scale_Pretraining_and_Efficient_F/LIFT__Towards_Bridging_the_Gap_between_Large-Scale_Pretraining_and_Efficient_F.html) 思路不同** | LIFT 走"超大规模 SAC 预训练 + Dyna 微调"，PolySim 走"多仿真器并行喂数据"，两者可叠加 |
 | **对开发者社区友好** | HumanoidVerse 已经统一了仿真器接口，PolySim 把工程门槛进一步降到"改 YAML 就能加新仿真器"|
 
 ---
@@ -253,8 +253,8 @@ A：作者选的是**当下人形社区最主流**的四个：IsaacGym 速度快
 
 ## 🔗 相关阅读
 
-- [LIFT: Large-Scale Pretraining + Efficient Finetuning for Humanoid Control (2510.xxxxx)](../LIFT__Towards_Bridging_the_Gap_between_Large-Scale_Pretraining_and_Efficient_F/LIFT__Towards_Bridging_the_Gap_between_Large-Scale_Pretraining_and_Efficient_F.md)：同期 sim-to-real 路线，本仓库已有笔记
-- [RAPT: Model-Predictive OOD Detection for Sim-to-Real Humanoids (2602.01515)](../RAPT__Model-Predictive_Out-of-Distribution_Detection_and_Failure_Diagnosis_for_/RAPT__Model-Predictive_Out-of-Distribution_Detection_and_Failure_Diagnosis_for_.md)：部署侧监控 gap，本仓库已有笔记
+- [LIFT: Large-Scale Pretraining + Efficient Finetuning for Humanoid Control (2510.xxxxx)](../LIFT__Towards_Bridging_the_Gap_between_Large-Scale_Pretraining_and_Efficient_F/LIFT__Towards_Bridging_the_Gap_between_Large-Scale_Pretraining_and_Efficient_F.html)：同期 sim-to-real 路线，本仓库已有笔记
+- [RAPT: Model-Predictive OOD Detection for Sim-to-Real Humanoids (2602.01515)](../RAPT__Model-Predictive_Out-of-Distribution_Detection_and_Failure_Diagnosis_for_/RAPT__Model-Predictive_Out-of-Distribution_Detection_and_Failure_Diagnosis_for_.html)：部署侧监控 gap，本仓库已有笔记
 - [Domain Randomization for Sim-to-Real Transfer (1703.06907)](https://arxiv.org/abs/1703.06907)：经典单仿真器 DR
 - [HumanoidVerse: LeCAR-Lab/HumanoidVerse](https://github.com/LeCAR-Lab/HumanoidVerse)：PolySim 依赖的多仿真器统一框架
 - [MOSAIC: Sim-to-Real Residual Adaptation (2602.08594)](https://arxiv.org/abs/2602.08594)：另一条残差适配路线

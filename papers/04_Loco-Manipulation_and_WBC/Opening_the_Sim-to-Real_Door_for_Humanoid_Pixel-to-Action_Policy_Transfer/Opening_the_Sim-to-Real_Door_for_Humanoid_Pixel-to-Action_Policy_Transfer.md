@@ -127,5 +127,5 @@ flowchart LR
 
 ## 🔗 相关阅读
 
-- **同模块·视觉 loco-manip / sim-to-real**：[VIRAL（大规模视觉 sim-to-real）](../VIRAL__Visual_Sim-to-Real_at_Scale_for_Humanoid_Loco-Manipulation/VIRAL__Visual_Sim-to-Real_at_Scale_for_Humanoid_Loco-Manipulation.md) · [ZeroWBC（从人类视频学视觉运动控制）](../ZeroWBC__Learning_Natural_Visuomotor_Humanoid_Control_Directly_from_Human_Egocen/ZeroWBC__Learning_Natural_Visuomotor_Humanoid_Control_Directly_from_Human_Egocen.md)；
+- **同模块·视觉 loco-manip / sim-to-real**：[VIRAL（大规模视觉 sim-to-real）](../VIRAL__Visual_Sim-to-Real_at_Scale_for_Humanoid_Loco-Manipulation/VIRAL__Visual_Sim-to-Real_at_Scale_for_Humanoid_Loco-Manipulation.html) · [ZeroWBC（从人类视频学视觉运动控制）](../ZeroWBC__Learning_Natural_Visuomotor_Humanoid_Control_from_Egocentric_Video/ZeroWBC__Learning_Natural_Visuomotor_Humanoid_Control_from_Egocentric_Video.html)；
 - **本仓 10 Sim-to-Real 板块**：MOSAIC、ZEST 等迁移工作。

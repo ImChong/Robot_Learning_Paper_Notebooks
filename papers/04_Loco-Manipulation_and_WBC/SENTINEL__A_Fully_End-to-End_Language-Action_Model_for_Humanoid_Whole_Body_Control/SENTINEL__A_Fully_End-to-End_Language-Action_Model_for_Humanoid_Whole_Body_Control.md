@@ -127,4 +127,4 @@ flowchart LR
 
 ## 🔗 相关阅读
 
-- **同模块·语言-动作模型**：[Humanoid-LLA（统一动作词表）](../Commanding_Humanoid_by_Free-form_Language__LLA_with_Unified_Motion_Vocabulary/Commanding_Humanoid_by_Free-form_Language__LLA_with_Unified_Motion_Vocabulary.md) · [UniAct（FSQ 码本流式执行）](../UniAct__Unified_Motion_Generation_and_Action_Streaming_for_Humanoid_Robots/UniAct__Unified_Motion_Generation_and_Action_Streaming_for_Humanoid_Robots.md) · [FRoM-W1](../FRoM-W1__Towards_General_Humanoid_Whole-Body_Control_with_Language_Instructions/FRoM-W1__Towards_General_Humanoid_Whole-Body_Control_with_Language_Instructions.md)。
+- **同模块·语言-动作模型**：[Humanoid-LLA（统一动作词表）](../Commanding_Humanoid_by_Free-form_Language__LLA_with_Unified_Motion_Vocabulary/Commanding_Humanoid_by_Free-form_Language__LLA_with_Unified_Motion_Vocabulary.html) · [UniAct（FSQ 码本流式执行）](../UniAct__Unified_Motion_Generation_and_Action_Streaming_for_Humanoid_Robots/UniAct__Unified_Motion_Generation_and_Action_Streaming_for_Humanoid_Robots.html) · [FRoM-W1](../FRoM-W1__Towards_General_Humanoid_Whole-Body_Control_with_Language_Instructions/FRoM-W1__Towards_General_Humanoid_Whole-Body_Control_with_Language_Instructions.html)。

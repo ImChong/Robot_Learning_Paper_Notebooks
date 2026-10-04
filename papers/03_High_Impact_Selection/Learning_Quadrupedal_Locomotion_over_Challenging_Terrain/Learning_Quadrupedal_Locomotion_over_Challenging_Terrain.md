@@ -91,7 +91,7 @@ demos: ["quadterrain"]
 1. **拿不到地形的真实物理属性**。相机、激光雷达测不出摩擦和软硬；会被植被、雪、水挡住；也跟不上机器人自己造成的变化（比如脚下松土塌陷）。剩下能依赖的只有**本体感知**：高频地感受自己身体的状态。
 2. **传统控制器越做越复杂**。主流做法是精心设计的状态机，调度运动原语和反射控制器；什么时候切换，靠显式估计接触、打滑，阈值是经验调出来的，碰到泥、雪、植被这些没建模的因素就不稳；有的系统在脚上装接触传感器，野外又不可靠。场景考虑得越多，系统越复杂、越难维护，还总有漏掉的角落。
 
-无模型强化学习已经能在实验室里学出行走和摔倒恢复（作者自己的前作 [Agile Motor Skills](../Learning_Agile_and_Dynamic_Motor_Skills_for_Legged_Robots/Learning_Agile_and_Dynamic_Motor_Skills_for_Legged_Robots.md)，但只在平地上），其他工作也大多停留在平地或轻度起伏的实验室地面。本文要回答：**只用本体感知、只在仿真里训练，能不能走进真实的野外？**
+无模型强化学习已经能在实验室里学出行走和摔倒恢复（作者自己的前作 [Agile Motor Skills](../Learning_Agile_and_Dynamic_Motor_Skills_for_Legged_Robots/Learning_Agile_and_Dynamic_Motor_Skills_for_Legged_Robots.html)，但只在平地上），其他工作也大多停留在平地或轻度起伏的实验室地面。本文要回答：**只用本体感知、只在仿真里训练，能不能走进真实的野外？**
 </details>
 
 ### 已有的两个 sim-to-real 经验，以及不够的地方
@@ -102,7 +102,7 @@ demos: ["quadterrain"]
 前人的 sim-to-real 经验主要两条，本文都用了：
 
 - **把物理系统建模得真实**，尤其是执行器：沿用前作的「执行器网络」，用真机数据学一个关节 PD + 串联弹性执行器的模型（补充材料 S2）；
-- **随机化仿真与真实之间会变的物理参数**（[域随机化](../../01_Foundational_RL/Domain_Randomization_for_Transferring_Deep_Neural_Networks_from_Simulation_to_the_Real_World/Domain_Randomization_for_Transferring_Deep_Neural_Networks_from_Simulation_to_the_Real_World.md) 的物理版）：本文随机化了足地摩擦、施加外力、给观测加噪声。
+- **随机化仿真与真实之间会变的物理参数**（[域随机化](../../01_Foundational_RL/Domain_Randomization_for_Transferring_Deep_Neural_Networks_from_Simulation_to_the_Real_World/Domain_Randomization_for_Transferring_Deep_Neural_Networks_from_Simulation_to_the_Real_World.html) 的物理版）：本文随机化了足地摩擦、施加外力、给观测加噪声。
 
 作者发现这两条**不足以**在崎岖地形上走稳，于是又加了三样，这也是全文的三个支柱：
 
@@ -443,20 +443,20 @@ CERBERUS 队在城市赛（Urban Circuit）上用它替换了此前的模型控�
 |------|------|------|------|
 | 本文（2020） | 地形高度、接触、摩擦、外力 | 2 s 本体历史（TCN） | — |
 | RMA（2021，四足） | 环境参数编码成外参潜向量 | 本体历史回归同一个潜向量（与本文式 1 第二项同一思路） | 无 |
-| HOVER（2024，人形） | 全部命令 + 特权状态的 oracle | 被掩码的命令 + 本体，DAgger 蒸馏 | [HOVER](../HOVER_Versatile_Neural_Whole-Body_Controller/HOVER_Versatile_Neural_Whole-Body_Controller.md) |
-| ExBody2（2024，人形） | 特权信息的教师 | 可部署的学生 | [ExBody2](../ExBody2_Advanced_Expressive_Whole-Body_Control/ExBody2_Advanced_Expressive_Whole-Body_Control.md) |
+| HOVER（2024，人形） | 全部命令 + 特权状态的 oracle | 被掩码的命令 + 本体，DAgger 蒸馏 | [HOVER](../HOVER_Versatile_Neural_Whole-Body_Controller/HOVER_Versatile_Neural_Whole-Body_Controller.html) |
+| ExBody2（2024，人形） | 特权信息的教师 | 可部署的学生 | [ExBody2](../ExBody2_Advanced_Expressive_Whole-Body_Control/ExBody2_Advanced_Expressive_Whole-Body_Control.html) |
 
-RMA 一行是我们按它的论文做的概括（本仓库没有 RMA 笔记）。本仓库的 [Humanoid-Gym 笔记](../Humanoid-Gym_Zero-Shot_Sim2Real_Transfer/Humanoid-Gym_Zero-Shot_Sim2Real_Transfer.md) 也把这篇列为「特权 + 历史观测」训练范式的来源。
+RMA 一行是我们按它的论文做的概括（本仓库没有 RMA 笔记）。本仓库的 [Humanoid-Gym 笔记](../Humanoid-Gym_Zero-Shot_Sim2Real_Transfer/Humanoid-Gym_Zero-Shot_Sim2Real_Transfer.html) 也把这篇列为「特权 + 历史观测」训练范式的来源。
 
 <h3 id="2-放到人形上要改什么">2. 放到人形上要改什么</h3>
 
-- **动作空间**：四足的「相位振荡器 + 足端残差」靠小跑这一稳定步态当先验；人形的走路同样常用周期相位（步态时钟），但上身动作多、接触更复杂，后来的人形工作多直接输出关节目标（如 [Real-World Humanoid Locomotion](../Real-World_Humanoid_Locomotion_with_RL/Real-World_Humanoid_Locomotion_with_RL.md) 用因果 Transformer 读观测—动作历史直接出关节目标）。这是我们的归纳。
+- **动作空间**：四足的「相位振荡器 + 足端残差」靠小跑这一稳定步态当先验；人形的走路同样常用周期相位（步态时钟），但上身动作多、接触更复杂，后来的人形工作多直接输出关节目标（如 [Real-World Humanoid Locomotion](../Real-World_Humanoid_Locomotion_with_RL/Real-World_Humanoid_Locomotion_with_RL.html) 用因果 Transformer 读观测—动作历史直接出关节目标）。这是我们的归纳。
 - **历史编码器**：TCN、GRU、Transformer 都在用；本文给的经验是「历史长度要够覆盖关键事件」（踩空那一下到后腿过台阶要 1 秒多）。
 - **课程**：人形同样需要课程，但常见的是按跟踪误差或成功率调难度；本文的「可通过性 + 粒子滤波」是针对参数化地形的版本。
 
 <h3 id="3-它没回答的问题">3. 它没回答的问题</h3>
 
-- **看不见**：盲走注定保守，叫它走下悬崖它就会走下去。作者把本体 + 视觉的混合控制器列为下一步，之后的 [ANYmal Parkour](../../05_Locomotion/ANYmal_Parkour_Robust_Perceptive_Locomotion/ANYmal_Parkour_Robust_Perceptive_Locomotion.md)、[Extreme Parkour](../../05_Locomotion/Extreme_Parkour_with_Legged_Robots/Extreme_Parkour_with_Legged_Robots.md) 把视觉接了回来。
+- **看不见**：盲走注定保守，叫它走下悬崖它就会走下去。作者把本体 + 视觉的混合控制器列为下一步，之后的 [ANYmal Parkour](../../05_Locomotion/ANYmal_Parkour_Robust_Perceptive_Locomotion/ANYmal_Parkour_Robust_Perceptive_Locomotion.html)、[Extreme Parkour](../../05_Locomotion/Extreme_Parkour_with_Legged_Robots/Extreme_Parkour_with_Legged_Robots.html) 把视觉接了回来。
 - **只有小跑**：ANYmal 物理上能做多种步态，作者推测强调多样性的训练目标能把它们引出来。
 - **学生的上限是教师**：学生只能逼近教师（图 5 里 TCN-100 在 20 cm 台阶上仍明显不如教师），信息不足以恢复 $\bar{l}_t$ 的地方就会有差距。这是我们的读图观察。
 </details>

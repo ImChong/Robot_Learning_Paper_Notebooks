@@ -120,4 +120,4 @@ flowchart LR
 
 ## 🔗 相关阅读
 
-- **同模块·家居/重排基准**：[RoboCasa（日常任务大规模仿真）](../RoboCasa__Large-Scale_Simulation_of_Everyday_Tasks_for_Generalist_Robots/RoboCasa__Large-Scale_Simulation_of_Everyday_Tasks_for_Generalist_Robots.md) · [BiGym（演示驱动移动双手基准）](../BiGym__A_Demo-Driven_Mobile_Bi-Manual_Manipulation_Benchmark/BiGym__A_Demo-Driven_Mobile_Bi-Manual_Manipulation_Benchmark.md)。
+- **同模块·家居/重排基准**：[RoboCasa（日常任务大规模仿真）](../RoboCasa__Large-Scale_Simulation_of_Everyday_Tasks_for_Generalist_Robots/RoboCasa__Large-Scale_Simulation_of_Everyday_Tasks_for_Generalist_Robots.html) · [BiGym（演示驱动移动双手基准）](../BiGym__A_Demo-Driven_Mobile_Bi-Manual_Manipulation_Benchmark/BiGym__A_Demo-Driven_Mobile_Bi-Manual_Manipulation_Benchmark.html)。

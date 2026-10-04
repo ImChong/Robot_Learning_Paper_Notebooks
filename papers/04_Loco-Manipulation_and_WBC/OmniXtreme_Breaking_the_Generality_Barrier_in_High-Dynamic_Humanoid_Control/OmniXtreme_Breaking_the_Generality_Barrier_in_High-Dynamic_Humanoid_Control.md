@@ -294,7 +294,7 @@ python deploy_mujoco.py
 | **真机平台** | Unitree G1 |
 | **机载推理** | Jetson Orin NX，base + residual 两路 ONNX 推理 |
 | **数据集** | LAFAN1、AMASS、MimicKit、Reallusion 运动库 |
-| **重定向工具** | [GMR](../../02_Motion_Retargeting/Retargeting_Matters__General_Motion_Retargeting_for_Humanoid_Motion_Tracking/Retargeting_Matters__General_Motion_Retargeting_for_Humanoid_Motion_Tracking.md) |
+| **重定向工具** | [GMR](../../02_Motion_Retargeting/Retargeting_Matters__General_Motion_Retargeting_for_Humanoid_Motion_Tracking/Retargeting_Matters__General_Motion_Retargeting_for_Humanoid_Motion_Tracking.html) |
 
 ### 网络结构
 

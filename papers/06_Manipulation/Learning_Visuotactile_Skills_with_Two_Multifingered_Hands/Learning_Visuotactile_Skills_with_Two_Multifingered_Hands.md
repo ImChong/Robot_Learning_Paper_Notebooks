@@ -121,4 +121,4 @@ flowchart LR
 
 ## 🔗 相关阅读
 
-- **同模块·触觉/灵巧**：[Humanoid Visual-Tactile-Action Dataset](../A_Humanoid_Visual-Tactile-Action_Dataset_for_Contact-Rich_Manipulation/A_Humanoid_Visual-Tactile-Action_Dataset_for_Contact-Rich_Manipulation.md) · [Object-Centric Dexterous Manipulation](../Object-Centric_Dexterous_Manipulation_from_Human_Motion_Data/Object-Centric_Dexterous_Manipulation_from_Human_Motion_Data.md)。
+- **同模块·触觉/灵巧**：[Humanoid Visual-Tactile-Action Dataset](../A_Humanoid_Visual-Tactile-Action_Dataset_for_Contact-Rich_Manipulation/A_Humanoid_Visual-Tactile-Action_Dataset_for_Contact-Rich_Manipulation.html) · [Object-Centric Dexterous Manipulation](../Object-Centric_Dexterous_Manipulation_from_Human_Motion_Data/Object-Centric_Dexterous_Manipulation_from_Human_Motion_Data.html)。

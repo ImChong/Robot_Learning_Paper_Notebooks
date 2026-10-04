@@ -36,7 +36,7 @@ demos: ["pi0"]
 
 ## 🎯 一句话总结
 
-π₀ 是一个视觉-语言-动作模型：图像和语言走从 PaliGemma 继承来的大权重，机器人状态和动作走一套新加的小权重（「动作专家」），两者在同一个 Transformer 的自注意力里交互；动作不再是一个个离散 token，而是用**流匹配**从噪声一次积分出 50 步的连续动作块，最高支持 50 Hz 控制。训练仿照大语言模型：先在约 1 万小时、68 个任务的混合数据上预训练，再用 5 到 100 多小时的高质量数据做任务后训练。论文的强项是**长程灵巧操作**（叠衣服、收桌子、折纸箱），不是行走，也不是开放环境泛化——后者是 [π₀.₅](../Pi05_A_Vision-Language-Action_Model_with_Open-World_Generalization/Pi05_A_Vision-Language-Action_Model_with_Open-World_Generalization.md) 要做的事。
+π₀ 是一个视觉-语言-动作模型：图像和语言走从 PaliGemma 继承来的大权重，机器人状态和动作走一套新加的小权重（「动作专家」），两者在同一个 Transformer 的自注意力里交互；动作不再是一个个离散 token，而是用**流匹配**从噪声一次积分出 50 步的连续动作块，最高支持 50 Hz 控制。训练仿照大语言模型：先在约 1 万小时、68 个任务的混合数据上预训练，再用 5 到 100 多小时的高质量数据做任务后训练。论文的强项是**长程灵巧操作**（叠衣服、收桌子、折纸箱），不是行走，也不是开放环境泛化——后者是 [π₀.₅](../Pi05_A_Vision-Language-Action_Model_with_Open-World_Generalization/Pi05_A_Vision-Language-Action_Model_with_Open-World_Generalization.html) 要做的事。
 
 > 🎮 **本文内嵌 1 段讲解动画 + 1 段配音视频**（不用装任何东西）：
 > 1. [七幕动画：π₀ 全流程](#pi0-explainer-anim) —— 约 88 秒串完「通才策略的三道坎 → 一个 Transformer 两套权重 → 分块因果掩码与 KV 缓存 → 流匹配从噪声走到动作块 → 动作块与推理预算 → 数据与配方 → 实验读数与边界」
@@ -126,7 +126,7 @@ $$
 W_3 \cdot \mathrm{swish}\big(W_2 \cdot \mathrm{concat}(W_1 a^\tau_{t'},\ \phi(\tau))\big)
 $$
 
-$\phi$ 就是 [Transformer](../../01_Foundational_RL/Transformer_Attention_Is_All_You_Need/Transformer_Attention_Is_All_You_Need.md) 里的正弦位置编码函数，这里拿来编码标量 $\tau$。
+$\phi$ 就是 [Transformer](../../01_Foundational_RL/Transformer_Attention_Is_All_You_Need/Transformer_Attention_Is_All_You_Need.html) 里的正弦位置编码函数，这里拿来编码标量 $\tau$。
 
 **对照模型 π₀-small**（附录 C）：470M，不用 VLM 初始化，语言用 DistilBERT 编码，动作专家用 DiT 并以 AdaLN-Zero 注入 $\tau$，交叉注意力读观测（更像经典编码器—解码器）。它用来衡量 VLM 预训练的作用，但作者也承认参数量不同是一个无法去掉的混淆因素。
 
@@ -659,10 +659,10 @@ A：两者都用流匹配生成动作块。π₀ 是同一个 Transformer 里两
 
 <h3 id="相关阅读">相关阅读</h3>
 
-- 本站 [Transformer](../../01_Foundational_RL/Transformer_Attention_Is_All_You_Need/Transformer_Attention_Is_All_You_Need.md)：自注意力、掩码与正弦编码的来源。
-- 本站 [Diffusion Policy](../../01_Foundational_RL/Diffusion_Policy/Diffusion_Policy.md)：动作块 + 去噪生成的前身，也是本文微调实验的对照。
-- 本站 [GR00T N1](../GR00T_N1_Humanoid_Foundation_Model/GR00T_N1_Humanoid_Foundation_Model.md)：同为流匹配 VLA，改用交叉注意力 + DiT，面向人形。
-- 本站 [π₀.₅](../Pi05_A_Vision-Language-Action_Model_with_Open-World_Generalization/Pi05_A_Vision-Language-Action_Model_with_Open-World_Generalization.md)：在 π₀ 上加异构协同训练、离散 + 连续两段训练和同模型高层推理，面向陌生家庭。
+- 本站 [Transformer](../../01_Foundational_RL/Transformer_Attention_Is_All_You_Need/Transformer_Attention_Is_All_You_Need.html)：自注意力、掩码与正弦编码的来源。
+- 本站 [Diffusion Policy](../../01_Foundational_RL/Diffusion_Policy/Diffusion_Policy.html)：动作块 + 去噪生成的前身，也是本文微调实验的对照。
+- 本站 [GR00T N1](../GR00T_N1_Humanoid_Foundation_Model/GR00T_N1_Humanoid_Foundation_Model.html)：同为流匹配 VLA，改用交叉注意力 + DiT，面向人形。
+- 本站 [π₀.₅](../Pi05_A_Vision-Language-Action_Model_with_Open-World_Generalization/Pi05_A_Vision-Language-Action_Model_with_Open-World_Generalization.html)：在 π₀ 上加异构协同训练、离散 + 连续两段训练和同模型高层推理，面向陌生家庭。
 - [FAST（Pertsch et al., 2025）](https://arxiv.org/abs/2501.09747)：π₀-FAST 与 π₀.₅ 预训练用的动作 tokenizer。
 - [Transfusion（Zhou et al., 2024）](https://arxiv.org/abs/2408.11039)：一个 Transformer 同时做交叉熵与扩散损失，π₀ 架构的直接灵感。
 

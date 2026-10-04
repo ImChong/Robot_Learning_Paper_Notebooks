@@ -119,5 +119,5 @@ flowchart LR
 
 ## 🔗 相关阅读
 
-- **相关·生成 + 实时响应（本仓 04）**：[Heracles（状态条件扩散中间件）](../../04_Loco-Manipulation_and_WBC/Heracles__Bridging_Precise_Tracking_and_Generative_Synthesis_for_General_Humanoid_Control/Heracles__Bridging_Precise_Tracking_and_Generative_Synthesis_for_General_Humanoid_Control.md)；
-- **同模块·动作合成**：[Guided Motion Diffusion](../Guided_Motion_Diffusion_for_Controllable_Human_Motion_Synthesis/Guided_Motion_Diffusion_for_Controllable_Human_Motion_Synthesis.md)。
+- **相关·生成 + 实时响应（本仓 04）**：[Heracles（状态条件扩散中间件）](../../04_Loco-Manipulation_and_WBC/Heracles__Bridging_Precise_Tracking_and_Generative_Synthesis_for_General_Humanoid_Control/Heracles__Bridging_Precise_Tracking_and_Generative_Synthesis_for_General_Humanoid_Control.html)；
+- **同模块·动作合成**：[Guided Motion Diffusion](../Guided_Motion_Diffusion_for_Controllable_Human_Motion_Synthesis/Guided_Motion_Diffusion_for_Controllable_Human_Motion_Synthesis.html)。

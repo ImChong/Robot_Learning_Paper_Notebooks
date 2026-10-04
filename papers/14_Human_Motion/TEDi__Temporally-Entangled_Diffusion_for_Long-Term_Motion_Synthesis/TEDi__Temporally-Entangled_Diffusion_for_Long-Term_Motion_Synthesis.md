@@ -122,4 +122,4 @@ flowchart LR
 
 ## 🔗 相关阅读
 
-- **同模块·长时程/生成**：[PRIMAL（持续生成）](../PRIMAL__Physically_Reactive_and_Interactive_Motor_Model_for_Avatar_Learning/PRIMAL__Physically_Reactive_and_Interactive_Motor_Model_for_Avatar_Learning.md) · [Example-based Motion Synthesis](../Example-based_Motion_Synthesis_via_Generative_Motion_Matching/Example-based_Motion_Synthesis_via_Generative_Motion_Matching.md)。
+- **同模块·长时程/生成**：[PRIMAL（持续生成）](../PRIMAL__Physically_Reactive_and_Interactive_Motor_Model_for_Avatar_Learning/PRIMAL__Physically_Reactive_and_Interactive_Motor_Model_for_Avatar_Learning.html) · [Example-based Motion Synthesis](../Example-based_Motion_Synthesis_via_Generative_Motion_Matching/Example-based_Motion_Synthesis_via_Generative_Motion_Matching.html)。

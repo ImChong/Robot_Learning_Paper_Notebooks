@@ -125,5 +125,5 @@ flowchart LR
 
 ## 🔗 相关阅读
 
-- **同模块·人体重建/交互**：[PICO（人-物接触重建）](../PICO__Reconstructing_3D_People_In_Contact_with_Objects/PICO__Reconstructing_3D_People_In_Contact_with_Objects.md)；
-- **世界系跟踪（本仓 04）**：[HiWET](../../04_Loco-Manipulation_and_WBC/HiWET__Hierarchical_World-Frame_End-Effector_Tracking_for_Long-Horizon_Humanoid_Loco-Manipulation/HiWET__Hierarchical_World-Frame_End-Effector_Tracking_for_Long-Horizon_Humanoid_Loco-Manipulation.md)。
+- **同模块·人体重建/交互**：[PICO（人-物接触重建）](../PICO__Reconstructing_3D_People_In_Contact_with_Objects/PICO__Reconstructing_3D_People_In_Contact_with_Objects.html)；
+- **世界系跟踪（本仓 04）**：[HiWET](../../04_Loco-Manipulation_and_WBC/HiWET__Hierarchical_World-Frame_End-Effector_Tracking_for_Long-Horizon_Humanoid_Loco-Manipulation/HiWET__Hierarchical_World-Frame_End-Effector_Tracking_for_Long-Horizon_Humanoid_Loco-Manipulation.html)。

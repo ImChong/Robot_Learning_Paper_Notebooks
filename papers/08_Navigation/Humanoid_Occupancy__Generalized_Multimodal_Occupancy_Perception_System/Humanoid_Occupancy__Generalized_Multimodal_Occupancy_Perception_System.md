@@ -124,4 +124,4 @@ flowchart LR
 
 ## 🔗 相关阅读
 
-- **同模块·人形导航/感知**：[NavDP](../NavDP__Learning_Sim-to-Real_Navigation_Diffusion_Policy/NavDP__Learning_Sim-to-Real_Navigation_Diffusion_Policy.md) · [RL 数据自举动态子目标导航](../RL_with_Data_Bootstrapping_for_Dynamic_Subgoal_Pursuit_in_Humanoid_Navigation/RL_with_Data_Bootstrapping_for_Dynamic_Subgoal_Pursuit_in_Humanoid_Navigation.md)。
+- **同模块·人形导航/感知**：[NavDP](../NavDP__Learning_Sim-to-Real_Navigation_Diffusion_Policy/NavDP__Learning_Sim-to-Real_Navigation_Diffusion_Policy.html) · [RL 数据自举动态子目标导航](../RL_with_Data_Bootstrapping_for_Dynamic_Subgoal_Pursuit_in_Humanoid_Navigation/RL_with_Data_Bootstrapping_for_Dynamic_Subgoal_Pursuit_in_Humanoid_Navigation.html)。

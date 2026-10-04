@@ -121,5 +121,5 @@ flowchart LR
 
 ## 🔗 相关阅读
 
-- **同模块·遥操作医疗/接触**：[Humanoid Visual-Tactile-Action Dataset](../A_Humanoid_Visual-Tactile-Action_Dataset_for_Contact-Rich_Manipulation/A_Humanoid_Visual-Tactile-Action_Dataset_for_Contact-Rich_Manipulation.md)；
-- **柔顺/阻抗（本仓 04）**：[HMC（异构元控制）](../../04_Loco-Manipulation_and_WBC/HMC__Learning_Heterogeneous_Meta-Control_for_Contact-Rich_Loco-Manipulation/HMC__Learning_Heterogeneous_Meta-Control_for_Contact-Rich_Loco-Manipulation.md)。
+- **同模块·遥操作医疗/接触**：[Humanoid Visual-Tactile-Action Dataset](../A_Humanoid_Visual-Tactile-Action_Dataset_for_Contact-Rich_Manipulation/A_Humanoid_Visual-Tactile-Action_Dataset_for_Contact-Rich_Manipulation.html)；
+- **柔顺/阻抗（本仓 04）**：[HMC（异构元控制）](../../04_Loco-Manipulation_and_WBC/HMC__Learning_Heterogeneous_Meta-Control_for_Contact-Rich_Loco-Manipulation/HMC__Learning_Heterogeneous_Meta-Control_for_Contact-Rich_Loco-Manipulation.html)。

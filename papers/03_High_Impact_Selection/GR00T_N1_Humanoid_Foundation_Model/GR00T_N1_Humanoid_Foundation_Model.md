@@ -1077,6 +1077,6 @@ A：长程移动操作。真机表也只有 GR-1。后训练数据若覆盖不�
 - [Diffusion Policy](https://arxiv.org/abs/2303.04137)：本文真机和仿真的主要模仿学习对照，U-Net 扩散，一次同样 16 步。
 - [DexMimicGen（Jiang et al., 2024）](https://arxiv.org/abs/2410.24185)：中层仿真轨迹的生成器。生成流程以本文 §2.2 为准。
 - [LAPA（Ye et al., 2024）](https://arxiv.org/abs/2410.11758)：潜动作预训练，本文的 VQ-VAE 标签来源。
-- 本站 [SONIC](../SONIC_Supersizing_Motion_Tracking_for_Natural_Humanoid_Control/SONIC_Supersizing_Motion_Tracking_for_Natural_Humanoid_Control.md)：后来的全身跟踪控制器，把 GR00T N1.5 接成 System 2。那是另一篇论文，不要把 N1 的 120 Hz 动作率和 SONIC 的 50 Hz 关节控制混成一个数。
+- 本站 [SONIC](../SONIC_Supersizing_Motion_Tracking_for_Natural_Humanoid_Control/SONIC_Supersizing_Motion_Tracking_for_Natural_Humanoid_Control.html)：后来的全身跟踪控制器，把 GR00T N1.5 接成 System 2。那是另一篇论文，不要把 N1 的 120 Hz 动作率和 SONIC 的 50 Hz 关节控制混成一个数。
 
 </details>

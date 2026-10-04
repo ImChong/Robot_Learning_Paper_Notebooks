@@ -68,6 +68,10 @@ chore(Progress): 更新论文阅读进度
 4. **跑测试**：`pytest tests/test_prepare_pages.py -v`（含 `is_zhname_description` / `resolve_zh_card_title` 用例）。
 5. **渲染验收（中文首页）**：`bundle exec jekyll serve` 后切换中文，抽查首页对应分类卡片**只显示论文名称**、无长段摘要；若改动影响可见 UI，PR 须附截图（见下文 Cursor Cloud 说明）。
 
+### 笔记之间的链接写 `.html`
+
+Jekyll 把笔记渲染成同名 `.html`，源 `.md` 不会发布，所以 `[PPO](../PPO_Proximal_Policy_Optimization/PPO_Proximal_Policy_Optimization.md)` 在站点上是 404。笔记里指向其他笔记的相对链接一律写成 `.html`（锚点照写：`….html#第-2-步计算优势gae`），目录名照抄磁盘上的真实名字（长标题目录是截断过的，别自己重新截）。已归档（`papers/_archived/`）的笔记不发布，改链 arXiv。`tests/test_paper_note_links.py` 会拦 `.md` 链接和指向不存在文件的链接。PROGRESS.md、DAILY_SUMMARY_LOG.md、todos/ 不发布成页面，里面的 `.md` 链接是给 GitHub 浏览用的，不受此限。
+
 ### 实现参考（供排错）
 
 - 摘要检测：`scripts/prepare_pages.py` 中的 `is_zhname_description()`、`resolve_zh_card_title()`

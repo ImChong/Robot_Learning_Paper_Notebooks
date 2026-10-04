@@ -119,5 +119,5 @@ flowchart LR
 
 ## 🔗 相关阅读
 
-- **同模块·动作生成/规模化**：[Being-M0.5（实时可控 VLMM）](../Being-M0.5__A_Real-Time_Controllable_Vision-Language-Motion_Model/Being-M0.5__A_Real-Time_Controllable_Vision-Language-Motion_Model.md)；
-- **人形动作生成（本仓 04）**：[UniAct](../../04_Loco-Manipulation_and_WBC/UniAct__Unified_Motion_Generation_and_Action_Streaming_for_Humanoid_Robots/UniAct__Unified_Motion_Generation_and_Action_Streaming_for_Humanoid_Robots.md)。
+- **同模块·动作生成/规模化**：[Being-M0.5（实时可控 VLMM）](../Being-M0.5__A_Real-Time_Controllable_Vision-Language-Motion_Model/Being-M0.5__A_Real-Time_Controllable_Vision-Language-Motion_Model.html)；
+- **人形动作生成（本仓 04）**：[UniAct](../../04_Loco-Manipulation_and_WBC/UniAct__Unified_Motion_Generation_and_Action_Streaming_for_Humanoid_Robots/UniAct__Unified_Motion_Generation_and_Action_Streaming_for_Humanoid_Robots.html)。

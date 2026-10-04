@@ -125,4 +125,4 @@ flowchart TB
 
 ## 🔗 相关阅读
 
-- **同模块·VLM/规划**：[本体感受感知具身规划](../Towards_Proprioception-Aware_Embodied_Planning_for_Dual-Arm_Humanoid_Robots/Towards_Proprioception-Aware_Embodied_Planning_for_Dual-Arm_Humanoid_Robots.md) · [给 GPT-4 一具人形身体·BiBo](../Endowing_GPT-4_with_a_Humanoid_Body__Bridge_Between_VLMs_and_the_Physical_World/Endowing_GPT-4_with_a_Humanoid_Body__Bridge_Between_VLMs_and_the_Physical_World.md)。
+- **同模块·VLM/规划**：[本体感受感知具身规划](../Towards_Proprioception-Aware_Embodied_Planning_for_Dual-Arm_Humanoid_Robots/Towards_Proprioception-Aware_Embodied_Planning_for_Dual-Arm_Humanoid_Robots.html) · [给 GPT-4 一具人形身体·BiBo](../Endowing_GPT-4_with_a_Humanoid_Body__Bridge_Between_VLMs_and_the_Physical_World/Endowing_GPT-4_with_a_Humanoid_Body__Bridge_Between_VLMs_and_the_Physical_World.html)。

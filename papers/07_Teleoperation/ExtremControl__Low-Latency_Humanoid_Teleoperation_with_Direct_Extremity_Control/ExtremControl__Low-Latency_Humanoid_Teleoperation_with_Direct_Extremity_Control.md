@@ -185,5 +185,5 @@ A：`Genesis-Humanoid` 仓库的 `extremcontrol` 分支提供：基于 Genesis �
 
 - [ExtremControl 项目主页](https://extremcontrol.github.io)
 - [Genesis-Humanoid `extremcontrol` 分支](https://github.com/UMass-Embodied-AGI/Genesis-Humanoid/tree/extremcontrol)
-- 同模块对照：[CLOT](../CLOT__Closed-Loop_Global_Motion_Tracking_for_Whole-Body_Humanoid_Teleoperation/CLOT__Closed-Loop_Global_Motion_Tracking_for_Whole-Body_Humanoid_Teleoperation.md)（闭环全局跟踪、强调长时序稳定） · [HumanPlus](../HumanPlus_Humanoid_Shadowing_and_Imitation_from_Humans/HumanPlus_Humanoid_Shadowing_and_Imitation_from_Humans.md)（全身重定向 + 模仿学习）
-- 跨模块对照：[HumDex](../../06_Manipulation/HumDex_Humanoid_Dexterous_Manipulation_Made_Easy/HumDex_Humanoid_Dexterous_Manipulation_Made_Easy.md)（IMU 全身遥操作 + 学习式手部重定向）
+- 同模块对照：[CLOT](../CLOT__Closed-Loop_Global_Motion_Tracking_for_Whole-Body_Humanoid_Teleoperation/CLOT__Closed-Loop_Global_Motion_Tracking_for_Whole-Body_Humanoid_Teleoperation.html)（闭环全局跟踪、强调长时序稳定） · [HumanPlus](../HumanPlus_Humanoid_Shadowing_and_Imitation_from_Humans/HumanPlus_Humanoid_Shadowing_and_Imitation_from_Humans.html)（全身重定向 + 模仿学习）
+- 跨模块对照：[HumDex](../../06_Manipulation/HumDex_Humanoid_Dexterous_Manipulation_Made_Easy/HumDex_Humanoid_Dexterous_Manipulation_Made_Easy.html)（IMU 全身遥操作 + 学习式手部重定向）

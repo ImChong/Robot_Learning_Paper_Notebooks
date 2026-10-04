@@ -119,4 +119,4 @@ flowchart LR
 
 ## 🔗 相关阅读
 
-- **同模块·视角/主动视觉**：[EgoMI（主动视觉头手协调）](../EgoMI__Learning_Active_Vision_and_Whole-Body_Manipulation_from_Egocentric_Human_Demos/EgoMI__Learning_Active_Vision_and_Whole-Body_Manipulation_from_Egocentric_Human_Demos.md) · [Masquerade（编辑人类视频）](../Masquerade__Learning_from_In-the-wild_Human_Videos_using_Data-Editing/Masquerade__Learning_from_In-the-wild_Human_Videos_using_Data-Editing.md)。
+- **同模块·视角/主动视觉**：[EgoMI（主动视觉头手协调）](../EgoMI__Learning_Active_Vision_and_Whole-Body_Manipulation_from_Egocentric_Human_Demos/EgoMI__Learning_Active_Vision_and_Whole-Body_Manipulation_from_Egocentric_Human_Demos.html) · [Masquerade（编辑人类视频）](../Masquerade__Learning_from_In-the-wild_Human_Videos_using_Data-Editing/Masquerade__Learning_from_In-the-wild_Human_Videos_using_Data-Editing.html)。

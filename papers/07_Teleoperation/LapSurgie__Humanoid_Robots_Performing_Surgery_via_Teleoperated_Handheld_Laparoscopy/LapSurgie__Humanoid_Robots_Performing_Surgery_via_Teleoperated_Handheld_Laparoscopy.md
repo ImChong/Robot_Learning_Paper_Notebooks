@@ -166,9 +166,9 @@ A：在 peg-transfer 上人形系统的**精度**可与 dVRK 金标准相当（�
 
 ## 🔗 相关阅读
 
-- [SEW-Mimic: 上肢闭式几何重定向](../SEW-Mimic__Closed-Form_Geometric_Retargeting_Solver_for_Upper_Body_Humanoid_Teleoperation/SEW-Mimic__Closed-Form_Geometric_Retargeting_Solver_for_Upper_Body_Humanoid_Teleoperation.md) — 同为「把人手位姿映射到机器人」的几何重定向，可与本文 RCM 逆映射对照
-- [X-OP: Cross-Morphology Whole-Body Teleoperation via MPC Retargeting](../X-OP__Cross-Morphology_Whole-Body_Teleoperation_via_MPC_Retargeting/X-OP__Cross-Morphology_Whole-Body_Teleoperation_via_MPC_Retargeting.md) — 全身遥操作里的「优化式重定向」另一路线
-- [Stability-Aware Retargeting for Humanoid Multi-Contact Teleoperation](../Stability-Aware_Retargeting_for_Humanoid_Multi-Contact_Teleoperation/Stability-Aware_Retargeting_for_Humanoid_Multi-Contact_Teleoperation.md) — 多接触遥操作的重定向与稳定性约束
+- [SEW-Mimic: 上肢闭式几何重定向](../SEW-Mimic__Closed-Form_Geometric_Retargeting_Solver_for_Upper_Body_Humanoid_Teleoperation/SEW-Mimic__Closed-Form_Geometric_Retargeting_Solver_for_Upper_Body_Humanoid_Teleoperation.html) — 同为「把人手位姿映射到机器人」的几何重定向，可与本文 RCM 逆映射对照
+- [X-OP: Cross-Morphology Whole-Body Teleoperation via MPC Retargeting](../X-OP__Cross-Morphology_Whole-Body_Teleoperation_via_MPC_Retargeting/X-OP__Cross-Morphology_Whole-Body_Teleoperation_via_MPC_Retargeting.html) — 全身遥操作里的「优化式重定向」另一路线
+- [Stability-Aware Retargeting for Humanoid Multi-Contact Teleoperation](../Stability-Aware_Retargeting_for_Humanoid_Multi-Contact_Teleoperation/Stability-Aware_Retargeting_for_Humanoid_Multi-Contact_Teleoperation.html) — 多接触遥操作的重定向与稳定性约束
 - [A Rapid Instrument Exchange System for Humanoid Robots in MIS (2604.02707)](https://arxiv.org/abs/2604.02707) — 同一方向的后续工作：人形微创手术中的快速换械
 - [LapSurgie arXiv 2510.03529](https://arxiv.org/abs/2510.03529)
 

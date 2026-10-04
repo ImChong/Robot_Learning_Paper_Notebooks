@@ -123,5 +123,5 @@ flowchart LR
 
 ## 🔗 相关阅读
 
-- **同模块·仿真/世界模型**：[Learning with pyCub](../Learning_with_pyCub__A_Simulation_and_Exercise_Framework_for_Humanoid_Robotics/Learning_with_pyCub__A_Simulation_and_Exercise_Framework_for_Humanoid_Robotics.md)；
-- **世界模型 + 控制**：[HAIC（动力学感知世界模型）](../../04_Loco-Manipulation_and_WBC/HAIC__Humanoid_Agile_Object_Interaction_Control_via_Dynamics-Aware_World_Model/HAIC__Humanoid_Agile_Object_Interaction_Control_via_Dynamics-Aware_World_Model.md)。
+- **同模块·仿真/世界模型**：[Learning with pyCub](../Learning_with_pyCub__A_Simulation_and_Exercise_Framework_for_Humanoid_Robotics/Learning_with_pyCub__A_Simulation_and_Exercise_Framework_for_Humanoid_Robotics.html)；
+- **世界模型 + 控制**：[HAIC（动力学感知世界模型）](../../04_Loco-Manipulation_and_WBC/HAIC__Humanoid_Agile_Object_Interaction_Control_via_Dynamics-Aware_World_Model/HAIC__Humanoid_Agile_Object_Interaction_Control_via_Dynamics-Aware_World_Model.html)。

@@ -120,4 +120,4 @@ flowchart LR
 
 ## 🔗 相关阅读
 
-- **同模块·可控动作生成**：[Flexible Motion In-betweening（关键帧约束）](../Flexible_Motion_In-betweening_with_Diffusion_Models/Flexible_Motion_In-betweening_with_Diffusion_Models.md) · [Guided Motion Diffusion](../Guided_Motion_Diffusion_for_Controllable_Human_Motion_Synthesis/Guided_Motion_Diffusion_for_Controllable_Human_Motion_Synthesis.md)。
+- **同模块·可控动作生成**：[Flexible Motion In-betweening（关键帧约束）](../Flexible_Motion_In-betweening_with_Diffusion_Models/Flexible_Motion_In-betweening_with_Diffusion_Models.html) · [Guided Motion Diffusion](../Guided_Motion_Diffusion_for_Controllable_Human_Motion_Synthesis/Guided_Motion_Diffusion_for_Controllable_Human_Motion_Synthesis.html)。

@@ -120,5 +120,5 @@ flowchart LR
 
 ## 🔗 相关阅读
 
-- **相关·接触/关系保持的交互重定向（本仓 04）**：[从人-人示范学人-人形交互（PAIR + D-STAR）](../../04_Loco-Manipulation_and_WBC/Learning_Whole-Body_Human-Humanoid_Interaction_from_Human-Human_Demonstrations/Learning_Whole-Body_Human-Humanoid_Interaction_from_Human-Human_Demonstrations.md)；
-- **人-物接触（本仓 14）**：[PICO（人-物接触重建）](../../14_Human_Motion/PICO__Reconstructing_3D_People_In_Contact_with_Objects/PICO__Reconstructing_3D_People_In_Contact_with_Objects.md)。
+- **相关·接触/关系保持的交互重定向（本仓 04）**：[从人-人示范学人-人形交互（PAIR + D-STAR）](../../04_Loco-Manipulation_and_WBC/Learning_Whole-Body_Human-Humanoid_Interaction_from_Human-Human_Demonstrations/Learning_Whole-Body_Human-Humanoid_Interaction_from_Human-Human_Demonstrations.html)；
+- **人-物接触（本仓 14）**：[PICO（人-物接触重建）](../../14_Human_Motion/PICO__Reconstructing_3D_People_In_Contact_with_Objects/PICO__Reconstructing_3D_People_In_Contact_with_Objects.html)。

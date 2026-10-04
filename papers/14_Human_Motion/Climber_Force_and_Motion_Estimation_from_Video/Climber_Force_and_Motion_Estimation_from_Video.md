@@ -117,5 +117,5 @@ flowchart LR
 
 ## 🔗 相关阅读
 
-- **同模块·攀岩/人-物接触**：[ClimbingCap（攀岩多模态动捕）](../ClimbingCap__Multi-Modal_Dataset_and_Method_for_Rock_Climbing_in_World_Coordinate/ClimbingCap__Multi-Modal_Dataset_and_Method_for_Rock_Climbing_in_World_Coordinate.md) · [PICO（人-物接触重建）](../PICO__Reconstructing_3D_People_In_Contact_with_Objects/PICO__Reconstructing_3D_People_In_Contact_with_Objects.md)；
-- **接触/力（本仓 04）**：[CHIP（可控柔顺）](../../04_Loco-Manipulation_and_WBC/CHIP__Adaptive_Compliance_for_Humanoid_Control_through_Hindsight_Perturbation/CHIP__Adaptive_Compliance_for_Humanoid_Control_through_Hindsight_Perturbation.md)。
+- **同模块·攀岩/人-物接触**：[ClimbingCap（攀岩多模态动捕）](../ClimbingCap__Multi-Modal_Dataset_and_Method_for_Rock_Climbing_in_World_Coordinate/ClimbingCap__Multi-Modal_Dataset_and_Method_for_Rock_Climbing_in_World_Coordinate.html) · [PICO（人-物接触重建）](../PICO__Reconstructing_3D_People_In_Contact_with_Objects/PICO__Reconstructing_3D_People_In_Contact_with_Objects.html)；
+- **接触/力（本仓 04）**：[CHIP（可控柔顺）](../../04_Loco-Manipulation_and_WBC/CHIP__Adaptive_Compliance_for_Humanoid_Control_through_Hindsight_Perturbation/CHIP__Adaptive_Compliance_for_Humanoid_Control_through_Hindsight_Perturbation.html)。

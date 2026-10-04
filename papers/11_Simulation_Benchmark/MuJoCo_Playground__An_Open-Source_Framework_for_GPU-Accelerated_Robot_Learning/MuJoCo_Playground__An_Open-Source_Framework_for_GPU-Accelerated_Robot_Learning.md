@@ -185,7 +185,7 @@ A：全身移动操作天然是「运动 + 操作」的跨模态问题，过去�
 - [MuJoCo Playground 项目主页](https://playground.mujoco.org/)：各机器人运动 / 操作演示与 sim-to-real 视频
 - [google-deepmind/mujoco_playground](https://github.com/google-deepmind/mujoco_playground)：环境、训练脚本与 Colab 教程
 - [HumanoidBench (arXiv 2403.10506)](https://arxiv.org/abs/2403.10506)：全身运动与操作仿真基准，本仓库已有笔记
-- [Isaac Lab GPU Simulation（本仓库已有笔记）](../../03_High_Impact_Selection/Isaac_Lab_GPU_Simulation/Isaac_Lab_GPU_Simulation.md)：另一主流 GPU 并行机器人学习框架
+- [Isaac Lab GPU Simulation（本仓库已有笔记）](../../03_High_Impact_Selection/Isaac_Lab_GPU_Simulation/Isaac_Lab_GPU_Simulation.html)：另一主流 GPU 并行机器人学习框架
 
 ---
 

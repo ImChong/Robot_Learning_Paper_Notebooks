@@ -125,5 +125,5 @@ flowchart LR
 
 ## 🔗 相关阅读
 
-- **同模块·VLM/语言驱动操作**：[Hierarchical Vision-Language Planning](../Hierarchical_Vision-Language_Planning_for_Multi-Step_Humanoid_Manipulation/Hierarchical_Vision-Language_Planning_for_Multi-Step_Humanoid_Manipulation.md)；
-- **语言-动作（本仓 04）**：[SENTINEL](../../04_Loco-Manipulation_and_WBC/SENTINEL__A_Fully_End-to-End_Language-Action_Model_for_Humanoid_Whole_Body_Control/SENTINEL__A_Fully_End-to-End_Language-Action_Model_for_Humanoid_Whole_Body_Control.md)。
+- **同模块·VLM/语言驱动操作**：[Hierarchical Vision-Language Planning](../Hierarchical_Vision-Language_Planning_for_Multi-Step_Humanoid_Manipulation/Hierarchical_Vision-Language_Planning_for_Multi-Step_Humanoid_Manipulation.html)；
+- **语言-动作（本仓 04）**：[SENTINEL](../../04_Loco-Manipulation_and_WBC/SENTINEL__A_Fully_End-to-End_Language-Action_Model_for_Humanoid_Whole_Body_Control/SENTINEL__A_Fully_End-to-End_Language-Action_Model_for_Humanoid_Whole_Body_Control.html)。

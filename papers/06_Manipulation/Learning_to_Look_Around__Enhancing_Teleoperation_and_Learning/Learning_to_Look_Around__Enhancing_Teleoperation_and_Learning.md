@@ -121,4 +121,4 @@ flowchart LR
 
 ## 🔗 相关阅读
 
-- **同模块·主动视觉/可动头**：[Vision in Action（6-DoF 颈）](../Vision_in_Action__Learning_Active_Perception_from_Human_Demonstrations/Vision_in_Action__Learning_Active_Perception_from_Human_Demonstrations.md) · [Learning to Look（信息寻求）](../Learning_to_Look__Seeking_Information_for_Decision_Making_via_Policy_Factorization/Learning_to_Look__Seeking_Information_for_Decision_Making_via_Policy_Factorization.md)。
+- **同模块·主动视觉/可动头**：[Vision in Action（6-DoF 颈）](../Vision_in_Action__Learning_Active_Perception_from_Human_Demonstrations/Vision_in_Action__Learning_Active_Perception_from_Human_Demonstrations.html) · [Learning to Look（信息寻求）](../Learning_to_Look__Seeking_Information_for_Decision_Making_via_Policy_Factorization/Learning_to_Look__Seeking_Information_for_Decision_Making_via_Policy_Factorization.html)。

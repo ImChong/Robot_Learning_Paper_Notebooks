@@ -131,6 +131,6 @@ flowchart LR
 
 ## 🔗 相关阅读
 
-- **同模块·重定向 / 合成数据**：[ReActor（物理感知 RL 重定向）](../ReActor__Reinforcement_Learning_for_Physics-Aware_Motion_Retargeting/ReActor__Reinforcement_Learning_for_Physics-Aware_Motion_Retargeting.md) · [SUGAR（人类视频 → 技能的可扩展流水线）](../SUGAR__A_Scalable_Human-Video-Driven_Generalizable_Humanoid_Loco-Manipulation_Learning_Framework/SUGAR__A_Scalable_Human-Video-Driven_Generalizable_Humanoid_Loco-Manipulation_Learning_Framework.md)；
-- **物体交互 / 动力学可行**：[HAIC（动力学感知世界模型）](../HAIC__Humanoid_Agile_Object_Interaction_Control_via_Dynamics-Aware_World_Model/HAIC__Humanoid_Agile_Object_Interaction_Control_via_Dynamics-Aware_World_Model.md)；
+- **同模块·重定向 / 合成数据**：[ReActor（物理感知 RL 重定向）](../../02_Motion_Retargeting/ReActor__Reinforcement_Learning_for_Physics-Aware_Motion_Retargeting/ReActor__Reinforcement_Learning_for_Physics-Aware_Motion_Retargeting.html) · [SUGAR（人类视频 → 技能的可扩展流水线）](../SUGAR__A_Scalable_Human-Video-Driven_Generalizable_Humanoid_Loco-Manipulation_Learning_Framework/SUGAR__A_Scalable_Human-Video-Driven_Generalizable_Humanoid_Loco-Manipulation_Learning_Framework.html)；
+- **物体交互 / 动力学可行**：[HAIC（动力学感知世界模型）](../HAIC__Humanoid_Agile_Object_Interaction_Control_via_Dynamics-Aware_World_Model/HAIC__Humanoid_Agile_Object_Interaction_Control_via_Dynamics-Aware_World_Model.html)；
 - **运动重定向（本仓 02 模块）**：GMR / OmniH2O 等人到人形重定向工作。

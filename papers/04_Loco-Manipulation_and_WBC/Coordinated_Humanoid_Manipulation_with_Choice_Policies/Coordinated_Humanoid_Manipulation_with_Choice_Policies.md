@@ -134,5 +134,5 @@ flowchart LR
 
 ## 🔗 相关阅读
 
-- **同模块·全身操作 / 末端跟踪**：[HiWET（长时程世界系末端跟踪）](../HiWET__Hierarchical_World-Frame_End-Effector_Tracking_for_Long-Horizon_Humanoid_Loco-Manipulation/HiWET__Hierarchical_World-Frame_End-Effector_Tracking_for_Long-Horizon_Humanoid_Loco-Manipulation.md) · [Humanoid Manipulation Interface](../Humanoid_Manipulation_Interface__Humanoid_Whole-Body_Manipulation_from/Humanoid_Manipulation_Interface__Humanoid_Whole-Body_Manipulation_from.md)；
+- **同模块·全身操作 / 末端跟踪**：[HiWET（长时程世界系末端跟踪）](../HiWET__Hierarchical_World-Frame_End-Effector_Tracking_for_Long-Horizon_Humanoid_Loco-Manipulation/HiWET__Hierarchical_World-Frame_End-Effector_Tracking_for_Long-Horizon_Humanoid_Loco-Manipulation.html) · [Humanoid Manipulation Interface](../Humanoid_Manipulation_Interface__Humanoid_Whole-Body_Manipulation_from_Robot-Fre/Humanoid_Manipulation_Interface__Humanoid_Whole-Body_Manipulation_from_Robot-Fre.html)；
 - **多模态策略**：本仓 06 操作板块中的扩散/流匹配策略工作。

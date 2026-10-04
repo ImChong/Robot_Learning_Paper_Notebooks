@@ -133,5 +133,5 @@ flowchart TB
 
 ## 🔗 相关阅读
 
-- **同模块·长时程 / 技能组合**：[LessMimic（统一距离场表征的长时程交互）](../LessMimic_Long-Horizon_Humanoid_Interaction_with_Unified_Distance_Field_Representations/LessMimic_Long-Horizon_Humanoid_Interaction_with_Unified_Distance_Field_Representations.md) · [HiWET（长时程世界系末端跟踪）](../HiWET__Hierarchical_World-Frame_End-Effector_Tracking_for_Long-Horizon_Humanoid_Loco-Manipulation/HiWET__Hierarchical_World-Frame_End-Effector_Tracking_for_Long-Horizon_Humanoid_Loco-Manipulation.md)；
-- **通用 / 共享控制器**：[General Humanoid WBC via Pretraining and Fast Adaptation](../General_Humanoid_Whole-Body_Control_via_Pretraining_and_Fast_Adaptation/General_Humanoid_Whole-Body_Control_via_Pretraining_and_Fast_Adaptation.md)。
+- **同模块·长时程 / 技能组合**：[LessMimic（统一距离场表征的长时程交互）](../LessMimic_Long-Horizon_Humanoid_Interaction_with_Unified_Distance_Field_Representations/LessMimic_Long-Horizon_Humanoid_Interaction_with_Unified_Distance_Field_Representations.html) · [HiWET（长时程世界系末端跟踪）](../HiWET__Hierarchical_World-Frame_End-Effector_Tracking_for_Long-Horizon_Humanoid_Loco-Manipulation/HiWET__Hierarchical_World-Frame_End-Effector_Tracking_for_Long-Horizon_Humanoid_Loco-Manipulation.html)；
+- **通用 / 共享控制器**：[General Humanoid WBC via Pretraining and Fast Adaptation](../General_Humanoid_Whole-Body_Control_via_Pretraining_and_Fast_Adaptation/General_Humanoid_Whole-Body_Control_via_Pretraining_and_Fast_Adaptation.html)。

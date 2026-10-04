@@ -124,4 +124,4 @@ flowchart LR
 
 ## 🔗 相关阅读
 
-- **同模块·灵巧/人手数据**：[Lightning Grasp（程序化抓取）](../Lightning_Grasp__High_Performance_Procedural_Grasp_Synthesis_with_Contact_Fields/Lightning_Grasp__High_Performance_Procedural_Grasp_Synthesis_with_Contact_Fields.md) · [EgoDex](../EgoDex__Learning_Dexterous_Manipulation_from_Large-Scale_Egocentric_Video/EgoDex__Learning_Dexterous_Manipulation_from_Large-Scale_Egocentric_Video.md)。
+- **同模块·灵巧/人手数据**：[Lightning Grasp（程序化抓取）](../Lightning_Grasp__High_Performance_Procedural_Grasp_Synthesis_with_Contact_Fields/Lightning_Grasp__High_Performance_Procedural_Grasp_Synthesis_with_Contact_Fields.html) · [EgoDex](../EgoDex__Learning_Dexterous_Manipulation_from_Large-Scale_Egocentric_Video/EgoDex__Learning_Dexterous_Manipulation_from_Large-Scale_Egocentric_Video.html)。

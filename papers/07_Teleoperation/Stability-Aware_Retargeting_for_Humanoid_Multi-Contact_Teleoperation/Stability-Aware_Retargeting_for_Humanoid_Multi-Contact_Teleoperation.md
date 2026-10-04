@@ -179,7 +179,7 @@ flowchart LR
 | **多接触作业落地** | 给"用手撑环境做活"的遥操作提供了实时稳定性护栏，是 loco-manipulation 走向真实场景的关键一环 |
 | **可微稳定性度量** | 把"离失稳多远"做成可微标量并高效求梯度，可被 RL 奖励、MPC 代价、共享自治等多处复用 |
 | **共享自治(shared autonomy)范式** | 示范了"听人 + 自动兜底"的好分工：人给意图，系统在零空间里保平衡 |
-| **与算法/界面路线互补** | 同模块 [SEW-Mimic](../SEW-Mimic__Closed-Form_Geometric_Retargeting_Solver_for_Upper_Body_Humanoid_Teleoperation/SEW-Mimic__Closed-Form_Geometric_Retargeting_Solver_for_Upper_Body_Humanoid_Teleoperation.md) 解决"重定向到哪"，本文解决"重定向时别失稳" |
+| **与算法/界面路线互补** | 同模块 [SEW-Mimic](../SEW-Mimic__Closed-Form_Geometric_Retargeting_Solver_for_Upper_Body_Humanoid_Teleoperation/SEW-Mimic__Closed-Form_Geometric_Retargeting_Solver_for_Upper_Body_Humanoid_Teleoperation.html) 解决"重定向到哪"，本文解决"重定向时别失稳" |
 
 ---
 
@@ -206,9 +206,9 @@ A：实验里启发式地沿法向挪接触点、缺乏全局位形配合时，�
   - [Feasibility Retargeting for Multi-contact Teleoperation and Physical Interaction](https://arxiv.org/abs/2308.03479)
   - [Generating Humanoid Multi-Contact through Feasibility Visualization](https://arxiv.org/abs/2303.08232)
 - 同模块对照：
-  - [SEW-Mimic](../SEW-Mimic__Closed-Form_Geometric_Retargeting_Solver_for_Upper_Body_Humanoid_Teleoperation/SEW-Mimic__Closed-Form_Geometric_Retargeting_Solver_for_Upper_Body_Humanoid_Teleoperation.md)（上肢闭式几何重定向）
-  - [ExtremControl](../ExtremControl__Low-Latency_Humanoid_Teleoperation_with_Direct_Extremity_Control/ExtremControl__Low-Latency_Humanoid_Teleoperation_with_Direct_Extremity_Control.md)（低延迟直接末端控制）
-  - [Intuitive GUI](../Intuitive_GUI_for_Non-Expert_Teleoperation_of_Humanoid_Robots/Intuitive_GUI_for_Non-Expert_Teleoperation_of_Humanoid_Robots.md)（非专家遥操作界面）
+  - [SEW-Mimic](../SEW-Mimic__Closed-Form_Geometric_Retargeting_Solver_for_Upper_Body_Humanoid_Teleoperation/SEW-Mimic__Closed-Form_Geometric_Retargeting_Solver_for_Upper_Body_Humanoid_Teleoperation.html)（上肢闭式几何重定向）
+  - [ExtremControl](../ExtremControl__Low-Latency_Humanoid_Teleoperation_with_Direct_Extremity_Control/ExtremControl__Low-Latency_Humanoid_Teleoperation_with_Direct_Extremity_Control.html)（低延迟直接末端控制）
+  - [Intuitive GUI](../Intuitive_GUI_for_Non-Expert_Teleoperation_of_Humanoid_Robots/Intuitive_GUI_for_Non-Expert_Teleoperation_of_Humanoid_Robots.html)（非专家遥操作界面）
 
 ---
 

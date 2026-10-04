@@ -201,9 +201,9 @@ flowchart TB
 | 方向 | 含义 |
 |---|---|
 | **"辨识 vs 随机化"的再平衡** | 与 [RMA](https://arxiv.org/abs/2107.04034) / DR 主流路线互补——DR 盖住 gap，PACE 理解并量准 gap |
-| **延续 RSL 执行器建模传统** | 接续 ANYmal 经典的 [Actuator Net](https://arxiv.org/abs/1901.08652)（[H17 笔记](../../03_High_Impact_Selection/Learning_Agile_and_Dynamic_Motor_Skills_for_Legged_Robots/Learning_Agile_and_Dynamic_Motor_Skills_for_Legged_Robots.md)），但更系统、可推广到任意机器人 |
+| **延续 RSL 执行器建模传统** | 接续 ANYmal 经典的 [Actuator Net](https://arxiv.org/abs/1901.08652)（[H17 笔记](../../03_High_Impact_Selection/Learning_Agile_and_Dynamic_Motor_Skills_for_Legged_Robots/Learning_Agile_and_Dynamic_Motor_Skills_for_Legged_Robots.html)），但更系统、可推广到任意机器人 |
 | **把能耗当一等公民** | 多数 RL 行走只把能量当正则项，PACE 用物理能量模型让"省电"真正可落地 |
-| **跟 [PolySim](../PolySim__Bridging_the_Sim-to-Real_Gap_for_Humanoid_Control_via_Multi-Simulato/PolySim__Bridging_the_Sim-to-Real_Gap_for_Humanoid_Control_via_Multi-Simulato.md) 思路对照** | PolySim 用多仿真器随机化压窄 gap，PACE 用辨识直接量准 gap，方向相反 |
+| **跟 [PolySim](../PolySim__Bridging_the_Sim-to-Real_Gap_for_Humanoid_Control_via_Multi-Simulato/PolySim__Bridging_the_Sim-to-Real_Gap_for_Humanoid_Control_via_Multi-Simulato.html) 思路对照** | PolySim 用多仿真器随机化压窄 gap，PACE 用辨识直接量准 gap，方向相反 |
 | **跟主动辨识工作呼应** | 与 [Sampling-Based System Identification with Active Exploration (2505.14266)](https://arxiv.org/abs/2505.14266) 同属"用辨识替代盲目随机化"思潮 |
 
 ---
@@ -229,11 +229,11 @@ A：互补。RMA 在**部署时**用历史观测在线估计隐变量来适应�
 
 ## 🔗 相关阅读
 
-- [Learning Agile and Dynamic Motor Skills for Legged Robots (1901.08652)](../../03_High_Impact_Selection/Learning_Agile_and_Dynamic_Motor_Skills_for_Legged_Robots/Learning_Agile_and_Dynamic_Motor_Skills_for_Legged_Robots.md)：ANYmal Actuator Net 奠基，本仓库已有笔记
-- [RMA: Rapid Motor Adaptation for Legged Robots (2107.04034)](../RMA_Rapid_Motor_Adaptation/RMA_Rapid_Motor_Adaptation.md)：在线动力学适应路线，本仓库已有笔记
-- [PolySim: Multi-Simulator Domain Randomization (2510.01708)](../PolySim__Bridging_the_Sim-to-Real_Gap_for_Humanoid_Control_via_Multi-Simulato/PolySim__Bridging_the_Sim-to-Real_Gap_for_Humanoid_Control_via_Multi-Simulato.md)：仿真侧随机化路线，与 PACE 思路对照，本仓库已有笔记
+- [Learning Agile and Dynamic Motor Skills for Legged Robots (1901.08652)](../../03_High_Impact_Selection/Learning_Agile_and_Dynamic_Motor_Skills_for_Legged_Robots/Learning_Agile_and_Dynamic_Motor_Skills_for_Legged_Robots.html)：ANYmal Actuator Net 奠基，本仓库已有笔记
+- [RMA: Rapid Motor Adaptation for Legged Robots (2107.04034)](https://arxiv.org/abs/2107.04034)：在线动力学适应路线
+- [PolySim: Multi-Simulator Domain Randomization (2510.01708)](../PolySim__Bridging_the_Sim-to-Real_Gap_for_Humanoid_Control_via_Multi-Simulato/PolySim__Bridging_the_Sim-to-Real_Gap_for_Humanoid_Control_via_Multi-Simulato.html)：仿真侧随机化路线，与 PACE 思路对照，本仓库已有笔记
 - [Sampling-Based System Identification with Active Exploration (2505.14266)](https://arxiv.org/abs/2505.14266)：主动探索做系统辨识，同属"辨识替代随机化"思潮
-- [Contrastive Representation Learning for Adaptive Humanoid Locomotion (2509.12858)](../Contrastive_Representation_Learning_for_Adaptive_Humanoid_Locomotion/Contrastive_Representation_Learning_for_Adaptive_Humanoid_Locomotion.md)：表征侧的 sim-to-real 路线，本仓库已有笔记
+- [Contrastive Representation Learning for Adaptive Humanoid Locomotion (2509.12858)](../Contrastive_Representation_Learning_for_Adaptive_Humanoid_Locomotion/Contrastive_Representation_Learning_for_Adaptive_Humanoid_Locomotion.html)：表征侧的 sim-to-real 路线，本仓库已有笔记
 
 ---
 

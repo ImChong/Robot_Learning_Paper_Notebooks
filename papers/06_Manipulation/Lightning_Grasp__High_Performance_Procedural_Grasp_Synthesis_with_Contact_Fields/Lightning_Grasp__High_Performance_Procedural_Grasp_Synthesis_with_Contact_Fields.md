@@ -125,4 +125,4 @@ flowchart LR
 
 ## 🔗 相关阅读
 
-- **同模块·灵巧抓取/操作**：[Object-Centric Dexterous Manipulation from Human Motion Data](../Object-Centric_Dexterous_Manipulation_from_Human_Motion_Data/Object-Centric_Dexterous_Manipulation_from_Human_Motion_Data.md) · [Learning Visuotactile Skills with Two Multifingered Hands](../Learning_Visuotactile_Skills_with_Two_Multifingered_Hands/Learning_Visuotactile_Skills_with_Two_Multifingered_Hands.md)。
+- **同模块·灵巧抓取/操作**：[Object-Centric Dexterous Manipulation from Human Motion Data](../Object-Centric_Dexterous_Manipulation_from_Human_Motion_Data/Object-Centric_Dexterous_Manipulation_from_Human_Motion_Data.html) · [Learning Visuotactile Skills with Two Multifingered Hands](../Learning_Visuotactile_Skills_with_Two_Multifingered_Hands/Learning_Visuotactile_Skills_with_Two_Multifingered_Hands.html)。

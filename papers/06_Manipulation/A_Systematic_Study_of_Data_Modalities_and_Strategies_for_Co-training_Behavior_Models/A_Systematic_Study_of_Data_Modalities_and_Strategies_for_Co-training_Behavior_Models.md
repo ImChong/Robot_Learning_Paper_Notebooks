@@ -130,4 +130,4 @@ flowchart LR
 
 ## 🔗 相关阅读
 
-- **同模块·协同训练/数据**：[Sim-and-Real Co-Training](../Sim-and-Real_Co-Training__A_Simple_Recipe_for_Vision-Based_Robotic_Manipulation/Sim-and-Real_Co-Training__A_Simple_Recipe_for_Vision-Based_Robotic_Manipulation.md) · [Humanoid Policy ~ Human Policy](../Humanoid_Policy__Human_Policy/Humanoid_Policy__Human_Policy.md) · [Being-H0](../Being-H0__Vision-Language-Action_Pretraining_from_Large-Scale_Human_Videos/Being-H0__Vision-Language-Action_Pretraining_from_Large-Scale_Human_Videos.md)。
+- **同模块·协同训练/数据**：[Sim-and-Real Co-Training](../Sim-and-Real_Co-Training__A_Simple_Recipe_for_Vision-Based_Robotic_Manipulation/Sim-and-Real_Co-Training__A_Simple_Recipe_for_Vision-Based_Robotic_Manipulation.html) · [Humanoid Policy ~ Human Policy](../Humanoid_Policy__Human_Policy/Humanoid_Policy__Human_Policy.html) · [Being-H0](../Being-H0__Vision-Language-Action_Pretraining_from_Large-Scale_Human_Videos/Being-H0__Vision-Language-Action_Pretraining_from_Large-Scale_Human_Videos.html)。

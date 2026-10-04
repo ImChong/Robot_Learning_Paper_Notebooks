@@ -164,6 +164,6 @@ flowchart LR
 
 ## 🔗 相关阅读
 
-- **同模块·力/负载自适应**：[FALCON: Learning Force-Adaptive Humanoid Loco-Manipulation](https://arxiv.org/abs/2505.06776) · [HAFO 力自适应控制框架](https://arxiv.org/abs/2511.20275) · [SteadyTray（残差 RL 托盘平衡）](../SteadyTray__Learning_Object_Balancing_Tasks_in_Humanoid_Tray_Transport_via_Resid/SteadyTray__Learning_Object_Balancing_Tasks_in_Humanoid_Tray_Transport_via_Resid.md)；
-- **冻结主干 + 残差/适配**：[General Humanoid WBC via Pretraining and Fast Adaptation (FAST)](../General_Humanoid_Whole-Body_Control_via_Pretraining_and_Fast_Adaptation/General_Humanoid_Whole-Body_Control_via_Pretraining_and_Fast_Adaptation.md) · ResMimic（残差学习）；
+- **同模块·力/负载自适应**：[FALCON: Learning Force-Adaptive Humanoid Loco-Manipulation](https://arxiv.org/abs/2505.06776) · [HAFO 力自适应控制框架](https://arxiv.org/abs/2511.20275) · [SteadyTray（残差 RL 托盘平衡）](../SteadyTray__Learning_Object_Balancing_Tasks_in_Humanoid_Tray_Transport_via_Resid/SteadyTray__Learning_Object_Balancing_Tasks_in_Humanoid_Tray_Transport_via_Resid.html)；
+- **冻结主干 + 残差/适配**：[General Humanoid WBC via Pretraining and Fast Adaptation (FAST)](../General_Humanoid_Whole-Body_Control_via_Pretraining_and_Fast_Adaptation/General_Humanoid_Whole-Body_Control_via_Pretraining_and_Fast_Adaptation.html) · ResMimic（残差学习）；
 - **上下文编码 / 隐变量适配**：基于历史的 RMA / 特权信息蒸馏一类方法（动力学自适应的经典范式）。

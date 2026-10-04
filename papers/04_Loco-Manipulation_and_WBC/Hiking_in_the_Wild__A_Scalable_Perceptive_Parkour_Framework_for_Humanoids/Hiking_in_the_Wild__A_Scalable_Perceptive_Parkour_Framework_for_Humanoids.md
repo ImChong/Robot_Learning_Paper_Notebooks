@@ -127,4 +127,4 @@ flowchart LR
 
 ## 🔗 相关阅读
 
-- **同模块·感知式跑酷 / 地形**：[Deep Whole-body Parkour（把感知并入全身动作跟踪）](../Deep_Whole-body_Parkour/Deep_Whole-body_Parkour.md) · [Perceptive Humanoid Parkour（动作匹配串接动态人类技能）](../Perceptive_Humanoid_Parkour__Chaining_Dynamic_Human_Skills_via_Motion_/Perceptive_Humanoid_Parkour__Chaining_Dynamic_Human_Skills_via_Motion_.md) · [TTT-Parkour（测试时快速训练）](../TTT-Parkour__Rapid_Test-Time_Training_for_Perceptive_Robot_Parkour/TTT-Parkour__Rapid_Test-Time_Training_for_Perceptive_Robot_Parkour.md)。
+- **同模块·感知式跑酷 / 地形**：[Deep Whole-body Parkour（把感知并入全身动作跟踪）](../Deep_Whole-body_Parkour/Deep_Whole-body_Parkour.html) · [Perceptive Humanoid Parkour（动作匹配串接动态人类技能）](../Perceptive_Humanoid_Parkour__Chaining_Dynamic_Human_Skills_via_Motion_Matching/Perceptive_Humanoid_Parkour__Chaining_Dynamic_Human_Skills_via_Motion_Matching.html) · [TTT-Parkour（测试时快速训练）](../TTT-Parkour__Rapid_Test-Time_Training_for_Perceptive_Robot_Parkour/TTT-Parkour__Rapid_Test-Time_Training_for_Perceptive_Robot_Parkour.html)。

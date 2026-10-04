@@ -271,9 +271,9 @@ A：双目隐式提供深度。消融里仅用左目时 H1 抓罐成功率从 92
 
 ## 🔗 相关阅读
 
-- [Mobile-TeleVision](../Mobile-TeleVision__Predictive_Motion_Priors_for_Humanoid_Whole-Body_Control/Mobile-TeleVision__Predictive_Motion_Priors_for_Humanoid_Whole-Body_Control.md)：同组后续工作，把系统扩展到全身移动
-- [Bunny-VisionPro](../Bunny-VisionPro__Real-Time_Bimanual_Dexterous_Teleoperation_for_Imitation_Learning/Bunny-VisionPro__Real-Time_Bimanual_Dexterous_Teleoperation_for_Imitation_Learning.md)：同期的 Vision Pro 双手灵巧遥操作，补了触觉反馈
-- [ACE](../ACE__A_Cross-Platform_Visual-Exoskeletons_System_for_Low-Cost_Dexterous_Teleoperation/ACE__A_Cross-Platform_Visual-Exoskeletons_System_for_Low-Cost_Dexterous_Teleoperation.md)：同实验室的视觉外骨骼遥操作
-- [iDP3](../../03_High_Impact_Selection/iDP3_Generalizable_Humanoid_Manipulation_with_3D_Diffusion_Policies/iDP3_Generalizable_Humanoid_Manipulation_with_3D_Diffusion_Policies.md)：沿用 Vision Pro 遥操作采数据的人形 3D 扩散策略
+- [Mobile-TeleVision](../Mobile-TeleVision__Predictive_Motion_Priors_for_Humanoid_Whole-Body_Control/Mobile-TeleVision__Predictive_Motion_Priors_for_Humanoid_Whole-Body_Control.html)：同组后续工作，把系统扩展到全身移动
+- [Bunny-VisionPro](../Bunny-VisionPro__Real-Time_Bimanual_Dexterous_Teleoperation_for_Imitation_Learning/Bunny-VisionPro__Real-Time_Bimanual_Dexterous_Teleoperation_for_Imitation_Learning.html)：同期的 Vision Pro 双手灵巧遥操作，补了触觉反馈
+- [ACE](../ACE__A_Cross-Platform_Visual-Exoskeletons_System_for_Low-Cost_Dexterous_Teleoperation/ACE__A_Cross-Platform_Visual-Exoskeletons_System_for_Low-Cost_Dexterous_Teleoperation.html)：同实验室的视觉外骨骼遥操作
+- [iDP3](../../03_High_Impact_Selection/iDP3_Generalizable_Humanoid_Manipulation_with_3D_Diffusion_Policies/iDP3_Generalizable_Humanoid_Manipulation_with_3D_Diffusion_Policies.html)：沿用 Vision Pro 遥操作采数据的人形 3D 扩散策略
 - [ALOHA / ACT (2304.13705)](https://arxiv.org/abs/2304.13705)：本文模仿学习策略的出处
 - [AnyTeleop / dex-retargeting (2307.04577)](https://arxiv.org/abs/2307.04577)：手部重定向库的出处

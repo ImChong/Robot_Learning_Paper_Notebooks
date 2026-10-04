@@ -129,4 +129,4 @@ flowchart LR
 ## 🔗 相关阅读
 
 - **同模块·Sim-to-Real**：本仓 10 模块 MOSAIC、ZEST 等迁移工作；
-- **可迁移性评估**：[MoE 四足 + RoboGauge](../../05_Locomotion/Toward_Reliable_Sim-to-Real_Predictability_for_MoE-based_Robust_Quadrupedal_Locomotion/Toward_Reliable_Sim-to-Real_Predictability_for_MoE-based_Robust_Quadrupedal_Locomotion.md)。
+- **可迁移性评估**：[MoE 四足 + RoboGauge](../../05_Locomotion/Toward_Reliable_Sim-to-Real_Predictability_for_MoE-based_Robust_Quadrupedal_Locomotion/Toward_Reliable_Sim-to-Real_Predictability_for_MoE-based_Robust_Quadrupedal_Locomotion.html)。

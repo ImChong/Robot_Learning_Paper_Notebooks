@@ -245,6 +245,6 @@ A：一是分布更简单、更好学；二是相对动作天然具备反应性�
 
 - [UMI: Universal Manipulation Interface (2402.10329)](https://arxiv.org/abs/2402.10329)：DexUMI 的直接前作，手持夹爪无机器人采集
 - [DexCap (2403.07788)](https://arxiv.org/abs/2403.07788)：动捕手套采灵巧数据，仍依赖重定向与真机数据
-- [HumDex: Humanoid Dexterous Manipulation Made Easy](../HumDex_Humanoid_Dexterous_Manipulation_Made_Easy/HumDex_Humanoid_Dexterous_Manipulation_Made_Easy.md)：人形灵巧操作的人手数据路线
-- [ActiveUMI](../ActiveUMI__Robotic_Manipulation_with_Active_Perception_from_Robot-Free_Human_Demonstrations/ActiveUMI__Robotic_Manipulation_with_Active_Perception_from_Robot-Free_Human_Demonstrations.md)：UMI 家族的主动感知扩展
-- [Diffusion Policy](../../01_Foundational_RL/Diffusion_Policy/Diffusion_Policy.md)：DexUMI 下游使用的策略类别
+- [HumDex: Humanoid Dexterous Manipulation Made Easy](../HumDex_Humanoid_Dexterous_Manipulation_Made_Easy/HumDex_Humanoid_Dexterous_Manipulation_Made_Easy.html)：人形灵巧操作的人手数据路线
+- [ActiveUMI](../ActiveUMI__Robotic_Manipulation_with_Active_Perception_from_Robot-Free_Human_Demonstrations/ActiveUMI__Robotic_Manipulation_with_Active_Perception_from_Robot-Free_Human_Demonstrations.html)：UMI 家族的主动感知扩展
+- [Diffusion Policy](../../01_Foundational_RL/Diffusion_Policy/Diffusion_Policy.html)：DexUMI 下游使用的策略类别

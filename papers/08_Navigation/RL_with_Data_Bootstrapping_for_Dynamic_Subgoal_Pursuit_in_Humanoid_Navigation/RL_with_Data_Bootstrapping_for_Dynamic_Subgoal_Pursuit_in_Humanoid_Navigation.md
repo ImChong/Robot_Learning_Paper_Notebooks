@@ -125,4 +125,4 @@ flowchart LR
 
 ## 🔗 相关阅读
 
-- **同模块·人形导航**：[NavDP](../NavDP__Learning_Sim-to-Real_Navigation_Diffusion_Policy/NavDP__Learning_Sim-to-Real_Navigation_Diffusion_Policy.md) · [Humanoid Occupancy（占据感知）](../Humanoid_Occupancy__Generalized_Multimodal_Occupancy_Perception_System/Humanoid_Occupancy__Generalized_Multimodal_Occupancy_Perception_System.md)。
+- **同模块·人形导航**：[NavDP](../NavDP__Learning_Sim-to-Real_Navigation_Diffusion_Policy/NavDP__Learning_Sim-to-Real_Navigation_Diffusion_Policy.html) · [Humanoid Occupancy（占据感知）](../Humanoid_Occupancy__Generalized_Multimodal_Occupancy_Perception_System/Humanoid_Occupancy__Generalized_Multimodal_Occupancy_Perception_System.html)。

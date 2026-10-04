@@ -90,5 +90,5 @@ flowchart LR
 
 ## 📚 与仓库内相关笔记
 
-- [HOVER](../HOVER_Versatile_Neural_Whole-Body_Controller/HOVER_Versatile_Neural_Whole-Body_Controller.md)：同属「多模式掩码 + 大规模模仿」脉络，便于对照接口设计。  
-- [ASAP](../ASAP_Aligning_Simulation_and_Real-World_Physics_for_Agile_Humanoid_Skills/ASAP_Aligning_Simulation_and_Real-World_Physics_for_Agile_Humanoid_Skills.md)：侧重 sim–real 动力学对齐；BFM 侧重跨任务行为分布与生成式接口。
+- [HOVER](../HOVER_Versatile_Neural_Whole-Body_Controller/HOVER_Versatile_Neural_Whole-Body_Controller.html)：同属「多模式掩码 + 大规模模仿」脉络，便于对照接口设计。  
+- [ASAP](../ASAP_Aligning_Simulation_and_Real-World_Physics_for_Agile_Humanoid_Skills/ASAP_Aligning_Simulation_and_Real-World_Physics_for_Agile_Humanoid_Skills.html)：侧重 sim–real 动力学对齐；BFM 侧重跨任务行为分布与生成式接口。

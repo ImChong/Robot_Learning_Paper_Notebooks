@@ -146,7 +146,7 @@ flowchart LR
 |---|---|
 | **降低操作门槛** | 让非专业人士也能遥操作人形机器人，对教育、科普、应急/救援等"操作员未必是工程师"的场景很重要 |
 | **HRI / UI 视角补位** | 提醒社区：遥操作的瓶颈不只在算法，**人能不能看懂、能不能控好界面**同样关键 |
-| **与算法路线互补** | 与本模块 [SEW-Mimic](../SEW-Mimic__Closed-Form_Geometric_Retargeting_Solver_for_Upper_Body_Humanoid_Teleoperation/SEW-Mimic__Closed-Form_Geometric_Retargeting_Solver_for_Upper_Body_Humanoid_Teleoperation.md)（重定向算法）、[ExtremControl](../ExtremControl__Low-Latency_Humanoid_Teleoperation_with_Direct_Extremity_Control/ExtremControl__Low-Latency_Humanoid_Teleoperation_with_Direct_Extremity_Control.md)（低延迟控制）形成"算法 ↔ 界面"两端的互补 |
+| **与算法路线互补** | 与本模块 [SEW-Mimic](../SEW-Mimic__Closed-Form_Geometric_Retargeting_Solver_for_Upper_Body_Humanoid_Teleoperation/SEW-Mimic__Closed-Form_Geometric_Retargeting_Solver_for_Upper_Body_Humanoid_Teleoperation.html)（重定向算法）、[ExtremControl](../ExtremControl__Low-Latency_Humanoid_Teleoperation_with_Direct_Extremity_Control/ExtremControl__Low-Latency_Humanoid_Teleoperation_with_Direct_Extremity_Control.html)（低延迟控制）形成"算法 ↔ 界面"两端的互补 |
 | **竞赛驱动研究** | 展示了 FIRA 这类机器人竞赛如何反哺学术研究与人才培养 |
 
 ---
@@ -172,10 +172,10 @@ A：教育/科普展示、灾害救援（操作员是消防员而非机器人专
 - 本文：[arXiv abs](https://arxiv.org/abs/2510.13594) · [HTML](https://arxiv.org/html/2510.13594v1) · [PDF](https://arxiv.org/pdf/2510.13594)
 - 背景：[Teleoperation of Humanoid Robots: A Survey](https://arxiv.org/abs/2301.04317)（人形遥操作综述，可了解算法侧全景）
 - 同模块对照：
-  - [HumanPlus](../HumanPlus_Humanoid_Shadowing_and_Imitation_from_Humans/HumanPlus_Humanoid_Shadowing_and_Imitation_from_Humans.md)（影子模仿遥操作）
-  - [Learning Adaptive Neural Teleoperation](../Learning_Adaptive_Neural_Teleoperation_for_Humanoid_Robots/Learning_Adaptive_Neural_Teleoperation_for_Humanoid_Robots.md)（端到端 RL 遥操作）
-  - [SEW-Mimic](../SEW-Mimic__Closed-Form_Geometric_Retargeting_Solver_for_Upper_Body_Humanoid_Teleoperation/SEW-Mimic__Closed-Form_Geometric_Retargeting_Solver_for_Upper_Body_Humanoid_Teleoperation.md)（闭式几何重定向）
-  - [ExtremControl](../ExtremControl__Low-Latency_Humanoid_Teleoperation_with_Direct_Extremity_Control/ExtremControl__Low-Latency_Humanoid_Teleoperation_with_Direct_Extremity_Control.md)（低延迟直接末端控制）
+  - [HumanPlus](../HumanPlus_Humanoid_Shadowing_and_Imitation_from_Humans/HumanPlus_Humanoid_Shadowing_and_Imitation_from_Humans.html)（影子模仿遥操作）
+  - [Learning Adaptive Neural Teleoperation](../Learning_Adaptive_Neural_Teleoperation_for_Humanoid_Robots/Learning_Adaptive_Neural_Teleoperation_for_Humanoid_Robots.html)（端到端 RL 遥操作）
+  - [SEW-Mimic](../SEW-Mimic__Closed-Form_Geometric_Retargeting_Solver_for_Upper_Body_Humanoid_Teleoperation/SEW-Mimic__Closed-Form_Geometric_Retargeting_Solver_for_Upper_Body_Humanoid_Teleoperation.html)（闭式几何重定向）
+  - [ExtremControl](../ExtremControl__Low-Latency_Humanoid_Teleoperation_with_Direct_Extremity_Control/ExtremControl__Low-Latency_Humanoid_Teleoperation_with_Direct_Extremity_Control.html)（低延迟直接末端控制）
 
 ---
 

@@ -131,5 +131,5 @@ flowchart LR
 
 ## 🔗 相关阅读
 
-- **同模块·语言/多模态驱动全身控制**：[ULTRA（统一多模态控制）](../ULTRA_Unified_Multimodal_Control_for_Autonomous_Humanoid_Whole-Body_Loco-Manipulation/ULTRA_Unified_Multimodal_Control_for_Autonomous_Humanoid_Whole-Body_Loco-Manipulation.md) · [SafeFlow（整流流 + 安全门控）](../SafeFlow__Real-Time_Text-Driven_Humanoid_Whole-Body_Control_via_Physics-Guided_Rectified_Flow/SafeFlow__Real-Time_Text-Driven_Humanoid_Whole-Body_Control_via_Physics-Guided_Rectified_Flow.md) · [UniAct（统一动作生成与流式执行）](../UniAct__Unified_Motion_Generation_and_Action_Streaming_for_Humanoid_Robots/UniAct__Unified_Motion_Generation_and_Action_Streaming_for_Humanoid_Robots.md)；
+- **同模块·语言/多模态驱动全身控制**：[ULTRA（统一多模态控制）](../ULTRA_Unified_Multimodal_Control_for_Autonomous_Humanoid_Whole-Body_Loco-Manipulation/ULTRA_Unified_Multimodal_Control_for_Autonomous_Humanoid_Whole-Body_Loco-Manipulation.html) · [SafeFlow（整流流 + 安全门控）](../SafeFlow__Real-Time_Text-Driven_Humanoid_Whole-Body_Control_via_Physics-Guided_Rectified_Flow/SafeFlow__Real-Time_Text-Driven_Humanoid_Whole-Body_Control_via_Physics-Guided_Rectified_Flow.html) · [UniAct（统一动作生成与流式执行）](../UniAct__Unified_Motion_Generation_and_Action_Streaming_for_Humanoid_Robots/UniAct__Unified_Motion_Generation_and_Action_Streaming_for_Humanoid_Robots.html)；
 - **动作生成基准**：本仓 14 人体动作板块（HumanML3D 等）。

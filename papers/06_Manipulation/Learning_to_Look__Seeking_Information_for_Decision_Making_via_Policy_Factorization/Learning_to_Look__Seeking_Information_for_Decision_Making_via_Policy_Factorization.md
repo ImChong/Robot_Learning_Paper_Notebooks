@@ -126,4 +126,4 @@ flowchart LR
 
 ## 🔗 相关阅读
 
-- **同模块·主动感知/信息寻求**：[Learning to Look Around（可动颈）](../Learning_to_Look_Around__Enhancing_Teleoperation_and_Learning/Learning_to_Look_Around__Enhancing_Teleoperation_and_Learning.md) · [Vision in Action](../Vision_in_Action__Learning_Active_Perception_from_Human_Demonstrations/Vision_in_Action__Learning_Active_Perception_from_Human_Demonstrations.md)。
+- **同模块·主动感知/信息寻求**：[Learning to Look Around（可动颈）](../Learning_to_Look_Around__Enhancing_Teleoperation_and_Learning/Learning_to_Look_Around__Enhancing_Teleoperation_and_Learning.html) · [Vision in Action](../Vision_in_Action__Learning_Active_Perception_from_Human_Demonstrations/Vision_in_Action__Learning_Active_Perception_from_Human_Demonstrations.html)。

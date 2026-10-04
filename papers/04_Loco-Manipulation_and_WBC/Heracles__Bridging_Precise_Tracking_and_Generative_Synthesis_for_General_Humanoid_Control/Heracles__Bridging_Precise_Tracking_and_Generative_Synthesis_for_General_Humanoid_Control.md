@@ -135,6 +135,6 @@ flowchart LR
 
 ## 🔗 相关阅读
 
-- **同模块·抗扰/强接触全身控制**：[OmniXtreme（高动态控制的通用性突破）](../OmniXtreme/OmniXtreme.md) · [VIGOR（统一跌落安全的视觉上下文推理）](../VIGOR_Visual_Goal-In-Context_Inference_for_Unified_Humanoid_Fall_Safety/VIGOR_Visual_Goal-In-Context_Inference_for_Unified_Humanoid_Fall_Safety.md)；
-- **生成式 + 控制**：[SafeFlow（整流流生成 + 安全门控）](../SafeFlow__Real-Time_Text-Driven_Humanoid_Whole-Body_Control_via_Physics-Guided_Rectified_Flow/SafeFlow__Real-Time_Text-Driven_Humanoid_Whole-Body_Control_via_Physics-Guided_Rectified_Flow.md)；
-- **跟踪鲁棒性**：[Robust and Generalized Humanoid Motion Tracking](../Robust_and_Generalized_Humanoid_Motion_Tracking/Robust_and_Generalized_Humanoid_Motion_Tracking.md)。
+- **同模块·抗扰/强接触全身控制**：[OmniXtreme（高动态控制的通用性突破）](../OmniXtreme_Breaking_the_Generality_Barrier_in_High-Dynamic_Humanoid_Control/OmniXtreme_Breaking_the_Generality_Barrier_in_High-Dynamic_Humanoid_Control.html) · [VIGOR（统一跌落安全的视觉上下文推理）](../VIGOR_Visual_Goal-In-Context_Inference_for_Unified_Humanoid_Fall_Safety/VIGOR_Visual_Goal-In-Context_Inference_for_Unified_Humanoid_Fall_Safety.html)；
+- **生成式 + 控制**：[SafeFlow（整流流生成 + 安全门控）](../SafeFlow__Real-Time_Text-Driven_Humanoid_Whole-Body_Control_via_Physics-Guided_Rectified_Flow/SafeFlow__Real-Time_Text-Driven_Humanoid_Whole-Body_Control_via_Physics-Guided_Rectified_Flow.html)；
+- **跟踪鲁棒性**：[Robust and Generalized Humanoid Motion Tracking](../Robust_and_Generalized_Humanoid_Motion_Tracking/Robust_and_Generalized_Humanoid_Motion_Tracking.html)。

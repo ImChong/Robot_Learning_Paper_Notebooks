@@ -125,5 +125,5 @@ flowchart LR
 
 ## 🔗 相关阅读
 
-- **相关·安全/碰撞**：[Collision-Free Humanoid Traversal（本仓 04）](../../04_Loco-Manipulation_and_WBC/Collision-Free_Humanoid_Traversal_in_Cluttered_Indoor_Scenes/Collision-Free_Humanoid_Traversal_in_Cluttered_Indoor_Scenes.md)；
-- **安全门控（本仓 04）**：[SafeFlow](../../04_Loco-Manipulation_and_WBC/SafeFlow__Real-Time_Text-Driven_Humanoid_Whole-Body_Control_via_Physics-Guided_Rectified_Flow/SafeFlow__Real-Time_Text-Driven_Humanoid_Whole-Body_Control_via_Physics-Guided_Rectified_Flow.md)。
+- **相关·安全/碰撞**：[Collision-Free Humanoid Traversal（本仓 04）](../../04_Loco-Manipulation_and_WBC/Collision-Free_Humanoid_Traversal_in_Cluttered_Indoor_Scenes/Collision-Free_Humanoid_Traversal_in_Cluttered_Indoor_Scenes.html)；
+- **安全门控（本仓 04）**：[SafeFlow](../../04_Loco-Manipulation_and_WBC/SafeFlow__Real-Time_Text-Driven_Humanoid_Whole-Body_Control_via_Physics-Guided_Rectified_Flow/SafeFlow__Real-Time_Text-Driven_Humanoid_Whole-Body_Control_via_Physics-Guided_Rectified_Flow.html)。

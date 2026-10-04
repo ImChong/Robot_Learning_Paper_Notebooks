@@ -120,4 +120,4 @@ flowchart LR
 
 ## 🔗 相关阅读
 
-- **同模块/相关·数据扩展**：[DreamGen](../DreamGen__Unlocking_Generalization_in_Robot_Learning_through_Video_World_Models/DreamGen__Unlocking_Generalization_in_Robot_Learning_through_Video_World_Models.md) · [Humanoid Policy ~ Human Policy](../Humanoid_Policy__Human_Policy/Humanoid_Policy__Human_Policy.md)。
+- **同模块/相关·数据扩展**：[DreamGen](../DreamGen__Unlocking_Generalization_in_Robot_Learning_through_Video_World_Models/DreamGen__Unlocking_Generalization_in_Robot_Learning_through_Video_World_Models.html) · [Humanoid Policy ~ Human Policy](../Humanoid_Policy__Human_Policy/Humanoid_Policy__Human_Policy.html)。

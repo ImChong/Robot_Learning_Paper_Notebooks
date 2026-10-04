@@ -210,9 +210,9 @@ A：偏"体验/接口"层面的创新——核心是**降低设计学习型角�
 
 ## 🔗 相关阅读
 
-- **同作者血脉**：[Learned Motion Matching](../Learned_Motion_Matching/Learned_Motion_Matching.md)（Holden 等，SIGGRAPH 2020，本文的 backbone 之一）、Phase-Functioned Neural Networks (PFNN, 2017)；
+- **同作者血脉**：[Learned Motion Matching](../Learned_Motion_Matching/Learned_Motion_Matching.html)（Holden 等，SIGGRAPH 2020，本文的 backbone 之一）、Phase-Functioned Neural Networks (PFNN, 2017)；
 - **生成式角色控制**：BeyondMimic（引导扩散）、Motion VAE、Diffusion Policy；
 - **可组合 / 多模式控制对照**：HugWBC、GMT、LangWBC（人形侧"一策略多命令"）；
-- **同模块前作**：[EmbodMocap](../EmbodMocap__In-the-Wild_4D_Human-Scene_Reconstruction_for_Embodied_Agents/EmbodMocap__In-the-Wild_4D_Human-Scene_Reconstruction_for_Embodied_Agents.md) · [WHOLE](../WHOLE__World-Grounded_Hand-Object_Lifted_from_Egocentric_Videos/WHOLE__World-Grounded_Hand-Object_Lifted_from_Egocentric_Videos.md) · [MAGNet](../MAGNet__Diffusion_Forcing_for_Multi-Agent_Interaction_Sequence_Modeling/MAGNet__Diffusion_Forcing_for_Multi-Agent_Interaction_Sequence_Modeling.md)。
+- **同模块前作**：[EmbodMocap](../EmbodMocap__In-the-Wild_4D_Human-Scene_Reconstruction_for_Embodied_Agents/EmbodMocap__In-the-Wild_4D_Human-Scene_Reconstruction_for_Embodied_Agents.html) · [WHOLE](../WHOLE__World-Grounded_Hand-Object_Lifted_from_Egocentric_Videos/WHOLE__World-Grounded_Hand-Object_Lifted_from_Egocentric_Videos.html) · [MAGNet](../MAGNet__Diffusion_Forcing_for_Multi-Agent_Interaction_Sequence_Modeling/MAGNet__Diffusion_Forcing_for_Multi-Agent_Interaction_Sequence_Modeling.html)。
 </content>
 </invoke>

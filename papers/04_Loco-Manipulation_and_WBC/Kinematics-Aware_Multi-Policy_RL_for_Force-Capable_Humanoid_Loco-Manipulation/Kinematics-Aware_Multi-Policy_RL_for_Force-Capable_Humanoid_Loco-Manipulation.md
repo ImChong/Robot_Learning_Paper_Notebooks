@@ -128,4 +128,4 @@ flowchart TB
 
 ## 🔗 相关阅读
 
-- **同模块·力/接触自适应**：[HMC（异构元控制拼接力-位）](../HMC__Learning_Heterogeneous_Meta-Control_for_Contact-Rich_Loco-Manipulation/HMC__Learning_Heterogeneous_Meta-Control_for_Contact-Rich_Loco-Manipulation.md) · [CHIP（可控柔顺）](../CHIP__Adaptive_Compliance_for_Humanoid_Control_through_Hindsight_Perturbation/CHIP__Adaptive_Compliance_for_Humanoid_Control_through_Hindsight_Perturbation.md) · [SplitAdapter（负载自适应）](../SplitAdapter__Load-Aware_Humanoid_Loco-Manipulation_via_Factorized_Adaptation/SplitAdapter__Load-Aware_Humanoid_Loco-Manipulation_via_Factorized_Adaptation.md)。
+- **同模块·力/接触自适应**：[HMC（异构元控制拼接力-位）](../HMC__Learning_Heterogeneous_Meta-Control_for_Contact-Rich_Loco-Manipulation/HMC__Learning_Heterogeneous_Meta-Control_for_Contact-Rich_Loco-Manipulation.html) · [CHIP（可控柔顺）](../CHIP__Adaptive_Compliance_for_Humanoid_Control_through_Hindsight_Perturbation/CHIP__Adaptive_Compliance_for_Humanoid_Control_through_Hindsight_Perturbation.html) · [SplitAdapter（负载自适应）](../SplitAdapter__Load-Aware_Humanoid_Loco-Manipulation_via_Factorized_Adaptation/SplitAdapter__Load-Aware_Humanoid_Loco-Manipulation_via_Factorized_Adaptation.html)。

@@ -134,5 +134,5 @@ flowchart LR
 
 ## 🔗 相关阅读
 
-- **同模块·人-人形交互 / 长时程**：[LessMimic（统一距离场的长时程交互）](../LessMimic_Long-Horizon_Humanoid_Interaction_with_Unified_Distance_Field_Representations/LessMimic_Long-Horizon_Humanoid_Interaction_with_Unified_Distance_Field_Representations.md) · [HumanX（敏捷可泛化人形交互技能）](../HumanX__Toward_Agile_and_Generalizable_Humanoid_Interaction_Skills_fro/HumanX__Toward_Agile_and_Generalizable_Humanoid_Interaction_Skills_fro.md)；
-- **接触保持的数据生成**：[DynaRetarget（动力学可行重定向）](../DynaRetarget__Dynamically-Feasible_Retargeting_using_Sampling-Based_Trajectory_Optimization/DynaRetarget__Dynamically-Feasible_Retargeting_using_Sampling-Based_Trajectory_Optimization.md)。
+- **同模块·人-人形交互 / 长时程**：[LessMimic（统一距离场的长时程交互）](../LessMimic_Long-Horizon_Humanoid_Interaction_with_Unified_Distance_Field_Representations/LessMimic_Long-Horizon_Humanoid_Interaction_with_Unified_Distance_Field_Representations.html) · [HumanX（敏捷可泛化人形交互技能）](../HumanX__Toward_Agile_and_Generalizable_Humanoid_Interaction_Skills_from_Human_Vi/HumanX__Toward_Agile_and_Generalizable_Humanoid_Interaction_Skills_from_Human_Vi.html)；
+- **接触保持的数据生成**：[DynaRetarget（动力学可行重定向）](../DynaRetarget__Dynamically-Feasible_Retargeting_using_Sampling-Based_Trajectory_Optimization/DynaRetarget__Dynamically-Feasible_Retargeting_using_Sampling-Based_Trajectory_Optimization.html)。

@@ -211,9 +211,9 @@ A：给定当前帧和一段候选动作，模型能生成未来帧，相当于�
 ## 🔗 相关阅读
 
 - [CLAP 项目主页](https://omni-clap.github.io)：视频演示与模型说明
-- [Generative World Modelling for Humanoids: 1X World Model（本仓库已有笔记）](../Generative_World_Modelling_for_Humanoids__1X_World_Model_Challenge_Technical_Report/Generative_World_Modelling_for_Humanoids__1X_World_Model_Challenge_Technical_Report.md)：人形世界模型技术报告
-- [Humanoid World Models（本仓库已有笔记）](../Humanoid_World_Models__Open_World_Foundation_Models_for_Humanoid_Robotics/Humanoid_World_Models__Open_World_Foundation_Models_for_Humanoid_Robotics.md)：人形开放世界基础模型
-- [SIMPLE（本仓库已有笔记）](../SIMPLE__Simulation-Based_Policy_Learning_and_Evaluation_for_Humanoid_Loco-manipulation/SIMPLE__Simulation-Based_Policy_Learning_and_Evaluation_for_Humanoid_Loco-manipulation.md)：面向全身移动操作的混合仿真评测平台
+- [Generative World Modelling for Humanoids: 1X World Model（本仓库已有笔记）](../Generative_World_Modelling_for_Humanoids__1X_World_Model_Challenge_Technical_Report/Generative_World_Modelling_for_Humanoids__1X_World_Model_Challenge_Technical_Report.html)：人形世界模型技术报告
+- [Humanoid World Models（本仓库已有笔记）](../Humanoid_World_Models__Open_World_Foundation_Models_for_Humanoid_Robotics/Humanoid_World_Models__Open_World_Foundation_Models_for_Humanoid_Robotics.html)：人形开放世界基础模型
+- [SIMPLE（本仓库已有笔记）](../SIMPLE__Simulation-Based_Policy_Learning_and_Evaluation_for_Humanoid_Loco-manipulation/SIMPLE__Simulation-Based_Policy_Learning_and_Evaluation_for_Humanoid_Loco-manipulation.html)：面向全身移动操作的混合仿真评测平台
 
 ---
 
