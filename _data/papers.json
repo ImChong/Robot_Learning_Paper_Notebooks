@@ -303,6 +303,18 @@
             "zh_title": "人形机器人表现力全身控制"
           },
           {
+            "title": "MaskedMimic: Unified Physics-Based Character Control Through Masked Motion Inpainting",
+            "path": "papers/03_High_Impact_Selection/MaskedMimic_Unified_Physics-Based_Character_Control_Through_Masked_Motion_Inpainting/MaskedMimic_Unified_Physics-Based_Character_Control_Through_Masked_Motion_Inpainting.md",
+            "url": "/papers/03_High_Impact_Selection/MaskedMimic_Unified_Physics-Based_Character_Control_Through_Masked_Motion_Inpainting/MaskedMimic_Unified_Physics-Based_Character_Control_Through_Masked_Motion_Inpainting.html",
+            "dir": "MaskedMimic_Unified_Physics-Based_Character_Control_Through_Masked_Motion_Inpainting",
+            "arxiv": "2409.14393",
+            "has_open_source": true,
+            "published_date_zh": "2024年9月22日",
+            "published_date_en": "Sep 22, 2024",
+            "zhname": "MaskedMimic：基于掩码动作补全的统一物理角色控制",
+            "zh_title": "MaskedMimic：基于掩码动作补全的统一物理角色控制"
+          },
+          {
             "title": "HOVER: Versatile Neural Whole-Body Controller for Humanoid Robots",
             "path": "papers/03_High_Impact_Selection/HOVER_Versatile_Neural_Whole-Body_Controller/HOVER_Versatile_Neural_Whole-Body_Controller.md",
             "url": "/papers/03_High_Impact_Selection/HOVER_Versatile_Neural_Whole-Body_Controller/HOVER_Versatile_Neural_Whole-Body_Controller.html",
@@ -379,6 +391,18 @@
             "published_date_en": "Apr 23, 2023 (arXiv)",
             "zhname": "ACT / ALOHA：用低成本硬件学习精细双臂操作",
             "zh_title": "ACT / ALOHA：用低成本硬件学习精细双臂操作"
+          },
+          {
+            "title": "Learning Human-to-Humanoid Real-Time Whole-Body Teleoperation",
+            "path": "papers/03_High_Impact_Selection/H2O_Learning_Human-to-Humanoid_Real-Time_Whole-Body_Teleoperation/H2O_Learning_Human-to-Humanoid_Real-Time_Whole-Body_Teleoperation.md",
+            "url": "/papers/03_High_Impact_Selection/H2O_Learning_Human-to-Humanoid_Real-Time_Whole-Body_Teleoperation/H2O_Learning_Human-to-Humanoid_Real-Time_Whole-Body_Teleoperation.html",
+            "dir": "H2O_Learning_Human-to-Humanoid_Real-Time_Whole-Body_Teleoperation",
+            "arxiv": "2403.04436",
+            "has_open_source": true,
+            "published_date_zh": "2024年3月7日",
+            "published_date_en": "Mar 7, 2024",
+            "zhname": "H2O：基于强化学习的人到人形实时全身遥操作",
+            "zh_title": "H2O：基于强化学习的人到人形实时全身遥操作"
           },
           {
             "title": "OmniH2O: Universal and Dexterous Human-to-Humanoid Whole-Body Teleoperation and Learning",

@@ -50,7 +50,9 @@
        ↓
 ④ 【全身控制 WBC】        ← 把技能 / 扩散策略落到整机关节
   Expressive WBC (2024) → HOVER (2024) / HugWBC (2025) / ExBody2 (2024) / SONIC (2025)
-  OmniH2O (2024) → HOVER              ← HOVER 统一的就是 ExBody / OmniH2O 等各自的命令空间
+  H2O (2024) → OmniH2O (2024) → HOVER ← HOVER 统一的就是 ExBody / H2O / OmniH2O 等各自的命令空间
+  MaskedMimic (2024) → HOVER          ← 仿真角色上「随机遮掉部分目标」的统一控制，HOVER 把这个思路搬到人形
+  H2O (2024) → TWIST (2025) → TWIST2 (2025)   ← 动捕 / 便携 VR 全身遥操作，边遥操边采示范
        ↓
    ┌── 从 WBC / 扩散分出多条上行支线，最终都汇聚到 ⑨ ──┐
    │
@@ -70,6 +72,7 @@
        π₀ (2024) → π₀.₅ (2025)          ── 流匹配动作专家 → 异构协同训练、开放世界泛化
        π₀ → GR00T N1 (2025)             ── 视觉-语言-动作，端到端通才策略
   BFM：Behavior Foundation Model (2025) ── 行为基础模型 / 全身控制先验
+       BFM-Zero (2025)                  ── 无监督 RL 预训练，用目标姿态 / 动作 / 奖励提示调用（⇠ ASE 的技能复用）
 
 【Sim-to-Real 工程层】  ← 横跨整个路线
   Domain Randomization (2017) → LCP (2024)
@@ -78,6 +81,8 @@
                ↑ delta 动作对齐仿真与真机物理；BeyondMimic 以它为单动作专用方法的对照
   Domain Randomization (2017) → 四足地形 · 教师-学生 (2020) ⇢ HOVER 等 WBC
                                ↑ 特权教师 → 学生蒸馏的源头
+  四足地形 · 教师-学生 (2020) → Real-World Humanoid Locomotion (2023)
+                               ↑ 从四足换到全尺寸人形：因果 Transformer 读观测—动作历史直接出关节目标
   四足地形 · 教师-学生 (2020) → OP3 Soccer (2023)
                                ↑ 小人形零样本 sim-to-real：技能蒸馏 + 自博弈 + 针对性随机化
 ```
@@ -113,11 +118,11 @@
 
 主线之外的重点补充阅读，按子模块与发表时间（旧→新）排列，跟踪进度见 [PROGRESS.md](papers/PROGRESS.md)：
 
-- **全身控制核心**：[Expressive WBC](https://arxiv.org/abs/2402.16796) · [HOVER](https://arxiv.org/abs/2410.21229) · [ExBody2](https://arxiv.org/abs/2412.13196) · [UH-1](https://arxiv.org/abs/2412.14172) · [HugWBC](https://arxiv.org/abs/2502.03206) · [SONIC](https://arxiv.org/abs/2511.07820)
-- **遥操作与模仿学习**：[ACT / ALOHA](https://arxiv.org/abs/2304.13705) · [OmniH2O](https://arxiv.org/abs/2406.08858) · [iDP3](https://arxiv.org/abs/2410.10803) · [HOMIE](https://arxiv.org/abs/2502.13013)
+- **全身控制核心**：[Expressive WBC](https://arxiv.org/abs/2402.16796) · [MaskedMimic](https://arxiv.org/abs/2409.14393) · [HOVER](https://arxiv.org/abs/2410.21229) · [ExBody2](https://arxiv.org/abs/2412.13196) · [UH-1](https://arxiv.org/abs/2412.14172) · [HugWBC](https://arxiv.org/abs/2502.03206) · [SONIC](https://arxiv.org/abs/2511.07820)
+- **遥操作与模仿学习**：[ACT / ALOHA](https://arxiv.org/abs/2304.13705) · [H2O](https://arxiv.org/abs/2403.04436) · [OmniH2O](https://arxiv.org/abs/2406.08858) · [iDP3](https://arxiv.org/abs/2410.10803) · [HOMIE](https://arxiv.org/abs/2502.13013)
 - **行走经典**：Learning Quadrupedal Locomotion · [Real-World Humanoid Locomotion](https://arxiv.org/abs/2303.03381) · [Locomotion as Next Token Prediction](https://arxiv.org/abs/2402.19469) · [Humanoid Parkour](https://arxiv.org/abs/2406.10759) · [15-Minute Sim-to-Real](https://arxiv.org/abs/2512.01996) · [ECO](https://arxiv.org/abs/2602.06445)
 - **仿真到现实与基座模型**：[Agile Motor Skills (ANYmal)](https://arxiv.org/abs/1901.08652) · [OP3 Soccer](https://arxiv.org/abs/2304.13653) · [OpenVLA](https://arxiv.org/abs/2406.09246) · [π₀](https://arxiv.org/abs/2410.24164) · [ASAP](https://arxiv.org/abs/2502.01143) · [GR00T N1](https://arxiv.org/abs/2503.14734) · [π₀.₅](https://arxiv.org/abs/2504.16054) · [Behavior Foundation Model](https://arxiv.org/abs/2509.13780) · [Perceptive BFM](https://arxiv.org/abs/2606.08059)
-- **仿真平台与工具**：[Humanoid-Gym](https://arxiv.org/abs/2404.05695) · [BEHAVIOR Robot Suite](https://arxiv.org/abs/2503.05652) · Isaac Lab · [ProtoMotions3](https://arxiv.org/abs/2409.14393)
+- **仿真平台与工具**：[Humanoid-Gym](https://arxiv.org/abs/2404.05695) · [BEHAVIOR Robot Suite](https://arxiv.org/abs/2503.05652) · Isaac Lab · [ProtoMotions3](https://nvlabs.github.io/ProtoMotions/)
 
 ## 笔记说明
 
