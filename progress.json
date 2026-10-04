@@ -41,15 +41,15 @@
         "13_Physics-Based_Animation",
         "14_Human_Motion"
       ],
-      "last_module": "11_Simulation_Benchmark",
-      "last_index": 400,
-      "last_title": "Genesis: A Generative and Universal Physics Engine for Robotics and Beyond (GitHub, no arXiv)",
-      "next_module": "12_Hardware_Design",
-      "last_completed_date": "2026-10-03",
-      "note": "本日轮转应到 10_Sim-to-Real，但该模块中上游 awesome-humanoid-robot-learning 收录的论文已全部有笔记(剩下的 Learning Agile and Dynamic Motor Skills for Legged Robots, arXiv:1901.08652 已在 03_High_Impact_Selection 有笔记，按「已有内容则跳过」不重复建)；顺延到 11_Simulation_Benchmark，上游仅剩 Genesis 无笔记，取之。Genesis 没有 arXiv 论文，以 GitHub 仓库(2024-12-18 开源，Apache-2.0)与 Genesis World 1.0 博客(2026-05-27)为准：8 类求解器 + Legacy/SAP/IPC 三种耦合器的多物理仿真、Quadrants 跨后端编译器(含反向自动微分)、Nyx 路径追踪渲染，以及「先用仿真做评测」的方法论(仿真-真机 Pearson 0.8996、MMRV 0.0166)。含整体流程 mermaid 与基于 genesis/engine/scene.py + simulator.py 的源码运行时序图。",
-      "last_date": "2026-10-03",
+      "last_module": "12_Hardware_Design",
+      "last_index": 421,
+      "last_title": "A Framework for Optimal Ankle Design of Humanoid Robots (arXiv:2509.16469)",
+      "next_module": "13_Physics-Based_Animation",
+      "last_completed_date": "2026-10-04",
+      "note": "本日轮转到 12_Hardware_Design。本地已有笔记的 15 篇之外，上游 awesome-humanoid-robot-learning Hardware Design 章节中发表最新且无笔记的是 A Framework for Optimal Ankle Design of Humanoid Robots (arXiv:2509.16469, 2025-09-19, IIT, Humanoids 2025)。SPU/RSU 两种并联踝的闭式 IK、保证工作区可行的 RSU 重参数化、NSGA-II 多目标优化(峰值力/速度)+ 七指标标量代价跨构型排序；最优 RSU 代价比原串联踝低 41%、比人工设计 RSU 低 14%。未开源代码，仅含整体流程 mermaid。",
+      "last_date": "2026-10-04",
       "next_candidate": null,
-      "last_completed": "Genesis: A Generative and Universal Physics Engine for Robotics and Beyond (GitHub, no arXiv)"
+      "last_completed": "A Framework for Optimal Ankle Design of Humanoid Robots (arXiv:2509.16469)"
     },
     "last_summary_index": 532,
     "last_summary_date": "2026-09-18",
@@ -1629,6 +1629,17 @@
         "project_page": "https://genesis-embodied-ai.github.io/",
         "code": "https://github.com/Genesis-Embodied-AI/genesis-world (Python，Apache-2.0；编译器 Quadrants、渲染器 genesis-nyx 分仓)",
         "source": "✅ 已开源(含源码运行时序图) · 无 arXiv 论文，依据 GitHub 仓库与 Genesis World 1.0 博客 · 多物理 GPU 仿真 + 跨后端编译器 + 路径追踪渲染 + 仿真评测"
+      },
+      {
+        "date": "2026-10-04",
+        "index": 421,
+        "title": "A Framework for Optimal Ankle Design of Humanoid Robots",
+        "folder": "papers/12_Hardware_Design/Framework_for_Optimal_Ankle_Design_of_Humanoid_Robots",
+        "module": "12_Hardware_Design",
+        "arxiv": "2509.16469",
+        "project_page": "",
+        "code": "",
+        "source": "❌ 未开源（Grasshopper + Python + Tunny/NSGA-II 实现）· 并联踝 SPU/RSU 闭式 IK + RSU 重参数化 + 多目标优化 + 七指标标量代价 · IIT · Humanoids 2025"
       }
     ],
     "last_completed_index": 588,
@@ -6190,6 +6201,16 @@
       "pdf_file": "",
       "route": "Simulation Benchmark",
       "title_cn": "Genesis：面向机器人及更广领域的生成式通用物理引擎"
+    },
+    {
+      "title": "A Framework for Optimal Ankle Design of Humanoid Robots",
+      "folder": "papers/12_Hardware_Design/Framework_for_Optimal_Ankle_Design_of_Humanoid_Robots",
+      "note_file": "Framework_for_Optimal_Ankle_Design_of_Humanoid_Robots.md",
+      "status": "done",
+      "arxiv": "2509.16469",
+      "pdf_file": "",
+      "route": "Hardware Design",
+      "title_cn": "人形机器人踝关节最优设计框架"
     }
   ]
 }
