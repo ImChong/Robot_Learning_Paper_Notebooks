@@ -18,7 +18,7 @@
   }
 
   entry.addEventListener('animationend', function (event) {
-    if (event.target === entry && event.animationName === 'roadmap-invite-glow') finish();
+    if (event.animationName === 'roadmap-invite-trace') finish();
   });
   entry.addEventListener('click', finish);
   details.addEventListener('toggle', function () {
