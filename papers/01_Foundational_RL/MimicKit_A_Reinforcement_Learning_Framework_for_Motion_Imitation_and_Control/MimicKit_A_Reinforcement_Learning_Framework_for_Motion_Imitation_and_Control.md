@@ -1,6 +1,6 @@
 ---
 layout: paper
-paper_order: 15
+paper_order: 16
 title: "MimicKit: A Reinforcement Learning Framework for Motion Imitation and Control"
 category: "基础强化学习"
 zhname: "MimicKit：运动模仿与控制的强化学习框架"

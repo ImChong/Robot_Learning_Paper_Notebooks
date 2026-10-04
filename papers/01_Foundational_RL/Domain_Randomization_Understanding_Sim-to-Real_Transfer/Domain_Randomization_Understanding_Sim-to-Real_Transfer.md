@@ -1,8 +1,9 @@
 ---
 layout: paper
-paper_order: 13
+paper_order: 14
 title: "Understanding Domain Randomization for Sim-to-real Transfer"
 category: "仿真到现实"
+zhname: "理解域随机化在仿真到现实迁移中的作用"
 demos: ["dr_theory"]
 ---
 
@@ -11,7 +12,9 @@ demos: ["dr_theory"]
 
 > 📅 阅读日期: 待读
 >
-> 🏷️ 板块: Sim-to-Real / Theory
+> 🏷️ 板块: Sim-to-Real / Theory（选读）
+>
+> 📖 **选读**：这篇是 [Domain Randomization（2017）](../Domain_Randomization_for_Transferring_Deep_Neural_Networks_from_Simulation_to_the_Real_World/Domain_Randomization_for_Transferring_Deep_Neural_Networks_from_Simulation_to_the_Real_World.html) 的理论补充，路线图上没有后续论文依赖它，跳过不影响往下读。它的核心结论「DR 要配历史依赖的策略」在 [四足地形 · 教师-学生](../../03_High_Impact_Selection/Learning_Quadrupedal_Locomotion_over_Challenging_Terrain/Learning_Quadrupedal_Locomotion_over_Challenging_Terrain.html) 里有实证，读完那篇再回来看更好懂。
 
 ---
 
@@ -21,10 +24,10 @@ demos: ["dr_theory"]
 |------|------|
 | **arXiv** | [2110.03239](https://arxiv.org/abs/2110.03239) |
 | **PDF** | [下载](https://arxiv.org/pdf/2110.03239) |
-| **作者** | Xiaoyu Chen 等 |
-| **机构** | Princeton（主要）|
+| **作者** | Xiaoyu Chen, Jiachen Hu, Lihong Li, Chi Jin, Liwei Wang |
+| **机构** | 北京大学（Chen、Hu、Wang）、Princeton（Jin）、Amazon（Li） |
 | **发布时间** | 2021年10月（v1）, 2022年3月（v2）（arXiv） |
-| **类型** | 理论分析 / 综述 |
+| **类型** | 理论分析 |
 | **代码** | 理论论文，**无配套实验代码**（ICLR 2022 Spotlight） |
 
 ---
@@ -177,7 +180,7 @@ flowchart TB
 
 1. **给"随机化区间"的选择提供原则**：区间要覆盖真实不确定性的支撑集 (support)，宁宽勿窄。
 2. **解释了为什么 LSTM / Transformer / history frame stack 是 sim-to-real 标配**：无历史 → DR 理论下界达不到。
-3. **为 ADR（自动域随机化）等后续工作奠基**：既然 gap 依赖随机化分布与真实分布的匹配度，那就让算法自己去找最合适的分布。
+3. **给 ADR（自动域随机化）补上理论解释**：ADR（OpenAI 2019，[arXiv 1910.07113](https://arxiv.org/abs/1910.07113)）比本文早两年，做法是让算法自己把随机化范围往外扩；本文的界说明 gap 取决于随机化分布与真实分布的匹配度，正好解释了这类做法为什么有效。
 4. **告诉你何时 DR 会失败**：随机化区间漏掉真实值 / 策略没用历史 / 样本量太少——任一条件不满足，迁移就会出问题。
 
 ---
@@ -208,7 +211,7 @@ flowchart TB
 
 ### Q6: ADR（Automatic Domain Randomization）和本文是什么关系？
 
-本文从理论上说明"随机化分布越接近真实分布，gap 越小"；ADR 从算法上让随机化分布**自适应扩大**——只要策略在当前分布上达到阈值表现，就把分布再加宽一点。两者在精神上完全一致：ADR 是本文理论结论的工程实现之一。
+本文从理论上说明"随机化分布越接近真实分布，gap 越小"；ADR 从算法上让随机化分布**自适应扩大**——只要策略在当前分布上达到阈值表现，就把分布再加宽一点。两者在精神上完全一致。注意时间顺序：ADR（2019）在前，本文（2021）在后，所以是本文从理论上解释了 ADR 这类做法，而不是 ADR 实现了本文的结论。
 
 顺便把 Q3 那个对比也画出来：SysID 的曲线又高又窄，DR 的又低又平。把「参数漂移」滑块拖大——真机上电池、磨损、地面材质每天都在变，这才是两者的胜负手：
 
@@ -261,7 +264,7 @@ flowchart TB
 ## 📚 相关参考
 
 - Domain Randomization 原始应用（RoboLearn, OpenAI 等）
-- 后续工作：ADR (Automatic Domain Randomization)
+- 相关工作：ADR (Automatic Domain Randomization，OpenAI 2019，[arXiv 1910.07113](https://arxiv.org/abs/1910.07113))，早于本文
 
 ---
 

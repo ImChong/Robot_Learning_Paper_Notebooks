@@ -1,6 +1,6 @@
 ---
 layout: paper
-paper_order: 16
+paper_order: 17
 title: "Attention Is All You Need (Transformer)"
 category: "基础强化学习 Foundational RL"
 zhname: "Transformer：注意力就是你所需要的一切"
