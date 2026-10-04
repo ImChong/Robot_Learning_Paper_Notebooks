@@ -37,6 +37,7 @@
 | H4  | [HugWBC: A Unified and General Humanoid Whole-Body Controller](https://arxiv.org/abs/2502.03206) ✅ [笔记](03_High_Impact_Selection/HugWBC_A_Unified_and_General_Humanoid_Whole-Body_Controller/HugWBC_A_Unified_and_General_Humanoid_Whole-Body_Controller.md) | WBC | 统一框架，工程参考价值高               |
 | H5  | [SONIC: Supersizing Motion Tracking for Natural Humanoid Whole-Body Control](https://arxiv.org/abs/2511.07820) ✅ [笔记](03_High_Impact_Selection/SONIC_Supersizing_Motion_Tracking_for_Natural_Humanoid_Control/SONIC_Supersizing_Motion_Tracking_for_Natural_Humanoid_Control.md) | WBC | NVIDIA，大规模 motion tracking |
 | H6  | [Learning from Massive Human Videos for Universal Humanoid Pose Control](https://arxiv.org/abs/2412.14172) ✅ [笔记](03_High_Impact_Selection/UH-1_Learning_from_Massive_Human_Videos_for_Universal_Humanoid_Pose_Control/UH-1_Learning_from_Massive_Human_Videos_for_Universal_Humanoid_Pose_Control.md) | WBC | UH-1，海量人类视频学习              |
+| H31 | [MaskedMimic: Unified Physics-Based Character Control Through Masked Motion Inpainting](https://arxiv.org/abs/2409.14393) 🌟 ✅ [笔记](03_High_Impact_Selection/MaskedMimic_Unified_Physics-Based_Character_Control_Through_Masked_Motion_Inpainting/MaskedMimic_Unified_Physics-Based_Character_Control_Through_Masked_Motion_Inpainting.md) | WBC | NVIDIA，掩码动作补全统一角色控制，HOVER 的思路来源 |
 
 
 #### 遥操作与模仿学习
@@ -45,6 +46,7 @@
 | #   | 论文                                                                                                                 | 来源     | 理由                   |
 | --- | ------------------------------------------------------------------------------------------------------------------ | ------ | -------------------- |
 | H7  | [HumanPlus: Humanoid Shadowing and Imitation from Humans](https://arxiv.org/abs/2406.10454) 🌟                     | Teleop | Stanford，人形遥操作开山之作   |
+| H30 | [Learning Human-to-Humanoid Real-Time Whole-Body Teleoperation](https://arxiv.org/abs/2403.04436) 🌟 ✅ [笔记](03_High_Impact_Selection/H2O_Learning_Human-to-Humanoid_Real-Time_Whole-Body_Teleoperation/H2O_Learning_Human-to-Humanoid_Real-Time_Whole-Body_Teleoperation.md) | Teleop | LeCAR-Lab，H2O，首个 RL 人形实时全身遥操作 |
 | H8  | [OmniH2O: Universal and Dexterous Human-to-Humanoid Whole-Body Teleoperation](https://arxiv.org/abs/2406.08858) 🌟 | Teleop | LeCAR-Lab，通用 H2H 遥操作 |
 | H9  | [HOMIE: Humanoid Loco-Manipulation with Isomorphic Exoskeleton Cockpit](https://arxiv.org/abs/2502.13013) ✅ [笔记](03_High_Impact_Selection/HOMIE_Humanoid_Loco-Manipulation_with_Isomorphic_Exoskeleton_Cockpit/HOMIE_Humanoid_Loco-Manipulation_with_Isomorphic_Exoskeleton_Cockpit.md) | Teleop | OpenRobotLab，外骨骼遥操作  |
 | H28 | [Learning Fine-Grained Bimanual Manipulation with Low-Cost Hardware](https://arxiv.org/abs/2304.13705) ✅ [笔记](03_High_Impact_Selection/ACT_Learning_Fine-Grained_Bimanual_Manipulation_with_Low-Cost_Hardware/ACT_Learning_Fine-Grained_Bimanual_Manipulation_with_Low-Cost_Hardware.md) | Manip | ACT / ALOHA，动作块的来源（占位笔记，待补充） |
