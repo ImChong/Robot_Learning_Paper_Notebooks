@@ -27,7 +27,7 @@
 | `omniretarget` | `assets/js/demos/omniretarget.js` 七幕 | 约 5 分 7 秒 |
 | `humanml3d` | `assets/js/demos/humanml3d.js` 九幕 | 约 7 分 11 秒 |
 | `smp` | `assets/js/demos/smp.js` 八幕 | 约 8 分 37 秒 |
-| `domain_randomization` | `assets/js/demos/domain_randomization.js` 八幕（`dr-explainer`） | 约 8 分 18 秒 |
+| `domain_randomization` | `assets/js/demos/domain_randomization.js` 八幕（`dr-explainer`） | 约 8 分 20 秒 |
 
 - 画面：直接复用 `<paper>.js` 分镜的 `draw(t)`，数字与笔记算例一致；前后加片头、总结页（`papers/<paper>.js`）。
 - 分镜 `draw(t, clock)` 的第二个参数是这一幕的真实时间：旁白比动画长、画面停在 `to` 之前时它照样往前走，步态这类循环动作可以用它继续动（网页播放器只传 `t`）。
