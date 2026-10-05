@@ -260,7 +260,7 @@ def test_notes_declare_their_demos_in_reading_order():
         TRANSFORMER_NOTE: ("transformer", ["tf-explainer", "tf-video"]),
         PI0_NOTE: ("pi0", ["pi0-explainer", "pi0-video"]),
         PI05_NOTE: ("pi05", ["pi05-explainer", "pi05-video"]),
-        SOCCER_NOTE: ("op3soccer", ["soccer-explainer", "soccer-video"]),
+        SOCCER_NOTE: ("op3soccer", ["soccer-explainer", "soccer-video", "soccer-filter", "soccer-lambda", "soccer-pool"]),
         QUAD_NOTE: ("quadterrain", ["qt-explainer", "qt-video", "qt-ftg", "qt-curriculum", "qt-memory"]),
         RH_NOTE: ("realhumanoid", ["rh-explainer", "rh-video", "rh-context", "rh-reward", "rh-dr"]),
     }
@@ -371,9 +371,13 @@ EXPLAINER_BUNDLES = (
 # π₀.₅ 是七件（开放世界的难题 / 异构数据 / 两层推理 / 离散 + 连续两阶段 / 输入输出与部署 /
 # 训练地点数 / 消融）。「两层推理」是推理时的分解，「两阶段」是训练时的分解，合并会把式 (1)
 # 和子任务示例挤进一帧；地点数实验与配方消融是论文 §V-B 与 §V-C–E 的两组独立实验。
-# OP3 足球是七件（任务与机器人 / 技能教师 / 自适应蒸馏 / 自博弈 / 奖励与安全 / sim-to-real /
-# 实验）。蒸馏与自博弈同在阶段 2，但一个回答「向谁学」（λ 的自动开关），一个回答「和谁踢」
-# （对手池），论文也是分开的两段与两组消融。
+# OP3 足球是十二件（为什么是足球 / 一步控制 / 踢球教师 / 起身教师 / 按状态蒸馏与 λ / 自博弈 /
+# 奖励与安全正则 / 零样本上真机 / 对比脚本控制器 / 定位球与对手意识 / 行为嵌入与价值函数 / 局限与之后）。
+# 方法节的两个阶段各有两件独立的事：阶段 1 的踢球教师（未训练对手、终止条件、表 S3 一列）与起身教师
+# （关键姿态、指数间隔、条件与奖励符号）是分开训练的两个策略；阶段 2 的蒸馏回答「向谁学」（式 2–3 的 λ），
+# 自博弈回答「和谁踢」（对手池、对手编号、图 7），论文也是分开的两段与两组消融。观测与滤波（表 S2、§Environment）
+# 撑得起单独一幕；结果按论文的小节一节一幕：表 1 与测法、图 5 的定位球与对手意识、图 4 与图 6 的两种「往里看」。
+# 压回七幕会让 λ 曲线和对手池、四项基本功和定位球抢同一帧。
 # SMP 是八件（对抗先验不能复用 / 预训练冻结的扩散模型 / SDS 残差当奖励 / ESM 固定三档 /
 # AdaNorm 按档归一化 / GSI 生成初始状态 / CFG 与上下半身组合 / 训练闭环、证据与边界）。
 # ESM 与 AdaNorm 在论文同属 5.1 节，但一个回答「抽哪一档」（方差，表 5 / 表 7），一个回答
@@ -430,7 +434,7 @@ EXPLAINER_SCENES = {
     "transformer": (TRANSFORMER_NOTE, 7),
     "pi0": (PI0_NOTE, 7),
     "pi05": (PI05_NOTE, 7),
-    "op3soccer": (SOCCER_NOTE, 7),
+    "op3soccer": (SOCCER_NOTE, 12),
     "smp": (SMP_NOTE, 8),
     "domain_randomization": (DR_VISION_NOTE, 8),
     "quadterrain": (QUAD_NOTE, 9),
@@ -438,7 +442,7 @@ EXPLAINER_SCENES = {
 
     "humanml3d": (HUMANML3D_NOTE, 9),
 }
-CN_NUMERALS = {4: "四", 5: "五", 6: "六", 7: "七", 8: "八", 9: "九", 10: "十"}
+CN_NUMERALS = {4: "四", 5: "五", 6: "六", 7: "七", 8: "八", 9: "九", 10: "十", 11: "十一", 12: "十二"}
 
 
 def test_explainer_scene_count_matches_the_title_and_note():
@@ -1635,8 +1639,8 @@ def test_narrated_video_placeholders_point_at_files_that_exist():
         assert demo in seen, f"{demo} 应该挂在对应的论文笔记里"
 
 
-def test_vla_and_soccer_explainers_share_numbers_with_their_notes():
-    """Transformer / π₀ / π₀.₅ / OP3 足球的动画算例与笔记「🚶 具体实例」共用同一组数。
+def test_vla_explainers_share_numbers_with_their_notes():
+    """Transformer / π₀ / π₀.₅ 的动画算例与笔记「🚶 具体实例」共用同一组数（OP3 足球见下一个测试）。
 
     这些数由各自 bundle 里的小函数现算（softmax、Beta CDF、n^0.43、分桶、1 − 0.8^n ……），
     笔记里是手算结果；改了一边忘了另一边，这里会拦下来。
@@ -1645,7 +1649,6 @@ def test_vla_and_soccer_explainers_share_numbers_with_their_notes():
         TRANSFORMER_NOTE: ("transformer", ["q = [1, 0, 1, 0]", "[0.548,\\ 0.726]", "0.274", "0.452", "6.99", "89 倍"]),
         PI0_NOTE: ("pi0", ["64.7%", "7.24", "816", "73", "−1.2", "0.8"]),
         PI05_NOTE: ("pi05", ["97.6%", "**166**", "280k", "80k", "11%"]),
-        SOCCER_NOTE: ("op3soccer", ["275", "0.674", "0.745", "0.905", "29/50", "1/11"]),
     }
     for note, (_bundle, needles) in cases.items():
         text = note.read_text(encoding="utf-8")
@@ -1660,14 +1663,10 @@ def test_vla_and_soccer_explainers_share_numbers_with_their_notes():
     assert round((1 - ((0.999 - 0.5) / 0.999) ** 1.5) * 100, 1) == 64.7
     assert round(100 ** 0.43, 2) == 7.24
     assert sum(1 for k in range(256) if -1 + 2 * k / 256 <= 0.3) - 1 == 166
-    assert next(n for n in range(1, 30) if 1 - 0.8 ** n >= 0.9) * 25 == 275
-    assert round((math.pi - 0.8) / math.pi * (math.pi - 0.3) / math.pi, 3) == 0.674
 
     js = (DEMO_JS_DIR / "pi0.js").read_text(encoding="utf-8")
     assert "eps = -1.2, a = 0.8, steps = 10" in js
     assert "nBig = 100, nSmall = 1, p = 0.43" in js
-    js = (DEMO_JS_DIR / "op3soccer.js").read_text(encoding="utf-8")
-    assert "0.8 * u + 0.2 * 1" in js and "jointErr = 0.8, gravAng = 0.3" in js
 
 
 def test_sonic_and_gmr_worked_examples_share_numbers_with_their_explainers():
@@ -2078,3 +2077,78 @@ def test_realhumanoid_explainer_demos_and_worked_example_share_the_paper_numbers
         assert needle in narration, needle
     for stale in ("**超 MPC**", "~10 B steps", "自实现的耦合约束补丁", "**主动调摆臂幅度**"):
         assert stale not in note, f"旧版笔记的说法原文里没有：{stale}"
+
+
+def test_op3soccer_explainer_demos_and_worked_example_share_the_paper_numbers():
+    """OP3 足球：十二幕动画、三个演示、配音旁白与笔记「🚶 具体实例」用同一份论文数字。
+
+    正文、补充材料表 S1–S5 与表 1 照抄（arXiv v2 = Science Robotics 作者版）；156% / 24% 是 v1 的另一种测法；
+    267 维、1.43 Hz、0.111、1.65%、2000 步、12.5%、±0.07 是在这些数上现算的。
+    旧版笔记把「起身用时少 63%」写成「起身快 63%」，这里守着别再写回来。
+    """
+    js = (DEMO_JS_DIR / "op3soccer.js").read_text(encoding="utf-8")
+    note = SOCCER_NOTE.read_text(encoding="utf-8")
+    narration = (ROOT / "scripts" / "paper_video" / "papers" / "op3soccer.py").read_text(encoding="utf-8")
+    intro = (ROOT / "scripts" / "paper_video" / "papers" / "op3soccer.js").read_text(encoding="utf-8")
+
+    for line in (
+        "var OP3_CM = 51, OP3_KG = 3.5, JOINTS = 20;",
+        "var HZ = 40, DT = 1 / HZ;",
+        "var FILTER_A = 0.8;",
+        "var PITCH_L = 5, PITCH_W = 4, GOAL_W = 0.8;",
+        "var KEY_POSES = 3, GETUP_MEAN = 1.5, EP_SEC = 50;",
+        "var UPRIGHT_LO = 0.2, UPRIGHT_HI = 0.4, KNEE_NM = 5;",
+        "['起身技能', 2.4e8, 70, 14], ['踢球技能', 2.0e9, 580, 158], ['完整 1v1', 9.0e8, 262, 68]",
+        "{ name: '行走', unit: 'm/s', base: 0.2, real: 0.57, sim: 0.51, paper: '+181%' }",
+        "{ name: '转身', unit: 'rad/s', base: 0.71, real: 2.85, sim: 3.19, paper: '+302%' }",
+        "{ name: '起身用时', unit: 's', base: 2.52, real: 0.93, sim: 0.73, paper: '−63%' }",
+        "var SIM_REAL = [13, -11, 28, -5];",
+        "var SETPIECE = { n: 50, real: 29, sim: 35, touchReal: 4.7, touchSim: 4.6 };",
+        "var V1 = { walk: [0.27, 0.69], kick: [2.1, 2.6], pct: [156, 63, 24], penalty: 7, getupShoot: 8, trials: 10 };",
+        "var TOY_POSE = { jointErr: 0.8, gravAng: 0.3 };",
+        "var TOY_LAMBDA = { qs: 0.6, lr: 0.12, q0: 0.2, q1: 0.9, lam0: 0.5 };",
+        "var TOY_POOL = 40;",
+        "var TOY_TILT = 0.3;",
+    ):
+        assert line in js, line
+
+    # 表 S2 逐项相加
+    assert 5 * (20 + 3 + 3 + 3 + 20) == 245 and 4 * 2 + 5 * 2 + 2 + 2 == 22
+    # 指数滤波：阶跃、时间常数、截止频率、奈奎斯特增益
+    a = 0.8
+    assert next(n for n in range(1, 30) if 1 - a**n >= 0.9) == 11 and 11 * 25 == 275
+    assert _fmt(-1 / math.log(a), 2) == "4.48"
+    assert _fmt(math.acos((1 + a * a - 2 * (1 - a) ** 2) / (2 * a)) / (2 * math.pi) * 40, 2) == "1.43"
+    assert _fmt((1 - a) / (1 + a), 3) == "0.111"
+    assert _fmt((1 - a) / math.sqrt(1 + a * a - 2 * a * math.cos(2 * math.pi * 2 / 40)), 2) == "0.58"
+    # 起身：指数间隔与两种零点
+    assert _fmt((1 - math.exp(-0.025 / 1.5)) * 100, 2) == "1.65" and _fmt(math.exp(-2), 3) == "0.135"
+    p, g = (math.pi - 0.8) / math.pi, (math.pi - 0.3) / math.pi
+    assert (_fmt(p, 3), _fmt(g, 3), _fmt(p * g, 3)) == ("0.745", "0.905", "0.674")
+    g3 = 1 - 0.3 / (math.pi / 2)
+    assert (_fmt(g3, 3), _fmt(p * g3, 3)) == ("0.809", "0.603")
+    # λ、对手池、直立与一局的量级
+    assert (_fmt(0.5 + 0.12 * 0.4, 3), _fmt(0.5 - 0.12 * 0.3, 3)) == ("0.548", "0.464")
+    assert 40 // 4 + 1 == 11 and _fmt(1 / 11, 3) == "0.091" and _fmt(10 * 11 / 2 / 40 / 11, 3) == "0.125"
+    assert _fmt((0.4 - 0.3) / 0.2, 1) == "0.5" and 50 * 40 == 2000 and _fmt(0.02 * 2000, 0) == "40"
+    # 训练开销、表 1、v1、定位球的标准误
+    assert [_fmt(x * 0.025 / 86400, 0) for x in (2.4e8, 2.0e9, 9.0e8)] == ["69", "579", "260"]
+    assert [_fmt(x, 0) for x in (57 / 20 * 100 - 100, 285 / 71 * 100 - 100, 100 - 93 / 252 * 100, 277 / 207 * 100 - 100)] == [
+        "185", "301", "63", "34"]
+    assert (_fmt(69 / 27 * 100 - 100, 0), _fmt(26 / 21 * 100 - 100, 0)) == ("156", "24")
+    assert (_fmt(math.sqrt(0.58 * 0.42 / 50), 3), _fmt(math.sqrt(0.7 * 0.3 / 50), 3)) == ("0.070", "0.065")
+
+    for needle in (
+        "## 🎬 十二幕动画：OP3 小人形学踢足球全流程", "## 🚶 具体实例", "**245**", "**267**", "**0.914**", "275 ms",
+        "**1.43 Hz**", "**0.111**", "**1.65%**", "0.135", "0.745", "0.905", "0.674", "0.809", "0.603",
+        "0.548", "0.464", "1/11", "12.5%", "2000", "29/50", "0.69/0.27", "2.6/2.1", "0.070", "0.065",
+        'data-demo="soccer-filter"', 'data-demo="soccer-lambda"', 'data-demo="soccer-pool"',
+    ):
+        assert needle in note, needle
+    for needle in ("267 维", "275 毫秒", "1.43 赫兹", "0.111", "1.65%", "0.674", "11 分之 1", "156%", "181%", "29 个"):
+        assert needle in narration, needle
+    # 片头接上一期（真实世界人形行走）的片尾预告，片尾只预告下一篇（LCP）；封面大标题只留纯文字
+    assert "上一期结尾预告" in narration and "下一篇讲 LCP" in narration
+    assert ">OP3</div>" in intro and "⚽" not in intro
+    for stale in ("起身快 63%", "七幕动画"):
+        assert stale not in note, f"旧版笔记的说法：{stale}"
