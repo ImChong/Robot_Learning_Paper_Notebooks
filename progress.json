@@ -41,15 +41,15 @@
         "13_Physics-Based_Animation",
         "14_Human_Motion"
       ],
-      "last_module": "12_Hardware_Design",
-      "last_index": 421,
-      "last_title": "A Framework for Optimal Ankle Design of Humanoid Robots (arXiv:2509.16469)",
-      "next_module": "13_Physics-Based_Animation",
-      "last_completed_date": "2026-10-04",
-      "note": "本日轮转到 12_Hardware_Design。本地已有笔记的 15 篇之外，上游 awesome-humanoid-robot-learning Hardware Design 章节中发表最新且无笔记的是 A Framework for Optimal Ankle Design of Humanoid Robots (arXiv:2509.16469, 2025-09-19, IIT, Humanoids 2025)。SPU/RSU 两种并联踝的闭式 IK、保证工作区可行的 RSU 重参数化、NSGA-II 多目标优化(峰值力/速度)+ 七指标标量代价跨构型排序；最优 RSU 代价比原串联踝低 41%、比人工设计 RSU 低 14%。未开源代码，仅含整体流程 mermaid。",
-      "last_date": "2026-10-04",
+      "last_module": "13_Physics-Based_Animation",
+      "last_index": 456,
+      "last_title": "RL from Physical Feedback: Aligning Large Motion Models with Humanoid Control (arXiv:2506.12769)",
+      "next_module": "14_Human_Motion",
+      "last_completed_date": "2026-10-05",
+      "note": "本日轮转到 13_Physics-Based_Animation。上游 awesome-humanoid-robot-learning Physics-Based Character Animation 章节中发表最新且无笔记的是 RL from Physical Feedback (RLPF, arXiv:2506.12769, 2025-06-15, 北大 / BeingBeyond)。以冻结跟踪策略在 IsaacGym 中的二值跟踪成功作为物理奖励 + 对比编码器语义对齐奖励，用 GRPO 微调 LLaMA2-7B 文本生成动作模型；跟踪成功率 0.43–0.48→0.90–0.97，G1 真机部署。官方仓库仅 README，代码未放出，仅含整体流程 mermaid。",
+      "last_date": "2026-10-05",
       "next_candidate": null,
-      "last_completed": "A Framework for Optimal Ankle Design of Humanoid Robots (arXiv:2509.16469)"
+      "last_completed": "RL from Physical Feedback: Aligning Large Motion Models with Humanoid Control (arXiv:2506.12769)"
     },
     "last_summary_index": 532,
     "last_summary_date": "2026-09-18",
@@ -1640,6 +1640,17 @@
         "project_page": "",
         "code": "",
         "source": "❌ 未开源（Grasshopper + Python + Tunny/NSGA-II 实现）· 并联踝 SPU/RSU 闭式 IK + RSU 重参数化 + 多目标优化 + 七指标标量代价 · IIT · Humanoids 2025"
+      },
+      {
+        "date": "2026-10-05",
+        "index": 456,
+        "title": "RL from Physical Feedback: Aligning Large Motion Models with Humanoid Control",
+        "folder": "papers/13_Physics-Based_Animation/RLPF__RL_from_Physical_Feedback_Aligning_Large_Motion_Models_with_Humanoid_Control",
+        "module": "13_Physics-Based_Animation",
+        "arxiv": "2506.12769",
+        "project_page": "https://beingbeyond.github.io/RLPF/",
+        "code": "https://github.com/BeingBeyond/RLPF（仅 README，代码未放出）",
+        "source": "⏳ 暂未开源(故无源码时序图) · 物理反馈奖励(冻结 ExBody2 式跟踪策略二值成功) + TA/MA 语义对齐 + GRPO 微调 LLaMA2-7B T2M · 北大 / BeingBeyond"
       }
     ],
     "last_completed_index": 588,
@@ -6211,6 +6222,16 @@
       "pdf_file": "",
       "route": "Hardware Design",
       "title_cn": "人形机器人踝关节最优设计框架"
+    },
+    {
+      "title": "RL from Physical Feedback: Aligning Large Motion Models with Humanoid Control",
+      "folder": "papers/13_Physics-Based_Animation/RLPF__RL_from_Physical_Feedback_Aligning_Large_Motion_Models_with_Humanoid_Control",
+      "note_file": "RLPF__RL_from_Physical_Feedback_Aligning_Large_Motion_Models_with_Humanoid_Control.md",
+      "status": "done",
+      "arxiv": "2506.12769",
+      "pdf_file": "",
+      "route": "Physics-Based Animation",
+      "title_cn": "RLPF：基于物理反馈的强化学习，让大动作模型对齐人形机器人控制"
     }
   ]
 }
