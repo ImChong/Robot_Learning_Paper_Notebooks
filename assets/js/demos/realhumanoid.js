@@ -704,20 +704,21 @@
       put(torso, hip, sh);
       head.setAttribute('x', (sh[0] - 0.05 * M).toFixed(1));
       head.setAttribute('y', (sh[1] - 0.15 * M).toFixed(1));
-      var fx = [];
+      var fx = [], legs = [];
       [nearLeg, farLeg].forEach(function (lg, k) {
         var p = (((phase + (k ? Math.PI : 0)) % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
         var u = p < Math.PI ? p / Math.PI : (p - Math.PI) / Math.PI;
         var x = p < Math.PI ? S * (1 - 2 * u) : S * (2 * u - 1);
         var y = gy - (p < Math.PI ? 0 : LIFT * Math.sin(Math.PI * u));
         var foot = o.feet && o.feet[k] ? o.feet[k] : [cx + x, y];
-        legPose(lg, hip, foot);
+        legs.push(legPose(lg, hip, foot));
         fx.push(S ? x / S : 0);
       });
       // 对侧摆臂：近侧（左）手臂跟远侧（右）腿同步，远侧（右）手臂跟近侧（左）腿同步
       armPose(nearArm, sh, SW * fx[1]);
       armPose(farArm, sh, SW * fx[0]);
-      return { hip: hip, shoulder: sh };
+      // knee / ankle 是近侧腿的膝与踝（标注小腿时用）
+      return { hip: hip, shoulder: sh, knee: legs[0].knee, ankle: legs[0].ankle };
     }
 
     return { el: g, pose: pose, M: M };
@@ -850,14 +851,18 @@
       setOpacity(specs, seg(t, 4.0, 4.6));
       var walking = seg(t, 13.6, 14.2);
       var pz = digit.pose(690, 318, 2 * Math.PI * 1.1 * now * walking, { stride: 0.15 * walking, lift: 0.1 * walking, swing: 18 * walking });
-      // 小腿—跗骨一带画一圈，示意闭链所在
+      // 圈心放在近侧小腿（膝—踝连线）的中点，跟着走路的姿态一起动；引线从圈边指向下方的标注
       var M = digit.M;
-      var kx = pz.hip[0] + 0.12 * M,
-        ky = pz.hip[1] + 0.55 * M;
+      var kx = (pz.knee[0] + pz.ankle[0]) / 2,
+        ky = (pz.knee[1] + pz.ankle[1]) / 2,
+        r = 0.14 * M;
+      var lx = 600 - kx,
+        ly = 326 - ky,
+        ld = Math.hypot(lx, ly) || 1;
       chainDot.setAttribute('cx', kx.toFixed(1));
       chainDot.setAttribute('cy', ky.toFixed(1));
-      chainDot.setAttribute('r', (0.16 * M).toFixed(1));
-      chainLine.setAttribute('d', 'M ' + (kx - 0.1 * M).toFixed(1) + ' ' + (ky + 0.16 * M).toFixed(1) + ' L 600 326');
+      chainDot.setAttribute('r', r.toFixed(1));
+      chainLine.setAttribute('d', 'M ' + (kx + (r * lx) / ld).toFixed(1) + ' ' + (ky + (r * ly) / ld).toFixed(1) + ' L 600 326');
       setOpacity(chain, seg(t, 5.2, 5.8));
       setOpacity(sense, seg(t, 7.4, 8.0));
       setOpacity(hyp, seg(t, 10.6, 11.2));

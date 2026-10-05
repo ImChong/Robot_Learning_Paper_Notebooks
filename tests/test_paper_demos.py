@@ -2074,7 +2074,7 @@ def test_realhumanoid_explainer_demos_and_worked_example_share_the_paper_numbers
         "**约 11.8 亿步**", "**273 天**", "**1.3%**", "**21%**", "虚拟弹簧", "交替子步",
     ):
         assert needle in note, needle
-    for needle in ("0.951", "0.819", "0.287", "480 维", "136 对", "11.8 亿", "6.25 倍", "百分之七十一"):
+    for needle in ("0.951", "0.819", "0.287", "480 维", "136 对", "11.8 亿", "6.25 倍", "71%"):
         assert needle in narration, needle
     for stale in ("**超 MPC**", "~10 B steps", "自实现的耦合约束补丁", "**主动调摆臂幅度**"):
         assert stale not in note, f"旧版笔记的说法原文里没有：{stale}"
