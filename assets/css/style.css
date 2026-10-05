@@ -2626,3 +2626,25 @@ a.updates-item-link:hover {
 .paper-body details.paper-fold > *:last-child {
   margin-bottom: 1rem;
 }
+
+/* ── 滚动入场（全站）───────────────────────────────────────────────
+   scroll-reveal.js 只给登记时位于视口以下的元素加 .scroll-reveal，入视口后加
+   .is-revealed，过渡结束摘掉两者；JS 失败 / 减动 / 打印时内容照常可见。 */
+.scroll-reveal {
+  opacity: 0;
+  transform: translate3d(0, 16px, 0);
+}
+/* 论文正文只淡入不上移：目录与锚点跳转按 scrollIntoView 定位，位移会让落点偏 16px */
+#paper-body .scroll-reveal { transform: none; }
+.scroll-reveal.is-revealed {
+  opacity: 1;
+  transform: none;
+  transition: opacity .7s cubic-bezier(.22, 1, .36, 1), transform .7s cubic-bezier(.22, 1, .36, 1);
+  transition-delay: var(--reveal-delay, 0ms);
+}
+@media (prefers-reduced-motion: reduce) {
+  .scroll-reveal { opacity: 1; transform: none; }
+}
+@media print {
+  .scroll-reveal { opacity: 1 !important; transform: none !important; }
+}
