@@ -29,7 +29,7 @@
 | `smp` | `assets/js/demos/smp.js` 八幕 | 约 8 分 37 秒 |
 | `domain_randomization` | `assets/js/demos/domain_randomization.js` 八幕（`dr-explainer`） | 约 8 分 20 秒 |
 | `quadterrain` | `assets/js/demos/quadterrain.js` 九幕（`qt-explainer`） | 约 9 分 27 秒 |
-| `realhumanoid` | `assets/js/demos/realhumanoid.js` 十幕（`rh-explainer`） | 约 10 分 32 秒 |
+| `realhumanoid` | `assets/js/demos/realhumanoid.js` 十幕（`rh-explainer`） | 约 10 分 33 秒 |
 
 - 画面：直接复用 `<paper>.js` 分镜的 `draw(t)`，数字与笔记算例一致；前后加片头、总结页（`papers/<paper>.js`）。
 - 分镜 `draw(t, clock)` 的第二个参数是这一幕的真实时间：旁白比动画长、画面停在 `to` 之前时它照样往前走，步态这类循环动作可以用它继续动（网页播放器只传 `t`）。
