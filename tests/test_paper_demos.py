@@ -236,7 +236,7 @@ def test_notes_declare_their_demos_in_reading_order():
             "beyondmimic",
             ["bm-explainer", "bm-video", "bm-anchor", "bm-sampling", "bm-guidance"],
         ),
-        LCP_NOTE: ("lcp", ["lcp-explainer", "lcp-video", "lcp-sensitivity", "lcp-gp", "lcp-vs-filter"]),
+        LCP_NOTE: ("lcp", ["lcp-explainer", "lcp-video", "lcp-sensitivity", "lcp-gp", "lcp-table"]),
         SMP_NOTE: ("smp", ["smp-explainer", "smp-video", "smp-sds", "smp-esm", "smp-style"]),
         DR_VISION_NOTE: (
             "domain_randomization",
@@ -354,10 +354,13 @@ EXPLAINER_BUNDLES = (
 # 目标系动作对齐 / 恒等门控残差 / 定量证据与边界）。TCRS 的四步里「脚怎么走」与
 # 「身体怎么跟」各是一组公式（式 4–6 vs 式 7、12），合成一幕会让 MPPI 候选表和
 # 根高度滤波抢画面；对齐与门控是论文两条独立的消融，也各占一幕。
-# LCP 是五件（抖动 = K × σ / 梯度惩罚约束敏感度 / λ_gp 的取舍 / 对比低通滤波 /
-# 接进 PPO 只多一项 loss）。前三件对应笔记里的三个概念与三个演示，「λ_gp 取舍」不并进
-# 「梯度惩罚」是因为前者要并排看三档 K*、表现与抖动，后者要画 J(K) − λK² 的整条曲线，
-# 塞进同一帧会让两组读数互相盖住；低通滤波要付的延迟与接进 PPO 的源码是两件独立的事。
+# LCP 是十件（仿真里的理想电机 / Lipschitz 与梯度 / 式 4 → 7 / 罚的是 log π 的梯度 / 几行代码接进 PPO /
+# 观测、ROA 与罚整段输入 / 命令、奖励与课程 / 三种平滑办法（表 I(a)）/ λ_gp 扫一遍（表 I(b)）/ 四台真机与局限）。
+# 方法节四块各一幕：式 1–2 与图 3 是「为什么约束梯度」，式 4–7 是「怎么变成可微的一项」，两者各有一张图
+# （圆锥 vs 四行推导）；「罚的是 log π 的梯度」是读懂式 7 的关键，要单独算一个高斯例子；代码与超参数又是一幕。
+# 训练设置两幕：观测 / ROA 和表 I(c) 回答「罚哪些输入」，命令 / 奖励 / 课程回答「平滑奖励被拿掉之后还剩什么」。
+# 结果按表格一表一幕：表 I(a) 的四种办法、表 I(b) 的五档系数、表 II / III 的四台真机，压成五幕会让四行推导和
+# 圆锥、五档柱状和四种办法的柱状抢同一帧。
 # GentleHumanoid 是七件（跟踪策略把外力当扰动 / 阻抗参考动力学 / 抵抗与引导两种交互弹簧 /
 # 受力暴露的多样性 / 安全力阈值 / 教师—学生与柔顺奖励 / 定量证据与局限）。「交互力长什么样」
 # 与「什么时候、在哪几个 link、多硬」是两件事（式 3–4 vs 附录 A 的调度），阈值又有自己的
@@ -430,7 +433,7 @@ EXPLAINER_SCENES = {
     "php": (PHP_NOTE, 8),
     "pbfm": (PBFM_NOTE, 7),
     "gentle": (GENTLE_NOTE, 7),
-    "lcp": (LCP_NOTE, 5),
+    "lcp": (LCP_NOTE, 10),
     "transformer": (TRANSFORMER_NOTE, 7),
     "pi0": (PI0_NOTE, 7),
     "pi05": (PI05_NOTE, 7),
@@ -2151,4 +2154,72 @@ def test_op3soccer_explainer_demos_and_worked_example_share_the_paper_numbers():
     assert "上一期结尾预告" in narration and "下一篇讲 LCP" in narration
     assert ">OP3</div>" in intro and "⚽" not in intro
     for stale in ("起身快 63%", "七幕动画"):
+        assert stale not in note, f"旧版笔记的说法：{stale}"
+
+
+def test_lcp_explainer_demos_and_worked_example_share_the_paper_numbers():
+    """LCP：十幕动画、三个演示、配音旁白与笔记「🚶 具体实例」用同一份论文数字。
+
+    表 I–IV、式 4–9、附录 B 照抄 arXiv 2410.11825 v3；71 / 50 / 710 / 831 维、系数表、Adam 取自官方代码；
+    13.1 倍、91%、44%、9164 次等在这些数上现算；一维玩具策略与两维高斯算例只说明机制。
+    旧版笔记把官方代码的优化器写成 SGD、把式 7 写成 ∇_o π(o)、说「仿真里测不出抖动」，这里守着别再写回来。
+    """
+    js = (DEMO_JS_DIR / "lcp.js").read_text(encoding="utf-8")
+    note = LCP_NOTE.read_text(encoding="utf-8")
+    narration = (ROOT / "scripts" / "paper_video" / "papers" / "lcp.py").read_text(encoding="utf-8")
+    intro = (ROOT / "scripts" / "paper_video" / "papers" / "lcp.js").read_text(encoding="utf-8")
+
+    for line in (
+        "var LAMBDA_GP = 0.002, LAMBDA_ROA = 0.1;",
+        "var HZ = 50, EP_STEPS = 500, CMD_EVERY = 150;",
+        "var CMD_RANGE = [[0, 0.8], [-0.4, 0.4], [-0.6, 0.6]];",
+        "['LCP（本文）', [3.21, 0.17, 10.65, 24.57, 0.06, 26.03], [0.11, 0.01, 0.37, 1.17, 0.002, 1.51]],",
+        "['不平滑', [42.19, 0.41, 12.92, 42.68, 0.09, 28.87], [4.72, 0.08, 0.99, 10.27, 0.01, 0.85]]",
+        "[0.001, [3.69, 0.21, 11.44, 27.09, 0.06, 26.32], [0.31, 0.05, 1.18, 4.44, 0.01, 1.2]],",
+        "[0.01, [0.17, 0.07, 2.75, 5.89, 0.007, 16.11], [0.01, 0.0, 0.12, 0.28, 0.0, 2.76]]",
+        "['只罚当前观测', [7.16, 0.35, 13.7, 35.18, 0.09, 25.44], [0.6, 0.03, 1.5, 4.84, 0.005, 3.73]]",
+        "['Berkeley Humanoid', [1.77, 0.12, 7.92, 19.99, 0.06, 26.5], [0.32, 0.01, 0.21, 0.36, 0.0, 0.57]]",
+        "['Unitree H1', [[1.11, 0.14, 10.95], [0.07, 0.01, 0.53]], [[1.18, 0.15, 11.8], [0.09, 0.01, 0.57]], [[1.2, 0.14, 11.68], [0.09, 0.01, 0.84]]],",
+        "var CURRIC = { s0: 0.8, up: 1.0001, down: 0.9999, hi: 400, lo: 50, cap: 2.0 };",
+        "var CODE = { envs: 4096, steps: 24, lr: 2e-4, kl: 0.008, entropy: 0.01, epochs: 5, minibatches: 4, gpSched: [0.002, 0.002, 700, 1000], privSched: [0, 0.1, 2000, 3000] };",
+        "var TOY_K = 5, TOY_SIGMA = 0.045, TOY_SEED = 6, TOY_STEPS = 120;",
+        "var GAUSS_J = [[0.8, 0.2], [-0.4, 0.6]];",
+        "var GAUSS_SIGMA = 0.4;",
+        "var GAUSS_Z = [1, -0.5];",
+    ):
+        assert line in js, line
+
+    # 观测维度（GR1 配置）
+    assert 2 + 3 + 3 + 2 + 21 + 21 + 19 == 71 and 4 + 1 + 2 * 21 + 3 == 50 and 71 + 50 + 10 * 71 == 831
+    # 玩具：一维策略的最大斜率与均方根斜率（同 lcp.js 的 policyOf / toyTrajectory）
+    b = (5 - 1) / 4.5
+    slopes = [1 + b * 4.5 * math.cos(4.5 * 0.9 * math.sin(t * 0.055)) for t in range(120)]
+    assert _fmt(5 * 0.045, 3) == "0.225" and _fmt(math.sqrt(sum(x * x for x in slopes) / 120), 2) == "2.75"
+    # 两维高斯：‖J‖²_F / σ²、第一个样本、σ 减半
+    fro = 0.8**2 + 0.2**2 + 0.4**2 + 0.6**2
+    g = ((0.8 * 0.4 - 0.4 * -0.2) / 0.16, (0.2 * 0.4 + 0.6 * -0.2) / 0.16)
+    assert (_fmt(fro, 2), _fmt(fro / 0.16, 1), _fmt(g[0], 2), _fmt(g[1], 2), _fmt(g[0] ** 2 + g[1] ** 2, 2)) == (
+        "1.20", "7.5", "2.50", "-0.25", "6.31")
+    assert _fmt(fro / 0.04, 0) == "30"
+    # 课程、训练量
+    assert math.ceil(math.log(2.0 / 0.8) / math.log(1.0001)) == 9164 and round(9164 / 24) == 382
+    assert 4096 * 24 == 98304 and _fmt(6e8 * 0.02 / 86400, 0) == "139"
+    # 表 I 的比例、表 III 的涨幅
+    assert _fmt(42.19 / 3.21, 1) == "13.1" and _fmt((28.87 - 26.03) / 28.87 * 100, 1) == "9.8"
+    assert _fmt((42.68 - 24.57) / 42.68 * 100, 0) == "42" and _fmt((42.19 - 3.69) / 42.19 * 100, 0) == "91"
+    assert _fmt((28.87 - 16.11) / 28.87 * 100, 0) == "44" and _fmt(7.16 / 3.21, 2) == "2.23"
+    assert _fmt((1.20 - 1.11) / 1.11 * 100, 1) == "8.1"
+
+    for needle in (
+        "## 🎬 十幕动画：LCP 全流程", "## 🚶 具体实例", "**71**", "**50**", "**710**", "**831**", "**0.225**", "**0.142**",
+        "**2.75**", "**7.5**", "**6.31**", "**7.53**", "**30**", "**9164**", "**382**", "**13.1 倍**", "**9.8%**", "**42%**",
+        "**91%**", "**44%**", "**2.23 倍**", "**98,304**", "**139 天**", "**+8.1%**", "\\nabla_s\\log\\pi(a \\mid s)",
+        'data-demo="lcp-sensitivity"', 'data-demo="lcp-gp"', 'data-demo="lcp-table"', "Adam",
+    ):
+        assert needle in note, needle
+    for needle in ("28.87", "42.19", "13 倍", "0.142", "2.75", "7.5", "6.31", "831 维", "9164", "91%", "44%", "8%", "0.002"):
+        assert needle in narration, needle
+    # 片头接上一期（OP3 足球）的片尾预告，片尾只预告下一篇（ASAP）
+    assert "上一期结尾预告" in narration and "下一篇讲 ASAP" in narration and "ASAP" in intro
+    for stale in ("⚠️ **注意**：LCP 论文使用 SGD", "仿真根本测不出", "\\nabla_o \\pi(o)", "五幕动画"):
         assert stale not in note, f"旧版笔记的说法：{stale}"

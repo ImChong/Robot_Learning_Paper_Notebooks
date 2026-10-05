@@ -1,5 +1,6 @@
-/* Interactive LCP demos for
- * papers/01_Foundational_RL/LCP_Sim-to-Real_Action_Smoothing.
+/* Interactive demos for papers/01_Foundational_RL/LCP_Sim-to-Real_Action_Smoothing
+ * （Chen, He, Wang 等 · Learning Smooth Humanoid Locomotion through Lipschitz-Constrained Policies ·
+ *   arXiv 2410.11825 v3，官方仓库标注 IROS 2025）
  *
  * Loaded by _layouts/paper.html when the note's front matter declares
  * `demos: ["lcp"]`, after assets/js/demos/kit.js. The note itself may only
@@ -7,12 +8,13 @@
  * <script>/<canvas>/<input> from #paper-body before publish.
  *
  * Demos:
- *   lcp-explainer   — 五幕讲解动画：抖动 = K × σ → 梯度惩罚 → λ_gp 的取舍
- *                     → 对比低通滤波 → 接进 PPO 只多一项 loss
- *   lcp-video       — 同样五幕的配音竖屏视频（可下载）
- *   lcp-sensitivity — 动作抖动 ≈ Lipschitz 常数 × 观测噪声，就这么一条乘法
- *   lcp-gp          — λ_gp 的取舍：平滑和「跟得上指令」是一对矛盾
- *   lcp-vs-filter   — 同样是变平滑，低通滤波要付相位延迟，LCP 不用
+ *   lcp-explainer   — 十幕讲解动画：仿真里的理想电机 → Lipschitz 与梯度 → 式 4–7 → 罚的是 log π 的梯度 →
+ *                     几行代码接进 PPO → 观测、ROA 与「罚整段输入」 → 命令、奖励与课程 →
+ *                     三种平滑办法（表 I(a)）→ λ_gp 扫一遍（表 I(b)）→ 四台真机与局限
+ *   lcp-video       — 同一套十幕的配音竖屏视频（scripts/paper_video/ 离线渲染）
+ *   lcp-sensitivity — Lipschitz 圆锥（图 2）：观测抖 σ，动作最多抖 Kσ；式 4 的最大斜率 vs 式 5 的期望
+ *   lcp-gp          — 高斯策略上 E‖∇ₛ log π‖² = ‖J‖²_F / σ²：单个样本与样本平均（玩具算例）
+ *   lcp-table       — 论文表 I(a)(b)(c)、表 II、表 III 的六项指标浏览器
  */
 
 (function () {
@@ -45,10 +47,98 @@
     mulberry32 = K.mulberry32,
     gauss = K.gauss;
 
-  // ─── demo 1: 敏感度 × 噪声 = 抖动 ────────────────────────────────────────
-  /* 把策略写成 π(o) = o + b·sin(ω o)。它的最大斜率就是 Lipschitz 常数
-     K = 1 + bω —— 观测里那点噪声被原样放大 K 倍送进关节。 */
+  // ─── 论文里的数字（arXiv 2410.11825 v3；正文与 v1 / v2 相同，附录 A–C 是 v3 新加的） ───
+  /* 表 I–IV、式 4–9、附录 B 照抄；官方代码（zixuan417/smooth-humanoid-locomotion）的数单独标出。
+     十幕动画、三个演示与笔记「🚶 具体实例」共用这一份。 */
+  var LAMBDA_GP = 0.002, LAMBDA_ROA = 0.1; // 式 7、附录 A：λ_gp = 0.002，ROA 的 λ = 0.1
+  var HZ = 50, EP_STEPS = 500, CMD_EVERY = 150; // 表 I 标题：500 步 = 10 s；第 V 节：每 150 步重抽命令
+  var CMD_RANGE = [[0, 0.8], [-0.4, 0.4], [-0.6, 0.6]]; // 第 V 节：v_x、v_y（m/s）、v_yaw（rad/s）
+  var SEEDS = 3, EVAL_ENVS = 1000; // 表 I 标题：3 个随机种子、1000 个环境
+  var METRICS = [
+    // 表 I 的六列：名称 / 单位（第 VI-B 节）/ 越小越好？
+    ['动作抖动', 'rad/s³', true],
+    ['关节位置抖动', 'rad/s³', true],
+    ['关节速度', 'rad/s', true],
+    ['能耗', 'N·rad/s', true],
+    ['机身加速度', 'm/s²', true],
+    ['任务回报', '', false]
+  ];
+  var TABLE1A = [
+    // 表 I(a)：平滑办法（均值、标准差）
+    ['LCP（本文）', [3.21, 0.17, 10.65, 24.57, 0.06, 26.03], [0.11, 0.01, 0.37, 1.17, 0.002, 1.51]],
+    ['平滑奖励', [5.74, 0.19, 11.35, 25.92, 0.06, 26.56], [0.08, 0.002, 0.51, 0.84, 0.002, 0.26]],
+    ['低通滤波', [7.86, 0.23, 11.72, 32.83, 0.06, 24.98], [3.0, 0.04, 0.14, 5.5, 0.002, 1.29]],
+    ['不平滑', [42.19, 0.41, 12.92, 42.68, 0.09, 28.87], [4.72, 0.08, 0.99, 10.27, 0.01, 0.85]]
+  ];
+  var TABLE1B = [
+    // 表 I(b)：λ_gp（0 那一行就是不平滑，0.002 那一行就是 LCP）
+    [0, [42.19, 0.41, 12.92, 42.68, 0.09, 28.87], [4.72, 0.08, 0.99, 10.27, 0.01, 0.85]],
+    [0.001, [3.69, 0.21, 11.44, 27.09, 0.06, 26.32], [0.31, 0.05, 1.18, 4.44, 0.01, 1.2]],
+    [0.002, [3.21, 0.17, 10.65, 24.57, 0.06, 26.03], [0.11, 0.01, 0.37, 1.17, 0.002, 1.51]],
+    [0.005, [2.1, 0.15, 10.44, 26.24, 0.05, 23.92], [0.05, 0.01, 0.7, 3.5, 0.002, 2.05]],
+    [0.01, [0.17, 0.07, 2.75, 5.89, 0.007, 16.11], [0.01, 0.0, 0.12, 0.28, 0.0, 2.76]]
+  ];
+  var TABLE1C = [
+    // 表 I(c)：GP 加在哪些输入上
+    ['整段输入（本文）', [3.21, 0.17, 10.65, 24.57, 0.06, 26.03], [0.11, 0.01, 0.37, 1.17, 0.002, 1.51]],
+    ['只罚当前观测', [7.16, 0.35, 13.7, 35.18, 0.09, 25.44], [0.6, 0.03, 1.5, 4.84, 0.005, 3.73]]
+  ];
+  var TABLE2 = [
+    // 表 II：Isaac Gym 训练、MuJoCo 测试（3 次 × 500 步）
+    ['Fourier GR1', [1.47, 0.34, 9.54, 36.38, 0.08, 24.33], [0.43, 0.07, 1.53, 2.97, 0.004, 1.25]],
+    ['Unitree H1', [0.44, 0.1, 9.12, 76.22, 0.04, 21.74], [0.03, 0.007, 0.38, 5.81, 0.005, 1.4]],
+    ['Berkeley Humanoid', [1.77, 0.12, 7.92, 19.99, 0.06, 26.5], [0.32, 0.01, 0.21, 0.36, 0.0, 0.57]]
+  ];
+  var TERRAINS = ['平地', '软地', '粗糙地面'];
+  var TABLE3 = [
+    // 表 III：真机，三个模型各跑 10 s；只报了前三项指标。[机器人, [平地], [软地], [粗糙]]，每格 [均值三项, 标准差三项]
+    ['Fourier GR1', [[1.12, 0.28, 10.82], [0.16, 0.13, 1.58]], [[1.18, 0.24, 10.45], [0.17, 0.09, 1.42]], [[1.18, 0.26, 11.61], [0.22, 0.11, 1.64]]],
+    ['Unitree H1', [[1.11, 0.14, 10.95], [0.07, 0.01, 0.53]], [[1.18, 0.15, 11.8], [0.09, 0.01, 0.57]], [[1.2, 0.14, 11.68], [0.09, 0.01, 0.84]]],
+    ['Berkeley Humanoid', [[1.56, 0.1, 4.99], [0.1, 0.01, 0.6]], [[1.66, 0.12, 6.78], [0.03, 0.01, 1.57]], [[1.63, 0.11, 5.02], [0.11, 0.01, 0.48]]]
+  ];
+  var TABLE4 = [
+    // 附录表 IV：正则奖励（照抄，前三项论文没写负号）
+    ['机身角速度（横滚、俯仰）', '0.2'], ['关节力矩', '6e−7'], ['碰撞', '10'], ['竖直线速度', '−1.5'],
+    ['触地力', '−0.002'], ['绊脚', '−1.25'], ['关节限位', '−10'], ['机身姿态', '−1.0']
+  ];
+  var CURRIC = { s0: 0.8, up: 1.0001, down: 0.9999, hi: 400, lo: 50, cap: 2.0 }; // 附录 B
+  var ROBOTS = [
+    // 第 VI-A 节
+    ['Fourier GR1T1 / T2', '21 个关节，脚踝横滚力矩太小当被动关节，控制 19 个'],
+    ['Unitree H1', '19 个关节，全部主动控制'],
+    ['Berkeley Humanoid', '高 0.85 m，12 个自由度'],
+  ];
+  /* 官方代码（GR1 配置 gr1_walk_phase_config.py 与 rsl_rl 的 ppo_rma.py）里的数 */
+  var OBS_GR1 = {
+    proprio: [['步态相位', 2], ['速度命令', 3], ['机身角速度', 3], ['横滚、俯仰', 2], ['关节位置', 21], ['关节速度', 21], ['上一步动作', 19]],
+    priv: [['质量与质心', 4], ['摩擦', 1], ['电机强度', 42], ['机身线速度', 3]],
+    hist: 10
+  };
+  var CODE = { envs: 4096, steps: 24, lr: 2e-4, kl: 0.008, entropy: 0.01, epochs: 5, minibatches: 4, gpSched: [0.002, 0.002, 700, 1000], privSched: [0, 0.1, 2000, 3000] };
+
+  function sum(a) {
+    return a.reduce(function (x, y) { return x + y; }, 0);
+  }
+  var N_PROPRIO = sum(OBS_GR1.proprio.map(function (r) { return r[1]; })); // 71
+  var N_PRIV = sum(OBS_GR1.priv.map(function (r) { return r[1]; })); // 50
+  var N_OBS = N_PROPRIO + N_PRIV + OBS_GR1.hist * N_PROPRIO; // 831
+
+  /* 附录 B：s 从 s0 涨到上限要乘多少次 1.0001 */
+  function curriculumSteps(s0, cap, up) {
+    return Math.ceil(Math.log(cap / s0) / Math.log(up));
+  }
+
+  /* rsl_rl 的系数表 [起点, 终点, 开始迭代, 过渡迭代数]：线性插值 */
+  function schedule(sch, it) {
+    var u = Math.min(Math.max(it - sch[2], 0) / sch[3], 1);
+    return sch[0] + u * (sch[1] - sch[0]);
+  }
+
+  // ─── 玩具策略（第 2、3 幕与 lcp-sensitivity 共用） ───────────────────────────
+  /* π(o) = o + b·sin(ω o)。它的导数 1 + bω cos(ω o) 在 o = 0 处最大，所以最大斜率（Lipschitz 常数）
+     K = 1 + bω。它只用来把「斜率 = 放大倍数」画出来，不是论文的策略。 */
   var OMEGA = 4.5;
+  var TOY_K = 5, TOY_SIGMA = 0.045, TOY_SEED = 6, TOY_STEPS = 120;
 
   function policyOf(kLip) {
     var b = Math.max(0, (kLip - 1) / OMEGA);
@@ -56,54 +146,115 @@
       return o + b * Math.sin(OMEGA * o);
     };
   }
+  function slopeOf(kLip) {
+    var b = Math.max(0, (kLip - 1) / OMEGA);
+    return function (o) {
+      return 1 + b * OMEGA * Math.cos(OMEGA * o);
+    };
+  }
+  function toyTrajectory(t) {
+    return 0.9 * Math.sin(t * 0.055);
+  }
 
+  /* 一段带噪观测上的动作：抖动 = 动作减去无噪时应有的动作，取标准差 */
+  function toyRun(kLip, sigma, seed) {
+    var pi = policyOf(kLip),
+      dpi = slopeOf(kLip),
+      rng = mulberry32(seed);
+    var trueA = [], noisyA = [], resid = [], sq = 0;
+    for (var t = 0; t < TOY_STEPS; t++) {
+      var o = toyTrajectory(t);
+      var on = o + sigma * gauss(rng);
+      trueA.push(pi(o));
+      noisyA.push(pi(on));
+      resid.push(pi(on) - pi(o));
+      sq += dpi(o) * dpi(o);
+    }
+    var m = sum(resid) / resid.length;
+    var jit = Math.sqrt(sum(resid.map(function (r) { return (r - m) * (r - m); })) / resid.length);
+    return { pi: pi, trueA: trueA, noisyA: noisyA, jit: jit, rmsSlope: Math.sqrt(sq / TOY_STEPS) };
+  }
+  var TOY = toyRun(TOY_K, TOY_SIGMA, TOY_SEED);
+
+  // ─── 高斯策略算例（第 4 幕、lcp-gp 与笔记第 4 步共用） ─────────────────────────
+  /* a ~ N(μ(s), σ²I)，μ(s) = J s：∇ₛ log π = Jᵀ(a − μ)/σ²，对 a 取期望得 ‖J‖²_F / σ²（推导见笔记） */
+  var GAUSS_J = [[0.8, 0.2], [-0.4, 0.6]];
+  var GAUSS_SIGMA = 0.4;
+  var GAUSS_Z = [1, -0.5]; // 第一个样本：a − μ = σ·(1, −0.5) = (0.4, −0.2)
+  var GAUSS_N = 200, GAUSS_SEED = 36;
+
+  function frob2(J) {
+    return J[0][0] * J[0][0] + J[0][1] * J[0][1] + J[1][0] * J[1][0] + J[1][1] * J[1][1];
+  }
+  /* 单个样本：dev = a − μ */
+  function gradLogPi(J, sigma, dev) {
+    var s2 = sigma * sigma;
+    return [(J[0][0] * dev[0] + J[1][0] * dev[1]) / s2, (J[0][1] * dev[0] + J[1][1] * dev[1]) / s2];
+  }
+  function gaussSamples(J, sigma, n, seed) {
+    var rng = mulberry32(seed);
+    var devs = [], vals = [], run = [], acc = 0;
+    for (var i = 0; i < n; i++) {
+      var z = i === 0 ? GAUSS_Z : [gauss(rng), gauss(rng)];
+      var dev = [sigma * z[0], sigma * z[1]];
+      var g = gradLogPi(J, sigma, dev);
+      var v = g[0] * g[0] + g[1] * g[1];
+      acc += v;
+      devs.push(dev);
+      vals.push(v);
+      run.push(acc / (i + 1));
+    }
+    return { devs: devs, vals: vals, run: run };
+  }
+  var GAUSS = (function () {
+    var s = gaussSamples(GAUSS_J, GAUSS_SIGMA, GAUSS_N, GAUSS_SEED);
+    return {
+      fro: frob2(GAUSS_J),
+      expect: frob2(GAUSS_J) / (GAUSS_SIGMA * GAUSS_SIGMA),
+      first: s.vals[0],
+      grad0: gradLogPi(GAUSS_J, GAUSS_SIGMA, s.devs[0]),
+      mean: s.run[GAUSS_N - 1],
+      half: frob2(GAUSS_J) / (0.25 * GAUSS_SIGMA * GAUSS_SIGMA),
+      s: s
+    };
+  })();
+
+  // ─── demo 1: Lipschitz 圆锥 ────────────────────────────────────────────────
   function buildSensitivityDemo(host) {
     var root = card(host, {
-      title: '抖动是怎么来的：观测噪声 × 策略敏感度',
+      title: 'Lipschitz 常数：观测抖一点，动作最多抖几倍',
       sub:
-        '$\\lVert f(x_1) - f(x_2) \\rVert \\le K \\lVert x_1 - x_2 \\rVert$ 里的那个 $K$，在真机上就是「观测噪声被放大多少倍送进关节」。' +
-        '拖动 K 和噪声，看右边的动作序列什么时候开始发毛。'
+        '式 1：$\\lVert f(x_1) - f(x_2) \\rVert \\le K \\lVert x_1 - x_2 \\rVert$。图 2 的画法是在曲线上任一点画斜率 $\\pm K$ 的圆锥，整条曲线都落在里面。' +
+        '拖动 $K$ 和观测噪声，看动作序列什么时候开始发毛，再对比「最大斜率」（式 4）和「访问到的状态上的均方根斜率」（式 5）。'
     });
 
-    var state = { kLip: 5, noise: 0.045, seed: 6, steps: 120 };
+    var state = { kLip: TOY_K, noise: TOY_SIGMA, seed: TOY_SEED, o0: 0 };
 
     var ctrls = controlsRow(root);
-    slider(ctrls, {
-      label: '策略的 Lipschitz 常数 K',
-      min: 1,
-      max: 14,
-      step: 0.1,
-      value: state.kLip,
-      format: function (v) {
-        return fmt(v, 1);
-      },
-      onInput: function (v) {
-        state.kLip = v;
-        render();
-      }
+    var kSlider = slider(ctrls, {
+      label: '策略的 Lipschitz 常数 $K$',
+      min: 1, max: 14, step: 0.1, value: state.kLip,
+      format: function (v) { return fmt(v, 1); },
+      onInput: function (v) { state.kLip = v; render(); }
+    });
+    var sigSlider = slider(ctrls, {
+      label: '观测噪声 $\\sigma$（编码器 / IMU）',
+      min: 0, max: 0.12, step: 0.001, value: state.noise,
+      format: function (v) { return fmt(v, 3); },
+      onInput: function (v) { state.noise = v; render(); }
     });
     slider(ctrls, {
-      label: '观测噪声 $\\sigma$（编码器 / IMU）',
-      min: 0,
-      max: 0.12,
-      step: 0.002,
-      value: state.noise,
-      format: function (v) {
-        return fmt(v, 3);
-      },
-      onInput: function (v) {
-        state.noise = v;
-        render();
-      }
+      label: '圆锥顶点 $o_0$',
+      min: -1, max: 1, step: 0.01, value: state.o0,
+      format: function (v) { return fmt(v, 2); },
+      onInput: function (v) { state.o0 = v; render(); }
     });
     var btns = el('div', 'demo-control demo-buttons');
     ctrls.appendChild(btns);
-    button(btns, '仿真里的理想传感器（$\\sigma$ = 0）', function () {
-      state.noise = 0;
-      render();
-    });
-    button(btns, '真机的传感器（$\\sigma$ ≈ 0.045）', function () {
-      state.noise = 0.045;
+    button(btns, '回到默认（$K$ = 5，$\\sigma$ = 0.045）', function () {
+      state.kLip = TOY_K; state.noise = TOY_SIGMA; state.seed = TOY_SEED;
+      kSlider.set(TOY_K, true);
+      sigSlider.set(TOY_SIGMA, true);
       render();
     });
     button(btns, '换一段噪声', function () {
@@ -112,655 +263,455 @@
     });
 
     var setLegend = legend(root, [
-      { key: 'muted', text: '真实状态（无噪）' },
-      { key: 'accent', text: '策略实际输出的动作' },
-      { key: 'good', text: '策略函数 $\\pi(o)$' },
-      { key: 'bad', text: '噪声被放大的那一段' }
+      { key: 'good', text: '策略 $\\pi(o)$' },
+      { key: 'accent', text: '斜率 $\\pm K$ 的圆锥（图 2）' },
+      { key: 'bad', text: '$\\pm 2\\sigma$ 的观测噪声被放大成的动作带' },
+      { key: 'muted', text: '无噪时应有的动作' }
     ]);
 
     var grid = stageGrid(root);
-    var fnStage = stage(grid, 240);
-    var seqStage = stage(grid, 240);
+    var fnStage = stage(grid, 250);
+    var seqStage = stage(grid, 250);
 
     var stats = statsRow(root);
-    var sK = stats.add('$\\lVert \\nabla_o \\pi \\rVert$ 的上界');
+    var sK = stats.add('最大斜率 $K$（式 4 管的）');
+    var sRms = stats.add('访问到的状态上的均方根斜率（式 5）');
     var sJit = stats.add('动作抖动 std');
-    var sPred = stats.add('上界 $K \\times \\sigma$');
-    var sRate = stats.add('动作变化率峰值');
+    var sBound = stats.add('上界 $K \\sigma$');
     var verdict = verdictBox(root);
 
     note(root, [
-      '**这就是整篇论文的出发点**：动作抖动的上界是 $K \\times \\sigma$。$\\sigma$ 是硬件决定的，你改不了；' +
-        '能改的只有 K —— 所以「让动作平滑」这件事，等价于「把策略对观测的敏感度压下来」。',
-      '**仿真里看不出问题**：把噪声拖到 0，K = 14 的策略输出也是完全干净的。' +
-        '这解释了为什么很多 policy 在 sim 里好好的，一上真机就嗡嗡响 —— 差别不在策略，在 $\\sigma$。',
-      '**低通滤波治的是症状**：它在输出端把高频削掉，但那个 K 还在。' +
-        '一旦遇到滤波器跟不上的扰动，尖峰照样出来，而且还多了一份延迟（第三个演示会画）。',
-      '**这是简化模型**：真实策略是 MLP、观测是几十维、动作是 12~29 个关节。' +
-        '这里用一维的 $\\pi(o) = o + b \\sin(\\omega o)$ 把「斜率 = 放大倍数」这件事画出来，数值不能和论文比。'
+      '**上界是乘法**：$|\\pi(o + \\varepsilon) - \\pi(o)| \\le K|\\varepsilon|$，所以噪声标准差 $\\sigma$ 进来，动作最多抖 $K\\sigma$。默认 $K = 5$、$\\sigma = 0.045$ 时上界 0.225、实测 0.142 —— 实测比上界小，因为 $K$ 是**最大**斜率，轨迹不总在最陡的地方。',
+      '**式 4 → 式 5**：论文先要求所有状态上的梯度都不超过 $K$（式 4），算不出来，就按 TRPO 的做法换成 rollout 数据上的期望（式 5）。这条轨迹上最大斜率 5，均方根斜率只有 ' + fmt(TOY.rmsSlope, 2) + ' —— 期望只管策略真正走得到的状态。',
+      '**仿真里也抖**：论文表 I 的「不平滑」策略在 Isaac Gym 里动作抖动 42.19（LCP 3.21），任务回报反而最高 28.87。问题不是仿真看不出抖，而是仿真里的电机近乎理想，抖也照单全收、不扣分；真机电机打不出这种力矩。',
+      '**这是玩具模型**：一维的 $\\pi(o) = o + b\\sin(\\omega o)$，最大斜率 $K = 1 + b\\omega$；论文的策略是 MLP、观测几百维、动作 12–19 维，抖动指标是三阶导（见「论文表格浏览器」）。这里的数只说明「斜率 = 放大倍数」，不能和论文比。'
     ]);
 
     var render = registerRenderer(function () {
-      var pi = policyOf(state.kLip);
-      var rng = mulberry32(state.seed);
-      var trueO = [],
-        noisyO = [],
-        acts = [];
-      for (var t = 0; t < state.steps; t++) {
-        var o = 0.9 * Math.sin(t * 0.055);
-        var on = o + state.noise * gauss(rng);
-        trueO.push(o);
-        noisyO.push(on);
-        acts.push(pi(on));
-      }
-      // 抖动：动作里减掉「无噪时应有的动作」之后剩下的部分
-      var resid = acts.map(function (a, i) {
-        return a - pi(trueO[i]);
-      });
-      var mean =
-        resid.reduce(function (a, b) {
-          return a + b;
-        }, 0) / resid.length;
-      var jit = Math.sqrt(
-        resid.reduce(function (a, b) {
-          return a + (b - mean) * (b - mean);
-        }, 0) / resid.length
-      );
-      var rate = 0;
-      for (var i2 = 1; i2 < acts.length; i2++) rate = Math.max(rate, Math.abs(acts[i2] - acts[i2 - 1]));
+      var run = toyRun(state.kLip, state.noise, state.seed);
+      var pi = run.pi,
+        dpi = slopeOf(state.kLip);
+      sK.set(fmt(state.kLip, 2), state.kLip < 4 ? 'good' : state.kLip > 9 ? 'bad' : 'warn');
+      sRms.set(fmt(run.rmsSlope, 2), 'accent');
+      sJit.set(fmt(run.jit, 3), run.jit < 0.06 ? 'good' : run.jit > 0.2 ? 'bad' : 'warn');
+      sBound.set(fmt(state.kLip * state.noise, 3), 'accent');
 
-      sK.set(fmt(state.kLip, 1), state.kLip < 4 ? 'good' : state.kLip > 9 ? 'bad' : 'warn');
-      sJit.set(fmt(jit, 4), jit < 0.06 ? 'good' : jit > 0.2 ? 'bad' : 'warn');
-      sPred.set(fmt(state.kLip * state.noise, 4), 'accent');
-      sRate.set(fmt(rate, 3), rate < 0.15 ? 'good' : rate > 0.4 ? 'bad' : 'warn');
-
-      if (state.noise < 0.002) {
+      if (state.noise < 0.001) {
         verdict.set(
-          '🧪 $\\sigma$ = 0：仿真里的理想传感器。K = ' +
-            fmt(state.kLip, 1) +
-            ' 这么高的敏感度，输出依然完全干净 —— **仿真根本测不出这个问题**。' +
-            '把噪声拖到 0.045（真机量级）再看同一个策略。',
+          '🧪 $\\sigma$ = 0：观测没有噪声，动作就跟着真实状态走、不发毛。但 $K$ = ' + fmt(state.kLip, 1) +
+            ' 还在：状态本身一变（换步、被推），动作照样按最多 ' + fmt(state.kLip, 1) + ' 倍去变。论文表 I 的「不平滑」策略在仿真里就抖得很凶（42.19），只是理想电机照单全收。',
           'frozen'
         );
-      } else if (jit > 0.2) {
+      } else if (run.jit > 0.2) {
         verdict.set(
-          '📳 K = ' +
-            fmt(state.kLip, 1) +
-            '、$\\sigma$ = ' +
-            fmt(state.noise, 3) +
-            '：抖动 std 达到 ' +
-            fmt(jit, 3) +
-            '，上界 $K \\times \\sigma$ = ' +
-            fmt(state.kLip * state.noise, 3) +
-            '（实际抖动落在上界之内，因为 K 是**最大**斜率，不是平均斜率）。' +
-            '这个量级的高频指令送进 PD，电机会发热、发出可听见的嗡嗡声。',
+          '📳 $K$ = ' + fmt(state.kLip, 1) + '、$\\sigma$ = ' + fmt(state.noise, 3) + '：抖动 std ' + fmt(run.jit, 3) +
+            '，上界 $K\\sigma$ = ' + fmt(state.kLip * state.noise, 3) + '。高频指令送进 PD，真机电机跟不上、发热、嗡嗡响。',
           'frozen'
         );
       } else {
         verdict.set(
-          '✅ K = ' +
-            fmt(state.kLip, 1) +
-            ' 时抖动只有 ' +
-            fmt(jit, 3) +
-            '。注意左图：K 小的时候 $\\pi(o)$ 是一条平缓的线，噪声进去出来还是那么大；' +
-            'K 大的时候它满是褶皱，输入挪一点点就跳到另一个值。',
+          '✅ $K$ = ' + fmt(state.kLip, 1) + ' 时抖动只有 ' + fmt(run.jit, 3) + '（上界 ' + fmt(state.kLip * state.noise, 3) +
+            '）。左图：$K$ 小时曲线平缓，圆锥张得窄也装得下；$K$ 大时满是褶皱，输入挪一点就跳到另一个值。',
           'learning'
         );
       }
 
-      // ── 左：策略函数 ──
+      // ── 左：策略函数 + 圆锥 ──
       var g = begin(fnStage);
       var P = g.P;
       setLegend(P);
-      var p = plot(g, { l: 44, r: 14, t: 22, b: 34 }, [-1.2, 1.2], [-1.9, 1.9]);
-      axes(g, p, {
-        xTicks: [-1, -0.5, 0, 0.5, 1],
-        yTicks: [-1.5, 0, 1.5],
-        xLabel: '观测 o'
+      var p = plot(g, { l: 44, r: 14, t: 22, b: 34 }, [-1.2, 1.2], [-2.2, 2.2]);
+      axes(g, p, { xTicks: [-1, -0.5, 0, 0.5, 1], yTicks: [-2, -1, 0, 1, 2], xLabel: '观测 o' });
+      text(g.ctx, '策略函数：斜率就是放大倍数', p.x0, p.y1 - 8, P.muted, 'left', '11px sans-serif');
+      var o0 = state.o0,
+        a0 = pi(o0);
+      g.ctx.save();
+      g.ctx.beginPath();
+      g.ctx.moveTo(p.sx(-1.2), p.sy(clamp(a0 + state.kLip * (-1.2 - o0), -2.2, 2.2)));
+      g.ctx.lineTo(p.sx(o0), p.sy(a0));
+      g.ctx.lineTo(p.sx(1.2), p.sy(clamp(a0 + state.kLip * (1.2 - o0), -2.2, 2.2)));
+      g.ctx.lineTo(p.sx(1.2), p.sy(clamp(a0 - state.kLip * (1.2 - o0), -2.2, 2.2)));
+      g.ctx.lineTo(p.sx(o0), p.sy(a0));
+      g.ctx.lineTo(p.sx(-1.2), p.sy(clamp(a0 - state.kLip * (-1.2 - o0), -2.2, 2.2)));
+      g.ctx.closePath();
+      g.ctx.fillStyle = P.accent;
+      g.ctx.globalAlpha = 0.12;
+      g.ctx.fill();
+      g.ctx.restore();
+      [1, -1].forEach(function (sgn) {
+        line(g.ctx, [[p.sx(-1.2), p.sy(clamp(a0 - sgn * state.kLip * (o0 + 1.2), -2.2, 2.2))], [p.sx(1.2), p.sy(clamp(a0 + sgn * state.kLip * (1.2 - o0), -2.2, 2.2))]], P.accent, 1.2, [4, 3]);
       });
-      text(g.ctx, '策略函数 π(o)：斜率就是放大倍数', p.x0, p.y1 - 8, P.muted, 'left', '11px sans-serif');
       var pts = [];
       for (var s = 0; s <= 240; s++) {
         var o2 = -1.2 + (2.4 * s) / 240;
-        pts.push([p.sx(o2), p.sy(clamp(pi(o2), -1.9, 1.9))]);
+        pts.push([p.sx(o2), p.sy(clamp(pi(o2), -2.2, 2.2))]);
       }
       line(g.ctx, pts, P.good, 2.2);
-      // 在某个工作点上画出「噪声带 → 动作带」
-      var o0 = 0.45;
       var lo = o0 - 2 * state.noise,
         hi = o0 + 2 * state.noise;
       g.ctx.save();
       g.ctx.fillStyle = P.bad;
       g.ctx.globalAlpha = 0.25;
       g.ctx.fillRect(p.sx(lo), p.y1, Math.max(2, p.sx(hi) - p.sx(lo)), p.y0 - p.y1);
-      var aLo = pi(lo),
-        aHi = pi(hi);
+      var aLo = pi(lo), aHi = pi(hi);
       g.ctx.fillRect(p.x0, p.sy(Math.max(aLo, aHi)), p.x1 - p.x0, Math.max(2, Math.abs(p.sy(aLo) - p.sy(aHi))));
       g.ctx.restore();
-      dot(g.ctx, p.sx(o0), p.sy(pi(o0)), 4.5, P.accent, P.surface2);
-      text(g.ctx, '±2σ 的观测噪声', p.sx(o0), p.y0 - 8, P.bad, 'center', '10px sans-serif');
+      dot(g.ctx, p.sx(o0), p.sy(a0), 4.5, P.accent, P.surface2);
+      text(g.ctx, '这一点的斜率 ' + fmt(dpi(o0), 2), p.sx(o0) + 8, p.y0 - 8, P.text, 'left', '10px sans-serif');
 
       // ── 右：动作时间序列 ──
       var g2 = begin(seqStage);
       var P2 = g2.P;
-      var p2 = plot(g2, { l: 44, r: 14, t: 22, b: 34 }, [0, state.steps], [-2, 2]);
-      axes(g2, p2, {
-        xTicks: K.niceTicks(0, state.steps, 4),
-        yTicks: [-2, -1, 0, 1, 2],
-        xLabel: '控制步'
-      });
-      text(g2.ctx, '策略实际发出的关节指令', p2.x0, p2.y1 - 8, P2.muted, 'left', '11px sans-serif');
-      line(
-        g2.ctx,
-        trueO.map(function (v, i3) {
-          return [p2.sx(i3), p2.sy(clamp(pi(v), -2, 2))];
-        }),
-        P2.muted,
-        1.6,
-        [5, 4]
-      );
-      line(
-        g2.ctx,
-        acts.map(function (v, i4) {
-          return [p2.sx(i4), p2.sy(clamp(v, -2, 2))];
-        }),
-        jit > 0.2 ? P2.bad : P2.accent,
-        1.8
-      );
+      var p2 = plot(g2, { l: 44, r: 14, t: 22, b: 34 }, [0, TOY_STEPS], [-2.2, 2.2]);
+      axes(g2, p2, { xTicks: K.niceTicks(0, TOY_STEPS, 4), yTicks: [-2, -1, 0, 1, 2], xLabel: '控制步' });
+      text(g2.ctx, '策略发出的关节指令', p2.x0, p2.y1 - 8, P2.muted, 'left', '11px sans-serif');
+      line(g2.ctx, run.trueA.map(function (v, i3) { return [p2.sx(i3), p2.sy(clamp(v, -2.2, 2.2))]; }), P2.muted, 1.6, [5, 4]);
+      line(g2.ctx, run.noisyA.map(function (v, i4) { return [p2.sx(i4), p2.sy(clamp(v, -2.2, 2.2))]; }), run.jit > 0.2 ? P2.bad : P2.accent, 1.8);
 
-      fnStage.canvas.setAttribute('aria-label', '策略函数的斜率与观测噪声带的关系');
+      fnStage.canvas.setAttribute('aria-label', '玩具策略函数、斜率 ±K 的圆锥与观测噪声带');
       seqStage.canvas.setAttribute('aria-label', '带噪观测下策略输出的关节指令时间序列');
     });
 
     render();
   }
 
-  // ─── demo 2: λ_gp 的取舍 ────────────────────────────────────────────────
-  /* 训练目标 max J(K) − λ_gp·K²。J 随敏感度增加而饱和（更灵敏 → 更能追指令，
-     但收益递减），惩罚项是二次的，于是最优 K* 随 λ 单调下降。 */
-  function taskJ(kLip) {
-    return 1 - Math.exp(-(kLip - 0.6) / 2.2);
-  }
-
-  function bestK(lambda) {
-    var best = 0.8,
-      bestV = -Infinity;
-    for (var i = 0; i <= 400; i++) {
-      var k = 0.8 + (15 * i) / 400;
-      var v = taskJ(k) - lambda * k * k;
-      if (v > bestV) {
-        bestV = v;
-        best = k;
-      }
-    }
-    return best;
-  }
-
+  // ─── demo 2: 罚的是 log π 的梯度 ───────────────────────────────────────────
   function buildGpDemo(host) {
     var root = card(host, {
-      title: '$\\lambda_{\\mathrm{gp}}$：把「别一惊一乍」写进损失函数',
+      title: '式 7 罚的是 $\\nabla_s \\log \\pi(a \\mid s)$：高斯策略上它等于什么',
       sub:
-        '$L_{\\mathrm{total}} = L_{\\mathrm{RL}} - \\lambda_{\\mathrm{gp}}\\, \\mathbb{E}[\\lVert \\nabla_o \\pi(o) \\rVert^2]$。PPO 想要更高的 reward，GP 项想要更小的敏感度。' +
-        '拖动 $\\lambda_{\\mathrm{gp}}$，看最优 K 怎么被压下去，以及什么时候压过头。'
+        '对角高斯策略 $a \\sim \\mathcal{N}(\\mu(s), \\sigma^2 I)$、均值线性 $\\mu(s) = Js$ 时，$\\nabla_s \\log\\pi = J^\\top(a - \\mu)/\\sigma^2$，' +
+        '对动作取期望得 $\\mathbb{E}\\lVert\\nabla_s\\log\\pi\\rVert^2 = \\lVert J\\rVert_F^2/\\sigma^2$。训练时每个状态只有 rollout 里那一个动作 —— 拖动样本数，看单个样本的值怎么收敛到期望。'
     });
 
-    var state = { lambda: 0.012, noise: 0.045 };
+    var state = { sigma: GAUSS_SIGMA, scale: 1, n: 1 };
 
     var ctrls = controlsRow(root);
-    slider(ctrls, {
-      label: '$\\lambda_{\\mathrm{gp}}$（梯度惩罚权重）',
-      min: 0,
-      max: 0.1,
-      step: 0.001,
-      value: state.lambda,
-      format: function (v) {
-        return fmt(v, 3);
-      },
-      onInput: function (v) {
-        state.lambda = v;
-        render();
-      }
+    var sSlider = slider(ctrls, {
+      label: '探索噪声 $\\sigma$',
+      min: 0.1, max: 1, step: 0.05, value: state.sigma,
+      format: function (v) { return fmt(v, 2); },
+      onInput: function (v) { state.sigma = v; render(); }
     });
-    slider(ctrls, {
-      label: '真机的观测噪声 $\\sigma$',
-      min: 0.005,
-      max: 0.12,
-      step: 0.002,
-      value: state.noise,
-      format: function (v) {
-        return fmt(v, 3);
-      },
-      onInput: function (v) {
-        state.noise = v;
-        render();
-      }
+    var jSlider = slider(ctrls, {
+      label: '均值的斜率：$J$ 整体乘以',
+      min: 0, max: 2, step: 0.05, value: state.scale,
+      format: function (v) { return '×' + fmt(v, 2); },
+      onInput: function (v) { state.scale = v; render(); }
+    });
+    var nSlider = slider(ctrls, {
+      label: '样本数 $n$',
+      min: 1, max: GAUSS_N, step: 1, value: state.n,
+      format: function (v) { return String(v); },
+      onInput: function (v) { state.n = v; render(); }
     });
     var btns = el('div', 'demo-control demo-buttons');
     ctrls.appendChild(btns);
-    button(btns, '$\\lambda_{\\mathrm{gp}}$ = 0（纯 PPO）', function () {
-      state.lambda = 0;
+    button(btns, '回到笔记的例子', function () {
+      state.sigma = GAUSS_SIGMA; state.scale = 1; state.n = 1;
+      sSlider.set(GAUSS_SIGMA, true);
+      jSlider.set(1, true);
+      nSlider.set(1, true);
       render();
     });
-    button(btns, '压过头（$\\lambda_{\\mathrm{gp}}$ = 0.1）', function () {
-      state.lambda = 0.1;
+    button(btns, '抽满 ' + GAUSS_N + ' 个', function () {
+      state.n = GAUSS_N;
+      nSlider.set(GAUSS_N, true);
       render();
     });
 
     var setLegend = legend(root, [
-      { key: 'good', text: '任务表现 J(K)' },
-      { key: 'bad', text: '梯度惩罚 $\\lambda K^2$' },
-      { key: 'accent', text: '总目标 $J - \\lambda K^2$' }
+      { key: 'accent', text: '均值 $\\mu$ 与 $\\sigma$、$2\\sigma$ 圈' },
+      { key: 'warn', text: '第一个样本 $a - \\mu = \\sigma(1, -0.5)$' },
+      { key: 'good', text: '前 $n$ 个样本的平均' },
+      { key: 'bad', text: '期望 $\\lVert J\\rVert_F^2/\\sigma^2$' }
     ]);
 
     var grid = stageGrid(root);
-    var objStage = stage(grid, 235);
-    var paretoStage = stage(grid, 235);
-
-    var tb = table(root);
-    var cells = [];
-    (function () {
-      tb.row(['', '$\\lambda_{\\mathrm{gp}} = 0$', '当前 $\\lambda_{\\mathrm{gp}}$'], true);
-      ['学到的 K', '任务表现', '真机抖动 std'].forEach(function (lab) {
-        var tr = el('tr');
-        tr.appendChild(el('th', null, lab));
-        var a = el('td', null, '—'),
-          b = el('td', null, '—');
-        cells.push([a, b]);
-        tr.appendChild(a);
-        tr.appendChild(b);
-        tb.node.appendChild(tr);
-      });
-    })();
+    var planeStage = stage(grid, 250);
+    var runStage = stage(grid, 250);
 
     var stats = statsRow(root);
-    var sK = stats.add('最优敏感度 K*');
-    var sJ = stats.add('任务表现');
-    var sJit = stats.add('真机抖动 $K^* \\times \\sigma$');
-    var sLoss = stats.add('比纯 PPO 损失的表现');
+    var sFro = stats.add('$\\lVert J\\rVert_F^2$');
+    var sExp = stats.add('期望 $\\lVert J\\rVert_F^2/\\sigma^2$');
+    var sFirst = stats.add('第一个样本的 $\\lVert\\nabla_s\\log\\pi\\rVert^2$');
+    var sMean = stats.add('前 $n$ 个样本的平均');
     var verdict = verdictBox(root);
 
     note(root, [
-      '**它不是免费的**：K 压下去，策略对指令的响应也会变钝。表格里那一列「任务表现」就是代价。' +
-        '论文自己也承认这一点 —— 它的说法是「仍要调 GP 系数」，而不是「一劳永逸」。',
-      '**但它比调 reward 便宜**：平滑 reward 要在环境里加项、要配权重、还会和别的 reward 项互相打架；' +
-        'GP 只是在更新策略时多算一次对观测的梯度，几行代码，和 PPO / teacher-student / ROA 都不冲突。',
-      '**$\\lambda$ 的合适范围和 $\\sigma$ 有关**：把噪声拖大，同一个 $\\lambda$ 下的真机抖动跟着涨 —— ' +
-        '换一台传感器更差的机器，这个系数就得重调。这是它作为正则项的本性，不是 bug。',
-      '**这是简化模型**：J(K) 那条饱和曲线是编的，真实的任务表现随敏感度的关系要复杂得多。' +
-        '这里只复现「二次惩罚 → 最优 K 单调下降 → 表现有代价」这条链，数值不能和论文比。'
+      '**推导**（论文没写，是我们按式 7 推的）：$\\log\\pi(a \\mid s) = -\\lVert a - \\mu(s)\\rVert^2/(2\\sigma^2) + C$，对 $s$ 求导得 $J^\\top(a - \\mu)/\\sigma^2$；$a - \\mu$ 的协方差是 $\\sigma^2 I$，所以平方范数的期望是 $\\mathrm{tr}(JJ^\\top)/\\sigma^2 = \\lVert J\\rVert_F^2/\\sigma^2$。也就是说，GP 罚的是**均值对状态的斜率**，按 $1/\\sigma^2$ 加权。',
+      '**默认例子**：$J = [[0.8, 0.2], [-0.4, 0.6]]$、$\\sigma = 0.4$：$\\lVert J\\rVert_F^2 = 1.20$，期望 7.5；第一个样本 $a - \\mu = (0.4, -0.2)$，梯度 $(2.5, -0.25)$，平方和 6.31；' +
+        GAUSS_N + ' 个样本平均 ' + fmt(GAUSS.mean, 2) + '。$\\sigma$ 减半到 0.2，同一个 $J$ 的期望变成 30。',
+      '**和代码对得上**：官方 rsl_rl 与 MimicKit 都是 `torch.autograd.grad(log_prob, obs, create_graph=True)` 再逐样本平方求和取平均，正是这里的「样本平均」。官方代码的标准差是可学习参数（GR1 初值 0.1–0.4）；MimicKit 固定为 0.05（若按归一化后的动作算，$1/\\sigma^2 = 400$，推测）。',
+      '**一个推论（推测，论文没讨论）**：按这个式子，罚的值随 $\\sigma$ 增大而变小，所以 GP 对可学习的 $\\sigma$ 也有一点往大推的力。**这是两维玩具**：真实策略是非线性 MLP，$J$ 随状态变化；这里只验证「样本平均 → $\\lVert J\\rVert_F^2/\\sigma^2$」这件事。'
     ]);
 
     var render = registerRenderer(function () {
-      var k = bestK(state.lambda);
-      var k0 = bestK(0);
-      var j = taskJ(k),
-        j0 = taskJ(k0);
-      var jit = k * state.noise,
-        jit0 = k0 * state.noise;
+      var J = [[GAUSS_J[0][0] * state.scale, GAUSS_J[0][1] * state.scale], [GAUSS_J[1][0] * state.scale, GAUSS_J[1][1] * state.scale]];
+      var smp = gaussSamples(J, state.sigma, GAUSS_N, GAUSS_SEED);
+      var fro = frob2(J),
+        ex = fro / (state.sigma * state.sigma),
+        mean = smp.run[state.n - 1];
+      sFro.set(fmt(fro, 2), 'accent');
+      sExp.set(fmt(ex, 2), 'bad');
+      sFirst.set(fmt(smp.vals[0], 2), 'warn');
+      sMean.set(fmt(mean, 2), Math.abs(mean - ex) < 0.1 * ex + 1e-9 ? 'good' : 'warn');
 
-      sK.set(fmt(k, 2), k < 3 ? 'good' : k > 9 ? 'bad' : 'warn');
-      sJ.set(fmt(j, 3), j > 0.85 ? 'good' : j < 0.5 ? 'bad' : 'warn');
-      sJit.set(fmt(jit, 3), jit < 0.15 ? 'good' : jit > 0.35 ? 'bad' : 'warn');
-      sLoss.set(fmt((j0 - j) * 100, 1) + ' 个百分点', j0 - j > 0.2 ? 'bad' : 'good');
-      cells[0][0].textContent = fmt(k0, 2);
-      cells[0][1].textContent = fmt(k, 2);
-      cells[1][0].textContent = fmt(j0, 3);
-      cells[1][1].textContent = fmt(j, 3);
-      cells[2][0].textContent = fmt(jit0, 3);
-      cells[2][1].textContent = fmt(jit, 3);
-
-      if (state.lambda < 0.0005) {
-        verdict.set(
-          '📳 $\\lambda_{\\mathrm{gp}}$ = 0：纯 PPO 会一路把 K 推到 ' +
-            fmt(k0, 1) +
-            ' —— 因为在仿真里，更灵敏永远意味着更高的 reward，没有任何东西拦着它。' +
-            '真机抖动 ' +
-            fmt(jit0, 3) +
-            '。',
-          'frozen'
-        );
-      } else if (j0 - j > 0.25) {
-        verdict.set(
-          '🐢 $\\lambda_{\\mathrm{gp}}$ = ' +
-            fmt(state.lambda, 3) +
-            ' 压过头了：K 被摁到 ' +
-            fmt(k, 2) +
-            '，抖动确实只剩 ' +
-            fmt(jit, 3) +
-            '，但任务表现比纯 PPO 低了 ' +
-            fmt((j0 - j) * 100, 1) +
-            ' 个百分点 —— 策略对指令的响应变钝了。',
-          'frozen'
-        );
+      if (state.n === 1) {
+        verdict.set('🎯 只有 1 个样本：$\\lVert\\nabla_s\\log\\pi\\rVert^2$ = ' + fmt(smp.vals[0], 2) + '，期望是 ' + fmt(ex, 2) +
+          '。单个样本的估计很吵；代码里一个 minibatch 有成千上万个状态—动作对，平均以后才接近 $\\lVert J\\rVert_F^2/\\sigma^2$。', 'frozen');
+      } else if (fro < 1e-9) {
+        verdict.set('➖ $J = 0$：均值不随状态变化，梯度恒为 0，GP 不罚任何东西 —— 当然这个策略也什么都追不上。', 'frozen');
       } else {
-        verdict.set(
-          '✅ $\\lambda_{\\mathrm{gp}}$ = ' +
-            fmt(state.lambda, 3) +
-            '：K 从 ' +
-            fmt(k0, 1) +
-            ' 降到 ' +
-            fmt(k, 2) +
-            '，抖动从 ' +
-            fmt(jit0, 3) +
-            ' 降到 ' +
-            fmt(jit, 3) +
-            '，任务表现只掉 ' +
-            fmt((j0 - j) * 100, 1) +
-            ' 个百分点。这一段就是 LCP 想要的位置。',
-          'learning'
-        );
+        verdict.set('✅ 前 ' + state.n + ' 个样本平均 ' + fmt(mean, 2) + '，期望 ' + fmt(ex, 2) + '（差 ' + fmt((Math.abs(mean - ex) / ex) * 100, 1) +
+          '%）。把 $\\sigma$ 拖小：同一个 $J$ 的期望按 $1/\\sigma^2$ 涨上去 —— 探索噪声越小，同样的斜率罚得越重。', 'learning');
       }
 
-      // ── 左：目标函数 ──
-      var g = begin(objStage);
+      // ── 左：动作平面 ──
+      var g = begin(planeStage);
       var P = g.P;
       setLegend(P);
-      var p = plot(g, { l: 44, r: 14, t: 22, b: 34 }, [0.8, 15], [-1, 1.15]);
-      axes(g, p, {
-        xTicks: [1, 5, 10, 15],
-        yTicks: [-1, -0.5, 0, 0.5, 1],
-        yFmt: function (t) {
-          return fmt(t, 1);
-        },
-        xLabel: '策略敏感度 K'
+      var R = 1.2;
+      var p = plot(g, { l: 40, r: 14, t: 22, b: 30 }, [-R, R], [-R * 0.85, R * 0.85]);
+      axes(g, p, { xTicks: [-1, 0, 1], yTicks: [-1, 0, 1], xLabel: '动作第 1 维' });
+      text(g.ctx, '动作平面：a − μ', p.x0, p.y1 - 8, P.muted, 'left', '11px sans-serif');
+      var cx = p.sx(0), cy = p.sy(0), ux = (p.sx(1) - p.sx(0));
+      [1, 2].forEach(function (k) {
+        g.ctx.save();
+        g.ctx.strokeStyle = P.accent;
+        g.ctx.globalAlpha = k === 1 ? 0.9 : 0.45;
+        g.ctx.setLineDash([4, 3]);
+        g.ctx.beginPath();
+        g.ctx.ellipse(cx, cy, Math.abs(ux) * state.sigma * k, Math.abs(p.sy(state.sigma * k) - cy), 0, 0, Math.PI * 2);
+        g.ctx.stroke();
+        g.ctx.restore();
       });
-      text(g.ctx, '总目标的峰值决定学出来的 K', p.x0, p.y1 - 8, P.muted, 'left', '11px sans-serif');
-      var jPts = [],
-        gPts = [],
-        tPts = [];
-      for (var i = 0; i <= 200; i++) {
-        var kk = 0.8 + (14.2 * i) / 200;
-        jPts.push([p.sx(kk), p.sy(taskJ(kk))]);
-        gPts.push([p.sx(kk), p.sy(clamp(-state.lambda * kk * kk, -1, 1.15))]);
-        tPts.push([p.sx(kk), p.sy(clamp(taskJ(kk) - state.lambda * kk * kk, -1, 1.15))]);
+      for (var i = 1; i < state.n; i++) {
+        var d = smp.devs[i];
+        dot(g.ctx, p.sx(clamp(d[0], -R, R)), p.sy(clamp(d[1], -R * 0.85, R * 0.85)), 2.4, P.good);
       }
-      line(g.ctx, [[p.x0, p.sy(0)], [p.x1, p.sy(0)]], P.grid, 1);
-      line(g.ctx, jPts, P.good, 1.8, [5, 4]);
-      line(g.ctx, gPts, P.bad, 1.8, [5, 4]);
-      line(g.ctx, tPts, P.accent, 2.6);
-      line(g.ctx, [[p.sx(k), p.y0], [p.sx(k), p.y1]], P.text, 1, [3, 3]);
-      dot(g.ctx, p.sx(k), p.sy(clamp(taskJ(k) - state.lambda * k * k, -1, 1.15)), 4.5, P.accent, P.surface2);
-      text(g.ctx, 'K* = ' + fmt(k, 2), p.sx(k) + 6, p.y1 + 12, P.text, 'left', '11px monospace');
+      var d0 = smp.devs[0];
+      line(g.ctx, [[cx, cy], [p.sx(d0[0]), p.sy(d0[1])]], P.warn, 2);
+      dot(g.ctx, p.sx(d0[0]), p.sy(d0[1]), 4.5, P.warn, P.surface2);
+      dot(g.ctx, cx, cy, 4, P.accent, P.surface2);
 
-      // ── 右：抖动 / 表现 的帕累托 ──
-      var g2 = begin(paretoStage);
+      // ── 右：样本平均的收敛 ──
+      var g2 = begin(runStage);
       var P2 = g2.P;
-      var p2 = plot(g2, { l: 44, r: 14, t: 22, b: 34 }, [0, 0.1], [0, 1.05]);
-      axes(g2, p2, {
-        xTicks: [0, 0.025, 0.05, 0.075, 0.1],
-        yTicks: [0, 0.25, 0.5, 0.75, 1],
-        xFmt: function (t) {
-          return fmt(t, 3);
-        },
-        yFmt: function (t) {
-          return fmt(t, 2);
-        },
-        xLabel: 'λ_gp'
-      });
-      text(g2.ctx, '表现 ↓ 与抖动 ↓ 同时发生', p2.x0, p2.y1 - 8, P2.muted, 'left', '11px sans-serif');
-      var perfPts = [],
-        jitPts = [];
-      for (var l = 0; l <= 100; l++) {
-        var lam = (0.1 * l) / 100;
-        var kk2 = bestK(lam);
-        perfPts.push([p2.sx(lam), p2.sy(taskJ(kk2))]);
-        jitPts.push([p2.sx(lam), p2.sy(clamp((kk2 * state.noise) / 0.7, 0, 1))]);
-      }
-      line(g2.ctx, perfPts, P2.good, 2.4);
-      line(g2.ctx, jitPts, P2.bad, 2.4);
-      text(g2.ctx, '任务表现', p2.x0 + 8, p2.sy(0.96), P2.good, 'left', '11px sans-serif');
-      text(g2.ctx, '真机抖动（已归一）', p2.x0 + 8, p2.sy(0.86), P2.bad, 'left', '11px sans-serif');
-      line(g2.ctx, [[p2.sx(state.lambda), p2.y0], [p2.sx(state.lambda), p2.y1]], P2.text, 1, [3, 3]);
-      dot(g2.ctx, p2.sx(state.lambda), p2.sy(j), 4.5, P2.good, P2.surface2);
-      dot(g2.ctx, p2.sx(state.lambda), p2.sy(clamp(jit / 0.7, 0, 1)), 4.5, P2.bad, P2.surface2);
+      var yMax = Math.max(ex * 2.2, 1);
+      var p2 = plot(g2, { l: 44, r: 14, t: 22, b: 34 }, [1, GAUSS_N], [0, yMax]);
+      axes(g2, p2, { xTicks: [1, 50, 100, 150, 200], yTicks: K.niceTicks(0, yMax, 4), yFmt: function (t) { return fmt(t, t < 10 ? 1 : 0); }, xLabel: '样本数 n' });
+      text(g2.ctx, '前 n 个样本的平均 → 期望', p2.x0, p2.y1 - 8, P2.muted, 'left', '11px sans-serif');
+      line(g2.ctx, [[p2.x0, p2.sy(ex)], [p2.x1, p2.sy(ex)]], P2.bad, 1.6, [5, 4]);
+      line(g2.ctx, smp.run.slice(0, state.n).map(function (v, k) { return [p2.sx(k + 1), p2.sy(clamp(v, 0, yMax))]; }), P2.good, 2.2);
+      line(g2.ctx, smp.run.slice(state.n - 1).map(function (v, k) { return [p2.sx(k + state.n), p2.sy(clamp(v, 0, yMax))]; }), P2.muted, 1, [2, 3]);
+      dot(g2.ctx, p2.sx(state.n), p2.sy(clamp(mean, 0, yMax)), 4.5, P2.good, P2.surface2);
 
-      objStage.canvas.setAttribute('aria-label', '任务目标与梯度惩罚合成的总目标曲线');
-      paretoStage.canvas.setAttribute('aria-label', '任务表现与真机抖动随 λ_gp 的变化');
+      planeStage.canvas.setAttribute('aria-label', '高斯策略的动作平面：均值、σ 圈与抽到的样本');
+      runStage.canvas.setAttribute('aria-label', '梯度平方范数的样本平均随样本数收敛到期望');
     });
 
     render();
   }
 
-  // ─── demo 3: 和低通滤波 / 平滑 reward 的对比 ────────────────────────────
-  function buildVsFilterDemo(host) {
-    var root = card(host, {
-      title: '三种「让动作变平滑」的办法，代价各不相同',
-      sub:
-        '同一段带噪指令，分别交给：高敏感度策略（什么都不做）、输出端低通滤波、以及 LCP。' +
-        '注意看阶跃那一段 —— 滤波器平滑的代价写在延迟上。'
-    });
-
-    var state = { alpha: 0.18, kLip: 3.0, noise: 0.05, seed: 9, steps: 160, stepAt: 80 };
-
-    var ctrls = controlsRow(root);
-    slider(ctrls, {
-      label: '低通滤波系数 $\\alpha$（越小越平滑）',
-      min: 0.04,
-      max: 1,
-      step: 0.02,
-      value: state.alpha,
-      format: function (v) {
-        return fmt(v, 2);
-      },
-      onInput: function (v) {
-        state.alpha = v;
-        render();
-      }
-    });
-    slider(ctrls, {
-      label: 'LCP 压到的 K',
-      min: 1,
-      max: 12,
-      step: 0.1,
-      value: state.kLip,
-      format: function (v) {
-        return fmt(v, 1);
-      },
-      onInput: function (v) {
-        state.kLip = v;
-        render();
-      }
-    });
-    slider(ctrls, {
-      label: '观测噪声 $\\sigma$',
-      min: 0,
-      max: 0.12,
-      step: 0.002,
-      value: state.noise,
-      format: function (v) {
-        return fmt(v, 3);
-      },
-      onInput: function (v) {
-        state.noise = v;
-        render();
-      }
-    });
-
-    var setLegend = legend(root, [
-      { key: 'bad', text: '不做任何处理（K = 10）' },
-      { key: 'warn', text: '输出端低通滤波' },
-      { key: 'good', text: 'LCP：直接压 K' },
-      { key: 'muted', text: '指令（真值）' }
-    ]);
-
-    var grid = stageGrid(root);
-    var seqStage = stage(grid, 250);
-    var barStage = stage(grid, 250);
-
-    var stats = statsRow(root);
-    var sRawJ = stats.add('不处理的抖动');
-    var sFilJ = stats.add('低通后的抖动');
-    var sLcpJ = stats.add('LCP 的抖动');
-    var sLag = stats.add('低通引入的延迟');
-    var verdict = verdictBox(root);
-
-    note(root, [
-      '**滤波器的延迟是物理的**：一阶低通的群延迟大约是 $(1-\\alpha)/\\alpha$ 个控制步。' +
-        '把 $\\alpha$ 拖到 0.05，抖动几乎没了，但阶跃响应要等十几步才跟上 —— 在平衡控制里，十几步的延迟足够摔一次。',
-      '**LCP 没有这个延迟**：它改的是策略函数本身的斜率，不在信号链上加任何状态。' +
-        '输出该跟的时候照样立刻跟，只是不再对噪声过激反应。',
-      '**平滑 reward 的问题是另一类**：它也能压住抖动，但要在环境里加项、配权重，' +
-        '而且和别的 reward 项抢预算；更麻烦的是策略可能用「少动」来骗这一项。GP 是对函数的约束，绕不过去。',
-      '**这是简化模型**：真实策略不是一维、滤波器也可能是二阶的，延迟还叠加了通信和执行器的部分。' +
-        '这里只把「平滑 vs 延迟」这对矛盾画清楚，数值不能和论文比。'
-    ]);
-
-    var render = registerRenderer(function () {
-      var rng = mulberry32(state.seed);
-      var cmd = [],
-        noisy = [];
-      for (var t = 0; t < state.steps; t++) {
-        var c = 0.6 * Math.sin(t * 0.05) + (t >= state.stepAt ? 0.8 : 0);
-        cmd.push(c);
-        noisy.push(c + state.noise * gauss(rng));
-      }
-      var piRaw = policyOf(10),
-        piLcp = policyOf(state.kLip);
-      var raw = noisy.map(piRaw),
-        lcp = noisy.map(piLcp);
-      var fil = [],
-        prev = raw[0];
-      raw.forEach(function (a) {
-        prev = (1 - state.alpha) * prev + state.alpha * a;
-        fil.push(prev);
-      });
-
-      function jitter(series, pi) {
-        var res = series.map(function (a, i) {
-          return a - pi(cmd[i]);
+  // ─── demo 3: 论文表格浏览器 ────────────────────────────────────────────────
+  var TABLE_GROUPS = {
+    a: { name: '表 I(a) 平滑办法', rows: TABLE1A, cols: [0, 1, 2, 3, 4, 5], ref: 0 },
+    b: { name: '表 I(b) $\\lambda_{gp}$', rows: TABLE1B.map(function (r) { return ['$\\lambda_{gp}$ = ' + r[0], r[1], r[2]]; }), cols: [0, 1, 2, 3, 4, 5], ref: 2 },
+    c: { name: '表 I(c) GP 加在哪', rows: TABLE1C, cols: [0, 1, 2, 3, 4, 5], ref: 0 },
+    s2s: { name: '表 II MuJoCo', rows: TABLE2, cols: [0, 1, 2, 3, 4, 5], ref: null },
+    real: {
+      name: '表 III 真机',
+      rows: (function () {
+        var out = [];
+        TABLE3.forEach(function (r) {
+          [1, 2, 3].forEach(function (k) {
+            out.push([r[0].replace('Humanoid', 'H.').replace('Fourier ', '').replace('Unitree ', '') + ' · ' + TERRAINS[k - 1], r[k][0], r[k][1]]);
+          });
         });
-        var m =
-          res.reduce(function (a, b) {
-            return a + b;
-          }, 0) / res.length;
-        return Math.sqrt(
-          res.reduce(function (a, b) {
-            return a + (b - m) * (b - m);
-          }, 0) / res.length
-        );
+        return out;
+      })(),
+      cols: [0, 1, 2],
+      ref: null
+    }
+  };
+  var TABLE_VERDICT = {
+    a: '论文（第 VI-B 节）：LCP 没有被这些平滑指标直接奖励过，平滑程度却和平滑奖励相当（动作抖动 3.21 对 5.74），任务回报相近（26.03 对 26.56）；低通回报偏低（24.98），论文推测是滤波的阻尼压抑了探索；不平滑回报最高（28.87）但抖得不能上真机（42.19）。',
+    b: '论文：小系数（如 0.001）仍可能出现上真机危险的抖动；大系数（如 0.01）动作过于平滑迟缓，任务回报大幅下降（16.11），图 6 里也学得更慢；0.002 在平滑与任务之间平衡得最好。和别的平滑办法一样，系数需要调。',
+    c: '论文：策略输入既有当前观测、也有历史（ROA），GP 罚整段输入最好；只罚当前观测，历史一变动作照样会跳 —— 动作抖动 7.16 对 3.21。',
+    s2s: '论文：上真机前先在 MuJoCo 里测。全尺寸的 GR1、H1 回报比 Isaac Gym 里略降，说明大机器人的域差距更大；整体表现给了上真机的信心。（论文没给每台机器人在 Isaac Gym 里的回报）',
+    real: '论文：同样的奖励、$\\lambda_{gp}$ = 0.002，每台 3 个模型各跑 10 s。平地、软地、粗糙地面上三项指标基本不变，动作抖动最多涨 8%（H1：1.11 → 1.20）。真机只报了三项。'
+  };
+
+  function buildTableDemo(host) {
+    var root = card(host, {
+      title: '论文表格浏览器：六项指标、四种比较',
+      sub: '选一张表、一项指标。柱高是均值，细线是 ±1 个标准差；右图把表 I、表 II 的每一行放到「动作抖动（对数轴）× 任务回报」平面上。数字全部照抄论文。'
+    });
+
+    var state = { group: 'a', metric: 0 };
+    var ctrls = controlsRow(root);
+    var groupPick = buttonGroup(ctrls, {
+      label: '哪张表',
+      items: [
+        { label: 'I(a) 平滑办法', value: 'a' },
+        { label: 'I(b) $\\lambda_{gp}$', value: 'b' },
+        { label: 'I(c) GP 加在哪', value: 'c' },
+        { label: 'II MuJoCo', value: 's2s' },
+        { label: 'III 真机', value: 'real' }
+      ],
+      value: state.group,
+      onPick: function (v) {
+        state.group = v;
+        if (TABLE_GROUPS[v].cols.indexOf(state.metric) < 0) {
+          state.metric = 0;
+          metricPick.pick(0, true);
+        }
+        render();
       }
-      var jRaw = jitter(raw, piRaw),
-        jLcp = jitter(lcp, piLcp);
-      // 滤波后的抖动直接看高频能量，因为它的「目标值」本身已经被延迟了
-      var jFil = 0,
-        mF = 0;
-      for (var i2 = 1; i2 < fil.length; i2++) mF += Math.abs(fil[i2] - fil[i2 - 1]);
-      jFil = (jRaw * state.alpha) / (2 - state.alpha);
-      var lag = (1 - state.alpha) / state.alpha;
-
-      sRawJ.set(fmt(jRaw, 3), 'bad');
-      sFilJ.set(fmt(jFil, 3), jFil < 0.1 ? 'good' : 'warn');
-      sLcpJ.set(fmt(jLcp, 3), jLcp < 0.1 ? 'good' : 'warn');
-      sLag.set(fmt(lag, 1) + ' 步', lag > 6 ? 'bad' : lag > 2 ? 'warn' : 'good');
-
-      if (lag > 6) {
-        verdict.set(
-          '🐌 $\\alpha$ = ' +
-            fmt(state.alpha, 2) +
-            '：低通把抖动压到 ' +
-            fmt(jFil, 3) +
-            '，代价是约 ' +
-            fmt(lag, 1) +
-            ' 个控制步的延迟。看右图阶跃那一段 —— 黄线要爬很久才追上。' +
-            '在平衡控制里，这种延迟本身就是失稳来源。',
-          'frozen'
-        );
-      } else if (jLcp < jFil) {
-        verdict.set(
-          '✅ LCP 把 K 压到 ' +
-            fmt(state.kLip, 1) +
-            '，抖动 ' +
-            fmt(jLcp, 3) +
-            '，低通在 $\\alpha$ = ' +
-            fmt(state.alpha, 2) +
-            ' 下是 ' +
-            fmt(jFil, 3) +
-            '，而且还要付 ' +
-            fmt(lag, 1) +
-            ' 步延迟。**同样的平滑度，LCP 不用拿延迟去换。**',
-          'learning'
-        );
-      } else {
-        verdict.set(
-          '➖ 这组参数下两者的抖动接近（LCP ' +
-            fmt(jLcp, 3) +
-            ' vs 低通 ' +
-            fmt(jFil, 3) +
-            '），但低通那条仍然带着 ' +
-            fmt(lag, 1) +
-            ' 步延迟。把 $\\alpha$ 调小去追平 LCP 的平滑度，延迟就会涨上来 —— 这是它绕不开的取舍。',
-          'frozen'
-        );
+    });
+    var metricPick = buttonGroup(ctrls, {
+      label: '哪项指标',
+      items: METRICS.map(function (m, k) { return { label: m[0], value: k }; }),
+      value: state.metric,
+      onPick: function (v) {
+        if (TABLE_GROUPS[state.group].cols.indexOf(v) < 0) {
+          metricPick.pick(state.metric, true);
+          return;
+        }
+        state.metric = v;
+        render();
       }
+    });
+    void groupPick;
 
-      // ── 左：三条时间序列 ──
-      var g = begin(seqStage);
+    var setLegend = legend(root, [
+      { key: 'accent', text: '当前这张表的行' },
+      { key: 'muted', text: '表 I、表 II 的其他行' },
+      { key: 'good', text: 'LCP（$\\lambda_{gp}$ = 0.002，整段输入）' }
+    ]);
+
+    var grid = stageGrid(root);
+    var barStage = stage(grid, 260);
+    var scatStage = stage(grid, 260);
+    var tb = table(root);
+    var verdict = verdictBox(root);
+
+    note(root, [
+      '**测法**：表 I 每种设置 3 个随机种子、在 1000 个环境里各跑 500 步（10 s）；表 II 每个 3 次 × 500 步；表 III 每台 3 个模型、各跑 10 s。动作变化率是动作对时间的一阶导，「抖动」是三阶导（论文引 Flash & Hogan 1985 的最小加加速度模型）；任务回报只算线速度和角速度两项跟踪奖励。',
+      '**表 I 没写是哪台机器人**，表 II、表 III 才分机器人；所以表 I 的回报不能和表 II 直接相减。表 III 的真机抖动（1.1–1.7）比表 I（3.21）低，可能是机器人、命令、测法不同（推测），也不能直接比。',
+      '**λ = 0 那一行和「不平滑」、λ = 0.002 那一行和「LCP」、整段输入那一行和「LCP」**在论文里是同一组数，所以右图只画了不重复的行。'
+    ]);
+
+    function rowsOf(gk) {
+      return TABLE_GROUPS[gk].rows;
+    }
+
+    var render = registerRenderer(function () {
+      var G = TABLE_GROUPS[state.group];
+      var mi = state.metric;
+      var m = METRICS[mi];
+
+      // 表格
+      tb.clear();
+      tb.row(['设置'].concat(G.cols.map(function (c) { return METRICS[c][0] + (METRICS[c][1] ? '（' + METRICS[c][1] + '）' : '') + (METRICS[c][2] ? ' ↓' : ' ↑'); })), true);
+      G.rows.forEach(function (r) {
+        tb.row([r[0]].concat(G.cols.map(function (c, k) { return fmt(r[1][k], r[1][k] < 0.1 ? 3 : 2) + ' ± ' + fmt(r[2][k], r[2][k] < 0.01 ? 3 : 2); })));
+      });
+      verdict.set(TABLE_VERDICT[state.group], state.group === 'b' || state.group === 'c' ? 'frozen' : 'learning');
+
+      // ── 左：柱状图 ──
+      var g = begin(barStage);
       var P = g.P;
       setLegend(P);
-      var p = plot(g, { l: 44, r: 14, t: 22, b: 34 }, [40, state.steps], [-1.4, 2.6]);
-      axes(g, p, {
-        xTicks: [40, 80, 120, 160],
-        yTicks: [-1, 0, 1, 2],
-        xLabel: '控制步'
+      var k = G.cols.indexOf(mi);
+      var vals = G.rows.map(function (r) { return r[1][k]; }),
+        errs = G.rows.map(function (r) { return r[2][k]; });
+      var top = Math.max.apply(null, vals.map(function (v, i) { return v + errs[i]; })) * 1.15;
+      var p = plot(g, { l: 48, r: 12, t: 24, b: 46 }, [0, G.rows.length], [0, top]);
+      axes(g, p, { yTicks: K.niceTicks(0, top, 4), yFmt: function (t) { return fmt(t, t < 1 ? 2 : t < 10 ? 1 : 0); } });
+      text(g.ctx, m[0] + (m[1] ? '（' + m[1] + '）' : '') + (m[2] ? '，越小越平滑' : '，越大越好'), p.x0, p.y1 - 10, P.muted, 'left', '11px sans-serif');
+      var slot = (p.x1 - p.x0) / G.rows.length;
+      G.rows.forEach(function (r, i) {
+        var x = p.x0 + slot * (i + 0.5),
+          bw = Math.min(46, slot * 0.55);
+        var isLcp = G.ref != null && i === G.ref;
+        g.ctx.fillStyle = isLcp ? P.good : P.accent;
+        g.ctx.globalAlpha = 0.85;
+        g.ctx.fillRect(x - bw / 2, p.sy(vals[i]), bw, p.y0 - p.sy(vals[i]));
+        g.ctx.globalAlpha = 1;
+        line(g.ctx, [[x, p.sy(Math.max(0, vals[i] - errs[i]))], [x, p.sy(vals[i] + errs[i])]], P.text, 1.2);
+        barLabel(g, p, x, p.sy(vals[i] + errs[i]), fmt(vals[i], vals[i] < 0.1 ? 3 : 2), isLcp ? P.good : P.text);
+        var lab = state.group === 'b' ? 'λ = ' + TABLE1B[i][0] : K.richToPlain(r[0]);
+        var parts = lab.split(' · ');
+        text(g.ctx, parts[0], x, p.y0 + 14, P.muted, 'center', '10px sans-serif');
+        if (parts[1]) text(g.ctx, parts[1], x, p.y0 + 27, P.muted, 'center', '10px sans-serif');
       });
-      text(g.ctx, '关节指令（第 80 步有一个阶跃）', p.x0, p.y1 - 8, P.muted, 'left', '11px sans-serif');
-      function draw(series, color, w2, dash) {
-        line(
-          g.ctx,
-          series.map(function (v, i3) {
-            return [p.sx(i3), p.sy(clamp(v, -1.4, 2.6))];
-          }),
-          color,
-          w2,
-          dash
-        );
-      }
-      draw(cmd, P.muted, 1.4, [5, 4]);
-      draw(raw, P.bad, 1.2);
-      draw(fil, P.warn, 2);
-      draw(lcp, P.good, 2);
-      line(g.ctx, [[p.sx(state.stepAt), p.y0], [p.sx(state.stepAt), p.y1]], P.text, 1, [3, 3]);
 
-      // ── 右：抖动 vs 延迟 ──
-      var g2 = begin(barStage);
+      // ── 右：抖动（对数）× 回报 ──
+      var g2 = begin(scatStage);
       var P2 = g2.P;
-      var p2 = plot(g2, { l: 48, r: 14, t: 26, b: 40 }, [0, 3], [0, Math.max(0.4, jRaw * 1.25)]);
+      var p2 = plot(g2, { l: 44, r: 14, t: 24, b: 34 }, [Math.log10(0.1), Math.log10(80)], [14, 31]);
       axes(g2, p2, {
-        yTicks: K.niceTicks(0, Math.max(0.4, jRaw * 1.25), 4),
-        yFmt: function (t) {
-          return fmt(t, 2);
+        xTicks: [-1, 0, 1].map(function (e) { return e; }),
+        xFmt: function (t) { return String(Math.round(Math.pow(10, t) * 10) / 10); },
+        yTicks: [15, 20, 25, 30],
+        xLabel: '动作抖动（对数轴）'
+      });
+      text(g2.ctx, '任务回报 ↑ vs 动作抖动 ↓', p2.x0, p2.y1 - 10, P2.muted, 'left', '11px sans-serif');
+      var pts = [];
+      TABLE1A.forEach(function (r) { pts.push({ name: r[0], v: r[1], g: 'a' }); });
+      TABLE1B.forEach(function (r) { if (r[0] !== 0 && r[0] !== 0.002) pts.push({ name: 'λ ' + r[0], v: r[1], g: 'b' }); });
+      pts.push({ name: '只罚当前', v: TABLE1C[1][1], g: 'c' });
+      TABLE2.forEach(function (r) { pts.push({ name: r[0].replace('Fourier ', '').replace('Unitree ', '').replace('Berkeley Humanoid', 'Berkeley'), v: r[1], g: 's2s' }); });
+      var inGroup = function (pt) {
+        if (state.group === 'a') return pt.g === 'a';
+        if (state.group === 'b') return pt.g === 'b' || pt.name === '不平滑' || pt.name === 'LCP（本文）';
+        if (state.group === 'c') return pt.g === 'c' || pt.name === 'LCP（本文）';
+        return pt.g === state.group;
+      };
+      /* 标签依次试四个位置（右上、右下、左上、左下），和已放好的标签不重叠就用 */
+      var placed = pts.map(function (pt) {
+        return { x: p2.sx(Math.log10(pt.v[0])) - 5, y: p2.sy(pt.v[5]) - 5, w: 10, h: 10 };
+      });
+      g2.ctx.font = '10px sans-serif';
+      pts.forEach(function (pt) {
+        var x = p2.sx(Math.log10(pt.v[0])), y = p2.sy(pt.v[5]);
+        var hot = inGroup(pt);
+        var isLcp = pt.name === 'LCP（本文）';
+        dot(g2.ctx, x, y, hot ? 5 : 3.5, isLcp ? P2.good : hot ? P2.accent : P2.muted, hot ? P2.surface2 : null);
+        if (!hot) return;
+        var w = g2.ctx.measureText(pt.name).width, h = 11;
+        var tries = [];
+        [-6, 14, -20, 28].forEach(function (dy) {
+          /* LCP 先试左边：它和 λ = 0.001 那一点几乎重合，标签各放一边才不会认错 */
+          if (isLcp) tries.push([x - 7 - w, y + dy], [x + 7, y + dy]);
+          else tries.push([x + 7, y + dy], [x - 7 - w, y + dy]);
+        });
+        var pick = tries[0], best = Infinity;
+        for (var q = 0; q < tries.length; q++) {
+          var r = { x: tries[q][0], y: tries[q][1] - h + 2, w: w, h: h };
+          if (r.x < p2.x0 || r.x + r.w > g2.w - 4 || r.y < p2.y1) continue;
+          var hits = placed.filter(function (o) {
+            return r.x < o.x + o.w && o.x < r.x + r.w && r.y < o.y + o.h && o.y < r.y + r.h;
+          }).length;
+          if (hits < best) { best = hits; pick = tries[q]; }
+          if (!hits) break;
         }
+        placed.push({ x: pick[0], y: pick[1] - h + 2, w: w, h: h });
+        text(g2.ctx, pt.name, pick[0], pick[1], isLcp ? P2.good : P2.text, 'left', '10px sans-serif');
       });
-      text(g2.ctx, '抖动（柱）与延迟（标注）', p2.x0, p2.y1 - 10, P2.muted, 'left', '11px sans-serif');
-      var bars = [
-        { label: '不处理', v: jRaw, lag: 0, color: P2.bad },
-        { label: '低通滤波', v: jFil, lag: lag, color: P2.warn },
-        { label: 'LCP', v: jLcp, lag: 0, color: P2.good }
-      ];
-      var slot = (p2.x1 - p2.x0) / 3;
-      bars.forEach(function (b, i4) {
-        var cx = p2.x0 + slot * (i4 + 0.5);
-        var bw = Math.min(58, slot * 0.5);
-        g2.ctx.fillStyle = b.color;
-        g2.ctx.fillRect(cx - bw / 2, p2.sy(clamp(b.v, 0, p2.yd[1])), bw, p2.y0 - p2.sy(clamp(b.v, 0, p2.yd[1])));
-        barLabel(g2, p2, cx, p2.sy(clamp(b.v, 0, p2.yd[1])), fmt(b.v, 3), b.color);
-        text(g2.ctx, b.label, cx, p2.y0 + 14, P2.muted, 'center', '11px sans-serif');
-        text(g2.ctx, '延迟 ' + fmt(b.lag, 1) + ' 步', cx, p2.y0 + 28, b.lag > 2 ? P2.bad : P2.good, 'center', '10px sans-serif');
-      });
+      if (state.group === 'real') text(g2.ctx, '表 III 没报任务回报，这张图不画真机', p2.x0 + 8, p2.y0 - 10, P2.warn, 'left', '11px sans-serif');
 
-      seqStage.canvas.setAttribute('aria-label', '三种平滑方式下的关节指令时间序列');
-      barStage.canvas.setAttribute('aria-label', '三种平滑方式的抖动与延迟对比');
-      void mF;
+      barStage.canvas.setAttribute('aria-label', '论文表格里所选指标的柱状图与标准差');
+      scatStage.canvas.setAttribute('aria-label', '表 I 与表 II 各行的动作抖动与任务回报散点图');
+      void rowsOf;
     });
 
     render();
   }
 
-  // ─── demo 4: the five-scene explainer animation ──────────────────────────
-  /* LCP 的故事就五件事：抖动 = K × σ / 梯度惩罚约束敏感度 / λ_gp 的取舍 /
-     对比低通滤波 / 接进 PPO 只多一项 loss。五幕对应笔记「是怎么做的」的各小节，
-     数字与上面三个演示共用 policyOf / taskJ / bestK 与同一组默认参数。 */
-
+  // ─── 讲解动画：十幕 ─────────────────────────────────────────────────────────
   var svgEl = K.svgEl,
     svgText = K.svgText,
     svgMath = K.svgMath,
@@ -780,530 +731,994 @@
     C_MUTED = X.muted,
     C_BORDER = X.border,
     C_SURFACE = X.surface,
-    C_SURFACE2 = X.surface2;
+    C_SURFACE2 = X.surface2,
+    C_INK2 = X.ink2;
 
-  /* 一格读数：左边标签（可含公式），右边等宽数字。 */
-  function readoutChip(s, cx, y, w, label, value, color) {
+  function rectBox(parent, x, y, w, h, stroke, fill, dash) {
+    var r = paint(svgEl('rect', { x: x, y: y, width: w, height: h, rx: 7, 'stroke-width': 1.3 }), fill || C_SURFACE, stroke || C_BORDER);
+    if (dash) r.setAttribute('stroke-dasharray', dash);
+    parent.appendChild(r);
+    return r;
+  }
+
+  function group(parent) {
     var g = svgEl('g', {});
-    g.appendChild(paint(svgEl('rect', { x: cx - w / 2, y: y, width: w, height: 34, rx: 6, 'stroke-width': 1 }), C_SURFACE2, C_BORDER));
-    g.appendChild(svgRich(cx - w / 2 + 12, y + 18, label, { size: 10.5, cls: 'demo-x-mut', w: w * 0.62 }));
-    g.appendChild(paint(svgText(cx + w / 2 - 12, y + 22, value, 'demo-x-mono', 11.5, 'end'), color || C_ACCENT));
-    s.appendChild(g);
+    parent.appendChild(g);
     return g;
   }
 
-  /* ── scene 1: 抖动 = K × σ（与 lcp-sensitivity 的默认参数同源） ── */
-  var S1_K = 5;
-  var S1_SIGMA = 0.045;
-  var S1_STEPS = 120;
-  var S1 = (function () {
-    var pi = policyOf(S1_K);
-    var rng = mulberry32(6);
-    var trueA = [],
-      noisyA = [],
-      resid = [];
+  function arrowPath(parent, pts, color, marker, dash, width) {
+    var p = paint(svgEl('path', { d: polyPath(pts), fill: 'none', 'stroke-width': width || 1.6, 'marker-end': marker }), null, color);
+    if (dash) p.setAttribute('stroke-dasharray', dash);
+    parent.appendChild(p);
+    return p;
+  }
+
+  function chip(parent, x, y, w, str, color, opts) {
+    var o = opts || {};
+    var g = group(parent);
+    rectBox(g, x, y, w, o.h || 30, color, C_SURFACE, o.dash);
+    g.appendChild(svgRich(x + w / 2, y + (o.h || 30) / 2 + 4, str, { size: o.size || 11, anchor: 'middle', w: w - 8, cls: o.cls || 'demo-x-ink2' }));
+    return g;
+  }
+
+  function pathLine(parent, pts, color, width, dash) {
+    var p = paint(svgEl('path', { d: polyPath(pts.map(function (q) { return [q[0].toFixed(1), q[1].toFixed(1)]; })), fill: 'none', 'stroke-width': width || 2, 'stroke-linejoin': 'round', 'stroke-linecap': 'round' }), null, color);
+    if (dash) p.setAttribute('stroke-dasharray', dash);
+    parent.appendChild(p);
+    return p;
+  }
+
+  /* 按比例 u ∈ [0, 1] 把一条折线「画出来」 */
+  function drawOn(path, u) {
+    if (!path.lenCache) path.lenCache = path.getTotalLength ? path.getTotalLength() || 1 : 1;
+    path.setAttribute('stroke-dasharray', path.lenCache + ' ' + path.lenCache);
+    path.setAttribute('stroke-dashoffset', (path.lenCache * (1 - u)).toFixed(1));
+  }
+
+  /* 竖柱：底边固定在 yBase，高度随动画长 */
+  function vbar(parent, x, yBase, w, color, opacity) {
+    var r = paint(svgEl('rect', { x: x, y: yBase, width: w, height: 0, rx: 2.5, opacity: opacity == null ? 0.9 : opacity }), color);
+    r.yBase = yBase;
+    parent.appendChild(r);
+    return r;
+  }
+
+  function setH(node, h) {
+    var hh = Math.max(0, h);
+    node.setAttribute('y', (node.yBase - hh).toFixed(1));
+    node.setAttribute('height', hh.toFixed(1));
+  }
+
+  /* 一格读数：左边标签（可含公式），右边等宽数字 */
+  function readoutChip(parent, cx, y, w, label, value, color) {
+    var g = group(parent);
+    rectBox(g, cx - w / 2, y, w, 32, C_BORDER, C_SURFACE2);
+    g.appendChild(svgRich(cx - w / 2 + 10, y + 17, label, { size: 10.5, cls: 'demo-x-mut', w: w * 0.66 }));
+    g.appendChild(paint(svgText(cx + w / 2 - 10, y + 21, value, 'demo-x-mono', 11.5, 'end'), color || C_ACCENT));
+    return g;
+  }
+
+  /* ── scene 1: 仿真里的理想电机 ── */
+  /* 示意的「bang-bang」关节目标：在 ±0.8 之间来回跳，跟一条慢正弦叠在一起；平滑的那条只是慢正弦 */
+  var S1_STEPS = 60;
+  var S1_TRACE = (function () {
+    var rng = mulberry32(3), jag = [], smooth = [];
     for (var t = 0; t < S1_STEPS; t++) {
-      var o = 0.9 * Math.sin(t * 0.055);
-      var on = o + S1_SIGMA * gauss(rng);
-      trueA.push(pi(o));
-      noisyA.push(pi(on));
-      resid.push(pi(on) - pi(o));
+      var base = 0.45 * Math.sin(t * 0.16);
+      smooth.push(base);
+      jag.push(base + (rng() < 0.5 ? -1 : 1) * (0.35 + 0.35 * rng()));
     }
-    var mean =
-      resid.reduce(function (a, b) {
-        return a + b;
-      }, 0) / resid.length;
-    var jit = Math.sqrt(
-      resid.reduce(function (a, b) {
-        return a + (b - mean) * (b - mean);
-      }, 0) / resid.length
-    );
-    return { pi: pi, trueA: trueA, noisyA: noisyA, jit: jit };
+    return { jag: jag, smooth: smooth };
   })();
 
-  function buildSceneJitter() {
-    var s = sceneSvg('动作抖动的上界是策略敏感度 K 乘观测噪声 σ；σ = 0 的仿真里完全看不出来');
-    s.appendChild(svgRich(60, 32, '真机上的抖动 = **观测噪声** $\\sigma$ × **策略敏感度** $K$', { size: 13.5, cls: 'demo-x-ink2', w: 640 }));
+  function buildSceneProblem() {
+    var s = sceneSvg('仿真把电机建得近乎理想，强化学习策略容易学成 bang-bang 式的抖动；表 I 里不加平滑的策略任务回报最高 28.87，动作抖动 42.19，是 LCP 的 13 倍；常见补救是平滑奖励和低通滤波，前者权重多、要逐台调，后者常压抑探索，两者都不可微');
+    s.appendChild(svgText(30, 28, '仿真里电机想给多大力矩就给多大 → 策略学成 bang-bang 式的抖动', 'demo-x-ink2', 13.5));
 
-    /* 左：π(o) = o + b sin(ω o)，最大斜率 K */
-    var LX0 = 60, LX1 = 370, LY0 = 300, LY1 = 84;
+    var trace = group(s);
+    rectBox(trace, 30, 44, 360, 170, C_BORDER, C_SURFACE2);
+    trace.appendChild(svgText(42, 64, '相邻控制步的关节目标（示意）', 'demo-x-mut', 10.5));
+    function tx(t) { return 48 + (t / (S1_STEPS - 1)) * 326; }
+    function ty(v) { return 132 - v * 62; }
+    trace.appendChild(paint(svgEl('line', { x1: 48, y1: 132, x2: 374, y2: 132, 'stroke-width': 1 }), null, C_BORDER));
+    var smoothLn = pathLine(trace, S1_TRACE.smooth.map(function (v, t) { return [tx(t), ty(v)]; }), C_GOOD, 2.2, '5 4');
+    var jagLn = pathLine(trace, S1_TRACE.jag.map(function (v, t) { return [tx(t), ty(v)]; }), C_BAD, 1.6);
+    var traceTags = group(trace);
+    traceTags.appendChild(svgText(372, 204, '红：抖动　绿虚线：平滑', 'demo-x-mut', 10, 'end'));
+
+    var mk = K.arrowMarker(s, 'lcp-x-arrow-s1', C_MUTED);
+    var simBox = group(s);
+    rectBox(simBox, 420, 44, 350, 76, C_GOOD);
+    simBox.appendChild(svgText(436, 68, '仿真：理想电机', null, 12.5));
+    simBox.appendChild(svgText(436, 90, '指令怎么跳都照单全收，不扣分', 'demo-x-ink2', 11));
+    simBox.appendChild(svgRich(436, 110, '表 I：不平滑的策略任务回报**最高 28.87**', { size: 11, w: 320, cls: 'demo-x-good' }));
+    arrowPath(simBox, [[392, 100], [416, 84]], C_MUTED, mk);
+    var realBox = group(s);
+    rectBox(realBox, 420, 134, 350, 80, C_BAD);
+    realBox.appendChild(svgText(436, 158, '真机：带宽、延迟、力矩上限', null, 12.5));
+    realBox.appendChild(svgText(436, 180, '相邻两步差太多 → 要的力矩打不出来', 'demo-x-ink2', 11));
+    realBox.appendChild(svgRich(436, 201, '动作抖动 **42.19**，是 LCP（3.21）的 **13 倍**', { size: 11, w: 320, cls: 'demo-x-bad' }));
+    arrowPath(realBox, [[392, 150], [416, 168]], C_MUTED, mk);
+
+    function remedy(x, head, l1, l2, l3) {
+      var g = group(s);
+      rectBox(g, x, 232, 360, 96, C_WARN, C_SURFACE, '4 3');
+      g.appendChild(svgText(x + 14, 254, head, 'demo-x-warn', 12.5));
+      g.appendChild(svgRich(x + 14, 276, l1, { size: 11, w: 340, cls: 'demo-x-ink2' }));
+      g.appendChild(svgRich(x + 14, 296, l2, { size: 11, w: 340, cls: 'demo-x-ink2' }));
+      g.appendChild(svgRich(x + 14, 316, l3, { size: 11, w: 340, cls: 'demo-x-mut' }));
+      return g;
+    }
+    var rew = remedy(30, '补救一：平滑奖励', '罚动作变化、关节速度、关节加速度、能耗', '一堆权重要和任务奖励配平', '换一台机器人，往往就得重调');
+    var lpf = remedy(410, '补救二：输出端低通滤波', '上一期 OP3：$u_t = 0.8\\,u_{t-1} + 0.2\\,a_t$', '论文：常会压抑探索，训出次优策略', '滤波器参数同样要按机器人调');
+    var nd = group(s);
+    chip(nd, 30, 340, 740, '两者都**不可微**：藏在环境或信号链里，只能靠策略梯度采样去估', C_BAD, { h: 28, size: 11.5 });
+    var fin = group(s);
+    chip(fin, 30, 376, 740, 'LCP：一个**可微**的平滑目标，几行代码加进现有的强化学习框架', C_ACCENT, { h: 34, size: 12.5 });
+
+    function draw(t) {
+      setOpacity(trace, seg(t, 0.3, 0.9));
+      drawOn(jagLn, ease(seg(t, 0.6, 3.0)));
+      drawOn(smoothLn, ease(seg(t, 1.0, 3.2)));
+      setOpacity(traceTags, seg(t, 2.6, 3.2));
+      setOpacity(simBox, seg(t, 1.2, 1.8));
+      setOpacity(realBox, seg(t, 3.6, 4.2));
+      setOpacity(rew, seg(t, 7.0, 7.6));
+      setOpacity(lpf, seg(t, 10.4, 11.0));
+      setOpacity(nd, seg(t, 13.4, 14.0));
+      setOpacity(fin, seg(t, 14.6, 15.2));
+    }
+    return { el: s, draw: draw };
+  }
+
+  /* ── scene 2: Lipschitz 与梯度 ── */
+  function buildSceneLipschitz() {
+    var s = sceneSvg('Lipschitz 连续：任意两点输出之差不超过 K 乘输入之差；以曲线上任一点为顶点画斜率正负 K 的圆锥，整条曲线都在圆锥里；玩具策略最大斜率 K 等于 5，噪声 0.045 时动作最多抖 0.225，实测 0.142；梯度有界则 Lipschitz 连续，反之不成立；图 3：加了平滑奖励的策略梯度更小');
+    s.appendChild(svgText(30, 28, 'Lipschitz 连续：给函数的变化率设一个上限 K', 'demo-x-ink2', 13.5));
+
+    var LX0 = 50, LX1 = 370, LY0 = 290, LY1 = 70;
     function lx(o) { return LX0 + ((o + 1.2) / 2.4) * (LX1 - LX0); }
-    function ly(a) { return LY0 - ((clamp(a, -1.9, 1.9) + 1.9) / 3.8) * (LY0 - LY1); }
-    var left = svgEl('g', {});
-    left.appendChild(paint(svgEl('rect', { x: LX0 - 12, y: LY1 - 22, width: LX1 - LX0 + 24, height: LY0 - LY1 + 44, rx: 8, 'stroke-width': 1 }), C_SURFACE2, C_BORDER));
+    function ly(a) { return LY0 - ((clamp(a, -2.4, 2.4) + 2.4) / 4.8) * (LY0 - LY1); }
+    var left = group(s);
+    rectBox(left, 30, 44, 360, 266, C_BORDER, C_SURFACE2);
+    left.appendChild(svgRich(42, 62, '玩具策略 $\\pi(o) = o + b\\sin(\\omega o)$，最大斜率 $K = 5$', { size: 10.5, w: 340, cls: 'demo-x-mut' }));
     left.appendChild(paint(svgEl('line', { x1: LX0, y1: ly(0), x2: LX1, y2: ly(0), 'stroke-width': 1 }), null, C_BORDER));
-    left.appendChild(paint(svgEl('line', { x1: lx(0), y1: LY1, x2: lx(0), y2: LY0, 'stroke-width': 1 }), null, C_BORDER));
+    var cone = paint(svgEl('path', { d: '', 'fill-opacity': 0.13, 'stroke-width': 1.2, 'stroke-dasharray': '4 3' }), C_ACCENT, C_ACCENT);
+    left.appendChild(cone);
     var curve = [];
     for (var i = 0; i <= 240; i++) {
       var o = -1.2 + (2.4 * i) / 240;
-      curve.push([lx(o).toFixed(1), ly(S1.pi(o)).toFixed(1)]);
+      curve.push([lx(o), ly(TOY.pi(o))]);
     }
-    left.appendChild(paint(svgEl('path', { d: polyPath(curve), fill: 'none', 'stroke-width': 2.4 }), null, C_GOOD));
-    /* 在斜率最大的工作点 o = 0 上，把 ±2σ 的观测噪声带映射成动作带 */
-    var lo = -2 * S1_SIGMA, hi = 2 * S1_SIGMA;
-    var vBand = paint(svgEl('rect', { x: lx(lo), y: LY1, width: lx(hi) - lx(lo), height: LY0 - LY1, 'fill-opacity': 0.28 }), C_BAD);
-    var hBand = paint(svgEl('rect', { x: LX0, y: ly(S1.pi(hi)), width: LX1 - LX0, height: ly(S1.pi(lo)) - ly(S1.pi(hi)), 'fill-opacity': 0.28 }), C_BAD);
-    left.appendChild(vBand);
-    left.appendChild(hBand);
-    left.appendChild(paint(svgEl('circle', { cx: lx(0), cy: ly(0), r: 5, 'stroke-width': 1.6 }), C_ACCENT, C_SURFACE2));
-    left.appendChild(svgText(LX0 + 4, LY1 - 8, '策略函数：斜率就是放大倍数', 'demo-x-mut', 10.5));
-    left.appendChild(svgRich(lx(0) + 12, LY1 + 12, '$\\pm 2\\sigma$ 的观测噪声', { size: 10, w: 150 }).setTone(C_BAD));
-    left.appendChild(svgRich(LX0 + 6, ly(S1.pi(hi)) - 10, '被放大成这么宽的动作带', { size: 10, w: 170 }).setTone(C_BAD));
-    s.appendChild(left);
+    pathLine(left, curve, C_GOOD, 2.4);
+    var vtx = paint(svgEl('circle', { r: 5, 'stroke-width': 1.6 }), C_ACCENT, C_SURFACE2);
+    left.appendChild(vtx);
+    var coneTag = svgRich(LX1 - 4, LY1 + 6, '斜率 $\\pm K$ 的圆锥（图 2）', { size: 10.5, anchor: 'end', w: 180 }).setTone(C_ACCENT);
+    left.appendChild(coneTag);
 
-    /* 右：同一个策略的动作序列，先 σ = 0 再 σ = 0.045 */
-    var RX0 = 440, RX1 = 750;
-    function rx(k) { return RX0 + (k / (S1_STEPS - 1)) * (RX1 - RX0); }
-    function ry(a) { return LY0 - ((clamp(a, -2, 2) + 2) / 4) * (LY0 - LY1); }
-    var right = svgEl('g', {});
-    right.appendChild(paint(svgEl('rect', { x: RX0 - 12, y: LY1 - 22, width: RX1 - RX0 + 24, height: LY0 - LY1 + 44, rx: 8, 'stroke-width': 1 }), C_SURFACE2, C_BORDER));
-    right.appendChild(svgText(RX0 + 4, LY1 - 8, '策略实际发出的关节指令', 'demo-x-mut', 10.5));
-    var truth = paint(svgEl('path', {
-      d: polyPath(S1.trueA.map(function (v, k) { return [rx(k).toFixed(1), ry(v).toFixed(1)]; })),
-      fill: 'none', 'stroke-width': 1.6, 'stroke-dasharray': '5 4'
-    }), null, C_MUTED);
-    var actual = paint(svgEl('path', { d: '', fill: 'none', 'stroke-width': 2 }), null, C_ACCENT);
-    right.appendChild(truth);
-    right.appendChild(actual);
-    var tagQuiet = svgRich(RX1 - 4, LY0 - 10, '$\\sigma = 0$（仿真）：干净', { size: 11, anchor: 'end', w: 200 }).setTone(C_ACCENT);
-    var tagNoisy = svgRich(RX1 - 4, LY0 - 10, '$\\sigma = ' + fmt(S1_SIGMA, 3) + '$（真机）：发毛', { size: 11, anchor: 'end', w: 200 }).setTone(C_BAD);
-    right.appendChild(tagQuiet);
-    right.appendChild(tagNoisy);
-    s.appendChild(right);
+    var def = group(s);
+    rectBox(def, 410, 44, 360, 64, C_ACCENT);
+    def.appendChild(svgText(424, 64, '定义（式 1）', 'demo-x-acc', 11));
+    def.appendChild(svgMath(590, 90, 'd_Y\\big(f(x_1), f(x_2)\\big) \\le K\\, d_X(x_1, x_2)', { size: 13, anchor: 'middle', w: 340 }));
 
-    var chipK = readoutChip(s, 130, 326, 168, '策略敏感度 $K$', fmt(S1_K, 1), C_GOOD);
-    var chipSigma = readoutChip(s, 310, 326, 168, '观测噪声 $\\sigma$', fmt(S1_SIGMA, 3), C_BAD);
-    var chipBound = readoutChip(s, 490, 326, 168, '上界 $K \\times \\sigma$', fmt(S1_K * S1_SIGMA, 3), C_ACCENT);
-    var chipJit = readoutChip(s, 670, 326, 168, '动作抖动 std', fmt(S1.jit, 3), C_BAD);
+    var nums = group(s);
+    readoutChip(nums, 500, 122, 176, '最大斜率 $K$', fmt(TOY_K, 0), C_GOOD);
+    readoutChip(nums, 684, 122, 172, '观测噪声 $\\sigma$', fmt(TOY_SIGMA, 3), C_MUTED);
+    readoutChip(nums, 500, 160, 176, '上界 $K\\sigma$', fmt(TOY_K * TOY_SIGMA, 3), C_ACCENT);
+    readoutChip(nums, 684, 160, 172, '实测抖动 std', fmt(TOY.jit, 3), C_BAD);
 
-    var foot = svgRich(400, 396, '$\\sigma$ 是硬件决定的，能改的只有 $K$ —— 让动作平滑，就是把策略对观测的敏感度压下来', { size: 14, anchor: 'middle', w: 760 }).setTone(C_ACCENT);
-    s.appendChild(foot);
+    var cor = group(s);
+    rectBox(cor, 410, 202, 360, 62, C_BORDER);
+    cor.appendChild(svgRich(424, 224, '推论（式 2）：$\\lVert\\nabla_x f(x)\\rVert \\le K \\;\\Rightarrow\\;$ $K$-Lipschitz', { size: 11.5, w: 340 }));
+    cor.appendChild(svgRich(424, 248, '反过来不成立：$|x|$ 在 0 处不可导，却是 1-Lipschitz', { size: 10.5, w: 340, cls: 'demo-x-mut' }));
+
+    var fig3 = group(s);
+    rectBox(fig3, 410, 276, 360, 100, C_BORDER, C_SURFACE2);
+    fig3.appendChild(svgText(422, 294, '图 3（示意）：策略梯度范数 vs 训练迭代', 'demo-x-mut', 10.5));
+    var f3rng = mulberry32(17), hiPts = [], loPts = [];
+    for (var k = 0; k <= 60; k++) {
+      var fx = 424 + k * 5.5;
+      var spike = k > 14 && f3rng() < 0.12 ? 14 * f3rng() : 0;
+      hiPts.push([fx, 330 - 10 * (1 - Math.exp(-k / 8)) - 6 * f3rng() - spike]);
+      loPts.push([fx, 352 - 4 * (1 - Math.exp(-k / 8)) - 2 * f3rng()]);
+    }
+    var hiLn = pathLine(fig3, hiPts, C_WARN, 1.6);
+    var loLn = pathLine(fig3, loPts, C_BAD, 1.8);
+    fig3.appendChild(svgText(426, 312, '不加平滑奖励', 'demo-x-warn', 10));
+    fig3.appendChild(svgText(762, 370, '加平滑奖励：梯度小得多', 'demo-x-bad', 10, 'end'));
+
+    var fin = group(s);
+    chip(fin, 30, 384, 740, '平滑 ≈ 斜率小 ⇒ 直接去约束策略的梯度', C_ACCENT, { h: 30, size: 12 });
+
+    function coneAt(o0) {
+      var a0 = TOY.pi(o0);
+      var pts = [[lx(-1.2), ly(a0 - TOY_K * (o0 + 1.2))], [lx(o0), ly(a0)], [lx(1.2), ly(a0 + TOY_K * (1.2 - o0))],
+        [lx(1.2), ly(a0 - TOY_K * (1.2 - o0))], [lx(o0), ly(a0)], [lx(-1.2), ly(a0 + TOY_K * (o0 + 1.2))]];
+      cone.setAttribute('d', polyPath(pts.map(function (q) { return [q[0].toFixed(1), q[1].toFixed(1)]; })) + ' Z');
+      vtx.setAttribute('cx', lx(o0).toFixed(1));
+      vtx.setAttribute('cy', ly(a0).toFixed(1));
+    }
 
     function draw(t) {
-      setOpacity(left, seg(t, 0.8, 1.4));
-      setOpacity(right, seg(t, 1.6, 2.2));
-      setOpacity(chipK, seg(t, 1.0, 1.6));
-      setOpacity(vBand, seg(t, 1.6, 2.2));
-      setOpacity(hBand, seg(t, 1.9, 2.5));
-      var quiet = t < 4.4;
-      var n = quiet ? Math.floor(S1_STEPS * ease(seg(t, 2.6, 4.2))) : Math.floor(S1_STEPS * ease(seg(t, 4.6, 7.8)));
-      var series = quiet ? S1.trueA : S1.noisyA;
-      actual.setAttribute('d', n > 1 ? polyPath(series.slice(0, n).map(function (v, k) { return [rx(k).toFixed(1), ry(v).toFixed(1)]; })) : '');
-      paint(actual, null, quiet ? C_ACCENT : C_BAD);
-      setOpacity(tagQuiet, quiet ? seg(t, 2.6, 3.2) : 0);
-      setOpacity(tagNoisy, quiet ? 0 : seg(t, 4.6, 5.2));
-      setOpacity(chipSigma, seg(t, 4.4, 5.0));
-      setOpacity(chipBound, seg(t, 8.0, 8.6));
-      setOpacity(chipJit, seg(t, 8.35, 8.95));
-      setOpacity(foot, seg(t, 10.6, 11.4));
+      setOpacity(left, seg(t, 0.3, 0.9));
+      setOpacity(def, seg(t, 0.8, 1.4));
+      var u = seg(t, 3.6, 7.0);
+      coneAt(-0.9 + 1.8 * ease(u));
+      setOpacity(cone, seg(t, 3.6, 4.0));
+      setOpacity(vtx, seg(t, 3.6, 4.0));
+      setOpacity(coneTag, seg(t, 3.8, 4.4));
+      setOpacity(nums, seg(t, 7.0, 7.6));
+      setOpacity(cor, seg(t, 10.4, 11.0));
+      setOpacity(fig3, seg(t, 13.4, 13.9));
+      drawOn(hiLn, ease(seg(t, 13.6, 15.0)));
+      drawOn(loLn, ease(seg(t, 13.8, 15.2)));
+      setOpacity(fin, seg(t, 15.4, 16.0));
     }
-
     return { el: s, draw: draw };
   }
 
-  /* ── scene 2: 梯度惩罚 —— 总目标 J(K) − λ K²（与 lcp-gp 同一组函数） ── */
-  var S2_LAMBDA = 0.012;
-  var S2_SIGMA = 0.045;
-  var S2_K0 = bestK(0);
-  var S2_K = bestK(S2_LAMBDA);
+  /* ── scene 3: 式 4 → 式 7 ── */
+  function buildSceneDerive() {
+    var s = sceneSvg('式 4 要求所有状态动作上的梯度都不超过 K 平方；式 5 换成 rollout 数据上的期望；式 6 引入拉格朗日乘子；式 7 固定系数 lambda gp 并丢掉常数 K 平方，得到梯度惩罚；玩具策略最大斜率 5，访问到的状态上的均方根斜率 2.75');
+    s.appendChild(svgText(30, 28, '从约束到梯度惩罚：四步推到式 7', 'demo-x-ink2', 13.5));
 
-  function buildSceneGradPenalty() {
-    var s = sceneSvg('梯度有界就是 Lipschitz 连续：在目标里减去 λ 倍的梯度范数平方，总目标的峰值就是学出来的敏感度');
-    s.appendChild(svgText(60, 30, '把「别一惊一乍」写进损失函数：梯度有界 ⇒ Lipschitz 连续', 'demo-x-ink2', 13.5));
-    var formula = svgMath(400, 60,
-      '\\max_\\theta\; J(\\theta) - \\lambda_{gp}\\,\\mathbb{E}_{o \\sim \\mathcal{D}}\\!\\left[\\lVert \\nabla_o \\pi_\\theta(o) \\rVert^2\\right]',
-      { size: 12.5, anchor: 'middle', cls: 'demo-x-ink2', w: 700 });
-    s.appendChild(formula);
-
-    var PX0 = 70, PX1 = 740, PY0 = 306, PY1 = 92;
-    function px(k) { return PX0 + ((k - 0.8) / (15 - 0.8)) * (PX1 - PX0); }
-    function py(v) { return PY0 - ((clamp(v, -1, 1.15) + 1) / 2.15) * (PY0 - PY1); }
-    var plot = svgEl('g', {});
-    plot.appendChild(paint(svgEl('rect', { x: PX0 - 20, y: PY1 - 14, width: PX1 - PX0 + 40, height: PY0 - PY1 + 44, rx: 8, 'stroke-width': 1 }), C_SURFACE2, C_BORDER));
-    plot.appendChild(paint(svgEl('line', { x1: PX0, y1: py(0), x2: PX1, y2: py(0), 'stroke-width': 1 }), null, C_BORDER));
-    [1, 5, 10, 15].forEach(function (k) {
-      plot.appendChild(svgText(px(k), PY0 + 22, String(k), 'demo-x-mono demo-x-mut', 10, 'middle'));
-    });
-    plot.appendChild(svgRich(px(12.5), PY0 + 22, '策略敏感度 $K$', { size: 10, anchor: 'middle', cls: 'demo-x-mut', w: 150 }));
-    s.appendChild(plot);
-
-    function curveOf(fn) {
-      var pts = [];
-      for (var i = 0; i <= 200; i++) {
-        var k = 0.8 + (14.2 * i) / 200;
-        pts.push([px(k).toFixed(1), py(fn(k)).toFixed(1)]);
-      }
-      return polyPath(pts);
-    }
-    var jCurve = paint(svgEl('path', { d: curveOf(taskJ), fill: 'none', 'stroke-width': 1.9, 'stroke-dasharray': '5 4' }), null, C_GOOD);
-    var gCurve = paint(svgEl('path', { d: curveOf(function (k) { return -S2_LAMBDA * k * k; }), fill: 'none', 'stroke-width': 1.9, 'stroke-dasharray': '5 4' }), null, C_BAD);
-    var tCurve = paint(svgEl('path', { d: curveOf(function (k) { return taskJ(k) - S2_LAMBDA * k * k; }), fill: 'none', 'stroke-width': 2.8 }), null, C_ACCENT);
-    s.appendChild(jCurve);
-    s.appendChild(gCurve);
-    s.appendChild(tCurve);
-
-    var jTag = svgRich(PX1 - 4, py(taskJ(14)) - 12, '任务表现 $J(K)$', { size: 10.5, anchor: 'end', w: 140 }).setTone(C_GOOD);
-    var gTag = svgRich(px(6.6), py(-S2_LAMBDA * 6.6 * 6.6) - 12, '惩罚 $-\\lambda_{gp} K^2$', { size: 10.5, w: 150 }).setTone(C_BAD);
-    var tTag = svgRich(px(2.2), py(taskJ(S2_K) - S2_LAMBDA * S2_K * S2_K) - 22, '总目标', { size: 10.5, anchor: 'end', w: 90 }).setTone(C_ACCENT);
-    s.appendChild(jTag);
-    s.appendChild(gTag);
-    s.appendChild(tTag);
-
-    var peak = svgEl('g', {});
-    var peakY = py(taskJ(S2_K) - S2_LAMBDA * S2_K * S2_K);
-    peak.appendChild(paint(svgEl('line', { x1: px(S2_K), y1: PY0, x2: px(S2_K), y2: peakY, 'stroke-width': 1.2, 'stroke-dasharray': '3 3' }), null, C_MUTED));
-    peak.appendChild(paint(svgEl('circle', { cx: px(S2_K), cy: peakY, r: 5, 'stroke-width': 1.6 }), C_ACCENT, C_SURFACE2));
-    peak.appendChild(svgRich(px(S2_K) + 10, PY1 + 2, '$K^* = ' + fmt(S2_K, 2) + '$', { size: 11.5, w: 120 }).setTone(C_ACCENT));
-    s.appendChild(peak);
-
-    var chipA = readoutChip(s, 150, 342, 250, '纯 PPO：$K^*$', fmt(S2_K0, 1) + '（推到上限）', C_BAD);
-    var chipB = readoutChip(s, 420, 342, 250, '$\\lambda_{gp} = ' + fmt(S2_LAMBDA, 3) + '$：$K^*$', fmt(S2_K, 2), C_GOOD);
-    var chipC = readoutChip(s, 660, 342, 210, '真机抖动 $K^* \\sigma$', fmt(S2_K0 * S2_SIGMA, 3) + ' → ' + fmt(S2_K * S2_SIGMA, 3), C_ACCENT);
-
-    var foot = paint(svgText(400, 402, 'PPO 学「做什么动作更赚」，GP 项学「别一惊一乍地做」', null, 14.5, 'middle'), C_ACCENT);
-    s.appendChild(foot);
-
-    function draw(t) {
-      setOpacity(formula, seg(t, 0.8, 1.4));
-      setOpacity(plot, seg(t, 1.6, 2.2));
-      setOpacity(jCurve, seg(t, 2.2, 3.0));
-      setOpacity(jTag, seg(t, 2.6, 3.2));
-      setOpacity(gCurve, seg(t, 4.4, 5.2));
-      setOpacity(gTag, seg(t, 4.8, 5.4));
-      setOpacity(tCurve, seg(t, 6.4, 7.2));
-      setOpacity(tTag, seg(t, 6.8, 7.4));
-      setOpacity(peak, seg(t, 7.6, 8.4));
-      setOpacity(chipA, seg(t, 8.6, 9.2));
-      setOpacity(chipB, seg(t, 9.0, 9.6));
-      setOpacity(chipC, seg(t, 9.4, 10.0));
-      setOpacity(foot, seg(t, 11.0, 11.8));
-    }
-
-    return { el: s, draw: draw };
-  }
-
-  /* ── scene 3: λ_gp 的三档取舍（同一个 bestK / taskJ） ── */
-  var S3_NOISE = 0.045;
-  var S3_LAMBDAS = [
-    { lam: 0, name: '纯 PPO', color: C_BAD },
-    { lam: 0.012, name: 'LCP 的位置', color: C_GOOD },
-    { lam: 0.1, name: '压过头', color: C_WARN }
-  ];
-  S3_LAMBDAS.forEach(function (d) {
-    d.k = bestK(d.lam);
-    d.j = taskJ(d.k);
-    d.jit = d.k * S3_NOISE;
-  });
-  var S3_DROP = (S3_LAMBDAS[0].j - S3_LAMBDAS[2].j) * 100;
-  var S3_DROP_MID = (S3_LAMBDAS[0].j - S3_LAMBDAS[1].j) * 100;
-
-  function buildSceneTradeoff() {
-    var s = sceneSvg('λ_gp = 0 时 K 被推到上限；λ_gp 适中时抖动大降、表现几乎不掉；压过头时动作发钝、任务表现明显下降');
-    s.appendChild(svgRich(60, 32, '同一个真机噪声 $\\sigma = ' + fmt(S3_NOISE, 3) + '$，三档 $\\lambda_{gp}$', { size: 13.5, cls: 'demo-x-ink2', w: 640 }));
-
-    var cards = S3_LAMBDAS.map(function (d, i) {
-      var x = 40 + i * 248;
-      var g = svgEl('g', {});
-      g.appendChild(paint(svgEl('rect', { x: x, y: 58, width: 232, height: 246, rx: 10, 'stroke-width': 1.8 }), C_SURFACE2, d.color));
-      g.appendChild(paint(svgText(x + 116, 84, d.name, null, 13.5, 'middle'), d.color));
-      g.appendChild(svgMath(x + 116, 108, '\\lambda_{gp} = ' + fmt(d.lam, 3), { size: 12.5, anchor: 'middle', w: 200 }).setTone(d.color));
-      g.appendChild(svgRich(x + 16, 142, '学到的 $K^*$', { size: 11, cls: 'demo-x-mut', w: 120 }));
-      g.appendChild(paint(svgText(x + 216, 146, fmt(d.k, 2), 'demo-x-mono', 13, 'end'), d.color));
-      g.appendChild(svgText(x + 16, 184, '任务表现', 'demo-x-mut', 11));
-      g.appendChild(paint(svgEl('rect', { x: x + 16, y: 192, width: 200, height: 12, rx: 3 }), C_SURFACE, null));
-      g.appendChild(paint(svgEl('rect', { x: x + 16, y: 192, width: 200 * d.j, height: 12, rx: 3 }), C_GOOD));
-      g.appendChild(paint(svgText(x + 216, 184, fmt(d.j, 3), 'demo-x-mono', 11, 'end'), C_GOOD));
-      g.appendChild(svgText(x + 16, 234, '真机抖动', 'demo-x-mut', 11));
-      g.appendChild(paint(svgEl('rect', { x: x + 16, y: 242, width: 200, height: 12, rx: 3 }), C_SURFACE, null));
-      g.appendChild(paint(svgEl('rect', { x: x + 16, y: 242, width: 200 * clamp(d.jit / 0.7, 0, 1), height: 12, rx: 3 }), C_BAD));
-      g.appendChild(paint(svgText(x + 216, 234, fmt(d.jit, 3), 'demo-x-mono', 11, 'end'), C_BAD));
-      s.appendChild(g);
-      return { g: g, at: [1.0, 4.2, 7.2][i] };
-    });
-
-    var chip = svgEl('g', {});
-    chip.appendChild(paint(svgEl('rect', { x: 70, y: 322, width: 660, height: 34, rx: 17, 'stroke-width': 1, 'stroke-dasharray': '5 4' }), C_SURFACE, C_WARN));
-    chip.appendChild(paint(svgText(400, 344, '压过头：抖动确实没了，但任务表现比纯 PPO 低 ' + fmt(S3_DROP, 1) + ' 个百分点 —— 策略变钝了', null, 11.5, 'middle'), C_WARN));
-    s.appendChild(chip);
-
-    var foot = svgEl('g', {});
-    foot.appendChild(paint(svgText(400, 384, '不是越平滑越好：λ 太小没效果，太大动作发钝', null, 14.5, 'middle'), C_ACCENT));
-    foot.appendChild(svgRich(400, 406, '合适的范围还和 $\\sigma$ 有关 —— 换一台传感器更差的机器，系数就得重调', { size: 11.5, anchor: 'middle', cls: 'demo-x-mut', w: 700 }));
-    s.appendChild(foot);
-
-    function draw(t) {
-      cards.forEach(function (c) { setOpacity(c.g, seg(t, c.at, c.at + 0.6)); });
-      setOpacity(chip, seg(t, 9.6, 10.4));
-      setOpacity(foot, seg(t, 11.4, 12.2));
-    }
-
-    return { el: s, draw: draw };
-  }
-
-  /* ── scene 4: 对比低通滤波（与 lcp-vs-filter 的默认参数、同一组公式） ── */
-  var S4 = (function () {
-    var alpha = 0.18, kLip = 3.0, noise = 0.05, steps = 160, stepAt = 80;
-    var rng = mulberry32(9);
-    var cmd = [],
-      noisy = [];
-    for (var t = 0; t < steps; t++) {
-      cmd.push(0.6 * Math.sin(t * 0.05) + (t >= stepAt ? 0.8 : 0));
-      noisy.push(cmd[t] + noise * gauss(rng));
-    }
-    var piRaw = policyOf(10),
-      piLcp = policyOf(kLip);
-    var raw = noisy.map(piRaw),
-      lcp = noisy.map(piLcp);
-    var fil = [],
-      prev = raw[0];
-    raw.forEach(function (a) {
-      prev = (1 - alpha) * prev + alpha * a;
-      fil.push(prev);
-    });
-    function jitter(series, pi) {
-      var res = series.map(function (a, i) {
-        return a - pi(cmd[i]);
-      });
-      var m =
-        res.reduce(function (a, b) {
-          return a + b;
-        }, 0) / res.length;
-      return Math.sqrt(
-        res.reduce(function (a, b) {
-          return a + (b - m) * (b - m);
-        }, 0) / res.length
-      );
-    }
-    var jRaw = jitter(raw, piRaw);
-    return {
-      alpha: alpha,
-      kLip: kLip,
-      steps: steps,
-      stepAt: stepAt,
-      cmd: cmd,
-      raw: raw,
-      fil: fil,
-      lcp: lcp,
-      jRaw: jRaw,
-      jFil: (jRaw * alpha) / (2 - alpha),
-      jLcp: jitter(lcp, piLcp),
-      lag: (1 - alpha) / alpha
-    };
-  })();
-
-  function buildSceneVsFilter() {
-    var s = sceneSvg('低通滤波把抖动压下去，代价是阶跃响应要滞后好几个控制步；LCP 直接压策略斜率，没有这个延迟');
-    s.appendChild(svgRich(60, 32, '同一段带噪指令，第 80 步有个阶跃：**滤波** vs **LCP**', { size: 13.5, cls: 'demo-x-ink2', w: 640 }));
-
-    var PX0 = 60, PX1 = 750, PY0 = 296, PY1 = 92;
-    function px(k) { return PX0 + ((k - 40) / (S4.steps - 1 - 40)) * (PX1 - PX0); }
-    function py(v) { return PY0 - ((clamp(v, -1.4, 2.6) + 1.4) / 4) * (PY0 - PY1); }
-    var frame = svgEl('g', {});
-    frame.appendChild(paint(svgEl('rect', { x: PX0 - 16, y: PY1 - 18, width: PX1 - PX0 + 32, height: PY0 - PY1 + 36, rx: 8, 'stroke-width': 1 }), C_SURFACE2, C_BORDER));
-    frame.appendChild(paint(svgEl('line', { x1: px(S4.stepAt), y1: PY1, x2: px(S4.stepAt), y2: PY0, 'stroke-width': 1.2, 'stroke-dasharray': '3 3' }), null, C_MUTED));
-    frame.appendChild(svgText(px(S4.stepAt) + 6, PY1 + 10, '阶跃', 'demo-x-mut', 10.5));
-    s.appendChild(frame);
-
-    function pathOf(series, n) {
-      var pts = [];
-      for (var k = 40; k < n; k++) pts.push([px(k).toFixed(1), py(series[k]).toFixed(1)]);
-      return pts.length > 1 ? polyPath(pts) : '';
-    }
-    var cmdLine = paint(svgEl('path', { d: pathOf(S4.cmd, S4.steps), fill: 'none', 'stroke-width': 1.5, 'stroke-dasharray': '5 4' }), null, C_MUTED);
-    var rawLine = paint(svgEl('path', { d: '', fill: 'none', 'stroke-width': 1.2 }), null, C_BAD);
-    var filLine = paint(svgEl('path', { d: '', fill: 'none', 'stroke-width': 2.4 }), null, C_WARN);
-    var lcpLine = paint(svgEl('path', { d: '', fill: 'none', 'stroke-width': 2.4 }), null, C_GOOD);
-    s.appendChild(cmdLine);
-    s.appendChild(rawLine);
-    s.appendChild(filLine);
-    s.appendChild(lcpLine);
-
-    var lg = svgEl('g', {});
-    [['指令（真值）', C_MUTED, 74], ['不处理 $K = 10$', C_BAD, 220], ['低通滤波 $\\alpha = ' + fmt(S4.alpha, 2) + '$', C_WARN, 380], ['LCP：$K$ 压到 ' + fmt(S4.kLip, 1), C_GOOD, 570]].forEach(function (it) {
-      lg.appendChild(paint(svgEl('line', { x1: it[2] - 22, y1: 52, x2: it[2] - 6, y2: 52, 'stroke-width': 3 }), null, it[1]));
-      lg.appendChild(svgRich(it[2], 56, it[0], { size: 10.5, cls: 'demo-x-ink2', w: 170 }));
-    });
-    s.appendChild(lg);
-
-    var chipRaw = readoutChip(s, 130, 322, 168, '不处理的抖动', fmt(S4.jRaw, 3), C_BAD);
-    var chipFil = readoutChip(s, 310, 322, 168, '低通后的抖动', fmt(S4.jFil, 3), C_WARN);
-    var chipLag = readoutChip(s, 490, 322, 168, '低通引入的延迟', fmt(S4.lag, 1) + ' 步', C_BAD);
-    var chipLcp = readoutChip(s, 670, 322, 168, 'LCP 的抖动', fmt(S4.jLcp, 3), C_GOOD);
-
-    var foot = svgRich(400, 396, '低通拿延迟换平滑；LCP 直接压斜率，信号链上没有这份延迟', { size: 14.5, anchor: 'middle', w: 720 }).setTone(C_ACCENT);
-    s.appendChild(foot);
-
-    function draw(t) {
-      setOpacity(frame, seg(t, 0.3, 0.9));
-      setOpacity(lg, seg(t, 0.5, 1.1));
-      setOpacity(cmdLine, seg(t, 1.2, 1.8));
-      rawLine.setAttribute('d', pathOf(S4.raw, 40 + Math.floor((S4.steps - 40) * ease(seg(t, 1.4, 3.6)))));
-      setOpacity(rawLine, t > 8.2 ? 0.35 : 1);
-      filLine.setAttribute('d', pathOf(S4.fil, 40 + Math.floor((S4.steps - 40) * ease(seg(t, 3.8, 6.0)))));
-      lcpLine.setAttribute('d', pathOf(S4.lcp, 40 + Math.floor((S4.steps - 40) * ease(seg(t, 8.4, 10.4)))));
-      setOpacity(chipRaw, seg(t, 3.0, 3.6));
-      setOpacity(chipFil, seg(t, 5.6, 6.2));
-      setOpacity(chipLag, seg(t, 6.0, 6.6));
-      setOpacity(chipLcp, seg(t, 10.2, 10.8));
-      setOpacity(foot, seg(t, 10.6, 11.4));
-    }
-
-    return { el: s, draw: draw };
-  }
-
-  /* ── scene 5: 接进 PPO —— 只多一项 loss（MimicKit lcp_agent.py） ── */
-  function buildSceneLoop() {
-    var s = sceneSvg('LCPAgent 继承 PPOAgent：rollout、优势、critic 都与 PPO 相同，只在 actor 更新里多加一项梯度惩罚');
-    s.appendChild(svgText(60, 30, 'LCP 接进 PPO：不改 rollout、不改奖励、不改网络，只改 actor 那一步', 'demo-x-ink2', 13.5));
-
-    var arrow = K.arrowMarker(s, 'lcp-x-arrow-loop', C_MUTED);
-    var steps = [
-      { y: 52, text: 'rollout：4096 个并行环境采样（同 PPO）', tone: C_MUTED },
-      { y: 100, text: '优势：TD(λ) 回报 + GAE（同 PPO）', tone: C_MUTED },
-      { y: 148, text: 'critic 更新：MSE（同 PPO）', tone: C_MUTED },
-      { y: 196, text: 'actor：标准 PPO-Clip loss', tone: C_ACCENT },
-      { y: 244, tex: '+\\ \\lambda_{gp}\\, \\lVert \\nabla_o \\log \\pi(a \\mid o) \\rVert^2', tone: C_GOOD },
-      { y: 292, text: 'SGD 一步更新（二阶梯度回传）', tone: C_MUTED }
+    var rows = [
+      { y: 44, no: '式 4', tex: '\\max_\\pi J(\\pi)\\;\\; \\text{s.t.}\\;\\max_{s,a}\\lVert\\nabla_s\\log\\pi(a\\mid s)\\rVert^2 \\le K^2', note: '所有状态上的最大值：算不出来', tone: C_BAD },
+      { y: 112, no: '式 5', tex: '\\max_\\pi J(\\pi)\\;\\; \\text{s.t.}\\;\\mathbb{E}_{s,a\\sim\\mathcal{D}}\\lVert\\nabla_s\\log\\pi(a\\mid s)\\rVert^2 \\le K^2', note: '换成 rollout 数据上的期望（TRPO 的近似）', tone: C_WARN },
+      { y: 180, no: '式 6', tex: '\\min_{\\lambda\\ge 0}\\max_\\pi J(\\pi) - \\lambda\\big(\\mathbb{E}\\lVert\\nabla_s\\log\\pi\\rVert^2 - K^2\\big)', note: '拉格朗日乘子：约束搬进目标', tone: C_ACCENT },
+      { y: 248, no: '式 7', tex: '\\max_\\pi J(\\pi) - \\lambda_{gp}\\,\\mathbb{E}_{s,a\\sim\\mathcal{D}}\\lVert\\nabla_s\\log\\pi(a\\mid s)\\rVert^2', note: '$\\lambda$ 固定成手调的 $\\lambda_{gp}$，丢掉常数 $K^2$', tone: C_GOOD }
     ];
-    var nodes = steps.map(function (st, i) {
-      var g = svgEl('g', {});
-      g.appendChild(paint(svgEl('rect', { x: 40, y: st.y, width: 330, height: 38, rx: 8, 'stroke-width': i === 4 ? 2.2 : 1.4 }), C_SURFACE2, st.tone));
-      if (st.tex) g.appendChild(svgMath(205, st.y + 24, st.tex, { size: 11.5, anchor: 'middle', w: 320 }).setTone(st.tone));
-      else g.appendChild(paint(svgText(205, st.y + 24, st.text, null, 11.5, 'middle'), st.tone === C_MUTED ? null : st.tone));
-      if (i > 0) g.appendChild(paint(svgEl('line', { x1: 205, y1: st.y - 9, x2: 205, y2: st.y - 1, 'stroke-width': 1.3, 'marker-end': arrow }), null, C_MUTED));
-      s.appendChild(g);
+    var mk = K.arrowMarker(s, 'lcp-x-arrow-s3', C_MUTED);
+    var rowEls = rows.map(function (r, i) {
+      var g = group(s);
+      rectBox(g, 30, r.y, 520, 56, r.tone, C_SURFACE, i === 3 ? null : '4 3');
+      g.appendChild(paint(svgText(44, r.y + 20, r.no, 'demo-x-mono', 11), r.tone));
+      g.appendChild(svgMath(300, r.y + 26, r.tex, { size: 12, anchor: 'middle', w: 480 }));
+      g.appendChild(svgRich(290, r.y + 48, r.note, { size: 10.5, anchor: 'middle', w: 480, cls: 'demo-x-mut' }));
+      if (i > 0) arrowPath(g, [[290, r.y - 11], [290, r.y - 1]], C_MUTED, mk);
       return g;
     });
 
-    var code = svgEl('g', {});
-    code.appendChild(paint(svgEl('rect', { x: 400, y: 52, width: 370, height: 278, rx: 8, 'stroke-width': 1 }), C_SURFACE2, C_BORDER));
-    code.appendChild(svgText(414, 74, 'lcp_agent.py', 'demo-x-mut', 10.5));
-    var lines = [
-      { y: 100, s: 'info = super()._compute_actor_loss(batch)', tone: null, at: 3.6 },
-      { y: 122, s: 'lcp_loss = self._compute_lcp_loss(norm_obs, norm_a)', tone: C_GOOD, at: 3.6 },
-      { y: 160, s: 'torch.autograd.grad(a_logp, norm_obs,', tone: C_GOOD, at: 5.6 },
-      { y: 178, s: '                    create_graph=True)', tone: C_GOOD, at: 5.6 },
-      { y: 216, s: 'info["actor_loss"] += self._lcp_weight * lcp_loss', tone: C_ACCENT, at: 8.2 },
-      { y: 254, s: 'lcp_weight: 0.002', tone: C_ACCENT, at: 8.2 },
-      { y: 290, s: 'optimizer: SGD, learning_rate: 1e-4', tone: null, at: 10.6 }
-    ].map(function (ln) {
-      var t = paint(svgText(414, ln.y, ln.s, 'demo-x-mono', 10.5), ln.tone);
-      t.setAttribute('xml:space', 'preserve');
-      t.style.whiteSpace = 'pre';
-      code.appendChild(t);
-      return { node: t, at: ln.at };
-    });
-    s.appendChild(code);
+    /* 右：玩具策略上「最大斜率」与「访问到的状态上的均方根斜率」 */
+    var side = group(s);
+    rectBox(side, 570, 44, 200, 262, C_BORDER, C_SURFACE2);
+    side.appendChild(svgText(670, 66, '玩具策略上（同第 2 幕）', 'demo-x-mut', 10.5, 'middle'));
+    var BASE = 270, HSC = 36;
+    var barMax = vbar(side, 600, BASE, 52, C_BAD);
+    var barRms = vbar(side, 688, BASE, 52, C_WARN);
+    side.appendChild(paint(svgEl('line', { x1: 588, y1: BASE, x2: 752, y2: BASE, 'stroke-width': 1 }), null, C_BORDER));
+    side.appendChild(svgText(626, 288, '最大斜率', 'demo-x-ink2', 10.5, 'middle'));
+    side.appendChild(svgText(714, 288, '均方根斜率', 'demo-x-ink2', 10.5, 'middle'));
+    var vMax = paint(svgText(626, BASE - TOY_K * HSC - 8, fmt(TOY_K, 2), 'demo-x-mono', 11.5, 'middle'), C_BAD);
+    var vRms = paint(svgText(714, BASE - TOY.rmsSlope * HSC - 8, fmt(TOY.rmsSlope, 2), 'demo-x-mono', 11.5, 'middle'), C_WARN);
+    side.appendChild(vMax);
+    side.appendChild(vRms);
+    side.appendChild(svgText(670, 300, '期望只管走得到的状态', 'demo-x-mut', 10, 'middle'));
 
-    var foot = paint(svgText(400, 392, 'PPO 是主菜，LCP 是调味和收汁 —— 继承 PPOAgent，只多一项 loss', null, 14.5, 'middle'), C_ACCENT);
-    s.appendChild(foot);
+    var fin = group(s);
+    chip(fin, 30, 322, 740, '可微：和 PPO 的损失一起反向传播 · 论文所有实验 $\\lambda_{gp} = 0.002$', C_GOOD, { h: 32, size: 12 });
+    var vs = group(s);
+    chip(vs, 30, 366, 740, '平滑奖励藏在环境里，只能靠策略梯度采样去估；GP 直接对策略参数求导', C_BORDER, { h: 30, size: 11.5 });
 
     function draw(t) {
-      var at = [0.6, 1.0, 1.4, 3.4, 5.4, 8.0];
-      nodes.forEach(function (g, i) { setOpacity(g, seg(t, at[i], at[i] + 0.5)); });
-      setOpacity(code, seg(t, 3.0, 3.6));
-      lines.forEach(function (ln) { setOpacity(ln.node, seg(t, ln.at, ln.at + 0.5)); });
-      setOpacity(foot, seg(t, 12.4, 13.2));
+      setOpacity(rowEls[0], seg(t, 0.3, 0.9));
+      setOpacity(rowEls[1], seg(t, 3.6, 4.2));
+      setOpacity(side, seg(t, 4.2, 4.8));
+      setH(barMax, TOY_K * HSC * ease(seg(t, 4.6, 5.6)));
+      setH(barRms, TOY.rmsSlope * HSC * ease(seg(t, 5.4, 6.4)));
+      setOpacity(vMax, seg(t, 5.4, 5.8));
+      setOpacity(vRms, seg(t, 6.2, 6.6));
+      setOpacity(rowEls[2], seg(t, 7.0, 7.6));
+      setOpacity(rowEls[3], seg(t, 10.4, 11.0));
+      setOpacity(fin, seg(t, 13.4, 14.0));
+      setOpacity(vs, seg(t, 14.6, 15.2));
     }
+    return { el: s, draw: draw };
+  }
 
+  /* ── scene 4: 罚的是 log π 的梯度 ── */
+  function buildSceneLogPi() {
+    var s = sceneSvg('高斯策略的 log 概率对状态求导等于雅可比转置乘动作偏差除以方差；对动作取期望等于雅可比的 Frobenius 范数平方除以方差；J 取 0.8、0.2、负 0.4、0.6，sigma 0.4 时期望 7.5；第一个样本 a 减 mu 等于 0.4、负 0.2，梯度 2.5、负 0.25，平方和 6.31；sigma 减半期望变成 30');
+    s.appendChild(svgText(30, 28, '式 7 罚的是 log π 对状态的梯度：在高斯策略上它等于什么', 'demo-x-ink2', 13.5));
+
+    var form = group(s);
+    rectBox(form, 30, 44, 470, 106, C_ACCENT);
+    form.appendChild(svgRich(44, 64, 'PPO 的高斯策略 $a \\sim \\mathcal{N}(\\mu_\\theta(s), \\sigma^2 I)$，$J = \\partial\\mu/\\partial s$', { size: 11, w: 450, cls: 'demo-x-ink2' }));
+    form.appendChild(svgMath(140, 104, '\\nabla_s\\log\\pi = \\dfrac{J^\\top (a-\\mu)}{\\sigma^2}', { size: 13, anchor: 'middle', w: 220, h: 50 }));
+    var expF = group(form);
+    expF.appendChild(svgText(262, 100, '对 a 取期望 →', 'demo-x-mut', 10.5, 'middle'));
+    expF.appendChild(svgMath(395, 104, '\\mathbb{E}_a\\lVert\\nabla_s\\log\\pi\\rVert^2 = \\dfrac{\\lVert J\\rVert_F^2}{\\sigma^2}', { size: 13, anchor: 'middle', w: 200, h: 50 }).setTone(C_GOOD));
+    var ours = group(s);
+    ours.appendChild(svgText(490, 142, '这一步是我们推的，论文没写', 'demo-x-mut', 10, 'end'));
+
+    var ex = group(s);
+    rectBox(ex, 30, 160, 470, 92, C_BORDER, C_SURFACE2);
+    ex.appendChild(svgMath(130, 206, 'J = \\begin{bmatrix} 0.8 & 0.2 \\\\ -0.4 & 0.6 \\end{bmatrix}', { size: 12, anchor: 'middle', w: 190, h: 60 }));
+    ex.appendChild(svgRich(240, 186, '$\\lVert J\\rVert_F^2 = 0.64 + 0.04 + 0.16 + 0.36 = $ **1.20**', { size: 11, w: 255 }));
+    ex.appendChild(svgRich(240, 210, '$\\sigma = 0.4$：期望 $= 1.20 / 0.16 = $ **7.5**', { size: 11, w: 255 }));
+    ex.appendChild(svgRich(240, 234, '$\\sigma = 0.2$：期望 $= 1.20 / 0.04 = $ **30**', { size: 11, w: 255, cls: 'demo-x-mut' }));
+    var halfTag = group(ex);
+    halfTag.appendChild(svgText(494, 247, '探索噪声越小，同样的斜率罚得越重', 'demo-x-warn', 10, 'end'));
+
+    var one = group(s);
+    rectBox(one, 30, 264, 470, 62, C_WARN);
+    one.appendChild(svgRich(44, 286, '一个样本 $a - \\mu = (0.4, -0.2)$：梯度 $= (2.5,\\, -0.25)$', { size: 11, w: 450 }));
+    one.appendChild(svgRich(44, 310, '平方和 $= 6.25 + 0.0625 =$ **6.31**，不等于 7.5', { size: 11, w: 450, cls: 'demo-x-warn' }));
+
+    /* 右：动作平面 + 样本平均 */
+    var PX = 640, PY = 110, PU = 60;
+    var plane = group(s);
+    rectBox(plane, 520, 44, 250, 132, C_BORDER, C_SURFACE2);
+    plane.appendChild(svgRich(532, 62, '动作平面：$a - \\mu$', { size: 10.5, w: 200, cls: 'demo-x-mut' }));
+    [1, 2].forEach(function (k) {
+      plane.appendChild(paint(svgEl('circle', { cx: PX, cy: PY + 4, r: PU * GAUSS_SIGMA * k * 0.75, fill: 'none', 'stroke-width': 1.1, 'stroke-dasharray': '4 3', opacity: k === 1 ? 0.9 : 0.45 }), null, C_ACCENT));
+    });
+    var dots = GAUSS.s.devs.slice(1, 80).map(function (d) {
+      var c = paint(svgEl('circle', { cx: (PX + d[0] * PU * 0.75).toFixed(1), cy: (PY + 4 - d[1] * PU * 0.75).toFixed(1), r: 1.8 }), C_GOOD);
+      c.style.opacity = 0;
+      plane.appendChild(c);
+      return c;
+    });
+    var d0 = GAUSS.s.devs[0];
+    var firstArrow = group(plane);
+    pathLine(firstArrow, [[PX, PY + 4], [PX + d0[0] * PU * 0.75, PY + 4 - d0[1] * PU * 0.75]], C_WARN, 2);
+    firstArrow.appendChild(paint(svgEl('circle', { cx: PX + d0[0] * PU * 0.75, cy: PY + 4 - d0[1] * PU * 0.75, r: 4.2, 'stroke-width': 1.4 }), C_WARN, C_SURFACE2));
+    plane.appendChild(paint(svgEl('circle', { cx: PX, cy: PY + 4, r: 3.5 }), C_ACCENT));
+
+    var run = group(s);
+    rectBox(run, 520, 188, 250, 138, C_BORDER, C_SURFACE2);
+    run.appendChild(svgText(532, 206, '前 n 个样本的平均', 'demo-x-mut', 10.5));
+    var RX0 = 540, RX1 = 756, RY0 = 306, RY1 = 218, RMAX = 15;
+    function rx(n) { return RX0 + ((n - 1) / (GAUSS_N - 1)) * (RX1 - RX0); }
+    function ry(v) { return RY0 - (clamp(v, 0, RMAX) / RMAX) * (RY0 - RY1); }
+    run.appendChild(paint(svgEl('line', { x1: RX0, y1: RY0, x2: RX1, y2: RY0, 'stroke-width': 1 }), null, C_BORDER));
+    run.appendChild(paint(svgEl('line', { x1: RX0, y1: ry(GAUSS.expect), x2: RX1, y2: ry(GAUSS.expect), 'stroke-width': 1.3, 'stroke-dasharray': '5 4' }), null, C_BAD));
+    run.appendChild(paint(svgText(RX1, ry(GAUSS.expect) - 5, '期望 ' + fmt(GAUSS.expect, 1), 'demo-x-mono', 10, 'end'), C_BAD));
+    var runLn = pathLine(run, GAUSS.s.run.map(function (v, k) { return [rx(k + 1), ry(v)]; }), C_GOOD, 2);
+    var runTag = paint(svgText(RX1, RY0 + 14, GAUSS_N + ' 个样本平均 ' + fmt(GAUSS.mean, 2), 'demo-x-mono', 10, 'end'), C_GOOD);
+    run.appendChild(runTag);
+
+    var fin = group(s);
+    chip(fin, 30, 342, 740, 'GP 罚的是**均值对状态的斜率**，按 $1/\\sigma^2$ 加权；训练时每个状态只有一个动作，靠一个 minibatch 的平均来估', C_ACCENT, { h: 36, size: 11.5 });
+    var tail = group(s);
+    tail.appendChild(svgText(400, 404, '两维玩具算例；真实策略是 MLP，J 随状态变化', 'demo-x-mut', 10.5, 'middle'));
+
+    function draw(t) {
+      setOpacity(form, seg(t, 0.3, 0.9));
+      setOpacity(expF, seg(t, 3.6, 4.2));
+      setOpacity(ours, seg(t, 4.0, 4.6));
+      setOpacity(ex, seg(t, 7.0, 7.6));
+      setOpacity(halfTag, seg(t, 13.4, 14.0));
+      setOpacity(plane, seg(t, 7.4, 8.0));
+      setOpacity(firstArrow, seg(t, 10.4, 10.9));
+      setOpacity(one, seg(t, 10.4, 11.0));
+      var nDots = Math.floor(dots.length * ease(seg(t, 11.4, 13.0)));
+      dots.forEach(function (c, k) { c.style.opacity = k < nDots ? 0.8 : 0; });
+      setOpacity(run, seg(t, 11.0, 11.6));
+      drawOn(runLn, ease(seg(t, 11.4, 13.2)));
+      setOpacity(runTag, seg(t, 13.0, 13.4));
+      setOpacity(fin, seg(t, 14.6, 15.2));
+      setOpacity(tail, seg(t, 15.2, 15.8));
+    }
+    return { el: s, draw: draw };
+  }
+
+  /* ── scene 5: 几行代码接进 PPO ── */
+  function buildSceneCode() {
+    var s = sceneSvg('官方代码在 rsl_rl 的 PPO update 里把观测设成需要梯度，autograd 求 log_prob 对观测的梯度，create_graph 为真，逐样本平方求和取平均；总损失是裁剪替代损失加价值损失减 0.01 倍熵加特权正则加 0.002 倍梯度惩罚，Adam 学习率 2e-4；MimicKit 的 LCPAgent 继承 PPOAgent，配置是 DeepMimic 的 G1 PPO 配置加一行 lcp_weight 0.002，SGD 是 MimicKit 全部智能体的默认');
+    s.appendChild(svgText(30, 28, '几行代码接进 PPO：官方代码（rsl_rl 的 ppo_rma.py）', 'demo-x-ink2', 13.5));
+
+    var code = group(s);
+    rectBox(code, 30, 44, 470, 234, C_BORDER, C_SURFACE2);
+    var lines = [
+      { y: 66, s: 'obs_est_batch.requires_grad_()', tone: null, at: 0.3 },
+      { y: 86, s: 'self.actor_critic.act(obs_est_batch, ...)', tone: null, at: 0.3 },
+      { y: 106, s: 'log_prob = get_actions_log_prob(actions_batch)', tone: null, at: 0.3 },
+      { y: 136, s: 'grad = torch.autograd.grad(log_prob.sum(),', tone: C_GOOD, at: 3.6 },
+      { y: 154, s: '         obs_est_batch, create_graph=True)[0]', tone: C_GOOD, at: 3.6 },
+      { y: 172, s: 'gp_loss = torch.sum(torch.square(grad),', tone: C_GOOD, at: 3.6 },
+      { y: 190, s: '                    dim=-1).mean()', tone: C_GOOD, at: 3.6 },
+      { y: 220, s: 'loss = surrogate + 1.0 * value_loss', tone: C_ACCENT, at: 7.0 },
+      { y: 238, s: '     - 0.01 * entropy + priv_coef * priv_reg', tone: C_ACCENT, at: 7.0 },
+      { y: 256, s: '     + gp_coef * gp_loss          # 0.002', tone: C_ACCENT, at: 7.0 }
+    ].map(function (ln) {
+      var tnode = paint(svgText(44, ln.y, ln.s, 'demo-x-mono', 10.5), ln.tone);
+      tnode.setAttribute('xml:space', 'preserve');
+      tnode.style.whiteSpace = 'pre';
+      code.appendChild(tnode);
+      return { node: tnode, at: ln.at };
+    });
+
+    var cfg = group(s);
+    rectBox(cfg, 516, 44, 254, 234, C_ACCENT);
+    cfg.appendChild(svgText(530, 64, '官方配置（GR1）', 'demo-x-acc', 11.5));
+    [
+      ['GP 系数表 [0.002, 0.002, 700, 1000]', 'demo-x-ink2'],
+      ['首尾相同 → 全程恒为 0.002', 'demo-x-good'],
+      ['Adam · 学习率 2e-4 · 按 KL 自适应', 'demo-x-ink2'],
+      ['KL 目标 0.008 · 熵系数 0.01', 'demo-x-ink2'],
+      ['5 个 epoch × 4 个 minibatch', 'demo-x-ink2'],
+      ['4096 环境 × 24 步 = 98,304 样本/轮', 'demo-x-ink2'],
+      ['一次反向传播、一次更新', 'demo-x-mut']
+    ].forEach(function (r, k) {
+      cfg.appendChild(svgText(530, 90 + k * 26, r[0], r[1], 10.8));
+    });
+
+    var mimic = group(s);
+    rectBox(mimic, 30, 292, 740, 60, C_GOOD, C_SURFACE, '4 3');
+    mimic.appendChild(svgRich(44, 314, 'MimicKit：`LCPAgent` 继承 `PPOAgent`，只重写 actor 损失（`lcp_agent.py` 不到 50 行）', { size: 11, w: 720 }));
+    mimic.appendChild(svgRich(44, 338, '配置 = DeepMimic 的 G1 PPO 配置 + 一行 `lcp_weight: 0.002`；任务是动作跟踪，不是论文的速度行走', { size: 11, w: 720, cls: 'demo-x-ink2' }));
+    var sgd = group(s);
+    chip(sgd, 30, 366, 740, 'MimicKit 的 SGD、学习率 1e-4 是它**所有**智能体的默认，不是 LCP 的要求；论文官方代码用 Adam', C_WARN, { h: 34, size: 11.5 });
+
+    function draw(t) {
+      setOpacity(code, seg(t, 0.2, 0.7));
+      lines.forEach(function (ln) { setOpacity(ln.node, seg(t, ln.at, ln.at + 0.5)); });
+      setOpacity(cfg, seg(t, 7.6, 8.2));
+      setOpacity(mimic, seg(t, 10.4, 11.0));
+      setOpacity(sgd, seg(t, 13.4, 14.0));
+    }
+    return { el: s, draw: draw };
+  }
+
+  /* ── scene 6: 观测、ROA 与「罚整段输入」 ── */
+  function buildSceneObs() {
+    var s = sceneSvg('GR1 公开代码的观测：当前本体 71 维，特权信息 50 维，最近 10 步历史 710 维，共 831 维；ROA 用编码器把特权信息压成潜向量，适应模块只看历史去估它，式 8 两项距离各对另一边停梯度，lambda 0.1；表 I(c)：只罚当前观测动作抖动 7.16，罚整段输入 3.21');
+    s.appendChild(svgText(30, 28, '观测、ROA 与「GP 要罚整段输入」', 'demo-x-ink2', 13.5));
+
+    var blocks = group(s);
+    function block(x, w, head, val, lines, color, at) {
+      var g = group(blocks);
+      rectBox(g, x, 44, w, 108, color);
+      g.appendChild(svgText(x + 12, 64, head, null, 12));
+      g.appendChild(paint(svgText(x + w - 12, 64, val, 'demo-x-mono', 12, 'end'), color));
+      lines.forEach(function (str, k) {
+        g.appendChild(svgText(x + 12, 86 + k * 18, str, 'demo-x-ink2', 10.5));
+      });
+      g.at = at;
+      return g;
+    }
+    var bProp = block(30, 260, '当前本体', String(N_PROPRIO), ['相位 2 · 命令 3 · 角速度 3 · 横滚俯仰 2', '关节位置 21 · 关节速度 21', '上一步动作 19'], C_ACCENT, 0.3);
+    var bPriv = block(300, 210, '特权信息', String(N_PRIV), ['质量与质心 4 · 摩擦 1', '电机强度 42 · 机身线速度 3', '（只在仿真里拿得到）'], C_WARN, 3.6);
+    var bHist = block(520, 250, '历史 10 步', String(OBS_GR1.hist * N_PROPRIO), ['最近 10 步的本体观测', '10 × 71', '给适应模块估特权信息用'], C_MUTED, 3.6);
+    var total = group(s);
+    total.appendChild(svgRich(400, 172, '按 GR1 的公开代码：$71 + 50 + 710 =$ **831 维**，进网络前按滑动均值、标准差归一化', { size: 11.5, anchor: 'middle', w: 740 }));
+
+    var roa = group(s);
+    rectBox(roa, 30, 188, 470, 130, C_BORDER, C_SURFACE2);
+    roa.appendChild(svgText(44, 208, 'ROA（附录式 8）', 'demo-x-acc', 11.5));
+    var mk = K.arrowMarker(s, 'lcp-x-arrow-s6', C_MUTED);
+    roa.appendChild(svgRich(44, 234, '特权 $e$ → 编码器 $\\mu$ → $z_\\mu$', { size: 11, w: 200 }));
+    roa.appendChild(svgRich(270, 234, '历史 → 适应模块 $\\phi$ → $z_\\phi$', { size: 11, w: 220 }));
+    arrowPath(roa, [[150, 240], [150, 252]], C_MUTED, mk);
+    arrowPath(roa, [[380, 240], [380, 252]], C_MUTED, mk);
+    roa.appendChild(svgMath(265, 272, '-\\mathcal{L}_{PPO} + \\lambda\\lVert z_\\mu - \\mathrm{sg}[z_\\phi]\\rVert + \\lVert\\mathrm{sg}[z_\\mu] - z_\\phi\\rVert + \\lambda_{gp}\\mathcal{L}_{gp}', { size: 12, anchor: 'middle', w: 460 }));
+    roa.appendChild(svgRich(265, 302, '$\\lambda = 0.1$，$\\lambda_{gp} = 0.002$；sg 是停梯度：两项各拉一边', { size: 10.5, anchor: 'middle', w: 460, cls: 'demo-x-mut' }));
+
+    var abl = group(s);
+    rectBox(abl, 516, 188, 254, 130, C_BORDER, C_SURFACE2);
+    abl.appendChild(svgText(528, 208, '表 I(c)：GP 罚哪些输入', 'demo-x-ink2', 11));
+    var BASE = 290, SC = 9;
+    var bWhole = vbar(abl, 548, BASE, 48, C_GOOD);
+    var bCur = vbar(abl, 660, BASE, 48, C_BAD);
+    abl.appendChild(paint(svgEl('line', { x1: 530, y1: BASE, x2: 758, y2: BASE, 'stroke-width': 1 }), null, C_BORDER));
+    abl.appendChild(svgText(572, 306, '整段输入', 'demo-x-ink2', 10.5, 'middle'));
+    abl.appendChild(svgText(684, 306, '只罚当前观测', 'demo-x-ink2', 10.5, 'middle'));
+    var vW = paint(svgText(572, BASE - 3.21 * SC - 6, '3.21', 'demo-x-mono', 11, 'middle'), C_GOOD);
+    var vC = paint(svgText(684, BASE - 7.16 * SC - 6, '7.16', 'demo-x-mono', 11, 'middle'), C_BAD);
+    abl.appendChild(vW);
+    abl.appendChild(vC);
+    abl.appendChild(svgText(758, 222, '动作抖动', 'demo-x-mut', 10, 'end'));
+
+    var fin = group(s);
+    chip(fin, 30, 332, 740, '只罚当前观测：历史一变，动作照样会跳 —— 动作抖动 7.16 对 3.21，关节位置抖动 0.35 对 0.17', C_BAD, { h: 32, size: 11.5 });
+    var tail = group(s);
+    chip(tail, 30, 374, 740, '部署时特权信息拿不到，换成历史估出的 $z_\\phi$，这条通路也得平滑（这一句是我们的理解）', C_BORDER, { h: 32, size: 11 });
+
+    function draw(t) {
+      [bProp, bPriv, bHist].forEach(function (g) { setOpacity(g, seg(t, g.at, g.at + 0.6)); });
+      setOpacity(total, seg(t, 5.4, 6.0));
+      setOpacity(roa, seg(t, 7.0, 7.6));
+      setOpacity(abl, seg(t, 10.4, 11.0));
+      setH(bWhole, 3.21 * SC * ease(seg(t, 10.8, 11.8)));
+      setH(bCur, 7.16 * SC * ease(seg(t, 11.2, 12.2)));
+      setOpacity(vW, seg(t, 11.8, 12.2));
+      setOpacity(vC, seg(t, 12.2, 12.6));
+      setOpacity(fin, seg(t, 13.4, 14.0));
+      setOpacity(tail, seg(t, 14.8, 15.4));
+    }
+    return { el: s, draw: draw };
+  }
+
+  /* ── scene 7: 命令、奖励与课程 ── */
+  var S7_STEPS = curriculumSteps(CURRIC.s0, CURRIC.cap, CURRIC.up); // 9164
+  function buildSceneReward() {
+    var s = sceneSvg('命令：前进 0 到 0.8 米每秒、横移正负 0.4、转向正负 0.6 弧度每秒，每 150 步重抽，50 赫兹下是 3 秒，一回合 500 步 10 秒；奖励是步态风格、速度跟踪和表 IV 的八项正则，没有罚动作变化率与关节加速度的平滑项；附录 B 的课程：负奖励乘系数 s，从 0.8 起，回合长度低于 50 步乘 0.9999、高于 400 步乘 1.0001，上限 2.0，涨满要乘 9164 次');
+    s.appendChild(svgText(30, 28, '命令、奖励与课程：平滑交给 GP，正则奖励留着', 'demo-x-ink2', 13.5));
+
+    var cmd = group(s);
+    rectBox(cmd, 30, 44, 330, 108, C_BORDER, C_SURFACE2);
+    cmd.appendChild(svgText(44, 64, '速度命令（第 V 节，机器人坐标系）', 'demo-x-ink2', 11));
+    [['前进 $v_x$', '0 … 0.8 m/s'], ['横移 $v_y$', '−0.4 … 0.4 m/s'], ['转向 $v_{yaw}$', '−0.6 … 0.6 rad/s']].forEach(function (r, k) {
+      cmd.appendChild(svgRich(52, 88 + k * 21, r[0], { size: 11, w: 120 }));
+      cmd.appendChild(paint(svgText(346, 92 + k * 21, r[1], 'demo-x-mono', 11, 'end'), C_ACCENT));
+    });
+    var tl = group(s);
+    rectBox(tl, 376, 44, 394, 108, C_BORDER, C_SURFACE2);
+    tl.appendChild(svgText(390, 64, '一回合 500 步 = 10 s（50 Hz）', 'demo-x-ink2', 11));
+    var TX0 = 396, TX1 = 752;
+    function tx(k) { return TX0 + (k / EP_STEPS) * (TX1 - TX0); }
+    tl.appendChild(paint(svgEl('rect', { x: TX0, y: 84, width: TX1 - TX0, height: 18, rx: 4 }), C_SURFACE));
+    var segCols = [C_ACCENT, C_GOOD, C_WARN, C_ACCENT];
+    [0, 150, 300, 450].forEach(function (k, i) {
+      var e = Math.min(EP_STEPS, k + CMD_EVERY);
+      tl.appendChild(paint(svgEl('rect', { x: tx(k) + 1, y: 85, width: tx(e) - tx(k) - 2, height: 16, rx: 3, opacity: 0.55 }), segCols[i]));
+      tl.appendChild(svgText(tx(k), 118, String(k), 'demo-x-mono demo-x-mut', 9.5, 'middle'));
+    });
+    tl.appendChild(svgText(tx(500), 118, '500', 'demo-x-mono demo-x-mut', 9.5, 'middle'));
+    tl.appendChild(svgText(390, 140, '每 150 步（3 s）重抽一次命令，或者回合重置时', 'demo-x-mut', 10.5));
+
+    var rw = group(s);
+    rectBox(rw, 30, 166, 740, 104, C_BORDER);
+    rw.appendChild(svgText(44, 186, '奖励 = 步态风格 + 速度跟踪 + 正则（附录表 IV 的八项）', 'demo-x-ink2', 11.5));
+    TABLE4.forEach(function (r, k) {
+      var cx = 44 + (k % 4) * 182, cy = 210 + Math.floor(k / 4) * 22;
+      rw.appendChild(svgText(cx, cy, r[0], 'demo-x-ink2', 10.5));
+      rw.appendChild(paint(svgText(cx + 170, cy, r[1], 'demo-x-mono', 10.5, 'end'), C_WARN));
+    });
+    var gone = group(rw);
+    gone.appendChild(svgRich(44, 260, '没有「罚动作变化率、关节加速度」的平滑项（表 IV 里没有，GR1 配置里也没有）—— 这部分交给 GP', { size: 10.8, w: 720, cls: 'demo-x-good' }));
+
+    var cur = group(s);
+    rectBox(cur, 30, 282, 740, 128, C_BORDER, C_SURFACE2);
+    cur.appendChild(svgText(44, 302, '附录 B 的课程：负的奖励项乘系数 s，正的不乘', 'demo-x-ink2', 11.5));
+    var rules = group(cur);
+    [['s 从 0.8 开始', 'demo-x-ink2'], ['平均回合 < 50 步：s × 0.9999', 'demo-x-bad'], ['平均回合 > 400 步：s × 1.0001', 'demo-x-good'], ['上限 2.0', 'demo-x-ink2']].forEach(function (r, k) {
+      rules.appendChild(svgText(44, 326 + k * 20, r[0], r[1], 10.8));
+    });
+    var CX0 = 300, CX1 = 752, CY0 = 396, CY1 = 312;
+    function cxs(n) { return CX0 + (n / (S7_STEPS * 1.1)) * (CX1 - CX0); }
+    function cys(v) { return CY0 - ((v - 0.6) / (2.1 - 0.6)) * (CY0 - CY1); }
+    cur.appendChild(paint(svgEl('line', { x1: CX0, y1: CY0, x2: CX1, y2: CY0, 'stroke-width': 1 }), null, C_BORDER));
+    cur.appendChild(paint(svgEl('line', { x1: CX0, y1: cys(2.0), x2: CX1, y2: cys(2.0), 'stroke-width': 1, 'stroke-dasharray': '3 3' }), null, C_MUTED));
+    cur.appendChild(svgText(CX0 + 4, cys(2.0) - 4, '上限 2.0', 'demo-x-mut', 9.5));
+    var cPts = [];
+    for (var n = 0; n <= S7_STEPS * 1.1; n += 200) cPts.push([cxs(n), cys(Math.min(CURRIC.cap, CURRIC.s0 * Math.pow(CURRIC.up, n)))]);
+    var cLn = pathLine(cur, cPts, C_GOOD, 2.2);
+    var cTag = group(cur);
+    cTag.appendChild(svgRich(cxs(S7_STEPS) - 8, cys(2.0) - 8, '乘满 **' + S7_STEPS + '** 次 1.0001', { size: 10.5, anchor: 'end', w: 200, cls: 'demo-x-good' }));
+    cTag.appendChild(svgText(CX0 + 4, CY0 + 11, 's = 0.8', 'demo-x-mono demo-x-mut', 9.5));
+    cTag.appendChild(svgText(CX1, CY0 + 11, '假设每一步都满足「回合够长」（示意）', 'demo-x-mut', 9.5, 'end'));
+
+    function draw(t) {
+      setOpacity(cmd, seg(t, 0.3, 0.9));
+      setOpacity(tl, seg(t, 1.6, 2.2));
+      setOpacity(rw, seg(t, 3.6, 4.2));
+      setOpacity(gone, seg(t, 5.2, 5.8));
+      setOpacity(cur, seg(t, 7.0, 7.6));
+      drawOn(cLn, ease(seg(t, 10.4, 12.4)));
+      setOpacity(cTag, seg(t, 12.0, 12.6));
+    }
+    return { el: s, draw: draw };
+  }
+
+  /* ── scene 8: 三种平滑办法（表 I(a)） ── */
+  function buildSceneCompare() {
+    var s = sceneSvg('动作变化率是一阶导，抖动是三阶导；每种方法三个种子、一千个环境、五百步；图 4 的训练曲线里 LCP 的动作变化率等指标与平滑奖励相当；表 I(a) 动作抖动 LCP 3.21、平滑奖励 5.74、低通 7.86、不平滑 42.19；任务回报 26.03、26.56、24.98、28.87');
+    s.appendChild(svgText(30, 28, '三种平滑办法：没被平滑指标奖励过，却和平滑奖励一样平', 'demo-x-ink2', 13.5));
+
+    var mets = group(s);
+    chip(mets, 30, 42, 236, '动作变化率 = 一阶导', C_BORDER, { h: 28, size: 11 });
+    chip(mets, 276, 42, 250, '抖动 = 三阶导（jerk）', C_BORDER, { h: 28, size: 11 });
+    chip(mets, 536, 42, 234, '3 种子 × 1000 环境 × 500 步', C_BORDER, { h: 28, size: 11 });
+
+    /* 左：图 4 示意（动作变化率；读图近似值，0.5 B 样本处的跳变照画） */
+    var f4 = group(s);
+    rectBox(f4, 30, 84, 232, 230, C_BORDER, C_SURFACE2);
+    f4.appendChild(svgText(42, 102, '图 4（读图示意）：动作变化率', 'demo-x-mut', 10.5));
+    var FX0 = 48, FX1 = 250, FY0 = 286, FY1 = 116;
+    function fx(m) { return FX0 + (m / 680) * (FX1 - FX0); }
+    function fy(v) { return FY0 - ((v - 6) / (24 - 6)) * (FY0 - FY1); }
+    f4.appendChild(paint(svgEl('line', { x1: FX0, y1: FY0, x2: FX1, y2: FY0, 'stroke-width': 1 }), null, C_BORDER));
+    [8, 16].forEach(function (v) {
+      f4.appendChild(svgText(FX0 - 3, fy(v) + 3, String(v), 'demo-x-mono demo-x-mut', 9, 'end'));
+    });
+    [250, 500].forEach(function (m) {
+      f4.appendChild(svgText(fx(m), FY0 + 13, m + 'M', 'demo-x-mono demo-x-mut', 9, 'middle'));
+    });
+    function curveF(fn) {
+      var pts = [];
+      for (var m = 30; m <= 680; m += 10) pts.push([fx(m), fy(fn(m))]);
+      return pts;
+    }
+    var f4none = pathLine(f4, curveF(function (m) { return m < 495 ? 12 + 9 * (1 - Math.exp(-(m - 30) / 70)) : 14 + 1.2 * ((m - 495) / 185); }), C_MUTED, 1.8);
+    var f4rew = pathLine(f4, curveF(function (m) { return m < 495 ? 9 + 0.8 * (1 - Math.exp(-(m - 30) / 60)) : 9.1; }), C_WARN, 1.8);
+    var f4lcp = pathLine(f4, curveF(function (m) { return m < 495 ? 8 + 1.0 * (1 - Math.exp(-(m - 30) / 40)) : 7.9; }), C_BAD, 1.8);
+    f4.appendChild(svgText(250, 120, '灰：不平滑　黄：平滑奖励　红：LCP', 'demo-x-mut', 9.5, 'end'));
+
+    function bars(x0, title, idx, top, fmtD, at) {
+      var g = group(s);
+      rectBox(g, x0, 84, 246, 230, C_BORDER, C_SURFACE2);
+      g.appendChild(svgText(x0 + 12, 102, title, 'demo-x-ink2', 11));
+      var BASE = 274, H = 140;
+      g.appendChild(paint(svgEl('line', { x1: x0 + 10, y1: BASE, x2: x0 + 236, y2: BASE, 'stroke-width': 1 }), null, C_BORDER));
+      var cols = [C_GOOD, C_WARN, C_ACCENT, C_MUTED];
+      var names = ['LCP', '平滑奖励', '低通', '不平滑'];
+      var items = TABLE1A.map(function (r, k) {
+        var bx = x0 + 20 + k * 56;
+        var b = vbar(g, bx, BASE, 40, cols[k]);
+        var v = r[1][idx];
+        var lab = paint(svgText(bx + 20, BASE - (v / top) * H - 6, fmt(v, fmtD), 'demo-x-mono', 10.5, 'middle'), cols[k]);
+        g.appendChild(lab);
+        g.appendChild(svgText(bx + 20, BASE + 14, names[k], 'demo-x-ink2', 10, 'middle'));
+        return { b: b, h: (v / top) * H, lab: lab };
+      });
+      g.at = at;
+      g.items = items;
+      return g;
+    }
+    var bJit = bars(272, '表 I(a)：动作抖动 ↓', 0, 46, 2, 7.0);
+    var bRet = bars(524, '表 I(a)：任务回报 ↑', 5, 32, 2, 10.4);
+    var eTag = group(bJit);
+    eTag.appendChild(svgText(506, 306, '能耗 24.57 对 42.68：少 42%', 'demo-x-good', 10, 'end'));
+    var rTag = group(bRet);
+    rTag.appendChild(svgText(758, 306, 'LCP 只比不平滑低 9.8%', 'demo-x-good', 10, 'end'));
+
+    var fin = group(s);
+    chip(fin, 30, 330, 740, '论文：LCP 能替代平滑奖励，任务表现相近；低通回报偏低，可能是它的阻尼压抑了探索', C_ACCENT, { h: 34, size: 12 });
+    var tail = group(s);
+    chip(tail, 30, 374, 740, '不平滑回报最高，但动作抖动是 LCP 的 13 倍，不适合上真机', C_BORDER, { h: 30, size: 11 });
+
+    function draw(t) {
+      setOpacity(mets, seg(t, 0.3, 0.9));
+      setOpacity(f4, seg(t, 3.6, 4.2));
+      drawOn(f4none, ease(seg(t, 3.8, 5.4)));
+      drawOn(f4rew, ease(seg(t, 4.2, 5.8)));
+      drawOn(f4lcp, ease(seg(t, 4.6, 6.2)));
+      [bJit, bRet].forEach(function (g) {
+        setOpacity(g, seg(t, g.at, g.at + 0.5));
+        g.items.forEach(function (it, k) {
+          setH(it.b, it.h * ease(seg(t, g.at + 0.3 + k * 0.35, g.at + 1.1 + k * 0.35)));
+          setOpacity(it.lab, seg(t, g.at + 1.0 + k * 0.35, g.at + 1.3 + k * 0.35));
+        });
+      });
+      setOpacity(eTag, seg(t, 9.0, 9.6));
+      setOpacity(rTag, seg(t, 12.4, 13.0));
+      setOpacity(fin, seg(t, 13.4, 14.0));
+      setOpacity(tail, seg(t, 14.8, 15.4));
+    }
+    return { el: s, draw: draw };
+  }
+
+  /* ── scene 9: λ_gp 扫一遍（表 I(b)） ── */
+  function buildSceneLambda() {
+    var s = sceneSvg('表 I(b)：lambda gp 等于 0、0.001、0.002、0.005、0.01 时动作抖动 42.19、3.69、3.21、2.10、0.17，任务回报 28.87、26.32、26.03、23.92、16.11；0.01 时关节速度 2.75，回报比 0 低 44%，图 6 里也学得更慢');
+    s.appendChild(svgRich(30, 28, '$\\lambda_{gp}$ 扫一遍：0.001 就砍掉九成抖动，0.01 压过头', { size: 13.5, w: 700, cls: 'demo-x-ink2' }));
+
+    var X0 = 60, DX = 92;
+    var cols = TABLE1B.map(function (r, k) { return { lam: r[0], v: r[1], x: X0 + k * DX }; });
+    var head = group(s);
+    cols.forEach(function (c, k) {
+      head.appendChild(svgMath(c.x + 32, 56, '\\lambda_{gp} = ' + (c.lam === 0 ? '0' : String(c.lam)), { size: 11, anchor: 'middle', w: 100 }).setTone(k === 2 ? C_GOOD : null));
+    });
+
+    /* 上：动作抖动，对数轴 0.1 … 100 */
+    var top = group(s);
+    rectBox(top, 30, 70, 490, 150, C_BORDER, C_SURFACE2);
+    top.appendChild(svgText(42, 88, '动作抖动 ↓（对数轴）', 'demo-x-ink2', 10.5));
+    var LB = 206, LH = 100;
+    function ly(v) { return LB - ((Math.log10(v) + 1) / 3) * LH; }
+    [0.1, 1, 10, 100].forEach(function (v) {
+      top.appendChild(paint(svgEl('line', { x1: 50, y1: ly(v), x2: 510, y2: ly(v), 'stroke-width': 0.6, 'stroke-dasharray': '2 4' }), null, C_BORDER));
+      top.appendChild(svgText(48, ly(v) + 3, String(v), 'demo-x-mono demo-x-mut', 9, 'end'));
+    });
+    var jBars = cols.map(function (c, k) {
+      var b = vbar(top, c.x + 14, LB, 36, k === 2 ? C_GOOD : k === 4 ? C_WARN : k === 0 ? C_MUTED : C_ACCENT);
+      var lab = paint(svgText(c.x + 32, ly(c.v[0]) - 5, fmt(c.v[0], 2), 'demo-x-mono', 10.5, 'middle'), k === 2 ? C_GOOD : null);
+      top.appendChild(lab);
+      return { b: b, h: LB - ly(c.v[0]), lab: lab };
+    });
+
+    /* 下：任务回报 */
+    var bot = group(s);
+    rectBox(bot, 30, 230, 490, 120, C_BORDER, C_SURFACE2);
+    bot.appendChild(svgText(42, 248, '任务回报 ↑', 'demo-x-ink2', 10.5));
+    var RB = 336, RH = 70;
+    var rBars = cols.map(function (c, k) {
+      var b = vbar(bot, c.x + 14, RB, 36, k === 2 ? C_GOOD : k === 4 ? C_WARN : k === 0 ? C_MUTED : C_ACCENT);
+      var lab = paint(svgText(c.x + 32, RB - (c.v[5] / 30) * RH - 5, fmt(c.v[5], 2), 'demo-x-mono', 10.5, 'middle'), k === 2 ? C_GOOD : null);
+      bot.appendChild(lab);
+      return { b: b, h: (c.v[5] / 30) * RH, lab: lab };
+    });
+
+    /* 右：读数与图 6 示意 */
+    var drop = group(s);
+    rectBox(drop, 536, 70, 234, 120, C_BORDER);
+    drop.appendChild(svgText(548, 90, '0 → 0.001', 'demo-x-acc', 11.5));
+    drop.appendChild(svgRich(548, 114, '抖动 42.19 → 3.69：**−91%**', { size: 11, w: 220 }));
+    drop.appendChild(svgRich(548, 136, '回报 28.87 → 26.32：−8.8%', { size: 11, w: 220, cls: 'demo-x-ink2' }));
+    drop.appendChild(svgText(548, 160, '论文：仍可能出现危险的抖动', 'demo-x-warn', 10.5));
+    drop.appendChild(svgText(548, 180, '0.002 是论文选的', 'demo-x-good', 10.5));
+    var over = group(s);
+    rectBox(over, 536, 200, 234, 150, C_WARN, C_SURFACE, '4 3');
+    over.appendChild(svgText(548, 220, '0.01：压过头', 'demo-x-warn', 11.5));
+    over.appendChild(svgRich(548, 242, '关节速度 10.65 → **2.75**', { size: 11, w: 220 }));
+    over.appendChild(svgRich(548, 264, '回报 16.11，比 0 低 **44%**', { size: 11, w: 220 }));
+    over.appendChild(svgText(548, 286, '图 6（读图）：学得也更慢', 'demo-x-mut', 10.5));
+    var f6 = pathLine(over, (function () {
+      var pts = [];
+      for (var k = 0; k <= 40; k++) pts.push([552 + k * 5, 338 - 26 * (1 - Math.exp(-k / 5))]);
+      return pts;
+    })(), C_GOOD, 1.6);
+    var f6b = pathLine(over, (function () {
+      var pts = [];
+      for (var k = 0; k <= 40; k++) pts.push([552 + k * 5, 338 - 15 * (1 - Math.exp(-k / 6))]);
+      return pts;
+    })(), C_WARN, 1.6);
+    over.appendChild(svgText(756, 304, '0.002', 'demo-x-good demo-x-mono', 9.5, 'end'));
+    over.appendChild(svgText(756, 330, '0.01', 'demo-x-warn demo-x-mono', 9.5, 'end'));
+
+    var fin = group(s);
+    chip(fin, 30, 368, 740, '和别的平滑办法一样，$\\lambda_{gp}$ 也要调；论文实验里 0.002 平衡得最好，四台真机都用它', C_ACCENT, { h: 36, size: 12 });
+
+    function draw(t) {
+      setOpacity(head, seg(t, 0.3, 0.9));
+      setOpacity(top, seg(t, 0.3, 0.9));
+      setOpacity(bot, seg(t, 0.6, 1.2));
+      var at = [0.6, 3.6, 7.0, 8.4, 10.4];
+      cols.forEach(function (c, k) {
+        setH(jBars[k].b, jBars[k].h * ease(seg(t, at[k], at[k] + 0.8)));
+        setOpacity(jBars[k].lab, seg(t, at[k] + 0.6, at[k] + 1.0));
+        setH(rBars[k].b, rBars[k].h * ease(seg(t, at[k] + 0.3, at[k] + 1.1)));
+        setOpacity(rBars[k].lab, seg(t, at[k] + 0.9, at[k] + 1.3));
+      });
+      setOpacity(drop, seg(t, 4.4, 5.0));
+      setOpacity(over, seg(t, 11.0, 11.6));
+      drawOn(f6, ease(seg(t, 11.6, 13.0)));
+      drawOn(f6b, ease(seg(t, 11.8, 13.2)));
+      setOpacity(fin, seg(t, 13.4, 14.0));
+    }
+    return { el: s, draw: draw };
+  }
+
+  /* ── scene 10: 四台真机、sim-to-sim 与局限 ── */
+  function buildSceneReal() {
+    var s = sceneSvg('四台人形：傅利叶 GR1T1 与 GR1T2 二十一个关节控制十九个，宇树 H1 十九个关节，伯克利人形高 0.85 米十二个自由度；表 II MuJoCo 任务回报 24.33、21.74、26.50；表 III 真机三种地面动作抖动基本不变，最多涨 8%；局限：只验证了基础行走');
+    s.appendChild(svgText(30, 28, '四台人形：先 MuJoCo，再上真机，一个系数 0.002', 'demo-x-ink2', 13.5));
+
+    var robots = group(s);
+    var figs = [];
+    ROBOTS.forEach(function (r, k) {
+      var x = 30 + k * 250;
+      var g = group(robots);
+      rectBox(g, x, 42, 240, 116, C_BORDER, C_SURFACE2);
+      g.appendChild(svgText(x + 12, 62, r[0], null, 12));
+      var parts = r[1].split('，');
+      parts.forEach(function (p, q) {
+        g.appendChild(svgText(x + 12, 84 + q * 18, p, 'demo-x-ink2', 10.5));
+      });
+      var full = k < 2;
+      var fig = K.stickFigure(k === 2 ? C_GOOD : C_ACCENT, 2.4, false, 0.4);
+      fig.el.setAttribute('transform', 'translate(' + (x + 200) + ',' + (full ? 98 : 124) + ') scale(' + (full ? 0.62 : 0.33) + ')');
+      g.appendChild(fig.el);
+      figs.push(fig);
+      g.at = 0.3 + k * 1.1;
+      return g;
+    });
+    var robotTag = group(s);
+    robotTag.appendChild(svgText(770, 172, '小人是示意；只有伯克利人形的身高写在论文里', 'demo-x-mut', 9.5, 'end'));
+
+    var s2s = group(s);
+    rectBox(s2s, 30, 182, 230, 150, C_BORDER, C_SURFACE2);
+    s2s.appendChild(svgText(42, 200, '表 II：MuJoCo 任务回报', 'demo-x-ink2', 11));
+    var SB = 304, SH = 80;
+    var sNames = ['GR1', 'H1', 'Berkeley'];
+    var sBars = TABLE2.map(function (r, k) {
+      var bx = 52 + k * 70;
+      var b = vbar(s2s, bx, SB, 38, k === 2 ? C_GOOD : C_ACCENT);
+      var lab = paint(svgText(bx + 19, SB - (r[1][5] / 30) * SH - 5, fmt(r[1][5], 2), 'demo-x-mono', 10.5, 'middle'), null);
+      s2s.appendChild(lab);
+      s2s.appendChild(svgText(bx + 19, SB + 14, sNames[k], 'demo-x-ink2', 10, 'middle'));
+      return { b: b, h: (r[1][5] / 30) * SH, lab: lab };
+    });
+    s2s.appendChild(paint(svgEl('line', { x1: 44, y1: SB, x2: 252, y2: SB, 'stroke-width': 1 }), null, C_BORDER));
+
+    var real = group(s);
+    rectBox(real, 274, 182, 496, 150, C_BORDER, C_SURFACE2);
+    real.appendChild(svgText(286, 200, '表 III：真机动作抖动（3 个模型 × 10 s）', 'demo-x-ink2', 11));
+    var RB = 304, RH = 75;
+    var tCols = [C_ACCENT, C_WARN, C_BAD];
+    var rBars = [];
+    TABLE3.forEach(function (r, k) {
+      var gx = 300 + k * 156;
+      [1, 2, 3].forEach(function (q) {
+        var v = r[q][0][0];
+        var b = vbar(real, gx + (q - 1) * 40, RB, 32, tCols[q - 1]);
+        var lab = paint(svgText(gx + (q - 1) * 40 + 16, RB - (v / 2) * RH - 5, fmt(v, 2), 'demo-x-mono', 9.5, 'middle'), null);
+        real.appendChild(lab);
+        rBars.push({ b: b, h: (v / 2) * RH, lab: lab });
+      });
+      real.appendChild(svgText(gx + 56, RB + 14, sNames[k], 'demo-x-ink2', 10, 'middle'));
+    });
+    real.appendChild(paint(svgEl('line', { x1: 286, y1: RB, x2: 760, y2: RB, 'stroke-width': 1 }), null, C_BORDER));
+    var tLeg = group(real);
+    TERRAINS.forEach(function (n, q) {
+      tLeg.appendChild(paint(svgEl('rect', { x: 560 + q * 70, y: 192, width: 10, height: 10, rx: 2 }), tCols[q]));
+      tLeg.appendChild(svgText(574 + q * 70, 201, n, 'demo-x-mut', 9.5));
+    });
+
+    var lim = group(s);
+    chip(lim, 30, 344, 740, '外力推搡也能恢复（补充视频）。局限：只验证了**基础行走**，跑、跳还没试；$\\lambda_{gp}$ 仍要调', C_WARN, { h: 30, size: 11.5 });
+    var fin = group(s);
+    chip(fin, 30, 382, 740, '把「平滑」从调奖励、加滤波，换成对策略本身的一个**可微约束** · 代码与检查点开源', C_ACCENT, { h: 32, size: 12 });
+
+    function draw(t, clock) {
+      var now = clock == null ? t : clock;
+      robots.childNodes.forEach(function (g, k) { setOpacity(g, seg(t, 0.3 + k * 1.1, 0.9 + k * 1.1)); });
+      figs.forEach(function (f, k) { f.pose(0, 0, K.poseWalk((now * 0.9 + k * 0.33) % 1)); });
+      setOpacity(robotTag, seg(t, 3.0, 3.6));
+      setOpacity(s2s, seg(t, 3.6, 4.2));
+      sBars.forEach(function (it, k) {
+        setH(it.b, it.h * ease(seg(t, 4.0 + k * 0.4, 4.8 + k * 0.4)));
+        setOpacity(it.lab, seg(t, 4.6 + k * 0.4, 5.0 + k * 0.4));
+      });
+      setOpacity(real, seg(t, 7.0, 7.6));
+      rBars.forEach(function (it, k) {
+        setH(it.b, it.h * ease(seg(t, 7.4 + k * 0.2, 8.2 + k * 0.2)));
+        setOpacity(it.lab, seg(t, 8.0 + k * 0.2, 8.4 + k * 0.2));
+      });
+      setOpacity(lim, seg(t, 10.4, 11.0));
+      setOpacity(fin, seg(t, 13.4, 14.0));
+    }
     return { el: s, draw: draw };
   }
 
   var LCP_SCENES = [
     {
-      title: '抖动 = $K \\times \\sigma$',
-      dur: 13,
-      build: buildSceneJitter,
+      title: '仿真里的理想电机',
+      dur: 17,
+      build: buildSceneProblem,
       cues: [
-        { at: 0.3, s: '抖动从哪来？观测里有噪声 $\\sigma$，策略会把它放大 $K$ 倍再送进关节。' },
-        { at: 1.0, s: '左图：$\\pi(o) = o + b\\sin(\\omega o)$，它的最大斜率就是 Lipschitz 常数 $K$；这里 $K$ = **' + fmt(S1_K, 1) + '**。' },
-        { at: 2.6, s: '仿真里的理想传感器 $\\sigma = 0$：这个 $K = ' + fmt(S1_K, 1) + '$ 的策略输出**完全干净** —— 仿真根本测不出这个问题。' },
-        { at: 4.4, s: '换成真机量级 $\\sigma$ = **' + fmt(S1_SIGMA, 3) + '**：同一个策略，动作序列开始发毛，抖动 std = **' + fmt(S1.jit, 3) + '**。' },
-        { at: 8.0, s: '抖动的上界是 $K \\times \\sigma$ = **' + fmt(S1_K * S1_SIGMA, 3) + '**。$\\sigma$ 是硬件决定的，你改不了；能改的只有 $K$。' },
-        { at: 10.6, s: '所以「让动作平滑」，等价于「把策略对观测的敏感度压下来」。' }
+        { at: 0.3, s: '仿真的动力学和执行器模型都是简化的，电机近乎理想：在任何状态下都能给出想要的力矩。于是仿真里训出来的强化学习策略，容易学成类似 **bang-bang** 控制的抖动，相邻两步动作差得很多。' },
+        { at: 3.6, s: '论文表 I：不加任何平滑的策略，仿真里任务回报**最高**（28.87），但动作抖动 **42.19**，是 LCP（3.21）的 13 倍。真机电机打不出这么大的力矩，这类行为往往迁移失败。' },
+        { at: 7.0, s: '常见补救一：**平滑奖励**，罚动作变化、关节速度、关节加速度、能耗。权重要和任务奖励仔细配平，换一台机器人往往就得重调。' },
+        { at: 10.4, s: '补救二：在策略输出后面加**低通滤波**（上一期 OP3 用的就是 $u_t = 0.8\\,u_{t-1} + 0.2\\,a_t$）。论文说它常会压抑探索，训出次优策略。' },
+        { at: 13.4, s: '两者还有共同的问题：都**不可微**，藏在环境或信号链里，只能靠策略梯度采样去估。LCP 想要一个简单、可微、几行代码就能接进现有框架的平滑目标。' }
       ]
     },
     {
-      title: '梯度惩罚约束敏感度',
-      dur: 14,
-      build: buildSceneGradPenalty,
+      title: 'Lipschitz：给斜率设上限',
+      dur: 17,
+      build: buildSceneLipschitz,
       cues: [
-        { at: 0.3, s: '怎么压 $K$？全局 Lipschitz 常数很难算，但**梯度有界，函数就是 Lipschitz 连续的**。' },
-        { at: 0.8, s: '所以直接在目标里减去一项梯度惩罚：$\\max_\\theta J(\\theta) - \\lambda_{gp}\\,\\mathbb{E}[\\lVert\\nabla_o\\pi\\rVert^2]$。' },
-        { at: 2.2, s: '任务表现 $J(K)$：策略越灵敏越能追指令，但**收益递减**。' },
-        { at: 4.4, s: '梯度惩罚 $-\\lambda_{gp} K^2$（$\\lambda_{gp}$ = ' + fmt(S2_LAMBDA, 3) + '）：是二次的，$K$ 越大罚得越狠。' },
-        { at: 6.4, s: '两条相加得到总目标，**峰值落在哪里，就是训出来的敏感度** $K^*$ = ' + fmt(S2_K, 2) + '。' },
-        { at: 8.6, s: '$\\lambda_{gp}$ = 0 时没有任何东西拦着：$K^*$ 被一路推到搜索上限 ' + fmt(S2_K0, 1) + '，真机抖动 ' + fmt(S2_K0 * S2_SIGMA, 3) + '。' },
-        { at: 11.0, s: 'PPO 学「做什么动作更赚」，LCP 学「别一惊一乍地做」。' }
+        { at: 0.3, s: '**Lipschitz 连续**限制函数能变多快：任意两点，输出之差不超过 $K$ 乘输入之差（式 1）；满足它的 $K$ 叫 Lipschitz 常数。' },
+        { at: 3.6, s: '图 2 的画法：以曲线上任一点为顶点，画斜率 $\\pm K$ 的圆锥，整条曲线都落在圆锥里。左图是玩具策略 $\\pi(o) = o + b\\sin(\\omega o)$，最大斜率 $K = 5$。' },
+        { at: 7.0, s: '对策略来说，观测抖 $\\Delta o$，动作最多抖 $K\\Delta o$：噪声标准差 $\\sigma = 0.045$，上界 $K\\sigma = 0.225$，这段轨迹上实测 **' + fmt(TOY.jit, 3) + '**（玩具，不能和论文比）。' },
+        { at: 10.4, s: '推论（式 2）：梯度处处有界 $\\lVert\\nabla_x f(x)\\rVert \\le K$，函数就是 $K$-Lipschitz 的；反过来不成立，比如 $|x|$ 在 0 处不可导，却是 1-Lipschitz。' },
+        { at: 13.4, s: '动机实验（图 3）：只加平滑奖励、没有专门约束梯度，训出的策略**梯度范数就明显更小**。那就直接去约束策略的梯度。' }
       ]
     },
     {
-      title: '$\\lambda_{gp}$ 的取舍',
-      dur: 14,
-      build: buildSceneTradeoff,
+      title: '从约束到梯度惩罚：式 4 → 7',
+      dur: 17,
+      build: buildSceneDerive,
       cues: [
-        { at: 0.3, s: '$\\lambda_{gp}$ **不是越大越好**。同一个真机噪声 $\\sigma$ = ' + fmt(S3_NOISE, 3) + '，看三档。' },
-        { at: 1.0, s: '$\\lambda_{gp}$ = 0，纯 PPO：$K^*$ = **' + fmt(S3_LAMBDAS[0].k, 1) + '**，任务表现 ' + fmt(S3_LAMBDAS[0].j, 3) + '，但真机抖动 **' + fmt(S3_LAMBDAS[0].jit, 3) + '**。' },
-        { at: 4.2, s: '$\\lambda_{gp}$ = ' + fmt(S3_LAMBDAS[1].lam, 3) + '：$K^*$ = **' + fmt(S3_LAMBDAS[1].k, 2) + '**，抖动降到 ' + fmt(S3_LAMBDAS[1].jit, 3) + '，任务表现掉 ' + fmt(S3_DROP_MID, 1) + ' 个百分点 —— 演示里把这一段当作 LCP 想要的位置。' },
-        { at: 7.2, s: '$\\lambda_{gp}$ = ' + fmt(S3_LAMBDAS[2].lam, 1) + '，压过头：$K^*$ 只剩 **' + fmt(S3_LAMBDAS[2].k, 2) + '**，抖动几乎没了，可任务表现低了 **' + fmt(S3_DROP, 1) + '** 个百分点。' },
-        { at: 9.6, s: '太小没效果，太大动作发钝 —— 论文自己也承认 **$\\lambda_{gp}$ 仍要调**，而不是一劳永逸。' },
-        { at: 11.4, s: '合适的范围还和 $\\sigma$ 有关：换一台传感器更差的机器，这个系数就得重调。' }
+        { at: 0.3, s: '式 4：最大化回报 $J(\\pi)$，约束是 $\\lVert\\nabla_s\\log\\pi(a \\mid s)\\rVert^2$ 在**所有**状态、动作上都不超过 $K^2$。注意它约束的是 $\\log\\pi$ 对状态的梯度。' },
+        { at: 3.6, s: '所有状态上的最大值没法算，按 TRPO 的启发式换成 rollout 数据上的**期望**（式 5）。玩具策略上：最大斜率 5，访问到的状态上的均方根斜率只有 **' + fmt(TOY.rmsSlope, 2) + '** —— 期望只管走得到的地方。' },
+        { at: 7.0, s: '为了用梯度法优化，引入拉格朗日乘子 $\\lambda \\ge 0$，把约束搬进目标（式 6）：外层对 $\\lambda$ 取最小，内层对策略取最大。' },
+        { at: 10.4, s: '再简化：$\\lambda$ 不去学，固定成手调的系数 $\\lambda_{gp}$；$K^2$ 是常数，丢掉，得到式 7 的**梯度惩罚**（GP）。' },
+        { at: 13.4, s: 'GP 可微，能和 PPO 的损失一起反向传播，论文所有实验 $\\lambda_{gp} = 0.002$。平滑奖励藏在环境里，只能靠策略梯度采样去估；GP 直接对策略参数求导。' }
       ]
     },
     {
-      title: '对比低通滤波',
-      dur: 14,
-      build: buildSceneVsFilter,
+      title: '罚的是 $\\log\\pi$ 的梯度',
+      dur: 17,
+      build: buildSceneLogPi,
       cues: [
-        { at: 0.3, s: '另一条路：不动策略，在输出端加一个**低通滤波器**。' },
-        { at: 1.4, s: '同一段带噪指令，第 80 步有个阶跃。红线是 $K = 10$ 什么都不做，抖得最凶，抖动 **' + fmt(S4.jRaw, 3) + '**。' },
-        { at: 3.8, s: '黄线是低通（$\\alpha$ = ' + fmt(S4.alpha, 2) + '）：抖动压到 **' + fmt(S4.jFil, 3) + '**，比 LCP 还低，可阶跃要爬很久才追上。' },
-        { at: 6.2, s: '一阶低通的群延迟约 $(1-\\alpha)/\\alpha$ = **' + fmt(S4.lag, 1) + '** 个控制步 —— 平衡控制里，这份延迟本身就是失稳来源。' },
-        { at: 8.4, s: '绿线是 LCP（$K$ 压到 ' + fmt(S4.kLip, 1) + '）：抖动 **' + fmt(S4.jLcp, 3) + '**，比不处理低 ' + fmt(S4.jRaw / S4.jLcp, 1) + ' 倍，阶跃**立刻跟上**。' },
-        { at: 10.6, s: '低通治的是症状，$K$ 还在，还多了延迟；LCP 改的是策略函数本身，**不在信号链上加任何状态**。' }
+        { at: 0.3, s: '式 7 罚的不是动作本身，是 $\\log\\pi(a \\mid s)$ 对状态的梯度。PPO 的策略是对角高斯：均值 $\\mu_\\theta(s)$ 由网络给，标准差 $\\sigma$ 与状态无关。' },
+        { at: 3.6, s: '代进去：$\\nabla_s\\log\\pi = J^\\top(a - \\mu)/\\sigma^2$，$J$ 是均值对状态的雅可比；对动作取期望得 $\\lVert J\\rVert_F^2/\\sigma^2$ —— **罚的其实是均值的斜率，按 $1/\\sigma^2$ 加权**。这一步是我们推的，论文没写。' },
+        { at: 7.0, s: '两维算例：$J = [[0.8, 0.2], [-0.4, 0.6]]$，$\\lVert J\\rVert_F^2 = 1.20$；$\\sigma = 0.4$ 时期望 $= 1.20 / 0.16 =$ **7.5**。' },
+        { at: 10.4, s: '可训练时每个状态只有 rollout 里那**一个**动作：$a - \\mu = (0.4, -0.2)$ 时梯度 $(2.5, -0.25)$，平方和 **6.31**；样本多了，平均才收敛到 7.5（' + GAUSS_N + ' 个样本平均 ' + fmt(GAUSS.mean, 2) + '）。' },
+        { at: 13.4, s: '$\\sigma$ 减半到 0.2，同一个 $J$ 的期望变成 **30**，是 4 倍：探索噪声越小，同样的斜率罚得越重。' }
       ]
     },
     {
-      title: '接进 PPO：只多一项 loss',
-      dur: 14,
-      build: buildSceneLoop,
+      title: '几行代码接进 PPO',
+      dur: 17,
+      build: buildSceneCode,
       cues: [
-        { at: 0.3, s: 'LCP 不是新算法，是 PPO 上面的一个正则项：`LCPAgent` 继承 `PPOAgent`，全文不到 50 行。' },
-        { at: 1.0, s: 'rollout、优势估计、critic 更新都和 PPO 一样，网络结构也一样。' },
-        { at: 3.6, s: '唯一的差别在 actor 更新：先算标准 PPO-Clip loss，再算一项 `_compute_lcp_loss()`。' },
-        { at: 5.6, s: '对 `log_prob` 关于观测求梯度、取范数平方 $\\lVert\\nabla_o\\log\\pi(a \\mid o)\\rVert^2$，`create_graph=True` 让二阶梯度能回传。' },
-        { at: 8.2, s: '按权重合入：`actor_loss += lcp_weight * lcp_loss`，$\\lambda_{gp}$ = **0.002**。' },
-        { at: 10.6, s: '论文用 SGD（学习率 $10^{-4}$）而不是 Adam；笔记里的解释是，这样 GP 项和策略项的优化节奏更匹配。' },
-        { at: 12.4, s: '一句话：**PPO 是主菜，LCP 是调味和收汁** —— 只多一个方法、一项 loss。' }
+        { at: 0.3, s: '官方代码基于 legged_gym + rsl_rl。全部改动在 PPO 的 `update()` 里：把这一批观测设成需要梯度，前向一遍，算出这批动作的 `log_prob`。' },
+        { at: 3.6, s: '一次 `torch.autograd.grad` 求 `log_prob` 对观测的梯度，`create_graph=True` 让这个梯度还能再反向传播；逐样本平方求和、再取平均，就是 GP。' },
+        { at: 7.0, s: '总损失 = 裁剪的替代损失 + 价值损失 − 0.01 × 熵 + 特权正则 + **0.002 × GP**，一次反向传播、一次 Adam 更新。系数表 `[0.002, 0.002, 700, 1000]` 首尾相同，全程恒为 0.002。' },
+        { at: 10.4, s: 'MimicKit 也有 `LCPAgent`：继承 `PPOAgent`，只重写 actor 损失；配置就是 DeepMimic 的 G1 PPO 配置加一行 `lcp_weight: 0.002`，任务是动作跟踪，不是论文的速度行走。' },
+        { at: 13.4, s: '别搞反：MimicKit 里**所有**智能体默认都用 SGD、学习率 $10^{-4}$，这不是 LCP 的要求；论文官方代码用的是 Adam，学习率 $2\\times10^{-4}$，按 KL 自适应。' }
+      ]
+    },
+    {
+      title: '观测、ROA 与「罚整段输入」',
+      dur: 17,
+      build: buildSceneObs,
+      cues: [
+        { at: 0.3, s: '观测（第 V 节）：2 维步态相位（正弦、余弦）、3 维速度命令、关节位置和速度、上一步动作；按 GR1 的公开代码再加角速度、横滚俯仰，一共 **71** 维。' },
+        { at: 3.6, s: '特权信息：机身质量、质心、电机强度、机身线速度（代码里还多了摩擦），**50** 维；外加最近 10 步的历史，**710** 维。合起来 **831** 维，进网络前用滑动均值和标准差归一化。' },
+        { at: 7.0, s: 'sim-to-real 用 **ROA**（附录式 8）：编码器把特权信息压成 $z_\\mu$，适应模块只看历史去估 $z_\\phi$；两项距离各对另一边停梯度，$\\lambda = 0.1$，GP 照常加上。' },
+        { at: 10.4, s: 'GP 罚哪些输入？表 I(c)：只罚当前观测，动作抖动 **7.16**、关节位置抖动 0.35；罚整段输入，**3.21**、0.17。' },
+        { at: 13.4, s: '论文的解释：只管当前观测，历史一变，动作照样会跳。部署时特权信息拿不到、换成历史估出的 $z_\\phi$，这条通路也得平滑（后半句是我们的理解）。' }
+      ]
+    },
+    {
+      title: '命令、奖励与课程',
+      dur: 17,
+      build: buildSceneReward,
+      cues: [
+        { at: 0.3, s: '任务是跟着速度命令走：前进 $v_x \\in [0, 0.8]$ m/s、横移 $v_y \\in [-0.4, 0.4]$ m/s、转向 $v_{yaw} \\in [-0.6, 0.6]$ rad/s，每 **150** 步重抽一次；控制 50 Hz，就是每 3 s 换一次，一回合 500 步 = 10 s。' },
+        { at: 3.6, s: '奖励三类：步态风格、速度跟踪、正则（附录表 IV 八项：机身角速度、关节力矩、碰撞、竖直速度、触地力、绊脚、关节限位、机身姿态）。**没有**罚动作变化率、关节加速度的平滑项 —— 那部分交给 GP。' },
+        { at: 7.0, s: '附录 B 的课程：负的奖励项乘系数 $s$，正的不乘。$s$ 从 0.8 起：平均回合长度低于 50 步就乘 0.9999，高于 400 步就乘 1.0001，上限 2.0。' },
+        { at: 10.4, s: '意思是先轻罚、让它敢探索，站稳了再加重正则。从 0.8 涨到 2.0 要乘 **' + S7_STEPS + '** 次 1.0001（$\\ln 2.5 / \\ln 1.0001$）；公开代码每个控制步判断一次，那就是约 382 次迭代。' },
+        { at: 13.4, s: '公开代码和论文有出入：GR1 的命令区间是 0–0.6 m/s、±0.3、±0.3，课程从 1.0 起、阈值 420 步，各机器人还不一样。下面的数字以论文为准，代码供对照。' }
+      ]
+    },
+    {
+      title: '三种平滑办法：表 I(a)',
+      dur: 17,
+      build: buildSceneCompare,
+      cues: [
+        { at: 0.3, s: '怎么量「抖」：动作变化率是动作对时间的**一阶导**；动作抖动、关节位置抖动是**三阶导**（jerk）；再加关节速度、能耗、机身加速度。每种设置 3 个种子、1000 个环境、各跑 500 步。' },
+        { at: 3.6, s: '图 4：训练全程，LCP 的动作变化率、关节加速度、关节速度、能耗都和平滑奖励的策略差不多，远低于不平滑的 —— 而它从没被这些指标直接奖励过。' },
+        { at: 7.0, s: '表 I(a) 的动作抖动：LCP **3.21**，平滑奖励 5.74，低通 7.86，不平滑 42.19；能耗 24.57 对 42.68，少了 42%。' },
+        { at: 10.4, s: '任务回报：不平滑最高 **28.87**，平滑奖励 26.56，LCP 26.03，低通最低 24.98。LCP 只比不平滑低 9.8%。' },
+        { at: 13.4, s: '论文的读法：LCP 能替代平滑奖励，任务表现相近；低通回报偏低，可能是滤波带来的阻尼压抑了探索；不平滑回报虽高，抖得不能上真机。' }
+      ]
+    },
+    {
+      title: '$\\lambda_{gp}$ 扫一遍：表 I(b)',
+      dur: 17,
+      build: buildSceneLambda,
+      cues: [
+        { at: 0.3, s: '表 I(b) 只改 $\\lambda_{gp}$。$\\lambda_{gp} = 0$ 就是不平滑：动作抖动 42.19、任务回报 28.87。' },
+        { at: 3.6, s: '只加到 **0.001**，抖动就掉到 3.69，降了 **91%**；回报 26.32，只少 8.8%。可论文说这一档仍可能出现上真机危险的抖动。' },
+        { at: 7.0, s: '**0.002** 是论文选的：抖动 3.21、回报 26.03。再到 0.005：抖动 2.10、回报 23.92。' },
+        { at: 10.4, s: '**0.01** 压过头：抖动只剩 0.17，关节速度从 10.65 掉到 **2.75**，动作又平又慢，回报 16.11，比 0 低 44%；图 6 里它也学得更慢。' },
+        { at: 13.4, s: '结论：和别的平滑办法一样，$\\lambda_{gp}$ 也要调；论文的实验里 **0.002** 在平滑和任务之间平衡得最好，四台真机都用它。' }
+      ]
+    },
+    {
+      title: '四台真机与局限',
+      dur: 17,
+      build: buildSceneReal,
+      cues: [
+        { at: 0.3, s: '四台人形：Fourier GR1T1 和 GR1T2 结构相同，21 个关节，脚踝横滚力矩太小、当被动关节，实际控制 19 个；Unitree H1 19 个关节全主动；Berkeley Humanoid 高 0.85 m、12 个自由度。' },
+        { at: 3.6, s: '上真机前先在 MuJoCo 里做 sim-to-sim（表 II）：任务回报 GR1 24.33、H1 21.74、Berkeley 26.50。论文说全尺寸的两台比 Isaac Gym 里略降，大机器人的域差距更大。' },
+        { at: 7.0, s: '真机（表 III）：同样的奖励、$\\lambda_{gp} = 0.002$，每台 3 个模型、各跑 10 s。平地、软地、粗糙地面上动作抖动基本不变：GR1 1.12–1.18，H1 1.11–1.20，最多涨 **8%**。' },
+        { at: 10.4, s: '外力推搡也能恢复（补充视频）。局限：论文只验证了**基础行走**，跑、跳这类更动态的技能还没试；$\\lambda_{gp}$ 仍要调。' },
+        { at: 13.4, s: '一句话：把「平滑」从调奖励、加滤波，换成对策略本身的一个**可微约束** —— 几行代码，四台机器人共用一个系数。仿真、部署代码和检查点都开源了。' }
       ]
     }
   ];
 
   function buildExplainerDemo(host) {
     K.explainer(host, {
-      title: '五幕动画：LCP 全流程速览',
-      sub: '约 69 秒自动播放。空格播放/暂停，← → 换幕；画面里的数字与下面三个演示用的是同一份函数。',
-      ariaLabel: 'LCP 五幕讲解动画',
+      title: '十幕动画：LCP 全流程速览',
+      sub: '约 170 秒自动播放。空格播放/暂停，← → 换幕；表格数字照抄论文，玩具算例与下面三个演示、笔记「具体实例」用的是同一份数。',
+      ariaLabel: 'LCP 十幕讲解动画',
       notes: [
-        '取数依据：第一幕的 $K$、$\\sigma$ 与抖动 std 来自下面「抖动是怎么来的」演示的默认参数（$K$ = 5、$\\sigma$ = 0.045、同一个随机种子）；' +
-          '第二、三幕的 $K^*$、任务表现、真机抖动由「$\\lambda_{gp}$」演示里的同一套 `taskJ` / `bestK` 现算；' +
-          '第四幕的三条曲线与延迟公式 $(1-\\alpha)/\\alpha$ 来自「三种办法」演示的默认参数。',
-        '第五幕的代码摘自笔记「MimicKit 源码对照」：`lcp_agent.py` 的 `_compute_actor_loss` / `_compute_lcp_loss`，`lcp_weight: 0.002`，SGD 学习率 $10^{-4}$。',
-        '**这几幕里的玩具模型和下面三个演示同源**：策略取成一维的 $\\pi(o) = o + b\\sin(\\omega o)$，$J(K)$ 是一条编出来的饱和曲线，滤波器是一阶的。' +
-          '定性结论（抖动上界 = $K \\times \\sigma$、二次惩罚让最优 $K$ 单调下降、低通要付延迟而 LCP 不用）成立，**具体数值不能和论文直接比**。'
+        '取数依据：第 1、8、9、10 幕的数字照抄论文表 I–III（arXiv 2410.11825 v3）；第 3 幕的式 4–7、第 6 幕的式 8 与 $\\lambda = 0.1$、第 7 幕的课程与表 IV 照抄正文和附录 A–C；' +
+          '第 5 幕的代码与超参数摘自官方仓库 `rsl_rl/algorithms/ppo_rma.py`、`humanoid_config.py`、`gr1_walk_phase_config.py`，MimicKit 一行摘自 `lcp_agent.py` 与 `lcp_g1_agent.yaml`；第 6 幕的 71 / 50 / 710 / 831 维按 GR1 配置逐项相加；第 7 幕的 9164 次是现算的。',
+        '**玩具与示意**：第 2、3 幕的一维策略 $\\pi(o) = o + b\\sin(\\omega o)$ 与第 4 幕的两维高斯算例是玩具，第 4 幕的推导 $\\mathbb{E}\\lVert\\nabla_s\\log\\pi\\rVert^2 = \\lVert J\\rVert_F^2/\\sigma^2$ 是我们推的；第 1 幕的抖动曲线、第 2 幕的图 3、第 8 幕的图 4、第 9 幕的图 6 都是按论文图的走势画的示意（论文图 3 没有纵轴数值）；第 10 幕的小人是示意。'
       ],
       scenes: LCP_SCENES
     });
   }
 
-  // ─── the narrated vertical video of the same five scenes ─────────────
+  // ─── the narrated vertical video of the same ten scenes ─────────────
   /* Rendered offline by scripts/paper_video/ from the storyboard above plus a
      voice-over; the files sit next to the note (see its placeholder). */
   function buildVideoDemo(host) {
     K.video(host, {
-      title: '配音讲解视频：LCP 五幕全流程',
-      sub: '4 分 35 秒竖屏视频（1080×1920），中文配音 + 字幕。画面就是上面的五幕动画，旁白把每一幕讲细；适合手机上看或转发。',
-      size: '6.3 MB',
+      title: '配音讲解视频：LCP 十幕全流程',
+      sub: '10 分 34 秒竖屏视频（1080×1920），中文配音 + 字幕。画面就是上面的十幕动画，旁白把每一幕讲细；适合手机上看或转发。',
+      size: '11.0 MB',
       fileName: 'LCP_讲解视频.mp4'
     });
   }
@@ -1313,6 +1728,6 @@
     'lcp-video': buildVideoDemo,
     'lcp-sensitivity': buildSensitivityDemo,
     'lcp-gp': buildGpDemo,
-    'lcp-vs-filter': buildVsFilterDemo
+    'lcp-table': buildTableDemo
   });
 })();
