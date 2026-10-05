@@ -663,13 +663,49 @@
     function l2(a, b) { return [l(a[0], b[0]), l(a[1], b[1])]; }
     return { lean: l(A.lean, B.lean), armA: l2(A.armA, B.armA), armB: l2(A.armB, B.armB), legA: l2(A.legA, B.legA), legB: l2(A.legB, B.legB) };
   }
+  /* 姿态：角度从竖直向下量起、朝 +x（脸朝的方向）为正，与 kit.stickFigure 相同。
+     趴着 / 仰躺时手臂贴着身体往脚的方向放（不举在空中）；跪撑时手臂竖直撑地，躯干倾角让手和膝同时着地；
+     蹲时脚掌着地、大腿前伸，是跪撑到站立之间的一帧，免得小腿从地面以下扫过去。 */
   var POSE_STAND = { lean: 4, armA: [-8, 6], armB: [8, 18], legA: [2, 2], legB: [-2, -2] };
-  var POSE_PRONE = { lean: 90, armA: [150, 160], armB: [150, 160], legA: [-90, -90], legB: [-92, -92] };
-  var POSE_SUPINE = { lean: -90, armA: [-150, -160], armB: [-150, -160], legA: [90, 90], legB: [92, 92] };
-  var POSE_PUSH = { lean: 62, armA: [8, 0], armB: [12, 4], legA: [-12, -88], legB: [-16, -90] };
-  var POSE_CROUCH = { lean: 34, armA: [30, 50], armB: [36, 56], legA: [70, -24], legB: [66, -28] };
+  var POSE_PRONE = { lean: 90, armA: [-80, -95], armB: [-84, -98], legA: [-90, -90], legB: [-92, -92] };
+  var POSE_SUPINE = { lean: -90, armA: [80, 95], armB: [84, 98], legA: [90, 90], legB: [92, 92] };
+  var POSE_PUSH = { lean: 70, armA: [2, 0], armB: [6, 2], legA: [-12, -88], legB: [-16, -90] };
+  var POSE_CROUCH = { lean: 30, armA: [25, 10], armB: [30, 14], legA: [80, -10], legB: [76, -14] };
   var POSE_KICK = { lean: -14, armA: [-40, -20], armB: [40, 60], legA: [62, 80], legB: [-8, -8] };
   var POSE_LEAN = { lean: 20, armA: [-30, 0], armB: [30, 50], legA: [24, -6], legB: [-22, -60] };
+
+  /* 火柴人各点在髋坐标系下的位置（与 kit.stickFigure 同一套尺寸：躯干 42、头距肩 15 半径 8.5、
+     上臂 20 / 前臂 18、大腿 / 小腿各 24），用来找最低点和脚的位置 */
+  function figPoints(P) {
+    function lp(x, y, len, ang) {
+      var r = (ang * Math.PI) / 180;
+      return [x + len * Math.sin(r), y + len * Math.cos(r)];
+    }
+    var sh = lp(0, 0, 42, 180 - P.lean), hd = lp(sh[0], sh[1], 15, 180 - P.lean);
+    var pts = [[0, 0], sh, [hd[0], hd[1] + 8.5]], feet = [];
+    [P.armA, P.armB].forEach(function (a) {
+      var e = lp(sh[0], sh[1], 20, a[0]);
+      pts.push(e, lp(e[0], e[1], 18, a[1]));
+    });
+    [P.legA, P.legB].forEach(function (l) {
+      var k = lp(0, 0, 24, l[0]), f = lp(k[0], k[1], 24, l[1]);
+      pts.push(k, f);
+      feet.push(f);
+    });
+    return { low: Math.max.apply(null, pts.map(function (q) { return q[1]; })), footX: (feet[0][0] + feet[1][0]) / 2 };
+  }
+  /* 把姿态 P 放在地面 groundY 上：最低的点（脚、膝、手或头）正好贴地，身体既不悬空也不陷进地里。
+     给了 footX 就让两脚的中点钉在这个横坐标上（摔倒、爬起时脚不打滑），否则髋放在 x。 */
+  function placeOnGround(fig, x, groundY, P, footX) {
+    var fp = figPoints(P);
+    fig.pose(footX == null ? x : footX - fig.sc * fp.footX, groundY - fig.sc * fp.low, P);
+  }
+  /* 前倒起身的四个关键帧：趴 → 跪撑 → 蹲 → 站，w ∈ [0, 3] 在相邻两帧之间插值 */
+  var GETUP_SEQ = [POSE_PRONE, POSE_PUSH, POSE_CROUCH, POSE_STAND];
+  function getupPose(w) {
+    var k = Math.min(2, Math.floor(w));
+    return lerpPose(GETUP_SEQ[k], GETUP_SEQ[k + 1], ease(clamp(w - k, 0, 1)));
+  }
 
   /* 小折线图坐标 */
   function miniAxes(parent, x, y, w, h, xd, yd) {
@@ -712,7 +748,11 @@
     fail.appendChild(svgText(44, 294, '直接端到端训 1v1（消融，图 7B）', 'demo-x-bad', 11.5));
     fail.appendChild(svgText(44, 316, '① 只给进球 / 失球的稀疏奖励 → 滚到球边，用腿把球拨进门', 'demo-x-ink2', 11));
     fail.appendChild(svgText(44, 336, '② 加上倒地惩罚等塑形 → 只学会站起来不动，朝球、前进的塑形奖励也救不回来', 'demo-x-ink2', 11));
+    fail.appendChild(paint(svgEl('line', { x1: 596, y1: 341, x2: 760, y2: 341, 'stroke-width': 1 }), null, C_BORDER));
+    fail.appendChild(paint(svgEl('rect', { x: 760, y: 322, width: 4, height: 19, rx: 1.5 }), C_BAD));
     var roll = op3(fail, C_BAD, 0.5);
+    var rollBall = paint(svgEl('circle', { r: 3.6, 'stroke-width': 1 }), '#f5f5f5', '#555');
+    fail.appendChild(rollBall);
 
     var fin = group(s);
     chip(fin, 30, 358, 740, '所以分两段：先分别训**踢球**和**起身**两个技能 → 再**蒸馏**成一个智能体 + **自博弈**', C_GOOD, { h: 38, size: 12.5 });
@@ -731,8 +771,25 @@
       setOpacity(robot, seg(t, 7.0, 7.6));
       fig.pose(334, 236, K.poseWalk((now * 1.4) % 1));
       setOpacity(fail, seg(t, 10.4, 11.0));
-      // 「滚着拨球」：躺着的机器人
-      roll.pose(706, 330, lerpPose(POSE_PRONE, POSE_SUPINE, 0.5 + 0.5 * Math.sin(now * 2.2)));
+      // 「滚着拨球」：仰躺在地上（腿朝球），手脚轮流甩过身体往前滚，到球边抬腿把球拨进门；3.2 s 一轮
+      var rc = (now % 3.2) / 3.2;
+      var rollU = ease(clamp(rc / 0.62, 0, 1)), kickU = clamp((rc - 0.62) / 0.2, 0, 1);
+      var th = rc * 2 * Math.PI * 3;
+      var lift = Math.sin(Math.PI * kickU);
+      var RP = {
+        lean: -90 + 6 * Math.sin(th) * (1 - kickU),
+        armA: [80 + 70 * Math.max(0, Math.sin(th)), 95 + 60 * Math.max(0, Math.sin(th))],
+        armB: [84 + 70 * Math.max(0, -Math.sin(th)), 98 + 60 * Math.max(0, -Math.sin(th))],
+        legA: [90 + 10 * Math.sin(th) * (1 - kickU) + 40 * lift, 92 + 10 * lift],
+        legB: [92 - 10 * Math.sin(th) * (1 - kickU), 92]
+      };
+      placeOnGround(roll, 630 + 46 * rollU, 341, RP);
+      var hit = clamp((rc - 0.8) / 0.12, 0, 1); // 腿落下、脚背碰到球的那一刻球才动
+      rollBall.setAttribute('cx', (705 + 51 * ease(hit)).toFixed(1));
+      rollBall.setAttribute('cy', '337.4');
+      var fade = rc < 0.06 ? rc / 0.06 : rc > 0.94 ? (1 - rc) / 0.06 : 1;
+      roll.el.style.opacity = fade;
+      rollBall.style.opacity = fade;
       setOpacity(fin, seg(t, 13.6, 14.2));
     }
     return { el: s, draw: draw };
@@ -901,14 +958,12 @@
     rectBox(poses, 30, 40, 450, 144, C_GOOD, C_SURFACE);
     poses.appendChild(svgText(42, 58, '从脚本起身动作里抽关键姿态（图 S2，示意）', 'demo-x-good', 11.5));
     var keyFigs = [];
-    var HIP = { prone: 8, push: 24, crouch: 30, stand: 48 };
-    function hipLift(P) { return P === POSE_STAND ? HIP.stand : P === POSE_PUSH ? HIP.push : P === POSE_CROUCH ? HIP.crouch : HIP.prone; }
     [[POSE_PRONE, POSE_PUSH, POSE_STAND, '前倒'], [POSE_SUPINE, POSE_CROUCH, POSE_STAND, '后倒']].forEach(function (set, row) {
       var gy = 116 + row * 60;
       poses.appendChild(svgText(42, gy - 8, set[3], 'demo-x-mut', 10.5));
       for (var k = 0; k < KEY_POSES; k++) {
         var f = op3(poses, C_INK, 0.42);
-        f.pose(112 + k * 92, gy - hipLift(set[k]) * 0.42 * 1.0, set[k]);
+        placeOnGround(f, 112 + k * 92, gy + 1, set[k]);
         keyFigs.push(f.el);
         poses.appendChild(paint(svgEl('line', { x1: 80 + k * 92, y1: gy + 1, x2: 144 + k * 92, y2: gy + 1, 'stroke-width': 1 }), null, C_BORDER));
         if (k < 2) poses.appendChild(svgText(158 + k * 92, gy - 12, '→', 'demo-x-mut', 12, 'middle'));
@@ -963,11 +1018,9 @@
       var now = clock == null ? t : clock;
       setOpacity(poses, seg(t, 0.3, 0.8));
       keyFigs.forEach(function (g, k) { setOpacity(g, seg(t, 0.5 + k * 0.4, 0.9 + k * 0.4)); });
-      // 插值的目标姿态：沿前倒那一串来回
-      var w = (Math.sin(now * 0.9) + 1) / 2 * 2;
-      var P = w < 1 ? lerpPose(POSE_PRONE, POSE_PUSH, w) : lerpPose(POSE_PUSH, POSE_STAND, w - 1);
-      var lift = w < 1 ? HIP.prone + (HIP.push - HIP.prone) * w : HIP.push + (HIP.stand - HIP.push) * (w - 1);
-      live.pose(420, 159 - lift * 0.5, P);
+      // 插值的目标姿态：沿前倒那一串（趴 → 跪撑 → 蹲 → 站）来回，脚钉在地上
+      var w = ((1 - Math.cos(now * 0.8)) / 2) * 3;
+      placeOnGround(live, 0, 160, getupPose(w), 394);
       setOpacity(live.el, seg(t, 2.2, 2.8));
       setOpacity(tl, seg(t, 3.6, 4.2));
       tickEls.forEach(function (m, k) { setOpacity(m, seg(t, 4.0 + k * 0.25, 4.2 + k * 0.25)); });
@@ -1039,12 +1092,12 @@
       setOpacity(router, seg(t, 0.3, 0.9));
       // 机器人：站 → 摔 → 躺 → 起，循环
       var cyc = (now % 6) / 6;
-      var P, hipY;
-      if (cyc < 0.35) { P = POSE_STAND; hipY = 226; }
-      else if (cyc < 0.45) { var u = (cyc - 0.35) / 0.1; P = lerpPose(POSE_STAND, POSE_PRONE, u); hipY = 226 + 20 * u; }
-      else if (cyc < 0.7) { P = POSE_PRONE; hipY = 246; }
-      else { var v = (cyc - 0.7) / 0.3; P = v < 0.5 ? lerpPose(POSE_PRONE, POSE_PUSH, v * 2) : lerpPose(POSE_PUSH, POSE_STAND, v * 2 - 1); hipY = 246 - 20 * v; }
-      bot.pose(104, hipY, P);
+      var P;
+      if (cyc < 0.35) P = POSE_STAND;
+      else if (cyc < 0.45) { var u = (cyc - 0.35) / 0.1; P = lerpPose(POSE_STAND, POSE_PRONE, u * u); }
+      else if (cyc < 0.7) P = POSE_PRONE;
+      else P = getupPose(((cyc - 0.7) / 0.3) * 3);
+      placeOnGround(bot, 0, 250, P, 72);
       var isUp = cyc < 0.4 || cyc > 0.9;
       var shown = t >= 3.6;
       setOpacity(upBox, shown ? (isUp ? 1 : 0.3) : 0);
@@ -1534,8 +1587,11 @@
     g.appendChild(paint(svgEl('rect', { x: x + w, y: sy(0.4), width: 4, height: (GOAL_W / PITCH_W) * h }), C_BAD));
     g.appendChild(paint(svgEl('rect', { x: x - 4, y: sy(0.4), width: 4, height: (GOAL_W / PITCH_W) * h }), C_ACCENT));
     (marks || []).forEach(function (m) {
-      g.appendChild(paint(svgEl('circle', { cx: sx(m[0]), cy: sy(m[1]), r: m[3] || 3.4, 'stroke-width': 1 }), m[2], '#333'));
+      var dark = m[2] === '#222';
+      g.appendChild(paint(svgEl('circle', { cx: sx(m[0]), cy: sy(m[1]), r: m[3] || 3.4, 'stroke-width': dark ? 1.4 : 1 }), m[2], dark ? '#f0f0f0' : '#333'));
     });
+    g.sx = sx;
+    g.sy = sy;
     return g;
   }
 
@@ -1598,10 +1654,16 @@
     var mapGs = maps.map(function (m) {
       var g = group(val);
       g.appendChild(svgText(m[0], m[1] + 8, m[2], 'demo-x-ink2', 10));
-      g.appendChild(valueMap(g, m[0], m[1] + 16, W, m[3], m[4]));
+      g.vm = valueMap(g, m[0], m[1] + 16, W, m[3], m[4]);
       return g;
     });
-    val.appendChild(svgText(358, 380, '白：球 · 黑：对手 · 灰：智能体 · 蓝 / 红边：己方 / 对方球门', 'demo-x-mut', 9.5));
+    /* B 图的格子是「对手站在这里时的价值」：画一个对手，从亮处走到球门前的暗处 */
+    var oppB = paint(svgEl('circle', { r: 4, 'stroke-width': 1.4 }), '#222', '#f0f0f0');
+    mapGs[1].appendChild(oppB);
+    var oppBTxt = group(mapGs[1]);
+    oppBTxt.appendChild(paint(svgEl('rect', { x: -112, y: -11, width: 112, height: 15, rx: 3, opacity: 0.85 }), '#1b1b1f'));
+    oppBTxt.appendChild(paint(svgText(-6, 0, '对手站这里 → 价值最低', null, 9, 'end'), '#f0f0f0'));
+    val.appendChild(svgText(358, 380, '白：球 · 黑：对手 · 灰：智能体 · 每张图改一样东西，格子 = 它在那里时的价值', 'demo-x-mut', 9.5));
 
     function draw(t) {
       setOpacity(emb, seg(t, 0.3, 0.8));
@@ -1613,6 +1675,12 @@
       setOpacity(loops, seg(t, 6.2, 6.8));
       setOpacity(val, seg(t, 7.0, 7.4));
       [7.0, 10.4, 11.6, 13.6].forEach(function (a, k) { setOpacity(mapGs[k], seg(t, a, a + 0.6)); });
+      var vb = mapGs[1].vm, u = ease(seg(t, 10.8, 12.4));
+      var ox = vb.sx(0.9 + 0.5 * u), oy = vb.sy(1.3 - 1.3 * u);
+      oppB.setAttribute('cx', ox.toFixed(1));
+      oppB.setAttribute('cy', oy.toFixed(1));
+      setPos(oppBTxt, ox + 12, oy + 20);
+      setOpacity(oppBTxt, seg(t, 12.4, 12.8));
     }
     return { el: s, draw: draw };
   }
