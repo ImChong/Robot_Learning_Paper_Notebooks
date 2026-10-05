@@ -1534,8 +1534,11 @@
     g.appendChild(paint(svgEl('rect', { x: x + w, y: sy(0.4), width: 4, height: (GOAL_W / PITCH_W) * h }), C_BAD));
     g.appendChild(paint(svgEl('rect', { x: x - 4, y: sy(0.4), width: 4, height: (GOAL_W / PITCH_W) * h }), C_ACCENT));
     (marks || []).forEach(function (m) {
-      g.appendChild(paint(svgEl('circle', { cx: sx(m[0]), cy: sy(m[1]), r: m[3] || 3.4, 'stroke-width': 1 }), m[2], '#333'));
+      var dark = m[2] === '#222';
+      g.appendChild(paint(svgEl('circle', { cx: sx(m[0]), cy: sy(m[1]), r: m[3] || 3.4, 'stroke-width': dark ? 1.4 : 1 }), m[2], dark ? '#f0f0f0' : '#333'));
     });
+    g.sx = sx;
+    g.sy = sy;
     return g;
   }
 
@@ -1598,10 +1601,16 @@
     var mapGs = maps.map(function (m) {
       var g = group(val);
       g.appendChild(svgText(m[0], m[1] + 8, m[2], 'demo-x-ink2', 10));
-      g.appendChild(valueMap(g, m[0], m[1] + 16, W, m[3], m[4]));
+      g.vm = valueMap(g, m[0], m[1] + 16, W, m[3], m[4]);
       return g;
     });
-    val.appendChild(svgText(358, 380, '白：球 · 黑：对手 · 灰：智能体 · 蓝 / 红边：己方 / 对方球门', 'demo-x-mut', 9.5));
+    /* B 图的格子是「对手站在这里时的价值」：画一个对手，从亮处走到球门前的暗处 */
+    var oppB = paint(svgEl('circle', { r: 4, 'stroke-width': 1.4 }), '#222', '#f0f0f0');
+    mapGs[1].appendChild(oppB);
+    var oppBTxt = group(mapGs[1]);
+    oppBTxt.appendChild(paint(svgEl('rect', { x: -112, y: -11, width: 112, height: 15, rx: 3, opacity: 0.85 }), '#1b1b1f'));
+    oppBTxt.appendChild(paint(svgText(-6, 0, '对手站这里 → 价值最低', null, 9, 'end'), '#f0f0f0'));
+    val.appendChild(svgText(358, 380, '白：球 · 黑：对手 · 灰：智能体 · 每张图改一样东西，格子 = 它在那里时的价值', 'demo-x-mut', 9.5));
 
     function draw(t) {
       setOpacity(emb, seg(t, 0.3, 0.8));
@@ -1613,6 +1622,12 @@
       setOpacity(loops, seg(t, 6.2, 6.8));
       setOpacity(val, seg(t, 7.0, 7.4));
       [7.0, 10.4, 11.6, 13.6].forEach(function (a, k) { setOpacity(mapGs[k], seg(t, a, a + 0.6)); });
+      var vb = mapGs[1].vm, u = ease(seg(t, 10.8, 12.4));
+      var ox = vb.sx(0.9 + 0.5 * u), oy = vb.sy(1.3 - 1.3 * u);
+      oppB.setAttribute('cx', ox.toFixed(1));
+      oppB.setAttribute('cy', oy.toFixed(1));
+      setPos(oppBTxt, ox + 12, oy + 20);
+      setOpacity(oppBTxt, seg(t, 12.4, 12.8));
     }
     return { el: s, draw: draw };
   }
