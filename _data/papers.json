@@ -4040,6 +4040,17 @@
         "zh_title": "基于特征与基于 GAN 的示范学习：何时用、为什么"
       },
       {
+        "title": "RL from Physical Feedback: Aligning Large Motion Models with Humanoid Control",
+        "path": "papers/13_Physics-Based_Animation/RLPF__RL_from_Physical_Feedback_Aligning_Large_Motion_Models_with_Humanoid_Control/RLPF__RL_from_Physical_Feedback_Aligning_Large_Motion_Models_with_Humanoid_Control.md",
+        "url": "/papers/13_Physics-Based_Animation/RLPF__RL_from_Physical_Feedback_Aligning_Large_Motion_Models_with_Humanoid_Control/RLPF__RL_from_Physical_Feedback_Aligning_Large_Motion_Models_with_Humanoid_Control.html",
+        "dir": "RLPF__RL_from_Physical_Feedback_Aligning_Large_Motion_Models_with_Humanoid_Control",
+        "arxiv": "2506.12769",
+        "published_date_zh": "2025年6月15日（arXiv v1）",
+        "published_date_en": "Jun 15, 2025 (arXiv v1)",
+        "zhname": "RLPF：基于物理反馈的强化学习，让大动作模型对齐人形机器人控制",
+        "zh_title": "RLPF：基于物理反馈的强化学习，让大动作模型对齐人形机器人控制"
+      },
+      {
         "title": "Spatial Relationship Preserving Character Motion Adaptation",
         "path": "papers/13_Physics-Based_Animation/Spatial_Relationship_Preserving_Character_Motion_Adaptation/Spatial_Relationship_Preserving_Character_Motion_Adaptation.md",
         "url": "/papers/13_Physics-Based_Animation/Spatial_Relationship_Preserving_Character_Motion_Adaptation/Spatial_Relationship_Preserving_Character_Motion_Adaptation.html",
