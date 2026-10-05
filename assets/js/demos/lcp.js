@@ -799,157 +799,291 @@
     return g;
   }
 
+  /* 这十幕在视频里一幕要讲一分钟左右，画面不能停：draw(t, clock) 的 clock 是这一幕的真实时间
+     （旁白比分镜长时 t 会停在一段的末尾，clock 照走），所以抖动、走路、滑动这类循环动作都按 clock 画；
+     网页播放器只传 t，clock 就退回 t。公式尽量换成会动的图，每幕最多留一条。 */
+  function nowOf(t, clock) {
+    return clock == null ? t : clock;
+  }
+
   /* ── scene 1: 仿真里的理想电机 ── */
-  /* 示意的「bang-bang」关节目标：在 ±0.8 之间来回跳，跟一条慢正弦叠在一起；平滑的那条只是慢正弦 */
-  var S1_STEPS = 60;
-  var S1_TRACE = (function () {
-    var rng = mulberry32(3), jag = [], smooth = [];
-    for (var t = 0; t < S1_STEPS; t++) {
-      var base = 0.45 * Math.sin(t * 0.16);
-      smooth.push(base);
-      jag.push(base + (rng() < 0.5 ? -1 : 1) * (0.35 + 0.35 * rng()));
+  /* 示意信号：一条慢正弦叠上每 0.1 s 跳一次的 ±0.35–0.65（bang-bang 式的指令）。
+     仿真电机原样照做；「真机电机」每步最多转 0.035（力矩有上限），跟不上就有误差、发热（示意，不是论文的模型）；
+     低通滤波按上一期 OP3 的 u = 0.8u + 0.2a 算。 */
+  var S1_DT = 0.02, S1_N = 3000;
+  var S1_SIG = (function () {
+    var rng = mulberry32(3), jumps = [];
+    for (var k = 0; k < S1_N; k++) jumps.push((rng() < 0.5 ? -1 : 1) * (0.35 + 0.3 * rng()));
+    var cmd = [], real = [], fil = [], err = [], r = 0, f = 0, e = 0;
+    for (var i = 0; i < S1_N; i++) {
+      var tt = i * S1_DT;
+      var c = 0.25 * Math.sin(2 * Math.PI * 0.35 * tt) + jumps[Math.floor(tt / 0.1)];
+      r += clamp(0.3 * (c - r), -0.035, 0.035);
+      f = 0.8 * f + 0.2 * c;
+      e = 0.9 * e + 0.1 * Math.abs(c - r);
+      cmd.push(c);
+      real.push(r);
+      fil.push(f);
+      err.push(e);
     }
-    return { jag: jag, smooth: smooth };
+    return { cmd: cmd, real: real, fil: fil, err: err };
   })();
+  function s1At(arr, now) {
+    return arr[Math.floor(now / S1_DT) % S1_N];
+  }
+  /* 最近 span 秒的一段，画成 [x0, x1] × (yc ± amp) 的折线 */
+  function s1Trace(arr, now, span, x0, x1, yc, amp) {
+    var n = Math.round(span / S1_DT), i1 = Math.floor(now / S1_DT), pts = [];
+    for (var k = 0; k <= n; k++) {
+      var idx = (((i1 - n + k) % S1_N) + S1_N) % S1_N;
+      pts.push([x0 + (k / n) * (x1 - x0), yc - arr[idx] * amp]);
+    }
+    return polyPath(pts.map(function (q) { return [q[0].toFixed(1), q[1].toFixed(1)]; }));
+  }
+
+  function setLink(link, foot, px, py, len, val) {
+    var a = (val * 50 * Math.PI) / 180;
+    var x2 = px + len * Math.sin(a), y2 = py + len * Math.cos(a);
+    link.setAttribute('x2', x2.toFixed(1));
+    link.setAttribute('y2', y2.toFixed(1));
+    if (foot) {
+      foot.setAttribute('cx', x2.toFixed(1));
+      foot.setAttribute('cy', y2.toFixed(1));
+    }
+  }
 
   function buildSceneProblem() {
-    var s = sceneSvg('仿真把电机建得近乎理想，强化学习策略容易学成 bang-bang 式的抖动；表 I 里不加平滑的策略任务回报最高 28.87，动作抖动 42.19，是 LCP 的 13 倍；常见补救是平滑奖励和低通滤波，前者权重多、要逐台调，后者常压抑探索，两者都不可微');
-    s.appendChild(svgText(30, 28, '仿真里电机想给多大力矩就给多大 → 策略学成 bang-bang 式的抖动', 'demo-x-ink2', 13.5));
+    var s = sceneSvg('左边两个关节收到同一串来回跳的指令：仿真里的理想电机原样照做，真机电机力矩有上限，跟不上、发热；表 I 里不平滑的策略回报最高 28.87、动作抖动 42.19，是 LCP 的 13 倍；平滑奖励要拧一堆旋钮，低通滤波让动作慢半拍，两者都不可微');
+    s.appendChild(svgText(30, 28, '同一串来回跳的指令：仿真电机照做，真机电机跟不上', 'demo-x-ink2', 13.5));
 
-    var trace = group(s);
-    rectBox(trace, 30, 44, 360, 170, C_BORDER, C_SURFACE2);
-    trace.appendChild(svgText(42, 64, '相邻控制步的关节目标（示意）', 'demo-x-mut', 10.5));
-    function tx(t) { return 48 + (t / (S1_STEPS - 1)) * 326; }
-    function ty(v) { return 132 - v * 62; }
-    trace.appendChild(paint(svgEl('line', { x1: 48, y1: 132, x2: 374, y2: 132, 'stroke-width': 1 }), null, C_BORDER));
-    var smoothLn = pathLine(trace, S1_TRACE.smooth.map(function (v, t) { return [tx(t), ty(v)]; }), C_GOOD, 2.2, '5 4');
-    var jagLn = pathLine(trace, S1_TRACE.jag.map(function (v, t) { return [tx(t), ty(v)]; }), C_BAD, 1.6);
-    var traceTags = group(trace);
-    traceTags.appendChild(svgText(372, 204, '红：抖动　绿虚线：平滑', 'demo-x-mut', 10, 'end'));
+    var left = group(s);
+    rectBox(left, 30, 44, 370, 284, C_BORDER, C_SURFACE2);
+    function joint(px, label, sub, color) {
+      var g = group(left);
+      g.appendChild(svgText(px, 66, label, null, 12, 'middle'));
+      g.appendChild(svgText(px, 83, sub, 'demo-x-mut', 10.5, 'middle'));
+      var heat = paint(svgEl('circle', { cx: px, cy: 108, r: 20 }), C_BAD);
+      heat.style.opacity = 0;
+      g.appendChild(heat);
+      var ghost = paint(svgEl('line', { x1: px, y1: 108, x2: px, y2: 186, 'stroke-width': 3, 'stroke-dasharray': '4 4', 'stroke-linecap': 'round' }), null, C_MUTED);
+      var link = paint(svgEl('line', { x1: px, y1: 108, x2: px, y2: 186, 'stroke-width': 10, 'stroke-linecap': 'round' }), null, color);
+      var foot = paint(svgEl('circle', { cx: px, cy: 186, r: 7 }), color);
+      g.appendChild(ghost);
+      g.appendChild(link);
+      g.appendChild(foot);
+      g.appendChild(paint(svgEl('circle', { cx: px, cy: 108, r: 8, 'stroke-width': 2 }), C_SURFACE2, C_INK2));
+      return { g: g, ghost: ghost, link: link, foot: foot, heat: heat, px: px };
+    }
+    var jSim = joint(122, '仿真：理想电机', '指令怎么跳都照做', C_GOOD);
+    var jReal = joint(310, '真机：力矩有上限', '跟不上，发热、发抖', C_ACCENT);
+    var lag = paint(svgText(310, 214, '跟不上！', 'demo-x-bad', 12, 'middle'), C_BAD);
+    left.appendChild(lag);
+    left.appendChild(svgText(214, 140, '虚线 = 指令', 'demo-x-mut', 10, 'middle'));
 
-    var mk = K.arrowMarker(s, 'lcp-x-arrow-s1', C_MUTED);
-    var simBox = group(s);
-    rectBox(simBox, 420, 44, 350, 76, C_GOOD);
-    simBox.appendChild(svgText(436, 68, '仿真：理想电机', null, 12.5));
-    simBox.appendChild(svgText(436, 90, '指令怎么跳都照单全收，不扣分', 'demo-x-ink2', 11));
-    simBox.appendChild(svgRich(436, 110, '表 I：不平滑的策略任务回报**最高 28.87**', { size: 11, w: 320, cls: 'demo-x-good' }));
-    arrowPath(simBox, [[392, 100], [416, 84]], C_MUTED, mk);
-    var realBox = group(s);
-    rectBox(realBox, 420, 134, 350, 80, C_BAD);
-    realBox.appendChild(svgText(436, 158, '真机：带宽、延迟、力矩上限', null, 12.5));
-    realBox.appendChild(svgText(436, 180, '相邻两步差太多 → 要的力矩打不出来', 'demo-x-ink2', 11));
-    realBox.appendChild(svgRich(436, 201, '动作抖动 **42.19**，是 LCP（3.21）的 **13 倍**', { size: 11, w: 320, cls: 'demo-x-bad' }));
-    arrowPath(realBox, [[392, 150], [416, 168]], C_MUTED, mk);
+    var trBox = group(left);
+    trBox.appendChild(paint(svgEl('line', { x1: 46, y1: 276, x2: 384, y2: 276, 'stroke-width': 1 }), null, C_BORDER));
+    var trCmd = paint(svgEl('path', { d: '', fill: 'none', 'stroke-width': 1.4 }), null, C_BAD);
+    var trReal = paint(svgEl('path', { d: '', fill: 'none', 'stroke-width': 2.4 }), null, C_ACCENT);
+    trBox.appendChild(trCmd);
+    trBox.appendChild(trReal);
+    trBox.appendChild(svgText(46, 236, '最近 3 秒：红 = 指令，蓝 = 真机关节', 'demo-x-mut', 10));
 
-    function remedy(x, head, l1, l2, l3) {
+    var score = group(s);
+    rectBox(score, 420, 44, 350, 64, C_GOOD);
+    score.appendChild(svgRich(434, 68, '表 I：不平滑的策略，仿真里回报**最高 28.87**', { size: 11.5, w: 330 }));
+    var score2 = svgRich(434, 94, '可动作抖动 **42.19**，是 LCP（3.21）的 **13 倍**', { size: 11.5, w: 330, cls: 'demo-x-bad' });
+    score.appendChild(score2);
+
+    var rew = group(s);
+    rectBox(rew, 420, 118, 350, 96, C_WARN, C_SURFACE, '4 3');
+    rew.appendChild(svgText(434, 138, '补救一：平滑奖励 —— 一堆旋钮要拧', 'demo-x-warn', 12));
+    var knobs = ['动作变化', '关节速度', '关节加速度', '能耗'].map(function (name, k) {
+      var cx = 470 + k * 82, cy = 170;
+      rew.appendChild(paint(svgEl('circle', { cx: cx, cy: cy, r: 15, 'stroke-width': 2 }), C_SURFACE2, C_WARN));
+      var hand = paint(svgEl('line', { x1: cx, y1: cy, x2: cx, y2: cy - 12, 'stroke-width': 3, 'stroke-linecap': 'round' }), null, C_WARN);
+      rew.appendChild(hand);
+      rew.appendChild(svgText(cx, 204, name, 'demo-x-ink2', 10, 'middle'));
+      return { hand: hand, cx: cx, cy: cy, k: k };
+    });
+
+    var lpf = group(s);
+    rectBox(lpf, 420, 224, 350, 104, C_WARN, C_SURFACE, '4 3');
+    lpf.appendChild(svgText(434, 244, '补救二：输出端低通滤波 —— 慢半拍', 'demo-x-warn', 12));
+    rectBox(lpf, 566, 258, 58, 40, C_WARN, C_SURFACE2);
+    lpf.appendChild(svgText(595, 283, '滤波', 'demo-x-warn', 11.5, 'middle'));
+    var lpIn = paint(svgEl('path', { d: '', fill: 'none', 'stroke-width': 1.4 }), null, C_BAD);
+    var lpOut = paint(svgEl('path', { d: '', fill: 'none', 'stroke-width': 2.2 }), null, C_GOOD);
+    lpf.appendChild(lpIn);
+    lpf.appendChild(lpOut);
+    lpf.appendChild(svgText(434, 318, '上一期 OP3 就这么做；论文说它会压抑探索', 'demo-x-mut', 10));
+
+    function stamp(x, y) {
       var g = group(s);
-      rectBox(g, x, 232, 360, 96, C_WARN, C_SURFACE, '4 3');
-      g.appendChild(svgText(x + 14, 254, head, 'demo-x-warn', 12.5));
-      g.appendChild(svgRich(x + 14, 276, l1, { size: 11, w: 340, cls: 'demo-x-ink2' }));
-      g.appendChild(svgRich(x + 14, 296, l2, { size: 11, w: 340, cls: 'demo-x-ink2' }));
-      g.appendChild(svgRich(x + 14, 316, l3, { size: 11, w: 340, cls: 'demo-x-mut' }));
+      var r = paint(svgEl('rect', { x: x - 44, y: y - 15, width: 88, height: 28, rx: 5, fill: 'none', 'stroke-width': 2.4 }), null, C_BAD);
+      g.appendChild(r);
+      g.appendChild(paint(svgText(x, y + 5, '不可微', 'demo-x-bad', 14, 'middle'), C_BAD));
+      g.setAttribute('transform', 'rotate(-12 ' + x + ' ' + y + ')');
       return g;
     }
-    var rew = remedy(30, '补救一：平滑奖励', '罚动作变化、关节速度、关节加速度、能耗', '一堆权重要和任务奖励配平', '换一台机器人，往往就得重调');
-    var lpf = remedy(410, '补救二：输出端低通滤波', '上一期 OP3：$u_t = 0.8\\,u_{t-1} + 0.2\\,a_t$', '论文：常会压抑探索，训出次优策略', '滤波器参数同样要按机器人调');
-    var nd = group(s);
-    chip(nd, 30, 340, 740, '两者都**不可微**：藏在环境或信号链里，只能靠策略梯度采样去估', C_BAD, { h: 28, size: 11.5 });
+    var st1 = stamp(712, 150), st2 = stamp(712, 258);
     var fin = group(s);
-    chip(fin, 30, 376, 740, 'LCP：一个**可微**的平滑目标，几行代码加进现有的强化学习框架', C_ACCENT, { h: 34, size: 12.5 });
+    chip(fin, 30, 340, 740, '两种补救都藏在环境或信号链里，只能靠采样去估；LCP 想要一个**可微**、几行代码就能接进去的平滑目标', C_ACCENT, { h: 36, size: 11.8 });
 
-    function draw(t) {
-      setOpacity(trace, seg(t, 0.3, 0.9));
-      drawOn(jagLn, ease(seg(t, 0.6, 3.0)));
-      drawOn(smoothLn, ease(seg(t, 1.0, 3.2)));
-      setOpacity(traceTags, seg(t, 2.6, 3.2));
-      setOpacity(simBox, seg(t, 1.2, 1.8));
-      setOpacity(realBox, seg(t, 3.6, 4.2));
+    function draw(t, clock) {
+      var now = nowOf(t, clock);
+      setOpacity(left, seg(t, 0.2, 0.8));
+      var c = s1At(S1_SIG.cmd, now), r = s1At(S1_SIG.real, now), e = s1At(S1_SIG.err, now);
+      [jSim, jReal].forEach(function (j) { setLink(j.ghost, null, j.px, 108, 78, c); });
+      setLink(jSim.link, jSim.foot, jSim.px, 108, 78, c);
+      setLink(jReal.link, jReal.foot, jReal.px, 108, 78, r);
+      jReal.heat.style.opacity = clamp((e - 0.15) * 1.6, 0, 0.7).toFixed(2);
+      setOpacity(lag, e > 0.3 && Math.floor(now * 4) % 2 === 0 ? 1 : 0.15);
+      trCmd.setAttribute('d', s1Trace(S1_SIG.cmd, now, 3, 46, 384, 276, 26));
+      trReal.setAttribute('d', s1Trace(S1_SIG.real, now, 3, 46, 384, 276, 26));
+      setOpacity(score, seg(t, 1.2, 1.8));
+      setOpacity(score2, seg(t, 3.6, 4.2));
       setOpacity(rew, seg(t, 7.0, 7.6));
+      knobs.forEach(function (kn) {
+        var a = Math.sin(now * (1.3 + 0.37 * kn.k) + kn.k * 1.7) * 1.2;
+        kn.hand.setAttribute('x2', (kn.cx + 12 * Math.sin(a)).toFixed(1));
+        kn.hand.setAttribute('y2', (kn.cy - 12 * Math.cos(a)).toFixed(1));
+      });
       setOpacity(lpf, seg(t, 10.4, 11.0));
-      setOpacity(nd, seg(t, 13.4, 14.0));
-      setOpacity(fin, seg(t, 14.6, 15.2));
+      lpIn.setAttribute('d', s1Trace(S1_SIG.cmd, now, 2, 440, 560, 278, 14));
+      lpOut.setAttribute('d', s1Trace(S1_SIG.fil, now, 2, 630, 756, 278, 14));
+      setOpacity(st1, seg(t, 13.4, 13.8));
+      setOpacity(st2, seg(t, 13.7, 14.1));
+      setOpacity(fin, seg(t, 14.4, 15.0));
     }
     return { el: s, draw: draw };
   }
 
-  /* ── scene 2: Lipschitz 与梯度 ── */
+  /* ── scene 2: Lipschitz：给斜率设上限 ── */
+  /* 两条玩具策略（同 lcp-sensitivity）：平缓的 K = 1.5、满是褶皱的 K = 5。输入在 0 附近晃 ±0.13（画大了，看得清），
+     输出跟着晃，晃多少由那一段的斜率决定。 */
+  var S2_KA = 1.5, S2_IN = 0.13;
+  var S2_PI_A = policyOf(S2_KA);
+  function s2Jitter(now) {
+    return S2_IN * (0.6 * Math.sin(17 * now) + 0.4 * Math.sin(29 * now + 1));
+  }
+
   function buildSceneLipschitz() {
-    var s = sceneSvg('Lipschitz 连续：任意两点输出之差不超过 K 乘输入之差；以曲线上任一点为顶点画斜率正负 K 的圆锥，整条曲线都在圆锥里；玩具策略最大斜率 K 等于 5，噪声 0.045 时动作最多抖 0.225，实测 0.142；梯度有界则 Lipschitz 连续，反之不成立；图 3：加了平滑奖励的策略梯度更小');
-    s.appendChild(svgText(30, 28, 'Lipschitz 连续：给函数的变化率设一个上限 K', 'demo-x-ink2', 13.5));
+    var s = sceneSvg('两条玩具策略：平缓的最大斜率 1.5，满是褶皱的最大斜率 5；同样晃动的输入，平缓的输出只晃一点，褶皱的晃得很凶；以曲线上任一点为顶点画斜率正负 K 的圆锥，曲线都装在圆锥里；斜率处处不超过 K，函数就是 Lipschitz 连续的；图 3：加了平滑奖励的策略梯度明显更小');
+    s.appendChild(svgText(30, 28, 'Lipschitz 常数 K：输入晃一点，输出最多晃 K 倍', 'demo-x-ink2', 13.5));
+    var clip = svgEl('clipPath', { id: 'lcp-x-clip-s2' });
+    clip.appendChild(svgEl('rect', { x: 440, y: 76, width: 310, height: 156 }));
+    var defs = svgEl('defs', {});
+    defs.appendChild(clip);
+    s.appendChild(defs);
 
-    var LX0 = 50, LX1 = 370, LY0 = 290, LY1 = 70;
-    function lx(o) { return LX0 + ((o + 1.2) / 2.4) * (LX1 - LX0); }
-    function ly(a) { return LY0 - ((clamp(a, -2.4, 2.4) + 2.4) / 4.8) * (LY0 - LY1); }
-    var left = group(s);
-    rectBox(left, 30, 44, 360, 266, C_BORDER, C_SURFACE2);
-    left.appendChild(svgRich(42, 62, '玩具策略 $\\pi(o) = o + b\\sin(\\omega o)$，最大斜率 $K = 5$', { size: 10.5, w: 340, cls: 'demo-x-mut' }));
-    left.appendChild(paint(svgEl('line', { x1: LX0, y1: ly(0), x2: LX1, y2: ly(0), 'stroke-width': 1 }), null, C_BORDER));
-    var cone = paint(svgEl('path', { d: '', 'fill-opacity': 0.13, 'stroke-width': 1.2, 'stroke-dasharray': '4 3' }), C_ACCENT, C_ACCENT);
-    left.appendChild(cone);
-    var curve = [];
-    for (var i = 0; i <= 240; i++) {
-      var o = -1.2 + (2.4 * i) / 240;
-      curve.push([lx(o), ly(TOY.pi(o))]);
+    function panel(x0, title, pi, color) {
+      var g = group(s);
+      rectBox(g, x0, 44, 360, 210, C_BORDER, C_SURFACE2);
+      g.appendChild(svgText(x0 + 12, 64, title, null, 12));
+      var X0 = x0 + 30, X1 = x0 + 340, Y0 = 232, Y1 = 76;
+      function px(o) { return X0 + ((o + 1.2) / 2.4) * (X1 - X0); }
+      function py(a) { return Y0 - ((clamp(a, -2.2, 2.2) + 2.2) / 4.4) * (Y0 - Y1); }
+      g.appendChild(paint(svgEl('line', { x1: X0, y1: Y0, x2: X1, y2: Y0, 'stroke-width': 1 }), null, C_BORDER));
+      g.appendChild(paint(svgEl('line', { x1: X0, y1: Y0, x2: X0, y2: Y1, 'stroke-width': 1 }), null, C_BORDER));
+      var lo = S2_IN, aLo = pi(-lo), aHi = pi(lo);
+      g.appendChild(paint(svgEl('rect', { x: px(-lo), y: Y0 - 4, width: px(lo) - px(-lo), height: 8, 'fill-opacity': 0.35 }), C_MUTED));
+      g.appendChild(paint(svgEl('rect', { x: X0 - 4, y: py(Math.max(aLo, aHi)), width: 8, height: Math.abs(py(aLo) - py(aHi)), 'fill-opacity': 0.45 }), color));
+      var pts = [];
+      for (var i = 0; i <= 200; i++) {
+        var o = -1.2 + (2.4 * i) / 200;
+        pts.push([px(o), py(pi(o))]);
+      }
+      pathLine(g, pts, color, 2.4);
+      var vLine = paint(svgEl('line', { 'stroke-width': 1.2, 'stroke-dasharray': '3 3' }), null, C_MUTED);
+      var hLine = paint(svgEl('line', { 'stroke-width': 1.2, 'stroke-dasharray': '3 3' }), null, C_MUTED);
+      var inDot = paint(svgEl('circle', { r: 5 }), C_INK2);
+      var outDot = paint(svgEl('circle', { r: 6 }), color);
+      [vLine, hLine, inDot, outDot].forEach(function (n) { g.appendChild(n); });
+      var ratio = (Math.abs(aHi - aLo) / 2) / S2_IN;
+      g.appendChild(svgText(x0 + 348, 64, '输出晃动 ≈ 输入的 ' + fmt(ratio, 1) + ' 倍', 'demo-x-mono', 11, 'end'));
+      return { g: g, px: px, py: py, pi: pi, vLine: vLine, hLine: hLine, inDot: inDot, outDot: outDot, X0: X0, Y0: Y0 };
     }
-    pathLine(left, curve, C_GOOD, 2.4);
+    var pA = panel(30, '平缓的策略：最大斜率 1.5', S2_PI_A, C_GOOD);
+    var pB = panel(410, '满是褶皱的策略：最大斜率 5', TOY.pi, C_BAD);
+
+    var cone = paint(svgEl('path', { d: '', 'fill-opacity': 0.14, 'stroke-width': 1.3, 'stroke-dasharray': '4 3', 'clip-path': 'url(#lcp-x-clip-s2)' }), C_ACCENT, C_ACCENT);
     var vtx = paint(svgEl('circle', { r: 5, 'stroke-width': 1.6 }), C_ACCENT, C_SURFACE2);
-    left.appendChild(vtx);
-    var coneTag = svgRich(LX1 - 4, LY1 + 6, '斜率 $\\pm K$ 的圆锥（图 2）', { size: 10.5, anchor: 'end', w: 180 }).setTone(C_ACCENT);
-    left.appendChild(coneTag);
+    s.appendChild(cone);
+    s.appendChild(vtx);
+    var coneTag = svgText(752, 92, '斜率 ±5 的圆锥：曲线永远在里面', 'demo-x-acc', 10.5, 'end');
+    s.appendChild(coneTag);
 
-    var def = group(s);
-    rectBox(def, 410, 44, 360, 64, C_ACCENT);
-    def.appendChild(svgText(424, 64, '定义（式 1）', 'demo-x-acc', 11));
-    def.appendChild(svgMath(590, 90, 'd_Y\\big(f(x_1), f(x_2)\\big) \\le K\\, d_X(x_1, x_2)', { size: 13, anchor: 'middle', w: 340 }));
+    var badge = group(s);
+    chip(badge, 30, 262, 740, '真机量级的噪声 0.045：K = 5 的策略动作最多晃 **0.225**，这条轨迹上实测 **0.142**（玩具，不能和论文比）', C_BORDER, { h: 28, size: 11.2 });
 
-    var nums = group(s);
-    readoutChip(nums, 500, 122, 176, '最大斜率 $K$', fmt(TOY_K, 0), C_GOOD);
-    readoutChip(nums, 684, 122, 172, '观测噪声 $\\sigma$', fmt(TOY_SIGMA, 3), C_MUTED);
-    readoutChip(nums, 500, 160, 176, '上界 $K\\sigma$', fmt(TOY_K * TOY_SIGMA, 3), C_ACCENT);
-    readoutChip(nums, 684, 160, 172, '实测抖动 std', fmt(TOY.jit, 3), C_BAD);
-
-    var cor = group(s);
-    rectBox(cor, 410, 202, 360, 62, C_BORDER);
-    cor.appendChild(svgRich(424, 224, '推论（式 2）：$\\lVert\\nabla_x f(x)\\rVert \\le K \\;\\Rightarrow\\;$ $K$-Lipschitz', { size: 11.5, w: 340 }));
-    cor.appendChild(svgRich(424, 248, '反过来不成立：$|x|$ 在 0 处不可导，却是 1-Lipschitz', { size: 10.5, w: 340, cls: 'demo-x-mut' }));
+    var ticks = group(s);
+    var dB = slopeOf(TOY_K);
+    var tickEls = [];
+    for (var k = 0; k < 25; k++) {
+      var o = -1.1 + (2.2 * k) / 24, sl = dB(o);
+      var x = pB.px(o), y = pB.py(TOY.pi(o));
+      var ang = Math.atan2(-(pB.py(TOY.pi(o) + sl * 0.05) - y), pB.px(o + 0.05) - x);
+      var dx = 13 * Math.cos(ang), dy = -13 * Math.sin(ang);
+      var col = Math.abs(sl) > 4 ? C_BAD : Math.abs(sl) > 2.5 ? C_WARN : C_GOOD;
+      var tk = paint(svgEl('line', { x1: x - dx, y1: y - dy, x2: x + dx, y2: y + dy, 'stroke-width': 3, 'stroke-linecap': 'round' }), null, col);
+      ticks.appendChild(tk);
+      tickEls.push(tk);
+    }
+    var tickTag = svgText(752, 248, '每一处的斜率都 ≤ 5 ⇒ Lipschitz 连续', 'demo-x-ink2', 10.5, 'end');
+    ticks.appendChild(tickTag);
 
     var fig3 = group(s);
-    rectBox(fig3, 410, 276, 360, 100, C_BORDER, C_SURFACE2);
-    fig3.appendChild(svgText(422, 294, '图 3（示意）：策略梯度范数 vs 训练迭代', 'demo-x-mut', 10.5));
+    rectBox(fig3, 30, 298, 740, 80, C_BORDER, C_SURFACE2);
+    fig3.appendChild(svgText(42, 316, '图 3（示意）：策略的梯度大小，随训练', 'demo-x-mut', 10.5));
     var f3rng = mulberry32(17), hiPts = [], loPts = [];
-    for (var k = 0; k <= 60; k++) {
-      var fx = 424 + k * 5.5;
-      var spike = k > 14 && f3rng() < 0.12 ? 14 * f3rng() : 0;
-      hiPts.push([fx, 330 - 10 * (1 - Math.exp(-k / 8)) - 6 * f3rng() - spike]);
-      loPts.push([fx, 352 - 4 * (1 - Math.exp(-k / 8)) - 2 * f3rng()]);
+    for (var j = 0; j <= 80; j++) {
+      var fx = 300 + j * 5.5;
+      var spike = j > 14 && f3rng() < 0.12 ? 12 * f3rng() : 0;
+      hiPts.push([fx, 352 - 9 * (1 - Math.exp(-j / 8)) - 5 * f3rng() - spike]);
+      loPts.push([fx, 368 - 3 * (1 - Math.exp(-j / 8)) - 2 * f3rng()]);
     }
     var hiLn = pathLine(fig3, hiPts, C_WARN, 1.6);
     var loLn = pathLine(fig3, loPts, C_BAD, 1.8);
-    fig3.appendChild(svgText(426, 312, '不加平滑奖励', 'demo-x-warn', 10));
-    fig3.appendChild(svgText(762, 370, '加平滑奖励：梯度小得多', 'demo-x-bad', 10, 'end'));
-
+    fig3.appendChild(svgText(42, 344, '黄：不加平滑奖励', 'demo-x-warn', 10.5));
+    fig3.appendChild(svgText(42, 366, '红：加了平滑奖励，梯度小得多', 'demo-x-bad', 10.5));
     var fin = group(s);
-    chip(fin, 30, 384, 740, '平滑 ≈ 斜率小 ⇒ 直接去约束策略的梯度', C_ACCENT, { h: 30, size: 12 });
+    chip(fin, 30, 384, 740, '平滑 ≈ 斜率小 ⇒ 那就直接去约束策略的梯度', C_ACCENT, { h: 30, size: 12 });
 
-    function coneAt(o0) {
-      var a0 = TOY.pi(o0);
-      var pts = [[lx(-1.2), ly(a0 - TOY_K * (o0 + 1.2))], [lx(o0), ly(a0)], [lx(1.2), ly(a0 + TOY_K * (1.2 - o0))],
-        [lx(1.2), ly(a0 - TOY_K * (1.2 - o0))], [lx(o0), ly(a0)], [lx(-1.2), ly(a0 + TOY_K * (o0 + 1.2))]];
-      cone.setAttribute('d', polyPath(pts.map(function (q) { return [q[0].toFixed(1), q[1].toFixed(1)]; })) + ' Z');
-      vtx.setAttribute('cx', lx(o0).toFixed(1));
-      vtx.setAttribute('cy', ly(a0).toFixed(1));
+    function drawPanel(p, now) {
+      var o = s2Jitter(now), a = p.pi(o);
+      p.inDot.setAttribute('cx', p.px(o).toFixed(1));
+      p.inDot.setAttribute('cy', p.Y0);
+      p.outDot.setAttribute('cx', p.X0);
+      p.outDot.setAttribute('cy', p.py(a).toFixed(1));
+      [[p.vLine, p.px(o), p.Y0, p.px(o), p.py(a)], [p.hLine, p.px(o), p.py(a), p.X0, p.py(a)]].forEach(function (L) {
+        L[0].setAttribute('x1', L[1].toFixed(1));
+        L[0].setAttribute('y1', L[2].toFixed(1));
+        L[0].setAttribute('x2', L[3].toFixed(1));
+        L[0].setAttribute('y2', L[4].toFixed(1));
+      });
     }
 
-    function draw(t) {
-      setOpacity(left, seg(t, 0.3, 0.9));
-      setOpacity(def, seg(t, 0.8, 1.4));
-      var u = seg(t, 3.6, 7.0);
-      coneAt(-0.9 + 1.8 * ease(u));
-      setOpacity(cone, seg(t, 3.6, 4.0));
-      setOpacity(vtx, seg(t, 3.6, 4.0));
-      setOpacity(coneTag, seg(t, 3.8, 4.4));
-      setOpacity(nums, seg(t, 7.0, 7.6));
-      setOpacity(cor, seg(t, 10.4, 11.0));
+    function draw(t, clock) {
+      var now = nowOf(t, clock);
+      setOpacity(pA.g, seg(t, 0.2, 0.8));
+      setOpacity(pB.g, seg(t, 0.8, 1.4));
+      drawPanel(pA, now);
+      drawPanel(pB, now);
+      var coneOn = seg(t, 3.6, 4.2);
+      var ov = 0.85 * Math.sin(0.55 * now), a0 = TOY.pi(ov);
+      var cpts = [[-1.2, a0 - 5 * (ov + 1.2)], [ov, a0], [1.2, a0 + 5 * (1.2 - ov)], [1.2, a0 - 5 * (1.2 - ov)], [ov, a0], [-1.2, a0 + 5 * (ov + 1.2)]];
+      cone.setAttribute('d', polyPath(cpts.map(function (q) {
+        return [pB.px(q[0]).toFixed(1), (232 - ((q[1] + 2.2) / 4.4) * 156).toFixed(1)];
+      })) + ' Z');
+      vtx.setAttribute('cx', pB.px(ov).toFixed(1));
+      vtx.setAttribute('cy', pB.py(a0).toFixed(1));
+      setOpacity(cone, coneOn);
+      setOpacity(vtx, coneOn);
+      setOpacity(coneTag, coneOn);
+      setOpacity(badge, seg(t, 7.0, 7.6));
+      var tu = seg(t, 10.4, 12.0);
+      tickEls.forEach(function (tk, k) { tk.style.opacity = tu > 0 && k / 24 <= tu ? 0.95 : 0; });
+      setOpacity(tickTag, seg(t, 11.6, 12.2));
       setOpacity(fig3, seg(t, 13.4, 13.9));
       drawOn(hiLn, ease(seg(t, 13.6, 15.0)));
       drawOn(loLn, ease(seg(t, 13.8, 15.2)));
@@ -958,204 +1092,330 @@
     return { el: s, draw: draw };
   }
 
-  /* ── scene 3: 式 4 → 式 7 ── */
+  /* ── scene 3: 从「别太陡」到「陡了就罚」（式 4 → 7） ── */
   function buildSceneDerive() {
-    var s = sceneSvg('式 4 要求所有状态动作上的梯度都不超过 K 平方；式 5 换成 rollout 数据上的期望；式 6 引入拉格朗日乘子；式 7 固定系数 lambda gp 并丢掉常数 K 平方，得到梯度惩罚；玩具策略最大斜率 5，访问到的状态上的均方根斜率 2.75');
-    s.appendChild(svgText(30, 28, '从约束到梯度惩罚：四步推到式 7', 'demo-x-ink2', 13.5));
+    var s = sceneSvg('左边是玩具策略在每个状态上的斜率：先要求每一处都不超过 K，检查不完；改成只看 rollout 走到过的状态、取平均，最大 5、平均 2.75；再把约束换成罚款，罚款随斜率平方增长；单价固定成 0.002；最后回报和惩罚像拔河，停在中间的地方就是训出来的平滑程度');
+    s.appendChild(svgText(30, 28, '从「每一处都不许太陡」到「陡了就罚」：四步推到式 7', 'demo-x-ink2', 13.5));
+    var dpi = slopeOf(TOY_K);
 
-    var rows = [
-      { y: 44, no: '式 4', tex: '\\max_\\pi J(\\pi)\\;\\; \\text{s.t.}\\;\\max_{s,a}\\lVert\\nabla_s\\log\\pi(a\\mid s)\\rVert^2 \\le K^2', note: '所有状态上的最大值：算不出来', tone: C_BAD },
-      { y: 112, no: '式 5', tex: '\\max_\\pi J(\\pi)\\;\\; \\text{s.t.}\\;\\mathbb{E}_{s,a\\sim\\mathcal{D}}\\lVert\\nabla_s\\log\\pi(a\\mid s)\\rVert^2 \\le K^2', note: '换成 rollout 数据上的期望（TRPO 的近似）', tone: C_WARN },
-      { y: 180, no: '式 6', tex: '\\min_{\\lambda\\ge 0}\\max_\\pi J(\\pi) - \\lambda\\big(\\mathbb{E}\\lVert\\nabla_s\\log\\pi\\rVert^2 - K^2\\big)', note: '拉格朗日乘子：约束搬进目标', tone: C_ACCENT },
-      { y: 248, no: '式 7', tex: '\\max_\\pi J(\\pi) - \\lambda_{gp}\\,\\mathbb{E}_{s,a\\sim\\mathcal{D}}\\lVert\\nabla_s\\log\\pi(a\\mid s)\\rVert^2', note: '$\\lambda$ 固定成手调的 $\\lambda_{gp}$，丢掉常数 $K^2$', tone: C_GOOD }
-    ];
-    var mk = K.arrowMarker(s, 'lcp-x-arrow-s3', C_MUTED);
-    var rowEls = rows.map(function (r, i) {
-      var g = group(s);
-      rectBox(g, 30, r.y, 520, 56, r.tone, C_SURFACE, i === 3 ? null : '4 3');
-      g.appendChild(paint(svgText(44, r.y + 20, r.no, 'demo-x-mono', 11), r.tone));
-      g.appendChild(svgMath(300, r.y + 26, r.tex, { size: 12, anchor: 'middle', w: 480 }));
-      g.appendChild(svgRich(290, r.y + 48, r.note, { size: 10.5, anchor: 'middle', w: 480, cls: 'demo-x-mut' }));
-      if (i > 0) arrowPath(g, [[290, r.y - 11], [290, r.y - 1]], C_MUTED, mk);
+    var L = group(s);
+    rectBox(L, 30, 44, 450, 214, C_BORDER, C_SURFACE2);
+    var X0 = 52, X1 = 466, Y0 = 232, Y1 = 92;
+    function lx(o) { return X0 + ((o + 1.2) / 2.4) * (X1 - X0); }
+    function ly(v) { return Y0 - (v / 6) * (Y0 - Y1); }
+    L.appendChild(paint(svgEl('line', { x1: X0, y1: Y0, x2: X1, y2: Y0, 'stroke-width': 1 }), null, C_BORDER));
+    L.appendChild(svgText(X0, Y0 + 16, '状态 →（玩具策略，同第 2 幕）', 'demo-x-mut', 10));
+    var head1 = svgText(42, 64, '① 规定：每一处的斜率都 ≤ K', null, 12);
+    L.appendChild(head1);
+    var bars = [];
+    for (var i = 0; i < 48; i++) {
+      var o = -1.2 + (2.4 * (i + 0.5)) / 48, v = Math.abs(dpi(o));
+      var b = vbar(L, lx(o) - 3.5, Y0, 7, v > 4 ? C_BAD : v > 2.5 ? C_WARN : C_GOOD, 0.85);
+      setH(b, Y0 - ly(v));
+      bars.push({ b: b, o: o });
+    }
+    L.appendChild(paint(svgEl('line', { x1: X0, y1: ly(5), x2: X1, y2: ly(5), 'stroke-width': 1.6, 'stroke-dasharray': '5 4' }), null, C_BAD));
+    L.appendChild(svgText(X1, ly(5) - 5, '上限 K', 'demo-x-bad', 10.5, 'end'));
+    var scan = paint(svgEl('rect', { x: X0, y: Y1 - 4, width: 10, height: Y0 - Y1 + 4, 'fill-opacity': 0.25 }), C_ACCENT);
+    L.appendChild(scan);
+    var scanTag = svgText(256, 84, '状态有无穷多个：检查不完', 'demo-x-acc', 10.5, 'middle');
+    L.appendChild(scanTag);
+
+    var step2 = group(L);
+    step2.appendChild(svgText(42, 64, '② 只看 rollout 走到过的状态，取平均', 'demo-x-good', 12));
+    var dots = [];
+    for (var q = 0; q < 60; q++) {
+      var od = toyTrajectory(q * 2);
+      var d = paint(svgEl('circle', { cx: lx(od).toFixed(1), cy: Y0 + 5, r: 2.4 }), C_GOOD);
+      step2.appendChild(d);
+      dots.push(d);
+    }
+    step2.appendChild(paint(svgEl('line', { x1: lx(-0.9), y1: ly(TOY.rmsSlope), x2: lx(0.9), y2: ly(TOY.rmsSlope), 'stroke-width': 2, 'stroke-dasharray': '6 3' }), null, C_WARN));
+    step2.appendChild(svgText(lx(0.9) + 4, ly(TOY.rmsSlope) + 4, '平均 ' + fmt(TOY.rmsSlope, 2), 'demo-x-warn', 11));
+    step2.appendChild(svgText(lx(0), ly(5) - 6, '最大 5（碰到上限）', 'demo-x-bad', 11, 'middle'));
+
+    var R1 = group(s);
+    rectBox(R1, 494, 44, 276, 120, C_BORDER, C_SURFACE2);
+    R1.appendChild(svgText(506, 64, '③ 约束换成罚款：越陡罚越多', null, 12));
+    var PX0 = 512, PX1 = 640, PY0 = 152, PY1 = 76;
+    function ppx(k) { return PX0 + (k / 6) * (PX1 - PX0); }
+    function ppy(v) { return PY0 - (v / 36) * (PY0 - PY1); }
+    var par = [];
+    for (var k = 0; k <= 60; k++) par.push([ppx(k / 10), ppy((k / 10) * (k / 10))]);
+    pathLine(R1, par, C_BAD, 2);
+    R1.appendChild(svgText(PX1, PY0 + 2, '斜率', 'demo-x-mut', 9.5, 'end'));
+    var pDot = paint(svgEl('circle', { r: 5 }), C_BAD);
+    R1.appendChild(pDot);
+    var bill = vbar(R1, 690, 152, 40, C_BAD);
+    R1.appendChild(svgText(710, 76, '罚款', 'demo-x-bad', 10.5, 'middle'));
+    R1.appendChild(svgText(660, 128, '∝ 斜率²', 'demo-x-ink2', 10.5, 'end'));
+
+    var R2 = group(s);
+    rectBox(R2, 494, 172, 276, 86, C_BORDER, C_SURFACE2);
+    R2.appendChild(svgText(506, 192, '④ 罚款单价固定，不再去学', null, 12));
+    var tag = group(R2);
+    tag.appendChild(paint(svgEl('rect', { x: 560, y: 204, width: 150, height: 40, rx: 8, 'stroke-width': 2 }), C_SURFACE, C_ACCENT));
+    tag.appendChild(paint(svgEl('circle', { cx: 574, cy: 224, r: 4 }), C_ACCENT));
+    tag.appendChild(svgText(642, 230, '单价 0.002', 'demo-x-acc', 15, 'middle'));
+
+    var tug = group(s);
+    rectBox(tug, 30, 268, 740, 144, C_BORDER);
+    tug.appendChild(svgMath(400, 290, 'J(\\pi) - \\lambda_{gp}\\,\\mathbb{E}\\lVert\\nabla_s\\log\\pi(a\\mid s)\\rVert^2', { size: 13, anchor: 'middle', w: 520 }));
+    tug.appendChild(paint(svgEl('line', { x1: 150, y1: 352, x2: 650, y2: 352, 'stroke-width': 4 }), null, C_INK2));
+    var knot = paint(svgEl('rect', { y: 340, width: 12, height: 24, rx: 3 }), C_ACCENT);
+    tug.appendChild(knot);
+    tug.appendChild(paint(svgEl('line', { x1: 400, y1: 330, x2: 400, y2: 374, 'stroke-width': 1, 'stroke-dasharray': '3 3' }), null, C_MUTED));
+    function team(x, dir, color) {
+      var g = group(tug);
+      for (var m = 0; m < 2; m++) {
+        var fx = x + dir * m * 34;
+        g.appendChild(paint(svgEl('circle', { cx: fx + dir * 10, cy: 322, r: 7, fill: 'none', 'stroke-width': 2.2 }), null, color));
+        g.appendChild(paint(svgEl('line', { x1: fx + dir * 8, y1: 330, x2: fx - dir * 4, y2: 362, 'stroke-width': 2.6 }), null, color));
+        g.appendChild(paint(svgEl('line', { x1: fx - dir * 4, y1: 362, x2: fx + dir * 8, y2: 386, 'stroke-width': 2.4 }), null, color));
+        g.appendChild(paint(svgEl('line', { x1: fx - dir * 4, y1: 362, x2: fx - dir * 14, y2: 386, 'stroke-width': 2.4 }), null, color));
+        g.appendChild(paint(svgEl('line', { x1: fx + dir * 4, y1: 340, x2: fx - dir * 16, y2: 352, 'stroke-width': 2.2 }), null, color));
+      }
       return g;
-    });
+    }
+    var tL = team(132, 1, C_GOOD), tR = team(668, -1, C_BAD);
+    tug.appendChild(svgText(44, 402, '回报：想反应更灵敏（更陡）', 'demo-x-good', 11));
+    tug.appendChild(svgText(756, 402, '梯度惩罚：想更平滑', 'demo-x-bad', 11, 'end'));
+    tug.appendChild(svgText(400, 402, '停在哪里，就是训出来的平滑程度', 'demo-x-acc', 11, 'middle'));
 
-    /* 右：玩具策略上「最大斜率」与「访问到的状态上的均方根斜率」 */
-    var side = group(s);
-    rectBox(side, 570, 44, 200, 262, C_BORDER, C_SURFACE2);
-    side.appendChild(svgText(670, 66, '玩具策略上（同第 2 幕）', 'demo-x-mut', 10.5, 'middle'));
-    var BASE = 270, HSC = 36;
-    var barMax = vbar(side, 600, BASE, 52, C_BAD);
-    var barRms = vbar(side, 688, BASE, 52, C_WARN);
-    side.appendChild(paint(svgEl('line', { x1: 588, y1: BASE, x2: 752, y2: BASE, 'stroke-width': 1 }), null, C_BORDER));
-    side.appendChild(svgText(626, 288, '最大斜率', 'demo-x-ink2', 10.5, 'middle'));
-    side.appendChild(svgText(714, 288, '均方根斜率', 'demo-x-ink2', 10.5, 'middle'));
-    var vMax = paint(svgText(626, BASE - TOY_K * HSC - 8, fmt(TOY_K, 2), 'demo-x-mono', 11.5, 'middle'), C_BAD);
-    var vRms = paint(svgText(714, BASE - TOY.rmsSlope * HSC - 8, fmt(TOY.rmsSlope, 2), 'demo-x-mono', 11.5, 'middle'), C_WARN);
-    side.appendChild(vMax);
-    side.appendChild(vRms);
-    side.appendChild(svgText(670, 300, '期望只管走得到的状态', 'demo-x-mut', 10, 'middle'));
-
-    var fin = group(s);
-    chip(fin, 30, 322, 740, '可微：和 PPO 的损失一起反向传播 · 论文所有实验 $\\lambda_{gp} = 0.002$', C_GOOD, { h: 32, size: 12 });
-    var vs = group(s);
-    chip(vs, 30, 366, 740, '平滑奖励藏在环境里，只能靠策略梯度采样去估；GP 直接对策略参数求导', C_BORDER, { h: 30, size: 11.5 });
-
-    function draw(t) {
-      setOpacity(rowEls[0], seg(t, 0.3, 0.9));
-      setOpacity(rowEls[1], seg(t, 3.6, 4.2));
-      setOpacity(side, seg(t, 4.2, 4.8));
-      setH(barMax, TOY_K * HSC * ease(seg(t, 4.6, 5.6)));
-      setH(barRms, TOY.rmsSlope * HSC * ease(seg(t, 5.4, 6.4)));
-      setOpacity(vMax, seg(t, 5.4, 5.8));
-      setOpacity(vRms, seg(t, 6.2, 6.6));
-      setOpacity(rowEls[2], seg(t, 7.0, 7.6));
-      setOpacity(rowEls[3], seg(t, 10.4, 11.0));
-      setOpacity(fin, seg(t, 13.4, 14.0));
-      setOpacity(vs, seg(t, 14.6, 15.2));
+    function draw(t, clock) {
+      var now = nowOf(t, clock);
+      setOpacity(L, seg(t, 0.2, 0.8));
+      var s2on = seg(t, 3.6, 4.2);
+      setOpacity(head1, 1 - s2on);
+      setOpacity(step2, s2on);
+      var sx = X0 + ((now * 0.45) % 1) * (X1 - X0 - 10);
+      scan.setAttribute('x', sx.toFixed(1));
+      setOpacity(scan, 1 - s2on);
+      setOpacity(scanTag, seg(t, 1.2, 1.8) * (1 - s2on));
+      var nDots = Math.floor(dots.length * ease(seg(t, 3.8, 5.4)));
+      dots.forEach(function (d, k) { d.style.opacity = k < nDots ? 0.9 : 0; });
+      bars.forEach(function (b) {
+        b.b.style.opacity = s2on > 0 && Math.abs(b.o) > 0.9 ? 0.85 - 0.6 * s2on : 0.85;
+      });
+      setOpacity(R1, seg(t, 7.0, 7.6));
+      var k = 3 + 2.2 * Math.sin(1.2 * now);
+      pDot.setAttribute('cx', ppx(k).toFixed(1));
+      pDot.setAttribute('cy', ppy(k * k).toFixed(1));
+      setH(bill, (k * k / 36) * 70);
+      setOpacity(R2, seg(t, 10.4, 11.0));
+      tag.setAttribute('transform', 'rotate(' + (6 * Math.sin(2.1 * now)).toFixed(2) + ' 574 224)');
+      setOpacity(tug, seg(t, 13.4, 14.0));
+      var off = 40 * Math.sin(1.4 * now) * (0.55 + 0.45 * Math.cos(0.37 * now));
+      knot.setAttribute('x', (394 + off).toFixed(1));
+      tL.setAttribute('transform', 'translate(' + off.toFixed(1) + ' 0)');
+      tR.setAttribute('transform', 'translate(' + off.toFixed(1) + ' 0)');
     }
     return { el: s, draw: draw };
   }
 
-  /* ── scene 4: 罚的是 log π 的梯度 ── */
+  /* ── scene 4: 罚的到底是什么：均值的斜率 ── */
+  /* 一维示意：横轴状态 s、纵轴动作 a。策略在每个状态给一个钟形分布（均值线 ± σ 带）；rollout 采到的动作 a* 固定不动。
+     状态一晃，钟形沿均值线滑动，a* 在钟形里的高低（它的概率）就跟着变 —— 均值线越陡、钟形越窄，变得越凶。
+     推导见笔记第 3 节：对高斯策略，E‖∇ₛ log π‖² = ‖J‖²_F / σ²（整理者的推导，论文没写）。 */
+  var S4_SIG = 0.35, S4_ASTAR = 0.3;
+  function s4State(now) {
+    return 0.32 * Math.sin(1.6 * now) + 0.08 * Math.sin(4.3 * now + 0.5);
+  }
+
   function buildSceneLogPi() {
-    var s = sceneSvg('高斯策略的 log 概率对状态求导等于雅可比转置乘动作偏差除以方差；对动作取期望等于雅可比的 Frobenius 范数平方除以方差；J 取 0.8、0.2、负 0.4、0.6，sigma 0.4 时期望 7.5；第一个样本 a 减 mu 等于 0.4、负 0.2，梯度 2.5、负 0.25，平方和 6.31；sigma 减半期望变成 30');
-    s.appendChild(svgText(30, 28, '式 7 罚的是 log π 对状态的梯度：在高斯策略上它等于什么', 'demo-x-ink2', 13.5));
+    var s = sceneSvg('左右两个策略：每个状态给出一个钟形分布，采到的动作固定不动；状态晃动时钟形沿均值线滑动，这个动作的概率跟着变；均值线平缓时几乎不变，陡的时候忽高忽低；钟形变窄一半，变化更凶，罚 4 倍；训练时每个状态只有一个动作，要靠一批平均');
+    s.appendChild(svgText(30, 28, '梯度惩罚罚的是：状态一晃，采到的那个动作的概率变得多快', 'demo-x-ink2', 13.5));
 
-    var form = group(s);
-    rectBox(form, 30, 44, 470, 106, C_ACCENT);
-    form.appendChild(svgRich(44, 64, 'PPO 的高斯策略 $a \\sim \\mathcal{N}(\\mu_\\theta(s), \\sigma^2 I)$，$J = \\partial\\mu/\\partial s$', { size: 11, w: 450, cls: 'demo-x-ink2' }));
-    form.appendChild(svgMath(140, 104, '\\nabla_s\\log\\pi = \\dfrac{J^\\top (a-\\mu)}{\\sigma^2}', { size: 13, anchor: 'middle', w: 220, h: 50 }));
-    var expF = group(form);
-    expF.appendChild(svgText(262, 100, '对 a 取期望 →', 'demo-x-mut', 10.5, 'middle'));
-    expF.appendChild(svgMath(395, 104, '\\mathbb{E}_a\\lVert\\nabla_s\\log\\pi\\rVert^2 = \\dfrac{\\lVert J\\rVert_F^2}{\\sigma^2}', { size: 13, anchor: 'middle', w: 200, h: 50 }).setTone(C_GOOD));
-    var ours = group(s);
-    ours.appendChild(svgText(490, 142, '这一步是我们推的，论文没写', 'demo-x-mut', 10, 'end'));
+    function panel(x0, title, slope, color) {
+      var g = group(s);
+      rectBox(g, x0, 44, 360, 222, C_BORDER, C_SURFACE2);
+      g.appendChild(svgText(x0 + 12, 64, title, null, 12));
+      var X0 = x0 + 34, X1 = x0 + 286, Y0 = 250, Y1 = 78;
+      function px(v) { return X0 + ((v + 1) / 2) * (X1 - X0); }
+      function py(a) { return Y0 - ((clamp(a, -1.5, 1.5) + 1.5) / 3) * (Y0 - Y1); }
+      g.appendChild(svgText(X1, Y0 + 13, '状态 →', 'demo-x-mut', 9.5, 'end'));
+      g.appendChild(svgText(X0 - 4, Y1 + 4, '动作', 'demo-x-mut', 9.5, 'end'));
+      var band = paint(svgEl('path', { d: '', 'fill-opacity': 0.16 }), color);
+      g.appendChild(band);
+      g.appendChild(paint(svgEl('line', { x1: px(-1), y1: py(-slope), x2: px(1), y2: py(slope), 'stroke-width': 2.2 }), null, color));
+      g.appendChild(paint(svgEl('line', { x1: X0, y1: py(S4_ASTAR), x2: X1, y2: py(S4_ASTAR), 'stroke-width': 1.2, 'stroke-dasharray': '4 3' }), null, C_WARN));
+      g.appendChild(svgText(X0 + 4, py(S4_ASTAR) - 5, '采到的动作（固定）', 'demo-x-warn', 9.5));
+      var bell = paint(svgEl('path', { d: '', fill: 'none', 'stroke-width': 2 }), null, C_ACCENT);
+      var stem = paint(svgEl('line', { 'stroke-width': 1, 'stroke-dasharray': '2 3' }), null, C_MUTED);
+      var hit = paint(svgEl('circle', { r: 5.5 }), C_WARN);
+      g.appendChild(stem);
+      g.appendChild(bell);
+      g.appendChild(hit);
+      var MX = x0 + 318, MB = 240, MH = 150;
+      g.appendChild(paint(svgEl('rect', { x: MX, y: MB - MH, width: 18, height: MH, rx: 3 }), C_SURFACE));
+      var meter = vbar(g, MX, MB, 18, C_WARN);
+      g.appendChild(svgText(MX + 9, MB + 14, '概率', 'demo-x-mut', 9.5, 'middle'));
+      return { g: g, px: px, py: py, slope: slope, band: band, bell: bell, stem: stem, hit: hit, meter: meter, MH: MH, sig: S4_SIG, color: color };
+    }
+    var pA = panel(30, '均值线平缓：概率几乎不动', 0.3, C_GOOD);
+    var pB = panel(410, '均值线陡：概率忽高忽低', 1.3, C_BAD);
+    var narrow = svgText(694, 64, 'σ 减半 → 罚 4 倍', 'demo-x-bad', 11, 'end');
+    pB.g.appendChild(narrow);
 
-    var ex = group(s);
-    rectBox(ex, 30, 160, 470, 92, C_BORDER, C_SURFACE2);
-    ex.appendChild(svgMath(130, 206, 'J = \\begin{bmatrix} 0.8 & 0.2 \\\\ -0.4 & 0.6 \\end{bmatrix}', { size: 12, anchor: 'middle', w: 190, h: 60 }));
-    ex.appendChild(svgRich(240, 186, '$\\lVert J\\rVert_F^2 = 0.64 + 0.04 + 0.16 + 0.36 = $ **1.20**', { size: 11, w: 255 }));
-    ex.appendChild(svgRich(240, 210, '$\\sigma = 0.4$：期望 $= 1.20 / 0.16 = $ **7.5**', { size: 11, w: 255 }));
-    ex.appendChild(svgRich(240, 234, '$\\sigma = 0.2$：期望 $= 1.20 / 0.04 = $ **30**', { size: 11, w: 255, cls: 'demo-x-mut' }));
-    var halfTag = group(ex);
-    halfTag.appendChild(svgText(494, 247, '探索噪声越小，同样的斜率罚得越重', 'demo-x-warn', 10, 'end'));
-
-    var one = group(s);
-    rectBox(one, 30, 264, 470, 62, C_WARN);
-    one.appendChild(svgRich(44, 286, '一个样本 $a - \\mu = (0.4, -0.2)$：梯度 $= (2.5,\\, -0.25)$', { size: 11, w: 450 }));
-    one.appendChild(svgRich(44, 310, '平方和 $= 6.25 + 0.0625 =$ **6.31**，不等于 7.5', { size: 11, w: 450, cls: 'demo-x-warn' }));
-
-    /* 右：动作平面 + 样本平均 */
-    var PX = 640, PY = 110, PU = 60;
-    var plane = group(s);
-    rectBox(plane, 520, 44, 250, 132, C_BORDER, C_SURFACE2);
-    plane.appendChild(svgRich(532, 62, '动作平面：$a - \\mu$', { size: 10.5, w: 200, cls: 'demo-x-mut' }));
-    [1, 2].forEach(function (k) {
-      plane.appendChild(paint(svgEl('circle', { cx: PX, cy: PY + 4, r: PU * GAUSS_SIGMA * k * 0.75, fill: 'none', 'stroke-width': 1.1, 'stroke-dasharray': '4 3', opacity: k === 1 ? 0.9 : 0.45 }), null, C_ACCENT));
-    });
-    var dots = GAUSS.s.devs.slice(1, 80).map(function (d) {
-      var c = paint(svgEl('circle', { cx: (PX + d[0] * PU * 0.75).toFixed(1), cy: (PY + 4 - d[1] * PU * 0.75).toFixed(1), r: 1.8 }), C_GOOD);
-      c.style.opacity = 0;
-      plane.appendChild(c);
-      return c;
-    });
-    var d0 = GAUSS.s.devs[0];
-    var firstArrow = group(plane);
-    pathLine(firstArrow, [[PX, PY + 4], [PX + d0[0] * PU * 0.75, PY + 4 - d0[1] * PU * 0.75]], C_WARN, 2);
-    firstArrow.appendChild(paint(svgEl('circle', { cx: PX + d0[0] * PU * 0.75, cy: PY + 4 - d0[1] * PU * 0.75, r: 4.2, 'stroke-width': 1.4 }), C_WARN, C_SURFACE2));
-    plane.appendChild(paint(svgEl('circle', { cx: PX, cy: PY + 4, r: 3.5 }), C_ACCENT));
-
-    var run = group(s);
-    rectBox(run, 520, 188, 250, 138, C_BORDER, C_SURFACE2);
-    run.appendChild(svgText(532, 206, '前 n 个样本的平均', 'demo-x-mut', 10.5));
-    var RX0 = 540, RX1 = 756, RY0 = 306, RY1 = 218, RMAX = 15;
+    var strip = group(s);
+    rectBox(strip, 30, 274, 740, 62, C_BORDER);
+    strip.appendChild(svgText(44, 296, '训练时每个状态只有 rollout 里那一个动作：一个样本的估计很吵', 'demo-x-ink2', 11.5));
+    strip.appendChild(svgText(44, 320, '两维算例：单个样本 6.31，一批 200 个平均 7.53（期望 7.5）', 'demo-x-mut', 11));
+    var RX0 = 560, RX1 = 756, RY0 = 330, RY1 = 282, RMAX = 15;
     function rx(n) { return RX0 + ((n - 1) / (GAUSS_N - 1)) * (RX1 - RX0); }
     function ry(v) { return RY0 - (clamp(v, 0, RMAX) / RMAX) * (RY0 - RY1); }
-    run.appendChild(paint(svgEl('line', { x1: RX0, y1: RY0, x2: RX1, y2: RY0, 'stroke-width': 1 }), null, C_BORDER));
-    run.appendChild(paint(svgEl('line', { x1: RX0, y1: ry(GAUSS.expect), x2: RX1, y2: ry(GAUSS.expect), 'stroke-width': 1.3, 'stroke-dasharray': '5 4' }), null, C_BAD));
-    run.appendChild(paint(svgText(RX1, ry(GAUSS.expect) - 5, '期望 ' + fmt(GAUSS.expect, 1), 'demo-x-mono', 10, 'end'), C_BAD));
-    var runLn = pathLine(run, GAUSS.s.run.map(function (v, k) { return [rx(k + 1), ry(v)]; }), C_GOOD, 2);
-    var runTag = paint(svgText(RX1, RY0 + 14, GAUSS_N + ' 个样本平均 ' + fmt(GAUSS.mean, 2), 'demo-x-mono', 10, 'end'), C_GOOD);
-    run.appendChild(runTag);
+    strip.appendChild(paint(svgEl('line', { x1: RX0, y1: ry(GAUSS.expect), x2: RX1, y2: ry(GAUSS.expect), 'stroke-width': 1.2, 'stroke-dasharray': '4 3' }), null, C_BAD));
+    var runLn = pathLine(strip, GAUSS.s.run.map(function (v, k) { return [rx(k + 1), ry(v)]; }), C_GOOD, 1.8);
 
     var fin = group(s);
-    chip(fin, 30, 342, 740, 'GP 罚的是**均值对状态的斜率**，按 $1/\\sigma^2$ 加权；训练时每个状态只有一个动作，靠一个 minibatch 的平均来估', C_ACCENT, { h: 36, size: 11.5 });
+    chip(fin, 30, 346, 740, '罚的其实是**均值随状态变得多快**（斜率）；探索噪声越小，同样的斜率罚得越重', C_ACCENT, { h: 36, size: 12 });
     var tail = group(s);
-    tail.appendChild(svgText(400, 404, '两维玩具算例；真实策略是 MLP，J 随状态变化', 'demo-x-mut', 10.5, 'middle'));
+    tail.appendChild(svgText(400, 404, '示意图；这一幕的结论是我们按式 7 推的，论文没写', 'demo-x-mut', 10.5, 'middle'));
 
-    function draw(t) {
-      setOpacity(form, seg(t, 0.3, 0.9));
-      setOpacity(expF, seg(t, 3.6, 4.2));
-      setOpacity(ours, seg(t, 4.0, 4.6));
-      setOpacity(ex, seg(t, 7.0, 7.6));
-      setOpacity(halfTag, seg(t, 13.4, 14.0));
-      setOpacity(plane, seg(t, 7.4, 8.0));
-      setOpacity(firstArrow, seg(t, 10.4, 10.9));
-      setOpacity(one, seg(t, 10.4, 11.0));
-      var nDots = Math.floor(dots.length * ease(seg(t, 11.4, 13.0)));
-      dots.forEach(function (c, k) { c.style.opacity = k < nDots ? 0.8 : 0; });
-      setOpacity(run, seg(t, 11.0, 11.6));
-      drawOn(runLn, ease(seg(t, 11.4, 13.2)));
-      setOpacity(runTag, seg(t, 13.0, 13.4));
-      setOpacity(fin, seg(t, 14.6, 15.2));
-      setOpacity(tail, seg(t, 15.2, 15.8));
+    function drawPanel(p, now) {
+      var sv = s4State(now), mu = p.slope * sv, sig = p.sig;
+      var bp = [], top = [], bot = [];
+      for (var k = 0; k <= 40; k++) {
+        var v = -1 + k / 20;
+        top.push([p.px(v), p.py(p.slope * v + sig)]);
+        bot.unshift([p.px(v), p.py(p.slope * v - sig)]);
+      }
+      p.band.setAttribute('d', polyPath(top.concat(bot).map(function (q) { return [q[0].toFixed(1), q[1].toFixed(1)]; })) + ' Z');
+      for (var j = 0; j <= 50; j++) {
+        var a = mu - 3 * sig + (6 * sig * j) / 50;
+        var w = Math.exp(-((a - mu) * (a - mu)) / (2 * sig * sig));
+        bp.push([p.px(sv) + 52 * w, p.py(a)]);
+      }
+      p.bell.setAttribute('d', polyPath(bp.map(function (q) { return [q[0].toFixed(1), q[1].toFixed(1)]; })));
+      var like = Math.exp(-((S4_ASTAR - mu) * (S4_ASTAR - mu)) / (2 * sig * sig));
+      p.stem.setAttribute('x1', p.px(sv).toFixed(1));
+      p.stem.setAttribute('x2', p.px(sv).toFixed(1));
+      p.stem.setAttribute('y1', p.py(mu - 3 * sig).toFixed(1));
+      p.stem.setAttribute('y2', p.py(mu + 3 * sig).toFixed(1));
+      p.hit.setAttribute('cx', (p.px(sv) + 52 * like).toFixed(1));
+      p.hit.setAttribute('cy', p.py(S4_ASTAR).toFixed(1));
+      setH(p.meter, like * p.MH);
+    }
+
+    function draw(t, clock) {
+      var now = nowOf(t, clock);
+      setOpacity(pA.g, seg(t, 0.2, 0.8));
+      setOpacity(pB.g, seg(t, 0.8, 1.4));
+      pB.sig = S4_SIG * (1 - 0.5 * ease(seg(t, 7.0, 8.0)));
+      setOpacity(narrow, seg(t, 7.4, 8.0));
+      drawPanel(pA, now);
+      drawPanel(pB, now);
+      setOpacity(strip, seg(t, 10.4, 11.0));
+      drawOn(runLn, ease(seg(t, 10.8, 12.6)));
+      setOpacity(fin, seg(t, 13.4, 14.0));
+      setOpacity(tail, seg(t, 14.4, 15.0));
     }
     return { el: s, draw: draw };
   }
 
   /* ── scene 5: 几行代码接进 PPO ── */
   function buildSceneCode() {
-    var s = sceneSvg('官方代码在 rsl_rl 的 PPO update 里把观测设成需要梯度，autograd 求 log_prob 对观测的梯度，create_graph 为真，逐样本平方求和取平均；总损失是裁剪替代损失加价值损失减 0.01 倍熵加特权正则加 0.002 倍梯度惩罚，Adam 学习率 2e-4；MimicKit 的 LCPAgent 继承 PPOAgent，配置是 DeepMimic 的 G1 PPO 配置加一行 lcp_weight 0.002，SGD 是 MimicKit 全部智能体的默认');
-    s.appendChild(svgText(30, 28, '几行代码接进 PPO：官方代码（rsl_rl 的 ppo_rma.py）', 'demo-x-ink2', 13.5));
+    var s = sceneSvg('一批观测进策略网络得到 log π；再对观测求一次导，信号流回观测，每个格子的梯度有大有小；平方、求和、取平均成一项梯度惩罚，乘 0.002 叠到 PPO 的损失上，一次反向传播、一次 Adam 更新；MimicKit 的 LCPAgent 只多一行 lcp_weight，它默认的 SGD 不是 LCP 的要求');
+    s.appendChild(svgText(30, 28, '几行代码：前向算 log π，再对观测求一次导，叠到损失上', 'demo-x-ink2', 13.5));
+    var mk = K.arrowMarker(s, 'lcp-x-arrow-s5', C_MUTED);
 
-    var code = group(s);
-    rectBox(code, 30, 44, 470, 234, C_BORDER, C_SURFACE2);
-    var lines = [
-      { y: 66, s: 'obs_est_batch.requires_grad_()', tone: null, at: 0.3 },
-      { y: 86, s: 'self.actor_critic.act(obs_est_batch, ...)', tone: null, at: 0.3 },
-      { y: 106, s: 'log_prob = get_actions_log_prob(actions_batch)', tone: null, at: 0.3 },
-      { y: 136, s: 'grad = torch.autograd.grad(log_prob.sum(),', tone: C_GOOD, at: 3.6 },
-      { y: 154, s: '         obs_est_batch, create_graph=True)[0]', tone: C_GOOD, at: 3.6 },
-      { y: 172, s: 'gp_loss = torch.sum(torch.square(grad),', tone: C_GOOD, at: 3.6 },
-      { y: 190, s: '                    dim=-1).mean()', tone: C_GOOD, at: 3.6 },
-      { y: 220, s: 'loss = surrogate + 1.0 * value_loss', tone: C_ACCENT, at: 7.0 },
-      { y: 238, s: '     - 0.01 * entropy + priv_coef * priv_reg', tone: C_ACCENT, at: 7.0 },
-      { y: 256, s: '     + gp_coef * gp_loss          # 0.002', tone: C_ACCENT, at: 7.0 }
-    ].map(function (ln) {
-      var tnode = paint(svgText(44, ln.y, ln.s, 'demo-x-mono', 10.5), ln.tone);
-      tnode.setAttribute('xml:space', 'preserve');
-      tnode.style.whiteSpace = 'pre';
-      code.appendChild(tnode);
-      return { node: tnode, at: ln.at };
+    var gridG = group(s);
+    gridG.appendChild(svgText(85, 62, '一批观测', 'demo-x-ink2', 11, 'middle'));
+    var cells = [], grng = mulberry32(21);
+    for (var r = 0; r < 8; r++) {
+      for (var c = 0; c < 5; c++) {
+        var cell = paint(svgEl('rect', { x: 44 + c * 17, y: 72 + r * 15, width: 14, height: 12, rx: 2 }), C_MUTED);
+        cell.style.opacity = 0.5;
+        gridG.appendChild(cell);
+        cells.push({ el: cell, g: Math.pow(grng(), 1.6) });
+      }
+    }
+    var net = group(s);
+    rectBox(net, 168, 76, 124, 104, C_BORDER, C_SURFACE2);
+    net.appendChild(svgText(230, 196, '策略网络', 'demo-x-ink2', 11, 'middle'));
+    var neurons = [];
+    [[190, 4], [230, 5], [270, 3]].forEach(function (col) {
+      for (var n = 0; n < col[1]; n++) {
+        var cy = 128 + (n - (col[1] - 1) / 2) * 18;
+        var nd = paint(svgEl('circle', { cx: col[0], cy: cy, r: 5 }), C_ACCENT);
+        net.appendChild(nd);
+        neurons.push(nd);
+      }
     });
+    arrowPath(net, [[136, 128], [164, 128]], C_MUTED, mk);
+    arrowPath(net, [[294, 128], [326, 128]], C_MUTED, mk);
+    var lp = group(s);
+    rectBox(lp, 328, 110, 78, 36, C_ACCENT);
+    lp.appendChild(svgRich(367, 132, '$\\log\\pi$', { size: 13, anchor: 'middle', w: 70 }));
+    var fwdPath = [[80, 128], [166, 128], [230, 128], [326, 128], [367, 128]];
+    var fwdDot = paint(svgEl('circle', { r: 5 }), C_ACCENT);
+    s.appendChild(fwdDot);
 
-    var cfg = group(s);
-    rectBox(cfg, 516, 44, 254, 234, C_ACCENT);
-    cfg.appendChild(svgText(530, 64, '官方配置（GR1）', 'demo-x-acc', 11.5));
-    [
-      ['GP 系数表 [0.002, 0.002, 700, 1000]', 'demo-x-ink2'],
-      ['首尾相同 → 全程恒为 0.002', 'demo-x-good'],
-      ['Adam · 学习率 2e-4 · 按 KL 自适应', 'demo-x-ink2'],
-      ['KL 目标 0.008 · 熵系数 0.01', 'demo-x-ink2'],
-      ['5 个 epoch × 4 个 minibatch', 'demo-x-ink2'],
-      ['4096 环境 × 24 步 = 98,304 样本/轮', 'demo-x-ink2'],
-      ['一次反向传播、一次更新', 'demo-x-mut']
-    ].forEach(function (r, k) {
-      cfg.appendChild(svgText(530, 90 + k * 26, r[0], r[1], 10.8));
+    var back = group(s);
+    var bPts = [[367, 148], [367, 238], [85, 238], [85, 196]];
+    arrowPath(back, bPts, C_WARN, null, '5 4', 1.8);
+    back.appendChild(svgRich(226, 256, '对观测再求一次导（`create_graph=True`）', { size: 11, anchor: 'middle', w: 320, cls: 'demo-x-warn' }));
+    var backDot = paint(svgEl('circle', { r: 6 }), C_WARN);
+    back.appendChild(backDot);
+
+    var sq = group(s);
+    /* 从网络下面绕过去，不压在网络上（会和虚线的竖段交叉一次） */
+    arrowPath(sq, [[136, 212], [444, 212]], C_WARN, mk, null, 1.6);
+    sq.appendChild(svgText(250, 229, '平方 · 求和 · 取平均', 'demo-x-warn', 11, 'middle'));
+    var gpBar = vbar(sq, 450, 226, 30, C_WARN);
+    sq.appendChild(svgText(465, 242, 'GP', 'demo-x-warn', 12, 'middle'));
+
+    var stack = group(s);
+    stack.appendChild(svgText(660, 50, '这一步的总损失', 'demo-x-ink2', 11, 'middle'));
+    var blocks = [['PPO 裁剪损失', 70, C_ACCENT], ['价值损失', 40, C_ACCENT], ['− 0.01 × 熵', 22, C_MUTED], ['特权正则', 22, C_MUTED]];
+    var yb = 250;
+    blocks.forEach(function (b) {
+      yb -= b[1] + 3;
+      rectBox(stack, 560, yb, 200, b[1], b[2], C_SURFACE2);
+      stack.appendChild(svgText(660, yb + b[1] / 2 + 4, b[0], 'demo-x-ink2', 10.5, 'middle'));
     });
+    var gpBlock = group(s);
+    rectBox(gpBlock, 560, 0, 200, 16, C_WARN, C_SURFACE);
+    gpBlock.appendChild(svgText(660, 12, '+ 0.002 × GP（全程常数）', 'demo-x-warn', 10, 'middle'));
+    var GP_Y = yb - 19;
+    var upd = group(s);
+    arrowPath(upd, [[764, 240], [784, 240], [784, 70], [764, 70]], C_GOOD, mk, null, 1.6);
+    upd.appendChild(svgText(780, 262, '一次 Adam 更新', 'demo-x-good', 10.5, 'end'));
+    arrowPath(stack, [[484, 206], [552, 206]], C_WARN, mk);
+    stack.appendChild(svgText(518, 198, '× 0.002', 'demo-x-warn', 10.5, 'middle'));
 
     var mimic = group(s);
-    rectBox(mimic, 30, 292, 740, 60, C_GOOD, C_SURFACE, '4 3');
-    mimic.appendChild(svgRich(44, 314, 'MimicKit：`LCPAgent` 继承 `PPOAgent`，只重写 actor 损失（`lcp_agent.py` 不到 50 行）', { size: 11, w: 720 }));
-    mimic.appendChild(svgRich(44, 338, '配置 = DeepMimic 的 G1 PPO 配置 + 一行 `lcp_weight: 0.002`；任务是动作跟踪，不是论文的速度行走', { size: 11, w: 720, cls: 'demo-x-ink2' }));
+    chip(mimic, 30, 286, 740, 'MimicKit：`LCPAgent` 继承 `PPOAgent`，配置只比 DeepMimic 的 G1 PPO 多一行 `lcp_weight: 0.002`', C_GOOD, { h: 34, size: 11.5, dash: '4 3' });
     var sgd = group(s);
-    chip(sgd, 30, 366, 740, 'MimicKit 的 SGD、学习率 1e-4 是它**所有**智能体的默认，不是 LCP 的要求；论文官方代码用 Adam', C_WARN, { h: 34, size: 11.5 });
+    chip(sgd, 30, 332, 740, 'MimicKit 的 SGD、学习率 1e-4 是它**所有**智能体的默认，不是 LCP 的要求；论文官方代码用 Adam', C_WARN, { h: 34, size: 11.5 });
 
-    function draw(t) {
-      setOpacity(code, seg(t, 0.2, 0.7));
-      lines.forEach(function (ln) { setOpacity(ln.node, seg(t, ln.at, ln.at + 0.5)); });
-      setOpacity(cfg, seg(t, 7.6, 8.2));
+    function draw(t, clock) {
+      var now = nowOf(t, clock);
+      setOpacity(gridG, seg(t, 0.2, 0.7));
+      setOpacity(net, seg(t, 0.4, 0.9));
+      setOpacity(lp, seg(t, 1.0, 1.5));
+      var fu = (now * 0.6) % 1, fp = K.pointOn(fwdPath, fu);
+      fwdDot.setAttribute('cx', fp[0].toFixed(1));
+      fwdDot.setAttribute('cy', fp[1].toFixed(1));
+      setOpacity(fwdDot, seg(t, 0.6, 1.0) * (t < 3.6 ? 1 : 0.35));
+      neurons.forEach(function (nd, k) { nd.style.opacity = (0.45 + 0.55 * Math.max(0, Math.sin(now * 3 - k * 0.6))).toFixed(2); });
+      var bon = seg(t, 3.6, 4.2);
+      setOpacity(back, bon);
+      var bu = (now * 0.5) % 1, bp = K.pointOn(bPts, bu);
+      backDot.setAttribute('cx', bp[0].toFixed(1));
+      backDot.setAttribute('cy', bp[1].toFixed(1));
+      var lit = seg(t, 4.4, 5.4);
+      cells.forEach(function (c) {
+        paint(c.el, lit > 0 ? C_WARN : C_MUTED);
+        c.el.style.opacity = (lit > 0 ? 0.2 + 0.8 * c.g * lit : 0.5).toFixed(2);
+      });
+      setOpacity(sq, seg(t, 5.6, 6.2));
+      setH(gpBar, 34 + 6 * Math.sin(now * 2));
+      setOpacity(stack, seg(t, 7.0, 7.6));
+      var drop = ease(seg(t, 7.8, 8.8));
+      gpBlock.setAttribute('transform', 'translate(0 ' + (20 + (GP_Y - 20) * drop).toFixed(1) + ')');
+      setOpacity(gpBlock, seg(t, 7.6, 8.0));
+      setOpacity(upd, seg(t, 9.0, 9.6));
       setOpacity(mimic, seg(t, 10.4, 11.0));
       setOpacity(sgd, seg(t, 13.4, 14.0));
     }
@@ -1163,68 +1423,125 @@
   }
 
   /* ── scene 6: 观测、ROA 与「罚整段输入」 ── */
+  var S6_TR = (function () {
+    var rng = mulberry32(31), a = [];
+    for (var i = 0; i < 600; i++) a.push(gauss(rng));
+    return a;
+  })();
   function buildSceneObs() {
-    var s = sceneSvg('GR1 公开代码的观测：当前本体 71 维，特权信息 50 维，最近 10 步历史 710 维，共 831 维；ROA 用编码器把特权信息压成潜向量，适应模块只看历史去估它，式 8 两项距离各对另一边停梯度，lambda 0.1；表 I(c)：只罚当前观测动作抖动 7.16，罚整段输入 3.21');
-    s.appendChild(svgText(30, 28, '观测、ROA 与「GP 要罚整段输入」', 'demo-x-ink2', 13.5));
+    var s = sceneSvg('观测由当前本体 71 维、只在仿真里有的特权信息 50 维和最近 10 步的历史 710 维组成，共 831 维；ROA 训练时把特权编码和历史估计互相拉近，部署时只用历史估计；表 I(c)：只罚当前观测动作抖动 7.16，罚整段输入 3.21');
+    s.appendChild(svgText(30, 28, '策略看的是一整段：当前 + 特权 + 历史；GP 要罚整段', 'demo-x-ink2', 13.5));
 
-    var blocks = group(s);
-    function block(x, w, head, val, lines, color, at) {
-      var g = group(blocks);
-      rectBox(g, x, 44, w, 108, color);
-      g.appendChild(svgText(x + 12, 64, head, null, 12));
-      g.appendChild(paint(svgText(x + w - 12, 64, val, 'demo-x-mono', 12, 'end'), color));
-      lines.forEach(function (str, k) {
-        g.appendChild(svgText(x + 12, 86 + k * 18, str, 'demo-x-ink2', 10.5));
-      });
-      g.at = at;
-      return g;
+    var cur = group(s);
+    rectBox(cur, 30, 44, 240, 96, C_ACCENT);
+    cur.appendChild(svgText(42, 64, '当前本体', null, 12));
+    cur.appendChild(paint(svgText(258, 64, '71', 'demo-x-mono', 13, 'end'), C_ACCENT));
+    var segW = [2, 3, 3, 2, 21, 21, 19], sx = 42, segEls = [];
+    segW.forEach(function (w, k) {
+      var ww = (w / 71) * 216;
+      var r = paint(svgEl('rect', { x: sx, y: 76, width: Math.max(2, ww - 1.5), height: 18, rx: 2 }), k % 2 ? C_ACCENT : C_GOOD);
+      cur.appendChild(r);
+      segEls.push(r);
+      sx += ww;
+    });
+    cur.appendChild(svgText(42, 112, '相位 · 命令 · 角速度 · 姿态', 'demo-x-mut', 10));
+    cur.appendChild(svgText(42, 128, '关节位置 · 关节速度 · 上一步动作', 'demo-x-mut', 10));
+
+    var priv = group(s);
+    rectBox(priv, 280, 44, 170, 96, C_WARN);
+    priv.appendChild(svgText(292, 64, '特权信息', null, 12));
+    priv.appendChild(paint(svgText(438, 64, '50', 'demo-x-mono', 13, 'end'), C_WARN));
+    priv.appendChild(paint(svgEl('rect', { x: 300, y: 84, width: 22, height: 18, rx: 3 }), C_WARN));
+    priv.appendChild(paint(svgEl('path', { d: 'M 304 84 L 304 78 A 7 7 0 0 1 318 78 L 318 84', fill: 'none', 'stroke-width': 2.4 }), null, C_WARN));
+    priv.appendChild(svgText(332, 98, '只在仿真里有', 'demo-x-warn', 10.5));
+    priv.appendChild(svgText(292, 128, '质量 · 质心 · 电机强度 · 线速度', 'demo-x-mut', 9.5));
+
+    var hist = group(s);
+    rectBox(hist, 460, 44, 310, 96, C_MUTED);
+    hist.appendChild(svgText(472, 64, '最近 10 步的历史', null, 12));
+    hist.appendChild(paint(svgText(758, 64, '710', 'demo-x-mono', 13, 'end'), C_MUTED));
+    var clipH = svgEl('clipPath', { id: 'lcp-x-clip-s6' });
+    clipH.appendChild(svgEl('rect', { x: 470, y: 74, width: 290, height: 40 }));
+    var defs = svgEl('defs', {});
+    defs.appendChild(clipH);
+    s.appendChild(defs);
+    var conv = svgEl('g', { 'clip-path': 'url(#lcp-x-clip-s6)' });
+    hist.appendChild(conv);
+    var frames = [];
+    for (var f = 0; f < 11; f++) {
+      var fr = paint(svgEl('rect', { y: 78, width: 22, height: 32, rx: 3, 'stroke-width': 1.2 }), C_SURFACE2, C_MUTED);
+      conv.appendChild(fr);
+      frames.push(fr);
     }
-    var bProp = block(30, 260, '当前本体', String(N_PROPRIO), ['相位 2 · 命令 3 · 角速度 3 · 横滚俯仰 2', '关节位置 21 · 关节速度 21', '上一步动作 19'], C_ACCENT, 0.3);
-    var bPriv = block(300, 210, '特权信息', String(N_PRIV), ['质量与质心 4 · 摩擦 1', '电机强度 42 · 机身线速度 3', '（只在仿真里拿得到）'], C_WARN, 3.6);
-    var bHist = block(520, 250, '历史 10 步', String(OBS_GR1.hist * N_PROPRIO), ['最近 10 步的本体观测', '10 × 71', '给适应模块估特权信息用'], C_MUTED, 3.6);
+    hist.appendChild(svgText(472, 130, '每一步新的一帧推进来，最老的一帧挤出去', 'demo-x-mut', 10));
     var total = group(s);
-    total.appendChild(svgRich(400, 172, '按 GR1 的公开代码：$71 + 50 + 710 =$ **831 维**，进网络前按滑动均值、标准差归一化', { size: 11.5, anchor: 'middle', w: 740 }));
+    total.appendChild(svgRich(400, 156, '按 GR1 的公开代码：71 + 50 + 710 = **831 维**', { size: 11.5, anchor: 'middle', w: 600 }));
 
     var roa = group(s);
-    rectBox(roa, 30, 188, 470, 130, C_BORDER, C_SURFACE2);
-    roa.appendChild(svgText(44, 208, 'ROA（附录式 8）', 'demo-x-acc', 11.5));
-    var mk = K.arrowMarker(s, 'lcp-x-arrow-s6', C_MUTED);
-    roa.appendChild(svgRich(44, 234, '特权 $e$ → 编码器 $\\mu$ → $z_\\mu$', { size: 11, w: 200 }));
-    roa.appendChild(svgRich(270, 234, '历史 → 适应模块 $\\phi$ → $z_\\phi$', { size: 11, w: 220 }));
-    arrowPath(roa, [[150, 240], [150, 252]], C_MUTED, mk);
-    arrowPath(roa, [[380, 240], [380, 252]], C_MUTED, mk);
-    roa.appendChild(svgMath(265, 272, '-\\mathcal{L}_{PPO} + \\lambda\\lVert z_\\mu - \\mathrm{sg}[z_\\phi]\\rVert + \\lVert\\mathrm{sg}[z_\\mu] - z_\\phi\\rVert + \\lambda_{gp}\\mathcal{L}_{gp}', { size: 12, anchor: 'middle', w: 460 }));
-    roa.appendChild(svgRich(265, 302, '$\\lambda = 0.1$，$\\lambda_{gp} = 0.002$；sg 是停梯度：两项各拉一边', { size: 10.5, anchor: 'middle', w: 460, cls: 'demo-x-mut' }));
+    rectBox(roa, 30, 168, 380, 148, C_BORDER, C_SURFACE2);
+    roa.appendChild(svgText(42, 188, 'ROA：两条路互相拉近', 'demo-x-acc', 12));
+    var zMu = [300, 252];
+    var spring = paint(svgEl('path', { d: '', fill: 'none', 'stroke-width': 1.6 }), null, C_MUTED);
+    roa.appendChild(spring);
+    var dMu = paint(svgEl('circle', { cx: zMu[0], cy: zMu[1], r: 9 }), C_WARN);
+    var dPhi = paint(svgEl('circle', { r: 9 }), C_ACCENT);
+    roa.appendChild(dMu);
+    roa.appendChild(dPhi);
+    roa.appendChild(svgText(zMu[0] + 14, zMu[1] - 12, '特权编码', 'demo-x-warn', 10.5));
+    var phiTag = svgText(0, 0, '历史估计', 'demo-x-acc', 10.5, 'middle');
+    roa.appendChild(phiTag);
+    roa.appendChild(svgText(42, 300, '训练时互相拉近（系数 0.1）；部署时只剩历史估计', 'demo-x-mut', 10.5));
 
     var abl = group(s);
-    rectBox(abl, 516, 188, 254, 130, C_BORDER, C_SURFACE2);
-    abl.appendChild(svgText(528, 208, '表 I(c)：GP 罚哪些输入', 'demo-x-ink2', 11));
-    var BASE = 290, SC = 9;
-    var bWhole = vbar(abl, 548, BASE, 48, C_GOOD);
-    var bCur = vbar(abl, 660, BASE, 48, C_BAD);
-    abl.appendChild(paint(svgEl('line', { x1: 530, y1: BASE, x2: 758, y2: BASE, 'stroke-width': 1 }), null, C_BORDER));
-    abl.appendChild(svgText(572, 306, '整段输入', 'demo-x-ink2', 10.5, 'middle'));
-    abl.appendChild(svgText(684, 306, '只罚当前观测', 'demo-x-ink2', 10.5, 'middle'));
-    var vW = paint(svgText(572, BASE - 3.21 * SC - 6, '3.21', 'demo-x-mono', 11, 'middle'), C_GOOD);
-    var vC = paint(svgText(684, BASE - 7.16 * SC - 6, '7.16', 'demo-x-mono', 11, 'middle'), C_BAD);
-    abl.appendChild(vW);
-    abl.appendChild(vC);
-    abl.appendChild(svgText(758, 222, '动作抖动', 'demo-x-mut', 10, 'end'));
+    rectBox(abl, 420, 168, 350, 148, C_BORDER, C_SURFACE2);
+    abl.appendChild(svgText(432, 188, '表 I(c)：GP 罚哪些输入', 'demo-x-ink2', 12));
+    var trCur = paint(svgEl('path', { d: '', fill: 'none', 'stroke-width': 1.8 }), null, C_BAD);
+    var trAll = paint(svgEl('path', { d: '', fill: 'none', 'stroke-width': 1.8 }), null, C_GOOD);
+    abl.appendChild(trCur);
+    abl.appendChild(trAll);
+    abl.appendChild(svgText(432, 208, '只罚当前观测：动作抖动 7.16', 'demo-x-bad', 10.5));
+    abl.appendChild(svgText(432, 276, '罚整段输入：动作抖动 3.21', 'demo-x-good', 10.5));
 
     var fin = group(s);
-    chip(fin, 30, 332, 740, '只罚当前观测：历史一变，动作照样会跳 —— 动作抖动 7.16 对 3.21，关节位置抖动 0.35 对 0.17', C_BAD, { h: 32, size: 11.5 });
+    chip(fin, 30, 326, 740, '只罚当前观测，历史一变动作照样会跳：抖动 7.16 对 3.21（关节位置抖动 0.35 对 0.17）', C_BAD, { h: 34, size: 11.5 });
     var tail = group(s);
-    chip(tail, 30, 374, 740, '部署时特权信息拿不到，换成历史估出的 $z_\\phi$，这条通路也得平滑（这一句是我们的理解）', C_BORDER, { h: 32, size: 11 });
+    chip(tail, 30, 370, 740, '部署时特权信息拿不到，换成历史估计 —— 这条通路也得平滑（这一句是我们的理解）', C_BORDER, { h: 34, size: 11 });
 
-    function draw(t) {
-      [bProp, bPriv, bHist].forEach(function (g) { setOpacity(g, seg(t, g.at, g.at + 0.6)); });
+    function trace(amp, yc, now, phase) {
+      var pts = [], i0 = Math.floor(now * 20);
+      for (var k = 0; k <= 60; k++) {
+        var idx = (i0 + k + phase) % S6_TR.length;
+        pts.push([440 + k * 5, yc - 5 * Math.sin((i0 + k) * 0.12) - amp * clamp(S6_TR[idx], -2, 2)]);
+      }
+      return polyPath(pts.map(function (q) { return [q[0].toFixed(1), q[1].toFixed(1)]; }));
+    }
+
+    function draw(t, clock) {
+      var now = nowOf(t, clock);
+      setOpacity(cur, seg(t, 0.2, 0.8));
+      segEls.forEach(function (r, k) { r.style.opacity = (0.55 + 0.45 * Math.max(0, Math.sin(now * 2.2 - k * 0.7))).toFixed(2); });
+      setOpacity(priv, seg(t, 3.6, 4.2));
+      setOpacity(hist, seg(t, 4.0, 4.6));
+      var shift = ((now * 1.2) % 1) * 27;
+      frames.forEach(function (fr, k) { fr.setAttribute('x', (474 + k * 27 - shift).toFixed(1)); });
       setOpacity(total, seg(t, 5.4, 6.0));
       setOpacity(roa, seg(t, 7.0, 7.6));
+      var tau = now % 5, pull = Math.exp(-tau / 1.1);
+      var px = zMu[0] - 210 * pull, py = zMu[1] - 30 * pull + 4 * Math.sin(now * 3);
+      dPhi.setAttribute('cx', px.toFixed(1));
+      dPhi.setAttribute('cy', py.toFixed(1));
+      phiTag.setAttribute('x', px.toFixed(1));
+      phiTag.setAttribute('y', (py + 24).toFixed(1));
+      var n = 9, sp = [];
+      for (var k = 0; k <= n; k++) {
+        var u = k / n;
+        sp.push([px + (zMu[0] - px) * u, py + (zMu[1] - py) * u + (k % 2 ? 6 : -6) * (k > 0 && k < n ? 1 : 0)]);
+      }
+      spring.setAttribute('d', polyPath(sp.map(function (q) { return [q[0].toFixed(1), q[1].toFixed(1)]; })));
       setOpacity(abl, seg(t, 10.4, 11.0));
-      setH(bWhole, 3.21 * SC * ease(seg(t, 10.8, 11.8)));
-      setH(bCur, 7.16 * SC * ease(seg(t, 11.2, 12.2)));
-      setOpacity(vW, seg(t, 11.8, 12.2));
-      setOpacity(vC, seg(t, 12.2, 12.6));
+      /* 抖动幅度按 7.16 : 3.21 的比例画（示意） */
+      trCur.setAttribute('d', trace(7.16 * 1.2, 236, now, 0));
+      trAll.setAttribute('d', trace(3.21 * 1.2, 296, now, 200));
       setOpacity(fin, seg(t, 13.4, 14.0));
       setOpacity(tail, seg(t, 14.8, 15.4));
     }
@@ -1233,72 +1550,126 @@
 
   /* ── scene 7: 命令、奖励与课程 ── */
   var S7_STEPS = curriculumSteps(CURRIC.s0, CURRIC.cap, CURRIC.up); // 9164
+  var S7_CMDS = [[0.8, 0, 0, '前进 0.8 m/s'], [0.4, 0.4, 0, '前进 0.4 + 左移 0.4'], [0.2, 0, 0.6, '慢走 + 左转 0.6 rad/s'], [0.6, -0.3, 0, '前进 0.6 + 右移 0.3']];
   function buildSceneReward() {
-    var s = sceneSvg('命令：前进 0 到 0.8 米每秒、横移正负 0.4、转向正负 0.6 弧度每秒，每 150 步重抽，50 赫兹下是 3 秒，一回合 500 步 10 秒；奖励是步态风格、速度跟踪和表 IV 的八项正则，没有罚动作变化率与关节加速度的平滑项；附录 B 的课程：负奖励乘系数 s，从 0.8 起，回合长度低于 50 步乘 0.9999、高于 400 步乘 1.0001，上限 2.0，涨满要乘 9164 次');
-    s.appendChild(svgText(30, 28, '命令、奖励与课程：平滑交给 GP，正则奖励留着', 'demo-x-ink2', 13.5));
+    var s = sceneSvg('机器人跟着速度命令走，命令每 150 步、也就是 3 秒换一次，一回合 500 步 10 秒；奖励三类：步态风格、速度跟踪和八项正则，没有罚动作变化率和关节加速度的平滑项，那部分交给梯度惩罚；课程：机器人站得越久，负奖励的系数从 0.8 慢慢涨到 2.0');
+    s.appendChild(svgText(30, 28, '任务：跟着速度命令走；平滑项拿掉，正则项留着', 'demo-x-ink2', 13.5));
 
-    var cmd = group(s);
-    rectBox(cmd, 30, 44, 330, 108, C_BORDER, C_SURFACE2);
-    cmd.appendChild(svgText(44, 64, '速度命令（第 V 节，机器人坐标系）', 'demo-x-ink2', 11));
-    [['前进 $v_x$', '0 … 0.8 m/s'], ['横移 $v_y$', '−0.4 … 0.4 m/s'], ['转向 $v_{yaw}$', '−0.6 … 0.6 rad/s']].forEach(function (r, k) {
-      cmd.appendChild(svgRich(52, 88 + k * 21, r[0], { size: 11, w: 120 }));
-      cmd.appendChild(paint(svgText(346, 92 + k * 21, r[1], 'demo-x-mono', 11, 'end'), C_ACCENT));
+    var walk = group(s);
+    rectBox(walk, 30, 44, 370, 150, C_BORDER, C_SURFACE2);
+    var ground = group(walk);
+    var dashes = [];
+    for (var d = 0; d < 12; d++) {
+      var dl = paint(svgEl('line', { y1: 176, y2: 176, 'stroke-width': 2.4 }), null, C_MUTED);
+      ground.appendChild(dl);
+      dashes.push(dl);
+    }
+    var fig = K.stickFigure(C_ACCENT, 2.6, false, 0.4);
+    fig.el.setAttribute('transform', 'translate(130 141) scale(0.74)');
+    walk.appendChild(fig.el);
+    var mk = K.arrowMarker(s, 'lcp-x-arrow-s7', C_GOOD);
+    var cmdArrow = paint(svgEl('line', { x1: 250, y1: 120, x2: 330, y2: 120, 'stroke-width': 4, 'marker-end': mk }), null, C_GOOD);
+    walk.appendChild(cmdArrow);
+    var cmdTxt = svgText(280, 160, '', 'demo-x-good', 11.5, 'middle');
+    walk.appendChild(cmdTxt);
+    walk.appendChild(svgText(42, 64, '速度命令（每 3 s 换一次）', null, 12));
+    walk.appendChild(svgText(388, 64, '前进 0–0.8 · 横移 ±0.4 · 转向 ±0.6', 'demo-x-mut', 9.5, 'end'));
+
+    var ep = group(s);
+    rectBox(ep, 410, 44, 360, 150, C_BORDER, C_SURFACE2);
+    ep.appendChild(svgText(422, 64, '一回合 500 步 = 10 s（50 Hz）', null, 12));
+    var EX0 = 430, EX1 = 750;
+    function ex(k) { return EX0 + (k / EP_STEPS) * (EX1 - EX0); }
+    ep.appendChild(paint(svgEl('rect', { x: EX0, y: 96, width: EX1 - EX0, height: 22, rx: 5 }), C_SURFACE));
+    var epFill = paint(svgEl('rect', { x: EX0, y: 96, width: 0, height: 22, rx: 5 }), C_ACCENT);
+    ep.appendChild(epFill);
+    var tickEls = [150, 300, 450].map(function (k) {
+      var tk = paint(svgEl('line', { x1: ex(k), y1: 88, x2: ex(k), y2: 126, 'stroke-width': 2.4 }), null, C_GOOD);
+      ep.appendChild(tk);
+      ep.appendChild(svgText(ex(k), 142, String(k), 'demo-x-mono demo-x-mut', 9.5, 'middle'));
+      return tk;
     });
-    var tl = group(s);
-    rectBox(tl, 376, 44, 394, 108, C_BORDER, C_SURFACE2);
-    tl.appendChild(svgText(390, 64, '一回合 500 步 = 10 s（50 Hz）', 'demo-x-ink2', 11));
-    var TX0 = 396, TX1 = 752;
-    function tx(k) { return TX0 + (k / EP_STEPS) * (TX1 - TX0); }
-    tl.appendChild(paint(svgEl('rect', { x: TX0, y: 84, width: TX1 - TX0, height: 18, rx: 4 }), C_SURFACE));
-    var segCols = [C_ACCENT, C_GOOD, C_WARN, C_ACCENT];
-    [0, 150, 300, 450].forEach(function (k, i) {
-      var e = Math.min(EP_STEPS, k + CMD_EVERY);
-      tl.appendChild(paint(svgEl('rect', { x: tx(k) + 1, y: 85, width: tx(e) - tx(k) - 2, height: 16, rx: 3, opacity: 0.55 }), segCols[i]));
-      tl.appendChild(svgText(tx(k), 118, String(k), 'demo-x-mono demo-x-mut', 9.5, 'middle'));
-    });
-    tl.appendChild(svgText(tx(500), 118, '500', 'demo-x-mono demo-x-mut', 9.5, 'middle'));
-    tl.appendChild(svgText(390, 140, '每 150 步（3 s）重抽一次命令，或者回合重置时', 'demo-x-mut', 10.5));
+    ep.appendChild(svgText(422, 178, '绿线 = 换命令（每 150 步）', 'demo-x-good', 10.5));
 
     var rw = group(s);
-    rectBox(rw, 30, 166, 740, 104, C_BORDER);
-    rw.appendChild(svgText(44, 186, '奖励 = 步态风格 + 速度跟踪 + 正则（附录表 IV 的八项）', 'demo-x-ink2', 11.5));
-    TABLE4.forEach(function (r, k) {
-      var cx = 44 + (k % 4) * 182, cy = 210 + Math.floor(k / 4) * 22;
-      rw.appendChild(svgText(cx, cy, r[0], 'demo-x-ink2', 10.5));
-      rw.appendChild(paint(svgText(cx + 170, cy, r[1], 'demo-x-mono', 10.5, 'end'), C_WARN));
-    });
-    var gone = group(rw);
-    gone.appendChild(svgRich(44, 260, '没有「罚动作变化率、关节加速度」的平滑项（表 IV 里没有，GR1 配置里也没有）—— 这部分交给 GP', { size: 10.8, w: 720, cls: 'demo-x-good' }));
+    function bag(x, w, head, sub, color) {
+      rectBox(rw, x, 204, w, 84, color);
+      rw.appendChild(svgText(x + w / 2, 230, head, null, 12.5, 'middle'));
+      rw.appendChild(svgText(x + w / 2, 252, sub, 'demo-x-mut', 10.5, 'middle'));
+    }
+    bag(30, 200, '步态风格', '像人一样迈步', C_ACCENT);
+    bag(240, 200, '速度跟踪', '跟上命令（算任务回报）', C_GOOD);
+    bag(450, 320, '正则（附录表 IV 八项）', '力矩 · 碰撞 · 绊脚 · 关节限位 · 姿态 …', C_WARN);
+    var gone = group(s);
+    gone.appendChild(svgText(610, 278, '动作变化率 · 关节加速度', 'demo-x-bad', 11, 'middle'));
+    var strike = pathLine(gone, [[540, 274], [680, 274]], C_BAD, 2);
+    var toGp = svgText(690, 278, '→ 交给 GP', 'demo-x-good', 11);
+    gone.appendChild(toGp);
 
     var cur = group(s);
-    rectBox(cur, 30, 282, 740, 128, C_BORDER, C_SURFACE2);
-    cur.appendChild(svgText(44, 302, '附录 B 的课程：负的奖励项乘系数 s，正的不乘', 'demo-x-ink2', 11.5));
-    var rules = group(cur);
-    [['s 从 0.8 开始', 'demo-x-ink2'], ['平均回合 < 50 步：s × 0.9999', 'demo-x-bad'], ['平均回合 > 400 步：s × 1.0001', 'demo-x-good'], ['上限 2.0', 'demo-x-ink2']].forEach(function (r, k) {
-      rules.appendChild(svgText(44, 326 + k * 20, r[0], r[1], 10.8));
+    rectBox(cur, 30, 298, 740, 114, C_BORDER, C_SURFACE2);
+    cur.appendChild(svgText(42, 318, '附录 B 的课程：站得越久，罚得越重', null, 12));
+    var CX0 = 42, CX1 = 420;
+    function cx(k) { return CX0 + (k / EP_STEPS) * (CX1 - CX0); }
+    cur.appendChild(svgText(42, 340, '平均回合长度', 'demo-x-mut', 10.5));
+    cur.appendChild(paint(svgEl('rect', { x: CX0, y: 350, width: CX1 - CX0, height: 18, rx: 4 }), C_SURFACE));
+    var lenFill = paint(svgEl('rect', { x: CX0, y: 350, width: 0, height: 18, rx: 4 }), C_ACCENT);
+    cur.appendChild(lenFill);
+    [[50, '< 50：减轻', C_BAD], [400, '> 400：加重', C_GOOD]].forEach(function (m) {
+      cur.appendChild(paint(svgEl('line', { x1: cx(m[0]), y1: 344, x2: cx(m[0]), y2: 374, 'stroke-width': 2 }), null, m[2]));
+      cur.appendChild(svgText(cx(m[0]), 390, m[1], m[2] === C_BAD ? 'demo-x-bad' : 'demo-x-good', 10, 'middle'));
     });
-    var CX0 = 300, CX1 = 752, CY0 = 396, CY1 = 312;
-    function cxs(n) { return CX0 + (n / (S7_STEPS * 1.1)) * (CX1 - CX0); }
-    function cys(v) { return CY0 - ((v - 0.6) / (2.1 - 0.6)) * (CY0 - CY1); }
-    cur.appendChild(paint(svgEl('line', { x1: CX0, y1: CY0, x2: CX1, y2: CY0, 'stroke-width': 1 }), null, C_BORDER));
-    cur.appendChild(paint(svgEl('line', { x1: CX0, y1: cys(2.0), x2: CX1, y2: cys(2.0), 'stroke-width': 1, 'stroke-dasharray': '3 3' }), null, C_MUTED));
-    cur.appendChild(svgText(CX0 + 4, cys(2.0) - 4, '上限 2.0', 'demo-x-mut', 9.5));
-    var cPts = [];
-    for (var n = 0; n <= S7_STEPS * 1.1; n += 200) cPts.push([cxs(n), cys(Math.min(CURRIC.cap, CURRIC.s0 * Math.pow(CURRIC.up, n)))]);
-    var cLn = pathLine(cur, cPts, C_GOOD, 2.2);
-    var cTag = group(cur);
-    cTag.appendChild(svgRich(cxs(S7_STEPS) - 8, cys(2.0) - 8, '乘满 **' + S7_STEPS + '** 次 1.0001', { size: 10.5, anchor: 'end', w: 200, cls: 'demo-x-good' }));
-    cTag.appendChild(svgText(CX0 + 4, CY0 + 11, 's = 0.8', 'demo-x-mono demo-x-mut', 9.5));
-    cTag.appendChild(svgText(CX1, CY0 + 11, '假设每一步都满足「回合够长」（示意）', 'demo-x-mut', 9.5, 'end'));
+    var GX = 590, GY = 384, GR = 58;
+    var arc = [];
+    for (var a = 0; a <= 30; a++) {
+      var ang = Math.PI - (Math.PI * a) / 30;
+      arc.push([GX + GR * Math.cos(ang), GY - GR * Math.sin(ang)]);
+    }
+    pathLine(cur, arc, C_BORDER, 6);
+    var needle = paint(svgEl('line', { x1: GX, y1: GY, x2: GX - GR, y2: GY, 'stroke-width': 3.2, 'stroke-linecap': 'round' }), null, C_WARN);
+    cur.appendChild(needle);
+    cur.appendChild(svgText(GX - GR, GY + 14, '0.8', 'demo-x-mono demo-x-mut', 9.5, 'middle'));
+    cur.appendChild(svgText(GX + GR, GY + 14, '2.0', 'demo-x-mono demo-x-mut', 9.5, 'middle'));
+    var gaugeTxt = svgText(GX, GY - 18, '', 'demo-x-warn', 12, 'middle');
+    cur.appendChild(gaugeTxt);
+    cur.appendChild(svgText(GX, 318, '负奖励的系数', 'demo-x-ink2', 10.5, 'middle'));
+    cur.appendChild(svgText(758, 352, '从 0.8 涨到 2.0', 'demo-x-ink2', 10.5, 'end'));
+    cur.appendChild(svgText(758, 370, '要连乘 ' + S7_STEPS + ' 次 1.0001', 'demo-x-warn', 10.5, 'end'));
 
-    function draw(t) {
-      setOpacity(cmd, seg(t, 0.3, 0.9));
-      setOpacity(tl, seg(t, 1.6, 2.2));
+    function draw(t, clock) {
+      var now = nowOf(t, clock);
+      setOpacity(walk, seg(t, 0.2, 0.8));
+      var ci = Math.floor(now / 3) % S7_CMDS.length, cmd = S7_CMDS[ci];
+      fig.pose(0, 0, K.poseWalk((now * (0.8 + cmd[0])) % 1));
+      var spd = 60 * cmd[0];
+      dashes.forEach(function (dl, k) {
+        var x = 40 + ((k * 32 - now * spd) % 384 + 384) % 384;
+        dl.setAttribute('x1', Math.min(388, x).toFixed(1));
+        dl.setAttribute('x2', Math.min(388, x + 16).toFixed(1));
+      });
+      var ang = Math.atan2(cmd[1], cmd[0]) + cmd[2] * 0.8, len = 30 + 55 * Math.hypot(cmd[0], cmd[1]);
+      cmdArrow.setAttribute('x2', (250 + len * Math.cos(ang)).toFixed(1));
+      cmdArrow.setAttribute('y2', (120 - len * Math.sin(ang)).toFixed(1));
+      cmdTxt.textContent = cmd[3];
+      setOpacity(ep, seg(t, 1.6, 2.2));
+      var k = ((now % 10) / 10) * EP_STEPS;
+      epFill.setAttribute('width', (ex(k) - EX0).toFixed(1));
+      tickEls.forEach(function (tk, j) {
+        var dk = k - (j + 1) * 150;
+        tk.style.opacity = dk >= 0 && dk < 25 ? 1 : 0.35;
+      });
       setOpacity(rw, seg(t, 3.6, 4.2));
-      setOpacity(gone, seg(t, 5.2, 5.8));
+      setOpacity(gone, seg(t, 5.0, 5.6));
+      drawOn(strike, ease(seg(t, 5.6, 6.4)));
+      setOpacity(toGp, seg(t, 6.2, 6.8));
       setOpacity(cur, seg(t, 7.0, 7.6));
-      drawOn(cLn, ease(seg(t, 10.4, 12.4)));
-      setOpacity(cTag, seg(t, 12.0, 12.6));
+      var tau = now % 8, len2 = Math.min(EP_STEPS, (tau / 5) * EP_STEPS);
+      lenFill.setAttribute('width', (cx(len2) - CX0).toFixed(1));
+      var sval = 0.8 + 1.2 * clamp((tau - 4) / 3.5, 0, 1);
+      var ga = Math.PI - (Math.PI * (sval - 0.8)) / 1.2;
+      needle.setAttribute('x2', (GX + (GR - 6) * Math.cos(ga)).toFixed(1));
+      needle.setAttribute('y2', (GY - (GR - 6) * Math.sin(ga)).toFixed(1));
+      gaugeTxt.textContent = fmt(sval, 2);
     }
     return { el: s, draw: draw };
   }
@@ -1432,37 +1803,71 @@
       return { b: b, h: (c.v[5] / 30) * RH, lab: lab };
     });
 
-    /* 右：读数与图 6 示意 */
-    var drop = group(s);
-    rectBox(drop, 536, 70, 234, 120, C_BORDER);
-    drop.appendChild(svgText(548, 90, '0 → 0.001', 'demo-x-acc', 11.5));
-    drop.appendChild(svgRich(548, 114, '抖动 42.19 → 3.69：**−91%**', { size: 11, w: 220 }));
-    drop.appendChild(svgRich(548, 136, '回报 28.87 → 26.32：−8.8%', { size: 11, w: 220, cls: 'demo-x-ink2' }));
-    drop.appendChild(svgText(548, 160, '论文：仍可能出现危险的抖动', 'demo-x-warn', 10.5));
-    drop.appendChild(svgText(548, 180, '0.002 是论文选的', 'demo-x-good', 10.5));
-    var over = group(s);
-    rectBox(over, 536, 200, 234, 150, C_WARN, C_SURFACE, '4 3');
-    over.appendChild(svgText(548, 220, '0.01：压过头', 'demo-x-warn', 11.5));
-    over.appendChild(svgRich(548, 242, '关节速度 10.65 → **2.75**', { size: 11, w: 220 }));
-    over.appendChild(svgRich(548, 264, '回报 16.11，比 0 低 **44%**', { size: 11, w: 220 }));
-    over.appendChild(svgText(548, 286, '图 6（读图）：学得也更慢', 'demo-x-mut', 10.5));
-    var f6 = pathLine(over, (function () {
-      var pts = [];
-      for (var k = 0; k <= 40; k++) pts.push([552 + k * 5, 338 - 26 * (1 - Math.exp(-k / 5))]);
-      return pts;
-    })(), C_GOOD, 1.6);
-    var f6b = pathLine(over, (function () {
-      var pts = [];
-      for (var k = 0; k <= 40; k++) pts.push([552 + k * 5, 338 - 15 * (1 - Math.exp(-k / 6))]);
-      return pts;
-    })(), C_WARN, 1.6);
-    over.appendChild(svgText(756, 304, '0.002', 'demo-x-good demo-x-mono', 9.5, 'end'));
-    over.appendChild(svgText(756, 330, '0.01', 'demo-x-warn demo-x-mono', 9.5, 'end'));
+    /* 两条结论直接贴在柱子上 */
+    var dropTag = group(top);
+    dropTag.appendChild(svgText(510, 88, '0 → 0.001：抖动 −91%', 'demo-x-acc', 10.5, 'end'));
+    var overTag = group(bot);
+    overTag.appendChild(svgText(510, 248, '0.01：回报比 0 低 44%', 'demo-x-warn', 10.5, 'end'));
+
+    /* 右上：一个旋钮，指针按旁白走过五档 */
+    var dial = group(s);
+    rectBox(dial, 536, 70, 234, 150, C_BORDER, C_SURFACE2);
+    dial.appendChild(svgRich(548, 88, '把 $\\lambda_{gp}$ 当成一个旋钮', { size: 11, w: 210, cls: 'demo-x-ink2' }));
+    var DCX = 653, DCY = 190, DR = 62;
+    var DIAL_COL = [C_MUTED, C_ACCENT, C_GOOD, C_ACCENT, C_WARN];
+    function dialAng(u) { return Math.PI - (u / 4) * Math.PI; }
+    for (var q = 0; q < 4; q++) {
+      var a0 = dialAng(q), a1 = dialAng(q + 1);
+      dial.appendChild(paint(svgEl('path', {
+        d: 'M' + (DCX + DR * Math.cos(a0)).toFixed(1) + ',' + (DCY - DR * Math.sin(a0)).toFixed(1) +
+          ' A' + DR + ',' + DR + ' 0 0 1 ' + (DCX + DR * Math.cos(a1)).toFixed(1) + ',' + (DCY - DR * Math.sin(a1)).toFixed(1),
+        fill: 'none', 'stroke-width': 7, opacity: 0.55
+      }), null, [C_MUTED, C_GOOD, C_GOOD, C_WARN][q]));
+    }
+    var dialLabs = cols.map(function (c, k) {
+      var ag = dialAng(k);
+      var lab = svgText(DCX + 80 * Math.cos(ag), DCY - 80 * Math.sin(ag) + 4, c.lam === 0 ? '0' : String(c.lam), 'demo-x-mono demo-x-mut', 10, 'middle');
+      dial.appendChild(lab);
+      return lab;
+    });
+    var needle = paint(svgEl('line', { x1: DCX, y1: DCY, x2: DCX - DR + 8, y2: DCY, 'stroke-width': 3.2, 'stroke-linecap': 'round' }), null, C_INK2);
+    dial.appendChild(needle);
+    dial.appendChild(paint(svgEl('circle', { cx: DCX, cy: DCY, r: 6 }), C_INK2));
+    var dialRead = svgText(DCX, DCY + 24, '', 'demo-x-mono', 10.5, 'middle');
+    dial.appendChild(dialRead);
+
+    /* 右下：同一段目标动作，五档策略各自怎么走（示意：抖动幅度按表 I(b) 的大小排序，0.01 档跟得慢、幅度小） */
+    var tr = group(s);
+    rectBox(tr, 536, 230, 234, 120, C_BORDER, C_SURFACE);
+    tr.appendChild(svgText(548, 248, '一段动作（示意）', 'demo-x-ink2', 10.5));
+    tr.appendChild(svgText(758, 248, '虚线：该走的', 'demo-x-mut', 9.5, 'end'));
+    var trTarget = pathLine(tr, [[548, 296], [758, 296]], C_MUTED, 1.4, '4 3');
+    var trOut = pathLine(tr, [[548, 296], [758, 296]], C_BAD, 2);
+    var trState = svgText(758, 344, '', 'demo-x-mut', 10, 'end');
+    tr.appendChild(trState);
+    /* 每档：噪声幅度、滞后（秒）、幅度比例 */
+    var TR_P = [[0.42, 0, 1], [0.07, 0.03, 0.98], [0.055, 0.04, 0.96], [0.035, 0.1, 0.88], [0, 0.32, 0.55]];
+    var TR_TXT = ['来回跳，像 bang-bang', '几乎平了', '平滑、跟得上', '更平，开始变慢', '又平又慢，跟不上'];
+    var TR_NOISE = (function () {
+      var rng = mulberry32(9), arr = [];
+      for (var i = 0; i < 2000; i++) arr.push(rng() * 2 - 1);
+      return arr;
+    })();
+    function trAt(tau, p) {
+      var base = 0.75 * Math.sin(2 * Math.PI * 0.45 * (tau - p[1])) * p[2];
+      var i = ((Math.floor(tau / 0.05) % 2000) + 2000) % 2000;
+      return base + p[0] * TR_NOISE[i];
+    }
+    function lambdaIdx(t) {
+      return t < 3.6 ? 0 : t < 7.0 ? 1 : t < 8.4 ? 2 : t < 10.4 ? 3 : 4;
+    }
+    var LAM_AT = [0, 3.6, 7.0, 8.4, 10.4];
 
     var fin = group(s);
     chip(fin, 30, 368, 740, '和别的平滑办法一样，$\\lambda_{gp}$ 也要调；论文实验里 0.002 平衡得最好，四台真机都用它', C_ACCENT, { h: 36, size: 12 });
 
-    function draw(t) {
+    function draw(t, clock) {
+      var now = nowOf(t, clock);
       setOpacity(head, seg(t, 0.3, 0.9));
       setOpacity(top, seg(t, 0.3, 0.9));
       setOpacity(bot, seg(t, 0.6, 1.2));
@@ -1473,10 +1878,34 @@
         setH(rBars[k].b, rBars[k].h * ease(seg(t, at[k] + 0.3, at[k] + 1.1)));
         setOpacity(rBars[k].lab, seg(t, at[k] + 0.9, at[k] + 1.3));
       });
-      setOpacity(drop, seg(t, 4.4, 5.0));
-      setOpacity(over, seg(t, 11.0, 11.6));
-      drawOn(f6, ease(seg(t, 11.6, 13.0)));
-      drawOn(f6b, ease(seg(t, 11.8, 13.2)));
+      setOpacity(dropTag, seg(t, 4.4, 5.0));
+      setOpacity(overTag, seg(t, 11.0, 11.6));
+      setOpacity(dial, seg(t, 0.3, 0.9));
+      setOpacity(tr, seg(t, 0.6, 1.2));
+      var k = lambdaIdx(t), u = k ? ease(seg(t, LAM_AT[k], LAM_AT[k] + 0.8)) : 1;
+      var kp = Math.max(0, k - 1);
+      var ag = dialAng(kp + (k - kp) * u);
+      needle.setAttribute('x2', (DCX + (DR - 8) * Math.cos(ag)).toFixed(1));
+      needle.setAttribute('y2', (DCY - (DR - 8) * Math.sin(ag)).toFixed(1));
+      needle.style.stroke = DIAL_COL[k];
+      dialLabs.forEach(function (lab, j) {
+        lab.style.opacity = j === k ? 1 : 0.45;
+        lab.style.fontWeight = j === k ? 700 : 400;
+      });
+      dialRead.textContent = '抖动 ' + fmt(cols[k].v[0], 2) + ' · 回报 ' + fmt(cols[k].v[5], 2);
+      dialRead.style.fill = DIAL_COL[k];
+      var p = TR_P[kp].map(function (v, j) { return v + (TR_P[k][j] - v) * u; });
+      var tgt = [], out = [];
+      for (var j = 0; j <= 84; j++) {
+        var tau = now - 4 + (j / 84) * 4, x = 548 + (j / 84) * 210;
+        tgt.push([x, 292 - 34 * 0.75 * Math.sin(2 * Math.PI * 0.45 * tau)]);
+        out.push([x, 292 - 34 * clamp(trAt(tau, p), -1.1, 1.1)]);
+      }
+      trTarget.setAttribute('d', polyPath(tgt.map(function (q2) { return [q2[0].toFixed(1), q2[1].toFixed(1)]; })));
+      trOut.setAttribute('d', polyPath(out.map(function (q2) { return [q2[0].toFixed(1), q2[1].toFixed(1)]; })));
+      trOut.style.stroke = k === 0 ? C_BAD : DIAL_COL[k];
+      trState.textContent = TR_TXT[k];
+      trState.style.fill = k === 0 ? C_BAD : DIAL_COL[k];
       setOpacity(fin, seg(t, 13.4, 14.0));
     }
     return { el: s, draw: draw };
@@ -1580,11 +2009,11 @@
       dur: 17,
       build: buildSceneProblem,
       cues: [
-        { at: 0.3, s: '仿真的动力学和执行器模型都是简化的，电机近乎理想：在任何状态下都能给出想要的力矩。于是仿真里训出来的强化学习策略，容易学成类似 **bang-bang** 控制的抖动，相邻两步动作差得很多。' },
-        { at: 3.6, s: '论文表 I：不加任何平滑的策略，仿真里任务回报**最高**（28.87），但动作抖动 **42.19**，是 LCP（3.21）的 13 倍。真机电机打不出这么大的力矩，这类行为往往迁移失败。' },
-        { at: 7.0, s: '常见补救一：**平滑奖励**，罚动作变化、关节速度、关节加速度、能耗。权重要和任务奖励仔细配平，换一台机器人往往就得重调。' },
-        { at: 10.4, s: '补救二：在策略输出后面加**低通滤波**（上一期 OP3 用的就是 $u_t = 0.8\\,u_{t-1} + 0.2\\,a_t$）。论文说它常会压抑探索，训出次优策略。' },
-        { at: 13.4, s: '两者还有共同的问题：都**不可微**，藏在环境或信号链里，只能靠策略梯度采样去估。LCP 想要一个简单、可微、几行代码就能接进现有框架的平滑目标。' }
+        { at: 0.3, s: '左边两个关节收到同一串来回跳的指令。仿真里的电机近乎**理想**，指令多猛都照做；真机电机力矩有上限，跟不上，还会发热。' },
+        { at: 3.6, s: '所以仿真里训出的策略，容易学成 **bang-bang** 式的抖动。论文表 I：不加平滑的策略回报**最高**（28.87），动作抖动却有 **42.19**，是 LCP（3.21）的 13 倍。' },
+        { at: 7.0, s: '常见补救一：**平滑奖励**，罚动作变化、关节速度、关节加速度、能耗。旋钮一多，权重就要和任务奖励仔细配平，换一台机器人往往得重新调。' },
+        { at: 10.4, s: '补救二：在策略输出后面接**低通滤波**（上一期 OP3 就是这么做的）。曲线平了，动作却总慢半拍；论文说它常会压抑探索，训出次优策略。' },
+        { at: 13.4, s: '两种补救都藏在环境或信号链里，**不可微**，只能靠策略梯度采样去估。LCP 想要一个可微、几行代码就能接进现有框架的平滑目标。' }
       ]
     },
     {
@@ -1592,35 +2021,35 @@
       dur: 17,
       build: buildSceneLipschitz,
       cues: [
-        { at: 0.3, s: '**Lipschitz 连续**限制函数能变多快：任意两点，输出之差不超过 $K$ 乘输入之差（式 1）；满足它的 $K$ 叫 Lipschitz 常数。' },
-        { at: 3.6, s: '图 2 的画法：以曲线上任一点为顶点，画斜率 $\\pm K$ 的圆锥，整条曲线都落在圆锥里。左图是玩具策略 $\\pi(o) = o + b\\sin(\\omega o)$，最大斜率 $K = 5$。' },
-        { at: 7.0, s: '对策略来说，观测抖 $\\Delta o$，动作最多抖 $K\\Delta o$：噪声标准差 $\\sigma = 0.045$，上界 $K\\sigma = 0.225$，这段轨迹上实测 **' + fmt(TOY.jit, 3) + '**（玩具，不能和论文比）。' },
-        { at: 10.4, s: '推论（式 2）：梯度处处有界 $\\lVert\\nabla_x f(x)\\rVert \\le K$，函数就是 $K$-Lipschitz 的；反过来不成立，比如 $|x|$ 在 0 处不可导，却是 1-Lipschitz。' },
-        { at: 13.4, s: '动机实验（图 3）：只加平滑奖励、没有专门约束梯度，训出的策略**梯度范数就明显更小**。那就直接去约束策略的梯度。' }
+        { at: 0.3, s: '两条玩具策略看同一个微微晃动的输入：左边平缓，右边满是褶皱。平缓的那条输出几乎不动，褶皱的那条晃得很凶。' },
+        { at: 3.6, s: '**Lipschitz 常数** $K$ 就是这个放大倍数的上限：输入晃一点，输出最多晃 $K$ 倍。图 2 的画法：在曲线上任一点放一个斜率 $\\pm K$ 的圆锥，整条曲线都装得下。' },
+        { at: 7.0, s: '真机量级的观测噪声 0.045：$K = 5$ 的策略动作最多晃 0.225，这段轨迹上实测 **' + fmt(TOY.jit, 3) + '**（玩具，不能和论文比）。' },
+        { at: 10.4, s: '斜率处处不超过 $K$，函数就是 $K$-Lipschitz 的（式 2）。所以「平滑」可以换个说法：**斜率小**。' },
+        { at: 13.4, s: '动机实验（图 3）：只加平滑奖励、没专门去管梯度，训出的策略**梯度范数就明显更小**。那就直接去约束策略的梯度。' }
       ]
     },
     {
-      title: '从约束到梯度惩罚：式 4 → 7',
+      title: '从「别太陡」到「陡了就罚」',
       dur: 17,
       build: buildSceneDerive,
       cues: [
-        { at: 0.3, s: '式 4：最大化回报 $J(\\pi)$，约束是 $\\lVert\\nabla_s\\log\\pi(a \\mid s)\\rVert^2$ 在**所有**状态、动作上都不超过 $K^2$。注意它约束的是 $\\log\\pi$ 对状态的梯度。' },
-        { at: 3.6, s: '所有状态上的最大值没法算，按 TRPO 的启发式换成 rollout 数据上的**期望**（式 5）。玩具策略上：最大斜率 5，访问到的状态上的均方根斜率只有 **' + fmt(TOY.rmsSlope, 2) + '** —— 期望只管走得到的地方。' },
-        { at: 7.0, s: '为了用梯度法优化，引入拉格朗日乘子 $\\lambda \\ge 0$，把约束搬进目标（式 6）：外层对 $\\lambda$ 取最小，内层对策略取最大。' },
-        { at: 10.4, s: '再简化：$\\lambda$ 不去学，固定成手调的系数 $\\lambda_{gp}$；$K^2$ 是常数，丢掉，得到式 7 的**梯度惩罚**（GP）。' },
-        { at: 13.4, s: 'GP 可微，能和 PPO 的损失一起反向传播，论文所有实验 $\\lambda_{gp} = 0.002$。平滑奖励藏在环境里，只能靠策略梯度采样去估；GP 直接对策略参数求导。' }
+        { at: 0.3, s: '最直接的写法（式 4）：在**每一个**状态上，斜率都不许超过 $K$。可状态有无穷多个，检查不完。' },
+        { at: 3.6, s: '退一步（式 5，借 TRPO 的办法）：只看 rollout 真走到过的状态，取**平均**。玩具策略上最大斜率 5，平均只有 **' + fmt(TOY.rmsSlope, 2) + '** —— 只管走得到的地方。' },
+        { at: 7.0, s: '再把「不许超过」换成「超过就罚」（式 6，拉格朗日乘子）：越陡罚得越多，罚款随斜率的平方涨。' },
+        { at: 10.4, s: '最后一步（式 7）：罚款的单价不去学，固定成手调的系数，论文所有实验都是 **0.002**。这一项就叫**梯度惩罚**（GP）。' },
+        { at: 13.4, s: '训练成了一场拔河：回报想让策略更灵敏，GP 想让它更平滑，$J(\\pi) - \\lambda_{gp}\\,\\mathbb{E}\\lVert\\nabla_s\\log\\pi(a \\mid s)\\rVert^2$ 停在哪儿，就是训出来的平滑程度。GP 可微，能和 PPO 的损失一起反向传播。' }
       ]
     },
     {
-      title: '罚的是 $\\log\\pi$ 的梯度',
+      title: '罚的到底是什么：均值的斜率',
       dur: 17,
       build: buildSceneLogPi,
       cues: [
-        { at: 0.3, s: '式 7 罚的不是动作本身，是 $\\log\\pi(a \\mid s)$ 对状态的梯度。PPO 的策略是对角高斯：均值 $\\mu_\\theta(s)$ 由网络给，标准差 $\\sigma$ 与状态无关。' },
-        { at: 3.6, s: '代进去：$\\nabla_s\\log\\pi = J^\\top(a - \\mu)/\\sigma^2$，$J$ 是均值对状态的雅可比；对动作取期望得 $\\lVert J\\rVert_F^2/\\sigma^2$ —— **罚的其实是均值的斜率，按 $1/\\sigma^2$ 加权**。这一步是我们推的，论文没写。' },
-        { at: 7.0, s: '两维算例：$J = [[0.8, 0.2], [-0.4, 0.6]]$，$\\lVert J\\rVert_F^2 = 1.20$；$\\sigma = 0.4$ 时期望 $= 1.20 / 0.16 =$ **7.5**。' },
-        { at: 10.4, s: '可训练时每个状态只有 rollout 里那**一个**动作：$a - \\mu = (0.4, -0.2)$ 时梯度 $(2.5, -0.25)$，平方和 **6.31**；样本多了，平均才收敛到 7.5（' + GAUSS_N + ' 个样本平均 ' + fmt(GAUSS.mean, 2) + '）。' },
-        { at: 13.4, s: '$\\sigma$ 减半到 0.2，同一个 $J$ 的期望变成 **30**，是 4 倍：探索噪声越小，同样的斜率罚得越重。' }
+        { at: 0.3, s: 'GP 罚的不是动作本身，是**采到的那个动作的概率**随状态变得多快。PPO 的策略给每个状态一个钟形分布，中心是网络输出的均值。' },
+        { at: 3.6, s: '状态一晃，钟形就沿着均值线滑动，那个动作的概率跟着变。均值线平缓（左），概率几乎不动；均值线陡（右），概率忽高忽低，罚得就重。' },
+        { at: 7.0, s: '钟形变窄（探索噪声减半）时，同样的滑动让概率变得更剧烈：同一条均值线，罚 **4 倍**。' },
+        { at: 10.4, s: '训练时每个状态只有 rollout 里那**一个**动作，单个样本的估计很吵：两维算例里一个样本 6.31，样本多了平均才收敛到 **7.5**（' + GAUSS_N + ' 个样本平均 ' + fmt(GAUSS.mean, 2) + '）。' },
+        { at: 13.4, s: '结论：罚的其实是**均值的斜率**，探索噪声越小罚得越重。这一步是我们按式 7 推的，论文没写。' }
       ]
     },
     {
@@ -1628,11 +2057,11 @@
       dur: 17,
       build: buildSceneCode,
       cues: [
-        { at: 0.3, s: '官方代码基于 legged_gym + rsl_rl。全部改动在 PPO 的 `update()` 里：把这一批观测设成需要梯度，前向一遍，算出这批动作的 `log_prob`。' },
-        { at: 3.6, s: '一次 `torch.autograd.grad` 求 `log_prob` 对观测的梯度，`create_graph=True` 让这个梯度还能再反向传播；逐样本平方求和、再取平均，就是 GP。' },
-        { at: 7.0, s: '总损失 = 裁剪的替代损失 + 价值损失 − 0.01 × 熵 + 特权正则 + **0.002 × GP**，一次反向传播、一次 Adam 更新。系数表 `[0.002, 0.002, 700, 1000]` 首尾相同，全程恒为 0.002。' },
-        { at: 10.4, s: 'MimicKit 也有 `LCPAgent`：继承 `PPOAgent`，只重写 actor 损失；配置就是 DeepMimic 的 G1 PPO 配置加一行 `lcp_weight: 0.002`，任务是动作跟踪，不是论文的速度行走。' },
-        { at: 13.4, s: '别搞反：MimicKit 里**所有**智能体默认都用 SGD、学习率 $10^{-4}$，这不是 LCP 的要求；论文官方代码用的是 Adam，学习率 $2\\times10^{-4}$，按 KL 自适应。' }
+        { at: 0.3, s: '官方代码基于 legged_gym + rsl_rl，改动全在 PPO 的 `update()` 里：一批观测前向一遍，得到这批动作的 `log_prob`。' },
+        { at: 3.6, s: '再用 `torch.autograd.grad` 对观测求一次导，信号流回每一格观测；`create_graph=True` 让这个梯度还能再反向传播。平方、求和、取平均，就是 GP。' },
+        { at: 7.0, s: '乘 0.002 叠到 PPO 的损失上：一次反向传播、一次 Adam 更新，别的都不用动。' },
+        { at: 10.4, s: 'MimicKit 也有 `LCPAgent`：继承 `PPOAgent`，配置只比 DeepMimic 的 G1 PPO 配置多一行 `lcp_weight: 0.002`，任务是动作跟踪，不是论文的速度行走。' },
+        { at: 13.4, s: '别搞反：MimicKit 里**所有**智能体默认都用 SGD，这不是 LCP 的要求；论文官方代码用的是 Adam。' }
       ]
     },
     {
@@ -1640,11 +2069,11 @@
       dur: 17,
       build: buildSceneObs,
       cues: [
-        { at: 0.3, s: '观测（第 V 节）：2 维步态相位（正弦、余弦）、3 维速度命令、关节位置和速度、上一步动作；按 GR1 的公开代码再加角速度、横滚俯仰，一共 **71** 维。' },
-        { at: 3.6, s: '特权信息：机身质量、质心、电机强度、机身线速度（代码里还多了摩擦），**50** 维；外加最近 10 步的历史，**710** 维。合起来 **831** 维，进网络前用滑动均值和标准差归一化。' },
-        { at: 7.0, s: 'sim-to-real 用 **ROA**（附录式 8）：编码器把特权信息压成 $z_\\mu$，适应模块只看历史去估 $z_\\phi$；两项距离各对另一边停梯度，$\\lambda = 0.1$，GP 照常加上。' },
-        { at: 10.4, s: 'GP 罚哪些输入？表 I(c)：只罚当前观测，动作抖动 **7.16**、关节位置抖动 0.35；罚整段输入，**3.21**、0.17。' },
-        { at: 13.4, s: '论文的解释：只管当前观测，历史一变，动作照样会跳。部署时特权信息拿不到、换成历史估出的 $z_\\phi$，这条通路也得平滑（后半句是我们的理解）。' }
+        { at: 0.3, s: '策略看的不只是这一刻。当前的本体感受 **71** 维：步态相位、速度命令、关节位置和速度、上一步动作等（按 GR1 的公开代码数）。' },
+        { at: 3.6, s: '再加只在仿真里有的特权信息 **50** 维，和最近 10 步的历史 **710** 维，一共 **831** 维。' },
+        { at: 7.0, s: '上真机靠 **ROA**（附录 A）：训练时把特权编码和历史估计互相拉近，部署时只用历史估计。' },
+        { at: 10.4, s: 'GP 罚哪些输入？表 I(c)：只罚当前观测，历史一变动作照样会跳，抖动 **7.16**；罚整段输入，**3.21**。' },
+        { at: 13.4, s: '部署时特权信息拿不到、换成历史估计，这条通路也得平滑 —— 这句是我们的理解。' }
       ]
     },
     {
@@ -1652,11 +2081,11 @@
       dur: 17,
       build: buildSceneReward,
       cues: [
-        { at: 0.3, s: '任务是跟着速度命令走：前进 $v_x \\in [0, 0.8]$ m/s、横移 $v_y \\in [-0.4, 0.4]$ m/s、转向 $v_{yaw} \\in [-0.6, 0.6]$ rad/s，每 **150** 步重抽一次；控制 50 Hz，就是每 3 s 换一次，一回合 500 步 = 10 s。' },
-        { at: 3.6, s: '奖励三类：步态风格、速度跟踪、正则（附录表 IV 八项：机身角速度、关节力矩、碰撞、竖直速度、触地力、绊脚、关节限位、机身姿态）。**没有**罚动作变化率、关节加速度的平滑项 —— 那部分交给 GP。' },
-        { at: 7.0, s: '附录 B 的课程：负的奖励项乘系数 $s$，正的不乘。$s$ 从 0.8 起：平均回合长度低于 50 步就乘 0.9999，高于 400 步就乘 1.0001，上限 2.0。' },
-        { at: 10.4, s: '意思是先轻罚、让它敢探索，站稳了再加重正则。从 0.8 涨到 2.0 要乘 **' + S7_STEPS + '** 次 1.0001（$\\ln 2.5 / \\ln 1.0001$）；公开代码每个控制步判断一次，那就是约 382 次迭代。' },
-        { at: 13.4, s: '公开代码和论文有出入：GR1 的命令区间是 0–0.6 m/s、±0.3、±0.3，课程从 1.0 起、阈值 420 步，各机器人还不一样。下面的数字以论文为准，代码供对照。' }
+        { at: 0.3, s: '任务是跟着速度命令走：前进、横移、转向，每 **150** 步（3 秒）换一次命令；控制 50 Hz，一回合 500 步、10 秒。' },
+        { at: 3.6, s: '奖励三类：步态风格、速度跟踪、正则（附录表 IV 八项）。罚动作变化率、关节加速度的平滑项**拿掉了** —— 那部分交给 GP。' },
+        { at: 7.0, s: '附录 B 的课程：负的奖励项乘一个系数，从 0.8 起；回合太短（不到 50 步）就减轻，站得住（超过 400 步）就加重，上限 2.0。' },
+        { at: 10.4, s: '先轻罚，让它敢探索；站稳了再加重正则。从 0.8 涨到 2.0，要连乘 **' + S7_STEPS + '** 次 1.0001。' },
+        { at: 13.4, s: '公开代码和论文有出入：GR1 的命令区间是 0–0.6 m/s，课程从 1.0 起、阈值 420 步，各机器人还不一样。下面的数字以论文为准。' }
       ]
     },
     {
@@ -1676,10 +2105,10 @@
       dur: 17,
       build: buildSceneLambda,
       cues: [
-        { at: 0.3, s: '表 I(b) 只改 $\\lambda_{gp}$。$\\lambda_{gp} = 0$ 就是不平滑：动作抖动 42.19、任务回报 28.87。' },
-        { at: 3.6, s: '只加到 **0.001**，抖动就掉到 3.69，降了 **91%**；回报 26.32，只少 8.8%。可论文说这一档仍可能出现上真机危险的抖动。' },
-        { at: 7.0, s: '**0.002** 是论文选的：抖动 3.21、回报 26.03。再到 0.005：抖动 2.10、回报 23.92。' },
-        { at: 10.4, s: '**0.01** 压过头：抖动只剩 0.17，关节速度从 10.65 掉到 **2.75**，动作又平又慢，回报 16.11，比 0 低 44%；图 6 里它也学得更慢。' },
+        { at: 0.3, s: '表 I(b) 只拧一个旋钮 $\\lambda_{gp}$。拧到 0 就是不平滑：右下的动作来回跳，抖动 42.19、回报 28.87。' },
+        { at: 3.6, s: '只拧到 **0.001**，抖动就掉到 3.69，降了 **91%**；回报 26.32，只少 8.8%。可论文说这一档仍可能出现上真机危险的抖动。' },
+        { at: 7.0, s: '**0.002** 是论文选的：抖动 3.21、回报 26.03。再到 0.005：抖动 2.10、回报 23.92，动作开始变慢。' },
+        { at: 10.4, s: '**0.01** 压过头：抖动只剩 0.17，关节速度从 10.65 掉到 2.75，动作又平又慢、跟不上，回报 16.11，比 0 低 **44%**；图 6 里它也学得更慢。' },
         { at: 13.4, s: '结论：和别的平滑办法一样，$\\lambda_{gp}$ 也要调；论文的实验里 **0.002** 在平滑和任务之间平衡得最好，四台真机都用它。' }
       ]
     },
@@ -1705,7 +2134,7 @@
       notes: [
         '取数依据：第 1、8、9、10 幕的数字照抄论文表 I–III（arXiv 2410.11825 v3）；第 3 幕的式 4–7、第 6 幕的式 8 与 $\\lambda = 0.1$、第 7 幕的课程与表 IV 照抄正文和附录 A–C；' +
           '第 5 幕的代码与超参数摘自官方仓库 `rsl_rl/algorithms/ppo_rma.py`、`humanoid_config.py`、`gr1_walk_phase_config.py`，MimicKit 一行摘自 `lcp_agent.py` 与 `lcp_g1_agent.yaml`；第 6 幕的 71 / 50 / 710 / 831 维按 GR1 配置逐项相加；第 7 幕的 9164 次是现算的。',
-        '**玩具与示意**：第 2、3 幕的一维策略 $\\pi(o) = o + b\\sin(\\omega o)$ 与第 4 幕的两维高斯算例是玩具，第 4 幕的推导 $\\mathbb{E}\\lVert\\nabla_s\\log\\pi\\rVert^2 = \\lVert J\\rVert_F^2/\\sigma^2$ 是我们推的；第 1 幕的抖动曲线、第 2 幕的图 3、第 8 幕的图 4、第 9 幕的图 6 都是按论文图的走势画的示意（论文图 3 没有纵轴数值）；第 10 幕的小人是示意。'
+        '**玩具与示意**：第 2、3 幕的一维策略 $\\pi(o) = o + b\\sin(\\omega o)$（平缓的那条最大斜率 1.5）与第 4 幕的两维高斯算例是玩具，第 4 幕的推导 $\\mathbb{E}\\lVert\\nabla_s\\log\\pi\\rVert^2 = \\lVert J\\rVert_F^2/\\sigma^2$ 是我们推的；第 1 幕的两个关节与电机曲线、第 4 幕的钟形与概率表、第 9 幕右下的动作曲线是示意（只表达谁抖、谁慢，幅度不对应论文数值）；第 2 幕的图 3、第 8 幕的图 4 是按论文图的走势画的示意（论文图 3 没有纵轴数值）；第 7、10 幕的小人是示意。'
       ],
       scenes: LCP_SCENES
     });
@@ -1717,8 +2146,8 @@
   function buildVideoDemo(host) {
     K.video(host, {
       title: '配音讲解视频：LCP 十幕全流程',
-      sub: '10 分 34 秒竖屏视频（1080×1920），中文配音 + 字幕。画面就是上面的十幕动画，旁白把每一幕讲细；适合手机上看或转发。',
-      size: '11.0 MB',
+      sub: '9 分 52 秒竖屏视频（1080×1920），中文配音 + 字幕。画面就是上面的十幕动画，旁白把每一幕讲细；适合手机上看或转发。',
+      size: '11.1 MB',
       fileName: 'LCP_讲解视频.mp4'
     });
   }

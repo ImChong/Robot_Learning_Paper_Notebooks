@@ -13,7 +13,7 @@ window.PaperVideo = {
     m.style.padding = '22px 34px';
     var toc = h('div', 'toc', root,
       '<div><span>01</span>仿真里的理想电机</div><div><span>02</span>Lipschitz：给斜率设上限</div>' +
-      '<div><span>03</span>从约束到梯度惩罚：式 4 → 7</div><div><span>04</span>罚的是 log π 的梯度</div>' +
+      '<div><span>03</span>从「别太陡」到「陡了就罚」</div><div><span>04</span>罚的到底是什么：均值的斜率</div>' +
       '<div><span>05</span>几行代码接进 PPO</div><div><span>06</span>观测、ROA 与「罚整段输入」</div>' +
       '<div><span>07</span>命令、奖励与课程</div><div><span>08</span>三种平滑办法：表 I(a)</div>' +
       '<div><span>09</span>λ<sub>gp</sub> 扫一遍：表 I(b)</div><div><span>10</span>四台真机与局限</div>');
@@ -36,7 +36,7 @@ window.PaperVideo = {
     var head = h('div', 'head', root, '<div class="act">三句话记住 LCP</div><div class="title">平滑写成一项可微约束</div>');
     var items = [
       [ACC, '① 仿真不罚抖动', '理想电机照单全收：不平滑的回报最高 28.87<br>动作抖动却是 LCP 的 13 倍（42.19 对 3.21）'],
-      [GOOD, '② 约束 → 梯度惩罚', '$J(\\pi) - \\lambda_{gp}\\,\\mathbb{E}\\lVert\\nabla_s\\log\\pi(a \\mid s)\\rVert^2$<br>罚整段输入；只罚当前观测抖动 7.16'],
+      [GOOD, '② 「别太陡」→「陡了就罚」', '斜率上限化成一项可微的梯度惩罚<br>要罚整段输入：只罚当前观测，抖动 7.16'],
       [WARN, '③ 一个系数，几行代码', '$\\lambda_{gp}$ = 0.002：0.001 仍有风险，0.01 回报低 44%<br>四台人形共用，零样本上真机']
     ];
     var pts = items.map(function (it) {
