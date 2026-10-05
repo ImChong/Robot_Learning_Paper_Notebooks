@@ -850,7 +850,9 @@
       setOpacity(robotG, seg(t, 3.6, 4.2));
       setOpacity(specs, seg(t, 4.0, 4.6));
       var walking = seg(t, 13.6, 14.2);
-      var pz = digit.pose(690, 318, 2 * Math.PI * 1.1 * now * walking, { stride: 0.15 * walking, lift: 0.1 * walking, swing: 18 * walking });
+      /* 相位从起步那一刻（13.6 s）开始累加，起步时只让步幅从 0 长起来。
+         写成 1.1 Hz × now × walking 的话，起步那 0.6 s 里相位的变化率会被放大约 now / 0.6 ≈ 23 倍，腿会猛转几圈 */
+      var pz = digit.pose(690, 318, 2 * Math.PI * 1.1 * Math.max(0, now - 13.6), { stride: 0.15 * walking, lift: 0.1 * walking, swing: 18 * walking });
       // 圈心放在近侧小腿（膝—踝连线）的中点，跟着走路的姿态一起动；引线从圈边指向下方的标注
       var M = digit.M;
       var kx = (pz.knee[0] + pz.ankle[0]) / 2,
@@ -1514,6 +1516,19 @@
       SLOPE_END = 520,
       GY0 = 128,
       DROP = 46;
+    // 第 1–12 s 匀速从 CX0 + 30 走到 CX1 − 30：tAtX 是走到横坐标 x 的时刻
+    function tAtX(x) {
+      return 1.0 + (11.0 * (x - CX0 - 30)) / (CX1 - CX0 - 60);
+    }
+    function rampUp(x, a, c) {
+      return clamp((x - a) / (c - a), 0, 1);
+    }
+    // rampUp(·, a, c) 从 0 积到 x 的面积（a 之前是 0，a→c 线性升到 1，之后恒为 1）
+    function rampArea(x, a, c) {
+      if (x <= a) return 0;
+      if (x < c) return ((x - a) * (x - a)) / (2 * (c - a));
+      return (c - a) / 2 + (x - c);
+    }
     function groundY(x) {
       if (x < FLAT1) return GY0;
       if (x < SLOPE_END) return GY0 + ((x - FLAT1) / (SLOPE_END - FLAT1)) * DROP;
@@ -1584,9 +1599,13 @@
       setOpacity(course, seg(t, 0.3, 0.9));
       var u = seg(t, 1.0, 12.0);
       var cx = CX0 + 30 + u * (CX1 - CX0 - 60);
-      var onSlope = cx > FLAT1 - 6 && cx < SLOPE_END + 6;
+      /* 步态在坡的两端各用 24 px 渐变过去（b：0 = 平地步态，1 = 坡上碎步），步频 1.1 → 1.7 Hz 也跟着渐变。
+         相位是步频对时间的积分：直接写「步频 × now」的话，一换步频相位就跳 0.6 Hz × now ≈ 0.4 圈，腿会闪一下 */
+      var b = rampUp(cx, FLAT1 - 18, FLAT1 + 6) - rampUp(cx, SLOPE_END - 6, SLOPE_END + 18);
+      var onSlope = b > 0.5;
       var gy = groundY(cx);
-      digit.pose(cx, gy, 2 * Math.PI * (onSlope ? 1.7 : 1.1) * now, { stride: onSlope ? 0.06 : 0.15, lift: onSlope ? 0.035 : 0.11, swing: onSlope ? 10 : 18, lean: onSlope ? 2 : 5 });
+      var ph = 2 * Math.PI * (1.1 * now + 0.6 * (rampArea(now, tAtX(FLAT1 - 18), tAtX(FLAT1 + 6)) - rampArea(now, tAtX(SLOPE_END - 6), tAtX(SLOPE_END + 18))));
+      digit.pose(cx, gy, ph, { stride: 0.15 - 0.09 * b, lift: 0.11 - 0.075 * b, swing: 18 - 8 * b, lean: 5 - 3 * b });
       gaitLbl.textContent = onSlope ? '小碎步、脚抬得低' : '正常步幅';
       gaitLbl.setAttribute('x', cx.toFixed(1));
       gaitLbl.setAttribute('y', (gy - 108).toFixed(1));
