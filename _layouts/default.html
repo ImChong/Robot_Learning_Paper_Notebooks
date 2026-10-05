@@ -545,6 +545,10 @@
     subgraph SG_Loco ["6 · Loco-Manipulation"]
         HOMIE(["HOMIE<br/><span class='roadmap-node-year'>2025</span>"]) --> ULTRA(["ULTRA<br/><span class='roadmap-node-year'>2026</span>"])
         ULTRA --> Psi(["Ψ₀<br/><span class='roadmap-node-year'>2026</span>"])
+        HOMIE -.-> FALCON(["FALCON<br/><span class='roadmap-node-year'>2025</span>"]) -.-> CHIP(["CHIP<br/><span class='roadmap-node-year'>2025</span>"])
+        HOMIE --> VIRAL(["VIRAL<br/><span class='roadmap-node-year'>2025</span>"])
+        HOMIE --> DoorMan(["DoorMan<br/><span class='roadmap-node-year'>2025</span>"])
+        HDMI(["HDMI<br/><span class='roadmap-node-year'>2025</span>"])
     end
     subgraph SG_WM ["7 · World Model"]
         Cosmos(["Cosmos<br/><span class='roadmap-node-year'>2025</span>"]) --> DreamDojo(["DreamDojo<br/><span class='roadmap-node-year'>2026</span>"]) --> WM1X(["1X World Model<br/><span class='roadmap-node-year'>2025</span>"])
@@ -574,6 +578,7 @@
     NMR -.-> BM
     ReActor -.-> DM
     PHC --> ASE
+    DM -.-> HDMI
     ASE -.-> BFMZero
     PULSE --> DP
     PULSE --> EWBC
@@ -642,6 +647,10 @@
     subgraph SG_Loco ["6 · 移动操作 Loco-Manip"]
         HOMIE(["HOMIE<br/><span class='roadmap-node-year'>2025</span>"]) --> ULTRA(["ULTRA<br/><span class='roadmap-node-year'>2026</span>"])
         ULTRA --> Psi(["Ψ₀<br/><span class='roadmap-node-year'>2026</span>"])
+        HOMIE -.-> FALCON(["FALCON<br/><span class='roadmap-node-year'>2025</span>"]) -.-> CHIP(["CHIP<br/><span class='roadmap-node-year'>2025</span>"])
+        HOMIE --> VIRAL(["VIRAL<br/><span class='roadmap-node-year'>2025</span>"])
+        HOMIE --> DoorMan(["DoorMan<br/><span class='roadmap-node-year'>2025</span>"])
+        HDMI(["HDMI<br/><span class='roadmap-node-year'>2025</span>"])
     end
     subgraph SG_WM ["7 · 世界模型 World Model"]
         Cosmos(["Cosmos<br/><span class='roadmap-node-year'>2025</span>"]) --> DreamDojo(["DreamDojo<br/><span class='roadmap-node-year'>2026</span>"]) --> WM1X(["1X 世界模型<br/><span class='roadmap-node-year'>2025</span>"])
@@ -671,6 +680,7 @@
     NMR -.-> BM
     ReActor -.-> DM
     PHC --> ASE
+    DM -.-> HDMI
     ASE -.-> BFMZero
     PULSE --> DP
     PULSE --> EWBC

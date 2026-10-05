@@ -1475,6 +1475,18 @@
         "zh_title": "视觉驱动的人形机器人反应式足球技能学习"
       },
       {
+        "title": "HDMI: Learning Interactive Humanoid Whole-Body Control from Human Videos",
+        "path": "papers/04_Loco-Manipulation_and_WBC/HDMI__Learning_Interactive_Humanoid_Whole-Body_Control_from_Human_Videos/HDMI__Learning_Interactive_Humanoid_Whole-Body_Control_from_Human_Videos.md",
+        "url": "/papers/04_Loco-Manipulation_and_WBC/HDMI__Learning_Interactive_Humanoid_Whole-Body_Control_from_Human_Videos/HDMI__Learning_Interactive_Humanoid_Whole-Body_Control_from_Human_Videos.html",
+        "dir": "HDMI__Learning_Interactive_Humanoid_Whole-Body_Control_from_Human_Videos",
+        "arxiv": "2509.16757",
+        "has_open_source": true,
+        "published_date_zh": "2025年9月20日",
+        "published_date_en": "Sep 20, 2025",
+        "zhname": "HDMI：从人类视频学习人形全身交互控制",
+        "zh_title": "HDMI：从人类视频学习人形全身交互控制"
+      },
+      {
         "title": "H2-COMPACT: Human-Humanoid Co-Manipulation via Adaptive Contact Trajectory Policies",
         "path": "papers/04_Loco-Manipulation_and_WBC/H2-COMPACT__Human-Humanoid_Co-Manipulation_via_Adaptive_Contact_Trajectory/H2-COMPACT__Human-Humanoid_Co-Manipulation_via_Adaptive_Contact_Trajectory.md",
         "url": "/papers/04_Loco-Manipulation_and_WBC/H2-COMPACT__Human-Humanoid_Co-Manipulation_via_Adaptive_Contact_Trajectory/H2-COMPACT__Human-Humanoid_Co-Manipulation_via_Adaptive_Contact_Trajectory.html",
@@ -1485,6 +1497,18 @@
         "published_date_en": "May 23, 2025 (arXiv)",
         "zhname": "H2-COMPACT：基于自适应接触轨迹策略的人-人形协同搬运",
         "zh_title": "H2-COMPACT：基于自适应接触轨迹策略的人-人形协同搬运"
+      },
+      {
+        "title": "FALCON: Learning Force-Adaptive Humanoid Loco-Manipulation",
+        "path": "papers/04_Loco-Manipulation_and_WBC/FALCON__Learning_Force-Adaptive_Humanoid_Loco-Manipulation/FALCON__Learning_Force-Adaptive_Humanoid_Loco-Manipulation.md",
+        "url": "/papers/04_Loco-Manipulation_and_WBC/FALCON__Learning_Force-Adaptive_Humanoid_Loco-Manipulation/FALCON__Learning_Force-Adaptive_Humanoid_Loco-Manipulation.html",
+        "dir": "FALCON__Learning_Force-Adaptive_Humanoid_Loco-Manipulation",
+        "arxiv": "2505.06776",
+        "has_open_source": true,
+        "published_date_zh": "2025年5月10日",
+        "published_date_en": "May 10, 2025",
+        "zhname": "FALCON：力自适应的人形移动操作",
+        "zh_title": "FALCON：力自适应的人形移动操作"
       }
     ],
     "zhname": "运动操作与全身控制",

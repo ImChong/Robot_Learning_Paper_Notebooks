@@ -62,6 +62,9 @@
    │
    ├─ ⑥ 移动操作 Loco-Manipulation： HOMIE (2025) → ULTRA (2026) → Ψ₀ (2026)
    │                                （外骨骼遥操作 → 多模态全身控制 → loco-manip 基础模型）
+   │                                HOMIE → VIRAL (2025) / DoorMan (2025)（RGB 学生直接输出 HOMIE 控制器的命令）
+   │                                HOMIE ⇢ FALCON (2025) ⇢ CHIP (2025)（末端受力：抗扰补偿 → 可调柔顺）
+   │                                DeepMimic ⇢ HDMI (2025)（从人类视频学交互：机器人 + 物体一起跟踪）
    │
    └─ ⑦ 世界模型 World Model：       Cosmos (2025) → DreamDojo (2026) → 1X World Model (2025)；HAIC (2026)（动力学感知 WM）
             ↓（世界模型"会做梦"预测未来 / 动力学，再升级为可直接当策略的模型）
