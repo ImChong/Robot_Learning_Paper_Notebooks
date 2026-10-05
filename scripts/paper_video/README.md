@@ -21,7 +21,7 @@
 | `transformer` | `assets/js/demos/transformer.js` 七幕（`tf-explainer`） | 约 5 分 51 秒 |
 | `pi0` | `assets/js/demos/pi0.js` 七幕 | 约 6 分 14 秒 |
 | `pi05` | `assets/js/demos/pi05.js` 七幕 | 约 6 分 27 秒 |
-| `op3soccer` | `assets/js/demos/op3soccer.js` 七幕（`soccer-explainer`） | 约 6 分 45 秒 |
+| `op3soccer` | `assets/js/demos/op3soccer.js` 十二幕（`soccer-explainer`） | 约 10 分 16 秒 |
 | `sonic` | `assets/js/demos/sonic.js` 七幕 | 约 5 分 32 秒 |
 | `gmr` | `assets/js/demos/gmr.js` 七幕 | 约 5 分 25 秒 |
 | `omniretarget` | `assets/js/demos/omniretarget.js` 七幕 | 约 5 分 7 秒 |
@@ -36,7 +36,7 @@
 - 配音：`edge-tts`（`zh-CN-YunxiNeural`，需联网），旁白在 `papers/<paper>.py`。
 - 读音：「arXiv」念 archive，旁白里写 `archive`、`DISPLAY` 把字幕换回 `arXiv`（直接写 arXiv 会被逐字母或乱读）；「数」单用会被念成 shǔ（「数都从图 8 读」），旁白改说「数字 / 数值」。旁白里的数字写阿拉伯数字（「75」不写「七十五」），字幕跟着显示数字；「2 + 量词」多数念 liǎng，个别（如「2 簇」念 èr）要 DTW 核对，念错的旁白保留汉字、用 `DISPLAY` 把字幕换成数字。拿不准的字用同句合成原字与各读音的同音字，比 log-mel DTW。
 - 同步：每句旁白对应分镜的一段 `[from, to]`，旁白比动画长时画面停在 `to` 之前一刻。`[from, to]` 最好对齐分镜 cue 的 `at`，「要点」框才会和旁白同步。
-- 输出：`out/<paper>/<paper>_video.mp4`（H.264 + AAC，30 fps，`-crf 19`），不入库。在对话里交付给用户的就是这一版高画质原片；只有放进笔记 `media/` 的才按下面「放进笔记」再压小。对话附件上限 30 MiB，十分钟以上的原片会超：画面 `-c:v copy` 不动，只把音频降到 `-b:a 96k -ac 1`（旁白本来就是 24 kHz 单声道），真实世界人形行走从 30.3 降到 27.5 MiB。
+- 输出：`out/<paper>/<paper>_video.mp4`（H.264 + AAC，30 fps，`-crf 19`），不入库。在对话里交付给用户的就是这一版高画质原片；只有放进笔记 `media/` 的才按下面「放进笔记」再压小。对话附件上限 30 MiB，十分钟以上的原片会超：画面 `-c:v copy` 不动，只把音频降到 `-b:a 96k -ac 1`（旁白本来就是 24 kHz 单声道），真实世界人形行走从 30.3 降到 27.5 MiB，OP3 足球从 30.4 降到 27.7 MiB。
 
 ## 安全区（视频号 / 公众号视频）
 
@@ -56,6 +56,7 @@
 - 论文信息框从 680 起（34px，内边距 34 / 40），标题可以折行。
 - 目录紧跟信息框（间距 24），40px；行距随条数收紧：≤5 条 1.9、6 条 1.75、7 条 1.55、8 条及以上 1.5 / 38px；视频号「设置封面」按 **3:4 置顶裁剪**（只留 y 0–1440），所以最后一行目录的字底不过 **1405**（和 AMP 一样离裁剪线 35px），超了先把行距压到 1.35、再缩字号（PHC / ASE / PULSE 6 条为 1.5，7–8 条的会缩到 36 / 32px）。
 - 每块都排在上一块底下，内容比原设计高就整体往下推，永不重叠。
+- 目录超过十条时单列放不下（OP3 足球十二幕：字号缩到 32px、行距 1.35 仍会越过 1405）：在 `papers/<paper>.js` 里把 `.toc` 设成两列网格（`display: grid; grid-template-columns: 1fr 1fr`），左列 01–06、右列 07–12，每条目录要短到一列放得下；`classicCover()` 只改字号和行距，不动网格。
 
 生成封面不需要先跑 `build.py`（没有 timeline 时 `render.mjs cover` 自己补一段片头）。生成后必须跑 `node check_layout.mjs <paper> cover`：四块互不重叠、都在画面里、大标题 / 中文名 / 一句话 / 每条目录各占一行、目录字底不过 1405，输出 `no overlap` 才算过。海报由 `cover.png` 缩到 540×960 的 jpg。
 
@@ -75,4 +76,4 @@ node check_layout.mjs awr cover       # 封面排版检查，输出 no overlap �
 - Chromium：设置 `CHROME=/path/to/chrome`，否则用 playwright-core 默认路径。几篇可以同时渲染（各自写 `stage.<paper>.built.html`）。
 - 走 TLS 代理时设置 `SSL_CERT_FILE`，`build.py` 会让 edge-tts 用这份 CA。
 - 新增一篇：写 `papers/<paper>.py`（`SCRIPT` / `DISPLAY`）和 `papers/<paper>.js`（`window.PaperVideo` 的 `arxiv` / `intro` / `outro`；没有 arXiv 版本的论文改写 `badge`，如 HumanML3D 的 `'CVPR 2022'`，角标就显示会议名），`<paper>` 是 `assets/js/demos/<paper>.js` 的 bundle 名；讲解动画的演示 id 不必叫 `<paper>-explainer`（`diffusion_policy.js` 里是 `dp-explainer`、`beyondmimic.js` 里是 `bm-explainer`），`render.mjs` 会从 bundle 里读出 `'…-explainer'` 那个 id。
-- 放进笔记：网页版再压一次（`-crf 27 -tune stillimage -b:a 64k -ac 1 -movflags +faststart`；PPO 5.2 MB，更长的 AWR 用 `-crf 30` 压到 7.1 MB，DeepMimic 用 `-crf 29` 压到 6.2 MB；AMP 用 `-crf 31` 压到 6.4 MB，六分多钟的 PHC 用 `-crf 32` 压到 8.5 MB，ADD 加 `-preset slow` 同 `-crf 32` 压到 8.3 MB，七分多钟的 ASE 用 `-preset slow -crf 33` 压到 9.5 MB；四五分钟的 LCP 用 `-preset slow -crf 30` 压到 6.3 MB，六七分钟的 CALM / PULSE 用 `-preset slow -crf 31` 压到 7.9 / 9.4 MB，八分钟的 Diffusion Policy 用 `-preset slow -crf 33` 压到 9.9 MB，七分钟的 BeyondMimic 用 `-crf 33` 压到 9.4 MB；约三分钟的 Cosmos 用 `-preset slow -crf 30` 压到 4.3 MB，GR00T N1 用 `-preset slow -crf 31` 压到 7.0 MB；六分钟上下的 Transformer / π₀ / π₀.₅ / OP3 足球同参数压到 7.7 / 8.2 / 8.7 / 9.2 MB，SONIC / GMR / OmniRetarget 同参数压到 7.0 / 7.3 / 6.7 MB，七分多钟的 HumanML3D 同参数压到 9.2 MB；八分半的 SMP 用 `-preset slow -crf 34`、音频降到 `-b:a 48k` 压到 9.7 MB，八分多钟的域随机化同样 48k 音频、`-preset slow -crf 35` 压到 9.9 MB（`-crf 34` 是 10.2 MB），九分半的四足野外盲走同样 48k 音频、`-preset slow -crf 36 -tune stillimage` 压到 10.4 MB（`-crf 35` 是 10.8 MB），十分半的真实世界人形行走同参数改 `-crf 37` 压到 11.1 MB（`-crf 36` 是 11.4 MB；对话里交付的是 `-crf 19` 原片），海报由 `cover.png` 缩到 540×960 的 jpg，与海报一起放到笔记目录的 `media/`，接线方式见 `AGENTS.md`「配音讲解视频（`K.video`）」。
+- 放进笔记：网页版再压一次（`-crf 27 -tune stillimage -b:a 64k -ac 1 -movflags +faststart`；PPO 5.2 MB，更长的 AWR 用 `-crf 30` 压到 7.1 MB，DeepMimic 用 `-crf 29` 压到 6.2 MB；AMP 用 `-crf 31` 压到 6.4 MB，六分多钟的 PHC 用 `-crf 32` 压到 8.5 MB，ADD 加 `-preset slow` 同 `-crf 32` 压到 8.3 MB，七分多钟的 ASE 用 `-preset slow -crf 33` 压到 9.5 MB；四五分钟的 LCP 用 `-preset slow -crf 30` 压到 6.3 MB，六七分钟的 CALM / PULSE 用 `-preset slow -crf 31` 压到 7.9 / 9.4 MB，八分钟的 Diffusion Policy 用 `-preset slow -crf 33` 压到 9.9 MB，七分钟的 BeyondMimic 用 `-crf 33` 压到 9.4 MB；约三分钟的 Cosmos 用 `-preset slow -crf 30` 压到 4.3 MB，GR00T N1 用 `-preset slow -crf 31` 压到 7.0 MB；六分钟上下的 Transformer / π₀ / π₀.₅ 同参数压到 7.7 / 8.2 / 8.7 MB，SONIC / GMR / OmniRetarget 同参数压到 7.0 / 7.3 / 6.7 MB，七分多钟的 HumanML3D 同参数压到 9.2 MB；八分半的 SMP 用 `-preset slow -crf 34`、音频降到 `-b:a 48k` 压到 9.7 MB，八分多钟的域随机化同样 48k 音频、`-preset slow -crf 35` 压到 9.9 MB（`-crf 34` 是 10.2 MB），九分半的四足野外盲走同样 48k 音频、`-preset slow -crf 36 -tune stillimage` 压到 10.4 MB（`-crf 35` 是 10.8 MB），十分半的真实世界人形行走同参数改 `-crf 37` 压到 11.1 MB（`-crf 36` 是 11.4 MB；对话里交付的是 `-crf 19` 原片），十分钟出头的 OP3 足球（十二幕）同样 48k 音频、`-preset slow -crf 36 -tune stillimage` 压到 11.4 MB（`-crf 35` 是 11.8 MB），海报由 `cover.png` 缩到 540×960 的 jpg，与海报一起放到笔记目录的 `media/`，接线方式见 `AGENTS.md`「配音讲解视频（`K.video`）」。
