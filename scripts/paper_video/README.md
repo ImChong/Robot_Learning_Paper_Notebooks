@@ -29,13 +29,14 @@
 | `smp` | `assets/js/demos/smp.js` 八幕 | 约 8 分 37 秒 |
 | `domain_randomization` | `assets/js/demos/domain_randomization.js` 八幕（`dr-explainer`） | 约 8 分 20 秒 |
 | `quadterrain` | `assets/js/demos/quadterrain.js` 九幕（`qt-explainer`） | 约 9 分 27 秒 |
-| `realhumanoid` | `assets/js/demos/realhumanoid.js` 十幕（`rh-explainer`） | 约 10 分 29 秒 |
+| `realhumanoid` | `assets/js/demos/realhumanoid.js` 十幕（`rh-explainer`） | 约 10 分 32 秒 |
 
 - 画面：直接复用 `<paper>.js` 分镜的 `draw(t)`，数字与笔记算例一致；前后加片头、总结页（`papers/<paper>.js`）。
 - 分镜 `draw(t, clock)` 的第二个参数是这一幕的真实时间：旁白比动画长、画面停在 `to` 之前时它照样往前走，步态这类循环动作可以用它继续动（网页播放器只传 `t`）。
 - 配音：`edge-tts`（`zh-CN-YunxiNeural`，需联网），旁白在 `papers/<paper>.py`。
+- 读音：「arXiv」念 archive，旁白里写 `archive`、`DISPLAY` 把字幕换回 `arXiv`（直接写 arXiv 会被逐字母或乱读）；「数」单用会被念成 shǔ（「数都从图 8 读」），旁白改说「数字 / 数值」。拿不准的字用同句合成原字与各读音的同音字，比 log-mel DTW。
 - 同步：每句旁白对应分镜的一段 `[from, to]`，旁白比动画长时画面停在 `to` 之前一刻。`[from, to]` 最好对齐分镜 cue 的 `at`，「要点」框才会和旁白同步。
-- 输出：`out/<paper>/<paper>_video.mp4`（H.264 + AAC，30 fps），不入库。
+- 输出：`out/<paper>/<paper>_video.mp4`（H.264 + AAC，30 fps，`-crf 19`），不入库。在对话里交付给用户的就是这一版高画质原片；只有放进笔记 `media/` 的才按下面「放进笔记」再压小。
 
 ## 安全区（视频号 / 公众号视频）
 
@@ -74,4 +75,4 @@ node check_layout.mjs awr cover       # 封面排版检查，输出 no overlap �
 - Chromium：设置 `CHROME=/path/to/chrome`，否则用 playwright-core 默认路径。几篇可以同时渲染（各自写 `stage.<paper>.built.html`）。
 - 走 TLS 代理时设置 `SSL_CERT_FILE`，`build.py` 会让 edge-tts 用这份 CA。
 - 新增一篇：写 `papers/<paper>.py`（`SCRIPT` / `DISPLAY`）和 `papers/<paper>.js`（`window.PaperVideo` 的 `arxiv` / `intro` / `outro`；没有 arXiv 版本的论文改写 `badge`，如 HumanML3D 的 `'CVPR 2022'`，角标就显示会议名），`<paper>` 是 `assets/js/demos/<paper>.js` 的 bundle 名；讲解动画的演示 id 不必叫 `<paper>-explainer`（`diffusion_policy.js` 里是 `dp-explainer`、`beyondmimic.js` 里是 `bm-explainer`），`render.mjs` 会从 bundle 里读出 `'…-explainer'` 那个 id。
-- 放进笔记：网页版再压一次（`-crf 27 -tune stillimage -b:a 64k -ac 1 -movflags +faststart`；PPO 5.2 MB，更长的 AWR 用 `-crf 30` 压到 7.1 MB，DeepMimic 用 `-crf 29` 压到 6.2 MB；AMP 用 `-crf 31` 压到 6.4 MB，六分多钟的 PHC 用 `-crf 32` 压到 8.5 MB，ADD 加 `-preset slow` 同 `-crf 32` 压到 8.3 MB，七分多钟的 ASE 用 `-preset slow -crf 33` 压到 9.5 MB；四五分钟的 LCP 用 `-preset slow -crf 30` 压到 6.3 MB，六七分钟的 CALM / PULSE 用 `-preset slow -crf 31` 压到 7.9 / 9.4 MB，八分钟的 Diffusion Policy 用 `-preset slow -crf 33` 压到 9.9 MB，七分钟的 BeyondMimic 用 `-crf 33` 压到 9.4 MB；约三分钟的 Cosmos 用 `-preset slow -crf 30` 压到 4.3 MB，GR00T N1 用 `-preset slow -crf 31` 压到 7.0 MB；六分钟上下的 Transformer / π₀ / π₀.₅ / OP3 足球同参数压到 7.7 / 8.2 / 8.7 / 9.2 MB，SONIC / GMR / OmniRetarget 同参数压到 7.0 / 7.3 / 6.7 MB，七分多钟的 HumanML3D 同参数压到 9.2 MB；八分半的 SMP 用 `-preset slow -crf 34`、音频降到 `-b:a 48k` 压到 9.7 MB，八分多钟的域随机化同样 48k 音频、`-preset slow -crf 35` 压到 9.9 MB（`-crf 34` 是 10.2 MB），九分半的四足野外盲走同样 48k 音频、`-preset slow -crf 36 -tune stillimage` 压到 10.4 MB（`-crf 35` 是 10.8 MB），十分半的真实世界人形行走同参数改 `-crf 37` 压到 11.0 MB（`-crf 36` 是 11.4 MB）），海报由 `cover.png` 缩到 540×960 的 jpg，与海报一起放到笔记目录的 `media/`，接线方式见 `AGENTS.md`「配音讲解视频（`K.video`）」。
+- 放进笔记：网页版再压一次（`-crf 27 -tune stillimage -b:a 64k -ac 1 -movflags +faststart`；PPO 5.2 MB，更长的 AWR 用 `-crf 30` 压到 7.1 MB，DeepMimic 用 `-crf 29` 压到 6.2 MB；AMP 用 `-crf 31` 压到 6.4 MB，六分多钟的 PHC 用 `-crf 32` 压到 8.5 MB，ADD 加 `-preset slow` 同 `-crf 32` 压到 8.3 MB，七分多钟的 ASE 用 `-preset slow -crf 33` 压到 9.5 MB；四五分钟的 LCP 用 `-preset slow -crf 30` 压到 6.3 MB，六七分钟的 CALM / PULSE 用 `-preset slow -crf 31` 压到 7.9 / 9.4 MB，八分钟的 Diffusion Policy 用 `-preset slow -crf 33` 压到 9.9 MB，七分钟的 BeyondMimic 用 `-crf 33` 压到 9.4 MB；约三分钟的 Cosmos 用 `-preset slow -crf 30` 压到 4.3 MB，GR00T N1 用 `-preset slow -crf 31` 压到 7.0 MB；六分钟上下的 Transformer / π₀ / π₀.₅ / OP3 足球同参数压到 7.7 / 8.2 / 8.7 / 9.2 MB，SONIC / GMR / OmniRetarget 同参数压到 7.0 / 7.3 / 6.7 MB，七分多钟的 HumanML3D 同参数压到 9.2 MB；八分半的 SMP 用 `-preset slow -crf 34`、音频降到 `-b:a 48k` 压到 9.7 MB，八分多钟的域随机化同样 48k 音频、`-preset slow -crf 35` 压到 9.9 MB（`-crf 34` 是 10.2 MB），九分半的四足野外盲走同样 48k 音频、`-preset slow -crf 36 -tune stillimage` 压到 10.4 MB（`-crf 35` 是 10.8 MB），十分半的真实世界人形行走同参数改 `-crf 37` 压到 11.1 MB（`-crf 36` 是 11.4 MB；对话里交付的是 `-crf 19` 原片），海报由 `cover.png` 缩到 540×960 的 jpg，与海报一起放到笔记目录的 `media/`，接线方式见 `AGENTS.md`「配音讲解视频（`K.video`）」。

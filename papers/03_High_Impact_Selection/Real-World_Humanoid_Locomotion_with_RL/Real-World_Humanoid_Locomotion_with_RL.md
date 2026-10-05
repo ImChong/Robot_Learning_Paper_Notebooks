@@ -39,7 +39,7 @@ demos: ["realhumanoid"]
 
 > 🎮 **本文内嵌 1 段动画 + 1 段配音视频 + 3 个可交互演示**（不用装任何东西）：
 > 1. [十幕动画：Digit 真实世界人形行走全流程](#rh-explainer-anim) —— 约 170 秒串完「全尺寸人形为什么难 → 因果 Transformer → 两步训练 → 奖励与命令 → 仿真闭链与域随机化 → 户外与实验室 → 自然行走 → 下坡换步态 → 脚被绊住 → 消融与局限」
-> 2. [配音讲解视频](#rh-video) —— 同样十幕，加中文配音与字幕，10 分 29 秒竖屏，可下载
+> 2. [配音讲解视频](#rh-video) —— 同样十幕，加中文配音与字幕，10 分 32 秒竖屏，可下载
 > 3. 上下文窗口 —— 1 / 8 / 16 步的因果掩码，事件还在不在窗口里，配论文图 8B 的读图数
 > 4. 奖励计算器 —— 拖动命令与实际速度，看速度跟踪、转向跟踪与机身高度三项怎么算
 > 5. 抽一台随机化的 Digit —— 按 v1 表 I 抽样，看阻尼为什么用对数均匀
@@ -69,7 +69,7 @@ demos: ["realhumanoid"]
 
 ## 📺 配音讲解视频（可下载） {#rh-video}
 
-<div class="paper-demo" data-demo="rh-video" data-src="media/rh_explainer_video.mp4" data-poster="media/rh_explainer_video_poster.jpg"><p class="demo-fallback">（本节含讲解视频播放器，需要启用 JavaScript；也可以直接<a href="media/rh_explainer_video.mp4" download="真实世界人形行走_讲解视频.mp4">下载 mp4（11.0 MB）</a>）</p></div>
+<div class="paper-demo" data-demo="rh-video" data-src="media/rh_explainer_video.mp4" data-poster="media/rh_explainer_video_poster.jpg"><p class="demo-fallback">（本节含讲解视频播放器，需要启用 JavaScript；也可以直接<a href="media/rh_explainer_video.mp4" download="真实世界人形行走_讲解视频.mp4">下载 mp4（11.1 MB）</a>）</p></div>
 
 > 📖 **动画之后的正文默认全部折叠**：前半部分（「要解决什么问题」「是怎么做的」「具体实例」）按小节收起，后面的实验解读、对人形的意义、开源情况、面试问题与附录整块收起。想细读哪一块就点开对应的折叠条，内容一字未删；流程图和三个交互演示留在外面，目录里的标题依旧可以直接点，会自动展开所在折叠块，左侧目录顶部还有「展开全部文字」一键铺开。
 
@@ -568,6 +568,7 @@ def student_loss(ppo_loss, dist_student, dist_teacher, it, total_it):
 <h3 id="d-讨论记录">D. 讨论记录</h3>
 
 - 配音视频的多音字：「弹簧」「跗骨」用同句合成原字与同音字（谈 / 蛋、夫 / 付）比 log-mel DTW，确认读成 tán、fū；旁白绕开了「卡住（qiǎ）」「散度」「偏离的量（liàng）」「得 0.951」「调好」等，改成「绊住 / KL 项 / 偏离原长多少 / 奖励是 0.951 / 选好」。
+- 2026-10-05 按读者反馈重配：「arXiv」念 archive（旁白写 archive、字幕换回 arXiv）；「数都从图 8 读」的「数」被念成 shǔ，改说「这些数字都是从图 8 读的」，同样的「读图的数」「三个数」也改成「数字 / 数值」，DTW 核对后读 shù。
 - 读这篇时值得和 [LCP 笔记](../../01_Foundational_RL/LCP_Sim-to-Real_Action_Smoothing/LCP_Sim-to-Real_Action_Smoothing.html)对照：本文用「关节目标的一阶、二阶差分」奖励来压抖动，LCP 用梯度惩罚。
 </details>
 
