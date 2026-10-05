@@ -809,24 +809,22 @@
   /* ── scene 1: 仿真里的理想电机 ── */
   /* 示意信号：一条慢正弦叠上每 0.1 s 跳一次的 ±0.35–0.65（bang-bang 式的指令）。
      仿真电机原样照做；「真机电机」每步最多转 0.035（力矩有上限），跟不上就有误差、发热（示意，不是论文的模型）；
-     低通滤波按上一期 OP3 的 u = 0.8u + 0.2a 算。 */
+     低通滤波那一格另用一串每步都来回跳的动作（见 S1_LP）。 */
   var S1_DT = 0.02, S1_N = 3000;
   var S1_SIG = (function () {
     var rng = mulberry32(3), jumps = [];
     for (var k = 0; k < S1_N; k++) jumps.push((rng() < 0.5 ? -1 : 1) * (0.35 + 0.3 * rng()));
-    var cmd = [], real = [], fil = [], err = [], r = 0, f = 0, e = 0;
+    var cmd = [], real = [], err = [], r = 0, e = 0;
     for (var i = 0; i < S1_N; i++) {
       var tt = i * S1_DT;
       var c = 0.25 * Math.sin(2 * Math.PI * 0.35 * tt) + jumps[Math.floor(tt / 0.1)];
       r += clamp(0.3 * (c - r), -0.035, 0.035);
-      f = 0.8 * f + 0.2 * c;
       e = 0.9 * e + 0.1 * Math.abs(c - r);
       cmd.push(c);
       real.push(r);
-      fil.push(f);
       err.push(e);
     }
-    return { cmd: cmd, real: real, fil: fil, err: err };
+    return { cmd: cmd, real: real, err: err };
   })();
   function s1At(arr, now) {
     return arr[Math.floor(now / S1_DT) % S1_N];
@@ -839,6 +837,28 @@
       pts.push([x0 + (k / n) * (x1 - x0), yc - arr[idx] * amp]);
     }
     return polyPath(pts.map(function (q) { return [q[0].toFixed(1), q[1].toFixed(1)]; }));
+  }
+
+  /* 低通滤波那一格：一个慢变化的走势，每个控制步再叠一次方向相反的跳变（bang-bang），
+     按上一期 OP3 的 u = 0.8u + 0.2a 逐步滤波（跑两圈取稳态，首尾接得上）。
+     画成传送带：动作从左边流进滤波器、从右边流出来，所以两段都往右走；
+     左段画的是「马上要进去」的几步，右段是「刚出来」的几步。步速是示意（每秒 10 步），不是真机的 50 Hz。 */
+  var S1_LP = (function () {
+    var N = 400, rng = mulberry32(5), slow = [], a = [], u = [], v = 0;
+    for (var j = 0; j < N; j++) {
+      slow.push(0.9 * Math.sin((2 * Math.PI * j) / 40));
+      a.push(slow[j] + (j % 2 ? 1 : -1) * (0.25 + 0.2 * rng()));
+    }
+    for (var pass = 0; pass < 2; pass++) {
+      for (j = 0; j < N; j++) {
+        v = 0.8 * v + 0.2 * a[j];
+        if (pass) u.push(v);
+      }
+    }
+    return { N: N, slow: slow, a: a, u: u, rate: 10, px: 5 };
+  })();
+  function s1Lp(arr, j) {
+    return arr[((j % S1_LP.N) + S1_LP.N) % S1_LP.N];
   }
 
   function setLink(link, foot, px, py, len, val) {
@@ -909,23 +929,55 @@
     var lpf = group(s);
     rectBox(lpf, 420, 224, 350, 104, C_WARN, C_SURFACE, '4 3');
     lpf.appendChild(svgText(434, 244, '补救二：输出端低通滤波 —— 慢半拍', 'demo-x-warn', 12));
-    rectBox(lpf, 566, 258, 58, 40, C_WARN, C_SURFACE2);
-    lpf.appendChild(svgText(595, 283, '滤波', 'demo-x-warn', 11.5, 'middle'));
-    var lpIn = paint(svgEl('path', { d: '', fill: 'none', 'stroke-width': 1.4 }), null, C_BAD);
-    var lpOut = paint(svgEl('path', { d: '', fill: 'none', 'stroke-width': 2.2 }), null, C_GOOD);
+    /* 传送带：左段进、右段出，两段都往右流 */
+    var LP_IX0 = 436, LP_IX1 = 556, LP_OX0 = 636, LP_OX1 = 758, LP_Y = 284, LP_AMP = 11;
+    lpf.appendChild(svgText(LP_IX0, 262, '进：每一步都来回跳', 'demo-x-bad', 9.5));
+    var lpMk = K.arrowMarker(s, 'lcp-x-arrow-s1lp', C_WARN);
+    arrowPath(lpf, [[LP_IX1 + 1, LP_Y], [564, LP_Y]], C_WARN, lpMk, null, 1.6);
+    arrowPath(lpf, [[624, LP_Y], [LP_OX0 - 2, LP_Y]], C_WARN, lpMk, null, 1.6);
+    var lpBox = rectBox(lpf, 566, 266, 58, 36, C_WARN, C_SURFACE2);
+    lpf.appendChild(svgText(595, 288, '滤波', 'demo-x-warn', 11.5, 'middle'));
+    var lpSlow = paint(svgEl('path', { d: '', fill: 'none', 'stroke-width': 1.3, 'stroke-dasharray': '4 3' }), null, C_MUTED);
+    var lpIn = paint(svgEl('path', { d: '', fill: 'none', 'stroke-width': 1.5, 'stroke-linejoin': 'round' }), null, C_BAD);
+    var lpOut = paint(svgEl('path', { d: '', fill: 'none', 'stroke-width': 2.4, 'stroke-linejoin': 'round' }), null, C_GOOD);
+    lpf.appendChild(lpSlow);
     lpf.appendChild(lpIn);
     lpf.appendChild(lpOut);
-    lpf.appendChild(svgText(434, 318, '上一期 OP3 就这么做；论文说它会压抑探索', 'demo-x-mut', 10));
+    lpf.appendChild(svgText(LP_OX1, 314, '出：平了，但比虚线（原来的走势）慢几步', 'demo-x-good', 9.5, 'end'));
+    lpf.appendChild(svgText(434, 314, '上一期 OP3 就这么做', 'demo-x-mut', 9.5));
+    function lpPaths(now) {
+      var f = now * S1_LP.rate, j0 = Math.floor(f), P = S1_LP.px, n = Math.ceil((LP_IX1 - LP_IX0) / P) + 1;
+      function y(v) { return (LP_Y - v * LP_AMP).toFixed(1); }
+      function cx(x, a, b) { return clamp(x, a, b).toFixed(1); }
+      /* 进：第 j 步离滤波器还有 (j − f) 格，每一步画成一小段平台（零阶保持） */
+      var pin = [];
+      for (var j = j0; j <= j0 + n; j++) {
+        var xa = LP_IX1 - (j - f) * P, v = s1Lp(S1_LP.a, j);
+        pin.push([cx(xa, LP_IX0, LP_IX1), y(v)], [cx(xa - P, LP_IX0, LP_IX1), y(v)]);
+      }
+      /* 出：第 j 步已经出来 (f − j) 格 */
+      var pout = [], pslow = [];
+      for (j = j0; j >= j0 - n; j--) {
+        var xo = LP_OX0 + (f - j) * P;
+        if (xo > LP_OX1) break;
+        pout.push([xo.toFixed(1), y(s1Lp(S1_LP.u, j))]);
+        pslow.push([xo.toFixed(1), y(s1Lp(S1_LP.slow, j))]);
+      }
+      lpIn.setAttribute('d', polyPath(pin));
+      lpOut.setAttribute('d', polyPath(pout));
+      lpSlow.setAttribute('d', polyPath(pslow));
+      return f - j0;
+    }
 
     function stamp(x, y) {
       var g = group(s);
-      var r = paint(svgEl('rect', { x: x - 44, y: y - 15, width: 88, height: 28, rx: 5, fill: 'none', 'stroke-width': 2.4 }), null, C_BAD);
+      var r = paint(svgEl('rect', { x: x - 36, y: y - 12, width: 72, height: 23, rx: 4, 'stroke-width': 2.2 }), C_SURFACE, C_BAD);
       g.appendChild(r);
-      g.appendChild(paint(svgText(x, y + 5, '不可微', 'demo-x-bad', 14, 'middle'), C_BAD));
-      g.setAttribute('transform', 'rotate(-12 ' + x + ' ' + y + ')');
+      g.appendChild(paint(svgText(x, y + 4.5, '不可微', 'demo-x-bad', 12.5, 'middle'), C_BAD));
+      g.setAttribute('transform', 'rotate(-8 ' + x + ' ' + y + ')');
       return g;
     }
-    var st1 = stamp(712, 150), st2 = stamp(712, 258);
+    var st1 = stamp(722, 138), st2 = stamp(722, 244);
     var fin = group(s);
     chip(fin, 30, 340, 740, '两种补救都藏在环境或信号链里，只能靠采样去估；LCP 想要一个**可微**、几行代码就能接进去的平滑目标', C_ACCENT, { h: 36, size: 11.8 });
 
@@ -949,8 +1001,8 @@
         kn.hand.setAttribute('y2', (kn.cy - 12 * Math.cos(a)).toFixed(1));
       });
       setOpacity(lpf, seg(t, 10.4, 11.0));
-      lpIn.setAttribute('d', s1Trace(S1_SIG.cmd, now, 2, 440, 560, 278, 14));
-      lpOut.setAttribute('d', s1Trace(S1_SIG.fil, now, 2, 630, 756, 278, 14));
+      var lpFrac = lpPaths(now);
+      lpBox.style.strokeWidth = lpFrac < 0.3 ? 2.6 : 1.3;
       setOpacity(st1, seg(t, 13.4, 13.8));
       setOpacity(st2, seg(t, 13.7, 14.1));
       setOpacity(fin, seg(t, 14.4, 15.0));
@@ -2012,7 +2064,7 @@
         { at: 0.3, s: '左边两个关节收到同一串来回跳的指令。仿真里的电机近乎**理想**，指令多猛都照做；真机电机力矩有上限，跟不上，还会发热。' },
         { at: 3.6, s: '所以仿真里训出的策略，容易学成 **bang-bang** 式的抖动。论文表 I：不加平滑的策略回报**最高**（28.87），动作抖动却有 **42.19**，是 LCP（3.21）的 13 倍。' },
         { at: 7.0, s: '常见补救一：**平滑奖励**，罚动作变化、关节速度、关节加速度、能耗。旋钮一多，权重就要和任务奖励仔细配平，换一台机器人往往得重新调。' },
-        { at: 10.4, s: '补救二：在策略输出后面接**低通滤波**（上一期 OP3 就是这么做的）。曲线平了，动作却总慢半拍；论文说它常会压抑探索，训出次优策略。' },
+        { at: 10.4, s: '补救二：在策略输出后面接**低通滤波**（上一期 OP3 就是这么做的）。每一步都来回跳的动作从左边流进去，出来就平了，可比原来的走势落后几步，也就是慢半拍；论文说它常会压抑探索，训出次优策略。' },
         { at: 13.4, s: '两种补救都藏在环境或信号链里，**不可微**，只能靠策略梯度采样去估。LCP 想要一个可微、几行代码就能接进现有框架的平滑目标。' }
       ]
     },
@@ -2134,7 +2186,7 @@
       notes: [
         '取数依据：第 1、8、9、10 幕的数字照抄论文表 I–III（arXiv 2410.11825 v3）；第 3 幕的式 4–7、第 6 幕的式 8 与 $\\lambda = 0.1$、第 7 幕的课程与表 IV 照抄正文和附录 A–C；' +
           '第 5 幕的代码与超参数摘自官方仓库 `rsl_rl/algorithms/ppo_rma.py`、`humanoid_config.py`、`gr1_walk_phase_config.py`，MimicKit 一行摘自 `lcp_agent.py` 与 `lcp_g1_agent.yaml`；第 6 幕的 71 / 50 / 710 / 831 维按 GR1 配置逐项相加；第 7 幕的 9164 次是现算的。',
-        '**玩具与示意**：第 2、3 幕的一维策略 $\\pi(o) = o + b\\sin(\\omega o)$（平缓的那条最大斜率 1.5）与第 4 幕的两维高斯算例是玩具，第 4 幕的推导 $\\mathbb{E}\\lVert\\nabla_s\\log\\pi\\rVert^2 = \\lVert J\\rVert_F^2/\\sigma^2$ 是我们推的；第 1 幕的两个关节与电机曲线、第 4 幕的钟形与概率表、第 9 幕右下的动作曲线是示意（只表达谁抖、谁慢，幅度不对应论文数值）；第 2 幕的图 3、第 8 幕的图 4 是按论文图的走势画的示意（论文图 3 没有纵轴数值）；第 7、10 幕的小人是示意。'
+        '**玩具与示意**：第 2、3 幕的一维策略 $\\pi(o) = o + b\\sin(\\omega o)$（平缓的那条最大斜率 1.5）与第 4 幕的两维高斯算例是玩具，第 4 幕的推导 $\\mathbb{E}\\lVert\\nabla_s\\log\\pi\\rVert^2 = \\lVert J\\rVert_F^2/\\sigma^2$ 是我们推的；第 1 幕的两个关节与电机曲线、低通滤波那一格的输入（滤波系数照上一期 OP3 的 0.8 / 0.2 逐步算）、第 4 幕的钟形与概率表、第 9 幕右下的动作曲线是示意（只表达谁抖、谁慢，幅度不对应论文数值）；第 2 幕的图 3、第 8 幕的图 4 是按论文图的走势画的示意（论文图 3 没有纵轴数值）；第 7、10 幕的小人是示意。'
       ],
       scenes: LCP_SCENES
     });
@@ -2146,8 +2198,8 @@
   function buildVideoDemo(host) {
     K.video(host, {
       title: '配音讲解视频：LCP 十幕全流程',
-      sub: '9 分 52 秒竖屏视频（1080×1920），中文配音 + 字幕。画面就是上面的十幕动画，旁白把每一幕讲细；适合手机上看或转发。',
-      size: '11.1 MB',
+      sub: '9 分 56 秒竖屏视频（1080×1920），中文配音 + 字幕。画面就是上面的十幕动画，旁白把每一幕讲细；适合手机上看或转发。',
+      size: '11.3 MB',
       fileName: 'LCP_讲解视频.mp4'
     });
   }
