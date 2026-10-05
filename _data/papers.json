@@ -467,8 +467,8 @@
             "arxiv": "2303.03381",
             "published_date_zh": "2023年3月（arXiv），2024 Science Robotics",
             "published_date_en": "Mar 2023 (arXiv), 2024 Science Robotics",
-            "zhname": "首个 RL 真实世界人形行走（Berkeley · Causal Transformer）",
-            "zh_title": "首个 RL 真实世界人形行走（Berkeley · Causal Transformer）"
+            "zhname": "用强化学习实现真实世界人形行走",
+            "zh_title": "用强化学习实现真实世界人形行走"
           },
           {
             "title": "Humanoid Locomotion as Next Token Prediction",
