@@ -112,6 +112,7 @@ PI0_NOTE = _high_impact_note("Pi0_A_Vision-Language-Action_Flow_Model_for_Genera
 PI05_NOTE = _high_impact_note("Pi05_A_Vision-Language-Action_Model_with_Open-World_Generalization")
 SOCCER_NOTE = _high_impact_note("Learning_Agile_Soccer_Skills_for_a_Bipedal_Robot_with_Deep_RL")
 QUAD_NOTE = _high_impact_note("Learning_Quadrupedal_Locomotion_over_Challenging_Terrain")
+RH_NOTE = _high_impact_note("Real-World_Humanoid_Locomotion_with_RL")
 PHP_NOTE = (
     ROOT
     / "papers"
@@ -261,6 +262,7 @@ def test_notes_declare_their_demos_in_reading_order():
         PI05_NOTE: ("pi05", ["pi05-explainer", "pi05-video"]),
         SOCCER_NOTE: ("op3soccer", ["soccer-explainer", "soccer-video"]),
         QUAD_NOTE: ("quadterrain", ["qt-explainer", "qt-video", "qt-ftg", "qt-curriculum", "qt-memory"]),
+        RH_NOTE: ("realhumanoid", ["rh-explainer", "rh-video", "rh-context", "rh-reward", "rh-dr"]),
     }
     for note, (bundle, placeholders) in expected.items():
         text = note.read_text(encoding="utf-8")
@@ -298,7 +300,7 @@ EXPLAINER_BUNDLES = (
     "ppo", "awr", "deepmimic", "amp", "add", "ase", "calm", "pulse", "sonic", "groot",
     "gmr", "omniretarget", "diffusion_policy", "beyondmimic", "cosmos", "umr", "php", "pbfm",
     "gentle", "lcp", "transformer", "pi0", "pi05", "op3soccer", "smp", "humanml3d",
-    "domain_randomization", "quadterrain",
+    "domain_randomization", "quadterrain", "realhumanoid",
 )
 
 # 幕数由论文决定，不是统一模板：PPO / DeepMimic / AMP / ADD 的核心概念正好各 5 个，
@@ -390,6 +392,14 @@ EXPLAINER_BUNDLES = (
 # 「记忆要多长」（图 5B–D + 图 6 的显著性）与「记忆里装了什么」（图 S2 的解码器）是验证节和分析节的两段，
 # 合成一幕会让表 1 的柱子和图 3E 的折线、或者三档消融柱和摩擦曲线抢同一帧。
 
+# 真实世界人形行走（Radosavovic 2024）是十件（全尺寸人形为什么难 / 因果 Transformer / 两步训练 /
+# 奖励与命令 / 虚拟弹簧与域随机化 / 户外与实验室 / 自然行走 / 下坡换步态 / 脚被绊住 / 消融与局限）。
+# 方法节四块各一幕：网络结构（Model architecture）、训练目标（式 2 与 λ 退火）、奖励与命令（v1 附录的
+# 式 3–16 与表 II）、仿真（虚拟弹簧与表 I）；结果按论文的图一图一幕：图 1–2 鲁棒性与厂家对比、图 3–4
+# 自然行走、图 5 慢变化（地形改步态）、图 6 快变化（脚被绊住），图 8 的消融和局限收尾。论文的核心主张是
+# 「上下文内适应」，图 5 和图 6 是它的两种时间尺度，各有一组神经元分析，合成一幕会让两条神经元曲线、
+# 二维散点和热图抢同一帧；奖励表有 14 项，塞进训练那一幕会和式 2、λ 曲线、图 8C 挤在一起。
+
 # HumanML3D 是九件（文本生成动作卡在哪 / 数据集怎么建 / 一帧 263 维 / 每 4 帧一个 snippet code /
 # Text2Length / 时序 VAE 的一步 / 三项损失与课程学习 / 评测器与 R-Precision / 结果、消融与遗产）。
 # 它一篇论文同时交了数据集、方法和评测协议三样东西：数据集的「怎么建」与「每帧存什么」是第 4 节与
@@ -424,10 +434,11 @@ EXPLAINER_SCENES = {
     "smp": (SMP_NOTE, 8),
     "domain_randomization": (DR_VISION_NOTE, 8),
     "quadterrain": (QUAD_NOTE, 9),
+    "realhumanoid": (RH_NOTE, 10),
 
     "humanml3d": (HUMANML3D_NOTE, 9),
 }
-CN_NUMERALS = {4: "四", 5: "五", 6: "六", 7: "七", 8: "八", 9: "九"}
+CN_NUMERALS = {4: "四", 5: "五", 6: "六", 7: "七", 8: "八", 9: "九", 10: "十"}
 
 
 def test_explainer_scene_count_matches_the_title_and_note():
@@ -1620,7 +1631,7 @@ def test_narrated_video_placeholders_point_at_files_that_exist():
             assert f"'{demo}': buildVideoDemo" in js and "K.video(host" in js, f"{demo} 没有通过 K.video 注册"
     for demo in ("calm-video", "pulse-video", "dp-video", "bm-video", "lcp-video", "cosmos-video", "groot-video",
                  "tf-video", "pi0-video", "pi05-video", "soccer-video", "sonic-video", "gmr-video",
-                 "omniretarget-video", "humanml3d-video", "smp-video", "dr-video", "qt-video"):
+                 "omniretarget-video", "humanml3d-video", "smp-video", "dr-video", "qt-video", "rh-video"):
         assert demo in seen, f"{demo} 应该挂在对应的论文笔记里"
 
 
@@ -2014,3 +2025,56 @@ def test_quadterrain_explainer_demos_and_worked_example_share_the_paper_numbers(
     ):
         assert needle in note, needle
     assert "用 PPO" not in note and "PPO 训练" not in note, "论文的教师用的是 TRPO"
+
+
+def test_realhumanoid_explainer_demos_and_worked_example_share_the_paper_numbers():
+    """真实世界人形行走：十幕动画、三个演示、配音旁白与笔记「🚶 具体实例」用同一份论文数字。
+
+    正文与 arXiv v1 附录（表 I–IV、式 3–16）照抄；图 2D、图 8 是读图近似值；奖励、概率、步数在这些数上现算。
+    旧版笔记把 Agility 自带控制器写成 MPC、把闭链写成「耦合约束补丁」，这里守着别再写回来。
+    """
+    js = (DEMO_JS_DIR / "realhumanoid.js").read_text(encoding="utf-8")
+    note = RH_NOTE.read_text(encoding="utf-8")
+    narration = (ROOT / "scripts" / "paper_video" / "papers" / "realhumanoid.py").read_text(encoding="utf-8")
+    kit = DEMO_KIT.read_text(encoding="utf-8")
+
+    for line in (
+        "var CTX = 16, DT = 0.02, D_MODEL = 192, N_HEAD = 4, N_BLOCK = 4, MLP_RATIO = 2.0;",
+        "var N_PD = 16, N_GAIN = 8, POLICY_HZ = 50, PD_HZ = 1000;",
+        "var SIGMA_V = 0.2, SIGMA_W = 0.2, H_LOW = 1.0, KAPPA = 0.04, SWING_Z_W = 5.0;",
+        "var DAMP = [0.3, 4.0];",
+        "var PPO = { gpus: 4, envT: 8192, envS: 4096, steps: 24, epochs: 5, mbT: 49152, mbS: 24576, iters: 6000, ep: 20 };",
+        "var FIG2D_OURS = [100, 100, 100], FIG2D_NATIVE = [100, 97, 71];",
+        "var FIG8A = [['Transformer', 97], ['LSTM', 89], ['TCN', 86], ['MLP', 75]];",
+        "[16, [1.01, 0.96, 0.9, 0.84, 0.8, 0.75]]",
+        "['只 RL', [0.9, 0.89, 0.85, 0.79, 0.67, 0.16]]",
+        "['只模仿', [0.92, 0.85, 0.81, 0.75, 0.64, 0.63]]",
+        "var QT_STEPS = 100;",
+    ):
+        assert line in js, line
+    # 十幕的幕号要显示成 10，不是 010
+    assert "function sceneNo(i)" in kit and "'0' + (i + 1)" not in kit
+
+    def r(err):
+        return math.exp(-(err**2) / 0.2)
+
+    assert [_fmt(r(e), 3) for e in (0.1, 0.2, 0.5)] == ["0.951", "0.819", "0.287"]
+    assert 3 + 3 + 26 + 26 + 3 + 2 + 3 == 66 and 66 + 6 + 121 + 36 + 61 + 147 + 40 + 3 == 480
+    assert 16 * 17 // 2 == 136 and _fmt(16 * 0.02, 2) == "0.32" and 100 / 16 == 6.25 and 192 // 4 == 48
+    assert _fmt(math.sqrt(0.3 * 4.0), 2) == "1.10"
+    assert _fmt(math.log(1 / 0.3) / math.log(4.0 / 0.3), 3) == "0.465" and _fmt(0.7 / 3.7, 3) == "0.189"
+    assert 8192 * 24 * 6000 == 1_179_648_000 and _fmt(8192 * 24 * 6000 * 0.02 / 86400, 0) == "273"
+    assert 8192 * 24 // 49152 * 5 == 20 and 4096 * 24 // 24576 == 4
+    assert _fmt(0.2 / 1.3 * (0.2 / 0.6) * (0.52 / 2.0) * 100, 1) == "1.3"
+    assert (_fmt(0.16 / 0.75 * 100, 0), _fmt(0.75 / 0.62, 2), _fmt(0.63 / 0.75 * 100, 0)) == ("21", "1.21", "84")
+
+    for needle in (
+        "## 🎬 十幕动画：Digit 真实世界人形行走全流程", "## 🚶 具体实例", "**0.951**", "**0.819**", "**0.287**",
+        "**66**", "**480**", "**136 对**", "**0.32 s**", "**6.25 倍**", "**1.10**", "**0.465**", "**0.189**",
+        "**约 11.8 亿步**", "**273 天**", "**1.3%**", "**21%**", "虚拟弹簧", "交替子步",
+    ):
+        assert needle in note, needle
+    for needle in ("0.951", "0.819", "0.287", "480 维", "136 对", "11.8 亿", "6.25 倍", "百分之七十一"):
+        assert needle in narration, needle
+    for stale in ("**超 MPC**", "~10 B steps", "自实现的耦合约束补丁", "**主动调摆臂幅度**"):
+        assert stale not in note, f"旧版笔记的说法原文里没有：{stale}"

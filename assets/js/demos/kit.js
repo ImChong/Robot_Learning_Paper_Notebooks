@@ -1022,6 +1022,11 @@
     return pts[pts.length - 1];
   }
 
+  /* 幕号两位数：01 … 09、10（十幕的讲解动画不能显示成 010） */
+  function sceneNo(i) {
+    return (i + 1 < 10 ? '0' : '') + (i + 1);
+  }
+
   function clockText(sec) {
     var m = Math.floor(sec / 60), s = Math.floor(sec % 60);
     return m + ':' + (s < 10 ? '0' : '') + s;
@@ -1085,7 +1090,7 @@
     var chips = specs.map(function (spec, i) {
       var b = el('button', 'demo-x-chip');
       b.type = 'button';
-      b.appendChild(el('span', 'demo-x-chip-n', '0' + (i + 1)));
+      b.appendChild(el('span', 'demo-x-chip-n', sceneNo(i)));
       rich(b, spec.title);
       b.addEventListener('click', function () { go(i, true); });
       chipRow.appendChild(b);
@@ -1135,7 +1140,7 @@
       idx = clamp(next, 0, scenes.length - 1);
       time = reduceMotion ? scenes[idx].spec.dur : 0;
       scenes.forEach(function (sc, i) { sc.wrap.hidden = i !== idx; });
-      noEl.textContent = '0' + (idx + 1);
+      noEl.textContent = sceneNo(idx);
       titleEl.textContent = '';
       rich(titleEl, scenes[idx].spec.title);
       chips.forEach(function (c, i) { c.setAttribute('aria-current', i === idx ? 'true' : 'false'); });
