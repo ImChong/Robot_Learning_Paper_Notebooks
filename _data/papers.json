@@ -178,8 +178,8 @@
         "has_open_source": true,
         "published_date_zh": "2024年10月15日（arXiv）",
         "published_date_en": "Oct 15, 2024 (arXiv)",
-        "zhname": "LCP：通过 Lipschitz 约束策略学习平滑人形运动",
-        "zh_title": "LCP：通过 Lipschitz 约束策略学习平滑人形运动"
+        "zhname": "LCP：用 Lipschitz 约束策略学习平滑的人形行走",
+        "zh_title": "LCP：用 Lipschitz 约束策略学习平滑的人形行走"
       },
       {
         "title": "MimicKit: A Reinforcement Learning Framework for Motion Imitation and Control",
