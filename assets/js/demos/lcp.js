@@ -21,6 +21,15 @@
   'use strict';
 
   var K = window.PaperDemoKit;
+  /* 第 10 幕的机器人图放在 assets/img/robots/，按本脚本自己的地址找（网页与离线视频都适用） */
+  var ROBOT_IMG_BASE = (function () {
+    var cs = document.currentScript;
+    try {
+      return cs && cs.src ? new URL('../../img/robots/', cs.src).href : '';
+    } catch (e) {
+      return '';
+    }
+  })();
   var el = K.el,
     fmt = K.fmt,
     clamp = K.clamp,
@@ -107,6 +116,14 @@
     ['Fourier GR1T1 / T2', '21 个关节，脚踝横滚力矩太小当被动关节，控制 19 个'],
     ['Unitree H1', '19 个关节，全部主动控制'],
     ['Berkeley Humanoid', '高 0.85 m，12 个自由度'],
+  ];
+  /* 第 10 幕的机器人图：Robot Description Gallery Online（github.com/ImChong/Robot_Description_Gallery_Online）
+     按各家开源 URDF 渲染的缩略图，裁到机身、按 URDF 实测身高等比例缩放（GR1 用的是 GR1T1 的模型）。
+     h 是 URDF 实测身高（m），ar 是图的宽高比；论文只写了伯克利人形高 0.85 m。 */
+  var ROBOT_IMGS = [
+    { file: 'gr1.webp', h: 1.6133, ar: 0.2384 },
+    { file: 'h1.webp', h: 1.806, ar: 0.3047 },
+    { file: 'berkeley_humanoid.webp', h: 0.8735, ar: 0.3771 }
   ];
   /* 官方代码（GR1 配置 gr1_walk_phase_config.py 与 rsl_rl 的 ppo_rma.py）里的数 */
   var OBS_GR1 = {
@@ -1213,23 +1230,34 @@
     var tug = group(s);
     rectBox(tug, 30, 268, 740, 144, C_BORDER);
     tug.appendChild(svgMath(400, 290, 'J(\\pi) - \\lambda_{gp}\\,\\mathbb{E}\\lVert\\nabla_s\\log\\pi(a\\mid s)\\rVert^2', { size: 13, anchor: 'middle', w: 520 }));
-    tug.appendChild(paint(svgEl('line', { x1: 150, y1: 352, x2: 650, y2: 352, 'stroke-width': 4 }), null, C_INK2));
-    var knot = paint(svgEl('rect', { y: 340, width: 12, height: 24, rx: 3 }), C_ACCENT);
-    tug.appendChild(knot);
-    tug.appendChild(paint(svgEl('line', { x1: 400, y1: 330, x2: 400, y2: 374, 'stroke-width': 1, 'stroke-dasharray': '3 3' }), null, C_MUTED));
-    function team(x, dir, color) {
-      var g = group(tug);
-      for (var m = 0; m < 2; m++) {
-        var fx = x + dir * m * 34;
-        g.appendChild(paint(svgEl('circle', { cx: fx + dir * 10, cy: 322, r: 7, fill: 'none', 'stroke-width': 2.2 }), null, color));
-        g.appendChild(paint(svgEl('line', { x1: fx + dir * 8, y1: 330, x2: fx - dir * 4, y2: 362, 'stroke-width': 2.6 }), null, color));
-        g.appendChild(paint(svgEl('line', { x1: fx - dir * 4, y1: 362, x2: fx + dir * 8, y2: 386, 'stroke-width': 2.4 }), null, color));
-        g.appendChild(paint(svgEl('line', { x1: fx - dir * 4, y1: 362, x2: fx - dir * 14, y2: 386, 'stroke-width': 2.4 }), null, color));
-        g.appendChild(paint(svgEl('line', { x1: fx + dir * 4, y1: 340, x2: fx - dir * 16, y2: 352, 'stroke-width': 2.2 }), null, color));
-      }
+    /* 拔河：绳子、绳上的红标和两队人一起移动；人往后仰、手握在绳上。
+       每 7 秒一轮：从平衡点被猛扯一下，来回晃几下又回到「平衡点」（示意：平衡点的位置由系数决定，这里不对应具体数值）。
+       一轮结束时离平衡点不到 0.5，下一轮从平衡点接着开始，不会跳。 */
+    var TUG_Y = 352, TUG_EQ = 26;
+    tug.appendChild(paint(svgEl('line', { x1: 400, y1: 330, x2: 400, y2: 376, 'stroke-width': 1, 'stroke-dasharray': '3 3' }), null, C_MUTED));
+    var eqMark = group(tug);
+    eqMark.appendChild(paint(svgEl('path', { d: 'M' + (400 + TUG_EQ - 5) + ',378 L' + (400 + TUG_EQ + 5) + ',378 L' + (400 + TUG_EQ) + ',370 Z' }), C_ACCENT));
+    eqMark.appendChild(svgText(400 + TUG_EQ + 9, 383, '平衡点', 'demo-x-acc', 10));
+    var moving = group(tug);
+    moving.appendChild(paint(svgEl('line', { x1: 168, y1: TUG_Y, x2: 632, y2: TUG_Y, 'stroke-width': 4, 'stroke-linecap': 'round' }), null, C_INK2));
+    moving.appendChild(paint(svgEl('rect', { x: 394, y: TUG_Y - 12, width: 12, height: 24, rx: 3 }), C_ACCENT));
+    /* 一个人：手握在绳上的 hx，身体往远离中线的方向仰；away = −1 往左拉，+1 往右拉 */
+    function puller(hx, away, color) {
+      var g = group(moving);
+      function X(d) { return hx + away * d; }
+      function ln(x1, y1, x2, y2, w) { g.appendChild(paint(svgEl('line', { x1: x1, y1: y1, x2: x2, y2: y2, 'stroke-width': w, 'stroke-linecap': 'round' }), null, color)); }
+      ln(X(40), 336, hx, TUG_Y, 2.4);            // 手臂伸向绳子
+      ln(X(40), 336, X(24), 366, 2.8);           // 身体往后仰
+      ln(X(24), 366, X(12), 376, 2.4);           // 前腿蹬住
+      ln(X(12), 376, X(4), 390, 2.4);
+      ln(X(24), 366, X(32), 390, 2.4);           // 后腿
+      g.appendChild(paint(svgEl('circle', { cx: X(47), cy: 326, r: 7, fill: 'none', 'stroke-width': 2.2 }), null, color));
       return g;
     }
-    var tL = team(132, 1, C_GOOD), tR = team(668, -1, C_BAD);
+    puller(206, -1, C_GOOD);
+    puller(252, -1, C_GOOD);
+    puller(594, 1, C_BAD);
+    puller(548, 1, C_BAD);
     tug.appendChild(svgText(44, 402, '回报：想反应更灵敏（更陡）', 'demo-x-good', 11));
     tug.appendChild(svgText(756, 402, '梯度惩罚：想更平滑', 'demo-x-bad', 11, 'end'));
     tug.appendChild(svgText(400, 402, '停在哪里，就是训出来的平滑程度', 'demo-x-acc', 11, 'middle'));
@@ -1257,10 +1285,11 @@
       setOpacity(R2, seg(t, 10.4, 11.0));
       tag.setAttribute('transform', 'rotate(' + (6 * Math.sin(2.1 * now)).toFixed(2) + ' 574 224)');
       setOpacity(tug, seg(t, 13.4, 14.0));
-      var off = 40 * Math.sin(1.4 * now) * (0.55 + 0.45 * Math.cos(0.37 * now));
-      knot.setAttribute('x', (394 + off).toFixed(1));
-      tL.setAttribute('transform', 'translate(' + off.toFixed(1) + ' 0)');
-      tR.setAttribute('transform', 'translate(' + off.toFixed(1) + ' 0)');
+      /* 每 7 秒一轮：被一边猛扯，再来回晃，越晃越小，停回平衡点；外加一点点抖，表示两边一直在用力 */
+      var tau = now % 7;
+      var off = TUG_EQ + 46 * Math.sin(2.4 * tau) * Math.exp(-tau / 1.5) + 1.2 * Math.sin(11 * now);
+      moving.setAttribute('transform', 'translate(' + off.toFixed(1) + ' 0)');
+      setOpacity(eqMark, seg(t, 14.6, 15.2));
     }
     return { el: s, draw: draw };
   }
@@ -1968,32 +1997,57 @@
     var s = sceneSvg('四台人形：傅利叶 GR1T1 与 GR1T2 二十一个关节控制十九个，宇树 H1 十九个关节，伯克利人形高 0.85 米十二个自由度；表 II MuJoCo 任务回报 24.33、21.74、26.50；表 III 真机三种地面动作抖动基本不变，最多涨 8%；局限：只验证了基础行走');
     s.appendChild(svgText(30, 28, '四台人形：先 MuJoCo，再上真机，一个系数 0.002', 'demo-x-ink2', 13.5));
 
+    /* 三台机器人站在同一条地面上，按 URDF 实测身高等比例；地面在表 III 那一段轮换平地 / 软地 / 粗糙 */
     var robots = group(s);
-    var figs = [];
-    ROBOTS.forEach(function (r, k) {
-      var x = 30 + k * 250;
-      var g = group(robots);
-      rectBox(g, x, 42, 240, 116, C_BORDER, C_SURFACE2);
-      g.appendChild(svgText(x + 12, 62, r[0], null, 12));
-      var parts = r[1].split('，');
-      parts.forEach(function (p, q) {
-        g.appendChild(svgText(x + 12, 84 + q * 18, p, 'demo-x-ink2', 10.5));
+    rectBox(robots, 30, 42, 740, 152, C_BORDER, C_SURFACE2);
+    var defs = svgEl('defs', {});
+    var halo = svgEl('radialGradient', { id: 'lcp-x-halo-s10' });
+    halo.appendChild(svgEl('stop', { offset: '0', 'stop-color': '#a3acb9', 'stop-opacity': '0.5' }));
+    halo.appendChild(svgEl('stop', { offset: '1', 'stop-color': '#a3acb9', 'stop-opacity': '0' }));
+    defs.appendChild(halo);
+    s.appendChild(defs);
+    var GY = 176, PPM_U = 68;
+    var gFlat = group(robots), gSoft = group(robots), gRough = group(robots);
+    /* 地面颜色与表 III 图例一致：平地蓝、软地黄、粗糙红 */
+    gFlat.appendChild(paint(svgEl('line', { x1: 40, y1: GY, x2: 760, y2: GY, 'stroke-width': 1.8 }), null, C_ACCENT));
+    gSoft.appendChild(paint(svgEl('rect', { x: 40, y: GY - 2, width: 720, height: 9, rx: 4, 'fill-opacity': 0.28 }), C_WARN));
+    pathLine(gSoft, (function () {
+      var pts = [];
+      for (var x = 40; x <= 760; x += 6) pts.push([x, GY + 1.2 * Math.sin(x / 9)]);
+      return pts;
+    })(), C_WARN, 1.4);
+    pathLine(gRough, (function () {
+      var pts = [], rng = mulberry32(12);
+      for (var x = 40; x <= 760; x += 7) pts.push([x, GY + 1 - 4 * rng()]);
+      return pts;
+    })(), C_BAD, 1.6);
+    var terrainTxt = svgText(40, 189, '', 'demo-x-mut', 9.5);
+    robots.appendChild(terrainTxt);
+    robots.appendChild(svgText(762, 189, '图：Robot Description Gallery Online，按开源 URDF 渲染 · 身高按 URDF 等比例', 'demo-x-mut', 9, 'end'));
+    var bots = ROBOTS.map(function (r, k) {
+      var x0 = 30 + k * 247, cx = x0 + 44, im = ROBOT_IMGS[k];
+      var hU = im.h * PPM_U, wU = hU * im.ar;
+      var col = group(robots);
+      col.appendChild(paint(svgEl('ellipse', { cx: cx, cy: GY - hU * 0.5, rx: 34, ry: hU * 0.58 }), 'url(#lcp-x-halo-s10)'));
+      var body = group(col);
+      body.appendChild(svgEl('image', { href: ROBOT_IMG_BASE + im.file, x: (cx - wU / 2).toFixed(1), y: (GY - hU).toFixed(1), width: wU.toFixed(1), height: hU.toFixed(1), preserveAspectRatio: 'xMidYMax meet' }));
+      col.appendChild(svgText(x0 + 84, 66, r[0], null, 12));
+      r[1].split('，').forEach(function (p, q) {
+        col.appendChild(svgText(x0 + 84, 86 + q * 18, p, 'demo-x-ink2', 10.5));
       });
-      var full = k < 2;
-      var fig = K.stickFigure(k === 2 ? C_GOOD : C_ACCENT, 2.4, false, 0.4);
-      fig.el.setAttribute('transform', 'translate(' + (x + 200) + ',' + (full ? 98 : 124) + ') scale(' + (full ? 0.62 : 0.33) + ')');
-      g.appendChild(fig.el);
-      figs.push(fig);
-      g.at = 0.3 + k * 1.1;
-      return g;
+      return { col: col, body: body, cx: cx, hU: hU };
     });
-    var robotTag = group(s);
-    robotTag.appendChild(svgText(770, 172, '小人是示意；只有伯克利人形的身高写在论文里', 'demo-x-mut', 9.5, 'end'));
+    /* 推一把：外力推搡也能恢复（补充视频），推 H1 的身体，绕脚踝晃几下站回来 */
+    var push = group(robots);
+    var pushMk = K.arrowMarker(s, 'lcp-x-arrow-s10', C_WARN);
+    var pushY = GY - bots[1].hU * 0.62;
+    push.appendChild(paint(svgEl('line', { x1: bots[1].cx - 62, y1: pushY, x2: bots[1].cx - 22, y2: pushY, 'stroke-width': 3.4, 'marker-end': pushMk }), null, C_WARN));
+    push.appendChild(svgText(bots[1].cx - 64, pushY - 8, '推一把', 'demo-x-warn', 10));
 
     var s2s = group(s);
-    rectBox(s2s, 30, 182, 230, 150, C_BORDER, C_SURFACE2);
-    s2s.appendChild(svgText(42, 200, '表 II：MuJoCo 任务回报', 'demo-x-ink2', 11));
-    var SB = 304, SH = 80;
+    rectBox(s2s, 30, 200, 230, 132, C_BORDER, C_SURFACE2);
+    s2s.appendChild(svgText(42, 218, '表 II：MuJoCo 任务回报', 'demo-x-ink2', 11));
+    var SB = 304, SH = 70;
     var sNames = ['GR1', 'H1', 'Berkeley'];
     var sBars = TABLE2.map(function (r, k) {
       var bx = 52 + k * 70;
@@ -2006,8 +2060,8 @@
     s2s.appendChild(paint(svgEl('line', { x1: 44, y1: SB, x2: 252, y2: SB, 'stroke-width': 1 }), null, C_BORDER));
 
     var real = group(s);
-    rectBox(real, 274, 182, 496, 150, C_BORDER, C_SURFACE2);
-    real.appendChild(svgText(286, 200, '表 III：真机动作抖动（3 个模型 × 10 s）', 'demo-x-ink2', 11));
+    rectBox(real, 274, 200, 496, 132, C_BORDER, C_SURFACE2);
+    real.appendChild(svgText(286, 218, '表 III：真机动作抖动（3 个模型 × 10 s）', 'demo-x-ink2', 11));
     var RB = 304, RH = 75;
     var tCols = [C_ACCENT, C_WARN, C_BAD];
     var rBars = [];
@@ -2025,8 +2079,8 @@
     real.appendChild(paint(svgEl('line', { x1: 286, y1: RB, x2: 760, y2: RB, 'stroke-width': 1 }), null, C_BORDER));
     var tLeg = group(real);
     TERRAINS.forEach(function (n, q) {
-      tLeg.appendChild(paint(svgEl('rect', { x: 560 + q * 70, y: 192, width: 10, height: 10, rx: 2 }), tCols[q]));
-      tLeg.appendChild(svgText(574 + q * 70, 201, n, 'demo-x-mut', 9.5));
+      tLeg.appendChild(paint(svgEl('rect', { x: 560 + q * 70, y: 210, width: 10, height: 10, rx: 2 }), tCols[q]));
+      tLeg.appendChild(svgText(574 + q * 70, 219, n, 'demo-x-mut', 9.5));
     });
 
     var lim = group(s);
@@ -2036,18 +2090,33 @@
 
     function draw(t, clock) {
       var now = clock == null ? t : clock;
-      robots.childNodes.forEach(function (g, k) { setOpacity(g, seg(t, 0.3 + k * 1.1, 0.9 + k * 1.1)); });
-      figs.forEach(function (f, k) { f.pose(0, 0, K.poseWalk((now * 0.9 + k * 0.33) % 1)); });
-      setOpacity(robotTag, seg(t, 3.0, 3.6));
+      setOpacity(robots, seg(t, 0.2, 0.6));
+      var pushOn = seg(t, 10.4, 10.8), ptau = now % 4;
+      bots.forEach(function (b, k) {
+        setOpacity(b.col, seg(t, 0.3 + k * 1.1, 0.9 + k * 1.1));
+        var th = 0.7 * Math.sin(1.3 * now + 2 * k);
+        if (k === 1 && pushOn > 0) th += 9 * Math.exp(-ptau / 0.7) * Math.sin(6 * ptau) * pushOn;
+        b.body.setAttribute('transform', 'rotate(' + th.toFixed(2) + ' ' + b.cx + ' ' + GY + ')');
+      });
+      setOpacity(push, pushOn * clamp(1 - (ptau - 0.25) / 0.35, 0, 1));
+      /* 表 III 那一段起，地面每 2.5 秒换一种，柱子里对应的那一种亮起来 */
+      var ter = t >= 7.0 ? Math.floor(now / 2.5) % 3 : 0;
+      setOpacity(gFlat, ter === 0 ? 1 : 0);
+      setOpacity(gSoft, ter === 1 ? 1 : 0);
+      setOpacity(gRough, ter === 2 ? 1 : 0);
+      terrainTxt.textContent = '地面：' + TERRAINS[ter];
       setOpacity(s2s, seg(t, 3.6, 4.2));
       sBars.forEach(function (it, k) {
         setH(it.b, it.h * ease(seg(t, 4.0 + k * 0.4, 4.8 + k * 0.4)));
         setOpacity(it.lab, seg(t, 4.6 + k * 0.4, 5.0 + k * 0.4));
       });
       setOpacity(real, seg(t, 7.0, 7.6));
+      var lit = seg(t, 8.8, 9.2);
       rBars.forEach(function (it, k) {
         setH(it.b, it.h * ease(seg(t, 7.4 + k * 0.2, 8.2 + k * 0.2)));
-        setOpacity(it.lab, seg(t, 8.0 + k * 0.2, 8.4 + k * 0.2));
+        var dim = k % 3 === ter ? 1 : 1 - 0.6 * lit;
+        it.b.style.opacity = (0.9 * dim).toFixed(2);
+        setOpacity(it.lab, seg(t, 8.0 + k * 0.2, 8.4 + k * 0.2) * dim);
       });
       setOpacity(lim, seg(t, 10.4, 11.0));
       setOpacity(fin, seg(t, 13.4, 14.0));
@@ -2186,7 +2255,7 @@
       notes: [
         '取数依据：第 1、8、9、10 幕的数字照抄论文表 I–III（arXiv 2410.11825 v3）；第 3 幕的式 4–7、第 6 幕的式 8 与 $\\lambda = 0.1$、第 7 幕的课程与表 IV 照抄正文和附录 A–C；' +
           '第 5 幕的代码与超参数摘自官方仓库 `rsl_rl/algorithms/ppo_rma.py`、`humanoid_config.py`、`gr1_walk_phase_config.py`，MimicKit 一行摘自 `lcp_agent.py` 与 `lcp_g1_agent.yaml`；第 6 幕的 71 / 50 / 710 / 831 维按 GR1 配置逐项相加；第 7 幕的 9164 次是现算的。',
-        '**玩具与示意**：第 2、3 幕的一维策略 $\\pi(o) = o + b\\sin(\\omega o)$（平缓的那条最大斜率 1.5）与第 4 幕的两维高斯算例是玩具，第 4 幕的推导 $\\mathbb{E}\\lVert\\nabla_s\\log\\pi\\rVert^2 = \\lVert J\\rVert_F^2/\\sigma^2$ 是我们推的；第 1 幕的两个关节与电机曲线、低通滤波那一格的输入（滤波系数照上一期 OP3 的 0.8 / 0.2 逐步算）、第 4 幕的钟形与概率表、第 9 幕右下的动作曲线是示意（只表达谁抖、谁慢，幅度不对应论文数值）；第 2 幕的图 3、第 8 幕的图 4 是按论文图的走势画的示意（论文图 3 没有纵轴数值）；第 7、10 幕的小人是示意。'
+        '**玩具与示意**：第 2、3 幕的一维策略 $\\pi(o) = o + b\\sin(\\omega o)$（平缓的那条最大斜率 1.5）与第 4 幕的两维高斯算例是玩具，第 4 幕的推导 $\\mathbb{E}\\lVert\\nabla_s\\log\\pi\\rVert^2 = \\lVert J\\rVert_F^2/\\sigma^2$ 是我们推的；第 1 幕的两个关节与电机曲线、低通滤波那一格的输入（滤波系数照上一期 OP3 的 0.8 / 0.2 逐步算）、第 4 幕的钟形与概率表、第 9 幕右下的动作曲线是示意（只表达谁抖、谁慢，幅度不对应论文数值）；第 2 幕的图 3、第 8 幕的图 4 是按论文图的走势画的示意（论文图 3 没有纵轴数值）；第 7 幕的小人是示意；第 10 幕的机器人图取自 Robot Description Gallery Online（按各家开源 URDF 渲染，身高按 URDF 实测等比例，GR1 用 GR1T1 的模型），推一把和地面轮换是示意。'
       ],
       scenes: LCP_SCENES
     });
