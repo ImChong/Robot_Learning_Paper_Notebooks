@@ -77,7 +77,7 @@ demos: ["beyondmimic"]
 
 ## 📺 配音讲解视频（可下载） {#bm-video}
 
-<div class="paper-demo" data-demo="bm-video" data-src="media/bm_explainer_video.mp4" data-poster="media/bm_explainer_video_poster.jpg"><p class="demo-fallback">（本节含讲解视频播放器，需要启用 JavaScript；也可以直接<a href="media/bm_explainer_video.mp4" download="BeyondMimic_讲解视频.mp4">下载 mp4（9.4 MB）</a>）</p></div>
+<div class="paper-demo" data-demo="bm-video" data-src="media/bm_explainer_video.mp4" data-poster="media/bm_explainer_video_poster.jpg"><p class="demo-fallback">（本节含讲解视频播放器，需要启用 JavaScript；也可以直接<a href="media/bm_explainer_video.mp4" download="BeyondMimic_讲解视频.mp4">下载 mp4（11.2 MB）</a>）</p></div>
 
 > 📖 **动画之后的正文默认全部折叠**：问题、方法按小节收起，具体实例、实验、边界、源码对照、面试和附录各收成一块。想细读哪一块就点开，内容一字未删；四个交互演示和流程图留在外面。目录里的标题可以直接点，会自动展开所在折叠块，左侧目录顶部还有「展开全部文字」。
 
