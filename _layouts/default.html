@@ -551,10 +551,12 @@
         HDMI(["HDMI<br/><span class='roadmap-node-year'>2025</span>"])
     end
     subgraph SG_WM ["7 · World Model"]
+        Dreamer(["Dreamer / PlaNet<br/><span class='roadmap-node-year'>2019</span>"]) -.-> UniPi(["UniPi<br/><span class='roadmap-node-year'>2023</span>"])
         Cosmos(["Cosmos<br/><span class='roadmap-node-year'>2025</span>"]) --> DreamDojo(["DreamDojo<br/><span class='roadmap-node-year'>2026</span>"]) --> WM1X(["1X World Model<br/><span class='roadmap-node-year'>2025</span>"])
         HAIC(["HAIC — Dynamics-Aware WM<br/><span class='roadmap-node-year'>2026</span>"])
     end
     subgraph SG_WAM ["8 · World Action Model"]
+        CosmosPolicy(["Cosmos Policy<br/><span class='roadmap-node-year'>2026</span>"])
         DreamZero(["DreamZero<br/><span class='roadmap-node-year'>2026</span>"])
     end
     subgraph SG_FM ["9 · Foundation Models"]
@@ -592,6 +594,8 @@
     Psi --> BFM
     ULTRA --> BFM
     BM --> Cosmos
+    Cosmos --> CosmosPolicy
+    Dreamer -.-> CosmosPolicy
     HumDex --> DreamDojo
     ULTRA --> HAIC
     DreamDojo --> DreamZero
@@ -653,10 +657,12 @@
         HDMI(["HDMI<br/><span class='roadmap-node-year'>2025</span>"])
     end
     subgraph SG_WM ["7 · 世界模型 World Model"]
+        Dreamer(["Dreamer / PlaNet<br/><span class='roadmap-node-year'>2019</span>"]) -.-> UniPi(["UniPi<br/><span class='roadmap-node-year'>2023</span>"])
         Cosmos(["Cosmos<br/><span class='roadmap-node-year'>2025</span>"]) --> DreamDojo(["DreamDojo<br/><span class='roadmap-node-year'>2026</span>"]) --> WM1X(["1X 世界模型<br/><span class='roadmap-node-year'>2025</span>"])
         HAIC(["HAIC — 动力学感知 WM<br/><span class='roadmap-node-year'>2026</span>"])
     end
     subgraph SG_WAM ["8 · 世界-动作模型 WAM"]
+        CosmosPolicy(["Cosmos Policy<br/><span class='roadmap-node-year'>2026</span>"])
         DreamZero(["DreamZero<br/><span class='roadmap-node-year'>2026</span>"])
     end
     subgraph SG_FM ["9 · 基础模型 VLA / BFM"]
@@ -694,6 +700,8 @@
     Psi --> BFM
     ULTRA --> BFM
     BM --> Cosmos
+    Cosmos --> CosmosPolicy
+    Dreamer -.-> CosmosPolicy
     HumDex --> DreamDojo
     ULTRA --> HAIC
     DreamDojo --> DreamZero
