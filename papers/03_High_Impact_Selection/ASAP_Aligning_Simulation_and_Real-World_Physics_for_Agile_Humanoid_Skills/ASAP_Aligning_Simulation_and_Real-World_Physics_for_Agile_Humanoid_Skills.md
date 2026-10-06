@@ -8,6 +8,8 @@ demos: ["asap"]
 ---
 
 # ASAP: Aligning Simulation and Real-World Physics for Learning Agile Humanoid Whole-Body Skills
+**ASAP：对齐仿真与真实物理，学人形敏捷全身技能**
+
 **先在仿真里预训练相位跟踪策略，再到真机上录轨迹、学一个残差动作模型 $\Delta a = \pi^{\Delta}(s, a)$ 让仿真「演」出真机，把它冻结进仿真里微调策略，部署时拿掉：仿真到仿真的开环回放 1 s 误差少 53%，真机上只修脚踝 4 个自由度，跟踪误差少 18% / 30%。**
 
 > 📅 阅读日期: 2026-05-24（2026-10-06 对照 arXiv v1–v3 全文与官方代码重写，补十二幕动画、三个交互演示与配音视频）
