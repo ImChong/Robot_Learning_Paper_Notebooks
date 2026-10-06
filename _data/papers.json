@@ -538,6 +538,30 @@
             "zh_title": "ANYmal 敏捷运动技能学习（sim-to-real RL 奠基作）"
           },
           {
+            "title": "Dream to Control: Learning Behaviors by Latent Imagination",
+            "path": "papers/03_High_Impact_Selection/Dreamer_Learning_Behaviors_by_Latent_Imagination/Dreamer_Learning_Behaviors_by_Latent_Imagination.md",
+            "url": "/papers/03_High_Impact_Selection/Dreamer_Learning_Behaviors_by_Latent_Imagination/Dreamer_Learning_Behaviors_by_Latent_Imagination.html",
+            "dir": "Dreamer_Learning_Behaviors_by_Latent_Imagination",
+            "arxiv": "1912.01603",
+            "has_open_source": true,
+            "published_date_zh": "Dreamer 2019年12月3日；PlaNet 2018年11月12日",
+            "published_date_en": "Dreamer Dec 3, 2019; PlaNet Nov 12, 2018",
+            "zhname": "Dreamer：在潜空间想象中学习行为",
+            "zh_title": "Dreamer：在潜空间想象中学习行为"
+          },
+          {
+            "title": "Learning Universal Policies via Text-Guided Video Generation",
+            "path": "papers/03_High_Impact_Selection/UniPi_Learning_Universal_Policies_via_Text-Guided_Video_Generation/UniPi_Learning_Universal_Policies_via_Text-Guided_Video_Generation.md",
+            "url": "/papers/03_High_Impact_Selection/UniPi_Learning_Universal_Policies_via_Text-Guided_Video_Generation/UniPi_Learning_Universal_Policies_via_Text-Guided_Video_Generation.html",
+            "dir": "UniPi_Learning_Universal_Policies_via_Text-Guided_Video_Generation",
+            "arxiv": "2302.00111",
+            "has_open_source": true,
+            "published_date_zh": "2023年1月31日",
+            "published_date_en": "Jan 31, 2023",
+            "zhname": "UniPi：用文本引导的视频生成学习通用策略",
+            "zh_title": "UniPi：用文本引导的视频生成学习通用策略"
+          },
+          {
             "title": "Learning Agile Soccer Skills for a Bipedal Robot with Deep Reinforcement Learning",
             "path": "papers/03_High_Impact_Selection/Learning_Agile_Soccer_Skills_for_a_Bipedal_Robot_with_Deep_RL/Learning_Agile_Soccer_Skills_for_a_Bipedal_Robot_with_Deep_RL.md",
             "url": "/papers/03_High_Impact_Selection/Learning_Agile_Soccer_Skills_for_a_Bipedal_Robot_with_Deep_RL/Learning_Agile_Soccer_Skills_for_a_Bipedal_Robot_with_Deep_RL.html",
@@ -627,6 +651,18 @@
             "published_date_en": "Sep 17, 2025 (arXiv)",
             "zhname": "BFM：面向人形全身控制的行为基础模型",
             "zh_title": "BFM：面向人形全身控制的行为基础模型"
+          },
+          {
+            "title": "Cosmos Policy: Fine-Tuning Video Models for Visuomotor Control and Planning",
+            "path": "papers/03_High_Impact_Selection/Cosmos_Policy_Fine-Tuning_Video_Models_for_Visuomotor_Control_and_Planning/Cosmos_Policy_Fine-Tuning_Video_Models_for_Visuomotor_Control_and_Planning.md",
+            "url": "/papers/03_High_Impact_Selection/Cosmos_Policy_Fine-Tuning_Video_Models_for_Visuomotor_Control_and_Planning/Cosmos_Policy_Fine-Tuning_Video_Models_for_Visuomotor_Control_and_Planning.html",
+            "dir": "Cosmos_Policy_Fine-Tuning_Video_Models_for_Visuomotor_Control_and_Planning",
+            "arxiv": "2601.16163",
+            "has_open_source": true,
+            "published_date_zh": "2026年1月22日",
+            "published_date_en": "Jan 22, 2026",
+            "zhname": "Cosmos Policy：微调视频模型用于视觉运动控制与规划",
+            "zh_title": "Cosmos Policy：微调视频模型用于视觉运动控制与规划"
           },
           {
             "title": "Perceptive Behavior Foundation Model: Adapting Human Motion Priors to Robot-Centric Terrain",

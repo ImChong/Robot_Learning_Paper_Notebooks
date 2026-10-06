@@ -80,6 +80,9 @@
 | H25 | [π0: A Vision-Language-Action Flow Model for General Robot Control](https://arxiv.org/abs/2410.24164) 🌟 ✅ [笔记](03_High_Impact_Selection/Pi0_A_Vision-Language-Action_Flow_Model_for_General_Robot_Control/Pi0_A_Vision-Language-Action_Flow_Model_for_General_Robot_Control.md) | Manip | 流匹配 VLA，openpi 开源权重 |
 | H26 | [π0.5: a Vision-Language-Action Model with Open-World Generalization](https://arxiv.org/abs/2504.16054) 🌟 ✅ [笔记](03_High_Impact_Selection/Pi05_A_Vision-Language-Action_Model_with_Open-World_Generalization/Pi05_A_Vision-Language-Action_Model_with_Open-World_Generalization.md) | Manip | 异构协同训练，陌生家庭里做长程家务 |
 | H27 | [Learning Agile Soccer Skills for a Bipedal Robot with Deep Reinforcement Learning](https://arxiv.org/abs/2304.13653) ✅ [笔记](03_High_Impact_Selection/Learning_Agile_Soccer_Skills_for_a_Bipedal_Robot_with_Deep_RL/Learning_Agile_Soccer_Skills_for_a_Bipedal_Robot_with_Deep_RL.md) | S2R | DeepMind OP3 足球，小人形零样本 sim-to-real |
+| H32 | [Dream to Control: Learning Behaviors by Latent Imagination](https://arxiv.org/abs/1912.01603) 🌟 ✅ [笔记](03_High_Impact_Selection/Dreamer_Learning_Behaviors_by_Latent_Imagination/Dreamer_Learning_Behaviors_by_Latent_Imagination.md) | WM | Dreamer（含前作 PlaNet），潜空间世界模型 + 想象中学策略 |
+| H33 | [Learning Universal Policies via Text-Guided Video Generation](https://arxiv.org/abs/2302.00111) ✅ [笔记](03_High_Impact_Selection/UniPi_Learning_Universal_Policies_via_Text-Guided_Video_Generation/UniPi_Learning_Universal_Policies_via_Text-Guided_Video_Generation.md) | WM | UniPi，文本条件视频生成当规划器 + 逆动力学出动作 |
+| H34 | [Cosmos Policy: Fine-Tuning Video Models for Visuomotor Control and Planning](https://arxiv.org/abs/2601.16163) 🌟 ✅ [笔记](03_High_Impact_Selection/Cosmos_Policy_Fine-Tuning_Video_Models_for_Visuomotor_Control_and_Planning/Cosmos_Policy_Fine-Tuning_Video_Models_for_Visuomotor_Control_and_Planning.md) | WM | 视频模型一次后训练同时当策略、世界模型与价值函数 |
 
 
 #### 仿真平台 & 工具
