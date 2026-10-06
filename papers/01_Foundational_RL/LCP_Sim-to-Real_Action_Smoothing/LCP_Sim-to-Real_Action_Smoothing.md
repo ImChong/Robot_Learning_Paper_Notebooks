@@ -717,6 +717,8 @@ sequenceDiagram
 
 **2026-10-05（第二版）：动画与视频改成以动图为主**。第一版视频大部分时间在念公式，观众容易走神；这一版每幕最多留一条公式，其余换成会动的图：两个关节跟同一串指令（仿真照做、真机跟不上）、两条玩具策略抖给你看、「每一处都不许太陡 → 只看走到的地方 → 陡了就罚 → 单价固定」四步加一场拔河、钟形沿均值线滑动（罚的是均值的斜率）、旋钮拧过 $\lambda _ {gp}$ 的五档。推导和代数算例留在下面的「具体实例」和交互演示里。第 1 幕的低通滤波那一格改成传送带：每一步都来回跳的动作从左边流进滤波器，右边流出平滑的曲线，和虚线（原来的走势）一比就看得出慢了几步（之前两段都往左滚，方向和箭头相反，输出也没滤平）。配音视频重配为 9 分 56 秒。
 
+**2026-10-06：第 3 幕拔河、第 10 幕真机图**。第 3 幕的拔河原来绳子不动、人往前扑，改成绳子与两队一起移动、人往后仰拉，被扯一下后停回平衡点；第 10 幕的火柴人换成 [Robot Description Gallery Online](https://github.com/ImChong/Robot_Description_Gallery_Online) 按各家开源 URDF 渲染的 GR1T1、H1、Berkeley Humanoid，按 URDF 实测身高等比例，表 III 那段地面轮换三种、「外力推搡」那段推 H1 一把。配音视频按新画面重渲（旁白不变）。
+
 <h3 id="d-与路线图其他论文的关联">D. 与路线图其他论文的关联</h3>
 
 - **[Domain Randomization](../Domain_Randomization_for_Transferring_Deep_Neural_Networks_from_Simulation_to_the_Real_World/Domain_Randomization_for_Transferring_Deep_Neural_Networks_from_Simulation_to_the_Real_World.html)（DR → LCP）**：LCP 的训练照样带域随机化；随机化让策略见过足够多的动力学，LCP 让策略对输入的变化不过激。
