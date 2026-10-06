@@ -59,7 +59,8 @@ demos: ["asap"]
 | **DR** | Domain Randomization | 域随机化：训练时随机化物理参数 |
 | **Delta Dynamics** | — | 基线：学状态残差 $f^{\Delta} _ {\theta}(s, a)$，加到仿真的下一步状态上 |
 | **SMPL** | Skinned Multi-Person Linear model | 人体参数化模型：根位姿、身体姿态、体型 $\beta$ |
-| **TRAM** | Global Trajectory and Motion of 3D Humans from in-the-wild videos | 从单目视频估计世界坐标下的 SMPL 动作 |
+| **TRAM** | Global Trajectory and Motion of 3D Humans from in-the-wild videos（ECCV） | 从日常视频估计人的三维动作和世界坐标下的轨迹，输出 SMPL 参数 |
+| **MaskedMimic** | Unified Physics-Based Character Control Through Masked Motion Inpainting（TOG 2024） | 基于物理的动作跟踪器：在 IsaacGym 里驱动受重力的人体模型模仿 SMPL 动作，跟不上的扔掉（sim-to-data 清洗） |
 | **RSI** | Reference State Initialization | 回合从参考动作的随机相位开始（DeepMimic） |
 | **MPJPE** | Mean Per-Joint Position Error | 平均关节位置误差；论文分全局的 $E _ {\text{g-mpjpe}}$ 与根相对的 $E _ {\text{mpjpe}}$ |
 | **OOD** | Out of Distribution | 训练 Δ 时没见过的动作 |
