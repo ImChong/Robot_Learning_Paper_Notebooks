@@ -41,15 +41,15 @@
         "13_Physics-Based_Animation",
         "14_Human_Motion"
       ],
-      "last_module": "13_Physics-Based_Animation",
-      "last_index": 456,
-      "last_title": "RL from Physical Feedback: Aligning Large Motion Models with Humanoid Control (arXiv:2506.12769)",
-      "next_module": "14_Human_Motion",
-      "last_completed_date": "2026-10-05",
-      "note": "本日轮转到 13_Physics-Based_Animation。上游 awesome-humanoid-robot-learning Physics-Based Character Animation 章节中发表最新且无笔记的是 RL from Physical Feedback (RLPF, arXiv:2506.12769, 2025-06-15, 北大 / BeingBeyond)。以冻结跟踪策略在 IsaacGym 中的二值跟踪成功作为物理奖励 + 对比编码器语义对齐奖励，用 GRPO 微调 LLaMA2-7B 文本生成动作模型；跟踪成功率 0.43–0.48→0.90–0.97，G1 真机部署。官方仓库仅 README，代码未放出，仅含整体流程 mermaid。",
-      "last_date": "2026-10-05",
+      "last_module": "04_Loco-Manipulation_and_WBC",
+      "last_index": 86,
+      "last_title": "Thor: Towards Human-Inspired Whole-Body Reactions for Intense Contact-Rich Environments (arXiv:2510.26280)",
+      "next_module": "05_Locomotion",
+      "last_completed_date": "2026-10-06",
+      "note": "本日轮转到 14_Human_Motion，但上游 awesome-humanoid-robot-learning Human Motion Analysis and Synthesis 章节的论文已全部有笔记，按 AGENTS.md「模块 04–14 只为上游已收录论文建笔记」顺延到 04_Loco-Manipulation_and_WBC。04 中上游已收录、尚无独立笔记的最新论文是 Thor (arXiv:2510.26280, v1 2025-10-30 / v4 2026-09-21, BAAI 等；v3 起标题由 Human-Level 改为 Human-Inspired)。下肢 / 腰 / 上肢三策略分解(共享观测、各自奖励与 critic) + 由准静态力矩平衡推出质心偏移参考 d* = −M_h/(mg) 的 FAT2 奖励；G1 双手后退均值峰值拉力 167.7 N(比 FALCON 高 68.9%)，单手开防火门、拖 1.7 t 轿车。项目主页标注 Code Coming Soon，仅含整体流程 mermaid。",
+      "last_date": "2026-10-06",
       "next_candidate": null,
-      "last_completed": "RL from Physical Feedback: Aligning Large Motion Models with Humanoid Control (arXiv:2506.12769)"
+      "last_completed": "Thor: Towards Human-Inspired Whole-Body Reactions for Intense Contact-Rich Environments (arXiv:2510.26280)"
     },
     "last_summary_index": 532,
     "last_summary_date": "2026-09-18",
@@ -1651,6 +1651,17 @@
         "project_page": "https://beingbeyond.github.io/RLPF/",
         "code": "https://github.com/BeingBeyond/RLPF（仅 README，代码未放出）",
         "source": "⏳ 暂未开源(故无源码时序图) · 物理反馈奖励(冻结 ExBody2 式跟踪策略二值成功) + TA/MA 语义对齐 + GRPO 微调 LLaMA2-7B T2M · 北大 / BeingBeyond"
+      },
+      {
+        "date": "2026-10-06",
+        "index": 86,
+        "title": "Thor: Towards Human-Inspired Whole-Body Reactions for Intense Contact-Rich Environments",
+        "folder": "papers/04_Loco-Manipulation_and_WBC/Thor__Towards_Human-Inspired_Whole-Body_Reactions_for_Intense_Contact-Rich_Environments",
+        "module": "04_Loco-Manipulation_and_WBC",
+        "arxiv": "2510.26280",
+        "project_page": "https://baai-aether.github.io/baai-thor/",
+        "code": "项目主页标注 Code (Coming Soon)，暂未开源",
+        "source": "⏳ 暂未开源(故无源码时序图) · 下肢/腰/上肢三策略分解 + FAT2 力自适应躯干倾斜奖励(准静态力矩平衡推出质心偏移参考) · Unitree G1 · BAAI / 北理工 / 清华 / XYZ Embodied AI"
       }
     ],
     "last_completed_index": 588,
@@ -2570,16 +2581,16 @@
       "title_cn": ""
     },
     {
-      "title": "Thor: Towards Human-Level Whole-Body Reactions for Intense Contact-Rich Environments",
-      "arxiv": "Thor: Towards Human-Level Whole-Body Reactions for Intense Contact-Rich Environments",
-      "folder": "papers/04_Loco-Manipulation_and_WBC/Thor__Towards_Human-Level_Whole-Body_Reactions_for_Intense_Contact-Rich_Environm",
-      "note_file": "Thor__Towards_Human-Level_Whole-Body_Reactions_for_Intense_Contact-Rich_Environm.md",
-      "pdf_file": "Thor.pdf",
-      "status": "pending",
+      "title": "Thor: Towards Human-Inspired Whole-Body Reactions for Intense Contact-Rich Environments",
+      "arxiv": "2510.26280",
+      "folder": "papers/04_Loco-Manipulation_and_WBC/Thor__Towards_Human-Inspired_Whole-Body_Reactions_for_Intense_Contact-Rich_Environments",
+      "note_file": "Thor__Towards_Human-Inspired_Whole-Body_Reactions_for_Intense_Contact-Rich_Environments.md",
+      "pdf_file": "",
+      "status": "done",
       "start_date": null,
-      "done_date": null,
-      "route": "Loco-Manipulation",
-      "title_cn": ""
+      "done_date": "2026-10-06",
+      "route": "Loco-Manipulation and WBC",
+      "title_cn": "Thor：面向高强度接触环境的类人全身反应"
     },
     {
       "title": "One-shot Humanoid Whole-body Motion Learning",

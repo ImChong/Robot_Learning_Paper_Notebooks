@@ -1475,6 +1475,17 @@
         "zh_title": "视觉驱动的人形机器人反应式足球技能学习"
       },
       {
+        "title": "Thor: Towards Human-Inspired Whole-Body Reactions for Intense Contact-Rich Environments",
+        "path": "papers/04_Loco-Manipulation_and_WBC/Thor__Towards_Human-Inspired_Whole-Body_Reactions_for_Intense_Contact-Rich_Environments/Thor__Towards_Human-Inspired_Whole-Body_Reactions_for_Intense_Contact-Rich_Environments.md",
+        "url": "/papers/04_Loco-Manipulation_and_WBC/Thor__Towards_Human-Inspired_Whole-Body_Reactions_for_Intense_Contact-Rich_Environments/Thor__Towards_Human-Inspired_Whole-Body_Reactions_for_Intense_Contact-Rich_Environments.html",
+        "dir": "Thor__Towards_Human-Inspired_Whole-Body_Reactions_for_Intense_Contact-Rich_Environments",
+        "arxiv": "2510.26280",
+        "published_date_zh": "2025年10月30日（arXiv v1）",
+        "published_date_en": "Oct 30, 2025 (arXiv v1)",
+        "zhname": "Thor：面向高强度接触环境的类人全身反应",
+        "zh_title": "Thor：面向高强度接触环境的类人全身反应"
+      },
+      {
         "title": "HDMI: Learning Interactive Humanoid Whole-Body Control from Human Videos",
         "path": "papers/04_Loco-Manipulation_and_WBC/HDMI__Learning_Interactive_Humanoid_Whole-Body_Control_from_Human_Videos/HDMI__Learning_Interactive_Humanoid_Whole-Body_Control_from_Human_Videos.md",
         "url": "/papers/04_Loco-Manipulation_and_WBC/HDMI__Learning_Interactive_Humanoid_Whole-Body_Control_from_Human_Videos/HDMI__Learning_Interactive_Humanoid_Whole-Body_Control_from_Human_Videos.html",
