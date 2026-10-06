@@ -777,7 +777,10 @@
   var POSE_TUCK = { lean: 14, armA: [118, 100], armB: [108, 90], legA: [72, -6], legB: [64, -16] };
   var POSE_LAND = { lean: 26, armA: [62, 84], armB: [52, 74], legA: [46, -36], legB: [40, -40] };
   var POSE_STUMBLE = { lean: 52, armA: [96, 118], armB: [72, 96], legA: [64, -54], legB: [16, -26] };
-  var POSE_KICK = { lean: -14, armA: [-40, -20], armB: [40, 60], legA: [-70, -60], legB: [-6, 0] };
+  /* 前踢（表 V 的真机动作之一是 Kick）：面朝 +x，先提膝、再伸腿、再收回；躯干后仰、两臂一前一后配重，支撑腿微屈。
+     角度都从竖直向下量、朝 +x 为正：膝的弯曲 = 大腿角 − 小腿角 ≥ 0，肘的弯曲 = 小臂角 − 大臂角 ≥ 0，不会反关节 */
+  var POSE_CHAMBER = { lean: -6, armA: [-30, -8], armB: [30, 72], legA: [85, 10], legB: [4, -4] };
+  var POSE_KICK = { lean: -14, armA: [-40, -15], armB: [35, 80], legA: [72, 66], legB: [4, -4] };
 
   function lerp(a, b, u) {
     return a + (b - a) * u;
@@ -804,6 +807,16 @@
     if (u < 0.78) return { P: lerpPose(land, POSE_CROUCH, ease((u - 0.62) / 0.16)), x: 1, h: 0 };
     if (u < 0.92) return { P: lerpPose(POSE_CROUCH, POSE_STAND, ease((u - 0.78) / 0.14)), x: 1, h: 0 };
     return { P: POSE_STAND, x: 1, h: 0 };
+  }
+  /* 一次前踢，u ∈ [0, 1)：站 → 提膝 → 伸腿 → 停一下 → 收回提膝 → 落脚站好 */
+  function kickAt(u) {
+    if (u < 0.12) return POSE_STAND;
+    if (u < 0.32) return lerpPose(POSE_STAND, POSE_CHAMBER, ease((u - 0.12) / 0.2));
+    if (u < 0.44) return lerpPose(POSE_CHAMBER, POSE_KICK, ease((u - 0.32) / 0.12));
+    if (u < 0.54) return POSE_KICK;
+    if (u < 0.66) return lerpPose(POSE_KICK, POSE_CHAMBER, ease((u - 0.54) / 0.12));
+    if (u < 0.86) return lerpPose(POSE_CHAMBER, POSE_STAND, ease((u - 0.66) / 0.2));
+    return POSE_STAND;
   }
   /* 火柴人的 12 个点（局部坐标，髋在原点）：头、颈、两肘、两手、髋、两膝、两脚、胸 —— 第 2 幕重定向的示意 */
   function limb(p, len, ang) {
@@ -938,13 +951,13 @@
   /* ── scene 2: 从人类视频到 G1 参考动作 ── */
   var S2_STATIONS = [
     ['自己拍的视频', 'C 罗、科比、詹姆斯…'],
-    ['TRAM 重建', '输出 SMPL 参数'],
-    ['MaskedMimic 清洗', '物理上跟不上就扔'],
+    ['TRAM 重建', '视频 → 三维动作与轨迹'],
+    ['MaskedMimic 清洗', '物理跟踪器，跟不上就扔'],
     ['两步重定向', '体型 → 姿态'],
     ['G1 动作库', '43 段做仿真实验']
   ];
   function buildSceneData() {
-    var s = sceneSvg('自己拍人做招牌动作的视频，用 TRAM 重建成 SMPL 参数，在 IsaacGym 里用 MaskedMimic 物理跟踪器过一遍，跟不上的扔掉，再分两步重定向到 G1：先优化体型 β′ 让 12 个对应部位在静止姿态下贴近，再逐帧优化姿态；仿真实验选了 43 段，分简单、中等、困难三档');
+    var s = sceneSvg('自己拍人做招牌动作的视频，用 TRAM 从日常视频估计三维动作和人在世界里的轨迹（SMPL 参数），在 IsaacGym 里用基于物理的动作跟踪器 MaskedMimic 照着做一遍，跟不上的（示意：估计出的身体悬空）扔掉，再分两步重定向到 G1：先优化体型 β′ 让 12 个对应部位在静止姿态下贴近，再逐帧优化姿态；仿真实验选了 43 段，分简单、中等、困难三档');
     s.appendChild(svgText(30, 28, '参考动作从哪来：拍视频 → 重建 → 物理清洗 → 重定向', 'demo-x-ink2', 13.5));
 
     var line1 = group(s);
@@ -958,16 +971,52 @@
     });
     var belt = group(line1);
     belt.appendChild(paint(svgEl('line', { x1: 40, y1: 140, x2: 760, y2: 140, 'stroke-width': 3, 'stroke-dasharray': '10 6' }), null, C_BORDER));
-    /* 片段一个个往右流；每 4 段里有 1 段在物理清洗这一站掉下去 */
-    var CLIPS = 9, SPEED = 60;
+    /* 片段一个个往右流；每 4 段里有 1 段在物理清洗这一站掉下去。每段画一个不同的定格：前踢、提膝单脚站、下蹲 */
+    var CLIPS = 9, SPEED = 60, CLIP_POSES = [POSE_KICK, POSE_CHAMBER, POSE_CROUCH];
     var tokens = [];
     for (var i = 0; i < CLIPS; i++) {
       var g = group(belt);
       var r = rectBox(g, -15, -11, 30, 22, C_ACCENT, C_SURFACE);
       var f = robot(g, C_ACCENT, 0.17, false);
-      f.put(0, 8, POSE_KICK, 0);
+      f.put(0, 8, CLIP_POSES[i % 3], 0);
       tokens.push({ g: g, r: r, bad: i % 4 === 2, k: i });
     }
+
+    /* 3.6–10.4：下半屏先用两块小图讲清 TRAM 与 MaskedMimic 各干什么，10.4 之后让位给重定向和动作库 */
+    var tram = group(s);
+    rectBox(tram, 30, 172, 360, 220, C_BORDER, C_SURFACE2);
+    tram.appendChild(svgText(44, 194, 'TRAM：日常视频 → 三维动作 + 世界里的轨迹', 'demo-x-ink2', 11.5));
+    rectBox(tram, 44, 210, 116, 120, C_MUTED, C_SURFACE);
+    tram.appendChild(paint(svgEl('path', { d: 'M 52 218 l 8 4.5 l -8 4.5 Z' }), C_MUTED));
+    tram.appendChild(paint(svgEl('line', { x1: 50, y1: 312, x2: 154, y2: 312, 'stroke-width': 1 }), null, C_BORDER));
+    var vidFig = robot(tram, C_MUTED, 0.5, false);
+    tram.appendChild(svgText(102, 348, '视频：只有 2D 画面', 'demo-x-mut', 10, 'middle'));
+    arrowPath(tram, [[166, 272], [192, 272]], C_ACCENT, K.arrowMarker(s, 'asap-x-arrow-tram', C_ACCENT));
+    tram.appendChild(paint(svgEl('path', { d: 'M 198 360 L 380 360 L 352 292 L 226 292 Z', 'stroke-width': 1 }), C_SURFACE, C_BORDER));
+    tram.appendChild(paint(svgText(289, 222, '三维姿态 + 世界坐标下的轨迹', null, 10.5, 'middle'), C_ACCENT));
+    tram.appendChild(svgText(289, 378, 'SMPL：根的位置和朝向、身体姿态、体型', 'demo-x-mut', 10, 'middle'));
+    function trajAt(u) { return [218 + 136 * u, 348 - 40 * u - 8 * Math.sin(2 * Math.PI * u)]; }
+    var trail = [];
+    for (var q = 0; q < 24; q++) {
+      var tp = trajAt(q / 24);
+      trail.push(dotAt(tram, tp[0], tp[1], 1.8, C_ACCENT));
+    }
+    var worldFig = robot(tram, C_ACCENT, 0.5, false);
+
+    var mm = group(s);
+    rectBox(mm, 410, 172, 360, 220, C_WARN, C_SURFACE2);
+    mm.appendChild(svgText(424, 194, 'MaskedMimic：在物理仿真里照着做一遍', 'demo-x-ink2', 11.5));
+    mm.appendChild(svgText(756, 194, '虚线：估计　实线：仿真', 'demo-x-mut', 10, 'end'));
+    mm.appendChild(svgText(424, 216, '物理上做得到：跟得上', 'demo-x-good', 10.5));
+    mm.appendChild(svgText(424, 308, '估计出错（示意：悬空）：跟不上', 'demo-x-bad', 10.5));
+    [284, 378].forEach(function (gy) { mm.appendChild(paint(svgEl('line', { x1: 424, y1: gy, x2: 668, y2: gy, 'stroke-width': 1.2 }), null, C_BORDER)); });
+    var MMX = 612;  // 人放在两行说明文字的右边，悬空的那个才不会压到字
+    var okRef = robot(mm, C_MUTED, 0.55, true), okSim = robot(mm, C_GOOD, 0.55, false);
+    var badRef = robot(mm, C_MUTED, 0.55, true), badSim = robot(mm, C_BAD, 0.55, false);
+    var errLine = paint(svgEl('line', { 'stroke-width': 1.4, 'stroke-dasharray': '3 3' }), null, C_BAD);
+    mm.appendChild(errLine);
+    chip(mm, 684, 240, 72, '留下', C_GOOD, { h: 30, size: 11.5 });
+    chip(mm, 684, 334, 72, '扔掉', C_BAD, { h: 30, size: 11.5 });
 
     var fit = group(s);
     rectBox(fit, 30, 172, 470, 220, C_BORDER, C_SURFACE2);
@@ -981,7 +1030,7 @@
       fit.appendChild(ln);
       pairs.push(ln);
     }
-    fit.appendChild(svgText(44, 216, '灰虚：人（SMPL）', 'demo-x-mut', 10));
+    fit.appendChild(svgText(44, 216, '灰虚：人（SMPL），在做前踢', 'demo-x-mut', 10));
     fit.appendChild(svgText(44, 232, '绿：G1', 'demo-x-good', 10));
     var stepA = svgRich(290, 236, '① 先优化体型 $\\beta\'$：静止姿态下贴近', { size: 11, w: 200, cls: 'demo-x-warn' });
     var stepB = svgRich(290, 294, '② 体型固定，逐帧优化姿态：位置对上', { size: 11, w: 200, cls: 'demo-x-good' });
@@ -1024,11 +1073,33 @@
         tk.g.setAttribute('transform', 'translate(' + x.toFixed(1) + ' ' + y.toFixed(1) + ')');
         tk.g.style.opacity = (t < 7.0 && tk.bad && x > 400 ? 0 : op).toFixed(2);
       });
-      setOpacity(fit, seg(t, 10.4, 11.0));
+      /* TRAM：同一段前跳，左边是视频里的 2D 画面，右边是估出来的三维人和他在地面上走过的轨迹（三跳一轮） */
+      var out = 1 - seg(t, 10.4, 10.8);
+      setOpacity(tram, seg(t, 3.6, 4.2) * out);
+      var hop = now / 2.4, J = jumpAt(hop % 1, false), pos = ((Math.floor(hop) % 3) + J.x) / 3, wp = trajAt(pos);
+      vidFig.put(72 + pos * 60, 312, J.P, J.h);
+      worldFig.put(wp[0], wp[1], J.P, J.h, 0.5 - 0.12 * pos);
+      trail.forEach(function (d, q) { setOpacity(d, q / 24 <= pos ? 0.85 : 0.12); });
+      /* MaskedMimic：上面照着做得到（踢腿稍慢半拍跟上）；下面估计的人悬空，仿真里受重力的人跟不上、摔倒 */
+      setOpacity(mm, seg(t, 7.0, 7.6) * out);
+      okRef.put(MMX, 284, kickAt((now / 2.6) % 1), 0);
+      okSim.put(MMX, 284, kickAt(((now - 0.15) / 2.6 + 1) % 1), 0);
+      var bu = (now / 4) % 1, lift = 30 * ease(seg(bu, 0.1, 0.45)) * (1 - ease(seg(bu, 0.85, 1)));
+      badRef.put(MMX, 378, POSE_STAND, lift);
+      var fall = ease(seg(bu, 0.45, 0.7)) * (1 - seg(bu, 0.9, 1));
+      badSim.put(MMX, 378, lerpPose(POSE_STAND, POSE_STUMBLE, fall), 8 * Math.sin(Math.PI * seg(bu, 0.1, 0.3)));
+      badSim.g.setAttribute('transform', badSim.g.getAttribute('transform') + ' rotate(' + (60 * fall).toFixed(1) + ')');
+      var hr = badRef.joints()[0], hs = jointsOf(lerpPose(POSE_STAND, POSE_STUMBLE, fall))[0];
+      var ang = (60 * fall * Math.PI) / 180, sc = 0.55, hy = 378 - (hipHeight(lerpPose(POSE_STAND, POSE_STUMBLE, fall)) + 8 * Math.sin(Math.PI * seg(bu, 0.1, 0.3))) * sc;
+      var hx = MMX + sc * (hs[0] * Math.cos(ang) - hs[1] * Math.sin(ang)), hyy = hy + sc * (hs[0] * Math.sin(ang) + hs[1] * Math.cos(ang));
+      errLine.setAttribute('x1', hr[0].toFixed(1)); errLine.setAttribute('y1', hr[1].toFixed(1));
+      errLine.setAttribute('x2', hx.toFixed(1)); errLine.setAttribute('y2', hyy.toFixed(1));
+      setOpacity(errLine, seg(bu, 0.3, 0.45) * (1 - seg(bu, 0.85, 0.95)));
+
+      setOpacity(fit, seg(t, 10.8, 11.2));
       /* ① β′：人缩到 G1 的身材（两人都站着）；② 人在做动作（输入，不动），G1 的姿态一帧帧追上去，虚线缩短 */
       var uB = ease(seg(t, 11.2, 12.8)), uP = ease(seg(t, 13.0, 15.0));
-      var ph = (now / 2.6) % 1, wave = 0.5 - 0.5 * Math.cos(ph * Math.PI * 2);
-      var Ph = lerpPose(POSE_STAND, POSE_KICK, seg(t, 12.8, 13.0) * wave);
+      var Ph = lerpPose(POSE_STAND, kickAt((now / 2.6) % 1), seg(t, 12.8, 13.0));
       human.put(165, 380, Ph, 0, 1.12 - 0.26 * uB);
       g1.put(165, 380, lerpPose(POSE_STAND, Ph, uP), 0);
       var hj = human.joints(), gj = g1.joints(), err = 0;
@@ -1037,10 +1108,10 @@
         ln.setAttribute('x2', gj[k][0].toFixed(1)); ln.setAttribute('y2', gj[k][1].toFixed(1));
         err += Math.hypot(hj[k][0] - gj[k][0], hj[k][1] - gj[k][1]);
       });
-      setOpacity(stepA, seg(t, 11.0, 11.6));
+      setOpacity(stepA, seg(t, 11.2, 11.6));
       setOpacity(stepB, seg(t, 12.8, 13.4));
       resid.textContent = '12 对距离之和：' + fmt(err, 0) + ' px（示意）';
-      setOpacity(resid, seg(t, 11.0, 11.6));
+      setOpacity(resid, seg(t, 11.2, 11.6));
       setOpacity(lib, seg(t, 13.4, 14.0));
       lvNodes.forEach(function (g, k) { setOpacity(g, seg(t, 14.2 + k * 0.4, 14.6 + k * 0.4)); });
     }
@@ -1209,8 +1280,7 @@
     function draw(t, clock) {
       var now = nowOf(t, clock);
       setOpacity(mo, seg(t, 0.2, 0.8));
-      var ku = (now / 2.4) % 1, kw = 0.5 - 0.5 * Math.cos(ku * Math.PI * 2);
-      g1.put(180, 206, lerpPose(POSE_STAND, POSE_KICK, kw), 0);
+      g1.put(180, 206, kickAt((now / 2.4) % 1), 0);
       cams.forEach(function (led, k) { setOpacity(led, Math.floor(now * 3 + k) % 2 ? 1 : 0.3); });
       setOpacity(vec, seg(t, 3.6, 4.2));
       var nOn = Math.round(N_STATE_REAL * ease(seg(t, 4.0, 6.8)));
@@ -1221,7 +1291,7 @@
       var ru = ((now - 7) / 5) % 1;
       if (ru < 0) ru += 1;
       var tilt = ru < 0.55 ? 0 : ease(seg(ru, 0.55, 0.9));
-      var Pr = lerpPose(POSE_STAND, POSE_KICK, 0.5 - 0.5 * Math.cos(ru * Math.PI * 4));
+      var Pr = kickAt((ru * 2) % 1);
       realFig.put(100 + ru * 24, 370, Pr, 0);
       var Ps = lerpPose(Pr, POSE_STUMBLE, tilt);
       simFig.put(250 + ru * 24 + 24 * ru * ru, 370, Ps, 0);
@@ -1976,8 +2046,8 @@
       build: buildSceneData,
       cues: [
         { at: 0.3, s: '参考动作从哪来？作者自己拍视频：C 罗、科比、詹姆斯的招牌动作，还有跳、踢、单脚平衡、蹲。' },
-        { at: 3.6, s: '**TRAM** 从单目视频里重建全局的三维人体动作，输出 SMPL 参数：根的位置和朝向、身体姿态、体型。' },
-        { at: 7.0, s: '重建会带噪声，有的动作物理上做不出来。先在 IsaacGym 里让物理跟踪器 **MaskedMimic** 去模仿，跟得上的才留下 —— 论文叫「sim-to-data」清洗。' },
+        { at: 3.6, s: '**TRAM**：从日常视频里估计人的三维动作，连人在世界里走过的轨迹一起估出来；输出 SMPL 人体模型参数：根的位置和朝向、身体姿态、体型。' },
+        { at: 7.0, s: '**MaskedMimic**：基于物理的动作跟踪器，在 IsaacGym 里驱动受重力的人体模型去模仿。TRAM 的结果带噪声，跟不上的扔掉 —— 论文叫「sim-to-data」清洗。' },
         { at: 10.4, s: '再分两步重定向（沿用 H2O）：① 优化体型 $\\beta\'$，让 12 个对应部位在静止姿态下贴近 G1；② 体型固定，逐帧优化姿态，让这 12 个部位的位置对上。' },
         { at: 13.4, s: '得到清洗后的 G1 动作库。仿真实验选了 **43 段**，按难度分简单、中等、困难三档；SMPL 和 G1 动作都在官方仓库公开。' }
       ]
