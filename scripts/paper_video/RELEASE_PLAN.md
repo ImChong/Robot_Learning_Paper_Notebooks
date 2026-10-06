@@ -1,6 +1,6 @@
 # 视频号合集发布清单：从头学人形机器人算法
 
-[推荐学习路线图](../../README.md#学习路线图)里的 60 篇论文，按视频号发布顺序排好。已经发布的打勾；每发一集，把那一行的 `[ ]` 改成 `[x]`。截至 2026-10-06 已发布 001–016。
+[推荐学习路线图](../../README.md#学习路线图)里的 60 篇论文，按视频号发布顺序排好。已经发布的打勾；每发一集，把那一行的 `[ ]` 改成 `[x]`。截至 2026-10-06 已发布 001–017。
 
 2026-10-04 对照公众号「具身智能研究室」国庆系列《具身智能从入门到精通》day1–3 的「经典脉络」补入 6 篇：Real-World Humanoid Locomotion（day2「换到人形身体」）、H2O 与 MaskedMimic（day3「参考进入闭环」「稀疏输入由谁补全」）、TWIST / TWIST2（day3 遥操作线）、BFM-Zero（day2「让技能可以调用」）。只插在未发布的 011 之后，已发的 001–010 编号不变。
 
@@ -36,8 +36,8 @@
 - [x] 014 [Real-World Humanoid Locomotion](../../papers/03_High_Impact_Selection/Real-World_Humanoid_Locomotion_with_RL/Real-World_Humanoid_Locomotion_with_RL.md)（2023）🎬 `realhumanoid` — 四足地形→真实世界人形行走；从四足的教师-学生换到全尺寸人形 Digit，因果 Transformer 读观测—动作历史直接出关节目标。〔取舍〕按年份排在 OP3 足球（2023-04）前：先看全尺寸人形怎么走稳，再看小人形踢球
 - [x] 015 [OP3 足球](../../papers/03_High_Impact_Selection/Learning_Agile_Soccer_Skills_for_a_Bipedal_Robot_with_Deep_RL/Learning_Agile_Soccer_Skills_for_a_Bipedal_Robot_with_Deep_RL.md)（2023）🎬 `op3soccer` — DR→OP3 足球；2026-10-05 重做成十二幕，片头接 014 的片尾预告
 - [x] 016 [LCP](../../papers/01_Foundational_RL/LCP_Sim-to-Real_Action_Smoothing/LCP_Sim-to-Real_Action_Smoothing.md)（2024）🎬 `lcp` — DR→LCP；2026-10-05 重做成十幕，片头接 015 的片尾预告（OP3 用输出端滤波，LCP 改成梯度惩罚）；同日按「公式太多」的反馈改成以动图为主，重配为 9 分 56 秒
-- [ ] 017 [ASAP](../../papers/03_High_Impact_Selection/ASAP_Aligning_Simulation_and_Real-World_Physics_for_Agile_Humanoid_Skills/ASAP_Aligning_Simulation_and_Real-World_Physics_for_Agile_Humanoid_Skills.md)（2025）🎬 `asap` — LCP→ASAP、ASAP⇢BeyondMimic；BeyondMimic 笔记拿它当「单动作专用，每条动作要单独调 DR / 奖励」的对照；2026-10-06 新做十二幕，片头接 016 的片尾预告（LCP 改策略，ASAP 改仿真），片尾预告 018 BeyondMimic
-- [ ] 018 [BeyondMimic](../../papers/01_Foundational_RL/BeyondMimic/BeyondMimic.md)（2025）🎬 `beyondmimic` — DP→BeyondMimic；笔记把 CALM / PULSE 和 Diffusion Policy 列为它要补足的两类前作
+- [x] 017 [ASAP](../../papers/03_High_Impact_Selection/ASAP_Aligning_Simulation_and_Real-World_Physics_for_Agile_Humanoid_Skills/ASAP_Aligning_Simulation_and_Real-World_Physics_for_Agile_Humanoid_Skills.md)（2025）🎬 `asap` — LCP→ASAP、ASAP⇢BeyondMimic；BeyondMimic 笔记拿它当「单动作专用，每条动作要单独调 DR / 奖励」的对照；2026-10-06 新做十二幕，片头接 016 的片尾预告（LCP 改策略，ASAP 改仿真），片尾预告 018 BeyondMimic
+- [ ] 018 [BeyondMimic](../../papers/01_Foundational_RL/BeyondMimic/BeyondMimic.md)（2025）🎬 `beyondmimic` — DP→BeyondMimic；笔记把 CALM / PULSE 和 Diffusion Policy 列为它要补足的两类前作；2026-10-06 按 arXiv v4 重做成十二幕（9 分 45 秒），片头接 017 的片尾预告（ASAP 一段动作一套配方 → BeyondMimic 一份配方），片尾只预告「人类动作数据从哪来、怎么搬到机器人身上」，019 HumanML3D 与 020 GMR 都对得上
 - [ ] 019 [AMASS / HumanML3D](../../papers/14_Human_Motion/HumanML3D/HumanML3D.md)（2019 / 2022）🎬 `humanml3d` 可选 — AMASS / HumanML3D→GMR；视频讲的是 HumanML3D
 - [ ] 020 [GMR](../../papers/02_Motion_Retargeting/Retargeting_Matters__General_Motion_Retargeting_for_Humanoid_Motion_Tracking/Retargeting_Matters__General_Motion_Retargeting_for_Humanoid_Motion_Tracking.md)（2025）🎬 `gmr` — GMR 论文用 BeyondMimic 作中性训练框架做对比，所以排在它后面
 - [ ] 021 [OmniRetarget](../../papers/02_Motion_Retargeting/OmniRetarget__Interaction-Preserving_Data_Generation_for_Humanoid_Whole-Body_Loc/OmniRetarget__Interaction-Preserving_Data_Generation_for_Humanoid_Whole-Body_Loc.md)（2025）🎬 `omniretarget` — GMR→OmniRetarget
