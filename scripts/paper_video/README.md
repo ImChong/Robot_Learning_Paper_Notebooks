@@ -70,6 +70,7 @@ npm install
 python3 build.py awr                  # 旁白 TTS -> out/awr/timeline.json + narration.wav
 node render.mjs awr stills 14,125,200 # 先抽几帧看排版 -> out/awr/still_<t>.png
 node render.mjs awr video 30          # 逐帧截图 -> ffmpeg -> out/awr/awr_video.mp4
+node render.mjs awr clip 120,180 30   # 只渲染 120–180 s 这一段（配同一段旁白）-> out/awr/clip_120-180.mp4，改了某一幕先给人看
 node render.mjs awr cover             # 封面（最初的片头设计、无字幕）-> out/awr/cover.png
 node check_layout.mjs awr cover       # 封面排版检查，输出 no overlap 才算过
 ```

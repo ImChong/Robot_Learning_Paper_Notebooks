@@ -1,6 +1,7 @@
 // node render.mjs <paper> stills 1,20,40   -> out/<paper>/still_<t>.png
 // node render.mjs <paper> video [fps]       -> out/<paper>/<paper>_video.mp4
 // node render.mjs <paper> cover             -> out/<paper>/cover.png
+// node render.mjs <paper> clip 140.5,191 [fps] -> out/<paper>/clip_140.5-191.mp4（只渲染这一段，配上同一段旁白，给人先看改动）
 // <paper> names papers/<paper>.{py,js} and the storyboard bundle assets/js/demos/<paper>.js (its `*-explainer` demo id is read from the bundle).
 import { chromium } from 'playwright-core';
 import { spawn, execFileSync } from 'node:child_process';
@@ -56,6 +57,25 @@ if (mode === 'stills') {
   const intro = tl.segments.filter((s) => s.scene === 'intro').pop();
   await page.evaluate((x) => { window.__cover = true; window.renderAt(x); document.getElementById('sub').textContent = ''; }, intro.t1 - 0.5);
   await page.screenshot({ path: path.join(OUT, 'cover.png') });
+} else if (mode === 'clip') {
+  const [from, to] = arg.split(',').map(Number);
+  const fps = Number(process.argv[5] || 30);
+  const n = Math.ceil((to - from) * fps);
+  const mp4 = path.join(OUT, `clip_${from}-${to}.mp4`);
+  const ff = spawn(FFMPEG, ['-y', '-loglevel', 'error',
+    '-f', 'image2pipe', '-framerate', String(fps), '-c:v', 'mjpeg', '-i', '-',
+    '-ss', String(from), '-t', String(to - from), '-i', path.join(OUT, 'narration.wav'),
+    '-c:v', 'libx264', '-preset', 'medium', '-crf', '21', '-pix_fmt', 'yuv420p', '-r', String(fps),
+    '-c:a', 'aac', '-b:a', '128k', '-ar', '48000', '-shortest', '-movflags', '+faststart', mp4],
+  { stdio: ['pipe', 'inherit', 'inherit'] });
+  for (let i = 0; i < n; i++) {
+    await page.evaluate((x) => window.renderAt(x), from + i / fps);
+    const buf = await page.screenshot({ type: 'jpeg', quality: 93 });
+    if (!ff.stdin.write(buf)) await new Promise((r) => ff.stdin.once('drain', r));
+  }
+  ff.stdin.end();
+  await new Promise((r) => ff.on('close', r));
+  console.error('done', mp4);
 } else {
   const fps = Number(arg || 30);
   const n = Math.ceil(tl.total * fps);
