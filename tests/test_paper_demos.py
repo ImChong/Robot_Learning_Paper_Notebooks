@@ -235,7 +235,7 @@ def test_notes_declare_their_demos_in_reading_order():
         ),
         BEYONDMIMIC_NOTE: (
             "beyondmimic",
-            ["bm-explainer", "bm-video", "bm-anchor", "bm-sampling", "bm-guidance"],
+            ["bm-explainer", "bm-video", "bm-anchor", "bm-impedance", "bm-sampling", "bm-guidance"],
         ),
         LCP_NOTE: ("lcp", ["lcp-explainer", "lcp-video", "lcp-sensitivity", "lcp-gp", "lcp-table"]),
         SMP_NOTE: ("smp", ["smp-explainer", "smp-video", "smp-sds", "smp-esm", "smp-style"]),
@@ -331,13 +331,13 @@ EXPLAINER_BUNDLES = (
 # Diffusion Policy 也是七件（平均动作撞障 / 条件扩散 / action chunking / 视觉条件 + FiLM /
 # DDIM 加速 / receding horizon / 定量证据与局限），「扩散过程」和「一次吐多长」
 # 是两件独立的事，视觉条件与 DDIM 加速也是，压进五幕会让 chunking、FiLM 和 RHC 抢同一帧。
-# BeyondMimic 是八幕：它本身就是两篇论文订在一起（阶段 1 的跟踪 + 阶段 2 的
-# 引导扩散），两个阶段各自都有三件独立的事 —— 两个缺口 / 锚定跟踪 / 紧凑 MDP /
-# 自适应采样 / VAE 潜空间 / 状态-潜动作扩散 / Classifier Guidance / 真机与闭环。
-# 「锚定跟踪」是跟踪目标的定义、「紧凑 MDP」是 PD 与奖励的取舍、「自适应采样」是
-# 分钟级长参考才会遇到的问题，三者合并会让公式与那张分箱图抢同一块画面；
-# 「VAE 潜空间」与「联合扩散」更是两个独立训练阶段（前者决定扩散的动作是什么，
-# 后者决定轨迹怎么排布），压成一幕会让 DAgger、β、τ 的结构和 25 Hz 挤在一起。
+# BeyondMimic 是十二件（两个缺口 / 锚定跟踪 / 奖励 / 观测 / 动作与关节阻抗 / 随机化与部署延迟 / 自适应采样 /
+# 跟踪上真机 / VAE 潜空间 / 状态—潜动作扩散 / 代价引导 / 测试时的任务与边界）。v4 的方法节按 MDP 的组成一块一块写：
+# 跟踪目标（锚定）、奖励（表 S1）、观测与动作（Rot6D、历史的消融，按电机惯量算的阻抗与表 S3 / S4）、随机化（表 S2）、
+# 自适应采样，各有自己的公式和图 8 的一组消融，所以第 2–7 幕一块一幕；「观测」和「阻抗」在正文同属一节，但前者的证据是
+# 图 8A 的朝向 / 历史两行、后者是 armature 一行与图 S2，合成一幕会让两组柱子抢同一帧；随机化和延迟同属「仿真建对、系统做好」。
+# 第二阶段的 VAE（为什么要潜空间、5% 对 95%）与扩散（轨迹结构、逐元素噪声、OU 误差带、25 Hz 的时间账）是两个训练阶段，
+# 引导（贝叶斯拆分与三个代价）又是推理时的事；结果按正文一节一幕：跟踪的敏捷与自然（图 3、图 4），引导的三类任务与局限。
 # Cosmos 是五件（为什么要世界模型 / 视频整理 / 因果 tokenizer / 扩散与自回归并列预训练 /
 # 三类后训练示例）。扩散和自回归是两条预训练路线，画成前后两级会把 Table 10 的模型地图读反，
 # 所以第 4 幕必须是并排的两列，不能并进「一个生成模型」里。
@@ -437,7 +437,7 @@ EXPLAINER_SCENES = {
     "gmr": (GMR_NOTE, 7),
     "omniretarget": (OMNI_NOTE, 7),
     "diffusion_policy": (DIFFUSION_POLICY_NOTE, 7),
-    "beyondmimic": (BEYONDMIMIC_NOTE, 8),
+    "beyondmimic": (BEYONDMIMIC_NOTE, 12),
     "umr": (UMR_NOTE, 8),
     "php": (PHP_NOTE, 8),
     "pbfm": (PBFM_NOTE, 7),
@@ -1218,79 +1218,103 @@ def test_pulse_worked_example_arithmetic():
         assert _fmt(val, digits) in note, _fmt(val, digits)
 
 
-def test_beyondmimic_explainer_numbers_come_from_the_config():
-    """八幕动画不许手写换算结果：视野秒数、PD 时间常数、参数量、偏好差值都得现算。"""
+def test_beyondmimic_explainer_demos_and_worked_example_share_the_paper_numbers():
+    """BeyondMimic：十二幕动画、四个演示、配音旁白与笔记「🚶 具体实例」用同一份论文数字。
+
+    以 arXiv 2508.08241 v4 为准（表 S1–S8、补充材料 S1–S4），图 8A / 图 S2 是读图近似值；14 个目标部位、160 维、
+    力矩上限、核长 1 取自官方代码。k_p、α、真实阻尼比、0.062、半衰点、效应量等在这些数上现算。
+    旧版笔记把 v1–v3 的 Body-Pos 消融、λ 均匀混合和 v4 的 VAE 混在一起，还把「锚定吸收偏航」写反了，这里守着别再写回来。
+    """
     js = (DEMO_JS_DIR / "beyondmimic.js").read_text(encoding="utf-8")
     note = BEYONDMIMIC_NOTE.read_text(encoding="utf-8")
+    narration = (ROOT / "scripts" / "paper_video" / "papers" / "beyondmimic.py").read_text(encoding="utf-8")
+    intro = (ROOT / "scripts" / "paper_video" / "papers" / "beyondmimic.js").read_text(encoding="utf-8")
 
-    # 阶段 1 的 MDP：ω_n / ζ 是论文给的，k_d/k_p 必须现除（ω_n 要先换成 rad/s）
-    assert "var OMEGA_HZ = 10," in js
-    assert "ZETA = 2;" in js
-    assert "var PD_RATIO_S = (2 * ZETA) / (2 * Math.PI * OMEGA_HZ);" in js
-    assert _fmt(4 / (2 * math.pi * 10), 3) == "0.064"
+    for line in (
+        "var SIGMA = { p: 0.3, R: 0.4, v: 1.0, w: 3.14 };",
+        "var W_GLOBAL = 0.5;",
+        "var REG = { limit: -10.0, smooth: -0.1, contact: -0.1, softLimit: 0.9, fTh: 1.0 };",
+        "var TERM = { z: 0.25, rot: 0.8 };",
+        "var OMEGA_HZ = 10, ZETA = 2, ACT_FRAC = 0.25;",
+        "var ARMATURE = { '5020': 0.003609725, '7520-14': 0.010177520, '7520-22': 0.025101925, '4010': 0.00425 };",
+        "['膝', '7520-22', 1, 139, 0.1366], ['踝俯仰', '5020', 2, 50, 0.009997], ['踝横滚', '5020', 2, 50, 0.007607],",
+        "var DR = { muStatic: [0.3, 1.6], muDynamic: [0.3, 1.2], restitution: [0, 0.5], jointOffset: 0.01, com: [0.025, 0.05, 0.05] };",
+        "var DELAY_MS = [2, 5, 10], DELAY_FAILS = [0, 1, 2], DELAY_TRIALS = 3;",
+        "var AS = { binS: 1, ema: 0.001, floor: 0.1, rho: 0.8, kPaper: 3, kCode: 1 };",
+        "var FIG8B = { motions: 4, failNoAS: 3, maxIter: 30000, m4: [2000, 4000] };",
+        "var CARTWHEEL = { acc: 31, peak: 20, mean: 7.01, human: 7.75 }, RONALDO_REPS = 5;",
+        "var STUDY = { n: 77, pairs: 20, clipS: 5, all: 70.8, walk: 57.0, run: 84.7, h: [0.859, 0.281, 1.532] };",
+        "var VAE = { z: 32, enc: [2048, 1024, 512], dec: [2048, 1024, 512], teacher: [512, 256, 128], lr: 5e-4, accum: 15, beta: 0.01 };",
+        "var DIFF = { H: 16, N: 4, emb: 512, heads: 8, layers: 6, K: 20, batch: 512, epochs: 1000, lr: 1e-4, wd: 0.001, warmup: 10000, paramsM: 19.8, hz: 25, inferMs: 20, emphasis: 6 };",
+        "var OU = { theta: 0.8, mu: 0, dt: 1.0, sigma: 0.1, reps: 100, runS: 2.5, checkS: 5 };",
+        "var LATENT_ABL = { without: 5, with: 95 };",
+        "var DRIFT_EX = { dx: 0.3, dy: -0.4, yaw: 0.2 };",
+    ):
+        assert line in js, line
 
-    # 奖励项数：4 项跟踪 + 3 项正则，总数现加
-    assert "var N_TRACK = 4," in js
-    assert "N_REG = 3;" in js
-    assert "var N_TERMS = N_TRACK + N_REG;" in js
-    assert "var N_DR = 3;" in js
-    assert 4 + 3 == 7
+    # 观测维度（官方代码 PolicyCfg / PrivilegedCfg）
+    assert 58 + 9 + 6 + 29 * 3 == 160 and 160 + 14 * 3 + 14 * 6 == 286 and 160 - 6 == 154
+    # 锚定一个手（S1 的式子）：漂 (0.30, −0.40)、偏航 0.2
+    c, s_ = math.cos(0.2), math.sin(0.2)
+    hand = (2.30 + c * 0.25 + s_ * 0.20, 0.10 + s_ * 0.25 - c * 0.20, 0.95 - 0.10)
+    assert (_fmt(hand[0], 3), _fmt(hand[1], 3), _fmt(hand[2], 2)) == ("2.585", "-0.046", "0.85")
+    assert _fmt(math.sqrt((hand[0] - 2.25) ** 2 + (hand[1] - 0.30) ** 2), 2) == "0.48"
+    assert (_fmt(math.exp(-0.25 / 0.09), 3), _fmt(math.exp(-0.04 / 0.16), 3)) == ("0.062", "0.779")
+    # 四个高斯掉到一半
+    half = [s * math.sqrt(math.log(2)) for s in (0.3, 0.4, 1.0, 3.14)]
+    assert [_fmt(half[0], 2), _fmt(math.degrees(half[1]), 1), _fmt(half[2], 2), _fmt(half[3], 2)] == ["0.25", "19.1", "0.83", "2.61"]
+    # 膝与踝横滚的阻抗（表 S3 / S4 + 代码的力矩上限），真实轴惯量下的频率与阻尼比
+    w = 2 * math.pi * 10
+    I_knee, I_ankle = 0.025101925, 2 * 0.003609725
+    kp, kd = I_knee * w * w, 2 * I_knee * 2 * w
+    assert (_fmt(kp, 2), _fmt(kd, 3), _fmt(0.25 * 139 / kp, 3), _fmt(kp * 0.25 * 139 / kp, 2)) == ("99.10", "6.309", "0.351", "34.75")
+    assert (_fmt(I_ankle * w * w, 2), _fmt(2 * I_ankle * 2 * w, 3), _fmt(0.25 * 50 / (I_ankle * w * w), 3)) == ("28.50", "1.814", "0.439")
+    assert _fmt(0.25 * 5 / (0.00425 * w * w), 3) == "0.075" and _fmt(4 / w, 3) == "0.064"
+    def real(k, d, ie):
+        return math.sqrt(k / ie) / (2 * math.pi), d / (2 * math.sqrt(k * ie))
 
-    # 自适应采样：分钟级参考的箱数与均匀概率现算
-    assert "var REF_MIN = 3," in js
-    assert "BIN_S = 1;" in js
-    assert "var REF_BINS = (REF_MIN * 60) / BIN_S;" in js
-    assert "var UNIFORM_PCT = 100 / REF_BINS;" in js
-    assert (3 * 60) // 1 == 180
-    assert _fmt(100 / 180, 2) == "0.56"
+    assert tuple(_fmt(x, d) for x, d in zip(real(kp, kd, 0.1366), (2, 3), strict=True)) == ("4.29", "0.857")
+    ka, da = I_ankle * w * w, 2 * I_ankle * 2 * w
+    assert tuple(_fmt(x, d) for x, d in zip(real(ka, da, 0.007607), (2, 3), strict=True)) == ("9.74", "1.948")
+    assert _fmt(0.025101925 / 0.1366 * 100, 1) == "18.4" and _fmt(I_ankle / 0.007607 * 100, 1) == "94.9"
+    # 自适应采样的核（玩具：10 箱、第 6 秒失败率 0.5、底 0.01）与滑动平均的半衰期
+    k = [0.8 ** u for u in range(3)]
+    k = [x / sum(k) for x in k]
+    fb = [0.01] * 10
+    fb[6] = 0.51
+    p = [sum(k[u] * fb[min(i + u, 9)] for u in range(3)) for i in range(10)]
+    p = [x / sum(p) for x in p]
+    assert [_fmt(x, 3) for x in p[4:7]] == ["0.235", "0.290", "0.358"] and _fmt(sum(p[4:7]) * 100, 1) == "88.3"
+    assert _fmt(0.51 / sum(fb), 2) == "0.85" and round(math.log(0.5) / math.log(0.999)) == 693
+    # 效应量、时间账、OU 噪声、代价、表 S8
+    def h(q):
+        return 2 * math.asin(math.sqrt(q)) - 2 * math.asin(math.sqrt(1 - q))
 
-    # 阶段 2：H / f 现除。论文把跟踪策略降到 25 Hz 部署，所以 16/25 才是 0.64 s
-    assert "var HZ = 16;" in js, "视野应复用 guidance 演示里的 H"
-    assert "var CTRL_HZ = 25;" in js
-    assert "var HORIZON_S = HZ / CTRL_HZ;" in js
-    assert 16 / 25 == 0.64
-    assert "var DENOISE_K = 20;" in js
-    assert "var INFER_MS = 20;" in js
-    assert "var CTRL_MS = 1000 / CTRL_HZ;" in js
-    assert "var INFER_LOAD = INFER_MS / CTRL_MS;" in js
-    assert 1000 / 25 == 40 and 20 / 40 == 0.5
+    assert (_fmt(h(0.708), 3), _fmt(h(0.570), 3), _fmt(h(0.847), 3)) == ("0.858", "0.281", "1.534")
+    assert 16 / 25 == 0.64 and 1000 / 25 == 40 and 20 / 40 == 0.5
+    assert (_fmt(0.1 / math.sqrt(1 - 0.2**2), 3), _fmt(0.102 * 0.351, 3)) == ("0.102", "0.036")
+    assert _fmt(17 * 0.5 * (0.3**2 + 0.1**2), 2) == "0.85" and _fmt(1 - math.exp(-4), 3) == "0.982"
+    def b(x, d=0.1):
+        return -math.log(x) if x >= d else -math.log(d) + 0.5 * (((x - 2 * d) / d) ** 2 - 1)
 
-    # Transformer：层数 × 12d²（注意力 4d² + FFN 8d²），只含隐层权重
-    assert "var TF_LAYERS = 6," in js
-    assert "TF_HEADS = 8," in js
-    assert "TF_DIM = 512;" in js
-    assert "var TF_PARAM_M = (TF_LAYERS * 12 * TF_DIM * TF_DIM) / 1e6;" in js
-    assert _fmt(6 * 12 * 512 * 512 / 1e6, 2) == "18.87"
-    assert "**只含注意力与 FFN 的权重**" in js, "动画要说明这不是论文那个 ≈19.8M"
+    assert [_fmt(b(x), 3) for x in (0.3, 0.1, 0.05, -0.05)] == ["1.204", "2.303", "2.928", "4.928"]
+    lafan_real = [38.5, 69.3, 46.0, 30.0, 118.0, 140.0, 53.2, 20.0, 50.0, 48.0, 49.0, 8.6]
+    assert 7 + 25 == 32 and _fmt(sum(lafan_real), 1) == "670.6"
 
-    # 状态表示消融：摇杆任务上的差值现减
-    assert "var BP_PERTURB = 100," in js
-    assert "BP_JOY = 80," in js
-    assert "JR_PERTURB = 72," in js
-    assert "JR_JOY = 0;" in js
-    assert "var JOY_GAP = BP_JOY - JR_JOY;" in js
-    assert 80 - 0 == 80
-
-    # 用户研究：偏好差值是 2p − 100 现减，不是抄一份
-    assert "var PREF_ALL = 70.8," in js
-    assert "PREF_WALK = 57.0," in js
-    assert "PREF_RUN = 84.7;" in js
-    assert "var GAP_ALL = PREF_ALL - (100 - PREF_ALL);" in js
-    assert "var GAP_WALK = PREF_WALK - (100 - PREF_WALK);" in js
-    assert "var GAP_RUN = PREF_RUN - (100 - PREF_RUN);" in js
-    assert _fmt(70.8 - 29.2, 1) == "41.6"
-    assert _fmt(57.0 - 43.0, 1) == "14.0"
-    assert _fmt(84.7 - 15.3, 1) == "69.4"
-
-    # 笔记必须和动画说同一套数
-    assert "## 🎬 八幕动画：BeyondMimic 全流程" in note
-    assert "$16/25 = $ 约 **0.64 s**" in note
-    assert "**25 Hz**" in note
-    assert "约 **19.8M** 参数" in note
-    assert "**8** 头" in note
-    assert "Transformer **encoder**" in note
-    assert "走路 57.0% vs 43.0%" in note
-    assert "潜维度 | **32**" in note
+    for needle in (
+        "## 🎬 十二幕动画：BeyondMimic 全流程", "## 🚶 具体实例", "## 📁 源码对照", "**160**", "**286**", "**154**",
+        "**$(2.585,\\ -0.046,\\ 0.85)$**", "**0.062**", "**0.779**", "**0.25 m**", "**19.1°**", "**99.10**", "**6.309**",
+        "**0.351 rad**", "**4.29 Hz**", "**0.857**", "**0.235、0.290、0.358**", "**0.85**", "**693**", "**0.858**", "**1.534**",
+        "**0.64 s**", "**0.102**", "**0.2**", "**0.85**", "**2.928**", "**4.928**", "**32 段**", "670.6 s",
+        'data-demo="bm-anchor"', 'data-demo="bm-impedance"', 'data-demo="bm-sampling"', 'data-demo="bm-guidance"',
+    ):
+        assert needle in note, needle
+    for needle in ("0.062", "160", "286", "154", "99.1", "0.351", "0.86", "70.8%", "84.7%", "5%", "95%", "0.64", "20 毫秒", "7.01"):
+        assert needle in narration, needle
+    # 片头接上一期（ASAP）的片尾预告，片尾只预告下一篇的主题
+    assert "上一期结尾预告" in narration and "下一篇回到源头" in narration and "下一篇" in intro
+    for stale in ("放开的是水平位置，不是朝向", "p_s' = \\lambda", "18.87", "补充行走数据", "Walk+Perturb 成功率"):
+        assert stale not in note, f"旧版笔记的说法：{stale}"
 
 
 def test_groot_explainer_uses_the_paper_tables_and_the_code_sign():
