@@ -614,8 +614,8 @@
             "has_open_source": true,
             "published_date_zh": "2025年2月3日（arXiv），Robotics: Science and Systems（RSS） 2025",
             "published_date_en": "Feb 3, 2025 (arXiv), Robotics: Science and Systems (RSS) 2025",
-            "zhname": "ASAP：用残差动作模型对齐仿真与真机动力学的人形敏捷全身技能",
-            "zh_title": "ASAP：用残差动作模型对齐仿真与真机动力学的人形敏捷全身技能"
+            "zhname": "ASAP：对齐仿真与真实物理，学人形敏捷全身技能",
+            "zh_title": "ASAP：对齐仿真与真实物理，学人形敏捷全身技能"
           },
           {
             "title": "GR00T N1: An Open Foundation Model for Generalist Humanoid Robots",

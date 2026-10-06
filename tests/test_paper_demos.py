@@ -113,6 +113,7 @@ PI05_NOTE = _high_impact_note("Pi05_A_Vision-Language-Action_Model_with_Open-Wor
 SOCCER_NOTE = _high_impact_note("Learning_Agile_Soccer_Skills_for_a_Bipedal_Robot_with_Deep_RL")
 QUAD_NOTE = _high_impact_note("Learning_Quadrupedal_Locomotion_over_Challenging_Terrain")
 RH_NOTE = _high_impact_note("Real-World_Humanoid_Locomotion_with_RL")
+ASAP_NOTE = _high_impact_note("ASAP_Aligning_Simulation_and_Real-World_Physics_for_Agile_Humanoid_Skills")
 PHP_NOTE = (
     ROOT
     / "papers"
@@ -263,6 +264,7 @@ def test_notes_declare_their_demos_in_reading_order():
         SOCCER_NOTE: ("op3soccer", ["soccer-explainer", "soccer-video", "soccer-filter", "soccer-lambda", "soccer-pool"]),
         QUAD_NOTE: ("quadterrain", ["qt-explainer", "qt-video", "qt-ftg", "qt-curriculum", "qt-memory"]),
         RH_NOTE: ("realhumanoid", ["rh-explainer", "rh-video", "rh-context", "rh-reward", "rh-dr"]),
+        ASAP_NOTE: ("asap", ["asap-explainer", "asap-video", "asap-delta", "asap-tables", "asap-ablation"]),
     }
     for note, (bundle, placeholders) in expected.items():
         text = note.read_text(encoding="utf-8")
@@ -300,7 +302,7 @@ EXPLAINER_BUNDLES = (
     "ppo", "awr", "deepmimic", "amp", "add", "ase", "calm", "pulse", "sonic", "groot",
     "gmr", "omniretarget", "diffusion_policy", "beyondmimic", "cosmos", "umr", "php", "pbfm",
     "gentle", "lcp", "transformer", "pi0", "pi05", "op3soccer", "smp", "humanml3d",
-    "domain_randomization", "quadterrain", "realhumanoid",
+    "domain_randomization", "quadterrain", "realhumanoid", "asap",
 )
 
 # 幕数由论文决定，不是统一模板：PPO / DeepMimic / AMP / ADD 的核心概念正好各 5 个，
@@ -407,6 +409,13 @@ EXPLAINER_BUNDLES = (
 # 「上下文内适应」，图 5 和图 6 是它的两种时间尺度，各有一组神经元分析，合成一幕会让两条神经元曲线、
 # 二维散点和热图抢同一帧；奖励表有 14 项，塞进训练那一幕会和式 2、λ 曲线、图 8C 挤在一起。
 
+# ASAP 是十二件（仿真里跳得起来、真机跳不动 / 从人类视频到 G1 参考动作 / 相位跟踪策略 / 上真机录一遍 /
+# 残差动作模型 / 冻结 Δ 微调、部署时拿掉 / 开环回放（表 III）/ 闭环微调（表 IV）/ 真机只学脚踝（表 V）/
+# 怎么训 Δ（图 10）/ 怎么用 Δ（图 11）/ Δ 学到了什么与局限（图 12、13））。方法节的「采数据」和「训练 Δ」是第 III-A、III-B
+# 两节，Δ 的训练和使用（III-B 与 III-C）各有一条式子；结果按论文自己提的 Q1–Q6 一问一幕：Q1–Q3 是第 IV 节的开环、闭环、
+# 真机，Q4–Q6 是第 V 节的三组分析。压成十幕会让表 III 与表 IV、或图 11 的四条曲线与图 12 的噪声柱抢同一帧；局限和真机
+# 那一幕讲的是同一批约束（坏两台 G1、要动捕、23 自由度要 400 段），并进最后一幕收尾。
+
 # HumanML3D 是九件（文本生成动作卡在哪 / 数据集怎么建 / 一帧 263 维 / 每 4 帧一个 snippet code /
 # Text2Length / 时序 VAE 的一步 / 三项损失与课程学习 / 评测器与 R-Precision / 结果、消融与遗产）。
 # 它一篇论文同时交了数据集、方法和评测协议三样东西：数据集的「怎么建」与「每帧存什么」是第 4 节与
@@ -442,6 +451,7 @@ EXPLAINER_SCENES = {
     "domain_randomization": (DR_VISION_NOTE, 8),
     "quadterrain": (QUAD_NOTE, 9),
     "realhumanoid": (RH_NOTE, 10),
+    "asap": (ASAP_NOTE, 12),
 
     "humanml3d": (HUMANML3D_NOTE, 9),
 }
@@ -2222,4 +2232,139 @@ def test_lcp_explainer_demos_and_worked_example_share_the_paper_numbers():
     # 片头接上一期（OP3 足球）的片尾预告，片尾只预告下一篇（ASAP）
     assert "上一期结尾预告" in narration and "下一篇讲 ASAP" in narration and "ASAP" in intro
     for stale in ("⚠️ **注意**：LCP 论文使用 SGD", "仿真根本测不出", "\\nabla_o \\pi(o)", "五幕动画"):
+        assert stale not in note, f"旧版笔记的说法：{stale}"
+
+
+def _asap_toy(k: float, delay: int):
+    """asap.js 的单关节玩具（toyTargets / toyStep / toyFit / toyErr）逐行移植：返回拟合的 w1 与 1 s 开环误差（度）。"""
+    kp, kd, fric, inertia, dt, sub, steps = 20.0, 0.2, 0.6, 0.05, 0.02, 4, 100
+
+    def targets(kind):
+        out = []
+        for i in range(steps):
+            t = i * dt
+            if kind == "train":
+                v = (0.35 * math.exp(-(((t - 0.45) / 0.12) ** 2)) - 0.25 * math.exp(-(((t - 0.8) / 0.1) ** 2))
+                     + 0.2 * math.exp(-(((t - 1.35) / 0.18) ** 2)) + 0.08 * math.sin(2 * math.pi * 1.6 * t))
+            else:
+                v = 0.3 * math.sin(2 * math.pi * 0.9 * t) * math.exp(-0.4 * t) + 0.15 * math.exp(-(((t - 1.1) / 0.15) ** 2))
+            out.append(v)
+        return out
+
+    def step(s, target, gain):
+        q, v = s
+        h = dt / sub
+        for _ in range(sub):
+            tau = gain * (target - q) - kd * v - fric * v
+            v += tau / inertia * h
+            q += v * h
+        return (q, v)
+
+    def real(tg):
+        s, tr = (0.0, 0.0), [(0.0, 0.0)]
+        for i in range(len(tg)):
+            s = step(s, tg[max(0, i - delay)], k * kp)
+            tr.append(s)
+        return tr
+
+    def sim(tg, w=None):
+        s, tr = (0.0, 0.0), [(0.0, 0.0)]
+        for i in range(len(tg)):
+            d = w[0] * (tg[i] - s[0]) + w[1] * s[1] if w else 0.0
+            s = step(s, tg[i] + d, kp)
+            tr.append(s)
+        return tr
+
+    def best(sr, a, nxt):
+        s0, s1 = step(sr, a, kp), step(sr, a + 1, kp)
+        g, e, W = (s1[0] - s0[0], s1[1] - s0[1]), (s0[0] - nxt[0], s0[1] - nxt[1]), (1, 0.01)
+        return -(W[0] * g[0] * e[0] + W[1] * g[1] * e[1]) / (W[0] * g[0] ** 2 + W[1] * g[1] ** 2)
+
+    tr, te = targets("train"), targets("test")
+    r_tr, r_te = real(tr), real(te)
+    a11 = a12 = a22 = b1 = b2 = 0.0
+    for i in range(len(tr)):
+        x = (tr[i] - r_tr[i][0], r_tr[i][1])
+        y = best(r_tr[i], tr[i], r_tr[i + 1])
+        a11 += x[0] * x[0]; a12 += x[0] * x[1]; a22 += x[1] * x[1]; b1 += x[0] * y; b2 += x[1] * y  # noqa: E702
+    det = a11 * a22 - a12 * a12
+    w = ((b1 * a22 - b2 * a12) / det, (a11 * b2 - a12 * b1) / det)
+
+    def err(tra, trb, horizon=1.0):
+        n = round(horizon / dt)
+        return sum(abs(tra[i][0] - trb[i][0]) for i in range(1, n + 1)) / n * 180 / math.pi
+
+    return w[0], err(sim(te), r_te), err(sim(te, w), r_te)
+
+
+def test_asap_explainer_demos_and_worked_example_share_the_paper_numbers():
+    """ASAP：十二幕动画、三个演示、配音旁白与笔记「🚶 具体实例」用同一份论文数字。
+
+    表 I–VII、图 10 / 12 / 13 柱上的标注照抄 arXiv 2502.01143 v3；脚踝刚度 20、0.65 倍刚度的 −0.35、掩码 [4, 5, 10, 11]、
+    10 次 / 2000 步取自官方代码；53.1%、18.0%、29.6%、3.7 倍、64,377 次等在这些数上现算；单关节玩具与一步匹配只说明机制。
+    旧版笔记把 Delta Dynamics 写成「学了不回灌仿真」、没写真机只学 4 个踝自由度，这里守着别再写回来。
+    """
+    js = (DEMO_JS_DIR / "asap.js").read_text(encoding="utf-8")
+    note = ASAP_NOTE.read_text(encoding="utf-8")
+    narration = (ROOT / "scripts" / "paper_video" / "papers" / "asap.py").read_text(encoding="utf-8")
+    intro = (ROOT / "scripts" / "paper_video" / "papers" / "asap.js").read_text(encoding="utf-8")
+
+    for line in (
+        "var DOF = 23, HIST = 5;",
+        "var TERM = { start: 1.5, end: 0.3 };",
+        "var DR_PRE = { friction: [0.2, 1.1], kp: [0.925, 1.05], delayMs: [20, 40], pushEvery: 10, pushVel: 0.5 };",
+        "[[19.5, 15.1, 6.44, 5.8], [33.3, 23.2, 6.8, 6.84], [80.8, 43.5, 10.6, 11.1]],",
+        "[[19.9, 15.6, 6.48, 5.86], [26.8, 19.2, 5.09, 5.36], [37.9, 22.9, 4.38, 5.26]]",
+        "[[19.0, 14.9, 6.19, 5.59], [25.9, 18.4, 4.93, 5.19], [36.9, 22.6, 4.23, 5.1]]",
+        "[[100, 116, 52.5, 3.4, 6.16], [82.9, 175, 80.7, 3.87, 7.19], [100, 186, 93.0, 4.98, 8.98], [60.0, 190, 89.6, 4.29, 8.7], [100, 129, 77.0, 2.69, 5.65]]",
+        "['踢球（训练 Δ 时见过）', [61.2, 43.5, 2.96, 2.91], [50.2, 40.1, 2.46, 2.7]],",
+        "['詹姆斯「消音」（没见过）', [159, 55.3, 3.43, 6.43], [112, 47.5, 2.84, 5.94]]",
+        "var REAL = { tasks: ['踢球', '前跳', '前后迈步', '单脚平衡', '单脚跳'], runs: 30, clips: 100, need: 400, ankle: 4, broke: 2, locoMin: 10, height: 1.35 };",
+        "closed: [534.02, 104.95, 97.51, 98.15]",
+        "closed: [123.43, 118.46, 97.51, 113.28]",
+        "closed: [180.97, 169.19, 125.9, 97.51, 176.52]",
+        "var FIG12 = { beta: [0.025, 0.05, 0.1, 0.2, 0.4], label: ['1/40', '1/20', '1/10', '1/5', '2/5'], mpjpe: [182.0, 175.2, 173.5, 201.5, 1208.3], wo: 336.1, asap: 126.9 };",
+        "['踝俯仰', 0.056, 0.054], ['踝横滚', 0.0228, 0.017]",
+        "ankleKp: 20, ankleKd: 0.2, ankleIdx: [4, 5, 10, 11]",
+        "fixedIters: 10, gradIters: 2000, gradLr: 0.0002",
+        "var TOY_EX = { target: 0.3, q: 0.1 };",
+        "var FP = { pi: 0.3, q: 0.1, k: 0.65 };",
+    ):
+        assert line in js, line
+
+    # 维度、终止课程
+    assert (23 + 23 + 3 + 3 + 23) * 5 + 1 == 376 and 3 + 3 + 4 + 3 + 23 + 23 == 59
+    assert math.ceil(math.log(1.5 / 0.3) / -math.log(1 - 2.5e-5)) == 64377
+    # 弱电机的完美修正与一步匹配（玩具）
+    assert (_fmt(20 * 0.2, 1), _fmt(0.65 * 20 * 0.2, 1), _fmt(-0.35 * 0.2, 2), _fmt(20 * (0.3 - 0.07 - 0.1), 1)) == ("4.0", "2.6", "-0.07", "2.6")
+    y_star = (0.3 - 0.35 * 0.1) / 0.65
+    assert _fmt(y_star, 4) == "0.4077" and _fmt(0.65 * 20 * (y_star - 0.1), 1) == "4.0"
+    # 单关节玩具：拟合的 w1 与回放 1 s 的误差（三种延迟）
+    toy = [_asap_toy(0.65, d) for d in (0, 1, 2)]
+    assert [_fmt(t[0], 3) for t in toy] == ["-0.344", "-0.511", "-0.622"]
+    assert [(_fmt(t[1], 2), _fmt(t[2], 2)) for t in toy] == [("1.28", "0.02"), ("2.27", "0.40"), ("3.23", "0.86")]
+    # 表 III–V、图 10 / 12 / 13 的比例
+    assert _fmt((80.8 - 37.9) / 80.8 * 100, 1) == "53.1" and _fmt((68.1 - 37.9) / 68.1 * 100, 1) == "44.3"
+    assert _fmt(80.8 / 19.5, 1) == "4.1" and _fmt(37.9 / 19.9, 1) == "1.9"
+    assert _fmt((175 - 129) / 175 * 100, 1) == "26.3" and _fmt((148 - 129) / 148 * 100, 1) == "12.8"
+    assert _fmt((61.2 - 50.2) / 61.2 * 100, 1) == "18.0" and _fmt((159 - 112) / 159 * 100, 1) == "29.6"
+    assert _fmt(534.02 / 145.0, 1) == "3.7" and _fmt((98.15 - 97.51) / 97.51 * 100, 2) == "0.66"
+    assert _fmt((145.0 - 97.51) / 145.0 * 100, 1) == "32.8" and _fmt((173.5 - 126.9) / 173.5 * 100, 1) == "26.9"
+    upper = [0.014, 0.015, 0.014, 0.015, 0.013, 0.017, 0.011, 0.015]
+    legs = [0.037, 0.038, 0.033, 0.049, 0.056, 0.0228, 0.038, 0.039, 0.033, 0.049, 0.054, 0.017]
+    assert _fmt(sum(upper) / 8, 5) == "0.01425" and _fmt(sum(legs) / 12, 4) == "0.0388"
+    assert _fmt((sum(legs) / 12) / (sum(upper) / 8), 1) == "2.7" and _fmt(0.056 / (sum(upper) / 8), 1) == "3.9"
+
+    for needle in (
+        "## 🎬 十二幕动画：ASAP 全流程", "## 🚶 具体实例", "**376**", "**59**", "**64,377**", "**4.0 N·m**", "**2.6 N·m**",
+        "**−0.07 rad**", "**0.4077**", "**−0.344**", "**1.28°**", "**0.02°**", "**53.1%**", "**26.3%**", "**18.0%**", "**29.6%**",
+        "**3.7 倍**", "**涨了 0.66%**", "**26.9%**", "**0.01425**", "**0.0388**", "`[4, 5, 10, 11]`", "52.7%",
+        'data-demo="asap-delta"', 'data-demo="asap-tables"', 'data-demo="asap-ablation"',
+    ):
+        assert needle in note, needle
+    for needle in ("80.8", "37.9", "53%", "129", "116", "61.2", "50.2", "159", "112", "534", "97.5", "173.5", "126.9", "0.056", "65%", "0.07", "0.41"):
+        assert needle in narration, needle
+    # 片头接上一期（LCP）的片尾预告，片尾只预告下一篇（BeyondMimic）
+    assert "上一期结尾预告" in narration and "下一篇讲 BeyondMimic" in narration and "BeyondMimic" in intro
+    for stale in ("仅学习 delta 动力学但不回灌仿真", "前跳（0.85 m / 1.5 m）", "球星庆祝动作、APT 舞蹈", "「蒸馏」进最终策略", "首版基础摘要"):
         assert stale not in note, f"旧版笔记的说法：{stale}"
