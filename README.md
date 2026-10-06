@@ -2,8 +2,8 @@
 
 [![GitHub Pages](https://img.shields.io/badge/GitHub%20Pages-Live-brightgreen.svg)](https://imchong.github.io/Robot_Learning_Paper_Notebooks/)
 [![License](https://img.shields.io/badge/License-BSD_3--Clause-blue.svg)](LICENSE)
-[![Papers](https://img.shields.io/badge/Papers-786-orange.svg)](papers/PROGRESS.md)
-[![Notes](https://img.shields.io/badge/Notes-380-green.svg)](papers/)
+[![Papers](https://img.shields.io/badge/Papers-790-orange.svg)](papers/PROGRESS.md)
+[![Notes](https://img.shields.io/badge/Notes-384-green.svg)](papers/)
 
 人形机器人学习方向的每日论文精读笔记，逐篇部署为 [在线网页](https://imchong.github.io/Robot_Learning_Paper_Notebooks/)。
 
@@ -66,9 +66,11 @@
    │                                HOMIE ⇢ FALCON (2025) ⇢ CHIP (2025)（末端受力：抗扰补偿 → 可调柔顺）
    │                                DeepMimic ⇢ HDMI (2025)（从人类视频学交互：机器人 + 物体一起跟踪）
    │
-   └─ ⑦ 世界模型 World Model：       Cosmos (2025) → DreamDojo (2026) → 1X World Model (2025)；HAIC (2026)（动力学感知 WM）
+   └─ ⑦ 世界模型 World Model：       Dreamer / PlaNet (2019) ⇢ UniPi (2023)（潜空间想象学策略 → 文本条件视频当规划器）
+                                    Cosmos (2025) → DreamDojo (2026) → 1X World Model (2025)；HAIC (2026)（动力学感知 WM）
             ↓（世界模型"会做梦"预测未来 / 动力学，再升级为可直接当策略的模型）
-       ⑧ 世界-动作模型 WAM：         DreamZero (2026)（World Action Models are Zero-shot Policies）
+       ⑧ 世界-动作模型 WAM：         Cosmos → Cosmos Policy (2026)（⇠ Dreamer；视频模型一次后训练兼任策略、世界模型、价值函数）
+                                    DreamZero (2026)（World Action Models are Zero-shot Policies）
        ↓
 ⑨ 【基础模型终点 (VLA / BFM)】   ← 一路从 PPO 爬到这里
   VLA：OpenVLA (2024) → π₀ (2024)       ── 离散 token 自回归 → 流匹配动作块
@@ -124,7 +126,7 @@
 - **全身控制核心**：[Expressive WBC](https://arxiv.org/abs/2402.16796) · [MaskedMimic](https://arxiv.org/abs/2409.14393) · [HOVER](https://arxiv.org/abs/2410.21229) · [ExBody2](https://arxiv.org/abs/2412.13196) · [UH-1](https://arxiv.org/abs/2412.14172) · [HugWBC](https://arxiv.org/abs/2502.03206) · [SONIC](https://arxiv.org/abs/2511.07820)
 - **遥操作与模仿学习**：[ACT / ALOHA](https://arxiv.org/abs/2304.13705) · [H2O](https://arxiv.org/abs/2403.04436) · [OmniH2O](https://arxiv.org/abs/2406.08858) · [iDP3](https://arxiv.org/abs/2410.10803) · [HOMIE](https://arxiv.org/abs/2502.13013)
 - **行走经典**：[Learning Quadrupedal Locomotion](https://arxiv.org/abs/2010.11251) · [Real-World Humanoid Locomotion](https://arxiv.org/abs/2303.03381) · [Locomotion as Next Token Prediction](https://arxiv.org/abs/2402.19469) · [Humanoid Parkour](https://arxiv.org/abs/2406.10759) · [15-Minute Sim-to-Real](https://arxiv.org/abs/2512.01996) · [ECO](https://arxiv.org/abs/2602.06445)
-- **仿真到现实与基座模型**：[Agile Motor Skills (ANYmal)](https://arxiv.org/abs/1901.08652) · [OP3 Soccer](https://arxiv.org/abs/2304.13653) · [OpenVLA](https://arxiv.org/abs/2406.09246) · [π₀](https://arxiv.org/abs/2410.24164) · [ASAP](https://arxiv.org/abs/2502.01143) · [GR00T N1](https://arxiv.org/abs/2503.14734) · [π₀.₅](https://arxiv.org/abs/2504.16054) · [Behavior Foundation Model](https://arxiv.org/abs/2509.13780) · [Perceptive BFM](https://arxiv.org/abs/2606.08059)
+- **仿真到现实与基座模型**：[Agile Motor Skills (ANYmal)](https://arxiv.org/abs/1901.08652) · [Dreamer](https://arxiv.org/abs/1912.01603) · [UniPi](https://arxiv.org/abs/2302.00111) · [OP3 Soccer](https://arxiv.org/abs/2304.13653) · [OpenVLA](https://arxiv.org/abs/2406.09246) · [π₀](https://arxiv.org/abs/2410.24164) · [ASAP](https://arxiv.org/abs/2502.01143) · [GR00T N1](https://arxiv.org/abs/2503.14734) · [π₀.₅](https://arxiv.org/abs/2504.16054) · [Behavior Foundation Model](https://arxiv.org/abs/2509.13780) · [Cosmos Policy](https://arxiv.org/abs/2601.16163) · [Perceptive BFM](https://arxiv.org/abs/2606.08059)
 - **仿真平台与工具**：[Humanoid-Gym](https://arxiv.org/abs/2404.05695) · [BEHAVIOR Robot Suite](https://arxiv.org/abs/2503.05652) · Isaac Lab · [ProtoMotions3](https://nvlabs.github.io/ProtoMotions/)
 
 ## 笔记说明

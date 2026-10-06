@@ -8,6 +8,8 @@ demos: ["op3soccer"]
 ---
 
 # Learning Agile Soccer Skills for a Bipedal Robot with Deep Reinforcement Learning
+**OP3 足球：用深度强化学习让双足机器人学会敏捷踢球**
+
 **DeepMind 先分别训「踢球」和「起身」两个技能教师，再用自适应 KL 正则把它们蒸馏进一个策略并配合自博弈；靠 5 个参数的系统辨识、5 类随机化和随机推搡，零样本迁移到 20 个关节的小型人形 OP3，1 对 1 踢球时走得比脚本控制器快 181%、转身快 302%、起身用时少 63%。**
 
 > 📅 阅读日期: 2026-09-30（2026-10-05 对照 arXiv v1 / v2 全文重核，补十二幕动画、三个交互演示与配音视频）
