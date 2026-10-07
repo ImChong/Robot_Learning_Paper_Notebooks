@@ -79,7 +79,10 @@
   BFM：Behavior Foundation Model (2025) ── 行为基础模型 / 全身控制先验
        BFM-Zero (2025)                  ── 无监督 RL 预训练，用目标姿态 / 动作 / 奖励提示调用（⇠ ASE 的技能复用）
 
-【Sim-to-Real 工程层】  ← 横跨整个路线
+【状态估计、硬件与 Sim-to-Real 工程层】  ← 横跨整个路线
+  Contact-Aided InEKF (2018 / 2019)  ← IMU + 接触运动学估计身体状态
+  Berkeley Humanoid (2024)          ← 硬件、执行器辨识与仿真共同设计；LCP 的部署平台之一
+  ToddlerBot (2025)                 ← 校准、数字孪生、遥操作采集与部署工具链
   Domain Randomization (2017) → LCP (2024)
   ↑ sim环境随机化迁移        ↑ 动作平滑，替代低通滤波器
   LCP (2024) → ASAP (2025) ⇢ BeyondMimic
@@ -92,6 +95,7 @@
                                ↑ 小人形零样本 sim-to-real：技能蒸馏 + 自博弈 + 针对性随机化
 ```
 
+- **工程层补充 day6**：[InEKF 笔记](papers/09_State_Estimation/Contact-Aided_Invariant_EKF_for_Legged_Robots/Contact-Aided_Invariant_EKF_for_Legged_Robots.md)（待深化；涵盖 2018 会议版与 2019 扩展版的版本核对）、[Berkeley Humanoid 原文](https://arxiv.org/abs/2407.21781)、[ToddlerBot 原文](https://arxiv.org/abs/2502.00893)（后两篇笔记待建）。[发布计划](scripts/paper_video/RELEASE_PLAN.md)将三篇安排在 ASAP → BeyondMimic 之后、动作数据之前；这是教学排序。首页的 LCP → Berkeley Humanoid 连线标明「部署平台」，InEKF 与 ToddlerBot 作为工程层独立节点。
 - **动作重定向单列一层**：精确模仿 / 风格学习 / 遥操作都依赖"人体动作 → 机器人可执行轨迹"的转换，重定向质量直接决定下游策略能学到什么动作。
 - **从 WBC 上行到基础模型**：全身控制把底层技能 / 扩散策略落到整机关节后，分出操作、移动操作、世界模型等支线，最终都汇聚到 VLA（π₀ / π₀.₅ / GR00T N1）与 BFM（行为基础模型）这一顶点。
 - **SMP 放在扩散层**：它沿用 AMP 的「风格奖励 + 任务奖励」，但打分器换成预训练后冻结的运动扩散模型（SDS 噪声残差），一个先验可复用到多任务、多风格，训练策略时不再需要原始数据。

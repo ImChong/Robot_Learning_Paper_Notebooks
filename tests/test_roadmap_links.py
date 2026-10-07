@@ -29,6 +29,12 @@ def _load_roadmap_links() -> dict[str, str]:
 def test_roadmap_link_paths_resolve_to_notes():
     failures: list[str] = []
     for node_id, html_path in _load_roadmap_links().items():
+        if html_path.startswith("https://"):
+            assert re.fullmatch(r"https://arxiv\.org/abs/\d{4}\.\d{4,5}", html_path), (
+                f"Unexpected external roadmap URL for {node_id}: {html_path}"
+            )
+            continue
+        assert html_path.startswith("/papers/"), f"Invalid note path: {html_path}"
         rel = html_path.removeprefix("/papers/").removesuffix(".html")
         md_path = PAPERS_DIR / f"{rel}.md"
         if not md_path.is_file():
