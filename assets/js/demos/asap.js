@@ -766,6 +766,8 @@
   /* 这十二幕在视频里一幕要讲五十秒到一分钟，画面不能停：draw(t, clock) 的 clock 是这一幕的真实时间
      （旁白比分镜长时 t 会停在一段的末尾，clock 照走），所以跳跃、回放、流动这类循环动作都按 clock 画；
      网页播放器只传 t，clock 就退回 t。公式尽量换成会动的图，每幕最多留一条。 */
+  /* 出场 / 描线 / 收紧这类一次性动画的 seg(t, a, b) 不要跨过 cue 时刻（3.6 / 7.0 / 10.4 / 13.4）：视频里旁白比分镜长时
+     t 停在这一段的末尾，跨段的动画会卡在半截，要等下一段旁白才画完（第 2、3、5 幕出过这事） */
   function nowOf(t, clock) {
     return clock == null ? t : clock;
   }
@@ -1098,7 +1100,7 @@
 
       setOpacity(fit, seg(t, 10.8, 11.2));
       /* ① β′：人缩到 G1 的身材（两人都站着）；② 人在做动作（输入，不动），G1 的姿态一帧帧追上去，虚线缩短 */
-      var uB = ease(seg(t, 11.2, 12.8)), uP = ease(seg(t, 13.0, 15.0));
+      var uB = ease(seg(t, 11.2, 12.8)), uP = ease(seg(t, 12.9, 13.35));
       var Ph = lerpPose(POSE_STAND, kickAt((now / 2.6) % 1), seg(t, 12.8, 13.0));
       human.put(165, 380, Ph, 0, 1.12 - 0.26 * uB);
       g1.put(165, 380, lerpPose(POSE_STAND, Ph, uP), 0);
@@ -1193,7 +1195,7 @@
       setOpacity(rew, seg(t, 7.0, 7.6));
       setOpacity(cur, seg(t, 10.4, 11.0));
       /* 阈值从 1.5 m 收到 0.3 m（这里压缩成几秒演示；实际按 README 每次 ×(1 − 2.5e−5)，要收紧约 6.4 万次） */
-      var thrM = TERM.start - (TERM.start - TERM.end) * ease(seg(t, 11.2, 15.2));
+      var thrM = TERM.start - (TERM.start - TERM.end) * ease(seg(t, 11.2, 13.3));
       thr.textContent = '阈值 ' + fmt(thrM, 2) + ' m';
       var w = 6 + (thrM / TERM.start) * 34;
       var top = refPath.map(function (q) { return [q[0], q[1] - w]; }), btm = refPath.slice().reverse().map(function (q) { return [q[0], q[1] + w]; });
@@ -1398,9 +1400,9 @@
       cursor.setAttribute('x1', (TX0 + cu * (TX1 - TX0)).toFixed(1));
       cursor.setAttribute('x2', (TX0 + cu * (TX1 - TX0)).toFixed(1));
       drawOn(realP, ease(seg(t, 1.4, 3.0)));
-      drawOn(simP, ease(seg(t, 2.4, 4.0)));
+      drawOn(simP, ease(seg(t, 2.0, 3.4)));
       drawOn(simDP, ease(seg(t, 4.6, 6.4)));
-      drawOn(errS, ease(seg(t, 2.6, 4.2)));
+      drawOn(errS, ease(seg(t, 2.2, 3.5)));
       drawOn(errD, ease(seg(t, 4.8, 6.6)));
       setOpacity(weak, seg(t, 10.4, 11.0));
       /* 左：仿真；右：真机。12 s 起仿真也加上 Δ —— 跟真机一样跳不远 */
