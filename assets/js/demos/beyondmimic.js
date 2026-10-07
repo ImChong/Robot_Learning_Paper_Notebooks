@@ -1511,7 +1511,7 @@
     var walker = robot(left, C_ACCENT, 0.95);
     var pushArrow = paint(svgEl('path', { 'stroke-width': 3, fill: 'none' }), null, C_BAD);
     left.appendChild(pushArrow);
-    var pushLbl = svgText(140, 92, '', 'demo-x-bad', 10.5, 'middle');
+    var pushLbl = svgText(140, 118, '', 'demo-x-bad', 10.5, 'middle');
     left.appendChild(pushLbl);
     var dials = [
       ['摩擦', '静 0.3–1.6，动 0.3–1.2', 0], ['关节零位', '±0.01 rad（动作、观测一起偏）', 1], ['躯干质心', 'x ±2.5 cm，y / z ±5 cm', 2]
@@ -1572,6 +1572,7 @@
         pushArrow.setAttribute('d', 'M ' + x1 + ' 128 L ' + x2 + ' 128 M ' + (x2 - dir * 8) + ' 122 L ' + x2 + ' 128 L ' + (x2 - dir * 8) + ' 134');
         setOpacity(pushArrow, 1);
         pushLbl.textContent = '推！';
+        pushLbl.setAttribute('x', ((x1 + x2) / 2).toFixed(1));  // 写在箭头上方，不压头
         setOpacity(pushLbl, 1);
       } else {
         setOpacity(pushArrow, 0);
