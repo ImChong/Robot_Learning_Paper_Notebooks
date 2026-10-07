@@ -41,7 +41,7 @@ demos: ["asap"]
 
 > 🎮 **本文内嵌 1 段讲解动画 + 1 段配音视频 + 3 个交互演示**（不用装任何东西）：
 > 1. [十二幕动画：ASAP 全流程](#asap-explainer-anim) —— 约 204 秒串完「仿真里跳得起来、真机跳不动 → 从人类视频到 G1 参考动作 → 相位跟踪策略 → 上真机录一遍 → 残差动作模型 → 冻结 Δ 微调、部署时拿掉 → 开环回放（表 III）→ 闭环微调（表 IV）→ 真机只学脚踝（表 V）→ 怎么训 Δ（图 10）→ 怎么用 Δ（图 11）→ Δ 学到了什么与局限（图 12、13）」
-> 2. [配音讲解视频](#asap-video) —— 同样十二幕，加中文配音与字幕，10 分 16 秒竖屏，可下载
+> 2. [配音讲解视频](#asap-video) —— 同样十二幕，加中文配音与字幕，10 分 38 秒竖屏，可下载
 > 3. [一个关节的残差动作](#asap-delta) —— 拖「真机刚度 / 仿真刚度」和控制延迟，看仿真开环回放差多少、拟合出的 $\Delta a$ 补回多少（单关节玩具）
 > 4. [论文表格浏览器](#asap-experiments) —— 表 III（开环）、表 IV（闭环）、表 V（真机）的四项指标
 > 5. [怎么训、怎么用 Δ](#asap-ablation) —— 图 10 的数据量 / 训练时长 / 动作范数权重、图 12 的随机噪声对照、图 13 的各关节幅度
@@ -74,7 +74,7 @@ demos: ["asap"]
 
 ## 📺 配音讲解视频（可下载） {#asap-video}
 
-<div class="paper-demo" data-demo="asap-video" data-src="media/asap_explainer_video.mp4" data-poster="media/asap_explainer_video_poster.jpg"><p class="demo-fallback">（本节含讲解视频播放器，需要启用 JavaScript；也可以直接<a href="media/asap_explainer_video.mp4" download="ASAP_讲解视频.mp4">下载 mp4（11.3 MB）</a>）</p></div>
+<div class="paper-demo" data-demo="asap-video" data-src="media/asap_explainer_video.mp4" data-poster="media/asap_explainer_video_poster.jpg"><p class="demo-fallback">（本节含讲解视频播放器，需要启用 JavaScript；也可以直接<a href="media/asap_explainer_video.mp4" download="ASAP_讲解视频.mp4">下载 mp4（11.6 MB）</a>）</p></div>
 
 > 📖 **动画之后的正文默认全部折叠**：问题、方法按小节收起，具体实例、实验、边界、源码对照、面试和附录各收成一块。想细读哪一块就点开，内容一字未删；三个交互演示和流程图留在外面。目录里的标题可以直接点，会自动展开所在折叠块，左侧目录顶部还有「展开全部文字」。
 
