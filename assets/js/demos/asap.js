@@ -1269,6 +1269,8 @@
     function fy(v) { return FY0 - (v / 2600) * (FY0 - FY1); }
     rp.appendChild(paint(svgEl('line', { x1: FX0, y1: FY0, x2: FX1, y2: FY0, 'stroke-width': 1 }), null, C_BORDER));
     rp.appendChild(svgText(FX0, 286, '图 5（读图示意）：开环回放的 MPJPE（mm）', 'demo-x-mut', 10));
+    var mpjpeNote = svgText(FX0 + 4, 302, 'MPJPE：每个关节离参考位置多远，取平均', 'demo-x-warn', 9.5);
+    rp.appendChild(mpjpeNote);
     [0, 1000, 2000].forEach(function (v) { rp.appendChild(svgText(FX0 - 4, fy(v) + 3, String(v), 'demo-x-mono demo-x-mut', 9, 'end')); });
     rp.appendChild(svgText(FX1, FY0 + 13, '150 步', 'demo-x-mono demo-x-mut', 9, 'end'));
     var curve = [];
@@ -1299,6 +1301,7 @@
       setOpacity(vanilla, seg(t, 10.4, 10.8));
       drawOn(vanilla, ease(seg(t, 10.6, 13.0)));
       setOpacity(vLab, seg(t, 12.6, 13.2));
+      setOpacity(mpjpeNote, seg(t, 10.6, 11.2));
     }
     return { el: s, draw: draw };
   }
@@ -1616,24 +1619,28 @@
     rectBox(chart, 30, 42, 500, 290, C_BORDER, C_SURFACE2);
     var simName = svgText(44, 62, '', 'demo-x-ink2', 11.5);
     chart.appendChild(simName);
-    chart.appendChild(svgText(516, 62, '全局位置误差（mm）· 虚线 = Oracle', 'demo-x-mut', 10, 'end'));
-    var BASE = 300, HM = 200, VM = 200;
+    chart.appendChild(svgText(516, 62, '柱：全局位置误差（mm）· 虚线 = Oracle', 'demo-x-mut', 10, 'end'));
+    var BASE = 274, HM = 176, VM = 200, X0 = 104;
     function levelVals(sim) { return TABLE4[sim].map(function (rows) { return rows.slice(1).map(function (r) { return r[1]; }); }); }
     var isaac = levelVals('IsaacSim'), gen = levelVals('Genesis');
-    var gb = groupedBars(chart, 50, 516, BASE, HM, VM, isaac, C_METHOD, LEVELS.map(function (n) { return n + '档'; }), { bw: 34 });
-    var slot = (516 - 50) / 3;
+    var gb = groupedBars(chart, X0, 516, BASE, HM, VM, isaac, C_METHOD, LEVELS.map(function (n) { return n + '档'; }), { bw: 34 });
+    var slot = (516 - X0) / 3;
     var oracle = LEVELS.map(function (n, j) {
-      var ln = paint(svgEl('line', { x1: 50 + slot * j + 10, x2: 50 + slot * (j + 1) - 10, y1: 0, y2: 0, 'stroke-width': 1.6, 'stroke-dasharray': '5 3' }), null, C_INK2);
+      var ln = paint(svgEl('line', { x1: X0 + slot * j + 10, x2: X0 + slot * (j + 1) - 10, y1: 0, y2: 0, 'stroke-width': 1.6, 'stroke-dasharray': '5 3' }), null, C_INK2);
       chart.appendChild(ln);
       ln.v = TABLE4.IsaacSim[j][0][1];
       return ln;
     });
-    var succ = [];
-    LEVELS.forEach(function (n, j) {
-      [0, 2].forEach(function (k) {
-        var lab = svgText(0, BASE - 8, '', 'demo-x-bad', 9.5, 'middle');
-        chart.appendChild(lab);
-        succ.push({ lab: lab, j: j, k: k });
+    /* 成功率单独排两行放在横轴下面（IsaacSim、Genesis 各一行，每根柱子正下方一格）：
+       放进柱子里会被柱宽截掉，而且一次只能显示一个仿真器，66.7% 和 60% 看不全 */
+    var succ = group(chart);
+    succ.appendChild(svgText(X0 - 6, BASE + 15, '成功率 %', 'demo-x-ink2', 10, 'end'));
+    ['IsaacSim', 'Genesis'].forEach(function (sim, r) {
+      var y = BASE + 30 + r * 16;
+      succ.appendChild(svgText(X0 - 6, y, sim, 'demo-x-mut', 10, 'end'));
+      gb.items.forEach(function (it) {
+        var v = TABLE4[sim][it.i][it.k + 1][0];
+        succ.appendChild(svgText(it.x, y, fmt(v, v < 100 ? 1 : 0), v < 100 ? 'demo-x-mono demo-x-bad' : it.k === 3 ? 'demo-x-mono demo-x-good' : 'demo-x-mono demo-x-mut', 10, 'middle'));
       });
     });
     var leg = group(chart);
@@ -1678,13 +1685,7 @@
         ln.setAttribute('y2', y);
         setOpacity(ln, seg(t, 8.4, 9.0));
       });
-      succ.forEach(function (sc) {
-        var r = TABLE4[sim][sc.j][sc.k + 1], it = gb.items.filter(function (q) { return q.i === sc.j && q.k === sc.k; })[0];
-        sc.lab.setAttribute('x', it.x.toFixed(1));
-        sc.lab.textContent = r[0] < 100 ? fmt(r[0], 1) + '%' : '';
-        sc.lab.style.fill = C_SURFACE;
-        setOpacity(sc.lab, seg(t, 10.4, 11.0));
-      });
+      setOpacity(succ, seg(t, 10.4, 11.0));
       setOpacity(f7, seg(t, 13.4, 14.0));
       var wig = 0.5 + 0.5 * Math.sin(now * 2);
       drawOn(pB, ease(seg(t, 13.6, 15.4)));
@@ -2072,7 +2073,7 @@
         { at: 0.3, s: '第二阶段先采数据：把预训练策略直接部署到 G1 上做全身跟踪。它能跟，但动作质量不高。' },
         { at: 3.6, s: '每一步用**动作捕捉 + 机载传感器**记下状态 $s_t$：基座位置 3、线速度 3、四元数朝向 4、角速度 3，加上 23 个关节的位置和速度，共 **59 维**。' },
         { at: 7.0, s: '再把真机录下的动作，**原样放回仿真重放**：同样的动作，仿真里的机器人越走越偏 —— 动力学差距变成了看得见的跟踪误差。' },
-        { at: 10.4, s: '图 5 是同一件事在仿真到仿真里的样子：IsaacSim 的动作放回 IsaacGym，开环回放 150 步后误差两米多（读图），机器人摔倒。' },
+        { at: 10.4, s: '图 5：IsaacSim 的动作放回 IsaacGym 开环回放，150 步后误差两米多（读图），机器人摔倒。纵轴 **MPJPE** 是平均每个关节的位置误差（mm）。' },
         { at: 13.4, s: '这条偏差就是学习信号：仿真到底差在哪，真机数据会告诉你。' }
       ]
     },
