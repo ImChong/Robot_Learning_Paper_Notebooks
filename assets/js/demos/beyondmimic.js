@@ -830,10 +830,31 @@
     p.setAttribute('d', polyPath(pts.map(function (q) { return [q[0].toFixed(1), q[1].toFixed(1)]; })));
   }
   /* 按比例 u ∈ [0, 1] 把一条折线「画出来」 */
+  /* 沿路径「画出来」。原本是虚线的（如图里「虚线：人」）照样按虚线画：把虚线的节拍铺到已画出的长度，最后一段空白盖住其余部分。
+     还没开始画时整条藏起来（圆头线帽会把长度为 0 的一段画成一个点） */
   function drawOn(path, u) {
-    if (!path.lenCache) path.lenCache = path.getTotalLength ? path.getTotalLength() || 1 : 1;
-    path.setAttribute('stroke-dasharray', path.lenCache + ' ' + path.lenCache);
-    path.setAttribute('stroke-dashoffset', (path.lenCache * (1 - u)).toFixed(1));
+    if (!path.lenCache) {
+      path.lenCache = path.getTotalLength ? path.getTotalLength() || 1 : 1;
+      path.baseDash = path.getAttribute('stroke-dasharray');
+    }
+    var L = path.lenCache, shown = L * clamp(u, 0, 1);
+    path.style.visibility = shown > 0.5 ? '' : 'hidden';
+    if (!path.baseDash) {
+      path.setAttribute('stroke-dasharray', L + ' ' + L);
+      path.setAttribute('stroke-dashoffset', (L - shown).toFixed(1));
+      return;
+    }
+    var beat = path.baseDash.split(/[\s,]+/).map(Number), out = [], acc = 0, i = 0;
+    while (acc < shown) {
+      var d = Math.min(beat[i % beat.length], shown - acc);
+      out.push(d);
+      acc += d;
+      i++;
+    }
+    if (out.length % 2) out.push(L + 1);
+    else out[out.length - 1] += L + 1;
+    path.setAttribute('stroke-dasharray', out.map(function (v) { return v.toFixed(1); }).join(' '));
+    path.setAttribute('stroke-dashoffset', '0');
   }
   function vbar(parent, x, yBase, w, color, opacity) {
     var r = paint(svgEl('rect', { x: x, y: yBase, width: w, height: 0, rx: 2.5, opacity: opacity == null ? 0.9 : opacity }), color);
@@ -881,12 +902,50 @@
   }
 
   // ── 火柴人（示意，不是论文的动作数据） ──
-  var POSE_STAND = { lean: 2, armA: [-12, 8], armB: [12, 24], legA: [4, 0], legB: [-4, 0] };
+  /* 侧面看、面朝 +x 的姿态：角度都从竖直向下量、朝 +x 为正，lean > 0 是躯干前倾。
+     膝的弯曲 = 大腿角 − 小腿角 ≥ 0，肘的弯曲 = 小臂角 − 大臂角 ≥ 0，不会反关节（tests/test_paper_demos.py 会核对）。
+     只有侧手翻的「大字」POSE_STAR 是正面看的，两侧镜像 */
+  var POSE_STAND = { lean: 2, armA: [-12, 8], armB: [12, 24], legA: [4, 0], legB: [-4, -4] };
   var POSE_CROUCH = { lean: 30, armA: [-52, -30], armB: [-40, -20], legA: [50, -40], legB: [44, -44] };
-  var POSE_KICK = { lean: -14, armA: [-40, -20], armB: [40, 60], legA: [-70, -60], legB: [-6, 0] };
-  var POSE_STAR = { lean: 0, armA: [150, 162], armB: [-150, -162], legA: [26, 26], legB: [-26, -26] }; // 侧手翻的「大字」
-  var POSE_BALANCE = { lean: 10, armA: [80, 90], armB: [-80, -90], legA: [0, 0], legB: [-80, -88] };
-  var POSE_LEAN = { lean: 22, armA: [40, 60], armB: [-30, -10], legA: [-10, -4], legB: [16, 8] };
+  /* 跳：蹲 → 两臂上摆蹬地 → 空中收腿 → 屈膝落地（同 ASAP 那篇的火柴人） */
+  var POSE_TAKEOFF = { lean: 12, armA: [160, 170], armB: [150, 160], legA: [-8, -12], legB: [-14, -18] };
+  var POSE_TUCK = { lean: 14, armA: [118, 130], armB: [108, 120], legA: [72, -6], legB: [64, -16] };
+  var POSE_LAND = { lean: 26, armA: [62, 84], armB: [52, 74], legA: [46, -36], legB: [40, -40] };
+  /* 前踢：先提膝、再伸腿、再收回；躯干后仰、两臂一前一后配重，支撑腿微屈 —— 踢出去的腿和躯干分在支撑脚两侧 */
+  var POSE_CHAMBER = { lean: -6, armA: [-30, -8], armB: [30, 72], legA: [85, 10], legB: [4, -4] };
+  var POSE_KICK = { lean: -14, armA: [-40, -15], armB: [35, 80], legA: [72, 66], legB: [4, -4] };
+  var POSE_STAR = { lean: 0, armA: [150, 162], armB: [-150, -162], legA: [26, 26], legB: [-26, -26] }; // 侧手翻的「大字」（正面看）
+  var POSE_BALANCE = { lean: 10, armA: [80, 90], armB: [-80, -72], legA: [0, 0], legB: [-80, -88] };
+  /* 被往前 / 往后推：躯干顺着倒，一条腿跨出去接住 */
+  var POSE_LEAN = { lean: 22, armA: [40, 60], armB: [-30, -10], legA: [-10, -16], legB: [16, 8] };
+  var POSE_LEAN_BACK = { lean: -18, armA: [-50, -40], armB: [30, 50], legA: [10, 4], legB: [-14, -22] };
+  /* 原地踏步：两腿轮流提膝、手臂反向摆；支撑腿伸直，脚不在地上滑 */
+  function poseMarch(ph) {
+    var s = Math.sin(ph * 2 * Math.PI), a = Math.max(0, s), b = Math.max(0, -s);
+    return { lean: 4, armA: [-20 * s - 6, -20 * s + 14], armB: [20 * s + 6, 20 * s + 26], legA: [40 * a, -30 * a], legB: [40 * b, -30 * b] };
+  }
+  /* 原地跳一次，u ∈ [0, 1)：返回姿态与腾空高度 h（未缩放） */
+  function jumpAt(u) {
+    if (u < 0.18) return { P: lerpPose(POSE_STAND, POSE_CROUCH, ease(u / 0.18)), h: 0 };
+    if (u < 0.28) return { P: lerpPose(POSE_CROUCH, POSE_TAKEOFF, ease((u - 0.18) / 0.1)), h: 0 };
+    if (u < 0.62) {
+      var f = (u - 0.28) / 0.34;
+      return { P: f < 0.5 ? lerpPose(POSE_TAKEOFF, POSE_TUCK, ease(f / 0.5)) : lerpPose(POSE_TUCK, POSE_LAND, ease((f - 0.5) / 0.5)), h: 46 * Math.sin(Math.PI * f) };
+    }
+    if (u < 0.78) return { P: lerpPose(POSE_LAND, POSE_CROUCH, ease((u - 0.62) / 0.16)), h: 0 };
+    if (u < 0.92) return { P: lerpPose(POSE_CROUCH, POSE_STAND, ease((u - 0.78) / 0.14)), h: 0 };
+    return { P: POSE_STAND, h: 0 };
+  }
+  /* 一次前踢，u ∈ [0, 1)：站 → 提膝 → 伸腿 → 停一下 → 收回提膝 → 落脚站好 */
+  function kickAt(u) {
+    if (u < 0.12) return POSE_STAND;
+    if (u < 0.32) return lerpPose(POSE_STAND, POSE_CHAMBER, ease((u - 0.12) / 0.2));
+    if (u < 0.44) return lerpPose(POSE_CHAMBER, POSE_KICK, ease((u - 0.32) / 0.12));
+    if (u < 0.54) return POSE_KICK;
+    if (u < 0.66) return lerpPose(POSE_KICK, POSE_CHAMBER, ease((u - 0.54) / 0.12));
+    if (u < 0.86) return lerpPose(POSE_CHAMBER, POSE_STAND, ease((u - 0.66) / 0.2));
+    return POSE_STAND;
+  }
   function limb(p, len, ang) {
     var r = (ang * Math.PI) / 180;
     return [p[0] + len * Math.sin(r), p[1] + len * Math.cos(r)];
@@ -910,8 +969,28 @@
         fig.pose(0, 0, P);
         jointsOf(P).forEach(function (q) { low = Math.max(low, q[0] * Math.sin(a) + q[1] * Math.cos(a)); });
         tr(g, x, groundY - (low + (h || 0)) * k, rot || 0, k);
+      },
+      /* 直接给髋离地的高度（未缩放）：腾空的动作用它，不再把最低点按在地上 */
+      putHip: function (x, groundY, P, hip, sc, rot) {
+        var k = sc == null ? scale : sc;
+        fig.pose(0, 0, P);
+        tr(g, x, groundY - hip * k, rot || 0, k);
       }
     };
+  }
+  /* 空中侧手翻（正面看，「大字」绕髋转一整圈），u ∈ [0, 1]：返回转角与髋离地的高度（未缩放）。
+     髋走一条弧线：起跳、落地时脚刚好着地，倒立时手离地还有约 9 个单位 —— 腾空翻，不是撑地翻，
+     也不会在转到 90° 时贴着地面躺平。linear = 匀速转（第 12 幕按时间轴放关键帧），否则两头缓 */
+  var CW_LIFT = 44;
+  function lowestAt(P, rot) {
+    var a = (rot * Math.PI) / 180, low = 0;
+    jointsOf(P).forEach(function (q, i) { low = Math.max(low, q[0] * Math.sin(a) + q[1] * Math.cos(a) + (i === 0 ? 8.5 : 0)); });
+    return low;
+  }
+  function cartwheelAt(u, linear) {
+    var rot = 360 * (linear ? u : ease(u));
+    var hip = Math.max(lowestAt(POSE_STAR, 0) + CW_LIFT * Math.sin(Math.PI * u), lowestAt(POSE_STAR, rot));
+    return { rot: rot, hip: hip };
   }
 
   /* ── 第 1 幕：两个缺口 ── */
@@ -922,14 +1001,14 @@
     var p1 = group(s);
     rectBox(p1, 30, 44, 360, 150, C_BORDER, C_SURFACE2);
     p1.appendChild(svgText(44, 64, '一段动作一套调参（ASAP、KungfuBot、HuB）', 'demo-x-mut', 11));
-    var lanes = [['踢', POSE_KICK], ['跳', POSE_CROUCH], ['单脚站', POSE_BALANCE]].map(function (it, k) {
+    var lanes = [['踢', 'kick'], ['跳', 'jump'], ['单脚站', POSE_BALANCE]].map(function (it, k) {
       var x = 70 + k * 112;
       p1.appendChild(paint(svgEl('line', { x1: x - 34, y1: 176, x2: x + 50, y2: 176, 'stroke-width': 1.2 }), null, C_BORDER));
       var f = robot(p1, C_ACCENT, 0.55);
       var knob = group(p1);
       knob.appendChild(paint(svgEl('circle', { cx: 0, cy: 0, r: 11, 'stroke-width': 1.6, fill: 'none' }), null, C_WARN));
       knob.appendChild(paint(svgEl('line', { x1: 0, y1: 0, x2: 0, y2: -10, 'stroke-width': 2.2 }), null, C_WARN));
-      p1.appendChild(svgText(x + 50, 104, '调', 'demo-x-warn', 10));
+      p1.appendChild(svgText(x + 58, 90, '调', 'demo-x-warn', 10));  // 旋钮放在右上，跳起来举手、收腿时碰不到
       p1.appendChild(svgText(x, 190, it[0], 'demo-x-mut', 10, 'middle'));
       return { f: f, P: it[1], x: x, knob: knob, k: k };
     });
@@ -975,9 +1054,11 @@
       var now = nowOf(t, clock);
       setOpacity(p1, seg(t, 0.3, 0.9));
       lanes.forEach(function (L) {
-        var w = 0.5 - 0.5 * Math.cos(now * 2.2 + L.k);
-        L.f.put(L.x, 176, lerpPose(POSE_STAND, L.P, w), 0);
-        tr(L.knob, L.x + 34, 100, (now * 140 + L.k * 70) % 360);
+        /* 三条道各做各的动作：前踢、原地跳、单脚站（站 ↔ 燕式平衡） */
+        if (L.P === 'kick') L.f.put(L.x, 176, kickAt((now / 2.6) % 1), 0);
+        else if (L.P === 'jump') { var J = jumpAt(((now + 0.9) / 2.8) % 1); L.f.put(L.x, 176, J.P, J.h); }
+        else L.f.put(L.x, 176, lerpPose(POSE_STAND, L.P, 0.5 - 0.5 * Math.cos(now * 2.2 + L.k)), 0);
+        tr(L.knob, L.x + 44, 86, (now * 140 + L.k * 70) % 360);
       });
       setOpacity(p2, seg(t, 3.6, 4.2));
       shaky.forEach(function (S) {
@@ -1307,7 +1388,7 @@
 
   /* ── 第 5 幕：动作与关节阻抗 ── */
   function buildSceneImpedance() {
-    var s = sceneSvg('左侧是一个膝关节：电机转子经齿轮带动连杆，弹簧和阻尼器表示 PD。目标在 0 和 α 之间跳，虚线连杆只算电机惯量，按设计的 10 赫兹、阻尼比 2 平稳到位；实线代入真实轴惯量，频率降到 4.3 赫兹、阻尼比 0.86，略有超调。右侧柱子是各关节里电机惯量的占比，膝 18%，踝横滚 95%。下方是图 8A 与图 S2 的消融');
+    var s = sceneSvg('左侧是一个膝关节：电机转子经齿轮带动连杆，PD 让连杆跟着设定点走。目标在 0 和 α 之间跳，连杆慢放 4 倍：虚线只算电机惯量，按设计的 10 赫兹、阻尼比 2 平稳爬上去；实线代入真实轴惯量，频率降到 4.3 赫兹、阻尼比 0.86，起步慢半拍、随后追上，超调不到 1%。右侧柱子是各关节里电机惯量的占比，膝 18%，踝横滚 95%。下方是图 8A 与图 S2 的消融');
     s.appendChild(svgText(30, 28, 'PD 增益 = 反射惯量 × 频率²；动作取 1 = 25% 最大力矩', 'demo-x-ink2', 13.5));
     var left = group(s);
     rectBox(left, 30, 44, 400, 262, C_BORDER, C_SURFACE2);
@@ -1326,10 +1407,11 @@
     left.appendChild(targetArm);
     var linkDesign = paint(svgEl('line', { 'stroke-width': 5, 'stroke-linecap': 'round', 'stroke-dasharray': '7 5' }), null, C_MUTED);
     var linkReal = paint(svgEl('line', { 'stroke-width': 6, 'stroke-linecap': 'round' }), null, C_ACCENT);
-    left.appendChild(linkDesign);
     left.appendChild(linkReal);
+    left.appendChild(linkDesign); // 虚线压在实线上面，两根重合时也看得见
+    left.appendChild(svgText(44, 88, '连杆：慢放 4 倍', 'demo-x-mut', 10));
     var knee = KNEE;
-    var respD = stepResponse(knee.kp, knee.kd, knee.I, knee.alpha, knee.tauMax, 0.6, 120);
+    var respD = stepResponse(knee.kp, knee.kd, knee.I, knee.alpha, knee.tauMax, 0.6, 120), SLOW = 4;
     var respR = stepResponse(knee.kp, knee.kd, knee.Ieff, knee.alpha, knee.tauMax, 0.6, 120);
     var readout = [
       svgRich(250, 130, '膝：$I$ = ' + fmt(knee.I, 4) + ' kg·m²', { size: 11, w: 170, cls: 'demo-x-ink2' }),
@@ -1382,9 +1464,10 @@
       var now = nowOf(t, clock);
       setOpacity(left, seg(t, 0.2, 0.8));
       tr(rotor, 80, 190, (now * 260) % 360);
-      /* 目标每 1.2 s 在 0 与 α 之间来回跳；角度放大 2.2 倍好看清 */
+      /* 目标在 0 与 α 之间来回跳；角度放大 2.2 倍、慢放 4 倍（画面 1.2 s = 真实 0.3 s，两种惯量都已到位），
+         实线（真实惯量更重）起步慢半拍、随后追上并略超一点，虚线（只算电机惯量）一路平稳爬上去 */
       var cyc = now % 2.4, up = cyc < 1.2, tt = up ? cyc : cyc - 1.2;
-      var idx = Math.min(respD.length - 1, Math.round((tt / 0.6) * 120));
+      var idx = Math.min(respD.length - 1, Math.round((tt / SLOW / 0.6) * 120));
       var qd = up ? respD[idx][1] : knee.alpha - respD[idx][1];
       var qr = up ? respR[idx][1] : knee.alpha - respR[idx][1];
       var G = 2.2, base = -0.5;
@@ -1428,7 +1511,7 @@
     var walker = robot(left, C_ACCENT, 0.95);
     var pushArrow = paint(svgEl('path', { 'stroke-width': 3, fill: 'none' }), null, C_BAD);
     left.appendChild(pushArrow);
-    var pushLbl = svgText(140, 92, '', 'demo-x-bad', 10.5, 'middle');
+    var pushLbl = svgText(140, 118, '', 'demo-x-bad', 10.5, 'middle');
     left.appendChild(pushLbl);
     var dials = [
       ['摩擦', '静 0.3–1.6，动 0.3–1.2', 0], ['关节零位', '±0.01 rad（动作、观测一起偏）', 1], ['躯干质心', 'x ±2.5 cm，y / z ±5 cm', 2]
@@ -1481,14 +1564,15 @@
       var last = null;
       PUSH_TIMES.forEach(function (pu) { if (pu.t <= now) last = pu; });
       var since = last ? now - last.t : 99, k = since < 0.6 ? Math.sin((Math.PI * since) / 0.6) : 0;
-      var P = poseWalk((now * 0.9) % 1);
-      if (k > 0) P = lerpPose(P, last.dir > 0 ? POSE_LEAN : { lean: -18, armA: [-50, -40], armB: [30, 10], legA: [10, 4], legB: [-14, -8] }, k * 0.8);
+      var P = poseMarch((now * 0.9) % 1);
+      if (k > 0) P = lerpPose(P, last.dir > 0 ? POSE_LEAN : POSE_LEAN_BACK, k * 0.8);
       walker.put(140 + (last ? last.dir * 10 * k : 0), 196, P, 0);
       if (since < 0.6 && t >= 0.3) {
         var dir = last.dir, x1 = 140 - dir * 70, x2 = 140 - dir * 30;
         pushArrow.setAttribute('d', 'M ' + x1 + ' 128 L ' + x2 + ' 128 M ' + (x2 - dir * 8) + ' 122 L ' + x2 + ' 128 L ' + (x2 - dir * 8) + ' 134');
         setOpacity(pushArrow, 1);
         pushLbl.textContent = '推！';
+        pushLbl.setAttribute('x', ((x1 + x2) / 2).toFixed(1));  // 写在箭头上方，不压头
         setOpacity(pushLbl, 1);
       } else {
         setOpacity(pushArrow, 0);
@@ -1509,7 +1593,7 @@
         setOpacity(R.g, seg(t, 10.8 + R.k * 0.6, 11.3 + R.k * 0.6));
         R.marks.forEach(function (M, i) {
           var wob = M.fail ? clamp((now - 11 - R.k * 0.6 - i * 0.2) % 3, 0, 1) : 0;
-          M.f.put(M.x, R.y + 34, M.fail ? lerpPose(POSE_STAND, POSE_LEAN, wob) : poseWalk((now * 0.8 + i * 0.3) % 1), 0, null, M.fail ? 70 * wob : 0);
+          M.f.put(M.x, R.y + 34, M.fail ? lerpPose(POSE_STAND, POSE_LEAN, wob) : poseMarch((now * 0.8 + i * 0.3) % 1), 0, null, M.fail ? 70 * wob : 0);
         });
       });
       setOpacity(footA, seg(t, 0.4, 1.0));
@@ -1694,12 +1778,14 @@
     function draw(t, clock) {
       var now = nowOf(t, clock);
       setOpacity(left, seg(t, 0.2, 0.8));
-      /* 一个侧手翻 2.4 s：蹲 → 转一整圈 → 站 */
-      var c = (now % 2.6) / 2.6, rot = 0, P = POSE_STAND, x = 90, w = 0;
-      if (c < 0.15) P = lerpPose(POSE_STAND, POSE_STAR, c / 0.15);
-      else if (c < 0.75) { var u = (c - 0.15) / 0.6; P = POSE_STAR; rot = 360 * ease(u); x = 90 + 150 * u; w = Math.sin(Math.PI * u); }
-      else { P = lerpPose(POSE_STAR, POSE_STAND, (c - 0.75) / 0.25); x = 240; }
-      flipper.put(x, 196, P, 6 * w, null, rot);
+      /* 一个空中侧手翻 2.6 s：张开 → 腾空转一整圈（髋走弧线，手不撑地）→ 落地站好 */
+      var c = (now % 2.6) / 2.6, w = 0;
+      if (c < 0.15) flipper.put(90, 196, lerpPose(POSE_STAND, POSE_STAR, c / 0.15), 0);
+      else if (c < 0.75) {
+        var u = (c - 0.15) / 0.6, cw = cartwheelAt(u);
+        w = Math.sin(Math.PI * u);
+        flipper.putHip(90 + 150 * u, 196, POSE_STAR, cw.hip, null, cw.rot);
+      } else flipper.put(240, 196, lerpPose(POSE_STAR, POSE_STAND, (c - 0.75) / 0.25), 0);
       var omega = CARTWHEEL.peak * w * (0.6 + 0.4 * Math.abs(Math.sin(now * 5)));
       setW(gFill, (242 * Math.min(omega, 22)) / 22);
       gTxt.textContent = '骨盆角速度 ' + fmt(omega, 1) + ' rad/s（平均 ' + fmt(CARTWHEEL.mean, 2) + '）';
@@ -1955,11 +2041,11 @@
     var cA = group(cards);
     rectBox(cA, 476, 78, 294, 76, C_BORDER, C_SURFACE);
     cA.appendChild(svgText(488, 98, '摇杆：罚预测的平面速度偏离摇杆', 'demo-x-ink2', 10.5));
-    var vCmd = paint(svgEl('line', { x1: 500, y1: 136, x2: 560, y2: 136, 'stroke-width': 3 }), null, C_GOOD);
-    var vPred = paint(svgEl('line', { x1: 500, y1: 136, 'stroke-width': 3 }), null, C_ACCENT);
-    cA.appendChild(vCmd);
+    var vCmd = paint(svgEl('line', { x1: 500, y1: 136, x2: 560, y2: 136, 'stroke-width': 2.4, 'stroke-dasharray': '6 4' }), null, C_GOOD);
+    var vPred = paint(svgEl('line', { x1: 500, y1: 136, 'stroke-width': 4, 'stroke-linecap': 'round' }), null, C_ACCENT);
     cA.appendChild(vPred);
-    cA.appendChild(svgText(600, 140, '绿：摇杆；蓝：预测 → 被拉齐', 'demo-x-mut', 10));
+    cA.appendChild(vCmd); // 绿虚线压在蓝线上：拉齐以后两条都看得见
+    cA.appendChild(svgText(600, 140, '绿虚线：摇杆；蓝：预测 → 被拉齐', 'demo-x-mut', 10));
     var cB = group(cards);
     rectBox(cB, 476, 162, 294, 84, C_BORDER, C_SURFACE);
     cB.appendChild(svgText(488, 182, '路点：远处罚位置，近处换成罚速度', 'demo-x-ink2', 10.5));
@@ -1985,7 +2071,7 @@
     }
     pathLine(cC, bPts, C_BAD, 1.8);
     cC.appendChild(paint(svgEl('line', { x1: 500 + (0.2 / 0.9) * 240, y1: 280, x2: 500 + (0.2 / 0.9) * 240, y2: 320, 'stroke-width': 1, 'stroke-dasharray': '3 3' }), null, C_MUTED));
-    cC.appendChild(svgText(752, 306, '钻进去也有限值', 'demo-x-mut', 9.5, 'end'));
+    cC.appendChild(svgText(564, 292, '← 钻进去（左段换成二次）也有限值', 'demo-x-mut', 9.5));
 
     var foot = svgText(400, 352, '路点 + 避障 = 绕开到点（图 6B）；摇杆 + 避障，用户推歪了也能躲开 —— 训练时一个都没见过', 'demo-x-ink2', 11.5, 'middle');
     s.appendChild(foot);
@@ -2058,7 +2144,7 @@
     var stick = dotAt(js, 86, 130, 10, C_GOOD);
     var walker = robot(js, C_ACCENT, 0.75);
     js.appendChild(paint(svgEl('line', { x1: 150, y1: 168, x2: 386, y2: 168, 'stroke-width': 1.2 }), null, C_BORDER));
-    var kick = svgText(300, 92, '踢一脚！', 'demo-x-bad', 11, 'middle');
+    var kick = svgText(300, 76, '踢一脚！', 'demo-x-bad', 11, 'middle');
     js.appendChild(kick);
     js.appendChild(svgText(44, 190, '速度误差（仿真）：走 12.14%、跑 13.65%；跑道连跑 50 m+', 'demo-x-ink2', 10.5));
 
@@ -2102,9 +2188,11 @@
       var dir = Math.sin(now * 0.7);
       moveDot(stick, [86 + 18 * Math.cos(now * 0.7), 130 - 18 * Math.sin(now * 0.7) * 0.5]);
       var kc = (now % 6) / 6, kicked = kc > 0.55 && kc < 0.68;
-      var P = poseWalk((now * 1.1) % 1);
+      /* 步态相位跟着位移走（一个步态周期前进 72 个单位，缩放 0.75 后 54 px）：往回走时腿也倒着迈，支撑脚不在地上滑 */
+      var wx = 70 * dir, P = poseWalk(((wx / 54) % 1 + 1) % 1);
       if (kicked) P = lerpPose(P, POSE_LEAN, Math.sin(((kc - 0.55) / 0.13) * Math.PI));
-      walker.put(270 + 70 * dir, 168, P, 0);
+      walker.put(270 + wx, 168, P, 0);
+      kick.setAttribute('x', (270 + wx).toFixed(1));  // 跟着人走，写在头顶上方，不压头
       setOpacity(kick, kicked ? 1 : 0);
       setOpacity(run, seg(t, 0.8, 1.4));
       var vp = [];
@@ -2115,12 +2203,13 @@
       setPath(velLine, vp);
       setOpacity(inp, seg(t, 3.6, 4.2));
       var cyc = (now % 2.5) / 2.5;
+      /* 横轴是时间：关键帧与补出来的动作用同一条空中侧手翻（匀速转、髋走弧线），转到 90° 时是腾空横着，不是躺在地上 */
       keyFigs.forEach(function (KF) {
-        var u = KF.k / 4;
-        KF.f.put(470 + KF.k * 64, 140, POSE_STAR, 6, null, 360 * u);
+        var cw = cartwheelAt(KF.k / 4, true);
+        KF.f.putHip(470 + KF.k * 64, 140, POSE_STAR, cw.hip, null, cw.rot);
       });
-      var uu = Math.min(cyc / 0.85, 1);
-      fillFig.put(470 + 256 * uu, 140, POSE_STAR, 6, null, 360 * uu);
+      var uu = Math.min(cyc / 0.85, 1), cwf = cartwheelAt(uu, true);
+      fillFig.putHip(470 + 256 * uu, 140, POSE_STAR, cwf.hip, null, cwf.rot);
       setOpacity(strip, seg(t, 5.0, 5.6));
       setOpacity(lim, seg(t, 7.0, 7.6));
       limNodes.forEach(function (g, k) { setOpacity(g, seg(t, k < 3 ? 7.2 + k * 0.6 : 10.4 + (k - 3) * 0.6, k < 3 ? 7.7 + k * 0.6 : 10.9 + (k - 3) * 0.6)); });

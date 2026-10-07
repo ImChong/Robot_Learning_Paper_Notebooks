@@ -1311,10 +1311,37 @@ def test_beyondmimic_explainer_demos_and_worked_example_share_the_paper_numbers(
         assert needle in note, needle
     for needle in ("0.062", "160", "286", "154", "99.1", "0.351", "0.86", "70.8%", "84.7%", "5%", "95%", "0.64", "20 毫秒", "7.01"):
         assert needle in narration, needle
-    # 片头接上一期（ASAP）的片尾预告，片尾只预告下一篇的主题
-    assert "上一期结尾预告" in narration and "下一篇回到源头" in narration and "下一篇" in intro
+    # 片头接上一期（ASAP）的片尾预告；片尾按 2026-10-07 的发布清单预告 019 InEKF（旁白逐字母念，字幕显示 InEKF）
+    assert "上一期结尾预告" in narration and "下一篇讲 In E K F" in narration and "**下一篇**：InEKF" in intro
+    assert "回到源头" not in narration and "回到源头" not in intro
     for stale in ("放开的是水平位置，不是朝向", "p_s' = \\lambda", "18.87", "补充行走数据", "Walk+Perturb 成功率"):
         assert stale not in note, f"旧版笔记的说法：{stale}"
+
+
+def test_beyondmimic_stick_figures_bend_the_right_way():
+    """侧面看的火柴人不反关节：膝的弯曲 = 大腿角 − 小腿角 ≥ 0，肘的弯曲 = 小臂角 − 大臂角 ≥ 0（角度从竖直向下量、朝 +x 为正）。
+
+    旧版前踢的膝盖反折、踢出的腿和后仰的躯干倒向同一侧（ASAP 那篇改过同样的毛病）；侧手翻的「大字」是正面看的，不在此列。
+    """
+    js = (ROOT / "assets" / "js" / "demos" / "beyondmimic.js").read_text(encoding="utf-8")
+    num = r"(-?\d+(?:\.\d+)?)"
+    pat = re.compile(
+        rf"var (POSE_\w+) = \{{ lean: {num}, armA: \[{num}, {num}\], armB: \[{num}, {num}\], "
+        rf"legA: \[{num}, {num}\], legB: \[{num}, {num}\] \}};"
+    )
+    poses = {m.group(1): [float(x) for x in m.groups()[1:]] for m in pat.finditer(js)}
+    assert {"POSE_STAND", "POSE_KICK", "POSE_CHAMBER", "POSE_TAKEOFF", "POSE_TUCK", "POSE_LAND", "POSE_LEAN", "POSE_LEAN_BACK"} <= set(poses)
+    for name, (_lean, a0, a1, b0, b1, la0, la1, lb0, lb1) in poses.items():
+        if name == "POSE_STAR":
+            continue
+        assert a1 - a0 >= 0 and b1 - b0 >= 0, f"{name} 的肘反了"
+        assert la0 - la1 >= 0 and lb0 - lb1 >= 0, f"{name} 的膝反了"
+    lean, *_, la0, la1, lb0, lb1 = poses["POSE_KICK"]
+    assert lean < 0 < la0, "前踢：躯干后仰、踢出去的腿在前，分在支撑脚两侧"
+    # 被淘汰的写法不再出现：反折的前踢、在地上躺平的侧手翻、把虚线画成实线的 drawOn
+    assert "legA: [-70, -60]" not in js
+    assert "function cartwheelAt(" in js and "putHip(" in js
+    assert "path.baseDash" in js
 
 
 def test_groot_explainer_uses_the_paper_tables_and_the_code_sign():
