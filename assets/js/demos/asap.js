@@ -393,7 +393,7 @@
     });
 
     var setLegend = legend(root, [
-      { key: 'muted', text: '开环 / Vanilla' },
+      { key: 'muted', text: '开环（表 III）/ Vanilla（表 IV、V）' },
       { key: 'warn', text: 'SysID' },
       { key: 'accent', text: 'Delta Dynamics' },
       { key: 'good', text: 'ASAP' }
@@ -694,7 +694,7 @@
     C_SURFACE = X.surface,
     C_SURFACE2 = X.surface2,
     C_INK2 = X.ink2;
-  var C_METHOD = [C_MUTED, C_WARN, C_ACCENT, C_GOOD]; // 开环 / Vanilla、SysID、Delta Dynamics、ASAP
+  var C_METHOD = [C_MUTED, C_WARN, C_ACCENT, C_GOOD]; // 开环（表 III）/ Vanilla（表 IV、V）、SysID、Delta Dynamics、ASAP
 
   function rectBox(parent, x, y, w, h, stroke, fill, dash) {
     var r = paint(svgEl('rect', { x: x, y: y, width: w, height: h, rx: 7, 'stroke-width': 1.3 }), fill || C_SURFACE, stroke || C_BORDER);
@@ -766,6 +766,8 @@
   /* 这十二幕在视频里一幕要讲五十秒到一分钟，画面不能停：draw(t, clock) 的 clock 是这一幕的真实时间
      （旁白比分镜长时 t 会停在一段的末尾，clock 照走），所以跳跃、回放、流动这类循环动作都按 clock 画；
      网页播放器只传 t，clock 就退回 t。公式尽量换成会动的图，每幕最多留一条。 */
+  /* 出场 / 描线 / 收紧这类一次性动画的 seg(t, a, b) 不要跨过 cue 时刻（3.6 / 7.0 / 10.4 / 13.4）：视频里旁白比分镜长时
+     t 停在这一段的末尾，跨段的动画会卡在半截，要等下一段旁白才画完（第 2、3、5 幕出过这事） */
   function nowOf(t, clock) {
     return clock == null ? t : clock;
   }
@@ -1098,7 +1100,7 @@
 
       setOpacity(fit, seg(t, 10.8, 11.2));
       /* ① β′：人缩到 G1 的身材（两人都站着）；② 人在做动作（输入，不动），G1 的姿态一帧帧追上去，虚线缩短 */
-      var uB = ease(seg(t, 11.2, 12.8)), uP = ease(seg(t, 13.0, 15.0));
+      var uB = ease(seg(t, 11.2, 12.8)), uP = ease(seg(t, 12.9, 13.35));
       var Ph = lerpPose(POSE_STAND, kickAt((now / 2.6) % 1), seg(t, 12.8, 13.0));
       human.put(165, 380, Ph, 0, 1.12 - 0.26 * uB);
       g1.put(165, 380, lerpPose(POSE_STAND, Ph, uP), 0);
@@ -1193,7 +1195,7 @@
       setOpacity(rew, seg(t, 7.0, 7.6));
       setOpacity(cur, seg(t, 10.4, 11.0));
       /* 阈值从 1.5 m 收到 0.3 m（这里压缩成几秒演示；实际按 README 每次 ×(1 − 2.5e−5)，要收紧约 6.4 万次） */
-      var thrM = TERM.start - (TERM.start - TERM.end) * ease(seg(t, 11.2, 15.2));
+      var thrM = TERM.start - (TERM.start - TERM.end) * ease(seg(t, 11.2, 13.3));
       thr.textContent = '阈值 ' + fmt(thrM, 2) + ' m';
       var w = 6 + (thrM / TERM.start) * 34;
       var top = refPath.map(function (q) { return [q[0], q[1] - w]; }), btm = refPath.slice().reverse().map(function (q) { return [q[0], q[1] + w]; });
@@ -1398,9 +1400,9 @@
       cursor.setAttribute('x1', (TX0 + cu * (TX1 - TX0)).toFixed(1));
       cursor.setAttribute('x2', (TX0 + cu * (TX1 - TX0)).toFixed(1));
       drawOn(realP, ease(seg(t, 1.4, 3.0)));
-      drawOn(simP, ease(seg(t, 2.4, 4.0)));
+      drawOn(simP, ease(seg(t, 2.0, 3.4)));
       drawOn(simDP, ease(seg(t, 4.6, 6.4)));
-      drawOn(errS, ease(seg(t, 2.6, 4.2)));
+      drawOn(errS, ease(seg(t, 2.2, 3.5)));
       drawOn(errD, ease(seg(t, 4.8, 6.6)));
       setOpacity(weak, seg(t, 10.4, 11.0));
       /* 左：仿真；右：真机。12 s 起仿真也加上 Δ —— 跟真机一样跳不远 */
@@ -1490,11 +1492,14 @@
   function groupedBars(parent, x0, x1, base, hMax, vMax, groups, cols, names, opts) {
     var o = opts || {};
     var slot = (x1 - x0) / groups.length, n = groups[0].length, bw = Math.min(o.bw || 34, (slot * 0.84) / n);
-    parent.appendChild(paint(svgEl('line', { x1: x0, y1: base, x2: x1, y2: base, 'stroke-width': 1 }), null, C_BORDER));
-    var items = [];
+    var axis = paint(svgEl('line', { x1: x0, y1: base, x2: x1, y2: base, 'stroke-width': 1 }), null, C_BORDER);
+    parent.appendChild(axis);
+    var items = [], labels = [];
     groups.forEach(function (vals, i) {
       var gx = x0 + slot * i + (slot - bw * n) / 2;
-      parent.appendChild(svgText(x0 + slot * (i + 0.5), base + 15, names[i], 'demo-x-ink2', 10.5, 'middle'));
+      var nm = svgText(x0 + slot * (i + 0.5), base + 15, names[i], 'demo-x-ink2', 10.5, 'middle');
+      parent.appendChild(nm);
+      labels.push(nm);
       vals.forEach(function (v, k) {
         var b = vbar(parent, gx + k * bw + 2, base, bw - 4, cols[k]);
         var lab = svgText(gx + k * bw + bw / 2, base, '', 'demo-x-mono', o.labSize || 9.5, 'middle');
@@ -1504,6 +1509,8 @@
     });
     return {
       items: items,
+      axis: axis,
+      labels: labels,
       set: function (u, values, labU) {
         items.forEach(function (it) {
           var v = values ? values[it.i][it.k] : it.v;
@@ -1612,7 +1619,7 @@
 
   /* ── scene 8: 闭环微调（表 IV） ── */
   function buildSceneClosedLoop() {
-    var s = sceneSvg('表 IV 闭环：IsaacSim 简单档 ASAP 106、开环 107、SysID 105；困难档 ASAP 129、开环 148、SysID 165；Genesis 困难档开环 175、SysID 186、Delta Dynamics 190、ASAP 129，Oracle 116；ASAP 成功率全是 100%，Delta Dynamics 困难档 66.7% 和 60%；图 7 微调前误差越积越大，微调后稳住');
+    var s = sceneSvg('表 IV 闭环：IsaacSim 简单档 ASAP 106、Vanilla 107、SysID 105；困难档 ASAP 129、Vanilla 148、SysID 165；Genesis 困难档 Vanilla 175、SysID 186、Delta Dynamics 190、ASAP 129，Oracle 116；ASAP 成功率全是 100%，Delta Dynamics 困难档 66.7% 和 60%；图 7 微调前误差越积越大，微调后稳住');
     s.appendChild(svgText(30, 28, '闭环：在改造过的仿真里微调，再拿到测试环境里跑', 'demo-x-ink2', 13.5));
 
     var chart = group(s);
@@ -1620,7 +1627,7 @@
     var simName = svgText(44, 62, '', 'demo-x-ink2', 11.5);
     chart.appendChild(simName);
     chart.appendChild(svgText(516, 62, '柱：全局位置误差（mm）· 虚线 = Oracle', 'demo-x-mut', 10, 'end'));
-    var BASE = 274, HM = 176, VM = 200, X0 = 104;
+    var BASE = 274, HM = 164, VM = 200, X0 = 104;
     function levelVals(sim) { return TABLE4[sim].map(function (rows) { return rows.slice(1).map(function (r) { return r[1]; }); }); }
     var isaac = levelVals('IsaacSim'), gen = levelVals('Genesis');
     var gb = groupedBars(chart, X0, 516, BASE, HM, VM, isaac, C_METHOD, LEVELS.map(function (n) { return n + '档'; }), { bw: 34 });
@@ -1644,9 +1651,27 @@
       });
     });
     var leg = group(chart);
+    leg.appendChild(svgText(50, 101, 'Vanilla：IsaacGym 里训完不做对齐，直接跑　Oracle（虚线）：训练、测试都在 IsaacGym，仿真里的上限', 'demo-x-mut', 9.5));
     ['Vanilla', 'SysID', 'Delta Dynamics', 'ASAP'].forEach(function (n, k) {
       leg.appendChild(paint(svgEl('rect', { x: 50 + k * 112, y: 76, width: 10, height: 10, rx: 2 }), C_METHOD[k]));
       leg.appendChild(svgText(64 + k * 112, 85, n, 'demo-x-mut', 10));
+    });
+
+    /* 开场先把几种办法各在哪训、在哪测画出来（Vanilla、Oracle 第一次出现），柱子从 3.6 起长出来时淡出 */
+    var who = group(s);
+    var whoMk = K.arrowMarker(s, 'asap-x-arrow-s8', C_MUTED);
+    var WHO = [
+      ['Vanilla', C_MUTED, '直接到测试环境跑，不做任何对齐', null],
+      ['Oracle', C_INK2, '还在 IsaacGym 里测：没有差距，是上限', '4 3'],
+      ['SysID · DD · ASAP', C_GOOD, '改造过的环境里微调，再到测试环境跑', null]
+    ];
+    var whoRows = WHO.map(function (w, k) {
+      var g = group(who), y = 120 + k * 50;
+      chip(g, 46, y, 118, w[0], w[1], { h: 32, size: 11, dash: w[3] });
+      chip(g, 178, y, 104, 'IsaacGym 训练', C_BORDER, { h: 32, size: 10.5 });
+      arrowPath(g, [[284, y + 16], [298, y + 16]], C_MUTED, whoMk);
+      chip(g, 302, y, 214, w[2], w[1], { h: 32, size: 10.5 });
+      return g;
     });
 
     var f7 = group(s);
@@ -1674,6 +1699,10 @@
     function draw(t, clock) {
       var now = nowOf(t, clock);
       setOpacity(chart, seg(t, 0.3, 0.9));
+      setOpacity(who, 1 - seg(t, 3.6, 4.0));
+      /* 讲 Vanilla / Oracle 的时候横轴和「简单档 / 中等档 / 困难档」先不出来，示意淡出后再和柱子一起出现 */
+      [gb.axis].concat(gb.labels).forEach(function (n) { setOpacity(n, seg(t, 3.7, 4.1)); });
+      whoRows.forEach(function (g, k) { setOpacity(g, seg(t, 0.6 + k * 0.8, 1.2 + k * 0.8)); });
       var toGen = ease(seg(t, 7.0, 8.0));
       var sim = toGen > 0.5 ? 'Genesis' : 'IsaacSim';
       simName.textContent = '表 IV · ' + sim;
@@ -2118,9 +2147,9 @@
       dur: 17,
       build: buildSceneClosedLoop,
       cues: [
-        { at: 0.3, s: '再比**闭环**：用三种办法分别改造训练环境，在里面微调策略，再拿到测试环境里跑。全部用同一套奖励。' },
-        { at: 3.6, s: '表 IV，IsaacSim：简单档 ASAP 106、开环 107、SysID 105，几乎一样；困难档 **ASAP 129**，开环 148、SysID 165。' },
-        { at: 7.0, s: 'Genesis 差距更大：困难档开环 175、SysID 186、Delta Dynamics 190，**ASAP 129**，离只在 IsaacGym 里跑的上限 Oracle（116）不远。' },
+        { at: 0.3, s: '再比**闭环**：在改造过的训练环境里微调策略，再拿到测试环境里跑。两个参照：**Vanilla** 训完不对齐、直接跑；**Oracle** 训练、测试都在 IsaacGym，是仿真里的上限。' },
+        { at: 3.6, s: '表 IV，IsaacSim：简单档 ASAP 106、Vanilla 107、SysID 105，几乎一样；困难档 **ASAP 129**，Vanilla 148、SysID 165。' },
+        { at: 7.0, s: 'Genesis 差距更大：困难档 Vanilla 175、SysID 186、Delta Dynamics 190，**ASAP 129**，离只在 IsaacGym 里跑的上限 Oracle（116）不远。' },
         { at: 10.4, s: '成功率：ASAP 两个仿真器、三档难度都是 **100%**；Delta Dynamics 困难档只有 66.7% 和 60%。' },
         { at: 13.4, s: '图 7 逐帧对比：微调前误差越积越大，微调后一直稳着。论文说它适应了新动力学，没有过拟合、也没有钻模型的空子。' }
       ]
