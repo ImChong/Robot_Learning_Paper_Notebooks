@@ -59,11 +59,11 @@ window.PaperVideo = {
       });
       return p;
     });
-    /* 下一篇的主题（不写集数）：清单里接下来是可选的 HumanML3D、再往后是 GMR，这句话两篇都对得上 */
+    /* 下一篇（不写集数）：按 2026-10-07 的清单是 019 InEKF；只是教学上的衔接，BeyondMimic 并没有用 InEKF */
     var next = h('div', 'pt', root);
     next.style.fontSize = '29px'; next.style.padding = '14px 30px';
     next.style.borderStyle = 'dashed';
-    K.rich(next, '**下一篇**：回到源头 —— 人类动作数据从哪来，怎么搬到机器人身上');
+    K.rich(next, '**下一篇**：InEKF —— 机器人怎样知道自己当前的姿态和速度');
     var foot = h('div', 'meta', root,
       '<b>完整笔记 · 4 个交互演示 · 论文数字逐项对照</b><br>imchong.github.io/Robot_Learning_Paper_Notebooks');
     foot.style.textAlign = 'center';

@@ -1311,8 +1311,9 @@ def test_beyondmimic_explainer_demos_and_worked_example_share_the_paper_numbers(
         assert needle in note, needle
     for needle in ("0.062", "160", "286", "154", "99.1", "0.351", "0.86", "70.8%", "84.7%", "5%", "95%", "0.64", "20 毫秒", "7.01"):
         assert needle in narration, needle
-    # 片头接上一期（ASAP）的片尾预告，片尾只预告下一篇的主题
-    assert "上一期结尾预告" in narration and "下一篇回到源头" in narration and "下一篇" in intro
+    # 片头接上一期（ASAP）的片尾预告；片尾按 2026-10-07 的发布清单预告 019 InEKF（旁白逐字母念，字幕显示 InEKF）
+    assert "上一期结尾预告" in narration and "下一篇讲 In E K F" in narration and "**下一篇**：InEKF" in intro
+    assert "回到源头" not in narration and "回到源头" not in intro
     for stale in ("放开的是水平位置，不是朝向", "p_s' = \\lambda", "18.87", "补充行走数据", "Walk+Perturb 成功率"):
         assert stale not in note, f"旧版笔记的说法：{stale}"
 
