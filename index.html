@@ -86,7 +86,7 @@ title: "Home"
             <span class="roadmap-entry-arrow" aria-hidden="true">→</span>
           </span>
         </summary>
-        <p class="roadmap-link-hint" data-en="Click a paper node to open its note; click elsewhere on the diagram to zoom in." data-zh="点击论文节点跳转到对应笔记；点击图中其他区域可放大查看。">Click a paper node to open its note; click elsewhere on the diagram to zoom in.</p>
+        <p class="roadmap-link-hint" data-en="Click a node to open its note; nodes marked “paper” open the original paper. Click elsewhere on the diagram to zoom in." data-zh="点击节点阅读笔记；标注“原文”的节点打开论文。点击图中其他区域可放大查看。">Click a node to open its note; nodes marked “paper” open the original paper. Click elsewhere on the diagram to zoom in.</p>
         <div class="mermaid" id="roadmap-mermaid"></div>
       </details>
     </div>
@@ -96,7 +96,12 @@ title: "Home"
 {%- for pair in site.data.roadmap_links -%}
 {%- unless link_first -%},{%- endunless -%}
 {%- assign link_first = false -%}
-      {{ pair[0] | jsonify | replace: '<', '\u003c' | replace: '>', '\u003e' | replace: '&', '\u0026' }}: {{ pair[1] | relative_url | jsonify | replace: '<', '\u003c' | replace: '>', '\u003e' | replace: '&', '\u0026' }}
+{%- assign link_url = pair[1] -%}
+{%- assign link_prefix = link_url | slice: 0, 8 -%}
+{%- unless link_prefix == 'https://' -%}
+{%- assign link_url = link_url | relative_url -%}
+{%- endunless -%}
+      {{ pair[0] | jsonify | replace: '<', '\u003c' | replace: '>', '\u003e' | replace: '&', '\u0026' }}: {{ link_url | jsonify | replace: '<', '\u003c' | replace: '>', '\u003e' | replace: '&', '\u0026' }}
 {%- endfor -%}
     }</script>
 
