@@ -5,7 +5,8 @@ window.PaperVideo = {
     var h = V.h, fadeUp = V.fadeUp;
     var root = h('div', 'card');
     var a = h('div', 'big', root, '<div style="font-size:162px;font-weight:900;letter-spacing:16px;color:var(--demo-accent);line-height:1.08">ASAP</div>');
-    var b = h('div', 'big', root, '<div style="font-size:52px;font-weight:900;line-height:1.2">对齐仿真与真实物理，学人形敏捷全身技能</div>' +
+    // 缩小中文标题，为小红书长屏播放的左右裁切留出余量。
+    var b = h('div', 'big', root, '<div style="font-size:44px;font-weight:900;line-height:1.2">对齐仿真与真实物理，学人形敏捷全身技能</div>' +
       '<div style="font-size:32px;color:var(--text-secondary);margin-top:8px">到真机上采数据，学一个残差动作模型，把仿真对齐到真机</div>');
     var m = h('div', 'meta', root,
       '<b>ASAP: Aligning Simulation and Real-World Physics for Learning Agile Humanoid Whole-Body Skills</b><br>He、Gao 等 · CMU、NVIDIA · RSS 2025');
