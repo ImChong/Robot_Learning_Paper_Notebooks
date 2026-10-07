@@ -1492,11 +1492,14 @@
   function groupedBars(parent, x0, x1, base, hMax, vMax, groups, cols, names, opts) {
     var o = opts || {};
     var slot = (x1 - x0) / groups.length, n = groups[0].length, bw = Math.min(o.bw || 34, (slot * 0.84) / n);
-    parent.appendChild(paint(svgEl('line', { x1: x0, y1: base, x2: x1, y2: base, 'stroke-width': 1 }), null, C_BORDER));
-    var items = [];
+    var axis = paint(svgEl('line', { x1: x0, y1: base, x2: x1, y2: base, 'stroke-width': 1 }), null, C_BORDER);
+    parent.appendChild(axis);
+    var items = [], labels = [];
     groups.forEach(function (vals, i) {
       var gx = x0 + slot * i + (slot - bw * n) / 2;
-      parent.appendChild(svgText(x0 + slot * (i + 0.5), base + 15, names[i], 'demo-x-ink2', 10.5, 'middle'));
+      var nm = svgText(x0 + slot * (i + 0.5), base + 15, names[i], 'demo-x-ink2', 10.5, 'middle');
+      parent.appendChild(nm);
+      labels.push(nm);
       vals.forEach(function (v, k) {
         var b = vbar(parent, gx + k * bw + 2, base, bw - 4, cols[k]);
         var lab = svgText(gx + k * bw + bw / 2, base, '', 'demo-x-mono', o.labSize || 9.5, 'middle');
@@ -1506,6 +1509,8 @@
     });
     return {
       items: items,
+      axis: axis,
+      labels: labels,
       set: function (u, values, labU) {
         items.forEach(function (it) {
           var v = values ? values[it.i][it.k] : it.v;
@@ -1695,6 +1700,8 @@
       var now = nowOf(t, clock);
       setOpacity(chart, seg(t, 0.3, 0.9));
       setOpacity(who, 1 - seg(t, 3.6, 4.0));
+      /* 讲 Vanilla / Oracle 的时候横轴和「简单档 / 中等档 / 困难档」先不出来，示意淡出后再和柱子一起出现 */
+      [gb.axis].concat(gb.labels).forEach(function (n) { setOpacity(n, seg(t, 3.7, 4.1)); });
       whoRows.forEach(function (g, k) { setOpacity(g, seg(t, 0.6 + k * 0.8, 1.2 + k * 0.8)); });
       var toGen = ease(seg(t, 7.0, 8.0));
       var sim = toGen > 0.5 ? 'Genesis' : 'IsaacSim';
