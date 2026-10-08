@@ -729,6 +729,58 @@
         return theme + ':' + mode;
       }
 
+      var roadmapVideoTooltip;
+
+      function hideRoadmapVideoTooltip() {
+        if (roadmapVideoTooltip) roadmapVideoTooltip.hidden = true;
+      }
+
+      function attachRoadmapVideoTooltip(nodeGroup, nodeId) {
+        if (nodeGroup.textContent.indexOf('🎬') === -1) return;
+        var videoHint = root.getAttribute('data-lang-mode') === 'zh'
+          ? '🎬 含配音讲解视频，点击阅读笔记'
+          : '🎬 Narrated video included. Click to read the note.';
+        if (!roadmapVideoTooltip) {
+          roadmapVideoTooltip = document.createElement('div');
+          roadmapVideoTooltip.id = 'roadmap-video-tooltip';
+          roadmapVideoTooltip.className = 'roadmap-video-tooltip';
+          roadmapVideoTooltip.setAttribute('role', 'tooltip');
+          roadmapVideoTooltip.hidden = true;
+          document.body.appendChild(roadmapVideoTooltip);
+        }
+        nodeGroup.setAttribute('aria-label', nodeId + ' — ' + videoHint);
+        nodeGroup.setAttribute('aria-describedby', roadmapVideoTooltip.id);
+
+        function showVideoHint() {
+          roadmapVideoTooltip.textContent = videoHint;
+          roadmapVideoTooltip.hidden = false;
+          var rect = nodeGroup.getBoundingClientRect();
+          var width = roadmapVideoTooltip.offsetWidth;
+          var height = roadmapVideoTooltip.offsetHeight;
+          var left = Math.max(8, Math.min(rect.left + rect.width / 2 - width / 2, window.innerWidth - width - 8));
+          var top = rect.bottom + 8;
+          if (top + height > window.innerHeight - 8) top = rect.top - height - 8;
+          top = Math.max(8, Math.min(top, window.innerHeight - height - 8));
+          roadmapVideoTooltip.style.left = left + 'px';
+          roadmapVideoTooltip.style.top = top + 'px';
+        }
+
+        nodeGroup.addEventListener('pointerenter', function(e) {
+          if (e.pointerType !== 'touch') showVideoHint();
+        });
+        nodeGroup.addEventListener('focus', showVideoHint);
+        nodeGroup.addEventListener('pointerleave', hideRoadmapVideoTooltip);
+        nodeGroup.addEventListener('blur', hideRoadmapVideoTooltip);
+        nodeGroup.addEventListener('pointerdown', hideRoadmapVideoTooltip);
+      }
+
+      window.addEventListener('scroll', hideRoadmapVideoTooltip, true);
+      window.addEventListener('resize', hideRoadmapVideoTooltip);
+      document.addEventListener('cl-lang-changed', hideRoadmapVideoTooltip);
+      document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') hideRoadmapVideoTooltip();
+      });
+
       window.attachRoadmapNodeLinks = function(container) {
         if (!container) return;
         var dataEl = document.querySelector('script#roadmap-node-links');
@@ -752,6 +804,7 @@
           nodeGroup.setAttribute('tabindex', '0');
           nodeGroup.setAttribute('aria-label', nodeId);
           nodeGroup.setAttribute('data-roadmap-url', url);
+          attachRoadmapVideoTooltip(nodeGroup, nodeId);
 
           function goToNote(e) {
             if (e) {
@@ -774,6 +827,7 @@
       };
 
       function finishRoadmapInsert(mermaidRoadmap) {
+        hideRoadmapVideoTooltip();
         mermaidRoadmap.removeAttribute('data-processed');
         window.attachRoadmapNodeLinks(mermaidRoadmap);
         if (typeof window.attachRoadmapEdgeFlow === 'function') {

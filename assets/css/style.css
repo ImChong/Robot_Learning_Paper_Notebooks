@@ -2627,6 +2627,22 @@ a.updates-item-link:hover {
   margin-bottom: 1rem;
 }
 
+.roadmap-video-tooltip {
+  position: fixed;
+  z-index: 10100;
+  max-width: min(320px, calc(100vw - 16px));
+  box-sizing: border-box;
+  padding: 0.55rem 0.8rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-secondary);
+  color: var(--text);
+  font-size: 0.85rem;
+  line-height: 1.5;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+  pointer-events: none;
+}
+
 /* ── 滚动入场（全站）───────────────────────────────────────────────
    scroll-reveal.js 只给登记时位于视口以下的元素加 .scroll-reveal，入视口后加
    .is-revealed，过渡结束摘掉两者；JS 失败 / 减动 / 打印时内容照常可见。 */
