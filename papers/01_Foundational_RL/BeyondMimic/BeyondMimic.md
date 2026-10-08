@@ -40,7 +40,7 @@ demos: ["beyondmimic"]
 
 > 🎮 **本文内嵌 1 段讲解动画 + 1 段配音视频 + 4 个交互演示**（不用装任何东西）：
 > 1. [十二幕动画：BeyondMimic 全流程](#bm-explainer-anim) —— 约 204 秒串完「两个缺口 → 锚定跟踪 → 奖励 → 观测 → 动作与关节阻抗 → 随机化与部署延迟 → 自适应采样 → 跟踪上真机 → VAE 潜空间 → 状态—潜动作扩散 → 代价引导 → 测试时的任务与边界」
-> 2. [配音讲解视频](#bm-video) —— 同样十二幕，加中文配音与字幕，9 分 45 秒竖屏，可下载
+> 2. [配音讲解视频](#bm-video) —— 同样十二幕，加中文配音与字幕，9 分 47 秒竖屏，可下载
 > 3. [锚定变换](#bm-anchor-demo) —— 拖水平漂移、偏航、高度偏差，看表 S1 的六项奖励在「锚定」和「跟世界系」下各是多少
 > 4. [关节阻抗](#bm-impedance-demo) —— 选关节、拖 $\omega$ 与 $\zeta$，看按电机惯量算出的 $k_p$、$k_d$、$\alpha$，以及代入表 S4 真实轴惯量后的阶跃响应
 > 5. [自适应采样](#bm-sampling-demo) —— 均匀 / 核长 3（论文）/ 核长 1（当前代码）三种抽起点的办法，看两段侧手翻怎么被练会（玩具）
@@ -64,7 +64,7 @@ demos: ["beyondmimic"]
 | **LDM** | Latent Diffusion Model | 潜空间扩散：这里扩散的是「状态 + 潜码」轨迹 |
 | **DDPM** | Denoising Diffusion Probabilistic Model | 去噪网络直接预测干净轨迹 $\tau$，推理 20 步 |
 | **OU** | Ornstein–Uhlenbeck | 采数据时加在动作上的噪声（式 S4），形成「误差带」 |
-| **SDF** | Signed Distance Field | 有符号距离场：避障代价用它算部位到障碍的距离 |
+| **SDF** | Signed Distance Field | 有符号距离场：空间里每个点离障碍表面多远，外面为正、钻进去为负；避障代价用它算部位到障碍的距离 |
 | **PDP** | Physics-based character animation via Diffusion Policy | 同组前作，带扰动采数据的做法来自这里 |
 | **Diffuse-CLoC** | Guided Diffusion for Physics-based Character Look-ahead Control | 同组前作，状态—动作联合扩散 + 引导，v1–v3 的直接来源 |
 | **LIO** | LiDAR-Inertial Odometry | 起身这类极端接触动作，用激光惯导修正位置 |
@@ -77,7 +77,7 @@ demos: ["beyondmimic"]
 
 ## 📺 配音讲解视频（可下载） {#bm-video}
 
-<div class="paper-demo" data-demo="bm-video" data-src="media/bm_explainer_video.mp4" data-poster="media/bm_explainer_video_poster.jpg"><p class="demo-fallback">（本节含讲解视频播放器，需要启用 JavaScript；也可以直接<a href="media/bm_explainer_video.mp4" download="BeyondMimic_讲解视频.mp4">下载 mp4（11.2 MB）</a>）</p></div>
+<div class="paper-demo" data-demo="bm-video" data-src="media/bm_explainer_video.mp4" data-poster="media/bm_explainer_video_poster.jpg"><p class="demo-fallback">（本节含讲解视频播放器，需要启用 JavaScript；也可以直接<a href="media/bm_explainer_video.mp4" download="BeyondMimic_讲解视频.mp4">下载 mp4（11.3 MB）</a>）</p></div>
 
 > 📖 **动画之后的正文默认全部折叠**：问题、方法按小节收起，具体实例、实验、边界、源码对照、面试和附录各收成一块。想细读哪一块就点开，内容一字未删；四个交互演示和流程图留在外面。目录里的标题可以直接点，会自动展开所在折叠块，左侧目录顶部还有「展开全部文字」。
 
@@ -387,7 +387,7 @@ $\tau^\ast$ 是想要的最优轨迹。用一个可微的任务代价 $G(\tau)$ 
 | 路点 | $G _ {wp} = \sum_i (1 - e^{-2d_i}) \lVert P _ {xy,i} - g_p \rVert^2 + e^{-2d_i} \lVert V _ {xy,i} \rVert^2$，$d_i = \lVert P _ {xy,i} - g_p \rVert$：远处罚位置，近处换成罚速度，好停下（v1–v3 写明 $d$ 不参与求导） |
 | 避障 | $G _ {sdf} = \sum_i \sum_b B(\mathrm{SDF}(P _ {b,i}) - r_b,\ \delta)$，$r_b$ 是部位的碰撞半径；松弛对数障碍 $B(x, \delta) = -\ln x$（$x \ge \delta$），$-\ln\delta + \tfrac12[((x - 2\delta)/\delta)^2 - 1]$（$x < \delta$） |
 
-梯度用 CppAD 在每个去噪步里自动求。**代价可以直接相加**：路点 + 避障 = 绕开障碍走到目标（图 6B）；换成摇杆 + 避障，用户稍微推歪也能躲开碰撞。训练时不需要枚举这些组合。
+梯度用 CppAD（一个 C++ 自动求导库：写好代价函数，梯度由它自动算出）在每个去噪步里自动求。**代价可以直接相加**：路点 + 避障 = 绕开障碍走到目标（图 6B）；换成摇杆 + 避障，用户稍微推歪也能躲开碰撞。训练时不需要枚举这些组合。
 
 和在线轨迹优化的区别（Results 开头）：模型已经学会了一整套可行的人类动作当先验，简单的、任务相关的代价就够触发合适的行为，不用堆正则和塑形项。代价要的状态：摇杆与补全用机载状态估计；**路点与避障用动作捕捉**提供环境与更准的定位。
 

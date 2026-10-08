@@ -1134,10 +1134,11 @@
     barG.appendChild(svgText(530, 202, '部位位置这一项奖励', 'demo-x-mut', 10.5));
     barG.appendChild(svgText(530, 226, '跟世界系', 'demo-x-bad', 10.5));
     barG.appendChild(svgText(530, 254, '锚定', 'demo-x-good', 10.5));
-    rectBox(barG, 590, 214, 150, 16, C_BORDER, 'none');
-    rectBox(barG, 590, 242, 150, 16, C_BORDER, 'none');
+    /* 读数写在读数条右边，不压条的边框 */
+    rectBox(barG, 590, 214, 128, 16, C_BORDER, 'none');
+    rectBox(barG, 590, 242, 128, 16, C_BORDER, 'none');
     var bW = hbar(barG, 590, 214, 16, C_BAD), bA = hbar(barG, 590, 242, 16, C_GOOD);
-    var vW = svgText(746, 227, '', 'demo-x-mono', 10.5, 'end'), vA = svgText(746, 255, '', 'demo-x-mono', 10.5, 'end');
+    var vW = svgText(724, 227, '', 'demo-x-mono', 10.5), vA = svgText(724, 255, '', 'demo-x-mono', 10.5);
     barG.appendChild(vW);
     barG.appendChild(vA);
     barG.appendChild(svgText(530, 288, '水平漂 0.5 m：0.062 对 1', 'demo-x-acc', 11));
@@ -1181,8 +1182,8 @@
       paint(modeLbl, anchored ? C_GOOD : C_BAD);
       setOpacity(side, seg(t, 3.6, 4.2));
       var rW = Math.exp(-(d * d) / (SIGMA.p * SIGMA.p));
-      setW(bW, 150 * rW);
-      setW(bA, 150);
+      setW(bW, 128 * rW);
+      setW(bA, 128);
       vW.textContent = fmt(rW, 3);
       vA.textContent = '1.000';
       setOpacity(barG, seg(t, 10.4, 11.0));
@@ -1388,23 +1389,46 @@
 
   /* ── 第 5 幕：动作与关节阻抗 ── */
   function buildSceneImpedance() {
-    var s = sceneSvg('左侧是一个膝关节：电机转子经齿轮带动连杆，PD 让连杆跟着设定点走。目标在 0 和 α 之间跳，连杆慢放 4 倍：虚线只算电机惯量，按设计的 10 赫兹、阻尼比 2 平稳爬上去；实线代入真实轴惯量，频率降到 4.3 赫兹、阻尼比 0.86，起步慢半拍、随后追上，超调不到 1%。右侧柱子是各关节里电机惯量的占比，膝 18%，踝横滚 95%。下方是图 8A 与图 S2 的消融');
+    var s = sceneSvg('左侧是一个膝关节，用皮带减速器示意：黄色小轮是电机，蓝色大轮和蓝杆一起是膝关节，小轮转 5 圈大轮转 1 圈、两轮同向转；绿色虚线是设定点，PD 让连杆跟着设定点走。目标在 0 和 α 之间跳，连杆慢放 4 倍：虚线只算电机惯量，按设计的 10 赫兹、阻尼比 2 平稳爬上去；实线代入真实轴惯量，频率降到 4.3 赫兹、阻尼比 0.86，起步慢半拍、随后追上，超调不到 1%。右侧柱子是各关节里电机惯量的占比，膝 18%，踝横滚 95%。下方是图 8A 与图 S2 的消融');
     s.appendChild(svgText(30, 28, 'PD 增益 = 反射惯量 × 频率²；动作取 1 = 25% 最大力矩', 'demo-x-ink2', 13.5));
     var left = group(s);
     rectBox(left, 30, 44, 400, 262, C_BORDER, C_SURFACE2);
     left.appendChild(svgMath(230, 72, 'k_p = I\\,\\omega^2,\\quad k_d = 2 I \\zeta \\omega', { size: 14, anchor: 'middle', w: 380 }));
-    var PIV = [150, 190];
-    var rotor = group(left);
-    rotor.appendChild(paint(svgEl('circle', { cx: 0, cy: 0, r: 26, 'stroke-width': 2, fill: 'none' }), null, C_WARN));
-    for (var sp = 0; sp < 6; sp++) {
-      var a = (sp * Math.PI) / 3;
-      rotor.appendChild(paint(svgEl('line', { x1: 0, y1: 0, x2: (26 * Math.cos(a)).toFixed(1), y2: (26 * Math.sin(a)).toFixed(1), 'stroke-width': 1.4 }), null, C_WARN));
+    /* 左边画一个膝关节，皮带减速器示意：黄色小轮 = 电机（转子），蓝色大轮和蓝杆一起 = 膝关节。
+       小轮半径 8、大轮 40，皮带不打滑，所以小轮转 5 圈大轮才转 1 圈（齿比 5，示意），开口皮带两轮同向转；
+       反射惯量 = 转子惯量 × 齿比² 就是这么来的。绿虚线 = 设定点 */
+    var PIV = [150, 190], MOT = [78, 190], R_MOT = 8, R_JNT = 40, GEAR_VIS = R_JNT / R_MOT;
+    (function () {
+      /* 两圆的外公切线（开口皮带）：sin α = (R − r) / d，切点 = 圆心 + 半径 × (−sin α, ∓cos α) */
+      var d = PIV[0] - MOT[0], sa = (R_JNT - R_MOT) / d, ca = Math.sqrt(1 - sa * sa);
+      [-1, 1].forEach(function (sg) {
+        left.appendChild(paint(svgEl('line', {
+          x1: (MOT[0] - R_MOT * sa).toFixed(1), y1: (MOT[1] + sg * R_MOT * ca).toFixed(1),
+          x2: (PIV[0] - R_JNT * sa).toFixed(1), y2: (PIV[1] + sg * R_JNT * ca).toFixed(1), 'stroke-width': 1.6
+        }), null, C_MUTED));
+      });
+    })();
+    function wheel(r, color, spokes) {
+      var g = group(left);
+      g.appendChild(paint(svgEl('circle', { cx: 0, cy: 0, r: r, 'stroke-width': 2, fill: 'none' }), null, color));
+      for (var sp = 0; sp < spokes; sp++) {
+        var a = (sp * 2 * Math.PI) / spokes;
+        g.appendChild(paint(svgEl('line', { x1: 0, y1: 0, x2: (r * Math.cos(a)).toFixed(1), y2: (r * Math.sin(a)).toFixed(1), 'stroke-width': 1.4 }), null, color));
+      }
+      return g;
     }
-    left.appendChild(svgText(80, 250, '转子惯量 × 齿比²', 'demo-x-warn', 10.5, 'middle'));
-    left.appendChild(svgText(80, 266, '= 反射惯量（armature）', 'demo-x-warn', 10.5, 'middle'));
+    var jointWheel = wheel(R_JNT, C_ACCENT, 4);
+    var rotor = wheel(R_MOT, C_WARN, 3);
+    left.appendChild(svgText(66, 194, '电机', 'demo-x-warn', 10.5, 'end'));
+    left.appendChild(svgText(92, 160, '减速 5 : 1', 'demo-x-mut', 10, 'middle'));
+    left.appendChild(svgText(42, 248, '黄小轮 = 电机：转得快', 'demo-x-warn', 10));
+    left.appendChild(svgText(42, 264, '蓝大轮 + 蓝杆 = 膝关节：转得慢、同向', 'demo-x-acc', 10));
+    left.appendChild(svgText(42, 280, '反射惯量 = 转子惯量 × 齿比²（armature）', 'demo-x-warn', 10));
     left.appendChild(paint(svgEl('circle', { cx: PIV[0], cy: PIV[1], r: 6 }), C_MUTED));
     var targetArm = paint(svgEl('line', { 'stroke-width': 1.4, 'stroke-dasharray': '4 3' }), null, C_GOOD);
     left.appendChild(targetArm);
+    var spLbl = svgText(0, 0, '设定点', 'demo-x-good', 10);  // 跟着绿虚线的末端
+    left.appendChild(spLbl);
     var linkDesign = paint(svgEl('line', { 'stroke-width': 5, 'stroke-linecap': 'round', 'stroke-dasharray': '7 5' }), null, C_MUTED);
     var linkReal = paint(svgEl('line', { 'stroke-width': 6, 'stroke-linecap': 'round' }), null, C_ACCENT);
     left.appendChild(linkReal);
@@ -1426,7 +1450,7 @@
     var realG = group(left);
     realG.appendChild(svgText(250, 262, '代入真实轴惯量 ' + fmt(knee.Ieff, 3) + '：', 'demo-x-acc', 10.5));
     realG.appendChild(svgRich(250, 280, fmt(knee.fReal, 1) + ' Hz、阻尼比 ' + fmt(knee.zetaReal, 2) + ' → 所以先取 $\\zeta$ = 2', { size: 10.5, w: 180, cls: 'demo-x-acc' }));
-    realG.appendChild(svgText(44, 296, '虚线：只算电机惯量；实线：真实惯量', 'demo-x-mut', 10));
+    realG.appendChild(svgText(42, 296, '灰虚线：只算电机惯量；蓝实线：真实惯量', 'demo-x-mut', 10));
 
     var right = group(s);
     rectBox(right, 446, 44, 324, 262, C_BORDER, C_SURFACE);
@@ -1463,7 +1487,7 @@
     function draw(t, clock) {
       var now = nowOf(t, clock);
       setOpacity(left, seg(t, 0.2, 0.8));
-      tr(rotor, 80, 190, (now * 260) % 360);
+      /* 大轮与蓝杆同角；电机小轮同向转 5 倍角度（开口皮带、不打滑）：连杆停，电机也停 */
       /* 目标在 0 与 α 之间来回跳；角度放大 2.2 倍、慢放 4 倍（画面 1.2 s = 真实 0.3 s，两种惯量都已到位），
          实线（真实惯量更重）起步慢半拍、随后追上并略超一点，虚线（只算电机惯量）一路平稳爬上去 */
       var cyc = now % 2.4, up = cyc < 1.2, tt = up ? cyc : cyc - 1.2;
@@ -1474,6 +1498,13 @@
       linkTo(targetArm, base + G * (up ? knee.alpha : 0), 96);
       linkTo(linkDesign, base + G * qd, 84);
       linkTo(linkReal, base + G * qr, 84);
+      var linkDeg = ((base + G * qr) * 180) / Math.PI;
+      tr(jointWheel, PIV[0], PIV[1], linkDeg);
+      tr(rotor, MOT[0], MOT[1], (linkDeg * GEAR_VIS) % 360);
+      var spAng = base + G * (up ? knee.alpha : 0), spR = up ? 'start' : 'end';
+      spLbl.setAttribute('x', (PIV[0] + 100 * Math.sin(spAng) + (up ? 6 : -6)).toFixed(1));
+      spLbl.setAttribute('y', (PIV[1] - 100 * Math.cos(spAng) + 4).toFixed(1));
+      spLbl.setAttribute('text-anchor', spR);
       readout.forEach(function (n, k) { setOpacity(n, seg(t, 3.6 + k * 0.4, 4.0 + k * 0.4)); });
       setOpacity(alphaG, seg(t, 7.0, 7.6));
       setOpacity(realG, seg(t, 10.4, 11.0));
@@ -1763,9 +1794,10 @@
     var studies = [['整体', STUDY.all, STUDY.h[0]], ['走路', STUDY.walk, STUDY.h[1]], ['跑步', STUDY.run, STUDY.h[2]]].map(function (st, k) {
       var g = group(right), y = 88 + k * 62;
       g.appendChild(svgText(566, y + 4, st[0] + '（h = ' + fmt(st[2], 2) + '）', 'demo-x-ink2', 11));
-      rectBox(g, 566, y + 12, 190, 18, C_BORDER, 'none');
+      /* 百分比写在条的右边：18px 高的条里放 10.5px 的字，上下只剩 1px，看着压边 */
+      rectBox(g, 566, y + 12, 150, 18, C_BORDER, 'none');
       var b = hbar(g, 566, y + 12, 18, C_GOOD);
-      var v = svgText(752, y + 25, '', 'demo-x-mono', 10.5, 'end');
+      var v = svgText(722, y + 25, '', 'demo-x-mono', 10.5);
       g.appendChild(v);
       return { g: g, b: b, v: v, p: st[1], k: k };
     });
@@ -1799,7 +1831,7 @@
       setOpacity(right, seg(t, 13.4, 14.0));
       studies.forEach(function (S2) {
         var u = ease(seg(t, 13.6 + S2.k * 0.5, 14.4 + S2.k * 0.5));
-        setW(S2.b, (190 * S2.p * u) / 100);
+        setW(S2.b, (150 * S2.p * u) / 100);
         S2.v.textContent = u > 0.1 ? fmt(S2.p * u, 1) + '%' : '';
       });
       setOpacity(foot, seg(t, 0.6, 1.2));
@@ -1831,8 +1863,8 @@
     zG.appendChild(svgText(326, 182, 'z：32 维', 'demo-x-good', 11, 'middle'));
     arrowPath(left, [[360, 119], [390, 119]], C_ACCENT, mk);
     var dec = chip(left, 392, 96, 96, '解码器', C_ACCENT, { h: 46 });
-    left.appendChild(svgText(440, 158, '+ 本体感受：重力方向、', 'demo-x-mut', 10, 'middle'));
-    left.appendChild(svgText(440, 172, '机身速度、关节、上一步动作', 'demo-x-mut', 10, 'middle'));
+    left.appendChild(svgText(492, 158, '+ 本体感受：重力方向、', 'demo-x-mut', 10, 'end'));
+    left.appendChild(svgText(492, 172, '机身速度、关节、上一步动作', 'demo-x-mut', 10, 'end'));
     var actOut = svgRich(440, 198, '→ 动作 $\\hat a$', { size: 11.5, anchor: 'middle', w: 120, cls: 'demo-x-ink2' });
     left.appendChild(actOut);
     var dag = group(left);
@@ -2016,7 +2048,7 @@
     return out;
   })();
   function buildSceneGuidance() {
-    var s = sceneSvg('左侧俯视：起点、障碍、路点。一条预测轨迹从噪声开始，每个去噪步被代价的梯度推一下，最后绕开障碍到达路点。右侧三张卡是三种代价：摇杆罚速度偏差；路点离得远罚位置、近了按 e 的负 2d 次方换成罚速度；避障是松弛对数障碍。下方：代价直接相加');
+    var s = sceneSvg('左侧俯视：起点、障碍、路点。一条预测轨迹从噪声开始，每个去噪步被代价的梯度推一下；灰虚线是当前代价把它拉向的位置：只加路点代价时是一条穿过障碍的直线，加上避障后绕开障碍到达路点。右侧三张卡是三种代价：摇杆罚速度偏差；路点离得远罚位置、近了按 e 的负 2d 次方换成罚速度；避障是松弛对数障碍。下方：代价直接相加');
     s.appendChild(svgText(30, 28, '先验 + 任务：代价的负梯度加进每一步去噪', 'demo-x-ink2', 13.5));
     s.appendChild(svgMath(400, 58, '\\nabla_\\tau \\log p(\\tau \\mid \\tau^\\ast) = \\nabla_\\tau \\log p(\\tau) - \\nabla_\\tau G(\\tau)', { size: 14, anchor: 'middle', w: 560 }));
     var field = group(s);
@@ -2031,6 +2063,9 @@
     dotAt(field, FX(0), FY(0), 5, C_ACCENT);
     var traj = pathLine(field, [[0, 0], [1, 1]], C_ACCENT, 2.4);
     var ghost = pathLine(field, [[0, 0], [1, 1]], C_MUTED, 1.4, '4 3');
+    /* 灰虚线 = 当前代价把轨迹往哪拉：只有路点代价时是一条直线，会穿过障碍；加上避障才绕开。左上角写明这一段加了哪些代价 */
+    var phaseCap = svgText(44, 100, '', 'demo-x-mut', 10.5);
+    field.appendChild(phaseCap);
     var arrows = group(field);
     var kTxt = svgText(44, 316, '', 'demo-x-mono', 10.5);
     field.appendChild(kTxt);
@@ -2063,7 +2098,7 @@
     cB.appendChild(svgText(756, 241, '2 m', 'demo-x-mut', 9.5, 'end'));
     var cC = group(cards);
     rectBox(cC, 476, 254, 294, 72, C_BORDER, C_SURFACE);
-    cC.appendChild(svgText(488, 274, '避障：SDF 套松弛对数障碍', 'demo-x-ink2', 10.5));
+    cC.appendChild(svgText(488, 274, '避障：SDF（离障碍表面多远）套对数障碍', 'demo-x-ink2', 10.5));
     var bPts = [];
     for (var j = 0; j <= 40; j++) {
       var xx = -0.1 + (0.9 * j) / 40;
@@ -2075,7 +2110,7 @@
 
     var foot = svgText(400, 352, '路点 + 避障 = 绕开到点（图 6B）；摇杆 + 避障，用户推歪了也能躲开 —— 训练时一个都没见过', 'demo-x-ink2', 11.5, 'middle');
     s.appendChild(foot);
-    var foot2 = svgText(400, 378, '梯度用 CppAD 在每个去噪步里自动求；引导权重仍要轻调，细粒度目标效果差', 'demo-x-mut', 10.5, 'middle');
+    var foot2 = svgText(400, 378, '梯度用 CppAD（C++ 自动求导库：写好代价函数，梯度它自动算）在每个去噪步里求；引导权重仍要轻调', 'demo-x-mut', 10.5, 'middle');
     s.appendChild(foot2);
 
     function draw(t, clock) {
@@ -2103,6 +2138,8 @@
       for (var k2 = 0; k2 < 40; k2++) gp.push([FX(target(k2)[0]), FY(target(k2)[1])]);
       setPath(ghost, gp);
       setOpacity(ghost, guided ? 0.6 : 0);
+      phaseCap.textContent = !guided ? '还没加代价：先验只会往前走' : !withSdf ? '只加路点代价：被拉向灰虚线（直线），会穿过障碍' : '路点 + 避障代价：灰虚线绕开障碍';
+      phaseCap.setAttribute('class', !guided ? 'demo-x-mut' : !withSdf ? 'demo-x-bad' : 'demo-x-good');
       kTxt.textContent = '去噪还剩 k = ' + kNow + ' 步';
       /* 梯度箭头：障碍附近往外推，终点附近往路点拉 */
       while (arrows.firstChild) arrows.removeChild(arrows.firstChild);
@@ -2272,7 +2309,7 @@
       dur: 17,
       build: buildSceneImpedance,
       cues: [
-        { at: 0.3, s: '动作是归一化的关节设定点 $\\theta^{sp} = \\theta_0 + \\alpha \\odot a$，交给电机的 PD。它不是要精确跟踪的位置，只是生成力矩的中间量，所以**故意不按关节限位裁剪**。' },
+        { at: 0.3, s: '左边是一个膝关节：**黄色小轮是电机**，皮带带动**蓝色大轮和连杆**（小轮转 5 圈、大轮转 1 圈，示意）；绿虚线是设定点 $\\theta^{sp} = \\theta_0 + \\alpha \\odot a$，只是生成力矩的中间量，**故意不按限位裁剪**。' },
         { at: 3.6, s: '增益按电机算：反射惯量 = 转子惯量 × 齿比²，$k_p = I\\omega^2$、$k_d = 2I\\zeta\\omega$，$\\omega$ = 10 Hz、$\\zeta$ = 2。膝：$I$ = 0.0251，$k_p$ = 99.1、$k_d$ = 6.31。' },
         { at: 7.0, s: '动作缩放 $\\alpha = 0.25\\,\\tau_{max} / k_p$：动作取 1、关节在默认角时，刚好出 25% 的最大力矩。膝 0.351 rad，手腕俯仰只有 0.075。' },
         { at: 10.4, s: '为什么 $\\zeta$ 取 2？只算了电机惯量。膝的真实轴惯量是 0.137，代进去只有 4.3 Hz、阻尼比 0.86；越靠末端电机惯量占比越大（踝横滚 95%）。' },
@@ -2345,8 +2382,8 @@
       build: buildSceneGuidance,
       cues: [
         { at: 0.3, s: '扩散模型学的是得分。贝叶斯拆开：$\\nabla \\log p(\\tau \\mid \\tau^\\ast) = \\nabla \\log p(\\tau) + \\nabla \\log p(\\tau^\\ast \\mid \\tau)$；令 $p(\\tau^\\ast \\mid \\tau) \\propto e^{-G(\\tau)}$，第二项就是 $-\\nabla G$。' },
-        { at: 3.6, s: '摇杆：罚预测的平面速度偏离摇杆。路点：离得远罚位置，近了按 $e^{-2d}$ 换成罚速度，好停下。' },
-        { at: 7.0, s: '避障：SDF 给每个部位到障碍的距离，套松弛对数障碍 $B(x, \\delta)$，钻进去也有有限的值和梯度。梯度用 CppAD 在每个去噪步里自动求。' },
+        { at: 3.6, s: '摇杆：罚预测的平面速度偏离摇杆。路点：离得远罚位置，近了按 $e^{-2d}$ 换成罚速度。左图先**只加路点代价**：轨迹被拉向灰虚线那条直线，会穿过障碍。' },
+        { at: 7.0, s: '**再加避障**：SDF（有符号距离场）记下每个点离障碍表面多远，外面为正、钻进去为负；套上松弛对数障碍 $B(x, \\delta)$，灰虚线就绕开了。梯度由 CppAD（C++ 自动求导库）在每个去噪步里算出。' },
         { at: 10.4, s: '代价直接相加：路点 + 避障 = 绕开障碍走到目标（图 6B）；摇杆 + 避障，用户稍微推歪也能躲开。训练时一个都没见过。' },
         { at: 13.4, s: '和在线轨迹优化不同：先验里已经有一整套可行的人类动作，简单的代价就够了。不过引导权重仍要轻调，细粒度目标效果差。' }
       ]
@@ -2385,8 +2422,8 @@
   function buildVideoDemo(host) {
     K.video(host, {
       title: '配音讲解视频：BeyondMimic 十二幕全流程',
-      sub: '9 分 45 秒竖屏视频（1080×1920），中文配音 + 字幕。画面就是上面的十二幕动画，旁白把每一幕讲细；适合手机上看或转发。',
-      size: '11.2 MB',
+      sub: '9 分 47 秒竖屏视频（1080×1920），中文配音 + 字幕。画面就是上面的十二幕动画，旁白把每一幕讲细；适合手机上看或转发。',
+      size: '11.3 MB',
       fileName: 'BeyondMimic_讲解视频.mp4'
     });
   }
