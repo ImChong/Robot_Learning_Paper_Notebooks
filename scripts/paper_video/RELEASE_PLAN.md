@@ -41,7 +41,7 @@
 - [x] 016 [LCP](../../papers/01_Foundational_RL/LCP_Sim-to-Real_Action_Smoothing/LCP_Sim-to-Real_Action_Smoothing.md)（2024）🎬 `lcp` — DR→LCP；2026-10-05 重做成十幕，片头接 015 的片尾预告（OP3 用输出端滤波，LCP 改成梯度惩罚）；同日按「公式太多」的反馈改成以动图为主，重配为 9 分 56 秒
 - [ ] 017 [ASAP](../../papers/03_High_Impact_Selection/ASAP_Aligning_Simulation_and_Real-World_Physics_for_Agile_Humanoid_Skills/ASAP_Aligning_Simulation_and_Real-World_Physics_for_Agile_Humanoid_Skills.md)（2025）🎬 `asap` — LCP→ASAP、ASAP⇢BeyondMimic；BeyondMimic 笔记拿它当「单动作专用，每条动作要单独调 DR / 奖励」的对照；2026-10-06 新做十二幕，片头接 016 的片尾预告（LCP 改策略，ASAP 改仿真），片尾预告 018 BeyondMimic；视频已完成，尚未发布（2026-10-07 核对）
 - [ ] 018 [BeyondMimic](../../papers/01_Foundational_RL/BeyondMimic/BeyondMimic.md)（2025）🎬 `beyondmimic` — DP→BeyondMimic；笔记把 CALM / PULSE 和 Diffusion Policy 列为它要补足的两类前作；2026-10-06 按 arXiv v4 重做成十二幕，片头接 017 的片尾预告（ASAP 一段动作一套配方 → BeyondMimic 一份配方），2026-10-07 片尾画面与配音的源文件已改为预告 019 InEKF「机器人怎样知道自己当前的姿态和速度」（借第 12 幕「还依赖状态估计」接过去，不说 BeyondMimic 用了 InEKF），同日参考 ASAP 改正火柴人（前踢反关节、侧手翻改成腾空）与几条曲线；2026-10-08 全片重渲为 9 分 47 秒、换进笔记；同日按看片反馈改 VAE 读法（逐字母念）、第 5 幕改成皮带减速器（电机小轮转 5 圈、关节大轮转 1 圈、同向）、第 11 幕说明灰虚线（只加路点代价时穿过障碍）、四处文字出框、SDF / CppAD 各加一句解释，只出了改动的片段，**全片待重渲与验收后发布**
-- [ ] 019 [Contact-Aided InEKF](../../papers/09_State_Estimation/Contact-Aided_Invariant_EKF_for_Legged_Robots/Contact-Aided_Invariant_EKF_for_Legged_Robots.md)（2018 / 2019）🆕 笔记待深化与版本核对 — day6「状态估计先于动作」：融合 IMU、接触与足端运动学，估计身体姿态和速度。〔取舍〕先看 BeyondMimic 的跟踪能力，再补状态估计背景；这是教学关联，不表示 BeyondMimic 采用该论文的 InEKF。day6 对应 [RSS 2018 版](https://arxiv.org/abs/1805.10410)，现有笔记链接 [2019 扩展版](https://arxiv.org/abs/1904.09251)，制作前需厘清标题、年份与版本关系
+- [ ] 019 [Contact-Aided InEKF](../../papers/09_State_Estimation/Contact-Aided_Invariant_EKF_for_Legged_Robots/Contact-Aided_Invariant_EKF_for_Legged_Robots.md)（2018 / 2019）🎬 `inekf` — day6「状态估计先于动作」：融合 IMU、接触与足端运动学，估计身体姿态和速度。〔取舍〕先看 BeyondMimic 的跟踪能力，再补状态估计背景；这是教学关联，不表示 BeyondMimic 采用该论文的 InEKF。day6 对应 [RSS 2018 会议版](https://arxiv.org/abs/1805.10410)；上游清单收录的是 [IJRR 2020 扩展版](https://arxiv.org/abs/1904.09251)（标题去掉了 Legged，2019 年挂 arXiv），2026-10-08 以扩展版为准重写笔记、单列两版关系，新做十二幕动画、三个交互演示与配音视频（约 10 分钟），片头接 018 的片尾预告，片尾只预告 020 Berkeley Humanoid；视频已完成，尚未发布。发布标题用扩展版英文标题（与 `_data/papers.json` 一致）
 - [ ] 020 [Berkeley Humanoid](https://arxiv.org/abs/2407.21781)（2024）🆕 笔记待建（12_Hardware_Design）— day6「仿真与硬件」：硬件、执行器台架辨识与仿真训练共同设计。LCP 在该平台上验证，属于部署平台关联。〔取舍〕承接状态估计，补上控制命令落到硬件这一环
 - [ ] 021 [ToddlerBot](https://arxiv.org/abs/2502.00893)（2025）🆕 笔记待建（12_Hardware_Design）— day6「仿真与硬件」：把校准、数字孪生、遥操作采集与部署工具连成完整平台。〔取舍〕与 Berkeley Humanoid 连着讲，由硬件与仿真对齐走向整套工具链；片尾从遥操作采集引出 022 HumanML3D / 023 GMR 的动作数据与重定向
 - [ ] 022 [AMASS / HumanML3D](../../papers/14_Human_Motion/HumanML3D/HumanML3D.md)（2019 / 2022）🎬 `humanml3d` 可选 — AMASS / HumanML3D→GMR；视频讲的是 HumanML3D
@@ -51,7 +51,7 @@
 ### day6 补充集的制作与发布待办
 
 - [ ] 调整 018 BeyondMimic：修改片尾画面与配音，预告 019 InEKF「机器人怎样知道自己当前的姿态和速度」，完成重渲与验收后再发布；017 ASAP 继续预告 018 BeyondMimic。（2026-10-08：片尾已改、全片已重渲并换进笔记，只差验收）
-- [ ] 深化 019 InEKF：把现有起步笔记深化，并核对 RSS 2018 与 2019 扩展版的标题、年份、链接，保留版本关系说明。
+- [x] 深化 019 InEKF：把现有起步笔记深化，并核对 RSS 2018 与 2019 扩展版的标题、年份、链接，保留版本关系说明。（2026-10-08：以扩展版为准重写，笔记新增「两个版本是什么关系」一节，并完成十二幕动画与配音视频）
 - [ ] 准备 020 Berkeley Humanoid / 021 ToddlerBot：两篇已收录于[上游 Hardware Design](https://github.com/YanjieZe/awesome-humanoid-robot-learning#hardware-design)；建笔记前按仓库规则复核来源，先补对应索引条目，再在 12 模块创建笔记。
 - [ ] 制作 021 ToddlerBot：片尾从遥操作采集引出「人类动作数据从哪里来、怎样搬到机器人身上」，衔接 022 HumanML3D / 023 GMR；制作时核对后两集现有片头。
 
