@@ -99,6 +99,12 @@ Jekyll 把笔记渲染成同名 `.html`，源 `.md` 不会发布，所以 `[PPO]
 - **画真实机器人用真机的图，不用火柴人**：取 [Robot_Description_Gallery_Online](https://github.com/ImChong/Robot_Description_Gallery_Online) 的 `web/thumbs/<id>.webp`（透明底，按各家开源 URDF 渲染），裁到机身、按 `data/robots.json` 的 `measured.height_m` 等比例缩放后放进 `assets/img/robots/`，图注写明出处；bundle 里用 `document.currentScript.src` 解析 `../../img/robots/`，网页和离线视频都能找到（LCP 第 10 幕就是这么做的）。
 - **改了某一幕先出这一段给人看**：`node render.mjs <paper> clip <from>,<to>` 只渲染这段时间并配上同一段旁白，确认后再重渲整片。
 
+### 视频渲染可以尝试并行
+
+完整视频逐帧截图时，如果 CPU / 内存仍有余量，可以先尝试 **2–4 个独立 Chrome 进程分段并行渲染**，保持原分辨率、帧率与画质。2026-10-08 的 BeyondMimic 全片已用四段并行完成，观察到约三倍总吞吐量；实际收益取决于机器与分镜。具体流程和拼接验收见 [视频 README「并行渲染」](scripts/paper_video/README.md#并行渲染)。
+
+当前 `render.mjs video` 仍是串行，尚无内置 `--workers` 参数；本次使用的是临时分段脚本。后续 agent 可按文档准备独立 worker：按整数帧号划分连续区间，各段只渲染画面，按顺序拼接后统一加入完整旁白。**不要中途终止正在输出普通 MP4 的串行进程来复用前半段**：未完成封装的文件可能没有 `moov`，无法直接拼接。并行方案应在开始渲染前决定。
+
 ### 有讲解动画的笔记：动画之后的正文默认折叠
 
 一篇笔记一旦内嵌了 `K.explainer` 讲解动画，动画之后的正文就**默认折叠**，读者想细读时自己点开：
