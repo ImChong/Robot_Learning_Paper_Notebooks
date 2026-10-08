@@ -8,7 +8,7 @@ arxiv: "2608.30832"
 ---
 
 # A Dual-Cam Parallel Elastic Actuator with Shared Gas-Spring Compensation for Humanoid Ankles
-**双凸轮 + 单气弹簧：让一根弹性元件同时替人形踝的俯仰(pitch)和翻滚(roll)两个自由度分担静态力矩，把电机从「长期扛着重力」里解放出来，又不占用踝部本就紧张的空间。**
+**双凸轮并联弹性驱动器：用共享气弹簧补偿人形踝关节双向力矩**
 
 > 📅 阅读日期: 2026-09-15
 >

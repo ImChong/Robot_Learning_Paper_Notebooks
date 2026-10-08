@@ -8,7 +8,7 @@ category: "Simulation Benchmark"
 
 # MuJoCo Playground: An Open-Source Framework for GPU-Accelerated Robot Learning and Sim-to-Real Transfer
 
-**一句话简要描述：基于 MJX 的全开源机器人学习框架，把「DM Control 经典控制 + 足式运动 + 灵巧操作」统一进 GPU 并行仿真，配 Madrona 批渲染器直接训练像素策略，可在单张 GPU 上几分钟训好并零样本迁移到真机（状态与像素输入皆可）。**
+**MuJoCo Playground：GPU 加速的机器人学习开源框架**
 
 > 📅 总结日期: 2026-08-18
 >

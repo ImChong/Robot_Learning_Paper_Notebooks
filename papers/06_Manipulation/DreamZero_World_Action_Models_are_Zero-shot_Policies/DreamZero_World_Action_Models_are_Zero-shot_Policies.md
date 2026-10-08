@@ -7,7 +7,7 @@ category: "Manipulation"
 ---
 
 # DreamZero: World Action Models are Zero-shot Policies
-**把 14B 视频扩散骨干改造成「同时做梦、同时动手」的世界-动作模型，真机零样本泛化超 SOTA VLA 2×**
+**DreamZero：世界-动作模型即零样本策略**
 
 > 📅 阅读日期: 2026-06-08
 >

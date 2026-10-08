@@ -7,7 +7,7 @@ category: "Navigation"
 ---
 
 # GuideWalk: Learning Unified Autonomous Navigation and Locomotion for Humanoid Robots across Versatile Terrains
-**把「可通过性感知的导航规划」与「地形自适应的运动控制」用复合教师蒸馏成一个统一策略，再经 RL+行为克隆微调，让人形机器人在楼梯/斜坡/窄梁/杂乱场景中既能避障又能稳步行走**
+**GuideWalk：面向多样地形的人形机器人统一自主导航与运动策略**
 
 > 📅 阅读日期: 2026-07-03
 >

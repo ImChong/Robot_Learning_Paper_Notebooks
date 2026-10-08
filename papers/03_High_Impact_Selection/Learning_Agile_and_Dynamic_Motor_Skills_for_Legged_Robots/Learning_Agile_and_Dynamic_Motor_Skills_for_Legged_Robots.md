@@ -7,7 +7,7 @@ zhname: "ANYmal 敏捷运动技能学习（sim-to-real RL 奠基作）"
 ---
 
 # Learning Agile and Dynamic Motor Skills for Legged Robots
-**ANYmal 敏捷运动技能学习（sim-to-real RL 奠基作）**
+**足式机器人敏捷动态运动技能学习**
 
 > 📅 阅读日期: 2026-05-17
 >

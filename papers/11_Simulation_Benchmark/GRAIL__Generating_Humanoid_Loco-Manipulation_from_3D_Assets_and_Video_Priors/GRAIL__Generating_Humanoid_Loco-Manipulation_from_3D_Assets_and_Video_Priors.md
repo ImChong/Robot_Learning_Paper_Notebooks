@@ -7,7 +7,7 @@ category: "Simulation Benchmark"
 ---
 
 # GRAIL: Generating Humanoid Loco-Manipulation from 3D Assets and Video Priors
-**全数字的数据生成管线：把 3D 资产、可仿真场景与「视频基础模型（VFM）」先验拼起来，直接合成人形机器人的全身操作 + 行走交互数据，部署前完全不碰真机、不做遥操作。**
+**GRAIL：从 3D 资产与视频先验生成人形 Loco-Manipulation**
 
 > 📅 阅读日期: 2026-06-25
 >

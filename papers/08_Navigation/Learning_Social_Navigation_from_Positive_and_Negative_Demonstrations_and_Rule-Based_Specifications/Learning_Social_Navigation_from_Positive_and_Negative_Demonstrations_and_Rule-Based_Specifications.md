@@ -7,7 +7,7 @@ arxiv: "2510.12215"
 ---
 
 # Learning Social Navigation from Positive and Negative Demonstrations and Rule-Based Specifications
-**针对人群环境导航「既要适应多样行为又要遵守安全约束」的矛盾：从正/负示范学一个密度型奖励，再叠加避障与到达目标的规则目标；用基于采样的前瞻控制器产出既安全又自适应的监督动作，蒸馏成带不确定性估计、可实时运行的紧凑学生策略；合成与电梯共乘仿真成功率/时效双升，真人实验验证可部署**
+**从正负示范与规则规范学习社交导航**
 
 > 📅 阅读日期: 2026-06-21
 >

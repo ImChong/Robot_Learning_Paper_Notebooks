@@ -7,7 +7,7 @@ arxiv: "2410.24185"
 ---
 
 # DexMimicGen: Automated Data Generation for Bimanual Dexterous Manipulation via Imitation Learning
-**针对模仿学习「数据采集是瓶颈」，提出大规模自动数据生成系统：在仿真里从极少量人类演示合成出大量轨迹，面向带灵巧手的人形机器人；从 60 条源演示生成 2.1 万条演示，覆盖多种双手操作行为，并在真实人形的易拉罐分拣任务上部署验证**
+**DexMimicGen：经由模仿学习的双手灵巧操作自动数据生成**
 
 > 📅 阅读日期: 2026-06-21
 >

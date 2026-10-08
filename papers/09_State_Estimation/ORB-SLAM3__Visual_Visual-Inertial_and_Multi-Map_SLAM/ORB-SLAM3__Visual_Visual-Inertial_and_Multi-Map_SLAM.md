@@ -7,7 +7,7 @@ arxiv: "2007.11898"
 ---
 
 # ORB-SLAM3: An Accurate Open-Source Library for Visual, Visual-Inertial and Multi-Map SLAM
-**在 ORB-SLAM2 的「跟踪 / 局部建图 / 闭环」三线程框架上加了两件事：一是从 IMU 初始化阶段起就完全基于最大后验（MAP）估计的紧耦合视觉-惯性 SLAM，二是由 Atlas 管理的多地图系统——跟丢时新开一张地图，重访旧区域时用高召回的位置识别把地图无缝合并；同一套代码支持单目 / 双目 / RGB-D、针孔 / 鱼眼相机，有无 IMU 均可。**
+**ORB-SLAM3：视觉、视觉-惯性与多地图 SLAM 的高精度开源库**
 
 > 📅 总结日期: 2026-09-24
 >

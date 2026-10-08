@@ -7,7 +7,7 @@ arxiv: "2503.12725"
 ---
 
 # Humanoids in Hospitals: A Technical Study of Humanoid Robot Surrogates for Dexterous Medical Interventions
-**探索人形机器人经遥操作执行医疗任务以缓解医护人力短缺：为 Unitree G1 搭建带位姿跟踪、定制抓取与阻抗控制的双臂系统，跨七类医疗流程（体检、急救干预、通气、超声引导、精密穿针）评测，结果显示人形能复现关键医疗评估、在通气与超声引导任务上有可观定量表现，但受力限与传感灵敏度制约影响临床精度**
+**Humanoids in Hospitals：人形替身灵巧医疗干预的技术研究**
 
 > 📅 阅读日期: 2026-06-21
 >

@@ -8,7 +8,7 @@ category: "Simulation Benchmark"
 
 # Labimus: A Simulation and Benchmark for Humanoid Dexterous Manipulation in Chemical Laboratory
 
-**一句话简要描述：把真实有机化学实验台「real-to-sim」重建成 30+ 功能保真资产，配「PhysX 刚体 + 粒子化粉末物理 + 天平闭环读数」的高保真仿真，用称量等标准化原子操作与完整工作流评测人形灵巧操作，并揭示「任务完成 ≠ 精度达标」的精度鸿沟。**
+**Labimus：面向化学实验室人形灵巧操作的仿真与基准**
 
 > 📅 总结日期: 2026-07-27
 >

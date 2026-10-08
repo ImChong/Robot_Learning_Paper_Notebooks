@@ -7,7 +7,7 @@ arxiv: "2505.11709"
 ---
 
 # EgoDex: Learning Dexterous Manipulation from Large-Scale Egocentric Video
-**用 Apple Vision Pro 采集迄今最大、最多样的人类灵巧操作数据集：829 小时第一视角视频，录制时即配 3D 手与手指跟踪（多标定相机 + 机载 SLAM 精确跟踪每个关节），覆盖 194 个桌面任务（从系鞋带到叠衣服）；并训练评测手部轨迹预测的模仿学习策略、建立度量与基准，数据集公开**
+**EgoDex：从大规模第一视角视频学习灵巧操作**
 
 > 📅 阅读日期: 2026-06-21
 >

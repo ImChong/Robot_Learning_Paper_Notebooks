@@ -6,7 +6,7 @@ category: "Manipulation"
 ---
 
 # AnyWorld: Factorized Egocentric World Models for Cross-Embodiment Generalization
-**AnyWorld：把一段人类第一人称交互视频「分解」成动作 / 相机 / 本体三路可独立重组的条件，用视频世界模型直接生成机器人自视角的操作数据——无需成对人-机演示，就能把稀缺的人类视频扩成海量、可控、贴合目标机器人的训练经验**
+**AnyWorld：可分解的第一人称世界模型，把人类视频「改写」成跨本体机器人经验**
 
 > 📅 阅读日期: 2026-09-04
 >

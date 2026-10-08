@@ -7,7 +7,7 @@ arxiv: "2507.07095"
 ---
 
 # Go to Zero: Towards Zero-shot Motion Generation with Million-scale Data
-**把文本到动作推向「零样本泛化」：提出高效动作标注机制，从网络规模人类动作视频自动用运动学回归采集高质量动作、用视觉语言模型生成语义丰富描述，构建迄今最大的人类动作数据集 MotionMillion（2000+ 小时、200 万条序列），并提出最全面的零样本评测 MotionMillion-Eval；把模型规模化到 7B 参数，对域外与复杂组合动作展现强泛化**
+**Go to Zero：迈向百万级数据的零样本动作生成**
 
 > 📅 阅读日期: 2026-06-21
 >

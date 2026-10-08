@@ -7,7 +7,7 @@ category: "Simulation Benchmark"
 ---
 
 # MolmoSpaces: A Large-Scale Open Ecosystem for Robot Navigation and Manipulation
-**Ai2 把场景、物体、抓取、机器人、模拟器接口、基准任务一口气全部开源，给「在仿真里训通用 VLA」这件事第一次配齐弹药**
+**MolmoSpaces：面向机器人导航与操作的大规模开放生态**
 
 > 📅 阅读日期: 2026-05-20
 >

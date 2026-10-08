@@ -7,7 +7,7 @@ category: "Loco-Manipulation and WBC"
 ---
 
 # MOSAIC: Bridging the Sim-to-Real Gap in Generalist Humanoid Motion Tracking and Teleoperation with Rapid Residual Adaptation
-**MOSAIC：冻结通用跟踪骨干 + 轻量残差模块，分钟级适配遥操接口实现稳定泛化**
+**MOSAIC：通用人形动作跟踪与遥操作的 Sim-to-Real 桥接**
 
 > 📅 阅读日期: 2026-05-01
 >

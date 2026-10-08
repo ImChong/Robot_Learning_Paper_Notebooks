@@ -7,7 +7,7 @@ category: "State Estimation"
 ---
 
 # Legged Robot State-Estimation Through Combined Forward Kinematic and Preintegrated Contact Factors
-**把 IMU 预积分的思路搬到「腿」上：用前向运动学因子约束 base↔足端、用预积分接触因子把高频接触测量压成一条相对位姿约束，整体在因子图上做平滑（smoothing）而不是滤波（filtering）**
+**用「前向运动学因子 + 预积分接触因子」把足式机器人状态估计搬到因子图平滑上**
 
 > 📅 阅读日期: 2026-06-07
 >

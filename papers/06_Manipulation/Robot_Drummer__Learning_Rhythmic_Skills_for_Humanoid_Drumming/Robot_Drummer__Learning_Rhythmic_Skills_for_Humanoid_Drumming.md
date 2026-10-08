@@ -7,7 +7,7 @@ arxiv: "2507.11498"
 ---
 
 # Robot Drummer: Learning Rhythmic Skills for Humanoid Drumming
-**把人形打鼓表述成「节奏接触链（Rhythmic Contact Chain）」——一连串定时接触：从鼓谱推出接触链，把长时程乐曲分解成定长片段并行用 RL 训练；在 30+ 摇滚/金属/爵士曲目上取得高 F1，并涌现交叉臂击打与自适应鼓棒分配等拟人策略，完成数分钟级多肢协调演奏**
+**Robot Drummer：为人形打鼓学习节奏技能**
 
 > 📅 阅读日期: 2026-06-21
 >

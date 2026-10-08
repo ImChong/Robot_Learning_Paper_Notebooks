@@ -80,3 +80,26 @@ node check_layout.mjs awr cover       # 封面排版检查，输出 no overlap �
 - 走 TLS 代理时设置 `SSL_CERT_FILE`，`build.py` 会让 edge-tts 用这份 CA。
 - 新增一篇：写 `papers/<paper>.py`（`SCRIPT` / `DISPLAY`）和 `papers/<paper>.js`（`window.PaperVideo` 的 `arxiv` / `intro` / `outro`；没有 arXiv 版本的论文改写 `badge`，如 HumanML3D 的 `'CVPR 2022'`，角标就显示会议名），`<paper>` 是 `assets/js/demos/<paper>.js` 的 bundle 名；讲解动画的演示 id 不必叫 `<paper>-explainer`（`diffusion_policy.js` 里是 `dp-explainer`、`beyondmimic.js` 里是 `bm-explainer`），`render.mjs` 会从 bundle 里读出 `'…-explainer'` 那个 id。
 - 放进笔记：网页版再压一次（`-crf 27 -tune stillimage -b:a 64k -ac 1 -movflags +faststart`；PPO 5.2 MB，更长的 AWR 用 `-crf 30` 压到 7.1 MB，DeepMimic 用 `-crf 29` 压到 6.2 MB；AMP 用 `-crf 31` 压到 6.4 MB，六分多钟的 PHC 用 `-crf 32` 压到 8.5 MB，ADD 加 `-preset slow` 同 `-crf 32` 压到 8.3 MB，七分多钟的 ASE 用 `-preset slow -crf 33` 压到 9.5 MB；六七分钟的 CALM / PULSE 用 `-preset slow -crf 31` 压到 7.9 / 9.4 MB，八分钟的 Diffusion Policy 用 `-preset slow -crf 33` 压到 9.9 MB；约三分钟的 Cosmos 用 `-preset slow -crf 30` 压到 4.3 MB，GR00T N1 用 `-preset slow -crf 31` 压到 7.0 MB；六分钟上下的 Transformer / π₀ / π₀.₅ 同参数压到 7.7 / 8.2 / 8.7 MB，SONIC / GMR / OmniRetarget 同参数压到 7.0 / 7.3 / 6.7 MB，七分多钟的 HumanML3D 同参数压到 9.2 MB；八分半的 SMP 用 `-preset slow -crf 34`、音频降到 `-b:a 48k` 压到 9.7 MB，八分多钟的域随机化同样 48k 音频、`-preset slow -crf 35` 压到 9.9 MB（`-crf 34` 是 10.2 MB），九分半的四足野外盲走同样 48k 音频、`-preset slow -crf 36 -tune stillimage` 压到 10.4 MB（`-crf 35` 是 10.8 MB），十分半的真实世界人形行走同参数改 `-crf 37` 压到 11.1 MB（`-crf 36` 是 11.4 MB；对话里交付的是 `-crf 19` 原片），十分钟出头的 OP3 足球（十二幕）同样 48k 音频、`-preset slow -crf 36 -tune stillimage` 压到 11.4 MB（`-crf 35` 是 11.8 MB），将近十分钟的 LCP（十幕，第二版改成以动图为主，画面一直在动，体积比同长的静帧多）用 `-crf 37` 压到 11.3 MB（渲染原片 35 MiB 超了 30 MiB，对话交付改用 `-crf 21` + 96k 单声道音频重编码，27.8 MiB），十分钟出头的 ASAP（十二幕，同样以动图为主）同参数 `-crf 37` 压到 11.3 MB（`-crf 36` 是 11.7 MB；原片 34.5 MB，只降音频的 `-c:v copy` 仍有 30.2 MiB，对话交付同 LCP 用 `-crf 21` + 96k 单声道，26.6 MiB），九分 47 秒的 BeyondMimic（十二幕，第二版，片尾改预告 InEKF）同参数 `-crf 37` 压到 11.3 MB（原片 34.0 MiB，对话交付用 `-crf 21` + 96k 单声道，27.1 MiB），十分 6 秒的接触辅助 InEKF（十二幕）同样 48k 音频、`-preset slow -crf 36 -tune stillimage` 压到 11.1 MB（`-crf 37` 是 10.7 MB；`-crf 19` 原片 29.5 MiB，没超 30 MiB，对话里直接交付原片），海报由 `cover.png` 缩到 540×960 的 jpg，与海报一起放到笔记目录的 `media/`，接线方式见 `AGENTS.md`「配音讲解视频（`K.video`）」。
+
+## 并行渲染
+
+逐帧截图的串行速度受浏览器限制；CPU / 内存有余量时，可以尝试 2–4 个独立 Chrome 进程分段渲染。2026-10-08 的 BeyondMimic 使用四段并行，观察到约三倍总吞吐量，最终 18,282 帧全部保留，音视频时长分别为 609.400 / 609.380 秒。这个收益是本次机器上的观察值，不保证其他机器或分镜也一样。
+
+**当前 `render.mjs video` 仍是串行，没有内置 `--workers` 参数。** 本次使用临时 worker 脚本，未入库；后续 agent 尝试并行时，需要先准备分段 worker，而不是直接给现有命令加参数。现有 `clip` 模式带分段音频且使用 CRF 21，不能原样当作 CRF 19 全片的无声分段 worker。
+
+1. 先完成 `build.py`，所有 worker 共用同一份 `timeline.json` 和 `narration.wav`。并行只用于画面渲染。
+2. 以总帧数 `ceil(timeline.total × fps)` 划分连续、不重叠的整数帧区间 `[startFrame, endFrame)`。每段渲染 `endFrame - startFrame` 帧，传给 `renderAt` 的是全片时间 `(startFrame + i) / fps`，不要从零重新播放分镜。
+3. 每个 worker 使用独立浏览器、独立生成的 `stage.*.built.html`、日志和输出文件；完整执行字体等待、分镜预热与 `fitStages()`。所有分段使用相同的分辨率、帧率、H.264 / yuv420p 与 CRF 19，仅输出画面（`-an`）；可以限制每个编码器的线程数，避免争抢 CPU。
+4. 检查每个 worker 的退出码和分段实际帧数，确认都与预期一致后，用 ffmpeg concat 按帧号顺序拼接画面（`-c:v copy`），再从完整的 `narration.wav` 一次性编码 AAC。这样避免分段 AAC 编码延迟造成接缝停顿。
+5. 合并时不要依赖 `-shortest` 来裁尾：本次它截掉了最后 4 帧，移除后才保留全部 18,282 帧。用 `ffprobe` 核对总帧数、帧率、分辨率和音视频时长，再做全片解码检查；音视频时长差应不超过一帧。排版与封面仍按上文运行 `check_layout.mjs`。
+
+分段都完成后，`concat.txt` 按顺序列出相对路径，如 `file 'chunk_0-4570.mp4'`。合并示例（以下为已有四段视频的合并，不是启动 worker 的命令）：
+
+```bash
+ffmpeg -y -f concat -safe 0 -i out/beyondmimic/concat.txt \
+  -i out/beyondmimic/narration.wav -map 0:v:0 -map 1:a:0 \
+  -c:v copy -c:a aac -b:a 160k -ar 48000 -movflags +faststart \
+  out/beyondmimic/beyondmimic_video.mp4
+```
+
+并行方案应在开始渲染前决定。不要中途终止现有串行进程后直接复用它正在写的普通 MP4：未完成封装时可能没有 `moov`，已编码的前半段也无法直接拼接。渲染产物和临时脚本继续放在被忽略的 `out/` 等临时位置，不提交进仓库。

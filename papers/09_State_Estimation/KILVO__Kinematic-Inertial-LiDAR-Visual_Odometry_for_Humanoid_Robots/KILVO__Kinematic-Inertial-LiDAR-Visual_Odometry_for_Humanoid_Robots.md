@@ -7,7 +7,7 @@ arxiv: "2608.05647"
 ---
 
 # KILVO: Kinematic-Inertial-LiDAR-Visual Odometry with Robust Multimodal Adaptation for Humanoid Robots
-**把关节编码器（运动学）、IMU、LiDAR、相机四类传感器塞进一个「异步-顺序混合」的误差状态迭代卡尔曼滤波器（ESIKF）：高频腿部运动学做本体约束、LiDAR 与视觉光度误差做外感更新，再配一个不加装额外传感器的接触估计模块；当某一路传感器退化或失效时能在 KI / KIL / LIV / KILV 之间平滑切换，实现 1 kHz 输出、对多种人形与步态都鲁棒的里程计。**
+**KILVO：面向人形机器人的运动学-惯性-激光-视觉多模态自适应里程计**
 
 > 📅 总结日期: 2026-09-12
 >

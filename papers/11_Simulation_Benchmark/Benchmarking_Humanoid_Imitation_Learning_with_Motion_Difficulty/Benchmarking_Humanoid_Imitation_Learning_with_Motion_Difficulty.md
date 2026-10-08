@@ -7,7 +7,7 @@ category: "Simulation Benchmark"
 ---
 
 # Benchmarking Humanoid Imitation Learning with Motion Difficulty
-**第一个把「动作本身有多难」从「策略学得多好」里剥离出来的评测框架——用刚体动力学下的扰动力矩量化难度，把 AMASS 重新切成难度分层基准**
+**基于动作难度的人形模仿学习基准**
 
 > 📅 阅读日期: 2026-05-29
 >

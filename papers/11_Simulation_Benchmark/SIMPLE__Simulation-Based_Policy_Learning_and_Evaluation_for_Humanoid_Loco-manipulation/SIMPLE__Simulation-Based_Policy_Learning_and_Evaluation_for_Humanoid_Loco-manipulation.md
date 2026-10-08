@@ -8,7 +8,7 @@ category: "Simulation Benchmark"
 
 # SIMPLE: Simulation-Based Policy Learning and Evaluation for Humanoid Loco-manipulation
 
-**一句话简要描述：把 MuJoCo 的接触物理与 Isaac Sim 的真实感渲染拼成一套「物理算一份、画面渲一份」的混合仿真平台，配 60 个全身移动操作任务 / 50 个室内场景 / 1000+ 物体，并内置「运动规划自动生成 + VR 遥操作」两条数据管线，给主流 VLA / 世界动作模型提供可复现、和真机高度相关的统一评测。**
+**SIMPLE：面向人形机器人全身移动操作的仿真策略学习与评测平台**
 
 > 📅 阅读日期: 2026-07-06
 >

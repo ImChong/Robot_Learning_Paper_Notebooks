@@ -9,7 +9,7 @@ demos: ["umr"]
 ---
 
 # Unified Motion Retargeting for Humanoids with Learned Point Cloud Correspondence
-**把人和机器人的「体表点云」当作统一接口：先在 T-pose 下学一套稠密的人—机表面对应，再用这些点对当锚点做带约束的位姿优化，重定向从此不需要手工指定关节映射，接触关系也能一并搬过去。**
+**UMR：基于学习点云对应的人形统一动作重定向**
 
 > 📅 阅读日期: 2026-09-19
 >

@@ -7,7 +7,7 @@ category: "Locomotion"
 ---
 
 # CMR: Contractive Mapping Embeddings for Robust Humanoid Locomotion on Unstructured Terrains
-**把高维含噪观测压进一个「收缩映射（contractive mapping）」潜空间——在那里扰动会随时间逐步衰减而非放大；用对比学习保留任务关键信息、用 Lipschitz 约束压低敏感度，二者合成一个辅助损失，几乎零成本地插进现成深度 RL 管线**
+**CMR：非结构地形上的鲁棒人形行走收缩映射嵌入**
 
 > 📅 阅读日期: 2026-06-15
 >

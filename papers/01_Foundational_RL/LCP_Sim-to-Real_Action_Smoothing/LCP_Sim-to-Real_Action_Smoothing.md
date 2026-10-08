@@ -8,7 +8,7 @@ demos: ["lcp"]
 ---
 
 # Learning Smooth Humanoid Locomotion through Lipschitz-Constrained Policies (LCP)
-**把「动作要平滑」写成对策略的 Lipschitz 约束，再化成一项可微的梯度惩罚 $\lambda _ {gp}\,\mathbb{E}\lVert\nabla_s\log\pi(a \mid s)\rVert^2$：不用平滑奖励、不加低通滤波，几行代码、一个系数 0.002，四台人形机器人的行走策略都零样本上了真机。**
+**LCP：用 Lipschitz 约束策略学习平滑的人形行走**
 
 > 📅 阅读日期: 2026-04-06（2026-10-05 对照 arXiv v1–v3 全文与官方代码重核，补十幕动画、三个交互演示与配音视频）
 >

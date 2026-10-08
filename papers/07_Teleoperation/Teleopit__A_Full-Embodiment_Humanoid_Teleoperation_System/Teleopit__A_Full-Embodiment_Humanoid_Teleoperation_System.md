@@ -7,7 +7,7 @@ arxiv: "2608.01834"
 ---
 
 # Teleopit: A Full-Embodiment Humanoid Teleoperation System
-**用单副 Meta PICO 头显同时驱动人形的身体、灵巧手与主动视觉：运动跟踪器 + 免调参手部重定向 + 2-DoF 主动头，采集的演示能把 ACT / GR00T N1.7 训到 90%~95% 成功率**
+**Teleopit：用一副 VR 头显统管身-手-头的全体感人形遥操作系统**
 
 > 📅 阅读日期: 2026-08-14
 >

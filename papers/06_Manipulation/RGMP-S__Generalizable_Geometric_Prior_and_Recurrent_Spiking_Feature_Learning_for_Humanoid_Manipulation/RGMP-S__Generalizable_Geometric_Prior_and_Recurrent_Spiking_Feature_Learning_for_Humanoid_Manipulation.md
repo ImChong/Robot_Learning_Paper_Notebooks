@@ -7,7 +7,7 @@ category: "Manipulation"
 ---
 
 # Generalizable Geometric Prior and Recurrent Spiking Feature Learning for Humanoid Robot Manipulation
-**让 VLM 看 2D 几何先验做长程技能拆解，让递归脉冲网络在稀疏示范下还能学到一致动作**
+**RGMP-S：用 2D 几何先验做长程技能选择 + 递归脉冲网络稀疏示范下学动作**
 
 > 📅 阅读日期: 2026-05-29
 >

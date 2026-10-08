@@ -7,7 +7,7 @@ arxiv: "2410.00425"
 ---
 
 # ManiSkill3: GPU Parallelized Robotics Simulation and Rendering for Generalizable Embodied AI
-**基于开源 SAPIEN + PhysX 的 GPU 并行机器人仿真框架：物理和渲染都在 GPU 上批量完成，「仿真 + 渲染」吞吐可达 30,000+ FPS，显存只有 Isaac Lab 的 1/2–1/3；它还支持异构并行（每个并行环境里的物体、关节数甚至整个房间都可以不同），提供面向对象的批量 API、12 类共享同一接口的任务、20+ 款机器人（含 Unitree H1 / G1 人形）、大规模演示数据，以及统一评测口径的 RL / IL 基线。**
+**ManiSkill3：面向可泛化具身智能的 GPU 并行机器人仿真与渲染**
 
 > 📅 总结日期: 2026-09-25
 >

@@ -7,7 +7,7 @@ category: "硬件设计"
 ---
 
 # Olaf: Bringing an Animated Character to Life in the Physical World
-**Olaf：把"动画造型优先、物理上限让位"的角色机器人做到真的能在主题乐园里走起来**
+**Olaf：让动画角色在物理世界中活起来**
 
 > 📅 阅读日期: 2026-05-27
 >

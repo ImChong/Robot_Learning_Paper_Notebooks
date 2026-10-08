@@ -7,7 +7,7 @@ category: "Locomotion"
 ---
 
 # A Hybrid Autoencoder for Robust Heightmap Generation from Fused Lidar and Depth Data for Humanoid Robot Locomotion
-**把 LiDAR（球面投影） + 深度相机 + IMU 融合到「机器人中心」的 2.5D 高度图：CNN 抽空间几何 + GRU 维持时序一致性，作为人形 locomotion 的鲁棒地形感知前端**
+**融合 LiDAR 与深度的鲁棒高度图混合自编码器**
 
 > 📅 阅读日期: 2026-05-23
 >

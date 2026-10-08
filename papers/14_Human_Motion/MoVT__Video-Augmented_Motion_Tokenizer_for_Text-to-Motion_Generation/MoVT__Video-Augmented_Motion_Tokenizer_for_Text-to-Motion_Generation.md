@@ -7,7 +7,7 @@ arxiv: "2609.14965"
 ---
 
 # MoVT: Video-Augmented Motion Tokenizer for Text-to-Motion Generation
-**3D 动作训练数据太少限制了文本到动作模型对开放文本的响应能力；MoVT 把离散 3D 运动 token 投影到 2D 域，用海量人体动作视频扩充码本，再抬回 3D，得到对齐的 3D/2D 双码本，喂进模态无关的掩码 Transformer 生成器——用视频里的真实动作模式补齐动作码本**
+**MoVT：用视频增强运动分词器的文本到动作生成**
 
 > 📅 阅读日期: 2026-09-17
 >

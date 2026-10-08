@@ -7,7 +7,7 @@ arxiv: "2310.08580"
 ---
 
 # OmniControl: Control Any Joint at Any Time for Human Motion Generation
-**以往文本条件动作扩散只能控制骨盆一个关节；OmniControl 用「空间引导 + 真实性引导」两套互补机制，让单一模型能对任意关节、任意时刻施加灵活空间控制信号——空间引导用解析梯度让生成动作紧贴控制信号，真实性引导再对全身关节做协调修正，在 HumanML3D / KIT-ML 上骨盆控制显著超 SOTA，并首次支持头/手/脚等多关节约束**
+**OmniControl：任意关节、任意时刻可控的人体动作生成**
 
 > 📅 阅读日期: 2026-07-20
 >

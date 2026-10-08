@@ -6,7 +6,7 @@ category: "Human Motion"
 ---
 
 # MANIKIN: Biomechanically Accurate Neural Inverse Kinematics for Human Motion Estimation
-**面向混合现实「仅用头与手末端位姿估全身关节」的逆运动学问题，已有方法沿运动链累积误差、致末端不对齐、手位偏差或脚穿地；MANIKIN 是一个神经-解析式 IK 求解器，给常用 SMPL 参数模型嵌入解剖学约束、缩减特定参数自由度以贴近人体生物力学，并基于摆转角（swivel angle）预测，使输出完美匹配输入末端位姿、避免穿地，在快速推理下超越 SOTA（ECCV 2024）**
+**MANIKIN：生物力学精确的神经逆运动学用于人体动作估计**
 
 > 📅 阅读日期: 2026-06-21
 >

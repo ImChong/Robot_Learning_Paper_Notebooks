@@ -7,7 +7,7 @@ arxiv: "2503.17544"
 ---
 
 # PRIMAL: Physically Reactive and Interactive Motor Model for Avatar Learning
-**把交互式化身的「运动系统」建成一个生成式动作模型，实现持续、逼真、可控、可响应的 3D 运动：采用基础模型式两阶段训练——先在无监督的亚秒级动作片段上预训练，再用类 ControlNet 微调做个性化动作与空间目标到达；从单帧出发即可生成无界限逼真动作，同时实时响应外部冲量，并接入 Unreal Engine 做角色动画**
+**PRIMAL：可物理反应与交互的化身运动模型**
 
 > 📅 阅读日期: 2026-06-21
 >

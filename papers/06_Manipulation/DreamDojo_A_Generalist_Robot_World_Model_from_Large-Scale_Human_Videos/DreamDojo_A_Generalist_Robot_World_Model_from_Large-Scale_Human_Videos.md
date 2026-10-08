@@ -7,7 +7,7 @@ category: "Manipulation"
 ---
 
 # DreamDojo: A Generalist Robot World Model from Large-Scale Human Videos
-**用 4.4 万小时第一视角人类视频，预训练一个能"做梦"的机器人通用世界模型**
+**DreamDojo：从大规模人类视频中学到的通用机器人世界模型**
 
 > 📅 阅读日期: 2026-05-20
 >

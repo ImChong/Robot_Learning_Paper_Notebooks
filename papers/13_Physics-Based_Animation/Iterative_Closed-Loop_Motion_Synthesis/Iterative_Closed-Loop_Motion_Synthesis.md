@@ -7,7 +7,7 @@ category: "物理仿真动画"
 ---
 
 # Iterative Closed-Loop Motion Synthesis for Scaling the Capabilities of Humanoid Control
-**迭代闭环动作合成：用「合成 → 训练 → 失败诊断 → 再合成」的循环扩展人形控制能力**
+**迭代闭环动作合成：扩展人形机器人控制能力的数据-策略协同进化框架**
 
 > 📅 阅读日期: 2026-05-17
 >

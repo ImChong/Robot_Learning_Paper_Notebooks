@@ -7,7 +7,7 @@ category: "Teleoperation"
 ---
 
 # ExtremControl: Low-Latency Humanoid Teleoperation with Direct Extremity Control
-**绕开全身重定向，直接在末端 SE(3) 空间做映射 + 速度前馈，把端到端延迟从 200 ms 量级压到 50 ms**
+**ExtremControl：直接末端控制的低延迟人形遥操作**
 
 > 📅 阅读日期: 2026-05-19
 >

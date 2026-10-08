@@ -7,7 +7,7 @@ arxiv: "2605.27724"
 ---
 
 # HumanoidMimicGen: Data Generation for Loco-Manipulation via Whole-Body Planning
-**MimicGen / DexMimicGen 的人形续作：只给「一条带每臂技能标注的源演示」，就能把接触密集的全身技能适配到新物体位姿、并用全身规划把「单/双臂操作」与「行走+操作」串起来，自动合成大规模、稳定且无碰撞的 loco-manipulation 数据；同时配套一个 9 任务的仿真基准来公平评测。**
+**HumanoidMimicGen：用全身规划为「行走+操作」自动生成数据**
 
 > 📅 总结日期: 2026-09-14
 >

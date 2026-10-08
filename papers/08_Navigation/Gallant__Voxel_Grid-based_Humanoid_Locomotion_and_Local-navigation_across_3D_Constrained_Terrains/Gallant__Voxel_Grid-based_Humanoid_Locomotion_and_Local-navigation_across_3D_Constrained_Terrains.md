@@ -7,7 +7,7 @@ category: "Navigation"
 ---
 
 # Gallant: Voxel Grid-based Humanoid Locomotion and Local-navigation across 3D Constrained Terrains
-**用体素化 LiDAR（32×32×40 占据栅格）作为轻量、结构化的全 3D 感知表示，配 z-分组 2D CNN 端到端映射到控制策略，让单一策略不再局限于「地面障碍」，而能同时应对侧向杂物、头顶限高、多层结构与窄道；爬楼/上台阶成功率首次逼近 100%**
+**Gallant：3D 受限地形上的体素栅格人形行走与局部导航**
 
 > 📅 阅读日期: 2026-06-17
 >

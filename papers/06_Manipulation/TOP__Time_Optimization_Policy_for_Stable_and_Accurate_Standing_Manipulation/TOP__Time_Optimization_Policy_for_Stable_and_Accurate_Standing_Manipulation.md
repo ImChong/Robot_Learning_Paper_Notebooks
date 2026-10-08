@@ -7,7 +7,7 @@ arxiv: "2508.00355"
 ---
 
 # TOP: Time Optimization Policy for Stable and Accurate Standing Manipulation with Humanoid Robots
-**人形多样操作依赖鲁棒精确的站立控制，但已有方法要么难精控高维上身关节、要么在上身快速运动时难兼顾鲁棒与精度；TOP 提出「调整上身动作的时间轨迹」而非一味强化下身抗扰：用 VAE 编码上身动作先验、解耦全身控制（上身 PD + 下身 RL），训练时间优化策略来减轻快速上身运动给平衡带来的负担，同时保证平衡、精度与时间效率**
+**TOP：面向人形稳定精确站立操作的时间优化策略**
 
 > 📅 阅读日期: 2026-06-21
 >

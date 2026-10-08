@@ -7,7 +7,7 @@ demos: ["phc"]
 ---
 
 # PHC: Perpetual Humanoid Control for Real-time Simulated Avatars
-**永续人形控制：面向实时仿真虚拟角色**
+**PHC：面向实时仿真化身的持续人形控制**
 
 > 📅 阅读日期: -
 >

@@ -7,7 +7,7 @@ arxiv: "2407.01512"
 ---
 
 # Open-TeleVision: Teleoperation with Immersive Active Visual Feedback
-**给人形机器人装一个跟着操作员头部转动的立体相机云台，把双目画面实时推到 Vision Pro 里，同时用 IK + dex-retargeting 把操作员的手腕与手指镜像到机器人双臂双手上：操作员「看到机器人看到的」，采到的演示带着主动转头这一维，直接拿来训练改版 ACT（DINOv2 + 双目输入）**
+**Open-TeleVision：带沉浸式主动视觉反馈的遥操作系统**
 
 > 📅 阅读日期: 2026-10-01
 >

@@ -7,7 +7,7 @@ arxiv: "2510.07882"
 ---
 
 # Towards Proprioception-Aware Embodied Planning for Dual-Arm Humanoid Robots
-**多模态大模型可做高层规划，但在双臂人形长时程任务上受限于仿真平台不足与「具身感知」欠缺；本文用带连续过渡与意外机制的双臂人形模拟器 DualTHOR，并提出 Proprio-MLLM——融合本体感受、基于运动的位置嵌入与跨空间编码器以增强具身感知，在该环境中规划性能平均提升 19.75%**
+**面向双臂人形的本体感受感知具身规划**
 
 > 📅 阅读日期: 2026-06-21
 >

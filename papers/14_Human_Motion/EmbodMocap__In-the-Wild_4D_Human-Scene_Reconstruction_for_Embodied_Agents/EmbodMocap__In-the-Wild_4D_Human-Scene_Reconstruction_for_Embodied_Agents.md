@@ -7,7 +7,7 @@ category: "人体动作生成"
 ---
 
 # EmbodMocap: In-the-Wild 4D Human-Scene Reconstruction for Embodied Agents
-**双 iPhone 户外 4D 人-场景重建，给具身智能体喂数据**
+**EmbodMocap：面向具身智能体的户外 4D 人-场景重建**
 
 > 📅 阅读日期: 2026-05-19
 >

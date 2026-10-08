@@ -7,7 +7,7 @@ arxiv: "2511.21169"
 ---
 
 # Kinematics-Aware Multi-Policy Reinforcement Learning for Force-Capable Humanoid Loco-Manipulation
-**面向高负载工业场景「既要灵巧又要主动施力」的需求，用解耦三阶段 RL 流水线（上身策略 + 下身策略 + delta 指令策略）：上身用隐含前向运动学先验的启发式奖励加速收敛、下身用基于力的课程学习让机器人主动施加并调节与环境的交互力**
+**面向力交互的人形移动操作：运动学感知的多策略强化学习**
 
 > 📅 阅读日期: 2026-06-21
 >

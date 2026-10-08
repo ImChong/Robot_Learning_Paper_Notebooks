@@ -7,7 +7,7 @@ category: "硬件设计"
 ---
 
 # Human-Level Actuation for Humanoids
-**用「DoF Atlas + 人等效包络 HEE + 人级驱动评分 HLAS」把模糊的「人级驱动」说法变成可量化、可对比的关节驱动器基准，戳破「峰值扭矩」宣传的水分**
+**Human-Level Actuation for Humanoids：人形关节驱动的人级评测**
 
 > 📅 阅读日期: 2026-07-07
 >

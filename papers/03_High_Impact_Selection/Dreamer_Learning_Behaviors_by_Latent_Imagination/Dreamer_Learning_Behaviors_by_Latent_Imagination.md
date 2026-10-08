@@ -7,7 +7,7 @@ zhname: "Dreamer：在潜空间想象中学习行为"
 ---
 
 # Dream to Control: Learning Behaviors by Latent Imagination
-**Dreamer：先从图像里学一个能「往前推演」的潜空间世界模型（沿用 PlaNet 的 RSSM），再完全在这个潜空间里想象轨迹，用值函数补上想象视野之外的回报，并把回报的解析梯度沿学到的动力学一路反传给策略**
+**Dreamer：在潜空间想象中学习行为**
 
 > 📅 阅读日期: 2026-10-06
 >

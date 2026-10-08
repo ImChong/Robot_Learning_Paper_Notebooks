@@ -7,7 +7,7 @@ category: "Sim-to-Real"
 ---
 
 # Contrastive Representation Learning for Robust Sim-to-Real Transfer of Adaptive Humanoid Locomotion
-**用对比学习把"特权环境信息（地形/物理参数）"塞进 actor 的潜变量，再让"自适应步态时钟"按这个潜变量主动调整节奏 —— 在不依赖外接感知的情况下让全尺寸人形零样本走过 30 cm 台阶 / 26.5° 斜坡**
+**自适应步态的对比表征学习与鲁棒 Sim-to-Real 迁移**
 
 > 📅 阅读日期: 2026-05-28
 >

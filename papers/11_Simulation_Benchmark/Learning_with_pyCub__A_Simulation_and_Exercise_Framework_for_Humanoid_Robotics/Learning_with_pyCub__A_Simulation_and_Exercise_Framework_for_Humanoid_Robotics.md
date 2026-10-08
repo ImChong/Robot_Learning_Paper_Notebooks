@@ -7,7 +7,7 @@ arxiv: "2506.01756"
 ---
 
 # Learning with pyCub: A Simulation and Exercise Framework for Humanoid Robotics
-**面向教学的 iCub 开源物理仿真 pyCub：相比需 C++ 与 YARP 中间件的 iCub SIM/Gazebo，pyCub 纯 Python、无需 YARP；完整仿真带眼部双相机与覆盖体表 4000 个感受器的独特敏感皮肤，配套从速度/关节/笛卡尔空间控制到注视、抓取、反应式控制的分级练习，已在两轮人形机器人课程中验证**
+**Learning with pyCub：人形机器人学的仿真与练习框架**
 
 > 📅 阅读日期: 2026-06-21
 >

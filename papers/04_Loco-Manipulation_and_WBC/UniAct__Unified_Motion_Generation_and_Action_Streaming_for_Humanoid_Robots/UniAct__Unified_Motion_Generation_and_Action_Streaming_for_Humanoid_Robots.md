@@ -7,7 +7,7 @@ arxiv: "2512.24321"
 ---
 
 # UniAct: Unified Motion Generation and Action Streaming for Humanoid Robots
-**两段式框架：把微调的多模态大模型（MLLM）与因果流式管线结合，让人形以亚 500 ms 延迟执行多模态指令（语言/音乐/轨迹）；用 FSQ 共享离散码本统一各模态输入，既做跨模态对齐、又把动作约束在物理可行流形上，零样本跟踪不完美参考动作成功率提升 19%，并在 20 小时 UniMoCap 基准上验证**
+**UniAct：人形机器人的统一动作生成与流式执行**
 
 > 📅 阅读日期: 2026-06-21
 >

@@ -7,7 +7,7 @@ category: "Loco-Manipulation and WBC"
 ---
 
 # TTT-Parkour: Rapid Test-Time Training for Perceptive Robot Parkour
-**对着障碍物拍一段 RGB-D → 重建网格 → 仿真里再微调几分钟 → Unitree G1 零样本跑酷**
+**TTT-Parkour：用快速测试时训练让人形跑酷适应未见地形**
 
 > 📅 阅读日期: 2026-05-13
 >

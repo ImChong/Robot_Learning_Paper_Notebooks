@@ -7,7 +7,7 @@ category: "Loco-Manipulation and WBC"
 ---
 
 # Collision-Free Humanoid Traversal in Cluttered Indoor Scenes
-**CAT（Click-and-Traverse）：用"人形势场"把机器人和障碍物的空间关系编码成无碰撞运动方向，让人形机器人在堆满杂物的室内里钻、蹲、跨着穿过去**
+**杂乱室内场景中的人形无碰撞穿越**
 
 > 📅 阅读日期: 2026-06-13
 >

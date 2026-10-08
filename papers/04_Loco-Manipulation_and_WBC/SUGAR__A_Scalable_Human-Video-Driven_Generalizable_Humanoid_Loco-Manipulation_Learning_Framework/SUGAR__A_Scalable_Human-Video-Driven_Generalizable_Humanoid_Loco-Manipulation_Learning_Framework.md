@@ -7,7 +7,7 @@ arxiv: "2605.20373"
 ---
 
 # SUGAR: A Scalable Human-Video-Driven Generalizable Humanoid Loco-Manipulation Learning Framework
-**把无结构的人类视频自动转成可部署的人形移动操作技能：先抽取「人-物」运动与接触先验，再用特权物理精修把含噪先验「磨」成物理可行技能，最后蒸馏成「指令生成器 + 指令跟踪器」的分层自主策略；推理时无需任务奖励工程、也无需参考运动条件，性能随视频数据量清晰提升并零样本上真机**
+**SUGAR：基于人类视频的可扩展通用人形移动操作学习框架**
 
 > 📅 阅读日期: 2026-06-21
 >

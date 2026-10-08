@@ -7,7 +7,7 @@ category: "State Estimation"
 ---
 
 # Physics-Informed Neural Networks with Unscented Kalman Filter for Sensorless Joint Torque Estimation in Humanoid Robots
-**用「物理约束神经网络（PINN）学摩擦 + 无迹卡尔曼滤波（UKF）做融合」，替代昂贵又难铺满全身的关节力矩传感器**
+**PINN + UKF：让没有力矩传感器的人形机器人也能做精准全身力矩估计**
 
 > 📅 阅读日期: 2026-05-20
 >

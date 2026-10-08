@@ -7,7 +7,7 @@ category: "Loco-Manipulation and WBC"
 ---
 
 # OmniXtreme: Breaking the Generality Barrier in High-Dynamic Humanoid Control
-**Flow Matching 蒸馏多专家为统一策略，再叠加执行器感知残差 RL 与功率安全正则，让单一策略在 G1 真机完成翻跟头、霹雳舞等极限全身动作**
+**OmniXtreme：突破高动态人形控制的通用性壁垒**
 
 > 📅 阅读日期: 2026-03-08
 >

@@ -7,7 +7,7 @@ arxiv: "2508.09846"
 ---
 
 # Whole-Body Bilateral Teleoperation with Multi-Stage Object Parameter Estimation for Wheeled Humanoid Locomanipulation
-**面向轮式人形移动操作的「物体感知」全身双边遥操作：把遥操作与在线参数估计结合——先用视觉估物体尺寸、再用大型视觉语言模型给初始参数猜测、最后用解耦的分层采样（先质量/质心、再惯量）多假设鲁棒估计；据此实时更新机器人的平衡点，从而在搬运约 1/3 自重负载时保持柔顺并改善操作跟踪**
+**面向轮式人形移动操作的多阶段物体参数估计全身双边遥操作**
 
 > 📅 阅读日期: 2026-06-21
 >

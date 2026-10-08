@@ -7,7 +7,7 @@ zhname: "Cosmos Policy：微调视频模型用于视觉运动控制与规划"
 ---
 
 # Cosmos Policy: Fine-Tuning Video Models for Visuomotor Control and Planning
-**Cosmos Policy：不改一行网络结构，把本体状态、动作块和价值都「伪装」成视频潜帧塞进 Cosmos-Predict2-2B 的扩散序列，一次后训练同时得到策略、世界模型和价值函数；再用策略自己的 rollout 精修后两者，做 best-of-N 规划**
+**Cosmos Policy：微调视频模型用于视觉运动控制与规划**
 
 > 📅 阅读日期: 2026-10-06
 >

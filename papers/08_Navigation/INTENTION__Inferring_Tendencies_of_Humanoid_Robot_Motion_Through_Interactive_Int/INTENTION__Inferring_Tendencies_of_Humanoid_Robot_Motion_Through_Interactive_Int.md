@@ -7,7 +7,7 @@ category: "Navigation"
 ---
 
 # INTENTION: Inferring Tendencies of Humanoid Robot Motion Through Interactive Intuition and Grounded VLM
-**用「记忆图 + 直觉感知器 + 具身 VLM」让机器人像人一样凭直觉与环境交互，无需重复指令即可在新场景推断出合适的操作行为。**
+**INTENTION：用交互直觉与具身 VLM 推断人形机器人的动作倾向**
 
 > 📅 阅读日期: 2026-06-24
 >

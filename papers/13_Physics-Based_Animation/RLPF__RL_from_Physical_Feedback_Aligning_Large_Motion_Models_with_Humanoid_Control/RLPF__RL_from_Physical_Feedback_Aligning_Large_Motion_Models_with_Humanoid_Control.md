@@ -8,7 +8,7 @@ arxiv: "2506.12769"
 ---
 
 # RL from Physical Feedback: Aligning Large Motion Models with Humanoid Control
-**把「冻结的人形动作跟踪策略能否在仿真里跟住」当作奖励，用 GRPO 微调 LLM 式文本生成动作模型，再用对比编码器做语义对齐校验，让生成的动作既听懂文字、又能真的在 G1 上跑起来**
+**RLPF：基于物理反馈的强化学习，让大动作模型对齐人形机器人控制**
 
 > 📅 阅读日期: 2026-10-05
 >

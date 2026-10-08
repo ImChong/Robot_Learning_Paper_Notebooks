@@ -7,7 +7,7 @@ category: "物理动画"
 ---
 
 # Lambda-Hold Control: Human-Like Movement Emerges from a Minimal Task Reward in Predictive Musculoskeletal Simulation
-**不给模仿、不给能耗项、不给对称约束——只给「往前跑得快」一个奖励，让 90 块肌肉的骨骼模型在一小时训练里自己涌现出类人冲刺**
+**λ-Hold 控制：极简任务奖励下从肌肉骨骼仿真中涌现出类人运动**
 
 > 📅 阅读日期: 2026-08-20
 >

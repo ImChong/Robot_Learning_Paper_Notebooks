@@ -7,7 +7,7 @@ arxiv: "2510.26280"
 ---
 
 # Thor: Towards Human-Inspired Whole-Body Reactions for Intense Contact-Rich Environments
-**让人形在大力拉拽时会像人一样「往后仰」：把全身策略拆成下肢 / 腰 / 上肢三个共享观测、各自奖励和 critic 的 actor，再用准静态力矩平衡推出一个随手部受力变化的质心水平偏移参考 $d^{\ast}$，作为下肢的 FAT2 奖励；Unitree G1 双手后退拉力均值峰值 167.7 N（比 FALCON 高 68.9%），单手拉开约 60 N 的防火门，后退拖动 1.7 吨轿车。**
+**Thor：面向高强度接触环境的类人全身反应**
 
 > 📅 总结日期: 2026-10-06
 >

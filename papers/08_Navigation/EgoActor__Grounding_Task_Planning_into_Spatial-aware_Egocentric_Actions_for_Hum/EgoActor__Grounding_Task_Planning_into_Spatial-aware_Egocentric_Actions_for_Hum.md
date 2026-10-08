@@ -7,7 +7,7 @@ category: "Navigation"
 ---
 
 # EgoActor: Grounding Task Planning into Spatial-aware Egocentric Actions for Humanoid Robots via Visual-Language Models
-**EgoActor：用 VLM 把任务规划直接落到人形机器人的空间感知第一视角动作上**
+**EgoActor：用 VLM 把任务规划落到人形机器人的空间感知第一视角动作上**
 
 > 📅 阅读日期: 2026-05-18
 >

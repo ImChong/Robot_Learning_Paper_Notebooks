@@ -7,7 +7,7 @@ category: "State Estimation"
 ---
 
 # An Empirical Evaluation of Four Off-the-Shelf Proprietary Visual-Inertial Odometry Systems
-**用同一台「手提式四传感器同步采集架」在室内外多场景下，把 Apple ARKit、Google ARCore、Intel RealSense T265、Stereolabs ZED 2 这四款主流商用 VIO 系统做一次端到端的精度 / 稳定性 / 一致性横评**
+**四款商用视觉-惯性里程计系统的实证评估**
 
 > 📅 阅读日期: 2026-05-27
 >

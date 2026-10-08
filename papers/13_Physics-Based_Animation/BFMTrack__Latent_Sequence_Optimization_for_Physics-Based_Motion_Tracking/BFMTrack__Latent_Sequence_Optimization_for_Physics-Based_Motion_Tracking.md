@@ -7,7 +7,7 @@ category: "物理动画"
 ---
 
 # BFMTrack: Latent Sequence Optimization for Physics-Based Motion Tracking with Behavioral Foundation Models
-**把行为基础模型（BFM）冻结不动，只在潜空间里优化一条「时间相关」的潜向量序列，就能让它精确追踪动作——无需任何奖励工程**
+**BFMTrack：用潜空间序列优化让行为基础模型做物理动作追踪**
 
 > 📅 阅读日期: 2026-07-19
 >

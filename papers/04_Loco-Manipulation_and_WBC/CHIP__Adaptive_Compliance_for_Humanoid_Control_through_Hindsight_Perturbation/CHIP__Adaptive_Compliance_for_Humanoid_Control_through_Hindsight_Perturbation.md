@@ -7,7 +7,7 @@ arxiv: "2512.14689"
 ---
 
 # CHIP: Adaptive Compliance for Humanoid Control through Hindsight Perturbation
-**一个即插即用模块，用「事后扰动（hindsight perturbation）」让动作跟踪控制器获得可控的末端刚度（柔顺），同时保住对动态参考动作的敏捷跟踪；无需数据增强、也无需额外奖励调参，即可让通用跟踪控制器胜任搬物、擦拭、推车、开门等需要变刚度的发力操作**
+**CHIP：用「事后扰动」实现人形控制的自适应柔顺**
 
 > 📅 阅读日期: 2026-06-21
 >

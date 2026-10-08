@@ -7,7 +7,7 @@ category: "Loco-Manipulation and WBC"
 ---
 
 # HiWET: Hierarchical World-Frame End-Effector Tracking for Long-Horizon Humanoid Loco-Manipulation
-**分层世界坐标框架：通过子目标分解与运动学流形先验实现稳定的长时域人形 Loco-Manipulation**
+**HiWET：面向长时域人形机器人运动-操作的层级式世界坐标末端执行器跟踪**
 
 > 📅 阅读日期: 2026-05-04
 >

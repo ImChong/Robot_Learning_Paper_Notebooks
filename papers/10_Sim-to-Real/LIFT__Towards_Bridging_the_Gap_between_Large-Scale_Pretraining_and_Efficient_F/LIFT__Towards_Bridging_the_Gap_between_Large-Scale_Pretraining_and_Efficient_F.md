@@ -7,7 +7,7 @@ category: "Sim-to-Real"
 ---
 
 # LIFT: Towards Bridging the Gap between Large-Scale Pretraining and Efficient Finetuning for Humanoid Control
-**JAX-SAC 大批量 + 高 UTD 预训练，叠加 Lagrangian + 残差的物理先验世界模型，1 小时 4090 内完成新环境微调**
+**LIFT：弥合大规模预训练与高效微调的鸿沟**
 
 > 📅 阅读日期: 2026-05-19
 >

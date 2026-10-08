@@ -7,7 +7,7 @@ arxiv: "2309.01952"
 ---
 
 # Deep Imitation Learning for Humanoid Loco-manipulation through Human Teleoperation (TRILL)
-**用 VR 遥操作低成本采集人形「移动 + 操作」演示，再以模仿学习训练端到端视觉运动策略：策略在任务空间以 20 Hz 输出高层指令，交给全身控制器（WBC）以 100 Hz 转成关节力矩并稳定动力学，从而在高自由度双臂人形 DRACO 3 上完成取放工具、拧喷雾盖等真机移动操作任务**
+**TRILL：通过人类遥操作的人形移动操作深度模仿学习**
 
 > 📅 阅读日期: 2026-09-05
 >

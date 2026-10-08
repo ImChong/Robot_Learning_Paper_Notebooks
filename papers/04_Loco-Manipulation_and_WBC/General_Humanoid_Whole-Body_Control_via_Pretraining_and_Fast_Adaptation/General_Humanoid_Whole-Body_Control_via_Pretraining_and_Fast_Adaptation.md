@@ -7,7 +7,7 @@ category: "Loco-Manipulation and WBC"
 ---
 
 # General Humanoid Whole-Body Control via Pretraining and Fast Adaptation
-**FAST：预训练通用全身控制器，再用轻量残差策略快速适应新动作**
+**FAST：通过预训练与快速适应实现通用人形机器人全身控制**
 
 > 📅 阅读日期: 2026-04-29
 >

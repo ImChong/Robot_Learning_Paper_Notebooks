@@ -7,7 +7,7 @@ category: "硬件设计"
 ---
 
 # Fauna Sprout: A lightweight, approachable, developer-ready humanoid robot
-**Fauna Sprout：把"在共享人类空间里安全可玩"作为第一性原则的轻量级人形开发平台**
+**Fauna Sprout：一款轻量、亲和、开发者友好的人形机器人开发平台**
 
 > 📅 阅读日期: 2026-05-24
 >

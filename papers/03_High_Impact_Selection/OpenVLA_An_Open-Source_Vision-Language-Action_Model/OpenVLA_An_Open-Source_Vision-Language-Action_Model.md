@@ -7,7 +7,7 @@ zhname: "OpenVLA：开源的视觉-语言-动作模型"
 ---
 
 # OpenVLA: An Open-Source Vision-Language-Action Model
-**7B 开源 VLA：在 97 万条机器人示教上训练，把动作离散成 token 自回归输出**
+**OpenVLA：开源的视觉-语言-动作模型**
 
 > 📅 阅读日期: 2026-10-03
 >

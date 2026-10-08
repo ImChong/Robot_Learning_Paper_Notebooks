@@ -8,7 +8,7 @@ category: "Locomotion"
 
 # SKATER: Synthesized Kinematics for Advanced Traversing Efficiency on a Humanoid Robot via Roller Skate Swizzles
 
-**给人形机器人每只脚装一排被动轮，用深度强化学习学出「葫芦步（swizzle gait）」的连续滑行运动——相比双足行走，冲击强度降 75.86%、单位运输能耗（CoT）降 63.34%，兼顾节能与关节寿命。**
+**SKATER：用轮滑「葫芦步」实现高效通行的人形机器人**
 
 > 📅 阅读日期: 2026-08-12
 >

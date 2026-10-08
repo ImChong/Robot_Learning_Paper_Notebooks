@@ -7,7 +7,7 @@ category: "硬件设计"
 ---
 
 # Characteristics, Management, and Utilization of Muscles in Musculoskeletal Humanoids
-**肌骨型人形机器人的"肌肉"是怎么造、怎么管、怎么用的——东京大学 JSK 在 Kengoro & Musashi 上的实证总结**
+**肌骨型人形机器人肌肉的特性、管理与利用**
 
 > 📅 阅读日期: 2026-05-23
 >

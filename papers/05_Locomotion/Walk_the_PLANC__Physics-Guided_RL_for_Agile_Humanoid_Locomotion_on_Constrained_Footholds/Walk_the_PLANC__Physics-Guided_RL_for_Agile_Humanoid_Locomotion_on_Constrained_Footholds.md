@@ -8,7 +8,7 @@ arxiv: "2601.06286"
 ---
 
 # Walk the PLANC: Physics-Guided RL for Agile Humanoid Locomotion on Constrained Footholds
-**用一个降阶（LIP）落脚规划器在线生成「动力学一致」的参考轨迹，再用控制李雅普诺夫函数（CLF）奖励把 RL 训练引导到这条物理可行的参考上——在踏脚石/稀疏落脚点这类受约束地形上，让 Unitree G1 既敏捷又可靠地精准落脚（真机验证）**
+**Walk the PLANC：受约束落脚点上的物理引导人形敏捷行走**
 
 > 📅 阅读日期: 2026-06-30
 >

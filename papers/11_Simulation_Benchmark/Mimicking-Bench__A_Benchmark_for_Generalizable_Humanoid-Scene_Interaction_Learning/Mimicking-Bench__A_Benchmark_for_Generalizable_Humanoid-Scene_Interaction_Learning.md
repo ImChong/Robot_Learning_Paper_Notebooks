@@ -7,7 +7,7 @@ arxiv: "2412.17730"
 ---
 
 # Mimicking-Bench: A Benchmark for Generalizable Humanoid-Scene Interaction Learning via Human Mimicking
-**针对以往人形-场景交互依赖小规模手工采集演示的不足，提出大规模基准：含 6 个家居全身交互任务、11K 多样物体形状、20K 合成 + 3K 真实人类技能参考，系统比较运动重定向、运动跟踪、模仿学习及其组合，验证「模仿人类」对技能习得的价值并指出场景几何泛化的关键挑战**
+**Mimicking-Bench：经由模仿人类的可泛化人形-场景交互学习基准**
 
 > 📅 阅读日期: 2026-06-21
 >

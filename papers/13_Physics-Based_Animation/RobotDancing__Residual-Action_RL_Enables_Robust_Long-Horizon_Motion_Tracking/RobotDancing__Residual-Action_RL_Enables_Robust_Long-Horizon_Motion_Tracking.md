@@ -7,7 +7,7 @@ category: "物理动画"
 ---
 
 # RobotDancing: Residual-Action Reinforcement Learning Enables Robust Long-Horizon Humanoid Motion Tracking
-**用「残差关节目标」显式补偿模型-实机差异，单阶段 RL 把多分钟高能舞蹈（跳跃/旋转/侧手翻）零样本部署到 Unitree G1**
+**RobotDancing：残差动作强化学习实现鲁棒的长时程人形动作追踪**
 
 > 📅 阅读日期: 2026-07-08
 >

@@ -7,7 +7,7 @@ category: "人体动作生成"
 ---
 
 # Kimodo: Scaling Controllable Human Motion Generation
-**Kimodo：在 700 小时商用友好动捕数据上训练的运动学动作扩散模型，用文本 + 多种运动学约束精确可控地生成高质量人 / 人形动作**
+**Kimodo：用 700 小时光学动捕把「可控人体动作生成」扩大规模**
 
 > 📅 阅读日期: 2026-06-13
 >

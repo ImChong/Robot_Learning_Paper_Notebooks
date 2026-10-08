@@ -7,7 +7,7 @@ category: "Sim-to-Real"
 ---
 
 # MOSAIC: Bridging the Sim-to-Real Gap in Generalist Humanoid Motion Tracking and Teleoperation with Rapid Residual Adaptation
-**通用动作跟踪器在仿真里指标很好，一上真机遥操作却「脆」：接口延迟/抖动 + 动力学偏差让跟踪失同步。MOSAIC 先训一个「世界系一致」的通用跟踪器，再用少量接口数据训一个接口专用策略，通过一个「加性残差模块」蒸馏进通用模型——不重训主干、只加一层残差修正，快速把遥操作误差压下来**
+**MOSAIC：通用人形动作跟踪与遥操作的 Sim-to-Real 桥接**
 
 > 📅 阅读日期: 2026-07-26
 >

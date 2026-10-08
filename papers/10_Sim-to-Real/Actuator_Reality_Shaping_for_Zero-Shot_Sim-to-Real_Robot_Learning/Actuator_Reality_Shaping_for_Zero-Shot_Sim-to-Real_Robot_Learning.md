@@ -7,7 +7,7 @@ category: "Sim-to-Real"
 ---
 
 # Actuator Reality Shaping for Zero-Shot Sim-to-Real Robot Learning
-**不改仿真、反过来「塑形硬件」：给每个关节套一层二自由度前馈-反馈控制器 + 扰动观测器，把真实电机的非线性响应逼成仿真里的理想执行器模型，从而让仿真策略零样本上真机**
+**执行器现实塑形：面向零样本 Sim-to-Real 的机器人学习**
 
 > 📅 阅读日期: 2026-08-06
 >

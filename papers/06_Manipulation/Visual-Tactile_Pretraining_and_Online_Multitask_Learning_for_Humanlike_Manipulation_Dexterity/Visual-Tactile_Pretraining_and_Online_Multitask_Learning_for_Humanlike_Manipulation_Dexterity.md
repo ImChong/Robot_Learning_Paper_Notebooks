@@ -8,7 +8,7 @@ category: "Manipulation"
 
 # Visual-tactile pretraining and online multitask learning for humanlike manipulation dexterity
 
-**只用单目相机 + 简单的「碰没碰到」二值触觉，先从人类裸手/戴手套的演示里自监督学到「视觉与触觉怎么协同」的融合表示，再在仿真里用 RL + 在线模仿一次学多个技能：低成本四指 LEAP 手在五类复杂任务、25 个物体上达 85% 成功率，并零样本泛化到三类没见过的任务（削铅笔、拧螺丝等）**
+**视触觉预训练与在线多任务学习的人形灵巧操作**
 
 > 📅 阅读日期: 2026-06-17
 >
