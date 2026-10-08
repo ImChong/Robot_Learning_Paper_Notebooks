@@ -1471,7 +1471,7 @@
       var pNow = [UPD.p[0] + k * UPD_EX.dp[0] * MAG, 0, UPD.p[2] + k * UPD_EX.dp[2] * MAG];
       var dNow = [UPD.d[0] + k * UPD_EX.dd[0] * MAG, 0, UPD.d[2] + k * UPD_EX.dd[2] * MAG];
       var bp = W(pNow), dp = W(dNow);
-      bodyB.put(bp[0], bp[1], 0, [[dp[0], dp[1], true], [bp[0] - 26, GY - 40, false]]);
+      bodyB.put(bp[0], bp[1], 0, [[dp[0], dp[1], true], [bp[0] - 26, GY - 62, false]]);
       moveDot(footD, dp);
       /* 测量：从身体出发的 R̄h（h 比估计长 2 cm，放大 10 倍） */
       var hEnd = [pNow[0] + (UPD.h[0] + (UPD.h[0] - (UPD.d[0] - UPD.p[0])) * (MAG - 1)), 0, pNow[2] + (UPD.h[2] + (UPD.h[2] - (UPD.d[2] - UPD.p[2])) * (MAG - 1))];
