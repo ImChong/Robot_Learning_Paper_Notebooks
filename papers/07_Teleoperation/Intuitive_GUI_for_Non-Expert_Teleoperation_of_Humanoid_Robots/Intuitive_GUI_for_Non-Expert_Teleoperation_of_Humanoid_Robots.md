@@ -7,7 +7,7 @@ category: "Teleoperation"
 ---
 
 # Development of an Intuitive GUI for Non-Expert Teleoperation of Humanoid Robots
-**不研究控制算法，而是从"人机交互 + UI 设计"角度出发：为人形机器人遥操作做一个简单、直观、可扩展的图形界面，让没有机器人背景的普通人也能开着机器人走完 FIRA HuroCup 障碍赛**
+**面向非专家的人形遥操作直观图形界面**
 
 > 📅 阅读日期: 2026-06-16
 >

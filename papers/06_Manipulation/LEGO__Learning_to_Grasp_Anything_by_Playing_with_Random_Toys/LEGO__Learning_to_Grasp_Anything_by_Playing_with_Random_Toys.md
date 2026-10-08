@@ -7,7 +7,7 @@ arxiv: "2510.12866"
 ---
 
 # Learning to Grasp Anything by Playing with Random Toys
-**只用「球 / 长方体 / 圆柱 / 圆环」四种基本几何体随机拼出的玩具来训练，配上「SAM 2 分割 + 注意力掩码 + 均值池化」的物体中心视觉表征（detection pooling），就能在没见过的真实物体上泛化抓取：YCB 真机 67%、Unitree H1-2 人形灵巧手 51%，比用更多数据训练的大型 VLM 还强。**
+**LEGO：通过玩随机拼装玩具学会抓取任意物体**
 
 > 📅 阅读日期: 2026-08-02
 >

@@ -7,7 +7,7 @@ category: "Loco-Manipulation and WBC"
 ---
 
 # SteadyTray: Learning Object Balancing Tasks in Humanoid Tray Transport via Residual Reinforcement Learning
-**SteadyTray：让 Unitree G1 端托盘走路不洒水的"残差师生 RL"**
+**SteadyTray：用残差强化学习教人形机器人端着托盘稳稳走路**
 
 > 📅 阅读日期: 2026-04-25
 >

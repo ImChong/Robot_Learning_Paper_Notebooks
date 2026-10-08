@@ -7,7 +7,7 @@ arxiv: "2511.06371"
 ---
 
 # Towards Adaptive Humanoid Control via Multi-Behavior Distillation and Reinforced Fine-Tuning
-**针对「每个技能各训一个专精策略、泛化差且在不规则地形上脆」的问题，提出 AHC 两阶段框架：先把站立/行走/跑/跳等多个主技能策略蒸馏成一个多行为控制器，再用不规则地形上的在线反馈做强化微调，得到能跨技能跨地形自适应切换的统一人形运动控制器**
+**AHC：用多行为蒸馏与强化微调迈向自适应人形控制**
 
 > 📅 阅读日期: 2026-06-21
 >

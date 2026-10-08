@@ -7,7 +7,7 @@ arxiv: "2512.12230"
 ---
 
 # Learning to Get Up Across Morphologies: Zero-Shot Recovery with a Unified Humanoid Policy
-**把 7 款 RoboCup 小型人形（身高 0.48–0.81 m、2.8–7.8 kg）的起身动作都压到左右对称的 5 个俯仰关节（肩 / 肘 / 髋 / 膝 / 踝）上，观测里不给任何形态编号，每回合随机换一台机器人，用 CrossQ 训练一个 27 维输入、5 维输出的共享策略；留一法下没见过的机器人最高 72%（Wolfgang），训练集增到 4 台时 Wolfgang 达 86 ± 7%；单独训不会起身的 NUGUS 在共享训练下达 81%。**
+**跨形态学习起身：统一人形策略的零样本跌倒恢复**
 
 > 📅 总结日期: 2026-10-08
 >

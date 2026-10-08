@@ -7,7 +7,7 @@ category: "Teleoperation"
 ---
 
 # CLOT: Closed-Loop Global Motion Tracking for Whole-Body Humanoid Teleoperation
-**用高频全局定位反馈把人形遥操作从「局部跟踪」升级为「闭环全局跟踪」，解决长时序漂移问题**
+**CLOT：用闭环全局动作跟踪做长时序人形遥操作**
 
 > 📅 阅读日期: 2026-05-17
 >

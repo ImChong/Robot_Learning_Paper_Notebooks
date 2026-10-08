@@ -7,7 +7,7 @@ arxiv: "2412.10631"
 ---
 
 # ARMADA: Augmented Reality for Robot Manipulation and Robot-Free Data Acquisition
-**遥操作采集机器人模仿数据受硬件可得性瓶颈——能否在没有实体机器人的情况下采到高质量机器人数据？ARMADA 把 Apple Vision Pro 与实时虚拟机器人反馈结合，让用户理解自己的动作如何转成机器人动作，从而采集「与实体机器人硬件限制兼容」的自然徒手人类数据；15 人、3 任务、3 种反馈条件的用户研究表明实时机器人反馈显著提升采集数据质量**
+**ARMADA：用增强现实做机器人操作与无机器人数据采集**
 
 > 📅 阅读日期: 2026-06-21
 >

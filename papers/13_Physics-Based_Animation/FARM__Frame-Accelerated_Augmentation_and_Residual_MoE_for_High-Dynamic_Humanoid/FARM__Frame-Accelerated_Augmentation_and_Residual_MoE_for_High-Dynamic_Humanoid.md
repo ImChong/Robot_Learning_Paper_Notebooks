@@ -6,7 +6,7 @@ category: "Physics-Based Animation"
 ---
 
 # FARM: Frame-Accelerated Augmentation and Residual Mixture-of-Experts for Physics-Based High-Dynamic Humanoid Control
-**冻结一个「日常动作」基座控制器，只用帧加速增广 + 残差混合专家（MoE）把额外网络容量按动作强度动态分配给爆发性高动态动作（跳舞/武术/体育），在几乎不损失低动态精度的前提下大幅降低高动态动作的追踪失败率**
+**FARM：帧加速增广 + 残差混合专家，攻克高动态人形动作控制**
 
 > 📅 阅读日期: 2026-07-29
 >

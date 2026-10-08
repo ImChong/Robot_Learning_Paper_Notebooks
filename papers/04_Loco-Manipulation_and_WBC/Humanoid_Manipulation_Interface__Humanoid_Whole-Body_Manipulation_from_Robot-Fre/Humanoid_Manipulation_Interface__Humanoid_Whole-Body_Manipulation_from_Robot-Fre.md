@@ -7,7 +7,7 @@ category: "Loco-Manipulation and WBC"
 ---
 
 # Humanoid Manipulation Interface: Humanoid Whole-Body Manipulation from Robot-Free Demonstrations
-**HuMI：通过便携设备捕捉人类动作，实现高效、无机器人的数据收集，并分层学习人形机器人全身技能**
+**Humanoid Manipulation Interface：基于无机器人演示的人形全身操作**
 
 > 📅 阅读日期: 2026-05-04
 >

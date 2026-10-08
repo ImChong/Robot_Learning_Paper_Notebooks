@@ -7,7 +7,7 @@ arxiv: "2509.16757"
 ---
 
 # HDMI: Learning Interactive Humanoid Whole-Body Control from Human Videos
-**从单目 RGB 视频里同时恢复人和物体的轨迹，让 RL 策略「机器人 + 物体一起跟踪」：物体位姿与期望接触点写进观测，残差动作让跪姿这类难姿态也能探索，交互奖励在参考动作不准时也逼出稳定接触——G1 连续开门穿门 67 次**
+**HDMI：从人类视频学习人形全身交互控制**
 
 > 📅 阅读日期: 2026-10-05
 >

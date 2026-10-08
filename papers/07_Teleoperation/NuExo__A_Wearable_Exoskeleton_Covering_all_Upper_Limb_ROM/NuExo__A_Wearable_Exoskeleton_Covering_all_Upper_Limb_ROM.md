@@ -7,7 +7,7 @@ arxiv: "2503.10554"
 ---
 
 # NuExo: A Wearable Exoskeleton Covering all Upper Limb ROM for Outdoor Data Collection and Teleoperation of Humanoid Robots
-**一套同时满足准确、舒适、通用、便携四目标的可穿戴上肢外骨骼：靠同步连杆 + 同步带传动的新型肩部机构适配复合肩部运动、100% 覆盖自然上肢活动范围；仅 5.2 kg 可背包式户外日常使用；配统一直观遥操作框架与多模态（含力）数据采集，兼容多款人形，跨平台跨用户验证其运动范围、灵活性与动态场景下的采集/遥操作稳定性**
+**NuExo：覆盖全上肢活动范围的可穿戴外骨骼，用于户外数据采集与人形遥操作**
 
 > 📅 阅读日期: 2026-06-21
 >

@@ -7,7 +7,7 @@ arxiv: "2310.07896"
 ---
 
 # NoMaD: Goal Masked Diffusion Policies for Navigation and Exploration
-**用「一张策略」同时干两件事——有目标就照着目标图导航、没目标就自主探索：在 ViNT 视觉导航骨干上加一个「目标掩码（goal masking）」开关控制是否条件于目标，再用条件扩散策略（diffusion policy）生成多模态动作序列，一个比以往更小的模型就把「导航 + 探索」统一了。**
+**NoMaD：面向导航与探索的目标掩码扩散策略**
 
 > 📅 阅读日期: 2026-08-15
 >

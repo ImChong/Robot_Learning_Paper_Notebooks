@@ -7,7 +7,7 @@ arxiv: "2602.13850"
 ---
 
 # Humanoid Hanoi: Investigating Shared Whole-Body Control for Skill-Based Box Rearrangement
-**研究「技能化」的人形搬箱重排：在任务层把可复用技能串成长时程，所有技能都经由一个「共享、任务无关的全身控制器（WBC）」执行，提供一致的闭环组合接口；针对「直接复用预训练 WBC 会在长时程上掉鲁棒性」的问题，用一套简单的数据聚合（把闭环技能执行 + 域随机化的 rollout 回灌训练）来修复**
+**Humanoid Hanoi：面向技能化箱体重排的共享全身控制研究**
 
 > 📅 阅读日期: 2026-06-21
 >

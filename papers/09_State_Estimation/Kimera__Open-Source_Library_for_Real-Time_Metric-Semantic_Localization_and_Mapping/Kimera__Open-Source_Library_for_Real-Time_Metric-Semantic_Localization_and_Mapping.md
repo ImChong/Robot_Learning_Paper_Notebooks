@@ -7,7 +7,7 @@ arxiv: "1910.02490"
 ---
 
 # Kimera: an Open-Source Library for Real-Time Metric-Semantic Localization and Mapping
-**用双目 + IMU 在 CPU 上实时跑出「位姿 + 三维网格 + 语义标签」：四个可拆可合的模块——基于 GTSAM 因子图的视觉-惯性里程计 Kimera-VIO、带 PCM 外点剔除的鲁棒位姿图优化 Kimera-RPGO、低延迟局部网格 Kimera-Mesher、基于 TSDF 与语义光线投射的全局语义网格 Kimera-Semantics，分跑在四个不同频率的线程里。**
+**Kimera：实时度量-语义定位与建图的开源库**
 
 > 📅 总结日期: 2026-10-02
 >

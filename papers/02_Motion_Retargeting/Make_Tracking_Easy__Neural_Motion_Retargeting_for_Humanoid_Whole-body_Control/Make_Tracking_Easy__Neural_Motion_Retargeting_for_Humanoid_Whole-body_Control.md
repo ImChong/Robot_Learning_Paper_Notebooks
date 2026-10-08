@@ -7,7 +7,7 @@ paper_order: 2
 ---
 
 # Make Tracking Easy: Neural Motion Retargeting for Humanoid Whole-body Control
-**把重定向从「每帧非凸优化」改成「可学习的分布映射」，再用物理仿真把监督信号洗干净**
+**让跟踪变简单：面向人形全身控制的神经动作重定向**
 
 > 📅 阅读日期: 2026-05-13
 >

@@ -7,7 +7,7 @@ category: "Locomotion"
 ---
 
 # APEX: Learning Adaptive High-Platform Traversal for Humanoid Robots
-**用棘轮式（ratchet）进度奖励，把"攀爬式"高平台穿越压进单一通用策略**
+**APEX：用棘轮式进度奖励学习「攀越式」高平台穿越的人形机器人技能**
 
 > 📅 阅读日期: 2026-05-18
 >

@@ -7,7 +7,7 @@ arxiv: "2607.29227"
 ---
 
 # Event-Based Upper-Body Humanoid Teleoperation Under Challenging Illumination
-**用神经形态事件相机替代 RGB 做上肢人形遥操作：借助事件相机的高动态范围与异步高时间分辨率，在强逆光与 <5 lux 极暗、以及快速运动场景下稳定跟踪人体上肢姿态，再经头戴 IMU 重力对齐 + One-Euro 滤波 + TWIST 因果重定向映射到 18-DoF 人形上半身，端到端「光子到动作」延迟仅 23–34 ms**
+**极端光照下的事件相机上肢人形遥操作**
 
 > 📅 阅读日期: 2026-08-25
 >

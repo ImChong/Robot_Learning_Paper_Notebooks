@@ -7,7 +7,7 @@ arxiv: "2602.00678"
 ---
 
 # Toward Reliable Sim-to-Real Predictability for MoE-based Robust Quadrupedal Locomotion
-**统一框架：用门控专家混合（MoE）运动策略把地形与指令的隐表征分解、仅靠本体感受实现多地形鲁棒部署，并配 RoboGauge——一个用 sim-to-sim 指标量化「sim-to-real 可迁移性」的预测评估套件，从而无需大量真机试验就能可靠地选策略；Go2 上雪/沙/楼梯/斜坡/30cm 障碍稳健通行，高速达 4 m/s 并涌现窄步态**
+**面向 MoE 鲁棒四足运动的可靠 Sim-to-Real 可预测性**
 
 > 📅 阅读日期: 2026-06-21
 >

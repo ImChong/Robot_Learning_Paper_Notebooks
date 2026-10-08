@@ -7,7 +7,7 @@ arxiv: "2609.09158"
 ---
 
 # TANGO: Humanoid Navigation in Cluttered Environments with a Whole-Body Vision-Language-Action Model
-**把「导航」从 2D 路径规划升级为全身几何自适应：TANGO 用一个「7B 视觉-语言骨干 + 流匹配 MM-DiT 动作专家 + 低层运动跟踪器」的分层 VLA，直接由语言指令 + 第一视角图像输出 29 自由度全身关节角，让人形一边侧身、屈膝、调姿一边穿越杂乱室内空间；训练全在仿真里靠 Plan-Edit-Track 合成无碰撞轨迹 + RL 完成，零样本迁移到 Unitree G1 真机。**
+**TANGO：面向杂乱环境的人形全身视觉-语言-动作导航模型**
 
 > 📅 总结日期: 2026-09-11
 >

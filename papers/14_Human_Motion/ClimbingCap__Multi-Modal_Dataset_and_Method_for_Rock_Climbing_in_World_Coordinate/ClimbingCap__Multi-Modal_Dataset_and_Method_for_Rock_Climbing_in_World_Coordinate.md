@@ -7,7 +7,7 @@ arxiv: "2503.21268"
 ---
 
 # ClimbingCap: Multi-Modal Dataset and Method for Rock Climbing in World Coordinate
-**人体动作恢复多聚焦地面动作，离地的攀岩动作研究稀少且缺大规模 3D 标注数据；作者采集 AscendMotion（41.2 万帧 RGB+LiDAR+IMU，22 位攀岩教练、12 面岩壁），并提出 ClimbingCap：用 RGB 与 LiDAR 分别在相机坐标与全局坐标重建动作并联合优化，在世界坐标系下连续重建复杂攀岩动作（含全局位置），CVPR 2025**
+**ClimbingCap：世界坐标系下攀岩的多模态数据集与方法**
 
 > 📅 阅读日期: 2026-06-21
 >

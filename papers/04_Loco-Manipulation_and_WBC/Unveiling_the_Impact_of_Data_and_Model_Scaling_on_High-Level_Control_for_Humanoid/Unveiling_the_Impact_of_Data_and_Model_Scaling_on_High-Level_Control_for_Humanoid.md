@@ -7,7 +7,7 @@ arxiv: "2511.09241"
 ---
 
 # Unveiling the Impact of Data and Model Scaling on High-Level Control for Humanoid Robots
-**用自动化流水线从人类动作视频造出 Humanoid-Union（260+ 小时、带语义标注、可继续扩展）大规模数据集，并提出 SCHUR 可扩展学习框架，系统研究数据/模型规模对人形高层控制的影响；相比此前方法重建 MPJPE 提升 37%、文本-动作对齐 FID 提升 25%**
+**揭示数据与模型规模对人形高层控制的影响**
 
 > 📅 阅读日期: 2026-06-21
 >

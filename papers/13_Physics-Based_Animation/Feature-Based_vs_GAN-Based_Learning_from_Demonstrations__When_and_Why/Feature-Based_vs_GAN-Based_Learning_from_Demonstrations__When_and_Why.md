@@ -8,7 +8,7 @@ arxiv: "2507.05906"
 ---
 
 # Feature-Based vs. GAN-Based Learning from Demonstrations: When and Why
-**一篇短综述：把「从动作参考里学控制」按奖励结构分成显式特征匹配（DeepMimic 系）与隐式判别器奖励（AMP 系）两条路线，比较二者的取舍，逐条拆解常见误解，并指出两派正在向「结构化运动表征」收敛。**
+**基于特征与基于 GAN 的示范学习：何时用、为什么**
 
 > 📅 阅读日期: 2026-09-27
 >

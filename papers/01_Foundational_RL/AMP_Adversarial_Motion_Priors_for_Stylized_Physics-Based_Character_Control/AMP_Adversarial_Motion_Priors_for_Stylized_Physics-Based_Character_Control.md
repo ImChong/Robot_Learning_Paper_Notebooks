@@ -7,7 +7,7 @@ demos: ["amp"]
 ---
 
 # AMP: Adversarial Motion Priors for Stylized Physics-Based Character Control
-**对抗运动先验：风格化物理角色控制**
+**AMP：面向风格化物理角色控制的对抗运动先验**
 
 > 📅 阅读日期: 2026-04-19
 >

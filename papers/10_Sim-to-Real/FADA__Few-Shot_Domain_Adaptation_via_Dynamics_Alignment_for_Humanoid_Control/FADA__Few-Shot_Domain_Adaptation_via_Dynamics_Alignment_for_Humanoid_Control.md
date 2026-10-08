@@ -7,7 +7,7 @@ category: "Sim-to-Real"
 ---
 
 # FADA: Few-Shot Domain Adaptation via Dynamics Alignment for Humanoid Control
-**只微调「逆动力学模块」：把策略拆成 Planner + IDM 两段，部署时冻结 Planner、用约 2 分钟目标域数据把 IDM 对齐到真机动力学，实现少样本域自适应**
+**FADA：用动力学对齐实现少样本域自适应的人形控制**
 
 > 📅 阅读日期: 2026-07-16
 >

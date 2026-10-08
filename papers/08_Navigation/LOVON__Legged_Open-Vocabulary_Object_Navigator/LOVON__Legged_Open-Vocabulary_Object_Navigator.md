@@ -7,7 +7,7 @@ category: "Navigation"
 ---
 
 # LOVON: Legged Open-Vocabulary Object Navigator
-**用 LLM 做分层任务规划、用开放词汇视觉检测识别任意目标，并以拉普拉斯方差滤波稳像，构成一个可即插即用部署到 Go2 / B2 / H1-2 的长时程目标导航框架**
+**LOVON：足式机器人开放词汇目标导航器**
 
 > 📅 阅读日期: 2026-06-24
 >

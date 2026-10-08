@@ -7,7 +7,7 @@ zhname: "ACT / ALOHA：用低成本硬件学习精细双臂操作"
 ---
 
 # ACT: Learning Fine-Grained Bimanual Manipulation with Low-Cost Hardware
-**用 Transformer 一次预测一整段动作（action chunking），在低成本双臂 ALOHA 上靠约 10 分钟示教学会精细操作**
+**ACT / ALOHA：用低成本硬件学习精细双臂操作**
 
 > 📅 阅读日期: 2026-10-03
 >

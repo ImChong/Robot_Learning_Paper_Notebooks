@@ -7,7 +7,7 @@ category: "人物交互重建"
 ---
 
 # Efficient and Scalable Monocular Human-Object Interaction Motion Reconstruction
-**从普通单目视频里高效、可扩展地把「人怎么和物体交互」恢复成带物理合理性的 4D 数据，并配套 Open4DHOI 数据集与 RL 动作模仿验证**
+**用稀疏接触标注 + 优化求解从单目视频高效、可扩展地重建 4D 人-物交互动作**
 
 > 📅 阅读日期: 2026-06-20
 >

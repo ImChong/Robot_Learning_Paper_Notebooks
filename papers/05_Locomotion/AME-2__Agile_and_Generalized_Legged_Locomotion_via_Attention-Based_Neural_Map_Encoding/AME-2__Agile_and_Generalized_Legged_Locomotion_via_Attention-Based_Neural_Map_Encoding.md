@@ -7,7 +7,7 @@ category: "Locomotion"
 ---
 
 # AME-2: Agile and Generalized Legged Locomotion via Attention-Based Neural Map Encoding
-**用「注意力地图编码器 + 学习式概率建图」把感知足式运动统一到一个策略里：既能敏捷跨越台阶/缝隙/瓦砾，又能零样本泛化到没见过的地形组合，四足（ANYmal-D）和双足（TRON1）通用**
+**AME-2：基于注意力的神经地图编码实现敏捷且泛化的足式运动**
 
 > 📅 阅读日期: 2026-08-01
 >

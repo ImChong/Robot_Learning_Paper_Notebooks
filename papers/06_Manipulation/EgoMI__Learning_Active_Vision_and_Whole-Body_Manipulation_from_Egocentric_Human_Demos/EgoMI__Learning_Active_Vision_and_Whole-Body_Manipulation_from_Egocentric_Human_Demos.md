@@ -7,7 +7,7 @@ arxiv: "2511.00153"
 ---
 
 # EgoMI: Learning Active Vision and Whole-Body Manipulation from Egocentric Human Demonstrations
-**人在操作时会主动协调头与手、用动态视角变化与视觉搜索；EgoMI 捕捉同步的「末端 + 头部」轨迹并可迁移到半人形机器人，引入一个会选择性纳入历史观测的「记忆增强策略」来应对快速视角切换；在带可动相机头的双臂机器人上验证，显式建模头部运动的策略持续优于基线，有效弥合人-机具身差距**
+**EgoMI：从第一视角人类演示学习主动视觉与全身操作**
 
 > 📅 阅读日期: 2026-06-21
 >

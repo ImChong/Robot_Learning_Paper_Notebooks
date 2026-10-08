@@ -7,7 +7,7 @@ category: "Physics-Based Animation"
 ---
 
 # CRISP: Contact-Guided Real2Sim from Monocular Video with Planar Scene Primitives
-**用「人体接触线索 + 平面基元拟合」把一段单目视频变成可仿真的人–场景，把动作跟踪失败率从 55.2% 压到 6.9%**
+**CRISP：基于接触引导的单目视频 Real2Sim**
 
 > 📅 阅读日期: 2026-05-19
 >

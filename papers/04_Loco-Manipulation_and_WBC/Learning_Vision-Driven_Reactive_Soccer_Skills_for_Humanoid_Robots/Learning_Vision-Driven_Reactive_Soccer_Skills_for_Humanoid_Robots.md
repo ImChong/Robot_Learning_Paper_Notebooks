@@ -6,7 +6,7 @@ category: "Loco-Manipulation and WBC"
 ---
 
 # Learning Vision-Driven Reactive Soccer Skills for Humanoid Robots
-**把「板载视觉感知」直接耦进「全身运动控制」，用单一 RL 策略端到端学出找球 / 追球 / 多方向踢球：训练时用一个「虚拟感知系统」在仿真里复现真机摄像头的视场受限、噪声与漏检，再配「编码器-解码器 + AMP 对抗动作先验 + 多 Critic」把带噪历史观测补全成完整状态，从而在真实 RoboCup 赛场上零改动稳定踢球**
+**视觉驱动的人形机器人反应式足球技能学习**
 
 > 📅 阅读日期: 2026-09-02
 >

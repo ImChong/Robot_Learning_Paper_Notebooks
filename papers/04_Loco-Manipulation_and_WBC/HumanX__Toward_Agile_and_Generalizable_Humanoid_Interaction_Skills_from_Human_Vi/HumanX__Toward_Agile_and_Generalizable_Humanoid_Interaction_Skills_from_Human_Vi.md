@@ -7,7 +7,7 @@ category: "Loco-Manipulation and WBC"
 ---
 
 # HumanX: Toward Agile and Generalizable Humanoid Interaction Skills from Human Videos
-**一段人类视频 → Unitree G1 真机：用 XGen 造数据 + XMimic 蒸馏，零样本学打篮球、踢球、打羽毛球**
+**HumanX：从人类视频学习敏捷且可泛化的人形交互技能**
 
 > 📅 阅读日期: 2026-05-09
 >

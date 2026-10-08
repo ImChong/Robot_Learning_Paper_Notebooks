@@ -7,7 +7,7 @@ category: "Loco-Manipulation and WBC"
 ---
 
 # LATENT: Learning Athletic Humanoid Tennis Skills from Imperfect Human Motion Data
-**LATENT：从不完美的人类动作片段中学出会打网球的 Unitree G1**
+**LATENT：从不完美的人类动作数据中学习人形机器人网球运动技能**
 
 > 📅 阅读日期: 2026-04-24
 >

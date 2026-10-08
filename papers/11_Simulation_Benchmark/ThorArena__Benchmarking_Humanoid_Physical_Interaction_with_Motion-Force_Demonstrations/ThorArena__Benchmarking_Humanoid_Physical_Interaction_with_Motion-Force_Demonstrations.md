@@ -7,7 +7,7 @@ arxiv: "2607.06052"
 ---
 
 # ThorArena: Benchmarking Humanoid Physical Interaction with Human Motion-Force Demonstrations
-**用「同步采集的人体运动 + 双手交互力」示范建一套力感知评测基准：在仿真里回放真实交互力，用 FATS 分数把「有力/无力」下的跟踪差异暴露出来，让接触密集任务的全身控制策略首次被公平地比出高下。**
+**ThorArena：面向人形物理交互的运动-力示范基准**
 
 > 📅 阅读日期: 2026-07-17
 >

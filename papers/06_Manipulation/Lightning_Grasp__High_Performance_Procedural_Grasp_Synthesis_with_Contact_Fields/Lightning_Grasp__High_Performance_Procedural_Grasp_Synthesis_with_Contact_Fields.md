@@ -7,7 +7,7 @@ arxiv: "2511.07418"
 ---
 
 # Lightning Grasp: High Performance Procedural Grasp Synthesis with Contact Fields
-**面向灵巧手实时多样抓取合成这一长期难题，提出一个程序化算法：用一个简单高效的数据结构「接触场（Contact Field）」把复杂几何计算与搜索过程解耦，从而比 SOTA 快几个数量级、还能为不规则/工具类物体生成抓取，且无需精心调的能量函数与敏感初始化，开源**
+**Lightning Grasp：用接触场做高性能程序化抓取合成**
 
 > 📅 阅读日期: 2026-06-21
 >

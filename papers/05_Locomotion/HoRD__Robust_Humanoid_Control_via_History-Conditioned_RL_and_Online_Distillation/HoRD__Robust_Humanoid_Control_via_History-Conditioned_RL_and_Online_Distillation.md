@@ -7,7 +7,7 @@ category: "Locomotion"
 ---
 
 # HoRD: Robust Humanoid Control via History-Conditioned Reinforcement Learning and Online Distillation
-**两阶段框架：先用「历史条件强化学习」训出能在线自适应的教师策略，再「在线蒸馏」到一个吃稀疏 3D 关键点轨迹的 Transformer 学生策略，做到单策略零样本扛住未见动力学/任务/环境的变化**
+**HoRD：历史条件 RL 与在线蒸馏的鲁棒人形控制**
 
 > 📅 阅读日期: 2026-06-14
 >

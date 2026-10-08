@@ -7,7 +7,7 @@ arxiv: "2502.02858"
 ---
 
 # Dexterous Safe Control for Humanoids in Cluttered Environments via Projected Safe Set Algorithm
-**在不牺牲性能的前提下确保人形安全：聚焦「灵巧安全」——用肢体级几何约束在杂乱环境中同时避外部碰撞与自碰撞；提出投影安全集算法 p-SSA 处理由此产生的大量约束，并以有原则的方式松弛冲突约束、最小化安全违例以保证可行控制；仿真与 Unitree G1 真机验证，能在挑战性场景中稳健运行、最小违例，且跨任务免调参泛化**
+**用投影安全集算法实现杂乱环境中人形的灵巧安全控制**
 
 > 📅 阅读日期: 2026-06-21
 >

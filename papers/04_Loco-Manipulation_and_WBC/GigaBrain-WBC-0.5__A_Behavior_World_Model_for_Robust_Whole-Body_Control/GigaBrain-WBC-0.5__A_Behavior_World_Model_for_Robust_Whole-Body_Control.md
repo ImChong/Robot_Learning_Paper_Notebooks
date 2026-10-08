@@ -7,7 +7,7 @@ category: "Loco-Manipulation and WBC"
 
 # GigaBrain-WBC-0.5: A Behavior World Model for Robust Whole-Body Control with Environment Interaction
 
-**GigaBrain-WBC-0.5：把人形全身运动跟踪从「被动照抄指令」升级为「行为世界模型」——一个因果 Transformer 在输出下一步动作的同时，还预测下一步本体状态与「下一步合法行为指令的分布」，于是策略天然懂得哪些指令在当前地形/接触下物理可行；配合从动作重定向数据自动恢复的 3D 接触地形标注与在线越界指令检测，让机器人能与楼梯、椅子、桌子、箱子等真实几何交互，并从跌倒中稳健恢复。**
+**GigaBrain-WBC-0.5：面向人形全身控制的行为世界模型**
 
 > 📅 阅读日期: 2026-08-22
 >

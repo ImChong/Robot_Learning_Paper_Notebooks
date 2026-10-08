@@ -7,7 +7,7 @@ category: "Loco-Manipulation and WBC"
 ---
 
 # Embodiment-Aware Generalist Specialist Distillation for Unified Humanoid Whole-Body Control
-**一个策略管多种人形：用"泛化—专家"循环蒸馏，把 H1 / G1 / N1 / T1 / Adam 统一成一份 WBC 控制器**
+**EAGLE：面向跨本体人形全身控制的泛化-专家迭代蒸馏**
 
 > 📅 阅读日期: 2026-05-08
 >

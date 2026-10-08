@@ -7,7 +7,7 @@ zhname: "Humanoid-Gym：面向人形机器人零样本 Sim2Real 的 RL 框架"
 ---
 
 # Humanoid-Gym: Reinforcement Learning for Humanoid Robot with Zero-Shot Sim2Real Transfer
-**Humanoid-Gym：面向人形机器人零样本 Sim2Real 迁移的 RL 框架**
+**Humanoid-Gym：面向人形机器人零样本 Sim2Real 的 RL 框架**
 
 > 📅 阅读日期: 2026-05-18
 >

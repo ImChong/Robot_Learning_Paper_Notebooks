@@ -7,7 +7,7 @@ category: "Physics-Based Animation"
 ---
 
 # InterPrior: Scaling Generative Control for Physics-Based Human-Object Interactions
-**用「模仿预训练 → 物理扰动增广 → RL 微调」把物理仿真下的全身人–物交互（HOI）做成一个可泛化、可扩展的生成式运动先验**
+**InterPrior：可扩展的物理人–物交互生成式控制框架**
 
 > 📅 阅读日期: 2026-06-27
 >

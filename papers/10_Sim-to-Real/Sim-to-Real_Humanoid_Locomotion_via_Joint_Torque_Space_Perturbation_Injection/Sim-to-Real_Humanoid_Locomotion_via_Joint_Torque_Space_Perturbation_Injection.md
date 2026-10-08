@@ -7,7 +7,7 @@ category: "Sim-to-Real"
 ---
 
 # Sim-to-Real of Humanoid Locomotion Policies via Joint Torque Space Perturbation Injection
-**不再只随机化几个物理参数，而是用一张随机初始化的小网络在「关节力矩」上注入状态相关扰动，模拟非线性执行器动力学、接触柔顺等参数化域随机化表达不出来的现实差**
+**在关节力矩空间注入「状态相关随机扰动」，逼策略学会扛住域随机化覆盖不到的现实差**
 
 > 📅 阅读日期: 2026-06-17
 >

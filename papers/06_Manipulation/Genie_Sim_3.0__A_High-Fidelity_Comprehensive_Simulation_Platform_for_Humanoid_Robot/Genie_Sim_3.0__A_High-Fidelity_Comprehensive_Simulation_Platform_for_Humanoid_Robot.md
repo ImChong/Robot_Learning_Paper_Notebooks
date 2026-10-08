@@ -7,7 +7,7 @@ category: "Manipulation"
 ---
 
 # Genie Sim 3.0: A High-Fidelity Comprehensive Simulation Platform for Humanoid Robot
-**智元（AgiBot）基于 NVIDIA Isaac Sim 打造的一体化机器人操作仿真平台：用 LLM 把自然语言描述变成高保真场景，贯通「场景生成 → 数据采集 → 物理仿真 → 自动化评测」全流程，并开源 1 万+ 小时合成数据与首个 LLM/VLM 自动评测基准**
+**Genie Sim 3.0：面向人形机器人的高保真一体化仿真平台**
 
 > 📅 阅读日期: 2026-06-15
 >

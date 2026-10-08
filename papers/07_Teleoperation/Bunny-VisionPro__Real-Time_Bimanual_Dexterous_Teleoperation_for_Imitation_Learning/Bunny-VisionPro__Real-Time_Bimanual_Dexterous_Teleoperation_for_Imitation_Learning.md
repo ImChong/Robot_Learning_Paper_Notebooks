@@ -7,7 +7,7 @@ arxiv: "2407.03162"
 ---
 
 # Bunny-VisionPro: Real-Time Bimanual Dexterous Teleoperation for Imitation Learning
-**基于 VR 头显的实时双手灵巧遥操作系统：不同于以往纯视觉方案，设计低成本设备给操作者力触觉反馈以增强沉浸；内置碰撞与奇异点规避保安全、并保持实时；在标准任务集上成功率更高、用时更短，所采高质量演示提升下游模仿学习的泛化，并首次支持多阶段长时程双手灵巧操作任务的模仿学习**
+**Bunny-VisionPro：面向模仿学习的实时双手灵巧遥操作**
 
 > 📅 阅读日期: 2026-06-21
 >

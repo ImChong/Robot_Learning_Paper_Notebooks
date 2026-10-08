@@ -9,7 +9,7 @@ demos: ["cosmos"]
 ---
 
 # Cosmos World Foundation Model Platform for Physical AI
-**NVIDIA 提出的物理 AI 世界基础模型平台：整理大规模视频，训练因果视频 tokenizer 与两类视频生成模型，再针对相机、机器人和驾驶场景进行后训练。**
+**Cosmos：面向物理 AI 的世界基础模型平台**
 
 ## 📋 基本信息
 

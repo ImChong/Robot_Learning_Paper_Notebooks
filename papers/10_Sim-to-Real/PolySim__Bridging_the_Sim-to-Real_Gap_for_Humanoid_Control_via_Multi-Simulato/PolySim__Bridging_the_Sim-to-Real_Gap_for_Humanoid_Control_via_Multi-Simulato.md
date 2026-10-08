@@ -7,7 +7,7 @@ category: "Sim-to-Real"
 ---
 
 # PolySim: Bridging the Sim-to-Real Gap for Humanoid Control via Multi-Simulator Dynamics Randomization
-**让同一个人形 WBC 策略在 IsaacGym / IsaacSim / Genesis / MuJoCo 四个仿真器里"同时"训练，把每个仿真器的归纳偏置当作天然的 domain randomization**
+**PolySim：把「域随机化」从参数维度推到「整套仿真器」维度**
 
 > 📅 阅读日期: 2026-05-20
 >

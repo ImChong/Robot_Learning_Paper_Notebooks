@@ -7,7 +7,7 @@ category: "Teleoperation"
 ---
 
 # Learning Adaptive Neural Teleoperation for Humanoid Robots: From Inverse Kinematics to End-to-End Control
-**用 RL 训练的神经策略，把"VR 控制器 → IK → PD"这一传统三段式遥操作管线压成一个端到端网络，在 Unitree G1 上跟踪误差降 34%、轨迹平滑度提升 45%**
+**人形机器人的自适应神经遥操作**
 
 > 📅 阅读日期: 2026-05-30
 >

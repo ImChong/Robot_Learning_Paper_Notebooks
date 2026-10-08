@@ -6,7 +6,7 @@ category: "Locomotion"
 ---
 
 # RoboMirror: Understand Before You Imitate for Video to Humanoid Locomotion
-**首个免重定向（retargeting-free）的「视频→人形运动」框架：秉持「先理解、再模仿」，用视觉语言模型（VLM）把第一/第三人称视频先蒸馏成「视觉运动意图」，再直接条件化一个扩散策略生成物理可信、语义对齐的运动，全程不做显式姿态重建与重定向**
+**RoboMirror：先理解再模仿的视频驱动人形运动框架**
 
 > 📅 阅读日期: 2026-09-08
 >

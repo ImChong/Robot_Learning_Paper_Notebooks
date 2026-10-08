@@ -6,7 +6,7 @@ category: "Human Motion"
 ---
 
 # Implicit Bézier Motion Model for Precise Spatial and Temporal Control
-**针对此前贝塞尔运动模型（BMM）只能在均匀时间间隔预测固定控制点、艺术家无法做细粒度时间控制的局限，IBMM 在训练中隐式学习贝塞尔拟合、允许任意时间控制点、彻底取消「步幅（stride）」概念，使艺术家可在任意帧约束任意末端关节，并新增对运动全局缓入/缓出（ease-in/out）的直接全局时间控制——首个在生成自然运动时无需人工标注即可全局控时的方法（SIGGRAPH MIG 2025, Disney）**
+**隐式贝塞尔运动模型：精确的空间与时间控制**
 
 > 📅 阅读日期: 2026-06-21
 >

@@ -7,7 +7,7 @@ arxiv: "2601.07718"
 ---
 
 # Hiking in the Wild: A Scalable Perceptive Parkour Framework for Humanoids
-**从「被动本体感受」走向「主动感知」的人形复杂地形行走：把原始深度 + 本体感受单阶段端到端映射到关节动作，用「地形边缘检测 + 足体积点」防打滑、用「平坦面片采样」防奖励作弊，无需外部状态估计即可在复杂地形上以至多 2.5 m/s 通行，训练与部署代码开源**
+**Hiking in the Wild：可扩展的人形感知式跑酷框架**
 
 > 📅 阅读日期: 2026-06-21
 >

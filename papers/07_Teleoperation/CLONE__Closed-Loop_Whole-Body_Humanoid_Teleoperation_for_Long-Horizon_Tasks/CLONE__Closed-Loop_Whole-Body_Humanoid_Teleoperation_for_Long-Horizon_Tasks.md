@@ -7,7 +7,7 @@ category: "Teleoperation"
 ---
 
 # CLONE: Closed-Loop Whole-Body Humanoid Teleoperation for Long-Horizon Tasks
-**只用 MR 头显的头 + 双手三点信号，靠 MoE 策略做全身协调、靠 LiDAR 闭环校正抑制漂移，实现分钟级长时序全身遥操作**
+**CLONE：面向长时序任务的闭环全身人形遥操作**
 
 > 📅 阅读日期: 2026-07-02
 >

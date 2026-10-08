@@ -7,7 +7,7 @@ arxiv: "2506.16012"
 ---
 
 # DualTHOR: A Dual-Arm Humanoid Simulation Platform for Contingency-Aware Planning
-**在扩展版 AI2-THOR 上构建的双臂人形物理仿真平台：含真实机器人资产、双臂协作任务套件、面向人形的逆运动学求解器，并引入纳入执行失败的「意外（contingency）」机制；用于评测 VLM 在家务任务上的双臂协调与抗意外鲁棒性，发现当前 VLM 在双臂协调与现实意外下能力有限**
+**DualTHOR：面向意外感知规划的双臂人形仿真平台**
 
 > 📅 阅读日期: 2026-06-21
 >

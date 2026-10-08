@@ -8,7 +8,7 @@ demos: ["gmr"]
 ---
 
 # Retargeting Matters: General Motion Retargeting for Humanoid Motion Tracking
-**把"人类动作 → 机器人动作"这一步做到好，是 RL tracking 能不能跟上的关键**
+**Retargeting Matters：面向人形运动跟踪的通用动作重定向**
 
 > 📅 阅读日期: 2026-04-19
 >

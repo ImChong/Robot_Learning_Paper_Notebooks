@@ -7,7 +7,7 @@ arxiv: "2510.08807"
 ---
 
 # Humanoid Everyday: A Comprehensive Robotic Dataset for Open-World Humanoid Manipulation
-**一个大规模、多样化的人形操作数据集：用一套高效的「人监督遥操作」流水线，在 Unitree G1 / H1 上采集 10.3k 条轨迹、300 万+ 帧、260 个任务、7 大类，覆盖灵巧操作、人-人形交互、行走-操作一体化等；每帧含 RGB / 深度 / LiDAR / 触觉 / IMU 多模态与自然语言标注，并配套云端标准化评测平台，让研究者一键部署策略拿到成绩。**
+**Humanoid Everyday：面向开放世界人形操作的综合机器人数据集**
 
 > 📅 阅读日期: 2026-09-09
 >

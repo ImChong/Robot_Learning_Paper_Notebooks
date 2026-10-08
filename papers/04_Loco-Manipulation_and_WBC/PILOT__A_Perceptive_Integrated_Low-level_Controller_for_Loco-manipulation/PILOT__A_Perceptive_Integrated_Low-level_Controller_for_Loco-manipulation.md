@@ -7,7 +7,7 @@ category: "Loco-Manipulation and WBC"
 ---
 
 # PILOT: A Perceptive Integrated Low-level Controller for Loco-manipulation over Unstructured Scenes
-**PILOT：把"地形感知"和"全身动作"放进同一个单阶段 RL 策略里，让 Unitree G1 在乱糟糟的真实场景里既能走又能干活**
+**PILOT：感知集成的人形 Loco-Manipulation 底层控制器**
 
 > 📅 阅读日期: 2026-06-02
 >

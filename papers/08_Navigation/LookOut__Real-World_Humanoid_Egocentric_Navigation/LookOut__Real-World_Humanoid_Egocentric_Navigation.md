@@ -7,7 +7,7 @@ category: "Navigation"
 ---
 
 # LookOut: Real-World Humanoid Egocentric Navigation
-**只用一段第一视角（egocentric）视频，预测未来一串 6-DoF 头部位姿——既给出走哪条无碰撞路线（平移），又给出「往哪看」的主动信息采集行为（转头），并发布 4 小时真实场景的 Aria Navigation Dataset（AND）**
+**LookOut：真实世界人形第一视角导航**
 
 > 📅 阅读日期: 2026-06-17
 >

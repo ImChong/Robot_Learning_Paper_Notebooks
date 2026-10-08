@@ -7,7 +7,7 @@ category: "人体动作生成"
 ---
 
 # MAGNet: Diffusion Forcing for Multi-Agent Interaction Sequence Modeling
-**用扩散强制（Diffusion Forcing）把多人长时序交互装进一个自回归生成模型**
+**MAGNet：用扩散强制把多人长时序交互装进一个自回归生成模型**
 
 > 📅 阅读日期: 2026-06-01
 >

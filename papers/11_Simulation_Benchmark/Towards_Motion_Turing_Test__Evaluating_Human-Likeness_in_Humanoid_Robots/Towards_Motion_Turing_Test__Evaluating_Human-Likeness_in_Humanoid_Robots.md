@@ -7,7 +7,7 @@ category: "Simulation Benchmark"
 ---
 
 # Towards Motion Turing Test: Evaluating Human-Likeness in Humanoid Robots
-**用 1,000 段 SMPL-X 化运动 + 30 位标注员 × 500 小时打分，给「人形机器人到底像不像人」第一次立起统一标尺**
+**迈向动作图灵测试：评估人形机器人的「类人度」**
 
 > 📅 阅读日期: 2026-05-19
 >

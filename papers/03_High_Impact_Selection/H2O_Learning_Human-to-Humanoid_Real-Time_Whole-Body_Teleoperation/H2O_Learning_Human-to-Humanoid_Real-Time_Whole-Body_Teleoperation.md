@@ -7,7 +7,7 @@ zhname: "H2O：基于强化学习的人到人形实时全身遥操作"
 ---
 
 # Learning Human-to-Humanoid Real-Time Whole-Body Teleoperation
-**H2O：一台 RGB 相机看人，强化学习策略让 H1 实时跟着做全身动作——先用「仿真筛数据」把 AMASS 里机器人做不到的动作剔掉，再训练只用真机可得观测的跟踪策略**
+**H2O：基于强化学习的人到人形实时全身遥操作**
 
 > 📅 阅读日期: 2026-10-04
 >

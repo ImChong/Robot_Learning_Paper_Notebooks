@@ -7,7 +7,7 @@ category: "Simulation Benchmark"
 ---
 
 # GRUtopia: Dream General Robots in a City at Scale
-**用 10 万级精标注交互场景 + LLM 驱动的 NPC + Loco-Nav / Loco-Manip 基准，构建首个面向通用机器人的城市级仿真社会**
+**GRUtopia：城市级交互式 3D 社会，给通用机器人造一座可训练的「乌托邦」**
 
 > 📅 阅读日期: 2026-05-17
 >

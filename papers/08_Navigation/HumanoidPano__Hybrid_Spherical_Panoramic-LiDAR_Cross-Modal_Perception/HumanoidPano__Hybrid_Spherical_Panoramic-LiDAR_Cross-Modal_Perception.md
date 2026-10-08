@@ -7,7 +7,7 @@ arxiv: "2503.09010"
 ---
 
 # HumanoidPano: Hybrid Spherical Panoramic-LiDAR Cross-Modal Perception for Humanoid Robots
-**针对人形机器人「自遮挡严重、视场受限」的结构性感知痛点，用一台 360° 全景相机 + LiDAR 做球面几何对齐的跨模态融合，直接生成鸟瞰图（BEV）语义地图，为导航提供无盲区的环境理解。**
+**HumanoidPano：面向人形机器人的球面全景-激光雷达混合跨模态感知**
 
 > 📅 阅读日期: 2026-07-25
 >

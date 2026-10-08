@@ -7,7 +7,7 @@ category: "Locomotion"
 ---
 
 # Now You See That: Learning End-to-End Humanoid Locomotion from Raw Pixels
-**用「训练时给深度图加真伪影、部署时做行为蒸馏」把人形机器人推到原始深度像素的端到端 50 Hz 在线控制**
+**Now You See That：从原始像素端到端学习人形行走**
 
 > 📅 阅读日期: 2026-05-20
 >

@@ -7,7 +7,7 @@ category: "硬件设计"
 ---
 
 # OSMO: Open-Source Tactile Glove for Human-to-Robot Skill Transfer
-**OSMO：让人和机器人戴同一只触觉手套，把视觉学不到的「接触力」一并迁移过去**
+**OSMO：面向人机技能迁移的开源触觉手套**
 
 > 📅 阅读日期: 2026-06-10
 >

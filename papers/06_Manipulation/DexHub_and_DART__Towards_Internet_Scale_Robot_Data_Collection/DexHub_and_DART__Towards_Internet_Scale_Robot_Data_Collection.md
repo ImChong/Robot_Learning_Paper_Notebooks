@@ -7,7 +7,7 @@ arxiv: "2411.02214"
 ---
 
 # DexHub and DART: Towards Internet Scale Robot Data Collection
-**构建通才机器人受制于数据稀缺；DART 是一个借云端仿真与增强现实做可扩展机器人数据采集的众包遥操作平台，数据自动存入意在成为公共仓库的云端数据库 DexHub；用户研究表明 DART 比真机遥操作吞吐更高、体力疲劳更低，并能成功 sim-to-real 迁移、对视觉扰动鲁棒**
+**DexHub 与 DART：迈向互联网规模的机器人数据采集**
 
 > 📅 阅读日期: 2026-06-21
 >

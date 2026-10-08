@@ -7,7 +7,7 @@ category: "Teleoperation"
 ---
 
 # TeleGate: Whole-Body Humanoid Teleoperation via Gated Expert Selection with Motion Prior
-**冻结多专家 + 在线门控混合，配合 VAE 运动先验"猜未来"，让单一遥操作策略覆盖跑跳、跌倒恢复、踢球等高动态全身任务**
+**TeleGate：用门控专家选择 + 运动先验做全身人形遥操作**
 
 > 📅 阅读日期: 2026-05-20
 >

@@ -7,7 +7,7 @@ arxiv: "2501.04595"
 ---
 
 # MobileH2R: Learning Generalizable Human to Mobile Robot Handover Exclusively from Scalable and Diverse Synthetic Data
-**面向「人到移动机器人」递交：不同于固定底座递交，移动机器人要借移动性在大工作空间里可靠接物；MobileH2R 完全用可扩展多样的合成数据学习视觉递交技能——可扩展地生成多样全身人体运动数据、自动造安全且易模仿的演示、用高效 4D 模仿学习协调底盘与机械臂；仿真与真机较基线成功率至少 +15%**
+**MobileH2R：仅用可扩展多样合成数据学习泛化的人到移动机器人递交**
 
 > 📅 阅读日期: 2026-06-21
 >

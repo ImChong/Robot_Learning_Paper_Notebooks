@@ -8,7 +8,7 @@ arxiv: "2510.03529"
 ---
 
 # LapSurgie: Humanoid Robots Performing Surgery via Teleoperated Handheld Laparoscopy
-**首个「人形机器人 + 手持腹腔镜」遥操作手术框架：让 G1 人形直接握住现成的手动腕式腹腔镜器械，用一套满足远心点（RCM）约束的逆映射策略，把操作者手的位姿映射到器械末端，配立体视觉控制台实现免改造的微创手术遥操作——无需专用手术机器人，直接在为人设计的手术室里部署。**
+**LapSurgie：人形机器人经遥操作手持腹腔镜执行手术**
 
 > 📅 阅读日期: 2026-06-23
 >

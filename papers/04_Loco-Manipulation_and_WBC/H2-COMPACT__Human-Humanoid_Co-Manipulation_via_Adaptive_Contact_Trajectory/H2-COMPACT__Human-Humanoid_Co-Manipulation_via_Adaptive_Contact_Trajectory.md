@@ -7,7 +7,7 @@ category: "Loco-Manipulation and WBC"
 ---
 
 # H2-COMPACT: Human-Humanoid Co-Manipulation via Adaptive Contact Trajectory Policies
-**只靠手腕上的力/力矩传感器"读懂"人的意图，让 Unitree G1 与人合力抬运长条重物——上层行为克隆把力信号翻译成速度指令，下层强化学习把速度指令变成负载下的稳定步态**
+**H2-COMPACT：基于自适应接触轨迹策略的人-人形协同搬运**
 
 > 📅 阅读日期: 2026-09-07
 >

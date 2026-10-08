@@ -7,7 +7,7 @@ zhname: "MaskedMimic：基于掩码动作补全的统一物理角色控制"
 ---
 
 # MaskedMimic: Unified Physics-Based Character Control Through Masked Motion Inpainting
-**MaskedMimic：先用强化学习训一个全身跟踪老师，再把它蒸馏进一个只看「被随机遮掉一部分」目标的条件 VAE 学生——头手三点、任意关节关键帧、文字、物体，都只是不同的掩码**
+**MaskedMimic：基于掩码动作补全的统一物理角色控制**
 
 > 📅 阅读日期: 2026-10-04
 >

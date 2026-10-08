@@ -7,7 +7,7 @@ category: "Locomotion"
 ---
 
 # RPL: Learning Robust Humanoid Perceptive Locomotion on Challenging Terrains
-**两阶段「专家-学生」范式：第一阶段用特权高程图为斜坡/上下楼梯/踏脚石各训一个地形专家，第二阶段把这些专家蒸馏进一个用多路深度相机感知的 Transformer 策略；并提出「随速度调节深度特征(DFSV)」与「随机侧向遮挡(RSM)」两招专门鲁棒化感知，真机 Unitree G1 带 2kg 负载在 20° 斜坡、台阶、25cm 踏脚石上稳健双向行走**
+**RPL：挑战性地形上的鲁棒人形感知行走**
 
 > 📅 阅读日期: 2026-06-17
 >

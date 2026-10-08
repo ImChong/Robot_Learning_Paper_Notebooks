@@ -7,7 +7,7 @@ arxiv: "2607.02332"
 ---
 
 # HEFT: Heavy-Payload Full-size Humanoid Teleoperation with Privileged Motion Guidance and Windowed Payload Curriculum
-**用「特权动作引导」抗住 VR 追踪器噪声、用「窗口化负载课程」按动作分段逐步加重，让 175cm/65kg 的全尺寸人形在遥操作下也能扛着最多 24kg 负载走路、下蹲、搬举。**
+**HEFT：面向重载全尺寸人形的全身遥操作**
 
 > 📅 阅读日期: 2026-07-13
 >

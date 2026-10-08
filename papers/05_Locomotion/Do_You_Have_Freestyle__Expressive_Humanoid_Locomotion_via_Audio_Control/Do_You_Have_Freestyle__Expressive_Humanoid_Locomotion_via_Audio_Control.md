@@ -6,7 +6,7 @@ category: "Locomotion"
 ---
 
 # Do You Have Freestyle? Expressive Humanoid Locomotion via Audio Control
-**RoboPerform：首个「音频→运动」统一框架，不做显式动作重建，直接把音乐/语音当作隐式风格信号，端到端驱动人形跳舞与伴语手势——「运动 = 内容 + 风格」，内容来自预训练文生动作先验，风格由音频调制，配「ResMoE 教师 + 扩散学生」实现低延迟高保真的即兴表演**
+**RoboPerform：音频直驱的人形即兴表达运动**
 
 > 📅 阅读日期: 2026-09-03
 >

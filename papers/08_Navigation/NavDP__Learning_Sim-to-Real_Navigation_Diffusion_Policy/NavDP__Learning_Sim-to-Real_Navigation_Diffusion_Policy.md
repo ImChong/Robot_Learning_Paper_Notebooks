@@ -7,7 +7,7 @@ arxiv: "2505.08712"
 ---
 
 # NavDP: Learning Sim-to-Real Navigation Diffusion Policy with Privileged Information Guidance
-**只在仿真训练就能零样本跨环境、跨本体迁移真机的端到端导航扩散策略：用统一 Transformer 同时生成轨迹并打分（评论值），以局部 RGB-D 为条件，借助特权仿真信息提升空间理解；在跨 3000 个场景、累计百万米的大规模数据上训练，仿真与真机均显著超越此前 SOTA**
+**NavDP：用特权信息引导学习 Sim-to-Real 导航扩散策略**
 
 > 📅 阅读日期: 2026-06-21
 >

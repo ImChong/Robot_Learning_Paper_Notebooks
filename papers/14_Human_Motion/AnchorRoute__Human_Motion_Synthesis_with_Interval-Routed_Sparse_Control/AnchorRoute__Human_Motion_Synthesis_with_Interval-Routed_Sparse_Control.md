@@ -6,7 +6,7 @@ category: "Human Motion"
 ---
 
 # AnchorRoute: Human Motion Synthesis with Interval-Routed Sparse Control
-**用一小撮「稀疏锚点」（几个根位置 / 平面轨迹点 / 身体点目标）就能作者化全身动作：生成阶段把锚点特征经 AnchorKV 低秩注入到冻结的文本到动作先验里（只训 1.2M 参数、保住生成质量），生成后再用 RouteSolver 把优化更新投影到「锚点定义的分段仿射区间基」上做残差精修，让锚点约束在其时间邻域内被精确满足**
+**AnchorRoute：用「区间路由的稀疏锚点」做可控人体动作合成**
 
 > 📅 阅读日期: 2026-09-01
 >

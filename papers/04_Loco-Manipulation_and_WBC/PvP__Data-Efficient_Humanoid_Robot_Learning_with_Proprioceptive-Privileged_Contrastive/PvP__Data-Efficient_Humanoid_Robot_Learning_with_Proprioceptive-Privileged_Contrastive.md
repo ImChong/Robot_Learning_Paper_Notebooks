@@ -8,7 +8,7 @@ arxiv: "2512.13093"
 ---
 
 # PvP: Data-Efficient Humanoid Robot Learning with Proprioceptive-Privileged Contrastive Representations
-**PvP：把「特权状态」当成「本体感知状态」的天然增强视图，在二者间做无需手工数据增强的对比学习（SimSiam 式负余弦相似度 + 停梯度），学到紧凑、任务相关的本体表征，再以非对称 actor-critic 接入 PPO，从而显著提升人形全身控制的样本效率；并配套开源 SRL4Humanoid 统一评测框架**
+**PvP：用「本体感知 ↔ 特权状态」对比学习，提升人形机器人 RL 的样本效率**
 
 > 📅 阅读日期: 2026-06-29
 >

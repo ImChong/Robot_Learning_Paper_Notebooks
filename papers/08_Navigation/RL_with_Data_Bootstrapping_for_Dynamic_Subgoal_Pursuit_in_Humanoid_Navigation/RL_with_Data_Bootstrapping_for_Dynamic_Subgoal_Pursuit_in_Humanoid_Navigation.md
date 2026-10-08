@@ -7,7 +7,7 @@ arxiv: "2506.02206"
 ---
 
 # Reinforcement Learning with Data Bootstrapping for Dynamic Subgoal Pursuit in Humanoid Robot Navigation
-**分层导航框架：高层 RL 规划器在机器人中心坐标系里持续生成动态子目标穿越杂乱环境，低层基于 MPC 的规划器产出鲁棒步态去到达子目标；用一套数据自举（借模型法生成多样信息丰富的数据集）来加速并稳定训练；Digit 人形多场景仿真中成功率与适应性显著优于原模型法与其它学习法**
+**用数据自举的强化学习实现人形导航中的动态子目标追踪**
 
 > 📅 阅读日期: 2026-06-21
 >

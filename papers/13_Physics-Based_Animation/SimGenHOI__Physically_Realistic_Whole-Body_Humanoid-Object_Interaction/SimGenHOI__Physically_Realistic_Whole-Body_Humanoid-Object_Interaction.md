@@ -6,7 +6,7 @@ category: "Physics-Based Animation"
 ---
 
 # SimGenHOI: Physically Realistic Whole-Body Humanoid-Object Interaction via Generative Modeling and Reinforcement Learning
-**用「DiT 生成关键动作 + 接触感知的 RL 全身控制器跟踪纠错 + 生成器与控制器互相微调」的闭环，生成物理可行、无穿模无脚滑的长时程全身人-物交互（HOI）**
+**SimGenHOI：用生成建模 + 强化学习做物理真实的全身人-物交互**
 
 > 📅 阅读日期: 2026-08-09
 >

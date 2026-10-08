@@ -8,7 +8,7 @@ arxiv: "2606.19512"
 ---
 
 # Proprioceptive Invariant State Estimation for Humanoid Robots on Non-Inertial Ground
-**只用机载本体感知（躯干 + 足底 IMU + 关节编码器），在「会晃动/倾斜的运动地面」上直接估出机身相对运动地面的位置与速度，无需给地面加装外部传感器；关键是把足底 IMU 反推出的地面运动塞进 InEKF 的过程/测量模型，并保持右不变测量结构以获得优良的收敛性。**
+**非惯性地面上人形机器人的本体感知不变状态估计**
 
 > 📅 阅读日期: 2026-07-15
 >

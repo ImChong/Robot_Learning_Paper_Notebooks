@@ -7,7 +7,7 @@ category: "全身控制"
 ---
 
 # Semantic Co-Speech Gesture Synthesis and Real-Time Control for Humanoid Robots
-**语义化伴语手势合成与实时控制：LLM 生成检索 + Motion-GPT + GMR 重定向 + MotionTracker 跟踪，让 Unitree G1 边说边比划**
+**面向人形机器人的语义化伴语手势合成与实时控制**
 
 > 📅 阅读日期: 2026-05-19
 >

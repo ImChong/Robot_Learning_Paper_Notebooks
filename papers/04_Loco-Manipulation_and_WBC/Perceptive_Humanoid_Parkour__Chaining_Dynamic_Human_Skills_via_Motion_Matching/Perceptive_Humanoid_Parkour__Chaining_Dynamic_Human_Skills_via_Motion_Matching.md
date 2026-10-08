@@ -9,7 +9,7 @@ demos: ["php"]
 ---
 
 # Perceptive Humanoid Parkour: Chaining Dynamic Human Skills via Motion Matching
-**PHP：用游戏动画里的「动作匹配」把几秒长的人类跑酷片段拼成长程参考，先训单技能跟踪专家，再用 DAgger + PPO 蒸馏成一个只看深度图和速度命令的学生策略，让 G1 自己决定迈过、爬上、撑越还是滚下**
+**Perceptive Humanoid Parkour：基于动作匹配串联动态人类技能**
 
 > 📅 阅读日期: 2026-04-28（2026-09-24 重写：对照全文精读，新增八幕讲解动画与具体实例）
 >

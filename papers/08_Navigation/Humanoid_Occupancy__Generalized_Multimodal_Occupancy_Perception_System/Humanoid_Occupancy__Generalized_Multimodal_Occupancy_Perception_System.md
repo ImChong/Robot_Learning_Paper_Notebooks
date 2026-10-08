@@ -7,7 +7,7 @@ arxiv: "2507.20217"
 ---
 
 # Humanoid Occupancy: Enabling A Generalized Multimodal Occupancy Perception System on Humanoid Robots
-**为人形打造通用的多模态「占据（occupancy）」感知系统：软硬件 + 数据采集设备 + 标注流水线一体，用多模态融合输出带占据状态与语义标签的栅格；针对人形特有的运动学干扰与遮挡设计传感器布局，并建立首个人形全景占据数据集，为任务规划与导航提供统一环境理解**
+**Humanoid Occupancy：面向人形机器人的通用多模态占据感知系统**
 
 > 📅 阅读日期: 2026-06-21
 >

@@ -8,7 +8,7 @@ arxiv: "2509.26082"
 ---
 
 # Evolutionary Continuous Adaptive RL-Powered Co-Design for Humanoid Chin-Up Performance
-**外环用 CMA-ES 进化电机减速比，内环让同一个 PPO 策略跟着每一代新设计持续微调、而不是冻结在预训练模型上，在 RH5 人形上把原本受驱动器限制做不了的「引体向上」协同设计出来。**
+**EA-CoRL：面向人形引体向上的进化式连续自适应强化学习协同设计**
 
 > 📅 阅读日期: 2026-09-26
 >

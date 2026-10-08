@@ -7,7 +7,7 @@ category: "Loco-Manipulation and WBC"
 ---
 
 # ZEST: Zero-shot Embodied Skill Transfer for Athletic Robot Control
-**一套极简的运动模仿配方：动捕 / 单目视频 / 动画都能吃，仿真训完直接零样本上 Atlas、G1、Spot**
+**ZEST：面向敏捷机器人控制的零样本跨形态技能迁移**
 
 > 📅 阅读日期: 2026-05-14
 >

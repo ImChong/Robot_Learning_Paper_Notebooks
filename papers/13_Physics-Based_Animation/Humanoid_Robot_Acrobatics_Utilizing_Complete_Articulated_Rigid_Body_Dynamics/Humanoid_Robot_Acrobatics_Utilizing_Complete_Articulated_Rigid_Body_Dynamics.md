@@ -8,7 +8,7 @@ arxiv: "2508.08258"
 ---
 
 # Humanoid Robot Acrobatics Utilizing Complete Articulated Rigid Body Dynamics
-**不做线性化、不做质点近似——在完整多刚体动力学上做「轨迹优化 + 全身控制」，让 24 自由度人形完成前空翻/转体跳等杂技动作**
+**利用完整多刚体动力学的人形机器人杂技动作**
 
 > 📅 阅读日期: 2026-08-31
 >

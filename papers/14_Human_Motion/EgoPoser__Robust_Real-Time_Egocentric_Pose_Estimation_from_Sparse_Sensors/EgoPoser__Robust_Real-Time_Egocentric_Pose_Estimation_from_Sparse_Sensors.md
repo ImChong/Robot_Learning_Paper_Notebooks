@@ -7,7 +7,7 @@ arxiv: "2308.06493"
 ---
 
 # EgoPoser: Robust Real-Time Egocentric Pose Estimation from Sparse and Intermittent Observations Everywhere
-**现有头显第一视角全身姿态估计过度依赖室内动捕空间、假设关节连续跟踪与统一体型；EgoPoser 让全身姿态估计在「只有手进入头显视野时才有的间歇手部位置/朝向」下仍鲁棒，并提出独立于全局位置预测全身姿态的全局运动分解、用高效 SlowFast 模块兼顾更长时序与算力，且能跨不同体型泛化（ECCV 2024）**
+**EgoPoser：随处可用、面向稀疏且间歇观测的鲁棒实时第一视角姿态估计**
 
 > 📅 阅读日期: 2026-06-21
 >

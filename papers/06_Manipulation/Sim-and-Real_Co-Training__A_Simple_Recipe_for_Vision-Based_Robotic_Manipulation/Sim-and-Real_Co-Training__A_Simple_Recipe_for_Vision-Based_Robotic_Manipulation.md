@@ -7,7 +7,7 @@ arxiv: "2503.24361"
 ---
 
 # Sim-and-Real Co-Training: A Simple Recipe for Vision-Based Robotic Manipulation
-**与其只做 sim-to-real 迁移，不如在训练时直接把仿真与真实数据混合协同训练；在机械臂与人形系统、多样操作任务上系统实验表明：即便仿真与真实数据差异明显，仿真数据也能把真实任务表现平均提升 38%**
+**Sim-and-Real 协同训练：基于视觉的机器人操作的简单配方**
 
 > 📅 阅读日期: 2026-06-21
 >

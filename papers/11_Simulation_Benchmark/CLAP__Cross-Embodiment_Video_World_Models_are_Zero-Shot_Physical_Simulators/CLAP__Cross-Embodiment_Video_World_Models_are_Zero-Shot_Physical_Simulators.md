@@ -8,7 +8,7 @@ category: "Simulation Benchmark"
 
 # CLAP: Cross-Embodiment Video World Models are Zero-Shot Physical Simulators
 
-**一句话简要描述：把「动作条件视频生成模型」从单一机器人本体解放出来——用「末端位姿 + 语言 + 潜在动作」统一异构动作空间，先在无标注人/机器人视频上用潜在动作学通用物理先验、再落到末端动作空间，训出一个能当作零样本物理仿真器、跨臂/双臂/人形都能用的跨本体视频世界模型，且全部开源。**
+**CLAP：跨本体视频世界模型即零样本物理仿真器**
 
 > 📅 总结日期: 2026-08-29
 >

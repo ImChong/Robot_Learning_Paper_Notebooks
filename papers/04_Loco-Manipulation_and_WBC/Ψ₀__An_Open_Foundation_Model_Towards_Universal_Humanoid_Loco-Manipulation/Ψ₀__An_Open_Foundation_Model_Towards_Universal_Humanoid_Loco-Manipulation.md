@@ -7,7 +7,7 @@ category: "Loco-Manipulation and WBC"
 ---
 
 # Ψ₀: An Open Foundation Model Towards Universal Humanoid Loco-Manipulation
-**Ψ₀：用 800 小时人类视频 + 30 小时机器人数据训出的开源人形 VLA 基础模型**
+**Ψ₀：迈向通用人形机器人 Loco-Manipulation 的开源基础模型**
 
 > 📅 阅读日期: 2026-04-25
 >

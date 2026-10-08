@@ -7,7 +7,7 @@ category: "Sim-to-Real"
 ---
 
 # Bridging the Sim-to-Real Gap for Athletic Loco-Manipulation
-**要在真机上做「扔球 / 拖拽 / 抓举」这类竞技型动态动作，光靠追踪奖励不够——本文改用任务奖励，配上无需力矩传感器的「无监督执行器网络 UAN」补齐 sim-to-real 动力学差距，再用参考轨迹做预训练引导探索、防止奖励作弊**
+**UAN：面向竞技型运动操作的 Sim-to-Real 无监督执行器网络**
 
 > 📅 阅读日期: 2026-08-28
 >

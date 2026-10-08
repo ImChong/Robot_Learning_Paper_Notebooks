@@ -8,7 +8,7 @@ demos: ["omniretarget"]
 ---
 
 # OmniRetarget: Interaction-Preserving Data Generation for Humanoid Whole-Body Loco-Manipulation and Scene Interaction
-**用 interaction mesh + 硬约束优化，把「人-物-地形」的空间关系保真地搬到机器人上，再系统性扩增数据**
+**OmniRetarget：面向人形全身运动操作与场景交互的交互保持数据生成**
 
 > 📅 阅读日期: 2026-06-08
 >

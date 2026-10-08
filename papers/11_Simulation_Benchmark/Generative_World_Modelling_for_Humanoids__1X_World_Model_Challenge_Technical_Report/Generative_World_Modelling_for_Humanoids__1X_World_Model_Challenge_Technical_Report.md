@@ -8,7 +8,7 @@ category: "Simulation Benchmark"
 
 # Generative World Modelling for Humanoids: 1X World Model Challenge Technical Report
 
-**1X 公开了一套「真实人形机器人第一视角交互」基准，把"学习一个能预测未来观测的世界模型"拆成采样（预测未来图像帧）与压缩（预测未来离散 token）两条赛道；Team Revontuli 把视频生成基础模型 Wan-2.2 改造成"视频 + 机器人状态"双条件的帧预测器，并从零训练一个时空 Transformer，分别在两条赛道拿下第一。**
+**人形机器人生成式世界建模：1X 世界模型挑战赛技术报告**
 
 > 📅 阅读日期: 2026-06-09
 >

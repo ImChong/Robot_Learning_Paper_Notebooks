@@ -7,7 +7,7 @@ arxiv: "2512.16446"
 ---
 
 # E-SDS: Environment-aware See it, Do it, Sorted - Automated Environment-Aware Reinforcement Learning for Humanoid Locomotion
-**在 SDS「看一段视频 → VLM 写奖励代码」的基础上加一个环境分析智能体：先放 1000 台 G1 在目标地形里跑 10 s，统计缺口比例、障碍密度、地形粗糙度，再把这些数字和视频里提取的步态描述一起交给 GPT-5 生成奖励函数；每轮生成 2 个候选、各训练 500 次 PPO 迭代，由反馈智能体打分并挑出最好的进入下一轮，共 3 轮，每种地形约 99 分钟。仿真里只有 E-SDS 学会了下楼梯，四种地形的速度跟踪误差比手工奖励基线低 51.9–82.6%。**
+**E-SDS：面向人形行走的环境感知自动奖励生成强化学习**
 
 > 📅 总结日期: 2026-09-29
 >

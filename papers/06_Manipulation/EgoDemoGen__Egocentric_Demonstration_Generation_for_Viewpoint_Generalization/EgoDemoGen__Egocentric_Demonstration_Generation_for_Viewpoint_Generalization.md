@@ -7,7 +7,7 @@ arxiv: "2509.22578"
 ---
 
 # EgoDemoGen: Egocentric Demonstration Generation for Viewpoint Generalization in Robotic Manipulation
-**模仿学习的视觉运动策略对第一视角视角变化敏感，EgoDemoGen 在不需多视角数据的情况下生成「新第一视角下的观测-动作配对演示」：EgoTrajTransfer 用运动技能分割 + 几何感知变换 + 逆运动学滤波把机器人轨迹迁到新第一视角，EgoViewTransfer 用条件视频生成融合新视角重投影场景与渲染机器人运动合成逼真观测；仿真成功率 +24.6/16.9%、真机 +16/23%**
+**EgoDemoGen：为操作视角泛化生成第一视角演示**
 
 > 📅 阅读日期: 2026-06-21
 >

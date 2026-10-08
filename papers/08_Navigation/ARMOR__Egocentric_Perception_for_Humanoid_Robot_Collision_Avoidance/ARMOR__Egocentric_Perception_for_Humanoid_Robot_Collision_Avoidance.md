@@ -7,7 +7,7 @@ arxiv: "2412.00396"
 ---
 
 # ARMOR: Egocentric Perception for Humanoid Robot Collision Avoidance and Motion Planning
-**把「可穿戴式分布传感」搬到人形机器人手臂上：用 40 颗低成本 ToF 激光雷达贴满双臂做全向、低遮挡的第一视角深度感知，再配一个 Transformer 模仿学习策略（ARMOR-Policy）直接做动态避障运动规划，替代传统头戴相机 + 采样式规划器。**
+**ARMOR：面向人形机器人碰撞规避与运动规划的第一视角感知**
 
 > 📅 阅读日期: 2026-08-04
 >
