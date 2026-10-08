@@ -2385,8 +2385,8 @@
   function buildVideoDemo(host) {
     K.video(host, {
       title: '配音讲解视频：BeyondMimic 十二幕全流程',
-      sub: '9 分 45 秒竖屏视频（1080×1920），中文配音 + 字幕。画面就是上面的十二幕动画，旁白把每一幕讲细；适合手机上看或转发。',
-      size: '11.2 MB',
+      sub: '9 分 47 秒竖屏视频（1080×1920），中文配音 + 字幕。画面就是上面的十二幕动画，旁白把每一幕讲细；适合手机上看或转发。',
+      size: '11.3 MB',
       fileName: 'BeyondMimic_讲解视频.mp4'
     });
   }

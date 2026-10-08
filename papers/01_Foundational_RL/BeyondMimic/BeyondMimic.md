@@ -40,7 +40,7 @@ demos: ["beyondmimic"]
 
 > 🎮 **本文内嵌 1 段讲解动画 + 1 段配音视频 + 4 个交互演示**（不用装任何东西）：
 > 1. [十二幕动画：BeyondMimic 全流程](#bm-explainer-anim) —— 约 204 秒串完「两个缺口 → 锚定跟踪 → 奖励 → 观测 → 动作与关节阻抗 → 随机化与部署延迟 → 自适应采样 → 跟踪上真机 → VAE 潜空间 → 状态—潜动作扩散 → 代价引导 → 测试时的任务与边界」
-> 2. [配音讲解视频](#bm-video) —— 同样十二幕，加中文配音与字幕，9 分 45 秒竖屏，可下载
+> 2. [配音讲解视频](#bm-video) —— 同样十二幕，加中文配音与字幕，9 分 47 秒竖屏，可下载
 > 3. [锚定变换](#bm-anchor-demo) —— 拖水平漂移、偏航、高度偏差，看表 S1 的六项奖励在「锚定」和「跟世界系」下各是多少
 > 4. [关节阻抗](#bm-impedance-demo) —— 选关节、拖 $\omega$ 与 $\zeta$，看按电机惯量算出的 $k_p$、$k_d$、$\alpha$，以及代入表 S4 真实轴惯量后的阶跃响应
 > 5. [自适应采样](#bm-sampling-demo) —— 均匀 / 核长 3（论文）/ 核长 1（当前代码）三种抽起点的办法，看两段侧手翻怎么被练会（玩具）
@@ -77,7 +77,7 @@ demos: ["beyondmimic"]
 
 ## 📺 配音讲解视频（可下载） {#bm-video}
 
-<div class="paper-demo" data-demo="bm-video" data-src="media/bm_explainer_video.mp4" data-poster="media/bm_explainer_video_poster.jpg"><p class="demo-fallback">（本节含讲解视频播放器，需要启用 JavaScript；也可以直接<a href="media/bm_explainer_video.mp4" download="BeyondMimic_讲解视频.mp4">下载 mp4（11.2 MB）</a>）</p></div>
+<div class="paper-demo" data-demo="bm-video" data-src="media/bm_explainer_video.mp4" data-poster="media/bm_explainer_video_poster.jpg"><p class="demo-fallback">（本节含讲解视频播放器，需要启用 JavaScript；也可以直接<a href="media/bm_explainer_video.mp4" download="BeyondMimic_讲解视频.mp4">下载 mp4（11.3 MB）</a>）</p></div>
 
 > 📖 **动画之后的正文默认全部折叠**：问题、方法按小节收起，具体实例、实验、边界、源码对照、面试和附录各收成一块。想细读哪一块就点开，内容一字未删；四个交互演示和流程图留在外面。目录里的标题可以直接点，会自动展开所在折叠块，左侧目录顶部还有「展开全部文字」。
 
