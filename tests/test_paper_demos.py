@@ -1344,6 +1344,23 @@ def test_beyondmimic_stick_figures_bend_the_right_way():
     assert "path.baseDash" in js
 
 
+def test_beyondmimic_video_feedback_spell_vae_and_explain_the_pictures():
+    """2026-10-08 的看片反馈：VAE 逐字母念；第 5 幕说清黄轮与蓝杆是什么；第 11 幕说清横穿障碍的灰虚线。"""
+    js = (ROOT / "assets" / "js" / "demos" / "beyondmimic.js").read_text(encoding="utf-8")
+    narration = (ROOT / "scripts" / "paper_video" / "papers" / "beyondmimic.py").read_text(encoding="utf-8")
+    script = narration[narration.index("SCRIPT = ["):narration.index("DISPLAY = [")]
+    # 「VAE」连写会被 TTS 读成一个词：旁白一律写「V A E」，字幕经 DISPLAY 换回 VAE
+    assert "VAE" not in script and script.count("V A E") >= 4
+    assert '("V A E", "VAE")' in narration
+    # 第 5 幕：黄轮 = 电机（经减速器带动连杆），蓝杆 = 膝关节连杆，绿虚线 = 设定点；旁白开头先讲这三样
+    for needle in ("'电机'", "'减速器'", "'蓝：膝关节连杆'", "'绿虚线：设定点'", "GEAR_VIS"):
+        assert needle in js, needle
+    assert "黄色轮子是电机，经过减速器带动蓝色连杆，绿色虚线是设定点" in script
+    # 第 11 幕：只有路点代价时灰虚线是穿过障碍的直线，加上避障才绕开；画面左上角与旁白都要说
+    assert "只加路点代价：被拉向灰虚线（直线），会穿过障碍" in js and "路点 + 避障代价：灰虚线绕开障碍" in js
+    assert "左图先只加路点代价" in script and "灰色虚线就绕开了障碍" in script
+
+
 def test_groot_explainer_uses_the_paper_tables_and_the_code_sign():
     """GR00T 的动画数字必须从论文表格和开源流匹配符号现算，不能回到旧提纲。
 
