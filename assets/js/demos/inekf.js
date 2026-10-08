@@ -825,1111 +825,326 @@
     return '(' + a.map(function (x) { return fmt(x, d); }).join(', ') + ')';
   }
 
-  /* ── scene 1: 机器人怎样知道自己的姿态和速度 ── */
-  function buildSceneWhy() {
-    var s = sceneSvg('左边是 Cassie 双足机器人：控制器每一拍要知道身体的朝向、速度和位置，编码器只量关节。相机和激光雷达怕暗、怕烟、怕晃；IMU、编码器、接触开关几乎不会失效。只积分 IMU 很快漂走，只靠运动学噪声大，常见做法是用扩展卡尔曼滤波融合；EKF 在当前估计值处线性化，估计偏远了，切线就是错的。这篇用不变扩展卡尔曼滤波');
-    s.appendChild(svgText(30, 28, '控制器每一拍都要问：我现在朝哪、走多快、在哪', 'demo-x-ink2', 13.5));
-    /* 左：Cassie 和三个问号 */
-    var left = group(s);
-    rectBox(left, 30, 44, 220, 286, C_BORDER, C_SURFACE2);
-    hline(left, 44, 296, 236, 296, C_BORDER, 1.4);
-    var cs = cassie(left, 82, 296, 228);
-    var imu = cs.mark(CASSIE_IMG.imu);
-    var qs = [['朝向 $R$？', -64, -4], ['速度 $v$？', 40, 26], ['位置 $p$？', 40, -34]].map(function (q) {
-      var g = group(left);
-      g.appendChild(svgRich(imu[0] + q[1], imu[1] + q[2], q[0], { size: 11.5, anchor: 'middle', w: 110, cls: 'demo-x-acc' }));
-      return g;
-    });
-    var imuDot = dotAt(left, imu[0], imu[1], 5, C_WARN);
-    left.appendChild(svgText(140, 316, 'Cassie：20 自由度、10 个电机、4 根弹簧', 'demo-x-mut', 10, 'middle'));
-
-    /* 中：要估什么 + 两类传感器 */
-    var need = group(s);
-    rectBox(need, 266, 44, 250, 120, C_ACCENT, C_SURFACE);
-    need.appendChild(svgText(280, 64, '编码器直接量得到的：关节角', 'demo-x-mut', 10.5));
-    need.appendChild(svgText(280, 84, '没有传感器能直接读的：', 'demo-x-ink2', 11.5));
-    var needChips = ['身体的朝向（往哪歪）', '身体的速度（走多快）', '身体的位置（走到哪）'].map(function (str, k) {
-      return chip(need, 280 + (k % 2) * 116, 94 + Math.floor(k / 2) * 34, 110, str, C_ACCENT, { h: 28, size: 10.5 });
-    });
-    var sens = group(s);
-    rectBox(sens, 266, 176, 250, 154, C_BORDER, C_SURFACE2);
-    var ext = group(sens);
-    rectBox(ext, 278, 188, 226, 56, C_WARN, C_SURFACE, '4 3');
-    ext.appendChild(paint(svgText(290, 208, '外部感知：相机、激光雷达', null, 11.5), C_WARN));
-    ext.appendChild(svgText(290, 230, '怕暗、怕烟、怕晃；帧率也低', 'demo-x-mut', 10.5));
-    var extX = hline(ext, 470, 196, 496, 236, C_BAD, 2.4);
-    var prop = group(sens);
-    rectBox(prop, 278, 254, 226, 66, C_GOOD, C_SURFACE);
-    prop.appendChild(paint(svgText(290, 274, '本体感受：几乎不会失效', null, 11.5), C_GOOD));
-    prop.appendChild(svgText(290, 294, 'IMU 800 Hz · 编码器 2000 Hz', 'demo-x-ink2', 10.5));
-    prop.appendChild(svgText(290, 311, '弹簧压缩量当接触开关', 'demo-x-ink2', 10.5));
-
-    /* 右上：漂移 */
-    var drift = group(s);
-    rectBox(drift, 532, 44, 238, 150, C_BORDER, C_SURFACE2);
-    drift.appendChild(svgText(544, 62, '单用一种传感器会漂', 'demo-x-ink2', 11));
-    var DX0 = 548, DX1 = 756, DY = 160;
-    hline(drift, DX0, DY, DX1, DY, C_BORDER, 1);
-    pathLine(drift, [[DX0, DY], [DX1, DY]], C_TRUE, 2, '5 4');
-    var pImu = pathLine(drift, [], C_BAD, 2);
-    var pKin = pathLine(drift, [], C_WARN, 1.6);
-    var pFuse = pathLine(drift, [], C_GOOD, 2.2);
-    drift.appendChild(paint(svgText(DX1, 80, '只积分 IMU', null, 10, 'end'), C_BAD));
-    drift.appendChild(paint(svgText(DX1, 188, '只靠运动学', null, 10, 'end'), C_WARN));
-    var fuseLab = paint(svgText(DX0, 188, '融合：EKF', null, 10.5), C_GOOD);
-    drift.appendChild(fuseLab);
-
-    /* 右下：在估计值处线性化 */
-    var lin = group(s);
-    rectBox(lin, 532, 204, 238, 126, C_BORDER, C_SURFACE2);
-    lin.appendChild(svgText(544, 222, 'EKF：在当前估计值处线性化', 'demo-x-ink2', 11));
-    function fcurve(x) { return 284 - 34 * Math.sin((x - 548) / 40) * Math.exp(-(x - 548) / 400); }
-    var cpts = [];
-    for (var xx = 548; xx <= 756; xx += 4) cpts.push([xx, fcurve(xx)]);
-    pathLine(lin, cpts, C_INK2, 2);
-    var xT = 590, xE = 690;
-    function tangent(x0) {
-      var sl = (fcurve(x0 + 0.5) - fcurve(x0 - 0.5));
-      var L = 30 / Math.sqrt(1 + sl * sl);
-      return [[x0 - L, fcurve(x0) - sl * L], [x0 + L, fcurve(x0) + sl * L]];
-    }
-    var tT = pathLine(lin, tangent(xT), C_IN, 2), tE = pathLine(lin, tangent(xE), C_Q, 2);
-    var dT = dotAt(lin, xT, fcurve(xT), 4.5, C_IN), dE = dotAt(lin, xE, fcurve(xE), 4.5, C_Q);
-    lin.appendChild(paint(svgText(xT, fcurve(xT) + 26, '真值处', null, 10, 'middle'), C_IN));
-    var lE = paint(svgText(xE, 0, '估计值处（偏远了）', null, 10, 'middle'), C_Q);
-    lin.appendChild(lE);
-
-    /* 底：这一篇 */
-    var plan = group(s);
-    rectBox(plan, 30, 342, 740, 62, C_ACCENT, C_SURFACE);
-    plan.appendChild(svgRich(46, 366, '这篇：**不变扩展卡尔曼滤波（InEKF）** —— 传感器和模型都不变，只换「误差」的定义，线性化就不再依赖估计值', { size: 12, w: 720, cls: 'demo-x-ink2' }));
-    plan.appendChild(svgText(46, 392, 'Hartley 等 · 密歇根大学 · RSS 2018 会议版 → IJRR 2020 扩展版 · 平台：Cassie 双足', 'demo-x-mut', 10.5));
-
-    function draw(t, clock) {
-      var now = nowOf(t, clock);
-      setOpacity(left, seg(t, 0.2, 0.8));
-      cs.g.setAttribute('transform', 'translate(0 ' + (2 * Math.sin(now * 2.4)).toFixed(1) + ')');
-      qs.forEach(function (g, k) { setOpacity(g, seg(t, 0.8 + k * 0.5, 1.2 + k * 0.5)); });
-      imuDot.setAttribute('r', (4 + 1.5 * Math.sin(now * 4)).toFixed(1));
-      setOpacity(need, seg(t, 0.4, 1.0));
-      needChips.forEach(function (g, k) { setOpacity(g, seg(t, 1.0 + k * 0.4, 1.4 + k * 0.4)); });
-      setOpacity(sens, seg(t, 3.6, 4.2));
-      setOpacity(extX, seg(t, 4.6, 5.0));
-      setOpacity(prop, seg(t, 5.4, 6.0));
-      /* 漂移曲线按真实时间循环画：6 秒一轮 */
-      setOpacity(drift, seg(t, 7.0, 7.6));
-      var u = ((now - 7.0) % 6 + 6) % 6 / 6, imuPts = [], kinPts = [], fusePts = [];
-      for (var i = 0; i <= 40; i++) {
-        var f = (i / 40) * u, x = DX0 + f * (DX1 - DX0);
-        imuPts.push([x, DY - 82 * f * f]);
-        kinPts.push([x, DY + 14 * f + 3 * Math.sin(i * 1.7)]);
-        fusePts.push([x, DY + 2 * Math.sin(i * 0.9)]);
-      }
-      setPath(pImu, imuPts); setPath(pKin, kinPts); setPath(pFuse, t >= 8.6 ? fusePts : []);
-      setOpacity(fuseLab, seg(t, 8.6, 9.2));
-      setOpacity(lin, seg(t, 10.4, 11.0));
-      setOpacity(tT, seg(t, 11.2, 11.6));
-      setOpacity(dT, seg(t, 11.0, 11.4));
-      var wob = 6 * Math.sin(now * 1.3);
-      moveDot(dE, [xE + wob, fcurve(xE + wob)]);
-      lE.setAttribute('x', (xE + wob).toFixed(1)); lE.setAttribute('y', (fcurve(xE + wob) - 14).toFixed(1));
-      setPath(tE, tangent(xE + wob));
-      setOpacity(tE, seg(t, 11.8, 12.2));
-      setOpacity(plan, seg(t, 13.4, 14.0));
-    }
-    return { el: s, draw: draw };
-  }
-
-  /* ── scene 2: IMU 往前推，脚踩住不动，运动学来校正 ── */
-  function buildSceneSensors() {
-    var s = sceneSvg('左边 Cassie 上标出三种传感器：躯干里的 IMU、关节编码器、腿上的弹簧当接触开关。右边是世界坐标下的示意：身体（IMU）的朝向、速度、位置，加上脚踩住的触地点。IMU 往前积分做预测，不确定性越来越大；触地点假设不动，允许一点打滑；正运动学测出脚相对身体的位置，把估计拉回来');
-    s.appendChild(svgText(30, 28, '三种传感器各管一件事：IMU 往前推，脚踩住不动，运动学来校正', 'demo-x-ink2', 13.5));
-    var left = group(s);
-    rectBox(left, 30, 44, 230, 290, C_BORDER, C_SURFACE2);
-    hline(left, 44, 306, 246, 306, C_BORDER, 1.4);
-    var cs = cassie(left, 40, 306, 228);
-    var imu = cs.mark(CASSIE_IMG.imu), spr = cs.mark(CASSIE_IMG.spring), hip = cs.mark(CASSIE_IMG.hip), ft = cs.mark(CASSIE_IMG.footA);
-    /* 标签都放在图的右边，用细线连到图上的位置 */
-    var tags = [
-      [imu, 'IMU · 800 Hz', C_WARN, 92],
-      [hip, '编码器 · 2000 Hz', C_ACCENT, 146],
-      [spr, '弹簧被压缩 = 落地', C_GOOD, 214],
-      [ft, '触地点 $d$', C_GOOD, 286]
-    ].map(function (q) {
-      var g = group(left);
-      dotAt(g, q[0][0], q[0][1], 5, q[2]);
-      hline(g, q[0][0], q[0][1], 156, q[3] - 4, q[2], 1, '2 2');
-      g.appendChild(svgRich(160, q[3], q[1], { size: 10.5, w: 100, cls: 'demo-x-ink2' }));
-      return g;
-    });
-
-    /* 右：世界坐标下的示意 */
-    var right = group(s);
-    rectBox(right, 276, 44, 494, 236, C_BORDER, C_SURFACE2);
-    right.appendChild(svgText(290, 62, '世界坐标（示意）', 'demo-x-mut', 10.5));
-    var GY = 250;
-    hline(right, 290, GY, 756, GY, C_BORDER, 1.4);
-    var trueBody = bodyLegs(right, C_TRUE, true);
-    var estBody = bodyLegs(right, C_EST, false);
-    var ell = paint(svgEl('ellipse', { cx: 0, cy: 0, rx: 10, ry: 6, fill: 'none', 'stroke-width': 1.4, 'stroke-dasharray': '3 3' }), null, C_EST);
-    right.appendChild(ell);
-    var pin = group(right);
-    var pinMark = paint(svgEl('path', { d: 'M 0 0 l -6 -12 l 12 0 z' }), C_GOOD);
-    pin.appendChild(pinMark);
-    var slip = paint(svgText(0, 0, '不动（允许一点打滑）', null, 10, 'middle'), C_GOOD);
-    right.appendChild(slip);
-    var fkMk = K.arrowMarker(s, 'inekf-x-arrow-fk', C_WARN);
-    var fk = arrowPath(right, [[0, 0], [1, 1]], C_WARN, fkMk, null, 2.2);
-    var vMk = K.arrowMarker(s, 'inekf-x-arrow-v', C_EST);
-    var vArr = arrowPath(right, [[0, 0], [1, 1]], C_EST, vMk, null, 2);
-    var stateLab = group(right);
-    stateLab.appendChild(svgRich(290, 84, '状态：朝向 $R$、速度 $v$、位置 $p$（身体 = IMU），加上每个触地点 $d$', { size: 11, w: 470, cls: 'demo-x-ink2' }));
-    var formula = group(right);
-    formula.appendChild(svgMath(523, 118, 'h_p(\\tilde\\alpha) = R^{\\top}(d - p) + \\text{噪声}', { size: 15, anchor: 'middle', w: 400, cls: 'demo-x-warn' }));
-
-    /* 底：循环 */
-    var loop = group(s);
-    rectBox(loop, 30, 346, 740, 60, C_ACCENT, C_SURFACE);
-    var cy = 376, loopMk = K.arrowMarker(s, 'inekf-x-arrow-loop', C_ACCENT);
-    var lc = [
-      chip(loop, 46, cy - 16, 196, '① 预测：积分 IMU（捷联，不用动力学模型）', C_WARN, { h: 32, size: 10.5 }),
-      chip(loop, 272, cy - 16, 196, '② 接触：脚不动 + 速度白噪声', C_GOOD, { h: 32, size: 10.5 }),
-      chip(loop, 498, cy - 16, 256, '③ 校正：编码器 → 正运动学 → 脚在身体系的位置', C_WARN, { h: 32, size: 10.5 })
-    ];
-    arrowPath(loop, [[244, cy], [268, cy]], C_ACCENT, loopMk);
-    arrowPath(loop, [[470, cy], [494, cy]], C_ACCENT, loopMk);
-    var bloesch = group(s);
-    rectBox(bloesch, 276, 288, 494, 46, C_ACCENT, C_SURFACE, '4 3');
-    bloesch.appendChild(svgRich(290, 316, '这套拆法来自 Bloesch 的 QEKF（2012）；InEKF 不改传感器、不改模型，**只改误差怎么定义**', { size: 11, w: 470, cls: 'demo-x-ink2' }));
-
-    function draw(t, clock) {
-      var now = nowOf(t, clock);
-      setOpacity(left, seg(t, 0.2, 0.8));
-      tags.forEach(function (g, k) { setOpacity(g, seg(t, [3.8, 10.6, 7.2, 7.6][k], [4.2, 11.0, 7.6, 8.0][k])); });
-      setOpacity(right, seg(t, 0.4, 1.0));
-      setOpacity(stateLab, seg(t, 0.8, 1.4));
-      /* 身体按 4 秒一个循环：前 2.4 秒只靠 IMU 往前推（估计慢慢偏、椭圆变大），之后运动学一校正就拉回 */
-      var period = 4, n = Math.floor(now / period), u = (now % period) / period;
-      var bx0 = 340 + (n % 4) * 90, bx = bx0 + 90 * u, footX = bx0 + 70, by = GY - 74;
-      var drift = t >= 3.6 ? (u < 0.6 ? Math.pow(u / 0.6, 2) : Math.max(0, 1 - (u - 0.6) / 0.08)) : 0;
-      trueBody.put(bx, by, 0, [[footX, GY, true], [bx - 30, GY - 8, false]]);
-      var ex = bx + 28 * drift, ey = by - 10 * drift;
-      estBody.put(ex, ey, 0.12 * drift, [[footX, GY, true], [ex - 30, ey + 66, false]]);
-      ell.setAttribute('cx', ex.toFixed(1)); ell.setAttribute('cy', ey.toFixed(1));
-      ell.setAttribute('rx', (8 + 30 * drift).toFixed(1)); ell.setAttribute('ry', (5 + 12 * drift).toFixed(1));
-      setOpacity(ell, t >= 3.6 ? 0.9 : 0);
-      setOpacity(trueBody.g, t >= 3.6 ? 0.8 : 0);
-      setArrow(vArr, [[ex, ey], [ex + 46, ey]]);
-      setOpacity(vArr, seg(t, 3.6, 4.2));
-      pin.setAttribute('transform', 'translate(' + footX.toFixed(1) + ' ' + (GY - 4).toFixed(1) + ')');
-      slip.setAttribute('x', footX.toFixed(1)); slip.setAttribute('y', (GY + 18).toFixed(1));
-      setOpacity(pin, seg(t, 7.0, 7.4));
-      setOpacity(slip, seg(t, 7.2, 7.6));
-      var flash = u >= 0.6 && u < 0.75 ? 1 : 0.35;
-      setArrow(fk, [[ex, ey + 8], [footX - 3, GY - 6]]);
-      setOpacity(fk, t >= 10.4 ? flash : 0);
-      setOpacity(formula, seg(t, 10.4, 11.0));
-      setOpacity(loop, seg(t, 3.6, 4.2));
-      lc.forEach(function (g, k) { setOpacity(g, seg(t, [3.6, 7.0, 10.4][k], [4.2, 7.6, 11.0][k])); });
-      setOpacity(bloesch, seg(t, 13.4, 14.0));
-    }
-    return { el: s, draw: draw };
-  }
-
-  /* ── scene 3: 线性化点选错会怎样（第 4 节、第 6.1 节；具体实例第 2–4 步） ── */
-  function buildSceneWrongLin() {
-    var s = sceneSvg('左边 Cassie 站着不动，IMU 只读到重力。滤波器以为身体前倾了 0.1 弧度，用错的朝向把重力转到世界系，扣掉 g 后剩下约 0.98 m/s² 的假加速度，1 秒后估计速度约 0.98 m/s。右边对比真实的速度误差和 QEKF 在估计值处线性化的预测：0.1 弧度时竖直分量多算一倍，0.5 弧度时水平差 0.4、竖直差 1.15');
-    s.appendChild(svgText(30, 28, '站着不动、朝向估错一点：线性化在哪儿出问题', 'demo-x-ink2', 13.5));
-    var left = group(s);
-    rectBox(left, 30, 44, 300, 290, C_BORDER, C_SURFACE2);
-    var GY = 250, CX = 150;
-    hline(left, 44, GY, 316, GY, C_BORDER, 1.4);
-    var trueB = bodyLegs(left, C_TRUE, true), estB = bodyLegs(left, C_Q, false);
-    var mkG = K.arrowMarker(s, 'inekf-x-arrow-g', C_WARN), mkR = K.arrowMarker(s, 'inekf-x-arrow-res', C_Q);
-    var aBody = arrowPath(left, [[0, 0], [1, 1]], C_WARN, mkG, null, 2.2);
-    var aG = arrowPath(left, [[0, 0], [1, 1]], C_MUTED, K.arrowMarker(s, 'inekf-x-arrow-gw', C_MUTED), '4 3', 2);
-    var aRes = arrowPath(left, [[0, 0], [1, 1]], C_Q, mkR, null, 2.6);
-    var labA = group(left), labG = group(left), labR = group(left);
-    labA.appendChild(svgRich(0, 0, '$\\bar R\\tilde a$', { size: 12, anchor: 'start', w: 60, cls: 'demo-x-warn' }));
-    labG.appendChild(svgRich(0, 0, '$+g$', { size: 12, anchor: 'start', w: 50, cls: 'demo-x-mut' }));
-    labR.appendChild(svgRich(0, 0, '假加速度', { size: 11, anchor: 'start', w: 70, cls: 'demo-x-bad' }));
-    var angLab = svgRich(46, 284, '', { size: 11.5, w: 270, cls: 'demo-x-ink2' });
-    left.appendChild(angLab);
-    var velLab = svgRich(46, 312, '', { size: 11, w: 270, cls: 'demo-x-mut' });
-    left.appendChild(velLab);
-
-    /* 右：柱状对比（x、z 两个分量） */
-    var right = group(s);
-    rectBox(right, 346, 44, 424, 214, C_BORDER, C_SURFACE2);
-    right.appendChild(svgRich(360, 64, '1 秒后的速度误差 $v - \\bar v$（m/s）', { size: 11.5, w: 400, cls: 'demo-x-ink2' }));
-    var BY = 136, SC = 18; // 1 m/s = 18 px
-    hline(right, 372, BY, 756, BY, C_BORDER, 1.2);
-    var groups = [['水平 x', 430], ['竖直 z', 620]];
-    var bars = groups.map(function (gq) {
-      right.appendChild(svgText(gq[1] + 30, 246, gq[0], 'demo-x-mut', 10.5, 'middle'));
-      var bT = vbar(right, gq[1] - 6, BY, 30, C_MUTED, 0.75), bQ = vbar(right, gq[1] + 36, BY, 30, C_Q, 0.85);
-      var tT = svgText(gq[1] + 9, 0, '', 'demo-x-mut', 10, 'middle'), tQ = paint(svgText(gq[1] + 51, 0, '', null, 10, 'middle'), C_Q);
-      right.appendChild(tT); right.appendChild(tQ);
-      return { bT: bT, bQ: bQ, tT: tT, tQ: tQ };
-    });
-    var leg = group(right);
-    rectBox(leg, 372, 74, 12, 10, C_MUTED, C_MUTED);
-    leg.appendChild(svgText(390, 83, '真实误差', 'demo-x-mut', 10));
-    rectBox(leg, 456, 74, 12, 10, C_Q, C_Q);
-    leg.appendChild(paint(svgText(474, 83, 'QEKF 在估计值处线性化的预测', null, 10), C_Q));
-
-    var eq = group(s);
-    rectBox(eq, 346, 268, 424, 66, C_Q, C_SURFACE, '4 3');
-    eq.appendChild(svgText(360, 288, 'QEKF 的误差方程里含着估计值：', 'demo-x-ink2', 11));
-    eq.appendChild(svgMath(558, 316, 'A^{\\text{QEKF}}_t = A(\\,\\bar R_t,\\ \\tilde a_t,\\ \\tilde\\omega_t\\,)', { size: 15, anchor: 'middle', w: 400, cls: 'demo-x-bad' }));
-
-    var sec4 = group(s);
-    rectBox(sec4, 30, 346, 740, 60, C_ACCENT, C_SURFACE);
-    sec4.appendChild(svgRich(46, 370, '第 4 节的例子：欧拉角的误差方程处处是估计值 → 换成旋转矩阵、误差定义成 $R^{\\top}\\bar R$，方程只剩 $\\dot\\xi = -(\\tilde\\omega)_\\times\\,\\xi$', { size: 11.5, w: 720, cls: 'demo-x-ink2' }));
-    sec4.appendChild(svgText(46, 394, '估计值从方程里消失了 —— 这就是 InEKF 要推广到整个状态的那件事', 'demo-x-mut', 10.5));
-
-    function draw(t) {
-      setOpacity(left, seg(t, 0.2, 0.8));
-      var th = t < 10.4 ? 0.1 : 0.1 + 0.4 * ease(seg(t, 10.4, 11.4));
-      var by = GY - 74;
-      trueB.put(CX, by, 0, [[CX - 12, GY, true], [CX + 12, GY, true]]);
-      var tilt = t < 0.8 ? 0 : th * ease(seg(t, 0.8, 1.6));
-      estB.put(CX, by, -tilt, [[CX - 12, GY, true], [CX + 12, GY, true]]);
-      angLab.setText('滤波器以为前倾了 **' + fmt(th, 1) + ' rad**（约 ' + fmt((th * 180) / Math.PI, 0) + '°）');
-      /* 读数 ã 沿机身的「上」：在估计的朝向下画出来，再加上 g（向下），剩下水平的假加速度 */
-      var L = 112, up = [Math.sin(tilt), -Math.cos(tilt)];
-      var x0 = CX, y0 = by - 4;
-      var tip = [x0 + L * up[0], y0 + L * up[1]];
-      setArrow(aBody, [[x0, y0], tip]);
-      setArrow(aG, [tip, [tip[0], tip[1] + L]]);
-      setArrow(aRes, [[x0, y0], [tip[0], y0 + (tip[1] + L - y0)]]);
-      labA.setAttribute('transform', 'translate(' + (tip[0] + 6).toFixed(1) + ' ' + (tip[1] + 8).toFixed(1) + ')');
-      labG.setAttribute('transform', 'translate(' + (tip[0] + 6).toFixed(1) + ' ' + (tip[1] + L / 2).toFixed(1) + ')');
-      labR.setAttribute('transform', 'translate(' + (Math.max(tip[0], x0 + 20) + 8).toFixed(1) + ' ' + (y0 + 4).toFixed(1) + ')');
-      setOpacity(aBody, seg(t, 1.6, 2.2));
-      setOpacity(labA, seg(t, 1.6, 2.2));
-      setOpacity(aG, seg(t, 3.6, 4.2));
-      setOpacity(labG, seg(t, 3.6, 4.2));
-      setOpacity(aRes, seg(t, 4.4, 5.0));
-      setOpacity(labR, seg(t, 4.4, 5.0));
-      var ex = t < 10.4 ? EX_SMALL : EX_BIG;
-      velLab.setText(t < 3.6 ? 'IMU 读到的只有重力：$\\tilde a = (0, 0, 9.81)$' : '1 秒后估计速度 $\\bar v = ' + fmtV([ex.vbar[0], ex.vbar[2]], 3) + '$（x, z）');
-      setOpacity(velLab, seg(t, 0.8, 1.4));
-      setOpacity(right, seg(t, 5.4, 6.0));
-      var grow = t < 10.4 ? ease(seg(t, 5.6, 6.6)) : 1;
-      [0, 2].forEach(function (c, k) {
-        var B = bars[k], a = ex.trueDv[c], b = t >= 7.0 ? ex.qekfDv[c] : 0;
-        var gb = t >= 7.0 ? (t < 10.4 ? ease(seg(t, 7.0, 7.8)) : 1) : 0;
-        setH(B.bT, a * SC * grow);
-        setH(B.bQ, b * SC * gb);
-        B.tT.textContent = fmt(a, 3);
-        B.tT.setAttribute('y', (a >= 0 ? BY - a * SC * grow - 5 : BY - a * SC * grow + 12).toFixed(1));
-        B.tQ.textContent = fmt(b, 3);
-        B.tQ.setAttribute('y', (b >= 0 ? BY - b * SC * gb - 5 : BY - b * SC * gb + 12).toFixed(1));
-        setOpacity(B.tQ, gb);
-      });
-      setOpacity(eq, seg(t, 7.0, 7.6));
-      setOpacity(sec4, seg(t, 13.4, 14.0));
-    }
-    return { el: s, draw: draw };
-  }
-
-  /* ── scene 4: 一个矩阵装下全部状态 ── */
-  function buildSceneMatrix() {
-    var s = sceneSvg('把朝向、速度、位置和两个触地点拼成一个 7 乘 7 的矩阵：左上 3×3 是旋转，右边各列是速度、位置、两个触地点，右下是单位阵；这些矩阵相乘还是同一种矩阵，构成矩阵李群。误差也在群里定义：右不变误差是把真值整体挪到估计值的那一下。取对数后是 15 维的误差向量，加上 IMU 零偏再加 6 维');
-    s.appendChild(svgRich(30, 28, '一个矩阵装下全部状态：$SE_{N+2}(3)$', { size: 13.5, w: 520, cls: 'demo-x-ink2' }));
-    /* 左：7×7 的块矩阵（两只脚着地） */
-    var mat = group(s);
-    var MX = 46, MY = 54, CW = 38, CH = 30;
-    rectBox(mat, 30, 44, 330, 286, C_BORDER, C_SURFACE2);
-    var cols = [['R', 3, C_ACCENT], ['v', 1, C_WARN], ['p', 1, C_GOOD], ['d_1', 1, C_INK2], ['d_2', 1, C_INK2]];
-    var blocks = [];
-    var cx0 = MX;
-    cols.forEach(function (c, k) {
-      var g = group(mat);
-      var w = c[1] * CW;
-      rectBox(g, cx0, MY, w - 3, 3 * CH - 3, c[2], C_SURFACE);
-      g.appendChild(svgMath(cx0 + w / 2 - 1.5, MY + 1.5 * CH + 3, c[0], { size: 17, anchor: 'middle', w: w, cls: k ? 'demo-x-ink2' : 'demo-x-acc' }));
-      blocks.push(g);
-      cx0 += w;
-    });
-    /* 下面四行：0 … 0 | 单位阵 */
-    var low = group(mat);
-    for (var r = 0; r < 4; r++) {
-      low.appendChild(svgText(MX + 1.5 * CW, MY + (3 + r) * CH + 20, '0  0  0', 'demo-x-mut', 11, 'middle'));
-      for (var c2 = 0; c2 < 4; c2++) {
-        low.appendChild(svgText(MX + (3 + c2) * CW + CW / 2 - 1.5, MY + (3 + r) * CH + 20, r === c2 ? '1' : '0', r === c2 ? 'demo-x-ink2' : 'demo-x-mut', 12, 'middle'));
-      }
-    }
-    var sizeLab = group(mat);
-    sizeLab.appendChild(svgRich(MX, 300, '$N$ 个触地点：$(N+5)\\times(N+5)$；两只脚着地是 7 × 7', { size: 11, w: 300, cls: 'demo-x-mut' }));
-    sizeLab.appendChild(svgText(MX, 320, '右边每多一列，就多一个要估的点', 'demo-x-mut', 10.5));
-
-    /* 右上：相乘还是同一种矩阵 */
-    var grp = group(s);
-    rectBox(grp, 376, 44, 394, 76, C_ACCENT, C_SURFACE);
-    grp.appendChild(svgRich(390, 66, '相乘、求逆都还是这种矩阵 → 一个**矩阵李群**', { size: 11.5, w: 370, cls: 'demo-x-ink2' }));
-    grp.appendChild(svgText(390, 90, '比 SE(3)（朝向 + 位置）多带了 N + 1 列：速度、各个触地点', 'demo-x-mut', 10.5));
-    grp.appendChild(svgText(390, 108, '「一步变换」= 先转、再把每一列平移', 'demo-x-mut', 10.5));
-
-    /* 右中：右不变误差 —— 把真值整体挪到估计值 */
-    var err = group(s);
-    rectBox(err, 376, 130, 394, 136, C_BORDER, C_SURFACE2);
-    err.appendChild(svgMath(470, 152, '\\eta_t = \\bar X_t\\,X_t^{-1}', { size: 15, anchor: 'middle', w: 180, cls: 'demo-x-acc' }));
-    err.appendChild(svgText(560, 152, '右不变误差：在世界坐标里量', 'demo-x-ink2', 10.5));
-    var ORIG = [420, 236];
-    dotAt(err, ORIG[0], ORIG[1], 3, C_MUTED);
-    err.appendChild(svgText(ORIG[0], ORIG[1] + 18, '世界原点', 'demo-x-mut', 9.5, 'middle'));
-    var tB = bodyLegs(err, C_TRUE, true), eB = bodyLegs(err, C_EST, false);
-    var swing = paint(svgEl('path', { fill: 'none', 'stroke-width': 1.4, 'stroke-dasharray': '3 3' }), null, C_EST);
-    err.appendChild(swing);
-    err.appendChild(paint(svgText(756, 256, '整体转 + 挪一下', null, 10, 'end'), C_EST));
-
-    /* 右下：误差向量的维数 */
-    var dims = group(s);
-    rectBox(dims, 376, 276, 394, 54, C_BORDER, C_SURFACE2);
-    dims.appendChild(svgRich(390, 294, '取对数 → 误差向量 $\\xi$：$3N+9$ 维（两只脚 15 维，加零偏 21 维）', { size: 11, w: 370, cls: 'demo-x-ink2' }));
-    var segs = [['旋转', 3, C_ACCENT], ['速度', 3, C_WARN], ['位置', 3, C_GOOD], ['脚 1', 3, C_INK2], ['脚 2', 3, C_INK2], ['零偏', 6, C_MUTED]];
-    var sx = 390, segNodes = [];
-    segs.forEach(function (q) {
-      var w = q[1] * 15;
-      var g = group(dims);
-      g.appendChild(paint(svgEl('rect', { x: sx, y: 306, width: w - 2, height: 16, rx: 3, opacity: 0.75 }), q[2]));
-      g.appendChild(svgText(sx + w / 2 - 1, 318, q[0], 'demo-x-ink', 9.5, 'middle'));
-      segNodes.push(g);
-      sx += w;
-    });
-
-    /* 底：QEKF vs InEKF 的误差 */
-    var cmp = group(s);
-    rectBox(cmp, 30, 342, 740, 64, C_ACCENT, C_SURFACE);
-    cmp.appendChild(svgRich(46, 364, '**QEKF**：误差逐项相减 $v-\\bar v$、$p-\\bar p$，朝向单独用四元数乘 —— 各管各的', { size: 11.5, w: 720, cls: 'demo-x-bad' }));
-    cmp.appendChild(svgRich(46, 390, '**InEKF**：$\\eta$ 把它们绑在一起 —— 朝向一偏，速度、位置、触地点的误差跟着一起转', { size: 11.5, w: 720, cls: 'demo-x-good' }));
-
-    function draw(t, clock) {
-      var now = nowOf(t, clock);
-      setOpacity(mat, seg(t, 0.2, 0.6));
-      blocks.forEach(function (g, k) { setOpacity(g, seg(t, 0.5 + k * 0.5, 0.9 + k * 0.5)); });
-      setOpacity(low, seg(t, 3.0, 3.5));
-      setOpacity(sizeLab, seg(t, 3.0, 3.5));
-      setOpacity(grp, seg(t, 3.6, 4.2));
-      setOpacity(err, seg(t, 7.0, 7.6));
-      /* 真值不动；估计值 = 真值绕世界原点转 ψ 再平移一点（ψ 来回摆） */
-      var psi = 0.28 + 0.08 * Math.sin(now * 1.2);
-      var P0 = [520, 220];
-      tB.put(P0[0], P0[1], 0, [[P0[0] - 10, P0[1] + 32, true], [P0[0] + 14, P0[1] + 32, true]]);
-      function rotAbout(q) {
-        var dx = q[0] - ORIG[0], dy = q[1] - ORIG[1], c = Math.cos(-psi), sn = Math.sin(-psi);
-        return [ORIG[0] + c * dx - sn * dy + 40, ORIG[1] + sn * dx + c * dy - 6];
-      }
-      var b2 = rotAbout(P0), f1 = rotAbout([P0[0] - 10, P0[1] + 32]), f2 = rotAbout([P0[0] + 14, P0[1] + 32]);
-      eB.put(b2[0], b2[1], psi, [[f1[0], f1[1], true], [f2[0], f2[1], true]]);
-      swing.setAttribute('d', 'M ' + P0[0] + ' ' + P0[1] + ' Q ' + ((P0[0] + b2[0]) / 2 + 10).toFixed(1) + ' ' + ((P0[1] + b2[1]) / 2 + 20).toFixed(1) + ' ' + b2[0].toFixed(1) + ' ' + b2[1].toFixed(1));
-      setOpacity(dims, seg(t, 10.4, 11.0));
-      segNodes.forEach(function (g, k) { setOpacity(g, seg(t, 10.6 + k * 0.4, 11.0 + k * 0.4)); });
-      setOpacity(cmp, seg(t, 13.4, 14.0));
-    }
-    return { el: s, draw: draw };
-  }
-
-  /* ── scene 5: 误差不看轨迹：对数线性（定理 1、2；图 4、5） ── */
-  function buildSceneLogLinear() {
-    var s = sceneSvg('左上两块：两条完全不同的真实轨迹，估计值都是真值绕原点转了同一个角度，误差向量一模一样、一直不变。右上是误差方程，A 是常数，只含重力。中间是站立的例子：0.1 弧度的俯仰误差，1 秒后线性误差过一次指数映射，和滤波器自己的预测一位不差。下面是图 4：初始误差放大时，QEKF 的线性预测越错越多，InEKF 一直是 0');
-    s.appendChild(svgText(30, 28, '误差的演化和轨迹无关，线性方程还是精确的', 'demo-x-ink2', 13.5));
-    /* 左上：两条不同轨迹 */
-    var trk = group(s);
-    rectBox(trk, 30, 44, 360, 150, C_BORDER, C_SURFACE2);
-    var panes = [[40, '走直线'], [212, '转弯']];
-    var trackers = panes.map(function (pq, k) {
-      var g = group(trk);
-      g.appendChild(svgText(pq[0] + 6, 62, pq[1], 'demo-x-mut', 10));
-      var O = [pq[0] + 16, 178];
-      dotAt(g, O[0], O[1], 2.5, C_MUTED);
-      var pts = [];
-      for (var i = 0; i <= 40; i++) {
-        var u = i / 40;
-        pts.push(k === 0 ? [O[0] + 150 * u, O[1] - 20 - 10 * u] : [O[0] + 70 + 60 * Math.sin(u * 2.4), O[1] - 10 - 100 * u + 30 * u * u]);
-      }
-      function rot(q, a) { var dx = q[0] - O[0], dy = q[1] - O[1]; return [O[0] + Math.cos(a) * dx + Math.sin(a) * dy, O[1] - Math.sin(a) * dx + Math.cos(a) * dy]; }
-      pathLine(g, pts, C_TRUE, 1.6, '4 3');
-      var est = pathLine(g, pts.map(function (q) { return rot(q, 0.22); }), C_EST, 2);
-      var dT = dotAt(g, 0, 0, 4, C_TRUE), dE = dotAt(g, 0, 0, 4, C_EST);
-      return { pts: pts, rot: rot, dT: dT, dE: dE, est: est };
-    });
-    var xiBars = group(trk);
-    xiBars.appendChild(svgRich(46, 190, '两边的误差 $\\xi$ 一样，而且一直不变', { size: 10.5, w: 300, cls: 'demo-x-acc' }));
-
-    /* 右上：A 是常数 */
-    var eqg = group(s);
-    rectBox(eqg, 406, 44, 364, 150, C_ACCENT, C_SURFACE);
-    eqg.appendChild(svgText(420, 64, '定理 1：群仿射 → 误差的演化与轨迹无关', 'demo-x-ink2', 11));
-    eqg.appendChild(svgText(420, 82, '定理 2：对数误差满足线性方程，而且是精确的', 'demo-x-ink2', 11));
-    var Aeq = group(eqg);
-    Aeq.appendChild(svgMath(588, 140, '\\dot\\xi = A\\,\\xi,\\quad A=\\begin{bmatrix}0&0&0&0\\\\(g)_\\times&0&0&0\\\\0&I&0&0\\\\0&0&0&0\\end{bmatrix}', { size: 14, anchor: 'middle', w: 350, h: 100, cls: 'demo-x-ink2' }));
-    eqg.appendChild(svgText(756, 186, 'A 里只有重力 g，没有估计值', 'demo-x-good', 10.5, 'end'));
-
-    /* 中：站立例子的数 */
-    var num = group(s);
-    rectBox(num, 30, 204, 360, 126, C_BORDER, C_SURFACE2);
-    num.appendChild(svgText(44, 222, '站立例子：俯仰错 0.1 rad，传 1 秒', 'demo-x-ink2', 11));
-    var nl = [
-      ['线性误差：', '$\\xi_v = (0.981,\\ 0,\\ 0)$，$\\xi_p = (0.4905,\\ 0,\\ 0)$', C_INK2],
-      ['过一次指数映射：', '速度 $' + fmtV(EX_SMALL.inekfV, 4) + '$', C_IN],
-      ['滤波器自己积分：', '速度 $' + fmtV(EX_SMALL.vbar, 4) + '$', C_EST]
-    ].map(function (q, k) {
-      var g = group(num);
-      g.appendChild(svgText(44, 248 + k * 26, q[0], 'demo-x-mut', 10.5));
-      g.appendChild(svgRich(150, 248 + k * 26, q[1], { size: 10.5, w: 236, cls: k === 1 ? 'demo-x-good' : 'demo-x-ink2' }));
-      return g;
-    });
-    var tick = paint(svgText(376, 316, '一位不差', null, 11, 'end'), C_IN);
-    num.appendChild(tick);
-
-    /* 右下：图 4 */
-    var fig = group(s);
-    rectBox(fig, 406, 204, 364, 126, C_BORDER, C_SURFACE2);
-    fig.appendChild(svgText(420, 222, '图 4：初始朝向误差放大，传 1 秒后的线性化误差（读图）', 'demo-x-ink2', 10.5));
-    var FX0 = 436, FX1 = 756, FY0 = 316, FY1 = 236;
-    hline(fig, FX0, FY0, FX1, FY0, C_BORDER, 1);
-    hline(fig, FX0, FY1, FX0, FY0, C_BORDER, 1);
-    fig.appendChild(svgText(FX0 - 4, FY1 + 4, '25', 'demo-x-mut', 9, 'end'));
-    fig.appendChild(svgText(FX0 - 4, FY0 + 3, '0', 'demo-x-mut', 9, 'end'));
-    fig.appendChild(svgText(FX1, FY0 + 12, '初始误差缩放 0 → 1（π/2 × 3 轴）', 'demo-x-mut', 9, 'end'));
-    var qPath = pathLine(fig, [], C_Q, 2), iPath = pathLine(fig, [], C_IN, 2.2, '6 4');
-    var qLab = paint(svgText(FX1 - 4, FY1 - 2, 'QEKF ≈ 25', null, 10, 'end'), C_Q);
-    var iLab = paint(svgText(FX1 - 4, FY0 - 6, 'InEKF = 0', null, 10, 'end'), C_IN);
-    fig.appendChild(qLab); fig.appendChild(iLab);
-    var noise = group(fig);
-    noise.appendChild(paint(svgText(FX0 + 6, FY1 + 12, '图 5（读数带噪声）：InEKF 不再是 0，但仍小得多', null, 9.5), C_WARN));
-
-    var rngF = mulberry32(42), jit = [];
-    for (var j = 0; j <= 60; j++) jit.push(gauss(rngF));
-    function figPts(u, isQ, noisy) {
-      var pts = [];
-      for (var i = 0; i <= 60 * u; i++) {
-        var x = i / 60, y;
-        if (isQ) y = FIG4_READ.qekf * Math.pow(x, 1.9) + 0.9 * x * jit[i];
-        else y = noisy ? 2 * x * x + 0.4 * x * Math.abs(jit[i]) : 0;
-        pts.push([FX0 + x * (FX1 - FX0), FY0 - (Math.max(0, y) / FIG4_READ.qekf) * (FY0 - FY1)]);
-      }
-      return pts;
-    }
-
-    function draw(t, clock) {
-      var now = nowOf(t, clock);
-      setOpacity(trk, seg(t, 0.2, 0.8));
-      trackers.forEach(function (tr) {
-        var u = (now / 5) % 1, i = Math.floor(u * 40);
-        moveDot(tr.dT, tr.pts[i]);
-        moveDot(tr.dE, tr.rot(tr.pts[i], 0.22));
-      });
-      setOpacity(xiBars, seg(t, 1.6, 2.2));
-      setOpacity(eqg, seg(t, 3.6, 4.2));
-      setOpacity(num, seg(t, 7.0, 7.6));
-      nl.forEach(function (g, k) { setOpacity(g, seg(t, 7.2 + k * 0.8, 7.6 + k * 0.8)); });
-      setOpacity(tick, seg(t, 9.6, 10.0));
-      setOpacity(fig, seg(t, 10.4, 11.0));
-      var noisy = t >= 13.4;
-      setPath(qPath, figPts(ease(seg(t, 10.6, 12.2)), true));
-      setPath(iPath, figPts(ease(seg(t, 10.6, 12.2)), false, noisy));
-      setOpacity(qLab, seg(t, 12.0, 12.4));
-      setOpacity(iLab, noisy ? 0 : seg(t, 12.0, 12.4));
-      setOpacity(noise, seg(t, 13.4, 14.0));
-    }
-    return { el: s, draw: draw };
-  }
-
-  /* ── scene 6: 正运动学校正：H 是常数（第 5.3 节；第 10–11 节的左 / 右不变） ── */
-  function buildSceneUpdate() {
-    var s = sceneSvg('左边：腿测出来的脚的位置比估计的远 2 厘米，新息指向缺口；校正时身体往回挪 1 厘米、脚往前挪 1 厘米，缺口合上（放大 10 倍画）。右边：InEKF 的观测矩阵 H 是常数 0、0、负单位阵、单位阵；QEKF 的 H 里有估计值。下面：协方差用 Joseph 形式更新；换成机器人中心的写法，同一个测量变成左不变观测，两种误差用伴随矩阵互换');
-    s.appendChild(svgText(30, 28, '正运动学来校正：新息只看不变误差，H 是常数', 'demo-x-ink2', 13.5));
-    var left = group(s);
-    rectBox(left, 30, 44, 360, 290, C_BORDER, C_SURFACE2);
-    left.appendChild(svgText(44, 62, '世界坐标，侧视（位移放大 10 倍画）', 'demo-x-mut', 10));
-    var GY = 286, SCL = 210; // 1 m = 210 px
-    var O = [96, GY];
-    hline(left, 44, GY, 376, GY, C_BORDER, 1.4);
-    function W(p3, mag) { return [O[0] + p3[0] * SCL * (mag || 1), O[1] - p3[2] * SCL * (mag || 1)]; }
-    var bodyB = bodyLegs(left, C_EST, false);
-    var footD = dotAt(left, 0, 0, 6, C_GOOD);
-    var mkM = K.arrowMarker(s, 'inekf-x-arrow-meas', C_WARN), mkZ = K.arrowMarker(s, 'inekf-x-arrow-z', C_Q);
-    var meas = arrowPath(left, [[0, 0], [1, 1]], C_WARN, mkM, null, 2.2);
-    var innov = arrowPath(left, [[0, 0], [1, 1]], C_Q, mkZ, null, 2.4);
-    var labs = group(left);
-    var lbMeas = svgRich(0, 0, '腿测出来的 $\\bar R h_p$', { size: 10.5, w: 140, cls: 'demo-x-warn' });
-    var lbFoot = svgRich(0, 0, '估计的脚 $\\bar d$', { size: 10.5, w: 120, cls: 'demo-x-good' });
-    var lbZ = svgRich(0, 0, '新息：差 2 cm', { size: 10.5, w: 110, cls: 'demo-x-bad' });
-    [lbMeas, lbFoot, lbZ].forEach(function (n) { labs.appendChild(n); });
-    var numbers = group(left);
-    numbers.appendChild(svgRich(44, 316, 'x、z 两轴：身体各挪 $' + fmt(UPD_EX.dp[0] * 100, 3) + '$ cm，脚各挪 $+' + fmt(UPD_EX.dd[0] * 100, 3) + '$ cm，缺口合上', { size: 10.5, w: 330, cls: 'demo-x-ink2' }));
-
-    var right = group(s);
-    rectBox(right, 406, 44, 364, 182, C_BORDER, C_SURFACE2);
-    right.appendChild(svgText(420, 64, '运动学测的是「脚相对身体」：', 'demo-x-ink2', 11));
-    right.appendChild(svgMath(588, 92, 'Y = X^{-1} b + V', { size: 15, anchor: 'middle', w: 300, cls: 'demo-x-ink2' }));
-    right.appendChild(svgText(756, 112, '右不变观测（Barrau & Bonnabel 的定义）', 'demo-x-mut', 10, 'end'));
-    var hIn = group(right);
-    hIn.appendChild(svgText(420, 144, 'InEKF：', 'demo-x-good', 11));
-    var cellW = 54;
-    ['0', '0', '-I', 'I'].forEach(function (c, k) {
-      rectBox(hIn, 476 + k * cellW, 128, cellW - 4, 26, C_GOOD, C_SURFACE);
-      hIn.appendChild(svgMath(476 + k * cellW + (cellW - 4) / 2, 146, c, { size: 13, anchor: 'middle', w: cellW, cls: 'demo-x-good' }));
-    });
-    hIn.appendChild(svgText(700, 146, '常数', 'demo-x-good', 10.5));
-    var hQ = group(right);
-    hQ.appendChild(svgText(420, 184, 'QEKF：', 'demo-x-bad', 11));
-    hQ.appendChild(svgMath(600, 186, '\\big[\\,(\\bar R^{\\top}(\\bar d-\\bar p))_\\times,\\ 0,\\ -\\bar R^{\\top},\\ \\bar R^{\\top}\\big]', { size: 12.5, anchor: 'middle', w: 300, cls: 'demo-x-bad' }));
-    hQ.appendChild(svgText(756, 214, '含估计值', 'demo-x-bad', 10.5, 'end'));
-
-    var jos = group(s);
-    rectBox(jos, 406, 236, 364, 98, C_BORDER, C_SURFACE2);
-    jos.appendChild(svgRich(420, 258, '更新：$\\bar X^{+} = \\exp(K\\,\\Pi\\,\\bar X Y)\\,\\bar X$', { size: 11.5, w: 340, cls: 'demo-x-ink2' }));
-    jos.appendChild(svgText(420, 282, '协方差：扩展版用 Joseph 形式（式 19）', 'demo-x-ink2', 10.5));
-    jos.appendChild(svgText(420, 300, '会议版写的是 (I − KH)P', 'demo-x-mut', 10.5));
-    jos.appendChild(svgText(420, 320, '官方 C++ 库 Correct() 里就是 Joseph 那一行', 'demo-x-mut', 10.5));
-
-    var lr = group(s);
-    rectBox(lr, 30, 346, 740, 60, C_ACCENT, C_SURFACE);
-    lr.appendChild(svgRich(46, 368, '**世界中心**：运动学是右不变观测 → 用右不变误差。**机器人中心**（状态取逆）：同一个测量变成左不变观测；GPS 也是左不变观测', { size: 11, w: 720, cls: 'demo-x-ink2' }));
-    lr.appendChild(svgRich(46, 392, '两种误差用伴随矩阵精确互换：$P^{r} = \\mathrm{Ad}_{\\bar X}\\,P^{l}\\,\\mathrm{Ad}_{\\bar X}^{\\top}$（第 10.1 节）', { size: 11, w: 720, cls: 'demo-x-mut' }));
-
-    function draw(t, clock) {
-      var now = nowOf(t, clock);
-      setOpacity(left, seg(t, 0.2, 0.8));
-      /* 7.0 之后反复演示一次校正：3 秒一轮，前 1.2 秒是缺口，之后合上 */
-      var u = t >= 7.0 ? ((now - 7.0) % 3) / 3 : 0, k = t >= 7.0 ? ease(clamp((u - 0.4) / 0.3, 0, 1)) : 0;
-      var MAG = 10;
-      var pNow = [UPD.p[0] + k * UPD_EX.dp[0] * MAG, 0, UPD.p[2] + k * UPD_EX.dp[2] * MAG];
-      var dNow = [UPD.d[0] + k * UPD_EX.dd[0] * MAG, 0, UPD.d[2] + k * UPD_EX.dd[2] * MAG];
-      var bp = W(pNow), dp = W(dNow);
-      bodyB.put(bp[0], bp[1], 0, [[dp[0], dp[1], true], [bp[0] - 40, GY - 6, false]]);
-      moveDot(footD, dp);
-      /* 测量：从身体出发的 R̄h（h 比估计长 2 cm，放大 10 倍） */
-      var hEnd = [pNow[0] + (UPD.h[0] + (UPD.h[0] - (UPD.d[0] - UPD.p[0])) * (MAG - 1)), 0, pNow[2] + (UPD.h[2] + (UPD.h[2] - (UPD.d[2] - UPD.p[2])) * (MAG - 1))];
-      var he = W(hEnd);
-      setArrow(meas, [[bp[0], bp[1] + 6], he]);
-      setArrow(innov, [dp, [dp[0] + (he[0] - dp[0]) * 0.92, dp[1] + (he[1] - dp[1]) * 0.92]]);
-      setOpacity(meas, seg(t, 0.8, 1.4));
-      setOpacity(innov, t >= 3.6 ? (1 - k) : 0);
-      lbMeas.setX(he[0] + 6); lbMeas.setY(he[1] - 4);
-      lbFoot.setX(dp[0] - 92); lbFoot.setY(dp[1] - 10);
-      lbZ.setX(dp[0] + 40); lbZ.setY(dp[1] + 2);
-      setOpacity(lbMeas, seg(t, 0.8, 1.4));
-      setOpacity(lbFoot, seg(t, 0.8, 1.4));
-      setOpacity(lbZ, t >= 3.6 ? 1 - k : 0);
-      setOpacity(numbers, seg(t, 7.0, 7.6));
-      setOpacity(right, seg(t, 0.4, 1.0));
-      setOpacity(hIn, seg(t, 3.6, 4.2));
-      setOpacity(hQ, seg(t, 5.0, 5.6));
-      setOpacity(jos, seg(t, 10.4, 11.0));
-      setOpacity(lr, seg(t, 13.4, 14.0));
-    }
-    return { el: s, draw: draw };
-  }
-
-  /* ── scene 7: 看不见的方向：航向与绝对位置（第 5.4 节；具体实例第 7 步） ── */
-  function buildSceneObservability() {
-    var s = sceneSvg('左边俯视：把机器人连同两个脚印整体平移，或绕竖直轴旋转，IMU 和腿测到的读数一模一样，这 4 个方向看不见。右边是可观性矩阵：位置和触地点两大列只差符号，旋转那一块的第 3 列全是 0。单脚 12 维里秩为 8。右下比较：真系统 4 个方向不可观，InEKF 也是 4 个；QEKF 在抖动的估计值处线性化，只剩 3 个，航向被假装看见了');
-    s.appendChild(svgText(30, 28, '看不见的方向：航向与绝对位置，InEKF 老实承认', 'demo-x-ink2', 13.5));
-    var left = group(s);
-    rectBox(left, 30, 44, 330, 290, C_BORDER, C_SURFACE2);
-    left.appendChild(svgText(44, 62, '俯视（示意）', 'demo-x-mut', 10));
-    var O = [195, 190];
-    dotAt(left, O[0], O[1], 2.5, C_MUTED);
-    left.appendChild(svgText(O[0] + 6, O[1] + 14, '世界原点', 'demo-x-mut', 9.5));
-    function robotTop(color, dashed) {
-      var g = group(left);
-      var tri = paint(svgEl('path', { d: 'M 22 0 L -12 -13 L -12 13 Z', 'stroke-width': 2 }), C_SURFACE, color);
-      if (dashed) tri.setAttribute('stroke-dasharray', '4 3');
-      g.appendChild(tri);
-      var f1 = dotAt(g, -4, -26, 5, color), f2 = dotAt(g, 10, 24, 5, color);
-      if (dashed) { f1.style.opacity = 0.7; f2.style.opacity = 0.7; }
-      return g;
-    }
-    var real = robotTop(C_EST, false), ghost = robotTop(C_MUTED, true);
-    var modeLab = svgRich(44, 300, '', { size: 11, w: 300, cls: 'demo-x-acc' });
-    left.appendChild(modeLab);
-    var reads = group(left);
-    reads.appendChild(svgRich(44, 322, 'IMU 读数、腿的读数：**一模一样** ✓', { size: 10.5, w: 300, cls: 'demo-x-good' }));
-
-    var right = group(s);
-    rectBox(right, 376, 44, 394, 214, C_BORDER, C_SURFACE2);
-    right.appendChild(svgRich(390, 64, '可观性矩阵 $O = [\\,H;\\ H\\Phi;\\ H\\Phi^{2};\\ \\cdots]$（单脚，12 列）', { size: 11, w: 370, cls: 'demo-x-ink2' }));
-    var GX = 436, GY0 = 84, CWb = 80, RH = 34;
-    var colNames = ['R', 'v', 'p', 'd'], cells = [
-      ['0', '0', '-I', 'I'],
-      ['-\\tfrac12(g)_\\times\\Delta t^2', '-I\\Delta t', '-I', 'I'],
-      ['-2(g)_\\times\\Delta t^2', '-2I\\Delta t', '-I', 'I']
-    ];
-    var rowNames = ['H', 'H\\Phi', 'H\\Phi^2'];
-    colNames.forEach(function (c, k) {
-      right.appendChild(svgMath(GX + k * CWb + CWb / 2, GY0 + 4, c, { size: 13, anchor: 'middle', w: CWb, cls: 'demo-x-mut' }));
-    });
-    var hiCols = [group(right), group(right)];
-    rectBox(hiCols[0], GX + 2 * CWb + 2, GY0 + 12, 2 * CWb - 4, 3 * RH + 4, C_Q, 'none', '4 3');
-    rectBox(hiCols[1], GX + 0.66 * CWb, GY0 + 12, CWb * 0.34, 3 * RH + 4, C_WARN, 'none', '4 3');
-    cells.forEach(function (row, r) {
-      right.appendChild(svgMath(GX - 24, GY0 + 34 + r * RH, rowNames[r], { size: 12, anchor: 'middle', w: 60, cls: 'demo-x-mut' }));
-      row.forEach(function (c, k) {
-        right.appendChild(svgMath(GX + k * CWb + CWb / 2, GY0 + 34 + r * RH, c, { size: 11.5, anchor: 'middle', w: CWb + 10, cls: 'demo-x-ink2' }));
-      });
-    });
-    var noteT = group(right), noteY = group(right);
-    noteT.appendChild(paint(svgText(756, 222, 'p、d 两大列符号相反 → 平移看不见（3 维）', null, 10.5, 'end'), C_Q));
-    noteY.appendChild(svgRich(390, 244, '$(g)_\\times$ 的第 3 列是 0（g 只有 z 分量）→ 航向看不见（1 维）', { size: 10.5, w: 370, cls: 'demo-x-warn' }));
-
-    var meter = group(s);
-    rectBox(meter, 376, 268, 394, 66, C_BORDER, C_SURFACE2);
-    var rowsM = [['非线性系统本身', 4, C_MUTED], ['InEKF（秩 8 / 12）', 4, C_IN], ['QEKF（估计值处线性化，玩具）', 3, C_Q]];
-    var mBars = rowsM.map(function (q, k) {
-      var y = 282 + k * 18;
-      meter.appendChild(svgText(390, y + 4, q[0], 'demo-x-ink2', 10));
-      var bs = [];
-      for (var i = 0; i < 4; i++) bs.push(paint(svgEl('rect', { x: 590 + i * 34, y: y - 6, width: 30, height: 12, rx: 2 }), i < q[1] ? q[2] : 'none', q[2]));
-      bs.forEach(function (b) { meter.appendChild(b); });
-      meter.appendChild(svgText(736, y + 4, q[1] + ' 维', 'demo-x-mut', 10));
-      return bs;
-    });
-
-    var oc = group(s);
-    rectBox(oc, 30, 346, 740, 60, C_ACCENT, C_SURFACE);
-    oc.appendChild(svgRich(46, 368, '以前要靠**可观性约束 EKF**（Huang 等 2010）专门修；InEKF 的误差方程不含估计值，不可观方向天生和非线性系统一致', { size: 11, w: 720, cls: 'demo-x-ink2' }));
-    oc.appendChild(svgText(46, 392, '后果：航向和位置的协方差会老实地慢慢长大（图 10 的 3σ 包络），不会被误判成越来越准', 'demo-x-mut', 10.5));
-
-    function draw(t, clock) {
-      var now = nowOf(t, clock);
-      setOpacity(left, seg(t, 0.2, 0.8));
-      var P0 = [150, 150];
-      real.setAttribute('transform', 'translate(' + P0[0] + ' ' + P0[1] + ') rotate(-20)');
-      /* 6 秒一轮：x 平移 → y 平移 → 绕原点旋转 */
-      var c = (now % 6) / 6, mode = Math.floor(c * 3), u = Math.sin(Math.PI * ((c * 3) % 1));
-      var gx = P0[0], gy = P0[1], ang = -20, label;
-      if (mode === 0) { gx += 70 * u; label = '整体往前平移（上下平移也一样）'; }
-      else if (mode === 1) { gy -= 60 * u; label = '整体往侧面平移'; }
-      else {
-        var a = 0.7 * u, dx = P0[0] - O[0], dy = P0[1] - O[1];
-        gx = O[0] + Math.cos(a) * dx + Math.sin(a) * dy; gy = O[1] - Math.sin(a) * dx + Math.cos(a) * dy; ang = -20 - (a * 180) / Math.PI;
-        label = '绕竖直轴整体旋转（航向）';
-      }
-      ghost.setAttribute('transform', 'translate(' + gx.toFixed(1) + ' ' + gy.toFixed(1) + ') rotate(' + ang.toFixed(1) + ')');
-      modeLab.setText(label);
-      setOpacity(ghost, seg(t, 0.8, 1.4));
-      setOpacity(reads, seg(t, 1.6, 2.2));
-      setOpacity(right, seg(t, 3.6, 4.2));
-      setOpacity(hiCols[0], seg(t, 7.0, 7.6));
-      setOpacity(noteT, seg(t, 7.0, 7.6));
-      setOpacity(hiCols[1], seg(t, 8.2, 8.8));
-      setOpacity(noteY, seg(t, 8.2, 8.8));
-      setOpacity(meter, seg(t, 10.4, 11.0));
-      mBars.forEach(function (bs, k) { bs.forEach(function (b) { setOpacity(b, seg(t, 10.6 + k * 0.5, 11.0 + k * 0.5)); }); });
-      setOpacity(oc, seg(t, 13.4, 14.0));
-    }
-    return { el: s, draw: draw };
-  }
-
-  /* ── scene 8: 不确定性长成香蕉（第 6.4 节，图 6、7；具体实例第 8 步） ── */
-  function buildSceneBanana() {
-    var s = sceneSvg('三格俯视图，纵轴是前进方向：机器人以每秒 1 米往前走 8 秒，初始位置不确定 0.1 米、航向不确定 10 度。左边真分布弯成香蕉，中间 InEKF 在李代数里撒点再映回来，也是香蕉；右边 QEKF 只能画直的椭圆。最后航向完全不知道时，真分布和 InEKF 都是一圈圈的圆环');
-    s.appendChild(svgText(30, 28, '不确定性的形状：真的会弯成香蕉', 'demo-x-ink2', 13.5));
-    var PW = 236, PH = 268, PY = 50, titles = ['真分布（1 万个粒子）', 'InEKF：李代数里的高斯', 'QEKF：位置上的高斯'];
-    var cols = [C_TRUE, C_IN, C_Q];
-    var small = bananaSamples(BANANA.yawDeg, 150, 5), big = bananaSamples(BANANA.fullYawDeg, 150, 6);
-    var panels = titles.map(function (tt, k) {
-      var g = group(s), x0 = 30 + k * (PW + 16);
-      rectBox(g, x0, PY - 6, PW, PH + 30, C_BORDER, C_SURFACE2);
-      g.appendChild(paint(svgText(x0 + 10, PY + 10, tt, null, 11), cols[k]));
-      return { g: g, x0: x0, clouds: [0, 1, 2, 3, 4].map(function () { var p = paint(svgEl('path', { d: '', opacity: 0.55 }), cols[k]); g.appendChild(p); return p; }), ells: [] };
-    });
-    /* 坐标：前进方向 x 朝上，侧向 y 朝左（论文的画法） */
-    function mapper(k, bigMode) {
-      var x0 = panels[k].x0, cx = x0 + PW / 2, yr = bigMode ? 9.5 : 5, xr = bigMode ? [-9.5, 9.5] : [-1, 9.5];
-      var sc = Math.min((PW - 20) / (2 * yr), (PH - 30) / (xr[1] - xr[0]));
-      return function (q) { return [cx - q[1] * sc, PY + PH - 6 - (q[0] - xr[0]) * sc]; };
-    }
-    function cloudD(pts, m) {
-      return pts.map(function (q) { var P = m(q); return 'M' + P[0].toFixed(1) + ' ' + P[1].toFixed(1) + 'h1.8v1.8h-1.8z'; }).join('');
-    }
-    function setClouds(bigMode, nShown) {
-      var src = bigMode ? big : small;
-      [src.truth, src.inv].forEach(function (sets, k) {
-        var m = mapper(k, bigMode);
-        panels[k].clouds.forEach(function (p, i) { p.setAttribute('d', i < nShown ? cloudD(sets[i], m) : ''); });
-      });
-      var m2 = mapper(2, bigMode);
-      panels[2].clouds.forEach(function (p, i) { p.setAttribute('d', !bigMode && i < nShown ? cloudD(src.q[i], m2) : ''); });
-    }
-    var ellG = group(panels[2].g);
-    var ells = BANANA.secs.map(function () { var e = paint(svgEl('ellipse', { fill: 'none', 'stroke-width': 1.4 }), null, C_Q); ellG.appendChild(e); return e; });
-    var robot = [0, 1, 2].map(function (k) { return dotAt(panels[k].g, 0, 0, 4, C_INK); });
-    var noFit = group(panels[2].g);
-    noFit.appendChild(paint(svgText(panels[2].x0 + PW / 2, PY + PH / 2 - 8, '高斯椭圆', null, 13, 'middle'), C_Q));
-    noFit.appendChild(paint(svgText(panels[2].x0 + PW / 2, PY + PH / 2 + 14, '表示不了圆环', null, 13, 'middle'), C_Q));
-    var nums = group(s);
-    nums.appendChild(svgRich(46, 366, '航向偏 10°、走 8 m：侧向偏 **' + fmt(BAN_LAT1, 2) + ' m**；偏 20°（2σ）时还往回弯 **' + fmt(BAN_SAG2, 2) + ' m**', { size: 11.5, w: 520, cls: 'demo-x-ink2' }));
-    var form = group(s);
-    form.appendChild(svgMath(680, 368, 'X = \\exp(\\xi)\\,\\bar X', { size: 15, anchor: 'middle', w: 200, cls: 'demo-x-good' }));
-    var ring = group(s);
-    ring.appendChild(svgRich(46, 394, '航向标准差 360°（图 7）：一圈圈圆环，半径 2、4、6、8 m', { size: 11, w: 520, cls: 'demo-x-acc' }));
-
-    function draw(t, clock) {
-      var now = nowOf(t, clock);
-      var bigMode = t >= 13.4;
-      var shown = bigMode ? Math.min(5, 1 + Math.floor(seg(t, 13.6, 15.6) * 4.99)) : Math.min(5, 1 + Math.floor(seg(t, 3.8, 6.6) * 4.99));
-      setClouds(bigMode, t >= 3.6 ? shown : 0);
-      panels.forEach(function (p, k) { setOpacity(p.g, seg(t, 0.2 + k * 0.3, 0.8 + k * 0.3)); });
-      /* InEKF 那格在 7.0 之后才撒点；QEKF 的椭圆在 10.4 之后 */
-      panels[1].clouds.forEach(function (p) { setOpacity(p, t >= 7.0 ? 0.55 : 0); });
-      panels[2].clouds.forEach(function (p) { setOpacity(p, t >= 10.4 ? 0.45 : 0); });
-      var m2 = mapper(2, bigMode);
-      BANANA.secs.forEach(function (sec, i) {
-        var d = BANANA.speed * sec, lat = Math.sqrt(BANANA.posSigma * BANANA.posSigma + d * d * BAN_S * BAN_S);
-        var c = m2([d, 0]), e = m2([d + 2 * BANANA.posSigma, 2 * lat]);
-        ells[i].setAttribute('cx', c[0].toFixed(1)); ells[i].setAttribute('cy', c[1].toFixed(1));
-        ells[i].setAttribute('rx', Math.abs(c[0] - e[0]).toFixed(1)); ells[i].setAttribute('ry', Math.abs(c[1] - e[1]).toFixed(1));
-        setOpacity(ells[i], !bigMode && t >= 10.4 && i < shown ? 1 : 0);
-      });
-      var walkT = (now % 8);
-      robot.forEach(function (r, k) { moveDot(r, mapper(k, bigMode)([BANANA.speed * walkT, 0])); setOpacity(r, seg(t, 3.6, 4.0)); });
-      setOpacity(noFit, bigMode ? seg(t, 14.0, 14.6) : 0);
-      setOpacity(nums, seg(t, 7.0, 7.6) * (bigMode ? 0.35 : 1));
-      setOpacity(form, seg(t, 0.4, 1.0));
-      setOpacity(ring, seg(t, 13.4, 14.0));
-    }
-    return { el: s, draw: draw };
-  }
-
-  /* ── scene 9: IMU 零偏：不完美的 InEKF（第 7 节） ── */
-  function buildSceneBias() {
-    var s = sceneSvg('左边：陀螺零偏像随机游走一样慢慢漂，不估计它，积分出的朝向越偏越多；估计它，就压住了。右边：零偏不属于任何满足群仿射的李群，只能留在群外，状态变成李群乘六维向量。误差方程 A 多出零偏那两列，里面是负的估计旋转、速度叉乘、位置叉乘这些估计值；零偏误差为零时它们乘零就消失了');
-    s.appendChild(svgText(30, 28, '真 IMU 有零偏：只好做一个「不完美的 InEKF」', 'demo-x-ink2', 13.5));
-    var left = group(s);
-    rectBox(left, 30, 44, 300, 290, C_BORDER, C_SURFACE2);
-    left.appendChild(svgText(44, 64, '陀螺零偏：缓慢漂移（随机游走）', 'demo-x-ink2', 11));
-    var BX0 = 50, BX1 = 316, BY0 = 160;
-    hline(left, BX0, BY0, BX1, BY0, C_BORDER, 1);
-    var rngB = mulberry32(9), walk = [0];
-    for (var i = 1; i <= 120; i++) walk.push(walk[i - 1] + 0.9 * gauss(rngB));
-    var biasPath = pathLine(left, [], C_WARN, 1.8);
-    left.appendChild(svgText(44, 196, '积分出的朝向误差', 'demo-x-ink2', 11));
-    var EY0 = 300;
-    hline(left, BX0, EY0, BX1, EY0, C_BORDER, 1);
-    var errNo = pathLine(left, [], C_Q, 2), errYes = pathLine(left, [], C_IN, 2);
-    var lNo = paint(svgText(BX1, 216, '不估计零偏', null, 10, 'end'), C_Q), lYes = paint(svgText(BX1, EY0 - 8, '估计零偏', null, 10, 'end'), C_IN);
-    left.appendChild(lNo); left.appendChild(lYes);
-    function cumPts(u, est) {
-      var pts = [], acc = 0;
-      for (var i = 0; i <= 120 * u; i++) {
-        acc += walk[i];
-        var e = est ? 8 * Math.exp(-i / 18) * Math.abs(Math.sin(i / 5)) + 2 : Math.abs(acc) * 0.12 + i * 0.5;
-        pts.push([BX0 + (i / 120) * (BX1 - BX0), EY0 - clamp(e, 0, 86)]);
-      }
-      return pts;
-    }
-
-    var tup = group(s);
-    rectBox(tup, 346, 44, 424, 70, C_ACCENT, C_SURFACE);
-    tup.appendChild(svgRich(360, 66, '没有哪个李群既装得下零偏、又满足群仿射（Barrau 2015）', { size: 11.5, w: 400, cls: 'demo-x-ink2' }));
-    tup.appendChild(svgRich(360, 94, '零偏留在群外：$(X_t, \\theta_t) \\in G \\times \\mathbb{R}^6$，$\\theta = (b^{g}, b^{a})$', { size: 12, w: 400, cls: 'demo-x-acc' }));
-
+  /* 幕布内的几何讲解：暗底、稳定配色、连续变换；外部 cues / title / dur 保持原样。
+     所有运动取真实 clock，阶段取 t，逐帧随机访问与网页播放结果一致。 */
+  var GEO = { bg: '#10141e', grid: '#202b3b', white: '#eef3fa', muted: '#a0adc0', blue: '#58c4dd', green: '#83c167', red: '#fc6255', gold: '#ffdc68', purple: '#b49bff' };
+  function geometryScene(label, messages, formula, render) {
+    var s = sceneSvg(label), bg = svgEl('rect', { x: 0, y: 0, width: 800, height: 420, fill: GEO.bg });
+    s.appendChild(bg);
     var grid = group(s);
-    rectBox(grid, 346, 124, 424, 210, C_BORDER, C_SURFACE2);
-    grid.appendChild(svgText(360, 142, '线性误差方程 A（6 × 6 块，单脚）', 'demo-x-ink2', 11));
-    var names = ['R', 'v', 'p', 'd', 'b^g', 'b^a'], GX = 420, GY = 152, CW = 56, CH = 26;
-    names.forEach(function (n, k) {
-      grid.appendChild(svgMath(GX + k * CW + CW / 2, GY + 8, n, { size: 11.5, anchor: 'middle', w: CW, cls: 'demo-x-mut' }));
-      grid.appendChild(svgMath(GX - 22, GY + 32 + k * CH, n, { size: 11.5, anchor: 'middle', w: 40, cls: 'demo-x-mut' }));
-    });
-    var cellsG = group(grid), biasCells = group(grid);
-    for (var r = 0; r < 6; r++) for (var c = 0; c < 6; c++) {
-      cellsG.appendChild(paint(svgEl('rect', { x: GX + c * CW + 2, y: GY + 16 + r * CH, width: CW - 4, height: CH - 4, rx: 3, 'stroke-width': 0.8 }), C_SURFACE, C_BORDER));
+    for (var x = 40; x < 800; x += 40) grid.appendChild(svgEl('path', { d: 'M'+x+' 55V340', stroke: GEO.grid, 'stroke-width': 0.55 }));
+    for (var y = 60; y <= 340; y += 40) grid.appendChild(svgEl('path', { d: 'M25 '+y+'H775', stroke: GEO.grid, 'stroke-width': 0.55 }));
+    var head = paint(svgText(400, 33, '', null, 17, 'middle'), GEO.white); s.appendChild(head);
+    var g = group(s), pool = {}, seen;
+    function node(key, tag, attrs) {
+      seen[key] = true;
+      var e = pool[key];
+      if (!e) { e = pool[key] = svgEl(tag, {}); g.appendChild(e); }
+      e.style.opacity = '1';
+      Object.keys(attrs).forEach(function (k) { e.setAttribute(k, attrs[k]); });
+      return e;
     }
-    [[1, 0, '(g)_\\times'], [2, 1, 'I']].forEach(function (e) {
-      cellsG.appendChild(svgMath(GX + e[1] * CW + CW / 2, GY + 32 + e[0] * CH, e[2], { size: 11, anchor: 'middle', w: CW, cls: 'demo-x-good' }));
-    });
-    [[0, 4, '-\\bar R'], [1, 4, '-(\\bar v)_\\times\\bar R'], [2, 4, '-(\\bar p)_\\times\\bar R'], [3, 4, '-(\\bar d)_\\times\\bar R'], [1, 5, '-\\bar R']].forEach(function (e) {
-      biasCells.appendChild(paint(svgEl('rect', { x: GX + e[1] * CW + 2, y: GY + 16 + e[0] * CH, width: CW - 4, height: CH - 4, rx: 3, opacity: 0.18 }), C_Q));
-      biasCells.appendChild(svgMath(GX + e[1] * CW + CW / 2, GY + 32 + e[0] * CH, e[2], { size: 9.5, anchor: 'middle', w: CW + 6, cls: 'demo-x-bad' }));
-    });
-    var biasNote = paint(svgText(756, 328, '红色：含估计值 → 又和轨迹有关了', null, 10, 'end'), C_Q);
-    grid.appendChild(biasNote);
-    var zero = group(grid);
-    zero.appendChild(svgRich(756, 142, '零偏误差 $\\zeta = 0$ 时这两列乘 0', { size: 10, anchor: 'end', w: 220, cls: 'demo-x-good' }));
-
-    var tab = group(s);
-    rectBox(tab, 30, 346, 740, 60, C_ACCENT, C_SURFACE);
-    tab.appendChild(svgText(46, 368, '表 1：初始零偏标准差 陀螺 0.005 rad/s、加速度计 0.05 m/s²；零偏噪声 0.001 rad/s²、0.001 m/s³', 'demo-x-ink2', 11));
-    tab.appendChild(svgText(46, 392, '零偏初值：机器人静止时，用那段 IMU 数据先估一个', 'demo-x-mut', 10.5));
-
-    function draw(t, clock) {
-      var now = nowOf(t, clock);
-      setOpacity(left, seg(t, 0.2, 0.8));
-      var u = ((now % 8) / 8);
-      var bp = [];
-      for (var i = 0; i <= 120 * u; i++) bp.push([BX0 + (i / 120) * (BX1 - BX0), BY0 - 60 - clamp(walk[i] * 3, -50, 50)]);
-      setPath(biasPath, bp);
-      setPath(errNo, cumPts(u, false));
-      setPath(errYes, t >= 1.6 ? cumPts(u, true) : []);
-      setOpacity(lYes, seg(t, 1.6, 2.2));
-      setOpacity(tup, seg(t, 3.6, 4.2));
-      setOpacity(grid, seg(t, 7.0, 7.6));
-      setOpacity(biasCells, seg(t, 7.8, 8.4));
-      setOpacity(biasNote, seg(t, 8.4, 9.0));
-      setOpacity(zero, seg(t, 10.4, 11.0));
-      setOpacity(tab, seg(t, 13.4, 14.0));
-    }
-    return { el: s, draw: draw };
+    var D = {
+      path: function (key, pts, color, width, dash, fill) {
+        return node(key, 'path', { d: pts.length ? polyPath(pts) : 'M0 0', stroke: color, 'stroke-width': width || 2.5, fill: fill || 'none', 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'stroke-dasharray': dash || '' });
+      },
+      circle: function (key, x, y, r, color, fill) { return node(key, 'circle', { cx: x, cy: y, r: r, stroke: color, fill: fill || 'none', 'stroke-width': 2 }); },
+      rect: function (key, x, y, w, h, color, fill) { return node(key, 'rect', { x: x, y: y, width: w, height: h, rx: 3, stroke: color, fill: fill || 'none', 'stroke-width': 1.6 }); },
+      text: function (key, x, y, str, color, size, anchor) {
+        var e = node(key, 'text', { x: x, y: y, fill: color || GEO.white, 'font-size': size || 14, 'text-anchor': anchor || 'middle' });
+        // SVG 的主题 CSS 会覆盖 fill 属性；幕布固定暗底，字色也要固定，浅色网页才仍然可读。
+        e.style.fill = color || GEO.white; e.textContent = str; return e;
+      },
+      arrow: function (key, a, b, color, dash) {
+        D.path(key, [a,b], color, 3, dash);
+        var ang = Math.atan2(b[1]-a[1], b[0]-a[0]), l=9;
+        D.path(key+'tip', [[b[0]-l*Math.cos(ang-.45),b[1]-l*Math.sin(ang-.45)], b, [b[0]-l*Math.cos(ang+.45),b[1]-l*Math.sin(ang+.45)]], color, 3);
+      },
+      frame: function (key, x, y, a, color, scale) {
+        var r=scale||45;
+        D.arrow(key+'x', [x,y], [x+r*Math.cos(a),y-r*Math.sin(a)], color);
+        D.arrow(key+'z', [x,y], [x-r*.8*Math.sin(a),y-r*.8*Math.cos(a)], color);
+        D.circle(key+'o',x,y,3,color,color);
+      },
+      robot: function (key, x, ground, h) {
+        node(key, 'image', { href: ROBOT_IMG_BASE+CASSIE_IMG.file, x: x-h*CASSIE_IMG.aspect/2, y: ground-h, width: h*CASSIE_IMG.aspect, height: h, preserveAspectRatio: 'xMidYMax meet' });
+      },
+      plot: function (key,x,y,w,h) { D.arrow(key+'x',[x,y],[x+w,y],GEO.muted); D.arrow(key+'y',[x,y],[x,y-h],GEO.muted); },
+      arc: function (key,cx,cy,r,a,b,color,dash) {
+        var pts=[]; for(var i=0;i<=60;i++){var q=a+(b-a)*i/60;pts.push([cx+r*Math.cos(q),cy-r*Math.sin(q)]);}
+        D.path(key,pts,color,2,dash);
+      }
+    };
+    var eq=svgMath(400,387,Array.isArray(formula)?formula[0]:formula,{size:21,anchor:'middle',w:744,h:48}); eq.setTone(GEO.gold); s.appendChild(eq);
+    return { el:s, draw:function(t,clock){
+      var phase=t<3.6?0:t<7?1:t<10.4?2:t<13.4?3:4;
+      head.textContent=messages[phase]; if(Array.isArray(formula))eq.setTex(formula[phase]); seen={}; render(D,t,nowOf(t,clock),phase);
+      Object.keys(pool).forEach(function(k){if(!seen[k])pool[k].style.opacity='0';});
+      var starts=[0,3.6,7,10.4,13.4]; g.style.opacity=.35+.65*ease(seg(t,starts[phase],starts[phase]+.5));
+    }};
   }
+  function geoCurve(f,n) { var p=[]; for(var i=0;i<=n;i++)p.push(f(i/n)); return p; }
 
-  /* ── scene 10: 脚落地、脚抬起：增删接触点（第 8 节、第 12 节；具体实例第 9 步） ── */
-  function buildSceneContacts() {
-    var s = sceneSvg('上面示意一段行走：脚落地，状态矩阵多一列；脚抬起，这一列删掉。右边是状态矩阵的列：朝向、速度、位置，加上左脚、右脚两列，跟着步态出现和消失。下面是新触地点的初始化公式与例子，以及和路标 SLAM 的对照：触地点就是只在踩着时才看得见的路标');
-    s.appendChild(svgText(30, 28, '脚落地、脚抬起：触地点一列一列地加、删', 'demo-x-ink2', 13.5));
-    var top = group(s);
-    rectBox(top, 30, 44, 500, 170, C_BORDER, C_SURFACE2);
-    var GY = 196;
-    hline(top, 44, GY, 516, GY, C_BORDER, 1.4);
-    var body = bodyLegs(top, C_EST, false);
-    var prints = group(top);
-    var tag = svgRich(0, 0, '', { size: 10.5, anchor: 'middle', w: 120, cls: 'demo-x-good' });
-    top.appendChild(tag);
-    var springs = group(top);
-    springs.appendChild(svgText(44, 62, '每条腿两根弹簧，压缩量过阈值 = 着地', 'demo-x-mut', 10));
-
-    var mat = group(s);
-    rectBox(mat, 546, 44, 224, 170, C_ACCENT, C_SURFACE);
-    mat.appendChild(svgText(560, 62, '状态矩阵 X 的列', 'demo-x-ink2', 11));
-    var colLab = ['R', 'v', 'p', 'd_{\\text{左}}', 'd_{\\text{右}}'], colX = [570, 612, 646, 680, 720];
-    var colRects = colLab.map(function (c, k) {
-      var g = group(mat);
-      var w = k === 0 ? 38 : 30;
-      rectBox(g, colX[k] - 4, 76, w, 100, k < 3 ? C_ACCENT : C_GOOD, C_SURFACE2);
-      g.appendChild(svgMath(colX[k] - 4 + w / 2, 132, c, { size: 13, anchor: 'middle', w: w + 10, cls: k < 3 ? 'demo-x-acc' : 'demo-x-good' }));
-      return g;
-    });
-    var sizeLab = svgText(560, 200, '', 'demo-x-mut', 10.5);
-    mat.appendChild(sizeLab);
-
-    var init = group(s);
-    rectBox(init, 30, 224, 500, 110, C_BORDER, C_SURFACE2);
-    init.appendChild(svgText(44, 244, '落地：用正运动学初始化新的触地点', 'demo-x-ink2', 11));
-    init.appendChild(svgMath(280, 272, '\\bar d = \\bar p + \\bar R\\,h_p(\\tilde\\alpha)', { size: 15, anchor: 'middle', w: 300, cls: 'demo-x-good' }));
-    init.appendChild(svgText(44, 298, '协方差：从身体位置那几行抄过来，再加上编码器带来的运动学噪声', 'demo-x-mut', 10.5));
-    var ex = group(init);
-    ex.appendChild(svgRich(44, 322, '例：$\\bar p = (0.30, 0, 0.90)$，腿测 $(0.12, -0.13, -0.88)$ → $\\bar d = ' + fmtV(NEWFOOT_D, 2) + '$，σ ≈ ' + fmt(NEWFOOT_SIG, 4) + ' m', { size: 10.5, w: 480, cls: 'demo-x-ink2' }));
-    var lift = group(s);
-    rectBox(lift, 546, 224, 224, 110, C_Q, C_SURFACE, '4 3');
-    lift.appendChild(paint(svgText(560, 244, '抬起：边缘化', null, 11), C_Q));
-    lift.appendChild(svgText(560, 268, 'X 删掉这只脚的那一列（和那一行）', 'demo-x-ink2', 10.5));
-    lift.appendChild(svgText(560, 290, '协方差删掉对应的 3 行 3 列', 'demo-x-ink2', 10.5));
-    lift.appendChild(svgText(560, 312, '代码：removeRowAndColumn()', 'demo-x-mut', 10));
-
-    var slam = group(s);
-    rectBox(slam, 30, 346, 740, 60, C_ACCENT, C_SURFACE);
-    slam.appendChild(svgRich(46, 368, '和**路标 SLAM** 是一回事（第 12 节）：触地点 = 只在踩着时才看得见的路标；2000 Hz、不用做数据关联，速度噪声允许打滑', { size: 11, w: 720, cls: 'demo-x-ink2' }));
-    slam.appendChild(svgText(46, 392, '把真的路标也放进同一个矩阵，位置和航向就能补成可观（代价是维数随路标增长）', 'demo-x-mut', 10.5));
-
-    function draw(t, clock) {
-      var now = nowOf(t, clock);
-      setOpacity(top, seg(t, 0.2, 0.8));
-      var W = walkPose(now, 60, GY, 120, 1.6), span = 520 - 60;
-      var wrapX = function (x) { return 60 + ((x - 60) % span + span) % span; };
-      var bx = wrapX(W.x), shift = bx - W.x;
-      body.put(bx, W.y, W.ang, W.feet.map(function (f) { return [f[0] + shift, f[1], f[2]]; }));
-      /* 脚印：踩着的那只画实心 */
-      while (prints.firstChild) prints.removeChild(prints.firstChild);
-      W.feet.forEach(function (f, k) {
-        if (!f[2]) return;
-        var r = paint(svgEl('rect', { x: (f[0] + shift - 9).toFixed(1), y: GY - 1, width: 18, height: 5, rx: 2 }), k ? C_ACCENT : C_GOOD);
-        prints.appendChild(r);
-      });
-      var stanceK = W.feet[0][2] ? 0 : 1, landing = W.u < 0.18;
-      tag.setText(landing ? '落地：+ 一列' : '');
-      var sf = W.feet[stanceK];
-      tag.setX(sf[0] + shift); tag.setY(GY - 104);
-      setOpacity(springs, seg(t, 0.6, 1.2));
-      setOpacity(mat, seg(t, 3.6, 4.2));
-      colRects.forEach(function (g, k) {
-        if (k < 3) setOpacity(g, 1);
-        else setOpacity(g, (k - 3 === stanceK || (W.u < 0.12 && k - 3 !== stanceK)) ? 1 : 0.15);
-      });
-      sizeLab.textContent = '现在 ' + (W.u < 0.12 ? 2 : 1) + ' 只脚着地 → X 是 ' + (W.u < 0.12 ? '7 × 7' : '6 × 6');
-      setOpacity(lift, seg(t, 3.6, 4.2));
-      setOpacity(init, seg(t, 7.0, 7.6));
-      setOpacity(ex, seg(t, 10.4, 11.0));
-      setOpacity(slam, seg(t, 13.4, 14.0));
-    }
-    return { el: s, draw: draw };
-  }
-
-  /* ── scene 11: 收敛：仿真与真机各 100 次（图 3、图 8，读图示意） ── */
-  function buildSceneConverge() {
-    var s = sceneSvg('上下两格是俯仰估计随时间的走势，每条线是一次随机初值，初值在正负 30 度之间：上面 QEKF，下面 InEKF。先是仿真的 1 秒，InEKF 约 0.3 秒就收拢，QEKF 1 秒后还散着十来度；再换成真机的 2 秒，InEKF 约 0.4 秒收拢，QEKF 2 秒后还散着约 5 度。曲线是按图 3、图 8 的走势画的示意');
-    s.appendChild(svgText(30, 28, '从差的初值出发：100 次随机初始化，谁先收拢', 'demo-x-ink2', 13.5));
-    var rows = [['QEKF：俯仰估计', C_Q], ['InEKF：俯仰估计', C_IN]];
-    var PX0 = 96, PX1 = 520, ROWH = 140;
-    var nRuns = 22, rngC = mulberry32(31), e0 = [], ph = [];
-    for (var i = 0; i < nRuns; i++) { e0.push((rngC() * 2 - 1) * CONV.eulerDeg); ph.push(rngC() * 6.28); }
-    function truthDeg(x, real) { return real ? 1.5 * Math.sin(x * 9) + 1.2 * Math.sin(x * 23) : 2 + 1.5 * Math.sin(x * 6); }
-    function fac(x, isIn, real) {
-      if (isIn) return Math.exp(-Math.pow(x / (real ? 0.2 : 0.15), 2));
-      return real ? 0.17 + 0.83 * Math.exp(-x / 0.5) : 0.35 + 0.65 * Math.exp(-x / 0.25);
-    }
-    var panes = rows.map(function (rq, k) {
-      var g = group(s), y0 = 44 + k * (ROWH + 10);
-      rectBox(g, 30, y0, 510, ROWH, C_BORDER, C_SURFACE2);
-      g.appendChild(paint(svgText(44, y0 + 18, rq[0], null, 11), rq[1]));
-      var yMid = y0 + ROWH / 2 + 8, ySc = (ROWH / 2 - 22) / 30;
-      hline(g, PX0, yMid, PX1, yMid, C_BORDER, 1);
-      g.appendChild(svgText(PX0 - 6, yMid - 30 * ySc + 4, '+30°', 'demo-x-mut', 9, 'end'));
-      g.appendChild(svgText(PX0 - 6, yMid + 30 * ySc + 4, '−30°', 'demo-x-mut', 9, 'end'));
-      var axisLab = svgText(PX1, y0 + ROWH - 4, '', 'demo-x-mut', 9.5, 'end');
-      g.appendChild(axisLab);
-      var lines = e0.map(function () { var p = pathLine(g, [], rq[1], 1.1); p.style.opacity = 0.6; return p; });
-      var truth = pathLine(g, [], C_INK, 2, '5 3');
-      return { g: g, yMid: yMid, ySc: ySc, lines: lines, truth: truth, axisLab: axisLab, isIn: k === 1 };
-    });
-    var side = group(s);
-    rectBox(side, 556, 44, 214, 290, C_ACCENT, C_SURFACE);
-    var sideT = svgRich(570, 66, '', { size: 11.5, w: 190, cls: 'demo-x-acc' });
-    side.appendChild(sideT);
-    var sideLines = [0, 1, 2, 3, 4, 5].map(function (k) { var n = svgRich(570, 96 + k * 24, '', { size: 10.5, w: 190, cls: 'demo-x-ink2' }); side.appendChild(n); return n; });
-    var bottom = group(s);
-    rectBox(bottom, 30, 346, 740, 60, C_BORDER, C_SURFACE2);
-    bottom.appendChild(svgText(46, 368, '初值离真值近时两者差不多（图 8 的黑线）；初值离得远，QEKF 就在错的工作点上线性化', 'demo-x-ink2', 11));
-    bottom.appendChild(svgText(46, 392, '曲线按图 3、图 8 的走势画（示意，读图）；下面的二维演示可以自己拖初始误差试', 'demo-x-mut', 10.5));
-
-    function draw(t, clock) {
-      var real = t >= 10.4, Tw = real ? CONV.realWin : CONV.simWin;
-      var grow = real ? ease(seg(t, 10.6, 12.6)) : ease(seg(t, 3.8, 6.4));
-      panes.forEach(function (pn, k) {
-        setOpacity(pn.g, seg(t, 0.2 + k * 0.3, 0.8 + k * 0.3));
-        pn.axisLab.textContent = '0 → ' + Tw + ' s（' + (real ? '真机，零偏估计开' : '仿真，零偏估计关') + '）';
-        var showRuns = t >= 3.6 && (pn.isIn || t >= 7.0 || real);
-        pn.lines.forEach(function (p, i) {
-          var pts = [];
-          if (showRuns) {
-            for (var j = 0; j <= 80 * grow; j++) {
-              var x = (j / 80) * Tw, wig = 1.2 * Math.sin(ph[i] + x * 7) * fac(x, pn.isIn, real);
-              var y = truthDeg(x, real) + e0[i] * fac(x, pn.isIn, real) + wig;
-              pts.push([PX0 + (j / 80) * (PX1 - PX0), pn.yMid - clamp(y, -32, 32) * pn.ySc]);
-            }
-          }
-          setPath(p, pts);
+  function buildSceneWhy() {
+    return geometryScene('身体状态估计：传感器融合与线性化',[
+      '关节角读得到，身体在世界里怎样运动？','可靠的起点：IMU · 编码器 · 接触开关','让三路测量互相纠错','切线选错，误差就会越滚越大','换一个误差定义，保留同一套传感器'
+    ],'\\text{IMU} + \\text{接触} + \\text{运动学} \\longrightarrow (R,v,p)',function(D,t,now,k){
+      if(k<2){
+        D.robot('cassie',235,320,240); D.path('ground',[[70,322],[390,322]],GEO.muted,1);
+        D.frame('body',280,108,.08*Math.sin(now),GEO.blue,52);
+        [['R 朝向',GEO.blue,110],['v 速度',GEO.green,190],['p 位置',GEO.purple,270]].forEach(function(q,i){
+          D.arrow('a'+i,[345,q[2]-5],[500,q[2]-5],q[1]); D.text('q'+i,600,q[2],k===0?q[0]+'？':['IMU · 800 Hz','编码器 · 2000 Hz','弹簧接触开关'][i],q[1],19);
         });
-        var tp = [];
-        for (var j = 0; j <= 80; j++) tp.push([PX0 + (j / 80) * (PX1 - PX0), pn.yMid - truthDeg((j / 80) * Tw, real) * pn.ySc]);
-        setPath(pn.truth, tp);
-        setOpacity(pn.truth, seg(t, 1.0, 1.6));
-      });
-      setOpacity(side, seg(t, 0.4, 1.0));
-      if (!real) {
-        sideT.setText('仿真（图 3）');
-        sideLines[0].setText('同一组测量、同样的噪声（表 1）');
-        sideLines[1].setText('初值：欧拉角 ±30°、速度 ±1 m/s');
-        sideLines[2].setText('各跑 **100** 次，零偏估计关');
-        sideLines[3].setText(t >= 3.6 ? 'InEKF：约 **0.3 s** 收拢（读图）' : '');
-        sideLines[4].setText(t >= 7.0 ? 'QEKF：1 s 后还散着 **十来度**' : '');
-        sideLines[5].setText(t >= 7.0 ? '航向两者都不收敛：看不见' : '');
+        D.circle('sense',282,99,10+3*Math.sin(now*3),GEO.gold);
+      } else if(k===2){
+        D.plot('axes',95,290,620,200); var u=(now%7)/7;
+        [GEO.red,GEO.gold,GEO.green].forEach(function(c,i){D.path('curve'+i,geoCurve(function(f){var z=f*u;return [100+600*z,255-(i===0?150*z*z:i===1?20*z+12*Math.sin(35*z):3*Math.sin(24*z))];},90),c,3);});
+        D.text('imu',580,100,'只积分 IMU',GEO.red,17);D.text('kin',585,185,'只靠运动学',GEO.gold,17);D.text('fuse',585,315,'融合估计',GEO.green,17);
       } else {
-        sideT.setText('真机（图 8）');
-        sideLines[0].setText('Cassie 慢走约 0.3 m/s');
-        sideLines[1].setText('同一段记录，离线跑 **100** 次');
-        sideLines[2].setText('零偏估计打开');
-        sideLines[3].setText('InEKF：约 **0.4 s** 收拢（读图）');
-        sideLines[4].setText('QEKF：2 s 后还散着 **约 5°**');
-        sideLines[5].setText('100 次里 InEKF 都更快、更稳');
+        D.plot('curveaxes',95,305,610,215);
+        function f(x){return 245-95*Math.sin((x-110)/170);}
+        D.path('nonlinear',geoCurve(function(u){var x=115+570*u;return[x,f(x)];},100),GEO.blue,3);
+        var xe=460+60*Math.sin(now*.5),xt=235;
+        [xt,xe].forEach(function(x,i){var slope=-95/170*Math.cos((x-110)/170),c=i?GEO.red:GEO.green;
+          D.path('tan'+i,[[x-70,f(x)-70*slope],[x+70,f(x)+70*slope]],c,3);D.circle('pt'+i,x,f(x),5,c,c);
+          D.text('lbl'+i,x,330,i?'估计值处':'真值处',c,17);
+        });
+        if(k===4) D.text('new',400,85,'InEKF：误差方程不随工作点改变',GEO.green,20);
       }
-      setOpacity(bottom, seg(t, 13.4, 14.0));
-    }
-    return { el: s, draw: draw };
+    });
   }
 
-  /* ── scene 12: Cassie 实测：动捕、200 米与激光建图（第 9.2–9.4 节，图 9–12；第 13 节） ── */
-  /* 图 9 的两条轨迹（读图，单位 m；起点在原点）：动捕约 15 m，InEKF 终点差不到 5% */
-  var FIG9 = {
-    mocap: [[0, 0], [-4.3, -3.6], [-7.1, -1.6], [-2.9, 3.0]],
-    inekf: [[0, 0], [-4.4, -3.9], [-7.3, -1.7], [-2.6, 3.6]]
-  };
-  function buildSceneReal() {
-    var s = sceneSvg('左边是图 9 的俯视轨迹：动作捕捉和 InEKF 估计，约 15 米、60 秒，终点差不到走过路程的 5%。右上：绕草坪人行道走约 200 米、7 分 45 秒，估计一直在人行道上。右下：按滤波器的位姿把激光雷达点云投到世界系，10 秒的点云叠成地图。底下是局限：位置和航向会漂、带零偏后理论保证不成立、运动学误差和打滑带进偏差');
-    s.appendChild(svgText(30, 28, 'Cassie 实测：动捕、200 米人行道与激光建图', 'demo-x-ink2', 13.5));
-    var left = group(s);
-    rectBox(left, 30, 44, 320, 290, C_BORDER, C_SURFACE2);
-    left.appendChild(svgText(44, 62, '图 9：动捕场地 M-Air，18 台相机（读图）', 'demo-x-ink2', 10.5));
-    var M = function (q) { return [326 + q[0] * 25, 172 - q[1] * 25]; };
-    var pM = pathLine(left, FIG9.mocap.map(M), C_TRUE, 2.2, '6 4'), pI = pathLine(left, FIG9.inekf.map(M), C_IN, 2.2);
-    dotAt(left, M([0, 0])[0], M([0, 0])[1], 4.5, C_INK);
-    left.appendChild(svgText(M([0, 0])[0] - 8, M([0, 0])[1] - 8, '起点', 'demo-x-mut', 9.5, 'end'));
-    var endT = dotAt(left, 0, 0, 4, C_TRUE), endI = dotAt(left, 0, 0, 4, C_IN);
-    var lg = group(left);
-    lg.appendChild(svgText(44, 300, '— — 动作捕捉', 'demo-x-mut', 10));
-    lg.appendChild(paint(svgText(140, 300, '—— InEKF', null, 10), C_IN));
-    var drift = group(left);
-    drift.appendChild(svgRich(44, 322, '约 15 m、60 s：终点差 **< 5%**（< 0.75 m）', { size: 10.5, w: 300, cls: 'demo-x-ink2' }));
-
-    var walk = group(s);
-    rectBox(walk, 366, 44, 404, 140, C_BORDER, C_SURFACE2);
-    walk.appendChild(svgText(380, 62, '图 11：绕 Wave Field 的人行道', 'demo-x-ink2', 10.5));
-    var loopPts = [[420, 80], [600, 84], [640, 112], [600, 168], [430, 172], [420, 80]];
-    pathLine(walk, loopPts, C_BORDER, 9);
-    var loopPath = pathLine(walk, loopPts, C_IN, 2);
-    var walker = dotAt(walk, 420, 80, 5, C_IN);
-    walk.appendChild(svgText(756, 118, '约 200 m', 'demo-x-ink2', 12, 'end'));
-    walk.appendChild(svgText(756, 140, '7 分 45 秒', 'demo-x-ink2', 12, 'end'));
-    walk.appendChild(svgText(756, 166, '估计一直在人行道上', 'demo-x-good', 10.5, 'end'));
-
-    var lidar = group(s);
-    rectBox(lidar, 366, 194, 404, 140, C_BORDER, C_SURFACE2);
-    lidar.appendChild(svgText(380, 212, '图 12：躯干换成带 32 线激光雷达的版本', 'demo-x-ink2', 10.5));
-    var cs = cassie(lidar, 380, 326, 96);
-    var rngL = mulberry32(77), walls = [];
-    for (var i = 0; i < 160; i++) {
-      var u = rngL(), side = rngL() < 0.5;
-      walls.push([470 + u * 280, side ? 232 + 4 * gauss(rngL) : 314 + 4 * gauss(rngL)]);
-    }
-    for (i = 0; i < 40; i++) walls.push([700 + 30 * rngL(), 240 + 70 * rngL()]);
-    var cloud = paint(svgEl('path', { d: '', opacity: 0.8 }), C_WARN);
-    lidar.appendChild(cloud);
-    var lidarTraj = pathLine(lidar, [], C_IN, 2);
-    lidar.appendChild(svgText(756, 330, '按 InEKF 的位姿叠 10 s 点云', 'demo-x-mut', 10, 'end'));
-    var scan = paint(svgEl('path', { fill: 'none', 'stroke-width': 1, opacity: 0.6 }), C_WARN);
-    lidar.appendChild(scan);
-
-    var lim = group(s);
-    rectBox(lim, 30, 346, 740, 60, C_ACCENT, C_SURFACE);
-    lim.appendChild(svgText(46, 368, '边界：位置与航向随时间漂；带零偏后理论保证不再成立；运动学模型误差、打滑会带进偏差', 'demo-x-ink2', 11));
-    lim.appendChild(svgText(46, 392, '之后：不变平滑器、接触预积分、在线标定运动学、视觉—惯性—接触融合', 'demo-x-mut', 10.5));
-
-    function draw(t, clock) {
-      var now = nowOf(t, clock);
-      setOpacity(left, seg(t, 0.2, 0.8));
-      var u = ease(seg(t, 1.0, 3.4));
-      drawOn(pM, u); drawOn(pI, u);
-      function along(pts, f) {
-        var lens = [], tot = 0;
-        for (var k = 1; k < pts.length; k++) { var d = Math.hypot(pts[k][0] - pts[k - 1][0], pts[k][1] - pts[k - 1][1]); lens.push(d); tot += d; }
-        var want = f * tot;
-        for (k = 0; k < lens.length; k++) { if (want <= lens[k]) { var r = want / lens[k]; return [pts[k][0] + (pts[k + 1][0] - pts[k][0]) * r, pts[k][1] + (pts[k + 1][1] - pts[k][1]) * r]; } want -= lens[k]; }
-        return pts[pts.length - 1];
+  function buildSceneSensors() {
+    return geometryScene('预测、接触和运动学更新',[
+      '身体状态与脚印，都放在世界坐标里','IMU 推着估计前进，不确定性逐渐扩张','踩住的脚，是暂时不动的锚点','腿测出的相对位置，把估计拉回来','三种传感器，组成一个预测—校正循环'
+    ],'h_p = R^\\top(d-p)',function(D,t,now,k){
+      var u=(now%6)/6,x=250+90*u,z=150,foot=[285,305],est=[x+25+35*u,z-15*u];
+      D.path('floor',[[75,310],[725,310]],GEO.muted,1);
+      D.robot('robot',x,306,180);D.frame('true',x,z,0,GEO.white,37);
+      D.circle('foot',foot[0],foot[1],7,GEO.green,GEO.green);D.text('footlab',foot[0],338,'d：踩住的脚印',GEO.green,15);
+      D.frame('estimate',est[0],est[1],.12*u,GEO.blue,42);
+      var ellipse=D.circle('uncertain',est[0],est[1],28+45*u,GEO.blue);ellipse.setAttribute('transform','translate('+est[0]+' '+est[1]+') scale(1 .6) translate('+(-est[0])+' '+(-est[1])+')');
+      D.text('imu',595,110,'IMU → 预测',GEO.blue,20);D.text('con',595,175,'接触 → 固定脚印',GEO.green,20);D.text('fk',595,240,'运动学 → 校正',GEO.gold,20);
+      if(k>=3){var q=.5-.5*Math.cos(now*1.4),corr=[est[0]+(x-est[0])*q,est[1]+(z-est[1])*q];
+        D.arrow('leg',[x,z],foot,GEO.gold);D.frame('corrected',corr[0],corr[1],.12*u*(1-q),GEO.green,42);D.arrow('innovation',est,corr,GEO.green);
       }
-      moveDot(endT, along(FIG9.mocap.map(M), u)); moveDot(endI, along(FIG9.inekf.map(M), u));
-      setOpacity(drift, seg(t, 3.6, 4.2));
-      setOpacity(walk, seg(t, 7.0, 7.6));
-      var f = (now % 9) / 9;
-      moveDot(walker, along(loopPts, f));
-      drawOn(loopPath, t >= 7.0 ? f : 0);
-      setOpacity(lidar, seg(t, 10.4, 11.0));
-      var g = t >= 10.4 ? ((now - 10.4) % 6) / 6 : 0, n = Math.floor(walls.length * g);
-      var bx = 470 + 270 * g;
-      cloud.setAttribute('d', walls.filter(function (q) { return q[0] < bx + 40; }).slice(0, Math.max(n, 0)).map(function (q) { return 'M' + q[0].toFixed(1) + ' ' + q[1].toFixed(1) + 'h2v2h-2z'; }).join(''));
-      setPath(lidarTraj, [[470, 274], [bx, 274 + 6 * Math.sin(g * 6)]]);
-      var sd = '';
-      for (var k = 0; k < 12; k++) { var a = (k / 12) * 2 * Math.PI + now * 2; sd += 'M' + bx.toFixed(1) + ' 274 l' + (36 * Math.cos(a)).toFixed(1) + ' ' + (36 * Math.sin(a)).toFixed(1); }
-      scan.setAttribute('d', sd);
-      cs.g.setAttribute('transform', 'translate(' + (2 * Math.sin(now * 2)).toFixed(1) + ' 0)');
-      setOpacity(lim, seg(t, 13.4, 14.0));
-    }
-    return { el: s, draw: draw };
+      if(k===2)D.arc('anchor',foot[0],foot[1],18,0,Math.PI*2,GEO.green);
+    });
+  }
+
+  function buildSceneWrongLin() {
+    return geometryScene('站立算例：误投影的重力与切线误差',[
+      '机器人没动，估计却倾斜了 0.1 rad','重力转错方向，长出一截假加速度','小角度时，竖直误差已经多算一倍','偏到 0.5 rad，真实误差与切线越分越远','问题不是 IMU，而是误差用什么坐标表达'
+    ],'a_{\\rm fake}=\\bar R(0,0,9.81)^\\top+g',function(D,t,now,k){
+      var th=k>=3?.5:.1,origin=[205,238],r=130;
+      D.frame('world',origin[0],origin[1],0,GEO.white,55);D.frame('tilted',origin[0],origin[1],th,GEO.blue,65);
+      var a=[origin[0]+r*Math.sin(th),origin[1]-r*Math.cos(th)];
+      D.arrow('a',origin,a,GEO.gold);D.arrow('g',a,[a[0],a[1]+r],GEO.muted);
+      D.arrow('residual',origin,[a[0],a[1]+r],GEO.red);
+      D.arc('angle',origin[0],origin[1],80,Math.PI/2-th,Math.PI/2,GEO.blue);
+      D.text('theta',110,90,'θ = '+th+' rad',GEO.blue,20);
+      D.text('stationary',205,320,'真值：速度 = 0',GEO.white,17);
+      var ex=standingExample(th,1),bx=490,base=220;
+      D.path('zero',[[435,base],[745,base]],GEO.muted,1);
+      [0,2].forEach(function(j,i){var x=bx+i*155,actual=ex.trueDv[j],q=ex.qekfDv[j],sc=i?(th<.2?500:25):(th<.2?34:12);
+        D.arrow('act'+i,[x,base],[x,base-actual*sc],GEO.white);D.arrow('q'+i,[x+35,base],[x+35,base-q*sc],GEO.red);
+        D.text('axis'+i,x+15,300,i?'竖直 z':'水平 x',GEO.muted,16);
+        D.text('av'+i,x-5,90,fmt(actual,3),GEO.white,17);D.text('qv'+i,x+45,117,fmt(q,3),GEO.red,17);
+      });
+      D.text('legend1',555,332,'真实误差',GEO.white,15);D.text('legend2',690,332,'QEKF',GEO.red,15);
+      D.circle('pulse',a[0],a[1]+r,4+2*Math.sin(now*3),GEO.red);
+    });
+  }
+
+  function buildSceneMatrix() {
+    return geometryScene('矩阵李群把朝向、速度、位置与脚印绑在一起',[
+      '旋转占三列，速度、位置和脚印各占一列','相乘和求逆，仍留在同一种矩阵结构里','误差是把真值整体挪到估计值的那一下','取对数：双脚时 15 维，加零偏再加 6 维','一起旋转，一起平移，保留状态之间的联系'
+    ],'\\eta=\\bar X X^{-1}',function(D,t,now,k){
+      var cols=[GEO.blue,GEO.blue,GEO.blue,GEO.green,GEO.purple,GEO.gold,GEO.gold],a=.24*Math.sin(now*.7);
+      var R=[[Math.cos(a),-Math.sin(a),0],[Math.sin(a),Math.cos(a),0],[0,0,1]];
+      D.path('bracketL',[[305,72],[295,72],[295,325],[305,325]],GEO.white,2);
+      D.path('bracketR',[[724,72],[734,72],[734,325],[724,325]],GEO.white,2);
+      cols.forEach(function(c,j){var x=326+j*60; D.rect('col'+j,x-22,85,43,130,c,c+'18');
+        D.text('label'+j,x,65,['R₁','R₂','R₃','v','p','d₁','d₂'][j],c,18);
+        for(var i=0;i<7;i++)D.text('cell'+i+'_'+j,x,110+i*33,i<3?(j<3?fmt(R[i][j],1):'·'):(i===j?'1':'0'),i<3?c:GEO.muted,17);
+      });
+      var dx=k>=2?18:0;
+      D.frame('true',135,180,0,GEO.white,66);D.frame('est',135+dx,180-10,a,GEO.blue,66);
+      D.text('body',140,285,'R · v · p · d',GEO.white,19);
+      D.text('dim',530,345,k>=3?'双脚：7 × 7 状态矩阵 · 15 维误差':'同一个变换作用于每一列',GEO.muted,15);
+      if(k>=2)D.arc('transform',135,180,90,0,a,GEO.gold);
+    });
+  }
+
+  function buildSceneLogLinear() {
+    return geometryScene('不同轨迹，在同一误差坐标里遵循同一条演化',[
+      '走直线或转弯，误差演化不看轨迹','对数坐标里，误差沿一条精确的线性路径走','映回真实空间，与直接积分落在同一点','初值放大：QEKF 偏离，InEKF 仍为零','加噪声后不再精确，但误差定义仍然有优势'
+    ],'\\dot\\xi=A\\xi \\quad (A\\text{只含重力})',function(D,t,now,k){
+      if(k<2){
+        [0,1].forEach(function(j){var y=115+j*155,pts=geoCurve(function(u){return[70+265*u,y+(j?30*Math.sin(u*6):0)];},60);D.path('traj'+j,pts,GEO.blue,2);
+          var u=(now%7)/7,p=pts[Math.floor(u*60)];D.frame('f'+j,p[0],p[1],j?.3*Math.cos(u*6):0,GEO.blue,25);
+          D.arrow('to'+j,[365,y],[430,y],GEO.muted);D.path('error'+j,[[450,y+30],[650,y-30]],GEO.green,3);
+          D.circle('e'+j,450+200*u,y+30-60*u,5,GEO.green,GEO.green);
+        });D.text('identical',595,198,'相同的误差演化',GEO.green,18);
+      }else if(k===2){
+        var u=(now%6)/6;D.plot('axes',90,290,600,200);
+        D.path('linear',[[120,260],[360,140]],GEO.blue,3);D.text('xi',225,305,'ξᵥ = 0.981',GEO.blue,18);
+        D.arrow('exp',[370,165],[475,165],GEO.gold);D.text('expLabel',423,140,'exp',GEO.gold,20);
+        var p=[520+140*u,260-100*u];D.path('mapped',geoCurve(function(q){return[520+140*q,260-100*q-20*Math.sin(q*Math.PI)];},50),GEO.green,3);
+        D.circle('direct',p[0],p[1]-20*Math.sin(u*Math.PI),6,GEO.white);D.circle('mappedDot',p[0],p[1]-20*Math.sin(u*Math.PI),3,GEO.green,GEO.green);
+        D.text('exact',580,315,'(0.9794, 0, −0.0490)',GEO.green,17);
+      }else{
+        D.plot('plot',100,292,610,205);var u=(now%8)/8;
+        D.path('q',geoCurve(function(f){var z=f*u;return[110+580*z,280-170*z*z];},80),GEO.red,3);
+        D.path('in',geoCurve(function(f){var z=f*u;return[110+580*z,280-(k===4?8*z*(1+Math.sin(z*24)):0)];},80),GEO.green,3);
+        D.text('qL',565,90,'QEKF ≈ 25',GEO.red,20);D.text('iL',570,245,k===3?'InEKF = 0':'有噪声：不再精确',GEO.green,19);
+        D.text('read',405,333,'图 4 / 5 的趋势示意 · 25 为读图近似',GEO.muted,14);
+      }
+    });
+  }
+
+  function buildSceneUpdate() {
+    return geometryScene('运动学残差怎样分给身体与脚印',[
+      '腿只测脚相对身体的位置','同一个残差，身体和脚印方向相反','2 cm 缺口，两边各移动约 1 cm','在群上更新整组状态','换到机器人中心，描述变了，测量没变'
+    ],'H=[0,\\;0,\\;-I,\\;I]',function(D,t,now,k){
+      var u=k>=2?(.5-.5*Math.cos(now*1.1)):0;
+      var px=220-35*u,dx=570+35*u;
+      D.frame('p',px,185,0,GEO.blue,46);D.circle('d',dx,185,8,GEO.gold,GEO.gold);
+      D.text('pl',px,255,'身体 p',GEO.blue,21);D.text('dl',dx,255,'脚印 d',GEO.gold,21);
+      D.path('old',[[220,100],[570,100]],GEO.muted,2,'5 5');
+      D.arrow('leg',[px,150],[dx,150],GEO.green);D.text('measured',400,85,'运动学：相对距离多了 2 cm',GEO.green,20);
+      if(k>=2){D.arrow('dp',[220,290],[185,290],GEO.blue);D.arrow('dd',[570,290],[605,290],GEO.gold);
+        D.text('dpLab',210,328,'Δp ≈ −0.995 cm',GEO.blue,17);D.text('ddLab',590,328,'Δd ≈ +0.995 cm',GEO.gold,17);
+      }
+      D.text('weights',400,215,'相同不确定性 → 各分一半',GEO.muted,17);
+      if(k===4)D.text('origin',400,350,'世界中心 ↔ 机器人中心：同一个几何关系',GEO.purple,16);
+    });
+  }
+
+  function buildSceneObservability() {
+    return geometryScene('绝对平移和航向是传感器看不见的自由度',[
+      '整个场景平移或绕竖直轴旋转，读数不变','零空间，必须在每一步保持一致','单脚 12 维，只能观测其中 8 维','QEKF 工作点抖动，可能假装看到了航向','保留 4 个自由度，承认传感器的边界'
+    ],'\\operatorname{rank}(\\mathcal O)=12-4=8',function(D,t,now,k){
+      var a=.4*Math.sin(now*.55),cx=235+30*Math.sin(now*.7),cy=215;
+      D.arc('orbit',235,215,98,0,Math.PI*2,GEO.muted,'4 5');
+      function pt(x,z){return[cx+x*Math.cos(a)-z*Math.sin(a),cy-x*Math.sin(a)-z*Math.cos(a)];}
+      var p=pt(0,40),d=pt(65,-45);D.frame('body',p[0],p[1],a,GEO.blue,36);D.circle('foot',d[0],d[1],6,GEO.gold,GEO.gold);D.arrow('relative',p,d,GEO.green);
+      D.text('same',235,338,'一起挪动，腿的读数不变',GEO.green,18);
+      for(var i=0;i<12;i++){var x=460+(i%4)*66,y=105+Math.floor(i/4)*70,c=i<8?GEO.green:GEO.muted;
+        D.circle('mode'+i,x,y,18,c,i<8?c+'30':'none');D.text('modeL'+i,x,y+5,i<8?'✓':'?',c,19);
+      }
+      D.text('rank',555,330,k===3?'抖动小例子：QEKF 秩 9':'8 个可观 · 4 个不可观',k===3?GEO.red:GEO.white,19);
+      if(k===3){D.circle('falseMode',460,245,20,GEO.red);D.text('false',460,250,'!',GEO.red,21);}
+      D.text('directions',540,65,'3 个位置 + 1 个航向',GEO.gold,19);
+    });
+  }
+
+  function buildSceneBanana() {
+    var rng=mulberry32(190409251),cloud=[];
+    for(var i=0;i<180;i++)cloud.push([gauss(rng),gauss(rng)]);
+    var cloudScale=103/(155*Math.max.apply(null,cloud.map(function(q){return Math.abs(Math.sin(q[0]*BAN_S));})));
+    return geometryScene('航向不确定性经旋转映射，弯成香蕉或圆环',[
+      '高斯放在哪个坐标里，决定了映回去的形状','先撒同一批样本：位置 0.1 m，航向 10°','越走越远，航向误差把粒子云弯成香蕉','位置上的直椭圆，套不住弯回来的云','航向完全未知时，位置沿圆环分布'
+    ],'X=\\exp(\\xi)\\bar X',function(D,t,now,k){
+      var u=.5-.5*Math.cos(now*.65),dist=k===0?35:70+85*u,cx=400,cy=208;
+      if(k===4){
+        [40,75,110,145].forEach(function(r,j){D.arc('ring'+j,cx,cy,r,0,Math.PI*2,GEO.blue);D.text('r'+j,cx+r+10,cy-8,(j+1)*2+' m',GEO.blue,13,'start');});
+        cloud.forEach(function(q,i){var a=q[0]*Math.PI*2+now*.12,r=40+35*(i%4)+q[1]*1.2;D.circle('p'+i,cx+r*Math.cos(a),cy+r*Math.sin(a),1.7,GEO.green,GEO.green);});
+        D.text('full',cx,cy+6,'360°',GEO.gold,22);
+      } else {
+        var dist=110+45*u,baseX=600;
+        D.path('leftaxis',[[90,208],[310,208]],GEO.muted,1);
+        D.path('rightaxis',[[450,208],[730,208]],GEO.muted,1);
+        cloud.forEach(function(q,i){
+          var th=q[0]*BAN_S;
+          D.circle('flat'+i,210+q[1]*3,cy-dist*Math.sin(th)*cloudScale,1.8,GEO.blue,GEO.blue);
+          if(k>=1)D.circle('p'+i,baseX+dist*(Math.cos(th)-1)*8+q[1]*3,cy-dist*Math.sin(th)*cloudScale,1.9,GEO.green,GEO.green);
+        });
+        if(k>=1){
+          D.arrow('exp',[345,208],[425,208],GEO.gold);D.text('map',385,180,'exp',GEO.gold,21);
+          D.path('banana',geoCurve(function(z){var th=(z-.5)*4*BAN_S;return[baseX+dist*(Math.cos(th)-1)*8,cy-dist*Math.sin(th)*cloudScale];},80),GEO.green,2);
+        }
+        if(k>=3){
+          D.path('ellipse',geoCurve(function(z){var a=z*Math.PI*2;return[baseX+9*Math.cos(a),cy+dist*BAN_S*cloudScale*2*Math.sin(a)];},80),GEO.red,2);
+        }
+        D.text('leftlabel',210,77,'李代数：高斯',GEO.blue,19);
+        D.text('rightlabel',610,77,k>=3?'QEKF 椭圆 / InEKF 香蕉':'映回位置：弯成香蕉',k>=3?GEO.red:GEO.green,18);
+        D.text('size',400,339,k>=2?'8 m · 偏 10° → 1.39 m · 偏 20° → 弯回 0.48 m':'初始位置 σ = 0.1 m · 航向 σ = 10°',GEO.gold,17);
+        D.text('zoomnote',400,358,'位置分布的局部放大示意（纵横轴缩放不同）',GEO.muted,12);
+      }
+    });
+  }
+
+  function buildSceneBias() {
+    return geometryScene('群外的 IMU 零偏使误差演化重新依赖估计值',[
+      '很小的零偏，也会在积分里累积','几何状态在群内，6 维零偏留在群外','连接回来的零偏，让 A 重新含有估计值','零偏误差为零，这条影响就消失','静止时先估零偏，再在滤波中继续追踪'
+    ],'(X,\\theta)\\in G\\times\\mathbb R^6',function(D,t,now,k){
+      D.circle('group',225,202,112,GEO.blue,GEO.blue+'0c');D.frame('state',225,205,.3*Math.sin(now*.6),GEO.blue,62);
+      D.text('groupL',225,80,'群内：R · v · p · d',GEO.blue,19);
+      D.rect('bias',490,125,220,154,GEO.gold,GEO.gold+'0c');
+      D.text('biasL',600,105,'群外：IMU 零偏',GEO.gold,19);
+      D.text('gyro',600,172,'bᵍ：3 维',GEO.gold,20);D.text('accel',600,216,'bᵃ：3 维',GEO.gold,20);
+      if(k>=2){D.arrow('coupling',[490,205],[355,205],k===3?GEO.muted:GEO.red);D.text('depends',424,172,k===3?'× 0':'−R̄',k===3?GEO.green:GEO.red,22);}
+      D.text('note',400,335,k===4?'初始标准差：陀螺 0.005 rad/s · 加速度 0.05 m/s²':'理论边界：加入零偏后，精确对数线性不再成立',GEO.muted,16);
+      var drift=geoCurve(function(u){return[512+175*u,259-15*u-6*Math.sin(9*u+now*.5)];},50);D.path('walk',drift,GEO.gold,2);
+    });
+  }
+
+  function buildSceneContacts() {
+    return geometryScene('落脚新增一列，抬脚删去一列',[
+      '脚印是临时路标，只在接触期间参与估计','抬脚：状态与协方差删去对应维度','落脚：从身体和运动学初始化新脚印','新脚印的位置与不确定性都继承身体信息','接触路标，持续接入又持续离开'
+    ],'\\bar d=\\bar p+\\bar R h_p',function(D,t,now,k){
+      var u=(now%5)/5,stance=u<.5;
+      D.robot('robot',205,310,205);D.path('floor',[[75,313],[350,313]],GEO.muted,1);
+      D.circle('oldfoot',171,310,8,GEO.muted);D.circle('newfoot',270,310,8,GEO.gold,stance?GEO.gold:'none');
+      D.circle('pulse',270,310,12+10*u,GEO.gold);
+      var names=['R','v','p','d₁','d₂'];
+      names.forEach(function(q,j){var x=416+j*63,c=j<3?GEO.blue:GEO.gold;
+        var active=j!==3||k!==1;D.rect('col'+j,x,100,47,185,active?c:GEO.muted,active?c+'18':'none');D.text('name'+j,x+23,88,q,active?c:GEO.muted,22);
+        if(j===3&&k===1){D.path('delete',[[x+4,132],[x+42,253]],GEO.red,3);D.path('delete2',[[x+42,132],[x+4,253]],GEO.red,3);}
+      });
+      if(k>=2){D.arrow('fromP',[565,303],[698,303],GEO.green);D.text('inherit',630,328,'继承协方差 + 运动学噪声',GEO.green,15);}
+      if(k===3)D.text('numbers',400,350,'d = (0.42, −0.13, 0.02) m · σ = 0.1005 m',GEO.gold,17);
+      else D.text('numbers',205,350,stance?'接触：路标有效':'离地：路标移除',stance?GEO.green:GEO.muted,16);
+    });
+  }
+
+  function buildSceneConverge() {
+    return geometryScene('从随机初始姿态收拢：论文图 3 与图 8 的趋势',[
+      '同一组测量，100 个不同初值','仿真：InEKF 约 0.3 s 收拢','QEKF 仍散开；航向本来就不可观','真机打开零偏：InEKF 约 0.4 s 收拢','初值越偏，误差坐标的选择越重要'
+    ],'\\theta_0\\sim U(-30^\\circ,30^\\circ)',function(D,t,now,k){
+      var real=k>=3,window=real?2:1,conv=real?CONV_READ.riReal:CONV_READ.riSim,u=(now%9)/9;
+      [0,1].forEach(function(j){var x0=80+j*380,base=210,w=280,c=j?GEO.red:GEO.green;
+        D.path('axis'+j,[[x0,base],[x0+w,base]],GEO.muted,1);D.text('name'+j,x0+w/2,78,j?'QEKF':'InEKF',c,24);
+        for(var i=0;i<30;i++){var init=CONV.eulerDeg*Math.sin(i*7.31),pts=geoCurve(function(f){var tm=f*u*window;
+          var z=init*Math.exp(-tm/(j?(real?.9:.5):conv/5));if(j)z+=Math.sin(i*1.7)*((real?5:10))*Math.sin(tm*3);
+          return[x0+w*f*u,base-z*2.8];},50);D.path('trace'+j+'_'+i,pts,c,1.1);}
+        D.text('end'+j,x0+w,325,window+' s',GEO.muted,14);D.text('start'+j,x0,325,'0',GEO.muted,14);
+      });
+      D.text('source',400,351,(real?'图 8：约 0.4 s':'图 3：约 0.3 s')+' · 曲线为读图趋势示意 · 100 次实验',GEO.muted,16);
+      D.text('units',60,165,'30°',GEO.muted,12);D.text('neg',60,285,'−30°',GEO.muted,12);
+    });
+  }
+
+  function buildSceneReal() {
+    return geometryScene('Cassie 的动捕、长距离行走与点云实验',[
+      '18 台动捕相机，提供独立真值','15 m 路程，终点误差小于 5%','200 m · 7 分 45 秒，人行道上的估计轨迹','10 秒点云，用高频位姿把扫描拼起来','会漂的仍会漂：航向、绝对位置与打滑'
+    ],['\\text{动捕：}18\\text{台相机}', '\\text{终点误差}/\\text{路程}<5\\%', '200\\text{ m}\\quad 7\\text{分}45\\text{秒}', '10\\text{ Hz}\\quad 10\\text{ s 点云}', '\\text{航向与绝对位置不可观}'],function(D,t,now,k){
+      D.robot('cassie',145,315,215);D.text('cassieL',145,342,'Cassie · 实机',GEO.white,18);
+      if(k<3){var pts=geoCurve(function(u){var a=u*Math.PI*1.7;return[505+135*Math.cos(a),210+85*Math.sin(a)];},110),u=(now%10)/10;
+        D.path('truth',pts,GEO.white,2,'5 4');D.path('estimate',pts.slice(0,Math.max(2,Math.floor(u*pts.length))).map(function(p,i){return[p[0]+i*.05,p[1]-i*.03];}),GEO.green,3);
+        var p=pts[Math.floor(u*110)];D.circle('head',p[0],p[1],5,GEO.green,GEO.green);
+        D.text('experiment',515,75,k===2?'200 m · 7 分 45 秒':'18 台相机 · 60 s · 15 m',GEO.blue,21);
+        D.text('drift',515,338,k===2?'估计轨迹一直在人行道上':'相对运动可信，绝对位置仍会漂',GEO.muted,17);
+      } else if(k===3){
+        for(var i=0;i<95;i++){var a=i*2.39996,r=25+((i*37)%150),x=505+r*Math.cos(a),y=210+.6*r*Math.sin(a);D.circle('cloud'+i,x,y,1.8,GEO.blue,GEO.blue);}
+        var a=now*.6;D.arrow('scan',[505,210],[505+155*Math.cos(a),210+90*Math.sin(a)],GEO.gold);
+        D.text('lidar',520,80,'激光雷达 · 10 Hz · 累积 10 s',GEO.blue,20);
+        D.text('cloudlabel',520,340,'点云示意：每束光都要对准同一个世界',GEO.muted,16);
+      } else {
+        [['航向与位置：持续漂移',GEO.gold],['零偏：精确理论有边界',GEO.purple],['运动学误差与打滑：仍会带偏',GEO.red]].forEach(function(q,i){D.circle('bullet'+i,375,125+i*80,5,q[1],q[1]);D.text('limit'+i,400,132+i*80,q[0],q[1],20,'start');});
+      }
+    });
   }
 
   var INEKF_SCENES = [
