@@ -60,6 +60,11 @@
      十二幕动画、三个演示、配音旁白与笔记「🚶 具体实例」共用这一份。 */
   var G = 9.81; // 代码 InEKF.cpp：g_ = (0, 0, −9.81)
   var CASSIE = { dof: 20, actuators: 10, springs: 4, encoders: 14, imuHz: 800, encHz: 2000, height: 1.2732 }; // 第 9 节；身高取自 Robot_Description_Gallery 的 URDF 测量（UMich BipedLab 展示模型）
+  /* Cassie 一条腿在侧视平面里的连杆（m），取自 mujoco_menagerie 的 agility_cassie/cassie.xml（Robot_Description_Gallery 记录的 MJCF），
+     按 home 关键帧做正运动学：髋俯仰 → 膝 0.12、膝 → 跗骨关节 0.50、跗骨关节 → 脚关节 0.41；站立时髋俯仰离地 0.916、脚关节离地 0.057，
+     脚板（碰撞胶囊）从脚关节后 0.06 到前 0.10。achilles 杆把大腿和跗骨连成近似平行四边形：膝弯 ±0.25 rad 时跗骨方向始终比大腿偏约 7°，
+     所以画图时跗骨跟着大腿转，一条腿只剩一个自由度。比例 大腿 : 小腿 : 跗骨 ≈ 1 : 4.2 : 3.4 */
+  var CASSIE_LEG = { thigh: 0.12, shin: 0.5, tarsus: 0.41, hipH: 0.916, footJointH: 0.057, heel: 0.06, toe: 0.1, tarsusFromThighDeg: 7.1, thighDeg: 61.5 };
   var TABLE1 = {
     // 表 1：离散噪声标准差与初始标准差（扩展版的零偏单位是 m/s³、rad/s²；会议版写成 m/s²、rad/s）
     noise: [['线加速度', '0.04 m/s²'], ['角速度', '0.002 rad/s'], ['加速度计零偏', '0.001 m/s³'], ['陀螺零偏', '0.001 rad/s²'], ['接触点线速度', '0.05 m/s'], ['关节编码器', '1.0°']],
@@ -787,17 +792,18 @@
     g.appendChild(img);
     return { g: g, w: w, h: h, mark: function (nn) { return [x + nn[0] * w, yBottom - h + nn[1] * h]; } };
   }
-  /* 侧视的 Cassie 示意（面朝 +x）：骨盆是一个带坐标轴的圆角块（IMU 在里面），腿照真实世界人形行走那篇的
-     Digit 下半身画 —— Digit 的腿就是 Cassie 的腿：大腿往前、小腿往后、跗骨再往前落到脚板上，髋上一个电机盘。
-     远侧那条腿淡一些。o.legH 是站直时髋到地面的像素数（连杆长度按它定，取 Digit 的比例），o.bodySc 缩放骨盆。
-     put(x, y, ang, feet, rigid)：骨盆中心 (x, y)、俯仰 ang（rad，图上逆时针为正）、feet = [[x, y, 着地?], …]（先近侧后远侧）；
-     rigid 为真时跗骨和脚板也跟着骨盆转（第 4 幕把整个机器人当刚体转一下） */
+  /* 侧视的 Cassie 示意（面朝 +x）：骨盆是一个带坐标轴的圆角块（IMU 在里面），腿按 CASSIE_LEG 的真实连杆画（鸟腿，同真实世界人形行走那篇的
+     Digit 下半身）：很短的大腿往前下、长小腿往后下、长跗骨再往前下落到三角形的脚上；跗骨方向 = 大腿方向偏 7°（achilles 平行四边形）。
+     远侧那条腿淡一些。o.legH 是站直时髋到地面的像素数（1 m = legH / 0.916 px），o.bodySc 缩放骨盆。
+     put(x, y, ang, feet, rigid)：骨盆中心 (x, y)、俯仰 ang（rad，图上逆时针为正）、feet = [[x, y, 着地?], …]（先近侧后远侧，给的是脚底在地上的点）；
+     rigid 为真时脚也跟着骨盆转（第 4 幕把整个机器人当刚体转一下） */
   function cassieLegs(parent, color, dashed, opts) {
-    var o = opts || {}, H = o.legH || 62, bs = o.bodySc || 1;
-    var M = H / 0.86, L1 = 0.36 * M, L2 = 0.42 * M, TAR = [-0.11 * M, -0.2 * M], ws = Math.min(M / 100, 1.1);
+    var o = opts || {}, bs = o.bodySc || 1, LG = CASSIE_LEG;
+    var M = (o.legH || 62) / LG.hipH, ws = Math.min(M / 70, 1.1);
+    var L1 = LG.thigh * M, L2 = LG.shin * M, L3 = LG.tarsus * M, C = (LG.tarsusFromThighDeg * Math.PI) / 180, A0 = (LG.thighDeg * Math.PI) / 180;
     var g = group(parent);
     function bone(parentG, w) {
-      var ln = paint(svgEl('line', { 'stroke-width': (dashed ? Math.max(1.6, w * ws * 0.55) : w * ws).toFixed(2), 'stroke-linecap': 'round' }), null, color);
+      var ln = paint(svgEl('line', { 'stroke-width': (dashed ? Math.max(1.6, w * ws * 0.5) : w * ws).toFixed(2), 'stroke-linecap': 'round' }), null, color);
       if (dashed) ln.setAttribute('stroke-dasharray', '4 3');
       parentG.appendChild(ln);
       return ln;
@@ -805,11 +811,12 @@
     function leg(far) {
       var lg = group(g);
       if (far) lg.style.opacity = 0.45;
-      var L = { thigh: bone(lg, 6.5), shin: bone(lg, 5.5), tar: bone(lg, 4), foot: bone(lg, 3.6) };
-      L.motor = paint(svgEl('circle', { r: Math.min(0.075 * M, 9).toFixed(1), 'stroke-width': 1.4 }), C_SURFACE, color);
-      if (dashed) L.motor.setAttribute('stroke-dasharray', '3 2');
-      lg.appendChild(L.motor);
-      L.dot = dotAt(lg, 0, 0, clamp(0.045 * M, 2.4, 4), color);
+      var L = { shin: bone(lg, 3.6), tar: bone(lg, 3), thigh: bone(lg, 9) };
+      L.foot = svgEl('path', { 'stroke-width': 1.2, 'stroke-linejoin': 'round' });
+      if (dashed) { paint(L.foot, 'none', color); L.foot.setAttribute('stroke-dasharray', '3 2'); }
+      else paint(L.foot, color, color);
+      lg.appendChild(L.foot);
+      L.dot = dotAt(lg, 0, 0, clamp(0.04 * M, 2.2, 3.6), color);
       return L;
     }
     var farLeg = leg(true);
@@ -823,20 +830,40 @@
     dotAt(body, 0, 0, 2.6, color);
     var nearLeg = leg(false);
     function rot(v, th) { return [v[0] * Math.cos(th) - v[1] * Math.sin(th), v[0] * Math.sin(th) + v[1] * Math.cos(th)]; }
-    function pose(L, hip, f, th) {
-      var tar = rot(TAR, th), ankle = [f[0] + tar[0], f[1] + tar[1]];
-      var dx = ankle[0] - hip[0], dy = ankle[1] - hip[1];
-      var d = clamp(Math.hypot(dx, dy), 0.2 * M, L1 + L2 - 0.01);
-      var base = Math.atan2(dy, dx), bend = Math.acos(clamp((L1 * L1 + d * d - L2 * L2) / (2 * L1 * d), -1, 1));
-      var a = base - bend; // 膝盖朝前
-      var knee = [hip[0] + L1 * Math.cos(a), hip[1] + L1 * Math.sin(a)];
-      var ank = [hip[0] + d * Math.cos(base), hip[1] + d * Math.sin(base)];
-      setLine(L.thigh, hip[0], hip[1], knee[0], knee[1]);
-      setLine(L.shin, knee[0], knee[1], ank[0], ank[1]);
-      setLine(L.tar, ank[0], ank[1], f[0], f[1]);
-      var heel = rot([-0.05 * M, 0], th), toe = rot([0.09 * M, 0], th);
-      setLine(L.foot, f[0] + heel[0], f[1] + heel[1], f[0] + toe[0], f[1] + toe[1]);
-      L.motor.setAttribute('cx', hip[0].toFixed(1)); L.motor.setAttribute('cy', hip[1].toFixed(1));
+    /* 大腿角 a（图上从 +x 顺时针量）定了，膝 K、跗骨关节 A 就定了；要求 |A − K| = 小腿长，一维求根，取离站立角最近的那个根 */
+    function gap(H, J, a) {
+      var K = [H[0] + L1 * Math.cos(a), H[1] + L1 * Math.sin(a)], b = a - C;
+      var A = [J[0] - L3 * Math.cos(b), J[1] - L3 * Math.sin(b)];
+      return { K: K, A: A, f: Math.hypot(A[0] - K[0], A[1] - K[1]) - L2 };
+    }
+    function solve(H, J, aRef) {
+      var root = null, near = null, step = Math.PI / 90, prev = null;
+      for (var a = aRef - 1.6; a <= aRef + 1.6 + 1e-9; a += step) {
+        var cur = { a: a, f: gap(H, J, a).f };
+        if (!near || Math.abs(cur.f) < Math.abs(near.f)) near = cur;
+        if (prev && (prev.f <= 0) !== (cur.f <= 0)) {
+          var lo = prev.a, hi = cur.a, flo = prev.f;
+          for (var it = 0; it < 40; it++) {
+            var mid = (lo + hi) / 2, fm = gap(H, J, mid).f;
+            if ((fm <= 0) === (flo <= 0)) { lo = mid; flo = fm; } else hi = mid;
+          }
+          var r = (lo + hi) / 2;
+          if (root == null || Math.abs(r - aRef) < Math.abs(root - aRef)) root = r;
+        }
+        prev = cur;
+      }
+      return gap(H, J, root == null ? near.a : root);
+    }
+    function pose(L, H, f, th) {
+      var J = [f[0] + rot([0, -LG.footJointH * M], th)[0], f[1] + rot([0, -LG.footJointH * M], th)[1]];
+      var q = solve(H, J, A0 + th), A = q.A, K = q.K;
+      /* 小腿两端用解出来的点；跗骨从 A 连到脚关节 J（无解时 A 是最接近的那个，跗骨会略长一点） */
+      setLine(L.thigh, H[0], H[1], K[0], K[1]);
+      setLine(L.shin, K[0], K[1], A[0], A[1]);
+      setLine(L.tar, A[0], A[1], J[0], J[1]);
+      var heel = rot([-LG.heel * M, 0], th), toe = rot([LG.toe * M, 0], th);
+      L.foot.setAttribute('d', 'M ' + J[0].toFixed(1) + ' ' + J[1].toFixed(1) + ' L ' + (f[0] + heel[0]).toFixed(1) + ' ' + (f[1] + heel[1]).toFixed(1) +
+        ' L ' + (f[0] + toe[0]).toFixed(1) + ' ' + (f[1] + toe[1]).toFixed(1) + ' Z');
       moveDot(L.dot, f);
       L.dot.style.opacity = f[2] ? 1 : 0.35;
     }
@@ -845,8 +872,8 @@
       put: function (x, y, ang, feet, rigid) {
         body.setAttribute('transform', 'translate(' + x.toFixed(1) + ' ' + y.toFixed(1) + ') rotate(' + ((-ang * 180) / Math.PI).toFixed(2) + ')');
         [nearLeg, farLeg].forEach(function (L, k) {
-          var off = rot([k ? -2 * bs : 2 * bs, 12 * bs], -ang), f = feet[k];
-          pose(L, [x + off[0], y + off[1]], f, rigid ? -ang : 0);
+          var off = rot([k ? -2 * bs : 2 * bs, 12 * bs], -ang);
+          pose(L, [x + off[0], y + off[1]], feet[k], rigid ? -ang : 0);
         });
       }
     };
@@ -1444,7 +1471,7 @@
       var pNow = [UPD.p[0] + k * UPD_EX.dp[0] * MAG, 0, UPD.p[2] + k * UPD_EX.dp[2] * MAG];
       var dNow = [UPD.d[0] + k * UPD_EX.dd[0] * MAG, 0, UPD.d[2] + k * UPD_EX.dd[2] * MAG];
       var bp = W(pNow), dp = W(dNow);
-      bodyB.put(bp[0], bp[1], 0, [[dp[0], dp[1], true], [bp[0] - 56, GY - 38, false]]);
+      bodyB.put(bp[0], bp[1], 0, [[dp[0], dp[1], true], [bp[0] - 26, GY - 40, false]]);
       moveDot(footD, dp);
       /* 测量：从身体出发的 R̄h（h 比估计长 2 cm，放大 10 倍） */
       var hEnd = [pNow[0] + (UPD.h[0] + (UPD.h[0] - (UPD.d[0] - UPD.p[0])) * (MAG - 1)), 0, pNow[2] + (UPD.h[2] + (UPD.h[2] - (UPD.d[2] - UPD.p[2])) * (MAG - 1))];
@@ -1730,7 +1757,7 @@
     rectBox(top, 30, 44, 500, 170, C_BORDER, C_SURFACE2);
     var GY = 196;
     hline(top, 44, GY, 516, GY, C_BORDER, 1.4);
-    var body = cassieLegs(top, C_EST, false, { legH: 70 });
+    var body = cassieLegs(top, C_EST, false, { legH: 66 });
     var prints = group(top);
     var tag = svgRich(0, 0, '', { size: 10.5, anchor: 'middle', w: 120, cls: 'demo-x-good' });
     top.appendChild(tag);
@@ -2129,7 +2156,7 @@
       notes: [
         '取数依据：第 1、2、11、12 幕的数字照抄论文第 6、9 节与表 1（IJRR 扩展版 arXiv 1904.09251 v2；会议版 1805.10410 的实验数字相同）；第 5 幕的 $A$、第 6 幕的 $H$、第 7 幕的可观性矩阵照抄第 5 节式 (12)–(14)、(20) 与第 5.4 节；第 9 幕的 $A$ 照抄式 (28)。' +
           '第 3、5 幕的站立例子（0.1 rad、0.5 rad）、第 6 幕的 2 cm 校正、第 10 幕的新触地点、第 8 幕的 1.39 m / 0.48 m 是在论文的式子上现算的（具体实例第 2–4、6、8、9 步）；第 7 幕「QEKF 秩为 9」是我们用抖动的估计值算的 12 维小例子，不是论文的数。',
-        '**读图与示意**：图 3、4、6、8、9 没有标数，第 5、11、12 幕的曲线和轨迹是按图读的近似值；第 2、3、4、6、10 幕的 Cassie 腿示意（照真实世界人形行走那篇 Digit 下半身的画法）、第 9 幕的零偏曲线、第 12 幕的人行道与点云是示意。Cassie 的图取自 Robot_Description_Gallery（按 UMich BipedLab 的开源 URDF 渲染）。'
+        '**读图与示意**：图 3、4、6、8、9 没有标数，第 5、11、12 幕的曲线和轨迹是按图读的近似值；第 2、3、4、6、10 幕的 Cassie 腿示意（鸟腿画法同真实世界人形行走那篇的 Digit 下半身，连杆按 MuJoCo Menagerie 的 Cassie 模型：大腿 0.12、小腿 0.50、跗骨 0.41 m）、第 9 幕的零偏曲线、第 12 幕的人行道与点云是示意。Cassie 的图取自 Robot_Description_Gallery（按 UMich BipedLab 的开源 URDF 渲染）。'
       ],
       scenes: INEKF_SCENES
     });

@@ -1335,20 +1335,31 @@ def test_beyondmimic_explainer_demos_and_worked_example_share_the_paper_numbers(
         assert stale not in note, f"旧版笔记的说法：{stale}"
 
 
-def test_inekf_legs_are_drawn_like_the_digit_lower_body():
-    """InEKF 讲解动画里的机器人示意画 Cassie 的鸟腿，比例照抄真实世界人形行走那篇的 Digit 下半身（Digit 的腿就是 Cassie 的腿）。
+def test_inekf_legs_use_the_cassie_link_lengths():
+    """InEKF 讲解动画里的 Cassie 腿示意按真机连杆画：大腿 0.12、小腿 0.50、跗骨 0.41（m），比例约 1 : 4.2 : 3.4。
 
-    大腿 0.36、小腿 0.42、跗骨偏移 (−0.11, −0.2)、髋高 0.86（单位 m，按像素比例缩放）；旧版「方块 + 两段线」的火柴人不再出现。
+    数取自 mujoco_menagerie 的 agility_cassie/cassie.xml（Robot_Description_Gallery 记录的 MJCF）里相邻 body 的 pos：
+    髋俯仰 → 膝 (0.12, 0, 0.0045)；膝 → 小腿 (0.06068, 0.04741, 0) 再 → 跗骨 (0.43476, 0.02, 0)（小腿关节是 ±20° 的弹簧，取 0）；
+    跗骨 → 脚 (0.408, −0.04, 0)。站立的髋高、脚关节高与「跗骨比大腿偏 7°」是按 home 关键帧做正运动学得到的，这里只核对连杆长度。
+    旧版借用 Digit 示意的 0.36 / 0.42 / 0.23 比例（大腿长了三倍），不再出现。
     """
-    digit = (ROOT / "assets" / "js" / "demos" / "realhumanoid.js").read_text(encoding="utf-8")
-    inekf = (ROOT / "assets" / "js" / "demos" / "inekf.js").read_text(encoding="utf-8")
-    for needle in ("L1 = 0.36 * M", "L2 = 0.42 * M", "TAR = [-0.11 * M, -0.2 * M]", "HIP_H = 0.86 * M"):
-        assert needle in digit, needle
-    assert "var M = H / 0.86, L1 = 0.36 * M, L2 = 0.42 * M, TAR = [-0.11 * M, -0.2 * M]" in inekf
-    assert "var a = base - bend; // 膝盖朝前" in inekf
-    assert "bodyLegs" not in inekf
-    assert inekf.count("cassieLegs(") == 9  # 定义 1 处；第 2、3、4 幕各两个（真值 + 估计），第 6、10 幕各一个
-    assert "UMich BipedLab" in inekf
+    import math
+
+    js = (ROOT / "assets" / "js" / "demos" / "inekf.js").read_text(encoding="utf-8")
+    m = re.search(r"var CASSIE_LEG = \{([^}]*)\};", js)
+    assert m, "inekf.js 里找不到 CASSIE_LEG"
+    leg = {k: float(v) for k, v in re.findall(r"(\w+): (-?\d+(?:\.\d+)?)", m.group(1))}
+    thigh = math.hypot(0.12, 0.0045)
+    shin = math.hypot(0.06068 + 0.43476, 0.04741 + 0.02)
+    tarsus = math.hypot(0.408, -0.04)
+    assert abs(leg["thigh"] - thigh) < 0.002 and abs(leg["shin"] - shin) < 0.002 and abs(leg["tarsus"] - tarsus) < 0.002
+    assert round(leg["shin"] / leg["thigh"], 1) == 4.2 and round(leg["tarsus"] / leg["thigh"], 1) == 3.4
+    assert leg["hipH"] == 0.916 and leg["tarsusFromThighDeg"] == 7.1
+    assert "大腿 : 小腿 : 跗骨 ≈ 1 : 4.2 : 3.4" in js
+    for stale in ("bodyLegs", "L1 = 0.36 * M", "TAR = [-0.11 * M, -0.2 * M]"):
+        assert stale not in js, stale
+    assert js.count("cassieLegs(") == 9  # 定义 1 处；第 2、3、4 幕各两个（真值 + 估计），第 6、10 幕各一个
+    assert "UMich BipedLab" in js
 
 
 def test_beyondmimic_stick_figures_bend_the_right_way():
