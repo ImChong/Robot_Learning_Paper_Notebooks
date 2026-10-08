@@ -41,15 +41,15 @@
         "13_Physics-Based_Animation",
         "14_Human_Motion"
       ],
-      "last_module": "04_Loco-Manipulation_and_WBC",
-      "last_index": 86,
-      "last_title": "Thor: Towards Human-Inspired Whole-Body Reactions for Intense Contact-Rich Environments (arXiv:2510.26280)",
-      "next_module": "05_Locomotion",
-      "last_completed_date": "2026-10-06",
-      "note": "本日轮转到 14_Human_Motion，但上游 awesome-humanoid-robot-learning Human Motion Analysis and Synthesis 章节的论文已全部有笔记，按 AGENTS.md「模块 04–14 只为上游已收录论文建笔记」顺延到 04_Loco-Manipulation_and_WBC。04 中上游已收录、尚无独立笔记的最新论文是 Thor (arXiv:2510.26280, v1 2025-10-30 / v4 2026-09-21, BAAI 等；v3 起标题由 Human-Level 改为 Human-Inspired)。下肢 / 腰 / 上肢三策略分解(共享观测、各自奖励与 critic) + 由准静态力矩平衡推出质心偏移参考 d* = −M_h/(mg) 的 FAT2 奖励；G1 双手后退均值峰值拉力 167.7 N(比 FALCON 高 68.9%)，单手开防火门、拖 1.7 t 轿车。项目主页标注 Code Coming Soon，仅含整体流程 mermaid。",
-      "last_date": "2026-10-06",
+      "last_module": "05_Locomotion",
+      "last_index": 203,
+      "last_title": "Learning to Get Up Across Morphologies: Zero-Shot Recovery with a Unified Humanoid Policy (arXiv:2512.12230)",
+      "next_module": "06_Manipulation",
+      "last_completed_date": "2026-10-08",
+      "note": "本日轮转到 05_Locomotion。上游 awesome-humanoid-robot-learning Locomotion 章节中尚无笔记的最新论文是 Learning to Get Up Across Morphologies (arXiv:2512.12230, 2025-12-13, 多伦多大学 UTRA, RoboCup Symposium)。7 款 KidSize 人形只控 5 个左右镜像的俯仰关节、27 维观测不含形态信息、每回合随机换机器人，CrossQ 训练共享起身策略；LOO 最高 72%（Wolfgang），4 台训练测 Wolfgang 86 ± 7%，NUGUS 共享训练 +61%。源码 utra-robosoccer/unified-humanoid-getup 已开源，含整体流程 mermaid 与源码运行时序图。",
+      "last_date": "2026-10-08",
       "next_candidate": null,
-      "last_completed": "Thor: Towards Human-Inspired Whole-Body Reactions for Intense Contact-Rich Environments (arXiv:2510.26280)"
+      "last_completed": "Learning to Get Up Across Morphologies: Zero-Shot Recovery with a Unified Humanoid Policy (arXiv:2512.12230)"
     },
     "last_summary_index": 532,
     "last_summary_date": "2026-09-18",
@@ -1662,6 +1662,17 @@
         "project_page": "https://baai-aether.github.io/baai-thor/",
         "code": "项目主页标注 Code (Coming Soon)，暂未开源",
         "source": "⏳ 暂未开源(故无源码时序图) · 下肢/腰/上肢三策略分解 + FAT2 力自适应躯干倾斜奖励(准静态力矩平衡推出质心偏移参考) · Unitree G1 · BAAI / 北理工 / 清华 / XYZ Embodied AI"
+      },
+      {
+        "date": "2026-10-08",
+        "index": 203,
+        "title": "Learning to Get Up Across Morphologies: Zero-Shot Recovery with a Unified Humanoid Policy",
+        "folder": "papers/05_Locomotion/Learning_to_Get_Up_Across_Morphologies__Zero-Shot_Recovery_with_a_Unified_Humanoid_Policy",
+        "module": "05_Locomotion",
+        "arxiv": "2512.12230",
+        "project_page": "",
+        "code": "https://github.com/utra-robosoccer/unified-humanoid-getup",
+        "source": "✅ 已开源(含源码时序图) · 5 个左右镜像俯仰关节 + 无形态信息的 27 维观测 + 每回合随机换机器人的 CrossQ 共享起身策略 · 7 款 RoboCup KidSize 人形 · MuJoCo · 多伦多大学 UTRA"
       }
     ],
     "last_completed_index": 588,
@@ -6203,6 +6214,16 @@
       "pdf_file": "",
       "route": "Locomotion",
       "title_cn": "E-SDS：面向人形行走的环境感知自动奖励生成强化学习"
+    },
+    {
+      "title": "Learning to Get Up Across Morphologies: Zero-Shot Recovery with a Unified Humanoid Policy",
+      "folder": "papers/05_Locomotion/Learning_to_Get_Up_Across_Morphologies__Zero-Shot_Recovery_with_a_Unified_Humanoid_Policy",
+      "note_file": "Learning_to_Get_Up_Across_Morphologies__Zero-Shot_Recovery_with_a_Unified_Humanoid_Policy.md",
+      "status": "done",
+      "arxiv": "2512.12230",
+      "pdf_file": "",
+      "route": "Locomotion",
+      "title_cn": "跨形态学习起身：统一人形策略的零样本跌倒恢复"
     },
     {
       "title": "Kimera: an Open-Source Library for Real-Time Metric-Semantic Localization and Mapping",

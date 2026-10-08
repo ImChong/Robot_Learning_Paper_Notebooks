@@ -2741,6 +2741,18 @@
         "zh_title": "E-SDS：面向人形行走的环境感知自动奖励生成强化学习"
       },
       {
+        "title": "Learning to Get Up Across Morphologies: Zero-Shot Recovery with a Unified Humanoid Policy",
+        "path": "papers/05_Locomotion/Learning_to_Get_Up_Across_Morphologies__Zero-Shot_Recovery_with_a_Unified_Humanoid_Policy/Learning_to_Get_Up_Across_Morphologies__Zero-Shot_Recovery_with_a_Unified_Humanoid_Policy.md",
+        "url": "/papers/05_Locomotion/Learning_to_Get_Up_Across_Morphologies__Zero-Shot_Recovery_with_a_Unified_Humanoid_Policy/Learning_to_Get_Up_Across_Morphologies__Zero-Shot_Recovery_with_a_Unified_Humanoid_Policy.html",
+        "dir": "Learning_to_Get_Up_Across_Morphologies__Zero-Shot_Recovery_with_a_Unified_Humanoid_Policy",
+        "arxiv": "2512.12230",
+        "has_open_source": true,
+        "published_date_zh": "2025年12月13日（arXiv v1）",
+        "published_date_en": "Dec 13, 2025 (arXiv v1)",
+        "zhname": "跨形态学习起身：统一人形策略的零样本跌倒恢复",
+        "zh_title": "跨形态学习起身：统一人形策略的零样本跌倒恢复"
+      },
+      {
         "title": "Extreme Parkour with Legged Robots",
         "path": "papers/05_Locomotion/Extreme_Parkour_with_Legged_Robots/Extreme_Parkour_with_Legged_Robots.md",
         "url": "/papers/05_Locomotion/Extreme_Parkour_with_Legged_Robots/Extreme_Parkour_with_Legged_Robots.html",
