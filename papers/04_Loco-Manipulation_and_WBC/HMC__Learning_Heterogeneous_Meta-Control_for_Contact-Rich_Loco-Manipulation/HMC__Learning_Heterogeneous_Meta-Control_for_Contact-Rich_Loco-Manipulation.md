@@ -7,7 +7,7 @@ arxiv: "2511.14756"
 ---
 
 # HMC: Learning Heterogeneous Meta-Control for Contact-Rich Loco-Manipulation
-**纯位置控制器在接触/变负载下吃力，HMC 用「异构元控制」自适应地拼接多种控制模态（位置 / 阻抗 / 力-位混合）：HMC-Controller 在力矩空间混合不同控制档以服务遥操作与策略部署，HMC-Policy 用专家混合式路由统一异构控制器；在擦桌、开抽屉等接触丰富真机任务上相对基线提升超 50%**
+**HMC：面向接触丰富移动操作的异构元控制学习**
 
 > 📅 阅读日期: 2026-06-21
 >

@@ -7,7 +7,7 @@ arxiv: "2412.13211"
 ---
 
 # ManiSkill-HAB: A Benchmark for Low-Level Manipulation in Home Rearrangement Tasks
-**面向长时程导航、操作与重排的高质量基准 MS-HAB：GPU 加速的家庭助理基准（HAB）实现，带真实低层控制，相比此前「魔法抓取」实现提速 3 倍以上、显存更省；训练 RL 与 IL 基线，并用基于规则的轨迹过滤系统大规模生成可控演示数据**
+**ManiSkill-HAB：家居重排任务中低层操作的基准**
 
 > 📅 阅读日期: 2026-06-21
 >

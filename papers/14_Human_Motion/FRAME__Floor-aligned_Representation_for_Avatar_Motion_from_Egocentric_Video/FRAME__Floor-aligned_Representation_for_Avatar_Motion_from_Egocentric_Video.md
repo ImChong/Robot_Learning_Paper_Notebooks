@@ -7,7 +7,7 @@ arxiv: "2503.23094"
 ---
 
 # FRAME: Floor-aligned Representation for Avatar Motion from Egocentric Video
-**用头戴朝身立体相机做第一视角动捕对 VR/AR 至关重要，但有严重遮挡与真实标注稀缺；作者搭建带实时 6D 位姿跟踪的轻量 VR 采集装置建立大规模数据集，并提出 FRAME——几何一致地融合设备位姿与相机画面做身体姿态预测，在现代硬件上以 300 FPS 运行、达 SOTA 且消除以往伪影、尤其改善下肢预测**
+**FRAME：面向第一视角视频化身动作的地面对齐表示**
 
 > 📅 阅读日期: 2026-06-21
 >

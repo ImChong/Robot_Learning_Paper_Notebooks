@@ -8,7 +8,7 @@ paper_order: 293
 ---
 
 # Humanoid Locomotion as Next Token Prediction
-**人形行走即下一 token 预测（自回归传感运动轨迹 · Digit 实机）**
+**人形行走即下一 token 预测**
 
 > 📅 阅读日期: 2026-05-22
 >

@@ -7,7 +7,7 @@ category: "硬件设计"
 ---
 
 # DecARt Leg: Design and Evaluation of a Novel Humanoid Robot Leg with Decoupled Actuation for Agile Locomotion
-**DecART Leg：把电机全部搬到膝盖以上、用「准伸缩 + 多连杆踝」做解耦驱动，让一条「前向膝、长得像人」的腿也能拥有 Cassie 级敏捷度**
+**DecArt Leg：面向敏捷运动的解耦驱动新型人形机器人腿设计与评估**
 
 > 📅 阅读日期: 2026-06-26
 >

@@ -7,7 +7,7 @@ category: "Loco-Manipulation and WBC"
 ---
 
 # ZeroWBC: Learning Natural Visuomotor Humanoid Control Directly from Human Egocentric Video
-**ZeroWBC：把人类第一视角视频当训练集，省掉昂贵遥操作的人形全身控制**
+**'ZeroWBC：直接从人类第一人称视频中学出"零遥操作"的人形视触运动控制'**
 
 > 📅 阅读日期: 2026-04-26
 >

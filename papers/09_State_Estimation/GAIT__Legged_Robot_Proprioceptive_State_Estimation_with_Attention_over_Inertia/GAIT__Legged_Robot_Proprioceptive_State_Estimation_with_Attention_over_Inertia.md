@@ -7,7 +7,7 @@ category: "State Estimation"
 ---
 
 # GAIT: Legged Robot Proprioceptive State Estimation with Attention over Inertial-Leg Tokens
-**把 IMU 与各条腿的测量拆成独立 token，让注意力按「当前接触状态」自动给每路测量赋权，从而不靠显式接触检测就估出机身速度**
+**GAIT：用「惯性-腿部」分词与注意力做足式机器人本体感知状态估计**
 
 > 📅 阅读日期: 2026-07-04
 >

@@ -7,7 +7,7 @@ category: "Navigation"
 ---
 
 # FocusNav: Spatial Selective Attention with Waypoint Guidance for Humanoid Local Navigation
-**FocusNav：用「往哪走 → 看哪里」的路径点引导注意力，把人形局部导航做稳**
+**FocusNav：用路径点引导的空间选择性注意力做人形局部导航**
 
 > 📅 阅读日期: 2026-05-19
 >

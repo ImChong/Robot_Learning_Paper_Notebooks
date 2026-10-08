@@ -8,7 +8,7 @@ category: "Simulation Benchmark"
 
 # ComFree-Sim: A GPU-Parallelized Analytical Contact Physics Engine for Scalable Contact-Rich Robotics Simulation and Control
 
-**接触密集（contact-rich）的机器人任务（抓取、灵巧操作、行走）在仿真里一直很慢，根因是传统接触求解把所有接触点耦合成一个全局「互补问题（complementarity problem）」，难以并行。ComFree-Sim 换一条路：用「免互补（complementarity-free）」建模，把每个接触点的冲量写成闭式（closed-form）解——在库仑摩擦锥的对偶锥里做一次「阻抗式预测—修正」更新。由于接触在「接触对之间」解耦、又在「摩擦锥面之间」可分离，整个计算天然映射到 GPU 核函数，运行时随接触数量近线性扩展。引擎兼容 MuJoCo API，底层用 NVIDIA Warp 实现。**
+**ComFree-Sim：GPU 并行解析接触物理引擎**
 
 > 📅 阅读日期: 2026-06-10
 >

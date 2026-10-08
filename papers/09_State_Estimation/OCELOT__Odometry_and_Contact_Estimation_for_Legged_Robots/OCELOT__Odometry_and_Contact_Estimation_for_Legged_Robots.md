@@ -7,7 +7,7 @@ category: "State Estimation"
 ---
 
 # OCELOT: Odometry and Contact Estimation for Legged Robots
-**只用 IMU + 关节编码器 + 足底力传感器，用「双路接触检测 + 自适应协方差」把打滑测量自动降权，做出纯本体感知、抗打滑的腿部里程计**
+**OCELOT：面向足式机器人的纯本体感知腿部里程计与接触估计**
 
 > 📅 阅读日期: 2026-08-05
 >

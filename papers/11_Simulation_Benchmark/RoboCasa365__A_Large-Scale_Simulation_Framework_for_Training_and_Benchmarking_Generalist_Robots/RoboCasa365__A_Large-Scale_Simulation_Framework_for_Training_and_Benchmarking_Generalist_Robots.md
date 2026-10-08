@@ -7,7 +7,7 @@ arxiv: "2603.04356"
 ---
 
 # RoboCasa365: A Large-Scale Simulation Framework for Training and Benchmarking Generalist Robots
-**在 RoboCasa 之上大规模扩展资产、环境、任务与数据集：含 365 个日常任务、2500 个多样厨房场景、600+ 小时人类演示与 1600 小时合成演示，并提供系统化基准；支持单臂移动平台、人形、带臂四足等多种形态，面向多任务学习、机器人基础模型训练与终身学习**
+**RoboCasa365：训练与评测通才机器人的大规模仿真框架**
 
 > 📅 阅读日期: 2026-06-21
 >

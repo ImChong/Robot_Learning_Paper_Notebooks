@@ -7,7 +7,7 @@ arxiv: "2511.15200"
 ---
 
 # VIRAL: Visual Sim-to-Real at Scale for Humanoid Loco-Manipulation
-**完全在仿真里学、零样本上真机的视觉移动操作框架：特权 RL 教师用 delta 动作空间 + 参考态初始化学长时程任务，视觉学生经平铺渲染的大规模仿真用「在线 DAgger + 行为克隆」蒸馏；发现算力规模是关键（扩到 64 张 GPU 才稳），并用大规模视觉域随机化 + 手/相机的真实到仿真对齐弥合 sim-to-real；G1 上纯 RGB 连续操作至多 54 个周期，逼近专家遥操作**
+**VIRAL：大规模视觉 Sim-to-Real 的人形移动操作**
 
 > 📅 阅读日期: 2026-06-21
 >

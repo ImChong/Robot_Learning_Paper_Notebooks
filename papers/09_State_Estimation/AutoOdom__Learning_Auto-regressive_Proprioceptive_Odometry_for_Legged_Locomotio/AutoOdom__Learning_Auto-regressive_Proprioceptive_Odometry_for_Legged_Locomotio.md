@@ -7,7 +7,7 @@ category: "State Estimation"
 ---
 
 # AutoOdom: Learning Auto-regressive Proprioceptive Odometry for Legged Locomotion
-**用「仿真大数据 + 真机自回归微调」做出一个不依赖视觉、不靠解析滤波的纯学习式足式里程计**
+**AutoOdom：用自回归式纯本体感知里程计撑住足式机器人的长程定位**
 
 > 📅 阅读日期: 2026-05-19
 >

@@ -7,7 +7,7 @@ zhname: "BEHAVIOR Robot Suite：面向日常家务的实机全身操作框架"
 ---
 
 # BEHAVIOR Robot Suite: Streamlining Real-World Whole-Body Manipulation for Everyday Household Activities
-**BEHAVIOR Robot Suite：面向日常家务的实机全身操作框架（BRS）**
+**BEHAVIOR Robot Suite：面向日常家务的实机全身操作框架**
 
 > 📅 阅读日期: 2026-05-16
 >

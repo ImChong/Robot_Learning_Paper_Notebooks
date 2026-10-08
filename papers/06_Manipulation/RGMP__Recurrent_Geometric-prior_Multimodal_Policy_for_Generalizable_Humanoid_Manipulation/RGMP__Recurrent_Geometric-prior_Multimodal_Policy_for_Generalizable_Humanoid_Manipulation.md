@@ -7,7 +7,7 @@ arxiv: "2511.09141"
 ---
 
 # RGMP: Recurrent Geometric-prior Multimodal Policy for Generalizable Humanoid Robot Manipulation
-**用「几何先验技能选择器 + 自适应递归高斯网络」两段式框架破解人形操作的数据效率与几何泛化难题：给 VLM 挂低秩几何适配器按物体几何选参数化技能，再用递归空间建模 + 自适应衰减 + 高斯混合的运动合成网络，仅 40 条演示即在未见物体上达 87% 成功率、比 Diffusion Policy 省 5× 数据。**
+**RGMP：面向可泛化人形操作的递归几何先验多模态策略**
 
 > 📅 阅读日期: 2026-07-12
 >

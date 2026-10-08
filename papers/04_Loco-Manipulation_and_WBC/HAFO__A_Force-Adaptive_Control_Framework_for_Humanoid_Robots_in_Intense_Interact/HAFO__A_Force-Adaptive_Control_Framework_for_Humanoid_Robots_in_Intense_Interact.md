@@ -6,7 +6,7 @@ category: "Loco-Manipulation and WBC"
 ---
 
 # HAFO: A Force-Adaptive Control Framework for Humanoid Robots in Intense Interaction Environments
-**HAFO：用「双智能体强化学习」把下肢行走与上肢操作解耦协同训练，通过弹簧-阻尼虚拟外力显式建模 + 受约束残差动作空间 + 非对称 Actor-Critic，让人形机器人在负重、被牵拉、绳索悬吊等强力交互场景下用同一套策略稳健运动**
+**HAFO：面向强力交互环境的人形机器人力自适应控制框架**
 
 > 📅 阅读日期: 2026-07-31
 >

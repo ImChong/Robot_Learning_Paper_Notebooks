@@ -7,7 +7,7 @@ arxiv: "2511.16661"
 ---
 
 # Dexterity from Smart Lenses: Multi-Fingered Robot Manipulation with In-the-Wild Human Demonstrations
-**AINA 框架：用 Aria Gen 2 智能眼镜采集任何人、任何地点、任何环境的人类演示来学多指操作策略，无需机器人专属数据；借助眼镜的高清 RGB、机载 3D 头/手跟踪与立体深度，学一个基于 3D 点的策略，可直接部署（不需在线纠正、强化学习或仿真），对背景变化鲁棒，在 9 个日常操作任务上验证**
+**Dexterity from Smart Lenses：基于智能眼镜人类演示的多指操作**
 
 > 📅 阅读日期: 2026-06-21
 >

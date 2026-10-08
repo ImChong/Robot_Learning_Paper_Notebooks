@@ -7,7 +7,7 @@ category: "State Estimation"
 ---
 
 # PRIME: Physically-consistent Robotic Inertial and Motion Estimation for Legged and Humanoid Robots
-**把只测到「运动学」的机器人日志，用一次 MAP 优化重建成「满足刚体动力学、同时反解出接触力与惯性参数」的物理一致轨迹**
+**PRIME：面向足式与人形机器人的物理一致惯性与运动估计**
 
 > 📅 阅读日期: 2026-08-27
 >

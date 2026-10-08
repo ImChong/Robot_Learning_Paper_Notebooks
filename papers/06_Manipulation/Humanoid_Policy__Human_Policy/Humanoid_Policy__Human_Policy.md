@@ -7,7 +7,7 @@ arxiv: "2503.13441"
 ---
 
 # Humanoid Policy ~ Human Policy
-**把第一视角人类演示当作跨本体训练数据来学人形操作策略：构建与人形任务对齐的第一视角人类数据集 PH2D，提出 Human Action Transformer（HAT）统一人类与人形的状态-动作表示并支持可微重定向，再与机器人数据协同训练；相比只用机器人数据，人类数据显著提升泛化与鲁棒、并大幅提高数据采集效率**
+**Humanoid Policy ~ Human Policy：人形策略≈人类策略**
 
 > 📅 阅读日期: 2026-06-21
 >

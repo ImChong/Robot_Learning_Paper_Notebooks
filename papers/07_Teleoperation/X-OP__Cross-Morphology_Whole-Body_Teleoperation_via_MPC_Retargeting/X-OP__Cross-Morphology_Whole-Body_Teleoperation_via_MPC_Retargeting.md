@@ -7,7 +7,7 @@ arxiv: "2606.07934"
 ---
 
 # X-OP: Cross-Morphology Whole-Body Teleoperation via MPC Retargeting
-**单台 Apple Vision Pro 就能遥操作人形或轮式移动操作臂：中间加一层「基于 MPC 的重定向器」，把操作者意图和机器人动力学可行性一起优化，换形态无需重训底层策略**
+**X-OP：用 MPC 重定向做跨形态全身遥操作**
 
 > 📅 阅读日期: 2026-09-10
 >

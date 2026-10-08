@@ -8,7 +8,7 @@ category: "Simulation Benchmark"
 
 # Humanoid Everyday: A Comprehensive Robotic Dataset for Open-World Humanoid Manipulation
 
-**人形机器人要学会「日常」操作，缺的不是算法而是规模化、多样化、贴近真实生活的数据。已有机器人数据集大多只盯着「固定底座 + 单/双臂桌面抓放」，既不含腿（行走中操作）、也少有人机交互和富接触触觉，分布太窄。Humanoid Everyday 用 Unitree G1 / H1 真机采集了一个大规模、多模态、覆盖开放世界日常任务的人形操作数据集：1.03 万条轨迹、300 万+ 帧、260 个任务、7 大类（灵巧物体操作、人机交互、行走融合动作等），每条轨迹同步 RGB + 深度 + LiDAR + 触觉 + 自然语言标注，30 Hz 记录；并配一个云端评测平台让研究者一键上传策略、统一测分。数据集、采集代码、评测网站全部开源。**
+**Humanoid Everyday：开放世界人形操作综合数据集**
 
 > 📅 阅读日期: 2026-06-17
 >

@@ -7,7 +7,7 @@ demos: ["add"]
 ---
 
 # ADD: Adversarial Disentanglement and Distillation
-**对抗差分鉴别器：基于物理的运动模仿**
+**ADD：对抗差分判别器**
 
 > 📅 阅读日期: 2026-04-07
 >

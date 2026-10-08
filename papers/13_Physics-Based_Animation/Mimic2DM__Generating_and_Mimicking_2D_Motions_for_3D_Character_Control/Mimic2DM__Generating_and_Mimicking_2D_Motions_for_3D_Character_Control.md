@@ -7,7 +7,7 @@ category: "物理动画"
 ---
 
 # Mimic2DM: Generating and Mimicking 2D Motions for 3D Character Control
-**绕开"先 3D 重建再模仿"的老路 —— 直接用视频里的 2D 关键点轨迹，通过重投影误差训练物理仿真中的单视角 2D 追踪策略**
+**Mimic2DM：仅靠 2D 关键点轨迹学习物理仿真 3D 角色控制器**
 
 > 📅 阅读日期: 2026-05-20
 >

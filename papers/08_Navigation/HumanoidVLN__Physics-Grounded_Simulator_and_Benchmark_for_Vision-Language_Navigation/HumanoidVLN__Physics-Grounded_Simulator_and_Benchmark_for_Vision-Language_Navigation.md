@@ -7,7 +7,7 @@ arxiv: "2608.12860"
 ---
 
 # HumanoidVLN: A Physics-Grounded Simulator and Benchmark for Vision-Language Navigation Across Diverse Humanoid Embodiments
-**为「人形机器人视觉-语言导航（VLN）」建一套物理接地的仿真器与基准：把 VLN 智能体真正放进 Isaac Sim 的双足运动闭环里跑，覆盖多种人形本体、可插拔的 VLN 模型与运动控制器，用 933 条防碰撞参考轨迹衡量「语言指令 → 真实执行」的差距。**
+**HumanoidVLN：面向多样人形本体的物理接地视觉-语言导航仿真器与基准**
 
 > 📅 阅读日期: 2026-08-26
 >

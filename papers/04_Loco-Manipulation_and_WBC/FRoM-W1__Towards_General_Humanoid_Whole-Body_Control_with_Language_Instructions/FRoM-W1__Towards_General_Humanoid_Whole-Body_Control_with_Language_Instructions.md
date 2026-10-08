@@ -7,7 +7,7 @@ arxiv: "2601.12799"
 ---
 
 # FRoM-W1: Towards General Humanoid Whole-Body Control with Language Instructions
-**一个开源的「自然语言 → 人形全身动作」两段式框架：H-GPT 用思维链从语言生成人体动作、H-ACT 把动作重定向到机器人并用 RL 微调稳定执行，再配 sim-to-real 部署模块；在 Unitree H1/G1 上验证，并在 HumanML3D-X 基准上刷新动作生成表现**
+**FRoM-W1：面向语言指令的通用人形全身控制开源框架**
 
 > 📅 阅读日期: 2026-06-21
 >

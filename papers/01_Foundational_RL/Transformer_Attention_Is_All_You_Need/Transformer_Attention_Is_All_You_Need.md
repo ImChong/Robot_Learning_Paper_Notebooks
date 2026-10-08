@@ -8,7 +8,7 @@ demos: ["transformer"]
 ---
 
 # Attention Is All You Need (Transformer)
-**去掉循环和卷积，只用缩放点积注意力、多头、正弦位置编码和残差 + LayerNorm 搭成编码器—解码器；整句并行训练，WMT14 英→德 28.4 BLEU，后来成了 VLA、扩散策略、世界模型的共同骨架。**
+**Transformer：注意力就是你所需要的一切**
 
 > 📅 阅读日期: 2026-09-30
 >

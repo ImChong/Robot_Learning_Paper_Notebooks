@@ -7,7 +7,7 @@ category: "Loco-Manipulation and WBC"
 ---
 
 # SplitAdapter: Load-Aware Humanoid Loco-Manipulation via Factorized Adaptation
-**SplitAdapter：冻结预训练的搬箱策略，外挂「负载/物体」与「动力学」两个上下文编码器，用拆分世界模型目标 + GRL 对抗解耦 + 分层 FiLM 注入，把负载因素与机器人动力学失配解耦开，从而稳健搬运至多 6 kg 重物并零样本迁移到真机**
+**SplitAdapter：负载感知的人形 Loco-Manipulation 因子化适配**
 
 > 📅 阅读日期: 2026-06-14
 >

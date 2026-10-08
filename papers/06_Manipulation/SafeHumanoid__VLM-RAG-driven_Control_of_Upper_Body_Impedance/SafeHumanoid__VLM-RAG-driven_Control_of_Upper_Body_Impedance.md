@@ -8,7 +8,7 @@ arxiv: "2511.23300"
 ---
 
 # SafeHumanoid: VLM-RAG-driven Control of Upper Body Impedance for Humanoid Robot
-**用第一视角 VLM 理解场景语义 + RAG 检索预验证模板，把「语义」翻译成关节阻抗参数，让人形上身在有人在场时自动变「软、慢」以保障安全**
+**SafeHumanoid：用 VLM-RAG 驱动人形上身阻抗控制**
 
 > 📅 阅读日期: 2026-06-22
 >

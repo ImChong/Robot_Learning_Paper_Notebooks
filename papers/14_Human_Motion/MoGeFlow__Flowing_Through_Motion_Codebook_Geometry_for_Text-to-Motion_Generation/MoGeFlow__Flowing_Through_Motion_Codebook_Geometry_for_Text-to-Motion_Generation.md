@@ -6,7 +6,7 @@ category: "Human Motion"
 ---
 
 # MoGeFlow: Flowing Through Motion Codebook Geometry for Text-to-Motion Generation
-**发现「运动码本并非无序标签、而是携带局部运动学几何」，于是把离散 token 帧重写成分组连续嵌入、用文本条件流匹配在码本几何上生成、再投影回合法码本条目——兼得离散分词的稳与连续生成的顺**
+**MoGeFlow：在运动码本几何上做流匹配的文本到动作生成**
 
 > 📅 阅读日期: 2026-08-10
 >

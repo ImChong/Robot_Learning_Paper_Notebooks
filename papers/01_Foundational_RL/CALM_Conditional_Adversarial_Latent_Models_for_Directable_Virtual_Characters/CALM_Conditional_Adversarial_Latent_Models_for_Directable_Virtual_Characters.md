@@ -8,7 +8,7 @@ demos: ["calm"]
 ---
 
 # CALM: Conditional Adversarial Latent Models for Directable Virtual Characters
-**条件对抗潜变量模型：可控虚拟角色**
+**CALM：面向可控虚拟角色的条件对抗潜变量模型**
 
 > 📅 阅读日期: 2026-04-07
 >

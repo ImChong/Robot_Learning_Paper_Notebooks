@@ -8,7 +8,7 @@ category: "Sim-to-Real"
 
 # Towards Bridging the Gap: Systematic Sim-to-Real Transfer for Diverse Legged Robots（PACE）
 
-**不靠"暴力域随机化"，而是把每台机器人的执行器/关节动力学和电机能耗都用第一性原理"量准"——一套系统化辨识流水线（PACE）让同一个 RL 策略零样本跑通 3 台主力 + 10 台扩展共 13 台腿足机器人，并把 ANYmal 的整机 Cost of Transport 降低 32%**
+**PACE：面向多样腿足机器人的系统化 Sim-to-Real 迁移**
 
 > 📅 阅读日期: 2026-06-08
 >

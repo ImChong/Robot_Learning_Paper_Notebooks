@@ -7,7 +7,7 @@ arxiv: "2608.18948"
 ---
 
 # RoboEdit: Turning Human Manipulation Videos into Scalable Robot Experience
-**一套「人类→机器人」视频改写工具：把海量无标注的人手操作视频，改写成动作一致、物理可信、并带对齐 3D 手部状态的机器人视频；配自动重建-重定向流水线 RoboEdit-ADC 造出 RoboEdit-14M（174K 对齐视频对 / 14M 帧 / 7 种机器人本体），核心引擎 RoboEdit-Trans 做跨本体外观+运动改写并解码逐帧手部状态，为通用机器人学习提供可规模化的视觉与 3D 运动监督。**
+**RoboEdit：把人类操作视频改写成可规模化的机器人经验**
 
 > 📅 阅读日期: 2026-08-24
 >

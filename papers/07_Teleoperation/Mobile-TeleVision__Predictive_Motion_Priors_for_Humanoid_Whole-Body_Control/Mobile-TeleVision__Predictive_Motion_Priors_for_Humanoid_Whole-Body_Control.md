@@ -7,7 +7,7 @@ arxiv: "2412.07773"
 ---
 
 # Mobile-TeleVision: Predictive Motion Priors for Humanoid Whole-Body Control
-**把上身控制与行走解耦：上身用逆运动学 + 动作重定向做精确操作，RL 专注鲁棒下身行走；提出用条件变分自编码器（CVAE）训练的预测式运动先验 PMP 来表示上身动作，并让行走策略以该上身表征为条件，从而在操作与行走时都保持鲁棒；CVAE 特征对稳定性至关重要，在精确操作上显著优于纯 RL 全身控制**
+**Mobile-TeleVision：面向人形全身控制的预测式运动先验**
 
 > 📅 阅读日期: 2026-06-21
 >

@@ -7,7 +7,7 @@ category: "物理动画"
 ---
 
 # Spherical Latent Motion Prior for Physics-Based Simulated Humanoid Control
-**用「专家跟踪 → 蒸馏进单位球面隐空间 + 判别器引导的语义一致性」造出一个既保真又能稳定随机采样的运动先验，让物理仿真人形在稀疏规则奖励下涌现出类人格斗行为**
+**SLMP：面向物理仿真人形控制的球面隐空间运动先验**
 
 > 📅 阅读日期: 2026-09-16
 >

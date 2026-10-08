@@ -7,7 +7,7 @@ arxiv: "2511.22963"
 ---
 
 # Commanding Humanoid by Free-form Language: A Large Language Action Model with Unified Motion Vocabulary
-**Humanoid-LLA：针对「成对语言-动作数据稀缺」与「物理不稳定」两大难题，学习一个统一的人-人形动作词表把语言语义与物理可控落地相连，并用两阶段微调（先有监督的动作思维链、再以物理反馈引导的强化学习）实现跨本体泛化，对新语言指令与多样动作生成都保持高物理保真**
+**Humanoid-LLA：用统一动作词表的大语言-动作模型以自由语言指挥人形**
 
 > 📅 阅读日期: 2026-06-21
 >

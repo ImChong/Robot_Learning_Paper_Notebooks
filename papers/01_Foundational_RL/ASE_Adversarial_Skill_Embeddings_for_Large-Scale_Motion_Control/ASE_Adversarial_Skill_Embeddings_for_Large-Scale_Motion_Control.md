@@ -7,7 +7,7 @@ demos: ["ase"]
 ---
 
 # ASE: Adversarial Skill Embeddings for Large-Scale Motion Control
-**大规模可复用对抗技能嵌入：物理仿真角色**
+**ASE：面向大规模运动控制的对抗技能嵌入**
 
 > 📅 阅读日期: 2026-04-07
 >

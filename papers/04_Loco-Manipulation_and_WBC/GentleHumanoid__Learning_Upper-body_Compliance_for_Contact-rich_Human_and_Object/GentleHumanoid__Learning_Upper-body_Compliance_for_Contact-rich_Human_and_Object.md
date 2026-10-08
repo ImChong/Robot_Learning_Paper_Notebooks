@@ -9,7 +9,7 @@ demos: ["gentle"]
 ---
 
 # GentleHumanoid: Learning Upper-body Compliance for Contact-rich Human and Object Interaction
-**把阻抗模型写进全身动作跟踪的参考：肩、肘（腕）、手各当一个虚拟质量，由朝目标动作的弹簧阻尼和「造出来的」交互弹簧共同推动，积分出柔顺参考让 RL 去跟；驱动力按可调的安全阈值（5–15 N）截断，让 G1 抱人、扶人、托气球时既不硬顶也不失力**
+**GentleHumanoid：面向密集接触人机与物体交互的上半身柔顺学习**
 
 > 📅 阅读日期: 2026-04-19（2026-09-24 扩充：对照全文与开源训练 / 部署代码重写，新增七幕讲解动画与具体实例）
 >

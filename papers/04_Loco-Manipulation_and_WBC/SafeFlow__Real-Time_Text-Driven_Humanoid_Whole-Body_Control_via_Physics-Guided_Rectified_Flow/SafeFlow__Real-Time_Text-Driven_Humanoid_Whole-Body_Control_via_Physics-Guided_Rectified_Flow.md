@@ -7,7 +7,7 @@ arxiv: "2603.23983"
 ---
 
 # SafeFlow: Real-Time Text-Driven Humanoid Whole-Body Control via Physics-Guided Rectified Flow and Selective Safety Gating
-**文本驱动的人形全身控制框架：高层在 VAE 隐空间用「物理引导整流流」生成可被真机执行的运动、再用 Reflow 减少函数评估次数做到实时；外加「三段式安全门」——文本嵌入空间 Mahalanobis 分数识别语义 OOD、方向敏感度差异过滤不稳定生成、最后强制关节/速度等硬运动学约束，再交给低层跟踪器**
+**SafeFlow：物理引导整流流与安全门控的实时文本驱动人形全身控制**
 
 > 📅 阅读日期: 2026-06-21
 >

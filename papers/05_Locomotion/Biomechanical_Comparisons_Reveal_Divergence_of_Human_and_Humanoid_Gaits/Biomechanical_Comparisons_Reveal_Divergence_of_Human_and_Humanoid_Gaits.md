@@ -7,7 +7,7 @@ category: "Locomotion"
 ---
 
 # Biomechanical Comparisons Reveal Divergence of Human and Humanoid Gaits
-**一个把"人形机器人到底走得多像人"量化下来的生物力学评估框架（GDAF）+ Unitree G1 全速段步态数据集**
+**用生物力学定量度量人形步态：GDAF 框架与 28 速 G1 数据集**
 
 > 📅 阅读日期: 2026-05-15
 >

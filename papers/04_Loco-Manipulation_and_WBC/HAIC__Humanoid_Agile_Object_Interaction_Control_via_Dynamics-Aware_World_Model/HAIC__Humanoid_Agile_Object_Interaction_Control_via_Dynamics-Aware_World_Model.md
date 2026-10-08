@@ -7,7 +7,7 @@ category: "Loco-Manipulation and WBC"
 ---
 
 # HAIC: Humanoid Agile Object Interaction Control via Dynamics-Aware World Model
-**HAIC：用本体感觉历史预测物体高阶状态，构建动态占据图驱动敏捷物体交互**
+**HAIC：通过动力学感知世界模型实现人形机器人敏捷物体交互控制**
 
 > 📅 阅读日期: 2026-04-29
 >

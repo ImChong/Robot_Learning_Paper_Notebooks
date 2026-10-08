@@ -9,7 +9,7 @@ demos: ["pbfm"]
 ---
 
 # Perceptive Behavior Foundation Model: Adapting Human Motion Priors to Robot-Centric Terrain
-**用户给的平地人类动作原样当命令，机器人用自己的高度图补上落脚点、抬脚高度、身体高度和接触时机：离线 TCRS 把平地片段改写成贴合地形的参考只用来当监督，盲教师跟踪它，再经「目标系动作对齐」蒸馏进一个带恒等门控地形残差的视觉学生**
+**Perceptive BFM：让人类动作先验适应机器人所处地形的感知行为基础模型**
 
 > 📅 阅读日期: 2026-09-24
 >

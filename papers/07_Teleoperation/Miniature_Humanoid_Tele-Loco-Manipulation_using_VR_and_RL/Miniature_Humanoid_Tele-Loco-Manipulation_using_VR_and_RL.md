@@ -7,7 +7,7 @@ arxiv: "2607.20399"
 ---
 
 # Towards Miniature Humanoid Tele-Loco-Manipulation Using Virtual Reality and Reinforcement Learning
-**把「VR 上肢遥操作」与「RL 下肢平衡行走」拼成一套完整的全身远程移动操作栈，并针对缺少仿生结构的小型人形（ROBOTIS OP3 / DYNAMIXEL 舵机）落地：操作者戴 VR 头显直接映射手臂，机器人下半身用强化学习自主维持平衡与行走，二者解耦，实现「一边走一边搬」。**
+**面向小型人形的远程移动操作：VR 上肢遥操作 + RL 下肢行走**
 
 > 📅 阅读日期: 2026-08-03
 >

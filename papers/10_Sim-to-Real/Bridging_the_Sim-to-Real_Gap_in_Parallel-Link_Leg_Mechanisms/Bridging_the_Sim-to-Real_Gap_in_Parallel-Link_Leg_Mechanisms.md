@@ -7,7 +7,7 @@ category: "Sim-to-Real"
 ---
 
 # Bridging the Sim-to-Real Gap in Parallel-Link Leg Mechanisms via Simulator-Side Dynamics Normalization
-**并联腿在仿真里被简化成「串联树」后丢了执行器耦合惯量与连杆质量——本文不改真机、只在仿真侧做动力学归一化（S3N），用辨识出的硬件参数把串联仿真器补成等效并联动力学，从而缩小 sim-to-real 差距**
+**S3N：面向并联腿机构 Sim-to-Real 的仿真侧动力学归一化**
 
 > 📅 阅读日期: 2026-08-17
 >

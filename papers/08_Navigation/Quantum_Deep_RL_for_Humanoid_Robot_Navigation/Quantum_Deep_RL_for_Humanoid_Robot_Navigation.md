@@ -7,7 +7,7 @@ category: "Navigation"
 ---
 
 # Quantum deep reinforcement learning for humanoid robot navigation task
-**量子深度强化学习做人形导航：把 SAC 的策略网络换成「变分量子电路」，直面高维连续控制**
+**量子深度强化学习做人形机器人导航：用变分量子 SAC 直接控制高维连续动作**
 
 > 📅 阅读日期: 2026-06-06
 >

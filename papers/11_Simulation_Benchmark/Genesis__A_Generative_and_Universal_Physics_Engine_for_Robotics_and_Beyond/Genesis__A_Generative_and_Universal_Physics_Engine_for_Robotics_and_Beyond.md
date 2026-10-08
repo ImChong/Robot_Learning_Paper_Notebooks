@@ -6,7 +6,7 @@ category: "Simulation Benchmark"
 ---
 
 # Genesis: A Generative and Universal Physics Engine for Robotics and Beyond
-**纯 Python 接口、可跑在 CUDA / ROCm / Metal / CPU 上的多物理仿真平台：刚体、FEM、MPM、SPH、PBD、稳定流体等求解器共享一个场景，通过三种可切换的耦合器互相作用，底层用 Taichi 分支改造的 Quadrants 编译器把 Python kernel 编译到各类 GPU；2026 年的 Genesis World 1.0 又加入路径追踪渲染器 Nyx，并把仿真定位成「评测基础模型的引擎」，而不只是数据生成器。**
+**Genesis：面向机器人及更广领域的生成式通用物理引擎**
 
 > 📅 总结日期: 2026-10-03
 >

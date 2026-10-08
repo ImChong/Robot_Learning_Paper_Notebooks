@@ -6,7 +6,7 @@ category: "Human Motion"
 ---
 
 # ARDY: Autoregressive Diffusion with Hybrid Representation for Interactive Human Motion Generation
-**用「显式根特征 + 隐式身体嵌入」的混合表征 + 两阶段自回归扩散去噪器，做一个能在线接收文本提示与灵活运动学约束、平均延迟仅 33ms 的实时流式人体动作生成框架**
+**ARDY：自回归扩散 + 混合表征，做可实时交互的人体动作生成**
 
 > 📅 阅读日期: 2026-07-30
 >

@@ -8,7 +8,7 @@ arxiv: "2510.22336"
 ---
 
 # Toward Humanoid Brain-Body Co-design: Joint Optimization of Control and Morphology for Fall Recovery
-**别只调控制器：把「大脑（策略）」和「身体（形态）」放进同一个迭代循环里一起优化——用跨设计共享策略 + 形态搜索 + 优先级缓冲区，让人形机器人在「摔倒恢复」任务上同时进化控制与机械结构。**
+**RoboCraft：面向摔倒恢复的人形机器人脑-体协同设计**
 
 > 📅 阅读日期: 2026-07-28
 >

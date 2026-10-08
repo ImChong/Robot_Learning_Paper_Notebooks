@@ -7,7 +7,7 @@ category: "Manipulation"
 ---
 
 # HumanoidVLM: Vision-Language-Guided Impedance Control for Contact-Rich Humanoid Manipulation
-**给 Unitree G1 一张第一视角图，VLM + FAISS-RAG 直接吐出"该用多硬的手"与"该怎么握"**
+**HumanoidVLM：视觉语言引导的人形阻抗控制**
 
 > 📅 阅读日期: 2026-05-24
 >

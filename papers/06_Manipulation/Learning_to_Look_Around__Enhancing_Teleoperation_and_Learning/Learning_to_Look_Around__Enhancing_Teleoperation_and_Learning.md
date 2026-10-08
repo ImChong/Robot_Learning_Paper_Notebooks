@@ -7,7 +7,7 @@ arxiv: "2411.00704"
 ---
 
 # Learning to Look Around: Enhancing Teleoperation and Learning with a Human-like Actuated Neck
-**一套集成 5 自由度可动颈的遥操作系统，复刻自然人类头部运动与感知：支持窥视、倾头等行为给操作者更好的环境视角、降低远程操作认知负荷；在七个遥操作任务上展示收益，并研究可动颈如何通过增强空间感知、减少分布偏移来改善模仿学习的自主策略训练**
+**Learning to Look Around：用拟人可动颈增强遥操作与学习**
 
 > 📅 阅读日期: 2026-06-21
 >

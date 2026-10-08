@@ -6,7 +6,7 @@ category: "Manipulation"
 ---
 
 # DexUMI: Using Human Hand as the Universal Manipulation Interface for Dexterous Manipulation
-**把 UMI「手持夹爪采数据」的思路搬到多指灵巧手：为每款目标机器人手优化一副可穿戴外骨骼（硬件适配，抹平运动学差距），再用 SAM2 分割 + ProPainter 补背景 + 真手回放合成把视频里的人手换成机器人手（软件适配，抹平视觉差距），不用机器人就能采到可直接训练扩散策略的灵巧操作数据**
+**DexUMI：以人手作为灵巧操作的通用操作接口**
 
 > 📅 阅读日期: 2026-09-30
 >

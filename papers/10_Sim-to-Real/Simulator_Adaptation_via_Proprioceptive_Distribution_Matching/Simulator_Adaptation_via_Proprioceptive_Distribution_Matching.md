@@ -7,7 +7,7 @@ category: "Sim-to-Real"
 ---
 
 # Simulator Adaptation for Sim-to-Real Learning of Legged Locomotion via Proprioceptive Distribution Matching
-**不修策略、改仿真器：把真机与仿真的「关节观测/动作分布」对齐，用不到 5 分钟真机数据辨识仿真参数，显著缩小 sim-to-real 漂移**
+**用本体感知分布匹配做仿真器自适应的腿足 Sim-to-Real 方法**
 
 > 📅 阅读日期: 2026-06-26
 >

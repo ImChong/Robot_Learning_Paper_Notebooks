@@ -7,7 +7,7 @@ category: "State Estimation"
 ---
 
 # The Invariant Extended Kalman Filter as a Stable Observer
-**把不变扩展卡尔曼滤波（InEKF）当成确定性非线性观测器来分析：找出一类「误差自治、对数线性」的系统，并证明在这类系统上 InEKF 具有局部收敛保证——这是后来 Contact-Aided InEKF 等足式机器人状态估计器的理论基石。**
+**不变扩展卡尔曼滤波作为稳定观测器**
 
 > 📅 阅读日期: 2026-06-25
 >

@@ -7,7 +7,7 @@ arxiv: "2511.00041"
 ---
 
 # Endowing GPT-4 with a Humanoid Body: Building the Bridge Between Off-the-Shelf VLMs and the Physical World
-**BiBo 系统让 GPT-4 这类视觉语言模型直接控制人形：不靠海量训练数据，而是借 VLM 的强开放世界泛化降低数据需求；由「具身指令编译器」把高层用户命令翻译成低层运动参数，再由「基于扩散的运动执行器」生成对环境反馈自适应的拟人动作；开放环境交互成功率 90.2%，文本引导动作执行精度较此前方法提升 16.3%**
+**给 GPT-4 一具人形身体：在现成 VLM 与物理世界间架桥**
 
 > 📅 阅读日期: 2026-06-21
 >

@@ -7,7 +7,7 @@ arxiv: "2512.19043"
 ---
 
 # EGM: Efficiently Learning General Motion Tracking Policy for High Dynamic Humanoid Whole-Body Control
-**针对通用动作跟踪「数据/训练低效、且高动态动作跟不好」的痛点：用基于分箱的跨动作课程自适应采样按跟踪误差动态调采样、用「复合解耦专家混合（CDMoE）」分上/下半身并解耦正交与共享专家、再用三阶段课程逐步抗扰——仅 4.08 小时数据训练即可泛化到 49.25 小时测试动作，常规与高动态任务均超基线**
+**EGM：高效学习高动态人形全身控制的通用动作跟踪策略**
 
 > 📅 阅读日期: 2026-06-21
 >

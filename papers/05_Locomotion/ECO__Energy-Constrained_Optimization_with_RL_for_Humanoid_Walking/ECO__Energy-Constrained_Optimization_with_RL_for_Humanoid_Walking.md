@@ -7,7 +7,7 @@ category: "Locomotion"
 ---
 
 # ECO: Energy-Constrained Optimization with Reinforcement Learning for Humanoid Walking
-**别再把能耗塞进奖励里调权重了：ECO 把电机能耗和步态对称性写成「不等式约束」，用 PPO-Lagrangian 边训练边把能耗压到给定预算，学出稳定又省电的人形行走**
+**ECO：把能耗写成硬约束的人形节能行走强化学习框架**
 
 > 📅 阅读日期: 2026-09-19
 >

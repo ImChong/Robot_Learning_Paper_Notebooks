@@ -7,7 +7,7 @@ category: "Locomotion"
 ---
 
 # Tac4Loco: Learning Spatiotemporal Plantar Pressure Representations for Humanoid Locomotion
-**给人形机器人「装上脚感」：用多阵列足底压力做直接反馈，学出对倾斜/部分/非对称支撑鲁棒的行走策略**
+**Tac4Loco：把足底压力当直接反馈的人形鲁棒行走**
 
 > 📅 阅读日期: 2026-08-23
 >

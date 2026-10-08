@@ -7,7 +7,7 @@ arxiv: "2608.25642"
 ---
 
 # EgoNav: Bridging Learned Waypoints and Geometry-Aware Local Control for Robust Indoor Navigation
-**学习式路点预测器（如 GNM）常给出「违反几何约束、偏离全局路径」的目标点；EgoNav 用一套三段式分层系统——视觉地点识别取子目标 → 学习式路点 + 几何精修 → 自适应局部规划器（Falco）——把「学出来的意图」和「几何上安全的落地」缝合起来，在仿真和真机人形上都显著提升成功率与路径效率。**
+**EgoNav：从人类数据学习人形导航**
 
 > 📅 阅读日期: 2026-09-06
 >

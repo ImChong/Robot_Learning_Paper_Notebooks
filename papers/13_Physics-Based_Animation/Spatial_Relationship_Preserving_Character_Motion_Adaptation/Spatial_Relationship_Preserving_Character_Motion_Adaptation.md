@@ -6,7 +6,7 @@ category: "Physics-Based Animation"
 ---
 
 # Spatial Relationship Preserving Character Motion Adaptation
-**面向「身体部位/多角色/角色-环境之间紧密交互」的运动编辑与重定向（跳舞、摔跤、剑斗、钻进车里等），提出用「交互网格（interaction mesh）」结构表示空间关系：在编辑各帧时最小化交互网格的局部形变，从而保持这些紧密空间关系、同时减少不当穿插；该表示通用，可统一处理单/多角色的身体部位与环境物体（SIGGRAPH 2010 / ACM TOG）**
+**保持空间关系的角色运动适配**
 
 > 📅 阅读日期: 2026-06-21
 >

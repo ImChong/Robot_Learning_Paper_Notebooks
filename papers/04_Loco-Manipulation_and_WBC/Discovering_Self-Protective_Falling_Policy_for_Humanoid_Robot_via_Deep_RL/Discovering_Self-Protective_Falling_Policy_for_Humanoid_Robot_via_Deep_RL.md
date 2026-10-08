@@ -7,7 +7,7 @@ arxiv: "2512.01336"
 ---
 
 # Discovering Self-Protective Falling Policy for Humanoid Robot via Deep Reinforcement Learning
-**与其用难以覆盖多样跌倒、且易引入不当人类先验的控制法，不如用大规模深度强化学习 + 课程学习，让人形自己「探索」出贴合自身形态的护身跌倒策略——精心设计奖励与域多样化课程后，智能体发现「三角」支撑结构能显著降低刚性机体的跌落损伤，并成功迁移真机**
+**用深度强化学习发现人形机器人的自保护跌落策略**
 
 > 📅 阅读日期: 2026-06-21
 >

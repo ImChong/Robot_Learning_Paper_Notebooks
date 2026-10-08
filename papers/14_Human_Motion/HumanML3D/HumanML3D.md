@@ -8,7 +8,7 @@ demos: ["humanml3d"]
 ---
 
 # Generating Diverse and Natural 3D Human Motions from Text
-**HumanML3D：一套 14,616 段动作 / 44,970 条描述的数据集，一个「先采长度、再用时序 VAE 在 snippet code 上逐段生成」的两阶段方法，以及一套沿用至今的文本—动作评测器**
+**HumanML3D：从文本生成多样且自然的 3D 人体动作**
 
 > 📅 阅读日期: 2026-04-21（2026-10-03 扩充：对照论文、补充材料与两个官方仓库重写，新增九幕讲解动画、配音视频、具体实例与源码对照）
 >

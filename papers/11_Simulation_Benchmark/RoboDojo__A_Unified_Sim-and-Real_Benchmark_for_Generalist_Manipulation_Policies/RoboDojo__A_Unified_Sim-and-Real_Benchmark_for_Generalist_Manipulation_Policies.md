@@ -7,7 +7,7 @@ category: "Simulation Benchmark"
 ---
 
 # RoboDojo: A Unified Sim-and-Real Benchmark for Comprehensive Evaluation of Generalist Robot Manipulation Policies
-**把通用操作策略放到「42 个仿真任务 + 18 个真机任务」的统一基准上，沿泛化 / 记忆 / 精度 / 长时程 / 开放语义五个维度做「一次接入、处处评测」的可复现测评**
+**RoboDojo：统一「仿真+真机」评测通用机器人操作策略的基准**
 
 > 📅 阅读日期: 2026-08-07
 >

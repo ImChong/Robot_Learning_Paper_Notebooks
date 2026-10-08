@@ -7,7 +7,7 @@ category: "Manipulation"
 ---
 
 # cuRoboV2: Dynamics-Aware Motion Generation with Depth-Fused Distance Fields for High-DoF Robots
-**把可执行的轨迹、密集的距离场感知与高自由度全身计算统一进一个 GPU 原生框架**
+**cuRoboV2：基于深度融合距离场的高自由度机器人动力学感知运动生成**
 
 > 📅 阅读日期: 2026-05-19
 >

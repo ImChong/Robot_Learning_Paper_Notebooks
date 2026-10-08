@@ -7,7 +7,7 @@ category: "Teleoperation"
 ---
 
 # SEW-Mimic: A Closed-Form Geometric Retargeting Solver for Upper Body Humanoid Robot Teleoperation
-**把"人到机器人手臂的重定向"重写成肩-肘-腕(SEW)的方向对齐问题，给出闭式几何解，CPU 上 3 kHz 实时跑还附带最优性保证**
+**SEW-Mimic：用肩-肘-腕几何对齐给出有最优性保证的闭式上肢重定向解**
 
 > 📅 阅读日期: 2026-05-25
 >

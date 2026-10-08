@@ -8,7 +8,7 @@ arxiv: "2606.13601"
 ---
 
 # MCR-Bionic Hand: Anatomical Structural Priors for Dexterous Manipulation
-**把「灵巧」从控制器搬进机械结构：用解剖级的骨-韧带-腱-肌肉布局，让低维输入经由结构本身自动生成合理抓握，再由肌肉在此默认状态上做精细调制——实现无外部传感、局部液压驱动的仿生手。**
+**MCR-Bionic Hand：面向灵巧操作的解剖学结构先验仿生手**
 
 > 📅 阅读日期: 2026-07-18
 >

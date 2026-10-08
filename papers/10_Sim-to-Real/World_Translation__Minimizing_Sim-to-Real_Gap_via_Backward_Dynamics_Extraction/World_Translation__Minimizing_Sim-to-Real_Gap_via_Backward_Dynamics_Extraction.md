@@ -7,7 +7,7 @@ arxiv: "2607.18154"
 ---
 
 # World Translation: Minimizing Sim-to-Real Gap with Backward Dynamics Extraction and Unpaired Domain Translation
-**不再「从历史观测正向预测下一步」，而是「从一次真实转移里反向读出那些看不见的动力学信息」，再把这段信息当成风格迁移问题、在仿真域与真实域之间做非配对翻译——从而绕开 real-to-sim 学习动力学模型时的「部分可观」难题，把仿真训练的策略更准地迁到真机。**
+**World Translation：最小化 Sim-to-Real 差距**
 
 > 📅 总结日期: 2026-09-13
 >

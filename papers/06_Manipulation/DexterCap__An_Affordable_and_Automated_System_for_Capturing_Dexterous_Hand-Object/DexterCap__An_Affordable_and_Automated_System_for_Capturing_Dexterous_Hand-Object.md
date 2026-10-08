@@ -7,7 +7,7 @@ category: "Manipulation"
 ---
 
 # DexterCap: An Affordable and Automated System for Capturing Dexterous Hand-Object Manipulation
-**一套廉价的光学动捕系统：靠密集「字符编码」标记贴片在手指严重自遮挡下也能稳定追踪，再用自动化流水线重建出 MANO 手参数与物体位姿，并配套发布精细手-物交互数据集 DexterHand**
+**DexterCap：低成本自动化灵巧手-物交互数据采集系统**
 
 > 📅 阅读日期: 2026-06-15
 >

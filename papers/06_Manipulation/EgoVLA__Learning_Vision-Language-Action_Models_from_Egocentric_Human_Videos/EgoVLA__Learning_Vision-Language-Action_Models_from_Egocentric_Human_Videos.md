@@ -7,7 +7,7 @@ arxiv: "2507.12440"
 ---
 
 # EgoVLA: Learning Vision-Language-Action Models from Egocentric Human Videos
-**用海量第一视角人类操作视频预训练一个 VLA 模型（预测人手手腕位姿 + MANO 手型），再经逆运动学 / 重定向映射成机器人动作，最后用少量真机演示微调得到人形双手操作策略**
+**EgoVLA：从第一视角人类视频学习视觉-语言-动作模型**
 
 > 📅 阅读日期: 2026-07-01
 >

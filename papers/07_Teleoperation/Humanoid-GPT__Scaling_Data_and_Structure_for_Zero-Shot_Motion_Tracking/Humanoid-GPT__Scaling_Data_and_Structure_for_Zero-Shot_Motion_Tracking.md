@@ -7,7 +7,7 @@ arxiv: "2606.03985"
 ---
 
 # Humanoid-GPT: Scaling Data and Structure for Zero-Shot Motion Tracking
-**把「动作跟踪」当成语言建模来做：用带因果注意力的 GPT 式 Transformer，在 20 亿帧重定向动作语料上预训练一个统一策略，直接输出各关节 PD 目标；单模型既能跟高动态动作，又能零样本泛化到没见过的动作与控制任务，为在线 MoCap 遥操作提供底座。**
+**Humanoid-GPT：用数据与结构的规模化实现零样本动作跟踪**
 
 > 📅 阅读日期: 2026-07-24
 >

@@ -8,7 +8,7 @@ arxiv: "2607.14487"
 ---
 
 # MIDAS Hand: Modular low-Impedance Direct-drive Anthropomorphic Sensing Hand
-**别再为「灵巧」堆昂贵的高减速比传动：用「直驱 + 低反驱扭矩 + 分布式触觉」造一只人手尺寸、3D 打印、BoM < 3000 美元、3 小时可装、软件栈全开源的仿人灵巧手，让接触丰富的操作研究人人可复现。**
+**MIDAS Hand：模块化低阻抗直驱仿人触觉灵巧手**
 
 > 📅 阅读日期: 2026-08-08
 >

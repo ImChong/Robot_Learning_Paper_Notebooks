@@ -7,7 +7,7 @@ category: "硬件设计"
 ---
 
 # Antagonistic Bowden-Cable Actuation of a Lightweight Robotic Hand
-**把电机搬到躯干、用拮抗式 Bowden 缆绳远程驱动手指 —— KAIST 给"负载受限的人形"一个 236 g 手掌就能 >18 N 指尖力、抬起百倍自重的方案**
+**拮抗式 Bowden 缆绳驱动的轻量化机器手：面向负载受限人形的灵巧操作**
 
 > 📅 阅读日期: 2026-05-20
 >

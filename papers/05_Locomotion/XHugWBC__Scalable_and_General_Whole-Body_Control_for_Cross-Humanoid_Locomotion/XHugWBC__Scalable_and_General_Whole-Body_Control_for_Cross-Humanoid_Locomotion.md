@@ -7,7 +7,7 @@ category: "Locomotion"
 ---
 
 # Scalable and General Whole-Body Control for Cross-Humanoid Locomotion (XHugWBC)
-**用「物理一致的形态随机化 + 语义对齐 obs/action + 形态-动力学感知策略」一次性训出一个通用策略，零样本跑通 12 个仿真人形与 7 台真机，包括实时全身遥操作**
+**XHugWBC：跨形态人形行走的规模化通用全身控制**
 
 > 📅 阅读日期: 2026-05-28
 >

@@ -7,7 +7,7 @@ category: "Manipulation"
 ---
 
 # HumDex: Humanoid Dexterous Manipulation Made Easy
-**用 IMU 全身动捕 + 学习式手部重定向，把人形灵巧操作的数据采集门槛打下来**
+**HumDex：让人形灵巧操作变简单**
 
 > 📅 阅读日期: 2026-05-16
 >

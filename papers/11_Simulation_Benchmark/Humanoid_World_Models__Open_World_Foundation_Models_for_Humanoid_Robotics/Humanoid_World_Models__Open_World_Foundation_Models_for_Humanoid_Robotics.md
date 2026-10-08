@@ -7,7 +7,7 @@ arxiv: "2506.01182"
 ---
 
 # Humanoid World Models: Open World Foundation Models for Humanoid Robotics
-**轻量开源的人形世界模型：以人形控制输入为条件预测未来第一视角视频，训练两类生成模型（掩码 Transformer 与流匹配）于 100 小时演示；参数共享技术在性能几乎无损下把模型缩小 33–53%，可在 1–2 张 GPU 的有限算力上部署，面向学术与小实验室**
+**Humanoid World Models：面向人形机器人的开放世界基础模型**
 
 > 📅 阅读日期: 2026-06-21
 >

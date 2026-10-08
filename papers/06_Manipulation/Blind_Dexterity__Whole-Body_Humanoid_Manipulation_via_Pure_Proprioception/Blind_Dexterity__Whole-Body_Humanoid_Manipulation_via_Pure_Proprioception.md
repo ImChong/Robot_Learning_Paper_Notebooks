@@ -6,7 +6,7 @@ category: "Manipulation"
 ---
 
 # Blind Dexterity: Whole-Body Humanoid Manipulation via Pure Proprioception
-**只用机身关节编码器（无相机 / 无 IMU / 无力矩传感器 / 无触觉），就在 Unitree G1 人形上学出全身灵巧操作：策略主动用「扫、拍、拖、滑」制造顺应性接触，让关节编码器随接触的变化本身变成一条「全身触觉通道」，物体位姿从而可从很短的本体感受历史里被解码出来**
+**Blind Dexterity：仅靠本体感受实现人形全身灵巧操作**
 
 > 📅 阅读日期: 2026-09-20
 >

@@ -8,7 +8,7 @@ category: "Sim-to-Real"
 
 # Sampling-Based System Identification with Active Exploration for Legged Robot Sim2Real Learning
 
-**用「大规模并行采样」把机器人的质量-惯量与电机扭矩参数量准，再用「最大化 Fisher 信息」的主动探索去采集最有信息量的真实数据——两阶段的 SPI-Active 让高精度腿足技能零样本迁移，跳跃/速度/姿态跟踪较域随机化基线提升 42–63%**
+**SPI-Active：面向腿足机器人 Sim2Real 的主动探索采样式系统辨识**
 
 > 📅 阅读日期: 2026-07-05
 >

@@ -7,7 +7,7 @@ category: "物理动画"
 ---
 
 # PhysHMR: Learning Humanoid Control Policies from Vision for Physically Plausible Human Motion Reconstruction
-**把"视觉 → 动作"做成一个端到端 RL 策略，跳过"先重建再物理后修"的两段式 HMR**
+**PhysHMR：用视觉条件策略直接产出物理可行的人体动作重建**
 
 > 📅 阅读日期: 2026-05-31
 >

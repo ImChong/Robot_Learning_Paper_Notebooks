@@ -7,7 +7,7 @@ category: "Sim-to-Real"
 ---
 
 # Robot Trains Robot: Automatic Real-World Policy Adaptation and Learning for Humanoids
-**让一台机械臂当「老师」，全程托举、出题、加扰、判摔、自动复位，把人形机器人的真实世界 RL 训练从「需要人盯」变成「基本无人值守」**
+**Robot Trains Robot：人形策略的真实世界自动适配与学习**
 
 > 📅 阅读日期: 2026-06-17
 >

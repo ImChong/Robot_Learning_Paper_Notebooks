@@ -9,7 +9,7 @@ demos: ["groot"]
 ---
 
 # GR00T N1: An Open Foundation Model for Generalist Humanoid Robots
-**Eagle-2 的中间层视觉语言特征经交叉注意力送进流匹配 DiT，人类视频、仿真和真机轨迹按数据金字塔一起训，放出 2.2B 开放权重。**
+**GR00T N1：面向通用人形机器人的开放基础模型**
 
 > 📅 阅读日期: 2026-04-21（2026-09-23 对照论文正文、附录表与 Isaac-GR00T 的流匹配实现重写）
 >

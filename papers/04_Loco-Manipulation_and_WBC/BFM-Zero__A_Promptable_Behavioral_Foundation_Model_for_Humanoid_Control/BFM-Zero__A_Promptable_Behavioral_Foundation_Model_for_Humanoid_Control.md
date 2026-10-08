@@ -7,7 +7,7 @@ category: "Loco-Manipulation and WBC"
 
 # BFM-Zero: A Promptable Behavioral Foundation Model for Humanoid Control Using Unsupervised Reinforcement Learning
 
-**BFM-Zero：不再「一个任务训一套策略」，而是用无监督强化学习的 Forward-Backward（前向-后向）表征，把动作、目标姿态、奖励函数统统嵌进同一个隐空间 z；训练一次得到一个可提示（promptable）的单策略 π(·|z)，靠切换 z 就能零样本做动作追踪、目标到达、奖励优化，并稳定跑在 Unitree G1 真机上。**
+**BFM-Zero：可提示的人形行为基础模型**
 
 > 📅 阅读日期: 2026-08-11
 >

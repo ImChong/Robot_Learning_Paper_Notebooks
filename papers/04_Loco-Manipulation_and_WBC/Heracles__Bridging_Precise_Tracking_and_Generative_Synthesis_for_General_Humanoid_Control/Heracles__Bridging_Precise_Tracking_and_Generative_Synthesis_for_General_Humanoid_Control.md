@@ -7,7 +7,7 @@ arxiv: "2603.27756"
 ---
 
 # Heracles: Bridging Precise Tracking and Generative Synthesis for General Humanoid Control
-**在「高层参考运动」与「低层物理跟踪器」之间插一层「状态条件扩散中间件」：当实时状态贴近参考时它近似恒等映射、保住零样本跟踪精度；当状态严重偏离时它自动切换成生成式合成器、产出自然拟人的恢复轨迹——无需显式模式切换，把刚性跟踪升级为开放式的通用控制**
+**Heracles：桥接精确跟踪与生成式合成的通用人形控制**
 
 > 📅 阅读日期: 2026-06-21
 >

@@ -7,7 +7,7 @@ category: "Navigation"
 ---
 
 # EgoNav: Learning Humanoid Navigation from Human Data
-**EgoNav：只用 5 小时人类行走数据学一个「具身无关」的导航先验，零样本上人形**
+**EgoNav：从人类数据学习人形导航**
 
 > 📅 阅读日期: 2026-06-17
 >

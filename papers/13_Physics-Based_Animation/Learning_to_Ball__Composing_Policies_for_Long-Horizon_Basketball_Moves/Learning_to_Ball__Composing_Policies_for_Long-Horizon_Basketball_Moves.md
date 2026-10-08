@@ -7,7 +7,7 @@ category: "Physics-Based Animation"
 ---
 
 # Learning to Ball: Composing Policies for Long-Horizon Basketball Moves
-**把运球、投篮、上篮这些「各管一段」的子技能策略组合起来，再用一个高层软路由器在「目标不清晰的过渡段」里平滑切换，拼出 shoot-off-the-dribble / catch-and-shoot / board-and-bang 这类长程篮球连招**
+**Learning to Ball：用「策略组合 + 高层软路由」拼出长程篮球连招**
 
 > 📅 阅读日期: 2026-06-11
 >

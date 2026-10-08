@@ -7,7 +7,7 @@ category: "Loco-Manipulation and WBC"
 ---
 
 # RoboStriker: Hierarchical Decision-Making for Autonomous Humanoid Boxing
-**RoboStriker：把"打拳"拆成"动作技能 + 潜空间策略博弈"，让 Unitree G1 在零和对抗里学会自主出拳**
+**RoboStriker：用潜空间神经虚拟自博弈实现自主人形拳击对抗**
 
 > 📅 阅读日期: 2026-05-22
 >

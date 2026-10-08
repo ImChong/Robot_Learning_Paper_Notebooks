@@ -8,7 +8,7 @@ paper_order: 294
 ---
 
 # Humanoid Parkour Learning
-**人形跑酷：无动作先验的端到端视觉全身控制（Unitree H1）**
+**人形跑酷学习**
 
 > 📅 阅读日期: 2026-05-25
 >

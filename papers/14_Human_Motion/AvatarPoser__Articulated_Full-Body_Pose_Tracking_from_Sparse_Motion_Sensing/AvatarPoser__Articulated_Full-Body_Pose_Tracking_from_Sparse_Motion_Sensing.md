@@ -7,7 +7,7 @@ arxiv: "2207.13784"
 ---
 
 # AvatarPoser: Articulated Full-Body Pose Tracking from Sparse Motion Sensing
-**面向 VR/AR 头显场景，仅用头显与双手三点（HMD + 两个手柄）的稀疏运动信号，实时重建关节化全身姿态：基于 Transformer 从稀疏输入预测全身关节旋转，并把全局运动与局部姿态解耦；再用逆运动学微调手臂以精确对齐输入关节，在 AMASS 上达 SOTA，为头显平台的化身驱动奠基（ECCV 2022）**
+**AvatarPoser：从稀疏运动感知做关节化全身姿态跟踪**
 
 > 📅 阅读日期: 2026-06-21
 >

@@ -7,7 +7,7 @@ category: "硬件设计"
 ---
 
 # DIJIT: A Robotic Head for an Active Observer
-**DIJIT：一颗自由度逼近人眼-头-颈的双目机器人头，让机器人像人一样「主动地看」**
+**DIJIT：面向主动观察者的机器人头**
 
 > 📅 阅读日期: 2026-06-11
 >

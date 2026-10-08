@@ -7,7 +7,7 @@ arxiv: "2606.31836"
 ---
 
 # RoboTacDex: A Dexterous Visual-Tactile-Action Dataset for Humanoid Manipulation
-**在 Unitree G1 人形上采集的大规模灵巧「视觉-触觉-动作」数据集：6k 条轨迹 / 19 任务 / 23 技能 / 22 物体，含多视角 RGB-D、指尖法向+切向接触力与自电容近距感知的触觉、以及语义标注；配毫秒级多相机同步系统，并在 ACT / Diffusion Policy / GR00T N1.5 三种模仿学习方法上给出基准。**
+**RoboTacDex：面向人形操作的灵巧视觉-触觉-动作数据集**
 
 > 📅 阅读日期: 2026-08-13
 >

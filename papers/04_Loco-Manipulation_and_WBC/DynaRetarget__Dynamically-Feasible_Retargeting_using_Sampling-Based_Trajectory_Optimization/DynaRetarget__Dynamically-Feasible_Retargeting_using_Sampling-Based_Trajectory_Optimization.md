@@ -7,7 +7,7 @@ arxiv: "2602.06827"
 ---
 
 # DynaRetarget: Dynamically-Feasible Retargeting using Sampling-Based Trajectory Optimization
-**一条把人类动作重定向到人形控制策略的完整流水线，核心是「基于采样的轨迹优化（SBTO）」：把不完美的运动学轨迹精修成动力学可行的运动，并通过「逐步推进优化时域」支持对整条长时程轨迹做优化；成功重定向数百条人-物演示、成功率超 SOTA，并能在同一跟踪目标下泛化到不同质量/尺寸/几何的物体，为大规模合成 loco-manip 数据集铺路**
+**DynaRetarget：基于采样轨迹优化的动力学可行运动重定向**
 
 > 📅 阅读日期: 2026-06-21
 >

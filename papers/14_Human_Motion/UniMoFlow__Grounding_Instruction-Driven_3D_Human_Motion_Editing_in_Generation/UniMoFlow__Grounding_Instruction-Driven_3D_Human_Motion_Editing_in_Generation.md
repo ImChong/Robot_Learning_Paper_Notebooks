@@ -6,7 +6,7 @@ category: "Human Motion"
 ---
 
 # UniMoFlow: Grounding Instruction-Driven 3D Human Motion Editing in Generation
-**把「指令驱动的 3D 人体动作编辑」直接接地在文本到动作生成之内：用闭环合成-校验流水线造大规模编辑数据集 Omni-MoEdit、用统一潜空间流匹配模型 UniMoFlow 让生成与编辑共享知识、再用 SAFE 源锚定流编辑在推理期做可控精修**
+**UniMoFlow：把指令驱动的 3D 人体动作编辑「接地」到文本到动作生成里**
 
 > 📅 阅读日期: 2026-08-21
 >

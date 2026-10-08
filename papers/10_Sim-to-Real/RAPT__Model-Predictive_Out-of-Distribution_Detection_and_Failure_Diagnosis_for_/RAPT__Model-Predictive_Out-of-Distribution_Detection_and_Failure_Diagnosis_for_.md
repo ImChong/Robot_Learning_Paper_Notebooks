@@ -7,7 +7,7 @@ category: "Sim-to-Real"
 ---
 
 # RAPT: Model-Predictive Out-of-Distribution Detection and Failure Diagnosis for Sim-to-Real Humanoid Robots
-**用一个轻量自监督的概率时空流形模型，给已经训练好的人形策略加一层「实时 OOD 报警 + LLM 自动归因」**
+**RAPT：人形部署的模型预测分布外检测与故障诊断**
 
 > 📅 阅读日期: 2026-05-16
 >

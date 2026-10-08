@@ -7,7 +7,7 @@ category: "Navigation"
 ---
 
 # STATE-NAV: Stability-Aware Traversability Estimation for Bipedal Navigation on Rough Terrain
-**STATE-NAV：把"双足走多稳"学成一张速度图，再用它驱动 RRT\* + MPC 在粗糙地形上跑稳**
+**STATE-NAV：用稳定性感知的可通过性估计做双足机器人粗糙地形导航**
 
 > 📅 阅读日期: 2026-05-20
 >

@@ -7,7 +7,7 @@ arxiv: "2510.01607"
 ---
 
 # ActiveUMI: Robotic Manipulation with Active Perception from Robot-Free Human Demonstrations
-**用便携 VR 遥操作套件 + 镜像机器人末端的传感手柄，采集「无需机器人」的野外人类演示；核心是记录操作者戴头显时的主动头部转动，学「视觉注意力 ↔ 操作动作」的关键关联，让策略在执行时能主动调整视线。仅用 ActiveUMI 数据训练，在 6 个双臂任务上分布内平均成功率 70%、换新物体/新环境仍保持 56%。**
+**ActiveUMI：从无机器人的人类演示中学带主动感知的机器人操作**
 
 > 📅 阅读日期: 2026-07-23
 >
