@@ -1353,12 +1353,18 @@ def test_beyondmimic_video_feedback_spell_vae_and_explain_the_pictures():
     assert "VAE" not in script and script.count("V A E") >= 4
     assert '("V A E", "VAE")' in narration
     # 第 5 幕：黄轮 = 电机（经减速器带动连杆），蓝杆 = 膝关节连杆，绿虚线 = 设定点；旁白开头先讲这三样
-    for needle in ("'电机'", "'减速器'", "'蓝：膝关节连杆'", "'绿虚线：设定点'", "GEAR_VIS"):
+    # 皮带减速器要符合物理：小轮 = 电机、大轮 = 关节，齿比 = 大轮半径 / 小轮半径，开口皮带两轮同向转
+    for needle in ("'电机'", "'减速 5 : 1'", "黄小轮 = 电机：转得快", "蓝大轮 + 蓝杆 = 膝关节：转得慢、同向", "'设定点'",
+                   "R_MOT = 8, R_JNT = 40, GEAR_VIS = R_JNT / R_MOT", "(linkDeg * GEAR_VIS) % 360"):
         assert needle in js, needle
-    assert "黄色轮子是电机，经过减速器带动蓝色连杆，绿色虚线是设定点" in script
+    assert "-((G * qr * GEAR_VIS" not in js, "电机与关节反向转是错的"
+    assert "黄色小轮是电机，用皮带带动蓝色大轮和连杆；小轮旋转五圈，大轮才旋转一圈，两个轮子同向" in script
     # 第 11 幕：只有路点代价时灰虚线是穿过障碍的直线，加上避障才绕开；画面左上角与旁白都要说
     assert "只加路点代价：被拉向灰虚线（直线），会穿过障碍" in js and "路点 + 避障代价：灰虚线绕开障碍" in js
     assert "左图先只加路点代价" in script and "灰色虚线就绕开了障碍" in script
+    # SDF / CppAD 各有一句白话：画面上、要点卡、旁白
+    assert "SDF（离障碍表面多远）" in js and "SDF（有符号距离场）记下每个点离障碍表面多远" in js
+    assert "CppAD（C++ 自动求导库" in js and "有符号距离场，就是记下每个点离障碍表面多远" in script and "自动求导库" in script
 
 
 def test_groot_explainer_uses_the_paper_tables_and_the_code_sign():

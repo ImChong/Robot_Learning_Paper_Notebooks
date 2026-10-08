@@ -64,7 +64,7 @@ demos: ["beyondmimic"]
 | **LDM** | Latent Diffusion Model | 潜空间扩散：这里扩散的是「状态 + 潜码」轨迹 |
 | **DDPM** | Denoising Diffusion Probabilistic Model | 去噪网络直接预测干净轨迹 $\tau$，推理 20 步 |
 | **OU** | Ornstein–Uhlenbeck | 采数据时加在动作上的噪声（式 S4），形成「误差带」 |
-| **SDF** | Signed Distance Field | 有符号距离场：避障代价用它算部位到障碍的距离 |
+| **SDF** | Signed Distance Field | 有符号距离场：空间里每个点离障碍表面多远，外面为正、钻进去为负；避障代价用它算部位到障碍的距离 |
 | **PDP** | Physics-based character animation via Diffusion Policy | 同组前作，带扰动采数据的做法来自这里 |
 | **Diffuse-CLoC** | Guided Diffusion for Physics-based Character Look-ahead Control | 同组前作，状态—动作联合扩散 + 引导，v1–v3 的直接来源 |
 | **LIO** | LiDAR-Inertial Odometry | 起身这类极端接触动作，用激光惯导修正位置 |
@@ -387,7 +387,7 @@ $\tau^\ast$ 是想要的最优轨迹。用一个可微的任务代价 $G(\tau)$ 
 | 路点 | $G _ {wp} = \sum_i (1 - e^{-2d_i}) \lVert P _ {xy,i} - g_p \rVert^2 + e^{-2d_i} \lVert V _ {xy,i} \rVert^2$，$d_i = \lVert P _ {xy,i} - g_p \rVert$：远处罚位置，近处换成罚速度，好停下（v1–v3 写明 $d$ 不参与求导） |
 | 避障 | $G _ {sdf} = \sum_i \sum_b B(\mathrm{SDF}(P _ {b,i}) - r_b,\ \delta)$，$r_b$ 是部位的碰撞半径；松弛对数障碍 $B(x, \delta) = -\ln x$（$x \ge \delta$），$-\ln\delta + \tfrac12[((x - 2\delta)/\delta)^2 - 1]$（$x < \delta$） |
 
-梯度用 CppAD 在每个去噪步里自动求。**代价可以直接相加**：路点 + 避障 = 绕开障碍走到目标（图 6B）；换成摇杆 + 避障，用户稍微推歪也能躲开碰撞。训练时不需要枚举这些组合。
+梯度用 CppAD（一个 C++ 自动求导库：写好代价函数，梯度由它自动算出）在每个去噪步里自动求。**代价可以直接相加**：路点 + 避障 = 绕开障碍走到目标（图 6B）；换成摇杆 + 避障，用户稍微推歪也能躲开碰撞。训练时不需要枚举这些组合。
 
 和在线轨迹优化的区别（Results 开头）：模型已经学会了一整套可行的人类动作当先验，简单的、任务相关的代价就够触发合适的行为，不用堆正则和塑形项。代价要的状态：摇杆与补全用机载状态估计；**路点与避障用动作捕捉**提供环境与更准的定位。
 
