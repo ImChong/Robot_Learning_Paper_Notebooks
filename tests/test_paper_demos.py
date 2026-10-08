@@ -1335,6 +1335,22 @@ def test_beyondmimic_explainer_demos_and_worked_example_share_the_paper_numbers(
         assert stale not in note, f"旧版笔记的说法：{stale}"
 
 
+def test_inekf_legs_are_drawn_like_the_digit_lower_body():
+    """InEKF 讲解动画里的机器人示意画 Cassie 的鸟腿，比例照抄真实世界人形行走那篇的 Digit 下半身（Digit 的腿就是 Cassie 的腿）。
+
+    大腿 0.36、小腿 0.42、跗骨偏移 (−0.11, −0.2)、髋高 0.86（单位 m，按像素比例缩放）；旧版「方块 + 两段线」的火柴人不再出现。
+    """
+    digit = (ROOT / "assets" / "js" / "demos" / "realhumanoid.js").read_text(encoding="utf-8")
+    inekf = (ROOT / "assets" / "js" / "demos" / "inekf.js").read_text(encoding="utf-8")
+    for needle in ("L1 = 0.36 * M", "L2 = 0.42 * M", "TAR = [-0.11 * M, -0.2 * M]", "HIP_H = 0.86 * M"):
+        assert needle in digit, needle
+    assert "var M = H / 0.86, L1 = 0.36 * M, L2 = 0.42 * M, TAR = [-0.11 * M, -0.2 * M]" in inekf
+    assert "var a = base - bend; // 膝盖朝前" in inekf
+    assert "bodyLegs" not in inekf
+    assert inekf.count("cassieLegs(") == 9  # 定义 1 处；第 2、3、4 幕各两个（真值 + 估计），第 6、10 幕各一个
+    assert "UMich BipedLab" in inekf
+
+
 def test_beyondmimic_stick_figures_bend_the_right_way():
     """侧面看的火柴人不反关节：膝的弯曲 = 大腿角 − 小腿角 ≥ 0，肘的弯曲 = 小臂角 − 大臂角 ≥ 0（角度从竖直向下量、朝 +x 为正）。
 
@@ -2519,7 +2535,7 @@ def test_inekf_explainer_demos_and_worked_example_share_the_paper_numbers():
 
     for line in (
         "var G = 9.81;",
-        "var CASSIE = { dof: 20, actuators: 10, springs: 4, encoders: 14, imuHz: 800, encHz: 2000, height: 1.2768 };",
+        "var CASSIE = { dof: 20, actuators: 10, springs: 4, encoders: 14, imuHz: 800, encHz: 2000, height: 1.2732 };",
         "var CONV = { runs: 100, eulerDeg: 30, velMax: 1.0, simSpeed: 0.3, realSpeed: 0.3, simWin: 1, realWin: 2 };",
         "var BANANA = { speed: 1, secs: [0, 2, 4, 6, 8], posSigma: 0.1, yawDeg: 10, particles: 10000, fullYawDeg: 360 };",
         "var MOCAP = { cams: 18, secs: 60, pathM: 15, driftPct: 5 };",

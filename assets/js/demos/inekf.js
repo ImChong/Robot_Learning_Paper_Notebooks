@@ -59,7 +59,7 @@
   /* 第 5–9 节与表 1 照抄；图 3、4、6、8、9 没有标数，读图的值单独标「读图」。官方 C++ 库（RossHartley/invariant-ekf）的数单独标出。
      十二幕动画、三个演示、配音旁白与笔记「🚶 具体实例」共用这一份。 */
   var G = 9.81; // 代码 InEKF.cpp：g_ = (0, 0, −9.81)
-  var CASSIE = { dof: 20, actuators: 10, springs: 4, encoders: 14, imuHz: 800, encHz: 2000, height: 1.2768 }; // 第 9 节；身高取自 Robot_Description_Gallery 的 URDF 测量
+  var CASSIE = { dof: 20, actuators: 10, springs: 4, encoders: 14, imuHz: 800, encHz: 2000, height: 1.2732 }; // 第 9 节；身高取自 Robot_Description_Gallery 的 URDF 测量（UMich BipedLab 展示模型）
   var TABLE1 = {
     // 表 1：离散噪声标准差与初始标准差（扩展版的零偏单位是 m/s³、rad/s²；会议版写成 m/s²、rad/s）
     noise: [['线加速度', '0.04 m/s²'], ['角速度', '0.002 rad/s'], ['加速度计零偏', '0.001 m/s³'], ['陀螺零偏', '0.001 rad/s²'], ['接触点线速度', '0.05 m/s'], ['关节编码器', '1.0°']],
@@ -769,44 +769,85 @@
     if (h >= 0) { node.setAttribute('y', (node.yBase - h).toFixed(1)); node.setAttribute('height', h.toFixed(1)); }
     else { node.setAttribute('y', node.yBase.toFixed(1)); node.setAttribute('height', (-h).toFixed(1)); }
   }
-  /* Cassie 的渲染图（Robot_Description_Gallery 按开源 URDF 渲染，透明底），高 h 时宽 0.45h；
+  /* Cassie 的渲染图（Robot_Description_Gallery 按 UMich BipedLab 的开源 URDF 渲染，透明底），高 h 时宽 0.45h；
+     机身是深灰，背后垫一层浅灰光晕（同 LCP 第 10 幕），深色主题下也看得清。
      mark(nx, ny) 把图上的归一化坐标换成画布坐标，用来标 IMU、弹簧、脚 */
-  var CASSIE_IMG = { file: 'cassie.webp', aspect: 135 / 300, imu: [0.75, 0.11], hip: [0.38, 0.25], spring: [0.11, 0.63], footA: [0.31, 0.97], footB: [0.6, 0.9] };
+  var CASSIE_IMG = { file: 'cassie.webp', aspect: 136 / 300, imu: [0.75, 0.11], hip: [0.38, 0.25], spring: [0.11, 0.63], footA: [0.31, 0.97], footB: [0.6, 0.9] };
+  var haloSeq = 0;
   function cassie(parent, x, yBottom, h) {
     var w = h * CASSIE_IMG.aspect, g = group(parent);
+    var root = parent.ownerSVGElement || parent, defs = root.querySelector('defs');
+    if (!defs) { defs = svgEl('defs', {}); root.insertBefore(defs, root.firstChild); }
+    var id = 'inekf-x-halo-' + (++haloSeq), halo = svgEl('radialGradient', { id: id });
+    halo.appendChild(svgEl('stop', { offset: '0', 'stop-color': '#a3acb9', 'stop-opacity': '0.5' }));
+    halo.appendChild(svgEl('stop', { offset: '1', 'stop-color': '#a3acb9', 'stop-opacity': '0' }));
+    defs.appendChild(halo);
+    g.appendChild(svgEl('ellipse', { cx: (x + w / 2).toFixed(1), cy: (yBottom - h * 0.5).toFixed(1), rx: (w * 0.72).toFixed(1), ry: (h * 0.58).toFixed(1), fill: 'url(#' + id + ')' }));
     var img = svgEl('image', { href: ROBOT_IMG_BASE + CASSIE_IMG.file, x: x.toFixed(1), y: (yBottom - h).toFixed(1), width: w.toFixed(1), height: h.toFixed(1), preserveAspectRatio: 'xMidYMax meet' });
     g.appendChild(img);
     return { g: g, w: w, h: h, mark: function (nn) { return [x + nn[0] * w, yBottom - h + nn[1] * h]; } };
   }
-  /* 示意用的「身体 + 两条腿」：身体是一个带坐标轴的方块（IMU 在里面），腿是两段线，脚是圆点。
-     put(x, y, ang, feet)：身体中心 (x, y)、俯仰 ang（rad，图上逆时针为正）、feet = [[x, y, 着地?], …] */
-  function bodyLegs(parent, color, dashed) {
+  /* 侧视的 Cassie 示意（面朝 +x）：骨盆是一个带坐标轴的圆角块（IMU 在里面），腿照真实世界人形行走那篇的
+     Digit 下半身画 —— Digit 的腿就是 Cassie 的腿：大腿往前、小腿往后、跗骨再往前落到脚板上，髋上一个电机盘。
+     远侧那条腿淡一些。o.legH 是站直时髋到地面的像素数（连杆长度按它定，取 Digit 的比例），o.bodySc 缩放骨盆。
+     put(x, y, ang, feet, rigid)：骨盆中心 (x, y)、俯仰 ang（rad，图上逆时针为正）、feet = [[x, y, 着地?], …]（先近侧后远侧）；
+     rigid 为真时跗骨和脚板也跟着骨盆转（第 4 幕把整个机器人当刚体转一下） */
+  function cassieLegs(parent, color, dashed, opts) {
+    var o = opts || {}, H = o.legH || 62, bs = o.bodySc || 1;
+    var M = H / 0.86, L1 = 0.36 * M, L2 = 0.42 * M, TAR = [-0.11 * M, -0.2 * M], ws = Math.min(M / 100, 1.1);
     var g = group(parent);
-    var legs = [0, 1].map(function () {
-      var l1 = hline(g, 0, 0, 0, 0, color, 2.4), l2 = hline(g, 0, 0, 0, 0, color, 2.4), foot = dotAt(g, 0, 0, 4.2, color);
-      if (dashed) { l1.setAttribute('stroke-dasharray', '4 3'); l2.setAttribute('stroke-dasharray', '4 3'); }
-      return { l1: l1, l2: l2, foot: foot };
-    });
+    function bone(parentG, w) {
+      var ln = paint(svgEl('line', { 'stroke-width': (dashed ? Math.max(1.6, w * ws * 0.55) : w * ws).toFixed(2), 'stroke-linecap': 'round' }), null, color);
+      if (dashed) ln.setAttribute('stroke-dasharray', '4 3');
+      parentG.appendChild(ln);
+      return ln;
+    }
+    function leg(far) {
+      var lg = group(g);
+      if (far) lg.style.opacity = 0.45;
+      var L = { thigh: bone(lg, 6.5), shin: bone(lg, 5.5), tar: bone(lg, 4), foot: bone(lg, 3.6) };
+      L.motor = paint(svgEl('circle', { r: Math.min(0.075 * M, 9).toFixed(1), 'stroke-width': 1.4 }), C_SURFACE, color);
+      if (dashed) L.motor.setAttribute('stroke-dasharray', '3 2');
+      lg.appendChild(L.motor);
+      L.dot = dotAt(lg, 0, 0, clamp(0.045 * M, 2.4, 4), color);
+      return L;
+    }
+    var farLeg = leg(true);
     var body = svgEl('g', {});
     g.appendChild(body);
-    var box = paint(svgEl('rect', { x: -22, y: -13, width: 44, height: 26, rx: 5, 'stroke-width': 2 }), C_SURFACE, color);
+    var box = paint(svgEl('rect', { x: -22 * bs, y: -13 * bs, width: 44 * bs, height: 26 * bs, rx: 9 * bs, 'stroke-width': 2 }), C_SURFACE, color);
     if (dashed) box.setAttribute('stroke-dasharray', '4 3');
     body.appendChild(box);
-    var ax = hline(body, 0, 0, 16, 0, color, 1.6), ay = hline(body, 0, 0, 0, -16, color, 1.6);
+    hline(body, 0, 0, 16 * bs, 0, color, 1.6);
+    hline(body, 0, 0, 0, -16 * bs, color, 1.6);
     dotAt(body, 0, 0, 2.6, color);
+    var nearLeg = leg(false);
+    function rot(v, th) { return [v[0] * Math.cos(th) - v[1] * Math.sin(th), v[0] * Math.sin(th) + v[1] * Math.cos(th)]; }
+    function pose(L, hip, f, th) {
+      var tar = rot(TAR, th), ankle = [f[0] + tar[0], f[1] + tar[1]];
+      var dx = ankle[0] - hip[0], dy = ankle[1] - hip[1];
+      var d = clamp(Math.hypot(dx, dy), 0.2 * M, L1 + L2 - 0.01);
+      var base = Math.atan2(dy, dx), bend = Math.acos(clamp((L1 * L1 + d * d - L2 * L2) / (2 * L1 * d), -1, 1));
+      var a = base - bend; // 膝盖朝前
+      var knee = [hip[0] + L1 * Math.cos(a), hip[1] + L1 * Math.sin(a)];
+      var ank = [hip[0] + d * Math.cos(base), hip[1] + d * Math.sin(base)];
+      setLine(L.thigh, hip[0], hip[1], knee[0], knee[1]);
+      setLine(L.shin, knee[0], knee[1], ank[0], ank[1]);
+      setLine(L.tar, ank[0], ank[1], f[0], f[1]);
+      var heel = rot([-0.05 * M, 0], th), toe = rot([0.09 * M, 0], th);
+      setLine(L.foot, f[0] + heel[0], f[1] + heel[1], f[0] + toe[0], f[1] + toe[1]);
+      L.motor.setAttribute('cx', hip[0].toFixed(1)); L.motor.setAttribute('cy', hip[1].toFixed(1));
+      moveDot(L.dot, f);
+      L.dot.style.opacity = f[2] ? 1 : 0.35;
+    }
     return {
       g: g, box: box,
-      put: function (x, y, ang, feet) {
+      put: function (x, y, ang, feet, rigid) {
         body.setAttribute('transform', 'translate(' + x.toFixed(1) + ' ' + y.toFixed(1) + ') rotate(' + ((-ang * 180) / Math.PI).toFixed(2) + ')');
-        feet.forEach(function (f, k) {
-          var L = legs[k], hip = [x + (k ? 6 : -6), y + 12];
-          var mid = [(hip[0] + f[0]) / 2 + 9, (hip[1] + f[1]) / 2];
-          setLine(L.l1, hip[0], hip[1], mid[0], mid[1]);
-          setLine(L.l2, mid[0], mid[1], f[0], f[1]);
-          moveDot(L.foot, f);
-          L.foot.style.opacity = f[2] ? 1 : 0.35;
+        [nearLeg, farLeg].forEach(function (L, k) {
+          var off = rot([k ? -2 * bs : 2 * bs, 12 * bs], -ang), f = feet[k];
+          pose(L, [x + off[0], y + off[1]], f, rigid ? -ang : 0);
         });
-        ax.style.opacity = 1; ay.style.opacity = 1;
       }
     };
   }
@@ -969,8 +1010,8 @@
     right.appendChild(svgText(290, 62, '世界坐标（示意）', 'demo-x-mut', 10.5));
     var GY = 250;
     hline(right, 290, GY, 756, GY, C_BORDER, 1.4);
-    var trueBody = bodyLegs(right, C_TRUE, true);
-    var estBody = bodyLegs(right, C_EST, false);
+    var trueBody = cassieLegs(right, C_TRUE, true);
+    var estBody = cassieLegs(right, C_EST, false);
     var ell = paint(svgEl('ellipse', { cx: 0, cy: 0, rx: 10, ry: 6, fill: 'none', 'stroke-width': 1.4, 'stroke-dasharray': '3 3' }), null, C_EST);
     right.appendChild(ell);
     var pin = group(right);
@@ -1044,7 +1085,7 @@
     rectBox(left, 30, 44, 300, 290, C_BORDER, C_SURFACE2);
     var GY = 250, CX = 150;
     hline(left, 44, GY, 316, GY, C_BORDER, 1.4);
-    var trueB = bodyLegs(left, C_TRUE, true), estB = bodyLegs(left, C_Q, false);
+    var trueB = cassieLegs(left, C_TRUE, true), estB = cassieLegs(left, C_Q, false);
     var mkG = K.arrowMarker(s, 'inekf-x-arrow-g', C_WARN), mkR = K.arrowMarker(s, 'inekf-x-arrow-res', C_Q);
     var aBody = arrowPath(left, [[0, 0], [1, 1]], C_WARN, mkG, null, 2.2);
     var aG = arrowPath(left, [[0, 0], [1, 1]], C_MUTED, K.arrowMarker(s, 'inekf-x-arrow-gw', C_MUTED), '4 3', 2);
@@ -1092,9 +1133,9 @@
       setOpacity(left, seg(t, 0.2, 0.8));
       var th = t < 10.4 ? 0.1 : 0.1 + 0.4 * ease(seg(t, 10.4, 11.4));
       var by = GY - 74;
-      trueB.put(CX, by, 0, [[CX - 12, GY, true], [CX + 12, GY, true]]);
+      trueB.put(CX, by, 0, [[CX + 2, GY, true], [CX + 12, GY, true]]);
       var tilt = t < 0.8 ? 0 : th * ease(seg(t, 0.8, 1.6));
-      estB.put(CX, by, -tilt, [[CX - 12, GY, true], [CX + 12, GY, true]]);
+      estB.put(CX, by, -tilt, [[CX + 2, GY, true], [CX + 12, GY, true]]);
       angLab.setText('滤波器以为前倾了 **' + fmt(th, 1) + ' rad**（约 ' + fmt((th * 180) / Math.PI, 0) + '°）');
       /* 读数 ã 沿机身的「上」：在估计的朝向下画出来，再加上 g（向下），剩下水平的假加速度 */
       var L = 112, up = [Math.sin(tilt), -Math.cos(tilt)];
@@ -1180,7 +1221,8 @@
     var ORIG = [420, 236];
     dotAt(err, ORIG[0], ORIG[1], 3, C_MUTED);
     err.appendChild(svgText(ORIG[0], ORIG[1] + 18, '世界原点', 'demo-x-mut', 9.5, 'middle'));
-    var tB = bodyLegs(err, C_TRUE, true), eB = bodyLegs(err, C_EST, false);
+    var FIG4 = { legH: 31, bodySc: 0.75 };
+    var tB = cassieLegs(err, C_TRUE, true, FIG4), eB = cassieLegs(err, C_EST, false, FIG4);
     var swing = paint(svgEl('path', { fill: 'none', 'stroke-width': 1.4, 'stroke-dasharray': '3 3' }), null, C_EST);
     err.appendChild(swing);
     err.appendChild(paint(svgText(756, 256, '整体转 + 挪一下', null, 10, 'end'), C_EST));
@@ -1216,14 +1258,14 @@
       setOpacity(err, seg(t, 7.0, 7.6));
       /* 真值不动；估计值 = 真值绕世界原点转 ψ 再平移一点（ψ 来回摆） */
       var psi = 0.28 + 0.08 * Math.sin(now * 1.2);
-      var P0 = [520, 220];
-      tB.put(P0[0], P0[1], 0, [[P0[0] - 10, P0[1] + 32, true], [P0[0] + 14, P0[1] + 32, true]]);
+      var P0 = [520, 212], F1 = [P0[0] + 3, P0[1] + 40], F2 = [P0[0] + 11, P0[1] + 40];
+      tB.put(P0[0], P0[1], 0, [[F1[0], F1[1], true], [F2[0], F2[1], true]]);
       function rotAbout(q) {
         var dx = q[0] - ORIG[0], dy = q[1] - ORIG[1], c = Math.cos(-psi), sn = Math.sin(-psi);
         return [ORIG[0] + c * dx - sn * dy + 40, ORIG[1] + sn * dx + c * dy - 6];
       }
-      var b2 = rotAbout(P0), f1 = rotAbout([P0[0] - 10, P0[1] + 32]), f2 = rotAbout([P0[0] + 14, P0[1] + 32]);
-      eB.put(b2[0], b2[1], psi, [[f1[0], f1[1], true], [f2[0], f2[1], true]]);
+      var b2 = rotAbout(P0), f1 = rotAbout(F1), f2 = rotAbout(F2);
+      eB.put(b2[0], b2[1], psi, [[f1[0], f1[1], true], [f2[0], f2[1], true]], true);
       swing.setAttribute('d', 'M ' + P0[0] + ' ' + P0[1] + ' Q ' + ((P0[0] + b2[0]) / 2 + 10).toFixed(1) + ' ' + ((P0[1] + b2[1]) / 2 + 20).toFixed(1) + ' ' + b2[0].toFixed(1) + ' ' + b2[1].toFixed(1));
       setOpacity(dims, seg(t, 10.4, 11.0));
       segNodes.forEach(function (g, k) { setOpacity(g, seg(t, 10.6 + k * 0.4, 11.0 + k * 0.4)); });
@@ -1350,7 +1392,7 @@
     var O = [96, GY];
     hline(left, 44, GY, 376, GY, C_BORDER, 1.4);
     function W(p3, mag) { return [O[0] + p3[0] * SCL * (mag || 1), O[1] - p3[2] * SCL * (mag || 1)]; }
-    var bodyB = bodyLegs(left, C_EST, false);
+    var bodyB = cassieLegs(left, C_EST, false, { legH: UPD.p[2] * SCL - 12 * 1.3, bodySc: 1.3 });
     var footD = dotAt(left, 0, 0, 6, C_GOOD);
     var mkM = K.arrowMarker(s, 'inekf-x-arrow-meas', C_WARN), mkZ = K.arrowMarker(s, 'inekf-x-arrow-z', C_Q);
     var meas = arrowPath(left, [[0, 0], [1, 1]], C_WARN, mkM, null, 2.2);
@@ -1402,7 +1444,7 @@
       var pNow = [UPD.p[0] + k * UPD_EX.dp[0] * MAG, 0, UPD.p[2] + k * UPD_EX.dp[2] * MAG];
       var dNow = [UPD.d[0] + k * UPD_EX.dd[0] * MAG, 0, UPD.d[2] + k * UPD_EX.dd[2] * MAG];
       var bp = W(pNow), dp = W(dNow);
-      bodyB.put(bp[0], bp[1], 0, [[dp[0], dp[1], true], [bp[0] - 40, GY - 6, false]]);
+      bodyB.put(bp[0], bp[1], 0, [[dp[0], dp[1], true], [bp[0] - 56, GY - 38, false]]);
       moveDot(footD, dp);
       /* 测量：从身体出发的 R̄h（h 比估计长 2 cm，放大 10 倍） */
       var hEnd = [pNow[0] + (UPD.h[0] + (UPD.h[0] - (UPD.d[0] - UPD.p[0])) * (MAG - 1)), 0, pNow[2] + (UPD.h[2] + (UPD.h[2] - (UPD.d[2] - UPD.p[2])) * (MAG - 1))];
@@ -1688,7 +1730,7 @@
     rectBox(top, 30, 44, 500, 170, C_BORDER, C_SURFACE2);
     var GY = 196;
     hline(top, 44, GY, 516, GY, C_BORDER, 1.4);
-    var body = bodyLegs(top, C_EST, false);
+    var body = cassieLegs(top, C_EST, false, { legH: 70 });
     var prints = group(top);
     var tag = svgRich(0, 0, '', { size: 10.5, anchor: 'middle', w: 120, cls: 'demo-x-good' });
     top.appendChild(tag);
@@ -1731,7 +1773,7 @@
     function draw(t, clock) {
       var now = nowOf(t, clock);
       setOpacity(top, seg(t, 0.2, 0.8));
-      var W = walkPose(now, 60, GY, 120, 1.6), span = 520 - 60;
+      var W = walkPose(now, 60, GY, 84, 1.6), span = 520 - 60;
       var wrapX = function (x) { return 60 + ((x - 60) % span + span) % span; };
       var bx = wrapX(W.x), shift = bx - W.x;
       body.put(bx, W.y, W.ang, W.feet.map(function (f) { return [f[0] + shift, f[1], f[2]]; }));
@@ -2087,7 +2129,7 @@
       notes: [
         '取数依据：第 1、2、11、12 幕的数字照抄论文第 6、9 节与表 1（IJRR 扩展版 arXiv 1904.09251 v2；会议版 1805.10410 的实验数字相同）；第 5 幕的 $A$、第 6 幕的 $H$、第 7 幕的可观性矩阵照抄第 5 节式 (12)–(14)、(20) 与第 5.4 节；第 9 幕的 $A$ 照抄式 (28)。' +
           '第 3、5 幕的站立例子（0.1 rad、0.5 rad）、第 6 幕的 2 cm 校正、第 10 幕的新触地点、第 8 幕的 1.39 m / 0.48 m 是在论文的式子上现算的（具体实例第 2–4、6、8、9 步）；第 7 幕「QEKF 秩为 9」是我们用抖动的估计值算的 12 维小例子，不是论文的数。',
-        '**读图与示意**：图 3、4、6、8、9 没有标数，第 5、11、12 幕的曲线和轨迹是按图读的近似值；第 1、2、6、10 幕的身体—腿示意、第 9 幕的零偏曲线、第 12 幕的人行道与点云是示意。Cassie 的图取自 Robot_Description_Gallery（按开源 URDF 渲染）。'
+        '**读图与示意**：图 3、4、6、8、9 没有标数，第 5、11、12 幕的曲线和轨迹是按图读的近似值；第 2、3、4、6、10 幕的 Cassie 腿示意（照真实世界人形行走那篇 Digit 下半身的画法）、第 9 幕的零偏曲线、第 12 幕的人行道与点云是示意。Cassie 的图取自 Robot_Description_Gallery（按 UMich BipedLab 的开源 URDF 渲染）。'
       ],
       scenes: INEKF_SCENES
     });
