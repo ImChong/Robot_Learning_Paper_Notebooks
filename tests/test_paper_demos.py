@@ -129,6 +129,13 @@ GENTLE_NOTE = (
     / "GentleHumanoid__Learning_Upper-body_Compliance_for_Contact-rich_Human_and_Object.md"
 )
 HUMANML3D_NOTE = ROOT / "papers" / "14_Human_Motion" / "HumanML3D" / "HumanML3D.md"
+INEKF_NOTE = (
+    ROOT
+    / "papers"
+    / "09_State_Estimation"
+    / "Contact-Aided_Invariant_EKF_for_Legged_Robots"
+    / "Contact-Aided_Invariant_EKF_for_Legged_Robots.md"
+)
 
 PLACEHOLDER_RE = re.compile(r'<div class="paper-demo" data-demo="([a-z0-9-]+)"')
 FRONTMATTER_DEMOS_RE = re.compile(r'^demos:\s*\[(.+)\]\s*$', re.MULTILINE)
@@ -265,6 +272,7 @@ def test_notes_declare_their_demos_in_reading_order():
         QUAD_NOTE: ("quadterrain", ["qt-explainer", "qt-video", "qt-ftg", "qt-curriculum", "qt-memory"]),
         RH_NOTE: ("realhumanoid", ["rh-explainer", "rh-video", "rh-context", "rh-reward", "rh-dr"]),
         ASAP_NOTE: ("asap", ["asap-explainer", "asap-video", "asap-delta", "asap-tables", "asap-ablation"]),
+        INEKF_NOTE: ("inekf", ["inekf-explainer", "inekf-video", "inekf-linearize", "inekf-banana", "inekf-converge"]),
     }
     for note, (bundle, placeholders) in expected.items():
         text = note.read_text(encoding="utf-8")
@@ -302,7 +310,7 @@ EXPLAINER_BUNDLES = (
     "ppo", "awr", "deepmimic", "amp", "add", "ase", "calm", "pulse", "sonic", "groot",
     "gmr", "omniretarget", "diffusion_policy", "beyondmimic", "cosmos", "umr", "php", "pbfm",
     "gentle", "lcp", "transformer", "pi0", "pi05", "op3soccer", "smp", "humanml3d",
-    "domain_randomization", "quadterrain", "realhumanoid", "asap",
+    "domain_randomization", "quadterrain", "realhumanoid", "asap", "inekf",
 )
 
 # 幕数由论文决定，不是统一模板：PPO / DeepMimic / AMP / ADD 的核心概念正好各 5 个，
@@ -416,6 +424,14 @@ EXPLAINER_BUNDLES = (
 # 真机，Q4–Q6 是第 V 节的三组分析。压成十幕会让表 III 与表 IV、或图 11 的四条曲线与图 12 的噪声柱抢同一帧；局限和真机
 # 那一幕讲的是同一批约束（坏两台 G1、要动捕、23 自由度要 400 段），并进最后一幕收尾。
 
+# 接触辅助 InEKF（Hartley 等，IJRR 2020）是十二件（为什么要状态估计 / IMU 推、脚踩住、运动学校正 / 线性化点选错 /
+# 一个矩阵装下状态 / 误差不看轨迹 / 运动学校正与 H / 看不见的方向 / 不确定性的形状 / IMU 零偏 / 增删接触点 /
+# 收敛（图 3、8）/ Cassie 实测（图 9–12））。论文第 5 节的四块各一幕：状态与不变误差（5.1）、过程模型的对数线性（5.2，
+# 配图 4）、右不变观测与常数 H（5.3，左右互换与机器人中心是第 10–11 节对它的补充）、可观性（5.4）；第 4 节的入门例子
+# 用站立的数值算例单独一幕，因为「QEKF 在估计值上线性化错在哪」要先看见才能懂后面的定理；第 6.4 节的协方差形状、
+# 第 7 节的零偏、第 8 节的增删接触各是一节、各有自己的公式；结果按收敛（图 3、8 是同一种做法的仿真与真机）和
+# 精度（图 9–12）两幕。合并会让可观性矩阵和香蕉、或零偏的 A 和增删接触的 F、G 抢同一帧。
+
 # HumanML3D 是九件（文本生成动作卡在哪 / 数据集怎么建 / 一帧 263 维 / 每 4 帧一个 snippet code /
 # Text2Length / 时序 VAE 的一步 / 三项损失与课程学习 / 评测器与 R-Precision / 结果、消融与遗产）。
 # 它一篇论文同时交了数据集、方法和评测协议三样东西：数据集的「怎么建」与「每帧存什么」是第 4 节与
@@ -452,6 +468,7 @@ EXPLAINER_SCENES = {
     "quadterrain": (QUAD_NOTE, 9),
     "realhumanoid": (RH_NOTE, 10),
     "asap": (ASAP_NOTE, 12),
+    "inekf": (INEKF_NOTE, 12),
 
     "humanml3d": (HUMANML3D_NOTE, 9),
 }
@@ -1722,7 +1739,7 @@ def test_narrated_video_placeholders_point_at_files_that_exist():
             assert f"'{demo}': buildVideoDemo" in js and "K.video(host" in js, f"{demo} 没有通过 K.video 注册"
     for demo in ("calm-video", "pulse-video", "dp-video", "bm-video", "lcp-video", "cosmos-video", "groot-video",
                  "tf-video", "pi0-video", "pi05-video", "soccer-video", "sonic-video", "gmr-video",
-                 "omniretarget-video", "humanml3d-video", "smp-video", "dr-video", "qt-video", "rh-video"):
+                 "omniretarget-video", "humanml3d-video", "smp-video", "dr-video", "qt-video", "rh-video", "inekf-video"):
         assert demo in seen, f"{demo} 应该挂在对应的论文笔记里"
 
 
@@ -2441,4 +2458,138 @@ def test_asap_explainer_demos_and_worked_example_share_the_paper_numbers():
     # 片头接上一期（LCP）的片尾预告，片尾只预告下一篇（BeyondMimic）
     assert "上一期结尾预告" in narration and "下一篇讲 BeyondMimic" in narration and "BeyondMimic" in intro
     for stale in ("仅学习 delta 动力学但不回灌仿真", "前跳（0.85 m / 1.5 m）", "球星庆祝动作、APT 舞蹈", "「蒸馏」进最终策略", "首版基础摘要"):
+        assert stale not in note, f"旧版笔记的说法：{stale}"
+
+
+def _inekf_mat(a, b):
+    return [[sum(a[i][k] * b[k][j] for k in range(len(b))) for j in range(len(b[0]))] for i in range(len(a))]
+
+
+def _inekf_rank(rows, tol=1e-9):
+    """Gaussian elimination with partial pivoting, pure Python (the test env has no numpy)."""
+    m = [r[:] for r in rows]
+    rank, cols = 0, len(m[0])
+    for c in range(cols):
+        piv = max(range(rank, len(m)), key=lambda r: abs(m[r][c]), default=None)
+        if piv is None or abs(m[piv][c]) < tol:
+            continue
+        m[rank], m[piv] = m[piv], m[rank]
+        for r in range(len(m)):
+            if r != rank and m[r][c]:
+                f = m[r][c] / m[rank][c]
+                m[r] = [x - f * y for x, y in zip(m[r], m[rank], strict=True)]
+        rank += 1
+    return rank
+
+
+def _inekf_observability_rank(n_contacts: int) -> int:
+    """第 5.4 节：Φ = e^{AΔt}，O = [H; HΦ; HΦ²; …]，A 只含 (g)× 与 I。"""
+    dim, dt, g = 9 + 3 * n_contacts, 0.01, (0.0, 0.0, -9.81)
+    gx = [[0.0, -g[2], g[1]], [g[2], 0.0, -g[0]], [-g[1], g[0], 0.0]]
+    phi = [[1.0 if i == j else 0.0 for j in range(dim)] for i in range(dim)]
+    for i in range(3):
+        for j in range(3):
+            phi[3 + i][j] += gx[i][j] * dt
+            phi[6 + i][j] += 0.5 * gx[i][j] * dt * dt
+        phi[6 + i][3 + i] += dt
+    h = []
+    for k in range(n_contacts):
+        for i in range(3):
+            row = [0.0] * dim
+            row[6 + i], row[9 + 3 * k + i] = -1.0, 1.0
+            h.append(row)
+    rows, m = [], [[1.0 if i == j else 0.0 for j in range(dim)] for i in range(dim)]
+    for _ in range(20):
+        rows += _inekf_mat(h, m)
+        m = _inekf_mat(phi, m)
+    return _inekf_rank(rows)
+
+
+def test_inekf_explainer_demos_and_worked_example_share_the_paper_numbers():
+    """接触辅助 InEKF：十二幕动画、三个演示、配音旁白与笔记「🚶 具体实例」用同一份数。
+
+    表 1、第 6.2 / 6.4 / 9 节的数照抄 IJRR 扩展版（arXiv 1904.09251 v2）；站立例子、一次校正、新触地点、香蕉的弯度
+    在论文的式子上现算；可观性的秩用纯 Python 重算。旧版起步笔记把会议版标题和扩展版的 arXiv 号混在一起、
+    还说「MIT Cheetah、Unitree 都以 InEKF 为基石」，这里守着别再写回来。
+    """
+    js = (DEMO_JS_DIR / "inekf.js").read_text(encoding="utf-8")
+    note = INEKF_NOTE.read_text(encoding="utf-8")
+    narration = (ROOT / "scripts" / "paper_video" / "papers" / "inekf.py").read_text(encoding="utf-8")
+    intro = (ROOT / "scripts" / "paper_video" / "papers" / "inekf.js").read_text(encoding="utf-8")
+
+    for line in (
+        "var G = 9.81;",
+        "var CASSIE = { dof: 20, actuators: 10, springs: 4, encoders: 14, imuHz: 800, encHz: 2000, height: 1.2768 };",
+        "var CONV = { runs: 100, eulerDeg: 30, velMax: 1.0, simSpeed: 0.3, realSpeed: 0.3, simWin: 1, realWin: 2 };",
+        "var BANANA = { speed: 1, secs: [0, 2, 4, 6, 8], posSigma: 0.1, yawDeg: 10, particles: 10000, fullYawDeg: 360 };",
+        "var MOCAP = { cams: 18, secs: 60, pathM: 15, driftPct: 5 };",
+        "var LONGWALK = { meters: 200, secs: 7 * 60 + 45 };",
+        "var UPD = { p: v3(0.30, 0, 0.90), d: v3(0.40, -0.13, 0), h: v3(0.12, -0.13, -0.88), sigP: 0.1, sigD: 0.1, sigN: 0.01 };",
+        "var EX_SMALL = standingExample(0.1, 1);",
+        "var EX_BIG = standingExample(0.5, 1);",
+        "var OBS = { one: [12, 8], two: [15, 11], qekfToy: 9 };",
+        "var CODE = { gyro: 0.01, accel: 0.1, gyroBias: 0.00001, accelBias: 0.0001, contact: 0.1, contactExample: 0.01 };",
+        "A[1][0] = -G; A[2][0] = 0;",
+        "H[0][3] = -1; H[1][4] = -1; H[0][5] = 1; H[1][6] = 1;",
+    ):
+        assert line in js, line
+
+    # 站立例子：俯仰错 θ，传 1 秒（具体实例第 2–4 步）
+    def standing(th):
+        acc = (9.81 * math.sin(th), 0.0, 9.81 * math.cos(th) - 9.81)
+        xiv = 9.81 * th  # g × ξ_R 的 x 分量
+        a = (1 - math.cos(th)) / th**2
+        b = (th - math.sin(th)) / th**3
+        # Γ1(ξ_R)·(xiv, 0, 0)，ξ_R = (0, θ, 0)
+        inekf = (xiv - b * th * th * xiv, 0.0, -a * th * xiv)
+        qekf = (-9.81 * th * math.cos(th), 0.0, 9.81 * th * math.sin(th))
+        return acc, inekf, qekf
+
+    acc, inekf, qekf = standing(0.1)
+    assert [_fmt(x, 4) for x in acc] == ["0.9794", "0.0000", "-0.0490"]
+    assert [_fmt(x, 4) for x in inekf] == [_fmt(x, 4) for x in acc], "指数映射之后应和滤波器自己的积分一位不差"
+    assert (_fmt(9.81 * 0.1, 3), _fmt(0.5 * 9.81 * 0.1, 4)) == ("0.981", "0.4905")
+    assert [_fmt(x, 4) for x in qekf] == ["-0.9761", "0.0000", "0.0979"]
+    acc5, _, qekf5 = standing(0.5)
+    assert [_fmt(-x, 4) for x in acc5][::2] == ["-4.7032", "1.2009"]
+    assert [_fmt(qekf5[0], 4), _fmt(qekf5[2], 4)] == ["-4.3045", "2.3516"]
+
+    # 一次运动学校正（第 6 步）与新触地点（第 9 步）
+    s = 0.1**2 + 0.1**2 + 0.01**2
+    k = 0.1**2 / s
+    assert (_fmt(s, 4), _fmt(k, 4), _fmt(k * 0.02 * 100, 3)) == ("0.0201", "0.4975", "0.995")
+    assert [_fmt(x, 2) for x in (0.30 + 0.12, -0.13, 0.90 - 0.88)] == ["0.42", "-0.13", "0.02"]
+    assert _fmt(math.sqrt(0.1**2 + 0.01**2), 4) == "0.1005"
+
+    # 香蕉（第 8 步）
+    d, s10, s20, s30 = 8.0, math.radians(10), math.radians(20), math.radians(30)
+    assert (_fmt(d * math.sin(s10), 2), _fmt(d * (1 - math.cos(s10)), 2)) == ("1.39", "0.12")
+    assert (_fmt(d * math.sin(s20), 2), _fmt(d * (1 - math.cos(s20)), 2)) == ("2.74", "0.48")
+    assert (_fmt(d * math.sin(s30), 1), _fmt(d * (1 - math.cos(s30)), 2)) == ("4.0", "1.07")
+    assert _fmt(math.sqrt(0.01 + 64 * s10 * s10), 2) == "1.40"
+
+    # 可观性的秩（第 7 步）：单脚 12 维秩 8、双脚 15 维秩 11，各少 4 维
+    assert _inekf_observability_rank(1) == 8 and _inekf_observability_rank(2) == 11
+
+    # 维度与实验对账（第 1、10 步）
+    assert (3 * 1 + 9, 3 * 2 + 9, 3 * 2 + 9 + 6, 3 * 7 - 6) == (12, 15, 21, 15)
+    assert (_fmt(15 * 0.05, 2), _fmt(15 / 60, 2), _fmt(200 / 465, 2), 800 // 10, 2000 / 800) == ("0.75", "0.25", "0.43", 80, 2.5)
+
+    for needle in (
+        "## 🎬 十二幕动画：接触辅助 InEKF 全流程", "## 🚶 具体实例", "## 🧭 两个版本是什么关系",
+        "[1904.09251](https://arxiv.org/abs/1904.09251)", "[arXiv:1805.10410](https://arxiv.org/abs/1805.10410)",
+        "39(4): 402–430", "10.1177/0278364919894385", "10.15607/RSS.2018.XIV.050",
+        "Ross Hartley, Maani Ghaffari, Ryan M. Eustice, Jessy W. Grizzle",
+        "\\mathbf{(0.9794,\\ 0,\\ -0.0490)}", "\\mathbf{(0.981,\\ 0,\\ 0)}", "\\mathbf{(0.4905,\\ 0,\\ 0)}",
+        "$(-0.9761,\\ 0,\\ 0.0979)$", "$(-4.3045,\\ 0,\\ 2.3516)$", "\\mathbf{0.1005}", "\\mathbf{(0.42,\\ -0.13,\\ 0.02)}", "**1.39 m**", "**0.48 m**", "**70.0%**", "秩 **8**", "秩 **11**", "秩是 **9**",
+        "| ±30° | 0.98 s | **0.47 s** |", "| ±90° | 1.80 s | **0.49 s** | 18 / 0 |",
+        'data-demo="inekf-linearize"', 'data-demo="inekf-banana"', 'data-demo="inekf-converge"',
+    ):
+        assert needle in note, needle
+    for needle in ("0.979", "0.098", "0.049", "2.35", "0.981", "0.4905", "0.9794", "1.39", "0.48", "0.42", "200 米", "5%", "18 台"):
+        assert needle in narration, needle
+    # 片头接上一期（BeyondMimic）的片尾预告，片尾只预告下一篇（Berkeley Humanoid）
+    assert "上一期结尾预告：机器人怎样知道自己当前的姿态和速度" in narration and "下一篇讲 Berkeley Humanoid" in narration
+    assert "Berkeley Humanoid" in intro and "arxiv: '1904.09251'" in intro
+    for stale in ("1904.09251) (RSS 2018)", "Unitree 系列）状态估计器的基石", "Ross Hartley, Maani Ghaffari, Jessy W. Grizzle, Eustice", "板块: 08 State Estimation"):
         assert stale not in note, f"旧版笔记的说法：{stale}"

@@ -3212,15 +3212,16 @@
         "zh_title": "Kimera：实时度量-语义定位与建图的开源库"
       },
       {
-        "title": "Contact-Aided Invariant Extended Kalman Filtering for Legged Robot State Estimation",
+        "title": "Contact-Aided Invariant Extended Kalman Filtering for Robot State Estimation",
         "path": "papers/09_State_Estimation/Contact-Aided_Invariant_EKF_for_Legged_Robots/Contact-Aided_Invariant_EKF_for_Legged_Robots.md",
         "url": "/papers/09_State_Estimation/Contact-Aided_Invariant_EKF_for_Legged_Robots/Contact-Aided_Invariant_EKF_for_Legged_Robots.html",
         "dir": "Contact-Aided_Invariant_EKF_for_Legged_Robots",
         "arxiv": "1904.09251",
-        "published_date_zh": "2018年6月（RSS 2018），2019年4月19日（arXiv）",
-        "published_date_en": "Jun 2018 (RSS 2018), Apr 19, 2019 (arXiv)",
-        "zhname": "基于接触辅助的不变扩展卡尔曼滤波的足式机器人状态估计",
-        "zh_title": "基于接触辅助的不变扩展卡尔曼滤波的足式机器人状态估计"
+        "has_open_source": true,
+        "published_date_zh": "2019年4月19日（arXiv v1），2020年1月16日（IJRR），2018年6月（RSS 2018）",
+        "published_date_en": "Apr 19, 2019 (arXiv v1), Jan 16, 2020 (IJRR), Jun 2018 (RSS 2018)",
+        "zhname": "接触辅助 InEKF：面向机器人状态估计的不变扩展卡尔曼滤波",
+        "zh_title": "接触辅助 InEKF：面向机器人状态估计的不变扩展卡尔曼滤波"
       },
       {
         "title": "Legged Robot State-Estimation Through Combined Forward Kinematic and Preintegrated Contact Factors",
