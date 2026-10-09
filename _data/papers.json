@@ -1566,6 +1566,17 @@
     "display_name": "Manipulation",
     "papers": [
       {
+        "title": "Immiscible Diffusion Policy: Preserving Multimodal Robot Actions through Label-Free Noise Assignment",
+        "path": "papers/06_Manipulation/Immiscible_Diffusion_Policy__Preserving_Multimodal_Robot_Actions_through_Label-Free_Noise_Assignment/Immiscible_Diffusion_Policy__Preserving_Multimodal_Robot_Actions_through_Label-Free_Noise_Assignment.md",
+        "url": "/papers/06_Manipulation/Immiscible_Diffusion_Policy__Preserving_Multimodal_Robot_Actions_through_Label-Free_Noise_Assignment/Immiscible_Diffusion_Policy__Preserving_Multimodal_Robot_Actions_through_Label-Free_Noise_Assignment.html",
+        "dir": "Immiscible_Diffusion_Policy__Preserving_Multimodal_Robot_Actions_through_Label-Free_Noise_Assignment",
+        "arxiv": "2610.09369",
+        "published_date_zh": "2026年10月7日（arXiv v1）",
+        "published_date_en": "Oct 7, 2026 (arXiv v1)",
+        "zhname": "不相溶扩散策略：用无标签噪声分配保住机器人动作的多模态",
+        "zh_title": "不相溶扩散策略：用无标签噪声分配保住机器人动作的多模态"
+      },
+      {
         "title": "Blind Dexterity: Whole-Body Humanoid Manipulation via Pure Proprioception",
         "path": "papers/06_Manipulation/Blind_Dexterity__Whole-Body_Humanoid_Manipulation_via_Pure_Proprioception/Blind_Dexterity__Whole-Body_Humanoid_Manipulation_via_Pure_Proprioception.md",
         "url": "/papers/06_Manipulation/Blind_Dexterity__Whole-Body_Humanoid_Manipulation_via_Pure_Proprioception/Blind_Dexterity__Whole-Body_Humanoid_Manipulation_via_Pure_Proprioception.html",
