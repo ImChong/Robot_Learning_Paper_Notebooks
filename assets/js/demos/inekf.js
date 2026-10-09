@@ -72,6 +72,7 @@
   };
   var CONV = { runs: 100, eulerDeg: 30, velMax: 1.0, simSpeed: 0.3, realSpeed: 0.3, simWin: 1, realWin: 2 }; // 第 6.2、9.1 节
   var CONV_READ = { riSim: 0.3, qSimSpread: 10, riReal: 0.4, qRealSpread: 5 }; // 图 3、图 8 读图：InEKF 收拢时刻（s）与 QEKF 窗口末尾的散布（°）
+  var FIG6_READ = { qekfLatRatio: 0.5 }; // 图 6 读图：8 s 时 QEKF 的样本侧向只铺到约 ±2 m，真值约 ±4 m，航向带来的侧向展宽只有一半
   var FIG4_READ = { qekf: 25, inekf: 0 }; // 图 4 读图：初始误差放大到 (π/2, π/2, π/2) 时 QEKF 约 25，InEKF 为 0
   var BANANA = { speed: 1, secs: [0, 2, 4, 6, 8], posSigma: 0.1, yawDeg: 10, particles: 10000, fullYawDeg: 360 }; // 第 6.4 节、图 6、7
   var MOCAP = { cams: 18, secs: 60, pathM: 15, driftPct: 5 }; // 第 9.2 节、图 9
@@ -560,7 +561,8 @@
      真值：p(t) = p₀ + t·(cos ψ, sin ψ)。InEKF：在李代数里撒 ξ = (ψ, ξ_p)，经指数映射 X = exp(ξ)X̄ 回到群上：
      p = Rot(ψ)p̄ + V(ψ)ξ_p（这个玩具里 ξ 的协方差不随时间变，航向误差只在旋转那一维）。
      QEKF：位置上的高斯，均值 p̄，按一阶线性化给侧向方差 (tσ_ψ)² —— 只能是直的椭圆。 */
-  function bananaSamples(sigDeg, n, seed) {
+  /* qRatio：QEKF 那团的航向展宽乘几（缺省 1 = 一阶线性化；讲解动画第 8 幕按图 6 读图取 0.5） */
+  function bananaSamples(sigDeg, n, seed, qRatio) {
     var rng = mulberry32(seed), sig = (sigDeg * Math.PI) / 180, out = { truth: [], inv: [], q: [] };
     BANANA.secs.forEach(function (t) {
       var d = BANANA.speed * t, tru = [], inv = [], q = [];
@@ -569,7 +571,7 @@
         tru.push([e0 + d * Math.cos(psi), e1 + d * Math.sin(psi)]);
         var Vm = V2(psi), vp = mv2(Vm, [e0, e1]);
         inv.push([d * Math.cos(psi) + vp[0], d * Math.sin(psi) + vp[1]]);
-        var lat = Math.sqrt(BANANA.posSigma * BANANA.posSigma + d * d * sig * sig);
+        var qr = qRatio == null ? 1 : qRatio, lat = Math.sqrt(BANANA.posSigma * BANANA.posSigma + qr * qr * d * d * sig * sig);
         q.push([d + BANANA.posSigma * gauss(rng), lat * gauss(rng)]);
       }
       out.truth.push(tru); out.inv.push(inv); out.q.push(q);
@@ -895,7 +897,7 @@
 
   /* ── scene 1: 机器人怎样知道自己的姿态和速度 ── */
   function buildSceneWhy() {
-    var s = sceneSvg('左边是 Cassie 双足机器人：控制器每一拍要知道身体的朝向、速度和位置，编码器只量关节。相机和激光雷达怕暗、怕烟、怕晃；IMU、编码器、接触开关几乎不会失效。只积分 IMU 很快漂走，只靠运动学噪声大，常见做法是用扩展卡尔曼滤波融合；EKF 在当前估计值处线性化，估计偏远了，切线就是错的。这篇用不变扩展卡尔曼滤波');
+    var s = sceneSvg('左边是 Cassie 双足机器人：控制器每一拍要知道身体的朝向、速度和位置，编码器只量关节。相机怕光照和环境变化、激光雷达帧率低；IMU、编码器、接触开关几乎不会失效。只积分 IMU 很快漂走，只靠运动学噪声大，常见做法是用扩展卡尔曼滤波融合；EKF 在当前估计值处线性化，估计偏远了，切线就是错的。这篇用不变扩展卡尔曼滤波');
     s.appendChild(svgText(30, 28, '控制器每一拍都要问：我现在朝哪、走多快、在哪', 'demo-x-ink2', 13.5));
     /* 左：Cassie 和三个问号 */
     var left = group(s);
@@ -924,7 +926,7 @@
     var ext = group(sens);
     rectBox(ext, 278, 188, 226, 56, C_WARN, C_SURFACE, '4 3');
     ext.appendChild(paint(svgText(290, 208, '外部感知：相机、激光雷达', null, 11.5), C_WARN));
-    ext.appendChild(svgText(290, 230, '怕暗、怕烟、怕晃；帧率也低', 'demo-x-mut', 10.5));
+    ext.appendChild(svgText(290, 230, '相机怕光照和环境变化；激光雷达帧率低', 'demo-x-mut', 10.5));
     var extX = hline(ext, 470, 196, 496, 236, C_BAD, 2.4);
     var prop = group(sens);
     rectBox(prop, 278, 254, 226, 66, C_GOOD, C_SURFACE);
@@ -991,7 +993,7 @@
         var f = (i / 40) * u, x = DX0 + f * (DX1 - DX0);
         imuPts.push([x, DY - 82 * f * f]);
         kinPts.push([x, DY + 14 * f + 3 * Math.sin(i * 1.7)]);
-        fusePts.push([x, DY + 2 * Math.sin(i * 0.9)]);
+        fusePts.push([x, DY - 10 * f + 2 * Math.sin(i * 0.9)]); // 融合后位置仍不可观，慢慢漂（比只积分 IMU 慢得多）
       }
       setPath(pImu, imuPts); setPath(pKin, kinPts); setPath(pFuse, t >= 8.6 ? fusePts : []);
       setOpacity(fuseLab, seg(t, 8.6, 9.2));
@@ -1140,11 +1142,12 @@
     hline(right, 372, BY, 756, BY, C_BORDER, 1.2);
     var groups = [['水平 x', 430], ['竖直 z', 620]];
     var bars = groups.map(function (gq) {
-      right.appendChild(svgText(gq[1] + 30, 246, gq[0], 'demo-x-mut', 10.5, 'middle'));
+      var lab = svgText(gq[1] + 30, 246, gq[0], 'demo-x-mut', 10.5, 'middle');
+      right.appendChild(lab);
       var bT = vbar(right, gq[1] - 6, BY, 30, C_MUTED, 0.75), bQ = vbar(right, gq[1] + 36, BY, 30, C_Q, 0.85);
       var tT = svgText(gq[1] + 9, 0, '', 'demo-x-mut', 10, 'middle'), tQ = paint(svgText(gq[1] + 51, 0, '', null, 10, 'middle'), C_Q);
       right.appendChild(tT); right.appendChild(tQ);
-      return { bT: bT, bQ: bQ, tT: tT, tQ: tQ };
+      return { bT: bT, bQ: bQ, tT: tT, tQ: tQ, lab: lab };
     });
     var leg = group(right);
     rectBox(leg, 372, 74, 12, 10, C_MUTED, C_MUTED);
@@ -1159,7 +1162,7 @@
 
     var sec4 = group(s);
     rectBox(sec4, 30, 346, 740, 60, C_ACCENT, C_SURFACE);
-    sec4.appendChild(svgRich(46, 370, '第 4 节的例子：欧拉角的误差方程处处是估计值 → 换成旋转矩阵、误差定义成 $R^{\\top}\\bar R$，方程只剩 $\\dot\\xi = -(\\tilde\\omega)_\\times\\,\\xi$', { size: 11.5, w: 720, cls: 'demo-x-ink2' }));
+    sec4.appendChild(svgRich(46, 370, '第 4 节的例子：欧拉角的误差方程里含着估计的横滚、俯仰 → 换成旋转矩阵、误差定义成 $R^{\\top}\\bar R$，方程只剩 $\\dot\\xi = -(\\tilde\\omega)_\\times\\,\\xi$', { size: 11.5, w: 720, cls: 'demo-x-ink2' }));
     sec4.appendChild(svgText(46, 394, '估计值从方程里消失了 —— 这就是 InEKF 要推广到整个状态的那件事', 'demo-x-mut', 10.5));
 
     function draw(t) {
@@ -1186,21 +1189,23 @@
       setOpacity(labG, seg(t, 3.6, 4.2));
       setOpacity(aRes, seg(t, 4.4, 5.0));
       setOpacity(labR, seg(t, 4.4, 5.0));
-      var ex = t < 10.4 ? EX_SMALL : EX_BIG;
+      /* 10.4 之后倾角从 0.1 动到 0.5 rad，柱子跟着倾角现算；0.1 rad 时竖直分量只有 0.05 / 0.1，放大 20 倍才看得出「多算一倍」 */
+      var ex = t < 10.4 ? EX_SMALL : standingExample(th, 1), zMag = t < 10.4 ? 20 : 1;
       velLab.setText(t < 3.6 ? 'IMU 读到的只有重力：$\\tilde a = (0, 0, 9.81)$' : '1 秒后估计速度 $\\bar v = ' + fmtV([ex.vbar[0], ex.vbar[2]], 3) + '$（x, z）');
       setOpacity(velLab, seg(t, 0.8, 1.4));
       setOpacity(right, seg(t, 5.4, 6.0));
       var grow = t < 10.4 ? ease(seg(t, 5.6, 6.6)) : 1;
       [0, 2].forEach(function (c, k) {
-        var B = bars[k], a = ex.trueDv[c], b = t >= 7.0 ? ex.qekfDv[c] : 0;
+        var B = bars[k], a = ex.trueDv[c], b = t >= 7.0 ? ex.qekfDv[c] : 0, sc = SC * (c === 2 ? zMag : 1);
         var gb = t >= 7.0 ? (t < 10.4 ? ease(seg(t, 7.0, 7.8)) : 1) : 0;
-        setH(B.bT, a * SC * grow);
-        setH(B.bQ, b * SC * gb);
+        setH(B.bT, a * sc * grow);
+        setH(B.bQ, b * sc * gb);
         B.tT.textContent = fmt(a, 3);
-        B.tT.setAttribute('y', (a >= 0 ? BY - a * SC * grow - 5 : BY - a * SC * grow + 12).toFixed(1));
+        B.tT.setAttribute('y', (a >= 0 ? BY - a * sc * grow - 5 : BY - a * sc * grow + 12).toFixed(1));
         B.tQ.textContent = fmt(b, 3);
-        B.tQ.setAttribute('y', (b >= 0 ? BY - b * SC * gb - 5 : BY - b * SC * gb + 12).toFixed(1));
+        B.tQ.setAttribute('y', (b >= 0 ? BY - b * sc * gb - 5 : BY - b * sc * gb + 12).toFixed(1));
         setOpacity(B.tQ, gb);
+        if (c === 2) B.lab.textContent = zMag > 1 ? '竖直 z（柱子放大 20 倍）' : '竖直 z';
       });
       setOpacity(eq, seg(t, 7.0, 7.6));
       setOpacity(sec4, seg(t, 13.4, 14.0));
@@ -1318,7 +1323,7 @@
     var trackers = panes.map(function (pq, k) {
       var g = group(trk);
       g.appendChild(svgText(pq[0] + 6, 62, pq[1], 'demo-x-mut', 10));
-      var O = [pq[0] + 16, 178];
+      var O = [pq[0] + 16, 172];
       dotAt(g, O[0], O[1], 2.5, C_MUTED);
       var pts = [];
       for (var i = 0; i <= 40; i++) {
@@ -1332,7 +1337,7 @@
       return { pts: pts, rot: rot, dT: dT, dE: dE, est: est };
     });
     var xiBars = group(trk);
-    xiBars.appendChild(svgRich(46, 190, '两边的误差 $\\xi$ 一样，而且一直不变', { size: 10.5, w: 300, cls: 'demo-x-acc' }));
+    xiBars.appendChild(svgRich(46, 190, '两边的误差 $\\xi$ 演化得一样（航向误差，所以一直不变）', { size: 10.5, w: 300, cls: 'demo-x-acc' }));
 
     /* 右上：A 是常数 */
     var eqg = group(s);
@@ -1369,7 +1374,7 @@
     hline(fig, FX0, FY1, FX0, FY0, C_BORDER, 1);
     fig.appendChild(svgText(FX0 - 4, FY1 + 4, '25', 'demo-x-mut', 9, 'end'));
     fig.appendChild(svgText(FX0 - 4, FY0 + 3, '0', 'demo-x-mut', 9, 'end'));
-    fig.appendChild(svgText(FX1, FY0 + 12, '初始误差缩放 0 → 1（π/2 × 3 轴）', 'demo-x-mut', 9, 'end'));
+    fig.appendChild(svgText(FX1, FY0 + 12, '初始误差 0 → 旋转向量 (π/2, π/2, π/2)，约 156°', 'demo-x-mut', 9, 'end'));
     var qPath = pathLine(fig, [], C_Q, 2), iPath = pathLine(fig, [], C_IN, 2.2, '6 4');
     var qLab = paint(svgText(FX1 - 4, FY1 - 2, 'QEKF ≈ 25', null, 10, 'end'), C_Q);
     var iLab = paint(svgText(FX1 - 4, FY0 - 6, 'InEKF = 0', null, 10, 'end'), C_IN);
@@ -1416,7 +1421,7 @@
 
   /* ── scene 6: 正运动学校正：H 是常数（第 5.3 节；第 10–11 节的左 / 右不变） ── */
   function buildSceneUpdate() {
-    var s = sceneSvg('左边：腿测出来的脚的位置比估计的远 2 厘米，新息指向缺口；校正时身体往回挪 1 厘米、脚往前挪 1 厘米，缺口合上（放大 10 倍画）。右边：InEKF 的观测矩阵 H 是常数 0、0、负单位阵、单位阵；QEKF 的 H 里有估计值。下面：协方差用 Joseph 形式更新；换成机器人中心的写法，同一个测量变成左不变观测，两种误差用伴随矩阵互换');
+    var s = sceneSvg('左边：腿测出来的脚比估计的靠前 2 厘米、高 2 厘米，新息指向缺口；校正时身体每轴往回挪约 1 厘米、脚每轴往前挪约 1 厘米，缺口合上（放大 10 倍画）。右边：InEKF 的观测矩阵 H 是常数 0、0、负单位阵、单位阵；QEKF 的 H 里有估计值。下面：协方差用 Joseph 形式更新；换成机器人中心的写法，运动学变成左不变观测、GPS 变成右不变观测，两种误差用伴随矩阵互换');
     s.appendChild(svgText(30, 28, '正运动学来校正：新息只看不变误差，H 是常数', 'demo-x-ink2', 13.5));
     var left = group(s);
     rectBox(left, 30, 44, 360, 290, C_BORDER, C_SURFACE2);
@@ -1433,7 +1438,7 @@
     var labs = group(left);
     var lbMeas = svgRich(0, 0, '腿测出来的 $\\bar R h_p$', { size: 10.5, w: 140, cls: 'demo-x-warn' });
     var lbFoot = svgRich(0, 0, '估计的脚 $\\bar d$', { size: 10.5, w: 120, cls: 'demo-x-good' });
-    var lbZ = svgRich(0, 0, '新息：差 2 cm', { size: 10.5, w: 110, cls: 'demo-x-bad' });
+    var lbZ = svgRich(0, 0, '新息：x、z 各差 2 cm', { size: 10.5, w: 130, cls: 'demo-x-bad' });
     [lbMeas, lbFoot, lbZ].forEach(function (n) { labs.appendChild(n); });
     var numbers = group(left);
     numbers.appendChild(svgRich(44, 316, 'x、z 两轴：身体各挪 $' + fmt(UPD_EX.dp[0] * 100, 3) + '$ cm，脚各挪 $+' + fmt(UPD_EX.dd[0] * 100, 3) + '$ cm，缺口合上', { size: 10.5, w: 330, cls: 'demo-x-ink2' }));
@@ -1455,6 +1460,7 @@
     hQ.appendChild(svgText(420, 184, 'QEKF：', 'demo-x-bad', 11));
     hQ.appendChild(svgMath(600, 186, '\\big[\\,(\\bar R^{\\top}(\\bar d-\\bar p))_\\times,\\ 0,\\ -\\bar R^{\\top},\\ \\bar R^{\\top}\\big]', { size: 12.5, anchor: 'middle', w: 300, cls: 'demo-x-bad' }));
     hQ.appendChild(svgText(756, 214, '含估计值', 'demo-x-bad', 10.5, 'end'));
+    hQ.appendChild(svgText(420, 214, '照抄第 6.1 节；第一块的正负号见笔记附录 C', 'demo-x-mut', 9.5));
 
     var jos = group(s);
     rectBox(jos, 406, 236, 364, 98, C_BORDER, C_SURFACE2);
@@ -1465,7 +1471,7 @@
 
     var lr = group(s);
     rectBox(lr, 30, 346, 740, 60, C_ACCENT, C_SURFACE);
-    lr.appendChild(svgRich(46, 368, '**世界中心**：运动学是右不变观测 → 用右不变误差。**机器人中心**（状态取逆）：同一个测量变成左不变观测；GPS 也是左不变观测', { size: 11, w: 720, cls: 'demo-x-ink2' }));
+    lr.appendChild(svgRich(46, 368, '**世界中心**：运动学是右不变观测、GPS 是左不变观测（表 2）。**机器人中心**（状态取逆）：两者对调（表 3）', { size: 11, w: 720, cls: 'demo-x-ink2' }));
     lr.appendChild(svgRich(46, 392, '两种误差用伴随矩阵精确互换：$P^{r} = \\mathrm{Ad}_{\\bar X}\\,P^{l}\\,\\mathrm{Ad}_{\\bar X}^{\\top}$（第 10.1 节）', { size: 11, w: 720, cls: 'demo-x-mut' }));
 
     function draw(t, clock) {
@@ -1479,7 +1485,7 @@
       var bp = W(pNow), dp = W(dNow);
       bodyB.put(bp[0], bp[1], 0, [[dp[0], dp[1], true], [bp[0] - 26, GY - 62, false]]);
       moveDot(footD, dp);
-      /* 测量：从身体出发的 R̄h（h 比估计长 2 cm，放大 10 倍） */
+      /* 测量：从身体出发的 R̄h（测到的脚比估计靠前 2 cm、高 2 cm，放大 10 倍） */
       var hEnd = [pNow[0] + (UPD.h[0] + (UPD.h[0] - (UPD.d[0] - UPD.p[0])) * (MAG - 1)), 0, pNow[2] + (UPD.h[2] + (UPD.h[2] - (UPD.d[2] - UPD.p[2])) * (MAG - 1))];
       var he = W(hEnd);
       setArrow(meas, [[bp[0], bp[1] + 6], he]);
@@ -1608,7 +1614,7 @@
     s.appendChild(svgText(30, 28, '不确定性的形状：真的会弯成香蕉', 'demo-x-ink2', 13.5));
     var PW = 236, PH = 268, PY = 50, titles = ['真分布（1 万个粒子）', 'InEKF：李代数里的高斯', 'QEKF：位置上的高斯'];
     var cols = [C_TRUE, C_IN, C_Q];
-    var small = bananaSamples(BANANA.yawDeg, 150, 5), big = bananaSamples(BANANA.fullYawDeg, 150, 6);
+    var small = bananaSamples(BANANA.yawDeg, 150, 5, FIG6_READ.qekfLatRatio), big = bananaSamples(BANANA.fullYawDeg, 150, 6);
     var panels = titles.map(function (tt, k) {
       var g = group(s), x0 = 30 + k * (PW + 16);
       rectBox(g, x0, PY - 6, PW, PH + 30, C_BORDER, C_SURFACE2);
@@ -1639,6 +1645,8 @@
     var noFit = group(panels[2].g);
     noFit.appendChild(paint(svgText(panels[2].x0 + PW / 2, PY + PH / 2 - 8, '高斯椭圆', null, 13, 'middle'), C_Q));
     noFit.appendChild(paint(svgText(panels[2].x0 + PW / 2, PY + PH / 2 + 14, '表示不了圆环', null, 13, 'middle'), C_Q));
+    var qNote = group(panels[2].g);
+    qNote.appendChild(svgText(panels[2].x0 + PW / 2, PY + PH + 16, '宽度按图 6 读图：8 s 约 ±2 m（真值约 ±4 m）', 'demo-x-mut', 9.5, 'middle'));
     var nums = group(s);
     nums.appendChild(svgRich(46, 366, '航向偏 10°、走 8 m：侧向偏 **' + fmt(BAN_LAT1, 2) + ' m**；偏 20°（2σ）时还往回弯 **' + fmt(BAN_SAG2, 2) + ' m**', { size: 11.5, w: 520, cls: 'demo-x-ink2' }));
     var form = group(s);
@@ -1657,7 +1665,7 @@
       panels[2].clouds.forEach(function (p) { setOpacity(p, t >= 10.4 ? 0.45 : 0); });
       var m2 = mapper(2, bigMode);
       BANANA.secs.forEach(function (sec, i) {
-        var d = BANANA.speed * sec, lat = Math.sqrt(BANANA.posSigma * BANANA.posSigma + d * d * BAN_S * BAN_S);
+        var qr = FIG6_READ.qekfLatRatio, d = BANANA.speed * sec, lat = Math.sqrt(BANANA.posSigma * BANANA.posSigma + qr * qr * d * d * BAN_S * BAN_S);
         var c = m2([d, 0]), e = m2([d + 2 * BANANA.posSigma, 2 * lat]);
         ells[i].setAttribute('cx', c[0].toFixed(1)); ells[i].setAttribute('cy', c[1].toFixed(1));
         ells[i].setAttribute('rx', Math.abs(c[0] - e[0]).toFixed(1)); ells[i].setAttribute('ry', Math.abs(c[1] - e[1]).toFixed(1));
@@ -1666,6 +1674,7 @@
       var walkT = (now % 8);
       robot.forEach(function (r, k) { moveDot(r, mapper(k, bigMode)([BANANA.speed * walkT, 0])); setOpacity(r, seg(t, 3.6, 4.0)); });
       setOpacity(noFit, bigMode ? seg(t, 14.0, 14.6) : 0);
+      setOpacity(qNote, !bigMode && t >= 10.4 ? seg(t, 10.4, 11.0) : 0);
       setOpacity(nums, seg(t, 7.0, 7.6) * (bigMode ? 0.35 : 1));
       setOpacity(form, seg(t, 0.4, 1.0));
       setOpacity(ring, seg(t, 13.4, 14.0));
@@ -1801,7 +1810,7 @@
     var slam = group(s);
     rectBox(slam, 30, 346, 740, 60, C_ACCENT, C_SURFACE);
     slam.appendChild(svgRich(46, 368, '和**路标 SLAM** 是一回事（第 12 节）：触地点 = 只在踩着时才看得见的路标；2000 Hz、不用做数据关联，速度噪声允许打滑', { size: 11, w: 720, cls: 'demo-x-ink2' }));
-    slam.appendChild(svgText(46, 392, '把真的路标也放进同一个矩阵，位置和航向就能补成可观（代价是维数随路标增长）', 'demo-x-mut', 10.5));
+    slam.appendChild(svgText(46, 392, '放进已知位置的路标（表 2 的绝对路标观测），位置和航向才能补成可观；代价是维数随路标增长', 'demo-x-mut', 10.5));
 
     function draw(t, clock) {
       var now = nowOf(t, clock);
@@ -1903,7 +1912,7 @@
         sideLines[1].setText('初值：欧拉角 ±30°、速度 ±1 m/s');
         sideLines[2].setText('各跑 **100** 次，零偏估计关');
         sideLines[3].setText(t >= 3.6 ? 'InEKF：约 **0.3 s** 收拢（读图）' : '');
-        sideLines[4].setText(t >= 7.0 ? 'QEKF：1 s 后还散着 **十来度**' : '');
+        sideLines[4].setText(t >= 7.0 ? 'QEKF：1 s 后还散着 **十来度**（读图）' : '');
         sideLines[5].setText(t >= 7.0 ? '航向两者都不收敛：看不见' : '');
       } else {
         sideT.setText('真机（图 8）');
@@ -1911,7 +1920,7 @@
         sideLines[1].setText('同一段记录，离线跑 **100** 次');
         sideLines[2].setText('零偏估计打开');
         sideLines[3].setText('InEKF：约 **0.4 s** 收拢（读图）');
-        sideLines[4].setText('QEKF：2 s 后还散着 **约 5°**');
+        sideLines[4].setText('QEKF：2 s 后还散着 **约 5°**（读图）');
         sideLines[5].setText('100 次里 InEKF 都更快、更稳');
       }
       setOpacity(bottom, seg(t, 13.4, 14.0));
@@ -1940,7 +1949,7 @@
     lg.appendChild(svgText(44, 300, '— — 动作捕捉', 'demo-x-mut', 10));
     lg.appendChild(paint(svgText(140, 300, '—— InEKF', null, 10), C_IN));
     var drift = group(left);
-    drift.appendChild(svgRich(44, 322, '约 15 m、60 s：终点差 **< 5%**（< 0.75 m）', { size: 10.5, w: 300, cls: 'demo-x-ink2' }));
+    drift.appendChild(svgRich(44, 322, '约 15 m、60 s：终点差 **< 5%**（约 0.75 m 以内）', { size: 10.5, w: 300, cls: 'demo-x-ink2' }));
 
     var walk = group(s);
     rectBox(walk, 366, 44, 404, 140, C_BORDER, C_SURFACE2);
@@ -2014,7 +2023,7 @@
       build: buildSceneWhy,
       cues: [
         { at: 0.3, s: '控制器每一拍都要知道身体的**朝向、速度和位置**：往哪歪、走多快、在哪。关节角有编码器直接量，身体在世界里的位姿和速度没有传感器能直接读。' },
-        { at: 3.6, s: '相机、激光雷达能帮忙，但怕暗、怕烟、怕晃，帧率也低。底层估计器最好只用**本体传感器**：IMU、关节编码器和接触开关，它们几乎不会失效。' },
+        { at: 3.6, s: '相机、激光雷达能帮忙，但相机怕光照和环境变化，激光雷达帧率也低。底层估计器最好只用**本体传感器**：IMU、关节编码器和接触开关，它们几乎不会失效。' },
         { at: 7.0, s: '只积分 IMU，几秒就漂飞；只靠运动学，噪声大还漂。常见做法是用**扩展卡尔曼滤波（EKF）**把三者融合起来（Bloesch 等，2012）。' },
         { at: 10.4, s: 'EKF 在**当前估计值**处线性化：估计偏得远，线性化本身就错了，收敛变慢甚至发散，还可能把看不见的量当成看得见。' },
         { at: 13.4, s: '这篇用**不变扩展卡尔曼滤波（InEKF）**：传感器和模型都不变，只换误差的定义，线性化就不再依赖估计值。RSS 2018 会议版，IJRR 2020 扩展版，平台是 Cassie。' }
@@ -2041,7 +2050,7 @@
         { at: 3.6, s: '用错的朝向把读数转到世界系，扣掉重力，剩下约 0.98 m/s² 的「假加速度」：1 秒后估计速度变成 (0.979, 0, −0.049) m/s。' },
         { at: 7.0, s: 'QEKF 的误差方程里含着估计值 $\\bar R_t$：它预测的速度误差是 (−0.976, 0, 0.098)，竖直分量比真实的 0.049 **多算了一倍**。' },
         { at: 10.4, s: '错 0.5 rad 时：真实误差 (−4.70, 0, 1.20)，QEKF 预测 (−4.30, 0, 2.35)。**估计越偏，线性化越错**，协方差也就越不可信。' },
-        { at: 13.4, s: '论文第 4 节用纯朝向的例子讲同一件事：欧拉角的误差方程处处带着估计值；换成旋转矩阵、误差定义成 $R^{\\top}\\bar R$，估计值就从方程里消失了。' }
+        { at: 13.4, s: '论文第 4 节用纯朝向的例子讲同一件事：欧拉角的误差方程里含着估计的横滚、俯仰；换成旋转矩阵、误差定义成 $R^{\\top}\\bar R$，估计值就从方程里消失了。' }
       ]
     },
     {
@@ -2064,7 +2073,7 @@
         { at: 0.3, s: '**定理 1**：动力学满足「群仿射」，不变误差的演化就**和轨迹无关**。IMU 加接触的模型正好满足：走直线还是转弯，误差都一样地演化。' },
         { at: 3.6, s: '**定理 2**：对数误差满足线性方程 $\\dot\\xi = A\\xi$，而且是**精确**的。这里的 $A$ 是常数，只含重力 $g$，没有任何估计值。' },
         { at: 7.0, s: '回到站立的例子：线性方程给出 $\\xi_v = (0.981, 0, 0)$、$\\xi_p = (0.4905, 0, 0)$；过一次指数映射得 (0.9794, 0, −0.0490)，和滤波器自己积分的**一位不差**。' },
-        { at: 10.4, s: '图 4 把它做成实验：初始朝向误差从 0 放大到每轴 π/2，传 1 秒。QEKF 的线性预测越错越多（约 25，读图），InEKF 一直是 **0**。' },
+        { at: 10.4, s: '图 4 把它做成实验：初始朝向误差从 0 放大到旋转向量 $(\\pi/2, \\pi/2, \\pi/2)$（合起来约 156°），传 1 秒。QEKF 的线性预测越错越多（约 25，读图），InEKF 一直是 **0**。' },
         { at: 13.4, s: '读数带噪声时就不再精确（图 5），但 InEKF 的线性化仍然准得多：估计偏了，也不会把方程本身带偏。' }
       ]
     },
@@ -2075,7 +2084,7 @@
       cues: [
         { at: 0.3, s: '正运动学测的是「脚相对身体」。写成矩阵，正好是 $Y = X^{-1}b + V$ 的形式 —— 论文叫它**右不变观测**。' },
         { at: 3.6, s: '于是新息只依赖不变误差，线性化后 $H = [\\,0,\\ 0,\\ -I,\\ I\\,]$，**和估计值无关**；QEKF 的 $H$ 里有 $\\bar R^{\\top}(\\bar d - \\bar p)$。' },
-        { at: 7.0, s: '例子：腿测出来比估计的远 2 cm、高 2 cm。更新后身体和脚各挪约 1 cm、方向相反，缺口就合上了（对角协方差，演示用）。' },
+        { at: 7.0, s: '例子：腿测出来的脚比估计的靠前 2 cm、高 2 cm。更新后身体和脚每轴各挪约 1 cm、方向相反，缺口就合上了（对角协方差，演示用）。' },
         { at: 10.4, s: '更新是 $\\bar X^{+} = \\exp(K\\Pi\\bar X Y)\\,\\bar X$；协方差用 Joseph 形式（扩展版式 19，会议版写的是 $(I-KH)P$）。官方 C++ 库的 `Correct()` 就是这样写的。' },
         { at: 13.4, s: '换成**机器人中心**的写法（状态取逆），同一个运动学测量变成左不变观测；左右两种误差之间用伴随矩阵精确换算（第 10、11 节）。' }
       ]
@@ -2100,7 +2109,7 @@
         { at: 0.3, s: '两种滤波器都把误差当成零均值高斯，但高斯放在哪儿不一样：QEKF 放在位置上；InEKF 放在李代数里，再经指数映射回到群上：$X = \\exp(\\xi)\\bar X$。' },
         { at: 3.6, s: '仿真（第 6.4 节）：Cassie 以 1 m/s 往前走 8 秒，初始位置不确定 0.1 m、航向不确定 10°。撒 1 万个粒子当「真」分布。' },
         { at: 7.0, s: '真分布弯成一根**香蕉**：航向偏 10°，走 8 m 侧向偏 1.39 m；偏 20° 时还往回弯 0.48 m。InEKF 的样本也弯成同一根香蕉。' },
-        { at: 10.4, s: 'QEKF 只能画**直的椭圆**，弯不过来；论文图 6 里它画出的侧向范围比真值还窄（读图）。' },
+        { at: 10.4, s: 'QEKF 只能画**直的椭圆**，弯不过来；论文图 6 里它的侧向范围只有真值的一半左右（读图：8 s 时约 ±2 m 对 ±4 m）。' },
         { at: 13.4, s: '航向完全不知道（标准差 360°，图 7）：InEKF 画出一圈圈圆环，半径 2、4、6、8 m；高斯椭圆根本表示不了。' }
       ]
     },
@@ -2124,8 +2133,8 @@
         { at: 0.3, s: '走路时触地点来来去去。Cassie 每条腿有两根弹簧，弹簧压缩量过阈值就算着地 —— 一个二值接触传感器。' },
         { at: 3.6, s: '**脚抬起**：把这只脚对应的那一列（和那一行）从 $X$ 里删掉，协方差也删掉对应的 3 行 3 列 —— 就是边缘化。' },
         { at: 7.0, s: '**脚落下**：用正运动学初始化新的触地点 $\\bar d = \\bar p + \\bar R\\,h_p(\\tilde\\alpha)$；协方差从身体位置那几行抄过来，再加上运动学噪声。' },
-        { at: 10.4, s: '例：$\\bar p = (0.30, 0, 0.90)$，腿测出 (0.12, −0.13, −0.88)，新脚印在 (0.42, −0.13, 0.02)；位置标准差 0.1 m 加上 1 cm 的运动学噪声，约 0.1005 m。' },
-        { at: 13.4, s: '这和**路标 SLAM** 是一回事：触地点就是只在踩着时才看得见的路标，2000 Hz、不用做数据关联。换成真的路标，位置和航向也能补成可观。' }
+        { at: 10.4, s: '例：$\\bar p = (0.30, 0, 0.90)$，腿测出 (0.12, −0.13, −0.88)，新脚印在 (0.42, −0.13, 0.02)；位置标准差 0.1 m 加上 1 cm 的运动学噪声（1 cm 取自官方示例代码），约 0.1005 m。' },
+        { at: 13.4, s: '这和**路标 SLAM** 是一回事：触地点就是只在踩着时才看得见的路标，2000 Hz、不用做数据关联。放进**已知位置**的路标（表 2 的绝对路标观测），位置和航向才能补成可观。' }
       ]
     },
     {
@@ -2161,8 +2170,8 @@
       ariaLabel: '接触辅助 InEKF 十二幕讲解动画',
       notes: [
         '取数依据：第 1、2、11、12 幕的数字照抄论文第 6、9 节与表 1（IJRR 扩展版 arXiv 1904.09251 v2；会议版 1805.10410 的实验数字相同）；第 5 幕的 $A$、第 6 幕的 $H$、第 7 幕的可观性矩阵照抄第 5 节式 (12)–(14)、(20) 与第 5.4 节；第 9 幕的 $A$ 照抄式 (28)。' +
-          '第 3、5 幕的站立例子（0.1 rad、0.5 rad）、第 6 幕的 2 cm 校正、第 10 幕的新触地点、第 8 幕的 1.39 m / 0.48 m 是在论文的式子上现算的（具体实例第 2–4、6、8、9 步）；第 7 幕「QEKF 秩为 9」是我们用抖动的估计值算的 12 维小例子，不是论文的数。',
-        '**读图与示意**：图 3、4、6、8、9 没有标数，第 5、11、12 幕的曲线和轨迹是按图读的近似值；第 2、3、4、6、10 幕的 Cassie 腿示意（鸟腿画法同真实世界人形行走那篇的 Digit 下半身，连杆按 MuJoCo Menagerie 的 Cassie 模型：大腿 0.12、小腿 0.50、跗骨 0.41 m）、第 9 幕的零偏曲线、第 12 幕的人行道与点云是示意。Cassie 的图取自 Robot_Description_Gallery（按 UMich BipedLab 的开源 URDF 渲染）。'
+          '第 3、5 幕的站立例子（0.1 rad、0.5 rad）、第 6 幕的 2 cm 校正、第 10 幕的新触地点、第 8 幕的 1.39 m / 0.48 m 是在论文的式子上现算的（具体实例第 2–4、6、8、9 步；第 3 幕 QEKF 的预测按式 (21) 的误差定义推，第 6.1 节印出的符号相反，见笔记附录 C）；第 7 幕「QEKF 秩为 9」是我们用抖动的估计值算的 12 维小例子，不是论文的数。',
+        '**读图与示意**：图 3、4、6、8、9 没有标数，第 5、11、12 幕的曲线和轨迹、第 8 幕 QEKF 那格的宽度是按图读的近似值；第 2、3、4、6、10 幕的 Cassie 腿示意（鸟腿画法同真实世界人形行走那篇的 Digit 下半身，连杆按 MuJoCo Menagerie 的 Cassie 模型：大腿 0.12、小腿 0.50、跗骨 0.41 m）、第 9 幕的零偏曲线、第 12 幕的人行道与点云是示意。Cassie 的图取自 Robot_Description_Gallery（按 UMich BipedLab 的开源 URDF 渲染）。'
       ],
       scenes: INEKF_SCENES
     });
