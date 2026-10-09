@@ -3639,6 +3639,18 @@
         "zh_title": "人形机器人踝关节最优设计框架"
       },
       {
+        "title": "ToddlerBot: Open-Source ML-Compatible Humanoid Platform for Loco-Manipulation",
+        "path": "papers/12_Hardware_Design/ToddlerBot_Open-Source_ML-Compatible_Humanoid_Platform_for_Loco-Manipulation/ToddlerBot_Open-Source_ML-Compatible_Humanoid_Platform_for_Loco-Manipulation.md",
+        "url": "/papers/12_Hardware_Design/ToddlerBot_Open-Source_ML-Compatible_Humanoid_Platform_for_Loco-Manipulation/ToddlerBot_Open-Source_ML-Compatible_Humanoid_Platform_for_Loco-Manipulation.html",
+        "dir": "ToddlerBot_Open-Source_ML-Compatible_Humanoid_Platform_for_Loco-Manipulation",
+        "arxiv": "2502.00893",
+        "has_open_source": true,
+        "published_date_zh": "2025年2月2日（arXiv v1），2025年10月6日（arXiv v4）",
+        "published_date_en": "Feb 2, 2025 (arXiv v1), Oct 6, 2025 (arXiv v4)",
+        "zhname": "ToddlerBot：面向移动操作的开源、机器学习兼容的人形机器人平台",
+        "zh_title": "ToddlerBot：面向移动操作的开源、机器学习兼容的人形机器人平台"
+      },
+      {
         "title": "Berkeley Humanoid: A Research Platform for Learning-based Control",
         "path": "papers/12_Hardware_Design/Berkeley_Humanoid_A_Research_Platform_for_Learning-based_Control/Berkeley_Humanoid_A_Research_Platform_for_Learning-based_Control.md",
         "url": "/papers/12_Hardware_Design/Berkeley_Humanoid_A_Research_Platform_for_Learning-based_Control/Berkeley_Humanoid_A_Research_Platform_for_Learning-based_Control.html",

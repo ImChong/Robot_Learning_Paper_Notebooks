@@ -629,7 +629,7 @@
 | 432  | [ORCA: Open-Source, Reliable, Cost-Effective, Anthropomorphic Robotic Hand for Uninterrupted Dexterous Task Learning](https://arxiv.org/abs/2504.04259)                | 2025.04 |     | ⏳ 待读 |
 | 433  | [Control of Humanoid Robots with Parallel Mechanisms using Kinematic Actuation Models](https://arxiv.org/abs/2503.22459)                                               | 2025.03 |     | ⏳ 待读 |
 | 434  | [Exceeding the Maximum Speed Limit of the Joint Angle for the Redundant Tendon-driven Structures of Musculoskeletal Humanoids](https://arxiv.org/abs/2502.12808)       | 2025.02 |     | ⏳ 待读 |
-| 435  | [ToddlerBot: Open-Source ML-Compatible Humanoid Platform for Loco-Manipulation](https://arxiv.org/abs/2502.00893)                                                      | 2025.02 |     | ⏳ 待读 |
+| 435  | [ToddlerBot: Open-Source ML-Compatible Humanoid Platform for Loco-Manipulation](https://arxiv.org/abs/2502.00893) ✅ [笔记](12_Hardware_Design/ToddlerBot_Open-Source_ML-Compatible_Humanoid_Platform_for_Loco-Manipulation/ToddlerBot_Open-Source_ML-Compatible_Humanoid_Platform_for_Loco-Manipulation.md) | 2025.02 | 🌟 | ✅ 已总结 |
 | 436  | [Design and Control of a Bipedal Robotic Character](https://arxiv.org/abs/2501.05204)                                                                                  | 2025.01 |     | ⏳ 待读 |
 | 437  | [The Duke Humanoid: Design and Control For Energy Efficient Bipedal Locomotion Using Passive Dynamics](https://arxiv.org/abs/2409.19795)                               | 2024.09 |     | ⏳ 待读 |
 | 438  | [The MIT Humanoid Robot: Design, Motion Planning, and Control For Acrobatic Behaviors](https://arxiv.org/abs/2104.09025)                                               | 2021.04 |     | ⏳ 待读 |
