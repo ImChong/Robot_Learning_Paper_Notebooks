@@ -1072,6 +1072,7 @@
     rectBox(bloesch, 276, 288, 494, 46, C_ACCENT, C_SURFACE, '4 3');
     bloesch.appendChild(svgRich(290, 316, '这套拆法来自 Bloesch 的 QEKF（2012）；InEKF 不改传感器、不改模型，**只改误差怎么定义**', { size: 11, w: 470, cls: 'demo-x-ink2' }));
 
+    var drift0 = null;
     function draw(t, clock) {
       var now = nowOf(t, clock);
       setOpacity(left, seg(t, 0.2, 0.8));
@@ -1085,8 +1086,14 @@
       var bx0 = 340 + (n % 8) * S, bx = bx0 + S * u, footX = bx0 + S / 2, by = GY - 74;
       var su = clamp((u - 0.15) / 0.7, 0, 1), swX = footX - S + 2 * S * ease(su), swY = GY - 10 * Math.sin(Math.PI * su);
       var stance = [footX, GY, true], swing = [swX, swY, su <= 0 || su >= 1];
-      /* 3.6 开始时真实时钟可能正处在漂得最远的地方，头 0.6 秒从 0 渐入，免得估计的身体一下跳开 */
-      var drift = t >= 3.6 ? (u < 0.6 ? Math.pow(u / 0.6, 2) : Math.max(0, 1 - (u - 0.6) / 0.08)) * ease(seg(t, 3.6, 4.2)) : 0;
+      /* 走满 8 步（视频里这一幕比网页长）要回到左边重走：第 8 步末尾淡出、回到起点后再淡入，不瞬移 */
+      var lap = n % 8 === 7 && u > 0.8 ? (1 - u) / 0.2 : n > 0 && n % 8 === 0 && u < 0.2 ? u / 0.2 : 1;
+      setOpacity(estBody.g, lap);
+      /* 视频里 3.6 开始时真实时钟可能正处在一步的中间（漂得正远），所以从下一步起才开始漂：
+         第一次画到 t ≥ 3.6 时记下从哪一步开始（这一步刚开头就从这一步起），估计的身体不会一出场就跳开 */
+      if (t < 3.6) drift0 = null;
+      else if (drift0 == null) drift0 = u < 0.05 ? n : n + 1;
+      var drift = t >= 3.6 && n >= drift0 ? (u < 0.6 ? Math.pow(u / 0.6, 2) : Math.max(0, 1 - (u - 0.6) / 0.08)) : 0;
       trueBody.put(bx, by, 0, n % 2 ? [swing, stance] : [stance, swing]);
       var ex = bx + 28 * drift, ey = by - 10 * drift;
       /* 估计的身体漂走时，触地点 d 在状态里不动（仍钉在 footX）；摆动脚是身体系里的量，跟着估计的身体一起偏 */
@@ -1094,17 +1101,19 @@
       estBody.put(ex, ey, 0.12 * drift, n % 2 ? [swingE, stance] : [stance, swingE]);
       ell.setAttribute('cx', ex.toFixed(1)); ell.setAttribute('cy', ey.toFixed(1));
       ell.setAttribute('rx', (8 + 30 * drift).toFixed(1)); ell.setAttribute('ry', (5 + 12 * drift).toFixed(1));
-      setOpacity(ell, t >= 3.6 ? 0.9 : 0);
-      setOpacity(trueBody.g, t >= 3.6 ? 0.8 : 0);
+      setOpacity(ell, t >= 3.6 ? 0.9 * lap : 0);
+      setOpacity(trueBody.g, t >= 3.6 ? 0.8 * lap : 0);
       setArrow(vArr, [[ex, ey], [ex + 46, ey]]);
-      setOpacity(vArr, seg(t, 3.6, 4.2));
+      setOpacity(vArr, seg(t, 3.6, 4.2) * lap);
       pin.setAttribute('transform', 'translate(' + footX.toFixed(1) + ' ' + (GY - 4).toFixed(1) + ')');
       slip.setAttribute('x', footX.toFixed(1)); slip.setAttribute('y', (GY + 18).toFixed(1));
-      setOpacity(pin, seg(t, 7.0, 7.4));
-      setOpacity(slip, seg(t, 7.2, 7.6));
+      /* 每迈完一步，支撑脚换成刚落地的那只：钉子、「不动」字样和运动学箭头在双脚着地的那一小段里先淡出、到新支撑脚上再淡入，不瞬移 */
+      var swap = (u > 0.88 ? clamp((0.98 - u) / 0.1, 0, 1) : u < 0.12 ? clamp((u - 0.02) / 0.1, 0, 1) : 1) * lap;
+      setOpacity(pin, seg(t, 7.0, 7.4) * swap);
+      setOpacity(slip, seg(t, 7.2, 7.6) * swap);
       var flash = u >= 0.6 && u < 0.75 ? 1 : 0.35;
       setArrow(fk, [[ex, ey + 8], [footX - 3, GY - 6]]);
-      setOpacity(fk, t >= 10.4 ? flash : 0);
+      setOpacity(fk, t >= 10.4 ? flash * swap : 0);
       setOpacity(formula, seg(t, 10.4, 11.0));
       setOpacity(loop, seg(t, 3.6, 4.2));
       lc.forEach(function (g, k) { setOpacity(g, seg(t, [3.6, 7.0, 10.4][k], [4.2, 7.6, 11.0][k])); });
@@ -1190,8 +1199,9 @@
       setOpacity(labG, seg(t, 3.6, 4.2));
       setOpacity(aRes, seg(t, 4.4, 5.0));
       setOpacity(labR, seg(t, 4.4, 5.0));
-      /* 10.4 之后倾角从 0.1 动到 0.5 rad，柱子跟着倾角现算；0.1 rad 时竖直分量只有 0.05 / 0.1，放大 20 倍才看得出「多算一倍」 */
-      var ex = t < 10.4 ? EX_SMALL : standingExample(th, 1), zMag = t < 10.4 ? 20 : 1;
+      /* 10.4 之后倾角从 0.1 动到 0.5 rad，柱子跟着倾角现算；0.1 rad 时竖直分量只有 0.05 / 0.1，放大 20 倍才看得出「多算一倍」，
+         倾角变大的同一秒里放大倍数从 20 平滑降到 1，柱子不会先缩没再长出来 */
+      var ex = t < 10.4 ? EX_SMALL : standingExample(th, 1), zMag = Math.pow(20, 1 - ease(seg(t, 10.4, 11.4)));
       velLab.setText(t < 3.6 ? 'IMU 读到的只有重力：$\\tilde a = (0, 0, 9.81)$' : '1 秒后估计速度 $\\bar v = ' + fmtV([ex.vbar[0], ex.vbar[2]], 3) + '$（x, z）');
       setOpacity(velLab, seg(t, 0.8, 1.4));
       setOpacity(right, seg(t, 5.4, 6.0));
@@ -1206,7 +1216,7 @@
         B.tQ.textContent = fmt(b, 3);
         B.tQ.setAttribute('y', (b >= 0 ? BY - b * sc * gb - 5 : BY - b * sc * gb + 12).toFixed(1));
         setOpacity(B.tQ, gb);
-        if (c === 2) B.lab.textContent = zMag > 1 ? '竖直 z（柱子放大 20 倍）' : '竖直 z';
+        if (c === 2) B.lab.textContent = zMag > 1.05 ? '竖直 z（柱子放大 ' + fmt(zMag, 0) + ' 倍）' : '竖直 z';
       });
       setOpacity(eq, seg(t, 7.0, 7.6));
       setOpacity(sec4, seg(t, 13.4, 14.0));
@@ -1390,7 +1400,7 @@
       for (var i = 0; i <= 60 * u; i++) {
         var x = i / 60, y;
         if (isQ) y = FIG4_READ.qekf * Math.pow(x, 1.9) + 0.9 * x * jit[i];
-        else y = noisy ? 2 * x * x + 0.4 * x * Math.abs(jit[i]) : 0;
+        else y = (noisy || 0) * (2 * x * x + 0.4 * x * Math.abs(jit[i])); // noisy ∈ [0, 1]：从图 4 的 0 平滑变成图 5 的带噪声
         pts.push([FX0 + x * (FX1 - FX0), FY0 - (Math.max(0, y) / FIG4_READ.qekf) * (FY0 - FY1)]);
       }
       return pts;
@@ -1399,10 +1409,14 @@
     function draw(t, clock) {
       var now = nowOf(t, clock);
       setOpacity(trk, seg(t, 0.2, 0.8));
+      /* 两个点沿轨迹走，5 秒一轮：在相邻采样点之间插值（不一格一格跳），每轮首尾淡入淡出（回到起点不瞬移） */
       trackers.forEach(function (tr) {
-        var u = (now / 5) % 1, i = Math.floor(u * 40);
-        moveDot(tr.dT, tr.pts[i]);
-        moveDot(tr.dE, tr.rot(tr.pts[i], 0.22));
+        var u = (now / 5) % 1, f = u * 40, i = Math.min(39, Math.floor(f)), w = f - i;
+        var q = [tr.pts[i][0] + (tr.pts[i + 1][0] - tr.pts[i][0]) * w, tr.pts[i][1] + (tr.pts[i + 1][1] - tr.pts[i][1]) * w];
+        var fade = clamp(Math.min((u - 0.01) / 0.06, (0.99 - u) / 0.06), 0, 1);
+        moveDot(tr.dT, q);
+        moveDot(tr.dE, tr.rot(q, 0.22));
+        setOpacity(tr.dT, fade); setOpacity(tr.dE, fade);
       });
       setOpacity(xiBars, seg(t, 1.6, 2.2));
       setOpacity(eqg, seg(t, 3.6, 4.2));
@@ -1410,11 +1424,11 @@
       nl.forEach(function (g, k) { setOpacity(g, seg(t, 7.2 + k * 0.8, 7.6 + k * 0.8)); });
       setOpacity(tick, seg(t, 9.6, 10.0));
       setOpacity(fig, seg(t, 10.4, 11.0));
-      var noisy = t >= 13.4;
+      var noisy = ease(seg(t, 13.4, 14.2));
       setPath(qPath, figPts(ease(seg(t, 10.6, 12.2)), true));
       setPath(iPath, figPts(ease(seg(t, 10.6, 12.2)), false, noisy));
       setOpacity(qLab, seg(t, 12.0, 12.4));
-      setOpacity(iLab, noisy ? 0 : seg(t, 12.0, 12.4));
+      setOpacity(iLab, (1 - noisy) * seg(t, 12.0, 12.4));
       setOpacity(noise, seg(t, 13.4, 14.0));
     }
     return { el: s, draw: draw };
@@ -1475,14 +1489,17 @@
     lr.appendChild(svgRich(46, 368, '**世界中心**：运动学是右不变观测、GPS 是左不变观测（表 2）。**机器人中心**（状态取逆）：两者对调（表 3）', { size: 11, w: 720, cls: 'demo-x-ink2' }));
     lr.appendChild(svgRich(46, 392, '两种误差用伴随矩阵精确互换：$P^{r} = \\mathrm{Ad}_{\\bar X}\\,P^{l}\\,\\mathrm{Ad}_{\\bar X}^{\\top}$（第 10.1 节）', { size: 11, w: 720, cls: 'demo-x-mut' }));
 
+    var corr0 = null;
     function draw(t, clock) {
       var now = nowOf(t, clock);
       setOpacity(left, seg(t, 0.2, 0.8));
-      /* 7.0 之后反复演示校正：3 秒一轮，先留 1.2 秒缺口，0.9 秒合上，停一会儿再平滑张开（首尾相接，不会跳）。
-         视频里这段开始时真实时钟 now 早已过了 7 秒，循环可能正处在「已合上」，所以头 0.6 秒从 0 渐入 */
-      var u = (((now - 7.0) % 3) + 3) % 3 / 3;
-      var cyc = u < 0.4 ? 0 : u < 0.7 ? ease((u - 0.4) / 0.3) : u < 0.85 ? 1 : 1 - ease((u - 0.85) / 0.15);
-      var k = t >= 7.0 ? cyc * ease(seg(t, 7.0, 7.6)) : 0;
+      /* 7.0 之后反复演示校正：4 秒一轮，先留 1 秒缺口，1 秒合上，停 1.2 秒，再用 0.8 秒平滑张开（首尾相接）。
+         视频里这段开始时真实时钟 now 早已过了 7 秒（旁白比分镜长），所以循环从「t 走到 7.0 的那一刻」起算：
+         第一次画到 t ≥ 7.0 时记下那一刻的 now，这样开头一定是缺口张开、静止，不会一出场就动 */
+      if (t < 7.0) corr0 = null;
+      else if (corr0 == null) corr0 = now - (t - 7.0);
+      var u = t >= 7.0 ? ((((now - corr0) % 4) + 4) % 4) / 4 : 0;
+      var k = u < 0.25 ? 0 : u < 0.5 ? ease((u - 0.25) / 0.25) : u < 0.8 ? 1 : 1 - ease((u - 0.8) / 0.2);
       var MAG = 10;
       var pNow = [UPD.p[0] + k * UPD_EX.dp[0] * MAG, 0, UPD.p[2] + k * UPD_EX.dp[2] * MAG];
       var dNow = [UPD.d[0] + k * UPD_EX.dd[0] * MAG, 0, UPD.d[2] + k * UPD_EX.dd[2] * MAG];
@@ -1675,8 +1692,9 @@
         ells[i].setAttribute('rx', Math.abs(c[0] - e[0]).toFixed(1)); ells[i].setAttribute('ry', Math.abs(c[1] - e[1]).toFixed(1));
         setOpacity(ells[i], !bigMode && t >= 10.4 && i < shown ? 1 : 0);
       });
-      var walkT = (now % 8);
-      robot.forEach(function (r, k) { moveDot(r, mapper(k, bigMode)([BANANA.speed * walkT, 0])); setOpacity(r, seg(t, 3.6, 4.0)); });
+      /* 白点按 1 m/s 走 8 秒一轮：每轮首尾淡入淡出，回到起点不瞬移 */
+      var walkT = (now % 8), walkFade = clamp(Math.min((walkT - 0.05) / 0.4, (7.95 - walkT) / 0.4), 0, 1);
+      robot.forEach(function (r, k) { moveDot(r, mapper(k, bigMode)([BANANA.speed * walkT, 0])); setOpacity(r, seg(t, 3.6, 4.0) * walkFade); });
       setOpacity(noFit, bigMode ? seg(t, 14.0, 14.6) : 0);
       setOpacity(qNote, !bigMode && t >= 10.4 ? seg(t, 10.4, 11.0) : 0);
       setOpacity(nums, seg(t, 7.0, 7.6) * (bigMode ? 0.35 : 1));
