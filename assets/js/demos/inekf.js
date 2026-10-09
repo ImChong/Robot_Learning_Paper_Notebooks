@@ -1085,7 +1085,8 @@
       var bx0 = 340 + (n % 8) * S, bx = bx0 + S * u, footX = bx0 + S / 2, by = GY - 74;
       var su = clamp((u - 0.15) / 0.7, 0, 1), swX = footX - S + 2 * S * ease(su), swY = GY - 10 * Math.sin(Math.PI * su);
       var stance = [footX, GY, true], swing = [swX, swY, su <= 0 || su >= 1];
-      var drift = t >= 3.6 ? (u < 0.6 ? Math.pow(u / 0.6, 2) : Math.max(0, 1 - (u - 0.6) / 0.08)) : 0;
+      /* 3.6 开始时真实时钟可能正处在漂得最远的地方，头 0.6 秒从 0 渐入，免得估计的身体一下跳开 */
+      var drift = t >= 3.6 ? (u < 0.6 ? Math.pow(u / 0.6, 2) : Math.max(0, 1 - (u - 0.6) / 0.08)) * ease(seg(t, 3.6, 4.2)) : 0;
       trueBody.put(bx, by, 0, n % 2 ? [swing, stance] : [stance, swing]);
       var ex = bx + 28 * drift, ey = by - 10 * drift;
       /* 估计的身体漂走时，触地点 d 在状态里不动（仍钉在 footX）；摆动脚是身体系里的量，跟着估计的身体一起偏 */
@@ -1477,8 +1478,11 @@
     function draw(t, clock) {
       var now = nowOf(t, clock);
       setOpacity(left, seg(t, 0.2, 0.8));
-      /* 7.0 之后反复演示一次校正：3 秒一轮，前 1.2 秒是缺口，之后合上 */
-      var u = t >= 7.0 ? ((now - 7.0) % 3) / 3 : 0, k = t >= 7.0 ? ease(clamp((u - 0.4) / 0.3, 0, 1)) : 0;
+      /* 7.0 之后反复演示校正：3 秒一轮，先留 1.2 秒缺口，0.9 秒合上，停一会儿再平滑张开（首尾相接，不会跳）。
+         视频里这段开始时真实时钟 now 早已过了 7 秒，循环可能正处在「已合上」，所以头 0.6 秒从 0 渐入 */
+      var u = (((now - 7.0) % 3) + 3) % 3 / 3;
+      var cyc = u < 0.4 ? 0 : u < 0.7 ? ease((u - 0.4) / 0.3) : u < 0.85 ? 1 : 1 - ease((u - 0.85) / 0.15);
+      var k = t >= 7.0 ? cyc * ease(seg(t, 7.0, 7.6)) : 0;
       var MAG = 10;
       var pNow = [UPD.p[0] + k * UPD_EX.dp[0] * MAG, 0, UPD.p[2] + k * UPD_EX.dp[2] * MAG];
       var dNow = [UPD.d[0] + k * UPD_EX.dd[0] * MAG, 0, UPD.d[2] + k * UPD_EX.dd[2] * MAG];
