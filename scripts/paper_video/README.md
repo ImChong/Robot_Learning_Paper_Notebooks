@@ -33,6 +33,7 @@
 | `asap` | `assets/js/demos/asap.js` 十二幕（`asap-explainer`） | 约 10 分 16 秒 |
 | `inekf` | `assets/js/demos/inekf.js` 十二幕（`inekf-explainer`） | 约 10 分 6 秒 |
 | `berkeley_humanoid` | `assets/js/demos/berkeley_humanoid.js` 十二幕（`bh-explainer`） | 约 11 分 16 秒 |
+| `toddlerbot` | `assets/js/demos/toddlerbot.js` 十二幕（`tb-explainer`） | 约 13 分 22 秒 |
 
 - 画面：直接复用 `<paper>.js` 分镜的 `draw(t)`，数字与笔记算例一致；前后加片头、总结页（`papers/<paper>.js`）。
 - 分镜 `draw(t, clock)` 的第二个参数是这一幕的真实时间：旁白比动画长、画面停在 `to` 之前时它照样往前走，步态这类循环动作可以用它继续动（网页播放器只传 `t`）。

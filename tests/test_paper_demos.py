@@ -143,6 +143,13 @@ BH_NOTE = (
     / "Berkeley_Humanoid_A_Research_Platform_for_Learning-based_Control"
     / "Berkeley_Humanoid_A_Research_Platform_for_Learning-based_Control.md"
 )
+TB_NOTE = (
+    ROOT
+    / "papers"
+    / "12_Hardware_Design"
+    / "ToddlerBot_Open-Source_ML-Compatible_Humanoid_Platform_for_Loco-Manipulation"
+    / "ToddlerBot_Open-Source_ML-Compatible_Humanoid_Platform_for_Loco-Manipulation.md"
+)
 
 PLACEHOLDER_RE = re.compile(r'<div class="paper-demo" data-demo="([a-z0-9-]+)"')
 FRONTMATTER_DEMOS_RE = re.compile(r'^demos:\s*\[(.+)\]\s*$', re.MULTILINE)
@@ -281,6 +288,7 @@ def test_notes_declare_their_demos_in_reading_order():
         ASAP_NOTE: ("asap", ["asap-explainer", "asap-video", "asap-delta", "asap-tables", "asap-ablation"]),
         INEKF_NOTE: ("inekf", ["inekf-explainer", "inekf-video", "inekf-linearize", "inekf-banana", "inekf-converge"]),
         BH_NOTE: ("berkeley_humanoid", ["bh-explainer", "bh-video", "bh-armature", "bh-actuator", "bh-dr"]),
+        TB_NOTE: ("toddlerbot", ["tb-explainer", "tb-video", "tb-power", "tb-sysid", "tb-actuator"]),
     }
     for note, (bundle, placeholders) in expected.items():
         text = note.read_text(encoding="utf-8")
@@ -319,6 +327,7 @@ EXPLAINER_BUNDLES = (
     "gmr", "omniretarget", "diffusion_policy", "beyondmimic", "cosmos", "umr", "php", "pbfm",
     "gentle", "lcp", "transformer", "pi0", "pi05", "op3soccer", "smp", "humanml3d",
     "domain_randomization", "quadterrain", "realhumanoid", "asap", "inekf", "berkeley_humanoid",
+    "toddlerbot",
 )
 
 # 幕数由论文决定，不是统一模板：PPO / DeepMimic / AMP / ADD 的核心概念正好各 5 个，
@@ -485,6 +494,7 @@ EXPLAINER_SCENES = {
     "asap": (ASAP_NOTE, 12),
     "inekf": (INEKF_NOTE, 12),
     "berkeley_humanoid": (BH_NOTE, 12),
+    "toddlerbot": (TB_NOTE, 12),
 
     "humanml3d": (HUMANML3D_NOTE, 9),
 }
@@ -1782,7 +1792,8 @@ def test_narrated_video_placeholders_point_at_files_that_exist():
             assert f"'{demo}': buildVideoDemo" in js and "K.video(host" in js, f"{demo} 没有通过 K.video 注册"
     for demo in ("calm-video", "pulse-video", "dp-video", "bm-video", "lcp-video", "cosmos-video", "groot-video",
                  "tf-video", "pi0-video", "pi05-video", "soccer-video", "sonic-video", "gmr-video",
-                 "omniretarget-video", "humanml3d-video", "smp-video", "dr-video", "qt-video", "rh-video", "inekf-video", "bh-video"):
+                 "omniretarget-video", "humanml3d-video", "smp-video", "dr-video", "qt-video", "rh-video", "inekf-video", "bh-video",
+                 "tb-video"):
         assert demo in seen, f"{demo} 应该挂在对应的论文笔记里"
 
 
@@ -2763,3 +2774,140 @@ def test_berkeley_humanoid_explainer_demos_and_worked_example_share_the_paper_nu
     # 片头接上一期（InEKF）的片尾预告，片尾只预告下一篇（ToddlerBot）
     assert "上一期结尾预告：硬件、执行器辨识和仿真训练一起设计" in narration and "下一篇讲 ToddlerBot" in narration
     assert "ToddlerBot" in intro and "arxiv: '2407.21781'" in intro
+
+
+TB_XC330 = dict(d=0.0036, I=0.0040, fl=0.036, tmax=0.76, qdt=1.80, qdm=6.50, tqd=0.48, kdmin=0.384, tbrake=1.75)
+
+
+def _tb_tau_limit(m: dict, qd: float) -> float:
+    """toddlerbot.js 的 tauLimit()：按表 3 / 图 12 / 代码，从 (q̇_τmax, τmax) 线性降到 (q̇max, τ_q̇max)，再快为 0。"""
+    a = abs(qd)
+    if a <= m["qdt"]:
+        return m["tmax"]
+    if a <= m["qdm"]:
+        return m["tmax"] + (m["tqd"] - m["tmax"]) * (a - m["qdt"]) / (m["qdm"] - m["qdt"])
+    return 0.0
+
+
+def _tb_chirp(t: float) -> float:
+    return 0.5 * math.sin(2 * math.pi * (0.1 * t + 1.9 * t * t / 16.0))
+
+
+def _tb_toy(p: dict | None = None) -> list[float]:
+    """toddlerbot.js 的 toyRun()：表 3 的 XC330 带 21700 电芯（0.070 kg、0.08 m），k_p = 10，50 Hz 零阶保持，1 kHz 半隐式欧拉。"""
+    o = p or {}
+    X = TB_XC330
+    fl, d = X["fl"] * o.get("fl", 1.0), X["d"] * o.get("d", 1.0)
+    inertia, kdmin = X["I"] * o.get("I", 1.0), X["kdmin"] * o.get("kdmin", 1.0)
+    par = 1.0 if o.get("par") is False else 3.0
+    limit_on = o.get("limit") is not False
+    J = inertia + 0.070 * 0.08 * 0.08
+    th = w = acc = q_ref = 0.0
+    out: list[float] = []
+    dt, n = 0.001, 8000
+    for i in range(n + 1):
+        if i % 20 == 0:
+            q_ref = _tb_chirp(i * dt)
+            out.append(th)
+        if i == n:
+            break
+        e = q_ref - th
+        kp = 10.0 * par if acc * e < 0 else 10.0
+        tm = kp * e - kdmin * w
+        a = abs(w)
+        lim = 1e9 if not limit_on else _tb_tau_limit(X, w)
+        tr = fl + d * a
+        tau = max(-X["tbrake"], min(lim, tm)) - tr if w >= 0 else max(-lim, min(X["tbrake"], tm)) + tr
+        acc = (tau - 0.070 * 9.81 * 0.08 * math.cos(th)) / J
+        w += acc * dt
+        th += w * dt
+    return out
+
+
+def _tb_rmse_deg(a: list[float], b: list[float]) -> float:
+    return math.degrees(math.sqrt(sum((x - y) ** 2 for x, y in zip(a, b, strict=True)) / len(a)))
+
+
+def test_toddlerbot_explainer_demos_and_worked_example_share_the_paper_numbers():
+    """ToddlerBot：十二幕动画、三个演示、配音旁白与笔记「🚶 具体实例」用同一份数。
+
+    表 2–3、表 7 与正文的数照抄 arXiv 2502.00893 v4；k_p 换算、质心 / 俯仰增益取自官方代码；
+    单电机 chirp 玩具用纯 Python 重跑一遍（九个参数全对、拿掉一项的 RMSE），功率因子用 Berkeley Humanoid 的表 2 验算公式。
+    """
+    js = (DEMO_JS_DIR / "toddlerbot.js").read_text(encoding="utf-8")
+    note = TB_NOTE.read_text(encoding="utf-8")
+    narration = (ROOT / "scripts" / "paper_video" / "papers" / "toddlerbot.py").read_text(encoding="utf-8")
+    intro = (ROOT / "scripts" / "paper_video" / "papers" / "toddlerbot.js").read_text(encoding="utf-8")
+
+    for line in (
+        "var ROBOT = { heightM: 0.56, kg: 3.4, gramsMeasured: 3484, dof: 30, armDof: 7, legDof: 6, neckDof: 2, waistDof: 2, usd: 6000, motorPcPct: 90, tflops: 2.5, torsoCm: [13, 9, 12] };",
+        "{ name: 'XC330', full: 'XC330-T288', stall: 1.0, d: 0.0036, I: 0.0040, fl: 0.036, tmax: 0.76, qdt: 1.80, qdm: 6.50, tqd: 0.48, kdmin: 0.384, tbrake: 1.75,",
+        "{ name: 'XM430', full: 'XM430-W210', stall: 3.0, d: 0.0056, I: 0.0022, fl: 0.025, tmax: 1.61, qdt: 0.10, qdm: 7.63, tqd: 0.47, kdmin: 0.203, tbrake: 3.70,",
+        "var CODE = { kpRatio: 150, kdRatio: 16, passiveActive: 3, ctrlHz: 50, ctrlHz2: 200, comKp: 1.0, pitchKp: 0.2, pitchKd: 0.01, pitchTarget: -0.2, pitchPayload: -0.7,",
+        "var TORQUE_REQ = { hM: 0.5, kg: 3.1, humanH: 1.73, humanKg: 70.9, knee: 2.35, ankle: 2.66, hip: 1.77 };",
+        "['ToddlerBot', 2.74, 1.40, 1.35]",
+        "var TABLE7 = { pos: [0.082, 0.133, 0.018], linVel: [0.016, 0.032, 0.002], angVel: [0.056, 0.113, 0.010] };",
+        "var LOAD = { m: 0.070, r: 0.08 };",
+        "var CHIRP = { A: 0.5, f0: 0.1, f1: 2.0, T: 8.0 };",
+        "var TOY = { kp: 10, kd: 0, dt: 0.001, ctrlEvery: 20 };",
+        "var DP = { px: 96, hz: 10, trainSteps: 100, inferSteps: 3, params: 3e8, latencyS: 0.1, predict: 16, discard: 3, execute: 5, demos: 60, trials: 20, bimanualPct: 90, fullBodyPct: 75 };",
+    ):
+        assert line in js, line
+
+    # 自由度、功率因子（实例第 1–2 步）
+    assert 2 * 7 + 2 * 6 + 2 + 2 == 30 and 6 + 4 + 4 + 12 + 4 == 30 and 30 * 50 + 600 + 1000 == 3100
+    stall = 6 * 1.0 + 4 * 1.9 + 4 * 3.0 + 12 * 1.5 + 4 * 1.8
+    hmg = 0.56 * 3.4 * 9.81
+    assert _fmt(stall, 1) == "50.8" and _fmt(hmg, 2) == "18.68" and _fmt(stall / hmg, 2) == "2.72"
+    assert (_fmt((2 * 1.9 + 12 * 1.5 + 2 * 1.0 + 2 * 1.0) / hmg, 2), _fmt((4 * 1.8 + 2 * 1.0 + 2 * 3.0 + 2 * 3.0 + 2 * 1.9) / hmg, 2)) == ("1.38", "1.34")
+    bh = 2 * 9.7 + 6 * 45.3 + 2 * 62.6 + 2 * 81.1
+    assert _fmt(bh, 1) == "578.6" and _fmt(bh / (0.85 * 16 * 9.81), 2) == "4.34"
+    assert _fmt(2.22 * 1.73 * 70.9 * 9.81, 0) == "2671" and _fmt(stall / (0.56 * 4.968 * 9.81), 2) == "1.86"
+    # 式 5（第 3 步）
+    fac = (0.5 * 3.1) / (1.73 * 70.9)
+    assert _fmt(fac, 5) == "0.01264"
+    assert [_fmt(x / fac, 0) for x in (2.35, 2.66, 1.77)] == ["186", "210", "140"]
+    assert (_fmt((3.0 / 2.35 - 1) * 100, 0), _fmt((3.0 / 2.66 - 1) * 100, 0), _fmt((1.8 / 1.77 - 1) * 100, 1), _fmt((1.9 / 2.35 - 1) * 100, 0)) == ("28", "13", "1.7", "-19")
+    # 通信、台架、执行器模型（第 4–6 步）
+    assert 30 * 50 == 1500 and _fmt(360 / 4096, 4) == "0.0879" and _fmt(0.25 / (360 / 4096), 1) == "2.8"
+    X = TB_XC330
+    assert (_fmt(X["fl"] + X["d"] * 1, 4), _fmt(X["fl"] + X["d"] * 6.5, 4)) == ("0.0396", "0.0594")
+    assert _fmt((X["I"] / X["d"]) * math.log(1 + 5 * X["d"] / X["fl"]), 3) == "0.451" and _fmt(X["I"] / X["d"], 3) == "1.111"
+    assert 1500 / 150 == 10 and _fmt(_tb_tau_limit(X, 3), 3) == "0.689"
+    tm = 10 * 0.1 - X["kdmin"] * 3
+    assert _fmt(tm, 3) == "-0.152" and _fmt(max(-X["tbrake"], min(_tb_tau_limit(X, 3), tm)) - (X["fl"] + X["d"] * 3), 3) == "-0.199"
+    assert _fmt(1 / math.sqrt(3), 3) == "0.577"
+    # chirp 玩具（第 7 步）
+    real = _tb_toy()
+    ref = [_tb_chirp(i * 0.02) for i in range(len(real))]
+    assert len(real) == 401 and _fmt(_tb_rmse_deg(real, ref), 1) == "5.8"
+    knock = {k: _fmt(_tb_rmse_deg(_tb_toy(p), real), 2) for k, p in (
+        ("kdmin", {"kdmin": 0.0}), ("par", {"par": False}), ("limit", {"limit": False}), ("I", {"I": 0.0}), ("fl", {"fl": 0.0}), ("d", {"d": 0.0}),
+        ("all", {"fl": 1.2, "d": 1.2, "I": 1.2, "kdmin": 1.2}))}
+    assert knock == {"kdmin": "4.32", "par": "1.90", "limit": "1.53", "I": "0.90", "fl": "0.24", "d": "0.09", "all": "1.15"}
+    assert _fmt(0.0040 + 0.070 * 0.08 ** 2, 6) == "0.004448" and _fmt(0.070 * 0.08 ** 2 / 0.004448 * 100, 1) == "10.1"
+    # 两层 PD、RL 规模、扩散策略时序、电池、实验对账（第 8–12 步）
+    assert 1 / (1 + 1.0) == 0.5
+    assert (_fmt(3e8 / 1024, 0), 256 * 4 * 20, _fmt(3e8 / 20480, 0), _fmt(3e8 * 0.02 / 86400, 0)) == ("292969", 20480, "14648", "69")
+    assert (16 * 0.1, 3 * 0.1 > 0.1, 5 * 0.1) == (1.6, True, 0.5)
+    assert (5 * 14.8, _fmt(74 / 65, 2), _fmt(2 * 14.8 / 65 * 60, 0), 14.8 * 25) == (74.0, "1.14", "27", 370.0)
+    assert (_fmt(27 * 24 * 31 / (13 * 9 * 12), 1), _fmt(1484 / 3484 * 100, 1), 21 + 14, 20 * 60 / 60) == ("14.3", "42.6", 35, 20)
+    assert (_fmt(0.133 / 0.082, 2), _fmt(0.032 / 0.016, 1), _fmt(0.113 / 0.056, 1)) == ("1.62", "2.0", "2.0")
+
+    for needle in (
+        "## 🎬 十二幕动画：ToddlerBot 全流程", "## 🚶 具体实例", "## 🧭 四个版本是什么关系",
+        "[2502.00893](https://arxiv.org/abs/2502.00893)", "CoRL 2025",
+        "Haochen Shi\\*, Weizhuo Wang\\*, Shuran Song†, C. Karen Liu†",
+        "\\mathbf{50.8}", "\\mathbf{2.72}", "\\mathbf{1.86}", "\\mathbf{0.01264}", "\\mathbf{186}", "\\mathbf{210}", "\\mathbf{140}",
+        "\\mathbf{0.0396}", "\\mathbf{0.0594}", "\\mathbf{0.451}", "\\mathbf{0.689}", "\\mathbf{-0.199}", "\\mathbf{0.577}",
+        "**5.8°**", "**4.32**", "**1.90**", "**1.53**", "**0.90**", "\\mathbf{292{,}969}", "\\mathbf{14{,}648}", "\\mathbf{74}", "\\mathbf{1.14}",
+        "\\mathbf{42.6\\%}", "\\mathbf{35}", "**14.3** 倍", "**1484 g**", "**19 分钟**",
+        'data-demo="tb-power"', 'data-demo="tb-sysid"', 'data-demo="tb-actuator"',
+    ):
+        assert needle in note, needle
+    for needle in ("0.56 米", "3.4 公斤", "30 个主动自由度", "6000 美元", "2.74", "2.22", "2.35", "2.66", "1.77", "0.0396", "0.45 秒",
+                   "4.32 度", "1.3 度", "20 分钟能采 60 条", "96 乘 96", "16 步", "1484 克", "19 分钟", "0.082", "0.133", "0.032", "0.113", "90%", "75%"):
+        assert needle in narration, needle
+    # 片头接上一期（Berkeley Humanoid）的片尾预告，片尾只预告下一篇（HumanML3D）
+    assert "上一期结尾预告：把校准、数字孪生、遥操作采集和部署工具" in narration and "下一篇讲 HumanML3D" in narration
+    assert "HumanML3D" in intro and "arxiv: '2502.00893'" in intro
