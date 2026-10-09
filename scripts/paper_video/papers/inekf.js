@@ -43,7 +43,7 @@ window.PaperVideo = {
     var head = h('div', 'head', root, '<div class="act">三句话记住 InEKF</div><div class="title">换一个误差的定义</div>');
     var items = [
       [ACC, '① 一个矩阵李群装下全部状态', '朝向、速度、位置、每个触地点拼成一个矩阵<br>误差 = 把真值整体挪到估计值的那一下'],
-      [GOOD, '② 误差方程和估计值无关（不估零偏时）', '$A$ 只含重力，$H = [0, 0, -I, I]$；图 4（读图）：QEKF 约 25、InEKF 0<br>±30° 的初值，约 0.3 s 收拢（读图 3）'],
+      [GOOD, '② 误差方程和估计值无关（不估零偏时）', '$A$ 只含重力、$H$ 是常数；图 4（读图）：QEKF 约 25、InEKF 0<br>±30° 的初值，约 0.3 s 收拢（读图 3）'],
       [WARN, '③ 看不见的就老实说看不见', '航向 + 位置 4 个方向不可观；不确定性弯成香蕉<br>动捕终点误差 < 5%，200 m 一直在人行道上']
     ];
     var pts = items.map(function (it) {
