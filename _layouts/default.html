@@ -505,7 +505,7 @@
 
       var roadmapGraphs = {
         en: `graph TD
-    subgraph SG_Basic ["1 · Basic RL and Transformer"]
+    subgraph SG_Basic ["1 · RL and Transformer"]
         PPO(["PPO 🎬<br/><span class='roadmap-node-year'>2017</span>"]) --> AWR(["AWR 🎬<br/><span class='roadmap-node-year'>2019</span>"])
         AWR --> DM(["DeepMimic 🎬<br/><span class='roadmap-node-year'>2018</span>"])
         Transformer(["Transformer 🎬<br/><span class='roadmap-node-year'>2017</span>"])
@@ -616,7 +616,7 @@
     BerkeleyHumanoid -.-> ToddlerBot
     DP --> Pi0`,
         zh: `graph TD
-    subgraph SG_Basic ["1 · 基础 RL 与 Transformer"]
+    subgraph SG_Basic ["1 · RL 与 Transformer"]
         PPO(["PPO 🎬<br/><span class='roadmap-node-year'>2017</span>"]) --> AWR(["AWR 🎬<br/><span class='roadmap-node-year'>2019</span>"])
         AWR --> DM(["DeepMimic 🎬<br/><span class='roadmap-node-year'>2018</span>"])
         Transformer(["Transformer 🎬<br/><span class='roadmap-node-year'>2017</span>"])
@@ -661,7 +661,7 @@
         HOMIE --> DoorMan(["DoorMan<br/><span class='roadmap-node-year'>2025</span>"])
         HDMI(["HDMI<br/><span class='roadmap-node-year'>2025</span>"])
     end
-    subgraph SG_WM ["7 · 世界模型 World Model"]
+    subgraph SG_WM ["7 · 世界模型 WM"]
         Dreamer(["Dreamer / PlaNet<br/><span class='roadmap-node-year'>2019</span>"]) -.-> UniPi(["UniPi<br/><span class='roadmap-node-year'>2023</span>"])
         Cosmos(["Cosmos 🎬<br/><span class='roadmap-node-year'>2025</span>"]) --> DreamDojo(["DreamDojo<br/><span class='roadmap-node-year'>2026</span>"]) --> WM1X(["1X 世界模型<br/><span class='roadmap-node-year'>2025</span>"])
         HAIC(["HAIC — 动力学感知 WM<br/><span class='roadmap-node-year'>2026</span>"])
@@ -850,7 +850,10 @@
         if (!mermaidRoadmap) return Promise.resolve();
 
         var normalizedMode = mode === 'zh' ? 'zh' : 'en';
-        var graphText = roadmapGraphs[normalizedMode].trim();
+        var graphText =
+          typeof window.buildRoadmapGraph === 'function'
+            ? window.buildRoadmapGraph(roadmapGraphs[normalizedMode])
+            : roadmapGraphs[normalizedMode].trim();
         var cacheKey = getRoadmapCacheKey(normalizedMode);
         var cachedSvg = roadmapSvgCache[cacheKey];
         var renderSeq = ++roadmapRenderSeq;
