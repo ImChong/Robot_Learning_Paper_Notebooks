@@ -133,10 +133,53 @@
     });
   };
 
-  /** After roadmap SVG insert (incl. lang-cache swap), fix iOS foreignObject sizing
-   *  and strip alpha/compositing styles from year labels. */
+  var SVG_NS = 'http://www.w3.org/2000/svg';
+  /** 子图标题底色左右多出的留白（px），让连线在字前后就断开。 */
+  var ROADMAP_TITLE_PAD_X = 6;
+
+  /**
+   * 子图标题在 SVG 里先于连线绘制（g.clusters 在 g.edgePaths 之前），连线会从字上
+   * 划过（「4 · 全身控制 WBC」「8 · 世界-动作模型 WAM」）。把每个 g.cluster-label
+   * 挪到 g.root 末尾，并在字后垫一块与子图同色的底，连线改从标题下面穿过。
+   *
+   * g.clusters 不带 transform，标签自己的 translate 是绝对坐标，挪层不改位置；
+   * Mermaid 给标题上色的规则是 `.cluster-label span`，不依赖父级 .cluster。
+   * 底色用 SVG rect 而不是 foreignObject 里的 background：后者在 iOS WebKit 上
+   * 有合成层问题（见下方年份标签的说明）。插入后会被调用两次，已挪过的跳过。
+   */
+  function liftRoadmapClusterTitles(container) {
+    var svg = container.querySelector('svg');
+    var root = svg && svg.querySelector('g.root');
+    if (!root) return;
+    svg.querySelectorAll('g.clusters > g.cluster').forEach(function (cluster) {
+      var label = cluster.querySelector(':scope > g.cluster-label');
+      var box = cluster.querySelector(':scope > rect');
+      var fo = label && label.querySelector('foreignObject');
+      if (!label || !box || !fo) return;
+      var w = parseFloat(fo.getAttribute('width')) || 0;
+      var h = parseFloat(fo.getAttribute('height')) || 0;
+      if (w > 0 && h > 0) {
+        var bg = document.createElementNS(SVG_NS, 'rect');
+        bg.setAttribute('class', 'roadmap-cluster-title-bg');
+        bg.setAttribute('x', String(-ROADMAP_TITLE_PAD_X));
+        bg.setAttribute('y', '0');
+        bg.setAttribute('width', String(w + 2 * ROADMAP_TITLE_PAD_X));
+        bg.setAttribute('height', String(h));
+        bg.setAttribute('rx', '4');
+        bg.style.fill = getComputedStyle(box).fill;
+        label.insertBefore(bg, label.firstChild);
+      }
+      label.setAttribute('data-roadmap-cluster', cluster.id);
+      root.appendChild(label);
+    });
+  }
+
+  /** After roadmap SVG insert (incl. lang-cache swap), lift subgraph titles above
+   *  the edges, fix iOS foreignObject sizing and strip alpha/compositing styles
+   *  from year labels. */
   window.patchRoadmapMermaidDom = function (container) {
     if (!container) return;
+    liftRoadmapClusterTitles(container);
     if (typeof window.patchMermaidForeignObjects === 'function') {
       window.patchMermaidForeignObjects(container);
     }
@@ -147,6 +190,35 @@
       el.style.removeProperty('transform');
       el.style.removeProperty('-webkit-transform');
     });
+  };
+
+  /**
+   * 首页路线图不让 Mermaid 自动折行。htmlLabels 标签量出来比
+   * flowchart.wrappingWidth（桌面 280px、手机 150px）宽时，Mermaid 会把它改成
+   * `white-space: break-spaces` 的定宽表格：中文按字断开（「BFM — 行为基础模 / 型」），
+   * 英文把 🎬 挤到第二行，节点高矮不一。路线图的节点名都是短论文名，换行只认源码里
+   * 写的 <br/>（名称一行、年份一行）。每次 render 都会先回到 initialize 的配置再套
+   * 本条 directive，不会影响论文页的流程图。
+   *
+   * 子图标题不吃 wrappingWidth：Mermaid 11 画 cluster 标签时写死 200px，标题只能写短
+   * （见 tests/test_roadmap_layout.py）。subGraphTitleMargin 给标题上下留白，
+   * 免得标题贴着子图边框、压在第一排节点的顶上。
+   */
+  var ROADMAP_WRAPPING_WIDTH = 1000;
+  var ROADMAP_SUBGRAPH_TITLE_MARGIN = { top: 6, bottom: 10 };
+
+  window.buildRoadmapGraph = function (source) {
+    return (
+      '%%{init: ' +
+      JSON.stringify({
+        flowchart: {
+          wrappingWidth: ROADMAP_WRAPPING_WIDTH,
+          subGraphTitleMargin: ROADMAP_SUBGRAPH_TITLE_MARGIN,
+        },
+      }) +
+      '}%%\n' +
+      (source || '').trim()
+    );
   };
 
   function scaledFlowchart(scale) {
