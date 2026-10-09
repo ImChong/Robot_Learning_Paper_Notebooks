@@ -639,7 +639,7 @@
 | 443  | ByteWrist: A Parallel Robotic Wrist Enabling Flexible and Anthropomorphic Motion for Confined Spaces                                                                   | -       |     | ⏳ 待读 |
 | 444  | Integrated linkage-driven dexterous anthropomorphic robotic hand                                                                                                       | -       |     | ⏳ 待读 |
 | 445  | Proprioceptive actuator design in the MIT Cheetah: Impact mitigation and high‑bandwidth physical interaction for dynamic legged robots                                 | -       |     | ⏳ 待读 |
-| 446  | [Berkeley Humanoid: A Research Platform for Learning-based Control](https://arxiv.org/abs/2407.21781) | 2024.07 | 🌟 | ⏳ 待读 |
+| 446  | [Berkeley Humanoid: A Research Platform for Learning-based Control](https://arxiv.org/abs/2407.21781) ✅ [笔记](12_Hardware_Design/Berkeley_Humanoid_A_Research_Platform_for_Learning-based_Control/Berkeley_Humanoid_A_Research_Platform_for_Learning-based_Control.md) | 2024.07 | 🌟 | ✅ 已总结 |
 | 531  | [Zeroth Bot](https://github.com/zeroth-robotics/zeroth-bot)                                                                                                            | -       |     | ⏳ 待读 |
 
 

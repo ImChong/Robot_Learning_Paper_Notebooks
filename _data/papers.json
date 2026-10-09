@@ -3626,6 +3626,18 @@
         "published_date_en": "Sep 19, 2025 (arXiv v1)",
         "zhname": "人形机器人踝关节最优设计框架",
         "zh_title": "人形机器人踝关节最优设计框架"
+      },
+      {
+        "title": "Berkeley Humanoid: A Research Platform for Learning-based Control",
+        "path": "papers/12_Hardware_Design/Berkeley_Humanoid_A_Research_Platform_for_Learning-based_Control/Berkeley_Humanoid_A_Research_Platform_for_Learning-based_Control.md",
+        "url": "/papers/12_Hardware_Design/Berkeley_Humanoid_A_Research_Platform_for_Learning-based_Control/Berkeley_Humanoid_A_Research_Platform_for_Learning-based_Control.html",
+        "dir": "Berkeley_Humanoid_A_Research_Platform_for_Learning-based_Control",
+        "arxiv": "2407.21781",
+        "has_open_source": true,
+        "published_date_zh": "2024年7月31日（arXiv v1），2025年5月（ICRA 2025）",
+        "published_date_en": "Jul 31, 2024 (arXiv v1), May 2025 (ICRA 2025)",
+        "zhname": "Berkeley Humanoid：面向学习型控制的人形机器人研究平台",
+        "zh_title": "Berkeley Humanoid：面向学习型控制的人形机器人研究平台"
       }
     ],
     "zhname": "硬件设计",
