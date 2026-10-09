@@ -1335,6 +1335,33 @@ def test_beyondmimic_explainer_demos_and_worked_example_share_the_paper_numbers(
         assert stale not in note, f"旧版笔记的说法：{stale}"
 
 
+def test_inekf_legs_use_the_cassie_link_lengths():
+    """InEKF 讲解动画里的 Cassie 腿示意按真机连杆画：大腿 0.12、小腿 0.50、跗骨 0.41（m），比例约 1 : 4.2 : 3.4。
+
+    数取自 mujoco_menagerie 的 agility_cassie/cassie.xml（Robot_Description_Gallery 记录的 MJCF）里相邻 body 的 pos：
+    髋俯仰 → 膝 (0.12, 0, 0.0045)；膝 → 小腿 (0.06068, 0.04741, 0) 再 → 跗骨 (0.43476, 0.02, 0)（小腿关节是 ±20° 的弹簧，取 0）；
+    跗骨 → 脚 (0.408, −0.04, 0)。站立的髋高、脚关节高与「跗骨比大腿偏 7°」是按 home 关键帧做正运动学得到的，这里只核对连杆长度。
+    旧版借用 Digit 示意的 0.36 / 0.42 / 0.23 比例（大腿长了三倍），不再出现。
+    """
+    import math
+
+    js = (ROOT / "assets" / "js" / "demos" / "inekf.js").read_text(encoding="utf-8")
+    m = re.search(r"var CASSIE_LEG = \{([^}]*)\};", js)
+    assert m, "inekf.js 里找不到 CASSIE_LEG"
+    leg = {k: float(v) for k, v in re.findall(r"(\w+): (-?\d+(?:\.\d+)?)", m.group(1))}
+    thigh = math.hypot(0.12, 0.0045)
+    shin = math.hypot(0.06068 + 0.43476, 0.04741 + 0.02)
+    tarsus = math.hypot(0.408, -0.04)
+    assert abs(leg["thigh"] - thigh) < 0.002 and abs(leg["shin"] - shin) < 0.002 and abs(leg["tarsus"] - tarsus) < 0.002
+    assert round(leg["shin"] / leg["thigh"], 1) == 4.2 and round(leg["tarsus"] / leg["thigh"], 1) == 3.4
+    assert leg["hipH"] == 0.916 and leg["tarsusFromThighDeg"] == 7.1
+    assert "大腿 : 小腿 : 跗骨 ≈ 1 : 4.2 : 3.4" in js
+    for stale in ("bodyLegs", "L1 = 0.36 * M", "TAR = [-0.11 * M, -0.2 * M]"):
+        assert stale not in js, stale
+    assert js.count("cassieLegs(") == 9  # 定义 1 处；第 2、3、4 幕各两个（真值 + 估计），第 6、10 幕各一个
+    assert "UMich BipedLab" in js
+
+
 def test_beyondmimic_stick_figures_bend_the_right_way():
     """侧面看的火柴人不反关节：膝的弯曲 = 大腿角 − 小腿角 ≥ 0，肘的弯曲 = 小臂角 − 大臂角 ≥ 0（角度从竖直向下量、朝 +x 为正）。
 
@@ -2519,7 +2546,7 @@ def test_inekf_explainer_demos_and_worked_example_share_the_paper_numbers():
 
     for line in (
         "var G = 9.81;",
-        "var CASSIE = { dof: 20, actuators: 10, springs: 4, encoders: 14, imuHz: 800, encHz: 2000, height: 1.2768 };",
+        "var CASSIE = { dof: 20, actuators: 10, springs: 4, encoders: 14, imuHz: 800, encHz: 2000, height: 1.2732 };",
         "var CONV = { runs: 100, eulerDeg: 30, velMax: 1.0, simSpeed: 0.3, realSpeed: 0.3, simWin: 1, realWin: 2 };",
         "var BANANA = { speed: 1, secs: [0, 2, 4, 6, 8], posSigma: 0.1, yawDeg: 10, particles: 10000, fullYawDeg: 360 };",
         "var MOCAP = { cams: 18, secs: 60, pathM: 15, driftPct: 5 };",
