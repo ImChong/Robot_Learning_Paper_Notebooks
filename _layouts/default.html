@@ -612,6 +612,8 @@
     ACT --> Pi0
     QuadTerrain -.-> HOVER
     ASAP -.-> BM
+    InEKF -.-> BerkeleyHumanoid
+    BerkeleyHumanoid -.-> ToddlerBot
     DP --> Pi0`,
         zh: `graph TD
     subgraph SG_Basic ["1 · 基础 RL 与 Transformer"]
@@ -721,6 +723,8 @@
     ACT --> Pi0
     QuadTerrain -.-> HOVER
     ASAP -.-> BM
+    InEKF -.-> BerkeleyHumanoid
+    BerkeleyHumanoid -.-> ToddlerBot
     DP --> Pi0`
       };
 
