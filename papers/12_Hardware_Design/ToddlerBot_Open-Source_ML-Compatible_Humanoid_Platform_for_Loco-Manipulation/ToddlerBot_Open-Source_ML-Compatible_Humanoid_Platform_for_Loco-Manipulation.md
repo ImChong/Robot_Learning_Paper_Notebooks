@@ -43,7 +43,7 @@ demos: ["toddlerbot"]
 
 > 🎮 **本文内嵌 1 段讲解动画 + 1 段配音视频 + 3 个交互演示**（不用装任何东西）：
 > 1. [十二幕动画：ToddlerBot 全流程](#tb-explainer-anim) —— 约 204 秒串完「为什么要 ML 兼容的平台（表 1）→ 30 个自由度与三种传动 → 可复现是硬约束 → 功率因子与电机选型（表 2、图 8）→ 零点校准（图 10）→ 电机台架辨识（式 6–7）→ 9 参数执行器模型（式 8–10、表 3、图 12）→ 遥操作装置与两层 PD → 关键帧动画与 RL 行走（式 1–2、表 5–6）→ 扩散策略 → 实验（图 3、表 7）→ 复刻验证与局限」
-> 2. [配音讲解视频](#tb-video) —— 同样十二幕，加中文配音与字幕，竖屏，可下载
+> 2. [配音讲解视频](#tb-video) —— 同样十二幕，加中文配音与字幕，13 分 22 秒竖屏，可下载
 > 3. [一台 Dynamixel 在仿真里长什么样](#tb-actuator) —— 表 3 的五种电机：力矩上限随速度的台阶、刹车力矩、$k_d^{\min}$ 与阻力 $\tau_r$，拖关节速度看净力矩
 > 4. [拿掉一个参数，chirp 跟踪差多少](#tb-sysid) —— 单电机台架玩具：按表 3 的 XC330 当「真机」，一项项关掉 $k_d^{\min}$、被动 / 主动比、力矩上限、转子惯量，看 RMSE
 > 5. [功率因子：按身高体重选电机](#tb-power) —— 式 4–5：拖身高、体重，看膝 / 踝 / 髋需要多大力矩、哪款电机够用、$\tilde p$ 落在图 8 的哪里
@@ -95,7 +95,7 @@ demos: ["toddlerbot"]
 
 ## 📺 配音讲解视频（可下载） {#tb-video}
 
-<div class="paper-demo" data-demo="tb-video" data-src="media/toddlerbot_explainer_video.mp4" data-poster="media/toddlerbot_explainer_video_poster.jpg"><p class="demo-fallback">（本节含讲解视频播放器，需要启用 JavaScript；也可以直接<a href="media/toddlerbot_explainer_video.mp4" download="ToddlerBot_讲解视频.mp4">下载 mp4（VIDEO_SIZE_MB MB）</a>）</p></div>
+<div class="paper-demo" data-demo="tb-video" data-src="media/toddlerbot_explainer_video.mp4" data-poster="media/toddlerbot_explainer_video_poster.jpg"><p class="demo-fallback">（本节含讲解视频播放器，需要启用 JavaScript；也可以直接<a href="media/toddlerbot_explainer_video.mp4" download="ToddlerBot_讲解视频.mp4">下载 mp4（14.1 MB）</a>）</p></div>
 
 > 📖 **动画之后的正文默认全部折叠**：问题、方法按小节收起，具体实例、实验、边界、源码对照、面试和附录各收成一块。想细读哪一块就点开，内容一字未删；三个交互演示和流程图留在外面。目录里的标题可以直接点，会自动展开所在折叠块，左侧目录顶部还有「展开全部文字」。
 

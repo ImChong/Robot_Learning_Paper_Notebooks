@@ -1936,7 +1936,7 @@
     K.video(host, {
       title: '配音讲解视频：ToddlerBot 十二幕全流程',
       sub: '13 分 22 秒竖屏视频（1080×1920），中文配音 + 字幕。画面就是上面的十二幕动画，旁白把每一幕讲细；适合手机上看或转发。',
-      size: 'VIDEO_SIZE_MB MB',
+      size: '14.1 MB',
       fileName: 'ToddlerBot_讲解视频.mp4'
     });
   }
