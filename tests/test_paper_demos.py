@@ -136,6 +136,13 @@ INEKF_NOTE = (
     / "Contact-Aided_Invariant_EKF_for_Legged_Robots"
     / "Contact-Aided_Invariant_EKF_for_Legged_Robots.md"
 )
+BH_NOTE = (
+    ROOT
+    / "papers"
+    / "12_Hardware_Design"
+    / "Berkeley_Humanoid_A_Research_Platform_for_Learning-based_Control"
+    / "Berkeley_Humanoid_A_Research_Platform_for_Learning-based_Control.md"
+)
 
 PLACEHOLDER_RE = re.compile(r'<div class="paper-demo" data-demo="([a-z0-9-]+)"')
 FRONTMATTER_DEMOS_RE = re.compile(r'^demos:\s*\[(.+)\]\s*$', re.MULTILINE)
@@ -273,6 +280,7 @@ def test_notes_declare_their_demos_in_reading_order():
         RH_NOTE: ("realhumanoid", ["rh-explainer", "rh-video", "rh-context", "rh-reward", "rh-dr"]),
         ASAP_NOTE: ("asap", ["asap-explainer", "asap-video", "asap-delta", "asap-tables", "asap-ablation"]),
         INEKF_NOTE: ("inekf", ["inekf-explainer", "inekf-video", "inekf-linearize", "inekf-banana", "inekf-converge"]),
+        BH_NOTE: ("berkeley_humanoid", ["bh-explainer", "bh-video", "bh-armature", "bh-actuator", "bh-dr"]),
     }
     for note, (bundle, placeholders) in expected.items():
         text = note.read_text(encoding="utf-8")
@@ -310,7 +318,7 @@ EXPLAINER_BUNDLES = (
     "ppo", "awr", "deepmimic", "amp", "add", "ase", "calm", "pulse", "sonic", "groot",
     "gmr", "omniretarget", "diffusion_policy", "beyondmimic", "cosmos", "umr", "php", "pbfm",
     "gentle", "lcp", "transformer", "pi0", "pi05", "op3soccer", "smp", "humanml3d",
-    "domain_randomization", "quadterrain", "realhumanoid", "asap", "inekf",
+    "domain_randomization", "quadterrain", "realhumanoid", "asap", "inekf", "berkeley_humanoid",
 )
 
 # 幕数由论文决定，不是统一模板：PPO / DeepMimic / AMP / ADD 的核心概念正好各 5 个，
@@ -432,6 +440,13 @@ EXPLAINER_BUNDLES = (
 # 第 7 节的零偏、第 8 节的增删接触各是一节、各有自己的公式；结果按收敛（图 3、8 是同一种做法的仿真与真机）和
 # 精度（图 9–12）两幕。合并会让可观性矩阵和香蕉、或零偏的 A 和增删接触的 F、G 抢同一帧。
 
+# Berkeley Humanoid 是十二件（差距从哪来 / 孩子大小的人形 / 执行器直接当关节 / 四种执行器 / EtherCAT 与时序 /
+# 可靠又便宜 / 拟人的腿 / 最简的控制器 / 辨识转子惯量与摩擦 / 随机化：硬件窄、环境宽 / 走出实验室 / 仿真与真机对比）。
+# 第 3 节是系统概览加四条设计考量，「仿真友好」（3.2）里有两件独立的事：结构（执行器即关节、armature 的 N²）与
+# 时序（EtherCAT 的 0.5–2 ms、25 kHz PD），一个讲建模误差、一个讲指令执行，压在一起会让转子惯量的柱子和时间线抢画面；
+# 表 2 的四种执行器有自己的十行参数和分工，单独一幕；3.3 的可靠 / 低成本（表 3、表 4）和 3.5 的拟人（表 5）各一幕。
+# 第 4 节的控制器（4.1）一幕；4.2 的「辨识」和「随机化多宽」是两步——前者是摩擦曲线与 CAD 的转子惯量，后者是表 6 与
+# 窄 / 宽两条带——合成一幕会让 tanh 曲线和包络带挤在同一帧。结果按第 5.1、5.2 节各一幕，5.3 的摔倒记录并进可靠那一幕。
 # HumanML3D 是九件（文本生成动作卡在哪 / 数据集怎么建 / 一帧 263 维 / 每 4 帧一个 snippet code /
 # Text2Length / 时序 VAE 的一步 / 三项损失与课程学习 / 评测器与 R-Precision / 结果、消融与遗产）。
 # 它一篇论文同时交了数据集、方法和评测协议三样东西：数据集的「怎么建」与「每帧存什么」是第 4 节与
@@ -469,6 +484,7 @@ EXPLAINER_SCENES = {
     "realhumanoid": (RH_NOTE, 10),
     "asap": (ASAP_NOTE, 12),
     "inekf": (INEKF_NOTE, 12),
+    "berkeley_humanoid": (BH_NOTE, 12),
 
     "humanml3d": (HUMANML3D_NOTE, 9),
 }
@@ -1766,7 +1782,7 @@ def test_narrated_video_placeholders_point_at_files_that_exist():
             assert f"'{demo}': buildVideoDemo" in js and "K.video(host" in js, f"{demo} 没有通过 K.video 注册"
     for demo in ("calm-video", "pulse-video", "dp-video", "bm-video", "lcp-video", "cosmos-video", "groot-video",
                  "tf-video", "pi0-video", "pi05-video", "soccer-video", "sonic-video", "gmr-video",
-                 "omniretarget-video", "humanml3d-video", "smp-video", "dr-video", "qt-video", "rh-video", "inekf-video"):
+                 "omniretarget-video", "humanml3d-video", "smp-video", "dr-video", "qt-video", "rh-video", "inekf-video", "bh-video"):
         assert demo in seen, f"{demo} 应该挂在对应的论文笔记里"
 
 
@@ -2620,3 +2636,130 @@ def test_inekf_explainer_demos_and_worked_example_share_the_paper_numbers():
     assert "Berkeley Humanoid" in intro and "arxiv: '1904.09251'" in intro
     for stale in ("1904.09251) (RSS 2018)", "Unitree 系列）状态估计器的基石", "Ross Hartley, Maani Ghaffari, Jessy W. Grizzle, Eustice", "板块: 08 State Estimation"):
         assert stale not in note, f"旧版笔记的说法：{stale}"
+
+
+def _bh_rng(seed: int):
+    """kit.js 的 mulberry32。"""
+    state = seed & 0xFFFFFFFF
+
+    def rng() -> float:
+        nonlocal state
+        state = (state + 0x6D2B79F5) & 0xFFFFFFFF
+        t = (state ^ (state >> 15)) * (1 | state) & 0xFFFFFFFF
+        t = (t + ((t ^ (t >> 7)) * (61 | t) & 0xFFFFFFFF)) & 0xFFFFFFFF ^ t
+        return ((t ^ (t >> 14)) & 0xFFFFFFFF) / 4294967296
+
+    return rng
+
+
+def _bh_toy(p: dict | None = None, horizon: float = 0.4) -> list[float]:
+    """berkeley_humanoid.js 的 toyRun()：膝关节带着 URDF 的小腿，代码 KFE 的 PD 与摩擦，5 kHz 半隐式欧拉，每 5 ms 记一次。"""
+    o = p or {}
+    inertia, arm, mgl = 0.0288, 1.5e-4 * 81, 0.956 * 9.81 * 0.155
+    sm, sf, sa = o.get("mass", 1.0), o.get("fric", 1.0), o.get("arm", 1.0)
+    st, skp, skd = o.get("strength", 1.0), o.get("kp", 1.0), o.get("kd", 1.0)
+    j = inertia * sm + arm * sa
+    th = w = 0.0
+    out, dt = [], 0.0002
+    n, every = round(horizon / dt), round(0.005 / dt)
+    for i in range(n + 1):
+        if i % every == 0:
+            out.append(th)
+        if i == n:
+            break
+        tau = max(-30.0, min(30.0, st * (15 * skp * (0.5 - th) - 1.5 * skd * w)))
+        fr = sf * (0.8 * math.tanh(w / 0.1) + 0.02 * w)
+        w += (tau - fr - sm * mgl * math.sin(th)) / j * dt
+        th += w * dt
+    return out
+
+
+def _bh_band(kind: str, seed: int = 7, n: int = 40):
+    """berkeley_humanoid.js 的 drBatch()：返回 (上下包络最宽处, 下包络, 上包络)。"""
+    rng = _bh_rng(seed)
+    runs = []
+    for _ in range(n):
+        p = {"mass": 0.9 + 0.2 * rng(), "fric": 0.9 + 0.2 * rng(), "arm": 1.0 + 0.05 * rng()}
+        if kind == "wide":
+            p["mass"] = 0.5 + rng()
+            p["strength"] = 0.85 + 0.3 * rng()
+            p["kp"] = 0.9 + 0.2 * rng()
+            p["kd"] = 0.9 + 0.2 * rng()
+        runs.append(_bh_toy(p))
+    lo = [min(r[i] for r in runs) for i in range(len(runs[0]))]
+    hi = [max(r[i] for r in runs) for i in range(len(runs[0]))]
+    return max(top - bottom for top, bottom in zip(hi, lo, strict=True)), lo, hi
+
+
+def test_berkeley_humanoid_explainer_demos_and_worked_example_share_the_paper_numbers():
+    """Berkeley Humanoid：十二幕动画、三个演示、配音旁白与笔记「🚶 具体实例」用同一份数。
+
+    表 1–6 与正文的数照抄 arXiv 2407.21781 v1（ICRA 2025 版相同）；PD 增益、摩擦、力矩上限取自官方训练代码；
+    小腿惯量按 URDF 算；单关节玩具用纯 Python 重跑一遍（armature 漏不漏、窄 / 宽随机化的带宽）。
+    """
+    js = (DEMO_JS_DIR / "berkeley_humanoid.js").read_text(encoding="utf-8")
+    note = BH_NOTE.read_text(encoding="utf-8")
+    narration = (ROOT / "scripts" / "paper_video" / "papers" / "berkeley_humanoid.py").read_text(encoding="utf-8")
+    intro = (ROOT / "scripts" / "paper_video" / "papers" / "berkeley_humanoid.js").read_text(encoding="utf-8")
+
+    for line in (
+        "var ROBOT = { kg: 16, heightM: 0.85, thigh: 0.22, calf: 0.18, foot: 0.16, ankleH: 0.06, legDof: 6, withArmsKg: 22, usd: 9955, withArmsUsd: 15000 };",
+        "{ name: '10413', g: 1011, ratio: 9, hollow: true, dia: 123, thick: 50, peak: 81.1, cont: 34.2, vmax: 27.9, watt: 890, rotor: 1.5e-4, joints: ['KFE'], qty: 2, usd: 676 }",
+        "var RATES = { policy: 50, estimator: 1000, pd: 25000, torqueBw: 1000, busLo: 1000, busHi: 4000, latAtLo: 2, latAtHi: 0.5, simSteps: 90000 };",
+        "var DR = { friction: [0.2, 1.25], restitution: [0, 0.1], baseMassKg: [-1, 1], linkMass: [0.9, 1.1], jointFriction: [0.9, 1.1], armature: [1, 1.05], defaultPos: [-0.05, 0.05] };",
+        "var FALLS = [['石砖路', 6], ['草地', 14], ['跑道', 3], ['土路', 15]];",
+        "var SIM2REAL = { secs: 60, vx: [0.051, 0.058], vy: [0.086, 0.1156] };",
+        "var FIELD = { terrains: 8, trailDeg: 20, stairCm: 4, stairLegPct: 10, campusM: 364, campusMin: 10, trailM: 96, trailRiseM: 10.5, trailMin: 5 };",
+        "{ key: 'kfe', label: 'KFE（膝）', act: '10413', effort: 30, vlim: 14, sat: 560, kp: 15, kd: 1.5, fs: 0.8, va: 0.1, fd: 0.02 },",
+        "var SHANK = { m: 0.956, lc: 0.155, I: 0.0288 };",
+        "var DR_N = 40, DR_SEED = 7;",
+    ):
+        assert line in js, line
+
+    # 重量、成本、力矩密度（实例第 1、2 步）
+    assert 2 * 251 + 6 * 756 + 2 * 856 + 2 * 1011 == 8772 and _fmt(8.772 / 16 * 100, 0) == "55"
+    actuators = 2 * 422 + 6 * 570 + 2 * 639 + 2 * 676
+    assert actuators == 6894 and actuators + 50 + 410 + 2 * 974 + 347 + 2 * 153 == 9955
+    assert _fmt(actuators / 9955 * 100, 0) == "69" and _fmt(81.1 / 1.011, 1) == "80.2" and _fmt(81.1 / 16, 2) == "5.07"
+    # 转子惯量（第 3 步）
+    arm = 1.5e-4 * 81
+    assert _fmt(arm, 5) == "0.01215" and _fmt(arm / 0.0288 * 100, 0) == "42"
+    assert (_fmt(7.5 / (0.0288 + arm), 0), _fmt(7.5 / 0.0288, 0)) == ("183", "260")
+    nom, noarm = _bh_toy(), _bh_toy({"arm": 0.0})
+    assert (_fmt(nom[8], 3), _fmt(noarm[8], 3), _fmt(nom[-1], 3)) == ("0.081", "0.097", "0.417")
+    # 时序、摩擦、力矩包络、覆盖率（第 4–7 步）
+    assert (2 / 20 * 100, 0.5 / 20 * 100, 25000 // 50, 4096 * 24) == (10.0, 2.5, 500, 98304)
+    assert (_fmt(0.8 * math.tanh(10) + 0.02, 2), _fmt(0.8 * math.tanh(0.5) + 0.02 * 0.05, 2)) == ("0.82", "0.37")
+    assert _fmt(14 * (1 - 30 / 560), 2) == "13.25"
+    ranges = [((-50, 40), (-35, 35)), ((-40, 20), (-35, 35)), ((-110, 30), (-100, 30)), ((0, 150), (0, 120)), ((-20, 50), (-30, 70)), ((-30, 18), (-30, 30))]
+    cov = [(min(h[1], r[1]) - max(h[0], r[0])) / (h[1] - h[0]) * 100 for h, r in ranges]
+    assert [_fmt(c, 2) for c in cov] == ["77.78", "91.67", "92.86", "80.00", "100.00", "100.00"]
+    # 窄 / 宽随机化（第 8 步）：种子 7 约 7.1 倍，换种子仍是 4.9–9.0 倍
+    narrow, lo, hi = _bh_band("narrow")
+    wide, wlo, whi = _bh_band("wide")
+    assert (_fmt(narrow, 4), _fmt(wide, 4), _fmt(wide / narrow, 1)) == ("0.0119", "0.0845", "7.1")
+    ratios = [_bh_band("wide", s)[0] / _bh_band("narrow", s)[0] for s in (1, 2, 3, 11)]
+    assert [_fmt(r, 1) for r in ratios] == ["6.5", "8.5", "4.9", "9.0"]
+    off = _bh_toy({"fric": 1.2})
+    inside = sum(lo[i] - 1e-9 <= off[i] <= hi[i] + 1e-9 for i in range(1, len(off))) / (len(off) - 1)
+    assert _fmt(inside * 100, 0) == "24"
+    # 观测维数、实验对账、单摆（第 9–11 步）
+    assert 3 + 3 + 3 + 3 + 12 + 12 + 12 == 48 and 6 + 14 + 3 + 15 == 38
+    assert (_fmt(0.058 - 0.051, 3), _fmt(0.1156 - 0.086, 4), _fmt(364 / 600, 2)) == ("0.007", "0.0296", "0.61")
+    assert _fmt(math.degrees(math.asin(10.5 / 96)), 1) == "6.3" and _fmt(math.sqrt(1.0 / 0.4), 2) == "1.58"
+
+    for needle in (
+        "## 🎬 十二幕动画：Berkeley Humanoid 全流程", "## 🚶 具体实例", "## 🧭 两个版本是什么关系",
+        "[2407.21781](https://arxiv.org/abs/2407.21781)", "ICRA2025_Berkeley_Humanoid.pdf",
+        "Qiayuan Liao, Bike Zhang, Xuanyu Huang, Xiaoyu Huang, Zhongyu Li, Koushil Sreenath",
+        "\\mathbf{9955}", "\\mathbf{80.2}", "\\mathbf{0.01215}", "**42%**", "\\mathbf{183}", "\\mathbf{260}", "**0.081**", "**0.097**",
+        "\\mathbf{0.82}", "\\mathbf{0.37}", "\\mathbf{13.25}", "**0.0119**", "**0.0845**", "**7.1 倍**", "**24%**", "**48**", "\\mathbf{1.58}",
+        "| HAA | [−35, 20] → 55° | 60° | 91.67% | 91.6% |",
+        'data-demo="bh-armature"', 'data-demo="bh-actuator"', 'data-demo="bh-dr"',
+    ):
+        assert needle in note, needle
+    for needle in ("16 公斤", "0.85 米", "364 米", "0.01215", "42%", "81.1", "9955", "0.82", "0.37", "0.051", "0.058", "0.1156", "38 次", "91.6%", "7 倍", "1.58"):
+        assert needle in narration, needle
+    # 片头接上一期（InEKF）的片尾预告，片尾只预告下一篇（ToddlerBot）
+    assert "上一期结尾预告：硬件、执行器辨识和仿真训练一起设计" in narration and "下一篇讲 ToddlerBot" in narration
+    assert "ToddlerBot" in intro and "arxiv: '2407.21781'" in intro
