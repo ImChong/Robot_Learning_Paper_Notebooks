@@ -375,11 +375,12 @@
 | 525  | [Benchmarking Potential Based Rewards for Learning Humanoid Locomotion](https://arxiv.org/abs/2307.10142)                                                      | 2023.07 |     | ⏳ 待读 |
 
 
-### Manipulation（60篇）
+### Manipulation（61篇）
 
 
 | #   | 论文                                                                                                                                                        | 日期      | 🌟  | 状态   |
 | --- | --------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- | --- | ---- |
+| 593  | [Immiscible Diffusion Policy: Preserving Multimodal Robot Actions through Label-Free Noise Assignment](https://arxiv.org/abs/2610.09369) ✅ [笔记](06_Manipulation/Immiscible_Diffusion_Policy__Preserving_Multimodal_Robot_Actions_through_Label-Free_Noise_Assignment/Immiscible_Diffusion_Policy__Preserving_Multimodal_Robot_Actions_through_Label-Free_Noise_Assignment.md) | 2026-10-07 |     | ✅ 已总结 |
 | 581  | [AnyWorld: Factorized Egocentric World Models for Cross-Embodiment Generalization](https://arxiv.org/abs/2608.29242) 🌟 ✅ [笔记](06_Manipulation/AnyWorld__Factorized_Egocentric_World_Models_for_Cross-Embodiment_Generalization/AnyWorld__Factorized_Egocentric_World_Models_for_Cross-Embodiment_Generalization.md) | 2026.08 | 2026-09-04 | ✅ 已总结 |
 | 271  | [HumDex: Humanoid Dexterous Manipulation Made Easy](https://arxiv.org/abs/2603.12260) ✅ [笔记](06_Manipulation/HumDex_Humanoid_Dexterous_Manipulation_Made_Easy/HumDex_Humanoid_Dexterous_Manipulation_Made_Easy.md) | 2026.03 |     | ✅ 完成 |
 | 272  | [cuRoboV2: Dynamics-Aware Motion Generation with Depth-Fused Distance Fields for High-DoF Robots](https://arxiv.org/abs/2603.05493) ✅ [笔记](06_Manipulation/cuRoboV2_Dynamics-Aware_Motion_Generation_with_Depth-Fused_Distance_Fields/cuRoboV2_Dynamics-Aware_Motion_Generation_with_Depth-Fused_Distance_Fields.md) | 2026.03 |     | ✅ 完成 |

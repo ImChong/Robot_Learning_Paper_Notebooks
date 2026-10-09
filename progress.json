@@ -41,15 +41,15 @@
         "13_Physics-Based_Animation",
         "14_Human_Motion"
       ],
-      "last_module": "05_Locomotion",
-      "last_index": 203,
-      "last_title": "Learning to Get Up Across Morphologies: Zero-Shot Recovery with a Unified Humanoid Policy (arXiv:2512.12230)",
-      "next_module": "06_Manipulation",
-      "last_completed_date": "2026-10-08",
-      "note": "本日轮转到 05_Locomotion。上游 awesome-humanoid-robot-learning Locomotion 章节中尚无笔记的最新论文是 Learning to Get Up Across Morphologies (arXiv:2512.12230, 2025-12-13, 多伦多大学 UTRA, RoboCup Symposium)。7 款 KidSize 人形只控 5 个左右镜像的俯仰关节、27 维观测不含形态信息、每回合随机换机器人，CrossQ 训练共享起身策略；LOO 最高 72%（Wolfgang），4 台训练测 Wolfgang 86 ± 7%，NUGUS 共享训练 +61%。源码 utra-robosoccer/unified-humanoid-getup 已开源，含整体流程 mermaid 与源码运行时序图。",
-      "last_date": "2026-10-08",
+      "last_module": "06_Manipulation",
+      "last_index": 593,
+      "last_title": "Immiscible Diffusion Policy: Preserving Multimodal Robot Actions through Label-Free Noise Assignment (arXiv:2610.09369)",
+      "next_module": "07_Teleoperation",
+      "last_completed_date": "2026-10-09",
+      "note": "本日轮转到 06_Manipulation。PROGRESS.md 的 Manipulation 表里待读条目均已有笔记文件，上游 awesome-humanoid-robot-learning Manipulation 章节中尚无笔记的最新论文是 Immiscible Diffusion Policy (arXiv:2610.09369, 2026-10-07, UC Berkeley / Princeton / UT Austin)，新增为 PROGRESS #593。数据均衡、batch 内严格对称时 vanilla DP 仍塌缩到单一模态；训练热身后对每个 batch 做标准化动作块与噪声的匈牙利匹配，网络 / 推理不变；两模态仿真任务非主导模态 ×6.0–14.6，四模态任务找回丢失模态，G1 真机左右手 1:1。论文未开源，仅含整体流程 mermaid。",
+      "last_date": "2026-10-09",
       "next_candidate": null,
-      "last_completed": "Learning to Get Up Across Morphologies: Zero-Shot Recovery with a Unified Humanoid Policy (arXiv:2512.12230)"
+      "last_completed": "Immiscible Diffusion Policy: Preserving Multimodal Robot Actions through Label-Free Noise Assignment (arXiv:2610.09369)"
     },
     "last_summary_index": 532,
     "last_summary_date": "2026-09-18",
@@ -1673,6 +1673,17 @@
         "project_page": "",
         "code": "https://github.com/utra-robosoccer/unified-humanoid-getup",
         "source": "✅ 已开源(含源码时序图) · 5 个左右镜像俯仰关节 + 无形态信息的 27 维观测 + 每回合随机换机器人的 CrossQ 共享起身策略 · 7 款 RoboCup KidSize 人形 · MuJoCo · 多伦多大学 UTRA"
+      },
+      {
+        "date": "2026-10-09",
+        "index": 593,
+        "title": "Immiscible Diffusion Policy: Preserving Multimodal Robot Actions through Label-Free Noise Assignment",
+        "folder": "papers/06_Manipulation/Immiscible_Diffusion_Policy__Preserving_Multimodal_Robot_Actions_through_Label-Free_Noise_Assignment",
+        "module": "06_Manipulation",
+        "arxiv": "2610.09369",
+        "project_page": "",
+        "code": "论文未给出代码链接，暂未开源；噪声分配算法沿用 https://github.com/yhli123/Immiscible-Diffusion",
+        "source": "⏳ 暂未开源(故无源码时序图) · 训练热身后 batch 内标准化动作块与高斯噪声的匈牙利匹配，网络 / 损失 / 推理不变 · Diffusion Policy / DP3 · RoboTwin 2.0 + Unitree G1 · UC Berkeley / Princeton / UT Austin"
       }
     ],
     "last_completed_index": 588,
@@ -6224,6 +6235,16 @@
       "pdf_file": "",
       "route": "Locomotion",
       "title_cn": "跨形态学习起身：统一人形策略的零样本跌倒恢复"
+    },
+    {
+      "title": "Immiscible Diffusion Policy: Preserving Multimodal Robot Actions through Label-Free Noise Assignment",
+      "folder": "papers/06_Manipulation/Immiscible_Diffusion_Policy__Preserving_Multimodal_Robot_Actions_through_Label-Free_Noise_Assignment",
+      "note_file": "Immiscible_Diffusion_Policy__Preserving_Multimodal_Robot_Actions_through_Label-Free_Noise_Assignment.md",
+      "status": "done",
+      "arxiv": "2610.09369",
+      "pdf_file": "",
+      "route": "Manipulation",
+      "title_cn": "不相溶扩散策略：用无标签噪声分配保住机器人动作的多模态"
     },
     {
       "title": "Kimera: an Open-Source Library for Real-Time Metric-Semantic Localization and Mapping",
