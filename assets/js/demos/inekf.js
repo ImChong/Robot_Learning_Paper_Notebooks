@@ -1076,13 +1076,19 @@
       tags.forEach(function (g, k) { setOpacity(g, seg(t, [3.8, 10.6, 7.2, 7.6][k], [4.2, 11.0, 7.6, 8.0][k])); });
       setOpacity(right, seg(t, 0.4, 1.0));
       setOpacity(stateLab, seg(t, 0.8, 1.4));
-      /* 身体按 4 秒一个循环：前 2.4 秒只靠 IMU 往前推（估计慢慢偏、椭圆变大），之后运动学一校正就拉回 */
-      var period = 4, n = Math.floor(now / period), u = (now % period) / period;
-      var bx0 = 340 + (n % 4) * 90, bx = bx0 + 90 * u, footX = bx0 + 70, by = GY - 74;
+      /* 身体按 4 秒一个循环（一步）：前 2.4 秒只靠 IMU 往前推（估计慢慢偏、椭圆变大），之后运动学一校正就拉回。
+         左右腿轮流支撑：这一步的支撑脚钉在 footX 不动，另一只脚从上一个落脚点 footX − S 迈到下一个落脚点 footX + S，
+         两头各留一小段双脚着地；下一步换另一条腿支撑 */
+      var period = 4, n = Math.floor(now / period), u = (now % period) / period, S = 45;
+      var bx0 = 340 + (n % 8) * S, bx = bx0 + S * u, footX = bx0 + S / 2, by = GY - 74;
+      var su = clamp((u - 0.15) / 0.7, 0, 1), swX = footX - S + 2 * S * ease(su), swY = GY - 10 * Math.sin(Math.PI * su);
+      var stance = [footX, GY, true], swing = [swX, swY, su <= 0 || su >= 1];
       var drift = t >= 3.6 ? (u < 0.6 ? Math.pow(u / 0.6, 2) : Math.max(0, 1 - (u - 0.6) / 0.08)) : 0;
-      trueBody.put(bx, by, 0, [[footX, GY, true], [bx - 30, GY - 8, false]]);
+      trueBody.put(bx, by, 0, n % 2 ? [swing, stance] : [stance, swing]);
       var ex = bx + 28 * drift, ey = by - 10 * drift;
-      estBody.put(ex, ey, 0.12 * drift, [[footX, GY, true], [ex - 30, ey + 66, false]]);
+      /* 估计的身体漂走时，触地点 d 在状态里不动（仍钉在 footX）；摆动脚是身体系里的量，跟着估计的身体一起偏 */
+      var swingE = [swX + ex - bx, swY + ey - by, swing[2]];
+      estBody.put(ex, ey, 0.12 * drift, n % 2 ? [swingE, stance] : [stance, swingE]);
       ell.setAttribute('cx', ex.toFixed(1)); ell.setAttribute('cy', ey.toFixed(1));
       ell.setAttribute('rx', (8 + 30 * drift).toFixed(1)); ell.setAttribute('ry', (5 + 12 * drift).toFixed(1));
       setOpacity(ell, t >= 3.6 ? 0.9 : 0);
@@ -1536,7 +1542,7 @@
     });
     var hiCols = [group(right), group(right)];
     rectBox(hiCols[0], GX + 2 * CWb + 2, GY0 + 12, 2 * CWb - 4, 3 * RH + 4, C_Q, 'none', '4 3');
-    rectBox(hiCols[1], GX + 0.66 * CWb, GY0 + 12, CWb * 0.34, 3 * RH + 4, C_WARN, 'none', '4 3');
+    rectBox(hiCols[1], GX - 4, GY0 + 12, CWb + 8, 3 * RH + 4, C_WARN, 'none', '4 3');
     cells.forEach(function (row, r) {
       right.appendChild(svgMath(GX - 24, GY0 + 34 + r * RH, rowNames[r], { size: 12, anchor: 'middle', w: 60, cls: 'demo-x-mut' }));
       row.forEach(function (c, k) {
@@ -1545,7 +1551,7 @@
     });
     var noteT = group(right), noteY = group(right);
     noteT.appendChild(paint(svgText(756, 222, 'p、d 两大列符号相反 → 平移看不见（3 维）', null, 10.5, 'end'), C_Q));
-    noteY.appendChild(svgRich(390, 244, '$(g)_\\times$ 的第 3 列是 0（g 只有 z 分量）→ 航向看不见（1 维）', { size: 10.5, w: 370, cls: 'demo-x-warn' }));
+    noteY.appendChild(svgRich(390, 244, '$R$ 这一大列里 $(g)_\\times$ 的第 3 列全是 0（g 只有 z 分量）→ 航向看不见（1 维）', { size: 10.5, w: 370, cls: 'demo-x-warn' }));
 
     var meter = group(s);
     rectBox(meter, 376, 268, 394, 66, C_BORDER, C_SURFACE2);
