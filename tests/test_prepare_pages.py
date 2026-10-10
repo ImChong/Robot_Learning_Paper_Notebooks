@@ -179,3 +179,68 @@ def test_resolve_zh_card_title_uses_zhname_when_title_like():
 def test_resolve_zh_card_title_skips_description_zhname():
     zhname = "CMR：把含噪观测映射到「收缩」潜空间，让扰动随时间自然衰减——对比学习保任务信息"
     assert prepare_pages.resolve_zh_card_title({"zhname": zhname}, {}, zhname) is None
+
+
+def test_extract_summary_takes_first_paragraph_as_plain_text():
+    content = (
+        "# T\n\n## 🎯 一句话总结\n\n"
+        "PPO 通过一个简单的**裁剪机制**，让 [策略](https://x) 更新 `clip` 既大胆又安全。\n\n"
+        "> 🎮 本文内嵌 1 段动画\n\n## 下一节\n"
+    )
+    assert prepare_pages.extract_summary(content) == "PPO 通过一个简单的裁剪机制，让 策略 更新 clip 既大胆又安全。"
+
+
+def test_extract_summary_accepts_blockquote_and_other_heading_wording():
+    content = "## 🎯 一句话理解\n\n> 先训教师，\n> 再蒸馏学生。\n\n---\n"
+    assert prepare_pages.extract_summary(content) == "先训教师， 再蒸馏学生。"
+    assert prepare_pages.extract_summary("## ❓ 要解决什么问题\n\n正文") is None
+
+
+def test_extract_summary_starts_at_the_sentence_naming_the_paper():
+    content = "## 🎯 一句话总结\n\n仿真和真机对不上。常见补法都不够。ASAP 换了一个对象去学：学动作残差。\n"
+    assert prepare_pages.extract_summary(content, "ASAP") == "ASAP 换了一个对象去学：学动作残差。"
+    # 简称只出现在第一句时不跳。
+    assert prepare_pages.extract_summary("## 🎯 一句话总结\n\nASAP 学残差。再部署。\n", "ASAP") == "ASAP 学残差。再部署。"
+
+
+def test_cut_summary_keeps_whole_sentences_and_never_splits_math():
+    first, second = "甲" * 70 + "。", "乙" * 70 + "。"
+    assert prepare_pages._cut_summary(first + second) == first
+    cut = prepare_pages._cut_summary("丙" * 110 + "，写成 $\\lVert x \\rVert$ 的上界" + "丁" * 30)
+    assert cut.endswith("…") and cut.count("$") % 2 == 0
+    assert len(cut) <= prepare_pages.SUMMARY_MAX_CHARS
+
+
+def test_paper_short_name():
+    assert prepare_pages.paper_short_name("Proximal Policy Optimization Algorithms (PPO)") == "PPO"
+    assert prepare_pages.paper_short_name("BFM-Zero: A Promptable Behavioral Foundation Model") == "BFM-Zero"
+    assert prepare_pages.paper_short_name("Learning Agile Soccer Skills for a Bipedal Robot") is None
+
+
+def test_extract_explainer_scenes_reads_chinese_numerals():
+    assert prepare_pages.extract_explainer_scenes("## 🎬 五幕动画：PPO 全流程 {#a}") == 5
+    assert prepare_pages.extract_explainer_scenes("## 🎬 十二幕动画：ASAP") == 12
+    assert prepare_pages.extract_explainer_scenes("## 🎬 十幕动画") == 10
+    assert prepare_pages.extract_explainer_scenes("## 🎬 9幕动画") == 9
+    assert prepare_pages.extract_explainer_scenes("## 📺 配音讲解视频") is None
+
+
+def _mp4_box(kind, payload):
+    return (8 + len(payload)).to_bytes(4, "big") + kind + payload
+
+
+def test_mp4_duration_seconds_reads_mvhd_after_mdat(tmp_path):
+    mvhd = _mp4_box(b"mvhd", bytes(4) + bytes(8) + (1000).to_bytes(4, "big") + (230378).to_bytes(4, "big"))
+    video = tmp_path / "v.mp4"
+    video.write_bytes(_mp4_box(b"ftyp", b"isom" + bytes(4)) + _mp4_box(b"mdat", bytes(64)) + _mp4_box(b"moov", mvhd))
+    assert prepare_pages.mp4_duration_seconds(str(video)) == 230
+    assert prepare_pages.mp4_duration_seconds(str(tmp_path / "missing.mp4")) is None
+
+
+def test_extract_video_seconds_resolves_the_note_media_path(tmp_path):
+    mvhd = _mp4_box(b"mvhd", bytes(4) + bytes(8) + (600).to_bytes(4, "big") + (600 * 676).to_bytes(4, "big"))
+    (tmp_path / "media").mkdir()
+    (tmp_path / "media" / "x.mp4").write_bytes(_mp4_box(b"moov", mvhd))
+    note = '<div class="paper-demo" data-demo="x-video" data-src="media/x.mp4" data-poster="p.jpg"></div>'
+    assert prepare_pages.extract_video_seconds(str(tmp_path / "note.md"), note) == 676
+    assert prepare_pages.extract_video_seconds(str(tmp_path / "note.md"), "无视频") is None
