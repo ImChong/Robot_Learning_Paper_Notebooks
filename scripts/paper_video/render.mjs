@@ -65,7 +65,7 @@ if (mode === 'stills') {
   const ff = spawn(FFMPEG, ['-y', '-loglevel', 'error',
     '-f', 'image2pipe', '-framerate', String(fps), '-c:v', 'mjpeg', '-i', '-',
     '-ss', String(from), '-t', String(to - from), '-i', path.join(OUT, 'narration.wav'),
-    '-c:v', 'libx264', '-preset', 'medium', '-crf', '21', '-pix_fmt', 'yuv420p', '-r', String(fps),
+    '-c:v', 'libx264', '-preset', 'medium', '-crf', '21', '-vf', 'scale=in_range=pc:out_range=tv', '-pix_fmt', 'yuv420p', '-color_range', 'tv', '-r', String(fps),
     '-c:a', 'aac', '-b:a', '128k', '-ar', '48000', '-shortest', '-movflags', '+faststart', mp4],
   { stdio: ['pipe', 'inherit', 'inherit'] });
   for (let i = 0; i < n; i++) {
@@ -83,7 +83,7 @@ if (mode === 'stills') {
   const ff = spawn(FFMPEG, ['-y', '-loglevel', 'error',
     '-f', 'image2pipe', '-framerate', String(fps), '-c:v', 'mjpeg', '-i', '-',
     '-i', path.join(OUT, 'narration.wav'),
-    '-c:v', 'libx264', '-preset', 'medium', '-crf', '19', '-pix_fmt', 'yuv420p', '-r', String(fps),
+    '-c:v', 'libx264', '-preset', 'medium', '-crf', '19', '-vf', 'scale=in_range=pc:out_range=tv', '-pix_fmt', 'yuv420p', '-color_range', 'tv', '-r', String(fps),
     '-c:a', 'aac', '-b:a', '160k', '-ar', '48000', '-shortest', '-movflags', '+faststart', mp4],
   { stdio: ['pipe', 'inherit', 'inherit'] });
   const t0 = Date.now();
