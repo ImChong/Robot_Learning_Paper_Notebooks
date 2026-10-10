@@ -2724,6 +2724,7 @@ def test_berkeley_humanoid_explainer_demos_and_worked_example_share_the_paper_nu
         "{ key: 'kfe', label: 'KFE（膝）', act: '10413', effort: 30, vlim: 14, sat: 560, kp: 15, kd: 1.5, fs: 0.8, va: 0.1, fd: 0.02 },",
         "var SHANK = { m: 0.956, lc: 0.155, I: 0.0288 };",
         "var DR_N = 40, DR_SEED = 7;",
+        "var TORSO_KG = 5.378;",
     ):
         assert line in js, line
 
@@ -2758,6 +2759,13 @@ def test_berkeley_humanoid_explainer_demos_and_worked_example_share_the_paper_nu
     assert 3 + 3 + 3 + 3 + 12 + 12 + 12 == 48 and 6 + 14 + 3 + 15 == 38
     assert (_fmt(0.058 - 0.051, 3), _fmt(0.1156 - 0.086, 4), _fmt(364 / 600, 2)) == ("0.007", "0.0296", "0.61")
     assert _fmt(math.degrees(math.asin(10.5 / 96)), 1) == "6.3" and _fmt(math.sqrt(1.0 / 0.4), 2) == "1.58"
+    # 机身质量 ±1 kg 加在躯干上（URDF 5.378 kg）；tanh 摩擦没有静摩擦，玩具最后仍到无摩擦的平衡点（第 5、8 步）
+    assert (_fmt(1 / 5.378 * 100, 1), _fmt(1 / 16 * 100, 2)) == ("18.6", "6.25")
+    assert (_fmt(_bh_toy(horizon=1.0)[-1], 3), _fmt(_bh_toy(horizon=3.0)[-1], 3)) == ("0.444", "0.457")
+    eq = 0.3
+    for _ in range(60):
+        eq -= (15 * (0.5 - eq) - 0.956 * 9.81 * 0.155 * math.sin(eq)) / (-15 - 0.956 * 9.81 * 0.155 * math.cos(eq))
+    assert _fmt(eq, 3) == "0.457"
 
     for needle in (
         "## 🎬 十二幕动画：Berkeley Humanoid 全流程", "## 🚶 具体实例", "## 🧭 两个版本是什么关系",
@@ -2766,10 +2774,11 @@ def test_berkeley_humanoid_explainer_demos_and_worked_example_share_the_paper_nu
         "\\mathbf{9955}", "\\mathbf{80.2}", "\\mathbf{0.01215}", "**42%**", "\\mathbf{183}", "\\mathbf{260}", "**0.081**", "**0.097**",
         "\\mathbf{0.82}", "\\mathbf{0.37}", "\\mathbf{13.25}", "**0.0119**", "**0.0845**", "**7.1 倍**", "**24%**", "**48**", "\\mathbf{1.58}",
         "| HAA | [−35, 20] → 55° | 60° | 91.67% | 91.6% |",
+        "±18.6%", "1 s 时 0.444、3 s 时 0.457",
         'data-demo="bh-armature"', 'data-demo="bh-actuator"', 'data-demo="bh-dr"',
     ):
         assert needle in note, needle
-    for needle in ("16 公斤", "0.85 米", "364 米", "0.01215", "42%", "81.1", "9955", "0.82", "0.37", "0.051", "0.058", "0.1156", "38 次", "91.6%", "7 倍", "1.58"):
+    for needle in ("16 公斤", "0.85 米", "364 米", "0.01215", "42%", "81.1", "9955", "0.82", "0.37", "0.051", "0.058", "0.1156", "38 次", "91.6%", "7 倍", "1.58", "约 6 度"):
         assert needle in narration, needle
     # 片头接上一期（InEKF）的片尾预告，片尾只预告下一篇（ToddlerBot）
     assert "上一期结尾预告：硬件、执行器辨识和仿真训练一起设计" in narration and "下一篇讲 ToddlerBot" in narration
