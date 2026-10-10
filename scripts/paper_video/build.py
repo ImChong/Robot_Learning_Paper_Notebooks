@@ -107,6 +107,15 @@ async def main():
         sents = await tts(text, mp3)
         audio = to_wav(mp3, wav)
         alen = len(audio) / 2 / SR
+        # 服务偶尔只回一小段音频而不报错（一句 60 字的旁白只有 0.36 s）：明显短于字数就重合成
+        for k in range(3):
+            if alen >= len(text) / 25:
+                break
+            print(f"seg{i:02d} only {alen:.2f}s for {len(text)} chars, retrying")
+            await asyncio.sleep(2 ** k)
+            sents = await tts(text, mp3)
+            audio = to_wav(mp3, wav)
+            alen = len(audio) / 2 / SR
         lead = LEAD if scene != prev_scene else 0.0
         dur = max(b - a, lead + alen + GAP)
         segs.append({"scene": scene, "t0": round(t, 3), "t1": round(t + dur, 3), "from": a, "to": b, "lead": lead})

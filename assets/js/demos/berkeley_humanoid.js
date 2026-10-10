@@ -489,10 +489,19 @@
   }
   /* 科学计数法写成 LaTeX：6.1e-6 → 6.1\times10^{-6} */
   function sci(x, d) {
+    var dd = d == null ? 2 : d, p = Math.pow(10, dd);
     var e = Math.floor(Math.log10(Math.abs(x)));
-    var m = x / Math.pow(10, e);
-    if (Math.abs(m - 10) < 1e-9) { m = 1; e += 1; }
-    return fmt(m, d == null ? 2 : d) + '\\times10^{' + e + '}';
+    var m = Math.round((x / Math.pow(10, e)) * p * (1 + 1e-12)) / p; // 浮点误差：0.01215 存成 1.2149999…×10⁻²
+    if (m >= 10) { m /= 10; e += 1; }
+    return fmt(m, dd) + '\\times10^{' + e + '}';
+  }
+  /* 从分镜时刻 at 起按真实时间算过了几秒（还没到 at 时为负）。网页播放器（clock 为空）和 stage.html 的 fitStory（draw(t, t)）里
+     就是 t − at；视频里分镜时间会在段尾停住、真实时间照走，所以在这一段还在走（t < at + run）的帧里锁住起点，之前的帧不清空——
+     render.mjs 先按各段 t0 + 0.5 预热，之后 stills、片段或分段并行从哪一帧开始渲都对得上。box 是每个用处自己的 { v: null } */
+  function sinceCue(box, t, clock, now, at, run) {
+    if (clock == null || clock === t) return t - at;
+    if (t >= at && (t < at + run - 0.01 || box.v == null)) box.v = now - (t - at);
+    return t < at || box.v == null ? -1 : now - box.v;
   }
   function rot(v, th) {
     return [v[0] * Math.cos(th) - v[1] * Math.sin(th), v[0] * Math.sin(th) + v[1] * Math.cos(th)];
@@ -744,9 +753,8 @@
     var cnt = paint(svgText(310, 394, '', null, 10), C_ACCENT);
     pen.appendChild(cnt);
     var PER = [2 * Math.PI * Math.sqrt(1.0 / G), 2 * Math.PI * Math.sqrt(0.4 / G)];
-    /* 两个摆在第 4 段开头一起从 0.42 rad 松手，按真实时间摆。视频里分镜时间会停、真实时间照走，
-       所以松手的时刻在第 4 段还在走的时候锁住（同 inekf.js 的 corr0） */
-    var pen0 = null;
+    /* 两个摆在第 4 段开头一起从 0.42 rad 松手，按真实时间摆（松手时刻见 sinceCue） */
+    var pen0 = { v: null };
 
     function draw(t, clock) {
       var now = nowOf(t, clock);
@@ -766,9 +774,7 @@
       setOpacity(key, seg(t, 4.4, 5.0));
       setOpacity(one, seg(t, 8.6, 9.2));
       setOpacity(pen, seg(t, 10.4, 11.0));
-      if (t < 10.4) pen0 = null;
-      else if (t < 13.39 || pen0 == null) pen0 = now - (t - 10.4);
-      var tt = pen0 == null ? 0 : Math.max(0, now - pen0), swings = [];
+      var tt = Math.max(0, sinceCue(pen0, t, clock, now, 10.4, 3.0)), swings = [];
       LEN.forEach(function (L, k) {
         var a = 0.42 * Math.cos((2 * Math.PI * tt) / PER[k]);
         var b = [PIV[k][0] + L * Math.sin(a), PIV[k][1] + L * Math.cos(a)];
@@ -1137,8 +1143,8 @@
     });
     var fineT = paint(svgText(756, 398, '只坏过 2 次：螺丝松、胶开', null, 10, 'end'), C_GOOD);
     tbl.appendChild(fineT);
-    /* 第 5 段开头锁住真实时间（视频里分镜时间会停、真实时间照走），摔倒循环从这里算起：先收脚站定，1 s 后才倒 */
-    var fall0 = null;
+    /* 摔倒循环从第 5 段开头按真实时间算起（见 sinceCue）：先收脚站定，1 s 后才倒；只摔两次，第二次扶起来后接着踏步 */
+    var fall0 = { v: null };
 
     function draw(t, clock) {
       var now = nowOf(t, clock);
@@ -1154,16 +1160,15 @@
       imuL2.setAttribute('x', (120 + COST.imuTypical * IS * ui + 8).toFixed(1));
       /* 摔倒循环：踏步 → 往后倒 → 躺一会 → 扶起；第 5 段之前只踏步 */
       setOpacity(fall, seg(t, 0.4, 1.0));
-      if (t < 13.4) fall0 = null;
-      else if (t < 16.99 || fall0 == null) fall0 = now - (t - 13.4);
-      var since = fall0 == null ? -1 : now - fall0, cyc = 4.2, phase = since < 0 ? -1 : since % cyc;
+      var cyc = 4.2, raw = sinceCue(fall0, t, clock, now, 13.4, 3.6), since = raw < 0 ? -1 : Math.min(raw, 2 * cyc - 1e-3);
+      var phase = since < 0 ? -1 : since % cyc;
       /* 绕后脚跟往后倒：重力矩随倾角变大，越倒越快，到躯干背面着地才停（-89° 时背面贴地）；扶起来可以慢慢来 */
       var LIE = -89, ang = 0;
       if (phase >= 1.0 && phase < 1.6) ang = LIE * Math.pow((phase - 1.0) / 0.6, 2);
       else if (phase >= 1.6 && phase < 3.0) ang = LIE;
       else if (phase >= 3.0 && phase < 3.6) ang = LIE * (1 - ease((phase - 3.0) / 0.6));
       var stand = [[BX + 4, GY], [BX - 6, GY]], walk = treadmill(now, BX, GY, 13, 1.1, 8);
-      var bl = since < 0 ? 0 : Math.min(1, since / 0.4);
+      var bl = raw < 0 ? 0 : raw < cyc + 3.6 ? Math.min(1, raw / 0.4) : Math.max(0, 1 - (raw - cyc - 3.6) / 0.4);
       var feet = [0, 1].map(function (k) { return [walk[k][0] + (stand[k][0] - walk[k][0]) * bl, walk[k][1] + (stand[k][1] - walk[k][1]) * bl]; });
       bot.put(BX, GY - LEG.hipH * M, 0, feet);
       botG.setAttribute('transform', 'rotate(' + ang.toFixed(1) + ' ' + (BX - 6 - LEG.heel * M).toFixed(1) + ' ' + GY + ')');
@@ -1346,8 +1351,8 @@
       setOpacity(flow, seg(t, 12.0, 12.4));
       var u = ((now * 0.5) % 1 + 1) % 1;
       moveDot(fl[0], [262 + u * 54, 175]);
-      moveDot(fl[1], [446 + u * 38, 200 + u * 12]);
-      moveDot(fl[2], [498 + u * 44, 220 - u * 10]);
+      moveDot(fl[1], [446 + u * 38, 200 + u * 24]);
+      moveDot(fl[2], [498 + u * 44, 228 - u * 18]);
       setOpacity(rew, seg(t, 13.4, 14.0));
     }
     return { el: s, draw: draw };
@@ -1631,8 +1636,8 @@
     trail.appendChild(paint(svgText(500, 376, '土路连续爬 5 分钟以上：96 m，爬升 10.5 m', null, 11), C_WARN));
     trail.appendChild(svgText(44, 394, '路线是示意', 'demo-x-mut', 9));
     trail.appendChild(svgText(500, 394, '96 m 爬升 10.5 m 折合约 6°，和 20° 对不上（论文没解释）', 'demo-x-mut', 9));
-    /* 踢：第 4 段开头锁住真实时间，第一脚在 0.8 s 后；脚先伸过来、碰到躯干背面才开始推 */
-    var kick0 = null, KC = 0.12, KP = 0.25;
+    /* 踢：从第 4 段开头按真实时间算（见 sinceCue），第一脚在 0.8 s 后；脚先伸过来、碰到躯干背面才开始推 */
+    var kick0 = { v: null }, KC = 0.12, KP = 0.25;
 
     function draw(t, clock) {
       var now = nowOf(t, clock);
@@ -1647,10 +1652,9 @@
       dirLab.textContent = kickOn ? '' : '命令：' + DIRS[ci];
       var S = (SS[cp] + (SS[ci] - SS[cp]) * ease(Math.min(1, ((cc - Math.floor(cc)) * 2.5) / 0.5))) * (1 - seg(t, 10.4, 10.9));
       var lean = 0, tip = null;
-      if (t < 10.4) kick0 = null;
-      else if (t < 13.39 || kick0 == null) kick0 = now - (t - 10.4);
-      if (kick0 != null) {
-        var ph = (((now - kick0 - 0.8) % 3.2) + 3.2) % 3.2, tl = ph - KC;
+      var kt = sinceCue(kick0, t, clock, now, 10.4, 3.0);
+      if (kt >= 0) {
+        var ph = (((kt - 0.8) % 3.2) + 3.2) % 3.2, tl = ph - KC;
         lean = tl < 0 ? 0 : tl < KP ? (0.5 * tl) / KP : 0.5 * Math.exp(-(tl - KP) * 2.2) * Math.cos((tl - KP) * 5);
         /* 踢的脚尖：先伸到躯干背面（y = 156，髋上方 10.9 px，躯干半宽 17 px），推的时候贴着背面走，推完 0.1 s 收回 */
         var back = 650 + 30 * lean - 17 / Math.cos(lean) + 10.9 * Math.tan(lean);
@@ -1666,7 +1670,7 @@
       setOpacity(tileNote, seg(t, 7.6, 8.2));
       setOpacity(slope, seg(t, 7.0, 7.5));
       /* 6 个整步一循环（步态相位接得上），循环头尾 0.3 s 淡出淡入，免得机器人一帧从坡上跳回坡底 */
-      var period = 1.3, cyc = 6 * period, lc = ((now % cyc) + cyc) % cyc;
+      var period = 1.3, cyc = 6 * period, lc = (((now - 7.0) % cyc) + cyc) % cyc; // 网页里第 3 段开头从坡底起步
       var w = worldGait(lc, 470, -1, 30, period, 7, gy);
       slopeBot.put(w.x, gy(w.x) - LEG.hipH * 150, 0.05, w.feet);
       setOpacity(slopeBot.g, Math.min(1, lc / 0.3, (cyc - lc) / 0.3));
@@ -1775,7 +1779,7 @@
         var tt = ((ph % PJ) + PJ) % PJ;
         if (tt < TS) return { y: 0, crouch: CA * Math.sin((Math.PI * tt) / TS), air: false };
         var s = (tt - TS) / TF;
-        return { y: 4 * HJ * HM * s * (1 - s), crouch: 0, air: true };
+        return { y: 4 * HJ * HM * s * (1 - s), crouch: 0, air: true, s: s };
       }
       var j2 = jump(now), j1 = jump(now + 0.2);
       var hy2 = HG - (LEG.hipH - j2.crouch) * HM - j2.y;
@@ -1784,8 +1788,9 @@
       hop1.put(300, hy1, 0.06, [[300 + 4, HG - j1.y], [300 - 24, HG - j1.y - 22]]); // 收起的腿膝弯 94–106°，在 KFE 的 120° 以内
       var rTop = hy1 - LEG.torsoH * HM - 6, span = rTop - 278, sag = Math.sqrt(Math.max(0, ROPE * ROPE - span * span)) / 2;
       rope.setAttribute('d', 'M 300 278 Q ' + (300 + sag).toFixed(1) + ' ' + ((278 + rTop) / 2).toFixed(1) + ' 300 ' + rTop.toFixed(1));
-      setOpacity(fly[0], j2.air && t >= 7.0 ? 1 : 0);
-      setOpacity(fly[1], j1.air && t >= 7.0 ? 1 : 0);
+      function flyA(j) { return 0.4 + 0.6 * (j.air ? Math.sin(Math.PI * j.s) : 0); }
+      setOpacity(fly[0], flyA(j2));
+      setOpacity(fly[1], flyA(j1));
       setOpacity(lim, seg(t, 10.4, 10.8));
       limRows.forEach(function (g, k) { setOpacity(g, seg(t, 10.6 + k * 0.7, 11.0 + k * 0.7)); });
       setOpacity(after, seg(t, 13.4, 14.0));
