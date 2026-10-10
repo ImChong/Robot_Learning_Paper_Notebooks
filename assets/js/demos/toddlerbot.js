@@ -691,10 +691,10 @@
     left.appendChild(needT);
     var needChips = ['便宜', '快速可修', '全栈透明'].map(function (str, k) { return chip(left, 44 + k * 69, 186, 64, str, C_GOOD, { size: 10.5, h: 26 }); });
     var mid = group(s);
-    var img = robotImg(mid, 300, 226, 180);
+    var img = robotImg(mid, 304, 204, 158);
     var midT = group(mid);
-    midT.appendChild(svgText(337, 240, '0.56 m · 3.4 kg · 30 个主动自由度', 'demo-x-ink2', 10.5, 'middle'));
-    midT.appendChild(svgText(337, 256, '全 3D 打印 + Dynamixel，不到 6000 美元', 'demo-x-mut', 10, 'middle'));
+    midT.appendChild(svgText(337, 220, '0.56 m · 3.4 kg · 30 个主动自由度', 'demo-x-ink2', 10.5, 'middle'));
+    midT.appendChild(svgText(337, 236, '全 3D 打印 + Dynamixel，不到 6000 美元', 'demo-x-mut', 10, 'middle'));
     /* 右：两边采数据 */
     var right = group(s);
     rectBox(right, 452, 44, 318, 190, C_GOOD, C_SURFACE);
@@ -709,23 +709,23 @@
     right.appendChild(svgText(466, 222, '补充：行走靠大规模仿真，操作靠真机示范（第 2 节）', 'demo-x-mut', 9.5));
     /* 底：表 1 的小人形 */
     var bot = group(s);
-    rectBox(bot, 30, 250, 740, 154, C_BORDER, C_SURFACE2);
+    rectBox(bot, 30, 250, 740, 164, C_BORDER, C_SURFACE2);
     bot.appendChild(svgText(44, 270, '表 1：小型人形的主动自由度（人体主要动作约 32 个旋转关节）', 'demo-x-ink2', 11.5));
     var small = [['Zeroth', 16, 1.4], ['BRUCE', 16, 6.5], ['Robotis OP3', 20, 11], ['NAO H25', 23, 14], ['Berkeley Lite', 22, 5], ['ToddlerBot', 30, 6]];
-    var BY = 372, BS = 3.1;
+    var BY = 384, BS = 2.5;
     var bars = small.map(function (r, k) {
       var x = 70 + k * 112, isT = r[0] === 'ToddlerBot';
       var b = vbar(bot, x, BY, 44, isT ? C_GOOD : C_MUTED, isT ? 0.95 : 0.6);
-      var v = svgText(x + 22, 0, String(r[1]), isT ? 'demo-x-good' : 'demo-x-ink2', 11, 'middle');
+      var v = paint(svgText(x + 22, 0, String(r[1]), null, 11, 'middle'), C_INK);
       bot.appendChild(v);
-      bot.appendChild(svgText(x + 22, BY + 14, r[0], 'demo-x-mut', 9.5, 'middle'));
-      bot.appendChild(svgText(x + 22, BY + 27, r[2] + 'K 美元', 'demo-x-mut', 9, 'middle'));
+      bot.appendChild(svgText(x + 22, BY + 13, r[0], isT ? 'demo-x-good' : 'demo-x-mut', 9.5, 'middle'));
+      bot.appendChild(svgText(x + 22, BY + 25, r[2] + 'K 美元', 'demo-x-mut', 9, 'middle'));
       return { b: b, v: v, h: r[1] * BS };
     });
     hline(bot, 60, BY - 32 * BS, 760, BY - 32 * BS, C_BAD, 1, '4 3');
     bot.appendChild(paint(svgText(756, BY - 32 * BS - 4, '人 32', null, 9.5, 'end'), C_BAD));
     var contrib = group(bot);
-    contrib.appendChild(svgRich(44, 294, '三条贡献：① 第一台 30 自由度的小型人形　② 完整的 sysID 流水线　③ 全身遥操作采数据', { size: 10.5, w: 700, cls: 'demo-x-good' }));
+    contrib.appendChild(svgRich(44, 292, '三条贡献：① 第一台 30 自由度的小型人形　② 完整的 sysID 流水线　③ 全身遥操作采数据', { size: 10.5, w: 700, cls: 'demo-x-good' }));
 
     function draw(t, clock) {
       var now = nowOf(t, clock);
@@ -748,7 +748,7 @@
       bars.forEach(function (b, k) {
         var h = b.h * ease(seg(t, 10.7 + k * 0.3, 11.3 + k * 0.3));
         setH(b.b, h);
-        b.v.setAttribute('y', (BY - h - 5).toFixed(1));
+        b.v.setAttribute('y', (BY - h + 15).toFixed(1));  // 数字写在柱顶里面，不和「人 32」虚线、贡献那一行抢位置
         setOpacity(b.v, seg(t, 11.2 + k * 0.3, 11.5 + k * 0.3));
       });
       setOpacity(contrib, seg(t, 13.4, 14.0));
@@ -774,10 +774,12 @@
     ];
     var counter = paint(svgText(155, 392, '', null, 14, 'middle'), C_GOOD);
     left.appendChild(counter);
+    /* 四组标注排在小人下方、面板之内（原来挂在小人两侧，左边那两行会跑出面板和画布） */
     var tags = [
-      [pts.shL[0] - 60, pts.elL[1], '肩 3 · 肘 2 · 腕 2', C_ACCENT], [pts.hipL[0] - 60, pts.kneeL[1] + 4, '髋 3 · 膝 1 · 踝 2', C_GOOD],
-      [pts.neck[0] + 30, pts.neck[1] - 8, '颈：俯仰 + 偏航', C_WARN], [pts.waist[0] + 36, pts.waist[1] + 4, '腰：偏航 + 横滚', C_WARN]
-    ].map(function (r) { var n = paint(svgText(r[0], r[1], r[2], null, 9.5, r[0] < 155 ? 'end' : 'start'), r[3]); left.appendChild(n); return n; });
+      ['手臂 7 × 2：肩 3 · 肘 2 · 腕 2', C_ACCENT], ['腿 6 × 2：髋 3 · 膝 1 · 踝 2', C_GOOD],
+      ['颈 2：俯仰 + 偏航', C_WARN], ['腰 2：偏航 + 横滚', C_WARN]
+    ].map(function (r, k) { var n = paint(svgText(48, 284 + k * 22, r[0], null, 10.5), r[1]); left.appendChild(n); return n; });
+    void pts;
     /* 右：三种传动 */
     var right = group(s);
     rectBox(right, 296, 44, 474, 360, C_BORDER, C_SURFACE);
@@ -814,8 +816,10 @@
     bevG.appendChild(svgText(470, 254, '上半身，两个合起来够', 'demo-x-ink2', 10));
     var linkG = group(right);
     linkG.appendChild(paint(svgText(310, 290, '③ 平行连杆（膝、颈俯仰）', null, 11), C_GOOD));
-    var l1 = hline(linkG, 0, 0, 0, 0, C_GOOD, 2.2), l2 = hline(linkG, 0, 0, 0, 0, C_GOOD, 2.2), l3 = hline(linkG, 0, 0, 0, 0, C_GOOD, 2.2), l4 = hline(linkG, 0, 0, 0, 0, C_MUTED, 1.4, '3 3');
-    var motorDot = dotAt(linkG, 340, 310, 5, C_GOOD);
+    var l4 = hline(linkG, 0, 0, 0, 0, C_MUTED, 1.4, '3 3'), l1 = hline(linkG, 0, 0, 0, 0, C_GOOD, 2.2), l2 = hline(linkG, 0, 0, 0, 0, C_GOOD, 2.2);
+    var linkRock = hline(linkG, 0, 0, 0, 0, C_GOOD, 2.2), l3 = hline(linkG, 0, 0, 0, 0, C_GOOD, 3);
+    var motorDot = dotAt(linkG, 340, 312, 5, C_GOOD), kneeDot = dotAt(linkG, 410, 312, 3.5, C_GOOD);
+    void kneeDot;
     linkG.appendChild(svgText(470, 310, '电机离开关节轴：膝电机放高，减小转动惯量', 'demo-x-ink2', 10));
     linkG.appendChild(svgText(470, 326, '颈的电机放进头里；活动范围略小（< 160°）', 'demo-x-ink2', 10));
     var muj = group(right);
@@ -848,13 +852,13 @@
       bevArrow1.setAttribute('stroke-width', (1.6 + 0.8 * Math.max(0, Math.sin(now * 1.6))).toFixed(2));
       bevArrow2.setAttribute('stroke-width', (1.6 + 0.8 * Math.max(0, Math.sin(now * 1.1))).toFixed(2));
       setOpacity(linkG, seg(t, 13.4, 13.9));
-      /* 四连杆：电机曲柄在 (340, 310)，输出摇杆在 (400, 310)，连杆平行 */
+      /* 平行四连杆：电机曲柄在 (340, 312)，关节在 (410, 312)，两根曲柄等长同角、连杆与机架平行；
+         小腿和关节处的摇杆固连，一起转。整个画面收在 y 296–350，不压下面的 MuJoCo 一行 */
       var th = 0.6 * Math.sin(now * 1.4) + 0.3;
-      var A = [340 + 22 * Math.cos(th), 310 + 22 * Math.sin(th)], B = [400 + 22 * Math.cos(th), 310 + 22 * Math.sin(th)];
-      setLine(l1, 340, 310, A[0], A[1]); setLine(l2, A[0], A[1], B[0], B[1]); setLine(l3, 400, 310, B[0], B[1]); setLine(l4, 340, 310, 400, 310);
-      var shin = [B[0] + 48 * Math.cos(th + 1.2), B[1] + 48 * Math.sin(th + 1.2)];
-      setLine(l3, 400, 310, shin[0], shin[1]);
-      setLine(l2, A[0], A[1], B[0], B[1]);
+      var A = [340 + 16 * Math.cos(th), 312 + 16 * Math.sin(th)], B = [410 + 16 * Math.cos(th), 312 + 16 * Math.sin(th)];
+      setLine(l1, 340, 312, A[0], A[1]); setLine(l2, A[0], A[1], B[0], B[1]); setLine(l4, 340, 312, 410, 312);
+      setLine(l3, 410, 312, 410 + 34 * Math.cos(th + Math.PI / 2), 312 + 34 * Math.sin(th + Math.PI / 2));
+      setLine(linkRock, 410, 312, B[0], B[1]);
       setOpacity(muj, seg(t, 14.4, 15.0));
     }
     return { el: s, draw: draw };
@@ -862,7 +866,7 @@
 
   /* ── scene 3: 可复现是硬约束 ── */
   function buildSceneRepro() {
-    var s = sceneSvg('左边两根悬臂梁，长的和短的受同样的载荷，短的相对挠度小得多，解释为什么小零件可以 3D 打印；右上是 6000 美元的物料清单条，九成是电机和电脑；右下是表 1 里几台小人形的价格柱；底下是「只用现成电机与轴承」「2 兆波特、50 赫兹、背隙 0.25 度」几条');
+    var s = sceneSvg('左边两根悬臂梁，长的是全尺寸、短的是小尺寸，载荷随体重一起缩小，短的相对挠度小得多，解释为什么小零件可以 3D 打印；右上是 6000 美元的物料清单条，九成是电机和电脑；右下是表 1 里几台小人形的价格柱；底下是「只用现成电机与轴承」「2 兆波特、50 赫兹、背隙 0.25 度」几条');
     s.appendChild(svgText(30, 28, '可复现是硬约束：一个人在家、没有专用设备也能把它造出来', 'demo-x-ink2', 13.5));
     var def = group(s);
     rectBox(def, 30, 44, 740, 40, C_GOOD, C_SURFACE);
@@ -871,15 +875,17 @@
     var beam = group(s);
     rectBox(beam, 30, 98, 360, 190, C_BORDER, C_SURFACE2);
     beam.appendChild(svgText(44, 118, '为什么小零件敢 3D 打印（附录 8.1）', 'demo-x-ink2', 11));
-    var wallL = hline(beam, 60, 130, 60, 200, C_MUTED, 3), wallS = hline(beam, 60, 214, 60, 262, C_MUTED, 3);
+    var wallL = hline(beam, 56, 132, 56, 196, C_MUTED, 3), wallS = hline(beam, 56, 214, 56, 258, C_MUTED, 3);
     var longBeam = pathLine(beam, [], C_SIM, 4), shortBeam = pathLine(beam, [], C_GOOD, 4);
-    var loadL = pathLine(beam, [], C_BAD, 1.6), loadS = pathLine(beam, [], C_BAD, 1.6);
-    beam.appendChild(svgText(62, 146, '长 L（铝）', 'demo-x-mut', 9.5));
-    beam.appendChild(svgText(62, 228, '短 L / 3（打印）', 'demo-x-mut', 9.5));
+    /* 载荷画成朝下的箭头：长梁的 P 大（载荷随体重按 L³ 放大），短梁的小 */
+    var loadL = pathLine(beam, [], C_BAD, 1.8), loadS = pathLine(beam, [], C_BAD, 1.4);
+    beam.appendChild(svgText(66, 148, '长 L（全尺寸，铝）', 'demo-x-mut', 9.5));
+    beam.appendChild(svgText(148, 232, '短 L / 3（小尺寸，打印）', 'demo-x-mut', 9.5));  // 放在梁端右边，左上方是端点的载荷箭头
     var beamF = group(beam);
-    beamF.appendChild(svgMath(300, 250, '\\frac{\\delta}{L}\\propto\\frac{P}{3EL^{2}}', { size: 13, anchor: 'middle' }));
-    beamF.appendChild(svgText(300, 274, '同样的载荷 P，L 小三倍，相对挠度小九倍', 'demo-x-ink2', 9.5, 'middle'));
-    beamF.appendChild(svgText(300, 230, '小尺寸的打印件（E 小）和全尺寸的铝件强度相当', 'demo-x-good', 9.5, 'middle'));
+    beamF.appendChild(svgMath(340, 222, '\\frac{\\delta}{L}\\propto\\frac{P}{3EL^{2}}', { size: 13, anchor: 'middle' }));
+    /* 式子里 P 不变时，L 越小 δ/L 反而越大；「越小越不容易弯」要靠载荷随体重一起按 L³ 缩小，这一步论文没写，是我们补的 */
+    beamF.appendChild(svgRich(160, 252, '载荷随体重按 $L^3$ 缩：$\\delta/L \\propto L/E$（我们补的一步）', { size: 9.5, w: 226, cls: 'demo-x-ink2' }));
+    beamF.appendChild(svgText(160, 272, '小尺寸打印件（E 小）≈ 全尺寸铝件的强度', 'demo-x-good', 9.5));
     /* 右上：BOM */
     var bom = group(s);
     rectBox(bom, 406, 98, 364, 86, C_BORDER, C_SURFACE2);
@@ -892,13 +898,14 @@
     rectBox(price, 406, 196, 364, 92, C_BORDER, C_SURFACE2);
     price.appendChild(svgText(420, 216, '表 1 的价格（千美元）与自由度', 'demo-x-ink2', 11));
     var pr = [['Zeroth', 1.4, 16], ['Lite', 5, 22], ['Toddler', 6, 30], ['BRUCE', 6.5, 16], ['Berkeley', 10, 12], ['OP3', 11, 20], ['NAO', 14, 23]];
-    var PY = 270, PS = 2.6;
+    var PY = 258, PS = 2.4;
     var pbars = pr.map(function (r, k) {
       var x = 426 + k * 48, isT = r[0] === 'Toddler';
       var b = vbar(price, x, PY, 30, isT ? C_GOOD : C_MUTED, isT ? 0.95 : 0.55);
       var v = svgText(x + 15, 0, r[1] + 'K', isT ? 'demo-x-good' : 'demo-x-mut', 9, 'middle');
       price.appendChild(v);
-      price.appendChild(svgText(x + 15, PY + 12, r[0] + ' · ' + r[2], 'demo-x-mut', 8.5, 'middle'));
+      price.appendChild(svgText(x + 15, PY + 11, r[0], isT ? 'demo-x-good' : 'demo-x-mut', 8.5, 'middle'));
+      price.appendChild(svgText(x + 15, PY + 23, r[2] + ' 自由度', 'demo-x-mut', 8, 'middle'));
       return { b: b, v: v, h: r[1] * PS };
     });
     /* 底：电机与通信 */
@@ -918,9 +925,11 @@
       var u = seg(t, 3.9, 5.0);
       var dL = 36 * P * u, dS = 4 * P * u;
       var lp = [], sp = [];
-      for (var i = 0; i <= 20; i++) { var x = i / 20; lp.push([60 + 300 * x, 165 + dL * x * x]); sp.push([60 + 100 * x, 238 + dS * x * x]); }
+      for (var i = 0; i <= 20; i++) { var x = i / 20; lp.push([56 + 240 * x, 160 + dL * x * x]); sp.push([56 + 80 * x, 236 + dS * x * x]); }
       setPath(longBeam, lp); setPath(shortBeam, sp);
-      setPath(loadL, [[360, 165 + dL - 26], [360, 165 + dL - 6]]); setPath(loadS, [[160, 238 + dS - 26], [160, 238 + dS - 6]]);
+      var tl = 160 + dL, ts = 236 + dS;
+      setPath(loadL, [[296, tl - 30], [296, tl - 5], [291, tl - 11], [296, tl - 5], [301, tl - 11]]);
+      setPath(loadS, [[136, ts - 18], [136, ts - 5], [132, ts - 10], [136, ts - 5], [140, ts - 10]]);
       setOpacity(beamF, seg(t, 5.2, 5.8));
       setOpacity(bot, seg(t, 7.0, 7.5));
       comm.forEach(function (c, k) { setOpacity(c, seg(t, 7.4 + k * 0.5, 7.8 + k * 0.5)); });
@@ -950,58 +959,62 @@
     fair.appendChild(svgText(44, 64, '1.8 m 和 0.5 m 的人形都跳 0.5 m 不公平 → 跳身高的 10%、跑每秒两个身长', 'demo-x-ink2', 10.5));
     fair.appendChild(svgText(44, 80, '同一串归一化动作，用掉各自电机最大功率的同一比例 = 性能相同（式 3）', 'demo-x-mut', 9.5));
     var formula = group(left);
-    formula.appendChild(svgMath(140, 118, '\\tilde p=\\frac{\\sum_i|\\tau_i^{\\max}|}{h\\,m\\,g}', { size: 15, anchor: 'middle' }));
+    /* 公式用独立公式的排版（display），否则分子里的求和号会被压成一团 */
+    formula.appendChild(svgMath(132, 124, '\\tilde p=\\frac{\\sum_i|\\tau_i^{\\max}|}{h\\,m\\,g}', { size: 14, anchor: 'middle', display: true }));
     formula.appendChild(svgText(236, 108, '全部电机最大力矩之和', 'demo-x-ink2', 10));
     formula.appendChild(svgText(236, 124, '除以身高 × 体重 × g（式 4）', 'demo-x-ink2', 10));
     formula.appendChild(svgText(236, 140, '不除以自由度数：1 个和 100 个同样的自由度不该得同分', 'demo-x-mut', 9));
+    /* 图 8 画成横条：名字放左边、数值跟在条尾，人的 2.22 是一条竖虚线（原来斜着写的名字会掉出面板） */
     var chart = group(left);
-    var CY = 370, CS = 42, CX0 = 56, CW = 30;
-    hline(chart, 44, CY, 470, CY, C_BORDER, 1.2);
+    var RY0 = 180, RP = 15, CX = 156, CS = 52;
     var cbars = POWER.map(function (r, k) {
-      var x = CX0 + k * 32, isT = r[0] === 'ToddlerBot', isH = r[0] === 'Human';
-      var b = vbar(chart, x, CY, CW - 6, isT ? C_GOOD : isH ? C_BAD : C_ACCENT, isT ? 0.95 : isH ? 0.5 : 0.7);
-      var v = svgText(x + (CW - 6) / 2, 0, fmt(r[1], 2), isT ? 'demo-x-good' : 'demo-x-ink2', 8.5, 'middle');
+      var y = RY0 + k * RP, isT = r[0] === 'ToddlerBot', isH = r[0] === 'Human';
+      chart.appendChild(svgText(CX - 6, y + 10, isH ? '人' : r[0], isT ? 'demo-x-good' : isH ? 'demo-x-bad' : 'demo-x-mut', 9.5, 'end'));
+      var b = hbar(chart, CX, y + 2, 10, isT ? C_GOOD : isH ? C_BAD : C_ACCENT, isT ? 0.95 : isH ? 0.55 : 0.7);
+      var v = svgText(0, y + 10, fmt(r[1], 2), isT ? 'demo-x-good' : 'demo-x-ink2', 9);
       chart.appendChild(v);
-      var lab = svgText(0, 0, r[0], isT ? 'demo-x-good' : 'demo-x-mut', 8.5, 'end');
-      lab.setAttribute('transform', 'translate(' + (x + 14) + ' ' + (CY + 6) + ') rotate(-55)');
-      chart.appendChild(lab);
-      return { b: b, v: v, h: r[1] * CS };
+      return { b: b, v: v, w: r[1] * CS };
     });
-    var human = hline(chart, 44, CY - P_HUMAN * CS, 470, CY - P_HUMAN * CS, C_BAD, 1.2, '5 4');
-    var humanT = paint(svgText(466, CY - P_HUMAN * CS - 4, '人 2.22：至少要超过它，远超也有害', null, 9.5, 'end'), C_BAD);
+    var HX = CX + P_HUMAN * CS;
+    var human = hline(chart, HX, RY0 - 4, HX, RY0 + POWER.length * RP + 2, C_BAD, 1.2, '5 4');
+    var humanT = paint(svgText(HX, 394, '人 2.22：至少要超过它，远超也有害', null, 9.5, 'middle'), C_BAD);
     chart.appendChild(humanT);
-    var tbT = paint(svgText(44, 170, 'ToddlerBot 2.74 = 1.40（上半身）+ 1.35（下半身），最接近人', null, 10.5), C_GOOD);
+    var tbT = paint(svgText(44, 166, 'ToddlerBot 2.74 = 1.40（上半身）+ 1.35（下半身），最接近人', null, 10.5), C_GOOD);
     chart.appendChild(tbT);
-    /* 右：式 5 与表 2 */
+    /* 右：式 5 与表 2；需求条与电机条用同一个比例尺（每 N·m 36 px），竖虚线是踝俯仰要的 2.66 */
     var right = group(s);
     rectBox(right, 496, 44, 274, 360, C_BORDER, C_SURFACE);
     right.appendChild(svgText(510, 64, '需要多大力矩（式 5，附录 8.6）', 'demo-x-ink2', 11));
     var eq5 = group(right);
-    eq5.appendChild(svgMath(633, 100, '\\tau_{\\text{robot}}=\\frac{h_{r}\\,m_{r}}{h_{h}\\,m_{h}}\\,\\tau_{\\text{human}}', { size: 12, anchor: 'middle' }));
-    eq5.appendChild(svgText(510, 124, '0.5 m、3.1 kg（30 × 50 g + 600 + 1000 g）', 'demo-x-mut', 9.5));
+    eq5.appendChild(svgMath(633, 106, '\\tau_{\\text{robot}}=\\frac{h_{r}\\,m_{r}}{h_{h}\\,m_{h}}\\,\\tau_{\\text{human}}', { size: 12, anchor: 'middle', display: true }));
+    eq5.appendChild(svgText(510, 136, '0.5 m、3.1 kg（30 × 50 g + 600 + 1000 g）', 'demo-x-mut', 9.5));
+    var MX = 556, MS = 36;
     var REQ = [['膝', TORQUE_REQ.knee], ['踝俯仰', TORQUE_REQ.ankle], ['髋俯仰', TORQUE_REQ.hip]];
-    var RY = 150, RS = 46;
+    var RY = 148;
     var reqBars = REQ.map(function (r, k) {
-      var y = RY + k * 26;
-      right.appendChild(svgText(560, y + 12, r[0], 'demo-x-ink2', 10, 'end'));
-      var b = hbar(right, 568, y + 2, 16, C_BAD, 0.8);
+      var y = RY + k * 24;
+      right.appendChild(svgText(MX - 6, y + 12, r[0], 'demo-x-ink2', 10, 'end'));
+      var b = hbar(right, MX, y + 2, 14, C_BAD, 0.8);
       var v = svgText(0, y + 13, fmt(r[1], 2), 'demo-x-ink2', 9.5);
       right.appendChild(v);
-      return { b: b, v: v, w: r[1] * RS, y: y };
+      return { b: b, v: v, w: r[1] * MS, y: y };
     });
     var tbl = group(right);
-    tbl.appendChild(svgText(510, 248, '表 2：12 V 堵转力矩与分工', 'demo-x-ink2', 11));
+    tbl.appendChild(svgText(510, 236, '表 2：12 V 堵转力矩与分工', 'demo-x-ink2', 11));
     var mrows = [['XM430', 3.0, '膝、踝俯仰', C_GOOD], ['XC430', 1.9, '肩俯仰、踝横滚', C_ACCENT], ['2XC430', 1.8, '髋横滚 / 俯仰', C_ACCENT], ['2XL430', 1.5, '肩 / 肘 / 腕（双轴）', C_ACCENT], ['XC330', 1.0, '颈、腰、髋偏航、夹爪', C_MUTED]].map(function (r, k) {
-      var y = 262 + k * 27, g = group(tbl);
+      var y = 246 + k * 24, g = group(tbl);
       g.appendChild(paint(svgText(510, y + 12, r[0], null, 10), r[3]));
-      var b = hbar(g, 560, y + 2, 15, r[3], 0.8);
-      g.appendChild(svgText(0, y + 13, '', 'demo-x-mut', 9));
-      g.appendChild(svgText(700, y + 12, r[2], 'demo-x-mut', 8.5, 'middle'));
-      return { g: g, b: b, w: r[1] * RS, v: g.childNodes[2], val: r[1], y: y };
+      var b = hbar(g, MX, y + 2, 14, r[3], 0.8);
+      var v = svgText(0, y + 13, '', 'demo-x-mut', 9);
+      g.appendChild(v);
+      g.appendChild(svgText(756, y + 12, r[2], 'demo-x-mut', 8.5, 'end'));
+      return { g: g, b: b, w: r[1] * MS, v: v, val: r[1], y: y };
     });
-    var reqLine = hline(tbl, 568 + TORQUE_REQ.ankle * RS, 258, 568 + TORQUE_REQ.ankle * RS, 398, C_BAD, 1, '3 3');
-    var only = paint(svgText(510, 400, 'XM430 是唯一够膝（2.35）和踝（2.66）的；髋用 2XC430 只多 1.7%', null, 9.5), C_GOOD);
-    tbl.appendChild(only);
+    var RLX = MX + TORQUE_REQ.ankle * MS;
+    var reqLine = hline(tbl, RLX, 242, RLX, 362, C_BAD, 1, '3 3');
+    var only = group(tbl);
+    only.appendChild(paint(svgText(510, 380, 'XM430 是唯一够膝（2.35）和踝（2.66）的', null, 9.5), C_GOOD));
+    only.appendChild(paint(svgText(510, 396, '髋用 2XC430，1.8 对 1.77 只多 1.7%', null, 9.5), C_GOOD));
 
     function draw(t, clock) {
       setOpacity(left, seg(t, 0.2, 0.7));
@@ -1009,9 +1022,9 @@
       setOpacity(formula, seg(t, 3.6, 4.1));
       setOpacity(chart, seg(t, 7.0, 7.4));
       cbars.forEach(function (b, k) {
-        var h = b.h * ease(seg(t, 7.2 + k * 0.15, 7.8 + k * 0.15));
-        setH(b.b, h);
-        b.v.setAttribute('y', (CY - h - 3).toFixed(1));
+        var w = b.w * ease(seg(t, 7.2 + k * 0.15, 7.8 + k * 0.15));
+        setW(b.b, w);
+        b.v.setAttribute('x', (CX + w + 4).toFixed(1));
         setOpacity(b.v, seg(t, 7.6 + k * 0.15, 7.9 + k * 0.15));
       });
       setOpacity(human, seg(t, 9.3, 9.7)); setOpacity(humanT, seg(t, 9.3, 9.7));
@@ -1021,7 +1034,7 @@
       reqBars.forEach(function (b, k) {
         var w = b.w * ease(seg(t, 11.2 + k * 0.4, 11.8 + k * 0.4));
         setW(b.b, w);
-        b.v.setAttribute('x', (574 + w).toFixed(1));
+        b.v.setAttribute('x', (MX + w + 4).toFixed(1));
         setOpacity(b.v, seg(t, 11.6 + k * 0.4, 11.9 + k * 0.4));
       });
       setOpacity(tbl, seg(t, 13.4, 13.8));
@@ -1029,7 +1042,7 @@
         var w = r.w * ease(seg(t, 13.6 + k * 0.25, 14.1 + k * 0.25));
         setW(r.b, w);
         r.v.textContent = fmt(r.val, 1);
-        r.v.setAttribute('x', (566 + w).toFixed(1));
+        r.v.setAttribute('x', (MX + w + 4).toFixed(1));
         setOpacity(r.v, seg(t, 13.9 + k * 0.25, 14.2 + k * 0.25));
       });
       setOpacity(reqLine, seg(t, 15.0, 15.4));
@@ -1140,7 +1153,7 @@
     var left = group(s);
     rectBox(left, 30, 44, 300, 220, C_BORDER, C_SURFACE2);
     left.appendChild(svgText(44, 64, '电机台架（附录 8.9、图 11）', 'demo-x-ink2', 11));
-    var railY = 150;
+    var railY = 128;  // 台架整体上移，给「驱动电机」和下面三行规格留出位置
     hline(left, 50, railY + 36, 310, railY + 36, C_MUTED, 3);
     var motorBox = chip(left, 60, railY - 20, 64, '待测电机', C_ACCENT, { size: 9.5, h: 40 });
     var shaft = hline(left, 124, railY, 160, railY, C_MUTED, 4);
@@ -1150,11 +1163,12 @@
     var driver = chip(left, 110, railY + 44, 70, '驱动电机', C_WARN, { size: 9, h: 24 });
     hline(left, 145, railY + 20, 145, railY + 44, C_MUTED, 2, '3 2');
     var arm = group(left);
-    var armLine = hline(arm, 92, railY - 40, 92, railY - 40, C_ACCENT, 2.4);
-    var armMass = dotAt(arm, 92, railY - 40, 6, C_ACCENT);
+    /* 负载臂装在电机顶上、在上方来回摆，不再扫过「待测电机」几个字 */
+    var armLine = hline(arm, 92, railY - 20, 92, railY - 46, C_ACCENT, 2.4);
+    var armMass = dotAt(arm, 92, railY - 46, 6, C_ACCENT);
     var spec = group(left);
-    spec.appendChild(svgText(44, 212, '刹车 5 N·m · 主动驱动 1 N·m · 扭矩精度 0.0003 N·m', 'demo-x-ink2', 9.5));
-    spec.appendChild(svgText(44, 228, '负载：21700 电芯当砝码；MCU 管采样、刹车与 CAN', 'demo-x-mut', 9));
+    spec.appendChild(svgText(44, 214, '刹车 5 N·m · 主动驱动 1 N·m · 扭矩精度 0.0003 N·m', 'demo-x-ink2', 9.5));
+    spec.appendChild(svgText(44, 230, '负载：21700 电芯当砝码；MCU 管采样、刹车与 CAN', 'demo-x-mut', 9));
     spec.appendChild(svgText(44, 250, '「将随发布开源」（CHANGELOG：有人感兴趣就开源）', 'demo-x-mut', 9));
     var params = group(s);
     rectBox(params, 30, 276, 300, 128, C_BORDER, C_SURFACE);
@@ -1179,8 +1193,8 @@
     for (var i = 0; i < 9; i++) { var w = 0.5 + i * 0.75; pts.push([w, tauR(X330, w) + 0.004 * (rng() - 0.5)]); }
     var dots = pts.map(function (p) { return dotAt(fit, fx(p[0]), fy(p[1]), 3.2, C_ACCENT); });
     var fitLine = pathLine(fit, [[fx(0), fy(X330.fl)], [fx(6.5), fy(tauR(X330, 6.5))]], C_GOOD, 2);
-    var interceptT = paint(svgText(fx(0) + 6, fy(X330.fl) - 6, '截距 0.036 = 摩擦损耗', null, 9.5), C_BAD);
-    var slopeT = paint(svgText(fx(4.2), fy(tauR(X330, 4.2)) - 10, '斜率 0.0036 = 阻尼', null, 9.5), C_WARN);
+    var interceptT = paint(svgText(fx(0) + 6, fy(X330.fl) + 18, '截距 0.036 = 摩擦损耗', null, 9.5), C_BAD);  // 写在线下方，不压散点
+    var slopeT = paint(svgText(fx(4.6), fy(tauR(X330, 4.6)) + 20, '斜率 0.0036 = 阻尼', null, 9.5), C_WARN);
     fit.appendChild(interceptT); fit.appendChild(slopeT);
     var ex = paint(svgText(FX1, FY1 + 4, '1 rad/s 时 0.0396 N·m，6.5 rad/s 时 0.0594', null, 9.5, 'end'), C_GOOD);
     fit.appendChild(ex);
@@ -1200,7 +1214,7 @@
       curve.push([SX0 + (tt / 0.6) * (SX1 - SX0), SY0 - (Math.max(0, wv) / 5) * (SY0 - SY1)]);
     }
     var spinPath = pathLine(spin, curve, C_ACCENT, 2.2);
-    var stopT = paint(svgText(SX0 + (T_STOP / 0.6) * (SX1 - SX0), SY0 - 8, '0.45 s 停', null, 9.5, 'middle'), C_BAD);
+    var stopT = paint(svgText(SX0 + (T_STOP / 0.6) * (SX1 - SX0) + 6, SY0 - 4, '0.45 s 停', null, 9.5), C_BAD);  // 曲线终点右边，不压曲线尾巴
     spin.appendChild(stopT);
     var eq7 = group(spin);
     eq7.appendChild(svgMath(708, 300, 'E=\\tfrac12 I\\omega^{2}', { size: 12, anchor: 'middle' }));
@@ -1212,9 +1226,9 @@
     function draw(t, clock) {
       var now = nowOf(t, clock);
       setOpacity(left, seg(t, 0.2, 0.7));
-      var ang = now * 2.4;
-      var ax = 92 + 34 * Math.cos(ang), ay = railY - 34 * Math.sin(ang);
-      setLine(armLine, 92, railY, ax, ay); moveDot(armMass, [ax, ay]);
+      var ang = Math.PI / 2 + 0.9 * Math.sin(now * 2.4);
+      var ax = 92 + 26 * Math.cos(ang), ay = railY - 20 - 26 * Math.sin(ang);
+      setLine(armLine, 92, railY - 20, ax, ay); moveDot(armMass, [ax, ay]);
       setOpacity(spec, seg(t, 1.6, 2.2));
       setOpacity(params, seg(t, 3.6, 4.1));
       pChips.forEach(function (c, k) { setOpacity(c, seg(t, 4.2 + k * 0.6, 4.7 + k * 0.6)); });
@@ -1269,7 +1283,7 @@
     var simP = pathLine(ch, noKd.map(function (v, i) { return [cx(i), cy(clamp(v, -0.65, 0.65))]; }), C_SIM, 1.6);
     var head = dotAt(ch, 0, 0, 4, C_REAL);
     var chLeg = group(ch);
-    chLeg.appendChild(svgText(44, 398, '灰：0.1 → 2 Hz 设定点　橙：九个参数全对　蓝：拿掉 k_d^min，差 4.32°', 'demo-x-mut', 9));
+    chLeg.appendChild(svgRich(44, 398, '灰：0.1 → 2 Hz 设定点　橙：九个参数全对　蓝：拿掉 $k_d^{\\min}$，差 4.32°', { size: 9, w: 380, cls: 'demo-x-mut' }));
     /* 右：knockouts */
     var right = group(s);
     rectBox(right, 446, 44, 324, 360, C_BORDER, C_SURFACE2);
@@ -1347,13 +1361,13 @@
     var right = group(s);
     rectBox(right, 466, 44, 304, 232, C_BORDER, C_SURFACE);
     right.appendChild(svgText(480, 64, '下半身怎么站稳（第 4.3 节）', 'demo-x-ink2', 11));
-    var GY = 250, RS = 230;
+    var GY = 250, RS = 170;  // 头顶低于上面那排 chip 和代码注释（230 时头会压到 chip）
     hline(right, 480, GY, 756, GY, C_BORDER, 1.4);
     var side = tbSide(right, C_INK2, RS);
     var support = paint(svgEl('rect', { x: 0, y: GY - 3, width: 0, height: 6, rx: 2 }), C_GOOD);
     support.style.opacity = 0.5; right.appendChild(support);
     var comDot = dotAt(right, 0, 0, 6, C_BAD), comLine = hline(right, 0, 0, 0, 0, C_BAD, 1.2, '3 2');
-    var comT = paint(svgText(0, 0, '质心', null, 9.5, 'middle'), C_BAD);
+    var comT = paint(svgText(0, 0, '质心', null, 9.5, 'end'), C_BAD);  // 放在点的左边：上方和右边是腿、手臂
     right.appendChild(comT);
     var layer1 = chip(right, 480, 74, 134, '① 质心 PD：拉回支撑面中心', C_GOOD, { size: 9, h: 24 });
     var layer2 = chip(right, 622, 74, 134, '② 躯干俯仰 PD：IMU 保持直立', C_ACCENT, { size: 9, h: 24 });
@@ -1386,7 +1400,11 @@
       setOpacity(padG, seg(t, 4.6, 5.1));
       var sx = 262 + 5 * Math.sin(now * 1.7), sy = 246 + 4 * Math.cos(now * 1.1);
       moveDot(stick, [sx, sy]);
-      setPath(velArrow, [[fp.waist[0], fp.waist[1] + 50], [fp.waist[0] + 30 * Math.sin(now * 1.7), fp.waist[1] + 50 + 10 * Math.cos(now * 1.1)]]);
+      /* 摇杆给的速度：画在跟随机器人脚下（y 196，掌机框顶在 206），跟着摇杆左右摆 */
+      var vx0 = fp.waist[0], vdx = 26 * Math.sin(now * 1.7), vdy = 3 * Math.cos(now * 1.1), vl = Math.hypot(vdx, vdy);
+      var vpts = [[vx0, 196], [vx0 + vdx, 196 + vdy]];
+      if (vl > 6) { var ux = vdx / vl, uy = vdy / vl, hx1 = vx0 + vdx, hy1 = 196 + vdy; vpts.push([hx1 - 5 * ux + 3 * uy, hy1 - 5 * uy - 3 * ux], [hx1, hy1], [hx1 - 5 * ux - 3 * uy, hy1 - 5 * uy + 3 * ux]); }
+      setPath(velArrow, vpts);
       setOpacity(velArrow, seg(t, 5.0, 5.4));
       setOpacity(right, seg(t, 7.0, 7.4));
       /* 侧视：手臂前伸把质心推出去；第 2 段起质心 PD 把髋后挪，第 3 段起俯仰 PD 后仰 */
@@ -1400,7 +1418,7 @@
       support.setAttribute('x', (fx - 0.045 * RS).toFixed(1)); setW(support, 0.1 * RS);
       moveDot(comDot, [comX, GY - 0.3 * RS]);
       setLine(comLine, comX, GY - 0.3 * RS, comX, GY);
-      comT.setAttribute('x', comX.toFixed(1)); comT.setAttribute('y', (GY - 0.3 * RS - 10).toFixed(1));
+      comT.setAttribute('x', (comX - 9).toFixed(1)); comT.setAttribute('y', (GY - 0.3 * RS + 3.5).toFixed(1));
       var inside = Math.abs(comX - fx) < 0.045 * RS;
       comDot.setAttribute('fill', inside ? C_GOOD : C_BAD); comT.setAttribute('fill', inside ? C_GOOD : C_BAD);
       setOpacity(layer1, seg(t, 8.0, 8.5));
@@ -1503,10 +1521,11 @@
       imgG.appendChild(q); cells.push(q);
     }
     imgG.appendChild(svgText(92, 178, '裁剪 + 下采样 96×96', 'demo-x-mut', 9, 'middle'));
-    var resnet = chip(left, 150, 104, 90, 'ResNet（ImageNet 预训练）', C_ACCENT, { size: 8.5, h: 36 });
-    var joint = chip(left, 150, 150, 90, '关节角 10 Hz', C_WARN, { size: 9, h: 24 });
-    var dpBox = chip(left, 262, 104, 150, '扩散策略 · 3 亿参数', C_GOOD, { size: 10, h: 36 });
-    var a1 = pathLine(left, [[134, 122], [150, 122]], C_ACCENT, 1.6), a2 = pathLine(left, [[240, 122], [262, 122]], C_ACCENT, 1.6), a3 = pathLine(left, [[240, 162], [262, 130]], C_WARN, 1.6);
+    /* ResNet 那格放宽到装得下整句（原来 90 px，字溢出到框外、和箭头叠在一起） */
+    var resnet = chip(left, 146, 104, 128, 'ResNet · ImageNet 预训练', C_ACCENT, { size: 9, h: 30 });
+    var joint = chip(left, 146, 146, 128, '关节角 10 Hz', C_WARN, { size: 9, h: 24 });
+    var dpBox = chip(left, 292, 104, 124, '扩散策略 · 3 亿参数', C_GOOD, { size: 10, h: 36 });
+    var a1 = pathLine(left, [[134, 119], [146, 119]], C_ACCENT, 1.6), a2 = pathLine(left, [[274, 119], [292, 119]], C_ACCENT, 1.6), a3 = pathLine(left, [[274, 158], [292, 132]], C_WARN, 1.6);
     /* 去噪 */
     var denG = group(left);
     denG.appendChild(svgText(44, 206, '训练 100 步 DDPM，推理只用 3 步（Jetson 上 < 0.1 s）', 'demo-x-ink2', 10));
@@ -1545,7 +1564,7 @@
     var res = group(s);
     rectBox(res, 446, 236, 324, 168, C_BORDER, C_SURFACE2);
     res.appendChild(svgText(460, 256, '20 次测试的成功率（第 5 节）', 'demo-x-ink2', 11));
-    var RY = 380, RS = 1.1;
+    var RY = 364, RS = 0.95;  // 柱子与两行标签上移，给最底下一行留位置
     var rbars = [['双臂：桌上的章鱼进小车', DP.bimanualPct], ['全身：跪下从地上捡', DP.fullBodyPct]].map(function (r, k) {
       var x = 500 + k * 140;
       var bar = vbar(res, x, RY, 50, k ? C_WARN : C_GOOD, 0.9);
@@ -1554,7 +1573,7 @@
       res.appendChild(svgText(x + 25, RY + 14, r[0], 'demo-x-mut', 8.5, 'middle'));
       return { b: bar, v: v, h: r[1] * RS };
     });
-    res.appendChild(svgText(460, 396, '数据来自一台，策略放到另一台仍 90%', 'demo-x-good', 9, 'start'));
+    res.appendChild(svgText(460, 396, '数据来自一台，策略放到另一台仍 90%', 'demo-x-good', 9.5, 'start'));
 
     function draw(t, clock) {
       var now = nowOf(t, clock);
@@ -1593,15 +1612,24 @@
     var span = group(s);
     rectBox(span, 30, 44, 360, 160, C_BORDER, C_SURFACE2);
     span.appendChild(svgText(44, 64, '臂展：用柔顺手掌抱大物体（图 3 左）', 'demo-x-ink2', 11));
-    var torsoR = paint(svgEl('rect', { x: 70, y: 150, width: 26, height: 24, rx: 3, 'stroke-width': 1.3 }), C_SURFACE, C_INK2);
+    /* 左半：躯干与箱子按同一比例并排比大小（宽 13 对 27 cm、高 12 对 31 cm）；右半：小人把箱子抱在身前 */
+    var torsoR = paint(svgEl('rect', { x: 60, y: 144, width: 26, height: 24, rx: 3, 'stroke-width': 1.3 }), C_SURFACE, C_INK2);
     span.appendChild(torsoR);
-    span.appendChild(svgText(83, 190, '躯干 13×9×12', 'demo-x-mut', 9, 'middle'));
-    var bigBox = paint(svgEl('rect', { x: 150, y: 90, width: 0, height: 0, rx: 4, 'stroke-width': 1.5 }), C_SURFACE, C_GOOD);
+    /* 名字和尺寸分两行：并排写一行时两段字会连成「13×9×12箱子」 */
+    span.appendChild(svgText(73, 182, '躯干', 'demo-x-mut', 9, 'middle'));
+    span.appendChild(svgText(73, 195, '13×9×12', 'demo-x-mut', 9, 'middle'));
+    var bigBox = paint(svgEl('rect', { x: 110, y: 168, width: 0, height: 0, rx: 4, 'stroke-width': 1.5 }), C_SURFACE, C_GOOD);
     span.appendChild(bigBox);
-    var bigT = paint(svgText(300, 190, '抱 27×24×31 cm³ 的箱子 ≈ 14 倍躯干体积', null, 9.5, 'middle'), C_GOOD);
-    span.appendChild(bigT);
+    span.appendChild(svgText(137, 182, '箱子', 'demo-x-mut', 9, 'middle'));
+    span.appendChild(svgText(137, 195, '27×24×31', 'demo-x-mut', 9, 'middle'));
+    var bigT = group(span);
+    bigT.appendChild(paint(svgText(137, 88, '体积约 14 倍', null, 10, 'middle'), C_GOOD));
+    bigT.appendChild(svgText(137, 101, '（单位 cm）', 'demo-x-mut', 9, 'middle'));
     var hugger = tbFront(span, C_INK2, 120);
-    hugger.g.setAttribute('transform', 'translate(0 0)');
+    /* 抱在身前的箱子按小人的比例画（56 cm 高的身子对 27 × 31 cm 的箱子），盖住躯干和大半条腿，手臂从两侧绕过去 */
+    var heldBox = paint(svgEl('rect', { x: 282, y: 108, width: 36, height: 41, rx: 3, 'stroke-width': 1.5 }), C_SURFACE, C_GOOD);
+    span.appendChild(heldBox);
+    span.appendChild(svgText(300, 190, '柔顺手掌抱住箱子，同时站稳', 'demo-x-ink2', 9.5, 'middle'));
     /* 左下：负重 + 耐久 */
     var load = group(s);
     rectBox(load, 30, 216, 360, 188, C_BORDER, C_SURFACE);
@@ -1643,7 +1671,7 @@
     var bars = group(right);
     bars.appendChild(svgText(420, 200, '跟踪误差（真机 ± 标准差）', 'demo-x-ink2', 10.5));
     var ROWS = [['位置 m', TABLE7.pos, 1000], ['线速度 m/s', TABLE7.linVel, 4000], ['角速度 rad/s', TABLE7.angVel, 1200]];
-    var BY0 = 360, BX = [460, 580, 700];
+    var BY0 = 350, BX = [460, 580, 700];  // 两行轴标签在 364 / 377，和底下 398 那行结论隔开
     var tbars = ROWS.map(function (r, k) {
       var g = group(bars), x = BX[k];
       var bs = vbar(g, x - 28, BY0, 26, C_SIM, 0.9), br = vbar(g, x + 2, BY0, 26, C_REAL, 0.9);
@@ -1651,7 +1679,7 @@
       g.appendChild(vs); g.appendChild(vr);
       g.appendChild(svgText(x, BY0 + 14, r[0], 'demo-x-mut', 9, 'middle'));
       g.appendChild(svgText(x, BY0 + 27, '± ' + r[1][2], 'demo-x-mut', 8.5, 'middle'));
-      return { bs: bs, br: br, vs: vs, vr: vr, hs: r[1][0] * r[2] / 10, hr: r[1][1] * r[2] / 10 };
+      return { bs: bs, br: br, vs: vs, vr: vr, hs: r[1][0] * r[2] * 0.9, hr: r[1][1] * r[2] * 0.9 };  // 每组按自己的单位缩放，最高约 122 px
     });
     var gapT = paint(svgText(420, 398, 'sim-to-real 差距（真机多的 0.016 m/s）比跟踪差距小 → 零样本成功', null, 9.5), C_GOOD);
     right.appendChild(gapT);
@@ -1660,9 +1688,12 @@
       var now = nowOf(t, clock);
       setOpacity(span, seg(t, 0.2, 0.7));
       var bu = ease(seg(t, 0.6, 2.4));
-      bigBox.setAttribute('width', (52 * bu).toFixed(1)); bigBox.setAttribute('height', (60 * bu).toFixed(1));
-      bigBox.setAttribute('x', (300 - 26 * bu).toFixed(1)); bigBox.setAttribute('y', (110 + 20 * (1 - bu)).toFixed(1));
-      hugger.put(300, 80, { armA: [1.35 * bu + 0.1, 2.3 * bu], armB: [1.35 * bu + 0.1, 2.3 * bu] });
+      bigBox.setAttribute('width', (54 * bu).toFixed(1)); bigBox.setAttribute('height', (62 * bu).toFixed(1));
+      bigBox.setAttribute('y', (168 - 62 * bu).toFixed(1));
+      /* 上臂外展到箱子两侧、前臂往里收：肩宽 24 px，箱宽 36 px */
+      var arm = [0.15 + 0.5 * bu, 0.2 + 1.23 * bu];
+      hugger.put(300, 80, { armA: arm, armB: arm });
+      setOpacity(heldBox, seg(t, 1.2, 2.0));
       setOpacity(bigT, seg(t, 2.4, 2.9));
       setOpacity(load, seg(t, 3.6, 4.0));
       var n = Math.round(6 * ease(seg(t, 3.9, 5.4)));
@@ -1696,18 +1727,21 @@
     var left = group(s);
     rectBox(left, 30, 44, 390, 200, C_BORDER, C_SURFACE2);
     left.appendChild(svgText(44, 64, '两台机器人合作收玩具（图 5）：Arya 与 Toddy', 'demo-x-ink2', 11));
-    var GY = 196, RS = 150;
+    var GY = 196, RS = 136;  // 头顶在 y 95，不碰 y 84 那行图例（150 时 Arya 走到左边会压住「蓝：Toddy」）
     hline(left, 44, GY, 406, GY, C_BORDER, 1.4);
-    var arya = tbSide(left, C_GOOD, RS), toddy = tbSide(left, C_ACCENT, RS);
+    var TX = 352;  // Toddy 站在右边、面朝左边的小车（绕 x = TX 镜像）
+    var toddyG = group(left);
+    toddyG.setAttribute('transform', 'translate(' + 2 * TX + ' 0) scale(-1 1)');
+    var arya = tbSide(left, C_GOOD, RS), toddy = tbSide(toddyG, C_ACCENT, RS);
     var wagon = group(left);
     wagon.appendChild(paint(svgEl('rect', { x: 0, y: -22, width: 40, height: 20, rx: 3, 'stroke-width': 1.3 }), C_SURFACE, C_WARN));
     wagon.appendChild(paint(svgEl('circle', { cx: 8, cy: 0, r: 4 }), C_WARN)); wagon.appendChild(paint(svgEl('circle', { cx: 32, cy: 0, r: 4 }), C_WARN));
     var octo = dotAt(wagon, 20, -28, 5, '#c678dd');
-    var steps = ['桌上粉章鱼', 'Arya 放进车', '走到把手', '抓把手', '推车过去', 'Toddy 到位', '跪下捡紫章鱼', '并肩离开'];
+    var steps = ['粉章鱼', '放进车', '走到把手', '抓把手', '推车', 'Toddy 到位', '跪下捡', '并肩离开'];  // 每格 46 px，字要短
     var stepDots = steps.map(function (str, k) {
       var g = group(left);
       dotAt(g, 56 + k * 46, 222, 4, C_MUTED);
-      g.appendChild(svgText(56 + k * 46, 238, str, 'demo-x-mut', 7.5, 'middle'));
+      g.appendChild(svgText(56 + k * 46, 238, str, 'demo-x-mut', 8.5, 'middle'));
       return g;
     });
     left.appendChild(svgText(44, 84, '绿：Arya　蓝：Toddy　橙：小车', 'demo-x-mut', 9));
@@ -1736,7 +1770,9 @@
     });
     var img = robotImg(right, 712, 400, 112);
     var after = group(right);
-    after.appendChild(svgRich(450, 312, '**三件事**：可复现当硬约束、30 自由度与接近人的 $\\tilde p$、两边都能采数据的工具链', { size: 9.5, w: 236, cls: 'demo-x-good' }));
+    /* svgRich 不会自动折行，分两行写，右边留给机器人图 */
+    after.appendChild(svgRich(450, 304, '**三件事**：可复现当硬约束、30 自由度', { size: 9.5, w: 250, cls: 'demo-x-good' }));
+    after.appendChild(svgRich(450, 322, '接近人的 $\\tilde p$、两边都能采数据的工具链', { size: 9.5, w: 250, cls: 'demo-x-good' }));
     after.appendChild(svgText(450, 356, '真机数据靠遥操作，仿真数据靠数字孪生——', 'demo-x-ink2', 9.5));
     after.appendChild(svgText(450, 372, '那人类的动作数据从哪里来、怎样搬到机器人身上？', 'demo-x-ink2', 9.5));
     after.appendChild(svgText(450, 392, '下一篇：HumanML3D / GMR', 'demo-x-acc', 10));
@@ -1744,17 +1780,18 @@
     function draw(t, clock) {
       var now = nowOf(t, clock);
       setOpacity(left, seg(t, 0.2, 0.7));
-      /* 故事板：每 2 s 一步，循环；Arya 推车从左往右走 */
+      /* 故事板：每 2 s 一步，循环；Arya 在「走到把手」到「Toddy 到位」之间推车往右，车停在 Toddy 跟前 */
       var ph = (now / 16) % 1, stepIdx = Math.floor(ph * 8);
       stepDots.forEach(function (g, k) { g.style.opacity = k <= stepIdx ? 1 : 0.35; g.firstChild.setAttribute('fill', k <= stepIdx ? C_GOOD : C_MUTED); });
       var walk = (now / 1.0) % 1;
-      var ax = 120 + 200 * ph;
-      var swing = 10 * Math.sin(walk * 2 * Math.PI);
-      arya.put(ax, GY - 0.37 * RS, 0.04, [[ax + swing, GY - 0.02 * RS - 4 * Math.max(0, Math.sin(walk * 2 * Math.PI))], [ax - swing, GY - 0.02 * RS - 4 * Math.max(0, -Math.sin(walk * 2 * Math.PI))]], [1.0, 0.4]);
+      var ax = 100 + 140 * ease(clamp((ph * 8 - 2) / 3, 0, 1));  // 车身右端最远到 ax + 76 = 316
+      var moving = ph * 8 > 2 && ph * 8 < 5 ? 1 : 0;  // 只在推车那几步迈腿
+      var swing = 10 * moving * Math.sin(walk * 2 * Math.PI), lift = 4 * moving;
+      arya.put(ax, GY - 0.37 * RS, 0.04, [[ax + swing, GY - 0.02 * RS - lift * Math.max(0, Math.sin(walk * 2 * Math.PI))], [ax - swing, GY - 0.02 * RS - lift * Math.max(0, -Math.sin(walk * 2 * Math.PI))]], [1.0, 0.4]);
       wagon.setAttribute('transform', 'translate(' + (ax + 36).toFixed(1) + ' ' + (GY - 6).toFixed(1) + ')');
       setOpacity(octo, stepIdx >= 1 ? 1 : 0);
-      var tx = 360;
-      var kneel = stepIdx >= 6 ? 1 : 0;
+      var tx = TX;
+      var kneel = stepIdx === 6 ? 1 : 0;
       toddy.put(tx, GY - (0.37 - 0.12 * kneel) * RS, 0.3 * kneel, [[tx + 6, GY - 0.02 * RS], [tx - 6, GY - 0.02 * RS]], [0.9 * kneel + 0.1, 0.3]);
       setOpacity(mid, seg(t, 3.6, 4.0));
       repChips.forEach(function (c, k) { setOpacity(c, seg(t, 3.8 + k * 0.6, 4.3 + k * 0.6)); });
@@ -1799,7 +1836,7 @@
       build: buildSceneRepro,
       cues: [
         { at: 0.3, s: '可复现的定义：**一个人在家、不用专用设备就能复刻整套系统**。平台造出来别人复刻不了，就没有价值，所以当硬约束（第 3.1 节）。' },
-        { at: 3.6, s: '为什么敢全 3D 打印（附录 8.1）：悬臂梁 $\\delta/L \\propto P/(3EL^2)$，结构越小相对挠度越小——小尺寸的打印件和全尺寸的铝件强度相当，换金属反而降低可复现性。' },
+        { at: 3.6, s: '为什么敢全 3D 打印（附录 8.1）：悬臂梁 $\\delta/L \\propto P/(3EL^2)$；载荷又随体重按 $L^3$ 一起缩小，代进去是 $\\delta/L \\propto L/E$，零件越小越不容易弯（这一步是我们补的）。小尺寸的打印件和全尺寸的铝件强度相当。' },
         { at: 7.0, s: '性能关键的电机、轴承只用现成件：Dynamixel 可靠好买，5 V TTL、2 Mbaud，30 个电机 50 Hz 读全状态；背隙约 0.25°、编码器 4096 → 0.09°（附录 8.6）。' },
         { at: 10.4, s: 'BOM 不到 **6000 美元**，九成是电机和 Jetson；表 1 里比它便宜的只有 Berkeley Lite（5K、22 自由度）和 Zeroth（1.4K、16 自由度）。' },
         { at: 13.4, s: '装配与维护（附录 8.2）：螺丝种类少、螺丝刀入口畅通、模块化好换；两台样机测了一年多，可靠性「和商用平台相当」。' }
