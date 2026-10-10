@@ -2627,20 +2627,94 @@ a.updates-item-link:hover {
   margin-bottom: 1rem;
 }
 
-.roadmap-video-tooltip {
+/* 首页路线图节点悬浮卡片（_layouts/default.html 的 attachRoadmapNodeCard）。
+   fixed 定位、不吃指针事件，节点点击与灯箱拖拽不受影响；z-index 高于灯箱（10050）。 */
+.roadmap-node-card {
   position: fixed;
   z-index: 10100;
-  max-width: min(320px, calc(100vw - 16px));
+  width: max-content;
+  max-width: min(360px, calc(100vw - 16px));
   box-sizing: border-box;
-  padding: 0.55rem 0.8rem;
+  padding: 0.75rem 0.9rem 0.7rem;
   border: 1px solid var(--border);
-  border-radius: 8px;
-  background: var(--bg-secondary);
+  border-radius: 10px;
+  background: var(--card-bg);
   color: var(--text);
   font-size: 0.85rem;
-  line-height: 1.5;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+  line-height: 1.55;
+  text-align: left;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.22);
   pointer-events: none;
+  animation: roadmap-node-card-in 0.14s ease-out;
+}
+
+.roadmap-node-card[hidden] {
+  display: none;
+}
+
+@keyframes roadmap-node-card-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .roadmap-node-card { animation: none; }
+}
+
+.roadmap-node-card__eyebrow {
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  letter-spacing: 0.01em;
+}
+
+.roadmap-node-card__title {
+  margin-top: 0.15rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.roadmap-node-card__subtitle {
+  margin-top: 0.1rem;
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+  line-height: 1.4;
+}
+
+.roadmap-node-card__summary {
+  margin: 0.5rem 0 0;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--border);
+}
+
+.roadmap-node-card__video {
+  margin-top: 0.55rem;
+  padding: 0.4rem 0.6rem;
+  border-left: 3px solid var(--blockquote-border);
+  border-radius: 0 6px 6px 0;
+  background: var(--blockquote-bg);
+}
+
+.roadmap-node-card__video-title {
+  font-weight: 600;
+}
+
+.roadmap-node-card__video-meta {
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+}
+
+.roadmap-node-card__meta {
+  margin-top: 0.5rem;
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+}
+
+.roadmap-node-card__action {
+  margin-top: 0.45rem;
+  color: var(--link);
+  font-size: 0.78rem;
+  font-weight: 600;
 }
 
 /* ── 滚动入场（全站）───────────────────────────────────────────────

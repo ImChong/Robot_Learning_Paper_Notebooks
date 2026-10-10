@@ -574,6 +574,148 @@ def extract_arxiv(content):
     return None
 
 
+# 「🎯 一句话总结」/「🎯 一句话理解」小节：取第一段当首页路线图悬浮卡片的简介。
+_SUMMARY_SECTION_RE = re.compile(r"^##\s*🎯\s*一句话[^\n]*\n(.*?)(?=^##\s|^---\s*$|\Z)", re.M | re.S)
+_MD_LINK_RE = re.compile(r"!?\[([^\]]*)\]\([^)]*\)")
+_MD_BOLD_RE = re.compile(r"\*\*(.+?)\*\*|__(.+?)__")
+_MD_CODE_RE = re.compile(r"`([^`]*)`")
+_HTML_TAG_RE = re.compile(r"<[^>]+>")
+_SENTENCE_END_RE = re.compile(r"(?<=[。！？])")
+_TITLE_ACRONYM_RE = re.compile(r"\(([^()]{2,20})\)\s*$")
+SUMMARY_MAX_CHARS = 120
+
+
+def _plain_summary_text(paragraph):
+    """Markdown → 卡片里的纯文本，保留 ``$…$`` 交给页面的 KaTeX。"""
+    lines = [re.sub(r"^\s*>\s?", "", line) for line in paragraph.splitlines()]
+    text = " ".join(line.strip() for line in lines if line.strip())
+    text = _MD_LINK_RE.sub(r"\1", text)
+    text = _MD_BOLD_RE.sub(lambda m: m.group(1) or m.group(2), text)
+    text = _MD_CODE_RE.sub(r"\1", text)
+    text = _HTML_TAG_RE.sub("", text)
+    text = re.sub(r"\{#[^}]*\}", "", text)
+    return re.sub(r"\s+", " ", text).strip()
+
+
+def _cut_summary(text, limit=SUMMARY_MAX_CHARS):
+    """按整句截到 ``limit`` 字以内；第一句就超长时硬截，且不把公式截成半个。"""
+    if len(text) <= limit:
+        return text
+    kept = ""
+    for sentence in (s for s in _SENTENCE_END_RE.split(text) if s):
+        if len(kept) + len(sentence) > limit:
+            break
+        kept += sentence
+    if kept:
+        return kept.strip()
+    cut = text[: limit - 1]
+    if cut.count("$") % 2:
+        cut = cut[: cut.rfind("$")]
+    return cut.rstrip(" ，、：；（(—-") + "…"
+
+
+def paper_short_name(title):
+    """标题里的简称：结尾括号里的缩写（``… (PPO)``）或冒号前的名字（``ASAP: …``）。"""
+    match = _TITLE_ACRONYM_RE.search(title or "")
+    if match:
+        return match.group(1).strip()
+    head, sep, _ = (title or "").partition(":")
+    head = head.strip()
+    return head if sep and 0 < len(head) <= 24 else None
+
+
+def extract_summary(content, short_name=None):
+    """「🎯 一句话总结」的第一段（去掉 Markdown 标记、截到约 120 字），没有则返回 None。
+
+    不少总结先用一两句交代背景，再用「<简称> 的做法是……」讲方法；卡片只放得下一两句，
+    所以第一句没提到简称、后面某句提到时，从那句开始取。
+    """
+    match = _SUMMARY_SECTION_RE.search(content)
+    if not match:
+        return None
+    paragraphs = [p for p in re.split(r"\n\s*\n", match.group(1).strip()) if p.strip()]
+    if not paragraphs:
+        return None
+    text = _plain_summary_text(paragraphs[0])
+    if not text:
+        return None
+    if short_name:
+        sentences = [s for s in _SENTENCE_END_RE.split(text) if s]
+        for i, sentence in enumerate(sentences):
+            if short_name in sentence:
+                text = "".join(sentences[i:]).strip()
+                break
+    return _cut_summary(text)
+
+
+_EXPLAINER_HEADING_RE = re.compile(r"^##\s*🎬\s*([0-9一二三四五六七八九十]+)\s*幕动画", re.M)
+_EXPLAINER_VIDEO_RE = re.compile(r'data-demo="[\w-]+-video"[^>]*?data-src="([^"]+\.mp4)"')
+_CN_DIGITS = {"一": 1, "二": 2, "三": 3, "四": 4, "五": 5, "六": 6, "七": 7, "八": 8, "九": 9}
+
+
+def _cn_numeral_to_int(text):
+    """``五`` → 5、``十二`` → 12、``12`` → 12（讲解动画幕数只到几十）。"""
+    if text.isdigit():
+        return int(text)
+    if "十" not in text:
+        return _CN_DIGITS.get(text)
+    tens, _, ones = text.partition("十")
+    value = (_CN_DIGITS.get(tens, 0) if tens else 1) * 10
+    return value + (_CN_DIGITS.get(ones, 0) if ones else 0)
+
+
+def extract_explainer_scenes(content):
+    """``## 🎬 N幕动画`` 标题里的幕数，没有讲解动画返回 None。"""
+    match = _EXPLAINER_HEADING_RE.search(content)
+    return _cn_numeral_to_int(match.group(1)) if match else None
+
+
+def mp4_duration_seconds(path):
+    """读 mp4 顶层 ``moov/mvhd`` 的时长（整秒，舍去零头，同笔记里「N 分 M 秒」的写法），读不到返回 None。"""
+    try:
+        with open(path, "rb") as f:
+            size = os.fstat(f.fileno()).st_size
+            pos = 0
+            while pos + 8 <= size:
+                f.seek(pos)
+                header = f.read(8)
+                box_size = int.from_bytes(header[:4], "big")
+                box_type = header[4:8]
+                header_len = 8
+                if box_size == 1:
+                    box_size = int.from_bytes(f.read(8), "big")
+                    header_len = 16
+                elif box_size == 0:
+                    box_size = size - pos
+                if box_size < header_len:
+                    return None
+                if box_type == b"moov":
+                    moov = f.read(box_size - header_len)
+                    i = moov.find(b"mvhd")
+                    if i < 4:
+                        return None
+                    body = moov[i + 4 :]
+                    if body[0] == 1:
+                        timescale = int.from_bytes(body[20:24], "big")
+                        duration = int.from_bytes(body[24:32], "big")
+                    else:
+                        timescale = int.from_bytes(body[12:16], "big")
+                        duration = int.from_bytes(body[16:20], "big")
+                    return duration // timescale if timescale else None
+                pos += box_size
+    except OSError:
+        return None
+    return None
+
+
+def extract_video_seconds(fpath, content):
+    """正文 ``data-demo="*-video"`` 指向的 mp4 时长（秒），没有配音视频返回 None。"""
+    match = _EXPLAINER_VIDEO_RE.search(content)
+    if not match:
+        return None
+    return mp4_duration_seconds(os.path.join(os.path.dirname(fpath), match.group(1)))
+
+
 def get_category_name(category_dir):
     """Clean category directory name for display."""
     name = _CATEGORY_PREFIX_RE.sub("", category_dir)
@@ -974,6 +1116,21 @@ def process_papers():
 
                 if extract_has_open_source(content):
                     paper_entry["has_open_source"] = True
+
+                # 首页路线图悬浮卡片：简介、讲解动画幕数、配音视频时长。
+                summary = extract_summary(content, paper_short_name(title))
+                if summary:
+                    paper_entry["summary_zh"] = summary
+                scenes = extract_explainer_scenes(content)
+                if scenes:
+                    paper_entry["explainer_scenes"] = scenes
+                if _EXPLAINER_VIDEO_RE.search(content):
+                    # 本地没有 mp4（浅克隆、未拉媒体）时沿用上次生成的时长。
+                    video_seconds = extract_video_seconds(fpath, content) or existing_meta_for_paper.get(
+                        "video_seconds"
+                    )
+                    if video_seconds:
+                        paper_entry["video_seconds"] = video_seconds
 
                 published_date_raw = (
                     extract_published_date(content)

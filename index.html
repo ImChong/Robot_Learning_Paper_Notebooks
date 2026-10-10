@@ -86,7 +86,7 @@ title: "Home"
             <span class="roadmap-entry-arrow" aria-hidden="true">→</span>
           </span>
         </summary>
-        <p class="roadmap-link-hint" data-en="Click a node to open its note; nodes marked “paper” open the original paper. 🎬 marks notes with a narrated video. Click elsewhere on the diagram to zoom in." data-zh="点击节点阅读笔记；标注“原文”的节点打开论文。🎬 表示笔记含配音讲解视频。点击图中其他区域可放大查看。">Click a node to open its note; nodes marked “paper” open the original paper. 🎬 marks notes with a narrated video. Click elsewhere on the diagram to zoom in.</p>
+        <p class="roadmap-link-hint" data-en="Hover over a node for its details; click it to open the note. Nodes marked “paper” open the original paper. 🎬 marks notes with a narrated video. Click elsewhere on the diagram to zoom in." data-zh="鼠标悬停节点查看详情，点击阅读笔记；标注“原文”的节点打开论文。🎬 表示笔记含配音讲解视频。点击图中其他区域可放大查看。">Hover over a node for its details; click it to open the note. Nodes marked “paper” open the original paper. 🎬 marks notes with a narrated video. Click elsewhere on the diagram to zoom in.</p>
         <div class="mermaid" id="roadmap-mermaid"></div>
       </details>
     </div>
@@ -102,6 +102,48 @@ title: "Home"
 {%- assign link_url = link_url | relative_url -%}
 {%- endunless -%}
       {{ pair[0] | jsonify | replace: '<', '\u003c' | replace: '>', '\u003e' | replace: '&', '\u0026' }}: {{ link_url | jsonify | replace: '<', '\u003c' | replace: '>', '\u003e' | replace: '&', '\u0026' }}
+{%- endfor -%}
+    }</script>
+    {%- comment -%}
+      路线图节点悬浮卡片的数据：按 roadmap_links 的笔记地址在 _data/papers.json 里找到那篇论文，
+      只输出卡片要用的字段（标题、板块、发表时间、arXiv、开源、简介、讲解动画幕数、配音视频时长）。
+    {%- endcomment %}
+    <script type="application/json" id="roadmap-node-details">{
+{%- assign detail_first = true -%}
+{%- for pair in site.data.roadmap_links -%}
+{%- assign detail_paper = nil -%}
+{%- assign detail_cat = nil -%}
+{%- for cat in site.data.papers -%}
+{%- assign detail_hit = cat[1].papers | where: "url", pair[1] | first -%}
+{%- unless detail_hit -%}
+{%- for sc in cat[1].subcategories -%}
+{%- assign detail_hit = sc.papers | where: "url", pair[1] | first -%}
+{%- if detail_hit -%}{%- break -%}{%- endif -%}
+{%- endfor -%}
+{%- endunless -%}
+{%- if detail_hit -%}
+{%- assign detail_paper = detail_hit -%}
+{%- assign detail_cat = cat[1] -%}
+{%- break -%}
+{%- endif -%}
+{%- endfor -%}
+{%- if detail_paper -%}
+{%- unless detail_first -%},{%- endunless -%}
+{%- assign detail_first = false -%}
+      {{ pair[0] | jsonify | replace: '<', '\u003c' | replace: '>', '\u003e' | replace: '&', '\u0026' }}: {
+        "title": {{ detail_paper.title | jsonify | replace: '<', '\u003c' | replace: '>', '\u003e' | replace: '&', '\u0026' }},
+        "zh_title": {{ detail_paper.zh_title | default: detail_paper.zhname | jsonify | replace: '<', '\u003c' | replace: '>', '\u003e' | replace: '&', '\u0026' }},
+        "category": {{ detail_cat.display_name | jsonify | replace: '<', '\u003c' | replace: '>', '\u003e' | replace: '&', '\u0026' }},
+        "category_zh": {{ detail_cat.zhname | default: detail_cat.display_name | jsonify | replace: '<', '\u003c' | replace: '>', '\u003e' | replace: '&', '\u0026' }},
+        "date": {{ detail_paper.published_date_en | jsonify | replace: '<', '\u003c' | replace: '>', '\u003e' | replace: '&', '\u0026' }},
+        "date_zh": {{ detail_paper.published_date_zh | jsonify | replace: '<', '\u003c' | replace: '>', '\u003e' | replace: '&', '\u0026' }},
+        "arxiv": {{ detail_paper.arxiv | jsonify | replace: '<', '\u003c' | replace: '>', '\u003e' | replace: '&', '\u0026' }},
+        "open_source": {{ detail_paper.has_open_source | default: false | jsonify | replace: '<', '\u003c' | replace: '>', '\u003e' | replace: '&', '\u0026' }},
+        "summary_zh": {{ detail_paper.summary_zh | jsonify | replace: '<', '\u003c' | replace: '>', '\u003e' | replace: '&', '\u0026' }},
+        "scenes": {{ detail_paper.explainer_scenes | jsonify | replace: '<', '\u003c' | replace: '>', '\u003e' | replace: '&', '\u0026' }},
+        "video_seconds": {{ detail_paper.video_seconds | jsonify | replace: '<', '\u003c' | replace: '>', '\u003e' | replace: '&', '\u0026' }}
+      }
+{%- endif -%}
 {%- endfor -%}
     }</script>
 
