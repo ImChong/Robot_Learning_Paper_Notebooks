@@ -22,7 +22,7 @@
   'use strict';
 
   var K = window.PaperDemoKit;
-  /* 第 2、6、11、12 幕的真机图放在 assets/img/robots/，按本脚本自己的地址找（网页与离线视频都适用） */
+  /* 第 2 幕的真机图放在 assets/img/robots/，按本脚本自己的地址找（网页与离线视频都适用）；第 1、6、11、12 幕是按图 2b 尺寸画的侧视示意（bhBody） */
   var ROBOT_IMG_BASE = (function () {
     var cs = document.currentScript;
     try {
@@ -57,6 +57,7 @@
   /* 第 3–5 节与附录表 4–6 照抄；图 7、8 没有标数，读图的值单独标「读图」。开源训练代码（HybridRobotics/isaac_berkeley_humanoid）
      与 URDF（HybridRobotics/berkeley_humanoid_description）的数单独标出。十二幕动画、三个演示、配音旁白与笔记「🚶 具体实例」共用这一份。 */
   var ROBOT = { kg: 16, heightM: 0.85, thigh: 0.22, calf: 0.18, foot: 0.16, ankleH: 0.06, legDof: 6, withArmsKg: 22, usd: 9955, withArmsUsd: 15000 }; // 第 3.1 节、图 2、表 1 脚注
+  var TORSO_KG = 5.378; // URDF 的躯干（torso）；代码的 add_base_mass 把 ±1 kg 加在它上面
   var ACTUATORS = [
     // 表 2；「关节」一行取自 ICRA 版表 II，与开源代码一致
     { name: '5013', g: 251, ratio: 9, hollow: false, dia: 54.6, thick: 53, peak: 9.7, cont: 4.59, vmax: 83.7, watt: 220, rotor: 6.1e-6, joints: ['FAA'], qty: 2, usd: 422 },
@@ -488,10 +489,19 @@
   }
   /* 科学计数法写成 LaTeX：6.1e-6 → 6.1\times10^{-6} */
   function sci(x, d) {
+    var dd = d == null ? 2 : d, p = Math.pow(10, dd);
     var e = Math.floor(Math.log10(Math.abs(x)));
-    var m = x / Math.pow(10, e);
-    if (Math.abs(m - 10) < 1e-9) { m = 1; e += 1; }
-    return fmt(m, d == null ? 2 : d) + '\\times10^{' + e + '}';
+    var m = Math.round((x / Math.pow(10, e)) * p * (1 + 1e-12)) / p; // 浮点误差：0.01215 存成 1.2149999…×10⁻²
+    if (m >= 10) { m /= 10; e += 1; }
+    return fmt(m, dd) + '\\times10^{' + e + '}';
+  }
+  /* 从分镜时刻 at 起按真实时间算过了几秒（还没到 at 时为负）。网页播放器（clock 为空）和 stage.html 的 fitStory（draw(t, t)）里
+     就是 t − at；视频里分镜时间会在段尾停住、真实时间照走，所以在这一段还在走（t < at + run）的帧里锁住起点，之前的帧不清空——
+     render.mjs 先按各段 t0 + 0.5 预热，之后 stills、片段或分段并行从哪一帧开始渲都对得上。box 是每个用处自己的 { v: null } */
+  function sinceCue(box, t, clock, now, at, run) {
+    if (clock == null || clock === t) return t - at;
+    if (t >= at && (t < at + run - 0.01 || box.v == null)) box.v = now - (t - at);
+    return t < at || box.v == null ? -1 : now - box.v;
   }
   function rot(v, th) {
     return [v[0] * Math.cos(th) - v[1] * Math.sin(th), v[0] * Math.sin(th) + v[1] * Math.cos(th)];
@@ -516,6 +526,7 @@
   /* 侧视的 Berkeley Humanoid 示意（面朝 +x）：方盒躯干（顶上有提手），两条腿按真实尺寸画——大腿 0.22 m、小腿 0.18 m、
      踝高 0.06 m、脚长 0.16 m（图 2b），膝盖朝前；远侧那条腿淡一些。M 是 1 m 对应的像素数。
      put(hx, hy, lean, feet)：髋在 (hx, hy)，躯干前倾 lean（rad，往前为正），feet = [[x, y], [x, y]]（先近侧后远侧）是脚底在踝正下方的点。
+     opts.footPitch：脚掌的俯仰（rad，脚尖朝下为正），坡上让脚掌贴着坡面；默认 0（平地）。
      返回近侧腿的髋、膝、踝坐标，第 7 幕用来标关节。 */
   var LEG = { thigh: ROBOT.thigh, calf: ROBOT.calf, ankleH: ROBOT.ankleH, heel: 0.05, toe: 0.11, hipH: 0.43, torsoH: 0.32, torsoW: 0.2 };
   function bhBody(parent, color, M, opts) {
@@ -566,9 +577,10 @@
       var Ar = [H[0] + d * Math.cos(base), H[1] + d * Math.sin(base)];
       setLine(L.thigh, H[0], H[1], Kn[0], Kn[1]);
       setLine(L.calf, Kn[0], Kn[1], Ar[0], Ar[1]);
-      var sole = [Ar[0], Ar[1] + AH];
-      L.foot.setAttribute('d', 'M ' + Ar[0].toFixed(1) + ' ' + Ar[1].toFixed(1) + ' L ' + (sole[0] - LEG.heel * M).toFixed(1) + ' ' + sole[1].toFixed(1) +
-        ' L ' + (sole[0] + LEG.toe * M).toFixed(1) + ' ' + sole[1].toFixed(1) + ' Z');
+      var sole = [Ar[0], Ar[1] + AH], fp = o.footPitch || 0, fc = Math.cos(fp), fs = Math.sin(fp);
+      L.foot.setAttribute('d', 'M ' + Ar[0].toFixed(1) + ' ' + Ar[1].toFixed(1) +
+        ' L ' + (sole[0] - LEG.heel * M * fc).toFixed(1) + ' ' + (sole[1] - LEG.heel * M * fs).toFixed(1) +
+        ' L ' + (sole[0] + LEG.toe * M * fc).toFixed(1) + ' ' + (sole[1] + LEG.toe * M * fs).toFixed(1) + ' Z');
       moveDot(L.kneeDot, Kn);
       return { hip: H, knee: Kn, ankle: Ar };
     }
@@ -627,7 +639,7 @@
     var realTicks = group(realP);
     function ticks(gp, x0, x1, now) {
       gp.textContent = '';
-      var off = (now * 60) % 24;
+      var off = (now * ((4 * 16) / 1.1)) % 24; // 和下面 treadmill 支撑脚的速度 4S/period 一样，脚不在地上打滑
       for (var x = x0 + 24 - off; x < x1; x += 24) hline(gp, x, GY + 2, x - 6, GY + 8, C_BORDER, 1.2);
     }
     /* 中间：差距从哪来 */
@@ -706,7 +718,7 @@
     /* 右上：表 1 的重量与价格 */
     var tab = group(s);
     rectBox(tab, 296, 44, 474, 222, C_BORDER, C_SURFACE2);
-    tab.appendChild(svgText(310, 62, '表 1：重量（kg）与价格（美元）', 'demo-x-ink2', 11.5));
+    tab.appendChild(svgText(310, 62, '表 1 节选：重量（kg）与价格（美元）', 'demo-x-ink2', 11.5));
     var X0 = 420, SCALE = 210 / 132;
     var rows = TABLE1.map(function (r, i) {
       var y = 74 + i * 15.5, g = group(tab);
@@ -738,9 +750,11 @@
     PIV.forEach(function (p) { hline(pen, p[0] - 12, p[1], p[0] + 12, p[1], C_INK2, 2); });
     var penLab = [paint(svgText(578, 312, '腿约 1.0 m', null, 10, 'end'), C_MUTED), paint(svgText(722, 312, '约 0.4 m', null, 10), C_ACCENT)];
     penLab.forEach(function (n) { pen.appendChild(n); });
-    var cnt = paint(svgText(758, 394, '', null, 10, 'end'), C_ACCENT);
+    var cnt = paint(svgText(310, 394, '', null, 10), C_ACCENT);
     pen.appendChild(cnt);
     var PER = [2 * Math.PI * Math.sqrt(1.0 / G), 2 * Math.PI * Math.sqrt(0.4 / G)];
+    /* 两个摆在第 4 段开头一起从 0.42 rad 松手，按真实时间摆（松手时刻见 sinceCue） */
+    var pen0 = { v: null };
 
     function draw(t, clock) {
       var now = nowOf(t, clock);
@@ -753,23 +767,22 @@
         var u = r.F ? seg(t, 3.8 + i * 0.25, 4.6 + i * 0.25) : seg(t, 7.0 + (i - 5) * 0.2, 7.6 + (i - 5) * 0.2);
         setW(r.b, r.w * ease(u));
         setOpacity(r.val, u);
-        setOpacity(r.g, r.F ? 1 : seg(t, 6.9, 7.1));
+        setOpacity(r.g, r.F ? 1 : seg(t, 7.0, 7.2));
         setOpacity(r.price, seg(t, 13.4 + i * 0.12, 13.8 + i * 0.12));
         if (r.ours) r.b.setAttribute('opacity', (0.75 + 0.25 * Math.abs(Math.sin(now * 3))).toFixed(2));
       });
       setOpacity(key, seg(t, 4.4, 5.0));
       setOpacity(one, seg(t, 8.6, 9.2));
       setOpacity(pen, seg(t, 10.4, 11.0));
-      var c = 0;
+      var tt = Math.max(0, sinceCue(pen0, t, clock, now, 10.4, 3.0)), swings = [];
       LEN.forEach(function (L, k) {
-        var tt = Math.max(0, now - 10.4);
-        var a = 0.42 * Math.sin((2 * Math.PI * tt) / PER[k]);
+        var a = 0.42 * Math.cos((2 * Math.PI * tt) / PER[k]);
         var b = [PIV[k][0] + L * Math.sin(a), PIV[k][1] + L * Math.cos(a)];
         setLine(rods[k], PIV[k][0], PIV[k][1], b[0], b[1]);
         moveDot(bobs[k], b);
-        if (k) c = Math.floor((2 * tt) / PER[k]);
+        swings.push(Math.floor((2 * tt) / PER[k]));
       });
-      cnt.textContent = t >= 10.4 ? '短的已摆 ' + c + ' 下' : '';
+      cnt.textContent = t >= 10.4 ? '一起松手：长的摆了 ' + swings[0] + ' 下，短的 ' + swings[1] + ' 下' : '';
     }
     return { el: s, draw: draw };
   }
@@ -782,14 +795,21 @@
     var hard = group(s);
     rectBox(hard, 30, 44, 270, 206, C_BAD, C_SURFACE2, '4 3');
     hard.appendChild(paint(svgText(44, 64, '难仿真：弹簧、连杆闭链、复杂传动', null, 11.5), C_BAD));
-    var HP = [92, 92], KN = [100, 160];
+    /* 一条示意腿：大腿不动，小腿绕膝弯曲（「落地」时弯）。弹簧跨在膝后，上端用支架固定在大腿上、下端固定在小腿上，
+       膝一弯两端就靠近、弹簧被压短；虚线是膝前的连杆闭链（大腿—两根杆—小腿），中间铰点按两根杆长不变来解 */
+    var HP = [92, 92], KN = [100, 160], SH = [-16, 66];
     var thigh = hline(hard, HP[0], HP[1], KN[0], KN[1], C_INK2, 5);
-    var shank = hline(hard, KN[0], KN[1], 84, 226, C_INK2, 4);
+    var shank = hline(hard, KN[0], KN[1], KN[0] + SH[0], KN[1] + SH[1], C_INK2, 4);
     dotAt(hard, HP[0], HP[1], 6, C_INK2);
-    dotAt(hard, KN[0], KN[1], 5, C_INK2);
+    var SA = [84, 143], LP1 = [108, 100];
+    hline(hard, 98, 143, SA[0], SA[1], C_INK2, 2);
+    hline(hard, 93, 100, LP1[0], LP1[1], C_INK2, 2);
+    var shBr = hline(hard, 0, 0, 0, 0, C_INK2, 2), lkBr = hline(hard, 0, 0, 0, 0, C_INK2, 2);
     var spring = pathLine(hard, [], C_WARN, 2);
     var link = pathLine(hard, [], C_BAD, 2, '5 3');
-    void thigh; void shank;
+    var LKA = 38.5, LKB = 47.2;
+    dotAt(hard, KN[0], KN[1], 5, C_INK2);
+    void thigh;
     var hardLabs = ['弹簧：多一组动力学方程', '闭链：每一步都要解约束', '传动：难映射到关节空间', '延迟、电机：要更小的步长'].map(function (str, k) {
       var g = group(hard);
       g.appendChild(svgText(136, 100 + k * 36, str, 'demo-x-ink2', 10.5));
@@ -811,7 +831,7 @@
     }
     dotAt(rotorG, CX + 34, CY, 4.5, C_WARN);
     dotAt(mid, CX, CY, 9, C_SURFACE);
-    var out = hline(mid, CX, CY, CX, CY + 86, C_GOOD, 7);
+    var out = hline(mid, CX, CY, CX, CY + 66, C_GOOD, 7);
     out.setAttribute('stroke-linecap', 'round');
     mid.appendChild(svgText(CX, 236, '转子转 9 圈，关节转 1 圈', 'demo-x-ink2', 10.5, 'middle'));
     /* 右：转子惯量折算 */
@@ -852,20 +872,32 @@
     function draw(t, clock) {
       var now = nowOf(t, clock);
       setOpacity(hard, seg(t, 0.3, 0.9));
-      /* 弹簧随着「落地」压缩（按真实时间循环） */
-      var c = 0.5 + 0.5 * Math.sin(now * 3);
-      var pts = [], A = [120, 150], B = [116, 224 - 18 * c];
+      /* 膝随着「落地」弯曲（按真实时间循环）：小腿、弹簧下端、连杆下端都跟着小腿转 */
+      var d = 0.25 * (0.5 + 0.5 * Math.sin(now * 3));
+      var sv = rot(SH, d);
+      setLine(shank, KN[0], KN[1], KN[0] + sv[0], KN[1] + sv[1]);
+      var s0 = rot([0.6 * SH[0], 0.6 * SH[1]], d), s1 = rot([0.6 * SH[0] - 14, 0.6 * SH[1]], d);
+      var B = [KN[0] + s1[0], KN[1] + s1[1]];
+      setLine(shBr, KN[0] + s0[0], KN[1] + s0[1], B[0], B[1]);
+      var pts = [], sl = Math.hypot(B[0] - SA[0], B[1] - SA[1]), nx = -(B[1] - SA[1]) / sl, ny = (B[0] - SA[0]) / sl;
       for (var i = 0; i <= 12; i++) {
-        var u = i / 12, x = A[0] + (B[0] - A[0]) * u, y = A[1] + (B[1] - A[1]) * u;
-        pts.push([x + (i % 2 ? 7 : -7) * (i > 0 && i < 12 ? 1 : 0), y]);
+        var u = i / 12, z = (i % 2 ? 7 : -7) * (i > 0 && i < 12 ? 1 : 0);
+        pts.push([SA[0] + (B[0] - SA[0]) * u + z * nx, SA[1] + (B[1] - SA[1]) * u + z * ny]);
       }
       setPath(spring, pts);
-      setPath(link, [[HP[0] + 16, HP[1] + 6], [124, 132 + 6 * c], [KN[0] + 12, KN[1] + 4]]);
+      var l0 = rot([0.3 * SH[0], 0.3 * SH[1]], d), l1 = rot([0.3 * SH[0] + 14, 0.3 * SH[1]], d);
+      var P3 = [KN[0] + l1[0], KN[1] + l1[1]];
+      setLine(lkBr, KN[0] + l0[0], KN[1] + l0[1], P3[0], P3[1]);
+      var dx = P3[0] - LP1[0], dy = P3[1] - LP1[1], dd = Math.hypot(dx, dy);
+      var along = (LKA * LKA - LKB * LKB + dd * dd) / (2 * dd), hgt = Math.sqrt(Math.max(0, LKA * LKA - along * along));
+      var P2 = [LP1[0] + (along * dx) / dd + (hgt * dy) / dd, LP1[1] + (along * dy) / dd - (hgt * dx) / dd];
+      setPath(link, [LP1, P2, P3]);
       hardLabs.forEach(function (g, k) { setOpacity(g, seg(t, 3.7 + k * 0.7, 4.2 + k * 0.7)); });
       setOpacity(mid, seg(t, 7.0, 7.6));
       var outA = 0.5 * Math.sin(now * 0.9);
-      rotorG.setAttribute('transform', 'rotate(' + ((9 * outA * 180) / Math.PI).toFixed(1) + ' ' + CX + ' ' + CY + ')');
-      setLine(out, CX, CY, CX + 86 * Math.sin(outA), CY + 86 * Math.cos(outA) * 0.62);
+      /* 行星减速常见的接法（齿圈固定、太阳轮进、行星架出）里转子和输出同向；论文没写接法，这是我们按常见做法画的 */
+      rotorG.setAttribute('transform', 'rotate(' + ((-9 * outA * 180) / Math.PI).toFixed(1) + ' ' + CX + ' ' + CY + ')');
+      setLine(out, CX, CY, CX + 66 * Math.sin(outA), CY + 66 * Math.cos(outA));
       setOpacity(arm, seg(t, 10.4, 10.9));
       var ub = ease(seg(t, 10.8, 11.8));
       setH(b1, SHANK.I * BS * ub); setH(b2, KNEE_ARM * BS * ub);
@@ -885,6 +917,13 @@
     var XS = [96, 246, 404, 572], CY = 104, PXMM = 0.8;
     var units = ACTUATORS.map(function (a, i) {
       var g = group(s), x = XS[i], r = (a.dia / 2) * PXMM;
+      /* 空心轴走线：线缆从左前方穿进轴心、从背后穿出到右边。右半段（背后）先画，被执行器挡住，只露出盘外那一截；
+         左半段（前面）最后画，挡在电机前面 */
+      var cable = null;
+      if (a.hollow) {
+        cable = [pathLine(g, [], C_WARN, 4), null];
+        cable[0].setAttribute('d', 'M ' + x + ' ' + CY + ' Q ' + (x + 0.5 * r).toFixed(1) + ' ' + (CY - 10) + ' ' + (x + r + 26).toFixed(1) + ' ' + (CY - 16));
+      }
       var ring = paint(svgEl('circle', { cx: x, cy: CY, r: r, 'stroke-width': 2.4 }), C_SURFACE2, C_INK2);
       g.appendChild(ring);
       var rotor = group(g);
@@ -894,10 +933,10 @@
       }
       var hole = paint(svgEl('circle', { cx: x, cy: CY, r: a.hollow ? 0.28 * r : 0.12 * r, 'stroke-width': 1.2 }), a.hollow ? C_SURFACE : C_INK2, C_INK2);
       g.appendChild(hole);
-      var cable = null;
-      if (a.hollow) {
-        cable = hline(g, x - r - 22, CY, x + r + 22, CY, C_WARN, 3, '6 4');
-        cable.style.opacity = 0;
+      if (cable) {
+        cable[1] = pathLine(g, [], C_WARN, 4);
+        cable[1].setAttribute('d', 'M ' + (x - r - 26).toFixed(1) + ' ' + (CY + 16) + ' Q ' + (x - 0.5 * r).toFixed(1) + ' ' + (CY + 10) + ' ' + x + ' ' + CY);
+        cable.forEach(function (c) { c.setAttribute('stroke-linecap', 'round'); c.style.opacity = 0; });
       }
       g.appendChild(svgText(x, CY + 70, a.name, 'demo-x-ink2', 12.5, 'middle'));
       g.appendChild(svgText(x, CY + 86, a.g + ' g · ×' + a.qty, 'demo-x-mut', 10, 'middle'));
@@ -929,6 +968,7 @@
     var hollowLab = group(s);
     hollowLab.appendChild(paint(svgText(664, 330, '空心轴：线从轴心穿过', null, 10.5), C_WARN));
     hollowLab.appendChild(svgText(664, 346, '关节转动不磨、不扯线', 'demo-x-mut', 10));
+    hollowLab.appendChild(paint(svgText(664, 362, '橙线：从轴心穿到背后', null, 9.5), C_WARN));
     var codeLab = group(s);
     codeLab.appendChild(svgText(40, 398, '开源代码把力矩上限压到 20 / 30 / 30 / 20 / 5 N·m（README：安全）', 'demo-x-ink2', 10.5));
 
@@ -936,7 +976,7 @@
       var now = nowOf(t, clock);
       units.forEach(function (u, i) {
         setOpacity(u.g, seg(t, 0.3 + i * 0.5, 0.8 + i * 0.5));
-        u.rotor.setAttribute('transform', 'rotate(' + ((now * (140 + 40 * i)) % 360).toFixed(1) + ' ' + u.x + ' ' + CY + ')');
+        u.rotor.setAttribute('transform', 'rotate(' + ((now * 4 * u.a.vmax) % 360).toFixed(1) + ' ' + u.x + ' ' + CY + ')'); // 按表 2 最高转速的比例，只示意快慢
         var ub = ease(seg(t, 3.7 + i * 0.4, 4.6 + i * 0.4));
         setH(u.bp, u.a.peak * u.SC * ub); setH(u.bc, u.a.cont * u.SC * ub);
         u.vp.setAttribute('y', (u.BY - u.a.peak * u.SC * ub - 5).toFixed(1));
@@ -944,10 +984,7 @@
         setOpacity(u.vp, seg(t, 4.4 + i * 0.4, 4.8 + i * 0.4));
         setOpacity(u.vc, seg(t, 4.4 + i * 0.4, 4.8 + i * 0.4));
         setOpacity(u.jc, seg(t, 7.1 + i * 0.4, 7.5 + i * 0.4));
-        if (u.cable) {
-          u.cable.style.opacity = seg(t, 10.5, 11.1);
-          u.cable.setAttribute('stroke-dashoffset', (-now * 24).toFixed(1));
-        }
+        if (u.cable) u.cable.forEach(function (c) { setOpacity(c, seg(t, 10.5, 11.1)); });
       });
       setOpacity(barKey, seg(t, 3.7, 4.2));
       setOpacity(legG, seg(t, 7.6, 8.4));
@@ -1005,8 +1042,7 @@
       hline(g, TX0, y + 10, TX1, y + 10, C_BORDER, 1);
       if (tr[1] < 0.1) {
         var r = paint(svgEl('rect', { x: TX0, y: y - 6, width: TX1 - TX0, height: 16, opacity: 0.35 }), tr[2]);
-        g.appendChild(r);
-        for (var x = TX0; x <= TX1; x += 2.5) hline(g, x, y - 6, x, y + 10, tr[2], 0.5);
+        g.appendChild(r); // 25 kHz 每 0.04 ms 一次，这个比例下画不出单条线，画成实心带
       } else {
         for (var ms = 0; ms <= 40 + 1e-9; ms += tr[1]) hline(g, TX0 + ms * MS, y + (tr[1] >= 20 ? -10 : -4), TX0 + ms * MS, y + 10, tr[2], tr[3]);
       }
@@ -1044,7 +1080,7 @@
   /* ── scene 6: 可靠又便宜 ── */
   function buildSceneReliable() {
     var s = sceneSvg('左下列出可靠性的做法：铝合金和钢、空心轴走线、用电流估力矩、用动量观测器估接触力。左上是表 3 的成本条：整机不含手臂 9955 美元，执行器约占七成；IMU 用 50 美元的手机级模块。右边机器人反复摔倒又被扶起，附录表 4 记了 38 次');
-    s.appendChild(svgText(30, 28, '可靠又便宜：整机约 1 万美元，摔了 38 次没摔坏', 'demo-x-ink2', 13.5));
+    s.appendChild(svgText(30, 28, '可靠又便宜：整机约 1 万美元，摔了 38 次只坏过 2 次', 'demo-x-ink2', 13.5));
     /* 左上：成本条 */
     var cost = group(s);
     rectBox(cost, 30, 44, 470, 160, C_BORDER, C_SURFACE2);
@@ -1112,6 +1148,8 @@
     });
     var fineT = paint(svgText(756, 398, '只坏过 2 次：螺丝松、胶开', null, 10, 'end'), C_GOOD);
     tbl.appendChild(fineT);
+    /* 摔倒循环从第 5 段开头按真实时间算起（见 sinceCue）：先收脚站定，1 s 后才倒；只摔两次，第二次扶起来后接着踏步 */
+    var fall0 = { v: null };
 
     function draw(t, clock) {
       var now = nowOf(t, clock);
@@ -1127,14 +1165,16 @@
       imuL2.setAttribute('x', (120 + COST.imuTypical * IS * ui + 8).toFixed(1));
       /* 摔倒循环：踏步 → 往后倒 → 躺一会 → 扶起；第 5 段之前只踏步 */
       setOpacity(fall, seg(t, 0.4, 1.0));
-      var cyc = 4.2, phase = t >= 13.4 ? ((now - 13.4) % cyc + cyc) % cyc : -1;
-      var ang = 0;
-      if (phase >= 0) {
-        if (phase < 1.6 && phase >= 1.0) ang = -84 * ease((phase - 1.0) / 0.6);
-        else if (phase >= 1.6 && phase < 3.0) ang = -84;
-        else if (phase >= 3.0 && phase < 3.6) ang = -84 * (1 - ease((phase - 3.0) / 0.6));
-      }
-      var feet = phase >= 0 ? [[BX + 4, GY], [BX - 6, GY]] : treadmill(now, BX, GY, 13, 1.1, 8);
+      var cyc = 4.2, raw = sinceCue(fall0, t, clock, now, 13.4, 3.6), since = raw < 0 ? -1 : Math.min(raw, 2 * cyc - 1e-3);
+      var phase = since < 0 ? -1 : since % cyc;
+      /* 绕后脚跟往后倒：重力矩随倾角变大，越倒越快，到躯干背面着地才停（-89° 时背面贴地）；扶起来可以慢慢来 */
+      var LIE = -89, ang = 0;
+      if (phase >= 1.0 && phase < 1.6) ang = LIE * Math.pow((phase - 1.0) / 0.6, 2);
+      else if (phase >= 1.6 && phase < 3.0) ang = LIE;
+      else if (phase >= 3.0 && phase < 3.6) ang = LIE * (1 - ease((phase - 3.0) / 0.6));
+      var stand = [[BX + 4, GY], [BX - 6, GY]], walk = treadmill(now, BX, GY, 13, 1.1, 8);
+      var bl = raw < 0 ? 0 : raw < cyc + 3.6 ? Math.min(1, raw / 0.4) : Math.max(0, 1 - (raw - cyc - 3.6) / 0.4);
+      var feet = [0, 1].map(function (k) { return [walk[k][0] + (stand[k][0] - walk[k][0]) * bl, walk[k][1] + (stand[k][1] - walk[k][1]) * bl]; });
       bot.put(BX, GY - LEG.hipH * M, 0, feet);
       botG.setAttribute('transform', 'rotate(' + ang.toFixed(1) + ' ' + (BX - 6 - LEG.heel * M).toFixed(1) + ' ' + GY + ')');
       setOpacity(resetT, phase >= 3.0 ? 1 : 0);
@@ -1167,7 +1207,8 @@
       g.appendChild(ring);
       var tick = hline(g, 64, y, 64, y - 12, col, 2.4);
       g.appendChild(paint(svgText(90, y - 2, j[0], null, 12.5), col));
-      g.appendChild(svgText(90, y + 14, j[1] + '（' + AX[j[2]][0] + '）', 'demo-x-mut', 10));
+      /* URDF 里髋的 HR、HAA 两根轴在矢状面里各斜 45°，两个一起转才是纯偏航或纯横滚 */
+      g.appendChild(svgText(90, y + 14, j[1] + '（' + (k < 2 ? '斜 45° 轴：偏航 + 横滚' : AX[j[2]][0]) + '）', 'demo-x-mut', 10));
       return { g: g, ring: ring, tick: tick, y: y };
     });
     var fiveDof = group(chain);
@@ -1198,7 +1239,7 @@
     rectBox(calc, 278, 306, 492, 98, C_ACCENT, C_SURFACE);
     calc.appendChild(svgMath(300, 334, 'c = \\dfrac{|R \\cap H|}{|H|}', { size: 13, w: 150, display: true }));
     calc.appendChild(svgText(450, 330, 'R：机器人的范围　H：人的范围', 'demo-x-mut', 10));
-    calc.appendChild(svgText(450, 352, '髋外展：[−35°, 35°] ∩ [−40°, 20°] = 55°', 'demo-x-ink2', 10.5));
+    calc.appendChild(svgText(450, 352, '髋外展：|[−35°, 35°] ∩ [−40°, 20°]| = 55°', 'demo-x-ink2', 10.5));
     calc.appendChild(svgText(450, 372, '55 / 60 = 91.67%，表 5 写的是 91.6%', 'demo-x-ink2', 10.5));
     var calc2 = group(calc);
     calc2.appendChild(paint(svgText(292, 394, '踝两个方向都是 100%；髋旋转最少，77.8%', null, 10.5), C_GOOD));
@@ -1285,12 +1326,15 @@
       strike(g, x, 328, 108, 28);
       return g;
     });
-    var noT = paint(svgText(532, 346, '都不要：没法在线辨识，只能靠仿真够准', null, 10.5), C_BAD);
-    no.appendChild(noT);
+    /* 论文第 4.1 节给了两种理由：历史与教师—学生是在线辨识环境参数的手段，相位与参考动作是为了减少人为偏置 */
+    var noT = group(no);
+    noT.appendChild(svgText(532, 338, '历史、教师—学生：在线辨识的手段', 'demo-x-mut', 10));
+    noT.appendChild(svgText(532, 353, '相位、参考动作：为了减少人为偏置', 'demo-x-mut', 10));
+    noT.appendChild(paint(svgText(532, 369, '都去掉：只能靠仿真本身够准', null, 10.5), C_BAD));
     var rew = group(no);
     rew.appendChild(svgText(44, 384, '奖励四组（附录 A）：', 'demo-x-ink2', 10.5));
     [['跟踪：前后左右速度、偏航角速度', 146, 384], ['平滑：罚竖直速度、横滚俯仰角速度、力矩、动作变化', 380, 384],
-      ['正则：髋膝偏离名义角、关节软限位', 146, 399], ['步态：腾空时间、不打滑、接触力不过阈值', 380, 399]].forEach(function (r) {
+      ['正则：髋膝偏离名义角、机身竖直、关节软限位', 146, 399], ['步态：腾空时间、不打滑、接触力不过阈值', 380, 399]].forEach(function (r) {
       rew.appendChild(svgText(r[1], r[2], r[0], 'demo-x-mut', 9.5));
     });
 
@@ -1304,7 +1348,7 @@
       setOpacity(noT, seg(t, 9.3, 9.8));
       setOpacity(net, seg(t, 10.4, 10.8));
       layers.forEach(function (l, k) { setH(l.r, l.h * ease(seg(t, 10.6 + k * 0.3, 11.1 + k * 0.3))); });
-      setH(outB, 18 * ease(seg(t, 11.5, 11.9)));
+      setH(outB, Math.max(4, (12 / 512) * 150) * ease(seg(t, 11.5, 11.9))); // 和 512 / 256 / 128 同一比例（3.5 px），最少画 4 px
       setOpacity(pd, seg(t, 11.6, 12.1));
       var target = 0.55 * Math.sin(now * 1.6), act = 0.55 * Math.sin(now * 1.6 - 0.35);
       setLine(tgt, JC[0], JC[1], JC[0] + 56 * Math.sin(target), JC[1] + 56 * Math.cos(target));
@@ -1312,8 +1356,8 @@
       setOpacity(flow, seg(t, 12.0, 12.4));
       var u = ((now * 0.5) % 1 + 1) % 1;
       moveDot(fl[0], [262 + u * 54, 175]);
-      moveDot(fl[1], [446 + u * 38, 200 + u * 12]);
-      moveDot(fl[2], [498 + u * 44, 220 - u * 10]);
+      moveDot(fl[1], [446 + u * 38, 200 + u * 24]);
+      moveDot(fl[2], [498 + u * 44, 228 - u * 18]);
       setOpacity(rew, seg(t, 13.4, 14.0));
     }
     return { el: s, draw: draw };
@@ -1321,7 +1365,7 @@
 
   /* ── scene 9: 辨识：转子惯量从 CAD，摩擦单独测 ── */
   function buildSceneIdentify() {
-    var s = sceneSvg('左下把不确定性分两类：机器人本身的物理参数，和与环境的接触。左上是从 CAD 读出的转子惯量，乘 81 折算到关节。右边是一个执行器的摩擦：一个个测量点慢慢出现，再拟合出开源代码里的 tanh 摩擦模型；几种关节的摩擦大小不同');
+    var s = sceneSvg('左下把不确定性分两类：机器人本身的物理参数，和与环境的接触。左上是从 CAD 读出的转子惯量，乘 81 折算到关节。右边是一个执行器的摩擦：示意测点慢慢出现，再画出开源代码里的 tanh 摩擦模型；几种关节的摩擦大小不同');
     s.appendChild(svgText(30, 28, '第一类不确定性：机器人自己的参数，辨识出来', 'demo-x-ink2', 13.5));
     var two = group(s);
     rectBox(two, 30, 262, 300, 142, C_BORDER, C_SURFACE2);
@@ -1341,7 +1385,7 @@
       var g = group(cad), y = 112 + k * 34;
       g.appendChild(svgText(50, y, a.name, 'demo-x-ink2', 11));
       g.appendChild(svgRich(160, y - 4, '$' + sci(a.rotor, 1) + '$', { size: 11, anchor: 'middle', w: 100 }));
-      g.appendChild(svgRich(262, y - 4, '$' + sci(armature(a), 2) + '$', { size: 11, anchor: 'middle', w: 100, cls: 'demo-x-acc' }));
+      g.appendChild(svgRich(262, y - 4, '$' + sci(armature(a), 3) + '$', { size: 11, anchor: 'middle', w: 100, cls: 'demo-x-acc' }));
       return g;
     });
     /* 右：摩擦的测点与拟合（摩擦关于 0 对称，只画正转那一半） */
@@ -1358,9 +1402,10 @@
     [0.5, 1, 1.5, 2].forEach(function (q) { fr.appendChild(svgText(fx(q), FY0 + 13, String(q), 'demo-x-mut', 9, 'middle')); });
     [0.5, 1].forEach(function (v) { fr.appendChild(svgText(FX0 - 6, fy(v) + 3, String(v), 'demo-x-mut', 9, 'end')); hline(fr, FX0, fy(v), FX1, fy(v), C_BORDER, 0.6, '2 4'); });
     var KNEE = CODE_JOINTS[2];
+    /* 示意测点：按代码的模型加 ±0.05 N·m 噪声，只画在 tanh 已经饱和的 0.25 rad/s 以上（0 附近的斜坡是仿真里平滑过零用的，不是测出来的） */
     var rng = mulberry32(42), pts = [];
     for (var i = 0; i < 24; i++) {
-      var q = 0.02 + (1.96 * i) / 23;
+      var q = 0.25 + (1.75 * i) / 23;
       pts.push([q, frictionTorque(KNEE, q) + 0.05 * (rng() - 0.5) * 2]);
     }
     var meas = pts.map(function (p) { return dotAt(fr, fx(p[0]), fy(p[1]), 3, C_INK2); });
@@ -1372,6 +1417,8 @@
     var fit = pathLine(fr, curvePts(KNEE), C_BAD, 2.6);
     var fitLabG = group(fr);
     fitLabG.appendChild(svgRich(FX1 + 6, fy(frictionTorque(KNEE, QM)) + 4, '膝 KFE $0.8$', { size: 10.5, w: 64, cls: 'demo-x-bad' }));
+    fitLabG.appendChild(svgText(fx(0.12) + 10, 244, '← 0 附近的斜坡：tanh 平滑过零（仿真用）', 'demo-x-mut', 9));
+    fr.appendChild(svgText(360, 346, '测点为示意：代码模型 + 噪声', 'demo-x-mut', 9.5));
     var formula = group(fr);
     formula.appendChild(svgMath(558, 94, '\\tau_f = F_s \\tanh(\\dot q / v_a) + F_d\\,\\dot q', { size: 13, anchor: 'middle', w: 380 }));
     var others = [[CODE_JOINTS[3], C_WARN, '踝 FFE 1.0'], [CODE_JOINTS[0], C_ACCENT, '髋 0.3'], [CODE_JOINTS[4], C_GOOD, '踝 FAA 0.1']].map(function (o) {
@@ -1384,8 +1431,9 @@
     var probeT = paint(svgText(0, 0, '', null, 10.5), C_BAD);
     fr.appendChild(probeT);
     var ex = group(fr);
-    ex.appendChild(svgText(360, 366, '膝以 1 rad/s 转：0.8 + 0.02 ≈ 0.82 N·m；0.05 rad/s：0.37 N·m', 'demo-x-ink2', 10.5));
-    ex.appendChild(svgText(360, 388, '代码 README：电机齿槽力矩大，一并算进摩擦', 'demo-x-mut', 10));
+    ex.appendChild(svgText(360, 362, '膝以 1 rad/s 转：0.8 + 0.02 ≈ 0.82 N·m', 'demo-x-ink2', 10.5));
+    ex.appendChild(svgText(360, 378, '模型在 0.05 rad/s 只给 0.37 N·m：平滑过零的过渡段', 'demo-x-ink2', 10));
+    ex.appendChild(svgText(360, 394, '代码 README：电机齿槽力矩大，一并算进摩擦', 'demo-x-mut', 10));
 
     function draw(t, clock) {
       var now = nowOf(t, clock);
@@ -1425,7 +1473,7 @@
     hw.appendChild(paint(svgText(44, 64, '硬件：辨识得准 → 窄（相对名义值的倍数）', null, 10.5), C_GOOD));
     hline(hw, bx(1), 72, bx(1), 196, C_BORDER, 1, '3 3');
     [0.5, 1, 1.5].forEach(function (v) { hw.appendChild(svgText(bx(v), 206, '×' + v, 'demo-x-mut', 9, 'middle')); });
-    var HW = [['连杆质量', DR.linkMass], ['关节摩擦', DR.jointFriction], ['转子惯量', DR.armature], ['机身质量 ±1 kg', [1 - 1 / ROBOT.kg, 1 + 1 / ROBOT.kg]]];
+    var HW = [['连杆质量', DR.linkMass], ['关节摩擦', DR.jointFriction], ['转子惯量', DR.armature], ['机身质量 ±1 kg', [1 - 1 / TORSO_KG, 1 + 1 / TORSO_KG]]];
     var hwRows = HW.map(function (r, k) {
       var y = 80 + k * 26, g = group(hw);
       g.appendChild(svgText(BX0 - 8, y + 11, r[0], 'demo-x-ink2', 10.5, 'end'));
@@ -1436,7 +1484,7 @@
     var zp = svgText(44, 196, '关节零位 ±0.05 rad', 'demo-x-ink2', 10.5);
     hw.appendChild(zp);
     var env = group(tab);
-    env.appendChild(paint(svgText(44, 230, '环境：没法辨识 → 宽', null, 10.5), C_WARN));
+    env.appendChild(paint(svgText(44, 230, '环境：没法辨识 → 宽（绝对值）', null, 10.5), C_WARN));
     var EX0 = 170, EX1 = 386;
     function ex(v) { return EX0 + (v / 1.3) * (EX1 - EX0); }
     var envRows = [['地面摩擦', DR.friction], ['恢复系数', DR.restitution]].map(function (r, k) {
@@ -1446,14 +1494,15 @@
       g.appendChild(b);
       return { g: g, b: b, w: ex(r[1][1]) - ex(r[1][0]) };
     });
+    [0, 0.5, 1].forEach(function (v) { env.appendChild(svgText(ex(v), 290, String(v), 'demo-x-mut', 9, 'middle')); });
     env.appendChild(svgText(44, 302, '再加外力推（代码：推速度随课程涨到 3 m/s）', 'demo-x-mut', 10));
     /* 下左：不随机化的 */
     var no = group(s);
     rectBox(no, 30, 324, 370, 80, C_BORDER, C_SURFACE);
     var nc = [chip(no, 44, 334, 110, '电机强度', C_BAD, { size: 11 }), chip(no, 164, 334, 110, 'PD 增益', C_BAD, { size: 11 })];
     var sk = [strike(no, 44, 334, 110, 28), strike(no, 164, 334, 110, 28)];
-    no.appendChild(svgText(286, 352, '辨识不出来的', 'demo-x-ink2', 10));
-    no.appendChild(svgText(286, 366, '不随机化', 'demo-x-ink2', 10));
+    no.appendChild(svgText(286, 352, '不属于这两类的', 'demo-x-ink2', 10));
+    no.appendChild(svgText(286, 366, '笼统参数：不随机化', 'demo-x-ink2', 10));
     var noT = svgText(44, 392, '论文：这是近似执行器不确定性的「偷懒做法」，范围只能凭经验', 'demo-x-mut', 9.5);
     no.appendChild(noT);
     void nc;
@@ -1562,7 +1611,7 @@
     var TAN = Math.tan((FIELD.trailDeg * Math.PI) / 180), SX0 = 306, SX1 = 516, SY0 = 250;
     function gy(x) { return SY0 - (SX1 - x) * TAN; }
     pathLine(slope, [[SX0, gy(SX0)], [SX1, gy(SX1)], [SX1, SY0 + 6], [SX0, SY0 + 6]], C_BORDER, 1.4);
-    var slopeBot = bhBody(slope, C_REAL, 150);
+    var slopeBot = bhBody(slope, C_REAL, 150, { footPitch: Math.atan(TAN) }); // 面朝下坡，脚尖朝下贴着坡面
     slope.appendChild(svgText(310, 240 - 2, '比踝的上翘范围还陡：', 'demo-x-mut', 9.5));
     slope.appendChild(svgText(310, 254, '倒着走，脚才踩得实', 'demo-x-mut', 9.5));
     /* 右上：全向 + 被踢 */
@@ -1591,33 +1640,47 @@
     var trail = group(far);
     trail.appendChild(paint(svgText(500, 376, '土路连续爬 5 分钟以上：96 m，爬升 10.5 m', null, 11), C_WARN));
     trail.appendChild(svgText(44, 394, '路线是示意', 'demo-x-mut', 9));
+    /* 踢：从第 4 段开头按真实时间算（见 sinceCue），第一脚在 0.8 s 后；脚先伸过来、碰到躯干背面才开始推 */
+    var kick0 = { v: null }, KC = 0.12, KP = 0.25;
 
     function draw(t, clock) {
       var now = nowOf(t, clock);
       /* 第 1 段：全向行走（前进 / 后退 / 横走 / 原地转，按真实时间轮换） */
       setOpacity(kick, seg(t, 0.3, 0.8));
-      var DIRS = ['前进', '后退', '横走', '原地转'];
+      /* 侧视里只看得出前后：前进时支撑脚往后滑、后退时往前滑；横走和原地转在侧视里就是原地踏步。
+         半步长 S 在换命令后 0.5 s 内过渡（treadmill 的脚位置对 S 是线性的，脚不会跳） */
+      var DIRS = ['前进', '后退', '横走（侧视里原地踏步）', '原地转（侧视里原地踏步）'], SS = [13, -13, 0, 0];
       var kickOn = t >= 10.4;
       kickTitle.textContent = kickOn ? '踢一脚，几步就恢复（图 6）' : '全向行走（图 4）';
-      dirLab.textContent = kickOn ? '' : '命令：' + DIRS[Math.floor(now / 2.5) % 4];
-      var lean = 0, push = 0;
-      if (kickOn) {
-        var ph = ((now - 10.4) % 3.2 + 3.2) % 3.2;
-        push = ph < 0.25 ? 1 - ph / 0.25 : 0;
-        lean = ph < 0.25 ? 0.5 * (ph / 0.25) : 0.5 * Math.exp(-(ph - 0.25) * 2.2) * Math.cos((ph - 0.25) * 5);
+      var cc = now / 2.5, ci = Math.floor(cc) % 4, cp = (ci + 3) % 4;
+      dirLab.textContent = kickOn ? '' : '命令：' + DIRS[ci];
+      var S = (SS[cp] + (SS[ci] - SS[cp]) * ease(Math.min(1, ((cc - Math.floor(cc)) * 2.5) / 0.5))) * (1 - seg(t, 10.4, 10.9));
+      var lean = 0, tip = null;
+      var kt = sinceCue(kick0, t, clock, now, 10.4, 3.0);
+      if (kt >= 0) {
+        var ph = (((kt - 0.8) % 3.2) + 3.2) % 3.2, tl = ph - KC;
+        lean = tl < 0 ? 0 : tl < KP ? (0.5 * tl) / KP : 0.5 * Math.exp(-(tl - KP) * 2.2) * Math.cos((tl - KP) * 5);
+        /* 踢的脚尖：先伸到躯干背面（y = 156，髋上方 10.9 px，躯干半宽 17 px），推的时候贴着背面走，推完 0.1 s 收回 */
+        var back = 650 + 30 * lean - 17 / Math.cos(lean) + 10.9 * Math.tan(lean);
+        if (ph < KC) tip = 596 + (37 * ph) / KC;
+        else if (tl < KP) tip = back;
+        else if (tl < KP + 0.1) tip = 651.6 - (50 * (tl - KP)) / 0.1;
       }
-      kickBot.put(650 + 30 * lean, KG - LEG.hipH * KM, lean, treadmill(now, 650 + 18 * lean, KG, 13, kickOn ? 0.75 : 1.0, 8));
-      foot.setAttribute('d', push > 0 ? 'M ' + (590 - 30 * push).toFixed(1) + ' 150 L ' + (606 - 10 * push).toFixed(1) + ' 156' : '');
+      /* 被踢时原地踏步：脚的中心不动，躯干被推开再回来 */
+      kickBot.put(650 + 30 * lean, KG - LEG.hipH * KM, lean, treadmill(now, 650, KG, S, 1.0, 8));
+      foot.setAttribute('d', tip != null ? 'M ' + (tip - 36).toFixed(1) + ' 150 L ' + tip.toFixed(1) + ' 156' : '');
       setOpacity(tiles, seg(t, 3.6, 4.0));
       tileG.forEach(function (g, k) { setOpacity(g, seg(t, 3.8 + k * 0.35, 4.2 + k * 0.35)); });
       setOpacity(tileNote, seg(t, 7.6, 8.2));
       setOpacity(slope, seg(t, 7.0, 7.5));
-      var period = 1.3, cyc = 9;
-      var w = worldGait(((now % cyc) + cyc) % cyc, 470, -1, 30, period, 7, gy);
+      /* 6 个整步一循环（步态相位接得上），循环头尾 0.3 s 淡出淡入，免得机器人一帧从坡上跳回坡底 */
+      var period = 1.3, cyc = 6 * period, lc = (((now - 7.0) % cyc) + cyc) % cyc; // 网页里第 3 段开头从坡底起步
+      var w = worldGait(lc, 470, -1, 30, period, 7, gy);
       slopeBot.put(w.x, gy(w.x) - LEG.hipH * 150, 0.05, w.feet);
+      setOpacity(slopeBot.g, Math.min(1, lc / 0.3, (cyc - lc) / 0.3));
       setOpacity(far, seg(t, 13.4, 13.9));
-      var u2 = ((now - 13.4) % 8 + 8) % 8 / 8;
-      drawOn(routeP, t >= 13.4 ? u2 : 0);
+      var u2 = ease(seg(t, 13.4, 16.8)); // 一次走完 364 m 并停在那里
+      drawOn(routeP, u2);
       var pt = route[Math.min(80, Math.round(u2 * 80))];
       moveDot(walker, pt);
       cnt1.textContent = Math.round(u2 * FIELD.campusM) + ' m / ' + FIELD.campusM + ' m';
@@ -1645,13 +1708,16 @@
       var yc = r[1], A = 28;
       hline(fig, X0, yc, X1, yc, C_BORDER, 1);
       fig.appendChild(svgText(X0 - 8, yc + 4, r[2], 'demo-x-mut', 10, 'end'));
+      /* 示意：两条线共用迈步带来的摆动 w，真机再加噪声；参数取成平均误差和右边的柱子一致（前后 0.051 / 0.059、左右 0.087 / 0.116） */
+      var PAR = { vx: [0.04, 0.04], vy: [0.11, 0.32] }[r[0]];
       var cmd = [], sim = [], real = [], vs = 0, vr = 0, rng = mulberry32(5 + k);
       for (var i = 0; i <= 500; i++) {
         var tt = i * 0.1, c = cmdAt(FIG8_CMD[r[0]], tt);
         cmd.push([xx(tt), yc - (c / 0.5) * A]);
         vs += (c - vs) * 0.16; vr += (c - vr) * 0.13;
-        sim.push([xx(tt), yc - ((vs + 0.03 * Math.sin(i * 1.7)) / 0.5) * A]);
-        real.push([xx(tt), yc - ((vr + 0.08 * (rng() - 0.5)) / 0.5) * A]);
+        var w = PAR[0] * Math.sin(i * 1.7);
+        sim.push([xx(tt), yc - ((vs + w) / 0.5) * A]);
+        real.push([xx(tt), yc - ((vr + w + PAR[1] * (rng() - 0.5)) / 0.5) * A]);
       }
       return { c: pathLine(fig, cmd, C_MUTED, 1.6, '4 3'), s: pathLine(fig, sim, C_SIM, 1.8), r: pathLine(fig, real, C_REAL, 1.4) };
     });
@@ -1680,7 +1746,7 @@
     var HG = 394, HM = 100;
     hline(hop, 44, HG, 386, HG, C_BORDER, 1.4);
     var hop2 = bhBody(hop, C_REAL, HM), hop1 = bhBody(hop, C_REAL, HM);
-    var rope = hline(hop, 300, 252, 300, 330, C_MUTED, 1.2, '3 3');
+    var rope = pathLine(hop, [], C_MUTED, 1.2, '3 3'), ROPE = 44; // 安全绳长度不变，松的时候弯下来
     var fly = [paint(svgText(200, 330, '腾空', null, 10.5), C_GOOD), paint(svgText(350, 330, '腾空', null, 10.5), C_GOOD)];
     fly.forEach(function (n) { hop.appendChild(n); });
     hop.appendChild(svgText(386, 270, '单腿跳挂安全绳，绳大多是松的', 'demo-x-mut', 9.5, 'end'));
@@ -1710,21 +1776,25 @@
       });
       setOpacity(diff, seg(t, 6.0, 6.6));
       setOpacity(hop, seg(t, 7.0, 7.5));
-      /* 跳：一次 0.9 s，蹲 → 起跳 → 腾空 → 落地 */
+      /* 跳：落地缓冲和下一次蹬地是同一次下蹲（半个正弦，深 0.07 m）；腾空 0.26 s 走抛物线（只受重力）。
+         起跳、落地的速度都是 g·Tf/2 ≈ 1.28 m/s，两边接得上；最高约 8 cm，下蹲时向上的最大加速度 VJ²/CA ≈ 2.4 g（我们算的） */
+      var TF = 0.26, CA = 0.07, VJ = (G * TF) / 2, TS = (CA * Math.PI) / VJ, PJ = TS + TF, HJ = (G * TF * TF) / 8;
       function jump(ph) {
-        var u = ((ph % 0.9) + 0.9) % 0.9 / 0.9;
-        if (u < 0.35) return { y: 0, crouch: 0.07 * Math.sin((Math.PI * u) / 0.35), air: false };
-        if (u < 0.85) return { y: 30 * Math.sin((Math.PI * (u - 0.35)) / 0.5), crouch: 0, air: true };
-        return { y: 0, crouch: 0.05 * Math.sin((Math.PI * (u - 0.85)) / 0.15), air: false };
+        var tt = ((ph % PJ) + PJ) % PJ;
+        if (tt < TS) return { y: 0, crouch: CA * Math.sin((Math.PI * tt) / TS), air: false };
+        var s = (tt - TS) / TF;
+        return { y: 4 * HJ * HM * s * (1 - s), crouch: 0, air: true, s: s };
       }
-      var j2 = jump(now), j1 = jump(now + 0.4);
+      var j2 = jump(now), j1 = jump(now + 0.2);
       var hy2 = HG - (LEG.hipH - j2.crouch) * HM - j2.y;
       hop2.put(150, hy2, 0.06, [[150 + 6, HG - j2.y], [150 - 4, HG - j2.y]]);
       var hy1 = HG - (LEG.hipH - j1.crouch) * HM - j1.y;
-      hop1.put(300, hy1, 0.06, [[300 + 4, HG - j1.y], [300 - 20, HG - j1.y - 26]]);
-      setLine(rope, 300, 278, 300, hy1 - LEG.torsoH * HM - 6);
-      setOpacity(fly[0], j2.air && t >= 7.0 ? 1 : 0);
-      setOpacity(fly[1], j1.air && t >= 7.0 ? 1 : 0);
+      hop1.put(300, hy1, 0.06, [[300 + 4, HG - j1.y], [300 - 24, HG - j1.y - 22]]); // 收起的腿膝弯 94–106°，在 KFE 的 120° 以内
+      var rTop = hy1 - LEG.torsoH * HM - 6, span = rTop - 278, sag = Math.sqrt(Math.max(0, ROPE * ROPE - span * span)) / 2;
+      rope.setAttribute('d', 'M 300 278 Q ' + (300 + sag).toFixed(1) + ' ' + ((278 + rTop) / 2).toFixed(1) + ' 300 ' + rTop.toFixed(1));
+      function flyA(j) { return 0.4 + 0.6 * (j.air ? Math.sin(Math.PI * j.s) : 0); }
+      setOpacity(fly[0], flyA(j2));
+      setOpacity(fly[1], flyA(j1));
       setOpacity(lim, seg(t, 10.4, 10.8));
       limRows.forEach(function (g, k) { setOpacity(g, seg(t, 10.6 + k * 0.7, 11.0 + k * 0.7)); });
       setOpacity(after, seg(t, 13.4, 14.0));
@@ -1742,7 +1812,7 @@
         { at: 3.6, s: '差距主要来自三处（第 4.2 节）：**建模误差**（弹簧、闭链、复杂传动）、**指令执行**的频率、精度和延迟，再加上传感器噪声。' },
         { at: 7.0, s: '常见补法在算法这边：大范围域随机化（「电机强度」、PD 增益）、观测历史在线辨识、教师—学生。随机化太宽会让训练变慢、策略变保守。' },
         { at: 10.4, s: '这篇反过来，从**硬件**上把差距做小：仿真友好、可靠便宜、好做实验、拟人——第 3 节的四条设计考量。' },
-        { at: 13.4, s: '为了证明差距真是硬件做小的，控制器只用最简的 MLP + PPO：没有观测历史、没有相位信号、没有参考动作。' }
+        { at: 13.4, s: '为了证明差距真是硬件做小的，控制器只用最简的 MLP + PPO（MLP 即多层感知机：几层全连接的神经网络，输入当下的观测直接出动作）：没有观测历史、没有相位信号、没有参考动作。' }
       ]
     },
     {
@@ -1775,7 +1845,7 @@
       build: buildSceneActuators,
       cues: [
         { at: 0.3, s: '12 个执行器分 4 种，按电机尺寸命名：5013、8513、8518、10413；减速比都是 9:1，行星减速，驱动器集成在执行器上。' },
-        { at: 3.6, s: '峰值力矩 9.7、45.3、62.6、**81.1** N·m；持续力矩约是峰值的四成（4.59、18.9、26.1、34.2）。最重的 10413 也只有 1011 g。' },
+        { at: 3.6, s: '峰值力矩 9.7、45.3、62.6、**81.1** N·m；持续力矩约是峰值的四成多（4.59、18.9、26.1、34.2）。最重的 10413 也只有 1011 g。' },
         { at: 7.0, s: '分工（ICRA 版表 II、开源代码）：膝 KFE 用最大的 10413，髋屈伸 HFE 用 8518，髋旋转、髋外展和踝屈伸用 8513，踝内外翻用最小的 5013。' },
         { at: 10.4, s: '除 5013 外都是**空心轴**：电源线和通信线从关节轴心穿过去，关节怎么转都不磨、不扯线（第 3.3 节）。' },
         { at: 13.4, s: '开源训练代码把力矩上限压到 20 / 30 / 30 / 20 / 5 N·m，比表 2 的峰值低得多；README 说是出于安全。' }
@@ -1824,9 +1894,9 @@
       cues: [
         { at: 0.3, s: '观测只有**当下这一拍**（第 4.1 节）：机身角速度、重力投影、关节角和角速度、状态估计给的机身线速度、速度命令、上一步动作。' },
         { at: 3.6, s: '按开源代码数一共 **48 维**；机身线速度来自 1 kHz 的状态估计器，仿真里用真值加 ±0.1 m/s 噪声。' },
-        { at: 7.0, s: '不要观测历史、不要教师—学生、不要相位信号、也不要参考动作——策略没法在线辨识，只能靠仿真本身够准。' },
+        { at: 7.0, s: '不要观测历史和教师—学生（在线辨识环境参数的手段），也不要相位信号和参考动作（减少人为偏置）——策略既没法在线辨识，也没有参考动作引导，只能靠仿真本身够准。' },
         { at: 10.4, s: 'Actor 和 critic 都是 512-256-128 的 MLP、ELU 激活，PPO 在 Isaac Lab 里训；输出 12 个目标关节角，由驱动器上的 PD 变成力矩：$\\tau = K_p(q_d - q) - K_d\\dot q$。' },
-        { at: 13.4, s: '奖励四组（附录 A）：跟踪速度；惩罚竖直速度、横滚俯仰角速度、力矩和动作变化；髋膝偏离与关节软限位；腾空时间、不打滑、接触力不过阈值。' }
+        { at: 13.4, s: '奖励四组（附录 A）：跟踪速度；惩罚竖直速度、横滚俯仰角速度、力矩和动作变化；髋膝偏离、机身竖直与关节软限位；腾空时间、不打滑、接触力不过阈值。' }
       ]
     },
     {
@@ -1836,9 +1906,9 @@
       cues: [
         { at: 0.3, s: '第 4.2 节把不确定性分两类：**机器人自己的物理参数**（比如每节连杆多重），和**执行任务时与环境的接触**。' },
         { at: 3.6, s: '自研的好处：转子惯量直接从 CAD 读，乘 81 折算到关节；每个执行器的摩擦用简单实验单独测。商用机器人很难拿到这么细的参数。' },
-        { at: 7.0, s: '开源代码里的摩擦模型：静摩擦用 tanh 平滑，再加与速度成正比的动摩擦：$\\tau_f = F_s\\tanh(\\dot q/v_a) + F_d\\dot q$，$v_a = 0.1$ rad/s。' },
-        { at: 10.4, s: '各关节的静摩擦：膝 KFE 0.8 N·m、踝屈伸 FFE 1.0、髋 0.3、踝内外翻 0.1。代码 README 说电机齿槽力矩大，一并算进了摩擦。' },
-        { at: 13.4, s: '例：膝以 1 rad/s 转，摩擦约 0.8 + 0.02 = **0.82 N·m**；慢到 0.05 rad/s 只剩 0.37。论文没写测法，这些数只在代码里。' }
+        { at: 7.0, s: '开源代码里的摩擦模型：库仑（滑动）摩擦 $F_s$ 用 tanh 平滑过零点，再加与速度成正比的黏性摩擦 $F_d\\dot q$（代码变量名 `friction_static` / `friction_dynamic`）：$\\tau_f = F_s\\tanh(\\dot q/v_a) + F_d\\dot q$，$v_a = 0.1$ rad/s。' },
+        { at: 10.4, s: '各关节的库仑摩擦 $F_s$：膝 KFE 0.8 N·m、踝屈伸 FFE 1.0、髋 0.3、踝内外翻 0.1。代码 README 说电机齿槽力矩大，一并算进了摩擦。' },
+        { at: 13.4, s: '例：膝以 1 rad/s 转，摩擦约 0.8 + 0.02 = **0.82 N·m**；模型在 0.05 rad/s 只给 0.37——这是 tanh 平滑过零的过渡段，不是测出来的。论文没写测法，这些数只在代码里。' }
       ]
     },
     {
@@ -1848,7 +1918,7 @@
       cues: [
         { at: 0.3, s: '硬件参数辨识得准，范围就给窄（附录表 6）：连杆质量 ×0.9–1.1、关节摩擦 ×0.9–1.1、转子惯量 ×1–1.05、机身质量 ±1 kg、关节零位 ±0.05 rad。' },
         { at: 3.6, s: '环境接触没法辨识，就给宽：地面摩擦系数 0.2–1.25、恢复系数 0–0.1，再加外力推（开源代码里推的速度随课程涨到 3 m/s）。' },
-        { at: 7.0, s: '辨识不出来的不随机化：笼统的「电机强度」、PD 增益。论文说这是近似执行器不确定性的「偷懒做法」，范围只能凭经验，常常给得过大。' },
+        { at: 7.0, s: '不属于这两类、对不上具体物理量的笼统参数不随机化：「电机强度」比例、PD 增益。论文说这是近似执行器不确定性的「偷懒做法」，范围只能凭经验，常常给得过大。' },
         { at: 10.4, s: '单关节玩具：按表 6 抽 40 组参数，阶跃响应挤成一条窄带；再加电机强度、PD 增益、±50% 质量，带子宽了约 **7 倍**（换种子 4.9–9.0 倍）。' },
         { at: 13.4, s: '窄的前提是**辨识得准**：真机摩擦若比辨识值大 20%，窄带就套不住了。另有 8 项观测噪声，比如关节角速度 ±1.5 rad/s。' }
       ]
@@ -1862,7 +1932,7 @@
         { at: 3.6, s: '8 种户外地面：草地、砖人行道、土路、沥青、桥、水泥路、跑道、瓷砖，还有台阶和坡（图 5a）。' },
         { at: 7.0, s: '最难的是平均 **20°** 的陡窄土路：比踝的上翘范围还陡，只好倒着走、把脚踩实。高低错落的石板路、自搭的 4 cm 碎石台阶（腿长的 10%）也能走、能转弯。' },
         { at: 10.4, s: '原地踏步时踢它身上不同部位，几步之内就恢复；户外草地上从侧面踢也一样（图 6）。' },
-        { at: 13.4, s: '长距离：校园里自由走 10 分钟、**364 m**，有上坡下坡（图 7）；在那条土路上连续爬 5 分钟以上、96 m、爬升 10.5 m。' }
+        { at: 13.4, s: '长距离：校园里自由走 10 分钟、**364 m**，有上坡下坡（图 7）；在图 5b 那片土路地形上连续爬 5 分钟以上、96 m、爬升 10.5 m。' }
       ]
     },
     {
