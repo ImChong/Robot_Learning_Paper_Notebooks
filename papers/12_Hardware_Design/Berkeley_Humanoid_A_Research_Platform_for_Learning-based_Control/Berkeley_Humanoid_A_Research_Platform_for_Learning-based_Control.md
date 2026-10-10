@@ -62,6 +62,7 @@ demos: ["berkeley_humanoid"]
 | **FFE / FAA** | Foot Flexion-Extension / Abduction-Adduction | 踝的屈伸（俯仰，经连杆驱动）与内外翻（横滚） |
 | **EtherCAT** | Ethernet for Control Automation Technology | 工业以太网现场总线：主站一圈轮询所有从站，这里 1–4 kHz |
 | **DR** | Domain Randomization | 域随机化：训练时随机化仿真参数（[本仓库笔记](../../01_Foundational_RL/Domain_Randomization_for_Transferring_Deep_Neural_Networks_from_Simulation_to_the_Real_World/Domain_Randomization_for_Transferring_Deep_Neural_Networks_from_Simulation_to_the_Real_World.html)） |
+| **MLP** | Multi-Layer Perceptron | 多层感知机：几层全连接的神经网络，没有记忆；这里 actor、critic 都是 [512, 256, 128]、ELU 激活 |
 | **PPO** | Proximal Policy Optimization | 训练策略用的强化学习算法（[本仓库笔记](../../01_Foundational_RL/PPO_Proximal_Policy_Optimization/PPO_Proximal_Policy_Optimization.html)） |
 | **MDP** | Markov Decision Process | 马尔可夫决策过程；第 5.2 节说「仿真的 MDP 与真机的 MDP 很接近」 |
 | **armature** | — | 仿真器里加在关节质量矩阵对角线上的惯量项，用来表示折算过来的转子惯量 |

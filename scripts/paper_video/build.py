@@ -114,7 +114,8 @@ async def main():
         pad = int(round((t + lead) * SR)) - len(pcm) // 2
         pcm += b"\x00\x00" * max(pad, 0) + audio
         for off, d, s in sents:
-            subs += chunks(s.strip(), t + lead + off, d)
+            # 先换成字幕写法再切行：逐字母念的缩写（「M L P」）带空格，按空格切行会把它拆到两行
+            subs += chunks(display(s.strip()), t + lead + off, d)
         t += dur
         prev_scene = scene
         print(f"{i:02d} {scene!s:>5} {alen:5.2f}s -> seg {dur:5.2f}s", file=sys.stderr)
