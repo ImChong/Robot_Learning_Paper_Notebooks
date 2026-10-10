@@ -32,7 +32,7 @@
 | `realhumanoid` | `assets/js/demos/realhumanoid.js` 十幕（`rh-explainer`） | 约 10 分 33 秒 |
 | `asap` | `assets/js/demos/asap.js` 十二幕（`asap-explainer`） | 约 10 分 16 秒 |
 | `inekf` | `assets/js/demos/inekf.js` 十二幕（`inekf-explainer`） | 约 10 分 6 秒 |
-| `berkeley_humanoid` | `assets/js/demos/berkeley_humanoid.js` 十二幕（`bh-explainer`） | 约 11 分 16 秒 |
+| `berkeley_humanoid` | `assets/js/demos/berkeley_humanoid.js` 十二幕（`bh-explainer`） | 约 11 分 35 秒 |
 | `toddlerbot` | `assets/js/demos/toddlerbot.js` 十二幕（`tb-explainer`） | 约 13 分 22 秒 |
 
 - 画面：直接复用 `<paper>.js` 分镜的 `draw(t)`，数字与笔记算例一致；前后加片头、总结页（`papers/<paper>.js`）。
@@ -94,6 +94,8 @@ node check_layout.mjs awr cover       # 封面排版检查，输出 no overlap �
 3. 每个 worker 使用独立浏览器、独立生成的 `stage.*.built.html`、日志和输出文件；完整执行字体等待、分镜预热与 `fitStages()`。所有分段使用相同的分辨率、帧率、H.264 / yuv420p 与 CRF 19，仅输出画面（`-an`）；可以限制每个编码器的线程数，避免争抢 CPU。
 4. 检查每个 worker 的退出码和分段实际帧数，确认都与预期一致后，用 ffmpeg concat 按帧号顺序拼接画面（`-c:v copy`），再从完整的 `narration.wav` 一次性编码 AAC。这样避免分段 AAC 编码延迟造成接缝停顿。
 5. 合并时不要依赖 `-shortest` 来裁尾：本次它截掉了最后 4 帧，移除后才保留全部 18,282 帧。用 `ffprobe` 核对总帧数、帧率、分辨率和音视频时长，再做全片解码检查；音视频时长差应不超过一帧。排版与封面仍按上文运行 `check_layout.mjs`。
+
+2026-10-10 的 Berkeley Humanoid 最新版在 16 个逻辑核、31 GiB 内存的本机上使用 **8 路并行**，拆成 24 个连续整数帧区间、分三批完成，每批约 125–130 秒，三批共约 6 分 21 秒。先尝试的八个长片段被运行环境中断，未完成的 MP4 没有复用；短片段方式完成了全部 20,854 帧（1080×1920、30 fps、CRF 19），音视频时长 695.132 / 695.133 秒。原片 37.8 MB，供笔记页面使用的压缩版保持 `-preset slow -crf 37 -tune stillimage` 与 48k 单声道音频。Chrome 回放曾因全范围标记而偏暗，整片统一转成有限范围 `yuv420p` 后修复；`render.mjs` 的整片与片段输出也显式转换范围并设置 `-color_range tv`，避免后续重渲再次偏暗。逐段帧数、全片解码、Chrome 播放、排版与封面检查均通过。后续遇到运行时限时，可保留并行数量、缩短每个片段并分批执行；只拼接已完整封装且通过帧数检查的片段。
 
 分段都完成后，`concat.txt` 按顺序列出相对路径，如 `file 'chunk_0-4570.mp4'`。合并示例（以下为已有四段视频的合并，不是启动 worker 的命令）：
 
