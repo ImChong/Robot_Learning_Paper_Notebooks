@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import re
 from pathlib import Path
 
@@ -13,6 +14,7 @@ INDEX_HTML = ROOT / "index.html"
 ZOOM_JS = ROOT / "assets" / "js" / "mermaid-zoom.js"
 CONFIG_JS = ROOT / "assets" / "js" / "mermaid-config.js"
 STYLE_CSS = ROOT / "assets" / "css" / "style.css"
+PAPERS_JSON = ROOT / "_data" / "papers.json"
 
 
 def _load_roadmap_links() -> dict[str, str]:
@@ -97,3 +99,67 @@ def test_roadmap_lang_switch_reapplies_ios_patch():
     assert "patchRoadmapMermaidDom" in config
     assert "requestAnimationFrame" in layout
     assert "window.patchRoadmapMermaidDom" in layout
+
+
+def _papers_by_url() -> dict[str, dict]:
+    data = json.loads(PAPERS_JSON.read_text(encoding="utf-8"))
+    by_url: dict[str, dict] = {}
+
+    def walk(group: dict) -> None:
+        for paper in group.get("papers", []):
+            by_url[paper["url"]] = paper
+        for sub in group.get("subcategories", []) or []:
+            walk(sub)
+
+    for category in data.values():
+        walk(category)
+    return by_url
+
+
+def _roadmap_node_labels() -> dict[str, str]:
+    graph = DEFAULT_LAYOUT.read_text(encoding="utf-8")
+    return dict(re.findall(r"\b([A-Za-z][A-Za-z0-9]*)\(\[\"([^\"]*)\"\]\)", graph))
+
+
+def test_home_page_exposes_roadmap_node_details_json():
+    text = INDEX_HTML.read_text(encoding="utf-8")
+    assert 'id="roadmap-node-details"' in text
+    for field in ("summary_zh", "explainer_scenes", "video_seconds", "published_date_zh"):
+        assert field in text
+
+
+def test_roadmap_note_nodes_have_paper_details():
+    """悬浮卡片按笔记地址在 papers.json 里找论文，每个笔记节点都要找得到。"""
+    by_url = _papers_by_url()
+    missing = [
+        node_id
+        for node_id, html_path in _load_roadmap_links().items()
+        if not html_path.startswith("https://") and html_path not in by_url
+    ]
+    assert missing == [], f"Roadmap nodes not found in papers.json (run scripts/prepare_pages.py): {missing}"
+
+
+def test_roadmap_video_badges_match_real_videos():
+    """节点上的 🎬 与卡片里的视频时长同源：标了 🎬 的笔记必须真有配音视频，反之亦然。"""
+    by_url = _papers_by_url()
+    links = _load_roadmap_links()
+    mismatched = []
+    for node_id, label in _roadmap_node_labels().items():
+        paper = by_url.get(links.get(node_id, ""))
+        if paper is None:
+            continue
+        if ("🎬" in label) != bool(paper.get("video_seconds")):
+            mismatched.append(f"{node_id}: badge={'🎬' in label}, video_seconds={paper.get('video_seconds')}")
+    assert mismatched == [], "Roadmap 🎬 badges out of sync with note videos:\n" + "\n".join(mismatched)
+
+
+def test_roadmap_node_card_wired_in_layout():
+    layout = DEFAULT_LAYOUT.read_text(encoding="utf-8")
+    css = STYLE_CSS.read_text(encoding="utf-8")
+    assert "attachRoadmapNodeCard(nodeGroup, nodeId, url)" in layout
+    assert "roadmap-node-details" in layout
+    # 卡片不挡节点点击，触屏点按直接跳转不弹卡片。
+    assert "e.pointerType !== 'touch'" in layout
+    card_css = css.split(".roadmap-node-card {", 1)[1].split("}", 1)[0]
+    assert "pointer-events: none" in card_css
+    assert "position: fixed" in card_css
