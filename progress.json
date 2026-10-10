@@ -41,15 +41,15 @@
         "13_Physics-Based_Animation",
         "14_Human_Motion"
       ],
-      "last_module": "06_Manipulation",
-      "last_index": 593,
-      "last_title": "Immiscible Diffusion Policy: Preserving Multimodal Robot Actions through Label-Free Noise Assignment (arXiv:2610.09369)",
-      "next_module": "07_Teleoperation",
-      "last_completed_date": "2026-10-09",
-      "note": "本日轮转到 06_Manipulation。PROGRESS.md 的 Manipulation 表里待读条目均已有笔记文件，上游 awesome-humanoid-robot-learning Manipulation 章节中尚无笔记的最新论文是 Immiscible Diffusion Policy (arXiv:2610.09369, 2026-10-07, UC Berkeley / Princeton / UT Austin)，新增为 PROGRESS #593。数据均衡、batch 内严格对称时 vanilla DP 仍塌缩到单一模态；训练热身后对每个 batch 做标准化动作块与噪声的匈牙利匹配，网络 / 推理不变；两模态仿真任务非主导模态 ×6.0–14.6，四模态任务找回丢失模态，G1 真机左右手 1:1。论文未开源，仅含整体流程 mermaid。",
-      "last_date": "2026-10-09",
+      "last_module": "07_Teleoperation",
+      "last_index": 594,
+      "last_title": "Beyond Retargeting: Low-Latency and Robust Humanoid Whole-Body Teleoperation with Learned Atomic Motion Primitives (arXiv:2610.07891)",
+      "next_module": "08_Navigation",
+      "last_completed_date": "2026-10-10",
+      "note": "本日轮转到 07_Teleoperation。_data/papers.json 中 Teleoperation 条目均已有笔记，上游 awesome-humanoid-robot-learning Teleoperation 章节中尚无笔记的最新论文是 Beyond Retargeting (arXiv:2610.07891, 2026-10-06, 港科大 / 浙大 / 腾讯 Robotics X / 湖南大学)，新增为 PROGRESS #594。特权 MoE 教师(PPO) → 只看人体坐标系描述的码本学生，部署时免重定向一次前向 0.604 ms；因子化类别码本(128×12)把带噪/部分/OOD 输入投影到全身原型，关键点噪声 0.30 m SR 0.949 vs MLP 0.868；G1 真机接 VR/动捕/视频/文本。论文未开源，仅含整体流程 mermaid。",
+      "last_date": "2026-10-10",
       "next_candidate": null,
-      "last_completed": "Immiscible Diffusion Policy: Preserving Multimodal Robot Actions through Label-Free Noise Assignment (arXiv:2610.09369)"
+      "last_completed": "Beyond Retargeting: Low-Latency and Robust Humanoid Whole-Body Teleoperation with Learned Atomic Motion Primitives (arXiv:2610.07891)"
     },
     "last_summary_index": 532,
     "last_summary_date": "2026-09-18",
@@ -1684,6 +1684,17 @@
         "project_page": "",
         "code": "论文未给出代码链接，暂未开源；噪声分配算法沿用 https://github.com/yhli123/Immiscible-Diffusion",
         "source": "⏳ 暂未开源(故无源码时序图) · 训练热身后 batch 内标准化动作块与高斯噪声的匈牙利匹配，网络 / 损失 / 推理不变 · Diffusion Policy / DP3 · RoboTwin 2.0 + Unitree G1 · UC Berkeley / Princeton / UT Austin"
+      },
+      {
+        "date": "2026-10-10",
+        "index": 594,
+        "title": "Beyond Retargeting: Low-Latency and Robust Humanoid Whole-Body Teleoperation with Learned Atomic Motion Primitives",
+        "folder": "papers/07_Teleoperation/Beyond_Retargeting__Low-Latency_Robust_Humanoid_Whole-Body_Teleoperation_with_Atomic_Motion_Primitives",
+        "module": "07_Teleoperation",
+        "arxiv": "2610.07891",
+        "project_page": "",
+        "code": "论文未给出代码链接，暂未开源",
+        "source": "⏳ 暂未开源(故无源码时序图) · 特权 MoE 教师蒸馏为免重定向码本学生，因子化类别码本(128×12)编码器—估计器匹配做 OOD 投影 · IsaacSim 训练 / MjLab 评测 · Unitree G1 · 港科大 / 浙大 / 腾讯 Robotics X / 湖南大学"
       }
     ],
     "last_completed_index": 588,

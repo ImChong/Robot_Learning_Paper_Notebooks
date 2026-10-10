@@ -2192,6 +2192,17 @@
     "display_name": "Teleoperation",
     "papers": [
       {
+        "title": "Beyond Retargeting: Low-Latency and Robust Humanoid Whole-Body Teleoperation with Learned Atomic Motion Primitives",
+        "path": "papers/07_Teleoperation/Beyond_Retargeting__Low-Latency_Robust_Humanoid_Whole-Body_Teleoperation_with_Atomic_Motion_Primitives/Beyond_Retargeting__Low-Latency_Robust_Humanoid_Whole-Body_Teleoperation_with_Atomic_Motion_Primitives.md",
+        "url": "/papers/07_Teleoperation/Beyond_Retargeting__Low-Latency_Robust_Humanoid_Whole-Body_Teleoperation_with_Atomic_Motion_Primitives/Beyond_Retargeting__Low-Latency_Robust_Humanoid_Whole-Body_Teleoperation_with_Atomic_Motion_Primitives.html",
+        "dir": "Beyond_Retargeting__Low-Latency_Robust_Humanoid_Whole-Body_Teleoperation_with_Atomic_Motion_Primitives",
+        "arxiv": "2610.07891",
+        "published_date_zh": "2026年10月6日（arXiv v1）",
+        "published_date_en": "Oct 6, 2026 (arXiv v1)",
+        "zhname": "超越重定向：基于原子动作基元的低延迟鲁棒人形全身遥操作",
+        "zh_title": "超越重定向：基于原子动作基元的低延迟鲁棒人形全身遥操作"
+      },
+      {
         "title": "Gated Residual Body-Hand Coordination for Whole-Body Humanoid Teleoperation",
         "path": "papers/07_Teleoperation/Gated_Residual_Body-Hand_Coordination_for_Whole-Body_Humanoid_Teleoperation/Gated_Residual_Body-Hand_Coordination_for_Whole-Body_Humanoid_Teleoperation.md",
         "url": "/papers/07_Teleoperation/Gated_Residual_Body-Hand_Coordination_for_Whole-Body_Humanoid_Teleoperation/Gated_Residual_Body-Hand_Coordination_for_Whole-Body_Humanoid_Teleoperation.html",
