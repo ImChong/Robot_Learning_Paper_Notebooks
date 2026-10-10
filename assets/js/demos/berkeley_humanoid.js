@@ -917,6 +917,13 @@
     var XS = [96, 246, 404, 572], CY = 104, PXMM = 0.8;
     var units = ACTUATORS.map(function (a, i) {
       var g = group(s), x = XS[i], r = (a.dia / 2) * PXMM;
+      /* 空心轴走线：线缆从左前方穿进轴心、从背后穿出到右边。右半段（背后）先画，被执行器挡住，只露出盘外那一截；
+         左半段（前面）最后画，挡在电机前面 */
+      var cable = null;
+      if (a.hollow) {
+        cable = [pathLine(g, [], C_WARN, 4), null];
+        cable[0].setAttribute('d', 'M ' + x + ' ' + CY + ' Q ' + (x + 0.5 * r).toFixed(1) + ' ' + (CY - 10) + ' ' + (x + r + 26).toFixed(1) + ' ' + (CY - 16));
+      }
       var ring = paint(svgEl('circle', { cx: x, cy: CY, r: r, 'stroke-width': 2.4 }), C_SURFACE2, C_INK2);
       g.appendChild(ring);
       var rotor = group(g);
@@ -926,12 +933,10 @@
       }
       var hole = paint(svgEl('circle', { cx: x, cy: CY, r: a.hollow ? 0.28 * r : 0.12 * r, 'stroke-width': 1.2 }), a.hollow ? C_SURFACE : C_INK2, C_INK2);
       g.appendChild(hole);
-      /* 线缆沿轴线穿过空心轴：正面看过去是轴心里的一个点（不在转子转的那个面上） */
-      var cable = null;
-      if (a.hollow) {
-        cable = group(g);
-        dotAt(cable, x, CY, 0.18 * r, C_WARN);
-        cable.style.opacity = 0;
+      if (cable) {
+        cable[1] = pathLine(g, [], C_WARN, 4);
+        cable[1].setAttribute('d', 'M ' + (x - r - 26).toFixed(1) + ' ' + (CY + 16) + ' Q ' + (x - 0.5 * r).toFixed(1) + ' ' + (CY + 10) + ' ' + x + ' ' + CY);
+        cable.forEach(function (c) { c.setAttribute('stroke-linecap', 'round'); c.style.opacity = 0; });
       }
       g.appendChild(svgText(x, CY + 70, a.name, 'demo-x-ink2', 12.5, 'middle'));
       g.appendChild(svgText(x, CY + 86, a.g + ' g · ×' + a.qty, 'demo-x-mut', 10, 'middle'));
@@ -963,7 +968,7 @@
     var hollowLab = group(s);
     hollowLab.appendChild(paint(svgText(664, 330, '空心轴：线从轴心穿过', null, 10.5), C_WARN));
     hollowLab.appendChild(svgText(664, 346, '关节转动不磨、不扯线', 'demo-x-mut', 10));
-    hollowLab.appendChild(paint(svgText(664, 362, '橙点：沿轴线穿过的线', null, 9.5), C_WARN));
+    hollowLab.appendChild(paint(svgText(664, 362, '橙线：从轴心穿到背后', null, 9.5), C_WARN));
     var codeLab = group(s);
     codeLab.appendChild(svgText(40, 398, '开源代码把力矩上限压到 20 / 30 / 30 / 20 / 5 N·m（README：安全）', 'demo-x-ink2', 10.5));
 
@@ -979,7 +984,7 @@
         setOpacity(u.vp, seg(t, 4.4 + i * 0.4, 4.8 + i * 0.4));
         setOpacity(u.vc, seg(t, 4.4 + i * 0.4, 4.8 + i * 0.4));
         setOpacity(u.jc, seg(t, 7.1 + i * 0.4, 7.5 + i * 0.4));
-        if (u.cable) setOpacity(u.cable, seg(t, 10.5, 11.1));
+        if (u.cable) u.cable.forEach(function (c) { setOpacity(c, seg(t, 10.5, 11.1)); });
       });
       setOpacity(barKey, seg(t, 3.7, 4.2));
       setOpacity(legG, seg(t, 7.6, 8.4));
@@ -1635,7 +1640,6 @@
     var trail = group(far);
     trail.appendChild(paint(svgText(500, 376, '土路连续爬 5 分钟以上：96 m，爬升 10.5 m', null, 11), C_WARN));
     trail.appendChild(svgText(44, 394, '路线是示意', 'demo-x-mut', 9));
-    trail.appendChild(svgText(500, 394, '96 m 爬升 10.5 m 折合约 6°，和 20° 对不上（论文没解释）', 'demo-x-mut', 9));
     /* 踢：从第 4 段开头按真实时间算（见 sinceCue），第一脚在 0.8 s 后；脚先伸过来、碰到躯干背面才开始推 */
     var kick0 = { v: null }, KC = 0.12, KP = 0.25;
 
@@ -1928,7 +1932,7 @@
         { at: 3.6, s: '8 种户外地面：草地、砖人行道、土路、沥青、桥、水泥路、跑道、瓷砖，还有台阶和坡（图 5a）。' },
         { at: 7.0, s: '最难的是平均 **20°** 的陡窄土路：比踝的上翘范围还陡，只好倒着走、把脚踩实。高低错落的石板路、自搭的 4 cm 碎石台阶（腿长的 10%）也能走、能转弯。' },
         { at: 10.4, s: '原地踏步时踢它身上不同部位，几步之内就恢复；户外草地上从侧面踢也一样（图 6）。' },
-        { at: 13.4, s: '长距离：校园里自由走 10 分钟、**364 m**，有上坡下坡（图 7）；在图 5b 那片土路地形上连续爬 5 分钟以上、96 m、爬升 10.5 m——折合平均只有约 6°，和 20° 对不上，论文没解释。' }
+        { at: 13.4, s: '长距离：校园里自由走 10 分钟、**364 m**，有上坡下坡（图 7）；在图 5b 那片土路地形上连续爬 5 分钟以上、96 m、爬升 10.5 m。' }
       ]
     },
     {

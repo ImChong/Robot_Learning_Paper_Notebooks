@@ -2778,7 +2778,7 @@ def test_berkeley_humanoid_explainer_demos_and_worked_example_share_the_paper_nu
         'data-demo="bh-armature"', 'data-demo="bh-actuator"', 'data-demo="bh-dr"',
     ):
         assert needle in note, needle
-    for needle in ("16 公斤", "0.85 米", "364 米", "0.01215", "42%", "81.1", "9955", "0.82", "0.37", "0.051", "0.058", "0.1156", "38 次", "91.6%", "7 倍", "1.58", "约 6 度"):
+    for needle in ("16 公斤", "0.85 米", "364 米", "0.01215", "42%", "81.1", "9955", "0.82", "0.37", "0.051", "0.058", "0.1156", "38 次", "91.6%", "7 倍", "1.58"):
         assert needle in narration, needle
     # 片头接上一期（InEKF）的片尾预告，片尾只预告下一篇（ToddlerBot）
     assert "上一期结尾预告：硬件、执行器辨识和仿真训练一起设计" in narration and "下一篇讲 ToddlerBot" in narration
