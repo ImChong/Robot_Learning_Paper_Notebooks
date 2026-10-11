@@ -78,7 +78,9 @@ demos: ["gmr"]
 
 > 📖 **动画之后的正文默认全部折叠**：动画覆盖到的那几节（要解决什么问题、方法详解、实验结果）按小节收起，再往后的具体实例、源码对照、工程价值、面试、讨论记录与附录各整块收起。想细读哪一块就点开对应的折叠条，内容一字未删；流程图和三个交互演示留在外面，目录里的标题依旧可以直接点，会自动展开所在折叠块，左侧目录顶部还有「展开全部文字」一键铺开。
 >
-> 动画第 1、4–8、12 幕里的人和 G1 是 LAFAN1 的真实片段与官方代码跑出的结果，和三个交互演示、下文「🚶 具体实例」是同一组数字；表格与第 10、11 幕的图来自论文。
+> 动画第 1、3–8、12 幕里的人和 G1 是 LAFAN1 的真实片段与官方代码跑出的结果，和三个交互演示、下文「🚶 具体实例」是同一组数字；表格与第 10、11 幕的图来自论文。
+>
+> G1 的 3D 外形借了 [Robot Retarget Online](https://imchong.github.io/Robot_Retarget_Online/)（GMR 的浏览器版）的 MuJoCo WASM + three.js 模型加载代码：读和官方 GMR 逐字节相同的 `g1_mocap_29dof.xml`，按复现实验的 qpos 用正交相机逐帧离线渲染，人、目标点和连线按同一个相机投影叠在上面。第 12 幕的「默认姿态」取 BeyondMimic 代码（whole_body_tracking 的 `robots/g1.py`）里 G1 的初始关节角。
 
 ---
 
@@ -516,11 +518,12 @@ python scripts/vis_robot_motion.py --robot unitree_g1 --robot_motion_path <out/g
 ## 🤖 工程价值
 
 <details class="paper-fold" markdown="1">
-<summary>📖 展开文字：重定向从附录走到台前；本仓库里用到 GMR 的笔记</summary>
+<summary>📖 展开文字：重定向从附录走到台前；浏览器版 GMR；本仓库里用到 GMR 的笔记</summary>
 
 1. **把一个默认被当成前处理脚本的环节单独拿出来比**：同一套跟踪配方、只换参考动作，把「重定向质量」变成了可以量的东西（成功率、跟踪误差、用户偏好），也给出了该避开的三类瑕疵和「起始帧」这个容易忽视的因素。
 2. **开源库**：一个参数换机器人、一条命令换数据源，CPU 上够快，可以直接接遥操作（TWIST / TWIST2）；MimicKit 也支持读 GMR 格式（README 2025-11-08）。
 3. **仍要人手的地方**：每款机器人一份 JSON（对应、权重、偏移、比例），个别动作还要调权重；它只管运动学，物理上做不做得出来仍要靠下游的跟踪策略。
+4. **在浏览器里直接试**：[Robot Retarget Online](https://imchong.github.io/Robot_Retarget_Online/) 把 GMR 移植成纯前端（MuJoCo WASM 做正运动学、雅可比与微分 IK），能加载 LAFAN1 示例、看两阶段匹配表、一键重定向并导出 NPZ。它的 README 说：在自带的 walk 样例上重定向到 G1，与 Python 版 GMR 相差 0.019 rad（关节角 RMSE）/ 0.27 cm（根位置 RMSE），差别来自它用阻尼 Gauss–Newton 一步代替 mink 的 `daqp` QP。上面动画里的 3D G1 就是用它的模型加载代码渲染的。
 
 本仓库里提到 GMR 的笔记：
 

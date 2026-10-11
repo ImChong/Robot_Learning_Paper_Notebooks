@@ -612,6 +612,15 @@ a.demo-btn {
   font-weight: 600;
 }
 
+/* 分镜里的 3D 机器人贴图（透明底，GMR 的 G1）：深色主题下描一圈淡光，黑色的关节和鞋底才不会融进背景 */
+.demo-x-g1mesh {
+  filter: drop-shadow(0 0 1.2px rgba(214, 222, 235, 0.55));
+}
+
+[data-theme="light"] .demo-x-g1mesh {
+  filter: none;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .demo-x-cue {
     transition: none;

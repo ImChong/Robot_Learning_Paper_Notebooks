@@ -41,6 +41,8 @@
       return '';
     }
   })();
+  /* G1 的 3D 逐帧贴图（由 Robot_Retarget_Online 的模型加载代码离线渲染，见 g1Mesh） */
+  var G1_3D_BASE = PAPER_IMG_BASE ? PAPER_IMG_BASE + 'g1_3d/' : '';
   var el = K.el,
     fmt = K.fmt,
     clamp = K.clamp,
@@ -1123,7 +1125,7 @@
     '/f4C7Qjl/cAB+gfH/QUBAglL/Q4Dbwli/eUBXAl//bIA8wgQ/nYE/ghV/pADSQlR/ukC3wgb/VwE0Qjm/HIDIgnU/M4CAQmU/QUD/Aih/esDAgni/fwCIQ' +
     'nw/cEBJQjO/RIBGwlL/RADfglj/eQBYAl//bIABwkT/ncEDwlh/pQDWwle/u0C+ggd/VwE7gjm/HIDRAna/M8C';
   var CLIP_ITERS = '212121212132323232221122222222222222222222222221213232323232222222212121212121212121212121212132323232222222222222222222222222222222223232323232222222222121212121212121';
-  var CLIP_REST = 'AAAAABkDAABAALICAAB3AGIBAAB3ACQAZAB3ABAAAADA/7ICAACJ/2IBAACJ/yQAZACJ/xAA/P8AAEUDAAAAABkDAABkAD0EEACTAIIDyACVAHgD8QCYAHgDAACc/z0EEABt/4IDyABr/3gD8QBo/3gDAAAAABkD/P8AANUE';
+  var CLIP_REST = 'AAAAAPUCAABAAI4CZwB3AE4B//93ACMAYwB3ABAAAADA/44CZwCJ/04B//+J/yMAYwCJ/xAA/P8AACEDAAAAAPUCAABkABkE6P+3AGQDYQDWAN0CfgDgAMACAACc/xkE6P9J/2QDYQAq/90CfgAg/8ACAAAAAPUC/P8AALEE';
   /* 解码：小端 int16（毫米）→ 米。HUMAN 每帧 22 根骨；G1_* 每帧 21 个身体原点 + 左右脚底各 4 个角点；TGT_* 每帧 14 个目标点。
      坐标是 z 朝上的世界系，原点挪到第 0 帧骨盆的正下方，人沿 +x 走（这段的朝向偏 0.6°）。 */
   function decodeClip(b64) {
@@ -1788,76 +1790,71 @@
       }
     };
   }
-  /* G1：按真实正运动学画成浅灰的粗肢体（G1 的外壳是浅灰、关节与头是黑的）：躯干是肩—髋围成的块，
-     头在躯干上方（head_mocap 在 torso_link 上方 0.4 m），脚底按 4 个接触点画成一块黑色鞋底。 */
+  /* 第 1 幕「抄关节角」那两条腿的配色（G1 的外壳是浅灰、关节与鞋底是黑的） */
   var G1_LIGHT = '#c4c9d0', G1_DARK = '#33363c', G1_EDGE = '#7c828c';
-  function g1Skel(parent, opts) {
-    var o = opts || {}, g = group(parent);
-    var shadow = paint(svgEl('ellipse', { rx: 10, ry: 3 }), C_INK2);
-    shadow.style.opacity = o.shadow === false ? 0 : 0.16;
-    g.appendChild(shadow);
-    function limb(w, color) {
-      var l = paint(svgEl('path', { fill: 'none', 'stroke-width': w, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }), null, color);
-      if (o.ghost) l.style.opacity = 0.45;
-      g.appendChild(l);
-      return l;
+  /* G1 的 3D 渲染：模型加载与网格构建来自 ImChong/Robot_Retarget_Online（GMR 的浏览器版，MuJoCo WASM + three.js），
+     读的是和官方 GMR 逐字节相同的 g1_mocap_29dof.xml；输入是官方 GMR 跑出的同一批 qpos（每种设定 84 帧），
+     用正交相机逐帧离线渲染成贴图表，相机的 yaw / pitch 与 project() 是同一套，所以二维的目标点、连线能直接叠在上面。
+     R：渲染时的像素 / 米；(ax, ay)：骨盆正下方的地面点在一格里的像素位置。侧视两组只渲染了 0.85 m 以下（第 5 幕只看膝盖以下） */
+  var G1_3D = {
+    gmr34: { file: 'g1_gmr34.webp', R: 240, yaw: -0.45, pitch: 0.1, cw: 205, ch: 327, cols: 12, n: 84, ax: 96, ay: 319 },
+    s1only34: { file: 'g1_s1only34.webp', R: 240, yaw: -0.45, pitch: 0.1, cw: 198, ch: 330, cols: 12, n: 84, ax: 102, ay: 322 },
+    height34: { file: 'g1_height34.webp', R: 150, yaw: -0.45, pitch: 0.1, cw: 123, ch: 205, cols: 12, n: 84, ax: 58, ay: 189 },
+    legsAsArms34: { file: 'g1_legsAsArms34.webp', R: 150, yaw: -0.45, pitch: 0.1, cw: 123, ch: 211, cols: 12, n: 84, ax: 59, ay: 206 },
+    gmrSide: { file: 'g1_gmrSide.webp', R: 280, yaw: 0, pitch: 0.04, cw: 247, ch: 242, cols: 12, n: 84, ax: 114, ay: 238 },
+    legsAsArmsSide: { file: 'g1_legsAsArmsSide.webp', R: 280, yaw: 0, pitch: 0.04, cw: 235, ch: 242, cols: 12, n: 84, ax: 110, ay: 238 },
+    rest34: { file: 'g1_rest34.webp', R: 240, yaw: -0.45, pitch: 0.1, cw: 140, ch: 316, cols: 1, n: 1, ax: 64, ay: 310 }
+  };
+  /* 两种常用相机：3/4 视角（第 3、4、6、7、8、12 幕）与侧视（第 5 幕） */
+  var CAM34 = { yaw: -0.45, pitch: 0.1 }, CAMSIDE = { yaw: 0, pitch: 0.04 };
+  function cam34(s, ox, oy, cx, cy) {
+    return { yaw: CAM34.yaw, pitch: CAM34.pitch, s: s, ox: ox, oy: oy, cx: cx, cy: cy };
+  }
+  /* 一台 G1：opts.set 选贴图表；put(pose, cam, 帧号) 摆到 pose[0]（骨盆）正下方的地面点，返回 29 个点的投影供叠加层用。
+     贴图第一次在 draw 里用到才设 href，所以只有放到这一幕时才下载 */
+  function g1Mesh(parent, opts) {
+    var o = opts || {}, M = G1_3D[o.set], g = group(parent), rows = Math.ceil(M.n / M.cols);
+    /* 外层 g 带 demo-x-g1mesh（深色主题下的一圈淡光，CSS 里定义），内层 g 放染色滤镜，两者互不覆盖 */
+    g.setAttribute('class', 'demo-x-g1mesh');
+    var inner = group(g);
+    var box = svgEl('svg', { overflow: 'hidden', preserveAspectRatio: 'none', width: 0, height: 0 });
+    var img = svgEl('image', { x: 0, y: 0, width: M.cw * M.cols, height: M.ch * rows, preserveAspectRatio: 'none' });
+    box.appendChild(img);
+    inner.appendChild(box);
+    if (o.ghost) g.style.opacity = 0.42;
+    /* tint：把这台染成偏红（第 7 幕「只跑第一阶段」的那台），灰度 L 映射到 (0.35 + 0.75L, 0.12 + 0.35L, 0.12 + 0.35L) */
+    if (o.tint) {
+      var root = parent.ownerSVGElement || parent, defs = root.querySelector('defs');
+      if (!defs) { defs = svgEl('defs', {}); root.insertBefore(defs, root.firstChild); }
+      var fid = 'gmr-x-tint-' + (++haloSeq), flt = svgEl('filter', { id: fid, 'color-interpolation-filters': 'sRGB' });
+      flt.appendChild(svgEl('feColorMatrix', { type: 'matrix', values: '0.25 0.25 0.25 0 0.35  0.117 0.117 0.117 0 0.12  0.117 0.117 0.117 0 0.12  0 0 0 1 0' }));
+      defs.appendChild(flt);
+      inner.setAttribute('filter', 'url(#' + fid + ')');
     }
-    function edged(w) {
-      return { e: limb(w + 2.4, G1_EDGE), f: limb(w, o.fill || G1_LIGHT) };
-    }
-    var far = { leg: edged(1), arm: edged(1), sole: paint(svgEl('path', { 'stroke-width': 1 }), G1_DARK, G1_EDGE) };
-    g.appendChild(far.sole);
-    var torso = paint(svgEl('path', { 'stroke-width': 1.4, 'stroke-linejoin': 'round' }), o.fill || G1_LIGHT, G1_EDGE);
-    g.appendChild(torso);
-    var pelvisBlk = paint(svgEl('path', { 'stroke-width': 1.2, 'stroke-linejoin': 'round' }), G1_DARK, G1_EDGE);
-    g.appendChild(pelvisBlk);
-    var head = paint(svgEl('ellipse', { 'stroke-width': 1.2 }), G1_DARK, G1_EDGE);
-    g.appendChild(head);
-    var near = { leg: edged(1), arm: edged(1), sole: paint(svgEl('path', { 'stroke-width': 1 }), G1_DARK, G1_EDGE) };
-    g.appendChild(near.sole);
-    var knees = [paint(svgEl('circle', { r: 2, 'stroke-width': 1 }), G1_DARK, G1_EDGE), paint(svgEl('circle', { r: 2, 'stroke-width': 1 }), G1_DARK, G1_EDGE)];
-    knees.forEach(function (k) { g.appendChild(k); });
-    if (o.ghost) [far.sole, torso, pelvisBlk, head, near.sole, knees[0], knees[1]].forEach(function (n) { n.style.opacity = 0.45; });
-    function setLimb(L, pts, w) {
-      setPath(L.e, pts); setPath(L.f, pts);
-      L.e.setAttribute('stroke-width', (w + 2.4).toFixed(1)); L.f.setAttribute('stroke-width', w.toFixed(1));
+    var woke = false, lastF = -1;
+    function wake() {
+      if (woke || !G1_3D_BASE) return;
+      woke = true;
+      img.setAttribute('href', G1_3D_BASE + M.file);
     }
     return {
       g: g,
       pts: null,
-      /* pose：g1At() 的 29 个点；返回投影后的点 */
-      put: function (pose, cam) {
+      wake: wake,
+      put: function (pose, cam, fr, quiet) {
+        if (!quiet) wake();
         var P = pose.map(function (p) { return project(p, cam); });
         this.pts = P;
-        var s = cam.s, lw = Math.max(2.5, 0.07 * s), aw = Math.max(2, 0.055 * s);
-        var legL = [P[GI.left_hip_pitch_link], P[GI.left_knee_link], P[GI.left_ankle_roll_link]];
-        var legR = [P[GI.right_hip_pitch_link], P[GI.right_knee_link], P[GI.right_ankle_roll_link]];
-        var armL = [P[GI.left_shoulder_pitch_link], P[GI.left_elbow_link], P[GI.left_wrist_yaw_link], P[GI.left_rubber_hand]];
-        var armR = [P[GI.right_shoulder_pitch_link], P[GI.right_elbow_link], P[GI.right_wrist_yaw_link], P[GI.right_rubber_hand]];
-        var soleL = P.slice(21, 25), soleR = P.slice(25, 29);
-        /* 远的一侧（depth 大）画在躯干后面 */
-        var leftFar = mean(legL.map(function (q) { return q[2]; })) > mean(legR.map(function (q) { return q[2]; }));
-        setLimb(far.leg, leftFar ? legL : legR, lw); setLimb(near.leg, leftFar ? legR : legL, lw);
-        setLimb(far.arm, leftFar ? armL : armR, aw); setLimb(near.arm, leftFar ? armR : armL, aw);
-        far.sole.setAttribute('d', polyPath((leftFar ? soleL : soleR).map(function (q) { return [q[0].toFixed(1), q[1].toFixed(1)]; })) + ' Z');
-        near.sole.setAttribute('d', polyPath((leftFar ? soleR : soleL).map(function (q) { return [q[0].toFixed(1), q[1].toFixed(1)]; })) + ' Z');
-        [far.leg, far.arm].forEach(function (L) { L.f.style.opacity = o.ghost ? 0.3 : 0.75; L.e.style.opacity = o.ghost ? 0.3 : 0.75; });
-        var shL = P[GI.left_shoulder_pitch_link], shR = P[GI.right_shoulder_pitch_link], hpL = P[GI.left_hip_pitch_link], hpR = P[GI.right_hip_pitch_link];
-        var tor = P[GI.torso_link], pel = P[GI.pelvis];
-        /* 躯干：两肩、腰（torso_link）与两髋围成一块 */
-        torso.setAttribute('d', polyPath([shL, shR, [tor[0] + (shR[0] - shL[0]) * 0.35, tor[1]], [pel[0] + (hpR[0] - hpL[0]) * 0.45, pel[1]], [pel[0] - (hpR[0] - hpL[0]) * 0.45, pel[1]], [tor[0] - (shR[0] - shL[0]) * 0.35, tor[1]]].map(function (q) { return [q[0].toFixed(1), q[1].toFixed(1)]; })) + ' Z');
-        var hw = Math.max(Math.abs(hpR[0] - hpL[0]) * 0.6, 0.06 * s);
-        pelvisBlk.setAttribute('d', polyPath([[pel[0] - hw, pel[1] - 0.03 * s], [pel[0] + hw, pel[1] - 0.03 * s], [pel[0] + hw * 0.8, pel[1] + 0.07 * s], [pel[0] - hw * 0.8, pel[1] + 0.07 * s]].map(function (q) { return [q[0].toFixed(1), q[1].toFixed(1)]; })) + ' Z');
-        var hm = P[GI.head_mocap];
-        var hc = [tor[0] + (hm[0] - tor[0]) * 0.88, tor[1] + (hm[1] - tor[1]) * 0.88];
-        head.setAttribute('cx', hc[0].toFixed(1)); head.setAttribute('cy', hc[1].toFixed(1));
-        head.setAttribute('rx', (0.075 * s).toFixed(1)); head.setAttribute('ry', (0.1 * s).toFixed(1));
-        var ang = (Math.atan2(hm[0] - tor[0], -(hm[1] - tor[1])) * 180) / Math.PI;
-        head.setAttribute('transform', 'rotate(' + ang.toFixed(1) + ' ' + hc[0].toFixed(1) + ' ' + hc[1].toFixed(1) + ')');
-        knees.forEach(function (k, i) { moveDot(k, i ? P[GI.right_knee_link] : P[GI.left_knee_link]); k.setAttribute('r', (0.028 * s).toFixed(1)); });
-        var gp = project([pose[0][0], pose[0][1], 0], cam);
-        shadow.setAttribute('cx', gp[0].toFixed(1)); shadow.setAttribute('cy', gp[1].toFixed(1));
-        shadow.setAttribute('rx', (0.26 * s).toFixed(1)); shadow.setAttribute('ry', (0.26 * s * Math.max(0.12, Math.sin(cam.pitch || 0.15))).toFixed(1));
+        var k = cam.s / M.R, a = project([pose[0][0], pose[0][1], 0], cam);
+        var f = clamp(Math.round(fr || 0), 0, M.n - 1);
+        box.setAttribute('x', (a[0] - M.ax * k).toFixed(1));
+        box.setAttribute('y', (a[1] - M.ay * k).toFixed(1));
+        box.setAttribute('width', (M.cw * k).toFixed(1));
+        box.setAttribute('height', (M.ch * k).toFixed(1));
+        if (f !== lastF) {
+          box.setAttribute('viewBox', [(f % M.cols) * M.cw, Math.floor(f / M.cols) * M.ch, M.cw, M.ch].join(' '));
+          lastF = f;
+        }
         return P;
       }
     };
@@ -2187,11 +2184,13 @@
     var top = group(s);
     rectBox(top, 30, 44, 740, 230, C_BORDER, C_SURFACE2);
     var hp = humanAt(MAP_FRAME), gp = g1At('gmr', MAP_FRAME), hip = hp[HI.Hips];
-    var camH = { yaw: -0.35, pitch: 0.1, s: 118, ox: 170, oy: 262, cx: hip[0], cy: hip[1] };
-    var camG = { yaw: -0.35, pitch: 0.1, s: 118, ox: 420, oy: 262, cx: gp[0][0], cy: gp[0][1] };
+    var camH = cam34(118, 170, 262, hip[0], hip[1]);
+    var camG = cam34(118, 420, 262, gp[0][0], gp[0][1]);
+    /* G1 的 3D 渲染垫在最底下，连线和端点画在它上面 */
+    var rob = g1Mesh(top, { set: 'gmr34' });
     var links = group(top);
-    var hum = humanSkel(top, { sw: 2.6 }), rob = g1Skel(top, {});
-    var hpts = hum.put(hp, camH), gpts = rob.put(gp, camG);
+    var hum = humanSkel(top, { sw: 2.6 });
+    var hpts = hum.put(hp, camH), gpts = rob.put(gp, camG, MAP_FRAME, true);
     top.appendChild(paint(svgText(170, 60, '人：LAFAN1（BVH）', null, 11, 'middle'), C_HUMAN));
     top.appendChild(svgText(420, 60, 'G1（MJCF）', 'demo-x-ink2', 11, 'middle'));
     var groups = [[0, 1], [2, 3, 4, 5, 6, 7], [8, 9, 10, 11, 12, 13]];
@@ -2262,6 +2261,7 @@
     brace2.appendChild(paint(svgText(x2 + (96 + 180) / 2, 394, '第 2 步：静止姿态差的那一点', null, 10.5, 'middle'), C_GOOD));
 
     function draw(t) {
+      rob.wake();
       setOpacity(top, seg(t, 0.2, 0.7));
       lines.forEach(function (ln, k) {
         var gi = groups.findIndex(function (gr) { return gr.indexOf(k) >= 0; });
@@ -2316,7 +2316,7 @@
     var SC = 190, GY = 392, OX = 170;
     var gl = ground(left, 40, 350, GY, { step: 0.25 });
     var hum = humanSkel(left, { sw: 2.6, dash: null });
-    var rob = g1Skel(left, {});
+    var rob = g1Mesh(left, { set: 'gmr34' });
     var tgtDots = KEYBODIES.map(function () { return dotAt(left, 0, 0, 4.2, C_TGT); });
     var lblL = group(left);
     var lblLeg = paint(svgText(46, 64, '', null, 11.5), C_HUMAN), lblArm = paint(svgText(46, 82, '', null, 11.5), C_HUMAN);
@@ -2336,8 +2336,8 @@
     var bad = group(s);
     rectBox(bad, 372, 204, 398, 206, C_BAD, C_SURFACE);
     bad.appendChild(paint(svgText(386, 224, '只用一个比例会怎样（本笔记跑官方代码的对照）', null, 11), C_BAD));
-    var BSC = 118, BGY = 384;
-    var bA = g1Skel(bad, {}), bB = g1Skel(bad, {});
+    var BSC = 96, BGY = 384;
+    var bA = g1Mesh(bad, { set: 'height34' }), bB = g1Mesh(bad, { set: 'legsAsArms34' });
     var bgA = hline(bad, 382, BGY, 566, BGY, C_INK2, 1.2), bgB = hline(bad, 576, BGY, 760, BGY, C_INK2, 1.2);
     void bgA; void bgB;
     var tA = group(bad), tB = group(bad);
@@ -2359,7 +2359,7 @@
       /* 根的高度跟着比例一起降：人的骨盆高 × s_root */
       var rootT = [tg[0][0], tg[0][1], raw[HI.Hips][2] * sL];
       var pose = scalePose(raw, rootT, sL, sA);
-      var cam = { yaw: -0.45, pitch: 0.1, s: SC, ox: OX, oy: GY, cx: g[0][0], cy: g[0][1] };
+      var cam = cam34(SC, OX, GY, g[0][0], g[0][1]);
       setOpacity(left, seg(t, 0.2, 0.7));
       hum.put(pose, cam);
       gl.set(g[0][0], SC, OX);
@@ -2369,7 +2369,7 @@
       /* 7.0 起：目标点 + G1 站上去 */
       tgtDots.forEach(function (d, k) { moveDot(d, project(tg[k], cam)); setOpacity(d, seg(t, 7.0, 7.4)); });
       setOpacity(lblT, seg(t, 7.0, 7.4));
-      rob.put(g, cam);
+      rob.put(g, cam, f);
       setOpacity(rob.g, seg(t, 7.8, 8.4));
       hum.g.style.opacity = 1 - 0.6 * seg(t, 7.8, 8.4);
       setOpacity(right, seg(t, 3.6, 4.1));
@@ -2377,9 +2377,9 @@
       /* 10.4 起：两个反例 */
       setOpacity(bad, seg(t, 10.4, 10.9));
       var a = g1At('height', f), b = g1At('legsAsArms', f);
-      var cA = { yaw: -0.45, pitch: 0.06, s: BSC, ox: 474, oy: BGY, cx: a[0][0], cy: a[0][1] };
-      var cB = { yaw: -0.45, pitch: 0.06, s: BSC, ox: 668, oy: BGY, cx: b[0][0], cy: b[0][1] };
-      bA.put(a, cA); bB.put(b, cB);
+      var cA = cam34(BSC, 474, BGY, a[0][0], a[0][1]);
+      var cB = cam34(BSC, 668, BGY, b[0][0], b[0][1]);
+      bA.put(a, cA, f); bB.put(b, cB, f);
       /* 绿虚线：GMR 默认时骨盆的平均高度 */
       var yRef = BGY - ST.gmr.pelvis * BSC;
       setLine(refA, 420, yRef, 530, yRef);
@@ -2416,7 +2416,7 @@
       var GY = L.y + 150;
       var gl = ground(inner, 40, 500, GY, { step: 0.1 });
       var prints = group(inner);
-      var rob = g1Skel(inner, { shadow: false });
+      var rob = g1Mesh(inner, { set: L.v + 'Side' });
       g.appendChild(paint(svgText(44, L.y + 20, L.lbl, null, 12), L.col));
       var stat = svgText(500, L.y + 20, '', 'demo-x-ink2', 11, 'end');
       g.appendChild(stat);
@@ -2472,8 +2472,8 @@
       lanes.forEach(function (L, i) {
         var g = g1At(L.v, f);
         var camX = g[0][0], OX = 250;
-        var cam = { yaw: 0, pitch: 0.04, s: SC, ox: OX, oy: L.GY, cx: camX, cy: g[0][1] };
-        L.rob.put(g, cam);
+        var cam = { yaw: CAMSIDE.yaw, pitch: CAMSIDE.pitch, s: SC, ox: OX, oy: L.GY, cx: camX, cy: g[0][1] };
+        L.rob.put(g, cam, f);
         L.gl.set(camX, SC, OX);
         setOpacity(L.g, seg(t, i ? 3.6 : 0.3, i ? 4.1 : 0.8));
         var cur = null;
@@ -2537,8 +2537,8 @@
     rectBox(left, 30, 44, 300, 366, C_BORDER, C_SURFACE2);
     var SC = 200, GY = 390, OX = 175;
     var gl = ground(left, 40, 320, GY, { step: 0.25 });
+    var rob = g1Mesh(left, { set: 's1only34' });
     var hum = humanSkel(left, { sw: 2, dash: '4 3', shadow: false });
-    var rob = g1Skel(left, {});
     var feetT = [dotAt(left, 0, 0, 5, C_GOOD), dotAt(left, 0, 0, 5, C_GOOD)];
     var handT = [dotAt(left, 0, 0, 5, C_TGT), dotAt(left, 0, 0, 5, C_TGT)];
     var handL = [hline(left, 0, 0, 0, 0, C_TGT, 1.6, '3 2'), hline(left, 0, 0, 0, 0, C_TGT, 1.6, '3 2')];
@@ -2574,11 +2574,11 @@
       var now = nowOf(t, clock);
       var f = loopAt(now);
       var g = g1At('s1only', f), tg = tgtAt('gmr', f);
-      var cam = { yaw: -0.5, pitch: 0.1, s: SC, ox: OX, oy: GY, cx: g[0][0], cy: g[0][1] };
+      var cam = cam34(SC, OX, GY, g[0][0], g[0][1]);
       setOpacity(left, seg(t, 0.2, 0.7));
       gl.set(g[0][0], SC, OX);
       hum.put(scalePose(humanAt(f), tg[0], S_LEGS, S_ARMS), cam);
-      rob.put(g, cam);
+      rob.put(g, cam, f);
       [4, 7].forEach(function (k, i) { moveDot(feetT[i], project(tg[k], cam)); });
       [10, 13].forEach(function (k, i) {
         var a = project(tg[k], cam), b = project(g[i ? GI.right_wrist_yaw_link : GI.left_wrist_yaw_link], cam);
@@ -2609,11 +2609,12 @@
     rectBox(left, 30, 44, 300, 366, C_BORDER, C_SURFACE2);
     var SC = 200, GY = 390, OX = 175;
     var gl = ground(left, 40, 320, GY, { step: 0.25 });
-    var ghost = g1Skel(left, { ghost: true, shadow: false });
-    var rob = g1Skel(left, {});
+    /* 只跑第一阶段的那台垫在下面、染成偏红的半透明，两台不重合的地方（主要是手臂）就露出来 */
+    var ghost = g1Mesh(left, { set: 's1only34', ghost: true, tint: true });
+    var rob = g1Mesh(left, { set: 'gmr34' });
     var handT = [dotAt(left, 0, 0, 5, C_TGT), dotAt(left, 0, 0, 5, C_TGT)];
     var lg = group(left);
-    lg.appendChild(svgText(44, 64, '半透明：只跑第一阶段', 'demo-x-ink2', 11));
+    lg.appendChild(paint(svgText(44, 64, '半透明（偏红）：只跑第一阶段', null, 11), C_BAD));
     lg.appendChild(svgText(44, 82, '实心：两阶段都跑完', 'demo-x-ink2', 11));
     lg.appendChild(paint(svgText(44, 100, '橙点：手的目标', null, 11), C_TGT));
     var errT = group(left);
@@ -2658,11 +2659,11 @@
       var now = nowOf(t, clock);
       var f = loopAt(now);
       var g = g1At('gmr', f), g0 = g1At('s1only', f), tg = tgtAt('gmr', f);
-      var cam = { yaw: -0.5, pitch: 0.1, s: SC, ox: OX, oy: GY, cx: g[0][0], cy: g[0][1] };
+      var cam = cam34(SC, OX, GY, g[0][0], g[0][1]);
       setOpacity(left, seg(t, 0.2, 0.7));
       gl.set(g[0][0], SC, OX);
-      ghost.put(g0, cam);
-      rob.put(g, cam);
+      ghost.put(g0, cam, f);
+      rob.put(g, cam, f);
       setOpacity(rob.g, seg(t, 1.6, 2.2));
       [10, 13].forEach(function (k, i) { moveDot(handT[i], project(tg[k], cam)); });
       setOpacity(lg, seg(t, 0.6, 1.0));
@@ -2740,7 +2741,7 @@
     var gl = ground(inner, 34, 290, GY, { step: 0.5 });
     var band = paint(svgEl('rect', { x: 34, width: 256, 'fill-opacity': 0.14 }), C_GOOD);
     inner.appendChild(band);
-    var rob = g1Skel(inner, { shadow: false });
+    var rob = g1Mesh(inner, { set: 'gmr34' });
     var bandT = paint(svgText(286, 0, '锚点高度 ± 阈值', null, 9.5, 'end'), C_GOOD);
     inner.appendChild(bandT);
     var rules = group(bottom);
@@ -2762,8 +2763,8 @@
       });
       setOpacity(bottom, seg(t, 10.4, 10.9));
       var f = loopAt(now), g = g1At('gmr', f);
-      var cam = { yaw: -0.3, pitch: 0.06, s: SC, ox: 150, oy: GY, cx: g[0][0], cy: g[0][1] };
-      rob.put(g, cam);
+      var cam = cam34(SC, 150, GY, g[0][0], g[0][1]);
+      rob.put(g, cam, f);
       gl.set(g[0][0], SC, 150);
       var tz = GY - g[GI.torso_link][2] * SC;
       band.setAttribute('y', (tz - 14).toFixed(1)); band.setAttribute('height', 28);
@@ -2995,7 +2996,9 @@
   }
 
   /* ── scene 12: 表 III：从哪一帧开始 ── */
-  /* G1 全零关节姿态（GMR 自带模型），脚底按踝横滚原点下方 3.5 cm 补 4 个角；评测时机器人从「默认姿态」出发，这里用全零姿态示意 */
+  /* 评测时机器人从「默认姿态」出发：取 BeyondMimic 代码（whole_body_tracking 的 robots/g1.py）里 G1 的 init_state ——
+     髋俯仰 −0.312、膝 0.669、踝俯仰 −0.363、肘 0.6、肩俯仰 0.2、肩横滚 ±0.2，其余 0；骨盆高 0.757 m 时最低的鞋底点贴地。
+     脚底按踝横滚原点下方 3.5 cm 补 4 个角 */
   var G1_REST = (function () {
     var p = decodeClip(CLIP_REST), out = [];
     for (var j = 0; j < GB.length; j++) out.push([p[3 * j], p[3 * j + 1], p[3 * j + 2]]);
@@ -3013,8 +3016,8 @@
     rectBox(left, 30, 44, 330, 366, C_BORDER, C_SURFACE2);
     var SC = 190, GY = 380;
     hline(left, 40, GY, 350, GY, C_BORDER, 1.4);
-    var rest = g1Skel(left, { ghost: true, shadow: false }), ref = g1Skel(left, {});
-    var lA = svgText(120, 66, '默认姿态（示意）', 'demo-x-ink2', 11, 'middle'), lB = paint(svgText(258, 66, '参考的第一帧', null, 11, 'middle'), C_TGT);
+    var rest = g1Mesh(left, { set: 'rest34', ghost: true }), ref = g1Mesh(left, { set: 'gmr34' });
+    var lA = svgText(120, 66, '默认姿态（BeyondMimic）', 'demo-x-ink2', 11, 'middle'), lB = paint(svgText(258, 66, '参考的第一帧', null, 11, 'middle'), C_TGT);
     left.appendChild(lA); left.appendChild(lB);
     var jump = pathLine(left, [], C_BAD, 2.4);
     var jumpT = paint(svgText(190, 108, '一上来就要跨过去', null, 11.5, 'middle'), C_BAD);
@@ -3045,12 +3048,12 @@
     function draw(t, clock) {
       var now = nowOf(t, clock);
       setOpacity(left, seg(t, 0.3, 0.8));
-      var camR = { yaw: -0.35, pitch: 0.1, s: SC, ox: 120, oy: GY, cx: 0, cy: 0 };
-      rest.put(G1_REST, camR);
+      var camR = cam34(SC, 120, GY, 0, 0);
+      rest.put(G1_REST, camR, 0);
       /* 参考的第一帧：拿这段走路里迈得最开的一帧 */
       var g = g1At('gmr', 24);
-      var camF = { yaw: -0.35, pitch: 0.1, s: SC, ox: 258, oy: GY, cx: g[0][0], cy: g[0][1] };
-      ref.put(g, camF);
+      var camF = cam34(SC, 258, GY, g[0][0], g[0][1]);
+      ref.put(g, camF, 24);
       setOpacity(ref.g, seg(t, 1.2, 1.7));
       setOpacity(lB, seg(t, 1.2, 1.7));
       var bounce = 0.5 + 0.5 * Math.sin(now * 3);
@@ -3288,12 +3291,13 @@
   function buildExplainerDemo(host) {
     K.explainer(host, {
       title: '十三幕动画：GMR 全流程速览',
-      sub: '约 208 秒自动播放。空格播放/暂停，← → 换幕；人和 G1 的动作是 LAFAN1 的真实片段和官方代码跑出的结果，表格与图来自论文。',
+      sub: '约 208 秒自动播放。空格播放/暂停，← → 换幕；人和 G1 的动作是 LAFAN1 的真实片段和官方代码跑出的结果（G1 按真实模型做 3D 渲染），表格与图来自论文。',
       ariaLabel: 'GMR 十三幕讲解动画',
       notes: [
         '取数依据：表 I–III、图 3、图 4 与正文的数字照抄 arXiv 2510.02252 v1；缩放比例、两张匹配表的权重、停止条件来自官方仓库的 `bvh_lafan1_to_g1.json` 与 `motion_retarget.py`（LAFAN1 的身高 1.75 m 写死在 `utils/lafan1.py` 里）。',
-        '第 1、4–8、12 幕的人和 G1 是**本笔记的复现实验**：用 mink + MuJoCo 照官方代码跑 LAFAN1 `walk1_subject1.bvh` 第 920–1003 帧（2.8 s），记录人的 22 根骨、G1 的身体位置与脚底 4 个接触点。「全身按身高缩放」「腿按手臂缩放」「只跑第一阶段」三种对照是本笔记加的，不是论文的实验；直接抄关节角是在侧视平面里照抄大腿、小腿角度的简化算法。',
-        '第 2 幕 PHC 的「每帧最低点」曲线、ProtoMotions 的路线都是示意；第 12 幕的默认姿态用 G1 全零关节姿态示意（论文只说从默认姿态出发）。第 10 幕三张图是论文图 3 的裁剪，圈出的位置按图上量的。'
+        '第 1、3–8、12 幕的人和 G1 是**本笔记的复现实验**：用 mink + MuJoCo 照官方代码跑 LAFAN1 `walk1_subject1.bvh` 第 920–1003 帧（2.8 s），记录人的 22 根骨、G1 的身体位置与脚底 4 个接触点。「全身按身高缩放」「腿按手臂缩放」「只跑第一阶段」三种对照是本笔记加的，不是论文的实验；直接抄关节角是在侧视平面里照抄大腿、小腿角度的简化算法。',
+        'G1 的 3D 外形：借 Robot Retarget Online（GMR 的浏览器版，ImChong/Robot_Retarget_Online）里 MuJoCo WASM + three.js 的模型加载与网格构建代码，读同一个 `g1_mocap_29dof.xml`，按复现实验的 qpos 用正交相机逐帧离线渲染成贴图；二维的目标点、连线按同一个相机投影叠在上面。',
+        '第 2 幕 PHC 的「每帧最低点」曲线、ProtoMotions 的路线都是示意；第 12 幕的默认姿态取 BeyondMimic 代码（whole_body_tracking 的 `robots/g1.py`）里 G1 的初始关节角（论文只说从默认姿态出发）。第 10 幕三张图是论文图 3 的裁剪，圈出的位置按图上量的。'
       ],
       scenes: GMR_SCENES
     });

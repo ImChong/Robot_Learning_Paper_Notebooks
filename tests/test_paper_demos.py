@@ -3128,3 +3128,60 @@ def test_gmr_explainer_demos_and_worked_example_share_the_paper_numbers():
     assert "上一期结尾预告：人和机器人的骨架不一样，怎样把人的动作搬到机器人身上" in narration and "下一篇讲 OmniRetarget" in narration
     assert "**下一篇**：OmniRetarget" in intro and "arxiv: '2510.02252'" in intro
     assert "OmniRetarget" not in js and "下一篇" not in js
+
+
+def _webp_size(path: Path):
+    """读 webp 的画布尺寸（带透明通道的贴图是 VP8X：第 24–29 字节是宽、高减一，小端 24 位）。"""
+    head = path.read_bytes()[:30]
+    assert head[:4] == b"RIFF" and head[8:12] == b"WEBP" and head[12:16] == b"VP8X", path.name
+    return int.from_bytes(head[24:27], "little") + 1, int.from_bytes(head[27:30], "little") + 1
+
+
+def test_gmr_3d_sprite_sheets_match_their_metadata_and_cameras():
+    """GMR：第 3–8、12 幕的 3D G1 是离线渲染的贴图表（Robot_Retarget_Online 的模型加载代码），
+
+    gmr.js 的 `G1_3D` 记着每张表的格子大小、列数、帧数与渲染相机。格子对不上图，裁出来的就是半个机器人；
+    相机对不上 `CAM34` / `CAMSIDE`，二维的目标点、连线就叠不到 3D 的机身上。
+    """
+    js = (ROOT / "assets/js/demos/gmr.js").read_text(encoding="utf-8")
+    num = r"(-?[\d.]+)"
+    sheets = {
+        m.group(1): {"file": m.group(2), "R": float(m.group(3)), "yaw": float(m.group(4)), "pitch": float(m.group(5)),
+                     "cw": int(m.group(6)), "ch": int(m.group(7)), "cols": int(m.group(8)), "n": int(m.group(9)),
+                     "ax": int(m.group(10)), "ay": int(m.group(11))}
+        for m in re.finditer(
+            rf"(\w+): \{{ file: '([\w.]+)', R: {num}, yaw: {num}, pitch: {num}, cw: (\d+), ch: (\d+), cols: (\d+), n: (\d+), ax: (\d+), ay: (\d+) \}}",
+            js)
+    }
+    assert set(sheets) == {"gmr34", "s1only34", "height34", "legsAsArms34", "gmrSide", "legsAsArmsSide", "rest34"}
+    cam34 = re.search(rf"var CAM34 = \{{ yaw: {num}, pitch: {num} \}}, CAMSIDE = \{{ yaw: {num}, pitch: {num} \}};", js)
+    side = {"yaw": float(cam34.group(3)), "pitch": float(cam34.group(4))}
+    three_q = {"yaw": float(cam34.group(1)), "pitch": float(cam34.group(2))}
+    sprite_dir = ROOT / "assets/img/papers/gmr/g1_3d"
+    total = 0
+    for sid, s in sheets.items():
+        path = sprite_dir / s["file"]
+        assert path.is_file(), s["file"]
+        total += path.stat().st_size
+        rows = math.ceil(s["n"] / s["cols"])
+        assert _webp_size(path) == (s["cw"] * s["cols"], s["ch"] * rows), sid
+        assert 0 < s["ax"] < s["cw"] and 0 < s["ay"] <= s["ch"], sid
+        cam = side if sid.endswith("Side") else three_q
+        assert (s["yaw"], s["pitch"]) == (cam["yaw"], cam["pitch"]), sid
+        # 每种设定都是复现片段的 84 帧（默认姿态只有一帧）
+        assert s["n"] == (1 if sid == "rest34" else 84), sid
+    assert {p.name for p in sprite_dir.iterdir()} == {s["file"] for s in sheets.values()}
+    assert total < 1.7e6, "贴图按幕懒加载，但总量也别失控"
+    # 每台 3D G1 都用表里有的贴图；侧视那两条跑道按 `L.v + 'Side'` 拼名字
+    used = set(re.findall(r"g1Mesh\(\w+, \{ set: '(\w+)'", js))
+    assert used <= set(sheets) and used >= {"gmr34", "s1only34", "height34", "legsAsArms34", "rest34"}
+    assert "g1Mesh(inner, { set: L.v + 'Side' })" in js
+    assert re.search(r"v: 'gmr', y: 44.*v: 'legsAsArms', y: 230", js)
+    # 胶囊画法已经撤掉，用到 3D 贴图的相机一律走 cam34() / CAMSIDE
+    assert "g1Skel" not in js
+    assert js.count("cam34(") >= 10 and "yaw: CAMSIDE.yaw, pitch: CAMSIDE.pitch" in js
+    # 第 12 幕的默认姿态：BeyondMimic robots/g1.py 的 init_state（不是全零关节）
+    rest = _gmr_clip(js, "REST", 21)[0]
+    assert abs(rest[0][2] - 0.757) < 0.002
+    knee, hip = rest[2], rest[1]
+    assert knee[0] - hip[0] > 0.05  # 屈膝：膝盖在髋的前面
