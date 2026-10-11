@@ -1418,18 +1418,30 @@
     }
     var invCam = { yaw: 0.42, pitch: 0.4, s: 48, ox: 180, oy: 205, cx: INV_C[0] + INV_D[0] / 2, cz: INV_C[2] + INV_D[2] / 2 };
     var inv2 = group(L);
-    /* 共用的地面：世界里固定的 0.5 m 方格 */
+    /* 共用的地面：世界里固定的 0.5 m 方格。线段先裁到面板里（视频按元素外框取景，clip-path 裁掉的部分也会被量进去） */
     var invGrid = group(inv2);
-    invGrid.setAttribute('clip-path', 'url(#' + clipId + ')');
+    function clipToPanel(p, q) {
+      var t0 = 0, t1 = 1, dx = q[0] - p[0], dy = q[1] - p[1];
+      var lim = [[-dx, p[0] - 32], [dx, 328 - p[0]], [-dy, p[1] - 40], [dy, 298 - p[1]]];
+      for (var i = 0; i < 4; i++) {
+        var pp = lim[i][0], qq = lim[i][1];
+        if (pp === 0) {
+          if (qq < 0) return null;
+        } else {
+          var r = qq / pp;
+          if (pp < 0) t0 = Math.max(t0, r);
+          else t1 = Math.min(t1, r);
+        }
+      }
+      return t0 < t1 ? [p[0] + t0 * dx, p[1] + t0 * dy, p[0] + t1 * dx, p[1] + t1 * dy] : null;
+    }
+    function gridLine(a, b) {
+      var c = clipToPanel(project(a, invCam), project(b, invCam));
+      if (c) hline(invGrid, c[0], c[1], c[2], c[3], C_GRID, 1);
+    }
     var GX0 = INV_C[0] - 1.5, GX1 = INV_C[0] + INV_D[0] + 1.5, GZ0 = INV_C[2] - 1.5, GZ1 = INV_C[2] + INV_D[2] + 1.5;
-    for (var gx = GX0; gx <= GX1 + 1e-6; gx += 0.5) {
-      var ga = project([gx, 0, GZ0], invCam), gb = project([gx, 0, GZ1], invCam);
-      hline(invGrid, ga[0], ga[1], gb[0], gb[1], C_GRID, 1);
-    }
-    for (var gz = GZ0; gz <= GZ1 + 1e-6; gz += 0.5) {
-      var gc = project([GX0, 0, gz], invCam), gd = project([GX1, 0, gz], invCam);
-      hline(invGrid, gc[0], gc[1], gd[0], gd[1], C_GRID, 1);
-    }
+    for (var gx = GX0; gx <= GX1 + 1e-6; gx += 0.5) gridLine([gx, 0, GZ0], [gx, 0, GZ1]);
+    for (var gz = GZ0; gz <= GZ1 + 1e-6; gz += 0.5) gridLine([GX0, 0, gz], [GX1, 0, gz]);
     /* 两份骨盆在地上走过的路：同一条路，挪了位置、换了方向 */
     var trA = [], trB = [];
     for (var ft = 0; ft < CLIP.rows; ft += 2) {
@@ -4358,7 +4370,7 @@
     },
     {
       title: '一帧 = ' + DIM + ' 个数',
-      dur: 16,
+      dur: 18, // 结尾两份发球在 15.0 s 才淡入，多留 2 s 给网页播放器
       build: buildSceneFeature,
       cues: [
         { at: 0.2, s: '每帧不存 22 个关节的坐标，而是一个 **' + DIM + ' 维**向量。' },
@@ -4473,7 +4485,7 @@
   function buildExplainerDemo(host) {
     K.explainer(host, {
       title: '十二幕动画：HumanML3D 全流程速览',
-      sub: '约 192 秒自动播放。空格播放/暂停，← → 换幕。骨架是官方仓库自带片段 012314 的真实 22 关节数据，长度分布是从补充材料图 6 量出来的，统计、维度和比例都是现算的。',
+      sub: '约 194 秒自动播放。空格播放/暂停，← → 换幕。骨架是官方仓库自带片段 012314 的真实 22 关节数据，长度分布是从补充材料图 6 量出来的，统计、维度和比例都是现算的。',
       ariaLabel: 'HumanML3D 十二幕讲解动画',
       notes: [
         '取数依据：第 2 幕的来源条按官方仓库 `index.csv` 的 `source_path` 计数；第 3 幕的四个倍数由论文 Table 1 现除（' + thou(HML.motions) + ' / ' + thou(KIT.motions) + ' = ' + fmt(RATIO.motions, 2) + ' 等）；第 4 幕的骨架、热图和触地条来自 `new_joints/' + CLIP.id + '.npy` 与 `new_joint_vecs/' + CLIP.id + '.npy`（热图按 `Mean.npy` / `Std.npy` 做了 Z-score）。',
