@@ -4404,8 +4404,8 @@
   function buildVideoDemo(host) {
     K.video(host, {
       title: '配音讲解视频：HumanML3D 十二幕全流程',
-      sub: '@@VIDEO_SUB@@',
-      size: '@@VIDEO_SIZE@@',
+      sub: '10 分 51 秒竖屏视频（1080×1920），中文配音 + 字幕。画面就是上面的十二幕动画，旁白把每一幕讲细；适合手机上看或转发。',
+      size: '11.7 MB',
       fileName: 'HumanML3D_讲解视频.mp4'
     });
   }

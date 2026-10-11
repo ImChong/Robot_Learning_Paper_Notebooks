@@ -1997,11 +1997,11 @@ def _hml_rprec_toy(sigma: float, q: float, trials: int, seed: int) -> float:
         a = [rng.gauss(0, 1) for _ in range(16)]
         t = [x + 0.6 * rng.gauss(0, 1) for x in a]
         m = [x + sigma * rng.gauss(0, 1) for x in a]
-        dt = sum((u - v) ** 2 for u, v in zip(m, t))
+        dt = sum((u - v) ** 2 for u, v in zip(m, t, strict=True))
         rank = 0
         for _ in range(31):
             same = rng.random() < q
-            d = sum(((x if same else rng.gauss(0, 1)) + 0.6 * rng.gauss(0, 1) - y) ** 2 for x, y in zip(a, m))
+            d = sum(((x if same else rng.gauss(0, 1)) + 0.6 * rng.gauss(0, 1) - y) ** 2 for x, y in zip(a, m, strict=True))
             rank += d < dt
         hits += rank == 0
     return hits / trials
