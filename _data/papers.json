@@ -4983,7 +4983,7 @@
         "has_open_source": true,
         "summary_zh": "HumanML3D 把 AMASS 与 HumanAct12 的动捕统一到 20 fps、同一副骨架与朝向，再请人每段写 3 句话，得到 14,616 段动作 / 44,970 条描述 / 28.59 小时；论文同时给出两阶段生成方法（t…",
         "explainer_scenes": 12,
-        "video_seconds": 651,
+        "video_seconds": 659,
         "published_date_zh": "2022年6月（CVPR 2022）",
         "published_date_en": "Jun 2022 (CVPR 2022)",
         "zhname": "HumanML3D：从文本生成多样且自然的 3D 人体动作",
