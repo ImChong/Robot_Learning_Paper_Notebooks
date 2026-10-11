@@ -41,15 +41,15 @@
         "13_Physics-Based_Animation",
         "14_Human_Motion"
       ],
-      "last_module": "07_Teleoperation",
-      "last_index": 594,
-      "last_title": "Beyond Retargeting: Low-Latency and Robust Humanoid Whole-Body Teleoperation with Learned Atomic Motion Primitives (arXiv:2610.07891)",
-      "next_module": "08_Navigation",
-      "last_completed_date": "2026-10-10",
-      "note": "本日轮转到 07_Teleoperation。_data/papers.json 中 Teleoperation 条目均已有笔记，上游 awesome-humanoid-robot-learning Teleoperation 章节中尚无笔记的最新论文是 Beyond Retargeting (arXiv:2610.07891, 2026-10-06, 港科大 / 浙大 / 腾讯 Robotics X / 湖南大学)，新增为 PROGRESS #594。特权 MoE 教师(PPO) → 只看人体坐标系描述的码本学生，部署时免重定向一次前向 0.604 ms；因子化类别码本(128×12)把带噪/部分/OOD 输入投影到全身原型，关键点噪声 0.30 m SR 0.949 vs MLP 0.868；G1 真机接 VR/动捕/视频/文本。论文未开源，仅含整体流程 mermaid。",
-      "last_date": "2026-10-10",
+      "last_module": "08_Navigation",
+      "last_index": 595,
+      "last_title": "TAPNAV: Humanoid Navigation through Tactile Active Perception (arXiv:2610.10748)",
+      "next_module": "09_State_Estimation",
+      "last_completed_date": "2026-10-11",
+      "note": "本日轮转到 08_Navigation。_data/papers.json 中 Navigation 条目均已有笔记，上游 awesome-humanoid-robot-learning Navigation 章节中尚无笔记的最新论文是 TAPNAV (arXiv:2610.10748, 2026-10-07, Georgia Tech LIDAR / Ye Zhao 组)，新增为 PROGRESS #595。无视觉人形导航：G1 双手触觉末端主动探测，粒子滤波 SE(2) 信念 + 不确定度有界约束 A* + 期望信息增益(含无接触结果)选探测动作 + 上下身解耦 RL 全身控制；MuJoCo 四图平均 SR 95% vs Random-touch 77.5% / Sweep-touch 38.8% / Odometry-only 22.5%。代码 coming soon，仅含整体流程 mermaid。",
+      "last_date": "2026-10-11",
       "next_candidate": null,
-      "last_completed": "Beyond Retargeting: Low-Latency and Robust Humanoid Whole-Body Teleoperation with Learned Atomic Motion Primitives (arXiv:2610.07891)"
+      "last_completed": "TAPNAV: Humanoid Navigation through Tactile Active Perception (arXiv:2610.10748)"
     },
     "last_summary_index": 532,
     "last_summary_date": "2026-09-18",
@@ -1695,6 +1695,17 @@
         "project_page": "",
         "code": "论文未给出代码链接，暂未开源",
         "source": "⏳ 暂未开源(故无源码时序图) · 特权 MoE 教师蒸馏为免重定向码本学生，因子化类别码本(128×12)编码器—估计器匹配做 OOD 投影 · IsaacSim 训练 / MjLab 评测 · Unitree G1 · 港科大 / 浙大 / 腾讯 Robotics X / 湖南大学"
+      },
+      {
+        "date": "2026-10-11",
+        "index": 595,
+        "title": "TAPNAV: Humanoid Navigation through Tactile Active Perception",
+        "folder": "papers/08_Navigation/TAPNAV__Humanoid_Navigation_through_Tactile_Active_Perception",
+        "module": "08_Navigation",
+        "arxiv": "2610.10748",
+        "project_page": "https://tapnav.github.io/TAPNAV-Project/",
+        "code": "项目主页标注 Code coming soon，暂未开源",
+        "source": "⏳ 暂未开源(故无源码时序图) · 触觉末端(SensX 160)主动探测 + 粒子滤波 SE(2) 信念 + 约束 A* + EIG 选探测动作 + 上下身解耦 RL 全身控制 · MuJoCo + Unitree G1 · Georgia Tech"
       }
     ],
     "last_completed_index": 588,
