@@ -1452,8 +1452,8 @@
     var heatCap = svgText(HM.x + HM.w / 2, HM.y + HM.h + 12, '片段 ' + CLIP.id + '：' + CLIP.rows + ' 帧 × ' + DIM + ' 维 = ' + thou(CLIP_NUMS) + ' 个数', 'demo-x-ink2', 8.6, 'middle');
     s.appendChild(heatCap);
     var invar = group(s);
-    invar.appendChild(paint(svgText(HM.x + HM.w + 8, HM.y + 112, '人在哪、面朝哪', null, 9), C_GOOD));
-    invar.appendChild(paint(svgText(HM.x + HM.w + 8, HM.y + 126, '都不进特征', null, 9), C_GOOD));
+    invar.appendChild(paint(svgText(HM.x + HM.w + 8, HM.y + 112, '换个位置、换个朝向', null, 9), C_GOOD));
+    invar.appendChild(paint(svgText(HM.x + HM.w + 8, HM.y + 126, '263 维都一样', null, 9), C_GOOD));
     var playhead = hline(s, 0, HM.y - 2, 0, HM.y + HM.h + 2, C_INK, 1.6);
     var bandBox = hiBox(s, HM.x - 1, HM.y, HM.w + 2, 6, C_BAD, 1.8);
 
