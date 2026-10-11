@@ -4106,8 +4106,7 @@
       var bar = paint(svgEl('rect', { x: S12_ABL_X0, y: y + 5, width: 0, height: 10, rx: 2 }), tone);
       bar.style.opacity = 0.85;
       ablG.appendChild(bar);
-      var tip = dotAt(ablG, S12_ABL_X0, y + 10, 3.4, tone);
-      return { a: a, bar: bar, tip: tip, val: val, drop: drop, at: [0.8, 1.6, 2.4, 2.9][k], dur: k < 2 ? 0.6 : 0.35 };
+      return { a: a, bar: bar, val: val, drop: drop, at: [0.8, 1.6, 2.4, 2.9][k], dur: k < 2 ? 0.6 : 0.35 };
     });
     var ablFoot = svgText(A.x + 10, A.y + A.h - 9, 'SnC = snippet code · Att = 词注意力', 'demo-x-mut', 8.5);
     ablG.appendChild(ablFoot);
@@ -4256,8 +4255,6 @@
         var u = ease(seg(t, r.at, r.at + r.dur)), w = r.a.drop * S12_ABL_PX * u;
         r.bar.setAttribute('x', (S12_ABL_X0 - w).toFixed(1));
         setW(r.bar, w);
-        r.tip.setAttribute('cx', (S12_ABL_X0 - w).toFixed(1));
-        setOpacity(r.tip, seg(t, r.at, r.at + 0.1));
         setOpacity(r.val, seg(t, r.at + r.dur - 0.1, r.at + r.dur + 0.2));
         setOpacity(r.drop, seg(t, r.at + r.dur - 0.1, r.at + r.dur + 0.2));
       });
