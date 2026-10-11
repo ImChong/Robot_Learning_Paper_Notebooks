@@ -3110,6 +3110,18 @@
     "display_name": "Navigation",
     "papers": [
       {
+        "title": "TAPNAV: Humanoid Navigation through Tactile Active Perception",
+        "path": "papers/08_Navigation/TAPNAV__Humanoid_Navigation_through_Tactile_Active_Perception/TAPNAV__Humanoid_Navigation_through_Tactile_Active_Perception.md",
+        "url": "/papers/08_Navigation/TAPNAV__Humanoid_Navigation_through_Tactile_Active_Perception/TAPNAV__Humanoid_Navigation_through_Tactile_Active_Perception.html",
+        "dir": "TAPNAV__Humanoid_Navigation_through_Tactile_Active_Perception",
+        "arxiv": "2610.10748",
+        "summary_zh": "TAPNAV 给 G1 两只手装上触觉末端（TouchTronix SensX 160，20 × 8 taxel），把「戳一下墙」当成主动的感知动作：粒子滤波维护 SE(2) 位姿信念，约束 A\\* 只接受预测不确定度不超过 (0.18…",
+        "published_date_zh": "2026年10月7日（arXiv v1）",
+        "published_date_en": "Oct 7, 2026 (arXiv v1)",
+        "zhname": "TAPNAV：基于触觉主动感知的人形机器人导航",
+        "zh_title": "TAPNAV：基于触觉主动感知的人形机器人导航"
+      },
+      {
         "title": "TANGO: Humanoid Navigation in Cluttered Environments with a Whole-Body Vision-Language-Action Model",
         "path": "papers/08_Navigation/TANGO__Whole-Body_Vision-Language_Navigation_in_Cluttered_Environments/TANGO__Whole-Body_Vision-Language_Navigation_in_Cluttered_Environments.md",
         "url": "/papers/08_Navigation/TANGO__Whole-Body_Vision-Language_Navigation_in_Cluttered_Environments/TANGO__Whole-Body_Vision-Language_Navigation_in_Cluttered_Environments.html",
