@@ -31,6 +31,15 @@
       return '';
     }
   })();
+  /* 第 2、5、6、8 幕直接用论文的图（arXiv:2502.00893 的图 1、7、10、11 裁剪），放在 assets/img/papers/toddlerbot/ */
+  var PAPER_IMG_BASE = (function () {
+    var cs = document.currentScript;
+    try {
+      return cs && cs.src ? new URL('../../img/papers/toddlerbot/', cs.src).href : '';
+    } catch (e) {
+      return '';
+    }
+  })();
   var el = K.el,
     fmt = K.fmt,
     clamp = K.clamp,
@@ -546,6 +555,16 @@
     return { g: g, w: w, h: h };
   }
 
+  /* 论文原图：白底圆角卡片里放图（线稿在深色主题下也看得清），下面一行小字写图号。
+     返回 { g, x, y, w, h, px(u, v) }：px 把图内的相对坐标（0–1）换成画布坐标，用来在图上标注、高亮 */
+  function paperFig(parent, file, x, y, w, h, caption, opts) {
+    var o = opts || {}, g = group(parent), pad = o.pad == null ? 3 : o.pad;
+    if (!o.bare) g.appendChild(svgEl('rect', { x: x, y: y, width: w, height: h, rx: 5, fill: '#ffffff', stroke: 'none' }));
+    g.appendChild(svgEl('image', { href: PAPER_IMG_BASE + file, x: (x + pad).toFixed(1), y: (y + pad).toFixed(1), width: (w - 2 * pad).toFixed(1), height: (h - 2 * pad).toFixed(1), preserveAspectRatio: 'xMidYMid meet' }));
+    if (caption) g.appendChild(svgText(o.capX == null ? x + w / 2 : o.capX, o.capY == null ? y + h + 11 : o.capY, caption, 'demo-x-mut', 8.5, o.capAnchor || 'middle'));
+    return { g: g, x: x, y: y, w: w, h: h, px: function (u, v) { return [x + pad + u * (w - 2 * pad), y + pad + v * (h - 2 * pad)]; } };
+  }
+
   /* 正视的 ToddlerBot 示意（火柴人式方块身体）：头、躯干、两条 3 段的手臂（肩—肘—腕）、两条 3 段的腿（髋—膝—踝）。
      S 是身高对应的像素数（0.56 m）。put(cx, cyTop, pose)：pose.armA / armB = [肩外展角 rad, 肘弯角 rad]，
      pose.crouch 0–1 让膝弯曲、身体下沉，pose.lean 躯干侧倾。返回各关节的像素坐标，第 2、5 幕用来标自由度和卡具。 */
@@ -813,7 +832,7 @@
 
   /* ── scene 2: 30 个自由度与三种传动 ── */
   function buildSceneDof() {
-    var s = sceneSvg('左边是正视的 ToddlerBot 示意，关节一组组亮起来，旁边的小圆牌写着每处几个自由度：肩 3、肘 2、腕 2、髋 3、膝 1、踝 2、颈 2、腰 2，合计 30；右边三个小机构在动：一对等大的直齿轮把转动挪到另一根轴、一对大小齿轮把力矩放大一倍，两个电机经耦合锥齿轮一起驱动腰的偏航和横滚，一条腿上电机放在大腿高处、经平行连杆带动膝，头里的电机带着颈俯仰');
+    var s = sceneSvg('左边是正视的 ToddlerBot 示意，关节一组组亮起来，关节圈里写着每处几个自由度：肩 3、肘 2、腕 2、髋 3、膝 1、踝 2、颈 2、腰 2，合计 30；右边三种传动各配一张论文图 7 的小图：一对等大的直齿轮把转动挪到另一根轴、一对大小齿轮把力矩放大一倍；照图 7(b) 重画的耦合锥齿轮，底下两个电机各带一个小锥齿轮咬住左右侧齿轮，同向转时顶齿轮自转是偏航，反向转时顶齿轮整体翻是横滚；一条腿上电机放在大腿高处、经平行连杆带动膝，头里的电机带着颈俯仰');
     s.appendChild(svgText(30, 28, '30 个主动自由度：7 + 7 + 6 + 6 + 2 + 2，三种传动把电机塞进小身体', 'demo-x-ink2', 13.5));
     var left = group(s);
     rectBox(left, 30, 44, 250, 360, C_BORDER, C_SURFACE2);
@@ -865,8 +884,12 @@
       return { g: g, cx: cx, cy: cy };
     }
     function spin(gr, deg) { gr.g.setAttribute('transform', 'rotate(' + deg.toFixed(1) + ' ' + gr.cx + ' ' + gr.cy + ')'); }
-    function mujocoTag(parent, y, str) { var n = svgText(756, y, 'MuJoCo：' + str, 'demo-x-good', 9.5, 'end'); parent.appendChild(n); return n; }
+    function mujocoTag(parent, y, str) { var n = svgText(668, y, 'MuJoCo：' + str, 'demo-x-good', 9.5, 'end'); parent.appendChild(n); return n; }
     var tags = [];
+    /* 每种传动右边放论文图 7 的对应小图（a / b / c），左边是会动的示意 */
+    var figA = paperFig(right, 'fig7a_spur.webp', 672, 98, 88, 70, '论文图 7(a)');
+    var figB = paperFig(right, 'fig7b_bevel.webp', 672, 212, 88, 72, '论文图 7(b)');
+    var figC = paperFig(right, 'fig7c_linkage.webp', 704, 324, 40, 76, '论文图 7(c)', { capX: 698, capY: 396, capAnchor: 'end' });
     /* ① 直齿轮：左一对等大（1:1，只把转动挪到另一根轴，副轴装轴承），右一对小带大（2:1，力矩 × 2、转速 ÷ 2） */
     var spurG = group(right);
     spurG.appendChild(paint(svgText(310, 92, '① 直齿轮（手臂、夹爪、髋偏航）', null, 11), C_ACCENT));
@@ -880,52 +903,73 @@
     var gc = gear(spurG, 468, 140, 12, C_ACCENT, 6), gd = gear(spurG, 468 + 41, 140, 24, C_ACCENT, 12);
     var linkB = hline(spurG, 0, 0, 0, 0, C_INK2, 3);
     spurG.appendChild(svgText(492, 184, '2 : 1 力矩 × 2', 'demo-x-ink2', 10, 'middle'));
-    spurG.appendChild(svgText(560, 136, '副轴的轴承替电机扛横向力：', 'demo-x-mut', 9.5));
-    spurG.appendChild(svgText(560, 152, 'XC330 的输出轴只有衬套，会晃', 'demo-x-mut', 9.5));
-    /* ② 耦合锥齿轮：腰的两个自由度 = 两个电机转角的和与差；两个电机同时出力，每个轴上都是两份力矩 */
+    spurG.appendChild(svgText(556, 134, '轴承替电机扛横向力', 'demo-x-mut', 9.5));
+    spurG.appendChild(svgText(556, 150, 'XC330 输出轴只有衬套', 'demo-x-mut', 9.5));
+    /* ② 耦合锥齿轮（照图 7(b) 重画）：底下两个同向安装的电机各带一个小锥齿轮，分别咬住左右两个侧锥齿轮；
+       顶上的大锥齿轮同时咬住两个侧齿轮，上半身装在它上面。两个电机同向转 → 两个侧齿轮反向转 → 顶齿轮绕竖轴自转（偏航）；
+       反向转 → 两个侧齿轮同向转 → 顶齿轮被带着绕侧齿轮的轴翻（横滚）。方向与官方代码 waist_fk 一致：
+       偏航 = 5/24 ·（m1 + m2），横滚 = 7/24 ·（m2 − m1）（toddlerbot/sim/robot.py、descriptions/default.yml） */
     var bevG = group(right);
-    bevG.appendChild(paint(svgText(310, 204, '② 耦合锥齿轮（腰）', null, 11), C_WARN));
-    tags.push(mujocoTag(bevG, 204, '固定肌腱'));
-    function motorIcon(parent, cx, cy, lab) {
-      var g = group(parent);
-      g.appendChild(paint(svgEl('rect', { x: cx - 22, y: cy - 11, width: 44, height: 22, rx: 4, 'stroke-width': 1.3 }), C_SURFACE2, C_WARN));
-      g.appendChild(svgText(cx - 7, cy + 3.5, lab, 'demo-x-ink2', 9, 'middle'));
-      g.appendChild(paint(svgEl('circle', { cx: cx + 14, cy: cy, r: 5.5, fill: 'none', 'stroke-width': 1.2 }), null, C_WARN));
-      var mark = hline(g, cx + 14, cy, cx + 14, cy - 5.5, C_WARN, 1.8);
-      return { mark: mark, cx: cx + 14, cy: cy };
+    bevG.appendChild(paint(svgText(310, 206, '② 耦合锥齿轮（腰）', null, 11), C_WARN));
+    tags.push(mujocoTag(bevG, 206, '固定肌腱'));
+    var BA = 248, SL = 340, SR = 452, TOPC = [396, 222];
+    var rollAxis = hline(bevG, 322, BA, 476, BA, C_MUTED, 1, '4 3');
+    var yawAxis = hline(bevG, TOPC[0], 208, TOPC[0], 236, C_MUTED, 1, '4 3');
+    function ell(parent, stroke, w) { var e = paint(svgEl('ellipse', { fill: 'none', 'stroke-width': w || 1.3 }), null, stroke); parent.appendChild(e); return e; }
+    function setEll(e, cx, cy, rx, ry) { e.setAttribute('cx', cx.toFixed(1)); e.setAttribute('cy', cy.toFixed(1)); e.setAttribute('rx', Math.abs(rx).toFixed(1)); e.setAttribute('ry', Math.abs(ry).toFixed(1)); }
+    /* 一圈齿：外圈（齿顶）到内圈（锥面靠里那圈）之间画 n 根短线，相位 phase 就是齿轮转过的角度 */
+    function teeth(o, i, n, phase, frontOnly) {
+      var d = '';
+      for (var k = 0; k < n; k++) {
+        var f = phase + (2 * Math.PI * k) / n;
+        if (frontOnly && Math.sin(f) < -0.05) continue;
+        d += 'M ' + (o[0] + o[2] * Math.cos(f)).toFixed(1) + ' ' + (o[1] + o[3] * Math.sin(f)).toFixed(1) + ' L ' + (i[0] + i[2] * Math.cos(f)).toFixed(1) + ' ' + (i[1] + i[3] * Math.sin(f)).toFixed(1) + ' ';
+      }
+      return d || 'M 0 0';
     }
-    var mo1 = motorIcon(bevG, 344, 228, '电机 1'), mo2 = motorIcon(bevG, 344, 258, '电机 2');
-    pathLine(bevG, [[366, 228], [404, 228], [420, 240]], C_WARN, 1.4); pathLine(bevG, [[366, 258], [404, 258], [420, 246]], C_WARN, 1.4);
-    /* 腰：正视的上半身方块，横滚 = 整块在画面内转，偏航 = 胸前的标记左右滑（绕竖轴转） */
-    var waistG = group(bevG);
-    var torsoW = paint(svgEl('rect', { x: -16, y: -26, width: 32, height: 26, rx: 3, 'stroke-width': 1.4 }), C_SURFACE2, C_WARN);
-    waistG.appendChild(torsoW);
-    var yawMark = paint(svgEl('rect', { x: -3, y: -18, width: 6, height: 10, rx: 1.5 }), C_WARN);
-    waistG.appendChild(yawMark);
-    waistG.appendChild(paint(svgEl('circle', { cx: 0, cy: 0, r: 3.2 }), C_WARN));
-    var yawT = paint(svgText(470, 230, '偏航', null, 10), C_WARN), rollT = paint(svgText(470, 254, '横滚', null, 10), C_WARN);
-    bevG.appendChild(yawT); bevG.appendChild(rollT);
-    var yawBar = hbar(bevG, 500, 222, 9, C_WARN, 0.75), rollBar = hbar(bevG, 500, 246, 9, C_WARN, 0.75);
-    /* 论文只说两个同向安装的电机驱动两个互相垂直的自由度，没说哪个轴对应和、哪个对应差，所以标「示意」 */
-    bevG.appendChild(svgText(600, 238, '两个电机转角的和 / 差', 'demo-x-mut', 9.5));
-    bevG.appendChild(svgText(600, 252, '（哪个轴对应哪个是示意）', 'demo-x-mut', 8.5));
+    function bevelGear(parent) {
+      var g = group(parent);
+      var face = paint(svgEl('path', { 'stroke-width': 1.1, fill: 'none' }), null, C_WARN);
+      var outer = ell(g, C_WARN, 1.6), inner = ell(g, C_WARN, 1.1);
+      g.appendChild(face);
+      return { g: g, outer: outer, inner: inner, face: face };
+    }
+    var sideL = bevelGear(bevG), sideR = bevelGear(bevG), topG = bevelGear(bevG);
+    setEll(sideL.outer, SL, BA, 13, 28); setEll(sideL.inner, SL + 10, BA, 8, 17);
+    setEll(sideR.outer, SR, BA, 13, 28); setEll(sideR.inner, SR - 10, BA, 8, 17);
+    /* 小锥齿轮与电机（同向安装，并排在底下） */
+    /* 小锥齿轮顶端伸进侧齿轮下沿的锥面里（图 7(b) 里两个小齿轮就在侧齿轮正下方偏内） */
+    var PIN = [[357, 282], [435, 282]];
+    var motorDots = PIN.map(function (pp, k) {
+      bevG.appendChild(paint(svgEl('path', { d: 'M ' + (pp[0] - 10) + ' ' + pp[1] + ' L ' + (pp[0] - 5) + ' ' + (pp[1] - 14) + ' L ' + (pp[0] + 5) + ' ' + (pp[1] - 14) + ' L ' + (pp[0] + 10) + ' ' + pp[1] + ' Z', 'stroke-width': 1.2 }), C_SURFACE2, C_WARN));
+      bevG.appendChild(paint(svgEl('rect', { x: pp[0] - 13, y: pp[1], width: 26, height: 12, rx: 2.5, 'stroke-width': 1.2 }), C_SURFACE2, C_WARN));
+      bevG.appendChild(svgText(pp[0], pp[1] + 9.5, 'M' + (k + 1), 'demo-x-ink2', 8, 'middle'));
+      var ring = ell(bevG, C_WARN, 0.9); setEll(ring, pp[0], pp[1] - 6, 11, 3); ring.style.opacity = 0.6;  // 转圈的点不压电机框里的 M1 / M2
+      return dotAt(bevG, pp[0], pp[1] - 6, 2.4, C_WARN);
+    });
+    var yawLab = paint(svgText(458, 218, '偏航', null, 9.5), C_WARN), rollLab = paint(svgText(480, 252, '横滚', null, 9.5), C_WARN);
+    bevG.appendChild(yawLab); bevG.appendChild(rollLab);
+    var modeG = group(bevG);
+    var modeA = svgText(512, 230, '同向转 → 顶齿轮自转 = 偏航', 'demo-x-ink2', 9.5), modeB = svgText(512, 246, '反向转 → 顶齿轮整体翻 = 横滚', 'demo-x-ink2', 9.5);
+    modeG.appendChild(modeA); modeG.appendChild(modeB);
+    modeG.appendChild(svgText(512, 262, '（方向按图 7(b) 和官方代码 waist_fk）', 'demo-x-mut', 8.5));
     var twoG = group(bevG);
-    twoG.appendChild(paint(svgText(310, 284, '一个 XC330 带不动上半身', null, 9.5), C_BAD));
-    twoG.appendChild(paint(svgText(436, 284, '→ 两个合力就够', null, 9.5), C_GOOD));
+    twoG.appendChild(paint(svgText(512, 282, '一个 XC330 带不动上半身', null, 9.5), C_BAD));
+    twoG.appendChild(paint(svgText(512, 297, '→ 每个轴上两个电机合力', null, 9.5), C_GOOD));
     /* ③ 平行连杆：电机放在大腿高处，曲柄与膝处的摇杆等长同角，连杆和大腿平行；小腿固连在摇杆上 */
     var linkG = group(right);
-    linkG.appendChild(paint(svgText(310, 304, '③ 平行连杆（膝、颈俯仰）', null, 11), C_GOOD));
-    tags.push(mujocoTag(linkG, 304, '焊接约束'));
-    var HIP = [352, 314], MOT = [352, 322], KNEE = [352, 352];
+    linkG.appendChild(paint(svgText(310, 318, '③ 平行连杆（膝、颈俯仰）', null, 11), C_GOOD));
+    tags.push(mujocoTag(linkG, 318, '焊接约束'));
+    var HIP = [352, 330], MOT = [352, 338], KNEE = [352, 366];
     hline(linkG, HIP[0], HIP[1] - 4, KNEE[0], KNEE[1], C_INK2, 5).style.opacity = 0.35;  // 大腿
     var crank = hline(linkG, 0, 0, 0, 0, C_GOOD, 2), coupler = hline(linkG, 0, 0, 0, 0, C_GOOD, 1.6), rocker = hline(linkG, 0, 0, 0, 0, C_GOOD, 2);
     var shin = hline(linkG, 0, 0, 0, 0, C_INK2, 4);
     linkG.appendChild(paint(svgEl('rect', { x: MOT[0] - 9, y: MOT[1] - 7, width: 18, height: 14, rx: 3, 'stroke-width': 1.3, opacity: 0.9 }), C_SURFACE2, C_GOOD));
     dotAt(linkG, MOT[0], MOT[1], 2.5, C_GOOD); dotAt(linkG, KNEE[0], KNEE[1], 3, C_GOOD);
-    linkG.appendChild(svgText(376, 326, '膝：电机放在大腿高处', 'demo-x-ink2', 9.5));
-    linkG.appendChild(svgText(376, 342, '→ 小腿轻，转动惯量小', 'demo-x-mut', 9.5));
+    linkG.appendChild(svgText(376, 340, '膝：电机放在大腿高处', 'demo-x-ink2', 9.5));
+    linkG.appendChild(svgText(376, 356, '→ 小腿轻，转动惯量小', 'demo-x-mut', 9.5));
     /* 颈：电机在头里，经连杆带着头俯仰 */
-    var NECK = [600, 352];
+    var NECK = [580, 372];
     var headG = group(linkG);
     headG.appendChild(paint(svgEl('rect', { x: -14, y: -34, width: 28, height: 26, rx: 4, 'stroke-width': 1.4 }), C_SURFACE2, C_GOOD));
     headG.appendChild(paint(svgEl('rect', { x: -7, y: -27, width: 14, height: 11, rx: 2, 'stroke-width': 1.1 }), C_SURFACE, C_GOOD));
@@ -933,8 +977,9 @@
     hline(linkG, NECK[0], NECK[1], NECK[0], NECK[1] + 16, C_INK2, 4).style.opacity = 0.5;
     var neckBar = hline(linkG, 0, 0, 0, 0, C_GOOD, 1.6);
     dotAt(linkG, NECK[0], NECK[1], 3, C_GOOD);
-    linkG.appendChild(svgText(628, 326, '颈：电机放进头里', 'demo-x-ink2', 9.5));
-    var simNote = svgText(310, 397, '三种约束在仿真里建模，经验上 sim-to-real 差距小（第 5 节）', 'demo-x-mut', 9.5);
+    linkG.appendChild(svgText(604, 346, '颈：电机', 'demo-x-ink2', 9.5));
+    linkG.appendChild(svgText(604, 360, '放进头里', 'demo-x-ink2', 9.5));
+    var simNote = svgText(376, 386, '仿真里三种约束各自建模，sim-to-real 差距小', 'demo-x-mut', 9);
     right.appendChild(simNote);
 
     function draw(t, clock) {
@@ -955,7 +1000,8 @@
       counter.textContent = total ? '主动自由度 ' + total : '';
       setOpacity(endT, seg(t, 6.4, 6.9));
       setOpacity(right, seg(t, 7.0, 7.5));
-      setOpacity(spurG, seg(t, 7.0, 7.5));
+      setOpacity(spurG, seg(t, 7.0, 7.5)); setOpacity(figA.g, seg(t, 7.2, 7.7));
+      setOpacity(figB.g, seg(t, 10.6, 11.1)); setOpacity(figC.g, seg(t, 13.6, 14.1));
       /* 关节来回摆（不是一直转）：主动轮转 θ，1:1 的从动轮转 -θ，2:1 的大轮转 -θ / 2；输出杆跟着从动轮 */
       var th = 50 * Math.sin(now * 1.5);
       spin(ga, th); spin(gb, -th); spin(gc, 1.4 * th); spin(gd, -0.7 * th);
@@ -963,14 +1009,24 @@
       setLine(linkA, 387, 140, 387 + 30 * Math.cos(aB), 140 + 30 * Math.sin(aB));
       setLine(linkB, 509, 140, 509 + 38 * Math.cos(aD), 140 + 38 * Math.sin(aD));
       setOpacity(bevG, seg(t, 10.4, 10.9));
-      /* 三段轮流：只偏航（两电机同向同速）、只横滚（反向）、两者叠加；腰角 = 和 / 差，电机角 = 偏航 ± 横滚 */
+      /* 三段轮流（每段 3 s）：只偏航、只横滚、两者叠加。先定腰角，再按官方 waist_ik 反算两个电机角 m1、m2：
+         m1 = (−横滚 / c_r + 偏航 / c_y) / 2，m2 = (横滚 / c_r + 偏航 / c_y) / 2，c_r = 7/24、c_y = 5/24 */
       var ph = (now % 9) / 3, wY = ph < 1 || ph >= 2 ? 1 : 0, wR = ph >= 1 ? 1 : 0;
-      var yaw = 0.5 * Math.sin(now * 1.6) * wY, roll = 0.3 * Math.sin(now * 1.1) * wR;
-      var q1 = yaw + roll, q2 = yaw - roll;
-      [[mo1, q1], [mo2, q2]].forEach(function (m) { var a = 3 * m[1] - Math.PI / 2; setLine(m[0].mark, m[0].cx, m[0].cy, m[0].cx + 5.5 * Math.cos(a), m[0].cy + 5.5 * Math.sin(a)); });  // 电机端转角 = 腰角 × 减速比（画成 3 倍）
-      waistG.setAttribute('transform', 'translate(440 254) rotate(' + ((roll * 180) / Math.PI).toFixed(1) + ')');
-      yawMark.setAttribute('x', (-3 + 12 * Math.sin(yaw)).toFixed(1));
-      setW(yawBar, 90 * Math.abs(yaw) / 0.5); setW(rollBar, 90 * Math.abs(roll) / 0.3);
+      var yaw = 0.6 * Math.sin(now * 1.6) * wY, roll = 0.3 * Math.sin(now * 1.1) * wR;
+      var CR = 7 / 24, CY = 5 / 24, m1 = (-roll / CR + yaw / CY) / 2, m2 = (roll / CR + yaw / CY) / 2;
+      motorDots.forEach(function (d, k) { var q = (k ? m2 : m1) * 2; moveDot(d, [PIN[k][0] + 11 * Math.cos(q), PIN[k][1] - 6 + 3 * Math.sin(q)]); });
+      /* 侧齿轮：两个小锥齿轮同向转时，咬合点在各自齿轮的外侧（左右镜像），所以两个侧齿轮反向转 */
+      var KS = 0.45, thL = -KS * m1, thR = KS * m2;
+      sideL.face.setAttribute('d', teeth([SL, BA, 13, 28], [SL + 10, BA, 8, 17], 14, thL));
+      sideR.face.setAttribute('d', teeth([SR, BA, 13, 28], [SR - 10, BA, 8, 17], 14, thR));  // 两个侧齿轮绕同一根轴，相位方向相同
+      /* 顶齿轮：自转角 = 偏航；横滚时被带着绕侧齿轮的轴（画面里的横虚线）翻，看起来是椭圆张合、前后点头 */
+      var EL = 0.2, tilt = EL + roll, ryO = 56 * Math.sin(tilt), cy0 = BA - 26 * Math.cos(roll);
+      setEll(topG.outer, TOPC[0], cy0, 56, ryO); setEll(topG.inner, TOPC[0], cy0 + 6 * Math.cos(tilt), 38, 38 * Math.sin(tilt));
+      topG.face.setAttribute('d', teeth([TOPC[0], cy0, 56, ryO], [TOPC[0], cy0 + 6 * Math.cos(tilt), 38, 38 * Math.sin(tilt)], 22, yaw * 2.2, true));
+      setLine(yawAxis, TOPC[0], cy0 - 9 * Math.cos(roll), TOPC[0], cy0 + 12);  // 上端不碰小标题
+      var ay = Math.abs(yaw) / 0.6, ar = Math.abs(roll) / 0.3;
+      setOpacity(yawLab, 0.35 + 0.65 * ay); setOpacity(rollLab, 0.35 + 0.65 * ar);
+      setOpacity(modeA, wY && !wR ? 1 : wY ? 0.75 : 0.35); setOpacity(modeB, wR && !wY ? 1 : wR ? 0.75 : 0.35);
       setOpacity(twoG, seg(t, 11.8, 12.3));
       setOpacity(linkG, seg(t, 13.4, 13.9));
       var c = 0.55 * Math.sin(now * 1.4);
@@ -1245,30 +1301,41 @@
 
   /* ── scene 5: 零点校准 ── */
   function buildSceneCalib() {
-    var s = sceneSvg('左边是正视的 ToddlerBot 示意，四种颜色的 3D 打印卡具从两侧滑进手臂、颈、髋、踝并卡住，关节锁在零点；中间一个计时条在一分钟内走完；右边是「站直、双臂贴身 = 零点」和代码里的两步：读电机位置、再用 IMU 的俯仰反馈微调');
+    var s = sceneSvg('左边是论文图 10：四种颜色的 3D 打印卡具按箭头插进手臂、颈、髋、踝，旁白念到哪种颜色就把那几块框出来，卡住后关节锁在零点；中间一个计时条在一分钟内走完；右边是「站直、双臂贴身 = 零点」和代码里的两步：读电机位置、再用 IMU 的俯仰反馈微调');
     s.appendChild(svgText(30, 28, '数字孪生之一：零点校准 —— Dynamixel 没有绝对零点，卡具一分钟校好', 'demo-x-ink2', 13.5));
     var left = group(s);
     rectBox(left, 30, 44, 300, 360, C_BORDER, C_SURFACE2);
-    var S = 290;
-    var fig = tbFront(left, C_INK2, S, { joints: true });
-    var pose0 = { armA: [0.45, 0.25], armB: [0.3, 0.6], crouch: 0.15, lean: 0.08 };
-    var devices = [
-      { key: 'arm', color: '#e8893a', label: '手臂（橙）', side: -1, jk: 'elL' }, { key: 'arm2', color: '#e8893a', label: '', side: 1, jk: 'elR' },
-      { key: 'neck', color: '#e6c84a', label: '颈（黄）', side: -1, jk: 'neck' },
-      { key: 'hip', color: '#d9534f', label: '髋（红）', side: 1, jk: 'hipR' },
-      { key: 'ankle', color: '#d8c7a6', label: '踝（米色）', side: -1, jk: 'ankL' }, { key: 'ankle2', color: '#d8c7a6', label: '', side: 1, jk: 'ankR' }
+    /* 直接用论文图 10：四种颜色的 3D 打印卡具（橙臂、黄颈、红髋、米色踝），箭头是插入方向。
+       旁白念到哪种颜色，就在图上把那几块框出来（坐标按原图 737 × 497 量的） */
+    var F10 = paperFig(left, 'fig10_calibration.webp', 35, 78, 290, 197, '论文图 10：零点标定卡具，箭头是插入方向');
+    var DEV = [
+      { color: '#e8893a', boxes: [[95, 110, 200, 335], [340, 105, 405, 325]] },
+      { color: '#e6c84a', boxes: [[262, 95, 296, 162]] },
+      { color: '#d9534f', boxes: [[482, 52, 612, 258]] },
+      { color: '#c9b48a', boxes: [[508, 288, 602, 412]] }
     ].map(function (d) {
-      d.node = paint(svgEl('rect', { width: 22, height: 14, rx: 3, 'stroke-width': 1 }), d.color, C_BORDER);
-      left.appendChild(d.node);
+      var g = group(left);
+      d.rects = d.boxes.map(function (b) {
+        var p0 = F10.px(b[0] / 737, b[1] / 497), p1 = F10.px(b[2] / 737, b[3] / 497);
+        var r = paint(svgEl('rect', { x: (p0[0] - 2).toFixed(1), y: (p0[1] - 2).toFixed(1), width: (p1[0] - p0[0] + 4).toFixed(1), height: (p1[1] - p0[1] + 4).toFixed(1), rx: 4, fill: 'none', 'stroke-width': 2.4 }), null, d.color);
+        g.appendChild(r);
+        return r;
+      });
+      d.g = g;
       return d;
     });
     var legendG = group(left);
-    ['手臂（橙）', '颈（黄）', '髋（红）', '踝（米色）'].forEach(function (str, k) {
-      var c = ['#e8893a', '#e6c84a', '#d9534f', '#d8c7a6'][k];
-      legendG.appendChild(paint(svgEl('rect', { x: 44 + k * 70, y: 372, width: 12, height: 12, rx: 2 }), c));
-      legendG.appendChild(svgText(60 + k * 70, 382, str, 'demo-x-mut', 9));
+    var legendItems = ['手臂（橙）', '颈（黄）', '髋（红）', '踝（米色）'].map(function (str, k) {
+      var c = ['#e8893a', '#e6c84a', '#d9534f', '#d8c7a6'][k], g = group(legendG);
+      g.appendChild(paint(svgEl('rect', { x: 44 + k * 70, y: 314, width: 12, height: 12, rx: 2 }), c));
+      g.appendChild(svgText(60 + k * 70, 324, str, 'demo-x-ink2', 9));
+      return g;
     });
-    var clickT = paint(svgText(180, 64, '', null, 12, 'middle'), C_GOOD);
+    var clickNote = group(left);
+    clickNote.appendChild(svgText(44, 356, '插进去、听到「咔」一声 → 关节被卡在零点', 'demo-x-ink2', 10));
+    var code20 = svgText(44, 374, '代码 2.0：除膝以外每个关节都加强了锁定', 'demo-x-mut', 9);
+    left.appendChild(code20);
+    var clickT = paint(svgText(180, 66, '', null, 12, 'middle'), C_GOOD);
     left.appendChild(clickT);
     /* 中：计时 */
     var mid = group(s);
@@ -1316,20 +1383,15 @@
     function draw(t, clock) {
       var now = nowOf(t, clock);
       setOpacity(left, seg(t, 0.2, 0.7));
-      /* 插卡具的过程：姿态从歪到正 */
-      var u = ease(seg(t, 3.6, 6.4));
-      var pts = fig.put(180, 86, { armA: [pose0.armA[0] * (1 - u), pose0.armA[1] * (1 - u)], armB: [pose0.armB[0] * (1 - u), pose0.armB[1] * (1 - u)], crouch: pose0.crouch * (1 - u), lean: pose0.lean * (1 - u) });
-      devices.forEach(function (d, k) {
-        var J = pts[d.jk];
-        var v = seg(t, 3.8 + k * 0.45, 4.6 + k * 0.45);
-        var x0 = d.side < 0 ? 40 : 300, x1 = J[0] + (d.side < 0 ? -26 : 4);
-        d.node.setAttribute('x', (x0 + (x1 - x0) * ease(v)).toFixed(1));
-        d.node.setAttribute('y', (J[1] - 7).toFixed(1));
-        setOpacity(d.node, seg(t, 3.6 + k * 0.45, 3.9 + k * 0.45));
-        fig.joints[d.jk].style.stroke = v >= 1 ? C_GOOD : C_INK2;
+      /* 3.6 s 起按旁白的顺序框出四种卡具：橙（手臂）、黄（颈）、红（髋）、米色（踝），框住时呼吸一下 */
+      DEV.forEach(function (d, k) {
+        var on = seg(t, 3.9 + k * 0.6, 4.2 + k * 0.6);
+        setOpacity(d.g, on * (0.75 + 0.25 * Math.cos(now * 5)));
+        setOpacity(legendItems[k], 0.35 + 0.65 * on);
       });
-      clickT.textContent = t >= 6.4 ? '「咔」—— 关节锁在零点' : t >= 3.6 ? '插进去……' : '';
+      clickT.textContent = t >= 6.4 ? '「咔」—— 关节锁在零点' : t >= 3.6 ? '按箭头插进去……' : '';
       setOpacity(legendG, seg(t, 3.6, 4.0));
+      setOpacity(clickNote, seg(t, 6.4, 6.9)); setOpacity(code20, seg(t, 11.2, 11.7));
       setOpacity(mid, seg(t, 7.0, 7.4));
       var tu = seg(t, 7.2, 9.6);
       setH(timer, 300 * tu);
@@ -1367,35 +1429,42 @@
 
   /* ── scene 6: 电机台架辨识 ── */
   function buildSceneTestbed() {
-    var s = sceneSvg('左边是电机台架的示意：待测电机经快接轴连着扭矩传感器，尾部是粉末制动器，侧面一个驱动电机；右上是力矩对转速的散点一个个落下，再拟合出一条直线，截距是摩擦损耗、斜率是阻尼；右下是断电后转速衰减的曲线，XC330 从每秒 5 弧度到停只要半秒，用它算 armature');
+    var s = sceneSvg('左边是论文图 11 的台架照片，右边一列标出各部件：后部的粉末制动器、侧面的驱动电机、扭矩传感器、蓝灰色快接轴和待测电机，电机输出盘上一个白圈是转子；右上是力矩对转速的散点一个个落下，再拟合出一条直线，截距是摩擦损耗、斜率是阻尼；右下是断电后转速衰减的曲线，XC330 从每秒 5 弧度到停只要半秒，用它算 armature');
     s.appendChild(svgText(30, 28, '数字孪生之二：台架上把 MuJoCo 的三个被动参数直接测出来', 'demo-x-ink2', 13.5));
     var left = group(s);
     rectBox(left, 30, 44, 300, 220, C_BORDER, C_SURFACE2);
-    left.appendChild(svgText(44, 64, '电机台架（附录 8.9、图 11）', 'demo-x-ink2', 11));
-    var railY = 128;  // 台架整体上移，给「驱动电机」和下面三行规格留出位置
-    hline(left, 50, railY + 36, 310, railY + 36, C_MUTED, 3);
-    var motorBox = chip(left, 60, railY - 20, 64, '待测电机', C_ACCENT, { size: 9.5, h: 40 });
-    var shaft = hline(left, 124, railY, 160, railY, C_MUTED, 4);
-    var sensor = chip(left, 160, railY - 16, 60, '扭矩传感器', C_GOOD, { size: 9, h: 32 });
-    hline(left, 220, railY, 250, railY, C_MUTED, 4);
-    var brake = chip(left, 250, railY - 20, 60, '粉末制动器', C_BAD, { size: 9, h: 40 });
-    var driver = chip(left, 110, railY + 44, 70, '驱动电机', C_WARN, { size: 9, h: 24 });
-    hline(left, 145, railY + 20, 145, railY + 44, C_MUTED, 2, '3 2');
-    /* 转子的端视图（画在电机上方）：反驱时按每个测点的恒定转速转，断电后按右下那条衰减曲线慢下来；
+    left.appendChild(svgText(44, 64, '电机台架（论文图 11，附录 8.9）', 'demo-x-ink2', 11));
+    /* 直接用论文图 11 的照片（透明底），右边一列标出各部件；部件说明取自图 11 的图注与附录 8.9 */
+    var F11 = paperFig(left, 'fig11_test_stand.webp', 40, 72, 170, 185, null, { bare: true, pad: 0 });
+    function at(u, v) { return F11.px(u, v); }
+    var CALL = [
+      { name: '粉末制动器（后部）', spec: '可控刹车 ≤ 5 N·m', tgt: at(0.45, 0.13), y: 90, color: C_BAD },
+      { name: '驱动电机（侧面）', spec: '主动驱动 1 N·m', tgt: at(0.81, 0.33), y: 122, color: C_WARN },
+      { name: '扭矩传感器', spec: '精度 0.0003 N·m', tgt: at(0.585, 0.35), y: 154, color: C_GOOD },
+      { name: '蓝灰色快接轴', spec: '待测电机从这里装上', tgt: at(0.68, 0.44), y: 186, color: C_INK2 },
+      { name: '待测电机', spec: '白圈：转子（慢放约 4×）', tgt: at(0.71, 0.63), y: 218, color: C_ACCENT }
+    ].map(function (c) {
+      var g = group(left);
+      hline(g, c.tgt[0], c.tgt[1], 216, c.y - 3, c.color, 0.9);
+      dotAt(g, c.tgt[0], c.tgt[1], 2.6, c.color);
+      g.appendChild(paint(svgText(219, c.y, c.name, null, 9.5), c.color));
+      var sp = svgText(219, c.y + 12, c.spec, 'demo-x-mut', 8.5);
+      g.appendChild(sp);
+      return { g: g, sp: sp };
+    });
+    var mcu = group(left);
+    var mcuT = at(0.18, 0.41);
+    /* 照片左下角是空的（透明底），MCU 的标注放那儿，往上连到面包板 */
+    hline(mcu, mcuT[0], mcuT[1], 60, 214, C_MUTED, 0.9); dotAt(mcu, mcuT[0], mcuT[1], 2.4, C_MUTED);
+    mcu.appendChild(svgText(44, 226, 'MCU：扭矩采样、', 'demo-x-mut', 8.5));
+    mcu.appendChild(svgText(44, 238, '刹车、CAN', 'demo-x-mut', 8.5));
+    /* 转子：画在照片里电机输出盘的位置。反驱时按每个测点的恒定转速转，断电后按右下那条衰减曲线慢下来；
        0.45 s 的衰减在画面里画成约 1.9 s，所以全程按同一个慢放倍数（约 4×）转 */
+    var HORN = at(0.814, 0.717);
     var rotor = group(left);
-    rotor.appendChild(paint(svgEl('circle', { cx: 92, cy: 86, r: 13, 'stroke-width': 1.4 }), C_SURFACE, C_ACCENT));
-    var spoke = hline(rotor, 92, 86, 92, 75, C_ACCENT, 2.4);
-    dotAt(rotor, 92, 86, 2.4, C_ACCENT);
-    hline(rotor, 92, 99, 92, railY - 20, C_MUTED, 1, '2 2');
-    var rotorT = svgText(112, 82, '转子', 'demo-x-mut', 9);
-    rotor.appendChild(rotorT);
-    var slowT = svgText(112, 95, '（慢放约 4×）', 'demo-x-mut', 8.5);
-    rotor.appendChild(slowT);
-    var spec = group(left);
-    spec.appendChild(svgText(44, 214, '刹车 5 N·m · 主动驱动 1 N·m · 扭矩精度 0.0003 N·m', 'demo-x-ink2', 9.5));
-    spec.appendChild(svgText(44, 230, '负载：21700 电芯当砝码；MCU 管采样、刹车与 CAN', 'demo-x-mut', 9));
-    spec.appendChild(svgText(44, 250, '「将随发布开源」（CHANGELOG：有人感兴趣就开源）', 'demo-x-mut', 9));
+    rotor.appendChild(paint(svgEl('circle', { cx: HORN[0], cy: HORN[1], r: 7, 'stroke-width': 1.6, fill: 'none' }), null, '#ffffff'));
+    var spoke = hline(rotor, HORN[0], HORN[1], HORN[0], HORN[1] - 7, '#ffffff', 2);
+    var slowT = CALL[4].sp;
     var params = group(s);
     rectBox(params, 30, 276, 300, 128, C_BORDER, C_SURFACE);
     params.appendChild(svgText(44, 296, 'MuJoCo 的被动阻力（式 6）', 'demo-x-ink2', 11));
@@ -1469,9 +1538,14 @@
         phi = spinPhase + (A / k) * (1 - Math.exp(-k * tau)) - (X330.fl / X330.d) * tau;
       }
       if (t < 10.7) { spinPhase = phi; spinClock = now; }
-      setLine(spoke, 92, 86, 92 + 11 * Math.sin(phi), 86 - 11 * Math.cos(phi));
-      setOpacity(slowT, seg(t, 10.4, 10.8));
-      setOpacity(spec, seg(t, 13.4, 13.9));
+      setLine(spoke, HORN[0], HORN[1], HORN[0] + 7 * Math.sin(phi), HORN[1] - 7 * Math.cos(phi));
+      /* 0–3.6 s 旁白按部件介绍台架：标注一条条出来；规格（第二行）等 13.4 s 念到规格时再出 */
+      CALL.forEach(function (c, k) {
+        setOpacity(c.g, seg(t, 0.8 + k * 0.45, 1.2 + k * 0.45));
+        setOpacity(c.sp, k === 3 ? seg(t, 2.6, 3.0) : k === 4 ? seg(t, 10.4, 10.8) : seg(t, 13.6 + k * 0.4, 14.0 + k * 0.4));
+      });
+      setOpacity(mcu, seg(t, 3.0, 3.4));
+      setOpacity(rotor, seg(t, 0.6, 1.0));
       setOpacity(params, seg(t, 3.6, 4.1));
       pChips.forEach(function (c, k) { setOpacity(c, seg(t, 4.2 + k * 0.6, 4.7 + k * 0.6)); });
       setOpacity(fit, seg(t, 7.0, 7.4));
@@ -1588,7 +1662,7 @@
 
   /* ── scene 8: 遥操作装置与两层 PD ── */
   function buildSceneTeleop() {
-    var s = sceneSvg('左边：操作员推着一副只有上半身的领导臂，右侧跟随机器人的手臂同步抬起，夹爪随力敏电阻的握力开合，下方一台掌机的摇杆给出速度箭头；右边是侧视的下半身：手臂前伸时质心点往前漂出支撑面中心，第一层质心 PD 把髋往后挪、第二层躯干俯仰 PD 把上身往后带，质心回到中间；底下写 20 分钟 60 条');
+    var s = sceneSvg('左边：操作员推着一副只有上半身的领导臂，旁边的跟随机器人手臂同步抬起，右上角是论文图 1 里遥操作装置的照片，夹爪随力敏电阻的握力开合，下方一台掌机的摇杆给出速度箭头；右边是侧视的下半身：手臂前伸时质心点往前漂出支撑面中心，第一层质心 PD 把髋往后挪、第二层躯干俯仰 PD 把上身往后带，质心回到中间；底下写 20 分钟 60 条');
     s.appendChild(svgText(30, 28, '采真机数据：领导臂 + 掌机做全身遥操作，下半身用两层 PD 自己站稳', 'demo-x-ink2', 13.5));
     var left = group(s);
     rectBox(left, 30, 44, 420, 232, C_BORDER, C_SURFACE2);
@@ -1597,9 +1671,11 @@
     var leader = tbFront(left, C_WARN, S);
     var follower = tbFront(left, C_INK2, S);
     var handL = dotAt(left, 0, 0, 7, C_WARN);
-    left.appendChild(svgText(110, 84, '领导臂（第二副上半身）', 'demo-x-warn', 9.5, 'middle'));
-    left.appendChild(svgText(300, 84, '跟随机器人', 'demo-x-ink2', 9.5, 'middle'));
-    var linkArrow = pathLine(left, [[170, 150], [240, 150]], C_WARN, 1.6, '4 3');
+    left.appendChild(svgText(100, 84, '领导臂（第二副上半身）', 'demo-x-warn', 9.5, 'middle'));
+    left.appendChild(svgText(240, 84, '跟随机器人', 'demo-x-ink2', 9.5, 'middle'));
+    var linkArrow = pathLine(left, [[152, 150], [190, 150]], C_WARN, 1.6, '4 3');
+    /* 右上放论文图 1 里的遥操作装置照片：上面是操作员握着的领导臂上半身，下面是掌机（ROG Ally X） */
+    var F1 = paperFig(left, 'fig1_teleop_device.webp', 332, 66, 112, 112, '论文图 1：遥操作装置');
     var fsrG = group(left);
     var fsrChip = chip(fsrG, 44, 218, 180, '2 片 FSR 感知握力 → 夹爪开合', C_WARN, { size: 9.5, h: 24 });
     var gripA = hline(fsrG, 0, 0, 0, 0, C_INK2, 2.2), gripB = hline(fsrG, 0, 0, 0, 0, C_INK2, 2.2);
@@ -1646,8 +1722,8 @@
       setOpacity(left, seg(t, 0.2, 0.7));
       var raise = 0.5 + 0.5 * Math.sin(now * 1.3);
       var armPose = { armA: [1.3 * raise + 0.1, 0.5 * raise], armB: [0.4 * raise + 0.1, 0.9 * raise] };
-      var lp = leader.put(110, 96, armPose);
-      var fp = follower.put(300, 96, { armA: [armPose.armA[0] * 0.95, armPose.armA[1]], armB: [armPose.armB[0] * 0.95, armPose.armB[1]] });
+      var lp = leader.put(100, 96, armPose);
+      var fp = follower.put(240, 96, { armA: [armPose.armA[0] * 0.95, armPose.armA[1]], armB: [armPose.armB[0] * 0.95, armPose.armB[1]] });
       moveDot(handL, [lp.wrL[0] - 8, lp.wrL[1] + 2]);
       setOpacity(linkArrow, seg(t, 0.8, 1.3));
       setOpacity(fsrG, seg(t, 3.6, 4.0));
@@ -1812,6 +1888,7 @@
     /* 去噪 */
     var denG = group(left);
     denG.appendChild(svgText(44, 206, '训练 100 步 DDPM，推理只用 3 步（Jetson 上 < 0.1 s）', 'demo-x-ink2', 10));
+    denG.appendChild(svgText(44, 221, 'DDPM（去噪扩散）：训练时加噪、学去噪；推理从纯噪声去几步噪', 'demo-x-mut', 8.5));
     var DX0 = 60, DX1 = 400, DY = 270;
     hline(denG, DX0, DY, DX1, DY, C_BORDER, 1);
     var rng = mulberry32(17);
@@ -2044,7 +2121,7 @@
 
   /* ── scene 12: 复刻验证、局限与之后 ── */
   function buildSceneRepro2() {
-    var s = sceneSvg('左边是图 5 的八步故事：Arya 从小桌上拿起粉色章鱼、抛进小车，走到把手、抓住推车往前走，Toddy 同时走过来，跪下捡起地上的紫色章鱼，两台转身并肩离开；中间是复刻的证据：没做过硬件的学生 3 天、五个团队约一周、策略换机器人仍 90%；右边是局限和代码 2.0 的更新，每条前面一个小图标，最后一行引出下一篇：人类动作数据从哪里来');
+    var s = sceneSvg('左边是图 5 的八步故事：Arya 从小桌上拿起粉色章鱼、抛进小车，走到把手、抓住推车往前走，Toddy 同时走过来，跪下捡起地上的紫色章鱼、用手放进车里，两台转身并肩离开；中间是复刻的证据：没做过硬件的学生 3 天、五个团队约一周、策略换机器人仍 90%；右边是局限和代码 2.0 的更新，每条前面一个小图标，最后是三件事的小结');
     s.appendChild(svgText(30, 28, '可复现的证据、局限，以及之后', 'demo-x-ink2', 13.5));
     var left = group(s);
     rectBox(left, 30, 44, 390, 200, C_BORDER, C_SURFACE2);
@@ -2114,9 +2191,9 @@
     /* svgRich 不会自动折行，分两行写，右边留给机器人图 */
     after.appendChild(svgRich(450, 304, '**三件事**：可复现当硬约束、30 自由度', { size: 9.5, w: 250, cls: 'demo-x-good' }));
     after.appendChild(svgRich(450, 322, '接近人的 $\\tilde p$、两边都能采数据的工具链', { size: 9.5, w: 250, cls: 'demo-x-good' }));
-    after.appendChild(svgText(450, 356, '真机数据靠遥操作，仿真数据靠数字孪生——', 'demo-x-ink2', 9.5));
-    after.appendChild(svgText(450, 372, '那人类的动作数据从哪里来、怎样搬到机器人身上？', 'demo-x-ink2', 9.5));
-    after.appendChild(svgText(450, 392, '下一篇：HumanML3D / GMR', 'demo-x-acc', 10));
+    /* 主动画里不预告下一篇（预告只放在视频片尾） */
+    after.appendChild(svgText(450, 356, '真机数据靠遥操作', 'demo-x-ink2', 9.5));
+    after.appendChild(svgText(450, 372, '仿真数据靠数字孪生', 'demo-x-ink2', 9.5));
 
     /* ── 故事板的运动学 ──
        一轮 16 s、每步 2 s。人物按 RS = 136 px 对应 0.56 m 画，重力按同一比例 g = 9.81 × 136 / 0.56 px/s²。
@@ -2124,8 +2201,8 @@
     var GPX = 9.81 * RS / 0.56, UA = 0.11 * RS, FA = 0.1 * RS, SHO = 0.17 * RS, HIP_Y = GY - 0.37 * RS, ANK_Y = GY - 0.02 * RS;
     function lerp(a, b, u) { return a + (b - a) * u; }
     function win(tau, a, b) { return ease(clamp((tau - a) / (b - a), 0, 1)); }
-    function aryaX(tau) { return lerp(lerp(104, 118, win(tau, 4.2, 5.8)), 228, win(tau, 8.0, 11.6)) + 30 * win(tau, 14.2, 15.8); }
-    function toddyX(tau) { return lerp(398, 352, win(tau, 8.4, 11.6)) + 30 * win(tau, 14.2, 15.8); }
+    function aryaX(tau) { return lerp(lerp(104, 118, win(tau, 4.2, 5.8)), 238, win(tau, 8.0, 11.6)) + 30 * win(tau, 14.2, 15.8); }  // 车停在 266–306，Toddy 跪着够得着车斗
+    function toddyX(tau) { return lerp(398, 342, win(tau, 6.2, 11.6)) + 30 * win(tau, 14.2, 15.8); }  // 图 5 第 (4) 步：Arya 抓把手时 Toddy 开始走过来
     var WAG0 = 146;  // 小车停着时车身左边，Arya 走到 118 时手正好够到把手
     function wagonX(tau) { return aryaX(tau) >= 118 && tau >= 8.0 ? aryaX(tau) + (WAG0 - 118) : WAG0; }
     function feet(xf, tau, phaseOff) {
@@ -2144,7 +2221,7 @@
     }
     function face(g, hx, left) { g.setAttribute('transform', left ? 'matrix(-1 0 0 1 ' + (2 * hx).toFixed(1) + ' 0)' : ''); }
     function toLocal(x, hx, left) { return left ? 2 * hx - x : x; }
-    var PINK0 = [76, TBL.top - 5], BED = [0, GY - 6 - 22 + 2], PURPLE0 = [322, GY - 5];
+    var PINK0 = [76, TBL.top - 5], BED = [0, GY - 6 - 22 + 2], PURPLE0 = [318, GY - 5];
 
     function draw(t, clock) {
       var now = nowOf(t, clock);
@@ -2177,7 +2254,7 @@
       var poseA = arya.put(ax, HIP_Y, pitchA, [[toLocal(fA[0][0], ax, aLeft), fA[0][1]], [toLocal(fA[1][0], ax, aLeft), fA[1][1]]], armA);
       var handA = [aLeft ? 2 * ax - poseA.hand[0] : poseA.hand[0], poseA.hand[1]];
       /* 粉章鱼：桌上 → 0.9 s 抓起跟着手 → 3.0 s 松手，按真实重力抛进车里（飞 0.3 s）→ 跟着车走 */
-      BED[0] = wl + 20;
+      BED[0] = wl + 12;
       if (tau < 0.9) pinkPos = PINK0;
       else if (tau < 3.0) pinkPos = handA;
       else {
@@ -2191,25 +2268,37 @@
       }
       moveDot(pink, pinkPos);
       wagon.setAttribute('transform', 'translate(' + wl.toFixed(1) + ' ' + (GY - 6) + ')');
-      /* Toddy：朝左走过来；12.0–12.7 s 跪下（膝着地、小腿贴地、上身前倾到 1.2 rad），12.9 s 抓起紫章鱼，13.2–13.9 s 站起；14.1 s 转身朝右 */
+      /* Toddy：朝左走过来；12.0–12.5 s 跪下（膝着地、小腿贴地、上身前倾到 1.2 rad），12.7 s 从地上抓起紫章鱼；
+         跪着用手把它放进车斗：先提起越过车帮（12.7–12.95 s）、平移到车斗上方（–13.15 s）、放下（–13.35 s）松手，
+         再收手、13.5–14.0 s 站起，14.1 s 转身朝右。手臂全程用两连杆 IK 追目标点（跪在 342：俯身 1.2 rad 时肩在 (320.5, 161) 够得着地面，
+         抬到 0.95 rad 时肩在 (323, 156) 够得着车斗 (300, 166)，距离 26 px < 臂长 28.6 px） */
       var tx = toddyX(tau), tLeft = tau < 14.1;
       face(toddyG, tx, tLeft);
-      var kn = win(tau, 12.0, 12.7) * (1 - win(tau, 13.2, 13.9));
-      var hyT = lerp(HIP_Y, GY - 2 - 0.18 * RS, kn), pitchT = 1.2 * kn;
+      var kn = win(tau, 12.0, 12.5) * (1 - win(tau, 13.5, 14.0));
+      /* 俯身 1.2 rad 才够得着地面；拿起后上身抬到 0.95 rad，头往后上方让开，手从头下面把章鱼送进车斗 */
+      var hyT = lerp(HIP_Y, GY - 2 - 0.18 * RS, kn), pitchT = kn * lerp(1.2, 0.95, win(tau, 12.7, 12.95));
       var fT = [feet(toddyX, tau, 0.25), feet(toddyX, tau, 0.75)].map(function (f) { return [toLocal(f[0], tx, tLeft), f[1]]; });
       fT = fT.map(function (f, k) { return [lerp(f[0], tx - 0.19 * RS - 2 * k, kn), lerp(f[1], ANK_Y, kn)]; });
       var shT = [tx + SHO * Math.sin(pitchT), hyT - SHO * Math.cos(pitchT)];
-      var holding = tau >= 12.9;
-      var armT;
-      if (tau >= 11.8 && tau < 13.9) {
-        var pickL = [toLocal(PURPLE0[0], tx, true), PURPLE0[1] - 4];
-        var chest = [shT[0] + 10, shT[1] + 18];
-        var gr = tau < 12.9 ? win(tau, 11.8, 12.8) : 1 - win(tau, 12.9, 13.9);
-        armT = armIK(shT, [lerp(chest[0], pickL[0], gr), lerp(chest[1], pickL[1], gr)], pitchT);
-      } else armT = [holding ? 0.9 : 0.1, holding ? 0.9 : 0.3];
+      var BEDP = [wl + 34, BED[1]];
+      /* 手的世界坐标路径：胸前 → 地上的章鱼 → 竖直提起 → 车斗上方 → 放进车斗 → 收回胸前 */
+      var chestW = [2 * tx - (shT[0] + 10), shT[1] + 18];
+      /* 车帮顶在 y 168：章鱼（半径 5）中心压到 162 以上就能越过去，同时不碰到抬起后的头（头底约在 157） */
+      var Wp = [[PURPLE0[0], PURPLE0[1] - 4], [PURPLE0[0] - 6, 160], [BEDP[0], 160], [BEDP[0], BEDP[1] - 2]];
+      var handW = null;
+      if (tau >= 11.8 && tau < 12.7) handW = [lerp(chestW[0], Wp[0][0], win(tau, 11.8, 12.6)), lerp(chestW[1], Wp[0][1], win(tau, 11.8, 12.6))];
+      else if (tau >= 12.7 && tau < 12.95) handW = [lerp(Wp[0][0], Wp[1][0], win(tau, 12.7, 12.95)), lerp(Wp[0][1], Wp[1][1], win(tau, 12.7, 12.95))];
+      else if (tau >= 12.95 && tau < 13.15) handW = [lerp(Wp[1][0], Wp[2][0], win(tau, 12.95, 13.15)), Wp[1][1]];
+      else if (tau >= 13.15 && tau < 13.35) handW = [Wp[2][0], lerp(Wp[2][1], Wp[3][1], win(tau, 13.15, 13.35))];
+      else if (tau >= 13.35 && tau < 13.6) handW = [lerp(Wp[3][0], chestW[0], win(tau, 13.35, 13.6)), lerp(Wp[3][1], chestW[1], win(tau, 13.35, 13.6))];
+      var armT = handW ? armIK(shT, [toLocal(handW[0], tx, true), handW[1]], pitchT) : [0.1, 0.3];
       var poseT = toddy.put(tx, hyT, pitchT, fT, armT);
       var handT = [tLeft ? 2 * tx - poseT.hand[0] : poseT.hand[0], poseT.hand[1]];
-      moveDot(purple, holding ? handT : PURPLE0);
+      var purplePos;
+      if (tau < 12.7) purplePos = PURPLE0;
+      else if (tau < 13.35) purplePos = [handT[0], handT[1]];  // 拿在手里
+      else purplePos = BEDP;  // 松手后留在车斗里，跟着车走
+      moveDot(purple, purplePos);
       setOpacity(mid, seg(t, 3.6, 4.0));
       repChips.forEach(function (c, k) { setOpacity(c, seg(t, 3.8 + k * 0.6, 4.3 + k * 0.6)); });
       setOpacity(right, seg(t, 7.0, 7.4));
@@ -2337,7 +2426,7 @@
       build: buildSceneDP,
       cues: [
         { at: 0.3, s: '扩散策略（附录 8.13）：RGB 裁剪并下采样到 **96×96**，ImageNet 预训练的 ResNet 提特征；领导臂和跟随机器人的关节角都降到 10 Hz，前者是动作、后者是观测。' },
-        { at: 3.6, s: '训练 100 步 DDPM，推理在 Jetson Orin NX 上只用 **3 步**就够；模型 3 亿参数，GPU 上延迟 < 0.1 s，10 Hz 不卡顿。' },
+        { at: 3.6, s: '**DDPM**（去噪扩散模型）：训练时给动作一步步加噪声、学会一步步去噪，推理时从纯噪声出发去几步噪就得到动作。训练 100 步，推理在 Jetson Orin NX 上只用 **3 步**就够；模型 3 亿参数，GPU 上延迟 < 0.1 s，10 Hz 不卡顿。' },
         { at: 7.0, s: '力从哪来：采数据时上半身电机用低比例增益防过载，操作力就体现在领导与跟随关节角的**差**里，策略把这个差学进去。每个任务 60 条演示。' },
         { at: 10.4, s: '动作块：每次预测 **16 步**，丢掉前 3 步补偿延迟（UMI 的做法），执行接下来 5 步——0.3 s 的余量比 0.1 s 的推理长，每 0.5 s 重新预测。' },
         { at: 13.4, s: '20 次测试：双臂把章鱼玩具从桌上搬进小车 **90%**，全身跪下从地上捡 **75%**；转腰、松手、跪下这些用开环动作，提高采集效率。' }
@@ -2360,11 +2449,11 @@
       dur: 17,
       build: buildSceneRepro2,
       cues: [
-        { at: 0.3, s: '两台 ToddlerBot（Arya、Toddy）合作收玩具（图 5）：粉章鱼进车、走到把手、推车到紫章鱼旁、Toddy 跪下捡起、并肩离开——八步长时程串联。' },
+        { at: 0.3, s: '两台 ToddlerBot（Arya、Toddy）合作收玩具（图 5）：粉章鱼进车、走到把手、推车到紫章鱼旁、Toddy 跪下捡起放进车里、并肩离开——八步长时程串联。' },
         { at: 3.6, s: '可复现的证据：没做过硬件的 CS 学生按开源手册 **3 天**装出第二台；社区五组复刻多数一周内完成；一台采的数据训的策略放到另一台仍 90%，RL 行走策略互换。' },
         { at: 7.0, s: '局限（第 7 节）：现成电机的转速、力矩和通信速度是天花板；执行器模型不考虑温度，接近极限不准；小尺寸只能和缩小的物体打交道；打印件撞击后更容易坏。' },
         { at: 10.4, s: '下一步：自制通信板提高控制频率（代码 2.0 已到 200 Hz）、执行器模型加热量、改设计提强度、立体视觉深度、多 IMU、触觉；2.0 还加了侧手翻、爬行、VR 遥操作。' },
-        { at: 13.4, s: '三件事记住它：可复现当硬约束、30 自由度与接近人的 $\\tilde p$、两边都能采数据的工具链。真机数据靠遥操作、仿真数据靠数字孪生——那**人类的动作数据**从哪里来、怎样搬到机器人身上？' }
+        { at: 13.4, s: '三件事记住它：可复现当硬约束、30 自由度与接近人的 $\\tilde p$、两边都能采数据的工具链。真机数据靠遥操作、仿真数据靠数字孪生。' }
       ]
     }
   ];
@@ -2389,8 +2478,8 @@
   function buildVideoDemo(host) {
     K.video(host, {
       title: '配音讲解视频：ToddlerBot 十二幕全流程',
-      sub: '13 分 21 秒竖屏视频（1080×1920），中文配音 + 字幕。画面就是上面的十二幕动画，旁白把每一幕讲细；适合手机上看或转发。',
-      size: '14.0 MB',
+      sub: '13 分 30 秒竖屏视频（1080×1920），中文配音 + 字幕。画面就是上面的十二幕动画，旁白把每一幕讲细；适合手机上看或转发。',
+      size: '14.5 MB',
       fileName: 'ToddlerBot_讲解视频.mp4'
     });
   }
