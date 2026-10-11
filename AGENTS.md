@@ -97,6 +97,8 @@ Jekyll 把笔记渲染成同名 `.html`，源 `.md` 不会发布，所以 `[PPO]
 - **循环动作按真实时间画**：`stage.html` 调 `draw(st, local)`，旁白比分镜长时 `st` 停在一段的末尾，`local` 照走；网页播放器只传 `t`。bundle 里写 `function draw(t, clock) { var now = clock == null ? t : clock; … }`，抖动、走路、滚动曲线按 `now` 画，出场时机仍按 `t`。
 - 推导细节、代数算例留在笔记的「🚶 具体实例」与交互演示里，动画只讲直觉和论文结论。
 - **画真实机器人用真机的图，不用火柴人**：取 [Robot_Description_Gallery_Online](https://github.com/ImChong/Robot_Description_Gallery_Online) 的 `web/thumbs/<id>.webp`（透明底，按各家开源 URDF 渲染），裁到机身、按 `data/robots.json` 的 `measured.height_m` 等比例缩放后放进 `assets/img/robots/`，图注写明出处；bundle 里用 `document.currentScript.src` 解析 `../../img/robots/`，网页和离线视频都能找到（LCP 第 10 幕就是这么做的）。
+- **讲硬件 / 机构设计时，可以直接用论文的图**（裁剪截图）：放进 `assets/img/papers/<bundle>/`（webp），bundle 里同样用 `document.currentScript.src` 解析路径，画面上写明「论文图 N」；论文图可以做底图，动的部分（高亮、标注、示意动画）叠在上面。ToddlerBot 第 2 幕（图 7 的三种传动）、第 5 幕（图 10 的标定卡具，旁白念到哪种颜色就框出哪几块）、第 6 幕（图 11 的台架照片加部件标注）、第 8 幕（图 1 的遥操作装置）是这样做的。arXiv 默认许可下图的版权仍归作者，只做讲解引用、不改原图。
+- **主动画各幕里不预告下一篇**：下一篇的主题只放在配音视频的片尾，`K.explainer` 的分镜、字幕轨和旁白的正片部分都不提（2026-10-11 的看片反馈）。
 - **改了某一幕先出这一段给人看**：`node render.mjs <paper> clip <from>,<to>` 只渲染这段时间并配上同一段旁白，确认后再重渲整片。
 
 ### 视频渲染可以尝试并行
