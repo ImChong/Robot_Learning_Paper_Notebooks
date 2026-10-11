@@ -2121,7 +2121,7 @@
 
   /* ── scene 12: 复刻验证、局限与之后 ── */
   function buildSceneRepro2() {
-    var s = sceneSvg('左边是图 5 的八步故事：Arya 从小桌上拿起粉色章鱼、抛进小车，走到把手、抓住推车往前走，Toddy 同时走过来，跪下捡起地上的紫色章鱼、抛进车里，两台转身并肩离开；中间是复刻的证据：没做过硬件的学生 3 天、五个团队约一周、策略换机器人仍 90%；右边是局限和代码 2.0 的更新，每条前面一个小图标，最后是三件事的小结');
+    var s = sceneSvg('左边是图 5 的八步故事：Arya 从小桌上拿起粉色章鱼、抛进小车，走到把手、抓住推车往前走，Toddy 同时走过来，跪下捡起地上的紫色章鱼、用手放进车里，两台转身并肩离开；中间是复刻的证据：没做过硬件的学生 3 天、五个团队约一周、策略换机器人仍 90%；右边是局限和代码 2.0 的更新，每条前面一个小图标，最后是三件事的小结');
     s.appendChild(svgText(30, 28, '可复现的证据、局限，以及之后', 'demo-x-ink2', 13.5));
     var left = group(s);
     rectBox(left, 30, 44, 390, 200, C_BORDER, C_SURFACE2);
@@ -2201,8 +2201,8 @@
     var GPX = 9.81 * RS / 0.56, UA = 0.11 * RS, FA = 0.1 * RS, SHO = 0.17 * RS, HIP_Y = GY - 0.37 * RS, ANK_Y = GY - 0.02 * RS;
     function lerp(a, b, u) { return a + (b - a) * u; }
     function win(tau, a, b) { return ease(clamp((tau - a) / (b - a), 0, 1)); }
-    function aryaX(tau) { return lerp(lerp(104, 118, win(tau, 4.2, 5.8)), 228, win(tau, 8.0, 11.6)) + 30 * win(tau, 14.2, 15.8); }
-    function toddyX(tau) { return lerp(398, 352, win(tau, 6.2, 11.6)) + 30 * win(tau, 14.2, 15.8); }  // 图 5 第 (4) 步：Arya 抓把手时 Toddy 开始走过来
+    function aryaX(tau) { return lerp(lerp(104, 118, win(tau, 4.2, 5.8)), 238, win(tau, 8.0, 11.6)) + 30 * win(tau, 14.2, 15.8); }  // 车停在 266–306，Toddy 跪着够得着车斗
+    function toddyX(tau) { return lerp(398, 342, win(tau, 6.2, 11.6)) + 30 * win(tau, 14.2, 15.8); }  // 图 5 第 (4) 步：Arya 抓把手时 Toddy 开始走过来
     var WAG0 = 146;  // 小车停着时车身左边，Arya 走到 118 时手正好够到把手
     function wagonX(tau) { return aryaX(tau) >= 118 && tau >= 8.0 ? aryaX(tau) + (WAG0 - 118) : WAG0; }
     function feet(xf, tau, phaseOff) {
@@ -2221,7 +2221,7 @@
     }
     function face(g, hx, left) { g.setAttribute('transform', left ? 'matrix(-1 0 0 1 ' + (2 * hx).toFixed(1) + ' 0)' : ''); }
     function toLocal(x, hx, left) { return left ? 2 * hx - x : x; }
-    var PINK0 = [76, TBL.top - 5], BED = [0, GY - 6 - 22 + 2], PURPLE0 = [322, GY - 5];
+    var PINK0 = [76, TBL.top - 5], BED = [0, GY - 6 - 22 + 2], PURPLE0 = [318, GY - 5];
 
     function draw(t, clock) {
       var now = nowOf(t, clock);
@@ -2268,39 +2268,36 @@
       }
       moveDot(pink, pinkPos);
       wagon.setAttribute('transform', 'translate(' + wl.toFixed(1) + ' ' + (GY - 6) + ')');
-      /* Toddy：朝左走过来；12.0–12.6 s 跪下（膝着地、小腿贴地、上身前倾到 1.2 rad），12.8 s 抓起紫章鱼，13.0–13.5 s 站起；
-         13.6 s 松手，按真实重力把紫章鱼抛进车里（飞 0.32 s，Fig. 1「Full-body Manip.」里就是放进小车）；14.1 s 转身朝右 */
+      /* Toddy：朝左走过来；12.0–12.5 s 跪下（膝着地、小腿贴地、上身前倾到 1.2 rad），12.7 s 从地上抓起紫章鱼；
+         跪着用手把它放进车斗：先提起越过车帮（12.7–12.95 s）、平移到车斗上方（–13.15 s）、放下（–13.35 s）松手，
+         再收手、13.5–14.0 s 站起，14.1 s 转身朝右。手臂全程用两连杆 IK 追目标点（跪在 342：俯身 1.2 rad 时肩在 (320.5, 161) 够得着地面，
+         抬到 0.95 rad 时肩在 (323, 156) 够得着车斗 (300, 166)，距离 26 px < 臂长 28.6 px） */
       var tx = toddyX(tau), tLeft = tau < 14.1;
       face(toddyG, tx, tLeft);
-      var kn = win(tau, 12.0, 12.6) * (1 - win(tau, 13.0, 13.5));
-      var hyT = lerp(HIP_Y, GY - 2 - 0.18 * RS, kn), pitchT = 1.2 * kn;
+      var kn = win(tau, 12.0, 12.5) * (1 - win(tau, 13.5, 14.0));
+      /* 俯身 1.2 rad 才够得着地面；拿起后上身抬到 0.95 rad，头往后上方让开，手从头下面把章鱼送进车斗 */
+      var hyT = lerp(HIP_Y, GY - 2 - 0.18 * RS, kn), pitchT = kn * lerp(1.2, 0.95, win(tau, 12.7, 12.95));
       var fT = [feet(toddyX, tau, 0.25), feet(toddyX, tau, 0.75)].map(function (f) { return [toLocal(f[0], tx, tLeft), f[1]]; });
       fT = fT.map(function (f, k) { return [lerp(f[0], tx - 0.19 * RS - 2 * k, kn), lerp(f[1], ANK_Y, kn)]; });
       var shT = [tx + SHO * Math.sin(pitchT), hyT - SHO * Math.cos(pitchT)];
-      var holding = tau >= 12.8 && tau < 13.6;
-      var armT;
-      if (tau >= 11.8 && tau < 13.5) {
-        var pickL = [toLocal(PURPLE0[0], tx, true), PURPLE0[1] - 4];
-        var chest = [shT[0] + 10, shT[1] + 18];
-        var gr = tau < 12.8 ? win(tau, 11.8, 12.7) : 1 - win(tau, 12.8, 13.4);
-        armT = armIK(shT, [lerp(chest[0], pickL[0], gr), lerp(chest[1], pickL[1], gr)], pitchT);
-      } else if (tau >= 13.5 && tau < 13.6) {
-        armT = [lerp(0.9, 1.3, (tau - 13.5) / 0.1), 0.15];  // 往前上方甩
-      } else armT = [tau >= 13.6 && tau < 14.0 ? lerp(1.3, 0.1, win(tau, 13.6, 14.0)) : 0.1, 0.3];
+      var BEDP = [wl + 34, BED[1]];
+      /* 手的世界坐标路径：胸前 → 地上的章鱼 → 竖直提起 → 车斗上方 → 放进车斗 → 收回胸前 */
+      var chestW = [2 * tx - (shT[0] + 10), shT[1] + 18];
+      /* 车帮顶在 y 168：章鱼（半径 5）中心压到 162 以上就能越过去，同时不碰到抬起后的头（头底约在 157） */
+      var Wp = [[PURPLE0[0], PURPLE0[1] - 4], [PURPLE0[0] - 6, 160], [BEDP[0], 160], [BEDP[0], BEDP[1] - 2]];
+      var handW = null;
+      if (tau >= 11.8 && tau < 12.7) handW = [lerp(chestW[0], Wp[0][0], win(tau, 11.8, 12.6)), lerp(chestW[1], Wp[0][1], win(tau, 11.8, 12.6))];
+      else if (tau >= 12.7 && tau < 12.95) handW = [lerp(Wp[0][0], Wp[1][0], win(tau, 12.7, 12.95)), lerp(Wp[0][1], Wp[1][1], win(tau, 12.7, 12.95))];
+      else if (tau >= 12.95 && tau < 13.15) handW = [lerp(Wp[1][0], Wp[2][0], win(tau, 12.95, 13.15)), Wp[1][1]];
+      else if (tau >= 13.15 && tau < 13.35) handW = [Wp[2][0], lerp(Wp[2][1], Wp[3][1], win(tau, 13.15, 13.35))];
+      else if (tau >= 13.35 && tau < 13.6) handW = [lerp(Wp[3][0], chestW[0], win(tau, 13.35, 13.6)), lerp(Wp[3][1], chestW[1], win(tau, 13.35, 13.6))];
+      var armT = handW ? armIK(shT, [toLocal(handW[0], tx, true), handW[1]], pitchT) : [0.1, 0.3];
       var poseT = toddy.put(tx, hyT, pitchT, fT, armT);
       var handT = [tLeft ? 2 * tx - poseT.hand[0] : poseT.hand[0], poseT.hand[1]];
-      var BED2 = [wl + 30, BED[1]], purplePos;
-      if (tau < 12.8) purplePos = PURPLE0;
-      else if (tau < 13.6) purplePos = handT;
-      else {
-        /* 松手点 = 13.6 s 时手的位置：Toddy 站直在 352、朝左、手臂 [1.3, 0.15]，按正运动学算 */
-        var rp = [352 - (UA * Math.sin(1.3) + FA * Math.sin(1.45)), HIP_Y - SHO + UA * Math.cos(1.3) + FA * Math.cos(1.45)];
-        var TT = 0.32, f2 = tau - 13.6, tgt2 = [228 + (WAG0 - 118) + 30, BED[1]];
-        if (f2 < TT) {
-          var vx2 = (tgt2[0] - rp[0]) / TT, vy2 = (tgt2[1] - rp[1] - 0.5 * GPX * TT * TT) / TT;
-          purplePos = [rp[0] + vx2 * f2, rp[1] + vy2 * f2 + 0.5 * GPX * f2 * f2];
-        } else purplePos = BED2;
-      }
+      var purplePos;
+      if (tau < 12.7) purplePos = PURPLE0;
+      else if (tau < 13.35) purplePos = [handT[0], handT[1]];  // 拿在手里
+      else purplePos = BEDP;  // 松手后留在车斗里，跟着车走
       moveDot(purple, purplePos);
       setOpacity(mid, seg(t, 3.6, 4.0));
       repChips.forEach(function (c, k) { setOpacity(c, seg(t, 3.8 + k * 0.6, 4.3 + k * 0.6)); });
