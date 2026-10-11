@@ -1398,9 +1398,9 @@
     while (L.childNodes.length > 1) Ldet.appendChild(L.childNodes[1]);
     L.appendChild(Ldet);
 
-    /* ── 结尾：同一个发球挪到球场另一处（3.2 m, 0.8 m）、绕竖轴换个朝向（2 rad）再做一遍。
+    /* ── 结尾：同一个发球挪到球场另一处（3 m 外）、绕竖轴换个朝向（约 90°）再做一遍。
        相机固定，两份同步播放；根节点只存角速度、水平速度和高度，关节从骨盆量起、按人自己的朝向摆，所以两份的 263 维逐帧相同 ── */
-    var INV_TH = 2.0, INV_D = [3.2, 0, 0.8];
+    var INV_TH = -1.6, INV_D = [3.0, 0, 0];
     var INV_C = (function () {
       var x0 = 1e9, x1 = -1e9, z0 = 1e9, z1 = -1e9;
       for (var fi = 0; fi < CLIP.rows; fi++) {
@@ -1416,7 +1416,7 @@
       var dx = p[0] - INV_C[0], dz = p[2] - INV_C[2], c = Math.cos(INV_TH), sn = Math.sin(INV_TH);
       return [INV_C[0] + INV_D[0] + dx * c + dz * sn, p[1], INV_C[2] + INV_D[2] - dx * sn + dz * c];
     }
-    var invCam = { yaw: 0.42, pitch: 0.5, s: 40, ox: 180, oy: 200, cx: INV_C[0] + INV_D[0] / 2, cz: INV_C[2] + INV_D[2] / 2 };
+    var invCam = { yaw: 0.42, pitch: 0.4, s: 48, ox: 180, oy: 205, cx: INV_C[0] + INV_D[0] / 2, cz: INV_C[2] + INV_D[2] / 2 };
     var inv2 = group(L);
     /* 共用的地面：世界里固定的 0.5 m 方格 */
     var invGrid = group(inv2);
@@ -1451,15 +1451,15 @@
     inv2.appendChild(svgText(180, 62, '同一个发球，换个位置、换个朝向再做一遍', 'demo-x-ink2', 9.5, 'middle'));
     var INV_K = ['角速度', '水平速度', '高度'];
     var invRead = [midX(trA), midX(trB)].map(function (x, k) {
-      inv2.appendChild(svgText(x, 234, k ? '换个位置、换个朝向' : '原来', 'demo-x-ink2', 9, 'middle'));
+      inv2.appendChild(svgText(x, 238, k ? '换个位置、换个朝向' : '原来', 'demo-x-ink2', 9, 'middle'));
       return INV_K.map(function (nm, i) {
-        var el = svgText(x, 247 + i * 11, '', 'demo-x-mono', 8.4, 'middle');
+        var el = svgText(x, 250 + i * 11, '', 'demo-x-mono', 8.8, 'middle');
         inv2.appendChild(el);
         return el;
       });
     });
-    inv2.appendChild(paint(svgText(180, 263, '=', null, 16, 'middle'), C_GOOD));
-    inv2.appendChild(paint(svgText(180, 289, '两份算出的 ' + DIM + ' 维一模一样 →', null, 9.5, 'middle'), C_GOOD));
+    inv2.appendChild(paint(svgText(180, 266, '=', null, 16, 'middle'), C_GOOD));
+    inv2.appendChild(paint(svgText(180, 291, '两份算出的 ' + DIM + ' 维完全一样 →', null, 9.5, 'middle'), C_GOOD));
 
     /* ── 右上：263 维分段条 ── */
     var R = group(s);
