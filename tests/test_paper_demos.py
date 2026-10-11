@@ -8,7 +8,9 @@ These tests pin the three links in that chain: placeholder survives sanitizing,
 layout loads the assets, and every placeholder has a builder behind it.
 """
 
+import base64
 import math
+import random
 import re
 from pathlib import Path
 
@@ -278,7 +280,7 @@ def test_notes_declare_their_demos_in_reading_order():
         PHP_NOTE: ("php", ["php-explainer"]),
         PBFM_NOTE: ("pbfm", ["pbfm-explainer"]),
         GENTLE_NOTE: ("gentle", ["gentle-explainer"]),
-        HUMANML3D_NOTE: ("humanml3d", ["humanml3d-explainer", "humanml3d-video"]),
+        HUMANML3D_NOTE: ("humanml3d", ["humanml3d-explainer", "humanml3d-video", "humanml3d-clip", "humanml3d-length", "humanml3d-rprec"]),
         TRANSFORMER_NOTE: ("transformer", ["tf-explainer", "tf-video"]),
         PI0_NOTE: ("pi0", ["pi0-explainer", "pi0-video"]),
         PI05_NOTE: ("pi05", ["pi05-explainer", "pi05-video"]),
@@ -456,11 +458,14 @@ EXPLAINER_BUNDLES = (
 # 表 2 的四种执行器有自己的十行参数和分工，单独一幕；3.3 的可靠 / 低成本（表 3、表 4）和 3.5 的拟人（表 5）各一幕。
 # 第 4 节的控制器（4.1）一幕；4.2 的「辨识」和「随机化多宽」是两步——前者是摩擦曲线与 CAD 的转子惯量，后者是表 6 与
 # 窄 / 宽两条带——合成一幕会让 tanh 曲线和包络带挤在同一帧。结果按第 5.1、5.2 节各一幕，5.3 的摔倒记录并进可靠那一幕。
-# HumanML3D 是九件（文本生成动作卡在哪 / 数据集怎么建 / 一帧 263 维 / 每 4 帧一个 snippet code /
-# Text2Length / 时序 VAE 的一步 / 三项损失与课程学习 / 评测器与 R-Precision / 结果、消融与遗产）。
-# 它一篇论文同时交了数据集、方法和评测协议三样东西：数据集的「怎么建」与「每帧存什么」是第 4 节与
-# 第 5 节两段；方法里自编码器（§3.1）、长度采样（§3.2）、VAE 结构与训练方案（§3.3 前后两半）各自
-# 独立；评测器（附录 B）又是后来被整个领域沿用的贡献，不能和 Table 2 的数字挤在一帧。
+# HumanML3D 是十二件（一句话生成动作卡在哪 / 动作从哪来 / 每段配三句话 / 一帧 263 维 / 每 4 帧一个 snippet code /
+# Text2Length / 文本编码器与词注意力 / 先验、后验、生成器 / 三项损失与课程学习 / 评测器与 R-Precision / 结果 /
+# 消融、局限与遗产）。它一篇论文同时交了数据集、方法和评测协议三样东西：数据集里「动作怎么统一格式」（第 4 节的
+# 降帧、裁剪、统一骨架与朝向）和「文字怎么来」（AMT 标注界面、三句话、镜像）是两件事，「每帧存什么」又是第 5 节；
+# 方法里自编码器（§3.1）、长度采样（§3.2）、文本编码与局部词注意力（式 4）、先验 / 后验 / 生成器（式 3、5）、训练方案
+# （式 6 与课程）各自独立；评测器（附录 B）是后来被整个领域沿用的贡献；结果（Table 2–3、图 4、用户研究）与消融、局限
+# （Table 4、图 6、补充材料图 8）各一幕。第二版的九幕把注意力和三个 GRU、标注和统一格式、结果和消融各压在一帧里，
+# 字多图少，2026-10-11 按「多用图少用文字」拆开，并换上片段 012314 的真实骨架和论文原图。
 EXPLAINER_SCENES = {
     "ppo": (PPO_NOTE, 5),
     "awr": (AWR_NOTE, 6),
@@ -496,7 +501,7 @@ EXPLAINER_SCENES = {
     "berkeley_humanoid": (BH_NOTE, 12),
     "toddlerbot": (TB_NOTE, 12),
 
-    "humanml3d": (HUMANML3D_NOTE, 9),
+    "humanml3d": (HUMANML3D_NOTE, 12),
 }
 CN_NUMERALS = {4: "四", 5: "五", 6: "六", 7: "七", 8: "八", 9: "九", 10: "十", 11: "十一", 12: "十二"}
 
@@ -1973,10 +1978,45 @@ def test_smp_explainer_and_worked_example_share_the_same_numbers():
     assert "## 🚶 具体实例" in note
     assert "## 📁 MimicKit 源码对照" in note
 
-def test_humanml3d_explainer_and_worked_example_share_the_same_numbers():
-    """HumanML3D 九幕动画与笔记「🚶 具体实例」是同一组数：统计比例、263 维、snippet code、长度采样与结果都现算。"""
+def _hml_t2l_dists(js: str):
+    """从 humanml3d.js 里读出补充材料图 6 的八条读图分布（归一化前的原值）。"""
+    rows = re.findall(r"\{ panel: '(\d-\d)', text: \"([^\"]+)\", real: (\d+), p: \[([^\]]+)\] \}", js)
+    out = []
+    for panel, text, real, ps in rows:
+        p = [float(x) for x in ps.split(",")]
+        s = sum(p)
+        out.append({"panel": panel, "text": text, "real": int(real), "p": [x / s for x in p]})
+    return out
+
+
+def _hml_rprec_toy(sigma: float, q: float, trials: int, seed: int) -> float:
+    """R-Precision 玩具的 Python 版（与 humanml3d.js 的 rprecToy 同一个模型，随机数不同）：返回 top-1。"""
+    rng = random.Random(seed)
+    hits = 0
+    for _ in range(trials):
+        a = [rng.gauss(0, 1) for _ in range(16)]
+        t = [x + 0.6 * rng.gauss(0, 1) for x in a]
+        m = [x + sigma * rng.gauss(0, 1) for x in a]
+        dt = sum((u - v) ** 2 for u, v in zip(m, t))
+        rank = 0
+        for _ in range(31):
+            same = rng.random() < q
+            d = sum(((x if same else rng.gauss(0, 1)) + 0.6 * rng.gauss(0, 1) - y) ** 2 for x, y in zip(a, m))
+            rank += d < dt
+        hits += rank == 0
+    return hits / trials
+
+
+def test_humanml3d_explainer_demos_and_worked_example_share_the_paper_numbers():
+    """HumanML3D：十二幕动画、三个演示、配音旁白与笔记「🚶 具体实例」用同一组数。
+
+    Table 1–4 照抄 CVPR 正文；片段 012314 的统计量取自官方仓库自带的 npy；长度分布是从补充材料图 6 量出来的
+    读图近似值，分位采样、熵、交叉熵在它上面现算；注意力打分是编的；R-Precision 玩具用 Python 再跑一遍（多种子）。
+    """
     js = (DEMO_JS_DIR / "humanml3d.js").read_text(encoding="utf-8")
     note = HUMANML3D_NOTE.read_text(encoding="utf-8")
+    narration = (ROOT / "scripts" / "paper_video" / "papers" / "humanml3d.py").read_text(encoding="utf-8")
+    intro = (ROOT / "scripts" / "paper_video" / "papers" / "humanml3d.js").read_text(encoding="utf-8")
 
     # 论文 Table 1 / 2 / 4 与官方仓库的原值
     for line in (
@@ -1997,39 +2037,43 @@ def test_humanml3d_explainer_and_worked_example_share_the_same_numbers():
         "var SAMPLE_U = [0.2, 0.5, 0.9];",
         "var ATT_EARLY = softmax([1.8, 1.5, 0.2, 0.1, 0.4]);",
         "var ATT_SWING = softmax([0.2, 0.4, 2.0, 1.3, 1.1]);",
+        "var T2L_STUMBLE = T2L_DISTS[1];",
+        "var T2L_WAVE = T2L_DISTS[6];",
+        "var RP_DIM = 16, RP_TAU = 0.6;",
     ):
         assert line in js, line
-    assert "'demo-x-mono'" in js and "K.video(host" in js
+    assert "K.video(host" in js and "'humanml3d-clip': buildClipDemo" in js and "'humanml3d-rprec': buildRprecDemo" in js
+    # 片段 012314 的真实骨架：170 帧 × 22 关节 × 3（毫米 int16）base64，触地标签每帧一位十六进制
+    b64 = re.search(r"var CLIP_B64 =\s*'([A-Za-z0-9+/=]+)'", js).group(1)
+    assert len(base64.b64decode(b64)) == 170 * 22 * 3 * 2
+    contact = re.search(r"var CLIP_CONTACT =\s*'([0-9a-f]+)'", js).group(1)
+    assert len(contact) == 170
+    ratios = [sum((int(c, 16) >> b) & 1 for c in contact) for b in range(4)]
+    assert ratios == [135, 138, 127, 127] and [_fmt(r / 170 * 100, 1) for r in ratios] == ["79.4", "81.2", "74.7", "74.7"]
 
-    # 第二幕：Table 1 的倍数与 index.csv 的来源
+    # 第 2–3 幕：Table 1 的倍数与 index.csv 的来源
     assert [_fmt(a / b, 2) for a, b in ((14616, 3911), (44970, 6278), (28.59, 10.33), (5371, 1623))] == [
         "3.74", "7.16", "2.77", "3.31"]
     assert 4648 + 2913 + 1839 + 1465 + 1191 + 2560 == 14616 and 14616 - 1191 == 13425
-    assert _fmt(44970 / 14616, 2) == "3.08" and _fmt(28.59 * 3600 / 14616, 2) == "7.04"
 
-    # 第三幕：263 维、触地阈值
+    # 第 4 幕：263 维、触地阈值
     def pose_dim(j):
         return 1 + 2 + 1 + 3 * (j - 1) + 6 * (j - 1) + 3 * j + 4
 
     assert (pose_dim(22), pose_dim(21), 4 + 3 * 22 + 6 * 22 + 3 * 22 + 4) == (263, 251, 272)
-    assert 170 * 263 == 44710
     assert (_fmt(math.sqrt(0.002) * 100, 2), _fmt(math.sqrt(0.002) * 20, 3)) == ("4.47", "0.894")
 
-    # 第四幕：168 帧 → 84 → 42 个 code，参数量与感受野
+    # 第 5 幕：168 帧 → 84 → 42 个 code，感受野与参数量
     def conv_len(n):
         return (n + 2 - 4) // 2 + 1
 
-    frames = 170 // 4 * 4
-    assert (frames, conv_len(frames), conv_len(conv_len(frames))) == (168, 84, 42)
-    assert (168 * 263, 42 * 512, _fmt(168 * 263 / (42 * 512), 2)) == (44184, 21504, "2.05")
-    enc = 259 * 512 * 4 + 512 + 512 * 512 * 4 + 512 + 512 * 512 + 512
-    dec = 512 * 512 * 4 + 512 + 512 * 263 * 4 + 263 + 263 * 263 + 263
-    assert (enc, dec, 4 + 3 * 2) == (1842688, 1657407, 10)
+    assert (170 // 4 * 4, conv_len(168), conv_len(conv_len(168))) == (168, 84, 42)
+    assert (168 * 263, 42 * 512, _fmt(168 * 263 / (42 * 512), 2), 4 + 3 * 2) == (44184, 21504, "2.05", 10)
+    assert (max(0, 4 * 7 - 3), 4 * 7 + 6) == (25, 34)
 
-    # 第五幕：截在 [10, 49] 的示意分布，按累积概率取样
-    def length_dist(mu, sigma):
-        w = [math.exp(-((k - mu) ** 2) / (2 * sigma * sigma)) for k in range(10, 50)]
-        return [x / sum(w) for x in w]
+    # 第 6 幕 + 第二个演示：补充材料图 6 的读图分布
+    dists = _hml_t2l_dists(js)
+    assert [d["real"] for d in dists] == [17, 25, 12, 34, 49, 25, 45, 40] and len(dists[0]["p"]) == 40
 
     def quantile(p, u):
         acc = 0.0
@@ -2039,13 +2083,20 @@ def test_humanml3d_explainer_and_worked_example_share_the_same_numbers():
                 return 10 + i
         return 49
 
-    peak, flat = length_dist(42, 3), length_dist(30, 9)
-    assert [quantile(peak, u) for u in (0.2, 0.5, 0.9)] == [39, 42, 46]
-    assert [quantile(flat, u) for u in (0.2, 0.5, 0.9)] == [23, 30, 41]
-    assert (_fmt(peak[42 - 10], 3), _fmt(-math.log(peak[42 - 10]), 2)) == ("0.134", "2.01")
-    assert (_fmt(flat[42 - 10], 3), _fmt(-math.log(flat[42 - 10]), 2)) == ("0.019", "3.98")
+    stumble, wave = dists[1], dists[6]
+    assert stumble["text"].startswith("Person stumbles") and wave["text"] == "A person waves with their left hand"
+    assert [quantile(stumble["p"], u) for u in (0.2, 0.5, 0.9)] == [23, 25, 27]
+    assert [quantile(wave["p"], u) for u in (0.2, 0.5, 0.9)] == [15, 21, 44]
 
-    # 第六幕：注意力示意、三个 GRU 的输入维数、到达倒计时、KL 算例
+    def entropy(p):
+        return -sum(x * math.log(x) for x in p if x > 0)
+
+    assert (_fmt(entropy(stumble["p"]), 2), _fmt(entropy(wave["p"]), 2), _fmt(math.log(40), 2)) == ("2.29", "3.28", "3.69")
+    assert (_fmt(stumble["p"][15], 3), _fmt(-math.log(stumble["p"][15]), 2)) == ("0.168", "1.79")
+    assert (_fmt(wave["p"][35], 3), _fmt(-math.log(wave["p"][35]), 2)) == ("0.043", "3.14")
+    assert _fmt(sum(stumble["p"][13:18]) * 100, 1) == "80.7" and _fmt(sum(wave["p"][33:38]) * 100, 1) == "23.7"
+
+    # 第 7–8 幕：注意力示意、三个 GRU 的输入维数、到达倒计时、KL 算例
     def softmax(x):
         e = [math.exp(v - max(x)) for v in x]
         return [v / sum(e) for v in e]
@@ -2053,35 +2104,52 @@ def test_humanml3d_explainer_and_worked_example_share_the_same_numbers():
     assert [_fmt(v, 3) for v in softmax([1.8, 1.5, 0.2, 0.1, 0.4])] == ["0.422", "0.312", "0.085", "0.077", "0.104"]
     assert [_fmt(v, 3) for v in softmax([0.2, 0.4, 2.0, 1.3, 1.1])] == ["0.073", "0.089", "0.440", "0.219", "0.179"]
     assert (512 + 512, 512 + 512 + 512, 512 + 512 + 128) == (1024, 1536, 1152)
-    assert 28 // 4 + 1 == 8 and 42 - 8 == 34 and _fmt(math.sqrt(512), 1) == "22.6"
+    assert 28 // 4 + 1 == 8 and 42 - 8 == 34
     kl = math.log(1 / 0.8) + (0.64 + 0.25) / 2 - 0.5
     assert (_fmt(kl, 3), _fmt(kl * 128, 1), _fmt(kl * 128 * 0.01, 3)) == ("0.168", "21.5", "0.215")
 
-    # 第七—九幕：课程阶段、评测随机水平、Table 2 / 4 的比例
+    # 第 9–12 幕：课程阶段、评测随机水平、Table 2 / 3 / 4 的比例
     assert 49 - 10 + 1 == 40 and 42 - 10 + 1 == 33
     assert (_fmt(100 / 32, 1), _fmt(300 / 32, 1)) == ("3.1", "9.4")
-    assert (_fmt(10 - 6, 0), (10 - 6) ** 2, 3 ** 2) == ("4", 16, 9)
     assert (_fmt(0.455 / 0.511 * 100, 1), _fmt(0.736 / 0.797 * 100, 1)) == ("89.0", "92.3")
-    assert (_fmt(11.02 / 1.087, 1), _fmt((2.219 - 2.090) / 2.090 * 100, 1)) == ("10.1", "6.2")
+    assert (_fmt(11.02 / 1.087, 1), _fmt((2.219 - 2.090) / 2.090 * 100, 1), _fmt((2.052 - 1.482) / 1.482 * 100, 1)) == ("10.1", "6.2", "38.5")
     assert [_fmt(0.455 - v, 3) for v in (0.370, 0.396, 0.443, 0.444)] == ["0.085", "0.059", "0.012", "0.011"]
+    assert [_fmt((0.455 - v) / 0.455 * 100, 1) for v in (0.370, 0.396, 0.443, 0.444)] == ["18.7", "13.0", "2.6", "2.4"]
+    assert _fmt((0.213 + 0.507) * 100, 0) == "72"
+    # 片段 012314 的根角速度存的是半角：170 行累加 −22.8°，乘 2 才是转角
+    assert _fmt(-22.80458 * 2, 1) == "-45.6"
+
+    # 第三个演示：R-Precision 玩具的结论多种子平均后仍成立（描述有歧义时 σ = 0 也到不了 100%）
+    clear = sum(_hml_rprec_toy(0.0, 0.0, 300, s) for s in (1, 2, 3)) / 3
+    ambiguous = sum(_hml_rprec_toy(0.0, 0.04, 300, s) for s in (1, 2, 3)) / 3
+    noisy = sum(_hml_rprec_toy(2.0, 0.0, 300, s) for s in (1, 2, 3)) / 3
+    assert clear > 0.95 and ambiguous < 0.75 and noisy < 0.5
 
     for needle in (
-        "## 🎬 九幕动画：HumanML3D 全流程",
-        "## 🚶 具体实例",
-        "## 📁 源码对照",
-        "14,616", "44,970", "13,425", "4,648", "29,232", "4,384",
+        "## 🎬 十二幕动画：HumanML3D 全流程", "## 🚶 具体实例", "## 📁 源码对照",
+        'data-demo="humanml3d-clip"', 'data-demo="humanml3d-length"', 'data-demo="humanml3d-rprec"',
+        "14,616", "44,970", "13,425", "4,648", "29,232", "29,228", "4,384",
         "$1+2+1+63+126+66+4 = 263$", "251 维", "272",
-        "$(170, 263)$", "−22.8°", "10.0 m/s", "第 28 帧",
-        "79.4%、81.2%、74.7%、74.7%", "0.894", "**−11.9**",
-        "**42 个 512 维 code**", "44{,}184", "21{,}504", "1{,}842{,}688", "1,657,407",
-        "39 / 42 / 46", "7.8 / 8.4 / 9.2", "23 / 30 / 41", "2.01", "3.98",
+        "$(170, 263)$", "−45.6°", "2.34 m", "10.0 m/s", "第 28 帧", "tennis-15-first service",
+        "79.4%、81.2%、74.7%、74.7%", "0.894", "**−11.9**", "−59.6",
+        "**42 个 512 维 code**", "44{,}184", "21{,}504", "1{,}842{,}688", "1,657,407", "第 25–34 帧",
+        "**23 / 25 / 27**", "**15 / 21 / 44**", "4.6 / 5.0 / 5.4 s", "3.0 / 4.2 / 8.8 s", "**1.79**", "**3.14**", "80.7%", "23.7%",
         "0.422 / 0.312 / 0.085 / 0.077 / 0.104", "0.073 / 0.089 / 0.440 / 0.219 / 0.179",
         "**1,024**", "**1,536**", "**1,152**", "$T-t = 34$", "0.168", "21.5", "0.215",
-        "**参加 33 个阶段**", "89.0\\%", "92.3\\%", "10.1", "+6.2%", "43,692",
+        "**参加 33 个阶段**", "89.0\\%", "92.3\\%", "10.1", "+6.2%", "+38.5%", "18.7%", "43,692", "21.3%",
     ):
         assert needle in note, needle
-    # 论文只发在 CVPR 2022；旧笔记里的 arXiv 2204.09419 是一篇天体物理论文，不能再当成出处链接
-    assert "arxiv.org/abs/2204.09419" not in note and "\narxiv:" not in note
+    # 论文只发在 CVPR 2022；旧笔记里的 arXiv 2204.09419 是一篇天体物理论文，不能再当成出处链接；
+    # 笔记里也不放任何 arxiv.org 链接，否则 prepare_pages 会把它当成这篇论文的 arXiv 号
+    assert "arxiv.org/abs/2204.09419" not in note and "\narxiv:" not in note and "arxiv.org/" not in note
+
+    for needle in ("263", "0.89", "42 个 code", "23、25、27", "15、21、44", "0.42", "0.44", "34 个", "33 阶段",
+                   "0.511", "0.455", "0.246", "1.087", "11.02", "72%", "0.361", "0.424", "0.085", "0.059"):
+        assert needle in narration.replace("第 33 阶段", "33 阶段"), needle
+    # 片头接上一期（ToddlerBot）的片尾预告，片尾只预告下一篇（GMR）；主动画不预告下一篇
+    assert "上一期结尾预告：人类的动作数据从哪里来，怎样给每段动作配上文字" in narration and "下一篇讲 G M R" in narration
+    assert "badge: 'CVPR 2022'" in intro and "**下一篇**：GMR" in intro
+    assert "GMR" not in js and "下一篇" not in js
 
 
 def test_dr_explainer_demos_and_worked_example_share_the_paper_numbers():

@@ -25,7 +25,7 @@
 | `sonic` | `assets/js/demos/sonic.js` 七幕 | 约 5 分 32 秒 |
 | `gmr` | `assets/js/demos/gmr.js` 七幕 | 约 5 分 25 秒 |
 | `omniretarget` | `assets/js/demos/omniretarget.js` 七幕 | 约 5 分 7 秒 |
-| `humanml3d` | `assets/js/demos/humanml3d.js` 九幕 | 约 7 分 11 秒 |
+| `humanml3d` | `assets/js/demos/humanml3d.js` 十二幕 | 约 @@HML_DUR@@ |
 | `smp` | `assets/js/demos/smp.js` 八幕 | 约 8 分 37 秒 |
 | `domain_randomization` | `assets/js/demos/domain_randomization.js` 八幕（`dr-explainer`） | 约 8 分 20 秒 |
 | `quadterrain` | `assets/js/demos/quadterrain.js` 九幕（`qt-explainer`） | 约 9 分 27 秒 |
