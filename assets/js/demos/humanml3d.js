@@ -3942,10 +3942,16 @@
   var S12_F6 = { x: 246, y: 38, w: 446, h: 366, iw: 1000, ih: 819 }; // 论文图 6 放大时（原图 1000×819）
   var S12_F6_SMALL = { x: 248, y: 38, w: 236 }; // 缩回去以后
   var S12_F8 = { x: 508, y: 38, w: 210, h: 164, iw: 1100, ih: 855 }; // 补充材料图 8（原图 1100×855）
+  /* 第三拍讲图 8 时整组（图、红框、①②、图例）放大 1.18 倍、左边贴到 492（图 6 缩回去后右边到 484），
+     右边的 ① 到 768、图例底到 300，下排还空着；第四拍开头缩回右上角的位置 */
+  var S12_F8_BIG = { a: [508, 38], to: [492, 38], s: 1.18 };
   /* 论文图 6 里的位置（原图像素，按蓝色人体的像素量出来）：三行、最后一列（右手举到脸边）、标题第二行的那半句 */
   var S12_F6_ROWS = [[60, 301], [306, 559], [565, 815]];
   var S12_F6_LAST = [838, 974];
-  var S12_F6_PHRASE = [392, 30, 771, 66]; // 「bring his right hand to his face.」
+  /* 最后一列三个人的上下范围（原图像素）：第 1 行举起的右手顶到 y 58，框顶必须在它上面，否则要看的那只手露在框外；
+     第 1 行脚底 297 和第 2 行头顶 298 挨着，两框各让几像素，中间留一道缝 */
+  var S12_F6_LAST_Y = [[50, 294], [304, 557], [564, 812]];
+  var S12_F6_PHRASE = [392, 29, 771, 61]; // 「bring his right hand to his face.」：第二行字 33–57，框底不压到下面一排人的头顶（63）
   var S12_F6_SPLIT = 508; // 第 2 行：前四个姿态 | 后四个姿态
   /* 补充材料图 8 里三个黄框（原图像素），往外扩几像素叠红框 */
   var S12_F8_BOX = [[506, 214, 1015, 259], [760, 528, 867, 574], [492, 812, 609, 853]];
@@ -3979,7 +3985,7 @@
   }
 
   function buildSceneLegacy() {
-    var s = sceneSvg('左上是论文 Table 4 的消融：从完整模型的 top 1 0.455 往下掉，去掉 snippet code 掉 0.085、去掉词注意力掉 0.059（红），去掉词性标签和位置编码只掉 0.012 和 0.011（灰）；中间是论文图 6，三行依次是完整模型、去掉 snippet code、去掉词注意力，去掉 snippet code 那行前半段像样、后半段跟不上，最后一列只有完整模型把右手举到脸边；右上是补充材料图 8 的三个失败案例，红框标出挠头、左腿和投棒球；底部一条时间轴，MDM、T2M-GPT、MoMask 都连回 HumanML3D 加评测器这个底座，最后一行是文字、人体动作、重定向、机器人骨架（示意）、物理跟踪的小流程');
+    var s = sceneSvg('左上是论文 Table 4 的消融：从完整模型的 top 1 ' + fmt(OURS.top1, 3) + ' 往下掉，去掉 snippet code 掉 ' + fmt(ABL[0].drop, 3) + '、去掉词注意力掉 ' + fmt(ABL[1].drop, 3) + '（红），去掉词性标签和位置编码只掉 ' + fmt(ABL[2].drop, 3) + ' 和 ' + fmt(ABL[3].drop, 3) + '（灰）；中间是论文图 6，三行依次是完整模型、去掉 snippet code、去掉词注意力，去掉 snippet code 那行前半段像样、后半段跟不上，最后一列只有完整模型把右手举到脸边；右上是补充材料图 8 的三个失败案例，红框标出挠头、左腿和投棒球；底部一条时间轴，MDM、T2M-GPT、MoMask 都连回 HumanML3D、' + DIM + ' 维特征加本文评测器这个底座，最后一行是文字、人体动作、重定向、机器人骨架（示意）、物理跟踪的小流程');
     headline(s, '哪个部件最要紧、还有哪些做不到、后来成了什么');
 
     var top = group(s);
@@ -4041,7 +4047,8 @@
     });
     var phraseBox = f6Box(S12_F6_PHRASE[0], S12_F6_PHRASE[1], S12_F6_PHRASE[2], S12_F6_PHRASE[3], C_WARN, 2);
     var lastBoxes = S12_F6_ROWS.map(function (r, k) {
-      return f6Box(S12_F6_LAST[0], r[0] + 4, S12_F6_LAST[1], r[1] - 4, k === 0 ? C_GOOD : C_BAD, 2.6);
+      var y = S12_F6_LAST_Y[k];
+      return f6Box(S12_F6_LAST[0], y[0], S12_F6_LAST[1], y[1], k === 0 ? C_GOOD : C_BAD, 2.6);
     });
     var f6C = [F.x + F.w / 2, F.y + F.h / 2];
     var f6S = S12_F6_SMALL.w / F.w;
@@ -4074,22 +4081,23 @@
 
     /* ── 右上：补充材料图 8（失败案例） ── */
     var G = S12_F8;
-    var f8 = paperFig(top, 'supp_failures.webp', G.x, G.y, G.w, G.h, '', { pad: 2 });
+    var f8G = group(top);
+    var f8 = paperFig(f8G, 'supp_failures.webp', G.x, G.y, G.w, G.h, '', { pad: 2 });
     var f8Marks = S12_F8_BOX.map(function (b, k) {
       var a = f8.px((b[0] - 6) / G.iw, (b[1] - 5) / G.ih), c = f8.px((b[2] + 6) / G.iw, Math.min(b[3] + 5, G.ih) / G.ih);
-      var g = group(top);
+      var g = group(f8G);
       hiBox(g, a[0], a[1], c[0] - a[0], c[1] - a[1], C_BAD, 1.8);
       g.appendChild(paint(svgText(G.x + G.w + 8, (a[1] + c[1]) / 2 + 4.5, S12_F8_MARK[k], null, 12.5), C_BAD));
       return { g: g, at: k === 1 ? 9.6 : 9.0 };
     });
     var f8Cap = svgText(G.x, G.y + G.h + 12, '补充材料图 8：失败案例（黄框是原图的）', 'demo-x-mut', 8.5);
-    top.appendChild(f8Cap);
+    f8G.appendChild(f8Cap);
     var legend = [
       ['①', '挠头、投棒球：动作太复杂'],
-      ['②', '左腿 / 右腿：这种细节分不清'],
+      ['②', '左腿 / 右腿：对这种细节不够敏感'],
       ['③', '超长文本、与环境交互：还没覆盖']
     ].map(function (l, k) {
-      var g = group(top), y = G.y + G.h + 26 + k * 14;
+      var g = group(f8G), y = G.y + G.h + 26 + k * 14;
       g.appendChild(paint(svgText(G.x, y, l[0], null, 10), C_BAD));
       g.appendChild(svgText(G.x + 15, y, l[1], 'demo-x-ink2', 9.5));
       return { g: g, at: 9.0 + k * 0.6 };
@@ -4103,7 +4111,7 @@
     var axis = arrow(s, [[160, RA.y + RA.h / 2], [768, RA.y + RA.h / 2]], C_BORDER, 1.4, 6);
     var baseG = group(s);
     rectBox(baseG, 160, RA.base, 610, 22, C_ACCENT, C_SURFACE2);
-    baseG.appendChild(svgRich(465, RA.base + 15.5, '**HumanML3D**（' + thou(HML.motions) + ' 段动作 · ' + thou(HML.texts) + ' 条描述）+ **本文的评测器**（' + DIM + ' 维特征）', { size: 9.5, anchor: 'middle', w: 600, cls: 'demo-x-ink2' }));
+    baseG.appendChild(svgRich(465, RA.base + 15.5, '**HumanML3D**（' + thou(HML.motions) + ' 段动作 · ' + thou(HML.texts) + ' 条描述）+ 每帧 **' + DIM + ' 维**特征 + **本文的评测器**', { size: 9.5, anchor: 'middle', w: 600, cls: 'demo-x-ink2' }));
     var later = [['2022 · MDM', 300], ['2023 · T2M-GPT', 480], ['2024 · MoMask', 660]].map(function (c, k) {
       var g = chip(s, c[1] - 65, RA.y, 130, '**' + c[0] + '**', C_ACCENT, { h: RA.h, size: 10, cls: 'demo-x-acc' });
       var link = arrow(s, [[c[1], RA.y + RA.h + 1], [c[1], RA.base - 1]], C_ACCENT, 1.4, 4);
@@ -4176,13 +4184,16 @@
       setOpacity(phraseBox, seg(t, 6.5, 6.8));
       setOpacity(nPhrase, seg(t, 6.5, 6.8));
       lastBoxes.forEach(function (b, k) {
+        /* 框线不随缩放变细（non-scaling），缩小后三框之间的缝只剩 2 px 左右，线宽跟着收一点免得连成一片 */
+        b.setAttribute('stroke-width', (2.6 - 0.9 * shrink).toFixed(2));
         setOpacity(b, seg(t, 6.9 + k * 0.25, 7.2 + k * 0.25));
         setOpacity(nEnd[k], seg(t, 6.9 + k * 0.25, 7.2 + k * 0.25));
       });
       setOpacity(f6CapBig, seg(t, 4.6, 5.0));
       setOpacity(f6CapSmall, seg(t, 8.4, 8.8));
 
-      /* 第三拍：补充材料图 8 + 红框 + ①②③ */
+      /* 第三拍：补充材料图 8 + 红框 + ①②③（放大着讲，第四拍开头缩回右上角） */
+      s12Place(f8G, S12_F8_BIG.a, S12_F8_BIG.to, S12_F8_BIG.s, 1 - ease(seg(t, 11.0, 11.45)));
       setOpacity(f8.g, seg(t, 8.45, 8.85));
       setOpacity(f8Cap, seg(t, 8.45, 8.85));
       f8Marks.forEach(function (m) {
@@ -4367,7 +4378,8 @@
         { at: 0.2, s: 'Table 4：去掉 snippet code 掉 **' + fmt(ABL[0].drop, 3) + '**，去掉词注意力掉 **' + fmt(ABL[1].drop, 3) + '**；词性、位置编码只掉一点。' },
         { at: 4.0, s: '论文图 6：去掉部件后，后半段跟不上文字，没把右手举到脸边。' },
         { at: 8.0, s: '局限：挠头、投棒球这类复杂动作，左腿 / 右腿这类细节；超长文本、环境交互还没覆盖。' },
-        { at: 11.0, s: 'MDM、T2M-GPT、MoMask 都在 HumanML3D 上用同一个评测器报数；上人形机器人还要映射到机器人骨架 + 物理跟踪。' }
+        { at: 11.0, s: 'MDM、T2M-GPT、MoMask 都在 HumanML3D 上用同一个评测器报数。' },
+        { at: 13.2, s: '用到人形机器人上：人体动作 → 映射到机器人骨架 → 物理跟踪，才真的做得出来。' }
       ]
     }
   ];

@@ -49,14 +49,14 @@ window.PaperVideo = {
     ];
     var pts = items.map(function (it) {
       var p = h('div', 'pt', root);
-      p.style.fontSize = '33px'; p.style.padding = '14px 30px';
+      p.style.fontSize = '31px'; p.style.padding = '12px 30px';
       p.style.borderLeft = '10px solid ' + it[0];
       var n = h('div', 'n', p, it[1]); n.style.color = it[0];
       var body = h('div', '', p);
       it[2].split('<br>').forEach(function (line, q) {
         if (q) body.appendChild(document.createElement('br'));
         var span = h('span', '', body); K.rich(span, line);
-        if (q) { span.style.fontSize = '30px'; span.style.color = 'var(--text-secondary)'; }
+        if (q) { span.style.fontSize = '28px'; span.style.color = 'var(--text-secondary)'; }
       });
       return p;
     });
@@ -64,7 +64,7 @@ window.PaperVideo = {
     var next = h('div', 'pt', root);
     next.style.fontSize = '29px'; next.style.padding = '14px 30px';
     next.style.borderStyle = 'dashed';
-    K.rich(next, '**下一篇**：GMR —— 人和机器人骨架不同，怎样把人的动作搬到机器人身上');
+    K.rich(next, '**下一篇**：GMR —— 怎样把人的动作搬到机器人身上');
     var foot = h('div', 'meta', root,
       '<b>完整笔记 · 3 个交互演示 · 论文数字逐项对照</b><br>imchong.github.io/Robot_Learning_Paper_Notebooks');
     foot.style.textAlign = 'center';
