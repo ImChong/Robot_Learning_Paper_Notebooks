@@ -3128,6 +3128,10 @@ def test_gmr_explainer_demos_and_worked_example_share_the_paper_numbers():
     assert "上一期结尾预告：人和机器人的骨架不一样，怎样把人的动作搬到机器人身上" in narration and "下一篇讲 OmniRetarget" in narration
     assert "**下一篇**：OmniRetarget" in intro and "arxiv: '2510.02252'" in intro
     assert "OmniRetarget" not in js and "下一篇" not in js
+    # 配置表的「一行」念 háng：旁白写同音的「航」，字幕按短语换回「行」（不碰「偏航角」）
+    for spoken, shown in (("写成一航", "写成一行"), ("每一航", "每一行"), ("这一航", "这一行")):
+        assert spoken in narration and f'("{spoken}", "{shown}")' in narration
+    assert "一行" not in narration.split("SCRIPT = [", 1)[1].split("DISPLAY = [", 1)[0]
 
 
 def _webp_size(path: Path):
