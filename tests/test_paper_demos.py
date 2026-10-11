@@ -274,7 +274,7 @@ def test_notes_declare_their_demos_in_reading_order():
         SONIC_NOTE: ("sonic", ["sonic-explainer", "sonic-video"]),
         GROOT_NOTE: ("groot", ["groot-explainer", "groot-video", "groot-timing", "groot-flow", "groot-results"]),
         COSMOS_NOTE: ("cosmos", ["cosmos-explainer", "cosmos-video", "cosmos-data", "cosmos-tokens", "cosmos-physics"]),
-        GMR_NOTE: ("gmr", ["gmr-explainer", "gmr-video"]),
+        GMR_NOTE: ("gmr", ["gmr-explainer", "gmr-video", "gmr-scale", "gmr-ik", "gmr-table"]),
         OMNI_NOTE: ("omniretarget", ["omniretarget-explainer", "omniretarget-video"]),
         UMR_NOTE: ("umr", ["umr-explainer"]),
         PHP_NOTE: ("php", ["php-explainer"]),
@@ -346,11 +346,12 @@ EXPLAINER_BUNDLES = (
 # 流匹配路径和 K=4 欧拉 / 数据金字塔三层 / 潜动作与 IDM 补标签 /
 # 一套权重加按本体的 MLP / Table 2–3 的任务加权平均和短程桌面的边界）。
 # 「频率」和「流匹配公式」是两件事，金字塔回答数据放哪一层、潜动作回答标签从哪来，
-# 压进六幕会有两幕各塞两件；GMR 也是七件
-# （retargeting 被当成前处理脚本 / 一条管线接 5 种格式 × 18+ 款机器人 / 论文的五步显式流程 /
-# 非均匀局部缩放为什么是关键 / mink + DAQP 的两阶段约束 IK / Retargeting Matters 的定量论据 /
-# 闭环与源码落点），「五步流程」是论文层面的分解、「两阶段 IK」是代码层面的两张 match table，
-# 合成一幕会把两套分解叠在同一块画面上；关键创新第 ③ 步也撑得起单独一幕。
+# 压进六幕会有两幕各塞两件；GMR 是十三件（2026-10-11 从七幕重做）
+# （人和机器人的身体不一样 / 两个开源基线怎么缩放 / 第 1、2 步一张配置表 / 第 3 步非均匀局部缩放 /
+# 根和脚同一个比例 / 第 4 步先对朝向 / 第 5 步再对所有位置 / 评测只换参考动作 / 表 I / 图 3 三类瑕疵 /
+# 图 4 用户研究 / 表 III 起始帧 / 开源库与局限）：方法节的五步里第 1、2 步写在同一份配置的同一行，合成一幕；
+# 第 3 步的式 2 与「根和腿必须同比例」（由式 2 推出的滑脚，配复现实验的两条跑道）是两件事；两个 IK 阶段各一幕；
+# 实验节按论文自己的 Q1–Q3 加第 V-D 节的起始帧，一问一幕，评测设计（三种测法、成功的定义）单独一幕。
 # OmniRetarget 也是七件（现有 retargeting 只盯人体关键点 / interaction mesh 的
 # Delaunay 四面体 / Laplacian 形变能 / 序贯 SOCP 硬约束 / 一条演示四路扩增 /
 # 极简 RL 与 Table II / 数据工厂到 G1 真机的闭环），「网格保形」是目标、「硬约束」
@@ -479,7 +480,7 @@ EXPLAINER_SCENES = {
     "sonic": (SONIC_NOTE, 7),
     "groot": (GROOT_NOTE, 7),
     "cosmos": (COSMOS_NOTE, 5),
-    "gmr": (GMR_NOTE, 7),
+    "gmr": (GMR_NOTE, 13),
     "omniretarget": (OMNI_NOTE, 7),
     "diffusion_policy": (DIFFUSION_POLICY_NOTE, 7),
     "beyondmimic": (BEYONDMIMIC_NOTE, 12),
@@ -503,7 +504,7 @@ EXPLAINER_SCENES = {
 
     "humanml3d": (HUMANML3D_NOTE, 12),
 }
-CN_NUMERALS = {4: "四", 5: "五", 6: "六", 7: "七", 8: "八", 9: "九", 10: "十", 11: "十一", 12: "十二"}
+CN_NUMERALS = {4: "四", 5: "五", 6: "六", 7: "七", 8: "八", 9: "九", 10: "十", 11: "十一", 12: "十二", 13: "十三"}
 
 
 def test_explainer_scene_count_matches_the_title_and_note():
@@ -1832,8 +1833,8 @@ def test_vla_explainers_share_numbers_with_their_notes():
     assert "nBig = 100, nSmall = 1, p = 0.43" in js
 
 
-def test_sonic_and_gmr_worked_examples_share_numbers_with_their_explainers():
-    """SONIC / GMR 的「🚶 具体实例」手算与七幕动画现算的是同一组数。"""
+def test_sonic_worked_example_shares_numbers_with_its_explainer():
+    """SONIC 的「🚶 具体实例」手算与七幕动画现算的是同一组数（GMR 改成了单独的测试）。"""
     sonic = SONIC_NOTE.read_text(encoding="utf-8")
     enc = 2048 * 1024 + 1024 * 512 + 512 * 512
     dyn = 2048 * 2048 + 2048 * 1024 + 1024 * 1024 + 1024 * 512 + 512 * 512
@@ -1845,15 +1846,6 @@ def test_sonic_and_gmr_worked_examples_share_numbers_with_their_explainers():
                    "= 5\\ \\text{个控制步}", "$20 \\times 0.95 = 19$"):
         assert needle in sonic, needle
 
-    gmr = GMR_NOTE.read_text(encoding="utf-8")
-    s = (0.80 + 0.85 + 1.00) / 3
-    resid = [abs(r - s) * L for r, L in ((0.80, 60), (0.85, 85), (1.00, 50))]
-    assert [round(x, 1) for x in resid] == [5.0, 2.8, 5.8] and round(sum(resid), 1) == 13.7
-    assert round(math.degrees(3 * math.pi / 30)) == 18
-    assert (round(1000 / 65, 1), round(1000 / 40, 1), round(300 / 21, 1)) == (15.4, 25.0, 14.3)
-    for needle in ("## 🚶 具体实例", "s = \\frac{0.80 + 0.85 + 1.00}{3} \\approx 0.883", "**13.7 cm**",
-                   "18^\\circ", "15.4", "25.0", "14.3\\%", "**90 条**"):
-        assert needle in gmr, needle
 
 
 def test_smp_explainer_and_worked_example_share_the_same_numbers():
@@ -2988,3 +2980,151 @@ def test_toddlerbot_explainer_demos_and_worked_example_share_the_paper_numbers()
     # 片头接上一期（Berkeley Humanoid）的片尾预告，片尾只预告下一篇（HumanML3D）
     assert "上一期结尾预告：把校准、数字孪生、遥操作采集和部署工具" in narration and "下一篇讲 HumanML3D" in narration
     assert "HumanML3D" in intro and "arxiv: '2502.00893'" in intro
+
+
+def _gmr_clip(js: str, name: str, n: int):
+    """从 gmr.js 里读出嵌入的片段（小端 int16 毫米，多段字符串拼起来的 base64），返回 [帧][点][xyz]（米）。"""
+    body = re.search(rf"var CLIP_{name} =\s*((?:\s*'[A-Za-z0-9+/=]+'\s*\+?)+);", js).group(1)
+    raw = base64.b64decode("".join(re.findall(r"'([A-Za-z0-9+/=]+)'", body)))
+    vals = [int.from_bytes(raw[i:i + 2], "little", signed=True) / 1000 for i in range(0, len(raw), 2)]
+    frames = len(vals) // (n * 3)
+    assert frames * n * 3 == len(vals)
+    return [[vals[(f * n + j) * 3:(f * n + j) * 3 + 3] for j in range(n)] for f in range(frames)]
+
+
+def test_gmr_explainer_demos_and_worked_example_share_the_paper_numbers():
+    """GMR：十三幕动画、三个演示、配音旁白与笔记「🚶 具体实例」用同一组数。
+
+    表 I–III、图 4 照抄 arXiv 2510.02252 v1；比例、权重、停止条件照抄官方仓库；人和 G1 的动作是我们用 mink + MuJoCo
+    照官方代码在 LAFAN1 walk1_subject1 第 920–1003 帧上跑的复现实验，嵌在 gmr.js 里，这里用 Python 解码后再算一遍。
+    """
+    js = (DEMO_JS_DIR / "gmr.js").read_text(encoding="utf-8")
+    note = GMR_NOTE.read_text(encoding="utf-8")
+    narration = (ROOT / "scripts" / "paper_video" / "papers" / "gmr.py").read_text(encoding="utf-8")
+    intro = (ROOT / "scripts" / "paper_video" / "papers" / "gmr.js").read_text(encoding="utf-8")
+
+    for line in (
+        "var EVAL = { seqs: 21, minLen: 5.5, maxLen: 130.5, sim: 100, simDr: 4096, sim2sim: 100, methods: 4 };",
+        "var CFG = { hRef: 1.8, hLafan: 1.75, sLegs: 0.9, sArms: 0.75, damping: 0.5, maxIter: 10, tol: 0.001, velLimit: 3 * Math.PI, solver: 'daqp' };",
+        "var USER = { n: 20, motions: 15, clipSec: 5, questions: 15 * 3, vs: [['Unitree', 25, 37, 38], ['PHC', 74, 8, 18], ['ProtoMotions', 63, 13, 23]] };",
+        "{ motion: 'Walk 2', frames: [0, 7], sr: [[100, 64, 100, 100], [100, 100, 100, 100]] },",
+        "{ motion: 'Turn 1', frames: [0, 49], sr: [[14, 100, 86, 47], [100, 100, 99, 100]] }",
+        "mean: [247.8, 104.1, 139.7, 77.2]",
+        "var PELVIS_Q = [0.5, 0.5, 0.5, 0.5];",
+        "var CLIP = { file: 'walk1_subject1.bvh', from: 920, frames: 84, fps: 30, warm: 860 };",
+    ):
+        assert line in js, line
+    for k in ("'gmr-scale': buildScaleDemo", "'gmr-ik': buildIkDemo", "'gmr-table': buildTableDemo", "K.video(host"):
+        assert k in js, k
+
+    # 表 I：21 段，11 + 3 段所有来源、所有测法都超过 98%，剩下 7 段差别大；合计时长
+    rows = re.findall(r"\['([^']+)', ([\d.]+), \[([^\]]+)\], \[([^\]]+)\], \[([^\]]+)\]\]", js)
+    assert len(rows) == 21
+    table = [(n, float(L), [float(x) for x in a.split(",") + b.split(",") + c.split(",")]) for n, L, a, b, c in rows]
+    perfect = [n for n, _, v in table if min(v) == 100]
+    easy = [n for n, _, v in table if 98 < min(v) < 100]
+    hard = [n for n, _, v in table if min(v) <= 98]
+    assert perfect == ["Walk 1", "Walk (old)", "Hop around"] and len(easy) == 11
+    assert hard == ["Walk 2", "Turn 1", "Hop", "Dance 1", "Dance 2", "Dance 5", "Run (stop & go)"]
+    total = sum(L for _, L, _ in table)
+    assert _fmt(total, 2) == "796.76" and _fmt(total / 60, 1) == "13.3" and _fmt(10 / total * 100, 1) == "1.3"
+    assert (4 * 21, 100 + 4096 + 100, 4 * 21 * 4296, 21 * 3 * 4, 15 * 3) == (84, 4296, 360864, 252, 45)
+
+    # 式 2 的比例与骨盆偏移
+    assert (_fmt(1.75 / 1.8, 3), _fmt(1.75 / 1.8 * 0.9, 3), _fmt(1.75 / 1.8 * 0.75, 3), _fmt(1.3228 / 1.75, 3)) == ("0.972", "0.875", "0.729", "0.756")
+    assert _fmt(1.75 / 1.8 * (0.9 - 0.75), 3) == "0.146"
+    assert round(math.degrees(2 * math.acos(0.5))) == 120
+    assert (_fmt(0.435 + 0.424, 3), _fmt(0.341 + 0.318, 3), _fmt(0.330 + 0.252, 3), _fmt(0.193 + 0.184, 3)) == ("0.859", "0.659", "0.582", "0.377")
+    assert (_fmt(0.659 / 0.859, 3), _fmt(0.377 / 0.582, 3)) == ("0.767", "0.648")
+
+    # 复现实验：从嵌入的数据再算一遍
+    human = _gmr_clip(js, "HUMAN", 22)
+    g1 = {v: _gmr_clip(js, "G1_" + v, 29) for v in ("gmr", "height", "legsAsArms", "s1only")}
+    tgt = _gmr_clip(js, "TGT_gmr", 14)
+    assert len(human) == 84 and all(len(g) == 84 for g in g1.values())
+
+    def hs(a, b):
+        return math.hypot(b[0] - a[0], b[1] - a[1]) * 30
+
+    stance = [[f == 83 or hs(human[f][j], human[f + 1][j]) < 0.15 for f in range(84)] for j in (16, 20)]
+    assert [sum(s) for s in stance] == [39, 36]
+    ankle = [human[f][j][2] for k, j in enumerate((16, 20)) for f in range(84) if stance[k][f]]
+    assert (_fmt(sum(ankle) / len(ankle) * 100, 1), _fmt(sum(ankle) / len(ankle) * 0.875 * 100, 1)) == ("7.8", "6.8")
+
+    def stats(v):
+        G = g1[v]
+        pel = sum(G[f][0][2] for f in range(84)) / 84
+        soles, slides = [], []
+        for k in range(2):
+            z, sl = [], []
+            for f in range(84):
+                if not stance[k][f]:
+                    continue
+                c = G[f][21 + 4 * k:25 + 4 * k]
+                z.append(min(p[2] for p in c))
+                if f < 83:
+                    c1 = G[f + 1][21 + 4 * k:25 + 4 * k]
+                    m0 = (sum(p[0] for p in c) / 4, sum(p[1] for p in c) / 4)
+                    m1 = (sum(p[0] for p in c1) / 4, sum(p[1] for p in c1) / 4)
+                    sl.append(hs(m0, m1))
+                else:
+                    sl.append(0)
+            soles.append(sum(z) / len(z))
+            slides.append(sum(sl) / len(sl))
+        return pel, sum(soles) / 2, sum(slides) / 2
+
+    st = {v: stats(v) for v in g1}
+    assert [_fmt(st[v][0], 3) for v in ("gmr", "height", "legsAsArms", "s1only")] == ["0.788", "0.714", "0.828", "0.796"]
+    assert [_fmt(st[v][1] * 100, 1) for v in ("gmr", "height", "legsAsArms", "s1only")] == ["2.2", "-5.1", "6.2", "2.7"]
+    assert [_fmt(st[v][2] * 100, 1) for v in ("gmr", "height", "legsAsArms", "s1only")] == ["2.2", "4.9", "7.6", "3.9"]
+    assert _fmt((st["gmr"][0] - st["height"][0]) * 100, 1) == "7.4" and _fmt(st["legsAsArms"][2] / st["gmr"][2], 1) == "3.4"
+
+    def hand(v):
+        e = [math.dist(g1[v][f][gi], tgt[f][ti]) for f in range(84) for gi, ti in ((13, 10), (17, 13))]
+        return sum(e) / len(e)
+
+    assert (_fmt(hand("gmr") * 100, 1), _fmt(hand("s1only") * 100, 1)) == ("3.1", "7.3")
+
+    def naive(f, hip_i, knee_i, ank_i):
+        hip, kn, an = human[f][hip_i], human[f][knee_i], human[f][ank_i]
+        t1 = math.atan2(kn[0] - hip[0], hip[2] - kn[2])
+        t2 = math.atan2(an[0] - kn[0], kn[2] - an[2])
+        kx, kz = hip[0] + 0.341 * math.sin(t1), hip[2] - 0.341 * math.cos(t1)
+        return kx + 0.318 * math.sin(t2), kz - 0.318 * math.cos(t2), an
+
+    lift, slide = [], []
+    for k, (h, kn, an) in enumerate(((14, 15, 16), (18, 19, 20))):
+        for f in range(84):
+            if not stance[k][f]:
+                continue
+            x, z, a = naive(f, h, kn, an)
+            lift.append(z - a[2])
+            slide.append(abs(naive(f + 1, h, kn, an)[0] - x) * 30 if f < 83 else 0)
+    assert (_fmt(sum(lift) / len(lift) * 100, 1), _fmt(sum(slide) / len(slide), 2)) == ("18.9", "0.22")
+    walk = math.hypot(human[83][0][0] - human[0][0][0], human[83][0][1] - human[0][0][1])
+    assert (_fmt(walk, 2), _fmt(walk / (83 / 30), 2)) == ("2.54", "0.92")
+
+    iters = re.search(r"var CLIP_ITERS = '(\d+)';", js).group(1)
+    s1, s2 = [int(c) for c in iters[0::2]], [int(c) for c in iters[1::2]]
+    assert [s1.count(i) for i in (1, 2, 3)] == [1, 65, 18] and [s2.count(i) for i in (1, 2)] == [30, 54] and max(s1 + s2) == 3
+    assert (_fmt(sum(s1) / 84, 1), _fmt(sum(s2) / 84, 1)) == ("2.2", "1.6")
+
+    for needle in (
+        "## 🎬 十三幕动画：GMR 全流程", "## 🚶 具体实例", "## 📁 源码对照",
+        'data-demo="gmr-scale"', 'data-demo="gmr-ik"', 'data-demo="gmr-table"',
+        "**0.859**", "**0.659**", "**0.767**", "**0.582**", "**0.377**", "**0.648**",
+        "**18.9 cm**", "**0.22 m/s**", "0.972 \\times 0.9 = 0.875", "0.972 \\times 0.75 = 0.729",
+        "**0.788 m**", "**低 7.4 cm**", "**−5.1 cm**", "**6.2 cm**", "**7.6 cm/s**（3.4 倍）", "**7.3 cm**", "**3.1 cm**",
+        "平均 **2.2** 次", "平均 **1.6** 次", "0.146", "**84 个策略**", "**4,296**", "360,864", "796.76 s", "**252**",
+        "**15 × 3 = 45 题**", "**11 段**", "**3 段**", "**74%**", "**63%**", "**37%**",
+        "`use_velocity_limit=True`", "HEIGHT_ADJUST", "平均离地 7.8 cm，乘 0.875 后目标是 6.8 cm",
+    ):
+        assert needle in note, needle
+    for needle in ("1.75 米", "0.86 米", "19 厘米", "0.22 米", "0.972", "0.875", "0.729", "0.756", "7 厘米", "5 厘米", "6 厘米",
+                   "7.6 厘米", "22 厘米", "7.3 厘米", "3.1 厘米", "84 个", "4096", "252", "247.8", "104.1", "74%", "63%", "37%",
+                   "64%", "14%", "47%", "60 厘米", "26%", "51%", "17 款"):
+        assert needle in narration, needle
+    # 片头接上一期（HumanML3D）的片尾预告，片尾只预告下一篇（OmniRetarget）；主动画不预告下一篇
+    assert "上一期结尾预告：人和机器人的骨架不一样，怎样把人的动作搬到机器人身上" in narration and "下一篇讲 OmniRetarget" in narration
+    assert "**下一篇**：OmniRetarget" in intro and "arxiv: '2510.02252'" in intro
+    assert "OmniRetarget" not in js and "下一篇" not in js
