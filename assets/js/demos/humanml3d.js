@@ -1294,7 +1294,7 @@
   }
 
   function buildSceneFeature() {
-    var s = sceneSvg('左边是片段 012314 的真实骨架，相机跟着骨盆走：根节点画成地上的转向弧、速度箭头和一根高度线，局部位置是地面原点到各关节的虚线，关节角弧代表旋转，橙色箭头是速度，脚上的点着地时变绿，两侧小图例给出这一帧的数值；右边是一帧 263 维的分段条和这段 170 帧特征的热图，竖线是当前帧，高亮框跟着旁白在热图的行段间移动；底部是四个触地通道和右腕速度曲线');
+    var s = sceneSvg('左边是片段 012314 的真实骨架，相机跟着骨盆走：根节点画成地上的转向弧、速度箭头和一根高度线，局部位置是地面原点到各关节的虚线，关节角弧代表旋转，橙色箭头是速度，脚上的点着地时变绿，两侧小图例给出这一帧的数值；右边是一帧 263 维的分段条和这段 170 帧特征的热图，竖线是当前帧，高亮框跟着旁白在热图的行段间移动；底部是四个触地通道和右腕速度曲线；结尾左边换成固定相机下的两份同一个发球，第二份挪到球场另一处、换了朝向，两份的根节点读数逐帧相同');
     headline(s, '一帧不是 22 个关节坐标，而是 ' + DIM + ' 个拆过的数');
 
     /* ── 左：骨架面板 ── */
@@ -1393,6 +1393,86 @@
     var ljFoot = legJ1(136, '触地', C_GOOD);
     dotAt(ljFoot, 267, 132.5, 3.5, C_GOOD);
 
+    /* 面板里的标注都收进 Ldet，结尾换成「两份同样的发球」时一起淡出 */
+    var Ldet = svgEl('g', {});
+    while (L.childNodes.length > 1) Ldet.appendChild(L.childNodes[1]);
+    L.appendChild(Ldet);
+
+    /* ── 结尾：同一个发球挪到球场另一处（3 m 外）、绕竖轴换个朝向（约 90°）再做一遍。
+       相机固定，两份同步播放；根节点只存角速度、水平速度和高度，关节从骨盆量起、按人自己的朝向摆，所以两份的 263 维逐帧相同 ── */
+    var INV_TH = -1.6, INV_D = [3.0, 0, 0];
+    var INV_C = (function () {
+      var x0 = 1e9, x1 = -1e9, z0 = 1e9, z1 = -1e9;
+      for (var fi = 0; fi < CLIP.rows; fi++) {
+        var r0 = jointAt(fi, 0);
+        x0 = Math.min(x0, r0[0]);
+        x1 = Math.max(x1, r0[0]);
+        z0 = Math.min(z0, r0[2]);
+        z1 = Math.max(z1, r0[2]);
+      }
+      return [(x0 + x1) / 2, 0, (z0 + z1) / 2];
+    })();
+    function invB(p) {
+      var dx = p[0] - INV_C[0], dz = p[2] - INV_C[2], c = Math.cos(INV_TH), sn = Math.sin(INV_TH);
+      return [INV_C[0] + INV_D[0] + dx * c + dz * sn, p[1], INV_C[2] + INV_D[2] - dx * sn + dz * c];
+    }
+    var invCam = { yaw: 0.42, pitch: 0.4, s: 48, ox: 180, oy: 205, cx: INV_C[0] + INV_D[0] / 2, cz: INV_C[2] + INV_D[2] / 2 };
+    var inv2 = group(L);
+    /* 共用的地面：世界里固定的 0.5 m 方格。线段先裁到面板里（视频按元素外框取景，clip-path 裁掉的部分也会被量进去） */
+    var invGrid = group(inv2);
+    function clipToPanel(p, q) {
+      var t0 = 0, t1 = 1, dx = q[0] - p[0], dy = q[1] - p[1];
+      var lim = [[-dx, p[0] - 32], [dx, 328 - p[0]], [-dy, p[1] - 40], [dy, 298 - p[1]]];
+      for (var i = 0; i < 4; i++) {
+        var pp = lim[i][0], qq = lim[i][1];
+        if (pp === 0) {
+          if (qq < 0) return null;
+        } else {
+          var r = qq / pp;
+          if (pp < 0) t0 = Math.max(t0, r);
+          else t1 = Math.min(t1, r);
+        }
+      }
+      return t0 < t1 ? [p[0] + t0 * dx, p[1] + t0 * dy, p[0] + t1 * dx, p[1] + t1 * dy] : null;
+    }
+    function gridLine(a, b) {
+      var c = clipToPanel(project(a, invCam), project(b, invCam));
+      if (c) hline(invGrid, c[0], c[1], c[2], c[3], C_GRID, 1);
+    }
+    var GX0 = INV_C[0] - 1.5, GX1 = INV_C[0] + INV_D[0] + 1.5, GZ0 = INV_C[2] - 1.5, GZ1 = INV_C[2] + INV_D[2] + 1.5;
+    for (var gx = GX0; gx <= GX1 + 1e-6; gx += 0.5) gridLine([gx, 0, GZ0], [gx, 0, GZ1]);
+    for (var gz = GZ0; gz <= GZ1 + 1e-6; gz += 0.5) gridLine([GX0, 0, gz], [GX1, 0, gz]);
+    /* 两份骨盆在地上走过的路：同一条路，挪了位置、换了方向 */
+    var trA = [], trB = [];
+    for (var ft = 0; ft < CLIP.rows; ft += 2) {
+      var rg = jointAt(ft, 0), gp = [rg[0], 0, rg[2]];
+      trA.push(project(gp, invCam));
+      trB.push(project(invB(gp), invCam));
+    }
+    pathLine(inv2, trA, C_MUTED, 1.2, '3 3');
+    pathLine(inv2, trB, C_MUTED, 1.2, '3 3');
+    var skA = skeleton(inv2, { sw: 2 }), skB = skeleton(inv2, { sw: 2 });
+    function midX(tr) {
+      var a = 1e9, b = -1e9;
+      tr.forEach(function (q) {
+        a = Math.min(a, q[0]);
+        b = Math.max(b, q[0]);
+      });
+      return (a + b) / 2;
+    }
+    inv2.appendChild(svgText(180, 62, '同一个发球，换个位置、换个朝向再做一遍', 'demo-x-ink2', 9.5, 'middle'));
+    var INV_K = ['角速度', '水平速度', '高度'];
+    var invRead = [midX(trA), midX(trB)].map(function (x, k) {
+      inv2.appendChild(svgText(x, 238, k ? '换个位置、换个朝向' : '原来', 'demo-x-ink2', 9, 'middle'));
+      return INV_K.map(function (nm, i) {
+        var el = svgText(x, 250 + i * 11, '', 'demo-x-mono', 8.8, 'middle');
+        inv2.appendChild(el);
+        return el;
+      });
+    });
+    inv2.appendChild(paint(svgText(180, 266, '=', null, 16, 'middle'), C_GOOD));
+    inv2.appendChild(paint(svgText(180, 291, '两份算出的 ' + DIM + ' 维完全一样 →', null, 9.5, 'middle'), C_GOOD));
+
     /* ── 右上：263 维分段条 ── */
     var R = group(s);
     var BX = 350, BW = 420;
@@ -1452,8 +1532,8 @@
     var heatCap = svgText(HM.x + HM.w / 2, HM.y + HM.h + 12, '片段 ' + CLIP.id + '：' + CLIP.rows + ' 帧 × ' + DIM + ' 维 = ' + thou(CLIP_NUMS) + ' 个数', 'demo-x-ink2', 8.6, 'middle');
     s.appendChild(heatCap);
     var invar = group(s);
-    invar.appendChild(paint(svgText(HM.x + HM.w + 8, HM.y + 112, '人在哪、面朝哪', null, 9), C_GOOD));
-    invar.appendChild(paint(svgText(HM.x + HM.w + 8, HM.y + 126, '都不进特征', null, 9), C_GOOD));
+    invar.appendChild(paint(svgText(HM.x + HM.w + 8, HM.y + 112, '换个位置、换个朝向', null, 9), C_GOOD));
+    invar.appendChild(paint(svgText(HM.x + HM.w + 8, HM.y + 126, '263 维都一样', null, 9), C_GOOD));
     var playhead = hline(s, 0, HM.y - 2, 0, HM.y + HM.h + 2, C_INK, 1.6);
     var bandBox = hiBox(s, HM.x - 1, HM.y, HM.w + 2, 6, C_BAD, 1.8);
 
@@ -1557,6 +1637,23 @@
       setOpacity(lgYaw, seg(t, 2.7, 3.1));
       setOpacity(lgVel, seg(t, 3.3, 3.7));
       setOpacity(lgH, seg(t, 3.9, 4.3));
+
+      /* 结尾：标注淡出，换成两份同样的发球；两边读数用的是同一组数 */
+      var wInv = ease(seg(t, 15.0, 15.6));
+      setOpacity(Ldet, 1 - wInv);
+      setOpacity(inv2, wInv);
+      if (wInv > 0) {
+        skA.put(pose, invCam);
+        skB.put(pose.map(invB), invCam);
+        skA.g.style.opacity = fade;
+        skB.g.style.opacity = fade;
+        var rv = [s4Minus(fmt(rate, 0)) + '°/s', fmt(Math.hypot(vx, vz), 2) + ' m/s', fmt(root[1], 2) + ' m'];
+        invRead.forEach(function (col) {
+          col.forEach(function (el, i) {
+            el.textContent = INV_K[i] + ' ' + rv[i];
+          });
+        });
+      }
 
       /* 局部位置：水平方向相对骨盆、高度离地（代码里 ric 的 y 就是离地高），所以虚线从骨盆正下方的地面原点连到各关节 */
       ricLines.forEach(function (ln, k) {
@@ -4009,8 +4106,7 @@
       var bar = paint(svgEl('rect', { x: S12_ABL_X0, y: y + 5, width: 0, height: 10, rx: 2 }), tone);
       bar.style.opacity = 0.85;
       ablG.appendChild(bar);
-      var tip = dotAt(ablG, S12_ABL_X0, y + 10, 3.4, tone);
-      return { a: a, bar: bar, tip: tip, val: val, drop: drop, at: [0.8, 1.6, 2.4, 2.9][k], dur: k < 2 ? 0.6 : 0.35 };
+      return { a: a, bar: bar, val: val, drop: drop, at: [0.8, 1.6, 2.4, 2.9][k], dur: k < 2 ? 0.6 : 0.35 };
     });
     var ablFoot = svgText(A.x + 10, A.y + A.h - 9, 'SnC = snippet code · Att = 词注意力', 'demo-x-mut', 8.5);
     ablG.appendChild(ablFoot);
@@ -4159,8 +4255,6 @@
         var u = ease(seg(t, r.at, r.at + r.dur)), w = r.a.drop * S12_ABL_PX * u;
         r.bar.setAttribute('x', (S12_ABL_X0 - w).toFixed(1));
         setW(r.bar, w);
-        r.tip.setAttribute('cx', (S12_ABL_X0 - w).toFixed(1));
-        setOpacity(r.tip, seg(t, r.at, r.at + 0.1));
         setOpacity(r.val, seg(t, r.at + r.dur - 0.1, r.at + r.dur + 0.2));
         setOpacity(r.drop, seg(t, r.at + r.dur - 0.1, r.at + r.dur + 0.2));
       });
@@ -4273,7 +4367,7 @@
     },
     {
       title: '一帧 = ' + DIM + ' 个数',
-      dur: 16,
+      dur: 18, // 结尾两份发球在 15.0 s 才淡入，多留 2 s 给网页播放器
       build: buildSceneFeature,
       cues: [
         { at: 0.2, s: '每帧不存 22 个关节的坐标，而是一个 **' + DIM + ' 维**向量。' },
@@ -4282,7 +4376,8 @@
         { at: 7.2, s: '22 个关节的速度 66 维（图上画在头、两腕、两脚）。' },
         { at: 8.6, s: '触地 4 维：相邻两帧位移² $< ' + FOOT_THR + '$，约 ' + fmt(FOOT_MS, 2) + ' m/s 以下算踩着地。' },
         { at: 11.6, s: '$1 + 2 + 1 + 63 + 126 + 66 + 4 = ' + DIM + '$；KIT-ML 少一个关节，是 ' + DIM_KIT + '。' },
-        { at: 13.6, s: '片段 ' + CLIP.id + '：' + CLIP.rows + ' 帧；右腕第 ' + CLIP.wristFrame + ' 帧 ' + fmt(CLIP.wristPeak, 1) + ' m/s —— 挥拍。' }
+        { at: 13.6, s: '片段 ' + CLIP.id + '：' + CLIP.rows + ' 帧；右腕第 ' + CLIP.wristFrame + ' 帧 ' + fmt(CLIP.wristPeak, 1) + ' m/s —— 挥拍。' },
+        { at: 15.0, s: '换个位置、换个朝向，**' + DIM + ' 维都一样**：水平方向只记每帧挪了多远，关节从骨盆量起、按人自己的朝向摆。' }
       ]
     },
     {
@@ -4387,7 +4482,7 @@
   function buildExplainerDemo(host) {
     K.explainer(host, {
       title: '十二幕动画：HumanML3D 全流程速览',
-      sub: '约 192 秒自动播放。空格播放/暂停，← → 换幕。骨架是官方仓库自带片段 012314 的真实 22 关节数据，长度分布是从补充材料图 6 量出来的，统计、维度和比例都是现算的。',
+      sub: '约 194 秒自动播放。空格播放/暂停，← → 换幕。骨架是官方仓库自带片段 012314 的真实 22 关节数据，长度分布是从补充材料图 6 量出来的，统计、维度和比例都是现算的。',
       ariaLabel: 'HumanML3D 十二幕讲解动画',
       notes: [
         '取数依据：第 2 幕的来源条按官方仓库 `index.csv` 的 `source_path` 计数；第 3 幕的四个倍数由论文 Table 1 现除（' + thou(HML.motions) + ' / ' + thou(KIT.motions) + ' = ' + fmt(RATIO.motions, 2) + ' 等）；第 4 幕的骨架、热图和触地条来自 `new_joints/' + CLIP.id + '.npy` 与 `new_joint_vecs/' + CLIP.id + '.npy`（热图按 `Mean.npy` / `Std.npy` 做了 Z-score）。',
@@ -4404,8 +4499,8 @@
   function buildVideoDemo(host) {
     K.video(host, {
       title: '配音讲解视频：HumanML3D 十二幕全流程',
-      sub: '10 分 51 秒竖屏视频（1080×1920），中文配音 + 字幕。画面就是上面的十二幕动画，旁白把每一幕讲细；适合手机上看或转发。',
-      size: '11.7 MB',
+      sub: '10 分 59 秒竖屏视频（1080×1920），中文配音 + 字幕。画面就是上面的十二幕动画，旁白把每一幕讲细；适合手机上看或转发。',
+      size: '11.8 MB',
       fileName: 'HumanML3D_讲解视频.mp4'
     });
   }
