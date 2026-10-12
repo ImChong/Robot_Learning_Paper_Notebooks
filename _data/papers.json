@@ -3425,6 +3425,18 @@
     "display_name": "State Estimation",
     "papers": [
       {
+        "title": "PRIMO: Prior-Informed Odometry from Human-Motion Tracking for Humanoid Robots",
+        "path": "papers/09_State_Estimation/PRIMO__Prior-Informed_Odometry_from_Human-Motion_Tracking_for_Humanoid_Robots/PRIMO__Prior-Informed_Odometry_from_Human-Motion_Tracking_for_Humanoid_Robots.md",
+        "url": "/papers/09_State_Estimation/PRIMO__Prior-Informed_Odometry_from_Human-Motion_Tracking_for_Humanoid_Robots/PRIMO__Prior-Informed_Odometry_from_Human-Motion_Tracking_for_Humanoid_Robots.html",
+        "dir": "PRIMO__Prior-Informed_Odometry_from_Human-Motion_Tracking_for_Humanoid_Robots",
+        "arxiv": "2609.23610",
+        "summary_zh": "PRIMO 是一个只看 IMU 和关节读数的人形本体里程计，它用人体动作跟踪数据和物理结构先验，解决仿真训练的里程计迁移到真机时的两个问题。",
+        "published_date_zh": "2026年9月20日（arXiv v1）",
+        "published_date_en": "Sep 20, 2026 (arXiv v1)",
+        "zhname": "PRIMO：基于人体动作跟踪数据与结构先验的人形机器人本体里程计",
+        "zh_title": "PRIMO：基于人体动作跟踪数据与结构先验的人形机器人本体里程计"
+      },
+      {
         "title": "KILVO: Kinematic-Inertial-LiDAR-Visual Odometry with Robust Multimodal Adaptation for Humanoid Robots",
         "path": "papers/09_State_Estimation/KILVO__Kinematic-Inertial-LiDAR-Visual_Odometry_for_Humanoid_Robots/KILVO__Kinematic-Inertial-LiDAR-Visual_Odometry_for_Humanoid_Robots.md",
         "url": "/papers/09_State_Estimation/KILVO__Kinematic-Inertial-LiDAR-Visual_Odometry_for_Humanoid_Robots/KILVO__Kinematic-Inertial-LiDAR-Visual_Odometry_for_Humanoid_Robots.html",

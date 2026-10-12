@@ -41,15 +41,15 @@
         "13_Physics-Based_Animation",
         "14_Human_Motion"
       ],
-      "last_module": "08_Navigation",
-      "last_index": 595,
-      "last_title": "TAPNAV: Humanoid Navigation through Tactile Active Perception (arXiv:2610.10748)",
-      "next_module": "09_State_Estimation",
-      "last_completed_date": "2026-10-11",
-      "note": "本日轮转到 08_Navigation。_data/papers.json 中 Navigation 条目均已有笔记，上游 awesome-humanoid-robot-learning Navigation 章节中尚无笔记的最新论文是 TAPNAV (arXiv:2610.10748, 2026-10-07, Georgia Tech LIDAR / Ye Zhao 组)，新增为 PROGRESS #595。无视觉人形导航：G1 双手触觉末端主动探测，粒子滤波 SE(2) 信念 + 不确定度有界约束 A* + 期望信息增益(含无接触结果)选探测动作 + 上下身解耦 RL 全身控制；MuJoCo 四图平均 SR 95% vs Random-touch 77.5% / Sweep-touch 38.8% / Odometry-only 22.5%。代码 coming soon，仅含整体流程 mermaid。",
-      "last_date": "2026-10-11",
+      "last_module": "09_State_Estimation",
+      "last_index": 699,
+      "last_title": "PRIMO: Prior-Informed Odometry from Human-Motion Tracking for Humanoid Robots (arXiv:2609.23610)",
+      "next_module": "10_Sim-to-Real",
+      "last_completed_date": "2026-10-12",
+      "note": "本日轮转到 09_State_Estimation。PROGRESS State Estimation 章节中尚无笔记的最新论文是 PRIMO (arXiv:2609.23610, 2026-09-20, 武汉大学 × 智元 AgiBot, 上游 🌟)，即 PROGRESS #699。数据侧用 SONIC 式全身跟踪器跟踪约 64 h 重定向人体动作录里程计监督、与部署策略解耦；模型侧 221 K 因果估计器含 CRP、去重力 Δv^I 条件、陀螺锚定有界修正、矢状面镜像 frame averaging；真机六格全最低，比最强外部基线低 31.6%–61.7%。仓库仅 README、代码待放出，含整体流程 mermaid 与按论文整理的推理时序图。",
+      "last_date": "2026-10-12",
       "next_candidate": null,
-      "last_completed": "TAPNAV: Humanoid Navigation through Tactile Active Perception (arXiv:2610.10748)"
+      "last_completed": "PRIMO: Prior-Informed Odometry from Human-Motion Tracking for Humanoid Robots (arXiv:2609.23610)"
     },
     "last_summary_index": 532,
     "last_summary_date": "2026-09-18",
@@ -1706,6 +1706,17 @@
         "project_page": "https://tapnav.github.io/TAPNAV-Project/",
         "code": "项目主页标注 Code coming soon，暂未开源",
         "source": "⏳ 暂未开源(故无源码时序图) · 触觉末端(SensX 160)主动探测 + 粒子滤波 SE(2) 信念 + 约束 A* + EIG 选探测动作 + 上下身解耦 RL 全身控制 · MuJoCo + Unitree G1 · Georgia Tech"
+      },
+      {
+        "date": "2026-10-12",
+        "index": 699,
+        "title": "PRIMO: Prior-Informed Odometry from Human-Motion Tracking for Humanoid Robots",
+        "folder": "papers/09_State_Estimation/PRIMO__Prior-Informed_Odometry_from_Human-Motion_Tracking_for_Humanoid_Robots",
+        "module": "09_State_Estimation",
+        "arxiv": "2609.23610",
+        "project_page": "",
+        "code": "https://github.com/Agibot-Spatial-Intelligence/PRIMO（目前仅 README，代码待放出）",
+        "source": "⏳ 仓库仅 README(故时序图按论文整理) · 动作跟踪造里程计监督 + Prior-Informed 估计器(CRP / Δv^I / 陀螺锚定 / 镜像 FA) · AgiBot A3 Ultra · 武汉大学 × 智元"
       }
     ],
     "last_completed_index": 588,
