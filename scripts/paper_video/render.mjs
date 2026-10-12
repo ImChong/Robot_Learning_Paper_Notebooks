@@ -46,6 +46,15 @@ await page.evaluate(() => document.fonts.ready);
 for (const [i, f] of (await page.evaluate(() => window.fitStages())).entries()) {
   console.error(`scene ${i + 1}: viewBox ${f.viewBox}  zoom ${f.zoom.toFixed(3)}`);
 }
+// some bundles set an <image> href only when its scene first draws (gmr's 3D sprite sheets); the warm-up
+// above has done that for every scene, so wait until each of those files is fetched and decoded
+await page.evaluate(() => Promise.all([...document.querySelectorAll('image')].map((im) => {
+  const href = im.getAttribute('href') || im.getAttributeNS('http://www.w3.org/1999/xlink', 'href');
+  if (!href) return null;
+  const pic = new Image();
+  pic.src = href;
+  return pic.decode().catch(() => null);
+})));
 
 if (mode === 'stills') {
   for (const t of arg.split(',').map(Number)) {

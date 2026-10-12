@@ -1,5 +1,7 @@
 /* Interactive GMR demos for
- * papers/02_Motion_Retargeting/Retargeting_Matters__General_Motion_Retargeting_for_Humanoid_Motion_Tracking.
+ * papers/02_Motion_Retargeting/Retargeting_Matters__General_Motion_Retargeting_for_Humanoid_Motion_Tracking
+ * （Araújo, Ze, Xu, Wu, Liu · Retargeting Matters: General Motion Retargeting for Humanoid Motion Tracking ·
+ *   arXiv 2510.02252 v1，2025-10；代码 YanjieZe/GMR）
  *
  * Loaded by _layouts/paper.html when the note's front matter declares
  * `demos: ["gmr"]`, after assets/js/demos/kit.js. The note itself may only
@@ -7,18 +9,1576 @@
  * <script>/<canvas>/<input> from #paper-body before publish.
  *
  * Demos:
- *   gmr-explainer — 七幕讲解动画：retargeting 被当成前处理脚本 → 一条管线接 5 种格式 ×
- *                   18+ 款机器人 → 论文的五步显式流程 → 非均匀局部缩放为什么是关键 →
- *                   mink + DAQP 的两阶段约束 IK → 「Retargeting Matters」的定量论据 →
- *                   闭环、已知失败与源码落点
+ *   gmr-explainer — 十三幕讲解动画：人和机器人的身体不一样 → 两个开源基线怎么缩放 → 一张配置表（第 1、2 步）→
+ *                   非均匀局部缩放（第 3 步，式 2）→ 根和脚用同一个比例 → 第一阶段 IK（第 4 步）→
+ *                   第二阶段 IK（第 5 步）→ 评测只换参考动作 → 表 I / 表 II → 图 3 三类瑕疵 → 图 4 用户研究 →
+ *                   表 III 第一帧 → 开源库与局限
+ *   gmr-video     — 同一套十三幕的配音竖屏视频（scripts/paper_video/ 离线渲染）
+ *   gmr-scale     — 缩放比例滑块：同一帧 LAFAN1 动作，改根 / 腿 / 手臂的比例，看目标点落在 G1 够得着的范围里没有
+ *   gmr-ik        — 两阶段 IK 玩具：平面两连杆手臂，只对位置会把肘弯反，先对朝向再对位置就不会
+ *   gmr-table     — 表 I / 表 III 浏览：21 段 × 4 种来源 × 3 种测法的成功率，以及换第一帧之后的变化
  */
 
 (function () {
   'use strict';
 
   var K = window.PaperDemoKit;
-  var fmt = K.fmt,
-    svgEl = K.svgEl,
+  /* 第 1、13 幕的真机图放在 assets/img/robots/，按本脚本自己的地址找（网页与离线视频都适用） */
+  var ROBOT_IMG_BASE = (function () {
+    var cs = document.currentScript;
+    try {
+      return cs && cs.src ? new URL('../../img/robots/', cs.src).href : '';
+    } catch (e) {
+      return '';
+    }
+  })();
+  /* 第 10、11 幕直接用论文的图（arXiv:2510.02252 的图 1、图 3 裁剪），放在 assets/img/papers/gmr/ */
+  var PAPER_IMG_BASE = (function () {
+    var cs = document.currentScript;
+    try {
+      return cs && cs.src ? new URL('../../img/papers/gmr/', cs.src).href : '';
+    } catch (e) {
+      return '';
+    }
+  })();
+  /* G1 的 3D 逐帧贴图（由 Robot_Retarget_Online 的模型加载代码离线渲染，见 g1Mesh） */
+  var G1_3D_BASE = PAPER_IMG_BASE ? PAPER_IMG_BASE + 'g1_3d/' : '';
+  var el = K.el,
+    fmt = K.fmt,
+    clamp = K.clamp,
+    card = K.card,
+    controlsRow = K.controlsRow,
+    slider = K.slider,
+    button = K.button,
+    buttonGroup = K.buttonGroup,
+    checkbox = K.checkbox,
+    statsRow = K.statsRow,
+    verdictBox = K.verdictBox,
+    legend = K.legend,
+    note = K.note,
+    table = K.table,
+    stage = K.stage,
+    begin = K.begin,
+    plot = K.plot,
+    line = K.line,
+    dot = K.dot,
+    text = K.text,
+    axes = K.axes,
+    registerRenderer = K.registerRenderer;
+
+  // ─── 论文里的数字（arXiv 2510.02252 v1；正文与表 I–III、图 4 照抄） ───────────────────────────
+  /* 十三幕动画、三个演示、配音旁白与笔记「🚶 具体实例」共用这一份。 */
+  var EVAL = { seqs: 21, minLen: 5.5, maxLen: 130.5, sim: 100, simDr: 4096, sim2sim: 100, methods: 4 }; // 第 III-B、III-C 节、表 I
+  var POLICIES = EVAL.seqs * EVAL.methods; // 84 个单段跟踪策略
+  var ROLLOUTS = EVAL.sim + EVAL.simDr + EVAL.sim2sim; // 每个策略 4296 次
+  var METHODS = ['PHC', 'GMR', 'PM', 'U']; // 表 I 的列顺序：PM = ProtoMotions，U = Unitree
+  var METHOD_ZH = { PHC: 'PHC', GMR: 'GMR', PM: 'ProtoMotions', U: 'Unitree' };
+  /* 表 I：名字 / 长度 s / sim / sim-dr / sim2sim（各四列：PHC, GMR, PM, U）。Walk 2、Turn 1 的 sim2sim 带 *，用的是表 III 换过的第一帧 */
+  var TABLE1 = [
+    ['Walk 1', 33, [100, 100, 100, 100], [100, 100, 100, 100], [100, 100, 100, 100]],
+    ['Walk 2', 5.5, [23, 100, 100, 100], [53.54, 100, 99.98, 100], [100, 100, 100, 100]],
+    ['Turn 1', 12.3, [93, 100, 100, 100], [87.18, 99.98, 99.95, 100], [100, 100, 99, 100]],
+    ['Turn 2', 12.3, [100, 100, 100, 100], [99.95, 99.98, 100, 99.98], [99, 100, 100, 99]],
+    ['Walk (old)', 33, [100, 100, 100, 100], [100, 100, 100, 100], [100, 100, 100, 100]],
+    ['Walk (army)', 13, [100, 100, 100, 100], [99.85, 98.63, 99.95, 99.95], [100, 100, 99, 100]],
+    ['Hop', 13, [95, 100, 100, 100], [92.97, 100, 100, 100], [100, 100, 100, 100]],
+    ['Walk (knees)', 19.58, [100, 100, 100, 100], [99.98, 100, 100, 100], [100, 100, 100, 100]],
+    ['Dance 1', 118, [0, 100, 100, 99], [0, 99.46, 99.24, 99.95], [0, 100, 100, 100]],
+    ['Dance 2', 130.5, [0, 100, 100, 100], [0.02, 99.9, 99.88, 99.98], [0, 100, 100, 100]],
+    ['Dance 3', 120, [100, 100, 100, 100], [100, 100, 99.95, 100], [99, 100, 100, 100]],
+    ['Dance 4', 20, [100, 100, 100, 100], [100, 100, 100, 100], [99, 100, 100, 100]],
+    ['Dance 5', 68.4, [100, 96, 100, 100], [100, 92.75, 99.98, 100], [100, 51, 100, 100]],
+    ['Run (slow)', 50, [100, 100, 100, 100], [99.19, 99.88, 99.95, 99.98], [100, 100, 100, 100]],
+    ['Run', 11, [100, 100, 100, 100], [99.98, 100, 99.95, 100], [100, 100, 100, 100]],
+    ['Run (stop & go)', 37, [17, 98, 20, 100], [20.46, 91.24, 40.26, 99.83], [74, 100, 26, 100]],
+    ['Hop around', 18, [100, 100, 100, 100], [100, 100, 100, 100], [100, 100, 100, 100]],
+    ['Hopscotch', 10, [100, 100, 100, 100], [100, 100, 100, 99.98], [100, 100, 100, 100]],
+    ['Jump and rotate', 21, [100, 100, 100, 100], [99.98, 100, 99.9, 100], [99, 100, 100, 99]],
+    ['Kung fu', 8.6, [100, 100, 100, 100], [100, 99.95, 100, 100], [100, 100, 100, 100]],
+    ['Various sports', 42.58, [100, 100, 100, 100], [99.98, 99.98, 99.95, 100], [100, 100, 100, 99]]
+  ];
+  var SETTINGS = [{ key: 'sim', zh: 'sim', n: EVAL.sim, col: 2 }, { key: 'simdr', zh: 'sim-dr', n: EVAL.simDr, col: 3 }, { key: 'sim2sim', zh: 'sim2sim', n: EVAL.sim2sim, col: 4 }];
+  function rowMin(r) {
+    return Math.min.apply(null, r[2].concat(r[3], r[4]));
+  }
+  var ROWS_PERFECT = TABLE1.filter(function (r) { return rowMin(r) === 100; }).map(function (r) { return r[0]; }); // 3 段
+  var ROWS_EASY = TABLE1.filter(function (r) { return rowMin(r) > 98 && rowMin(r) < 100; }).map(function (r) { return r[0]; }); // 11 段
+  var ROWS_HARD = TABLE1.filter(function (r) { return rowMin(r) <= 98; }).map(function (r) { return r[0]; }); // 7 段
+  var TOTAL_LEN = TABLE1.reduce(function (a, r) { return a + r[1]; }, 0); // 796.76 s ≈ 13.3 分钟
+  /* 表 II：sim 设定下 100 次评测的跟踪误差统计（21 段），[PHC, GMR, PM, U] */
+  var TABLE2 = {
+    gmpbpe: { zh: '$E_{\\text{g-mpbpe}}$（mm）', min: [71.8, 59.9, 66.0, 51.1], median: [111.9, 91.2, 101.9, 73.4], mean: [247.8, 104.1, 139.7, 77.2], max: [1062.3, 200.0, 915.6, 131.4] },
+    mpbpe: { zh: '$E_{\\text{mpbpe}}$（mm）', min: [20.9, 18.1, 24.1, 18.2], median: [29.9, 27.6, 30.4, 23.1], mean: [40.2, 28.1, 33.2, 23.2], max: [134.4, 48.0, 107.9, 28.9] },
+    mpjpe: { zh: '$E_{\\text{mpjpe}}$（$10^{-3}$ rad）', min: [569.5, 362.0, 499.0, 355.5], median: [739.8, 546.0, 599.7, 467.2], mean: [778.5, 561.7, 641.8, 483.0], max: [1336.1, 1044.8, 1397.9, 678.5] }
+  };
+  /* 表 III：sim2sim 下换第一帧（[PHC, GMR, PM, U]） */
+  var TABLE3 = [
+    { motion: 'Walk 2', frames: [0, 7], sr: [[100, 64, 100, 100], [100, 100, 100, 100]] },
+    { motion: 'Turn 1', frames: [0, 49], sr: [[14, 100, 86, 47], [100, 100, 99, 100]] }
+  ];
+  /* 图 4：用户研究（N = 20），每组 [偏好 GMR, 分不出, 偏好对方]（%） */
+  var USER = { n: 20, motions: 15, clipSec: 5, questions: 15 * 3, vs: [['Unitree', 25, 37, 38], ['PHC', 74, 8, 18], ['ProtoMotions', 63, 13, 23]] };
+  /* 第 V-B 节：三类瑕疵 */
+  var ARTIFACT = { phcPenetrationCm: 60, phcFloatCm: 30, dance5SegSec: 10, dance5Pct: 2 };
+
+  // ─── 代码里的数字（YanjieZe/GMR，2026-04 的 main） ──────────────────────────────────────────
+  /* bvh_lafan1_to_g1.json：human_height_assumption 1.8 m，human_scale_table 下半身与根 0.9、手臂 0.75；
+     utils/lafan1.py 把 LAFAN1 的身高写死成 1.75 m（算身高的两行注释掉了）。motion_retarget.py：solver daqp、damping 0.5、
+     max_iter 10、相邻两次误差差 < 0.001 就停；速度上限 3π rad/s 只在 use_velocity_limit=True 时加，默认 False。 */
+  var CFG = { hRef: 1.8, hLafan: 1.75, sLegs: 0.9, sArms: 0.75, damping: 0.5, maxIter: 10, tol: 0.001, velLimit: 3 * Math.PI, solver: 'daqp' };
+  var K_H = CFG.hLafan / CFG.hRef; // 0.972
+  var S_LEGS = K_H * CFG.sLegs; // 0.875：根、躯干、腿
+  var S_ARMS = K_H * CFG.sArms; // 0.729：手臂
+  /* 两张 match table（第 4、5 步）的权重：[位置权重, 朝向权重]，LAFAN1 → G1 */
+  var KEYBODIES = [
+    { h: 'Hips', r: 'pelvis', zh: '骨盆', t1: [0, 10], t2: [100, 5] },
+    { h: 'Spine2', r: 'torso_link', zh: '躯干', t1: [0, 100], t2: [0, 10] },
+    { h: 'LeftUpLeg', r: 'left_hip_yaw_link', zh: '左髋', t1: [0, 10], t2: [10, 5] },
+    { h: 'LeftLeg', r: 'left_knee_link', zh: '左膝', t1: [0, 10], t2: [10, 5] },
+    { h: 'LeftFootMod', r: 'left_ankle_roll_link', zh: '左脚', t1: [50, 10], t2: [50, 10] },
+    { h: 'RightUpLeg', r: 'right_hip_yaw_link', zh: '右髋', t1: [0, 10], t2: [10, 5] },
+    { h: 'RightLeg', r: 'right_knee_link', zh: '右膝', t1: [0, 10], t2: [10, 5] },
+    { h: 'RightFootMod', r: 'right_ankle_roll_link', zh: '右脚', t1: [50, 10], t2: [50, 10] },
+    { h: 'LeftArm', r: 'left_shoulder_yaw_link', zh: '左肩', t1: [0, 100], t2: [5, 100] },
+    { h: 'LeftForeArm', r: 'left_elbow_link', zh: '左肘', t1: [0, 10], t2: [10, 5] },
+    { h: 'LeftHand', r: 'left_wrist_yaw_link', zh: '左手', t1: [0, 10], t2: [10, 5] },
+    { h: 'RightArm', r: 'right_shoulder_yaw_link', zh: '右肩', t1: [0, 100], t2: [5, 100] },
+    { h: 'RightForeArm', r: 'right_elbow_link', zh: '右肘', t1: [0, 10], t2: [10, 5] },
+    { h: 'RightHand', r: 'right_wrist_yaw_link', zh: '右手', t1: [0, 10], t2: [10, 5] }
+  ];
+  /* README 的速度表（Speed Benchmark） */
+  var SPEED = [{ cpu: 'Threadripper 7960X', lo: 60, hi: 70 }, { cpu: 'i9-13900K', lo: 35, hi: 45 }];
+  var REPO = { robots: 17, entries: 18, version: '0.2.0' }; // README：GR3 是第 17 款人形；支持表 ID 0–17 共 18 行（含 G1 带手、T1 29 自由度两个变体）
+
+  // ─── 人和 G1 的尺寸（本笔记量的） ───────────────────────────────────────────────────────────
+  /* LAFAN1 subject1 的骨长按 BVH 读进来的第 0 帧算；G1 按 GMR 自带的 g1_mocap_29dof.xml 全零姿态算（髋俯仰—膝—踝横滚、肩俯仰—肘—腕偏航） */
+  var BODY = {
+    human: { h: 1.75, thigh: 0.435, shin: 0.424, upperArm: 0.330, foreArm: 0.252 },
+    g1: { h: 1.3228, thigh: 0.341, shin: 0.318, upperArm: 0.193, foreArm: 0.184, pelvisZ: 0.793, soleBelowAnkle: 0.035, waistRoll: 0.52 }
+  };
+  var LEG_H = BODY.human.thigh + BODY.human.shin; // 0.859
+  var LEG_G = BODY.g1.thigh + BODY.g1.shin; // 0.659
+  var ARM_H = BODY.human.upperArm + BODY.human.foreArm; // 0.582
+  var ARM_G = BODY.g1.upperArm + BODY.g1.foreArm; // 0.377
+  var S_HEIGHT = BODY.g1.h / BODY.human.h; // 0.756：按身高等比例
+
+  // ─── 复现实验：在 LAFAN1 walk1_subject1 的第 920–1003 帧上跑官方代码（本笔记做的，不是论文的实验） ───
+  /* 用 mink + mujoco 照抄 motion_retarget.py 跑 LAFAN1 → G1（从第 860 帧起跑，前 60 帧只用来热启动），记录人的 22 根骨、
+     G1 的 21 个身体原点加两只脚底各 4 个角点、缩放后的目标点。四种设定：GMR 默认；全身按身高 0.756；腿按手臂的 0.729、根仍 0.875；
+     只跑第一阶段。数字由下面这几段数据现算，笔记「🚶 具体实例」与测试里的 Python 再算一遍。 */
+  var CLIP = { file: 'walk1_subject1.bvh', from: 920, frames: 84, fps: 30, warm: 860 };
+  var CLIP_HUMAN =
+    'AAAAAIID4v8HAMUD6v8SAEIE9/8RAL0EHQD6/7sFGQDZ/ywGBwA7AIcFEgCrAHoFJwAMAUAElwABAV4DBADE/3wF8/9c/1MF8v8K/xQEewD9/kEDDgBqAH' +
+    'YDiACFANYBK/9mAOgAMf9qADsAFwCY/5EDigCo/+4BSQDP/00A6AC+/wsAHQD//4ED/v8GAMQDBQARAEEEEgARALwEOQD7/7oFNwDb/ysGIgA8AIYFKQCr' +
+    'AHgFNAAQAT4EpwAKAV4DIQDE/3sFEgBc/1IFGgAH/xMEqgD+/kUDLABoAHYDxgCFAOABd/9kAN8Ak/9nADQAMwCX/5ADmgCn/+oBSQDP/0wA6AC+/woAOg' +
+    'D+/4ADGwAFAMMDIAAQAEAELQAQALsEVgD8/7kFVgDd/ysGPQA8AIUFQACsAHcFQgASAT0EuAASAV4DPwDE/3sFNABb/1IFQgAF/xQE2AD//koDSQBnAHYD' +
+    'AAGDAOwByv9jAMwAAgBnACkATwCW/5ADqgCm/+cBSQDP/0wA6AC+/woAVwD+/4ADNwAFAMIDPAAPAD8ESQAQALoEcwD9/7gFdADg/yoGWAA9AIQFVwCtAH' +
+    'YFUgAUATwEygAZAV4DXQDF/3oFVQBc/1MFaQAD/xUEBQEB/08DZwBnAHUDNAGBAPcBJABjALMAewBnAB4AawCW/48DuQCl/+MBSQDP/0wA6AC+/wkAdAD+' +
+    '/4ADVAAFAMIDWQAOAEAEZgAPALsEkAD+/7kFkgDj/ysGcwA8AIQFbwCsAHYFZQAUAT0E3AAeAV8DfADF/3sFeABb/1QFkQAA/xgEMQED/1UDhQBnAHcDYQ' +
+    'F9AAEChQBiAJgA9wBoABYAiACW/44DxQCl/+ABSgDQ/00A6AC+/wkAkQD+/4ADcQAFAMMDdgANAEAEgwANALsErgD//7kFsADm/ywGjwA8AIQFiACsAHYF' +
+    'eAAUAT0E7wAhAV8DmwDF/3sFmgBb/1UFuAD+/hoEWwEG/1oDogBoAHgDiAF4AAgC7QBjAH4AdAFqABIApACW/40D0ACk/90BSgDQ/00A6AC+/wkArQD//4' +
+    'EDjgAEAMMDkwAMAEEEoAAMALwEywD//7oFzgDp/y4GrAA8AIUFoQCrAHYFjAASAT0EAgEjAV8DugDF/3wFvABa/1YF3wD8/hwEgwEJ/14DvgBoAHoDpQFz' +
+    'AAkCVQFlAGoA7gFtABgAwQCW/40D2QCl/9sBSgDQ/04A5wC+/wkAygD//4EDqwAEAMQDsQALAEIEvgALALwE6QD//7sF7QDr/y8GyQA7AIUFuwCqAHYFoQ' +
+    'APAT0EFQEjAV4D2QDE/30F3QBa/1gFAwH7/h4EqgEM/2ID2wBpAHwDvgFvAAgCvQFlAGEAXwJqACQA3gCX/4wD3wCl/9kBSgDQ/08A5wC+/wkA5gD//4ED' +
+    'yAADAMQDzgAJAEIE3AAJALwEBwH//7sFCwHt/y8G5gA6AIUF1gCpAHUFtwALATsEJwEiAVoD+ADE/30F/gBZ/1kFJgH6/iAEzQEN/2QD+ABpAHwD0gFqAA' +
+    'QCGwJkAGMAxAJlAD4A+gCW/4sD5QCk/9gBSgDQ/1AA5wC9/wkABAH//34D5gADAMED7AAIAD8E+gAJALoEJwEAALgFKQHv/ywGBAE7AIIF8wCpAHEFzwAI' +
+    'ATcEOQEgAVMDFwHF/3sFHwFa/1cFRwH7/h4E7gEQ/2IDFQFpAHoD6QFoAP4BaQJgAGoAFQNeAFkAGAGW/4cD7wCj/9YBSwDP/1IA5wC9/wgAIwH//3kDBQ' +
+    'EDALwDDAEJADoEGgELALUERwEEALMFSQH0/ycGJQE+AH0FEgGsAGoF6wAHAS8ETAEfAUgDNwHI/3YFQAFd/1MFZwH+/hoEDQIT/14DMwFpAHQDCwJnAPoB' +
+    'nAJcAGwASANYAGMANwGW/4MDAAGi/9MBTQDP/1YA5gC9/wcAQwEAAHQDJQEEALcDLAEKADUEOwEMAK8EaAEIAK4FaAH4/yIGRQFCAHcFMgGvAGIFCgEGAS' +
+    'YEYQEcATsDWAHL/3IFYQFg/08FhQEA/xUEKgIU/1gDUgFqAG8DMQJkAPkBswJXAGYAYANTAFYAWAGX/30DFAGi/9ABUADN/1oA5gC9/wUAZAECAG8DRwEF' +
+    'ALMDTwELADAEXQENAKsEiAEMAKkFiAH9/x4GZgFFAHIFUwGyAFsFKwEEAR4EeAEaAS8DeQHP/24FggFj/00FoQED/xIEQwIV/1IDdAFsAGsDVwJjAPgBvw' +
+    'JTAF4AaANPADsAegGZ/3cDKQGj/8wBVQDM/2AA5gC9/wQAiAEFAG4DawEHALIDcwELAC8EgAEOAKoEqQERAKkFpwEDAB4GhwFJAHAFdAG1AFcFTgEBARgE' +
+    'kgEZAScDmgHS/24FowFm/04FvAEG/xMEWQIU/08DmAFvAGwDeAJhAPgByQJQAFgAbgNLACMAngGd/3QDQwGm/8sBXQDL/2kA5gC+/wEArAEKAG8DjwEKAL' +
+    'MDlgELADAEowEOAKsEyAEVAKsFxgEJACAGqAFMAHAFlAG4AFUFcQH/ABQErgEYASEDuwHV/3EFwwFp/1MF1QEK/xcEawIS/00DvAF0AHADlgJiAPgBzwJQ' +
+    'AFUAcANJABYAwQGh/3IDYwGq/8oBaQDJ/3UA5QC+//3/zwEOAHMDsgEMALYDuQELADQExQEOAK8E5wEZAK8F5AEOACQGxwFPAHMFtAG6AFUFkwH9ABQEzg' +
+    'EXASAD2wHY/3YF4wFr/1oF7QEN/x4EeQIP/0wD3wF4AHcDrgJkAPgB0gJQAFMAcQNIAA8A5AGl/3MDjAGu/8kBfADI/4UA5AC+//v/7wETAHcD0gEQALsD' +
+    '2gEMADgE5QEOALMEBQIbALMFAQIRACgG5gFRAHcF1AG8AFgFtQH9ABUE8QEWASID+AHa/3sFAQJt/2IFBAIP/yYEhQIM/00DAQJ9AH4DwQJnAPgB0wJPAF' +
+    'IAcQNIAA0AAwKq/3QDwAGv/8YBlwDF/5oA4wC///7/DgIYAHsD8QETAL8D+AENADwEBAIOALcEIwIcALcFHQIUAC0GBAJSAHsF8wG9AFoF1gH9ABgEGAIT' +
+    'ASYDFQLb/38FHQJt/2kFGwIN/y4EkgIH/1ADIQKBAIUD0QJqAPcB0wJQAFEAcQNIAAsAHwKu/3YD/gGt/8QBuwDD/7MA5gC//wsAKwIcAH4DDQIWAMIDFQ' +
+    'IOAD8EIQINALoEQAIcALoFOgIUAC8GIwJSAH0FFAK9AFwF+QEAARoERAIQASoDMQLb/4IFOAJt/24FMAII/zQEowIC/1MDQAKEAIoD3wJtAPYB1AJQAE8A' +
+    'cQNIAAkAOwKy/3YDQQKp/8MB6gDD/8sA9QC+/x4ARwIfAH8DKQIZAMIDMAIOAD8EPQIMALoEXgIcALoFWAIUAC8GQQJSAH0FNQK9AFwFHgIDARoEdAINAS' +
+    '0DTQLb/4MFUQJs/28FRAIC/zcEtgL8/lYDXQKHAI0D7gJwAPQB1AJPAE4AcQNIAAcAVQK2/3UDgwKl/8QBIQHD/94AFgG//zEAYwIiAIADRQIaAMMDTAIP' +
+    'AEAEWAIMALsEfAIcALoFdgIUADAGYAJTAH0FVQK+AFsFSAIIARoEpwIKATEDagLb/4MFawJs/3AFVwL+/jkEywL3/lkDegKJAI8D/AJxAPEB1AJPAE0AcQ' +
+    'NHAAUAcQK4/3QDxQKh/8oBXwHG/+oAWwG//z0AfwIjAIADYQIbAMIDZwIPAD8EdAIMALoEmQIbALkFlQISAC8GfgJSAHwFdQK9AFoFdAILARkE3QIGATQD' +
+    'hgLa/4IFhAJr/24FagL7/jkE4ALy/loDlgKLAJADCwNyAO4B1AJOAEsAcQNHAAMAjQK6/3MDBQOd/9IBpAHH/+oAsgG//z4AnAIkAH8DfQIbAMIDgwIPAD' +
+    '8EkAILALoEtwIZALkFtAIQAC4GnAJRAHwFlQK8AFkFowINARoEFQMEATkDogLZ/4IFngJr/20FfgL7/jgE9ALu/loDsgKLAJADHANyAOsB1QJOAEsAcQNH' +
+    'AAIAqwK6/3MDQAOc/9sB7wHG/94ADwK8/zQAuQIkAH8DmwIbAMIDoAIPAD8ErQILALkE1AIYALkF0gIOAC4GugJRAHwFtQK8AFoF0QINARsETAMBAT8Dvg' +
+    'LZ/4EFuAJq/20FlAL9/jcECgPq/lkDzwKLAJADLAN0AOgB1QJOAEsAcQNHAAEAyQK7/3MDeAOe/+YBPwLE/8oAfQK2/ygA1wIjAIADuAIbAMMDvQIPAEAE' +
+    'ygIMALsE8QIXALoF8AIMAC8G2AJQAH0F1QK8AFwF/wIMAR8EggP+AEgD2gLY/4IF0gJq/20FqwIA/zcEIQPo/loD6wKLAJADOwN1AOUB1QJOAEsAcQNHAA' +
+    'EA6AK6/3UDqgOh//EBmAK//68A8wKv/x0A9AIiAIED1QIbAMQD2wIQAEEE5wINALwEDgMWALsFDgMKADAG9gJQAH8F9gK8AF8FKgMMASMEtwP6AFID9wLY' +
+    '/4MF7AJq/24FxAID/zcEOwPm/loDBgOLAJADRwN2AOIB1QJOAEwAcQNHAAAABgO5/3cD1gOk//oB9wK7/5IAbAOp/xQAEAMhAIMD8gIaAMUD+AIQAEMEBQ' +
+    'MNAL0ELAMVAL0FLAMHADIGFANQAIEFFwO8AGIFUwMMAScE6QP1AF0DFAPY/4UFBgNq/24F3wIE/zYEVgPl/lsDIQOKAJADUgN1AOAB1gJOAE0AcANHAAAA' +
+    'JAO4/3oD+wOn/wACWQO2/3gA5AOk/xIALQMgAIMDDwMZAMYDFgMQAEMEIwMNAL4ESgMUAL0FSgMEADIGMwNPAIIFOAO7AGQFewMLASoEGATvAGgDMQPX/4' +
+    'UFIQNq/24F+wIF/zYEcgPl/loDPQOJAI8DXAN0AN4B1gJOAE4AcANHAP//QQO3/3sDGgSq/wMCvgO1/2UAVgSi/xYASQMfAIMDLAMYAMYDMwMQAEQEQQMN' +
+    'AL4EaQMTAL4FaQMCADIGUwNOAIIFWgO7AGUFoAMLAS0ERAToAHEDTwPW/4UFPQNp/20FGAMG/zQEjwPl/lkDWQOIAI8DZANzANwB1wJNAE8AcANHAP//Xg' +
+    'O2/3wDNgSr/wICIAS2/1sAwgSl/yAAZgMeAIIDSQMXAMYDUgMPAEMEYAMNAL0EiAMSAL0FhwP//zEGcwNNAIEFfAO6AGUFxAMMAS4EbAThAHgDbgPV/4QF' +
+    'WgNp/2sFNgMH/zIErQPm/lcDdgOIAI0DbQNzANsB2AJNAFAAcANHAP7/fAO2/3sDUASs//8BfAS7/1oAJQWu/zQAhAMeAIADZwMXAMMDcAMOAEEEfwMMAL' +
+    'sEqAMQALoFpgP8/y4GkwNMAH8FngO5AGQF5gMNAS4EkQTaAHsDjQPU/4IFdwNo/2kFUwMJ/y8EygPm/lMDkgOHAIsDeQNzANkB2QJOAFIAcANHAP7/mgO1' +
+    '/3gDaASs//kBzQTA/14AeQW3/00ApAMcAHoDhwMVAL4DkAMMADsEnwMJALUEyQMMALQFxgP3/ygGtANIAHkFwQO1AF8FCQQNASkEswTSAHkDrQPQ/3wFlg' +
+    'Nl/2IFcgMI/ygE6APl/kwDsgOGAIYDigNzANUB2wJOAFUAcANHAP3/ugO0/3IDiQSu//QBCQXH/2AAtgXC/14AxAMbAHYDqAMUALkDsQMLADcEwAMIALEE' +
+    '6QMJALAF5gPz/yQG1QNGAHUF5AOzAFwFKQQMASYE0QTMAHUDzQPO/3cFtQNj/10FkQMJ/yEEBgTl/kUD0wOEAIEDnANyANEB3gJPAFkAbwNHAPz/2gOy/2' +
+    '4DrASx//EBLgXP/18A2wXN/1gA5gMYAHIDyQMSALYD0wMLADME4gMHAK4ECgQGAK0FBQTw/yEG9wNEAHMFBwSxAFoFSAQKASME6gTIAG4D7QPM/3QF0wNi' +
+    '/1gFsAMK/xwEJQTn/j8D9QOCAHwDsANwAM4B4gJPAF4AbwNHAPr/+wOv/2wD0gS1//IBPgXX/1oA6QXV/z8ACgQVAG8D7gMQALMD+AMKADAEBQQHAKsEKw' +
+    'QCAKoFJQTq/x4GGQRAAHEFKwStAFkFZgQFASAEAQXHAGQDDQTJ/3AF8gNf/1MF0AML/xYEQwTn/jkDGgR/AHYDyANuAMwB6QJQAGUAbwNGAPj/HgSs/2oD' +
+    '+QS5//IBSAXb/1QA7wXZ/yYALwQSAG0DEwQPALIDHQQKAC8EKgQGAKoETAT+/6oFRQTl/xwGPAQ9AHAFTwSqAFkFgwT+AB4EFQXIAFgDLwTG/24FEwRd/0' +
+    '8F8QMM/xEEYgTm/jMDQAR7AHMD5QNqAMoB8wJSAG8AbQNGAPX/QwSo/2sDHQW6//IBUAXd/08A8gXY/xUAUwQOAG8DNwQNALMDQAQLADAETQQHAKsEbgT7' +
+    '/6sFZQTg/x0GXwQ7AHMFcgSoAF0FngT3ACAEJAXNAE8DUATE/28FMwRc/04FEgQO/w8EgATo/jADZAR4AHEDCQRnAMgBAwNVAHwAawNFAPP/ZwSl/28DOQ' +
+    'W4//MBUwXe/00A8wXY/w0AdAQKAHIDWAQLALYDYQQMADMEbgQJAK4EjQT5/64FhATd/yAGfgQ6AHYFkwSnAGMFtgTzACMEMAXVAEkDcATD/3EFUwRc/08F' +
+    'MgQQ/xAEngTq/i8DgwR0AHADNwRmAMQBGgNaAIsAaQNFAPP/iQSh/3YDTwW2//MBVAXf/00A9AXY/wsAkgQFAHUDdgQHALkDfwQMADYEjAQKALEErAT4/7' +
+    'EFowTa/yIGnAQ5AHoFsQSnAGgFzQTyACgEOwXdAEYDkATC/3MFcwRb/1EFUwQQ/xEEvQTr/i8DnwRvAHADcQRqAMABOQNfAKEAaQNEAP3/qQSd/3wDXwW0' +
+    '//EBVAXg/0wA9AXZ/woArgQBAHcDkgQEALsDnAQLADkEqQQLALMEyQT4/7MFwQTa/yQGuAQ5AHwFywSoAG0F4gT3AC0ESQXnAEgDrgTC/3UFlARa/1IFdA' +
+    'QP/xIE3wTu/jADugRrAHADsgRxAL0BYwNjALoAdgNEABEAxwSZ/4EDbAWz//ABVQXg/0sA9AXZ/wkAywT9/3kDrwQCAL0DuAQLADoExQQLALQE5gT4/7QF' +
+    '3wTb/yYG0wQ5AH4F4wSoAHAF9AQAATIEWgXyAEwDzATC/3YFtQRZ/1IFmAQM/xIEBAXw/jED1QRnAG8D9QR4AL0BlwNkAM8AkwNJACUA5QSW/4UDegWx/+' +
+    '0BVQXg/0oA9AXZ/wcA6QT6/3sDzAT//74D1AQKADwE4QQKALYEBAX3/7YF/gTb/ycG7wQ4AIAF+wSoAHIFBgUJATcEcQX8AFMD6wTA/3cF2ARY/1IFvwQH' +
+    '/xQELwXx/jMD8wRkAHADOAWAAMMB1ANmAOAA0gNPADUAAwWT/4kDhgWv/+sBVQXg/0kA9AXZ/wYABwX3/3wD6QT+/78D8QQJADwE/gQKALcEIgX3/7YFHg' +
+    'Xb/ygGCwU4AIAFEgWnAHMFGAUSATsEiAUHAVkDCgXA/3gF+gRX/1IF6AQD/xQEWwXy/jQDEgVhAHADfAWHAMwBGgRmAOUAIwRWADkAIAWR/4oDkwWs/+gB' +
+    'VQXg/0gA9AXZ/wQAJQX2/3sDBwX9/78DDgUJADwEGgUKALYEPwX4/7YFPgXd/ygGJwU4AIAFKgWoAHMFKQUZAT0EoAUSAV8DKQXA/3cFHAVX/1IFEwUA/x' +
+    'QEiQXz/jYDMQVgAHADvAWLANYBZgRnAN4AgAReADQAPQWP/4sDogWp/+UBVgXh/0gA9AXZ/wIAQwX1/3wDJQX8/78DKwUIADwEOAUKALcEXQX5/7YFXQXf' +
+    '/ygGRAU4AIAFRAWoAHMFPAUdAT4EuAUcAWMDSAXA/3gFPgVW/1MFPQX+/hQEuQX0/jkDUQVfAHAD+AWLAOEBtwRnAM4A6gRlACkAWgWO/4wDsAWm/+IBVg' +
+    'Xh/0gA9AXZ/wEAYQX0/3wDQwX8/78DSQUHADwEVQUJALcEewX5/7YFfQXh/ykGYQU4AIAFXgWoAHMFUAUeAT8EzwUkAWUDZwXA/3gFXwVW/1MFZwX9/hUE' +
+    '6QX1/j4DcQVeAHEDLgaJAOsBDwVqALQAYQVrABwAdwWN/4wDvwWk/98BVwXg/0kA9AXZ/wEAfwX0/30DYAX8/78DZgUHADwEcgUJALcEmQX6/7YFnAXj/y' +
+    'oGfgU4AIAFeQWoAHMFZgUdAT8E5gUqAWYDhQXB/3gFgAVW/1QFjwX7/hcEGAb3/kMDjwVeAHIDXQaFAPUBbgVtAJgA2wVvABIAlAWM/4wDzAWj/90BWAXg' +
+    '/0oA9AXZ/wAAnAX0/34DfQX8/8ADgwUGAD4EkAUIALgEtwX6/7cFuwXk/ysGmwU4AIEFlQWoAHMFfwUaAT8E/gUuAWYDpAXA/3oFoQVV/1YFtwX5/hkERw' +
+    'b5/koDrQVeAHQDhQZ/APwB0gVtAHwAVQZxAAsAsAWM/4wD1wWj/9sBWQXg/0wA9AXZ////uAX1/34DmgX8/8EDoQUFAD8ErgUHALkE1gX6/7gF2gXm/ywG' +
+    'uQU4AIIFsQWnAHQFmgUXAT4EFQYwAWQDwwXA/3sFwQVV/1cF3gX4/hwEdAb8/lEDyQVeAHUDpgZ5AP8BNgZsAGYAywZyAA4AywWM/4wD4QWk/9oBWQXg/0' +
+    '0A8wXY////1AX1/38DtgX8/8MDvgUFAEAEywUGALsE9AX6/7kF+AXm/y0G1gU3AIMFzQWnAHQFtQUUAT4EKwYwAWED4QXA/3wF4QVV/1kFAwb3/h4Enwb/' +
+    '/lkD5gVeAHcDwgZyAAACnAZnAFoAOgdyABUA5wWM/4wD6QWj/9oBWgXg/08A8wXY////7wX1/4AD0gX8/8MD2wUEAEEE6QUFALsEEgb6/7oFFgbn/y4G9A' +
+    'U3AIQF6gWmAHQF0QURAT0EQgYuAV4D/wW//30FAAZU/1oFJQb2/iAExwYC/2ADAgZeAHgD2gZrAP4B+gZiAFgAngduACQAAgaM/4wD8AWj/9oBWwXg/1EA' +
+    '8wXY////DAb2/38D7wX8/8MD+AUEAEAEBwYFALoEMQb7/7kFNQbo/y0GEwY4AIMFCAanAHMF7QUPATsEWAYsAVkDHgbA/3wFIAZV/1oFRgb3/iAE7gYG/2' +
+    'QDHwZfAHcD8QZlAPoBSQdbAFwA8wdnAD4AHgaN/4oD+gWi/9kBXQXg/1QA8wXY//7/KQb2/30DDQb9/8EDFwYFAD4EJgYGALgEUQb9/7cFVAbq/ysGMgY5' +
+    'AIEFJwaoAG8FCgYNATYEcAYqAVIDPgbC/3oFPwZW/1kFZwb4/h8EEQcK/2YDPQZfAHUDCwdeAPYBiQdRAGIANQhcAFMAOwaN/4gDBwah/9kBYAXe/1gA8w' +
+    'XY//7/SQb4/3kDLQb+/70DNgYGADoERgYIALQEcQYAALMFcwbu/ycGUwY8AHwFSAarAGoFKAYLATAEiQYnAUgDXgbF/3cFXwZZ/1YFhgb6/hwEMwcO/2UD' +
+    'XQZhAHEDKwdYAPIBsgdHAGEAXghPAFgAWgaO/4QDGQah/9YBYwXd/1wA8wXY//3/agb6/3UDTQb//7kDVwYGADYEZwYIALEEkQYDALAFkQbx/yQGcwY+AH' +
+    'gFagatAGUFRwYIASkEogYjAUADfgbH/3QFfgZb/1QFpAb8/hoEUAcP/2MDfgZiAG8DTAdSAPABxgc7AFsAcgg7AEUAegaQ/38DLQag/9MBZwXb/2EA8wXY' +
+    '//z/jAb8/3QDcAYBALgDegYGADUEiAYIALAEsQYFAK8Frgbz/yMGlAZAAHYFjAauAGEFaAYFASUEvAYdATgDngbI/3MFnQZc/1UFwAb+/hoEagcO/2IDog' +
+    'ZlAG8DagdMAO4B0QcyAFQAeQgsACsAnAaT/3sDRAai/9IBbQXa/2kA8wXZ//v/sAYAAHQDlAYDALgDnQYGADUEqwYHALAE0QYHALAFywb3/yQGtgZCAHYF' +
+    'rwawAF8FiwYBASEE2QYXATIDvgbK/3UFuwZd/1gF2wb//h0EgQcM/2ADxgZpAHIDhgdKAO0B2wcwAE8AfwgmABYAvwaW/3kDYgak/9ABeAXX/3IA8gXZ//' +
+    'j/1AYDAHYDtwYEALoDwQYEADgEzgYFALIE8AYKALIF6Qb7/ycG1gZEAHcF0QayAF4FsAb+AB8E+AYSAS4D3QbM/3kF2AZf/1wF9gYB/yEElQcH/14D6gZs' +
+    'AHgDngdMAO0B4AcxAEsAgAgmAAsA4gaZ/3cDiAam/84BiQXT/34A8AXa//P/9QYHAHkD2QYGAL0D4gYDADoE7wYEALUEDwcMALUFBQf+/yoG9gZGAHkF8w' +
+    'azAF8F1gb9AB8EGwcOAS0D/AbO/3wF9gZg/2IFDgcE/yYEpAcC/1wDDAdvAH0DtQdQAO4B4gcwAEoAgQglAAYAAwed/3cDuAal/8oBoAXL/44A7gXb//X/' +
+    'EwcLAHoD9wYIAL4DAQcDADsEDQcDALYELQcNALYFIQcAACsGFAdGAHoFEwe0AF8F+wb9AB4EQQcLASwDGQfO/34FEwdg/2YFJAcE/yoEsQf9/lkDKwdzAI' +
+    'EDygdTAO0B4wcuAEgAgQgkAAMAIAeh/3UD9Qah/8QBwQXD/6IA7gXb//3/MQcPAHsDFQcLAL8DHgcEADwEKwcDALcESwcOALcFPgcBACsGMwdHAHoFMge0' +
+    'AF8FIQf/AB4EbQcJAS4DNgfP/38FMQdg/2kFOgcC/y0EwAf4/lgDSwd2AIQD3gdWAOwB4wctAEYAgQgjAAEAPQek/3QDNweb/8EB7QW8/7oA+QXZ/xAATg' +
+    'cSAHoDMQcOAL4DOgcFADsERwcDALYEaQcNALYFXQcBACsGUQdHAHkFUQe0AF0FRwcBAR0EnQcFATADUwfP/34FTAdg/2oFTwf9/i8E0Qfz/lgDaQd5AIYD' +
+    '8QdXAOoB5ActAEUAgQgjAP7/WAeo/3IDeAeU/8EBHwa2/84AEgbT/yQAawcVAHsDTgcQAL4DVgcGADwEYwcEALYEhwcOALYFfQcCACoGcAdHAHkFcQe0AF' +
+    '0FcQcEARwE0QcBATMDcAfP/34FaAdh/2oFZAf4/jEE5Qft/lgDhgd8AIcDAwhYAOgB5AcsAEQAgQgjAP3/dQeq/3IDugeO/8UBWga0/90ASgbJ/zIAhwcW' +
+    'AHoDaQcRAL0DcQcGADoEfgcDALUEpQcNALQFnAcBACkGjgdHAHgFkQe0AFsFmwcGARsEBQj8ADcDjQfP/30Fgwdh/2gFeQf1/jAE+Afn/lcDoQd9AIgDFA' +
+    'hZAOYB5AcsAEMAgQgjAPv/kges/3AD+geH/8sBnAaw/+EAnQa6/zQApAcXAHsDhgcRAL4DjgcHADsEmwcEALYExAcNALUFvQcBACoGrQdHAHkFsQe0AFwF' +
+    'xwcHAR0EPAj4AD4DqwfP/30Fnwdh/2gFjgf0/jEEDAji/lcDvQd+AIkDJAhaAOQB5AcsAEMAgQgiAPv/sQet/3EDNwiD/9UB5Qar/9oA/Qap/y4AwQcXAH' +
+    'sDowcRAL4DqgcHADsEuAcEALYE4gcNALQF3AcAACkGywdHAHkF0Qe0AFwF8wcHAR8EcQjzAEUDyAfP/30Fugdh/2cFpAf1/jAEHwjd/lYD2Ad/AIgDNAhc' +
+    'AOEB5QcsAEMAgQgiAPr/0Aeu/3EDbwiE/98BMgeo/8gAZgea/yQA3gcXAHwDwAcRAL8DxwcIAD0E1QcFALcE/wcNALYF/AcAACsG6AdIAHoF8Ae1AF4FHw' +
+    'gHASIEpgjvAE4D5QfQ/34F1gdi/2kFvAf4/jEENAjb/lYD8weAAIkDQghfAN8B5QctAEQAgQgiAPr/7weu/3QDowiI/+kBiAei/68A2geN/xgA+wcXAH4D' +
+    '3QcSAMED5AcJAD8E8gcHALkEHQgOALgFGwgAAC0GBghJAH0FDgi2AGEFSAgHAScE2AjsAFkDAgjR/4AF8gdk/2oF1Qf7/jMESgjb/lYDDQiAAIoDTwhgAN' +
+    '0B5gctAEYAgQgiAPr/DQiu/3cDzwiO//MB5Aed/5MAUwiI/xAAFwgYAIAD+QcSAMMDAQgLAEEEDwgJALsEOwgQALoFOggBAC8GIwhLAH4FLAi4AGQFbwgH' +
+    'ASsEBwnoAGQDIAjT/4IFDwhm/2sF7wf+/jQEYgjc/lYDKAiBAIoDWghhANsB5gctAEcAgAgjAPn/Kwiv/3oD9giW//oBRgic/3kAywiM/wsAMwgYAIADFQ' +
+    'gTAMQDHggMAEEELQgKALwEWQgQALoFWQgBAC8GQghLAH8FSwi4AGUFlAgIAS0EMwnkAG0DPgjT/4MFLAhm/2sFCwgA/zMEewjd/lQDQwiCAIoDZAhiANoB' +
+    '5wctAEgAgAgjAPj/SAiv/3oDFwmc//0Bqgif/2MAPwmT/w0ATggaAIIDMggUAMUDOwgOAEMESwgMAL0EeQgRALsFeAgCADAGYghMAIAFawi6AGcFtggKAT' +
+    'AEWwngAHYDXgjV/4QFSwho/2wFKAgD/zQElgjg/lMDXgiDAIsDbAhiANkB6ActAEoAgAgjAPf/ZAix/3wDNAmj//4BDQmp/1gArAmd/xUAaggbAIEDTggV' +
+    'AMUDWQgPAEIEaggNAL0EmggRALoFlggDAC8GgghNAIAFjAi6AGcF1ggLATAEfwncAHwDfgjV/4MFagho/2oFRggF/zIEswjk/lEDeQiFAIoDcwhkANgB6Q' +
+    'ctAEsAgAgiAPf/gQiz/3sDTgmo//wBawm1/1UAEQqq/ycAhwgdAIEDawgXAMUDdwgRAEIEiQgPALwEuggSALoFswgEAC4GoghOAIAFrQi7AGgF9AgOATAE' +
+    'nwnYAH8DngjW/4IFighp/2kFZAgI/zAE0Ajo/k8DlAiHAIkDeghmANgB6gcuAE4AfwgiAPb/ngi1/3sDZQmt//gBvwnE/1oAaQq1/0EApQgfAHwDiwgYAM' +
+    'ADlwgRAD0EqggOALcE2wgQALUF0ggCACkGwwhMAHsFzwi6AGQFEgkNASwEvQnUAHwDvwjU/30Fqgho/2MFgggJ/yoE7gjq/kgDsgiJAIUDhghoANYB7Acu' +
+    'AFAAfwgiAPb/vgi3/3UDhwm0//MBBgrT/2AAsgrD/1sAxQggAHYDqwgZALsDuAgRADgEywgNALIE/AgOAK8F8Aj//yMG5AhKAHYF8Ai4AF8FLwkLASYE2Q' +
+    'nRAHUD3wjS/3cFyghn/10FoQgK/yMEDQns/kED0QiKAIADlghrANMB7QcvAFIAfggiAPX/3wi4/28Dqwm5/+8BNAre/18A4ArU/2MA5wghAHIDzAgaALcD' +
+    '2QgSADQE6wgPAK4EHAkNAKwFDgn8/x8GBAlKAHMFDwm4AFwFSgkKASIE8AnRAG0D/wjS/3MF6ghn/1cFwQgN/xwELAnv/joD8QiLAHwDqQhsANAB8QcwAF' +
+    'cAfggiAPT/AQm6/2sDzAnB/+sBSQro/1gA9grl/1AACgkhAG8D8AgbALQD/AgVADEEDQkRAKsEOwkNAKkFLQn5/xwGJAlKAHEFMAm4AFsFZQkIAR8EBArV' +
+    'AGMDIAnS/28FCglo/1IF4ggR/xYETQn1/jQDFAmMAHcDvghrAM4B9QcxAF0AfggiAPT/JQm6/2oD8wnJ/+sBVAry/1EA/wr0/zMAMAkhAG4DFQkdALMDIA' +
+    'kZADAEMAkVAKoEWwkMAKkFTQn1/xwGRAlKAHEFUAm5AF0FfwkFAR8EFgraAFoDQAnS/24FKglo/04FBQkV/xEEbgn5/i4DOQmMAHMD2QhqAMwB/gczAGYA' +
+    'fggiAPL/TAm6/2wDFQrP/+sBXwr3/0wABQv6/xoAVQkhAG8DOgkeALMDRAkdADEEUwkZAKsEeQkLAKoFawny/x0GZAlKAHQFcAm5AGAFlwkDASEEIwriAF' +
+    'EDYAnT/20FSglp/0sFKAkZ/w0EkAn+/ikDXgmMAHED+whpAMsBCwg4AHAAfQghAPD/cQm6/3ADNArS/+wBZgr5/0kABwv7/wwAdwkgAHEDXAkfALYDZgkh' +
+    'ADMEdAkdAK4ElgkLAK0Fhwnx/x8GgglLAHcFjQm6AGUFrgkDASUELArtAEwDfQnU/28FZwlr/0sFSgke/wsEsQkC/ycDfwmLAHADJAlrAMgBHQhAAH4Aew' +
+    'ggAPD/lAm5/3UDTQrT/+0BaAr7/0gACAv8/wcAlQkfAHMDegkfALcDhAkjADUEkQkhALAEsgkMAK8Fognx/yAGnQlNAHkFqQm8AGoFwgkJASoENAr6AEkD' +
+    'mgnW/3AFhAlt/0sFawkj/woE0gkG/yYDnAmJAG8DWAlwAMIBOAhJAI4AeggfAPP/tAm4/3oDYQrT/+wBaQr9/0YACQv8/wQAsgkdAHQDlgkfALkDoAkmAD' +
+    'YErQkkALEEzQkQALAFvQnz/yEGuAlQAHoFwwnAAG4F1gkUAS8EQAoKAUoDtgnZ/3EFoQlw/0sFiwkn/woE9QkL/ycDtgmIAG0DlAl8ALwBWghUAKIAfggg' +
+    'AAEA0gm3/34DcgrV/+sBaQr9/0UACQv8/wIAzAkcAHMDsAkfALgDuQkpADUExgkpALAE6AkUAK8F2An4/yAG0QlVAHkF2gnFAG4F6QkkATIETwodAUwD0Q' +
+    'nd/3AFvwl1/0oFqwks/wgEGgoU/ycDzgmGAGkD0gmKALYBhAhgALUAjggjABMA7gm3/4ADgwrW/+kBagr+/0QACQv8/wAA5wkbAHQDywkfALgD0wkrADUE' +
+    '4AksAK8EAwoYAK8F9Qn9/yAG6glYAHkF8AnIAG8F+wk0ATcEYwowAVID7gnh/28F3gl4/0kFzgkt/wgEQwoc/yoD6QmGAGgDEwqZALcBughqAMcAuQgvAC' +
+    'QACwq3/4MDkgrX/+cBagr+/0MACQv8//7/';
+  var CLIP_G1_gmr =
+    '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' +
+    'YA6Qle/RMAPwlb/RQA';
+  var CLIP_G1_height =
+    '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' +
+    'D//gj5+sz/VAj1+sr/';
+  var CLIP_G1_legsAsArms =
+    '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' +
+    'EA1Qli/TwAKwle/ToA';
+  var CLIP_G1_s1only =
+    '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' +
+    'UA6Aln/RQAPwle/RgA';
+  var CLIP_TGT_gmr =
+    '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';
+  var CLIP_TGT_legsAsArms =
+    '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';
+  var CLIP_ITERS = '212121212132323232221122222222222222222222222221213232323232222222212121212121212121212121212132323232222222222222222222222222222222223232323232222222222121212121212121';
+  var CLIP_REST = 'AAAAAPUCAABAAI4CZwB3AE4B//93ACMAYwB3ABAAAADA/44CZwCJ/04B//+J/yMAYwCJ/xAA/P8AACEDAAAAAPUCAABkABkE6P+3AGQDYQDWAN0CfgDgAMACAACc/xkE6P9J/2QDYQAq/90CfgAg/8ACAAAAAPUC/P8AALEE';
+  /* 解码：小端 int16（毫米）→ 米。HUMAN 每帧 22 根骨；G1_* 每帧 21 个身体原点 + 左右脚底各 4 个角点；TGT_* 每帧 14 个目标点。
+     坐标是 z 朝上的世界系，原点挪到第 0 帧骨盆的正下方，人沿 +x 走（这段的朝向偏 0.6°）。 */
+  function decodeClip(b64) {
+    var bin = window.atob(b64), n = bin.length / 2, out = new Float32Array(n);
+    for (var i = 0; i < n; i++) {
+      var v = bin.charCodeAt(2 * i) | (bin.charCodeAt(2 * i + 1) << 8);
+      out[i] = (v >= 32768 ? v - 65536 : v) / 1000;
+    }
+    return out;
+  }
+  var HB = ['Hips', 'Spine', 'Spine1', 'Spine2', 'Neck', 'Head', 'LeftShoulder', 'LeftArm', 'LeftForeArm', 'LeftHand', 'RightShoulder', 'RightArm', 'RightForeArm', 'RightHand',
+    'LeftUpLeg', 'LeftLeg', 'LeftFoot', 'LeftToe', 'RightUpLeg', 'RightLeg', 'RightFoot', 'RightToe'];
+  var HI = {};
+  HB.forEach(function (b, i) { HI[b] = i; });
+  var GB = ['pelvis', 'left_hip_pitch_link', 'left_knee_link', 'left_ankle_roll_link', 'left_toe_link', 'right_hip_pitch_link', 'right_knee_link', 'right_ankle_roll_link', 'right_toe_link',
+    'torso_link', 'head_link', 'left_shoulder_pitch_link', 'left_elbow_link', 'left_wrist_yaw_link', 'left_rubber_hand', 'right_shoulder_pitch_link', 'right_elbow_link', 'right_wrist_yaw_link', 'right_rubber_hand',
+    'waist_yaw_link', 'head_mocap'];
+  var GI = {};
+  GB.forEach(function (b, i) { GI[b] = i; });
+  var NG = GB.length + 8; // 29
+  var DATA = {
+    human: decodeClip(CLIP_HUMAN),
+    g1: { gmr: decodeClip(CLIP_G1_gmr), height: decodeClip(CLIP_G1_height), legsAsArms: decodeClip(CLIP_G1_legsAsArms), s1only: decodeClip(CLIP_G1_s1only) },
+    tgt: { gmr: decodeClip(CLIP_TGT_gmr), legsAsArms: decodeClip(CLIP_TGT_legsAsArms) }
+  };
+  function at(arr, n, f, j) {
+    var o = (f * n + j) * 3;
+    return [arr[o], arr[o + 1], arr[o + 2]];
+  }
+  /* 第 fr 帧（可以是小数，相邻两帧线性插值；超出就夹在两端） */
+  function lerpFrame(arr, n, fr) {
+    var f0 = clamp(Math.floor(fr), 0, CLIP.frames - 1), f1 = Math.min(f0 + 1, CLIP.frames - 1), u = clamp(fr - f0, 0, 1);
+    var out = [];
+    for (var j = 0; j < n; j++) {
+      var a = at(arr, n, f0, j), b = at(arr, n, f1, j);
+      out.push([a[0] + (b[0] - a[0]) * u, a[1] + (b[1] - a[1]) * u, a[2] + (b[2] - a[2]) * u]);
+    }
+    return out;
+  }
+  function humanAt(fr) {
+    return lerpFrame(DATA.human, 22, fr);
+  }
+  function g1At(v, fr) {
+    return lerpFrame(DATA.g1[v], NG, fr);
+  }
+  function tgtAt(v, fr) {
+    return lerpFrame(DATA.tgt[v], 14, fr);
+  }
+  /* 循环播放：2.8 s 一遍，停 0.4 s 再从头；回到第 0 帧时整体往回挪，所以画面跟着骨盆走（返回帧号与这一遍的序号） */
+  var CLIP_SEC = (CLIP.frames - 1) / CLIP.fps;
+  function loopAt(now, speed) {
+    var period = CLIP_SEC + 0.4, u = ((now * (speed || 1)) % period + period) % period;
+    return Math.min(u * CLIP.fps, CLIP.frames - 1);
+  }
+
+  // ─── 由数据现算的统计（第 1、4、5、7 幕与演示 1 用） ───────────────────────────────────────
+  function hspeed(p0, p1) {
+    return Math.hypot(p1[0] - p0[0], p1[1] - p0[1]) * CLIP.fps;
+  }
+  /* 人的这只脚踩在地上 = 这一帧到下一帧水平速度 < 0.15 m/s（最后一帧算踩着） */
+  function stanceMask(bone) {
+    var m = [];
+    for (var f = 0; f < CLIP.frames; f++) {
+      if (f === CLIP.frames - 1) { m.push(true); continue; }
+      m.push(hspeed(at(DATA.human, 22, f, HI[bone]), at(DATA.human, 22, f + 1, HI[bone])) < 0.15);
+    }
+    return m;
+  }
+  var STANCE = [stanceMask('LeftFoot'), stanceMask('RightFoot')];
+  function mean(a) {
+    return a.reduce(function (s, x) { return s + x; }, 0) / (a.length || 1);
+  }
+  function sole(v, f, k) {
+    var out = [];
+    for (var c = 0; c < 4; c++) out.push(at(DATA.g1[v], NG, f, 21 + 4 * k + c));
+    return out;
+  }
+  function stats(v) {
+    var pel = [], soleZ = [[], []], slide = [[], []], minZ = Infinity;
+    for (var f = 0; f < CLIP.frames; f++) {
+      pel.push(at(DATA.g1[v], NG, f, 0)[2]);
+      for (var k = 0; k < 2; k++) {
+        var s = sole(v, f, k), z = Math.min(s[0][2], s[1][2], s[2][2], s[3][2]);
+        minZ = Math.min(minZ, z);
+        if (!STANCE[k][f]) continue;
+        soleZ[k].push(z);
+        var c0 = [mean(s.map(function (q) { return q[0]; })), mean(s.map(function (q) { return q[1]; }))];
+        var sp = 0;
+        if (f < CLIP.frames - 1) {
+          var s1 = sole(v, f + 1, k);
+          sp = hspeed(c0, [mean(s1.map(function (q) { return q[0]; })), mean(s1.map(function (q) { return q[1]; }))]);
+        }
+        slide[k].push(sp);
+      }
+    }
+    return { pelvis: mean(pel), sole: (mean(soleZ[0]) + mean(soleZ[1])) / 2, slide: (mean(slide[0]) + mean(slide[1])) / 2, minZ: minZ };
+  }
+  function handErr(v, tv) {
+    var e = [];
+    for (var f = 0; f < CLIP.frames; f++) {
+      [[GI.left_wrist_yaw_link, 10], [GI.right_wrist_yaw_link, 13]].forEach(function (pr) {
+        var a = at(DATA.g1[v], NG, f, pr[0]), b = at(DATA.tgt[tv], 14, f, pr[1]);
+        e.push(Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]));
+      });
+    }
+    return mean(e);
+  }
+  var ST = { gmr: stats('gmr'), height: stats('height'), legsAsArms: stats('legsAsArms'), s1only: stats('s1only') };
+  var HAND = { gmr: handErr('gmr', 'gmr'), s1only: handErr('s1only', 'gmr') }; // 3.1 cm / 7.3 cm
+  /* 这段走了多远、多快 */
+  var WALK = (function () {
+    var a = at(DATA.human, 22, 0, 0), b = at(DATA.human, 22, CLIP.frames - 1, 0);
+    var d = Math.hypot(b[0] - a[0], b[1] - a[1]);
+    var hz = [];
+    for (var f = 0; f < CLIP.frames; f++) hz.push(at(DATA.human, 22, f, 0)[2]);
+    return { dist: d, speed: d / CLIP_SEC, hipsZ: mean(hz) };
+  })();
+  /* 第 1 幕「直接抄关节角」：矢状面里照抄大腿、小腿与竖直线的夹角，长度换成 G1 的，髋放在人的髋上。
+     脚踩地的那些帧里，G1 的踝比人的踝高多少、往前滑多快 */
+  function naiveLeg(f, side) {
+    var hip = at(DATA.human, 22, f, HI[side + 'UpLeg']), kn = at(DATA.human, 22, f, HI[side + 'Leg']), an = at(DATA.human, 22, f, HI[side + 'Foot']);
+    var t1 = Math.atan2(kn[0] - hip[0], hip[2] - kn[2]), t2 = Math.atan2(an[0] - kn[0], kn[2] - an[2]);
+    var g = BODY.g1;
+    var kg = [hip[0] + g.thigh * Math.sin(t1), hip[2] - g.thigh * Math.cos(t1)];
+    return { hip: [hip[0], hip[2]], knee: kg, ankle: [kg[0] + g.shin * Math.sin(t2), kg[1] - g.shin * Math.cos(t2)], humanAnkle: [an[0], an[2]], t1: t1, t2: t2 };
+  }
+  var NAIVE = (function () {
+    var lift = [], slide = [];
+    ['Left', 'Right'].forEach(function (side, k) {
+      for (var f = 0; f < CLIP.frames; f++) {
+        if (!STANCE[k][f]) continue;
+        var a = naiveLeg(f, side);
+        lift.push(a.ankle[1] - a.humanAnkle[1]);
+        slide.push(f < CLIP.frames - 1 ? Math.abs(naiveLeg(f + 1, side).ankle[0] - a.ankle[0]) * CLIP.fps : 0);
+      }
+    });
+    return { lift: mean(lift), slide: mean(slide) };
+  })(); // 脚离地约 0.19 m；把髋压低贴地后，踩着的脚以约 0.23 m/s 往前滑
+  /* 第 5 幕的推导（由式 2 得出，不是论文写出来的式子）：脚踩住不动、根走了 Δ，目标脚就挪 k (s_root − s_foot) Δ */
+  function footDrift(sRoot, sFoot, d) {
+    return K_H * (sRoot - sFoot) * d;
+  }
+  /* 第 6、7 幕：每帧解了几次 QP（第一阶段 / 第二阶段） */
+  var ITERS = (function () {
+    var s1 = [], s2 = [];
+    for (var i = 0; i < CLIP_ITERS.length; i += 2) { s1.push(+CLIP_ITERS[i]); s2.push(+CLIP_ITERS[i + 1]); }
+    function hist(a) { var h = {}; a.forEach(function (x) { h[x] = (h[x] || 0) + 1; }); return h; }
+    return { s1: s1, s2: s2, mean1: mean(s1), mean2: mean(s2), hist1: hist(s1), hist2: hist(s2), max: Math.max.apply(null, s1.concat(s2)) };
+  })();
+
+  // ─── 演示 1：缩放比例滑块 ───────────────────────────────────────────────────
+  /* 按式 2 直接算目标点（没有跑 IK）：根 × k·s_root，脚相对根 × k·s_leg。踩地的帧里看目标脚有多高、滑多快，
+     骨盆目标比 G1 站直时的 0.793 m 低多少。坐标原点挪过，但高度不受影响、帧间差也不受影响。 */
+  function targetsFor(sRoot, sLeg, h) {
+    var k = h / CFG.hRef, out = { pelvis: [], foot: [[], []], slide: [[], []] };
+    var prev = [null, null];
+    for (var f = 0; f < CLIP.frames; f++) {
+      var r = at(DATA.human, 22, f, HI.Hips);
+      out.pelvis.push(k * sRoot * r[2]);
+      ['LeftFoot', 'RightFoot'].forEach(function (b, i) {
+        var p = at(DATA.human, 22, f, HI[b]);
+        var F = [k * (sRoot * r[0] + sLeg * (p[0] - r[0])), k * (sRoot * r[1] + sLeg * (p[1] - r[1])), k * (sRoot * r[2] + sLeg * (p[2] - r[2]))];
+        out.foot[i].push(F);
+        if (prev[i]) out.slide[i].push(hspeed(prev[i], F));
+        prev[i] = F;
+      });
+    }
+    function stanceMean(arr, fn, k2) {
+      var v = [];
+      for (var f = 0; f < CLIP.frames; f++) if (STANCE[k2][f]) v.push(fn(arr, f));
+      return mean(v);
+    }
+    var zs = [0, 1].map(function (i) { return stanceMean(out.foot[i], function (a, f) { return a[f][2]; }, i); });
+    var ss = [0, 1].map(function (i) { return stanceMean(out.slide[i], function (a, f) { return f < a.length ? a[f] : 0; }, i); });
+    return { k: k, pelvis: mean(out.pelvis), footZ: (zs[0] + zs[1]) / 2, slide: (ss[0] + ss[1]) / 2, foot: out.foot };
+  }
+  /* 人的踝在踩地帧里平均多高（踝关节离地，不是脚底）：缩放后目标踝的高度和它比 */
+  var HUMAN_FOOT_Z = (function () {
+    var v = [];
+    ['LeftFoot', 'RightFoot'].forEach(function (b, i) {
+      for (var f = 0; f < CLIP.frames; f++) if (STANCE[i][f]) v.push(at(DATA.human, 22, f, HI[b])[2]);
+    });
+    return mean(v);
+  })();
+  var SCALE_PRESETS = [
+    { key: 'gmr', label: 'GMR 默认', root: CFG.sLegs, leg: CFG.sLegs, arm: CFG.sArms },
+    { key: 'height', label: '全身按身高 0.756', root: S_HEIGHT / K_H, leg: S_HEIGHT / K_H, arm: S_HEIGHT / K_H },
+    { key: 'legsAsArms', label: '腿也按手臂', root: CFG.sLegs, leg: CFG.sArms, arm: CFG.sArms }
+  ];
+  function buildScaleDemo(host) {
+    var root = card(host, {
+      title: '缩放比例滑块：同一段 LAFAN1 走路，改根、腿、手臂的比例',
+      sub: '按式 2 直接算目标点：根乘 $\\frac{h}{h_{\\text{ref}}}s_{\\text{root}}$，其余身体相对根乘 $\\frac{h}{h_{\\text{ref}}}s_b$。看骨盆目标比 G1 站直时低多少、踩地时目标脚离地多高、往前滑多快。'
+    });
+    var state = { f: 40, root: CFG.sLegs, leg: CFG.sLegs, arm: CFG.sArms, h: CFG.hLafan };
+    var row = controlsRow(root);
+    var presets = buttonGroup(row, {
+      label: '一键',
+      items: SCALE_PRESETS.map(function (p) { return { label: p.label, value: p.key }; }),
+      value: 'gmr',
+      onPick: function (v) {
+        SCALE_PRESETS.forEach(function (p) {
+          if (p.key !== v) return;
+          state.root = p.root; state.leg = p.leg; state.arm = p.arm; state.h = CFG.hLafan;
+          sRoot.set(p.root, true); sLeg.set(p.leg, true); sArm.set(p.arm, true); sH.set(CFG.hLafan, true);
+        });
+        render();
+      }
+    });
+    var row2 = controlsRow(root);
+    var sRoot = slider(row2, { label: '根 $s_{\\text{root}}$', min: 0.6, max: 1.1, step: 0.005, value: state.root, format: function (v) { return fmt(v, 3); }, onInput: function (v) { state.root = v; render(); } });
+    var sLeg = slider(row2, { label: '躯干与腿 $s_{\\text{leg}}$', min: 0.6, max: 1.1, step: 0.005, value: state.leg, format: function (v) { return fmt(v, 3); }, onInput: function (v) { state.leg = v; render(); } });
+    var sArm = slider(row2, { label: '手臂 $s_{\\text{arm}}$', min: 0.5, max: 1.1, step: 0.005, value: state.arm, format: function (v) { return fmt(v, 3); }, onInput: function (v) { state.arm = v; render(); } });
+    var row3 = controlsRow(root);
+    var sH = slider(row3, { label: '人的身高 $h$（$h_{\\text{ref}} = 1.8$ m）', min: 1.5, max: 2.0, step: 0.01, value: state.h, format: function (v) { return fmt(v, 2) + ' m'; }, onInput: function (v) { state.h = v; render(); } });
+    slider(row3, { label: '看第几帧', min: 0, max: CLIP.frames - 1, step: 1, value: state.f, format: function (v) { return (CLIP.from + v) + ' 帧'; }, onInput: function (v) { state.f = v; render(); } });
+    var st = stage(root, 300);
+    var setLegend = legend(root, [{ key: 'muted', text: '┄ 原始的人' }, { key: 'accent', text: '━ 缩放后的人' }, { key: 'warn', text: '● 脚的目标' }, { key: 'good', text: '┄ G1 站直时的骨盆高' }]);
+    var stats = statsRow(root);
+    var sPel = stats.add('骨盆目标高（G1 站直 0.793 m）'), sFoot = stats.add('踩地时目标踝高（人 ' + fmt(HUMAN_FOOT_Z * 100, 1) + ' cm）'), sSlide = stats.add('踩地时目标脚滑速'), sK = stats.add('$k\\,s_{\\text{root}}$ / $k\\,s_{\\text{leg}}$ / $k\\,s_{\\text{arm}}$');
+    var verdict = verdictBox(root);
+    note(root, [
+      '数据：LAFAN1 `walk1_subject1.bvh` 第 920–1003 帧（2.8 s，' + fmt(WALK.speed, 2) + ' m/s 的直线走路），踩地 = 这只脚水平速度 < 0.15 m/s。这里只算**目标点**，没有跑 IK；G1 跟不跟得上，要看第 4、5 幕用官方代码跑出的结果。',
+      '三个「一键」对应第 4、5 幕的三种设定。跑完 IK 后：GMR 默认骨盆 ' + fmt(ST.gmr.pelvis, 3) + ' m、踩地时脚底 ' + fmt(ST.gmr.sole * 100, 1) + ' cm、滑 ' + fmt(ST.gmr.slide * 100, 1) + ' cm/s；全身按身高骨盆 ' + fmt(ST.height.pelvis, 3) + ' m、脚底 ' + fmt(ST.height.sole * 100, 1) + ' cm（陷进地面）；腿按手臂脚底 ' + fmt(ST.legsAsArms.sole * 100, 1) + ' cm、滑 ' + fmt(ST.legsAsArms.slide * 100, 1) + ' cm/s。',
+      '手臂的比例只改手的目标，不影响脚：拖 $s_{\\text{arm}}$ 时下面三个读数不变。'
+    ]);
+    var render = registerRenderer(function () {
+      var T = targetsFor(state.root, state.leg, state.h);
+      var g = begin(st), P = g.P, ctx = g.ctx;
+      setLegend(P);
+      var W = g.w, H = g.h, S = Math.min(H / 2.2, W / 3.2), GY = H - 70, OX = W * 0.32;
+      /* 侧视：x 向前、z 向上；画面跟着骨盆走 */
+      var raw = humanAt(state.f), r = raw[HI.Hips];
+      var rootT = [r[0], r[1], T.k * state.root * r[2]];
+      var sc = scalePose(raw, rootT, T.k * state.leg, T.k * state.arm);
+      function px(p) { return [OX + S * (p[0] - r[0]), GY - S * p[2]]; }
+      line(ctx, [[10, GY], [W - 10, GY]], P.border, 1.4);
+      line(ctx, [[10, GY - S * BODY.g1.pelvisZ], [W * 0.62, GY - S * BODY.g1.pelvisZ]], P.good, 1.2, [5, 4]);
+      text(ctx, 'G1 站直 0.793 m', W * 0.62 - 4, GY - S * BODY.g1.pelvisZ - 8, P.good, 'right', '11px sans-serif');
+      H_CHAINS.forEach(function (ch) {
+        line(ctx, ch.j.map(function (b) { return px(raw[HI[b]]); }), P.muted, 1.5, [4, 3]);
+        line(ctx, ch.j.map(function (b) { return px(sc[HI[b]]); }), P.accent, 2.6);
+      });
+      ['LeftFoot', 'RightFoot'].forEach(function (b) { var q = px(sc[HI[b]]); dot(ctx, q[0], q[1], 5, P.warn); });
+      /* 右：左脚目标的高度随时间（踩地帧涂底色） */
+      var p = plot(g, { l: W * 0.66, r: 14, t: 26, b: 70 }, [0, CLIP.frames - 1], [-0.1, 0.3]);
+      for (var f = 0; f < CLIP.frames; f++) if (STANCE[0][f]) { ctx.fillStyle = P.grid; ctx.fillRect(p.sx(f) - 1, p.y1, (p.x1 - p.x0) / CLIP.frames + 1, p.y0 - p.y1); }
+      line(ctx, [[p.x0, p.sy(0)], [p.x1, p.sy(0)]], P.border, 1);
+      line(ctx, T.foot[0].map(function (q, f2) { return [p.sx(f2), p.sy(q[2])]; }), P.warn, 2);
+      line(ctx, [[p.x0, p.sy(HUMAN_FOOT_Z)], [p.x1, p.sy(HUMAN_FOOT_Z)]], P.muted, 1, [3, 3]);
+      line(ctx, [[p.sx(state.f), p.y1], [p.sx(state.f), p.y0]], P.text, 1, [2, 3]);
+      text(ctx, '左脚目标的高度（m，灰底 = 踩地）', p.x0, p.y1 - 10, P.text, 'left', '11px sans-serif');
+      text(ctx, '0', p.x0 - 4, p.sy(0), P.muted, 'right', '10px sans-serif');
+      text(ctx, '0.3', p.x0 - 4, p.sy(0.3), P.muted, 'right', '10px sans-serif');
+      st.canvas.setAttribute('aria-label', '侧视的人与缩放后的人，以及左脚目标高度随时间的曲线');
+      var dPel = T.pelvis - BODY.g1.pelvisZ;
+      sPel.set(fmt(T.pelvis, 3) + ' m（' + (dPel < 0 ? '低 ' : '高 ') + fmt(Math.abs(dPel) * 100, 1) + ' cm）', Math.abs(dPel) > 0.04 ? 'bad' : 'good');
+      sFoot.set(fmt(T.footZ * 100, 1) + ' cm', Math.abs(T.footZ - HUMAN_FOOT_Z * T.k * state.root) > 0.03 || T.footZ < 0 ? 'bad' : 'good');
+      sSlide.set(fmt(T.slide * 100, 1) + ' cm/s', T.slide > 0.05 ? 'bad' : 'good');
+      sK.set(fmt(T.k * state.root, 3) + ' / ' + fmt(T.k * state.leg, 3) + ' / ' + fmt(T.k * state.arm, 3));
+      var drift = Math.abs(state.root - state.leg) * T.k;
+      if (drift > 0.02) verdict.set('根和腿的比例差 ' + fmt(drift, 3) + '：人的脚踩住不动时，根走多远，目标脚就跟着挪它的 ' + fmt(drift * 100, 1) + '%（由式 2 推出），踩地时目标脚滑 ' + fmt(T.slide * 100, 1) + ' cm/s。' + (state.leg < state.root ? '腿缩得比根多，目标脚还会悬在半空。' : '腿缩得比根少，目标脚会往地下扎。'), 'bad');
+      else if (dPel < -0.05) verdict.set('根和腿同比例，脚不会滑；但骨盆目标只有 ' + fmt(T.pelvis, 3) + ' m，比 G1 站直低 ' + fmt(-dPel * 100, 0) + ' cm——G1 得一直屈膝。官方代码跑出来骨盆是 ' + fmt(ST.height.pelvis, 3) + ' m，脚底陷进地面 ' + fmt(-ST.height.sole * 100, 0) + ' cm。', 'learning');
+      else verdict.set('根和腿同一个比例，骨盆目标 ' + fmt(T.pelvis, 3) + ' m 和 G1 站直的 0.793 m 差不到 4 cm：脚踩住时目标不挪，G1 站得上去。这就是配置里根、腿都写 0.9 的原因。', 'frozen');
+    });
+    presets.pick('gmr', true);
+    render();
+  }
+
+  // ─── 演示 2：两阶段 IK 玩具 ───────────────────────────────────────────────────
+  /* 平面两连杆手臂（上臂 0.193 m、前臂 0.184 m，取 G1 的长度），肘能往两边弯。人的示范是「肘往下弯」；
+     只对手的位置时，初值肘朝上就会停在肘朝上的那一支（手对上了，姿势反了）；先对两段的朝向、再对位置，就落在对的那一支。
+     每一步是阻尼最小二乘 Δq = Jᵀ(JJᵀ + λ²I)⁻¹e，关节限位 ±150°，误差降不到 0.001 或满 10 次就停。这是玩具，不是 mink。 */
+  var ARM2 = { L1: BODY.g1.upperArm, L2: BODY.g1.foreArm, lim: (150 * Math.PI) / 180 };
+  function fk2(q) {
+    var e = [ARM2.L1 * Math.cos(q[0]), ARM2.L1 * Math.sin(q[0])];
+    return { elbow: e, hand: [e[0] + ARM2.L2 * Math.cos(q[0] + q[1]), e[1] + ARM2.L2 * Math.sin(q[0] + q[1])] };
+  }
+  function wrapAng(a) {
+    return Math.atan2(Math.sin(a), Math.cos(a));
+  }
+  /* 一个阶段：stage 1 只对两段朝向（权重 10、10）；stage 2 对肘和手的位置（10、10）加朝向（5、5）；stage 3 只对手的位置 */
+  function ikStage(q0, target, stage, lambda) {
+    var q = q0.slice(), hist = [];
+    function residual(qq) {
+      var F = fk2(qq), r = [];
+      if (stage === 1) {
+        r.push(Math.sqrt(10) * wrapAng(target.a1 - qq[0]), Math.sqrt(10) * wrapAng(target.a2 - (qq[0] + qq[1])));
+      } else {
+        /* stage 3 = 只对手的位置；stage 2 = 肘、手的位置加两段朝向（同 GMR 第二阶段：位置 10、朝向 5） */
+        if (stage === 2) r.push(Math.sqrt(10) * (target.elbow[0] - F.elbow[0]), Math.sqrt(10) * (target.elbow[1] - F.elbow[1]));
+        r.push(Math.sqrt(10) * (target.hand[0] - F.hand[0]), Math.sqrt(10) * (target.hand[1] - F.hand[1]));
+        if (stage === 2) r.push(Math.sqrt(5) * wrapAng(target.a1 - qq[0]), Math.sqrt(5) * wrapAng(target.a2 - (qq[0] + qq[1])));
+      }
+      return r;
+    }
+    function norm(r) { return Math.sqrt(r.reduce(function (s, x) { return s + x * x; }, 0)); }
+    function step(qq) {
+      var r = residual(qq), h = 1e-5, J = [];
+      for (var i = 0; i < r.length; i++) J.push([0, 0]);
+      for (var j = 0; j < 2; j++) {
+        var qp = qq.slice(); qp[j] += h;
+        var rp = residual(qp);
+        for (var i2 = 0; i2 < r.length; i2++) J[i2][j] = -(rp[i2] - r[i2]) / h;
+      }
+      /* (JᵀJ + λ²I) Δq = Jᵀ r */
+      var A = [[lambda * lambda, 0], [0, lambda * lambda]], b = [0, 0];
+      for (var i3 = 0; i3 < r.length; i3++) {
+        A[0][0] += J[i3][0] * J[i3][0]; A[0][1] += J[i3][0] * J[i3][1]; A[1][1] += J[i3][1] * J[i3][1];
+        b[0] += J[i3][0] * r[i3]; b[1] += J[i3][1] * r[i3];
+      }
+      A[1][0] = A[0][1];
+      var det = A[0][0] * A[1][1] - A[0][1] * A[1][0];
+      var d0 = (A[1][1] * b[0] - A[0][1] * b[1]) / det, d1 = (A[0][0] * b[1] - A[1][0] * b[0]) / det;
+      return [clamp(qq[0] + d0, -Math.PI, Math.PI), clamp(qq[1] + d1, -ARM2.lim, ARM2.lim)];
+    }
+    var cur = norm(residual(q));
+    hist.push(cur);
+    q = step(q);
+    var nxt = norm(residual(q));
+    hist.push(nxt);
+    var n = 0;
+    while (cur - nxt > CFG.tol && n < CFG.maxIter) {
+      cur = nxt; q = step(q); nxt = norm(residual(q)); hist.push(nxt); n++;
+    }
+    return { q: q, hist: hist };
+  }
+  function ikRun(mode, q0, target, lambda) {
+    if (mode === 'pos') {
+      var a = ikStage(q0, target, 3, lambda);
+      return { q: a.q, s1: [], s2: a.hist };
+    }
+    var s1 = ikStage(q0, target, 1, lambda), s2 = ikStage(s1.q, target, 2, lambda);
+    return { q: s2.q, s1: s1.hist, s2: s2.hist };
+  }
+  function buildIkDemo(host) {
+    var root = card(host, {
+      title: '两阶段 IK 玩具：只对手的位置会把肘弯反，先对朝向就不会',
+      sub: '平面两连杆手臂（上臂 0.193 m、前臂 0.184 m，取 G1 的长度）。人的示范肘往下弯；初值肘朝上（比如上一帧解反了）。比一比「只对手的位置」和「先对朝向、再对位置」各停在哪一支。'
+    });
+    var state = { mode: 'two', sh: -20, el: 70, init: 'up', lambda: 0.5 };
+    var row = controlsRow(root);
+    buttonGroup(row, { label: '求解', items: [{ label: '只对手的位置', value: 'pos' }, { label: '先朝向、再位置（两阶段）', value: 'two' }], value: 'two', onPick: function (v) { state.mode = v; render(); } });
+    buttonGroup(row, { label: '初值', items: [{ label: '肘朝上', value: 'up' }, { label: '伸直', value: 'straight' }, { label: '肘朝下', value: 'down' }], value: 'up', onPick: function (v) { state.init = v; render(); } });
+    var row2 = controlsRow(root);
+    slider(row2, { label: '示范：肩角', min: -80, max: 60, step: 1, value: state.sh, format: function (v) { return v + '°'; }, onInput: function (v) { state.sh = v; render(); } });
+    slider(row2, { label: '示范：肘弯', min: 10, max: 140, step: 1, value: state.el, format: function (v) { return v + '°'; }, onInput: function (v) { state.el = v; render(); } });
+    slider(row2, { label: '阻尼 $\\lambda$', min: 0.05, max: 1.5, step: 0.05, value: state.lambda, format: function (v) { return fmt(v, 2); }, onInput: function (v) { state.lambda = v; render(); } });
+    var st = stage(root, 260);
+    var setLegend = legend(root, [{ key: 'warn', text: '┄ 人的示范' }, { key: 'muted', text: '┄ 初值' }, { key: 'good', text: '━ 解' }, { key: 'accent', text: '误差：第一阶段 ●  第二阶段 ■' }]);
+    var stats = statsRow(root);
+    var sHand = stats.add('手离目标'), sElbow = stats.add('肘弯的方向'), sIt = stats.add('解了几次（阶段 1 / 2）');
+    var verdict = verdictBox(root);
+    note(root, ['这是两连杆玩具，不是 mink：每一步用阻尼最小二乘 $\\Delta q = (J^\\top J + \\lambda^2 I)^{-1} J^\\top e$ 加关节限位，停止条件照抄 `motion_retarget.py`（误差降不到 0.001 或满 10 次）。它只演示论文说的「两阶段是为了避开局部极小」是什么意思：只看手的位置时，肘朝上、肘朝下都能让手到位，从哪边出发就停在哪边。GMR 第一阶段的位置项其实也只有末端，所以先把朝向对上，才不会在这一支上起步。']);
+    var render = registerRenderer(function () {
+      var a1 = (state.sh * Math.PI) / 180, a2 = a1 + (state.el * Math.PI) / 180;
+      var demo = fk2([a1, (state.el * Math.PI) / 180]);
+      var target = { a1: a1, a2: a2, elbow: demo.elbow, hand: demo.hand };
+      /* 初值：肘朝上 = 同一只手的位置、肘反过来那一支（加一点扰动，免得卡在奇异点） */
+      var q0;
+      if (state.init === 'straight') q0 = [Math.atan2(demo.hand[1], demo.hand[0]) + 0.02, 0.0];
+      else {
+        var d = Math.hypot(demo.hand[0], demo.hand[1]), c2 = clamp((d * d - ARM2.L1 * ARM2.L1 - ARM2.L2 * ARM2.L2) / (2 * ARM2.L1 * ARM2.L2), -1, 1);
+        var q2 = Math.acos(c2) * (state.init === 'up' ? -1 : 1);
+        var q1 = Math.atan2(demo.hand[1], demo.hand[0]) - Math.atan2(ARM2.L2 * Math.sin(q2), ARM2.L1 + ARM2.L2 * Math.cos(q2));
+        q0 = [q1 + 0.15, q2 * 0.8];
+      }
+      var res = ikRun(state.mode, q0, target, state.lambda);
+      var g = begin(st), P = g.P, ctx = g.ctx;
+      setLegend(P);
+      var W = g.w, H = g.h, S = Math.min(H, W * 0.5) / 0.9, OX = W * 0.22, OY = H * 0.45;
+      function px(p) { return [OX + S * p[0], OY - S * p[1]]; }
+      var sh = px([0, 0]);
+      dot(ctx, sh[0], sh[1], 6, P.text);
+      var F0 = fk2(q0), F = fk2(res.q);
+      line(ctx, [sh, px(demo.elbow), px(demo.hand)], P.warn, 3, [6, 4]);
+      line(ctx, [sh, px(F0.elbow), px(F0.hand)], P.muted, 2, [3, 3]);
+      line(ctx, [sh, px(F.elbow), px(F.hand)], P.good, 5);
+      dot(ctx, px(F.elbow)[0], px(F.elbow)[1], 5, P.good);
+      dot(ctx, px(demo.hand)[0], px(demo.hand)[1], 6, P.warn);
+      text(ctx, '肩', sh[0] - 8, sh[1], P.text, 'right', '12px sans-serif');
+      /* 右：误差随迭代 */
+      var hs = res.s1.concat(res.s2), n = hs.length;
+      var p = plot(g, { l: W * 0.58, r: 14, t: 24, b: 30 }, [0, Math.max(n - 1, 4)], [0, Math.max.apply(null, hs.concat([0.1])) * 1.1]);
+      axes(g, p, { xTicks: K.niceTicks(0, Math.max(n - 1, 4), 5), yTicks: [], xLabel: '第几次求解', yLabel: '误差' });
+      line(ctx, res.s1.map(function (v, i) { return [p.sx(i), p.sy(v)]; }), P.accent, 2);
+      res.s1.forEach(function (v, i) { dot(ctx, p.sx(i), p.sy(v), 3.5, P.accent); });
+      line(ctx, res.s2.map(function (v, i) { return [p.sx(i + res.s1.length), p.sy(v)]; }), P.accent, 2);
+      res.s2.forEach(function (v, i) { ctx.fillStyle = P.accent; ctx.fillRect(p.sx(i + res.s1.length) - 3.5, p.sy(v) - 3.5, 7, 7); });
+      st.canvas.setAttribute('aria-label', '两连杆手臂：示范、初值与解；右边是误差随求解次数的曲线');
+      var hErr = Math.hypot(F.hand[0] - demo.hand[0], F.hand[1] - demo.hand[1]);
+      var same = res.q[1] * ((state.el * Math.PI) / 180) > 0;
+      sHand.set(fmt(hErr * 100, 1) + ' cm', hErr < 0.01 ? 'good' : 'warn');
+      sElbow.set(same ? '和人一样' : '弯反了', same ? 'good' : 'bad');
+      sIt.set((res.s1.length ? res.s1.length - 1 : 0) + ' / ' + (res.s2.length - 1));
+      if (!same && hErr < 0.02) verdict.set('手到位了（差 ' + fmt(hErr * 100, 1) + ' cm），可肘弯反了：只看手的位置，这就是一个局部极小——误差已经很小，再迭代也不会翻到另一支。', 'bad');
+      else if (same && state.mode === 'two') verdict.set('第一阶段先把上臂、前臂的朝向对上人（肘自然弯到下面那一支），第二阶段再把肘和手的位置拉到目标：手差 ' + fmt(hErr * 100, 1) + ' cm，姿势也对。', 'frozen');
+      else if (same) verdict.set('这次从「' + (state.init === 'down' ? '肘朝下' : '伸直') + '」出发，只对位置也落在对的一支；换成「肘朝上」的初值再试。', 'learning');
+      else verdict.set('还没收敛到手的位置（差 ' + fmt(hErr * 100, 1) + ' cm）：阻尼太大时每步走得太短，10 次用完就停了。', 'learning');
+    });
+    render();
+  }
+
+  // ─── 演示 3：表 I / 表 III 浏览 ───────────────────────────────────────────────
+  function buildTableDemo(host) {
+    var root = card(host, {
+      title: '表 I / 表 III 浏览：21 段动作 × 4 种来源 × 3 种测法',
+      sub: '选一种测法，看每段动作四种参考来源训出的策略成功率（%）。可以只看差别大的 7 段，或者按长度排序；最后一行是表 III：同一个策略换起始帧。'
+    });
+    var state = { set: 2, only: false, sort: 'paper' };
+    var row = controlsRow(root);
+    buttonGroup(row, { label: '测法', items: SETTINGS.map(function (s, i) { return { label: s.zh + '（每策略 ' + s.n + ' 次）', value: i }; }), value: 2, onPick: function (v) { state.set = v; render(); } });
+    buttonGroup(row, { label: '排序', items: [{ label: '论文顺序', value: 'paper' }, { label: '按长度', value: 'len' }, { label: '按差距', value: 'gap' }], value: 'paper', onPick: function (v) { state.sort = v; render(); } });
+    checkbox(row, '只看差别大的 7 段', false, function (v) { state.only = v; render(); });
+    var stats = statsRow(root);
+    var sMean = METHODS.map(function (m) { return stats.add(METHOD_ZH[m] + ' 平均'); });
+    var tbl = table(root);
+    var tbl3 = table(root);
+    var verdict = verdictBox(root);
+    note(root, ['表 I 里 Walk 2、Turn 1 的 sim2sim 带星号：用的是表 III 换过的起始帧（第 7 帧、第 49 帧）。成功 = 从默认姿态出发跑到参考动作最后一帧，中途锚点高度或朝向没有偏离超过阈值。']);
+    function cell(v) {
+      return { text: v === 100 ? '100' : String(v), cls: v >= 99.5 ? 'is-good' : v >= 98 ? null : v >= 90 ? 'is-warn' : 'is-bad' };
+    }
+    var render = registerRenderer(function () {
+      var col = SETTINGS[state.set].col;
+      var rows = TABLE1.slice();
+      if (state.only) rows = rows.filter(function (r) { return ROWS_HARD.indexOf(r[0]) >= 0; });
+      if (state.sort === 'len') rows.sort(function (a, b) { return b[1] - a[1]; });
+      if (state.sort === 'gap') rows.sort(function (a, b) { return (Math.max.apply(null, b[col]) - Math.min.apply(null, b[col])) - (Math.max.apply(null, a[col]) - Math.min.apply(null, a[col])); });
+      tbl.clear();
+      tbl.row(['动作', '长度 s'].concat(METHODS.map(function (m) { return METHOD_ZH[m]; })), true);
+      rows.forEach(function (r) {
+        var star = state.set === 2 && (r[0] === 'Walk 2' || r[0] === 'Turn 1') ? '*' : '';
+        tbl.row([r[0] + star, String(r[1])].concat(r[col].map(cell)));
+      });
+      METHODS.forEach(function (m, j) {
+        var v = mean(TABLE1.map(function (r) { return r[col][j]; }));
+        sMean[j].set(fmt(v, 2) + '%', v > 99 ? 'good' : v < 90 ? 'bad' : null);
+      });
+      tbl3.clear();
+      tbl3.row(['表 III（sim2sim）', '起始帧'].concat(METHODS.map(function (m) { return METHOD_ZH[m]; })), true);
+      TABLE3.forEach(function (r) {
+        r.frames.forEach(function (fr, k) { tbl3.row([k ? '' : r.motion, String(fr)].concat(r.sr[k].map(cell))); });
+      });
+      var low = [];
+      TABLE1.forEach(function (r) { r[col].forEach(function (v, j) { if (v < 90) low.push(r[0] + ' 的 ' + METHOD_ZH[METHODS[j]] + '（' + v + '%）'); }); });
+      verdict.set(SETTINGS[state.set].zh + ' 下低于 90% 的：' + (low.length ? low.join('、') : '没有') + '。三种测法下全是 100 的 3 段：' + ROWS_PERFECT.join('、') + '。', low.length ? 'learning' : 'frozen');
+    });
+    render();
+  }
+
+  // ─── 讲解动画：十三幕 ───────────────────────────────────────────────────────
+  var svgEl = K.svgEl,
     svgText = K.svgText,
     svgMath = K.svgMath,
     svgRich = K.svgRich,
@@ -27,8 +1587,7 @@
     ease = K.ease,
     setOpacity = K.setOpacity,
     sceneSvg = K.sceneSvg,
-    polyPath = K.polyPath,
-    pointOn = K.pointOn;
+    polyPath = K.polyPath;
 
   var X = K.xColors;
   var C_ACCENT = X.accent,
@@ -38,875 +1597,1729 @@
     C_MUTED = X.muted,
     C_BORDER = X.border,
     C_SURFACE = X.surface,
-    C_SURFACE2 = X.surface2;
+    C_SURFACE2 = X.surface2,
+    C_INK = X.ink,
+    C_INK2 = X.ink2;
+  /* 全片统一：人蓝、G1 灰、GMR 绿、问题红、目标点橙 */
+  var C_HUMAN = C_ACCENT, C_TGT = C_WARN;
+  var M_COLOR = { PHC: C_BAD, GMR: C_GOOD, PM: C_WARN, U: C_ACCENT };
 
-  // ─── 画面上的数字从这里现算，不手写 ───────────────────────────────────
-  /* 「通用」这两个字的规模：README 的 18+ 款人形 × 5 种人体动作格式。
-     过去每家自己写脚本，等于每个组合各写一份。 */
-  var N_ROBOTS = 18,
-    N_FORMATS = 5;
-  var N_PATHS = N_ROBOTS * N_FORMATS; // 90 条「格式 → 机器人」通路
-
-  /* README 报的两档 CPU 吞吐，换算成每帧毫秒与相对 30 fps mocap 的实时倍率。 */
-  var MOCAP_FPS = 30;
-  var CPUS = [
-    { n: 'AMD Ryzen Threadripper 7960X', lo: 60, hi: 70, c: C_GOOD },
-    { n: 'Intel Core i9-13900K', lo: 35, hi: 45, c: C_ACCENT }
-  ];
-
-  function midFps(cpu) {
-    return (cpu.lo + cpu.hi) / 2;
+  /* 视频里一幕要讲五十秒左右，画面不能停：draw(t, clock) 的 clock 是这一幕的真实时间
+     （旁白比分镜长时 t 停在一段的末尾，clock 照走），走路这类循环动作按 clock 画；网页播放器只传 t。
+     出场 / 描线这类一次性动画的 seg(t, a, b) 不跨过 cue 时刻（3.6 / 7.0 / 10.4 / 13.4），免得视频里卡在半截。 */
+  /* 注意：K.paint 写的是 style.fill / style.stroke，动画里改色要改 style，setAttribute('fill') 会被它盖住、不起作用 */
+  function nowOf(t, clock) {
+    return clock == null ? t : clock;
   }
-  function msPerFrame(fps) {
-    return 1000 / fps;
+  function group(parent) {
+    var g = svgEl('g', {});
+    parent.appendChild(g);
+    return g;
   }
-  function realtime(fps) {
-    return fps / MOCAP_FPS;
+  function rectBox(parent, x, y, w, h, stroke, fill, dash) {
+    var r = paint(svgEl('rect', { x: x, y: y, width: w, height: h, rx: 7, 'stroke-width': 1.3 }), fill || C_SURFACE, stroke || C_BORDER);
+    if (dash) r.setAttribute('stroke-dasharray', dash);
+    parent.appendChild(r);
+    return r;
   }
-
-  /* `motion_retarget.py` 里写死的四个 IK 超参。关节速度限位是唯一一个
-     「带单位」的，把它按 mocap 帧率换算，就知道单帧最多允许转多少度。 */
-  var LM_DAMPING = 0.5,
-    MAX_ITERS = 10,
-    IK_TOL = 0.001;
-  var VEL_LIMIT = 3 * Math.PI; // rad/s ≈ 9.42
-  var STEP_LIMIT_RAD = VEL_LIMIT / MOCAP_FPS; // 单帧 0.314 rad
-  var STEP_LIMIT_DEG = (STEP_LIMIT_RAD * 180) / Math.PI; // 18°
-
-  /* 第四幕的玩具算例：比例取自笔记 Q7 的量级说法（手臂差 ~20%、腿差 ~15%、
-     躯干几乎一样），不是论文测得的数值。全局等比例只能取一个缩放因子，
-     这里取三条链的平均；非均匀缩放则每条链各自取自己的比例，残差归零。 */
-  var CHAINS = [
-    { n: '手臂链', ratio: 0.8, len: 60 },
-    { n: '腿链', ratio: 0.85, len: 85 },
-    { n: '躯干链', ratio: 1.0, len: 50 }
-  ];
-  var GLOBAL_S =
-    CHAINS.reduce(function (a, c) {
-      return a + c.ratio;
-    }, 0) / CHAINS.length; // 0.883
-
-  function residCm(c) {
-    return Math.abs(c.ratio - GLOBAL_S) * c.len;
+  function chip(parent, x, y, w, str, color, opts) {
+    var o = opts || {};
+    var g = group(parent);
+    rectBox(g, x, y, w, o.h || 28, color, o.fill || C_SURFACE, o.dash);
+    g.appendChild(svgRich(x + w / 2, y + (o.h || 28) / 2 + 4, str, { size: o.size || 11, anchor: 'middle', w: w - 8, cls: o.cls || 'demo-x-ink2' }));
+    return g;
   }
-  var RESID_SUM = CHAINS.reduce(function (a, c) {
-    return a + residCm(c);
-  }, 0); // ≈ 13.7 cm
-
-  /* 实验那一幕的两个可以现算的数字。 */
-  var LAFAN_SEQS = 21,
-    PERFECT_SEQS = 3;
-  var PERFECT_PCT = (100 * PERFECT_SEQS) / LAFAN_SEQS; // 14.3%
-  var HARD_SEQS = LAFAN_SEQS - PERFECT_SEQS; // 18
-  var USERS = 20,
-    INIT_FRAME_GAP = 50; // 个百分点
-
-  // ─── 第 1 幕：retargeting 被当成前处理脚本 ────────────────────────────
-  var S1_PIPE = [
-    { t: '人类 mocap', d: 'SMPL-X / BVH', c: C_MUTED, w: 150 },
-    { t: '[ 某种 retargeting 脚本 ]', d: '每篇论文自己写一份', c: C_WARN, w: 200, dash: true },
-    { t: '机器人关节轨迹', d: 'root + dof_pos', c: C_MUTED, w: 150 },
-    { t: 'RL tracking policy', d: '跟不跟得上，看上一步', c: C_MUTED, w: 150 }
-  ];
-
-  var S1_PAINS = [
-    { t: '① 当成前处理脚本，其实是瓶颈', d: '参考动作本身不可行（超关节限位 / 脚穿地板 / 自碰撞），', d2: 'RL 要么追不上，要么追上了 sim-to-real 也崩' },
-    { t: '② 每家一套配方，互不兼容', d: 'OmniH2O 自家参数化、ExBody2 自家 loss、', d2: 'OmniXtreme 又一套；换机器人就得重写一遍' },
-    { t: '③ 很多实现要 GPU 甚至 CUDA', d: '「带笔记本进实验室做遥操 demo」这种场景里，', d2: 'GPU 依赖本身就是障碍' }
-  ];
-
-  function buildSceneProblem() {
-    var s = sceneSvg(
-      'humanoid tracking 的默认流程里，retargeting 被当成一段前处理脚本；' +
-        '论文指出它其实是瓶颈：各家配方互不兼容、质量直接决定下游 RL 能否跟上、很多实现还依赖 GPU'
-    );
-    s.appendChild(svgText(56, 28, '几乎每篇 humanoid tracking 论文都有这条默认流程', 'demo-x-ink2', 13.5));
-
-    var arrow = K.arrowMarker(s, 'gmr-x-arrow-pipe', C_BORDER);
-    var x = 40;
-    var pipe = S1_PIPE.map(function (p, k) {
-      var g = svgEl('g', {});
-      var attrs = { x: x, y: 50, width: p.w, height: 54, rx: 8, 'stroke-width': p.dash ? 1.6 : 1.2 };
-      if (p.dash) attrs['stroke-dasharray'] = '5 4';
-      g.appendChild(paint(svgEl('rect', attrs), p.dash ? C_SURFACE : C_SURFACE2, p.c));
-      g.appendChild(paint(svgText(x + p.w / 2, 73, p.t, null, p.dash ? 12 : 11.5, 'middle'), p.c));
-      g.appendChild(svgText(x + p.w / 2, 92, p.d, 'demo-x-mut', 9, 'middle'));
-      s.appendChild(g);
-      if (k < S1_PIPE.length - 1) {
-        s.appendChild(
-          paint(
-            svgEl('path', { d: polyPath([[x + p.w + 4, 77], [x + p.w + 18, 77]]), fill: 'none', 'stroke-width': 1.5, 'marker-end': arrow }),
-            null,
-            C_BORDER
-          )
-        );
+  function pathLine(parent, pts, color, width, dash) {
+    var p = paint(svgEl('path', { d: pts.length ? polyPath(pts.map(function (q) { return [q[0].toFixed(1), q[1].toFixed(1)]; })) : 'M 0 0', fill: 'none', 'stroke-width': width || 2, 'stroke-linejoin': 'round', 'stroke-linecap': 'round' }), null, color);
+    if (dash) p.setAttribute('stroke-dasharray', dash);
+    parent.appendChild(p);
+    return p;
+  }
+  function setPath(p, pts) {
+    p.setAttribute('d', pts.length ? polyPath(pts.map(function (q) { return [q[0].toFixed(1), q[1].toFixed(1)]; })) : 'M 0 0');
+  }
+  function drawOn(path, u) {
+    if (!path.lenCache) path.lenCache = path.getTotalLength ? path.getTotalLength() || 1 : 1;
+    path.setAttribute('stroke-dasharray', path.lenCache + ' ' + path.lenCache);
+    path.setAttribute('stroke-dashoffset', (path.lenCache * (1 - u)).toFixed(1));
+  }
+  function dotAt(parent, cx, cy, r, color) {
+    var c = paint(svgEl('circle', { cx: cx, cy: cy, r: r }), color);
+    parent.appendChild(c);
+    return c;
+  }
+  function moveDot(c, p) {
+    c.setAttribute('cx', p[0].toFixed(1));
+    c.setAttribute('cy', p[1].toFixed(1));
+  }
+  function hline(parent, x1, y1, x2, y2, color, w, dash) {
+    var l = paint(svgEl('line', { x1: x1, y1: y1, x2: x2, y2: y2, 'stroke-width': w || 1.2 }), null, color);
+    if (dash) l.setAttribute('stroke-dasharray', dash);
+    parent.appendChild(l);
+    return l;
+  }
+  function setLine(l, x1, y1, x2, y2) {
+    l.setAttribute('x1', x1.toFixed(1)); l.setAttribute('y1', y1.toFixed(1));
+    l.setAttribute('x2', x2.toFixed(1)); l.setAttribute('y2', y2.toFixed(1));
+  }
+  function hbar(parent, x, y, h, color, opacity) {
+    var r = paint(svgEl('rect', { x: x, y: y, width: 0, height: h, rx: 2.5, opacity: opacity == null ? 0.9 : opacity }), color);
+    parent.appendChild(r);
+    return r;
+  }
+  function setW(node, w) {
+    node.setAttribute('width', Math.max(0, w).toFixed(1));
+  }
+  function vbar(parent, x, yBase, w, color, opacity) {
+    var r = paint(svgEl('rect', { x: x, y: yBase, width: w, height: 0, rx: 2.5, opacity: opacity == null ? 0.9 : opacity }), color);
+    r.yBase = yBase;
+    parent.appendChild(r);
+    return r;
+  }
+  function setH(node, h) {
+    node.setAttribute('y', (node.yBase - h).toFixed(1));
+    node.setAttribute('height', Math.max(0, h).toFixed(1));
+  }
+  function setTextX(node, s) {
+    node.textContent = s;
+  }
+  /* 横向的尺寸标注：两头小竖线、中间一条带箭头的线、上面写数 */
+  function dimV(parent, x, y0, y1, color, label, side) {
+    var g = group(parent);
+    var a = hline(g, x, y0, x, y1, color, 1.4);
+    var t0 = hline(g, x - 5, y0, x + 5, y0, color, 1.4), t1 = hline(g, x - 5, y1, x + 5, y1, color, 1.4);
+    var tx = paint(svgText(x + (side === 'left' ? -8 : 8), (y0 + y1) / 2 + 4, label, null, 11, side === 'left' ? 'end' : 'start'), color);
+    g.appendChild(tx);
+    return {
+      g: g,
+      set: function (nx, ny0, ny1, str) {
+        setLine(a, nx, ny0, nx, ny1); setLine(t0, nx - 5, ny0, nx + 5, ny0); setLine(t1, nx - 5, ny1, nx + 5, ny1);
+        tx.setAttribute('x', (nx + (side === 'left' ? -8 : 8)).toFixed(1)); tx.setAttribute('y', ((ny0 + ny1) / 2 + 4).toFixed(1));
+        if (str != null) tx.textContent = str;
       }
-      x += p.w + 22;
-      return { g: g, at: 0.4 + k * 0.6 };
-    });
-
-    var ring = paint(
-      svgEl('rect', { x: 206, y: 42, width: 216, height: 70, rx: 10, fill: 'none', 'stroke-width': 1.8, 'stroke-dasharray': '6 4' }),
-      null,
-      C_BAD
-    );
-    s.appendChild(ring);
-
-    var pains = S1_PAINS.map(function (p, k) {
-      var g = svgEl('g', {});
-      var px = 40 + k * 246;
-      g.appendChild(paint(svgEl('rect', { x: px, y: 132, width: 234, height: 96, rx: 8, 'stroke-width': 1.3 }), C_SURFACE, C_BAD));
-      g.appendChild(paint(svgText(px + 16, 156, p.t, null, 11.5), C_BAD));
-      g.appendChild(svgText(px + 16, 180, p.d, 'demo-x-mut', 9, 'start'));
-      g.appendChild(svgText(px + 16, 198, p.d2, 'demo-x-mut', 9, 'start'));
-      s.appendChild(g);
-      return { g: g, at: 3.2 + k * 1.2 };
-    });
-
-    var band = svgEl('g', {});
-    band.appendChild(paint(svgEl('rect', { x: 40, y: 246, width: 720, height: 60, rx: 8, 'stroke-width': 1.4 }), C_SURFACE2, C_ACCENT));
-    band.appendChild(paint(svgText(400, 270, '标题里的 “Matters” 是在叫板：把 retargeting 提到和 policy learning / sim-to-real 同一级', null, 12.5, 'middle'), C_ACCENT));
-    band.appendChild(svgText(400, 292, '把这块从各家附录里砍下来单独发表，后续工作才能显式引用它、讨论它', 'demo-x-mut', 10, 'middle'));
-    s.appendChild(band);
-
-    var foot = svgEl('g', {});
-    foot.appendChild(paint(svgText(400, 352, '翻译这一步没做好，后面训得再久也追不上', null, 15.5, 'middle'), C_ACCENT));
-    foot.appendChild(svgText(400, 378, 'GMR 的答案：一套通用、快速、CPU-only、全开源的管线', 'demo-x-mut', 11, 'middle'));
-    s.appendChild(foot);
-
-    function draw(t) {
-      pipe.forEach(function (p) {
-        setOpacity(p.g, seg(t, p.at, p.at + 0.4));
-      });
-      setOpacity(ring, seg(t, 2.6, 3.2));
-      pains.forEach(function (p) {
-        setOpacity(p.g, seg(t, p.at, p.at + 0.5));
-      });
-      setOpacity(band, seg(t, 7.6, 8.4));
-      setOpacity(foot, seg(t, 9.8, 10.6));
-    }
-
-    return { el: s, draw: draw };
+    };
   }
 
-  // ─── 第 2 幕：一条管线，5 种格式 × 18+ 款机器人 ───────────────────────
-  var S2_FORMATS = [
-    { t: 'SMPL-X', d: 'AMASS / OMOMO' },
-    { t: 'BVH', d: 'LAFAN1 / Nokov' },
-    { t: 'FBX', d: 'OptiTrack' },
-    { t: 'Xsens MVN', d: '惯性动捕' },
-    { t: 'GVHMR', d: '单目视频' }
-  ];
-
-  var S2_ROBOTS = [
-    { t: 'Unitree G1', d: '29 DOF' },
-    { t: 'Unitree H1', d: '19 DOF' },
-    { t: 'Unitree H1-2', d: '27 DOF' },
-    { t: 'Booster T1 / K1', d: 'Fourier N1 / GR3' },
-    { t: '… 共 ' + N_ROBOTS + '+ 款', d: 'ik_configs/*.yaml' }
-  ];
-
-  function buildSceneGeneral() {
-    var s = sceneSvg(
-      'GMR 用一条管线把 5 种人体动作格式翻译到 18 款以上的人形机器人，' +
-        '共 ' + N_PATHS + ' 条「格式 → 机器人」通路，输出 .pkl 关节轨迹，CPU 上就跑得过实时'
-    );
-    s.appendChild(svgText(56, 26, 'GMR 里的 “General”：一条管线，两头都可以换', 'demo-x-ink2', 13.5));
-
-    var arrow = K.arrowMarker(s, 'gmr-x-arrow-gen', C_BORDER);
-
-    var fmts = S2_FORMATS.map(function (f, k) {
-      var g = svgEl('g', {});
-      var x = 40 + k * 146;
-      g.appendChild(paint(svgEl('rect', { x: x, y: 44, width: 134, height: 44, rx: 8, 'stroke-width': 1.3 }), C_SURFACE2, C_ACCENT));
-      g.appendChild(paint(svgText(x + 67, 63, f.t, null, 11.5, 'middle'), C_ACCENT));
-      g.appendChild(svgText(x + 67, 79, f.d, 'demo-x-mut', 8.5, 'middle'));
-      s.appendChild(g);
-      s.appendChild(
-        paint(
-          svgEl('path', { d: polyPath([[x + 67, 90], [x + 67, 104], [400, 104], [400, 116]]), fill: 'none', 'stroke-width': 1.1 }),
-          null,
-          C_BORDER
-        )
-      );
-      return { g: g, at: 0.4 + k * 0.4 };
-    });
-
-    var core = svgEl('g', {});
-    core.appendChild(paint(svgEl('rect', { x: 180, y: 118, width: 440, height: 62, rx: 10, 'stroke-width': 1.8 }), C_SURFACE2, C_GOOD));
-    core.appendChild(paint(svgText(400, 142, 'GMR · mink + DAQP 的两阶段约束 IK · CPU-only', null, 13.5, 'middle'), C_GOOD));
-    core.appendChild(svgText(400, 162, '五步显式流程，确定性、不训练、不装 CUDA；MIT 协议', 'demo-x-mut', 10, 'middle'));
-    s.appendChild(core);
-
-    var badge = svgEl('g', {});
-    badge.appendChild(paint(svgEl('rect', { x: 640, y: 118, width: 120, height: 62, rx: 8, 'stroke-width': 1.4 }), C_SURFACE, C_WARN));
-    badge.appendChild(paint(svgText(700, 143, N_FORMATS + ' × ' + N_ROBOTS + ' = ' + N_PATHS, 'demo-x-mono', 14, 'middle'), C_WARN));
-    badge.appendChild(svgText(700, 166, '条通路，一份实现', 'demo-x-mut', 9, 'middle'));
-    s.appendChild(badge);
-
-    var robots = S2_ROBOTS.map(function (r, k) {
-      var g = svgEl('g', {});
-      var x = 40 + k * 146;
-      s.appendChild(
-        paint(
-          svgEl('path', { d: polyPath([[400, 182], [400, 196], [x + 67, 196], [x + 67, 208]]), fill: 'none', 'stroke-width': 1.1, 'marker-end': arrow }),
-          null,
-          C_BORDER
-        )
-      );
-      g.appendChild(paint(svgEl('rect', { x: x, y: 210, width: 134, height: 44, rx: 8, 'stroke-width': 1.3 }), C_SURFACE2, C_MUTED));
-      g.appendChild(paint(svgText(x + 67, 229, r.t, null, 11.5, 'middle'), C_MUTED));
-      g.appendChild(svgText(x + 67, 245, r.d, 'demo-x-mut', 8.5, 'middle'));
-      s.appendChild(g);
-      return { g: g, at: 4.2 + k * 0.4 };
-    });
-
-    var out = svgEl('g', {});
-    out.appendChild(paint(svgEl('rect', { x: 40, y: 268, width: 720, height: 50, rx: 8, 'stroke-width': 1.3 }), C_SURFACE, C_BORDER));
-    out.appendChild(svgText(58, 288, '输出一个 .pkl，直接喂 RL tracking 策略或 PD 控制器：', 'demo-x-ink2', 10.5));
-    out.appendChild(
-      paint(svgText(58, 308, 'root_pos (T, 3) · root_quat (T, 4) wxyz · dof_pos (T, num_dof) · fps（与输入一致）', 'demo-x-mono', 10.5), C_ACCENT)
-    );
-    s.appendChild(out);
-
-    var perf = svgEl('g', {});
-    perf.appendChild(paint(svgEl('rect', { x: 40, y: 330, width: 720, height: 50, rx: 8, 'stroke-width': 1.3 }), C_SURFACE2, C_GOOD));
-    CPUS.forEach(function (c, k) {
-      var mid = midFps(c);
-      var x = 58 + k * 366;
-      perf.appendChild(paint(svgText(x, 350, c.n, null, 10, 'start'), c.c));
-      perf.appendChild(
-        svgText(
-          x,
-          368,
-          c.lo + '–' + c.hi + ' FPS → ' + fmt(msPerFrame(mid), 1) + ' ms/帧 ≈ ' + fmt(realtime(mid), 1) + ' × 实时（' + MOCAP_FPS + ' fps mocap）',
-          'demo-x-mono',
-          9.5,
-          'start'
-        )
-      );
-    });
-    s.appendChild(perf);
-
-    var foot = paint(svgText(400, 406, '遥操现场一台笔记本就够，不必等 CUDA 环境', null, 13, 'middle'), C_ACCENT);
-    s.appendChild(foot);
-
-    function draw(t) {
-      fmts.forEach(function (f) {
-        setOpacity(f.g, seg(t, f.at, f.at + 0.4));
-      });
-      setOpacity(core, seg(t, 2.6, 3.4));
-      robots.forEach(function (r) {
-        setOpacity(r.g, seg(t, r.at, r.at + 0.4));
-      });
-      setOpacity(badge, seg(t, 6.6, 7.4));
-      setOpacity(out, seg(t, 8.2, 8.9));
-      setOpacity(perf, seg(t, 9.8, 10.5));
-      setOpacity(foot, seg(t, 11.4, 12.0));
-    }
-
-    return { el: s, draw: draw };
+  /* 真机渲染图（Robot_Description_Gallery_Online 按各家开源 URDF / MJCF 渲染，透明底），按真实身高等比例：
+     h 是像素高度，宽按图的长宽比。背后垫一层光晕，深色主题下黑色的机身也看得清 */
+  var ROBOT_IMGS = {
+    g1: { file: 'g1.webp', ar: 253 / 640, h: 1.3228, name: 'Unitree G1' },
+    h1_2: { file: 'h1_2.webp', ar: 164 / 400, h: 1.788, name: 'Unitree H1-2' },
+    talos: { file: 'talos.webp', ar: 132 / 400, h: 1.7568, name: 'PAL TALOS' },
+    adam: { file: 'pndbotics_adam_lite.webp', ar: 100 / 400, h: 1.6695, name: 'PND Adam Lite' },
+    gr3: { file: 'gr3.webp', ar: 110 / 400, h: 1.6418, name: 'Fourier GR3' },
+    pm01: { file: 'pm01.webp', ar: 113 / 400, h: 1.4203, name: 'EngineAI PM01' },
+    n1: { file: 'n1.webp', ar: 149 / 400, h: 1.241, name: 'Fourier N1' },
+    t1: { file: 'booster_t1.webp', ar: 279 / 400, h: 1.1675, name: 'Booster T1' },
+    toddy: { file: 'toddlerbot.webp', ar: 124 / 300, h: 0.5375, name: 'ToddlerBot' }
+  };
+  var haloSeq = 0;
+  function robotImg(parent, key, cx, yBottom, pxPerM) {
+    var R = ROBOT_IMGS[key], h = R.h * pxPerM, w = h * R.ar, g = group(parent), x = cx - w / 2;
+    var root = parent.ownerSVGElement || parent, defs = root.querySelector('defs');
+    if (!defs) { defs = svgEl('defs', {}); root.insertBefore(defs, root.firstChild); }
+    var id = 'gmr-x-halo-' + (++haloSeq), halo = svgEl('radialGradient', { id: id });
+    halo.appendChild(svgEl('stop', { offset: '0', 'stop-color': '#9fb4d6', 'stop-opacity': '0.42' }));
+    halo.appendChild(svgEl('stop', { offset: '1', 'stop-color': '#9fb4d6', 'stop-opacity': '0' }));
+    defs.appendChild(halo);
+    g.appendChild(svgEl('ellipse', { cx: cx.toFixed(1), cy: (yBottom - h * 0.5).toFixed(1), rx: Math.max(w * 0.85, h * 0.22).toFixed(1), ry: (h * 0.58).toFixed(1), fill: 'url(#' + id + ')' }));
+    g.appendChild(svgEl('image', { href: ROBOT_IMG_BASE + R.file, x: x.toFixed(1), y: (yBottom - h).toFixed(1), width: w.toFixed(1), height: h.toFixed(1), preserveAspectRatio: 'xMidYMax meet' }));
+    return { g: g, w: w, h: h, x: x };
+  }
+  /* 论文原图：白底圆角卡片里放图，下面一行小字写图号 */
+  function paperFig(parent, file, x, y, w, h, caption, opts) {
+    var o = opts || {}, g = group(parent), pad = o.pad == null ? 3 : o.pad;
+    g.appendChild(svgEl('rect', { x: x, y: y, width: w, height: h, rx: 5, fill: '#ffffff', stroke: 'none' }));
+    g.appendChild(svgEl('image', { href: PAPER_IMG_BASE + file, x: (x + pad).toFixed(1), y: (y + pad).toFixed(1), width: (w - 2 * pad).toFixed(1), height: (h - 2 * pad).toFixed(1), preserveAspectRatio: 'xMidYMid meet' }));
+    if (caption) g.appendChild(svgText(o.capX == null ? x + w / 2 : o.capX, o.capY == null ? y + h + 12 : o.capY, caption, 'demo-x-mut', 9, o.capAnchor || 'middle'));
+    return { g: g, x: x, y: y, w: w, h: h, px: function (u, v) { return [x + pad + u * (w - 2 * pad), y + pad + v * (h - 2 * pad)]; } };
   }
 
-  // ─── 第 3 幕：论文的五步显式流程 ──────────────────────────────────────
-  var S3_STEPS = [
-    { t: '① 骨骼对应关系', d: '人体骨骼 → 机器人 body', d2: '写成 YAML，一次性手工活', c: C_MUTED },
-    { t: '② 对齐静止姿态旋转', d: '修正 T-pose 与机器人静止姿态', d2: '不然每一帧都带同一个偏差', c: C_MUTED },
-    { t: '③ 非均匀局部缩放', d: '每条骨骼链各自估比例', d2: '关键创新，下一幕细讲', c: C_GOOD, star: true },
-    { t: '④ 带旋转约束的 IK', d: 'mink + DAQP 解关节角', d2: '施加关节限位约束', c: C_ACCENT },
-    { t: '⑤ 全约束精调', d: '加地面接触、自碰撞', d2: '最后一轮精修', c: C_ACCENT }
+  /* 三维 → 画布：z 朝上；绕竖轴转 yaw、抬头 pitch 的正交投影。cam = { yaw, pitch, s(像素/米), ox, oy, cx, cy }：
+     (cx, cy) 是地面上对准画布 (ox, oy) 的那一点。depth 越大离观众越远 */
+  function project(p, cam) {
+    var dx = p[0] - (cam.cx || 0), dy = p[1] - (cam.cy || 0);
+    var c = Math.cos(cam.yaw || 0), s = Math.sin(cam.yaw || 0);
+    var xr = dx * c + dy * s, depth = -dx * s + dy * c;
+    var cp = Math.cos(cam.pitch || 0), sp = Math.sin(cam.pitch || 0);
+    return [cam.ox + cam.s * xr, cam.oy - cam.s * (p[2] * cp + depth * sp), depth];
+  }
+  /* 人：五条链 + 头。左半身实线、右半身稍淡（侧视时左半身在远处），关节画小点 */
+  var H_CHAINS = [
+    { j: ['Hips', 'Spine', 'Spine1', 'Spine2', 'Neck', 'Head'], side: 'C' },
+    { j: ['Spine2', 'LeftShoulder', 'LeftArm', 'LeftForeArm', 'LeftHand'], side: 'L' },
+    { j: ['Spine2', 'RightShoulder', 'RightArm', 'RightForeArm', 'RightHand'], side: 'R' },
+    { j: ['Hips', 'LeftUpLeg', 'LeftLeg', 'LeftFoot', 'LeftToe'], side: 'L' },
+    { j: ['Hips', 'RightUpLeg', 'RightLeg', 'RightFoot', 'RightToe'], side: 'R' }
   ];
-
-  function buildSceneSteps() {
-    var s = sceneSvg(
-      'GMR 把 retargeting 拆成五个显式步骤：定义骨骼对应关系、对齐静止姿态旋转、' +
-        '非均匀局部缩放、带旋转约束的 IK、全约束精调，每一步的目标和约束都能单独检查'
-    );
-    s.appendChild(svgText(56, 26, '论文把这段「黑盒 IK 脚本」拆成五个能单独检查的步骤', 'demo-x-ink2', 13.5));
-
-    var arrow = K.arrowMarker(s, 'gmr-x-arrow-step', C_BORDER);
-    var cards = S3_STEPS.map(function (c0, k) {
-      var g = svgEl('g', {});
-      var x = 40 + k * 148;
-      g.appendChild(paint(svgEl('rect', { x: x, y: 54, width: 128, height: 152, rx: 8, 'stroke-width': c0.star ? 1.8 : 1.3 }), C_SURFACE2, c0.c));
-      if (c0.star) g.appendChild(paint(svgText(x + 64, 80, '⭐', null, 15, 'middle'), c0.c));
-      g.appendChild(paint(svgText(x + 64, c0.star ? 104 : 90, c0.t, null, 11.5, 'middle'), c0.c));
-      g.appendChild(svgText(x + 64, c0.star ? 132 : 122, c0.d, 'demo-x-mut', 9, 'middle'));
-      g.appendChild(svgText(x + 64, c0.star ? 152 : 142, c0.d2, 'demo-x-mut', 9, 'middle'));
-      s.appendChild(g);
-      if (k < S3_STEPS.length - 1) {
-        s.appendChild(
-          paint(
-            svgEl('path', { d: polyPath([[x + 132, 130], [x + 145, 130]]), fill: 'none', 'stroke-width': 1.5, 'marker-end': arrow }),
-            null,
-            C_BORDER
-          )
-        );
+  function humanSkel(parent, opts) {
+    var o = opts || {}, g = group(parent);
+    var col = o.color || C_HUMAN;
+    var shadow = paint(svgEl('ellipse', { rx: 10, ry: 3 }), C_INK2);
+    shadow.style.opacity = o.shadow === false ? 0 : 0.16;
+    g.appendChild(shadow);
+    var chains = H_CHAINS.map(function (c) {
+      var p = paint(svgEl('path', { fill: 'none', 'stroke-width': o.sw || 3, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }), null, col);
+      if (o.dash) p.setAttribute('stroke-dasharray', o.dash);
+      g.appendChild(p);
+      return { p: p, c: c };
+    });
+    var head = paint(svgEl('circle', { r: 4, 'stroke-width': o.sw || 3 }), o.headFill || C_SURFACE, col);
+    if (o.dash) head.setAttribute('stroke-dasharray', o.dash);
+    g.appendChild(head);
+    return {
+      g: g,
+      pts: null,
+      put: function (pose, cam) {
+        var pts = pose.map(function (p) { return project(p, cam); });
+        this.pts = pts;
+        chains.forEach(function (ch) {
+          var ps = ch.c.j.map(function (b) { return pts[HI[b]]; });
+          setPath(ch.p, ps);
+          var d = mean(ps.map(function (q) { return q[2]; }));
+          ch.p.style.opacity = ch.c.side === 'C' ? 1 : d > 0.02 ? 0.55 : 1;
+        });
+        var hd = pts[HI.Head], nk = pts[HI.Neck];
+        head.setAttribute('r', (0.1 * cam.s).toFixed(1));
+        head.setAttribute('cx', (hd[0] + (hd[0] - nk[0]) * 0.6).toFixed(1));
+        head.setAttribute('cy', (hd[1] + (hd[1] - nk[1]) * 0.6).toFixed(1));
+        var root = pose[HI.Hips], gp = project([root[0], root[1], 0], cam);
+        shadow.setAttribute('cx', gp[0].toFixed(1)); shadow.setAttribute('cy', gp[1].toFixed(1));
+        shadow.setAttribute('rx', (0.3 * cam.s).toFixed(1)); shadow.setAttribute('ry', (0.3 * cam.s * Math.max(0.12, Math.sin(cam.pitch || 0.15))).toFixed(1));
+        return pts;
       }
-      return { g: g, at: 0.5 + k * 1.1 };
-    });
-
-    var cmp = svgEl('g', {});
-    cmp.appendChild(paint(svgEl('rect', { x: 40, y: 224, width: 350, height: 74, rx: 8, 'stroke-width': 1.3, 'stroke-dasharray': '5 4' }), C_SURFACE, C_BAD));
-    cmp.appendChild(paint(svgText(58, 248, '隐式 IK 脚本：一把解完', null, 11.5), C_BAD));
-    cmp.appendChild(svgText(58, 268, '出了问题只能整体调参，说不清是哪一步坏的', 'demo-x-mut', 9.5));
-    cmp.appendChild(svgText(58, 286, '换机器人 = 重新调一遍玄学', 'demo-x-mut', 9.5));
-    s.appendChild(cmp);
-
-    var good = svgEl('g', {});
-    good.appendChild(paint(svgEl('rect', { x: 410, y: 224, width: 350, height: 74, rx: 8, 'stroke-width': 1.4 }), C_SURFACE2, C_GOOD));
-    good.appendChild(paint(svgText(428, 248, 'GMR：五步各有各的目标与约束', null, 11.5), C_GOOD));
-    good.appendChild(svgText(428, 268, '接新机器人的手工活被收敛成一张 10–20 行的 YAML', 'demo-x-mut', 9.5));
-    good.appendChild(svgText(428, 286, '（ik_configs/*.yaml：body ↔ human ↔ 权重 ↔ 偏移）', 'demo-x-mut', 9.5));
-    s.appendChild(good);
-
-    var foot = svgEl('g', {});
-    foot.appendChild(paint(svgText(400, 344, '第 ③ 步是全篇的关键创新，也是这五步里唯一「以前大家没认真做」的一步', null, 14, 'middle'), C_ACCENT));
-    foot.appendChild(svgText(400, 370, '④ ⑤ 两步的求解器细节，第五幕再拆开看', 'demo-x-mut', 10.5, 'middle'));
-    s.appendChild(foot);
-
-    function draw(t) {
-      cards.forEach(function (c) {
-        setOpacity(c.g, seg(t, c.at, c.at + 0.5));
-      });
-      setOpacity(cmp, seg(t, 6.4, 7.2));
-      setOpacity(good, seg(t, 8.0, 8.8));
-      setOpacity(foot, seg(t, 10.4, 11.2));
-    }
-
-    return { el: s, draw: draw };
+    };
   }
-
-  // ─── 第 4 幕：非均匀局部缩放为什么是关键 ──────────────────────────────
-  function buildSceneScaling() {
-    var s = sceneSvg(
-      '全局等比例缩放只能给所有骨骼链一个缩放因子，比例差异大的链会被要求够到机器人到不了的位置；' +
-        '非均匀局部缩放让每条链各自对齐比例，IK 的起点就落在可达范围内'
-    );
-    s.appendChild(svgText(56, 26, '为什么等比例缩放不行：人和机器人的四肢比例差异是非均匀的', 'demo-x-ink2', 13.5));
-
-    var left = svgEl('g', {});
-    left.appendChild(paint(svgEl('rect', { x: 40, y: 46, width: 350, height: 232, rx: 8, 'stroke-width': 1.4, 'stroke-dasharray': '5 4' }), C_SURFACE, C_BAD));
-    left.appendChild(paint(svgText(58, 70, '全局等比例：三条链共用一个 s', null, 12), C_BAD));
-    s.appendChild(left);
-
-    var sMath = svgMath(58, 94, 's_{\\text{global}} = \\tfrac{1}{3}\\sum_i s_i = ' + fmt(GLOBAL_S, 3), { size: 12, w: 240 });
-    sMath.setTone('var(--demo-bad)');
-    left.appendChild(sMath);
-
-    var right = svgEl('g', {});
-    right.appendChild(paint(svgEl('rect', { x: 410, y: 46, width: 350, height: 232, rx: 8, 'stroke-width': 1.5 }), C_SURFACE2, C_GOOD));
-    right.appendChild(paint(svgText(428, 70, '非均匀局部缩放：每条链各自一个 s', null, 12), C_GOOD));
-    s.appendChild(right);
-
-    var rMath = svgMath(428, 94, 's_i = \\ell_i^{\\text{robot}} \\,/\\, \\ell_i^{\\text{human}}\\quad (i = \\text{arm, leg, torso})', { size: 12, w: 310 });
-    rMath.setTone('var(--demo-good)');
-    right.appendChild(rMath);
-
-    var rows = CHAINS.map(function (c, k) {
-      var y = 128 + k * 46;
-      var g = svgEl('g', {});
-      /* 左：条形长度按 ratio 画，虚线是全局 s，差出来的那一段就是残差。 */
-      var BX = 150,
-        BW = 162;
-      g.appendChild(svgText(58, y + 4, c.n, 'demo-x-ink2', 10.5));
-      g.appendChild(svgText(58, y + 20, 's = ' + fmt(c.ratio, 2), 'demo-x-mono', 9));
-      g.appendChild(paint(svgEl('rect', { x: BX, y: y - 9, width: BW * c.ratio, height: 16, rx: 3 }), C_SURFACE2, C_BORDER));
-      g.appendChild(paint(svgEl('line', { x1: BX + BW * GLOBAL_S, y1: y - 15, x2: BX + BW * GLOBAL_S, y2: y + 13, 'stroke-width': 1.6, 'stroke-dasharray': '3 3' }), null, C_BAD));
-      g.appendChild(paint(svgText(378, y + 4, '+' + fmt(residCm(c), 1) + ' cm', 'demo-x-mono', 10, 'end'), C_BAD));
-
-      /* 右：每条链自己的比例，残差归零。 */
-      g.appendChild(svgText(428, y + 4, c.n, 'demo-x-ink2', 10.5));
-      g.appendChild(svgText(428, y + 20, 's = ' + fmt(c.ratio, 2), 'demo-x-mono', 9));
-      g.appendChild(paint(svgEl('rect', { x: 520, y: y - 9, width: BW * c.ratio, height: 16, rx: 3 }), C_SURFACE2, C_GOOD));
-      g.appendChild(paint(svgText(744, y + 4, '0.0 cm', 'demo-x-mono', 10, 'end'), C_GOOD));
-      s.appendChild(g);
-      return { g: g, at: 1.6 + k * 1.0 };
-    });
-
-    var sum = svgEl('g', {});
-    sum.appendChild(paint(svgText(378, 268, '末端目标合计偏出 ' + fmt(RESID_SUM, 1) + ' cm', null, 11.5, 'end'), C_BAD));
-    sum.appendChild(paint(svgText(744, 268, '起点就在可达范围内', null, 11.5, 'end'), C_GOOD));
-    s.appendChild(sum);
-
-    var band = svgEl('g', {});
-    band.appendChild(paint(svgEl('rect', { x: 40, y: 292, width: 720, height: 56, rx: 8, 'stroke-width': 1.3 }), C_SURFACE2, C_WARN));
-    band.appendChild(paint(svgText(400, 314, '偏出去的那几厘米，IK 只能用「极端关节角」去够 —— 解出来的姿势几何上对，物理上崩', null, 12, 'middle'), C_WARN));
-    band.appendChild(svgText(400, 336, '这正是下游 RL 追不上、或追上了 sim-to-real 崩掉的源头之一', 'demo-x-mut', 10, 'middle'));
-    s.appendChild(band);
-
-    var foot = svgEl('g', {});
-    foot.appendChild(paint(svgText(400, 378, '分链各自对齐比例，IK 的残差从源头上就小了', null, 15, 'middle'), C_ACCENT));
-    foot.appendChild(svgText(400, 402, '（上面三条比例是笔记 Q7 的量级说法搭的示意算例，不是论文测得的数值）', 'demo-x-mut', 9.5, 'middle'));
-    s.appendChild(foot);
-
-    function draw(t) {
-      setOpacity(left, seg(t, 0.4, 1.0));
-      setOpacity(right, seg(t, 0.8, 1.4));
-      rows.forEach(function (r) {
-        setOpacity(r.g, seg(t, r.at, r.at + 0.5));
-      });
-      setOpacity(sum, seg(t, 5.4, 6.2));
-      setOpacity(band, seg(t, 7.6, 8.4));
-      setOpacity(foot, seg(t, 10.2, 11.0));
-    }
-
-    return { el: s, draw: draw };
+  /* 第 1 幕「抄关节角」那两条腿的配色（G1 的外壳是浅灰、关节与鞋底是黑的） */
+  var G1_LIGHT = '#c4c9d0', G1_DARK = '#33363c', G1_EDGE = '#7c828c';
+  /* G1 的 3D 渲染：模型加载与网格构建来自 ImChong/Robot_Retarget_Online（GMR 的浏览器版，MuJoCo WASM + three.js），
+     读的是和官方 GMR 逐字节相同的 g1_mocap_29dof.xml；输入是官方 GMR 跑出的同一批 qpos（每种设定 84 帧），
+     用正交相机逐帧离线渲染成贴图表，相机的 yaw / pitch 与 project() 是同一套，所以二维的目标点、连线能直接叠在上面。
+     R：渲染时的像素 / 米；(ax, ay)：骨盆正下方的地面点在一格里的像素位置。侧视两组只渲染了 0.85 m 以下（第 5 幕只看膝盖以下） */
+  var G1_3D = {
+    gmr34: { file: 'g1_gmr34.webp', R: 240, yaw: -0.45, pitch: 0.1, cw: 205, ch: 327, cols: 12, n: 84, ax: 96, ay: 319 },
+    s1only34: { file: 'g1_s1only34.webp', R: 240, yaw: -0.45, pitch: 0.1, cw: 198, ch: 330, cols: 12, n: 84, ax: 102, ay: 322 },
+    height34: { file: 'g1_height34.webp', R: 150, yaw: -0.45, pitch: 0.1, cw: 123, ch: 205, cols: 12, n: 84, ax: 58, ay: 189 },
+    legsAsArms34: { file: 'g1_legsAsArms34.webp', R: 150, yaw: -0.45, pitch: 0.1, cw: 123, ch: 211, cols: 12, n: 84, ax: 59, ay: 206 },
+    gmrSide: { file: 'g1_gmrSide.webp', R: 280, yaw: 0, pitch: 0.04, cw: 247, ch: 242, cols: 12, n: 84, ax: 114, ay: 238 },
+    legsAsArmsSide: { file: 'g1_legsAsArmsSide.webp', R: 280, yaw: 0, pitch: 0.04, cw: 235, ch: 242, cols: 12, n: 84, ax: 110, ay: 238 },
+    rest34: { file: 'g1_rest34.webp', R: 240, yaw: -0.45, pitch: 0.1, cw: 140, ch: 316, cols: 1, n: 1, ax: 64, ay: 310 }
+  };
+  /* 两种常用相机：3/4 视角（第 3、4、6、7、8、12 幕）与侧视（第 5 幕） */
+  var CAM34 = { yaw: -0.45, pitch: 0.1 }, CAMSIDE = { yaw: 0, pitch: 0.04 };
+  function cam34(s, ox, oy, cx, cy) {
+    return { yaw: CAM34.yaw, pitch: CAM34.pitch, s: s, ox: ox, oy: oy, cx: cx, cy: cy };
   }
-
-  // ─── 第 5 幕：mink + DAQP 的两阶段约束 IK ─────────────────────────────
-  var S5_HYPERS = [
-    { k: 'lm_damping', v: fmt(LM_DAMPING, 1), d: 'Levenberg-Marquardt 阻尼，越大越稳越慢' },
-    { k: '关节速度限位', v: '$3\\pi$ rad/s', d: '≈ ' + fmt(VEL_LIMIT, 2) + ' rad/s；' + MOCAP_FPS + ' fps 下单帧最多转 ' + fmt(STEP_LIMIT_DEG, 0) + '°' },
-    { k: 'max_iters', v: String(MAX_ITERS), d: '单帧最多 ' + MAX_ITERS + ' 步 Newton 迭代' },
-    { k: '收敛阈值', v: 'err < ' + IK_TOL, d: '提前停止，10 步内达到即跳出' },
-    { k: 'QP 求解器', v: 'daqp', d: '默认 DAQP，可切 quadprog；多约束下更快' }
-  ];
-
-  function buildSceneIK() {
-    var s = sceneSvg(
-      'GMR 的 IK 是两阶段的：第一张 match table 先对齐 root 与主干，第二张再细化四肢末端；' +
-        '求解器是 mink + DAQP，四个超参写死在 motion_retarget.py 里'
-    );
-    s.appendChild(svgText(56, 26, '两阶段约束 IK：先锁住躯干，再去拟合手脚', 'demo-x-ink2', 13.5));
-
-    var arrow = K.arrowMarker(s, 'gmr-x-arrow-ik', C_BORDER);
-
-    var st1 = svgEl('g', {});
-    st1.appendChild(paint(svgEl('rect', { x: 40, y: 48, width: 330, height: 96, rx: 8, 'stroke-width': 1.5 }), C_SURFACE2, C_ACCENT));
-    st1.appendChild(paint(svgText(58, 72, 'Stage 1 · ik_match_table1', 'demo-x-mono', 12), C_ACCENT));
-    st1.appendChild(svgText(58, 96, 'root · pelvis · torso · head', 'demo-x-mut', 10));
-    st1.appendChild(svgText(58, 116, '先把 root 与主干骨骼的位姿锁定下来', 'demo-x-mut', 9.5));
-    st1.appendChild(svgText(58, 134, '每条 task 带 position_weight / rotation_weight / offset', 'demo-x-mut', 9.5));
-    s.appendChild(st1);
-
-    var st2 = svgEl('g', {});
-    st2.appendChild(paint(svgEl('rect', { x: 40, y: 172, width: 330, height: 96, rx: 8, 'stroke-width': 1.5 }), C_SURFACE2, C_GOOD));
-    st2.appendChild(paint(svgText(58, 196, 'Stage 2 · ik_match_table2', 'demo-x-mono', 12), C_GOOD));
-    st2.appendChild(svgText(58, 220, 'hands · feet · elbows · knees', 'demo-x-mut', 10));
-    st2.appendChild(svgText(58, 240, '在已经站稳的躯干上细化四肢与末端', 'demo-x-mut', 9.5));
-    st2.appendChild(svgText(58, 258, '第 ③ 步的分链缩放就是它的参考长度', 'demo-x-mut', 9.5));
-    s.appendChild(st2);
-
-    var link = paint(
-      svgEl('path', { d: polyPath([[205, 148], [205, 166]]), fill: 'none', 'stroke-width': 1.6, 'marker-end': arrow }),
-      null,
-      C_BORDER
-    );
-    s.appendChild(link);
-
-    var table = svgEl('g', {});
-    table.appendChild(paint(svgEl('rect', { x: 392, y: 48, width: 368, height: 220, rx: 8, 'stroke-width': 1.3 }), C_SURFACE, C_BORDER));
-    table.appendChild(svgText(410, 70, '写死在 general_motion_retargeting/motion_retarget.py：', 'demo-x-ink2', 10));
-    S5_HYPERS.forEach(function (h, k) {
-      var y = 94 + k * 34;
-      table.appendChild(svgText(410, y, h.k, 'demo-x-mono', 10));
-      table.appendChild(svgRich(620, y, h.v, { size: 10.5, cls: 'demo-x-mono', anchor: 'end', w: 200 }).setTone(C_ACCENT));
-      table.appendChild(svgText(410, y + 15, h.d, 'demo-x-mut', 8.5));
-    });
-    s.appendChild(table);
-
-    var qp = svgEl('g', {});
-    qp.appendChild(paint(svgEl('rect', { x: 40, y: 284, width: 720, height: 60, rx: 8, 'stroke-width': 1.3 }), C_SURFACE2, C_MUTED));
-    qp.appendChild(svgText(58, 306, '每一步都是一个带阻尼的加权最小二乘 QP（mink 搭好 task / limit，DAQP 求解）：', 'demo-x-ink2', 10));
-    var qpMath = svgMath(
-      400,
-      332,
-      '\\min_{\\dot q}\\ \\sum_i w_i \\lVert J_i \\dot q - v_i \\rVert^2 + \\lambda \\lVert \\dot q \\rVert^2,\\quad \\lambda = ' + fmt(LM_DAMPING, 1),
-      { size: 12.5, w: 560, anchor: 'middle' }
-    );
-    qpMath.setTone('var(--demo-accent)');
-    qp.appendChild(qpMath);
-    s.appendChild(qp);
-
-    var foot = svgEl('g', {});
-    foot.appendChild(paint(svgText(400, 376, '一次性把所有 task 塞进同一个 QP，远端误差会拉着 root 漂移', null, 14, 'middle'), C_ACCENT));
-    foot.appendChild(svgText(400, 400, '分两步，就不会「为了把手放对而牺牲躯干姿态」；求解器复用社区打磨过的 mink，不自己写 Jacobian', 'demo-x-mut', 10, 'middle'));
-    s.appendChild(foot);
-
-    function draw(t) {
-      setOpacity(st1, seg(t, 0.4, 1.2));
-      setOpacity(link, seg(t, 1.8, 2.3));
-      setOpacity(st2, seg(t, 2.2, 3.0));
-      setOpacity(table, seg(t, 4.2, 5.0));
-      setOpacity(qp, seg(t, 7.0, 7.8));
-      setOpacity(foot, seg(t, 10.0, 10.8));
+  /* 一台 G1：opts.set 选贴图表；put(pose, cam, 帧号) 摆到 pose[0]（骨盆）正下方的地面点，返回 29 个点的投影供叠加层用。
+     贴图第一次在 draw 里用到才设 href，所以只有放到这一幕时才下载 */
+  function g1Mesh(parent, opts) {
+    var o = opts || {}, M = G1_3D[o.set], g = group(parent), rows = Math.ceil(M.n / M.cols);
+    /* 外层 g 带 demo-x-g1mesh（深色主题下的一圈淡光，CSS 里定义），内层 g 放染色滤镜，两者互不覆盖 */
+    g.setAttribute('class', 'demo-x-g1mesh');
+    var inner = group(g);
+    var box = svgEl('svg', { overflow: 'hidden', preserveAspectRatio: 'none', width: 0, height: 0 });
+    var img = svgEl('image', { x: 0, y: 0, width: M.cw * M.cols, height: M.ch * rows, preserveAspectRatio: 'none' });
+    box.appendChild(img);
+    inner.appendChild(box);
+    if (o.ghost) g.style.opacity = 0.42;
+    /* tint：把这台染成偏红（第 7 幕「只跑第一阶段」的那台），灰度 L 映射到 (0.35 + 0.75L, 0.12 + 0.35L, 0.12 + 0.35L) */
+    if (o.tint) {
+      var root = parent.ownerSVGElement || parent, defs = root.querySelector('defs');
+      if (!defs) { defs = svgEl('defs', {}); root.insertBefore(defs, root.firstChild); }
+      var fid = 'gmr-x-tint-' + (++haloSeq), flt = svgEl('filter', { id: fid, 'color-interpolation-filters': 'sRGB' });
+      flt.appendChild(svgEl('feColorMatrix', { type: 'matrix', values: '0.25 0.25 0.25 0 0.35  0.117 0.117 0.117 0 0.12  0.117 0.117 0.117 0 0.12  0 0 0 1 0' }));
+      defs.appendChild(flt);
+      inner.setAttribute('filter', 'url(#' + fid + ')');
     }
-
-    return { el: s, draw: draw };
-  }
-
-  // ─── 第 6 幕：「Retargeting Matters」的定量论据 ───────────────────────
-  var S6_SETUP = [
-    { t: 'BeyondMimic 作训练框架', d: '刻意选的「中性框架」，不针对某个 retargeter 调奖励' },
-    { t: 'LAFAN1 · ' + LAFAN_SEQS + ' 段动作', d: '唯一被测机器人是 Unitree G1' },
-    { t: '对比 PHC / ProtoMotions / Unitree', d: '前两个开源，Unitree 数据集是闭源基线' }
-  ];
-
-  var S6_ARTIFACTS = [
-    { t: '① 地面穿透', d: 'ground penetration' },
-    { t: '② 自碰撞', d: 'self-intersection' },
-    { t: '③ 关节值突变', d: 'sudden joint value jumps' }
-  ];
-
-  function buildSceneEvidence() {
-    var s = sceneSvg(
-      '论文用中性的 BeyondMimic 框架在 LAFAN1 的 21 段动作上比较不同 retargeter：' +
-        'GMR 接近闭源 Unitree 基线、PHC 明显落后，21 段里只有 3 段是所有方法都跟得完美的'
-    );
-    s.appendChild(svgText(56, 24, '把 retargeter 换掉、RL 训练不动，成功率就变了 —— 这就是全篇的论据', 'demo-x-ink2', 13));
-
-    var setup = S6_SETUP.map(function (c0, k) {
-      var g = svgEl('g', {});
-      var x = 40 + k * 246;
-      g.appendChild(paint(svgEl('rect', { x: x, y: 40, width: 234, height: 46, rx: 8, 'stroke-width': 1.2 }), C_SURFACE, C_BORDER));
-      g.appendChild(paint(svgText(x + 117, 60, c0.t, null, 10.5, 'middle'), C_ACCENT));
-      g.appendChild(svgText(x + 117, 76, c0.d, 'demo-x-mut', 8.5, 'middle'));
-      s.appendChild(g);
-      return { g: g, at: 0.4 + k * 0.7 };
-    });
-
-    var grid = svgEl('g', {});
-    grid.appendChild(svgText(40, 108, LAFAN_SEQS + ' 段动作里，所有方法都跟得完美的只有 ' + PERFECT_SEQS + ' 段：', 'demo-x-ink2', 10.5));
-    var cells = [];
-    for (var i = 0; i < LAFAN_SEQS; i++) {
-      var ok = i < PERFECT_SEQS;
-      var cell = paint(
-        svgEl('rect', { x: 40 + i * 30, y: 118, width: 24, height: 24, rx: 4, 'stroke-width': 1.3 }),
-        ok ? C_SURFACE2 : C_SURFACE,
-        ok ? C_GOOD : C_BAD
-      );
-      grid.appendChild(cell);
-      cells.push(cell);
+    var woke = false, lastF = -1;
+    function wake() {
+      if (woke || !G1_3D_BASE) return;
+      woke = true;
+      img.setAttribute('href', G1_3D_BASE + M.file);
     }
-    grid.appendChild(
-      paint(svgText(40, 162, '也就是 ' + fmt(PERFECT_PCT, 1) + ' %；剩下 ' + HARD_SEQS + ' 段至少有一种方法跟不上', null, 10.5), C_BAD)
-    );
-    s.appendChild(grid);
-
-    var rank = svgEl('g', {});
-    rank.appendChild(svgText(40, 186, '感知保真度与跟踪成功率的名次（论文未给逐段数字，这里只画名次）：', 'demo-x-ink2', 10.5));
-    [
-      { t: 'Unitree（闭源基线）', c: C_GOOD },
-      { t: 'GMR', c: C_GOOD },
-      { t: 'ProtoMotions', c: C_ACCENT },
-      { t: 'PHC（明显落后）', c: C_BAD }
-    ].forEach(function (r, k) {
-      var x = 40 + k * 184;
-      rank.appendChild(paint(svgEl('rect', { x: x, y: 196, width: 172, height: 38, rx: 8, 'stroke-width': 1.3 }), C_SURFACE2, r.c));
-      rank.appendChild(paint(svgText(x + 86, 220, r.t, null, 11, 'middle'), r.c));
-      if (k < 3) rank.appendChild(paint(svgText(x + 178, 220, '≳', null, 12, 'middle'), C_MUTED));
-    });
-    s.appendChild(rank);
-
-    var arts = S6_ARTIFACTS.map(function (a, k) {
-      var g = svgEl('g', {});
-      var x = 40 + k * 246;
-      g.appendChild(paint(svgEl('rect', { x: x, y: 246, width: 234, height: 46, rx: 8, 'stroke-width': 1.3 }), C_SURFACE, C_BAD));
-      g.appendChild(paint(svgText(x + 117, 266, a.t, null, 11, 'middle'), C_BAD));
-      g.appendChild(svgText(x + 117, 282, a.d, 'demo-x-mono', 8.5, 'middle'));
-      s.appendChild(g);
-      return { g: g, at: 7.0 + k * 0.6 };
-    });
-
-    var surprise = svgEl('g', {});
-    surprise.appendChild(paint(svgEl('rect', { x: 40, y: 302, width: 720, height: 58, rx: 8, 'stroke-width': 1.5 }), C_SURFACE2, C_WARN));
-    surprise.appendChild(
-      paint(svgText(400, 324, '最意外的发现：同一段动作，换一个初始参考帧，成功率能差 ' + INIT_FRAME_GAP + '+ 个百分点', null, 12.5, 'middle'), C_WARN)
-    );
-    surprise.appendChild(
-      svgText(400, 346, USERS + ' 名参与者的主观打分也和定量结果一致：GMR 的感知保真度介于 PHC 与 Unitree 基线之间', 'demo-x-mut', 10, 'middle')
-    );
-    s.appendChild(surprise);
-
-    var foot = paint(svgText(400, 394, '同一套 RL 训练，换 retargeter 就换结果 —— retargeting 确实 matters', null, 15, 'middle'), C_ACCENT);
-    s.appendChild(foot);
-
-    function draw(t) {
-      setup.forEach(function (c) {
-        setOpacity(c.g, seg(t, c.at, c.at + 0.4));
-      });
-      setOpacity(grid, seg(t, 2.6, 3.2));
-      cells.forEach(function (cell, i) {
-        var on = seg(t, 3.0 + i * 0.09, 3.3 + i * 0.09);
-        setOpacity(cell, 0.25 + 0.75 * ease(on));
-      });
-      setOpacity(rank, seg(t, 5.4, 6.2));
-      arts.forEach(function (a) {
-        setOpacity(a.g, seg(t, a.at, a.at + 0.4));
-      });
-      setOpacity(surprise, seg(t, 9.2, 10.0));
-      setOpacity(foot, seg(t, 11.2, 12.0));
-    }
-
-    return { el: s, draw: draw };
-  }
-
-  // ─── 第 7 幕：闭环、已知失败与源码落点 ────────────────────────────────
-  var S7_CHAIN = [
-    { t: '手机 RGB 视频', d: '随手拍一段', c: C_MUTED, w: 128 },
-    { t: 'GVHMR', d: '视频 → SMPL-X', c: C_ACCENT, w: 110 },
-    { t: 'SMPL-X 动作', d: 'root + 各骨骼旋转', c: C_MUTED, w: 130 },
-    { t: 'GMR', d: 'smplx_to_robot.py', c: C_GOOD, w: 118 },
-    { t: 'G1 关节角 .pkl', d: '与输入同帧率', c: C_GOOD, w: 140 }
-  ];
-
-  var S7_FILES = [
-    { f: 'scripts/smplx_to_robot.py', d: 'SMPL-X → 机器人关节序列' },
-    { f: 'scripts/bvh_to_robot.py', d: 'BVH → 机器人关节序列' },
-    { f: 'scripts/vis_robot_motion.py', d: '可视化重定向结果' },
-    { f: 'motion_retarget.py', d: '★ mink + DAQP + 两阶段 IK' },
-    { f: 'kinematics_model.py', d: '★ 自研 PyTorch FK，全程可微' },
-    { f: 'ik_configs/*.yaml', d: N_ROBOTS + '+ 款人形的映射 + 权重 + 偏移' }
-  ];
-
-  function buildSceneLoop() {
-    var s = sceneSvg(
-      '典型下游串接：手机视频经 GVHMR 得到 SMPL-X，再经 GMR 得到 G1 关节角，' +
-        '分别喂给 RL tracking 策略与真机 PD 控制器；仓库还维护了一份已知失败动作清单'
-    );
-    s.appendChild(svgText(56, 24, '闭环与源码落点：一条命令就从视频走到机器人', 'demo-x-ink2', 13));
-
-    var arrow = K.arrowMarker(s, 'gmr-x-arrow-loop', C_BORDER);
-    var x = 40;
-    var chain = S7_CHAIN.map(function (c0, k) {
-      var g = svgEl('g', {});
-      g.appendChild(paint(svgEl('rect', { x: x, y: 40, width: c0.w, height: 54, rx: 8, 'stroke-width': 1.4 }), C_SURFACE2, c0.c));
-      g.appendChild(paint(svgText(x + c0.w / 2, 62, c0.t, null, 11, 'middle'), c0.c));
-      g.appendChild(svgText(x + c0.w / 2, 80, c0.d, 'demo-x-mut', 8.5, 'middle'));
-      s.appendChild(g);
-      if (k < S7_CHAIN.length - 1) {
-        s.appendChild(
-          paint(
-            svgEl('path', { d: polyPath([[x + c0.w + 3, 67], [x + c0.w + 16, 67]]), fill: 'none', 'stroke-width': 1.5, 'marker-end': arrow }),
-            null,
-            C_BORDER
-          )
-        );
+    return {
+      g: g,
+      pts: null,
+      wake: wake,
+      put: function (pose, cam, fr, quiet) {
+        if (!quiet) wake();
+        var P = pose.map(function (p) { return project(p, cam); });
+        this.pts = P;
+        var k = cam.s / M.R, a = project([pose[0][0], pose[0][1], 0], cam);
+        var f = clamp(Math.round(fr || 0), 0, M.n - 1);
+        box.setAttribute('x', (a[0] - M.ax * k).toFixed(1));
+        box.setAttribute('y', (a[1] - M.ay * k).toFixed(1));
+        box.setAttribute('width', (M.cw * k).toFixed(1));
+        box.setAttribute('height', (M.ch * k).toFixed(1));
+        if (f !== lastF) {
+          box.setAttribute('viewBox', [(f % M.cols) * M.cw, Math.floor(f / M.cols) * M.ch, M.cw, M.ch].join(' '));
+          lastF = f;
+        }
+        return P;
       }
-      x += c0.w + 19;
-      return { g: g, at: 0.4 + k * 0.6 };
+    };
+  }
+  /* 地面：一条线 + 每隔 0.5 m 一道刻度，跟着相机走（看得出在往前走） */
+  function ground(parent, x0, x1, y, opts) {
+    var o = opts || {}, g = group(parent);
+    hline(g, x0, y, x1, y, C_BORDER, 1.4);
+    var ticks = [];
+    for (var i = 0; i < 40; i++) ticks.push(hline(g, 0, y, 0, y + 6, C_BORDER, 1.1));
+    return {
+      g: g,
+      /* camX：相机对准的世界 x；s：像素/米；ox：camX 落在画布上的 x */
+      set: function (camX, s, ox) {
+        var step = o.step || 0.5, k0 = Math.floor((camX - (ox - x0) / s) / step);
+        ticks.forEach(function (tk, i) {
+          var x = ox + s * ((k0 + i) * step - camX);
+          setLine(tk, x, y, x - 4, y + 6);
+          tk.style.opacity = x >= x0 && x <= x1 ? 1 : 0;
+        });
+      }
+    };
+  }
+
+  /* ── scene 1: 人和机器人的身体不一样 ── */
+  function buildSceneGap() {
+    var s = sceneSvg('左边是 LAFAN1 里一段真实的走路（人，1.75 m）跟着骨盆原地播放，旁边是同一比例的 Unitree G1 渲染图（1.32 m）；右边先比身高、腿长、臂长，' +
+      '再演示把人的大腿、小腿角度直接抄给 G1 的短腿：骨盆留在人的高度，G1 的脚悬在半空；把骨盆压下去让脚贴地，踩着的脚又往前滑');
+    s.appendChild(svgText(30, 28, '同一段走路，人和 G1 的身体差多少', 'demo-x-ink2', 13.5));
+    /* 左：人 + G1 渲染图，同一比例（150 像素 / 米） */
+    var left = group(s);
+    rectBox(left, 30, 44, 340, 360, C_BORDER, C_SURFACE2);
+    var SC = 150, GY = 380;
+    var gl = ground(left, 40, 360, GY);
+    var hum = humanSkel(left, { sw: 3 });
+    var g1img = robotImg(left, 'g1', 290, GY, SC);
+    var rulers = group(left);
+    [[BODY.human.h, C_HUMAN, 46, '人 ' + fmt(BODY.human.h, 2) + ' m'], [BODY.g1.h, C_INK2, 360, 'G1 ' + fmt(BODY.g1.h, 2) + ' m']].forEach(function (r) {
+      var y = GY - r[0] * SC;
+      hline(rulers, r[2] === 46 ? 46 : 214, y, r[2] === 46 ? 180 : 356, y, r[1], 1.1, '4 3');
+      rulers.appendChild(paint(svgText(r[2] === 46 ? 50 : 352, y - 5, r[3], null, 10.5, r[2] === 46 ? 'start' : 'end'), r[1]));
     });
+    left.appendChild(svgText(110, 398, 'LAFAN1 walk1_subject1 · 第 920–1003 帧', 'demo-x-mut', 9, 'middle'));
+    left.appendChild(svgText(290, 398, 'Unitree G1（29 个自由度）', 'demo-x-mut', 9, 'middle'));
 
-    var sinks = [
-      { t: 'RL tracking policy', d: 'BeyondMimic / PHC / …', c: C_ACCENT },
-      { t: '真机 PD 控制器', d: 'TWIST 遥操直接用它', c: C_ACCENT }
-    ].map(function (b, k) {
-      var g = svgEl('g', {});
-      var bx = 430 + k * 172;
-      s.appendChild(
-        paint(
-          svgEl('path', { d: polyPath([[697, 96], [697, 108], [bx + 78, 108], [bx + 78, 120]]), fill: 'none', 'stroke-width': 1.2, 'marker-end': arrow }),
-          null,
-          C_BORDER
-        )
-      );
-      g.appendChild(paint(svgEl('rect', { x: bx, y: 122, width: 156, height: 44, rx: 8, 'stroke-width': 1.3 }), C_SURFACE2, b.c));
-      g.appendChild(paint(svgText(bx + 78, 142, b.t, null, 11, 'middle'), b.c));
-      g.appendChild(svgText(bx + 78, 158, b.d, 'demo-x-mut', 8.5, 'middle'));
-      s.appendChild(g);
-      return { g: g, at: 3.8 + k * 0.5 };
+    /* 右上：三条尺寸对比 */
+    var cmp = group(s);
+    rectBox(cmp, 390, 44, 380, 176, C_BORDER, C_SURFACE);
+    cmp.appendChild(svgText(404, 64, '量出来的尺寸（人按 BVH 骨长，G1 按 GMR 自带模型）', 'demo-x-ink2', 11));
+    var rows = [['身高', BODY.human.h, BODY.g1.h], ['腿长（髋→踝）', LEG_H, LEG_G], ['臂长（肩→腕）', ARM_H, ARM_G]];
+    var BX = 500, BW = 150;
+    var bars = rows.map(function (r, k) {
+      var y = 80 + k * 44;
+      cmp.appendChild(svgText(404, y + 14, r[0], 'demo-x-ink2', 10.5));
+      var bh = hbar(cmp, BX, y, 12, C_HUMAN, 0.85), bg = hbar(cmp, BX, y + 16, 12, G1_EDGE, 0.95);
+      var th = paint(svgText(0, y + 10, fmt(r[1], 2) + ' m', null, 9.5), C_HUMAN), tg = svgText(0, y + 26, fmt(r[2], 2) + ' m', 'demo-x-ink2', 9.5);
+      cmp.appendChild(th); cmp.appendChild(tg);
+      var ratio = paint(svgText(762, y + 22, '× ' + fmt(r[2] / r[1], 2), null, 12, 'end'), C_BAD);
+      cmp.appendChild(ratio);
+      return { bh: bh, bg: bg, th: th, tg: tg, ratio: ratio, a: r[1], b: r[2] };
     });
-
-    var fail = svgEl('g', {});
-    fail.appendChild(paint(svgEl('rect', { x: 40, y: 122, width: 366, height: 96, rx: 8, 'stroke-width': 1.3, 'stroke-dasharray': '5 4' }), C_SURFACE, C_BAD));
-    fail.appendChild(paint(svgText(58, 144, 'TEST_MOTIONS.md：仓库自己维护的失败清单', null, 11), C_BAD));
-    fail.appendChild(svgText(58, 164, '步态相位漂移 · 行走稳态被破坏 · 高频抖动 ·', 'demo-x-mut', 9.5));
-    fail.appendChild(svgText(58, 180, '地面支撑里手腕被卡住 · 大幅抛甩时上肢失稳', 'demo-x-mut', 9.5));
-    fail.appendChild(paint(svgText(58, 204, '共性：接触丰富 + 大幅旋转 —— 显式 IK 没有物理一致性约束', null, 9.5), C_BAD));
-    s.appendChild(fail);
-
-    var files = svgEl('g', {});
-    S7_FILES.forEach(function (f, k) {
-      var fx = 40 + (k % 3) * 246;
-      var fy = 234 + Math.floor(k / 3) * 52;
-      files.appendChild(paint(svgEl('rect', { x: fx, y: fy, width: 234, height: 44, rx: 7, 'stroke-width': 1.2 }), C_SURFACE2, C_BORDER));
-      files.appendChild(paint(svgText(fx + 12, fy + 19, f.f, 'demo-x-mono', 9.5), C_ACCENT));
-      files.appendChild(svgText(fx + 12, fy + 34, f.d, 'demo-x-mut', 8.5));
+    var cmpNote = svgText(404, 212, '比例不一样：腿短到 0.77，手臂短到 0.65', 'demo-x-ink2', 10.5);
+    cmp.appendChild(cmpNote);
+    /* 右下：论文列的六样差别 */
+    var six = group(s);
+    rectBox(six, 390, 230, 380, 174, C_BORDER, C_SURFACE);
+    six.appendChild(svgText(404, 250, '论文第 1 节列的差别', 'demo-x-ink2', 11));
+    var sixChips = [['骨长', C_BAD], ['关节活动范围', C_BAD], ['运动学结构', C_BAD], ['体型', C_MUTED], ['质量分布', C_MUTED], ['驱动方式', C_MUTED]].map(function (r, k) {
+      return chip(six, 404 + (k % 3) * 120, 262 + Math.floor(k / 3) * 34, 112, r[0], r[1], { size: 10.5, h: 26 });
     });
-    s.appendChild(files);
+    var sixNote = group(six);
+    sixNote.appendChild(svgRich(404, 348, '例：人的肩、髋是球关节；G1 的 29 个关节全是单轴转动', { size: 10.5, cls: 'demo-x-ink2', w: 360 }));
+    sixNote.appendChild(svgRich(404, 368, 'G1 腰的横滚、俯仰只有 ±0.52 rad（约 ±30°）', { size: 10.5, cls: 'demo-x-ink2', w: 360 }));
 
-    var rail = [[100, 348], [400, 348], [700, 348]];
-    var railPath = paint(svgEl('path', { d: polyPath(rail), fill: 'none', 'stroke-width': 1.2, 'stroke-dasharray': '4 4' }), null, C_BORDER);
-    s.appendChild(railPath);
-    var tok = paint(svgEl('circle', { r: 6, 'stroke-width': 1.6 }), C_ACCENT, C_SURFACE2);
-    s.appendChild(tok);
-    var railLbl = svgText(400, 368, N_PATHS + ' 条通路共用同一份实现，CPU 上就跑得过实时', 'demo-x-mut', 10, 'middle');
-    s.appendChild(railLbl);
+    /* 右：直接抄关节角（侧视，300 像素 / 米，相机跟着髋走）：两条腿都画，远的一条（左腿）淡一些 */
+    var naive = group(s);
+    rectBox(naive, 390, 44, 380, 360, C_BORDER, C_SURFACE);
+    naive.appendChild(svgText(404, 64, '最省事的做法：把大腿、小腿的角度直接抄过去', 'demo-x-ink2', 11.5));
+    var NS = 300, NOX = 560, NGY = 380;
+    var ngl = ground(naive, 400, 760, NGY, { step: 0.25 });
+    var prints = [0, 1].map(function () { var r = paint(svgEl('rect', { width: 30, height: 5, rx: 2 }), C_HUMAN); r.style.opacity = 0; naive.appendChild(r); return r; });
+    var NLEG = ['Left', 'Right'].map(function (side, k) {
+      var far = k === 0;
+      var hl = pathLine(naive, [], C_HUMAN, far ? 3 : 4);
+      var ge = pathLine(naive, [], G1_EDGE, 11.4), gl = pathLine(naive, [], G1_LIGHT, 9);
+      var ft = paint(svgEl('rect', { width: 32, height: 9, rx: 3 }), G1_DARK);
+      naive.appendChild(ft);
+      if (far) [hl, ge, gl, ft].forEach(function (n) { n.style.opacity = 0.42; });
+      return { side: side, k: k, hl: hl, ge: ge, gl: gl, ft: ft };
+    });
+    var slideBar = pathLine(naive, [], C_BAD, 5);
+    var slideT = paint(svgText(0, 0, '', null, 12, 'middle'), C_BAD);
+    naive.appendChild(slideT);
+    var liftDim = dimV(naive, 0, 0, 1, C_BAD, '', 'right');
+    var legLbl = group(naive);
+    legLbl.appendChild(paint(svgText(404, 84, '蓝：人的腿（0.86 m）', null, 11), C_HUMAN));
+    legLbl.appendChild(svgText(404, 101, '灰：G1 的腿（0.66 m），角度照抄', 'demo-x-ink2', 11));
+    var phaseA = paint(svgText(762, 84, '', null, 11.5, 'end'), C_BAD);
+    naive.appendChild(phaseA);
+    var phaseB = svgText(762, 101, '', 'demo-x-ink2', 10.5, 'end');
+    naive.appendChild(phaseB);
+    var outro = group(naive);
+    ['浮空', '穿地', '滑脚', '手脚漂移'].forEach(function (str, k) { chip(outro, 404 + k * 90, 116, 82, str, C_BAD, { size: 11, h: 26 }); });
 
-    var foot = svgEl('g', {});
-    foot.appendChild(paint(svgText(400, 398, 'GMR = 把 retargeting 从附录里砍出来，做成能被引用、被讨论的一层', null, 15, 'middle'), C_ACCENT));
-    s.appendChild(foot);
-
-    function draw(t) {
-      chain.forEach(function (c) {
-        setOpacity(c.g, seg(t, c.at, c.at + 0.4));
+    function draw(t, clock) {
+      var now = nowOf(t, clock);
+      var f = loopAt(now);
+      var pose = humanAt(f), hip = pose[HI.Hips];
+      setOpacity(left, seg(t, 0.2, 0.8));
+      hum.put(pose, { yaw: 0, pitch: 0.08, s: SC, ox: 110, oy: GY, cx: hip[0], cy: hip[1] });
+      gl.set(hip[0], SC, 110);
+      setOpacity(g1img.g, seg(t, 1.2, 1.8));
+      setOpacity(rulers, seg(t, 2.0, 2.6));
+      /* 尺寸对比 3.6–7.0，之后换成「抄关节角」 */
+      var showCmp = seg(t, 3.6, 4.1) * (1 - seg(t, 7.0, 7.3));
+      setOpacity(cmp, showCmp); setOpacity(six, showCmp);
+      bars.forEach(function (b, k) {
+        var u = ease(seg(t, 3.9 + k * 0.5, 4.5 + k * 0.5));
+        setW(b.bh, BW * b.a / 1.75 * u); setW(b.bg, BW * b.b / 1.75 * u);
+        b.th.setAttribute('x', (BX + BW * b.a / 1.75 * u + 5).toFixed(1));
+        b.tg.setAttribute('x', (BX + BW * b.b / 1.75 * u + 5).toFixed(1));
+        setOpacity(b.th, seg(t, 4.3 + k * 0.5, 4.6 + k * 0.5)); setOpacity(b.tg, seg(t, 4.3 + k * 0.5, 4.6 + k * 0.5));
+        setOpacity(b.ratio, seg(t, 4.5 + k * 0.5, 4.8 + k * 0.5));
       });
-      sinks.forEach(function (b) {
-        setOpacity(b.g, seg(t, b.at, b.at + 0.4));
+      setOpacity(cmpNote, seg(t, 5.6, 6.0));
+      sixChips.forEach(function (c, k) { setOpacity(c, seg(t, 4.2 + k * 0.25, 4.5 + k * 0.25)); });
+      setOpacity(sixNote, seg(t, 5.8, 6.2));
+      /* 7.0–：抄关节角；10.4–：把髋压低，脚贴地后开始滑 */
+      setOpacity(naive, seg(t, 7.0, 7.5));
+      var lower = ease(seg(t, 10.4, 11.4));
+      var drop = NAIVE.lift * lower;
+      var fi = Math.floor(f);
+      var camX = naiveLeg(fi, 'Right').hip[0];
+      function P(x, z) { return [NOX + NS * (x - camX), NGY - NS * z]; }
+      ngl.set(camX, NS, NOX);
+      var stanceK = STANCE[1][fi] ? 1 : STANCE[0][fi] ? 0 : -1;
+      NLEG.forEach(function (L) {
+        var leg = naiveLeg(fi, L.side);
+        var hk = at(DATA.human, 22, fi, HI[L.side + 'Leg']), ha = at(DATA.human, 22, fi, HI[L.side + 'Foot']), ht = at(DATA.human, 22, fi, HI[L.side + 'Toe']);
+        setPath(L.hl, [P(leg.hip[0], leg.hip[1]), P(hk[0], hk[2]), P(ha[0], ha[2]), P(ht[0], ht[2])]);
+        var gp = [P(leg.hip[0], leg.hip[1] - drop), P(leg.knee[0], leg.knee[1] - drop), P(leg.ankle[0], leg.ankle[1] - drop)];
+        setPath(L.ge, gp); setPath(L.gl, gp);
+        L.ft.setAttribute('x', (gp[2][0] - 9).toFixed(1)); L.ft.setAttribute('y', (gp[2][1] + 1).toFixed(1));
+        /* 人的脚印：踩地时画在踝下面的地上（世界里不动） */
+        var pr = prints[L.k], st = STANCE[L.k][fi];
+        pr.setAttribute('x', (P(ha[0], 0)[0] - 9).toFixed(1)); pr.setAttribute('y', (NGY - 3).toFixed(1));
+        pr.style.opacity = st ? (L.k ? 0.9 : 0.4) : 0;
+        L.gp = gp; L.ha = ha; L.leg = leg;
       });
-      setOpacity(fail, seg(t, 5.4, 6.2));
-      setOpacity(files, seg(t, 7.4, 8.2));
-      var on = seg(t, 9.4, 10.0);
-      setOpacity(railPath, on);
-      setOpacity(tok, on);
-      setOpacity(railLbl, on);
-      var pt = pointOn(rail, ease(seg(t, 9.6, 12.0)));
-      tok.setAttribute('cx', pt[0].toFixed(1));
-      tok.setAttribute('cy', pt[1].toFixed(1));
-      setOpacity(foot, seg(t, 11.4, 12.2));
+      /* 踩地的那条腿：G1 的踝离地多高（7.0–10.4），或者这一步滑了多远（10.4–） */
+      if (stanceK >= 0) {
+        var L = NLEG[stanceK];
+        var ap = P(L.ha[0], L.ha[2]);
+        liftDim.set(L.gp[2][0] + 30, L.gp[2][1] + 4, ap[1], '离地 ' + fmt(((L.leg.ankle[1] - drop) - L.ha[2]) * 100, 0) + ' cm');
+        var f0 = fi;
+        while (f0 > 0 && STANCE[stanceK][f0 - 1]) f0--;
+        var x0 = naiveLeg(f0, L.side).ankle[0], x1 = L.leg.ankle[0];
+        setPath(slideBar, [P(x0, 0), P(x1, 0)].map(function (q) { return [q[0], NGY + 8]; }));
+        slideT.setAttribute('x', ((P(x0, 0)[0] + P(x1, 0)[0]) / 2).toFixed(1)); slideT.setAttribute('y', (NGY + 24).toFixed(1));
+        slideT.textContent = '这一步滑了 ' + fmt((x1 - x0) * 100, 0) + ' cm';
+      }
+      setOpacity(liftDim.g, stanceK >= 0 ? seg(t, 8.2, 8.7) * (1 - seg(t, 10.4, 10.8)) : 0);
+      setOpacity(slideBar, stanceK >= 0 ? seg(t, 11.2, 11.6) : 0);
+      setOpacity(slideT, stanceK >= 0 ? seg(t, 11.2, 11.6) : 0);
+      phaseA.textContent = t < 10.4 ? '髋留在人的高度：踩地时离地 ' + fmt(NAIVE.lift * 100, 0) + ' cm' : '髋压低 ' + fmt(NAIVE.lift * 100, 0) + ' cm，脚贴地';
+      phaseB.textContent = t < 10.4 ? '（踩地那些帧的平均）' : '踩着的脚往前滑，平均 ' + fmt(NAIVE.slide, 2) + ' m/s';
+      setOpacity(phaseA, seg(t, 8.0, 8.4)); setOpacity(phaseB, seg(t, 8.4, 8.8));
+      setOpacity(legLbl, seg(t, 7.4, 7.8));
+      setOpacity(outro, seg(t, 13.4, 13.9));
     }
-
     return { el: s, draw: draw };
   }
 
+  /* ── scene 2: 两个开源重定向器怎么缩放 ── */
+  /* PHC 那条「每帧最低点」曲线是示意（论文只说「有的片段浮空 30 cm 以上」，没给曲线） */
+  var PHC_MINH = (function () {
+    var out = [];
+    for (var i = 0; i <= 60; i++) {
+      var u = i / 60;
+      out.push(0.03 + 0.025 * Math.sin(u * 9) + 0.02 * Math.sin(u * 23) - 0.36 * Math.exp(-Math.pow((u - 0.62) / 0.035, 2)));
+    }
+    return out;
+  })();
+  function buildSceneBaselines() {
+    var s = sceneSvg('左栏 PHC：先把 SMPL 人体模型的形状参数拟合成机器人的身材，再对整段动作做梯度下降，最后整段减去最低点——某一帧往下一沉，整段都被抬起来浮空；' +
+      '右栏 ProtoMotions：世界坐标的 x、y、z 各乘一个系数，再用 mink 让关键身体贴上去；底下一行：KungfuBot 用 ProtoMotions 但关掉缩放，论文发现多数瑕疵是缩放时引入的');
+    s.appendChild(svgText(30, 28, '两个开源重定向器，缩放的办法不一样', 'demo-x-ink2', 13.5));
+    /* PHC */
+    var phc = group(s);
+    rectBox(phc, 30, 44, 365, 316, C_BAD, C_SURFACE);
+    phc.appendChild(paint(svgText(46, 66, 'PHC（H2O / OmniH2O / ASAP 用的那套）', null, 12), C_BAD));
+    var steps1 = ['① 拟合 SMPL 形状参数 β，把人体模型捏成机器人的身材', '② 整段一起梯度下降（根用 Adam、关节用 Adadelta，限位靠截断）', '③ 整段减去最低的那一点'].map(function (str, k) {
+      return chip(phc, 44, 76 + k * 30, 337, str, C_BORDER, { size: 10.5, h: 24 });
+    });
+    /* ① 形状拟合：同一副骨架，腿和手臂慢慢缩到 G1 的比例 */
+    var shapeG = group(phc);
+    var restPose = humanAt(0);
+    var shapeH = humanSkel(shapeG, { sw: 9, shadow: false });
+    shapeH.g.style.opacity = 0.6;
+    var shapeImg = robotImg(shapeG, 'g1', 150, 338, 92);
+    var shapeLbl = svgText(110, 352, '人体模型 → 按 G1 的身材拟合', 'demo-x-mut', 10, 'middle');
+    shapeG.appendChild(shapeLbl);
+    /* ③ 每帧最低点（示意）：减去全段最低点后，大部分帧浮空 */
+    var plotG = group(phc);
+    var PX0 = 196, PX1 = 384, PY0 = 190, PY1 = 340, zMin = -0.4, zMax = 0.42;
+    function py(z) { return PY1 - (z - zMin) / (zMax - zMin) * (PY1 - PY0); }
+    rectBox(plotG, PX0 - 6, PY0 - 14, PX1 - PX0 + 12, PY1 - PY0 + 30, C_BORDER, C_SURFACE2);
+    plotG.appendChild(svgText(PX0, PY0 - 2, '每帧身体最低点的高度（示意）', 'demo-x-mut', 9));
+    var zeroLine = hline(plotG, PX0, py(0), PX1, py(0), C_INK2, 1, '4 3');
+    plotG.appendChild(svgText(PX1, py(0) - 3, '地面', 'demo-x-mut', 9, 'end'));
+    var curve = pathLine(plotG, [], C_BAD, 2);
+    var lift = svgText(PX0 + 4, PY1 + 10, '', 'demo-x-bad', 11);
+    plotG.appendChild(lift);
+    var floatBand = paint(svgEl('rect', { x: PX0, width: PX1 - PX0, y: 0, height: 0, 'fill-opacity': 0.08 }), C_BAD);
+    plotG.insertBefore(floatBand, curve);
+    var liftArrow = hline(plotG, PX0 + 20, py(0), PX0 + 20, py(0), C_BAD, 2);
+    /* ProtoMotions */
+    var pm = group(s);
+    rectBox(pm, 405, 44, 365, 316, C_WARN, C_SURFACE);
+    pm.appendChild(paint(svgText(421, 66, 'ProtoMotions（KungfuBot 用的那套）', null, 12), C_WARN));
+    var steps2 = ['① 世界坐标的 x、y、z 各乘一个系数', '② 用 mink 让关键身体的位置、朝向贴上去', '③ 最低点对齐到原动作的最低点'].map(function (str, k) {
+      return chip(pm, 419, 76 + k * 30, 337, str, C_BORDER, { size: 10.5, h: 24 });
+    });
+    /* ① 俯视：一条走过的路线，x、y 方向缩得不一样（示意） */
+    var axG = group(pm);
+    rectBox(axG, 419, 176, 337, 176, C_BORDER, C_SURFACE2);
+    axG.appendChild(svgText(429, 192, '俯视：一段弯着走的路线（示意）', 'demo-x-mut', 9));
+    var RCX = 470, RCY = 330;
+    var routeA = pathLine(axG, [], C_INK2, 1.6, '4 3');
+    var routeB = pathLine(axG, [], C_WARN, 2.4);
+    var sxT = paint(svgText(746, 300, '', null, 11, 'end'), C_WARN), syT = paint(svgText(746, 318, '', null, 11, 'end'), C_WARN);
+    axG.appendChild(sxT); axG.appendChild(syT);
+    var axX = hline(axG, RCX, RCY, RCX + 270, RCY, C_BORDER, 1), axY = hline(axG, RCX, RCY, RCX, 200, C_BORDER, 1);
+    axG.appendChild(svgText(RCX + 272, RCY + 4, 'x', 'demo-x-mut', 9));
+    axG.appendChild(svgText(RCX - 4, 206, 'y', 'demo-x-mut', 9, 'end'));
+    var ROUTE = [];
+    for (var i = 0; i <= 40; i++) {
+      var u = i / 40;
+      ROUTE.push([u * 2.4, 0.9 * Math.sin(u * Math.PI * 1.2) + 0.25 * u]);
+    }
+    var kfb = chip(pm, 590, 182, 160, 'KungfuBot：同一套，不缩放', C_WARN, { size: 10.5, h: 24 });
+    /* 底：论文的判断 */
+    var bottom = group(s);
+    rectBox(bottom, 30, 370, 740, 40, C_GOOD, C_SURFACE2);
+    bottom.appendChild(svgRich(46, 395, '论文：这两套产生的瑕疵，**大多是缩放时引入的**；KungfuBot 干脆用 ProtoMotions、关掉缩放', { size: 11.5, cls: 'demo-x-ink2', w: 710 }));
+
+    function draw(t, clock) {
+      var now = nowOf(t, clock);
+      setOpacity(phc, seg(t, 0.3, 0.8));
+      steps1.forEach(function (c, k) { setOpacity(c, seg(t, 0.6 + k * 1.0, 1.0 + k * 1.0)); });
+      /* 形状拟合：腿缩到 0.77、手臂缩到 0.65（G1 / 人，第 1 幕量的） */
+      var u = ease(seg(t, 1.0, 3.4));
+      var legK = 1 + (LEG_G / LEG_H - 1) * u, armK = 1 + (ARM_G / ARM_H - 1) * u;
+      var hip = restPose[HI.Hips];
+      var morph = restPose.map(function (p, j) {
+        var b = HB[j], k = /Leg|Foot|Toe|UpLeg/.test(b) ? legK : /Arm|Hand/.test(b) ? armK : 1 + (BODY.g1.h / BODY.human.h - 1) * u * 0.6;
+        var anchor = /Leg|Foot|Toe|UpLeg/.test(b) ? restPose[HI[b.indexOf('Left') === 0 ? 'LeftUpLeg' : 'RightUpLeg']] : /Arm|Hand/.test(b) ? restPose[HI[b.indexOf('Left') === 0 ? 'LeftArm' : 'RightArm']] : hip;
+        if (/UpLeg/.test(b) || b === 'LeftArm' || b === 'RightArm') anchor = p;
+        return [anchor[0] + (p[0] - anchor[0]) * k, anchor[1] + (p[1] - anchor[1]) * k, anchor[2] + (p[2] - anchor[2]) * k];
+      });
+      /* 缩完把脚放回地面 */
+      var lowZ = Math.min(morph[HI.LeftToe][2], morph[HI.RightToe][2], morph[HI.LeftFoot][2], morph[HI.RightFoot][2]);
+      morph = morph.map(function (p) { return [p[0], p[1], p[2] - lowZ + 0.03]; });
+      shapeH.put(morph, { yaw: -0.5, pitch: 0.1, s: 92, ox: 82, oy: 338, cx: hip[0], cy: hip[1] });
+      setOpacity(shapeImg.g, seg(t, 1.0, 1.5));
+      setOpacity(shapeG, seg(t, 0.8, 1.3));
+      /* ③ 最低点曲线 */
+      setOpacity(plotG, seg(t, 3.6, 4.1));
+      var shift = ease(seg(t, 4.6, 6.2)) * -Math.min.apply(null, PHC_MINH);
+      var pts = PHC_MINH.map(function (z, k) { return [PX0 + (PX1 - PX0) * k / (PHC_MINH.length - 1), py(z + shift)]; });
+      setPath(curve, pts);
+      drawOn(curve, seg(t, 3.8, 4.6));
+      floatBand.setAttribute('y', py(shift + 0.03).toFixed(1));
+      floatBand.setAttribute('height', Math.max(0, py(0) - py(shift + 0.03)).toFixed(1));
+      setOpacity(floatBand, seg(t, 5.8, 6.3));
+      setLine(liftArrow, PX0 + 20, py(0), PX0 + 20, py(Math.min.apply(null, PHC_MINH) + shift + 0.3));
+      setOpacity(liftArrow, 0);
+      lift.textContent = shift > 0.01 ? '整段抬高 ' + fmt(shift * 100, 0) + ' cm，其余帧都浮空' : '';
+      setOpacity(lift, seg(t, 6.0, 6.4));
+      setOpacity(shapeLbl, seg(t, 1.2, 1.6));
+      /* ProtoMotions */
+      setOpacity(pm, seg(t, 7.0, 7.5));
+      steps2.forEach(function (c, k) { setOpacity(c, seg(t, 7.3 + k * 1.0, 7.7 + k * 1.0)); });
+      setOpacity(axG, seg(t, 7.6, 8.1));
+      var w = ease(seg(t, 8.4, 9.8));
+      var sx = 1 + (0.8 - 1) * w, sy = 1 + (0.55 - 1) * w;
+      var S2 = 105;
+      setPath(routeA, ROUTE.map(function (p) { return [RCX + S2 * p[0], RCY - S2 * p[1] - 14]; }));
+      setPath(routeB, ROUTE.map(function (p) { return [RCX + S2 * p[0] * sx, RCY - S2 * p[1] * sy - 14]; }));
+      sxT.textContent = 'x × ' + fmt(sx, 2); syT.textContent = 'y × ' + fmt(sy, 2);
+      setOpacity(sxT, seg(t, 8.6, 9.0)); setOpacity(syT, seg(t, 8.6, 9.0));
+      setOpacity(kfb, seg(t, 10.4, 10.9));
+      setOpacity(bottom, seg(t, 13.4, 13.9));
+      void now;
+    }
+    return { el: s, draw: draw };
+  }
+
+  /* ── scene 3: 一张配置表（第 1、2 步） ── */
+  /* 第 1 步写对应关系和权重，第 2 步写偏移；骨盆那一行的旋转偏移 (0.5, 0.5, 0.5, 0.5) 是绕 (1,1,1) 转 120°，正好把 x→y→z→x 轮换 */
+  var PELVIS_Q = [0.5, 0.5, 0.5, 0.5];
+  function quatAngleDeg(q) {
+    return (2 * Math.acos(Math.min(1, Math.abs(q[0]))) * 180) / Math.PI;
+  }
+  function quatRotate(q, v) {
+    var w = q[0], x = q[1], y = q[2], z = q[3];
+    var ix = w * v[0] + y * v[2] - z * v[1], iy = w * v[1] + z * v[0] - x * v[2], iz = w * v[2] + x * v[1] - y * v[0], iw = -x * v[0] - y * v[1] - z * v[2];
+    return [ix * w + iw * -x + iy * -z - iz * -y, iy * w + iw * -y + iz * -x - ix * -z, iz * w + iw * -z + ix * -y - iy * -x];
+  }
+  function slerpAxis(q, u) {
+    /* 绕同一根轴转 u 倍角 */
+    var ang = 2 * Math.acos(clamp(q[0], -1, 1)), sn = Math.sin(ang / 2) || 1;
+    var ax = [q[1] / sn, q[2] / sn, q[3] / sn], a = ang * u;
+    return [Math.cos(a / 2), ax[0] * Math.sin(a / 2), ax[1] * Math.sin(a / 2), ax[2] * Math.sin(a / 2)];
+  }
+  var MAP_FRAME = 40; // 双脚都在地上的一帧
+  var MAP_PAIRS = [
+    ['Hips', 'pelvis'], ['Spine2', 'torso_link'], ['LeftUpLeg', 'left_hip_pitch_link'], ['LeftLeg', 'left_knee_link'], ['LeftFoot', 'left_ankle_roll_link'],
+    ['RightUpLeg', 'right_hip_pitch_link'], ['RightLeg', 'right_knee_link'], ['RightFoot', 'right_ankle_roll_link'],
+    ['LeftArm', 'left_shoulder_pitch_link'], ['LeftForeArm', 'left_elbow_link'], ['LeftHand', 'left_wrist_yaw_link'],
+    ['RightArm', 'right_shoulder_pitch_link'], ['RightForeArm', 'right_elbow_link'], ['RightHand', 'right_wrist_yaw_link']
+  ];
+  function buildSceneConfig() {
+    var s = sceneSvg('左边是人（LAFAN1 的一帧），右边是同一帧重定向出来的 G1，14 对关键身体一组一组连上线；底下是配置文件里的一行：机器人身体、人体骨骼、位置权重、朝向权重属于第 1 步，' +
+      '位置偏移和旋转偏移属于第 2 步；最后两组坐标轴演示骨盆那一行的旋转偏移：绕 (1,1,1) 转 120°，人体骨骼的坐标轴就和机器人的对齐了');
+    s.appendChild(svgText(30, 28, '第 1、2 步：一张配置表写下「谁对谁、多重要、差多少」', 'demo-x-ink2', 13.5));
+    var top = group(s);
+    rectBox(top, 30, 44, 740, 230, C_BORDER, C_SURFACE2);
+    var hp = humanAt(MAP_FRAME), gp = g1At('gmr', MAP_FRAME), hip = hp[HI.Hips];
+    var camH = cam34(118, 170, 262, hip[0], hip[1]);
+    var camG = cam34(118, 420, 262, gp[0][0], gp[0][1]);
+    /* G1 的 3D 渲染垫在最底下，连线和端点画在它上面 */
+    var rob = g1Mesh(top, { set: 'gmr34' });
+    var links = group(top);
+    var hum = humanSkel(top, { sw: 2.6 });
+    var hpts = hum.put(hp, camH), gpts = rob.put(gp, camG, MAP_FRAME, true);
+    top.appendChild(paint(svgText(170, 60, '人：LAFAN1（BVH）', null, 11, 'middle'), C_HUMAN));
+    top.appendChild(svgText(420, 60, 'G1（MJCF）', 'demo-x-ink2', 11, 'middle'));
+    var groups = [[0, 1], [2, 3, 4, 5, 6, 7], [8, 9, 10, 11, 12, 13]];
+    var lines = MAP_PAIRS.map(function (pr) {
+      var a = hpts[HI[pr[0]]], b = gpts[GI[pr[1]]];
+      var l = hline(links, a[0], a[1], b[0], b[1], C_TGT, 1.1, '3 3');
+      var d1 = dotAt(links, a[0], a[1], 3, C_TGT), d2 = dotAt(links, b[0], b[1], 3, C_TGT);
+      return [l, d1, d2];
+    });
+    /* 右上：数字 */
+    var info = group(top);
+    info.appendChild(paint(svgText(560, 90, '14', null, 34), C_TGT));
+    info.appendChild(svgText(604, 84, '对关键身体', 'demo-x-ink2', 12));
+    info.appendChild(svgText(604, 100, '骨盆、躯干、髋、膝、脚、肩、肘、手', 'demo-x-mut', 10));
+    info.appendChild(paint(svgText(560, 146, '× 2', null, 26), C_TGT));
+    info.appendChild(svgText(604, 140, '张匹配表', 'demo-x-ink2', 12));
+    info.appendChild(svgText(604, 156, '第 4、5 步各一张，权重不同', 'demo-x-mut', 10));
+    info.appendChild(svgText(560, 196, '接一款新机器人', 'demo-x-ink2', 11.5));
+    info.appendChild(svgText(560, 214, '= 写一份这样的 JSON', 'demo-x-ink2', 11.5));
+    /* 骨盆的坐标轴：人（转之前）→ 转 120° 之后与机器人一致 */
+    var axesG = group(top);
+    var AX = [600, 190], AXL = 46;
+    var cols = [C_BAD, C_GOOD, C_ACCENT], names = ['x', 'y', 'z'];
+    var axLines = names.map(function (n, k) { return { l: hline(axesG, 0, 0, 0, 0, cols[k], 2.6), t: paint(svgText(0, 0, n, null, 10.5, 'middle'), cols[k]) }; });
+    axLines.forEach(function (a) { axesG.appendChild(a.t); });
+    var axLbl = svgText(AX[0], 252, '', 'demo-x-ink2', 11, 'middle');
+    axesG.appendChild(axLbl);
+    var robAx = group(top);
+    names.forEach(function (n, k) {
+      var v = k === 0 ? [1, 0, 0] : k === 1 ? [0, 1, 0] : [0, 0, 1];
+      var p = project([v[0] * 0.3, v[1] * 0.3, v[2] * 0.3], { yaw: -0.6, pitch: 0.35, s: AXL / 0.3, ox: 0, oy: 0 });
+      var l = hline(robAx, 712, 190, 712 + p[0], 190 + p[1], cols[k], 2.6);
+      void l;
+      robAx.appendChild(paint(svgText(712 + p[0] * 1.25, 190 + p[1] * 1.25 + 4, n, null, 11, 'middle'), cols[k]));
+    });
+    robAx.appendChild(svgText(712, 252, 'G1 的骨盆', 'demo-x-ink2', 11, 'middle'));
+    robAx.appendChild(svgText(656, 82, '第 2 步：骨盆那一行的旋转偏移', 'demo-x-ink2', 11, 'middle'));
+    /* 内八字：两只脚的俯视，没对齐时脚尖往里扣 */
+    var toe = group(top);
+    function footTop(cx, cy, ang, col) {
+      var r = paint(svgEl('rect', { x: cx - 9, y: cy - 22, width: 18, height: 44, rx: 9, transform: 'rotate(' + ang + ' ' + cx + ' ' + cy + ')' }), col);
+      r.style.opacity = 0.85; toe.appendChild(r);
+    }
+    footTop(590, 150, 18, C_BAD); footTop(626, 150, -18, C_BAD); footTop(694, 150, 0, C_GOOD); footTop(730, 150, 0, C_GOOD);
+    toe.appendChild(paint(svgText(608, 196, '没对齐：内八字', null, 11, 'middle'), C_BAD));
+    toe.appendChild(paint(svgText(712, 196, '对齐之后', null, 11, 'middle'), C_GOOD));
+    toe.appendChild(svgText(656, 216, '（俯视，脚尖朝上）', 'demo-x-mut', 9.5, 'middle'));
+    /* 底：JSON 的一行，分成六格 */
+    var row = group(s);
+    rectBox(row, 30, 284, 740, 126, C_BORDER, C_SURFACE);
+    row.appendChild(svgText(46, 304, 'bvh_lafan1_to_g1.json 的一行（第 4 步那张表）', 'demo-x-mut', 10));
+    var CELLS = [['"left_ankle_roll_link"', '机器人身体', 1], ['"LeftFootMod"', '人体骨骼', 1], ['50', '位置权重', 1], ['10', '朝向权重', 1], ['[0, 0, 0]', '位置偏移', 2], ['[−0.707, 0.707, 0, 0]', '旋转偏移', 2]];
+    var CW = [150, 112, 70, 70, 96, 180], cx = 46;
+    var cells = CELLS.map(function (c, k) {
+      var g = group(row);
+      var col = c[2] === 1 ? C_ACCENT : C_GOOD;
+      rectBox(g, cx, 314, CW[k] - 6, 34, col, C_SURFACE2);
+      g.appendChild(svgText(cx + (CW[k] - 6) / 2, 336, c[0], 'demo-x-mono', 10.5, 'middle'));
+      g.appendChild(paint(svgText(cx + (CW[k] - 6) / 2, 364, c[1], null, 10.5, 'middle'), col));
+      cx += CW[k];
+      return g;
+    });
+    var brace1 = group(row), brace2 = group(row);
+    hline(brace1, 46, 376, 46 + 150 + 112 + 70 + 70 - 6, 376, C_ACCENT, 2);
+    brace1.appendChild(paint(svgText(46 + (150 + 112 + 70 + 70) / 2, 394, '第 1 步：谁对谁、多重要（每款机器人手写一次）', null, 10.5, 'middle'), C_ACCENT));
+    var x2 = 46 + 150 + 112 + 70 + 70;
+    hline(brace2, x2, 376, x2 + 96 + 180 - 6, 376, C_GOOD, 2);
+    brace2.appendChild(paint(svgText(x2 + (96 + 180) / 2, 394, '第 2 步：静止姿态差的那一点', null, 10.5, 'middle'), C_GOOD));
+
+    function draw(t) {
+      rob.wake();
+      setOpacity(top, seg(t, 0.2, 0.7));
+      lines.forEach(function (ln, k) {
+        var gi = groups.findIndex(function (gr) { return gr.indexOf(k) >= 0; });
+        var u = seg(t, 1.0 + gi * 0.8, 1.5 + gi * 0.8);
+        ln.forEach(function (n) { setOpacity(n, u); });
+      });
+      setOpacity(info, seg(t, 3.6, 4.1) * (1 - seg(t, 7.0, 7.3)));
+      setOpacity(row, seg(t, 4.4, 4.9));
+      cells.forEach(function (c, k) { setOpacity(c, seg(t, 4.6 + k * 0.3, 4.9 + k * 0.3)); });
+      setOpacity(brace1, seg(t, 6.2, 6.6));
+      setOpacity(brace2, seg(t, 7.2, 7.6));
+      /* 10.4 起：骨盆的旋转偏移，人的坐标轴绕 (1,1,1) 转 120° */
+      setOpacity(axesG, seg(t, 7.4, 7.8) * (1 - seg(t, 13.4, 13.6)));
+      setOpacity(robAx, seg(t, 7.4, 7.8) * (1 - seg(t, 13.4, 13.6)));
+      setOpacity(toe, seg(t, 13.6, 14.0));
+      var u = ease(seg(t, 10.6, 12.4));
+      var q = slerpAxis(PELVIS_Q, u), qi = [q[0], -q[1], -q[2], -q[3]];
+      void qi;
+      names.forEach(function (n, k) {
+        /* 人那边的坐标轴：配置里乘上的偏移把它的 z→x、x→y、y→z（转之前和机器人的不对齐） */
+        var base = k === 0 ? [0, 0, 1] : k === 1 ? [1, 0, 0] : [0, 1, 0];
+        var v = quatRotate(q, base);
+        var p = project([v[0] * 0.3, v[1] * 0.3, v[2] * 0.3], { yaw: -0.6, pitch: 0.35, s: AXL / 0.3, ox: 0, oy: 0 });
+        setLine(axLines[k].l, AX[0], AX[1], AX[0] + p[0], AX[1] + p[1]);
+        axLines[k].t.setAttribute('x', (AX[0] + p[0] * 1.25).toFixed(1)); axLines[k].t.setAttribute('y', (AX[1] + p[1] * 1.25 + 4).toFixed(1));
+      });
+      axLbl.textContent = u < 0.02 ? '人的 Hips：轴不一样' : u > 0.98 ? '乘上偏移之后：对齐' : '绕 (1,1,1) 转 ' + fmt(120 * u, 0) + '°';
+    }
+    return { el: s, draw: draw };
+  }
+
+  /* ── scene 4: 第 3 步：非均匀局部缩放（式 2） ── */
+  /* 按式 2 缩放人的一帧：根 × k·s_root，其余身体相对根 × k·s_b（腿与躯干 0.875、手臂 0.729） */
+  function scaleArm(b) {
+    return /Shoulder|Arm|Hand/.test(b);
+  }
+  /* 按式 2 缩放：根放到 rootTarget（缩放后的根，取自 TGT 数据，免得受坐标平移影响），其余身体相对根乘各自的比例 */
+  function scalePose(pose, rootTarget, sLeg, sArm) {
+    var r = pose[HI.Hips];
+    return pose.map(function (p, j) {
+      if (j === HI.Hips) return rootTarget.slice();
+      var k = scaleArm(HB[j]) ? sArm : sLeg;
+      return [rootTarget[0] + (p[0] - r[0]) * k, rootTarget[1] + (p[1] - r[1]) * k, rootTarget[2] + (p[2] - r[2]) * k];
+    });
+  }
+  function buildSceneScale() {
+    var s = sceneSvg('左边一帧走路：人的骨架绕骨盆缩放，下半身和根缩到 0.875、手臂缩到 0.729，橙点是缩完的目标，G1 正好站在这些目标上；右边是式 2 和两种「只用一个比例」的反例：' +
+      '全身按身高比 0.756 缩，G1 的骨盆低 7 cm、脚底陷进地面 5 cm；腿也按手臂的 0.729 缩，脚悬在半空');
+    s.appendChild(svgText(30, 28, '第 3 步：按身体部位各乘一个比例（式 2）', 'demo-x-ink2', 13.5));
+    var left = group(s);
+    rectBox(left, 30, 44, 330, 366, C_BORDER, C_SURFACE2);
+    var SC = 190, GY = 392, OX = 170;
+    var gl = ground(left, 40, 350, GY, { step: 0.25 });
+    var hum = humanSkel(left, { sw: 2.6, dash: null });
+    var rob = g1Mesh(left, { set: 'gmr34' });
+    var tgtDots = KEYBODIES.map(function () { return dotAt(left, 0, 0, 4.2, C_TGT); });
+    var lblL = group(left);
+    var lblLeg = paint(svgText(46, 64, '', null, 11.5), C_HUMAN), lblArm = paint(svgText(46, 82, '', null, 11.5), C_HUMAN);
+    lblL.appendChild(lblLeg); lblL.appendChild(lblArm);
+    var lblT = paint(svgText(46, 100, '橙点：缩完的目标（14 个）', null, 10.5), C_TGT);
+    left.appendChild(lblT);
+    /* 右：式 2 + 数 */
+    var right = group(s);
+    rectBox(right, 372, 44, 398, 150, C_BORDER, C_SURFACE);
+    var eq = svgMath(571, 92, '\\mathbf{p}_b^{\\text{target}} = \\frac{h}{h_{\\text{ref}}}\\Big[s_b\\big(\\mathbf{p}_b - \\mathbf{p}_{\\text{root}}\\big) + s_{\\text{root}}\\,\\mathbf{p}_{\\text{root}}\\Big]', { size: 14, anchor: 'middle' });
+    right.appendChild(eq);
+    right.appendChild(svgRich(386, 128, '$h = 1.75$ m（LAFAN1 加载器写死），$h_{\\text{ref}} = 1.8$ m（配置）', { size: 10.5, cls: 'demo-x-ink2', w: 380 }));
+    var numsG = group(right);
+    numsG.appendChild(svgRich(386, 150, '根、躯干、腿：$0.972 \\times 0.9 = $ **0.875**', { size: 11.5, cls: 'demo-x-ink2', w: 380 }));
+    numsG.appendChild(svgRich(386, 172, '手臂：$0.972 \\times 0.75 = $ **0.729**', { size: 11.5, cls: 'demo-x-ink2', w: 380 }));
+    /* 右下：两个反例（复现实验的 G1） */
+    var bad = group(s);
+    rectBox(bad, 372, 204, 398, 206, C_BAD, C_SURFACE);
+    bad.appendChild(paint(svgText(386, 224, '只用一个比例会怎样（本笔记跑官方代码的对照）', null, 11), C_BAD));
+    var BSC = 96, BGY = 384;
+    var bA = g1Mesh(bad, { set: 'height34' }), bB = g1Mesh(bad, { set: 'legsAsArms34' });
+    var bgA = hline(bad, 382, BGY, 566, BGY, C_INK2, 1.2), bgB = hline(bad, 576, BGY, 760, BGY, C_INK2, 1.2);
+    void bgA; void bgB;
+    var tA = group(bad), tB = group(bad);
+    tA.appendChild(svgText(474, 244, '全身 × 0.756（身高比）', 'demo-x-ink2', 10.5, 'middle'));
+    tA.appendChild(paint(svgText(474, 400, '', null, 10.5, 'middle'), C_BAD));
+    tB.appendChild(svgText(668, 244, '腿也 × 0.729，根仍 × 0.875', 'demo-x-ink2', 10.5, 'middle'));
+    tB.appendChild(paint(svgText(668, 400, '', null, 10.5, 'middle'), C_BAD));
+    var refA = hline(bad, 400, 0, 550, 0, C_GOOD, 1, '4 3');
+    var dimA = dimV(bad, 0, 0, 1, C_BAD, '', 'right'), dimB = dimV(bad, 0, 0, 1, C_BAD, '', 'right');
+
+    function draw(t, clock) {
+      var now = nowOf(t, clock);
+      var f = loopAt(now);
+      var raw = humanAt(f);
+      /* 0.4–3.6：原样；3.6–7.0：腿和根缩到 0.875、手臂缩到 0.729 */
+      var uL = ease(seg(t, 3.8, 5.2)), uA = ease(seg(t, 5.4, 6.8));
+      var sL = 1 + (S_LEGS - 1) * uL, sA = 1 + (S_ARMS - 1) * uA;
+      var tg = tgtAt('gmr', f), g = g1At('gmr', f);
+      /* 根的高度跟着比例一起降：人的骨盆高 × s_root */
+      var rootT = [tg[0][0], tg[0][1], raw[HI.Hips][2] * sL];
+      var pose = scalePose(raw, rootT, sL, sA);
+      var cam = cam34(SC, OX, GY, g[0][0], g[0][1]);
+      setOpacity(left, seg(t, 0.2, 0.7));
+      hum.put(pose, cam);
+      gl.set(g[0][0], SC, OX);
+      lblLeg.textContent = '腿、根 × ' + fmt(sL, 3);
+      lblArm.textContent = '手臂 × ' + fmt(sA, 3);
+      setOpacity(lblL, seg(t, 3.6, 4.0));
+      /* 7.0 起：目标点 + G1 站上去 */
+      tgtDots.forEach(function (d, k) { moveDot(d, project(tg[k], cam)); setOpacity(d, seg(t, 7.0, 7.4)); });
+      setOpacity(lblT, seg(t, 7.0, 7.4));
+      rob.put(g, cam, f);
+      setOpacity(rob.g, seg(t, 7.8, 8.4));
+      hum.g.style.opacity = 1 - 0.6 * seg(t, 7.8, 8.4);
+      setOpacity(right, seg(t, 3.6, 4.1));
+      setOpacity(numsG, seg(t, 4.4, 4.8));
+      /* 10.4 起：两个反例 */
+      setOpacity(bad, seg(t, 10.4, 10.9));
+      var a = g1At('height', f), b = g1At('legsAsArms', f);
+      var cA = cam34(BSC, 474, BGY, a[0][0], a[0][1]);
+      var cB = cam34(BSC, 668, BGY, b[0][0], b[0][1]);
+      bA.put(a, cA, f); bB.put(b, cB, f);
+      /* 绿虚线：GMR 默认时骨盆的平均高度 */
+      var yRef = BGY - ST.gmr.pelvis * BSC;
+      setLine(refA, 420, yRef, 530, yRef);
+      tA.lastChild.textContent = '骨盆低 ' + fmt((ST.gmr.pelvis - ST.height.pelvis) * 100, 0) + ' cm，脚底陷进地面 ' + fmt(-ST.height.sole * 100, 0) + ' cm';
+      tB.lastChild.textContent = '踩地时脚底悬空 ' + fmt(ST.legsAsArms.sole * 100, 0) + ' cm';
+      var pa = project(a[0], cA);
+      dimA.set(pa[0] + 34, yRef, pa[1], '');
+      var soleB = Math.min(b[25][2], b[26][2], b[27][2], b[28][2], b[21][2], b[22][2], b[23][2], b[24][2]);
+      var pb = project([b[0][0], b[0][1], soleB], cB);
+      dimB.set(pb[0] + 40, BGY, pb[1], fmt(soleB * 100, 0) + ' cm');
+      setOpacity(tA, seg(t, 10.8, 11.2)); setOpacity(tB, seg(t, 12.0, 12.4));
+      setOpacity(refA, seg(t, 11.0, 11.4)); setOpacity(dimA.g, seg(t, 11.0, 11.4)); setOpacity(dimB.g, seg(t, 12.2, 12.6));
+      setOpacity(bB.g, seg(t, 11.8, 12.2));
+    }
+    return { el: s, draw: draw };
+  }
+
+  /* ── scene 5: 根和脚要用同一个比例 ── */
+  function buildSceneRootScale() {
+    var s = sceneSvg('上下两条跑道：上面是 GMR 默认（根和腿都乘 0.875），G1 踩地的脚一直停在脚印上；下面根乘 0.875、腿乘 0.729，脚悬在半空，踩地时也一路往前滑，地上留下一道道红色拖痕；' +
+      '右边是由式 2 推出来的式子：脚踩住不动、根走了 Δ，目标脚就跟着挪 k(s_root − s_foot)Δ');
+    s.appendChild(svgText(30, 28, '根要用一个统一的比例，而且得和腿一样', 'demo-x-ink2', 13.5));
+    var SC = 230;
+    var lanes = [{ v: 'gmr', y: 44, lbl: 'GMR 默认：根 0.875、腿 0.875', col: C_GOOD }, { v: 'legsAsArms', y: 230, lbl: '对照：根 0.875、腿 0.729', col: C_BAD }].map(function (L, i) {
+      var g = group(s);
+      rectBox(g, 30, L.y, 480, 176, L.col, C_SURFACE2);
+      /* 只看膝盖以下：脚离地几厘米、踩地时滑多远都得放大才看得见 */
+      var clipId = 'gmr-x-lane-' + i;
+      var defs = svgEl('defs', {}), cp = svgEl('clipPath', { id: clipId });
+      cp.appendChild(svgEl('rect', { x: 31, y: L.y + 1, width: 478, height: 174, rx: 6 }));
+      defs.appendChild(cp); g.appendChild(defs);
+      var inner = svgEl('g', { 'clip-path': 'url(#' + clipId + ')' });
+      g.appendChild(inner);
+      var GY = L.y + 150;
+      var gl = ground(inner, 40, 500, GY, { step: 0.1 });
+      var prints = group(inner);
+      var rob = g1Mesh(inner, { set: L.v + 'Side' });
+      g.appendChild(paint(svgText(44, L.y + 20, L.lbl, null, 12), L.col));
+      var stat = svgText(500, L.y + 20, '', 'demo-x-ink2', 11, 'end');
+      g.appendChild(stat);
+      var stepT = paint(svgText(0, GY + 20, '', null, 11.5, 'middle'), L.col);
+      g.appendChild(stepT);
+      return { g: g, v: L.v, GY: GY, gl: gl, prints: prints, rob: rob, stat: stat, stepT: stepT, col: L.col, y: L.y };
+    });
+    /* 每条跑道里：踩地那几帧 G1 脚底中心的轨迹（世界坐标，提前算好），画成地上的一道印子 */
+    lanes.forEach(function (L) {
+      L.marks = [];
+      for (var k = 0; k < 2; k++) {
+        var cur = null;
+        for (var f = 0; f < CLIP.frames; f++) {
+          if (STANCE[k][f]) {
+            var so = sole(L.v, f, k);
+            if (!cur) { cur = { pts: [] }; L.marks.push({ st: cur, path: pathLine(L.prints, [], L.v === 'gmr' ? C_GOOD : C_BAD, 4) }); }
+            cur.pts.push([f, mean(so.map(function (q) { return q[0]; }))]);
+          } else cur = null;
+        }
+      }
+    });
+    var right = group(s);
+    rectBox(right, 522, 44, 248, 366, C_BORDER, C_SURFACE);
+    right.appendChild(svgText(536, 66, '脚踩住、根往前走 Δ', 'demo-x-ink2', 11.5));
+    var eq = svgMath(646, 104, '\\Delta\\mathbf{p}_{\\text{foot}}^{\\text{target}} = \\tfrac{h}{h_{\\text{ref}}}\\,(s_{\\text{root}} - s_{\\text{foot}})\\,\\Delta', { size: 13, anchor: 'middle' });
+    right.appendChild(eq);
+    right.appendChild(svgText(536, 132, '（由式 2 推出，论文没写成式子）', 'demo-x-mut', 9.5));
+    var rows = group(right);
+    var R = [
+      ['GMR 默认', '0.875 − 0.875 = 0', fmt(ST.gmr.slide * 100, 1) + ' cm/s', fmt(ST.gmr.sole * 100, 1) + ' cm', C_GOOD],
+      ['腿 0.729', '0.875 − 0.729 = 0.146', fmt(ST.legsAsArms.slide * 100, 1) + ' cm/s', fmt(ST.legsAsArms.sole * 100, 1) + ' cm', C_BAD],
+      ['直接抄关节角', '根 1、腿 ≈ 0.77', fmt(NAIVE.slide * 100, 0) + ' cm/s', fmt(NAIVE.lift * 100, 0) + ' cm', C_BAD]
+    ];
+    rows.appendChild(svgText(536, 160, '比例差', 'demo-x-mut', 9.5));
+    rows.appendChild(svgText(680, 160, '踩地时滑', 'demo-x-mut', 9.5, 'end'));
+    rows.appendChild(svgText(756, 160, '脚底高', 'demo-x-mut', 9.5, 'end'));
+    var rowG = R.map(function (r, k) {
+      var g = group(rows), y = 182 + k * 46;
+      g.appendChild(paint(svgText(536, y, r[0], null, 11.5), r[4]));
+      g.appendChild(svgText(536, y + 17, r[1], 'demo-x-mut', 10));
+      g.appendChild(paint(svgText(680, y + 8, r[2], null, 12, 'end'), r[4]));
+      g.appendChild(paint(svgText(756, y + 8, r[3], null, 12, 'end'), r[4]));
+      return g;
+    });
+    var concl = group(right);
+    concl.appendChild(svgRich(536, 340, '配置里根和腿**同一个比例**（0.9）；', { size: 11, cls: 'demo-x-ink2', w: 230 }));
+    concl.appendChild(svgRich(536, 360, '手臂一般不着地，单独用 0.75。', { size: 11, cls: 'demo-x-ink2', w: 230 }));
+    concl.appendChild(svgText(536, 392, '数据：walk1_subject1 第 920–1003 帧', 'demo-x-mut', 9));
+
+    function draw(t, clock) {
+      var now = nowOf(t, clock);
+      var f = loopAt(now);
+      lanes.forEach(function (L, i) {
+        var g = g1At(L.v, f);
+        var camX = g[0][0], OX = 250;
+        var cam = { yaw: CAMSIDE.yaw, pitch: CAMSIDE.pitch, s: SC, ox: OX, oy: L.GY, cx: camX, cy: g[0][1] };
+        L.rob.put(g, cam, f);
+        L.gl.set(camX, SC, OX);
+        setOpacity(L.g, seg(t, i ? 3.6 : 0.3, i ? 4.1 : 0.8));
+        var cur = null;
+        L.marks.forEach(function (m) {
+          var pts = m.st.pts.filter(function (p) { return p[0] <= f; }).map(function (p) { return [OX + SC * (p[1] - camX), L.GY + 4]; });
+          setPath(m.path, pts);
+          m.path.style.opacity = pts.length > 1 ? 0.8 : 0;
+          var last = m.st.pts[m.st.pts.length - 1];
+          if (pts.length > 1 && last[0] >= Math.floor(f)) cur = { a: m.st.pts[0][1], b: m.st.pts[Math.min(pts.length, m.st.pts.length) - 1][1], x: pts[pts.length - 1][0] };
+        });
+        if (cur) { L.stepT.textContent = '这一步滑 ' + fmt(Math.abs(cur.b - cur.a) * 100, 1) + ' cm'; L.stepT.setAttribute('x', Math.min(470, Math.max(80, cur.x)).toFixed(1)); }
+        L.stepT.style.opacity = cur ? 1 : 0.25;
+        var st = ST[L.v];
+        L.stat.textContent = '踩地时：脚底 ' + fmt(st.sole * 100, 1) + ' cm、滑 ' + fmt(st.slide * 100, 1) + ' cm/s';
+        setOpacity(L.stat, seg(t, i ? 4.4 : 1.6, i ? 4.8 : 2.0));
+      });
+      setOpacity(right, seg(t, 7.0, 7.5));
+      setOpacity(rows, seg(t, 8.4, 8.8));
+      rowG.forEach(function (g, k) { setOpacity(g, seg(t, 8.6 + k * 0.6, 9.0 + k * 0.6)); });
+      setOpacity(concl, seg(t, 13.4, 13.9));
+    }
+    return { el: s, draw: draw };
+  }
+
+  /* 每帧解了几次 QP 的直方图（第 6、7 幕） */
+  function iterHist(parent, x, y, w, h, hist, color, label) {
+    var g = group(parent);
+    rectBox(g, x, y, w, h, C_BORDER, C_SURFACE2);
+    g.appendChild(svgText(x + 10, y + 18, label, 'demo-x-ink2', 10.5));
+    var bx0 = x + 22, bw = (w - 44) / CFG.maxIter, base = y + h - 22, top = y + 34;
+    var maxN = CLIP.frames;
+    var bars = [];
+    for (var n = 1; n <= CFG.maxIter; n++) {
+      var b = vbar(g, bx0 + (n - 1) * bw + 2, base, bw - 4, color, 0.85);
+      var c = hist[n] || 0;
+      var tx = paint(svgText(bx0 + (n - 0.5) * bw, base - 4, c ? String(c) : '', null, 10, 'middle'), color);
+      g.appendChild(tx);
+      g.appendChild(svgText(bx0 + (n - 0.5) * bw, base + 13, String(n), 'demo-x-mut', 9.5, 'middle'));
+      bars.push({ b: b, h: (c / maxN) * (base - top), tx: tx });
+    }
+    hline(g, x + w - 22, top - 4, x + w - 22, base, C_BAD, 1.2, '4 3');
+    g.appendChild(paint(svgText(x + w - 26, top + 4, '上限 10', null, 9.5, 'end'), C_BAD));
+    return {
+      g: g,
+      grow: function (u) {
+        bars.forEach(function (b) {
+          setH(b.b, b.h * u);
+          b.tx.setAttribute('y', (b.b.yBase - b.h * u - 4).toFixed(1));
+          setOpacity(b.tx, u > 0.9 ? 1 : 0);
+        });
+      }
+    };
+  }
+
+  /* ── scene 6: 第 4 步：第一阶段 IK，先对朝向 ── */
+  function buildSceneStage1() {
+    var s = sceneSvg('左边是只跑第一阶段的 G1：14 个关键身体的朝向都对上了人，位置只管两只脚，所以脚落在橙色目标上、手离目标还差一截；右边是第一阶段的权重、每一步解的那个小 QP，' +
+      '以及这段走路里每帧解了几次：多数 2 次、最多 3 次，从没碰到 10 次的上限');
+    s.appendChild(svgText(30, 28, '第 4 步 · 第一阶段：朝向全对，位置只管末端', 'demo-x-ink2', 13.5));
+    var left = group(s);
+    rectBox(left, 30, 44, 300, 366, C_BORDER, C_SURFACE2);
+    var SC = 200, GY = 390, OX = 175;
+    var gl = ground(left, 40, 320, GY, { step: 0.25 });
+    var rob = g1Mesh(left, { set: 's1only34' });
+    var hum = humanSkel(left, { sw: 2, dash: '4 3', shadow: false });
+    var feetT = [dotAt(left, 0, 0, 5, C_GOOD), dotAt(left, 0, 0, 5, C_GOOD)];
+    var handT = [dotAt(left, 0, 0, 5, C_TGT), dotAt(left, 0, 0, 5, C_TGT)];
+    var handL = [hline(left, 0, 0, 0, 0, C_TGT, 1.6, '3 2'), hline(left, 0, 0, 0, 0, C_TGT, 1.6, '3 2')];
+    var lg = group(left);
+    rectBox(lg, 36, 50, 200, 62, C_BORDER, C_SURFACE);
+    lg.appendChild(paint(svgText(44, 68, '虚线：缩放后的人', null, 11), C_HUMAN));
+    lg.appendChild(paint(svgText(44, 86, '绿点：脚的目标（有位置权重）', null, 11), C_GOOD));
+    lg.appendChild(paint(svgText(44, 104, '橙点：手的目标（这一阶段不管）', null, 11), C_TGT));
+    var handErrT = paint(svgText(316, 132, '', null, 12, 'end'), C_TGT);
+    var initC = chip(left, 40, 352, 280, '初值：根 = 缩放后的位置 + 人的偏航角', C_ACCENT, { size: 10.5, h: 26 });
+    left.appendChild(handErrT);
+    /* 右上：第一阶段管什么 */
+    var right = group(s);
+    rectBox(right, 342, 44, 428, 126, C_BORDER, C_SURFACE);
+    right.appendChild(svgText(356, 64, '第一阶段的目标（式 4）', 'demo-x-ink2', 11.5));
+    var r1 = chip(right, 356, 74, 196, '朝向：全部 14 个关键身体', C_ACCENT, { size: 10.5, h: 26 });
+    var r2 = chip(right, 560, 74, 196, '位置：只有末端（手、脚）', C_GOOD, { size: 10.5, h: 26 });
+    var r3 = group(right);
+    r3.appendChild(svgRich(356, 122, 'LAFAN1→G1 这份配置：躯干、肩的朝向权重 100，其余 10；', { size: 10.5, cls: 'demo-x-ink2', w: 400 }));
+    r3.appendChild(svgRich(356, 140, '位置权重只有两只脚是 50，手是 0。初值：根取缩放后的位置、', { size: 10.5, cls: 'demo-x-ink2', w: 400 }));
+    r3.appendChild(svgRich(356, 158, '朝向只取人的偏航；关节限位有时还要收窄，免得出现不像人的动作', { size: 10.5, cls: 'demo-x-ink2', w: 400 }));
+    /* 右中：mink 的一步 */
+    var qp = group(s);
+    rectBox(qp, 342, 180, 428, 92, C_BORDER, C_SURFACE);
+    qp.appendChild(svgText(356, 200, 'mink 的一步：解一个小 QP，得到关节速度，积分一下', 'demo-x-ink2', 11.5));
+    qp.appendChild(svgMath(556, 236, '\\min_{\\dot{\\mathbf q}}\\ \\big\\|e(\\mathbf q) + J(\\mathbf q)\\,\\dot{\\mathbf q}\\big\\|_W^2\\quad \\text{s.t.}\\ \\ \\mathbf q^- \\le \\mathbf q + \\dot{\\mathbf q}\\,\\Delta t \\le \\mathbf q^+', { size: 13, anchor: 'middle' }));
+    qp.appendChild(svgRich(356, 262, '求解器 `daqp`，阻尼 0.5；误差降得不到 0.001 或满 10 次就停', { size: 10.5, cls: 'demo-x-ink2', w: 400 }));
+    var hist = iterHist(s, 342, 282, 428, 128, ITERS.hist1, C_ACCENT, '这段走路 84 帧，第一阶段每帧解了几次 QP');
+    var histNote = svgText(756, 300, '平均 ' + fmt(ITERS.mean1, 1) + ' 次', 'demo-x-acc', 11, 'end');
+    s.appendChild(histNote);
+
+    function draw(t, clock) {
+      var now = nowOf(t, clock);
+      var f = loopAt(now);
+      var g = g1At('s1only', f), tg = tgtAt('gmr', f);
+      var cam = cam34(SC, OX, GY, g[0][0], g[0][1]);
+      setOpacity(left, seg(t, 0.2, 0.7));
+      gl.set(g[0][0], SC, OX);
+      hum.put(scalePose(humanAt(f), tg[0], S_LEGS, S_ARMS), cam);
+      rob.put(g, cam, f);
+      [4, 7].forEach(function (k, i) { moveDot(feetT[i], project(tg[k], cam)); });
+      [10, 13].forEach(function (k, i) {
+        var a = project(tg[k], cam), b = project(g[i ? GI.right_wrist_yaw_link : GI.left_wrist_yaw_link], cam);
+        moveDot(handT[i], a); setLine(handL[i], a[0], a[1], b[0], b[1]);
+      });
+      feetT.forEach(function (d) { setOpacity(d, seg(t, 1.2, 1.6)); });
+      handT.concat(handL).forEach(function (d) { setOpacity(d, seg(t, 2.2, 2.6)); });
+      setOpacity(lg, seg(t, 0.8, 1.2));
+      handErrT.textContent = '手离目标平均 ' + fmt(HAND.s1only * 100, 1) + ' cm';
+      setOpacity(handErrT, seg(t, 2.6, 3.0));
+      setOpacity(initC, seg(t, 13.4, 13.8));
+      setOpacity(right, seg(t, 3.6, 4.0));
+      setOpacity(r1, seg(t, 3.8, 4.2)); setOpacity(r2, seg(t, 4.6, 5.0)); setOpacity(r3, seg(t, 5.4, 5.8));
+      setOpacity(qp, seg(t, 7.0, 7.5));
+      setOpacity(hist.g, seg(t, 10.4, 10.8));
+      hist.grow(ease(seg(t, 10.8, 12.0)));
+      setOpacity(histNote, seg(t, 12.0, 12.4));
+    }
+    return { el: s, draw: draw };
+  }
+
+  /* ── scene 7: 第 5 步：第二阶段，再对所有位置 ── */
+  function buildSceneStage2() {
+    var s = sceneSvg('左边两台 G1 叠在一起：半透明的是只跑第一阶段的结果，实心的是接着跑完第二阶段的结果，手落到了橙色目标上，误差从 7.3 cm 降到 3.1 cm；右边是第二阶段的位置权重，' +
+      '每帧解 QP 的次数，以及整段动作怎么一帧接一帧做完：上一帧的解当这一帧的初值，做完后整段减去最低点');
+    s.appendChild(svgText(30, 28, '第 5 步 · 第二阶段：从第一阶段的解出发，对上所有位置', 'demo-x-ink2', 13.5));
+    var left = group(s);
+    rectBox(left, 30, 44, 300, 366, C_BORDER, C_SURFACE2);
+    var SC = 200, GY = 390, OX = 175;
+    var gl = ground(left, 40, 320, GY, { step: 0.25 });
+    /* 只跑第一阶段的那台垫在下面、染成偏红的半透明，两台不重合的地方（主要是手臂）就露出来 */
+    var ghost = g1Mesh(left, { set: 's1only34', ghost: true, tint: true });
+    var rob = g1Mesh(left, { set: 'gmr34' });
+    var handT = [dotAt(left, 0, 0, 5, C_TGT), dotAt(left, 0, 0, 5, C_TGT)];
+    var lg = group(left);
+    lg.appendChild(paint(svgText(44, 64, '半透明（偏红）：只跑第一阶段', null, 11), C_BAD));
+    lg.appendChild(svgText(44, 82, '实心：两阶段都跑完', 'demo-x-ink2', 11));
+    lg.appendChild(paint(svgText(44, 100, '橙点：手的目标', null, 11), C_TGT));
+    var errT = group(left);
+    var e1 = paint(svgText(316, 64, '手误差 ' + fmt(HAND.s1only * 100, 1) + ' cm', null, 12, 'end'), C_BAD);
+    var e2 = paint(svgText(316, 84, '→ ' + fmt(HAND.gmr * 100, 1) + ' cm', null, 15, 'end'), C_GOOD);
+    errT.appendChild(e1); errT.appendChild(e2);
+    /* 右上：第二阶段的位置权重 */
+    var w = group(s);
+    rectBox(w, 342, 44, 428, 150, C_BORDER, C_SURFACE);
+    w.appendChild(svgText(356, 64, '第二阶段的位置权重（式 6，LAFAN1→G1）', 'demo-x-ink2', 11.5));
+    var WB = [['骨盆', 100], ['脚', 50], ['髋、膝', 10], ['肘、手', 10], ['肩', 5], ['躯干', 0]];
+    var wbars = WB.map(function (r, k) {
+      var y = 76 + k * 18;
+      w.appendChild(svgText(356, y + 10, r[0], 'demo-x-ink2', 10.5));
+      var b = hbar(w, 410, y, 12, C_GOOD, 0.85);
+      var tx = svgText(0, y + 10, String(r[1]), 'demo-x-ink2', 10);
+      w.appendChild(tx);
+      return { b: b, v: r[1], tx: tx };
+    });
+    w.appendChild(svgText(756, 186, '朝向权重 5–10，肩 100', 'demo-x-mut', 9.5, 'end'));
+    var hist = iterHist(s, 342, 202, 210, 120, ITERS.hist2, C_GOOD, '第二阶段每帧几次');
+    var hist2Note = svgText(540, 222, '平均 ' + fmt(ITERS.mean2, 1), 'demo-x-good', 10.5, 'end');
+    s.appendChild(hist2Note);
+    /* 右下：一帧接一帧 */
+    var seq = group(s);
+    rectBox(seq, 562, 202, 208, 208, C_BORDER, C_SURFACE);
+    seq.appendChild(svgText(574, 222, '整段动作怎么做完', 'demo-x-ink2', 11.5));
+    var frames = [0, 1, 2, 3].map(function (k) { return chip(seq, 574 + k * 48, 234, 42, k === 3 ? '…' : '第 ' + (k + 1) + ' 帧', C_BORDER, { size: 9.5, h: 24 }); });
+    var arrows = [0, 1, 2].map(function (k) { return pathLine(seq, [[574 + k * 48 + 30, 262], [574 + k * 48 + 40, 272], [574 + (k + 1) * 48 + 10, 272], [574 + (k + 1) * 48 + 20, 262]], C_ACCENT, 1.4); });
+    seq.appendChild(svgText(574, 292, '上一帧的解 = 这一帧的初值', 'demo-x-acc', 10.5));
+    seq.appendChild(svgRich(574, 316, '做完整段：正运动学算出', { size: 10.5, cls: 'demo-x-ink2', w: 190 }));
+    seq.appendChild(svgRich(574, 334, '所有身体的高度，减去最低点', { size: 10.5, cls: 'demo-x-ink2', w: 190 }));
+    seq.appendChild(svgRich(574, 352, '（修浮空与穿地）', { size: 10.5, cls: 'demo-x-mut', w: 190 }));
+    var speed = group(s);
+    rectBox(speed, 342, 330, 210, 80, C_BORDER, C_SURFACE);
+    speed.appendChild(svgText(354, 350, 'README 的速度（CPU）', 'demo-x-ink2', 10.5));
+    speed.appendChild(svgText(354, 370, 'Threadripper 7960X：60–70 帧/秒', 'demo-x-ink2', 10));
+    speed.appendChild(svgText(354, 388, 'i9-13900K：35–45 帧/秒', 'demo-x-ink2', 10));
+    speed.appendChild(svgText(354, 404, '比 30 帧/秒的动捕还快', 'demo-x-mut', 9.5));
+
+    function draw(t, clock) {
+      var now = nowOf(t, clock);
+      var f = loopAt(now);
+      var g = g1At('gmr', f), g0 = g1At('s1only', f), tg = tgtAt('gmr', f);
+      var cam = cam34(SC, OX, GY, g[0][0], g[0][1]);
+      setOpacity(left, seg(t, 0.2, 0.7));
+      gl.set(g[0][0], SC, OX);
+      ghost.put(g0, cam, f);
+      rob.put(g, cam, f);
+      setOpacity(rob.g, seg(t, 1.6, 2.2));
+      [10, 13].forEach(function (k, i) { moveDot(handT[i], project(tg[k], cam)); });
+      setOpacity(lg, seg(t, 0.6, 1.0));
+      setOpacity(errT, seg(t, 2.4, 2.8));
+      setOpacity(w, seg(t, 3.6, 4.0));
+      wbars.forEach(function (b, k) {
+        var u = ease(seg(t, 3.9 + k * 0.25, 4.5 + k * 0.25));
+        setW(b.b, 3 * b.v * u);
+        b.tx.setAttribute('x', (414 + 3 * b.v * u).toFixed(1));
+        setOpacity(b.tx, seg(t, 4.3 + k * 0.25, 4.6 + k * 0.25));
+      });
+      setOpacity(hist.g, seg(t, 7.0, 7.4));
+      hist.grow(ease(seg(t, 7.3, 8.3)));
+      setOpacity(hist2Note, seg(t, 8.3, 8.7));
+      setOpacity(seq, seg(t, 10.4, 10.9));
+      frames.forEach(function (c, k) { setOpacity(c, seg(t, 10.6 + k * 0.3, 10.9 + k * 0.3)); });
+      arrows.forEach(function (a, k) { drawOn(a, seg(t, 10.9 + k * 0.3, 11.2 + k * 0.3)); });
+      setOpacity(speed, seg(t, 13.4, 13.9));
+    }
+    return { el: s, draw: draw };
+  }
+
+  /* ── scene 8: 评测：只换参考动作 ── */
+  function buildSceneEval() {
+    var s = sceneSvg('左边四种参考动作的来源（PHC、GMR、ProtoMotions、Unitree）各做 LAFAN1 的 21 段，交给 BeyondMimic 每段单独训一个跟踪策略，一共 84 个；' +
+      '右边三种测法：IsaacSim 里不加随机化测 100 次、加随机化测 4096 次、在 MuJoCo 加 ROS 部署包里测 100 次；底下是成功的定义：从默认姿态出发跑完整段，锚点的高度和朝向都不能偏离参考超过阈值');
+    s.appendChild(svgText(30, 28, '评测：训练配方固定不动，只换参考动作', 'demo-x-ink2', 13.5));
+    var src = group(s);
+    rectBox(src, 30, 44, 300, 236, C_BORDER, C_SURFACE);
+    src.appendChild(svgText(44, 64, '4 种来源 × LAFAN1 的 21 段', 'demo-x-ink2', 11.5));
+    var srcRows = [['PHC', '开源'], ['GMR', '本文'], ['PM', 'ProtoMotions，开源'], ['U', 'Unitree：方法闭源、数据公开']].map(function (r, k) {
+      var g = group(src), y = 76 + k * 48;
+      chip(g, 44, y, 66, METHOD_ZH[r[0]] === 'ProtoMotions' ? 'PM' : r[0], M_COLOR[r[0]], { size: 11, h: 24 });
+      g.appendChild(svgText(118, y + 16, r[1], 'demo-x-mut', 9.5));
+      /* 21 段：宽度按长度（5.5–130.5 s） */
+      var x = 118;
+      TABLE1.forEach(function (row) {
+        var wd = Math.max(1.5, row[1] / TOTAL_LEN * 196);
+        var rc = paint(svgEl('rect', { x: x.toFixed(1), y: y + 24, width: (wd - 0.8).toFixed(1), height: 10 }), M_COLOR[r[0]]);
+        rc.style.opacity = 0.7;
+        g.appendChild(rc);
+        x += wd;
+      });
+      return g;
+    });
+    src.appendChild(svgText(44, 272, '一共 ' + fmt(TOTAL_LEN / 60, 1) + ' 分钟；最短 5.5 s，最长 130.5 s', 'demo-x-mut', 9.5));
+    var arrow1 = pathLine(s, [[332, 160], [372, 160]], C_INK2, 2);
+    var bm = group(s);
+    rectBox(bm, 374, 112, 124, 96, C_ACCENT, C_SURFACE);
+    bm.appendChild(paint(svgText(436, 134, 'BeyondMimic', null, 12, 'middle'), C_ACCENT));
+    bm.appendChild(svgText(436, 152, '每段单独训一个', 'demo-x-ink2', 10, 'middle'));
+    bm.appendChild(svgText(436, 168, '不调奖励', 'demo-x-ink2', 10, 'middle'));
+    bm.appendChild(paint(svgText(436, 196, POLICIES + ' 个策略', null, 14, 'middle'), C_ACCENT));
+    var arrows = [0, 1, 2].map(function (k) { return pathLine(s, [[500, 160], [520, 160], [520, 80 + k * 72], [540, 80 + k * 72]], C_INK2, 1.6); });
+    var arenas = [['sim', 'IsaacSim，不加随机化', EVAL.sim], ['sim-dr', 'IsaacSim，加域随机化', EVAL.simDr], ['sim2sim', 'MuJoCo + ROS 部署包', EVAL.sim2sim]].map(function (r, k) {
+      var g = group(s), y = 48 + k * 72;
+      rectBox(g, 542, y, 228, 64, C_BORDER, C_SURFACE);
+      g.appendChild(paint(svgText(556, y + 22, r[0], null, 13), C_ACCENT));
+      g.appendChild(svgText(556, y + 42, r[1], 'demo-x-ink2', 10.5));
+      if (k === 2) g.appendChild(svgText(556, y + 57, '状态估计噪声、ROS 时序，不给特权信息', 'demo-x-mut', 9));
+      var cnt = paint(svgText(760, y + 26, '', null, 18, 'end'), C_INK);
+      g.appendChild(cnt);
+      g.appendChild(svgText(760, y + 44, '次 / 每个策略', 'demo-x-mut', 9.5, 'end'));
+      return { g: g, cnt: cnt, n: r[2] };
+    });
+    /* 底：成功的定义 + 一台 G1 在锚点高度带里走 */
+    var bottom = group(s);
+    rectBox(bottom, 30, 290, 740, 120, C_BORDER, C_SURFACE2);
+    var clipDefs = svgEl('defs', {}), cp = svgEl('clipPath', { id: 'gmr-x-eval-clip' });
+    cp.appendChild(svgEl('rect', { x: 31, y: 291, width: 260, height: 118 }));
+    clipDefs.appendChild(cp); bottom.appendChild(clipDefs);
+    var inner = svgEl('g', { 'clip-path': 'url(#gmr-x-eval-clip)' });
+    bottom.appendChild(inner);
+    var SC = 82, GY = 400;
+    var gl = ground(inner, 34, 290, GY, { step: 0.5 });
+    var band = paint(svgEl('rect', { x: 34, width: 256, 'fill-opacity': 0.14 }), C_GOOD);
+    inner.appendChild(band);
+    var rob = g1Mesh(inner, { set: 'gmr34' });
+    var bandT = paint(svgText(286, 0, '锚点高度 ± 阈值', null, 9.5, 'end'), C_GOOD);
+    inner.appendChild(bandT);
+    var rules = group(bottom);
+    rules.appendChild(svgRich(306, 316, '**成功**：从默认姿态出发，一直跑到参考动作的最后一帧；', { size: 11.5, cls: 'demo-x-ink2', w: 450 }));
+    rules.appendChild(svgRich(306, 338, '中途锚点（躯干）的**高度或朝向**偏离参考超过阈值，就算摔、提前结束。', { size: 11.5, cls: 'demo-x-ink2', w: 450 }));
+    rules.appendChild(svgRich(306, 364, '另记三种跟踪误差：全局身体位置、相对根的身体位置（mm）、', { size: 10.5, cls: 'demo-x-mut', w: 450 }));
+    rules.appendChild(svgRich(306, 382, '关节角（$10^{-3}$ rad）；每个策略共 ' + ROLLOUTS + ' 次，84 个策略合计 ' + fmt(POLICIES * ROLLOUTS / 1000, 1) + ' 千次', { size: 10.5, cls: 'demo-x-mut', w: 450 }));
+
+    function draw(t, clock) {
+      var now = nowOf(t, clock);
+      setOpacity(src, seg(t, 0.2, 0.7));
+      srcRows.forEach(function (g, k) { setOpacity(g, seg(t, 0.6 + k * 0.5, 1.0 + k * 0.5)); });
+      drawOn(arrow1, seg(t, 3.6, 4.0));
+      setOpacity(bm, seg(t, 3.9, 4.4));
+      arrows.forEach(function (a, k) { drawOn(a, seg(t, 7.0 + k * 0.6, 7.4 + k * 0.6)); });
+      arenas.forEach(function (a, k) {
+        setOpacity(a.g, seg(t, 7.2 + k * 0.6, 7.6 + k * 0.6));
+        a.cnt.textContent = String(Math.round(a.n * ease(seg(t, 7.6 + k * 0.6, 9.0 + k * 0.6))));
+      });
+      setOpacity(bottom, seg(t, 10.4, 10.9));
+      var f = loopAt(now), g = g1At('gmr', f);
+      var cam = cam34(SC, 150, GY, g[0][0], g[0][1]);
+      rob.put(g, cam, f);
+      gl.set(g[0][0], SC, 150);
+      var tz = GY - g[GI.torso_link][2] * SC;
+      band.setAttribute('y', (tz - 14).toFixed(1)); band.setAttribute('height', 28);
+      bandT.setAttribute('y', (tz - 18).toFixed(1));
+      setOpacity(rules, seg(t, 10.6, 11.0));
+    }
+    return { el: s, draw: draw };
+  }
+
+  /* ── scene 9: 表 I / 表 II ── */
+  /* 成功率的颜色（不随主题变：数据本身的冷暖色） */
+  function srColor(v) {
+    if (v >= 99.5) return '#2e9e78';
+    if (v >= 98) return '#7fbf8f';
+    if (v >= 90) return '#d7a75f';
+    if (v >= 50) return '#e0875f';
+    return '#d0524f';
+  }
+  function buildSceneTable1() {
+    var s = sceneSvg('左边是表 I 的热图：21 段动作一行一行排下来，每行 12 格是 sim、sim-dr、sim2sim 三种测法下 PHC、GMR、ProtoMotions、Unitree 的成功率，绿是接近 100%，红是很低；' +
+      '先点亮 11 段所有方法都超过 98% 的、3 段全是 100% 的，再点亮剩下差别大的 7 段；右边是表 II 的平均全局位置误差：PHC 247.8 mm、ProtoMotions 139.7、GMR 104.1、Unitree 77.2');
+    s.appendChild(svgText(30, 28, '表 I：21 段 × 3 种测法 × 4 种来源的成功率（%）', 'demo-x-ink2', 13.5));
+    var map = group(s);
+    rectBox(map, 30, 40, 500, 372, C_BORDER, C_SURFACE);
+    var X0 = 148, CW = 30, GAP = 8, Y0 = 72, RH = 15.6;
+    SETTINGS.forEach(function (st, k) {
+      var x = X0 + k * (4 * CW + GAP);
+      map.appendChild(svgText(x + 2 * CW, 54, st.zh, 'demo-x-ink2', 11, 'middle'));
+      METHODS.forEach(function (m, j) { map.appendChild(paint(svgText(x + (j + 0.5) * CW, 67, m, null, 9, 'middle'), M_COLOR[m])); });
+    });
+    var rowsG = TABLE1.map(function (r, i) {
+      var g = group(map), y = Y0 + i * RH;
+      var nm = svgText(142, y + 11, r[0], 'demo-x-ink2', 9.5, 'end');
+      g.appendChild(nm);
+      var cells = [];
+      SETTINGS.forEach(function (st, k) {
+        r[st.col].forEach(function (v, j) {
+          var x = X0 + k * (4 * CW + GAP) + j * CW;
+          var c = svgEl('rect', { x: x + 1, y: y + 1, width: CW - 2, height: RH - 2, rx: 2, fill: srColor(v) });
+          g.appendChild(c);
+          if (v < 98) {
+            var tx = svgText(x + CW / 2, y + 11, v >= 10 ? fmt(v, 0) : String(v), null, 8.5, 'middle');
+            tx.setAttribute('fill', '#fff');
+            g.appendChild(tx);
+          }
+          cells.push(c);
+        });
+      });
+      var cls = ROWS_PERFECT.indexOf(r[0]) >= 0 ? 'p' : ROWS_EASY.indexOf(r[0]) >= 0 ? 'e' : 'h';
+      return { g: g, nm: nm, cls: cls, y: y };
+    });
+    var hiHard = group(map);
+    rowsG.forEach(function (r) {
+      if (r.cls !== 'h') return;
+      var rc = paint(svgEl('rect', { x: 34, y: r.y, width: 488, height: RH, rx: 3, fill: 'none', 'stroke-width': 1.6 }), null, C_BAD);
+      hiHard.appendChild(rc);
+    });
+    var d3 = TABLE1.map(function (r) { return r[0]; }).indexOf('Dance 3');
+    var hiD3 = group(map);
+    hiD3.appendChild(paint(svgEl('rect', { x: 34, y: Y0 + d3 * RH, width: 488, height: RH, rx: 3, fill: 'none', 'stroke-width': 2 }), null, C_GOOD));
+    hiD3.appendChild(paint(svgText(526, Y0 + d3 * RH + 11, '120 s', null, 10, 'end'), C_GOOD));
+    /* 右：分组计数 + 表 II */
+    var side = group(s);
+    rectBox(side, 540, 40, 230, 150, C_BORDER, C_SURFACE);
+    var cnt = [['3 段', '三种测法、四种来源全是 100', C_GOOD], ['11 段', '另外这些都在 98% 以上', '#7fbf8f'], ['7 段', '来源不同，成功率差得多', C_BAD]].map(function (r, k) {
+      var g = group(side), y = 70 + k * 42;
+      g.appendChild(paint(svgText(554, y, r[0], null, 18), r[2]));
+      g.appendChild(svgText(554, y + 17, r[1], 'demo-x-ink2', 10));
+      return g;
+    });
+    var t2 = group(s);
+    rectBox(t2, 540, 200, 230, 212, C_BORDER, C_SURFACE);
+    t2.appendChild(svgText(554, 220, '表 II：平均全局位置误差', 'demo-x-ink2', 11));
+    t2.appendChild(svgRich(554, 238, '$E_{\\text{g-mpbpe}}$（mm，sim，21 段平均）', { size: 10, cls: 'demo-x-mut', w: 210 }));
+    var order = [0, 2, 1, 3];
+    var bars = order.map(function (j, k) {
+      var y = 254 + k * 36, v = TABLE2.gmpbpe.mean[j];
+      t2.appendChild(paint(svgText(554, y + 12, METHODS[j], null, 10.5), M_COLOR[METHODS[j]]));
+      var b = hbar(t2, 590, y, 14, M_COLOR[METHODS[j]], 0.85);
+      var tx = svgText(0, y + 12, fmt(v, 1), 'demo-x-ink2', 10.5);
+      t2.appendChild(tx);
+      t2.appendChild(svgText(590, y + 28, '最大 ' + fmt(TABLE2.gmpbpe.max[j], 1), 'demo-x-mut', 9));
+      return { b: b, v: v, tx: tx };
+    });
+
+    function draw(t) {
+      setOpacity(map, seg(t, 0.2, 0.6));
+      rowsG.forEach(function (r, i) { setOpacity(r.g, seg(t, 0.5 + i * 0.12, 0.8 + i * 0.12)); });
+      /* 3.6–：先亮 3 + 11 段，其余变暗；7.0–：只亮 7 段 */
+      var phA = seg(t, 3.6, 4.0) * (1 - seg(t, 7.0, 7.4)), phB = seg(t, 7.0, 7.4);
+      rowsG.forEach(function (r) {
+        var dim = r.cls === 'h' ? phA : phB;
+        r.g.style.opacity = Math.min(parseFloat(r.g.style.opacity || 1), 1 - 0.7 * dim);
+      });
+      setOpacity(hiHard, phB * (1 - seg(t, 13.4, 13.8)));
+      setOpacity(hiD3, seg(t, 13.4, 13.8));
+      var d3row = rowsG[d3];
+      if (t >= 13.4) d3row.g.style.opacity = Math.max(parseFloat(d3row.g.style.opacity), seg(t, 13.4, 13.8));
+      setOpacity(side, seg(t, 3.6, 4.0));
+      cnt.forEach(function (g, k) { setOpacity(g, seg(t, k < 2 ? 3.8 + k * 0.8 : 7.2, k < 2 ? 4.2 + k * 0.8 : 7.6)); });
+      setOpacity(t2, seg(t, 10.4, 10.8));
+      bars.forEach(function (b, k) {
+        var u = ease(seg(t, 10.7 + k * 0.4, 11.4 + k * 0.4));
+        setW(b.b, b.v / 260 * 150 * u);
+        b.tx.setAttribute('x', (594 + b.v / 260 * 150 * u).toFixed(1));
+        setOpacity(b.tx, seg(t, 11.2 + k * 0.4, 11.5 + k * 0.4));
+      });
+    }
+    return { el: s, draw: draw };
+  }
+
+  /* ── scene 10: 图 3：三类瑕疵 ── */
+  function buildSceneArtifacts() {
+    var s = sceneSvg('三张论文图 3 的截图并排：PHC 的 Dance 1 机器人下半身陷进地面，ProtoMotions 的 Run (stop & go) 两条腿交叉穿进对方，GMR 的 Dance 5 腰的横滚角一会儿顶到 +0.52、一会儿跳到 −0.52 rad 的限位；' +
+      '每张底下写 sim2sim 的成功率：0%、26%、51%');
+    s.appendChild(svgText(30, 28, '图 3：跟不住的那几段，参考动作里都有瑕疵', 'demo-x-ink2', 13.5));
+    var A = group(s), B = group(s), C = group(s);
+    var fa = paperFig(A, 'fig3a_phc_ground_penetration.webp', 30, 44, 160, 248, '论文图 3(a)');
+    var fb = paperFig(B, 'fig3b_pm_self_intersection.webp', 200, 44, 190, 248, '论文图 3(b)');
+    var fc = paperFig(C, 'fig3c_gmr_waist_jumps.webp', 400, 44, 370, 248, '论文图 3(c)');
+    /* 高亮：(a) 地面线，(b) 交叉的两条腿，(c) 跳变 */
+    var hlA = paint(svgEl('rect', { fill: 'none', 'stroke-width': 3.2, rx: 6 }), null, C_BAD);
+    var pa0 = fa.px(0.2, 0.52), pa1 = fa.px(0.95, 0.72);
+    hlA.setAttribute('x', pa0[0]); hlA.setAttribute('y', pa0[1]); hlA.setAttribute('width', pa1[0] - pa0[0]); hlA.setAttribute('height', pa1[1] - pa0[1]);
+    A.appendChild(hlA);
+    var hlB = paint(svgEl('ellipse', { fill: 'none', 'stroke-width': 3.2 }), null, C_BAD);
+    var pb = fb.px(0.42, 0.66);
+    hlB.setAttribute('cx', pb[0]); hlB.setAttribute('cy', pb[1]); hlB.setAttribute('rx', 44); hlB.setAttribute('ry', 34);
+    B.appendChild(hlB);
+    /* (c) 的横轴第 1025–1230 帧，纵轴 ±0.52 rad 是限位；跳变的几处画圈（按图上量的位置） */
+    var jumps = [[0.06, 0.93], [0.13, 0.93], [0.38, 0.07], [0.55, 0.07], [0.84, 0.53]].map(function (u) {
+      var p = fc.px(u[0] * 0.78 + 0.12, u[1] * 0.73 + 0.13);
+      var c = paint(svgEl('circle', { cx: p[0], cy: p[1], r: 12, fill: 'none', 'stroke-width': 3 }), null, C_BAD);
+      C.appendChild(c);
+      return c;
+    });
+    var labels = [
+      [110, 'PHC · Dance 1', '地面穿透', '最深一处 60 cm', '0%'],
+      [295, 'ProtoMotions · Run (stop & go)', '自碰撞', '两条腿互相穿过', '26%'],
+      [585, 'GMR · Dance 5', '关节值突变', '腰横滚在 ±0.52 rad 间跳', '51%']
+    ].map(function (r, k) {
+      var g = group(s);
+      g.appendChild(paint(svgText(r[0], 318, r[2], null, 14, 'middle'), C_BAD));
+      g.appendChild(svgText(r[0], 336, r[1], 'demo-x-ink2', 10.5, 'middle'));
+      g.appendChild(svgText(r[0], 352, r[3], 'demo-x-mut', 10, 'middle'));
+      var big = paint(svgText(r[0], 388, r[4], null, 24, 'middle'), C_BAD);
+      g.appendChild(big);
+      g.appendChild(svgText(r[0], 404, 'sim2sim 成功率', 'demo-x-mut', 9.5, 'middle'));
+      return g;
+    });
+    var rare = group(s);
+    rectBox(rare, 400, 302, 370, 108, C_BORDER, C_SURFACE2);
+    rare.appendChild(svgRich(414, 326, 'GMR 的跳变很少见：Dance 5 里只有 **10 s** 的一段，', { size: 11, cls: 'demo-x-ink2', w: 350 }));
+    rare.appendChild(svgRich(414, 346, '不到全部 21 段（' + fmt(TOTAL_LEN / 60, 1) + ' 分钟）的 **2%**；所有动作都用同一套权重，', { size: 11, cls: 'demo-x-ink2', w: 350 }));
+    rare.appendChild(svgRich(414, 366, '个别动作还得单独调权重。', { size: 11, cls: 'demo-x-ink2', w: 350 }));
+    rare.appendChild(svgRich(414, 394, '三类都该在重定向时避开：高度不对、自碰撞、关节突变', { size: 11, cls: 'demo-x-bad', w: 350 }));
+
+    function draw(t, clock) {
+      var now = nowOf(t, clock);
+      setOpacity(A, seg(t, 0.3, 0.8)); setOpacity(B, seg(t, 3.6, 4.1)); setOpacity(C, seg(t, 7.0, 7.5));
+      var pulse = 0.75 + 0.25 * Math.cos(now * 4);
+      setOpacity(hlA, seg(t, 1.2, 1.6) * pulse);
+      setOpacity(hlB, seg(t, 4.6, 5.0) * pulse);
+      jumps.forEach(function (c, k) { setOpacity(c, seg(t, 8.0 + k * 0.3, 8.3 + k * 0.3) * pulse); });
+      labels.forEach(function (g, k) { setOpacity(g, seg(t, [1.6, 5.0, 8.6][k], [2.0, 5.4, 9.0][k])); });
+      setOpacity(rare, seg(t, 10.4, 10.9));
+      setOpacity(labels[2], seg(t, 8.6, 9.0) * (1 - seg(t, 10.4, 10.6)));
+    }
+    return { el: s, draw: draw };
+  }
+
+  /* ── scene 11: 图 1、图 4：用户研究 ── */
+  function buildSceneUser() {
+    var s = sceneSvg('左边是论文图 1 的界面：左半是 SMPL-X 渲染的人类参考动作，右半是两段重定向结果；右边是图 4 的三组柱子：对 PHC，74% 的回答偏好 GMR；' +
+      '对 ProtoMotions 是 63%；对 Unitree，偏好 GMR 的 25%、分不出的 37%、偏好 Unitree 的 38%');
+    s.appendChild(svgText(30, 28, '图 1、图 4：看起来像不像原动作（Q3）', 'demo-x-ink2', 13.5));
+    var left = group(s);
+    var f1 = paperFig(left, 'fig1_user_study.webp', 30, 50, 330, 193, '论文图 1：左为参考，右为两段重定向，选更像的');
+    var info = group(s);
+    rectBox(info, 30, 268, 330, 142, C_BORDER, C_SURFACE);
+    [['20', '位参与者'], ['15 × 3 = 45', '道题：15 段动作，GMR 各和三家比'], ['5 s', '的片段，左右顺序随机，可选「分不出」']].forEach(function (r, k) {
+      var y = 296 + k * 40;
+      info.appendChild(paint(svgText(44, y, r[0], null, 17), C_ACCENT));
+      info.appendChild(svgText(44 + (k === 1 ? 100 : 46), y, r[1], 'demo-x-ink2', 11));
+    });
+    void f1;
+    var right = group(s);
+    rectBox(right, 372, 44, 398, 366, C_BORDER, C_SURFACE);
+    right.appendChild(svgText(386, 64, '图 4：回答的比例（%）', 'demo-x-ink2', 11.5));
+    var LG = [['偏好 GMR', C_GOOD], ['分不出', C_MUTED], ['偏好对方', C_BAD]];
+    LG.forEach(function (r, k) {
+      right.appendChild(paint(svgEl('rect', { x: 540 + k * 78, y: 55, width: 10, height: 10, rx: 2 }), r[1]));
+      right.appendChild(svgText(554 + k * 78, 64, r[0], 'demo-x-ink2', 10));
+    });
+    var BASE = 360, HS = 3.1;
+    var order = [1, 2, 0]; // PHC, ProtoMotions, Unitree
+    var groupsB = order.map(function (idx, k) {
+      var r = USER.vs[idx], g = group(right), x0 = 404 + k * 124;
+      var bars = [1, 2, 3].map(function (j) {
+        var b = vbar(g, x0 + (j - 1) * 32, BASE, 28, LG[j - 1][1], 0.9);
+        var tx = paint(svgText(x0 + (j - 1) * 32 + 14, BASE, String(r[j]), null, 11.5, 'middle'), LG[j - 1][1]);
+        g.appendChild(tx);
+        return { b: b, v: r[j], tx: tx };
+      });
+      g.appendChild(svgText(x0 + 46, BASE + 18, 'GMR 对 ' + r[0], 'demo-x-ink2', 11, 'middle'));
+      return { g: g, bars: bars };
+    });
+    hline(right, 392, BASE, 760, BASE, C_BORDER, 1.2);
+    var concl = group(right);
+    concl.appendChild(svgRich(386, 398, '比两个开源方法更像原动作；Unitree 略好，但 37% 的回答分不出', { size: 10.5, cls: 'demo-x-ink2', w: 375 }));
+
+    function draw(t) {
+      setOpacity(left, seg(t, 0.3, 0.8));
+      setOpacity(info, seg(t, 1.6, 2.1));
+      setOpacity(right, seg(t, 3.6, 4.0));
+      groupsB.forEach(function (gb, k) {
+        var a = [3.9, 7.0, 10.4][k];
+        setOpacity(gb.g, seg(t, a, a + 0.3));
+        gb.bars.forEach(function (b, j) {
+          var u = ease(seg(t, a + 0.2 + j * 0.25, a + 0.9 + j * 0.25));
+          setH(b.b, b.v * HS * u);
+          b.tx.setAttribute('y', (BASE - b.v * HS * u - 5).toFixed(1));
+          setOpacity(b.tx, u > 0.95 ? 1 : 0);
+        });
+      });
+      setOpacity(concl, seg(t, 13.4, 13.8));
+    }
+    return { el: s, draw: draw };
+  }
+
+  /* ── scene 12: 表 III：从哪一帧开始 ── */
+  /* 评测时机器人从「默认姿态」出发：取 BeyondMimic 代码（whole_body_tracking 的 robots/g1.py）里 G1 的 init_state ——
+     髋俯仰 −0.312、膝 0.669、踝俯仰 −0.363、肘 0.6、肩俯仰 0.2、肩横滚 ±0.2，其余 0；骨盆高 0.757 m 时最低的鞋底点贴地。
+     脚底按踝横滚原点下方 3.5 cm 补 4 个角 */
+  var G1_REST = (function () {
+    var p = decodeClip(CLIP_REST), out = [];
+    for (var j = 0; j < GB.length; j++) out.push([p[3 * j], p[3 * j + 1], p[3 * j + 2]]);
+    [GI.left_ankle_roll_link, GI.right_ankle_roll_link].forEach(function (a) {
+      var o = out[a];
+      [[-0.05, 0.025], [0.12, 0.03], [0.12, -0.03], [-0.05, -0.025]].forEach(function (c) { out.push([o[0] + c[0], o[1] + c[1], o[2] - 0.035]); });
+    });
+    return out;
+  })();
+  function buildSceneFirstFrame() {
+    var s = sceneSvg('左边：评测时机器人总是从默认姿态出发，参考动作的第一帧却可能是一个大步，策略一开始就得「跳」过去；右边是表 III：Walk 2 从第 0 帧开始 GMR 只有 64%，' +
+      '从第 7 帧开始就是 100%；Turn 1 从第 0 帧开始 PHC 只有 14%、Unitree 47%，从第 49 帧开始全都在 99% 以上');
+    s.appendChild(svgText(30, 28, '表 III：同一个策略，换一个起始帧', 'demo-x-ink2', 13.5));
+    var left = group(s);
+    rectBox(left, 30, 44, 330, 366, C_BORDER, C_SURFACE2);
+    var SC = 190, GY = 380;
+    hline(left, 40, GY, 350, GY, C_BORDER, 1.4);
+    var rest = g1Mesh(left, { set: 'rest34', ghost: true }), ref = g1Mesh(left, { set: 'gmr34' });
+    var lA = svgText(120, 66, '默认姿态（BeyondMimic）', 'demo-x-ink2', 11, 'middle'), lB = paint(svgText(258, 66, '参考的第一帧', null, 11, 'middle'), C_TGT);
+    left.appendChild(lA); left.appendChild(lB);
+    var jump = pathLine(left, [], C_BAD, 2.4);
+    var jumpT = paint(svgText(190, 108, '一上来就要跨过去', null, 11.5, 'middle'), C_BAD);
+    left.appendChild(jumpT);
+    var tip = group(left);
+    tip.appendChild(svgRich(44, 398, '起点要选机器人**安全够得着**的姿态，结尾停在**稳定**姿态', { size: 11, cls: 'demo-x-ink2', w: 310 }));
+    /* 右：表 III 的柱子 */
+    var right = group(s);
+    rectBox(right, 372, 44, 398, 366, C_BORDER, C_SURFACE);
+    right.appendChild(svgText(386, 64, 'sim2sim 成功率（%）', 'demo-x-ink2', 11.5));
+    var blocks = TABLE3.map(function (r, k) {
+      var g = group(right), y0 = 84 + k * 162;
+      g.appendChild(svgText(386, y0 + 12, r.motion, 'demo-x-ink2', 12));
+      var bars = [];
+      METHODS.forEach(function (m, j) {
+        var y = y0 + 24 + j * 32;
+        g.appendChild(paint(svgText(386, y + 18, m, null, 10.5), M_COLOR[m]));
+        var a = hbar(g, 420, y + 2, 12, M_COLOR[m], 0.35), b = hbar(g, 420, y + 15, 12, M_COLOR[m], 0.9);
+        var ta = svgText(0, y + 12, '', 'demo-x-mut', 9.5), tb = svgText(0, y + 25, '', 'demo-x-ink2', 10);
+        g.appendChild(ta); g.appendChild(tb);
+        bars.push({ a: a, b: b, ta: ta, tb: tb, va: r.sr[0][j], vb: r.sr[1][j] });
+      });
+      g.appendChild(svgText(756, y0 + 12, '淡：从第 ' + r.frames[0] + ' 帧　深：从第 ' + r.frames[1] + ' 帧', 'demo-x-mut', 9.5, 'end'));
+      return { g: g, bars: bars };
+    });
+    var BW = 2.6;
+
+    function draw(t, clock) {
+      var now = nowOf(t, clock);
+      setOpacity(left, seg(t, 0.3, 0.8));
+      var camR = cam34(SC, 120, GY, 0, 0);
+      rest.put(G1_REST, camR, 0);
+      /* 参考的第一帧：拿这段走路里迈得最开的一帧 */
+      var g = g1At('gmr', 24);
+      var camF = cam34(SC, 258, GY, g[0][0], g[0][1]);
+      ref.put(g, camF, 24);
+      setOpacity(ref.g, seg(t, 1.2, 1.7));
+      setOpacity(lB, seg(t, 1.2, 1.7));
+      var bounce = 0.5 + 0.5 * Math.sin(now * 3);
+      setPath(jump, [[150, 150 - 6 * bounce], [190, 128 - 6 * bounce], [228, 150 - 6 * bounce]]);
+      setOpacity(jump, seg(t, 2.0, 2.4)); setOpacity(jumpT, seg(t, 2.0, 2.4));
+      setOpacity(right, seg(t, 3.6, 4.0));
+      blocks.forEach(function (bk, k) {
+        var a0 = k ? 7.0 : 3.9;
+        setOpacity(bk.g, seg(t, a0, a0 + 0.3));
+        bk.bars.forEach(function (b, j) {
+          var ua = ease(seg(t, a0 + 0.2 + j * 0.15, a0 + 0.8 + j * 0.15)), ub = ease(seg(t, a0 + 1.6 + j * 0.15, a0 + 2.2 + j * 0.15));
+          setW(b.a, b.va * BW * ua); setW(b.b, b.vb * BW * ub);
+          b.ta.setAttribute('x', (424 + b.va * BW * ua).toFixed(1)); b.tb.setAttribute('x', (424 + b.vb * BW * ub).toFixed(1));
+          b.ta.textContent = ua > 0.95 ? String(b.va) : ''; b.tb.textContent = ub > 0.95 ? String(b.vb) : '';
+          if (b.va < 90) b.ta.setAttribute('class', 'demo-x-bad');
+        });
+      });
+      setOpacity(tip, seg(t, 13.4, 13.8));
+    }
+    return { el: s, draw: draw };
+  }
+
+  /* ── scene 13: 开源库、局限与之后 ── */
+  function buildSceneRepo() {
+    var s = sceneSvg('上面一排是 GMR 支持的几款人形，按真实身高等比例排开：H1-2、TALOS、Adam Lite、GR3、PM01、G1、N1、Booster T1、ToddlerBot；底下左边是仓库支持的输入格式和用途，' +
+      '右边是论文自己写的三条局限：只用了 LAFAN1 一个数据源、只测了 G1、没碰有交互的动作');
+    s.appendChild(svgText(30, 28, '开源库：一个参数换机器人；论文的局限', 'demo-x-ink2', 13.5));
+    var top = group(s);
+    rectBox(top, 30, 44, 740, 208, C_BORDER, C_SURFACE2);
+    var keys = ['h1_2', 'talos', 'adam', 'gr3', 'pm01', 'g1', 'n1', 't1', 'toddy'];
+    var PXM = 96, GY = 222, x = 64;
+    var imgs = keys.map(function (k) {
+      var R = ROBOT_IMGS[k], w = R.h * PXM * R.ar;
+      var im = robotImg(top, k, x + w / 2, GY, PXM);
+      var lbl = svgText(x + w / 2, GY + 18, R.name.replace('Unitree ', '').replace('Fourier ', '').replace('PND ', '').replace('PAL ', '').replace('EngineAI ', '').replace('Booster ', ''), 'demo-x-ink2', 9.5, 'middle');
+      top.appendChild(lbl);
+      x += Math.max(w, 46) + 22;
+      return { im: im, lbl: lbl };
+    });
+    hline(top, 44, GY, 756, GY, C_BORDER, 1.2);
+    top.appendChild(svgText(756, 62, 'README：17 款人形（另有 G1 带手等变体）', 'demo-x-mut', 9.5, 'end'));
+    var fmtG = group(s);
+    rectBox(fmtG, 30, 262, 360, 148, C_BORDER, C_SURFACE);
+    fmtG.appendChild(svgText(44, 282, '输入：一条命令换数据源', 'demo-x-ink2', 11.5));
+    var chips = ['SMPL-X（AMASS / OMOMO）', 'BVH（LAFAN1 / Nokov / Xsens）', 'FBX（OptiTrack）', 'GVHMR（单目视频）', 'PICO / Xsens 实时流'].map(function (str, k) {
+      return chip(fmtG, 44 + (k % 2) * 170, 292 + Math.floor(k / 2) * 30, 162, str, C_ACCENT, { size: 9.5, h: 24 });
+    });
+    fmtG.appendChild(svgRich(44, 398, '实时遥操作 TWIST / TWIST2 用它；输出 `.pkl` 可转 BeyondMimic 的 CSV', { size: 9.5, cls: 'demo-x-mut', w: 340 }));
+    var lim = group(s);
+    rectBox(lim, 400, 262, 370, 148, C_BAD, C_SURFACE);
+    lim.appendChild(paint(svgText(414, 282, '论文写的局限', null, 11.5), C_BAD));
+    var L = ['① 21 段都来自 LAFAN1 一个数据源', '② 只测了 G1（受限于 BeyondMimic 的代码）', '③ 没测和环境、物体、别的机器人有交互的动作'].map(function (str, k) {
+      var tx = svgText(414, 306 + k * 26, str, 'demo-x-ink2', 11);
+      lim.appendChild(tx);
+      return tx;
+    });
+    lim.appendChild(svgRich(414, 394, '默认权重对大多数动作够用，个别（Dance 5）还要调', { size: 10, cls: 'demo-x-mut', w: 350 }));
+
+    function draw(t, clock) {
+      var now = nowOf(t, clock);
+      setOpacity(top, seg(t, 0.2, 0.6));
+      imgs.forEach(function (o, k) {
+        var u = seg(t, 0.5 + k * 0.3, 0.9 + k * 0.3);
+        setOpacity(o.im.g, u); setOpacity(o.lbl, u);
+
+      });
+      setOpacity(fmtG, seg(t, 3.6, 4.0));
+      chips.forEach(function (c, k) { setOpacity(c, seg(t, 3.8 + k * 0.3, 4.1 + k * 0.3)); });
+      setOpacity(lim, seg(t, 7.0, 7.4));
+      L.forEach(function (tx, k) { setOpacity(tx, seg(t, 7.3 + k * 0.8, 7.7 + k * 0.8)); });
+    }
+    return { el: s, draw: draw };
+  }
+
+  /* 各幕的 cue 时刻都落在 0.4 / 3.6 / 7.0 / 10.4 / 13.4，和配音旁白的分段一致 */
   var GMR_SCENES = [
     {
-      title: 'retargeting 被当成前处理脚本',
-      dur: 12,
-      build: buildSceneProblem,
+      title: '人和机器人的身体不一样',
+      dur: 16,
+      build: buildSceneGap,
       cues: [
-        { at: 0.4, s: '几乎每篇 humanoid tracking 论文都有这条流程：人类 mocap → 某种 retargeting 脚本 → 机器人轨迹 → RL tracking。' },
-        { at: 2.4, s: '中间那一格一直是虚线框：**每家自己写一份，谁也说不清里面是什么**。' },
-        { at: 3.6, s: '麻烦一：参考动作本身不可行（超关节限位、脚穿地板、自碰撞），RL 就追不上。' },
-        { at: 5.0, s: '麻烦二：OmniH2O、ExBody2、OmniXtreme 各一套配方，换机器人 / 换数据集就得重写。' },
-        { at: 6.4, s: '麻烦三：很多实现要 GPU 甚至 CUDA，遥操现场带台笔记本就办不成事。' },
-        { at: 8.0, s: '所以标题里的 “Matters” 是在叫板 —— **把 retargeting 提到和 policy learning 同一级**。' },
-        { at: 10.2, s: '翻译这一步没做好，后面训得再久也追不上。' }
+        { at: 0.4, s: '左：LAFAN1 里一段真实的走路（人，1.75 m）；右：同一比例的 Unitree G1（1.32 m）。' },
+        { at: 3.6, s: '腿长 ' + fmt(LEG_H, 2) + ' → ' + fmt(LEG_G, 2) + ' m（× ' + fmt(LEG_G / LEG_H, 2) + '），臂长 ' + fmt(ARM_H, 2) + ' → ' + fmt(ARM_G, 2) + ' m（× ' + fmt(ARM_G / ARM_H, 2) + '）：**比例不一样**。论文列了六样差别：骨长、关节范围、结构、体型、质量分布、驱动。' },
+        { at: 7.0, s: '最省事：把关节角直接抄过去。骨盆留在人的高度，G1 的脚**离地 ' + fmt(NAIVE.lift * 100, 0) + ' cm**。' },
+        { at: 10.4, s: '把骨盆压低让脚贴地：步子小、身体照人的速度走，踩着的脚**往前滑 ' + fmt(NAIVE.slide, 2) + ' m/s**。' },
+        { at: 13.4, s: '浮空、穿地、滑脚、手脚漂移——重定向要解决的就是这些；论文说，没有大量奖励调参时，它们让策略更难学，有的干脆学不会。' }
       ]
     },
     {
-      title: '一条管线，两头都能换',
-      dur: 13,
-      build: buildSceneGeneral,
+      title: '两个开源基线怎么缩放',
+      dur: 16,
+      build: buildSceneBaselines,
       cues: [
-        { at: 0.4, s: '先看 “General” 这两个字有多大：输入端 ' + N_FORMATS + ' 种人体动作格式。' },
-        { at: 1.6, s: 'SMPL-X（AMASS / OMOMO）、BVH（LAFAN1）、FBX（OptiTrack）、Xsens MVN，还有单目视频来的 GVHMR。' },
-        { at: 3.2, s: '中间是同一份实现：`mink` + DAQP 的两阶段约束 IK，确定性、不训练、不装 CUDA。' },
-        { at: 4.6, s: '输出端 ' + N_ROBOTS + '+ 款人形：G1 29 DOF、H1 19 DOF、H1-2 27 DOF、Booster、Fourier……' },
-        { at: 6.8, s: '两头一乘就是 **' + N_FORMATS + ' × ' + N_ROBOTS + ' = ' + N_PATHS + ' 条通路**，过去这等于要写 ' + N_PATHS + ' 份脚本。' },
-        { at: 8.4, s: '产物是一个 `.pkl`：`root_pos`、`root_quat`、`dof_pos`、`fps`，直接喂下游。' },
-        { at: 10.0, s: 'CPU 上的吞吐：Threadripper ' + fmt(msPerFrame(midFps(CPUS[0])), 1) + ' ms/帧、i9-13900K ' + fmt(msPerFrame(midFps(CPUS[1])), 1) + ' ms/帧。' },
-        { at: 11.4, s: '$\\ge 1$ 倍实时（对 30 fps 的 mocap 而言）—— 遥操现场一台笔记本就够，不必等 CUDA 环境。' }
+        { at: 0.4, s: '**PHC**：先拟合 SMPL 的形状参数 $\\beta$，把人体模型捏成机器人的身材。' },
+        { at: 3.6, s: '再对整段做梯度下降，最后**整段减去最低点**：一帧往下沉，整段被抬起来——论文说有的片段浮空 30 cm 以上。' },
+        { at: 7.0, s: '**ProtoMotions**：世界坐标的 x、y、z 各乘一个系数，再用 mink 让关键身体的位置、朝向贴上去。' },
+        { at: 10.4, s: 'KungfuBot 用的就是 ProtoMotions，只是把缩放关掉了。' },
+        { at: 13.4, s: '论文的判断：这两套的瑕疵**大多是缩放时引入的**。GMR 改的就是缩放，后面接两段优化。' }
       ]
     },
     {
-      title: '论文的五步显式流程',
-      dur: 13,
-      build: buildSceneSteps,
+      title: '第 1、2 步：一张配置表',
+      dur: 16,
+      build: buildSceneConfig,
       cues: [
-        { at: 0.4, s: '论文把这段黑盒拆成五步，每一步的目标和约束都能单独检查。' },
-        { at: 1.2, s: '① 定义骨骼对应关系：人体骨骼 → 机器人 body，写成 YAML，一次性手工活。' },
-        { at: 2.4, s: '② 对齐静止姿态旋转：修正人类 T-pose 与机器人静止姿态的坐标系偏差。' },
-        { at: 3.4, s: '不做这一步，**所有帧都会带上同一个系统性旋转偏差**。' },
-        { at: 4.6, s: '③ 非均匀局部缩放 —— 加星号的那一格，下一幕单独讲。' },
-        { at: 5.6, s: '④ 带旋转约束的 IK：在缩放后的参考下解关节角，施加关节限位。' },
-        { at: 6.6, s: '⑤ 全约束精调：再加地面接触、自碰撞，做最后一轮精修。' },
-        { at: 8.2, s: '对比隐式脚本：出了问题只能整体调参，说不清是哪一步坏的。' },
-        { at: 9.6, s: '拆开之后，接新机器人的手工活被收敛成一张 10–20 行的 `ik_configs/*.yaml`。' }
+        { at: 0.4, s: '第 1 步：人和机器人的关键身体一一对上。LAFAN1 → G1 一共 **14 对**。' },
+        { at: 3.6, s: '每对一行：机器人身体、人体骨骼、位置权重、朝向权重。第 4、5 步各一张表。接新机器人 = 写一份这样的 JSON。' },
+        { at: 7.0, s: '第 2 步：静止姿态对齐。人体骨骼和机器人身体的坐标轴不一样，每行再加一个**旋转偏移**（必要时加位置偏移）。' },
+        { at: 10.4, s: '骨盆那一行是 $(0.5, 0.5, 0.5, 0.5)$：绕 $(1,1,1)$ 转 ' + fmt(quatAngleDeg(PELVIS_Q), 0) + '°，三根轴正好轮换一遍。' },
+        { at: 13.4, s: '论文说这一步能减轻 H2O 提到的「内八字脚」。' }
       ]
     },
     {
-      title: '非均匀局部缩放为什么是关键',
-      dur: 13,
-      build: buildSceneScaling,
+      title: '第 3 步：非均匀局部缩放',
+      dur: 16,
+      build: buildSceneScale,
       cues: [
-        { at: 0.4, s: '人和机器人的四肢比例差异是**非均匀的**：手臂可能差 20%，腿差 15%，躯干几乎一样。' },
-        { at: 1.8, s: '全局等比例只能取一个缩放因子，这里取三条链的平均 $s = ' + fmt(GLOBAL_S, 3) + '$。' },
-        { at: 3.2, s: '于是每条链都对不齐：手臂 ' + fmt(residCm(CHAINS[0]), 1) + ' cm、腿 ' + fmt(residCm(CHAINS[1]), 1) + ' cm、躯干 ' + fmt(residCm(CHAINS[2]), 1) + ' cm。' },
-        { at: 5.6, s: '合计 ' + fmt(RESID_SUM, 1) + ' cm 的末端目标偏差 —— 机器人根本够不到那个位置。' },
-        { at: 7.0, s: 'IK 只能用极端关节角去够，**解出来的姿势几何上对、物理上崩**。' },
-        { at: 8.6, s: '非均匀缩放让每条链各自取自己的比例，残差归零，IK 的起点就落在可达范围内。' },
-        { at: 10.4, s: '这就是论文说「防止四肢比例差异导致 IK 解出大误差」的那一步。' },
-        { at: 11.6, s: '（画面里的三条比例是量级示意算例，不是论文测得的数值。）' }
+        { at: 0.4, s: '论文发现：其他方法的瑕疵，**多数是缩放时引入的**。' },
+        { at: 3.6, s: '先按身高算总比例 $1.75 / 1.8 = ' + fmt(K_H, 3) + '$，再乘各部位的系数：根、躯干、腿 0.9 → **' + fmt(S_LEGS, 3) + '**；手臂 0.75 → **' + fmt(S_ARMS, 3) + '**。' },
+        { at: 7.0, s: '缩完的 14 个点就是 IK 的目标；根的位置只乘一个统一的比例。G1 正好站得上这些目标。' },
+        { at: 10.4, s: '全身只用身高比 ' + fmt(S_HEIGHT, 3) + '：骨盆低 **' + fmt((ST.gmr.pelvis - ST.height.pelvis) * 100, 0) + ' cm**，脚底陷进地面 **' + fmt(-ST.height.sole * 100, 0) + ' cm**（本笔记跑官方代码的对照）。' },
+        { at: 13.4, s: '腿也按手臂的 ' + fmt(S_ARMS, 3) + '、根仍 ' + fmt(S_LEGS, 3) + '：踩地时脚底**悬空 ' + fmt(ST.legsAsArms.sole * 100, 0) + ' cm**。' }
       ]
     },
     {
-      title: '两阶段约束 IK：mink + DAQP',
-      dur: 13,
-      build: buildSceneIK,
+      title: '根和脚要用同一个比例',
+      dur: 16,
+      build: buildSceneRootScale,
       cues: [
-        { at: 0.4, s: '第 ④ ⑤ 步拆开看：GMR 的 IK 是两阶段的，两张 match table。' },
-        { at: 1.4, s: 'Stage 1 只管 `root`、`pelvis`、`torso`、`head` —— 先把主干的位姿锁定。' },
-        { at: 2.8, s: 'Stage 2 才去细化 `hands`、`feet`、`elbows`、`knees`。' },
-        { at: 4.4, s: '四个超参写死在 `motion_retarget.py`：`lm_damping` = ' + fmt(LM_DAMPING, 1) + '，越大越稳也越慢。' },
-        { at: 5.6, s: '关节速度限位 $3\\pi\\ \\text{rad/s}$ ≈ ' + fmt(VEL_LIMIT, 2) + '，按 ' + MOCAP_FPS + ' fps 换算就是**单帧最多转 ' + fmt(STEP_LIMIT_DEG, 0) + '°**，解不出「瞬移」pose。' },
-        { at: 7.2, s: '单帧最多 ' + MAX_ITERS + ' 步 Newton 迭代，误差 $< ' + IK_TOL + '$ 就提前跳出。' },
-        { at: 8.4, s: '每一步都是一个带阻尼的加权最小二乘 QP，`mink` 搭 task 与 limit，DAQP 求解。' },
-        { at: 10.2, s: '为什么要分两步：一次性全塞进同一个 QP，**远端误差会拉着 root 漂移**。' },
-        { at: 11.6, s: '分开之后，就不会「为了把手放对而牺牲躯干姿态」。' }
+        { at: 0.4, s: 'GMR 默认：根和腿都乘 ' + fmt(S_LEGS, 3) + '，踩地的脚停在原地（滑 ' + fmt(ST.gmr.slide * 100, 1) + ' cm/s）。' },
+        { at: 3.6, s: '根 ' + fmt(S_LEGS, 3) + '、腿 ' + fmt(S_ARMS, 3) + '：脚悬空 ' + fmt(ST.legsAsArms.sole * 100, 1) + ' cm，踩地时滑 **' + fmt(ST.legsAsArms.slide * 100, 1) + ' cm/s**，是默认的 ' + fmt(ST.legsAsArms.slide / ST.gmr.slide, 1) + ' 倍。' },
+        { at: 7.0, s: '由式 2 推出：脚踩住、根走了 $\\Delta$，目标脚挪 $\\frac{h}{h_{\\text{ref}}}(s_{\\text{root}} - s_{\\text{foot}})\\Delta$。两个比例相同，脚就不动。' },
+        { at: 10.4, s: '直接抄关节角 ≈ 根 1、腿 ' + fmt(LEG_G / LEG_H, 2) + '：滑得最厉害，**' + fmt(NAIVE.slide * 100, 0) + ' cm/s**。' },
+        { at: 13.4, s: '配置里根、腿都是 0.9，手臂单独 0.75。论文的原话：**根只用一个统一的比例**，对避免滑脚至关重要；「根和腿要一样」是由式 2 推出来的。' }
       ]
     },
     {
-      title: 'Retargeting Matters 的定量论据',
-      dur: 13,
-      build: buildSceneEvidence,
+      title: '第 4 步：先对朝向',
+      dur: 16,
+      build: buildSceneStage1,
       cues: [
-        { at: 0.4, s: '怎么证明 retargeting 真的 matters？把 RL 训练固定住，只换 retargeter。' },
-        { at: 1.2, s: '训练框架选 **BeyondMimic** —— 刻意挑的中性框架，不针对某个 retargeter 调奖励。' },
-        { at: 2.4, s: '数据是 LAFAN1 的 ' + LAFAN_SEQS + ' 段动作，被测机器人只有 Unitree G1 一款。' },
-        { at: 3.4, s: '' + LAFAN_SEQS + ' 段里，所有方法都跟得完美的只有 ' + PERFECT_SEQS + ' 段，' + fmt(PERFECT_PCT, 1) + '%。' },
-        { at: 5.0, s: '剩下 ' + HARD_SEQS + ' 段至少有一种方法跟不上 —— **通用跟踪仍然很难**。' },
-        { at: 6.0, s: '名次上：GMR 与 ProtoMotions 接近闭源的 Unitree 数据集，PHC 明显落后。' },
-        { at: 7.2, s: '拖后腿的是三类 artifact：地面穿透、自碰撞、关节值突变。' },
-        { at: 9.4, s: '还有个意外发现：同一段动作换一个初始参考帧，成功率能差 **' + INIT_FRAME_GAP + '+ 个百分点**。' },
-        { at: 11.0, s: USERS + ' 人的主观打分也和定量结果一致：GMR 介于 PHC 与 Unitree 基线之间。' }
+        { at: 0.4, s: '第一阶段（式 4）：14 个关键身体的**朝向**全对上，**位置**只管末端。' },
+        { at: 3.6, s: '这份配置：躯干、肩的朝向权重 100，其余 10；位置只有两只脚 50。只跑这一阶段，手离目标 **' + fmt(HAND.s1only * 100, 1) + ' cm**。' },
+        { at: 7.0, s: 'mink 每一步解一个小 QP（式 5）：求出让误差变小、又不越过关节限位的关节速度，积分一下再算。先对朝向，是为了**避开局部极小**。' },
+        { at: 10.4, s: '误差降不到 0.001 或满 10 次就停。这段 84 帧：多数 2 次，最多 ' + ITERS.max + ' 次，平均 ' + fmt(ITERS.mean1, 1) + ' 次。' },
+        { at: 13.4, s: '初值：根取缩放后的位置，朝向只取人的**偏航**。' }
       ]
     },
     {
-      title: '闭环、已知失败与源码落点',
-      dur: 13,
-      build: buildSceneLoop,
+      title: '第 5 步：再对所有位置',
+      dur: 16,
+      build: buildSceneStage2,
       cues: [
-        { at: 0.4, s: '典型下游串接：手机拍一段视频，GVHMR 转成 SMPL-X，GMR 转成 G1 关节角。' },
-        { at: 2.0, s: '一条命令：`python scripts/smplx_to_robot.py --robot unitree_g1 --save_path ...`。' },
-        { at: 3.6, s: '产物同时喂两头：RL tracking 策略，和真机 PD 控制器（TWIST 遥操就直接用它）。' },
-        { at: 5.6, s: '仓库还维护了 `TEST_MOTIONS.md`：**一份诚实的失败清单**。' },
-        { at: 6.8, s: '共性是接触丰富 + 大幅旋转 —— 显式 IK 没有物理一致性约束，只能留给下游 RL 补救。' },
-        { at: 8.0, s: '核心两个文件：`motion_retarget.py` 是两阶段 IK，`kinematics_model.py` 是自研的可微 PyTorch FK。' },
-        { at: 9.6, s: '接新机器人只要往 `ik_configs/` 里加一张表，管线本身一行不改。' },
-        { at: 11.6, s: '**GMR = 把 retargeting 从各家附录里砍出来，做成能被引用、被讨论的一层。**' }
+        { at: 0.4, s: '第二阶段（式 6）：从第一阶段的解出发，**所有关键身体的位置**都算进来。手离目标 ' + fmt(HAND.s1only * 100, 1) + ' → **' + fmt(HAND.gmr * 100, 1) + ' cm**。' },
+        { at: 3.6, s: '换一套权重：骨盆 100、脚 50、髋膝肘手 10、肩 5，躯干的位置不管。' },
+        { at: 7.0, s: '停止条件同第一阶段；这段走路第二阶段每帧 1–2 次，平均 ' + fmt(ITERS.mean2, 1) + ' 次。' },
+        { at: 10.4, s: '一帧接一帧：**上一帧的解 = 这一帧的初值**；整段做完，减去所有身体高度的最低点。' },
+        { at: 13.4, s: 'README：Threadripper 7960X 每秒 60–70 帧，i9-13900K 35–45 帧，比 30 帧/秒的动捕快，能跟遥操作实时跑。' }
+      ]
+    },
+    {
+      title: '评测：只换参考动作',
+      dur: 16,
+      build: buildSceneEval,
+      cues: [
+        { at: 0.4, s: '三个问题：重定向会不会影响跟踪（Q1）？什么瑕疵让策略学不会（Q2）？像不像原动作（Q3）？' },
+        { at: 3.6, s: '四种来源：PHC、GMR、ProtoMotions、Unitree（方法闭源、数据公开），各做 LAFAN1 的 **21 段**（5.5–130.5 s）。' },
+        { at: 7.0, s: 'BeyondMimic 每段单独训一个、不调奖励，共 **' + POLICIES + ' 个策略**；测 sim 100 次、sim-dr 4096 次、sim2sim 100 次。' },
+        { at: 10.4, s: '成功：从默认姿态出发跑到最后一帧，锚点的**高度或朝向**都没有偏离参考超过阈值。' },
+        { at: 13.4, s: 'sim2sim 用 MuJoCo + ROS 部署包：有状态估计噪声和通信时序，没有仿真里的特权信息。' }
+      ]
+    },
+    {
+      title: '表 I：谁跟得住',
+      dur: 16,
+      build: buildSceneTable1,
+      cues: [
+        { at: 0.4, s: '21 段 × 3 种测法 × 4 种来源 = **252** 个成功率。' },
+        { at: 3.6, s: '大部分谁都跟得上：**3 段**全是 100，另有 **11 段**都在 98% 以上。' },
+        { at: 7.0, s: '差别在剩下 **7 段**：PHC 的 Dance 1、2 几乎是 0；ProtoMotions 的 Run (stop & go) sim2sim 26%；GMR 的 Dance 5 是 51%。' },
+        { at: 10.4, s: '表 II 平均全局位置误差：PHC **247.8** mm，ProtoMotions 139.7，GMR **104.1**，Unitree 77.2。' },
+        { at: 13.4, s: 'Q1 的答案：会。长度不是问题——PHC 的 Dance 3 有两分钟，三种测法下照样跟得完（99–100%）。' }
+      ]
+    },
+    {
+      title: '图 3：三类瑕疵',
+      dur: 16,
+      build: buildSceneArtifacts,
+      cues: [
+        { at: 0.4, s: 'PHC · Dance 1：**地面穿透**，最深一处 60 cm。' },
+        { at: 3.6, s: 'ProtoMotions · Run (stop & go)：两条腿互相穿过，**自碰撞**；sim2sim 26%。' },
+        { at: 7.0, s: 'GMR · Dance 5：腰的横滚在 ±0.52 rad 的限位之间**突变**；sim2sim 51%。' },
+        { at: 10.4, s: '这种跳变很少见：只在 Dance 5 的一段 10 s 里，不到全部数据的 2%；所有动作用同一套权重，个别还得单独调。' },
+        { at: 13.4, s: 'Q2 的答案：高度不对、自碰撞、关节突变，重定向时就该避开。' }
+      ]
+    },
+    {
+      title: '图 4：像不像原动作',
+      dur: 16,
+      build: buildSceneUser,
+      cues: [
+        { at: 0.4, s: '用户研究：左边是参考动作，右边两段重定向，一段 GMR、一段是另外三家之一，选更像的。' },
+        { at: 3.6, s: '20 人、15 段动作 × 3 家 = 45 题，片段 5 秒。对 PHC：**74%** 选 GMR。' },
+        { at: 7.0, s: '对 ProtoMotions：**63%** 选 GMR。' },
+        { at: 10.4, s: '对 Unitree：GMR 25%、Unitree 38%，**37% 分不出**。' },
+        { at: 13.4, s: 'Q3 的答案：GMR 比两个开源方法更像原动作；Unitree 略好，但已经很难分辨。' }
+      ]
+    },
+    {
+      title: '表 III：从哪一帧开始',
+      dur: 16,
+      build: buildSceneFirstFrame,
+      cues: [
+        { at: 0.4, s: '机器人每次都从默认姿态出发，参考的第一帧却可能是一个大步。' },
+        { at: 3.6, s: 'Walk 2：从第 0 帧开始 GMR **64%**；同一个策略从第 7 帧开始，**100%**。' },
+        { at: 7.0, s: 'Turn 1：从第 0 帧开始 PHC **14%**、Unitree 47%；从第 49 帧开始全都 ≥ 99%。' },
+        { at: 10.4, s: '和重定向方法无关：哪一家都可能栽在第一帧上，之前也有论文观察到。' },
+        { at: 13.4, s: '建议：起始姿态选机器人能**安全够到**的，结尾停在**稳定**姿态。' }
+      ]
+    },
+    {
+      title: '开源库与局限',
+      dur: 16,
+      build: buildSceneRepo,
+      cues: [
+        { at: 0.4, s: '换机器人只改一个参数：README 已支持 **17 款**人形，从半米高的 ToddlerBot 到一米八的 H1。' },
+        { at: 3.6, s: '输入：SMPL-X、BVH、FBX、单目视频的 GVHMR，还有 PICO、Xsens 的实时流；TWIST / TWIST2 的遥操作就用它。' },
+        { at: 7.0, s: '局限：只用了 LAFAN1 一个数据源；只测了 G1；没测有交互的动作。' },
+        { at: 10.4, s: '默认权重对大多数动作够用，个别动作还要单独调。' },
+        { at: 13.4, s: '**重定向不是一段前处理脚本**：它做得好不好，决定了强化学习要不要替它收拾残局。' }
       ]
     }
   ];
 
   function buildExplainerDemo(host) {
     K.explainer(host, {
-      title: '七幕动画：GMR 全流程速览',
-      sub: '约 90 秒自动播放。空格播放/暂停，← → 换幕；画面里的换算数字都是现算的，不是手写。',
-      ariaLabel: 'GMR 七幕讲解动画',
+      title: '十三幕动画：GMR 全流程速览',
+      sub: '约 208 秒自动播放。空格播放/暂停，← → 换幕；人和 G1 的动作是 LAFAN1 的真实片段和官方代码跑出的结果（G1 按真实模型做 3D 渲染），表格与图来自论文。',
+      ariaLabel: 'GMR 十三幕讲解动画',
       notes: [
-        '取数依据：第二幕的「' + N_FORMATS + ' × ' + N_ROBOTS + ' = ' + N_PATHS +
-          ' 条通路」由 README 的「18+ 款机器人」「5 种输入格式」相乘得到；每帧毫秒与实时倍率由同一段 README ' +
-          '报的 FPS 现算（Threadripper 60–70、i9-13900K 35–45，取中点除 1000，再除 ' + MOCAP_FPS + ' fps 的 mocap 帧率）。',
-        '第五幕的「单帧最多 ' + fmt(STEP_LIMIT_DEG, 0) + '°」由 `motion_retarget.py` 写死的关节速度限位 ' +
-          '$3\\pi\\ \\text{rad/s}$ 除以 ' + MOCAP_FPS + ' fps 换算；`lm_damping` = ' + fmt(LM_DAMPING, 1) + '、`max_iters` = ' +
-          MAX_ITERS + '、收敛阈值 ' + IK_TOL + ' 都是仓库里的原值。第六幕的 ' + fmt(PERFECT_PCT, 1) + '% 是 ' +
-          PERFECT_SEQS + ' / ' + LAFAN_SEQS + ' 算出来的；' + INIT_FRAME_GAP + '+ 个百分点、' + USERS +
-          ' 名参与者是论文报告的原值，名次条只画名次（论文未给逐段数字）。',
-        '第四幕是**示意算例，不是论文数据**：三条链的比例（手臂 0.80 / 腿 0.85 / 躯干 1.00）取自本笔记 Q7 ' +
-          '「手臂可能差 20%、腿差 15%、躯干几乎一样」的量级说法，全局缩放因子取三者平均，残差 ' +
-          '$= \\lvert s_i - \\bar{s} \\rvert \\times \\ell_i$，用来说明「一个因子对不齐三条链」这个机制，' +
-          '数值不能和论文直接比。'
+        '取数依据：表 I–III、图 3、图 4 与正文的数字照抄 arXiv 2510.02252 v1；缩放比例、两张匹配表的权重、停止条件来自官方仓库的 `bvh_lafan1_to_g1.json` 与 `motion_retarget.py`（LAFAN1 的身高 1.75 m 写死在 `utils/lafan1.py` 里）。',
+        '第 1、3–8、12 幕的人和 G1 是**本笔记的复现实验**：用 mink + MuJoCo 照官方代码跑 LAFAN1 `walk1_subject1.bvh` 第 920–1003 帧（2.8 s），记录人的 22 根骨、G1 的身体位置与脚底 4 个接触点。「全身按身高缩放」「腿按手臂缩放」「只跑第一阶段」三种对照是本笔记加的，不是论文的实验；直接抄关节角是在侧视平面里照抄大腿、小腿角度的简化算法。',
+        'G1 的 3D 外形：借 Robot Retarget Online（GMR 的浏览器版，ImChong/Robot_Retarget_Online）里 MuJoCo WASM + three.js 的模型加载与网格构建代码，读同一个 `g1_mocap_29dof.xml`，按复现实验的 qpos 用正交相机逐帧离线渲染成贴图；二维的目标点、连线按同一个相机投影叠在上面。',
+        '第 2 幕 PHC 的「每帧最低点」曲线、ProtoMotions 的路线都是示意；第 12 幕的默认姿态取 BeyondMimic 代码（whole_body_tracking 的 `robots/g1.py`）里 G1 的初始关节角（论文只说从默认姿态出发）。第 10 幕三张图是论文图 3 的裁剪，圈出的位置按图上量的。'
       ],
       scenes: GMR_SCENES
     });
   }
 
-  // ─── the narrated vertical video of the same seven scenes ────────────
+  // ─── the narrated vertical video of the same thirteen scenes ────────────
   /* Rendered offline by scripts/paper_video/ from the storyboard above plus a
      voice-over; the files sit next to the note (see its placeholder). */
   function buildVideoDemo(host) {
     K.video(host, {
-      title: '配音讲解视频：GMR 七幕全流程',
-      sub: '5 分 25 秒竖屏视频（1080×1920），中文配音 + 字幕。画面就是上面的七幕动画，旁白把每一幕讲细；适合手机上看或转发。',
-      size: '7.3 MB',
+      title: '配音讲解视频：GMR 十三幕全流程',
+      sub: '12 分 5 秒竖屏视频（1080×1920），中文配音 + 字幕。画面就是上面的十三幕动画，旁白把每一幕讲细；适合手机上看或转发。',
+      size: '13.3 MB',
       fileName: 'GMR_讲解视频.mp4'
     });
   }
 
   K.mount({
     'gmr-explainer': buildExplainerDemo,
-    'gmr-video': buildVideoDemo
+    'gmr-video': buildVideoDemo,
+    'gmr-scale': buildScaleDemo,
+    'gmr-ik': buildIkDemo,
+    'gmr-table': buildTableDemo
   });
 })();
