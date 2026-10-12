@@ -1897,7 +1897,7 @@
       hline(rulers, r[2] === 46 ? 46 : 214, y, r[2] === 46 ? 180 : 356, y, r[1], 1.1, '4 3');
       rulers.appendChild(paint(svgText(r[2] === 46 ? 50 : 352, y - 5, r[3], null, 10.5, r[2] === 46 ? 'start' : 'end'), r[1]));
     });
-    left.appendChild(svgText(110, 398, 'LAFAN1 walk1_subject1 · 第 920–1003 帧', 'demo-x-mut', 9, 'middle'));
+    left.appendChild(svgText(128, 398, 'LAFAN1 walk1_subject1 · 第 920–1003 帧', 'demo-x-mut', 9, 'middle'));
     left.appendChild(svgText(290, 398, 'Unitree G1（29 个自由度）', 'demo-x-mut', 9, 'middle'));
 
     /* 右上：三条尺寸对比 */
@@ -1983,7 +1983,8 @@
       sixChips.forEach(function (c, k) { setOpacity(c, seg(t, 4.2 + k * 0.25, 4.5 + k * 0.25)); });
       setOpacity(sixNote, seg(t, 5.8, 6.2));
       /* 7.0–：抄关节角；10.4–：把髋压低，脚贴地后开始滑 */
-      setOpacity(naive, seg(t, 7.0, 7.5));
+      /* 先等尺寸对比淡出（7.0–7.3）再淡入，两块字不叠在一起 */
+      setOpacity(naive, seg(t, 7.3, 7.7));
       var lower = ease(seg(t, 10.4, 11.4));
       var drop = NAIVE.lift * lower;
       var fi = Math.floor(f);
@@ -2202,14 +2203,14 @@
     });
     /* 右上：数字 */
     var info = group(top);
-    info.appendChild(paint(svgText(560, 90, '14', null, 34), C_TGT));
-    info.appendChild(svgText(604, 84, '对关键身体', 'demo-x-ink2', 12));
-    info.appendChild(svgText(604, 100, '骨盆、躯干、髋、膝、脚、肩、肘、手', 'demo-x-mut', 10));
-    info.appendChild(paint(svgText(560, 146, '× 2', null, 26), C_TGT));
-    info.appendChild(svgText(604, 140, '张匹配表', 'demo-x-ink2', 12));
-    info.appendChild(svgText(604, 156, '第 4、5 步各一张，权重不同', 'demo-x-mut', 10));
-    info.appendChild(svgText(560, 196, '接一款新机器人', 'demo-x-ink2', 11.5));
-    info.appendChild(svgText(560, 214, '= 写一份这样的 JSON', 'demo-x-ink2', 11.5));
+    info.appendChild(paint(svgText(552, 90, '14', null, 34), C_TGT));
+    info.appendChild(svgText(600, 84, '对关键身体', 'demo-x-ink2', 12));
+    info.appendChild(svgText(600, 100, '骨盆、躯干、髋、膝、脚、肩、肘、手', 'demo-x-mut', 9.5));
+    info.appendChild(paint(svgText(552, 146, '×2', null, 26), C_TGT));
+    info.appendChild(svgText(600, 140, '张匹配表', 'demo-x-ink2', 12));
+    info.appendChild(svgText(600, 156, '第 4、5 步各一张，权重不同', 'demo-x-mut', 9.5));
+    info.appendChild(svgText(552, 196, '接一款新机器人', 'demo-x-ink2', 11.5));
+    info.appendChild(svgText(552, 214, '= 写一份这样的 JSON', 'demo-x-ink2', 11.5));
     /* 骨盆的坐标轴：人（转之前）→ 转 120° 之后与机器人一致 */
     var axesG = group(top);
     var AX = [600, 190], AXL = 46;
@@ -2342,9 +2343,9 @@
     void bgA; void bgB;
     var tA = group(bad), tB = group(bad);
     tA.appendChild(svgText(474, 244, '全身 × 0.756（身高比）', 'demo-x-ink2', 10.5, 'middle'));
-    tA.appendChild(paint(svgText(474, 400, '', null, 10.5, 'middle'), C_BAD));
+    tA.appendChild(paint(svgText(474, 404, '', null, 10.5, 'middle'), C_BAD));
     tB.appendChild(svgText(668, 244, '腿也 × 0.729，根仍 × 0.875', 'demo-x-ink2', 10.5, 'middle'));
-    tB.appendChild(paint(svgText(668, 400, '', null, 10.5, 'middle'), C_BAD));
+    tB.appendChild(paint(svgText(668, 404, '', null, 10.5, 'middle'), C_BAD));
     var refA = hline(bad, 400, 0, 550, 0, C_GOOD, 1, '4 3');
     var dimA = dimV(bad, 0, 0, 1, C_BAD, '', 'right'), dimB = dimV(bad, 0, 0, 1, C_BAD, '', 'right');
 
@@ -2548,7 +2549,8 @@
     lg.appendChild(paint(svgText(44, 86, '绿点：脚的目标（有位置权重）', null, 11), C_GOOD));
     lg.appendChild(paint(svgText(44, 104, '橙点：手的目标（这一阶段不管）', null, 11), C_TGT));
     var handErrT = paint(svgText(316, 132, '', null, 12, 'end'), C_TGT);
-    var initC = chip(left, 40, 352, 280, '初值：根 = 缩放后的位置 + 人的偏航角', C_ACCENT, { size: 10.5, h: 26 });
+    /* 13.4 起讲初值：图例淡出，这块放到图例的位置（放在底下会压住小腿） */
+    var initC = chip(left, 40, 56, 280, '初值：根 = 缩放后的位置 + 人的偏航角', C_ACCENT, { size: 10.5, h: 26 });
     left.appendChild(handErrT);
     /* 右上：第一阶段管什么 */
     var right = group(s);
@@ -2586,10 +2588,10 @@
       });
       feetT.forEach(function (d) { setOpacity(d, seg(t, 1.2, 1.6)); });
       handT.concat(handL).forEach(function (d) { setOpacity(d, seg(t, 2.2, 2.6)); });
-      setOpacity(lg, seg(t, 0.8, 1.2));
+      setOpacity(lg, seg(t, 0.8, 1.2) * (1 - seg(t, 13.4, 13.6)));
       handErrT.textContent = '手离目标平均 ' + fmt(HAND.s1only * 100, 1) + ' cm';
       setOpacity(handErrT, seg(t, 2.6, 3.0));
-      setOpacity(initC, seg(t, 13.4, 13.8));
+      setOpacity(initC, seg(t, 13.6, 14.0));
       setOpacity(right, seg(t, 3.6, 4.0));
       setOpacity(r1, seg(t, 3.8, 4.2)); setOpacity(r2, seg(t, 4.6, 5.0)); setOpacity(r3, seg(t, 5.4, 5.8));
       setOpacity(qp, seg(t, 7.0, 7.5));
@@ -2882,9 +2884,9 @@
       '每张底下写 sim2sim 的成功率：0%、26%、51%');
     s.appendChild(svgText(30, 28, '图 3：跟不住的那几段，参考动作里都有瑕疵', 'demo-x-ink2', 13.5));
     var A = group(s), B = group(s), C = group(s);
-    var fa = paperFig(A, 'fig3a_phc_ground_penetration.webp', 30, 44, 160, 248, '论文图 3(a)');
-    var fb = paperFig(B, 'fig3b_pm_self_intersection.webp', 200, 44, 190, 248, '论文图 3(b)');
-    var fc = paperFig(C, 'fig3c_gmr_waist_jumps.webp', 400, 44, 370, 248, '论文图 3(c)');
+    var fa = paperFig(A, 'fig3a_phc_ground_penetration.webp', 30, 44, 160, 240, '论文图 3(a)');
+    var fb = paperFig(B, 'fig3b_pm_self_intersection.webp', 200, 44, 190, 240, '论文图 3(b)');
+    var fc = paperFig(C, 'fig3c_gmr_waist_jumps.webp', 400, 44, 370, 240, '论文图 3(c)');
     /* 高亮：(a) 地面线，(b) 交叉的两条腿，(c) 跳变 */
     var hlA = paint(svgEl('rect', { fill: 'none', 'stroke-width': 3.2, rx: 6 }), null, C_BAD);
     var pa0 = fa.px(0.2, 0.52), pa1 = fa.px(0.95, 0.72);
@@ -2910,16 +2912,16 @@
       g.appendChild(paint(svgText(r[0], 318, r[2], null, 14, 'middle'), C_BAD));
       g.appendChild(svgText(r[0], 336, r[1], 'demo-x-ink2', 10.5, 'middle'));
       g.appendChild(svgText(r[0], 352, r[3], 'demo-x-mut', 10, 'middle'));
-      var big = paint(svgText(r[0], 388, r[4], null, 24, 'middle'), C_BAD);
+      var big = paint(svgText(r[0], 385, r[4], null, 24, 'middle'), C_BAD);
       g.appendChild(big);
-      g.appendChild(svgText(r[0], 404, 'sim2sim 成功率', 'demo-x-mut', 9.5, 'middle'));
+      g.appendChild(svgText(r[0], 405, 'sim2sim 成功率', 'demo-x-mut', 9.5, 'middle'));
       return g;
     });
     var rare = group(s);
-    rectBox(rare, 400, 302, 370, 108, C_BORDER, C_SURFACE2);
-    rare.appendChild(svgRich(414, 326, 'GMR 的跳变很少见：Dance 5 里只有 **10 s** 的一段，', { size: 11, cls: 'demo-x-ink2', w: 350 }));
-    rare.appendChild(svgRich(414, 346, '不到全部 21 段（' + fmt(TOTAL_LEN / 60, 1) + ' 分钟）的 **2%**；所有动作都用同一套权重，', { size: 11, cls: 'demo-x-ink2', w: 350 }));
-    rare.appendChild(svgRich(414, 366, '个别动作还得单独调权重。', { size: 11, cls: 'demo-x-ink2', w: 350 }));
+    rectBox(rare, 400, 304, 370, 106, C_BORDER, C_SURFACE2);
+    rare.appendChild(svgRich(414, 327, 'GMR 的跳变很少见：Dance 5 里只有 **10 s** 的一段，', { size: 11, cls: 'demo-x-ink2', w: 350 }));
+    rare.appendChild(svgRich(414, 347, '不到全部 21 段（' + fmt(TOTAL_LEN / 60, 1) + ' 分钟）的 **2%**；所有动作都用同一套权重，', { size: 11, cls: 'demo-x-ink2', w: 350 }));
+    rare.appendChild(svgRich(414, 367, '个别动作还得单独调权重。', { size: 11, cls: 'demo-x-ink2', w: 350 }));
     rare.appendChild(svgRich(414, 394, '三类都该在重定向时避开：高度不对、自碰撞、关节突变', { size: 11, cls: 'demo-x-bad', w: 350 }));
 
     function draw(t, clock) {
@@ -2930,7 +2932,8 @@
       setOpacity(hlB, seg(t, 4.6, 5.0) * pulse);
       jumps.forEach(function (c, k) { setOpacity(c, seg(t, 8.0 + k * 0.3, 8.3 + k * 0.3) * pulse); });
       labels.forEach(function (g, k) { setOpacity(g, seg(t, [1.6, 5.0, 8.6][k], [2.0, 5.4, 9.0][k])); });
-      setOpacity(rare, seg(t, 10.4, 10.9));
+      /* 第 3 列的字先淡出（10.4–10.6），说明框再淡入，两层字不叠 */
+      setOpacity(rare, seg(t, 10.6, 11.0));
       setOpacity(labels[2], seg(t, 8.6, 9.0) * (1 - seg(t, 10.4, 10.6)));
     }
     return { el: s, draw: draw };

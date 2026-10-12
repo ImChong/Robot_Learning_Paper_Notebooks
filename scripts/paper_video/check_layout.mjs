@@ -1,4 +1,5 @@
 // node check_layout.mjs <paper>        （先跑过 build.py，并用 render.mjs 生成过 stage.<paper>.built.html）
+// node check_layout.mjs <paper> story  分镜内部：文字压文字、文字压图（3D 贴图按当前帧的不透明像素裁边），每 0.25 s 抽一帧
 // node check_layout.mjs <paper> cover  封面帧（stage.html 的 classicCover，最初的片头设计）：块互不重叠、都在画面里、
 //                                      大标题 / 中文名 / 一句话 / 每条目录各占一行、3:4 置顶裁剪后目录不贴底（不需要 build.py）
 // 每 0.5 s 抽一帧，用 DOM 量各块位置：可见块之间不许重叠、不许压字幕、片头 / 片尾相邻块间距 ≥ 10px，要读的东西必须在安全区 330–1440 之内
@@ -10,7 +11,8 @@ const [name, mode] = process.argv.slice(2);
 const tlPath = `out/${name}/timeline.json`;
 const tl = fs.existsSync(tlPath) ? JSON.parse(fs.readFileSync(tlPath, 'utf8'))
   : { total: 30, segments: [{ scene: 'intro', t0: 0, t1: 30, from: 0, to: 30, lead: 0 }], subs: [] };
-const b = await chromium.launch({ executablePath: process.env.CHROME });
+// 'story' 模式要读贴图的像素（file:// 的图默认会污染 canvas），所以放开本地文件同源
+const b = await chromium.launch({ executablePath: process.env.CHROME, args: mode === 'story' ? ['--allow-file-access-from-files'] : [] });
 const pg = await b.newPage({ viewport: { width: 1080, height: 1920 } });
 await pg.goto('file://' + process.cwd() + `/stage.${name}.built.html`);
 await pg.evaluate((t) => window.setup(t), tl);
@@ -62,6 +64,152 @@ if (mode === 'cover') {
   process.exit(0);
 }
 for (const s of tl.segments) await pg.evaluate((t) => window.renderAt(t), s.t0 + 0.5);
+if (mode === 'story') {
+  // 分镜内部：每 0.25 s 抽一帧，量每段可见文字（svg <text>、KaTeX / svgRich 的 foreignObject 里的字形）的外框，
+  // 文字与文字、文字与图（论文图、真机图、3D 机器人贴图按当前帧的不透明像素裁边）两两比，重叠超过 2px 就记下来。
+  // 不透明度按祖先连乘，< 0.15 的（正在淡入淡出的）不算。
+  await pg.evaluate(() => Promise.all([...document.querySelectorAll('image')].map((im) => {
+    const h = im.getAttribute('href'); if (!h) return null; const p = new Image(); p.src = h; return p.decode().catch(() => null);
+  })));
+  const found = new Map();
+  for (let t = 0.1; t < tl.total; t += 0.25) {
+    const seg = tl.segments.find((s) => t >= s.t0 && t < s.t1);
+    if (!seg || typeof seg.scene !== 'number') continue;
+    const r = await pg.evaluate((t) => {
+      window.renderAt(t);
+      const out = [];
+      const svgs = [...document.querySelectorAll('#scene .stage svg')].filter((e) => !e.parentElement.closest('svg'));
+      const alpha = (e, root) => {
+        let a = 1;
+        for (let n = e; n && n !== root.parentElement; n = n.parentElement) {
+          const cs = getComputedStyle(n);
+          if (cs.display === 'none' || cs.visibility === 'hidden') return 0;
+          a *= +cs.opacity;
+        }
+        return a;
+      };
+      const imgCache = window.__alphaCache || (window.__alphaCache = new Map());
+      const tight = (svgBox, img) => {
+        // 嵌套 <svg viewBox> 裁出的贴图格：按这一格的不透明像素算外框
+        const href = img.getAttribute('href'); if (!href) return null;
+        let pic = imgCache.get(href);
+        if (!pic) { pic = new Image(); pic.src = href; imgCache.set(href, pic); }
+        if (!pic.complete || !pic.naturalWidth) return null;
+        const vb = svgBox.viewBox.baseVal; if (!vb || !vb.width) return null;
+        const cv = document.createElement('canvas'); cv.width = Math.ceil(vb.width); cv.height = Math.ceil(vb.height);
+        const cx = cv.getContext('2d');
+        const sx = pic.naturalWidth / (+img.getAttribute('width')), sy = pic.naturalHeight / (+img.getAttribute('height'));
+        cx.drawImage(pic, vb.x * sx, vb.y * sy, vb.width * sx, vb.height * sy, 0, 0, cv.width, cv.height);
+        let d; try { d = cx.getImageData(0, 0, cv.width, cv.height).data; } catch (err) { return null; }
+        let x0 = Infinity, y0 = Infinity, x1 = -1, y1 = -1;
+        for (let y = 0; y < cv.height; y++) for (let x = 0; x < cv.width; x++) if (d[(y * cv.width + x) * 4 + 3] > 40) {
+          if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y;
+        }
+        if (x1 < 0) return null;
+        const mask = { d, w: cv.width, h: cv.height };
+        // 嵌套 svg 的 getBoundingClientRect() 量的是整张贴图表，这里用它自己的视口（x / y / 宽高）乘父坐标系的 CTM
+        const M = svgBox.parentNode.getScreenCTM(), P = (x, y) => new DOMPoint(x, y).matrixTransform(M);
+        const p0 = P(+svgBox.getAttribute('x'), +svgBox.getAttribute('y')), p1 = P(+svgBox.getAttribute('x') + +svgBox.getAttribute('width'), +svgBox.getAttribute('y') + +svgBox.getAttribute('height'));
+        const R = { left: p0.x, top: p0.y, width: p1.x - p0.x, height: p1.y - p0.y }, kx = R.width / vb.width, ky = R.height / vb.height;
+        return { left: R.left + x0 * kx, right: R.left + (x1 + 1) * kx, top: R.top + y0 * ky, bottom: R.top + (y1 + 1) * ky,
+          // 文字框里有几个不透明像素（贴图坐标）：外接矩形只是初筛，机身旁的空白不算压到
+          ink: (q) => {
+            let n = 0;
+            const ax = Math.max(0, Math.floor((q.left - R.left) / kx)), bx = Math.min(mask.w, Math.ceil((q.right - R.left) / kx));
+            const ay = Math.max(0, Math.floor((q.top - R.top) / ky)), by = Math.min(mask.h, Math.ceil((q.bottom - R.top) / ky));
+            for (let y = ay; y < by; y++) for (let x = ax; x < bx; x++) if (mask.d[(y * mask.w + x) * 4 + 3] > 40) n++;
+            return n * kx * ky;
+          } };
+      };
+      // clip-path（第 5 幕的跑道只露膝盖以下）：把外框和祖先的裁剪矩形求交
+      const clipTo = (e, q) => {
+        let r = { left: q.left, right: q.right, top: q.top, bottom: q.bottom, ink: q.ink };
+        for (let n = e; n && n.tagName && n.tagName.toLowerCase() !== 'html'; n = n.parentElement) {
+          const cp = n.getAttribute && n.getAttribute('clip-path'), m = cp && cp.match(/url\(#([^)]+)\)/);
+          if (!m) continue;
+          const rc = document.getElementById(m[1]) && document.getElementById(m[1]).querySelector('rect');
+          if (!rc) continue;
+          const M = n.getScreenCTM(), P = (x, y) => new DOMPoint(x, y).matrixTransform(M);
+          const c0 = P(+rc.getAttribute('x'), +rc.getAttribute('y')), c1 = P(+rc.getAttribute('x') + +rc.getAttribute('width'), +rc.getAttribute('y') + +rc.getAttribute('height'));
+          r = { left: Math.max(r.left, c0.x), right: Math.min(r.right, c1.x), top: Math.max(r.top, c0.y), bottom: Math.min(r.bottom, c1.y), ink: r.ink };
+        }
+        return r.right > r.left && r.bottom > r.top ? r : null;
+      };
+      for (const root of svgs) {
+        if (alpha(root, root) < 0.15) continue;
+        const items = [];
+        for (const e of root.querySelectorAll('text')) {
+          if (!e.textContent.trim() || alpha(e, root) < 0.15) continue;
+          const q = e.getBoundingClientRect(); if (q.width < 1) continue;
+          const qc = clipTo(e, q); if (qc) items.push({ k: 'text', s: e.textContent.trim().slice(0, 18), r: qc, el: e });
+        }
+        for (const fo of root.querySelectorAll('foreignObject')) {
+          if (alpha(fo, root) < 0.15) continue;
+          const w = document.createTreeWalker(fo, NodeFilter.SHOW_TEXT), g = document.createRange();
+          let l = Infinity, rr = -Infinity, tp = Infinity, bt = -Infinity;
+          for (let n = w.nextNode(); n; n = w.nextNode()) {
+            if (!n.nodeValue.trim() || n.parentElement.closest('.katex-mathml')) continue;
+            g.selectNodeContents(n);
+            for (const q of g.getClientRects()) { if (q.width < 0.5) continue; l = Math.min(l, q.left); rr = Math.max(rr, q.right); tp = Math.min(tp, q.top); bt = Math.max(bt, q.bottom); }
+          }
+          const qc = rr > l && clipTo(fo, { left: l, right: rr, top: tp, bottom: bt });
+          if (qc) items.push({ k: 'text', s: fo.textContent.replace(/\s+/g, ' ').trim().slice(0, 18), r: qc, el: fo });
+        }
+        for (const im of root.querySelectorAll('image')) {
+          if (alpha(im, root) < 0.15) continue;
+          const box = im.parentElement && im.parentElement.tagName.toLowerCase() === 'svg' && im.parentElement !== root ? im.parentElement : null;
+          const q = box ? tight(box, im) : im.getBoundingClientRect();
+          const qc = q && clipTo(im, q);
+          if (qc) items.push({ k: 'img', s: (im.getAttribute('href') || '').split('/').pop(), r: qc, el: im });
+        }
+        // 文字越出框线：有描边的框（面板、胶囊）里的文字，一部分在框里、一部分伸到框外
+        for (const rc of root.querySelectorAll('rect')) {
+          if (rc.closest('clipPath, defs') || alpha(rc, root) < 0.15) continue;
+          const st = getComputedStyle(rc).stroke;
+          if (!st || st === 'none' || +getComputedStyle(rc).strokeOpacity === 0) continue;
+          const q = rc.getBoundingClientRect(); if (q.width < 40 || q.height < 18) continue;
+          for (const A of items) {
+            if (A.k !== 'text') continue;
+            const ox = Math.min(A.r.right, q.right) - Math.max(A.r.left, q.left), oy = Math.min(A.r.bottom, q.bottom) - Math.max(A.r.top, q.top);
+            if (ox <= 0 || oy <= 0) continue;
+            const area = (A.r.right - A.r.left) * (A.r.bottom - A.r.top);
+            if (ox * oy < 0.3 * area) continue;
+            const over = Math.max(q.left - A.r.left, A.r.right - q.right, q.top - A.r.top - 3, A.r.bottom - q.bottom - 3);
+            if (over > 1) out.push(`text「${A.s}」 crosses box edge (${Math.round(over)}px out)`);
+            else if (ox * oy >= 0.95 * area) {
+              const gap = Math.min(A.r.left - q.left, q.right - A.r.right);
+              if (gap < 4 && q.width > 120) out.push(`text「${A.s}」 touches box edge (${Math.round(gap)}px gap)`);
+            }
+          }
+        }
+        for (let i = 0; i < items.length; i++) for (let j = i + 1; j < items.length; j++) {
+          const A = items[i], B = items[j];
+          if (A.k === 'img' && B.k === 'img') continue;
+          const ox = Math.min(A.r.right, B.r.right) - Math.max(A.r.left, B.r.left), oy = Math.min(A.r.bottom, B.r.bottom) - Math.max(A.r.top, B.r.top);
+          if (!(ox > 2 && oy > 2)) continue;
+          const sp = [A, B].find((z) => z.k === 'img' && z.r.ink), tx = sp && (sp === A ? B : A);
+          if (sp) {
+            const inner = { left: Math.max(A.r.left, B.r.left), right: Math.min(A.r.right, B.r.right), top: Math.max(A.r.top, B.r.top), bottom: Math.min(A.r.bottom, B.r.bottom) };
+            const px = sp.r.ink(inner); if (px < 6) continue;
+            out.push(`${tx.k}「${tx.s}」 x ${sp.k}「${sp.s}」 (${Math.round(px)}px² ink)`);
+            continue;
+          }
+          out.push(`${A.k}「${A.s}」 x ${B.k}「${B.s}」 (${Math.round(ox)}×${Math.round(oy)}px)`);
+        }
+      }
+      return out;
+    }, t);
+    for (const x of r) {
+      const key = `scene ${seg.scene + 1}: ${x.replace(/ \([^()]*px[^()]*\)$/, '')}`;
+      const f = found.get(key);
+      if (!f) found.set(key, { t0: t, t1: t, n: 1, ex: x.match(/\(([^()]*px[^()]*)\)$/)[1] });
+      else { f.t1 = t; f.n++; }
+    }
+  }
+  console.log(name, 'story', found.size ? '\n  ' + [...found].map(([k, v]) => `${k}  ${v.ex}  @${v.t0.toFixed(1)}–${v.t1.toFixed(1)}s ×${v.n}`).join('\n  ') : 'no overlap');
+  await b.close();
+  process.exit(0);
+}
 const issues = new Map();
 for (let t = 0.2; t < tl.total; t += 0.5) {
   const r = await pg.evaluate((t) => {
