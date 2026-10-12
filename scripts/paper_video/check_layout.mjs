@@ -53,10 +53,11 @@ if (mode === 'cover') {
     oneLine('title', bigs[0].firstElementChild);
     [...bigs[1].children].forEach((e, k) => oneLine(k ? 'pitch' : 'name', e));
     [...toc.children].forEach((e, k) => oneLine(`toc row ${k + 1}`, e));
-    // 视频号「设置封面」按 3:4 置顶裁剪到 y 1440：最后一行目录的字底要离裁剪线 ≥ 35px（同 AMP）
-    const g = document.createRange(); g.selectNodeContents(toc.lastElementChild);
-    const ink = Math.max(...[...g.getClientRects()].map((q) => q.bottom));
-    if (ink > 1405) out.push(`toc ink bottom ${Math.round(ink)} > 1405 (3:4 top crop at 1440 leaves < 35px)`);
+    // 视频号「设置封面」按 3:4 置顶裁剪到 y 1440：最后一行目录的字底要离裁剪线 ≥ 80px（35px 在手机上看像压到底）
+    // 两列目录最低的一行不一定是最后一个元素（GMR 十三幕左列 7 条、右列 6 条），所以逐条量、取最低的字底
+    const g = document.createRange();
+    const ink = Math.max(...[...toc.children].flatMap((e) => { g.selectNodeContents(e); return [...g.getClientRects()].map((q) => q.bottom); }));
+    if (ink > 1360) out.push(`toc ink bottom ${Math.round(ink)} > 1360 (3:4 top crop at 1440 leaves < 80px)`);
     return out;
   }, intro.t1 - 0.5);
   console.log(name, 'cover', r.length ? '\n  ' + r.join('\n  ') : 'no overlap');
