@@ -18,11 +18,22 @@ from pathlib import Path
 
 import edge_tts
 import edge_tts.communicate
+import edge_tts.constants
 import imageio_ffmpeg
 
 # edge-tts pins certifi's bundle; behind a TLS-intercepting proxy point it at SSL_CERT_FILE instead.
 if os.environ.get("SSL_CERT_FILE"):
     edge_tts.communicate._SSL_CTX = ssl.create_default_context(cafile=os.environ["SSL_CERT_FILE"])
+
+# Since October 2026 speech.platform.bing.com answers the synthesis WebSocket with 403 (edge-tts <= 7.2.8
+# still connects there; only the voice list keeps working). Edge now synthesizes through
+# api.msedgeservices.com, which takes the same token as Ocp-Apim-Subscription-Key (rany2/edge-tts PR #491).
+# Point an older install there too; EDGE_TTS_LEGACY=1 keeps the old host.
+if "speech.platform.bing.com" in edge_tts.communicate.WSS_URL and not os.environ.get("EDGE_TTS_LEGACY"):
+    edge_tts.communicate.WSS_URL = (
+        "wss://api.msedgeservices.com/tts/cognitiveservices/websocket/v1"
+        f"?Ocp-Apim-Subscription-Key={edge_tts.constants.TRUSTED_CLIENT_TOKEN}"
+    )
 
 HERE = Path(__file__).parent
 NAME = sys.argv[1] if len(sys.argv) > 1 else "ppo"
