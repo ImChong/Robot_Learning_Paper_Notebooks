@@ -117,6 +117,7 @@ SOCCER_NOTE = _high_impact_note("Learning_Agile_Soccer_Skills_for_a_Bipedal_Robo
 QUAD_NOTE = _high_impact_note("Learning_Quadrupedal_Locomotion_over_Challenging_Terrain")
 RH_NOTE = _high_impact_note("Real-World_Humanoid_Locomotion_with_RL")
 ASAP_NOTE = _high_impact_note("ASAP_Aligning_Simulation_and_Real-World_Physics_for_Agile_Humanoid_Skills")
+EXBODY_NOTE = _high_impact_note("Expressive_Whole-Body_Control_for_Humanoid_Robots")
 PHP_NOTE = (
     ROOT
     / "papers"
@@ -295,6 +296,7 @@ def test_notes_declare_their_demos_in_reading_order():
         INEKF_NOTE: ("inekf", ["inekf-explainer", "inekf-video", "inekf-linearize", "inekf-banana", "inekf-converge"]),
         BH_NOTE: ("berkeley_humanoid", ["bh-explainer", "bh-video", "bh-armature", "bh-actuator", "bh-dr"]),
         TB_NOTE: ("toddlerbot", ["tb-explainer", "tb-video", "tb-power", "tb-sysid", "tb-actuator"]),
+        EXBODY_NOTE: ("exbody", ["exbody-explainer", "exbody-video", "exbody-retarget", "exbody-reward", "exbody-table"]),
     }
     for note, (bundle, placeholders) in expected.items():
         text = note.read_text(encoding="utf-8")
@@ -333,7 +335,7 @@ EXPLAINER_BUNDLES = (
     "gmr", "omniretarget", "diffusion_policy", "beyondmimic", "cosmos", "umr", "php", "pbfm",
     "gentle", "lcp", "transformer", "pi0", "pi05", "op3soccer", "smp", "humanml3d",
     "domain_randomization", "quadterrain", "realhumanoid", "asap", "inekf", "berkeley_humanoid",
-    "toddlerbot",
+    "toddlerbot", "exbody",
 )
 
 # 幕数由论文决定，不是统一模板：PPO / DeepMimic / AMP / ADD 的核心概念正好各 5 个，
@@ -473,6 +475,11 @@ EXPLAINER_BUNDLES = (
 # （式 6 与课程）各自独立；评测器（附录 B）是后来被整个领域沿用的贡献；结果（Table 2–3、图 4、用户研究）与消融、局限
 # （Table 4、图 6、补充材料图 8）各一幕。第二版的九幕把注意力和三个 GRU、标注和统一格式、结果和消融各压在一帧里，
 # 字多图少，2026-10-11 按「多用图少用文字」拆开，并换上片段 012314 的真实骨架和论文原图。
+# ExBody 是 13 幕：第 I 节立了图形学搬不上真机的三道坎（一幕），第 II 节的问题形式化分「目标拆两半」与「观测只用真机拿得到的」
+# 两段；第 III 节的数据有「怎么挑」（关键词、表 II）与「分布什么样」（图 3）两件事，重定向、RSI、跟踪奖励（表 III）各一幕，
+# 附录的正则（表 VI）与训练设置（表 VII、代码的随机化）合一幕；结果按论文的问题：根运动与双手（图 5、6，同一个「跟得怎么样」）、
+# 随机命令与全身跟踪（表 IV、图 8）、AMP（表 IV、图 7、表 V）、真机与局限（图 1、9）。压成 12 幕会让表 II 的条和图 3、
+# 或表 III 的五条和表 VI 的十四项抢同一帧。
 EXPLAINER_SCENES = {
     "ppo": (PPO_NOTE, 5),
     "awr": (AWR_NOTE, 6),
@@ -507,6 +514,7 @@ EXPLAINER_SCENES = {
     "inekf": (INEKF_NOTE, 12),
     "berkeley_humanoid": (BH_NOTE, 12),
     "toddlerbot": (TB_NOTE, 12),
+    "exbody": (EXBODY_NOTE, 13),
 
     "humanml3d": (HUMANML3D_NOTE, 12),
 }
@@ -1899,7 +1907,7 @@ def test_narrated_video_placeholders_point_at_files_that_exist():
     for demo in ("calm-video", "pulse-video", "dp-video", "bm-video", "lcp-video", "cosmos-video", "groot-video",
                  "tf-video", "pi0-video", "pi05-video", "soccer-video", "sonic-video", "gmr-video",
                  "omniretarget-video", "humanml3d-video", "smp-video", "dr-video", "qt-video", "rh-video", "inekf-video", "bh-video",
-                 "tb-video"):
+                 "tb-video", "exbody-video"):
         assert demo in seen, f"{demo} 应该挂在对应的论文笔记里"
 
 
@@ -3296,3 +3304,154 @@ def test_gmr_3d_sprite_sheets_match_their_metadata_and_cameras():
     assert abs(rest[0][2] - 0.757) < 0.002
     knee, hip = rest[2], rest[1]
     assert knee[0] - hip[0] > 0.05  # 屈膝：膝盖在髋的前面
+
+
+def _exbody_clips(js: str):
+    """exbody.js 的复现数据：每段动作每帧 125 个小端 int16（见 bundle 里的注释），解码成每帧的字典。"""
+    clips = {}
+    for m in re.finditer(r"    (\w+): \{ clip: '([\w]+)', zh: '[^']+', native: (\d+), fps: (\d+), t0: ([\d.]+), n: (\d+), sheet: (\{[^}]+\}),\n      data: '([^']+)' \}", js):
+        raw = base64.b64decode(m.group(8))
+        vals = [int.from_bytes(raw[i : i + 2], "little", signed=True) for i in range(0, len(raw), 2)]
+        n = int(m.group(6))
+        assert len(vals) == n * 125, m.group(1)
+        frames = []
+        for k in range(n):
+            v = vals[k * 125 : (k + 1) * 125]
+            frames.append({
+                "root": [x / 1000 for x in v[0:3]], "rpy": [x / 1000 for x in v[3:6]], "vloc": [x / 1000 for x in v[6:9]],
+                "dof": [x / 1000 for x in v[9:28]], "kp": [[x / 1000 for x in v[28 + 3 * j : 31 + 3 * j]] for j in range(6)],
+                "elbR": [v[121] / 1000, v[122] / 1000], "armErr": [v[123] / 10, v[124] / 10],
+            })
+        clips[m.group(1)] = {"clip": m.group(2), "native": int(m.group(3)), "fps": int(m.group(4)), "t0": float(m.group(5)),
+                             "n": n, "sheet": json.loads(m.group(7)), "frames": frames}
+    return clips
+
+
+def test_exbody_explainer_demos_and_worked_example_share_the_paper_numbers():
+    """ExBody：十三幕动画、三个演示、配音旁白与笔记「🚶 具体实例」用同一组数。
+
+    表 I–VIII 的数字照抄 arXiv 2402.16796 v2；观测维度、PD、随机化、1043 → 780 段照抄 chengxuxin/expressive-humanoid；
+    四段 CMU 动作（141_16 挥手、104_41 僵尸走、141_22 击掌、08_07 大步走）是我们照官方重定向步骤重算的复现，嵌在 exbody.js 里，
+    这里用 Python 解码后把例 2 的指数映射、右肘投影、前臂方向误差、例 4 的根运动目标再算一遍；例 5 的奖励按表 III 重算。
+    """
+    js = (DEMO_JS_DIR / "exbody.js").read_text(encoding="utf-8")
+    note = EXBODY_NOTE.read_text(encoding="utf-8")
+    narration = (ROOT / "scripts" / "paper_video" / "papers" / "exbody.py").read_text(encoding="utf-8")
+    intro = (ROOT / "scripts" / "paper_video" / "papers" / "exbody.js").read_text(encoding="utf-8")
+
+    for line in (
+        "var TABLE2 = [['Walk', 546, 9076.6], ['Dance', 78, 1552.3], ['Basketball', 36, 766.1], ['Punch', 20, 800.0], ['Others', 100, 1188.0]];",
+        "{ key: 'dof', zh: '关节角', k: 0.7, w: 3.0, unit: 'rad', goal: 'e' },",
+        "{ key: 'vel', zh: '线速度', k: 4.0, w: 6.0, unit: 'm/s', goal: 'm' },",
+        "var EX_ERR = { dof: 0.30, kp: 0.10, vel: 0.10, rp: 0.05, yaw: 0.10 };",
+        "{ key: 'ours', zh: 'ExBody（本文）', motion: [16.87, 318.67, 754.92, 659.78], random: [13.51, 132.14, 523.79, 483.67] },",
+        "{ key: 'noRsi', zh: 'No RSI', motion: [0.23, 0.63, 10.09, 7.25], random: [0.22, 0.10, 7.41, 7.15] },",
+        "{ key: 'full', zh: 'Full Body Tracking', motion: [13.28, 246.11, 584.40, 397.25], random: [10.76, 76.46, 407.88, 284.69] }",
+        "var T5_MEAN = { ours: 0.051, amp: 0.087 };",
+        "var PPO = { envs: 4096, gamma: 0.99, lam: 0.95, steps: 21, epochs: 5, minibatch: 4, entropy: 0.01, clip: 0.2, lr: '1e−3' };",
+        "envs: 6144, steps: 24, lr: '2e−4', entropy: 0.005, clips: 780, clipsAll: 1043,",
+        "var EX_K = 10;",
+    ):
+        assert line in js, line
+    for k in ("'exbody-explainer'", "'exbody-video'", "'exbody-retarget'", "'exbody-reward'", "'exbody-table'", "K.video(host"):
+        assert k in js, k
+
+    # 表 II、表 I 与表 V 的加总
+    assert 546 + 78 + 36 + 20 + 100 == 780 and _fmt(9076.6 + 1552.3 + 766.1 + 800.0 + 1188.0, 1) == "13383.0"
+    assert _fmt(13383.0 / 3600, 2) == "3.72" and _fmt(18.9 + 5.0 + 22.5 + 13.0 + 2.5 + 3.3 + 32.6 + 9.6 + 15.2 + 39.3 + 32.2 + 8.2, 1) == "202.3"
+    t5 = re.findall(r"\['[^']+', (0\.\d+), (0\.\d+)\]", js[js.index("var TABLE5 = [") : js.index("var T5_MEAN")])
+    assert len(t5) == 14
+    ours, amp = [float(a) for a, _ in t5], [float(b) for _, b in t5]
+    assert (_fmt(sum(ours) / 14, 4), _fmt(sum(amp) / 14, 4)) == ("0.0511", "0.0864")
+    assert sum(o > a for o, a in zip(ours, amp, strict=True)) == 1  # 只有 Boxing（MDM）是 ExBody 晃得更多
+    assert "$0.716/14 = 0.0511$" in note and "$1.209/14 = 0.0864$" in note
+    # 表 IV 的比值：速度跟踪 −35%、No RSI 差 73 倍、全身跟踪的关键点 −40%
+    assert round(100 * (1 - 205.60 / 318.67)) == 35 and round(16.87 / 0.23) == 73 and round(100 * (1 - 397.25 / 659.78)) == 40
+    for s in ("205.60 对 318.67", "397.25 对 659.78", "0.23", "16.87", "87.83"):
+        assert s in narration, s
+
+    # 例 5：表 III 的五项，假设误差 0.30 / 0.10 / 0.10 / 0.05 / 0.10
+    terms = [3 * math.exp(-0.7 * 0.30), 2 * math.exp(-0.10), 6 * math.exp(-0.4 * 1.0), math.exp(-0.05), math.exp(-0.10)]
+    parts = [_fmt(x, 3) for x in terms]
+    assert parts == ["2.432", "1.810", "4.022", "0.951", "0.905"]
+    assert _fmt(sum(terms), 2) == "10.12" and _fmt(sum(float(p) for p in parts), 3) == "10.120"
+    for text in (note, narration):
+        assert "2.432" in text and "4.022" in text and "10.12" in text
+    assert "10.12" in js and "2.432 + 1.810 + 4.022 + 0.951 + 0.905" in js
+    assert _fmt(math.log(10) / 0.7, 2) == "3.29" and "3.29" in note and "3.29 弧度" in narration
+    # 例 6：膝关节 PD
+    assert _fmt(200 * (0.8 + 0.25 * 0.4 - 0.80) - 10 * 0.5, 1) == "15.0" and "15\\ \\text{N·m}" in note
+    assert (_fmt(0.8 * 20 - 1.2 * 5, 0), _fmt(1.2 * 20 - 0.8 * 5, 0)) == ("10", "20")
+    # 例 3：观测维度
+    assert 3 + 2 + 2 + 19 * 3 + 2 == 66 and 9 + 3 + 3 + 2 + 1 + 18 == 36 and 264 + 66 + 36 + 3 + 43 + 660 == 1072
+    assert 66 + 36 + 16 + 3 + 20 == 141 and 6144 == 7 * 780 + 684
+
+    # 复现：从嵌入的数据再算一遍
+    clips = _exbody_clips(js)
+    assert set(clips) == {"wave", "zombie", "high5", "stride"}
+    assert [clips[k]["clip"] for k in ("wave", "zombie", "high5", "stride")] == ["141_16", "104_41", "141_22", "08_07"]
+    wave = clips["wave"]
+    f = wave["frames"][10]
+    assert wave["fps"] == 20 and wave["native"] == 60 and wave["n"] == 99  # 第 10 帧 = 0.5 s = 原始 60 fps 的第 30 帧
+    m = [f["dof"][16], f["dof"][15], f["dof"][17]]  # 右肩：dof 里是（俯仰, 横滚, 偏航）=（m_y, m_x, m_z）
+    assert [_fmt(x, 3) for x in m] == ["-1.559", "-0.277", "0.249"]
+    theta = math.sqrt(sum(x * x for x in m))
+    assert _fmt(theta, 3) == "1.603" and _fmt(math.degrees(theta), 1) == "91.8"
+    axis = [x / theta for x in m]
+    assert [_fmt(x, 3) for x in axis] == ["-0.973", "-0.173", "0.155"]
+    qw = math.cos(theta / 2)
+    assert _fmt(qw, 3) == "0.696" and [_fmt(x * math.sin(theta / 2), 3) for x in axis] == ["-0.699", "-0.124", "0.112"]
+    assert f["elbR"] == [0.751, 0.265] and _fmt(0.751 * 0.265, 3) == "0.199" and f["dof"][18] == 0.199
+    upper = [f["dof"][j] for j in range(10, 19)]
+    assert [_fmt(x, 3) for x in upper] == ["-0.313", "0.340", "0.186", "-0.088", "1.053", "-0.277", "-1.559", "0.249", "0.199"]
+    assert f["armErr"][1] == 41.4
+    fore = sum(fr["armErr"][1] for fr in wave["frames"]) / wave["n"]
+    upp = sum(fr["armErr"][0] for fr in wave["frames"]) / wave["n"]
+    zup = sum(fr["armErr"][0] for fr in clips["zombie"]["frames"]) / clips["zombie"]["n"]
+    assert (_fmt(fore, 1), _fmt(upp, 1), _fmt(zup, 1)) == ("32.2", "9.7", "41.9")
+    assert max(fr["armErr"][1] for fr in wave["frames"]) == 50.1 and max(fr["armErr"][0] for fr in wave["frames"]) == 17.5
+    for s in ("(-1.559,\\ -0.277,\\ 0.249)$", "1.603", "91.8°", "0.199", "32.2°", "41.4°", "9.7°", "41.9°", "17.5°", "50.1°"):
+        assert s in note, s
+    for s in ("负 1.559、负 0.277、0.249", "1.603 弧度", "0.199 弧度", "32.2 度"):
+        assert s in narration, s
+    # 例 2 的关键点：右臂三点几乎一样高（水平侧举、前臂朝前）
+    assert "$(-0.043, -0.150, 0.430)$" in note and "$(0.170, -0.649, 0.440)$" in note
+    # 例 4：僵尸走第 5.0 s（第 40 帧）的根运动目标与平均前进速度
+    z = clips["zombie"]
+    zf = z["frames"][40]
+    assert z["t0"] == 3.0 and z["fps"] == 20 and _fmt(z["t0"] + 40 / 20, 1) == "5.0"
+    assert zf["vloc"] == [0.341, -0.012, -0.069] and zf["rpy"][:2] == [0.065, -0.109] and zf["root"][2] == 0.989
+    assert _fmt(sum(fr["vloc"][0] for fr in z["frames"]) / z["n"], 2) == "0.40"
+    assert "$(0.341, -0.012, -0.069)$" in note and "每秒 0.4 米" in narration
+    assert _fmt(z["frames"][-1]["root"][0], 2) == "1.84"
+    # 片头接上一期（OmniRetarget）的片尾预告，片尾只预告下一篇（H2O）
+    assert narration.count("上一期结尾预告") == 1 and "下一篇讲 H2O" in narration and "H2O" in intro
+    assert "## 🎬 十三幕动画" in note and 'demos: ["exbody"]' in note
+
+
+def test_exbody_3d_sprite_sheets_match_their_metadata():
+    """ExBody：H1 的 3D 逐帧贴图（Robot_Retarget_Online 的材质与光照，MuJoCo Menagerie 的 H1）。
+
+    exbody.js 的 `sheet` 记着每张表的格子大小、列数、帧数与渲染相机；格子对不上图，裁出来的就是半个机器人。
+    """
+    js = (DEMO_JS_DIR / "exbody.js").read_text(encoding="utf-8")
+    clips = _exbody_clips(js)
+    sheets = {k: c["sheet"] for k, c in clips.items()}
+    sheets["stand"] = json.loads(re.search(r"var STAND_SHEET = (\{[^}]+\});", js).group(1))
+    sprite_dir = ROOT / "assets/img/papers/exbody/h1_3d"
+    total = 0
+    for sid, s in sheets.items():
+        path = sprite_dir / s["file"]
+        assert path.is_file(), s["file"]
+        total += path.stat().st_size
+        rows = math.ceil(s["n"] / s["cols"])
+        assert _webp_size(path) == (s["cw"] * s["cols"], s["ch"] * rows), sid
+        assert 0 < s["ax"] < s["cw"] and 0 < s["ay"] <= s["ch"], sid
+        if sid != "stand":
+            assert s["n"] == clips[sid]["n"], sid
+        assert (s["yaw"], s["pitch"]) == ((0, 0.05) if sid == "stride" else (1.1, 0.1)), sid
+    assert {p.name for p in sprite_dir.iterdir()} == {s["file"] for s in sheets.values()}
+    assert total < 1.6e6, "贴图按幕懒加载，但总量也别失控"
+    figs = {p.name for p in (ROOT / "assets/img/papers/exbody").glob("*.webp")}
+    used = set(re.findall(r"'(fig\w+\.webp)'", js))
+    assert used and used <= figs, used - figs
