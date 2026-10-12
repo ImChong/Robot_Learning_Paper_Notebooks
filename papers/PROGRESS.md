@@ -917,7 +917,7 @@
 
 | #   | 论文                                                                                                                                       | 日期      | 🌟  | 状态   |
 | --- | ---------------------------------------------------------------------------------------------------------------------------------------- | ------- | --- | ---- |
-| 699  | [PRIMO: Prior-Informed Odometry from Human-Motion Tracking for Humanoid Robots](https://arxiv.org/abs/2609.23610) | 2026.09 | 🌟 | ⏳ 待读 |
+| 699  | [PRIMO: Prior-Informed Odometry from Human-Motion Tracking for Humanoid Robots](https://arxiv.org/abs/2609.23610) ✅ [笔记](09_State_Estimation/PRIMO__Prior-Informed_Odometry_from_Human-Motion_Tracking_for_Humanoid_Robots/PRIMO__Prior-Informed_Odometry_from_Human-Motion_Tracking_for_Humanoid_Robots.md) | 2026.09 | 🌟 | ✅ 已总结 |
 | 700  | [A Multimodal Label Forecasting Method for Aperiodic Visuo-Motor Time Series](https://arxiv.org/abs/2609.07930) | 2026.09 |  | ⏳ 待读 |
 | 701  | [FOCUS: Foot Observation Confidence for Robust Humanoid Proprioceptive Odometry](https://arxiv.org/abs/2609.02222) | 2026.09 |  | ⏳ 待读 |
 | 702  | [Proprioceptive-visual correspondence enables self-other distinction in humanoid robots](https://arxiv.org/abs/2606.13222) | 2026.06 |  | ⏳ 待读 |
