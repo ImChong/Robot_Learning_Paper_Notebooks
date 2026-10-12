@@ -9,6 +9,7 @@ layout loads the assets, and every placeholder has a builder behind it.
 """
 
 import base64
+import json
 import math
 import random
 import re
@@ -275,7 +276,10 @@ def test_notes_declare_their_demos_in_reading_order():
         GROOT_NOTE: ("groot", ["groot-explainer", "groot-video", "groot-timing", "groot-flow", "groot-results"]),
         COSMOS_NOTE: ("cosmos", ["cosmos-explainer", "cosmos-video", "cosmos-data", "cosmos-tokens", "cosmos-physics"]),
         GMR_NOTE: ("gmr", ["gmr-explainer", "gmr-video", "gmr-scale", "gmr-ik", "gmr-table"]),
-        OMNI_NOTE: ("omniretarget", ["omniretarget-explainer", "omniretarget-video"]),
+        OMNI_NOTE: (
+            "omniretarget",
+            ["omniretarget-explainer", "omniretarget-video", "omniretarget-constraints", "omniretarget-aug", "omniretarget-table"],
+        ),
         UMR_NOTE: ("umr", ["umr-explainer"]),
         PHP_NOTE: ("php", ["php-explainer"]),
         PBFM_NOTE: ("pbfm", ["pbfm-explainer"]),
@@ -352,10 +356,12 @@ EXPLAINER_BUNDLES = (
 # 图 4 用户研究 / 表 III 起始帧 / 开源库与局限）：方法节的五步里第 1、2 步写在同一份配置的同一行，合成一幕；
 # 第 3 步的式 2 与「根和腿必须同比例」（由式 2 推出的滑脚，配复现实验的两条跑道）是两件事；两个 IK 阶段各一幕；
 # 实验节按论文自己的 Q1–Q3 加第 V-D 节的起始帧，一问一幕，评测设计（三种测法、成功的定义）单独一幕。
-# OmniRetarget 也是七件（现有 retargeting 只盯人体关键点 / interaction mesh 的
-# Delaunay 四面体 / Laplacian 形变能 / 序贯 SOCP 硬约束 / 一条演示四路扩增 /
-# 极简 RL 与 Table II / 数据工厂到 G1 真机的闭环），「网格保形」是目标、「硬约束」
-# 是可行域，合成一幕会让能量和 SDF/脚粘地抢同一块画面；扩增与下游 RL 也是两件独立的事。
+# OmniRetarget 是十二件（2026-10-12 从七幕重做）（只盯关键点会丢掉交互 / 交互网格 / Laplacian 坐标 / 四条硬约束 /
+# 序贯 SOCP / 一条演示扩成六条 / 别让整台机器人跟着箱子平移 / 地形与本体 / 极简强化学习 / 表 II / 下游强化学习 /
+# 真机、数据与局限）：第 III-A 节的「网格怎么连」（Delaunay）与「形状怎么量」（式 1 的 Laplacian 坐标）是两件事，
+# 硬约束（式 3 的四条）与求解（序贯 SOCP、信赖域、热启动）又是两件；第 III-B 节的物体扩增、下身锚定与初始双脚、
+# 地形与本体各有公式或复现实验；第 IV 节的极简强化学习一幕；结果按第 V 节：表 II 的运动学质量、下游成功率与图 7、
+# 真机与开源数据，压回七幕会让复现实验的穿透曲线和 SOCP 的迭代曲线、或表 II 的柱子和图 7 的直方图抢同一帧。
 # Diffusion Policy 也是七件（平均动作撞障 / 条件扩散 / action chunking / 视觉条件 + FiLM /
 # DDIM 加速 / receding horizon / 定量证据与局限），「扩散过程」和「一次吐多长」
 # 是两件独立的事，视觉条件与 DDIM 加速也是，压进五幕会让 chunking、FiLM 和 RHC 抢同一帧。
@@ -481,7 +487,7 @@ EXPLAINER_SCENES = {
     "groot": (GROOT_NOTE, 7),
     "cosmos": (COSMOS_NOTE, 5),
     "gmr": (GMR_NOTE, 13),
-    "omniretarget": (OMNI_NOTE, 7),
+    "omniretarget": (OMNI_NOTE, 12),
     "diffusion_policy": (DIFFUSION_POLICY_NOTE, 7),
     "beyondmimic": (BEYONDMIMIC_NOTE, 12),
     "umr": (UMR_NOTE, 8),
@@ -965,59 +971,153 @@ def test_sonic_explainer_numbers_come_from_the_config():
     assert "## 🎬 七幕动画：SONIC 全流程" in note
 
 
-def test_omniretarget_explainer_numbers_come_from_the_config():
-    """七幕动画不许手写换算结果：stance 单帧位移、Table II 差值、时长加总都得现算。"""
+def _omni_dec(b64: str, unit: float) -> list:
+    """omniretarget.js 里嵌入的数据：小端 int16 的 base64，乘上单位。"""
+    raw = base64.b64decode(b64)
+    return [int.from_bytes(raw[i:i + 2], "little", signed=True) * unit for i in range(0, len(raw), 2)]
+
+
+def test_omniretarget_explainer_demos_and_worked_example_share_the_paper_numbers():
+    """OmniRetarget：十二幕动画、三个演示、配音旁白与笔记「🚶 具体实例」用同一组数。
+
+    表 I–II、图 7、第 V 节的数字照抄 arXiv 2509.26633 v3；权重、容差、扩增参数照抄 amazon-far/holosoma；
+    搬箱子（sub3_largebox_003，196 帧）的各种设定是我们照官方代码跑的复现实验，嵌在 omniretarget.js 里，
+    这里用 Python 解码后把穿透、滑脚、迭代次数、第 0 帧的平移和左手腕的 Laplacian 坐标再算一遍。
+    嵌入的数据按 0.1 mm 存，所以「每帧最多挪」与笔记里全精度的 1.45 / 32.7 mm 差不到 0.05 mm。
+    """
     js = (DEMO_JS_DIR / "omniretarget.js").read_text(encoding="utf-8")
     note = OMNI_NOTE.read_text(encoding="utf-8")
+    narration = (ROOT / "scripts" / "paper_video" / "papers" / "omniretarget.py").read_text(encoding="utf-8")
+    intro = (ROOT / "scripts" / "paper_video" / "papers" / "omniretarget.js").read_text(encoding="utf-8")
 
-    assert "var STANCE_CM_S = 1;" in js
-    assert "var MOCAP_FPS = 30;" in js
-    assert "var STANCE_MM_FRAME = (STANCE_CM_S * 10) / MOCAP_FPS;" in js
-    stance_mm = (1 * 10) / 30
-    assert abs(stance_mm - 0.333333) < 1e-6
+    for line in (
+        "OmniRetarget: [[0.0, 0.01], [1.34, 0.34], [0, 0], [0, 0], [0.96, 0.09], [82.2, 9.74]]",
+        "GMR: [[0.83, 0.14], [8.5, 3.94], [0.02, 0.01], [1.46, 0.45], [0.99, 0.04], [50.83, 23.89]]",
+        "OmniRetarget: [[0.01, 0.02], [1.37, 0.18], [0, 0], [0, 0], [0.72, 0.19], [94.73, 22.33]]",
+        "var PAPER_SOLVER = { stanceCmS: 1, maxIter: 10, eps: 0.2 };",
+        "var N_REWARDS = 5, N_DR = 4;",
+        "var TERM = { objM: 1.0, objDeg: 45, eeM: 0.25, eeWallM: 0.5 };",
+        "var AUG_FULL = 79.1, AUG_NOM = 82.2;",
+        "var HOURS = { omomo: 2.78, mocap: 1, lafan: 4.6 };",
+        "var TERRAIN_M = [0.56, 0.7, 0.84];",
+        "var CODE = { wLap: 10, wSmooth: 0.2, step: 0.2, iter0: 50, iterN: 10, penTol: 0.001, colThr: 0.1, footTol: 0.001,",
+        "tauP: 50, tauR: 25, wAnchor: 5, tauAnchor: 10, anchorDims: 19, nKpts: 15, nObj: 100, fps: 30, augM: 0.2, augDeg: 45 };",
+        "var ROBOT_H = 1.32, H_SUB3 = 1.9411048;",
+        "var T_MOVE = 25;",
+        "var TETS_F76 = 598, TETS = { min: 576, max: 607 };",
+    ):
+        assert line in js, line
+    for k in (
+        "'omniretarget-explainer'", "'omniretarget-video'", "'omniretarget-constraints'", "'omniretarget-aug'",
+        "'omniretarget-table'", "K.video(host",
+    ):
+        assert k in js, k
 
-    assert "var N_REWARDS = 5;" in js
-    assert "var N_DR = 4;" in js
-    assert "var N_TERMS = N_REWARDS + N_DR;" in js
-    assert 5 + 4 == 9
+    # 图 7 的直方图：人-物 20 段 + 人-地形 19 段 = 39 段
+    hist = {k: re.search(rf"{k}: \{{ PHC: \[([\d, ]+)\]", js).group(1) for k in ("object", "terrain")}
+    assert [sum(int(x) for x in v.split(",")) for v in hist.values()] == [20, 19]
+    assert "var N_MOTIONS_RL = 39;" in js
+    # 比例、加总与指数衰减
+    assert _fmt(1.32 / 1.9411048, 3) == "0.680" and _fmt(2.78 + 1 + 4.6, 2) == "8.38" and _fmt(82.2 - 79.1, 1) == "3.1"
+    assert _fmt(20 * math.exp(-50 / 50), 1) == "7.4" and _fmt(45 * math.exp(-25 / 25), 1) == "16.6"
+    assert (_fmt(5 * math.exp(-10 / 10), 2), _fmt(5 * math.exp(-30 / 10), 2)) == ("1.84", "0.25")
+    assert _fmt(0.95 * 0.742, 3) == "0.705" and _fmt(82.2 - 50.83, 1) == "31.4"
 
-    assert "omni: { pen: 0.0, depth: 1.34, skate: 0, contact: 0.96, rl: 82.2 }" in js
-    assert "gmr: { pen: 0.83, depth: 8.5, skate: 0.02, contact: 0.99, rl: 50.83 }" in js
-    assert "phc: { pen: 0.68, depth: 5.11, skate: 0.05, contact: 0.96, rl: 71.28 }" in js
-    assert "vm: { pen: 0.6, depth: 7.48, skate: 0.12, contact: 0.77, rl: 3.85 }" in js
-    assert "var VS_PHC = OBJ.omni.rl - OBJ.phc.rl;" in js
-    assert "var VS_GMR = OBJ.omni.rl - OBJ.gmr.rl;" in js
-    assert "var VS_VM = OBJ.omni.rl - OBJ.vm.rl;" in js
-    assert "var DEPTH_VS_GMR = OBJ.gmr.depth - OBJ.omni.depth;" in js
-    assert _fmt(82.2 - 71.28, 1) == "10.9"
-    assert _fmt(82.2 - 50.83, 1) == "31.4"
-    assert _fmt(82.2 - 3.85, 1) == "78.4"
-    assert _fmt(8.5 - 1.34, 2) == "7.16"
+    # 复现实验：从嵌入的数据再算一遍
+    def s(name):
+        return re.search(rf"var {name} = '([^']+)';", js).group(1)
 
-    assert "var AUG_FULL = 79.1;" in js
-    assert "var AUG_NOM = 82.2;" in js
-    assert "var AUG_DROP = AUG_NOM - AUG_FULL;" in js
-    assert _fmt(82.2 - 79.1, 1) == "3.1"
+    series = json.loads(re.search(r"var SERIES = (\{.*?\});\n", js).group(1))
+    ser = {v: {q: _omni_dec(b, 1e-5 if q == "en" else 1e-4) for q, b in d.items()} for v, d in series.items()}
+    stance = [[bool(int(c) & 1), bool(int(c) & 2)] for c in s("STANCE_BITS")]
+    sph = {v: _omni_dec(s("SPH_" + v.upper()), 1e-4) for v in ("orig", "nopen", "nofoot")}
+    assert len(stance) == 196 and all(len(ser[v]["pb"]) == 196 for v in ser)
 
-    assert "var H_OMOMO = 2.78;" in js
-    assert "var H_MOCAP = 1;" in js
-    assert "var H_LAFAN = 4.6;" in js
-    assert "var H_SUM = H_OMOMO + H_MOCAP + H_LAFAN;" in js
-    assert _fmt(2.78 + 1 + 4.6, 2) == "8.38"
+    def pen(v):
+        box, gnd = max(-x for x in ser[v]["pb"]), max(-x for x in ser[v]["pg"])
+        return box * 100, gnd * 100, sum(x < -0.01 for x in ser[v]["pb"]), sum(x < -0.01 for x in ser[v]["pg"])
 
-    assert "var PLATFORM_M = 0.9;" in js
-    assert "var PLATFORM_PCT = 70;" in js
-    assert "var ROBOT_H_M = PLATFORM_M / (PLATFORM_PCT / 100);" in js
-    assert _fmt(0.9 / 0.7, 2) == "1.29"
+    def slide(v):
+        a, d = sph[v], []
+        for f in range(1, 196):
+            for side in range(2):
+                if stance[f][side]:
+                    for c in range(4):
+                        o1, o0 = f * 24 + 3 * (side * 4 + c), (f - 1) * 24 + 3 * (side * 4 + c)
+                        d.append(math.hypot(a[o1] - a[o0], a[o1 + 1] - a[o0 + 1]) * 1000)
+        return sum(d) / len(d), max(d)
 
-    assert "var WALL_RAD_S = 15;" in js
-    assert "var WALL_S = 0.5;" in js
-    assert "var WALL_RAD_IF_PEAK = WALL_RAD_S * WALL_S;" in js
-    assert _fmt(15 * 0.5, 1) == "7.5"
+    assert [_fmt(x, 2) for x in pen("orig")[:2]] == ["0.11", "0.26"] and pen("orig")[2:] == (0, 0)
+    assert [_fmt(x, 1) for x in pen("nopen")[:2]] == ["5.4", "7.6"] and pen("nopen")[2:] == (163, 196)
+    assert _fmt(pen("nofoot")[1], 2) == "0.23"
+    assert _fmt(slide("orig")[0], 2) == "1.20" and abs(slide("orig")[1] - 1.45) < 0.05
+    assert [_fmt(x, 2) for x in slide("nopen")] == ["1.14", "1.41"]
+    assert _fmt(slide("nofoot")[0], 1) == "4.6" and abs(slide("nofoot")[1] - 32.7) < 0.1
+    assert _fmt(slide("nofoot")[1] / 10, 1) == "3.3"
+    en = ser["orig"]["en"]
+    assert _fmt(sum(en) / len(en), 3) == "0.069" and _fmt(math.sqrt(sum(en) / len(en) / 115) * 100, 1) == "2.4"
+    iters = [10 if c == "x" else int(c) for c in s("ITERS")[1:]]
+    assert len(iters) == 195 and iters.count(10) == 179
+    cost0 = [float(x) for x in re.search(r"var COST_F0 = \[([^\]]+)\]", js).group(1).split(", ")]
+    assert len(cost0) == 50 and (_fmt(cost0[0], 2), _fmt(cost0[-1], 2)) == ("4.16", "1.18")
 
-    assert "82.20%±9.74%" in note
-    assert "2.78 h" in note and "4.6 h" in note and "8.38 h" in note
-    assert "## 🎬 七幕动画：OmniRetarget 全流程" in note
+    # 第 0 帧：扩增后骨盆、双脚（8 个接触球的平均）相对原始解挪了多少
+    def row0(name, stride):
+        return _omni_dec(s(name), 0.001)[:stride]
+
+    o = row0("CLIP_ORIG", 121)
+
+    def shift(name):
+        c = row0(name, 76)
+        fx = sum(c[45 + 3 * j] - o[45 + 3 * j] for j in range(8)) / 8
+        fy = sum(c[46 + 3 * j] - o[46 + 3 * j] for j in range(8)) / 8
+        return math.hypot(c[0] - o[0], c[1] - o[1]) * 100, math.hypot(fx, fy) * 100
+
+    # 嵌入的位置按 1 mm 存，与笔记里全精度的数差不到 0.1 cm
+    for name, want in (
+        ("CLIP_TRANS_0", (17.1, 19.2)), ("CLIP_NOANCHOR", (17.8, 19.9)), ("CLIP_PIN_TRANS_0", (10.5, 0.1)),
+        ("CLIP_ROT_0", (7.7, 11.5)), ("CLIP_PIN_ROT_0", (4.5, 0.0)),
+    ):
+        got = shift(name)
+        assert all(abs(g - w) < 0.1 for g, w in zip(got, want, strict=True)), (name, got)
+
+    # 第 76 帧人的左手腕：22 个邻居、Laplacian 坐标
+    m = re.search(r"var MESH_F76 = \{ src: '([^']+)', tgt: '([^']+)', edges: '([^']+)' \}", js)
+    src, tgt = (_omni_dec(m.group(k), 0.001) for k in (1, 2))
+    raw = base64.b64decode(m.group(3))
+    edges = [(raw[k], raw[k + 1]) for k in range(0, len(raw), 2)]
+    assert (len(src) // 3, len(edges)) == (115, 737)
+    nb = [b if a == 13 else a for a, b in edges if 13 in (a, b)]
+    assert len(nb) == 22 and sum(j >= 15 for j in nb) == 18 and sorted(j for j in nb if j < 15) == [1, 3, 7, 11]
+
+    def lap(v):
+        return [(v[39 + d] - sum(v[3 * j + d] for j in nb) / 22) * 100 for d in range(3)]
+
+    ls, lt = lap(src), lap(tgt)
+    assert [_fmt(x, 1) for x in ls] == ["3.6", "1.7", "0.2"] and [_fmt(x, 1) for x in lt] == ["6.6", "2.1", "0.5"]
+    assert _fmt(math.dist(ls, lt), 1) == "3.1"
+
+    for needle in (
+        "## 🎬 十二幕动画：OmniRetarget 全流程", "## 🚶 具体实例", "## 📁 源码对照",
+        'data-demo="omniretarget-constraints"', 'data-demo="omniretarget-aug"', 'data-demo="omniretarget-table"',
+        "**22 个邻居**", "$L \\approx (3.6,\\ 1.7,\\ 0.2)$ cm", "$L \\approx (6.6,\\ 2.1,\\ 0.5)$ cm", "两者差 **3.1 cm**",
+        "平均 0.069 m²", "平均差 **2.4 cm**", "**576–607 个四面体**", "598 个四面体、737 条边", "代价 4.16 → 1.18",
+        "**179 帧跑满 10 次**", "**0.26 cm**", "1.20 / **1.45 mm**", "箱子 **5.4 cm**", "地面 **7.6 cm**",
+        "163 帧", "196 帧脚都陷进地面", "1.14 / 1.41 mm", "0.23 cm", "**4.6 / 32.7 mm**", "**第 25 帧**",
+        "20 cm → 7.4 cm", "16.6°", "1.84", "0.25）", "17.8 cm", "19.9 cm", "17.1 cm", "19.2 cm", "**10.5 cm**", "**0.1 cm**",
+        "**0.705 m**", "82.20%±9.74%", "2.78 h", "4.6 h", "8.38 h", "79.1%", "82.2%",
+    ):
+        assert needle in note, needle
+    for needle in (
+        "5.4 厘米", "7.6 厘米", "0.26 厘米", "4.6 毫米", "3.3 厘米", "1.45", "22 个", "3.1 厘米", "2.4 厘米", "179",
+        "17.1", "10.5 厘米", "79.1%", "82.2%", "8.38", "39 段",
+    ):
+        assert needle in narration, needle
+    # 片头接上一期（GMR）的片尾预告，片尾只预告下一篇（Expressive WBC）；主动画不预告下一篇
+    assert "上一期结尾预告：人和物体、地形有接触的时候，怎样在重定向里把这些交互也保住" in narration
+    assert "下一篇讲 Expressive Whole-Body Control" in narration
+    assert "**下一篇**：Expressive WBC" in intro and "arxiv: '2509.26633'" in intro
+    assert "Expressive" not in js and "下一篇" not in js
 
 
 def test_umr_explainer_and_worked_examples_share_the_same_numbers():
