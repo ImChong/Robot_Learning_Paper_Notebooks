@@ -286,7 +286,7 @@
         "has_open_source": true,
         "summary_zh": "GMR 是一个运动学重定向方法：先在配置里写好人和机器人的关键身体怎么对应、静止姿态差多少；再按身体部位各乘一个比例缩放人的动作（根的平移只乘一个统一的比例）；最后用 mink 分两阶段解微分 IK——先对朝向（位置只管末端），再对所有关…",
         "explainer_scenes": 13,
-        "video_seconds": 725,
+        "video_seconds": 721,
         "published_date_zh": "2025年10月（arXiv）",
         "published_date_en": "Oct 2025 (arXiv)",
         "zhname": "Retargeting Matters：面向人形运动跟踪的通用动作重定向",

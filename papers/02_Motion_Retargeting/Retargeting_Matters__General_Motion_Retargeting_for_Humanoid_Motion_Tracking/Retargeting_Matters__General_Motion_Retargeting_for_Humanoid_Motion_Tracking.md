@@ -39,7 +39,7 @@ demos: ["gmr"]
 
 > 🎮 **本文内嵌 1 段讲解动画、1 段配音视频和 3 个交互演示**（不用装任何东西）：
 > [十三幕动画：GMR 全流程](#gmr-explainer-anim) —— 约 208 秒串完「人和机器人的身体不一样（直接抄关节角会浮空、滑脚）→ 两个开源基线怎么缩放 → 第 1、2 步：一张配置表 → 第 3 步：非均匀局部缩放（式 2）→ 根和脚要用同一个比例 → 第 4 步：先对朝向 → 第 5 步：再对所有位置 → 评测：只换参考动作 → 表 I：谁跟得住 → 图 3：三类瑕疵 → 图 4：像不像原动作 → 表 III：从哪一帧开始 → 开源库与局限」。空格播放/暂停，← → 换幕，也可以直接点分幕标签跳着看。
-> [配音讲解视频](#gmr-video) —— 同样十三幕，加中文配音与字幕，12 分 5 秒竖屏，可下载
+> [配音讲解视频](#gmr-video) —— 同样十三幕，加中文配音与字幕，12 分 2 秒竖屏，可下载
 > [缩放比例滑块](#demo-scale) —— 同一段 LAFAN1 走路，改根、腿、手臂的比例和人的身高，看骨盆目标高多少、踩地时目标脚离地多高、滑多快
 > [两阶段 IK 玩具](#demo-ik) —— 平面两连杆手臂：只对手的位置会停在肘弯反的那一支，先对朝向再对位置就不会
 > [表 I / 表 III 浏览](#demo-table) —— 21 段 × 4 种来源 × 3 种测法的成功率，只看差别大的 7 段、按长度或差距排序，以及换起始帧之后的变化
@@ -74,7 +74,7 @@ demos: ["gmr"]
 
 ## 📺 配音讲解视频（可下载） {#gmr-video}
 
-<div class="paper-demo" data-demo="gmr-video" data-src="media/gmr_explainer_video.mp4" data-poster="media/gmr_explainer_video_poster.jpg"><p class="demo-fallback">（本节含讲解视频播放器，需要启用 JavaScript；也可以直接<a href="media/gmr_explainer_video.mp4" download="GMR_讲解视频.mp4">下载 mp4（13.3 MB）</a>）</p></div>
+<div class="paper-demo" data-demo="gmr-video" data-src="media/gmr_explainer_video.mp4" data-poster="media/gmr_explainer_video_poster.jpg"><p class="demo-fallback">（本节含讲解视频播放器，需要启用 JavaScript；也可以直接<a href="media/gmr_explainer_video.mp4" download="GMR_讲解视频.mp4">下载 mp4（13.2 MB）</a>）</p></div>
 
 > 📖 **动画之后的正文默认全部折叠**：动画覆盖到的那几节（要解决什么问题、方法详解、实验结果）按小节收起，再往后的具体实例、源码对照、工程价值、面试、讨论记录与附录各整块收起。想细读哪一块就点开对应的折叠条，内容一字未删；流程图和三个交互演示留在外面，目录里的标题依旧可以直接点，会自动展开所在折叠块，左侧目录顶部还有「展开全部文字」一键铺开。
 >

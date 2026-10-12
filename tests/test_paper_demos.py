@@ -3132,6 +3132,13 @@ def test_gmr_explainer_demos_and_worked_example_share_the_paper_numbers():
     for spoken, shown in (("写成一航", "写成一行"), ("每一航", "每一行"), ("这一航", "这一行")):
         assert spoken in narration and f'("{spoken}", "{shown}")' in narration
     assert "一行" not in narration.split("SCRIPT = [", 1)[1].split("DISPLAY = [", 1)[0]
+    # 「调参」「单独调」念 tiáo：旁白写「条餐」「单独条」，字幕换回；「不调奖励」整句里本来就念对了
+    for spoken, shown in (("奖励条餐", "奖励调参"), ("单独条", "单独调")):
+        assert spoken in narration and f'("{spoken}", "{shown}")' in narration
+    script = narration.split("SCRIPT = [", 1)[1].split("DISPLAY = [", 1)[0]
+    assert "调参" not in script and "单独调" not in script and "不调奖励" in script
+    # sim2sim 念 sim to sim，字幕换回
+    assert "sim2sim" not in script and script.count("sim to sim") == 5 and '("sim to sim", "sim2sim")' in narration
 
 
 def _webp_size(path: Path):
