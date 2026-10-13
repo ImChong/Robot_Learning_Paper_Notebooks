@@ -41,15 +41,15 @@
         "13_Physics-Based_Animation",
         "14_Human_Motion"
       ],
-      "last_module": "09_State_Estimation",
-      "last_index": 699,
-      "last_title": "PRIMO: Prior-Informed Odometry from Human-Motion Tracking for Humanoid Robots (arXiv:2609.23610)",
-      "next_module": "10_Sim-to-Real",
-      "last_completed_date": "2026-10-12",
-      "note": "本日轮转到 09_State_Estimation。PROGRESS State Estimation 章节中尚无笔记的最新论文是 PRIMO (arXiv:2609.23610, 2026-09-20, 武汉大学 × 智元 AgiBot, 上游 🌟)，即 PROGRESS #699。数据侧用 SONIC 式全身跟踪器跟踪约 64 h 重定向人体动作录里程计监督、与部署策略解耦；模型侧 221 K 因果估计器含 CRP、去重力 Δv^I 条件、陀螺锚定有界修正、矢状面镜像 frame averaging；真机六格全最低，比最强外部基线低 31.6%–61.7%。仓库仅 README、代码待放出，含整体流程 mermaid 与按论文整理的推理时序图。",
-      "last_date": "2026-10-12",
+      "last_module": "10_Sim-to-Real",
+      "last_index": 692,
+      "last_title": "Informationally Decoupled Trajectory Design for Sim-to-Real System Identification (arXiv:2610.10905)",
+      "next_module": "11_Simulation_Benchmark",
+      "last_completed_date": "2026-10-13",
+      "note": "本日轮转到 10_Sim-to-Real。PROGRESS Sim-to-Real 章节中尚无笔记的最新论文是 IDTD (arXiv:2610.10905, 2026-10-07, UW–Madison)，即 PROGRESS #692，已确认在上游 README。用归一化 Schur 补解耦因子 + 分段覆盖 + 对数聚合设计采样式 SysID 的探索指令；Go2 / G1 辨识误差 7.31% / 1.28%，K1 真机开环预测代价降 14.4%。论文未开源，含整体流程 mermaid 与两参数算例，无源码时序图。",
+      "last_date": "2026-10-13",
       "next_candidate": null,
-      "last_completed": "PRIMO: Prior-Informed Odometry from Human-Motion Tracking for Humanoid Robots (arXiv:2609.23610)"
+      "last_completed": "Informationally Decoupled Trajectory Design for Sim-to-Real System Identification (arXiv:2610.10905)"
     },
     "last_summary_index": 532,
     "last_summary_date": "2026-09-18",
@@ -1717,6 +1717,17 @@
         "project_page": "",
         "code": "https://github.com/Agibot-Spatial-Intelligence/PRIMO（目前仅 README，代码待放出）",
         "source": "⏳ 仓库仅 README(故时序图按论文整理) · 动作跟踪造里程计监督 + Prior-Informed 估计器(CRP / Δv^I / 陀螺锚定 / 镜像 FA) · AgiBot A3 Ultra · 武汉大学 × 智元"
+      },
+      {
+        "date": "2026-10-13",
+        "index": 692,
+        "title": "Informationally Decoupled Trajectory Design for Sim-to-Real System Identification",
+        "folder": "papers/10_Sim-to-Real/IDTD__Informationally_Decoupled_Trajectory_Design_for_Sim-to-Real_System_Identification",
+        "module": "10_Sim-to-Real",
+        "arxiv": "2610.10905",
+        "project_page": "",
+        "code": "论文未给出代码 / 项目页链接；截至 2026-10-13 未见公开仓库",
+        "source": "⏳ 无公开源码(故无源码时序图)，含整体流程 mermaid 与两参数 tr(F⁻¹) 选错轨迹算例"
       }
     ],
     "last_completed_index": 588,

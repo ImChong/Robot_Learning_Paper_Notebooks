@@ -950,7 +950,7 @@
 
 | #   | 论文                                                                                                                                             | 日期      | 🌟  | 状态   |
 | --- | ---------------------------------------------------------------------------------------------------------------------------------------------- | ------- | --- | ---- |
-| 692  | [Informationally Decoupled Trajectory Design for Sim-to-Real System Identification](https://arxiv.org/abs/2610.10905) | 2026.10 |  | ⏳ 待读 |
+| 692  | [Informationally Decoupled Trajectory Design for Sim-to-Real System Identification](https://arxiv.org/abs/2610.10905) ✅ [笔记](10_Sim-to-Real/IDTD__Informationally_Decoupled_Trajectory_Design_for_Sim-to-Real_System_Identification/IDTD__Informationally_Decoupled_Trajectory_Design_for_Sim-to-Real_System_Identification.md) | 2026.10 |  | ✅ 已总结 |
 | 693  | [Bundled Contact Gradients: Stabilizing Differentiable Simulation for Deployable Dynamic Tasks](https://arxiv.org/abs/2609.30951) | 2026.09 |  | ⏳ 待读 |
 | 694  | [Online Sim-to-Real Adaptation via Closed-Loop System Modeling](https://arxiv.org/abs/2609.28878) | 2026.09 |  | ⏳ 待读 |
 | 695  | [asRoBallet: Closing the Sim2Real Gap via Friction-Aware Reinforcement Learning for Underactuated Spherical Dynamics](https://arxiv.org/abs/2604.24916) | 2026.04 |  | ⏳ 待读 |
