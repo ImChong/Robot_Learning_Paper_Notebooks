@@ -1129,6 +1129,14 @@ def test_omniretarget_explainer_demos_and_worked_example_share_the_paper_numbers
     # 第 3 幕：放大的手腕旁边画出整个人（骨架 + 箱子）和同一帧的 G1 渲染
     lap = js.split("function buildSceneLaplacian()", 1)[1].split("function drawOnPath(", 1)[0]
     assert "skeleton(bodyL" in lap and "boxWire(bodyL" in lap and "g1Sprite(bodyR, 'orig_side')" in lap and "clipCircle(" in lap
+    # 第 10 幕：三个「时长」都是 0–1 的比例（论文第 V-B 节按应有的时长归一化），表头、底注、旁白都说清楚
+    assert "zh: '打滑时长（比例）↓'" in js and "zh: '接触保持（比例）↑'" in js
+    assert "这几个时长都不是秒，而是比例：穿透除以整段的长度，打滑除以脚应该粘住的时长，接触除以应该接触的时长" in narration
+    assert "| 穿透时长（比例）↓ |" in note and "不是秒" in note
+    # 第 6 幕：俯视图人朝上，五种扩增的箱子起点在旁白念到时一个个出现（分镜 3.6–10.6 s 对着那一句旁白）
+    aug = js.split("function buildSceneAug()", 1)[1].split("function buildSceneAnchor()", 1)[0]
+    assert "var AT = [0.6, 6.5, 7.3, 7.9, 9.5, 10.1];" in aug and "function footprint(pose)" in aug
+    assert '(5, 3.6, 10.6, "物体位姿，开源代码给了 5 种' in narration and "左边的俯视图里，人站在下面、面朝上" in narration
     # 第 10 幕：表 II 柱子上的数字写在柱顶上方、跟着柱子长高，不压在柱子上
     t2 = js.split("function buildSceneTable2()", 1)[1].split("function buildSceneDownstream()", 1)[0]
     assert "b.lab.setAttribute('y', (b.base - h - 5).toFixed(1));" in t2

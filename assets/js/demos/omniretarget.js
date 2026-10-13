@@ -105,7 +105,7 @@
       }
     }
   };
-  var T2_COLS = ['穿透时长', '最深穿透（cm）', '打滑时长', '最大打滑（cm/s）', '接触保持', '下游成功率'];
+  var T2_COLS = ['穿透时长（比例）', '最深穿透（cm）', '打滑时长（比例）', '最大打滑（cm/s）', '接触保持（比例）', '下游成功率'];
   var METHODS = ['PHC', 'GMR', 'VideoMimic', 'OmniRetarget'];
   /* 图 7：每段动作的成功率直方图（10% 一格，读图值），人-物 20 段 + 人-地形 19 段 = 第 V-B 节的 39 段 */
   var HIST = {
@@ -1090,28 +1090,65 @@
 
   /* ── scene 6: 一条演示扩成六条 ── */
   function buildSceneAug() {
-    var s = sceneSvg('左边是俯视图：六条箱子轨迹的前 99 帧，原始的灰色虚线，五种扩增的起点挪 20 cm 或再转 ±45°，搬起后偏移按指数衰减回到原轨迹；' +
+    var s = sceneSvg('左边是俯视图（人朝上）：人站在下方，原始箱子是灰色虚线框，五种扩增把箱子的起点往前、往左、往右挪 20 cm 或再转 ±45°，画成彩色框；' +
+      '彩色线是前 99 帧箱子中心的轨迹，搬起后偏移按指数衰减回到原轨迹；' +
       '左下是偏移随帧数衰减的曲线；右边六台 G1 各解一遍同一道优化，循环播放第 0–99 帧');
     s.appendChild(svgText(30, 28, '人的网格不动，只改 G1 这边的箱子', 'demo-x-ink2', 13.5));
     var COLS = [C_MUTED, C_ACCENT, C_GOOD, C_WARN, C_BAD, '#9b7fd1'];
-    /* 左：俯视轨迹（只画前 99 帧：蹲下、搬起、刚开始走） */
+    /* 左：俯视图，转成「人朝上」：人站在原点，人 → 箱子的方向画成朝上（也就是代码里「人的坐标系」的 x 轴），
+       往左、往右就是画面的左右。先画人和原始箱子，再一个个画出五种扩增挪过的箱子起点（真实大小和转角），
+       最后画前 99 帧箱子中心的轨迹：起点不同，搬起来以后都慢慢回到原轨迹 */
     var MAP = group(s);
     rectBox(MAP, 30, 40, 330, 236, C_BORDER, C_SURFACE2);
-    MAP.appendChild(svgText(46, 62, '俯视：箱子中心（前 99 帧）', 'demo-x-ink2', 12.5));
+    MAP.appendChild(svgText(46, 62, '俯视：箱子的起点挪到哪（人朝上）', 'demo-x-ink2', 12.5));
     var mclip = clipTo(MAP, 30, 66, 330, 210);
-    var o = boxPose(CLIPS.orig, 0).p, mS = 300, mx = 200, my = 100;
-    function mp(p) { return [mx + (p[0] - o[0]) * mS, my - (p[1] - o[1]) * mS]; }
+    var pel = kpts(CLIPS.orig, 0)[KI.Pelvis], box0 = boxPose(CLIPS.orig, 0).p;
+    var fwd = Math.atan2(box0[1] - pel[1], box0[0] - pel[0]), mS = 150, mx = 186, my = 252;
+    var fc = Math.cos(fwd), fs = Math.sin(fwd);
+    /* 世界 → 画面：沿「前」的分量朝上，沿「左」的分量朝左 */
+    function mp(p) {
+      var dx = p[0] - pel[0], dy = p[1] - pel[1];
+      var f = dx * fc + dy * fs, l = -dx * fs + dy * fc;
+      return [mx - l * mS, my - f * mS];
+    }
+    /* 箱子在地面上的投影：模型包围盒的底面四个角，按这一帧的位姿摆好 */
+    function footprint(pose) {
+      return [[BOX.lo[0], BOX.lo[1]], [BOX.hi[0], BOX.lo[1]], [BOX.hi[0], BOX.hi[1]], [BOX.lo[0], BOX.hi[1]]].map(function (c) {
+        return mp(toWorld(pose, [c[0], c[1], 0]));
+      });
+    }
     var NR = 33;
-    var tracks = AUGS.map(function (a, k) {
+    /* 人：一个圆点 + 朝前的箭头 */
+    var who = group(mclip);
+    dotAt(who, mx, my, 7, C_INK2);
+    pathLine(who, [[mx, my - 10], [mx, my - 32]], C_INK2, 2);
+    pathLine(who, [[mx - 5, my - 26], [mx, my - 33], [mx + 5, my - 26]], C_INK2, 2);
+    who.appendChild(svgText(mx + 12, my + 5, '人（第 0 帧）', 'demo-x-ink2', 11.5));
+    /* 20 cm 比例尺 */
+    var bar = group(mclip);
+    var bx0 = 336 - 0.2 * mS;
+    hline(bar, bx0, 262, 336, 262, C_INK2, 2);
+    hline(bar, bx0, 257, bx0, 267, C_INK2, 1.5); hline(bar, 336, 257, 336, 267, C_INK2, 1.5);
+    bar.appendChild(svgText(bx0 + 0.1 * mS, 252, '20 cm', 'demo-x-mut', 10.5, 'middle'));
+    var o0 = mp(box0);
+    var augs = AUGS.map(function (a, k) {
       var c = CLIPS[a.key], pts = [];
       for (var r = 0; r < Math.min(NR, c.n); r++) pts.push(mp(boxPose(c, r).p));
-      var p = pathLine(mclip, pts, COLS[k], k ? 2.2 : 2.8, k ? null : '5 4');
-      var d = dotAt(mclip, pts[0][0], pts[0][1], 5, COLS[k]);
-      return { p: p, d: d, pts: pts };
+      var g = group(mclip);
+      var fp = footprint(boxPose(c, 0));
+      var shape = paint(svgEl('path', { d: polyPath(fp) + ' Z', 'stroke-width': k ? 2 : 1.6, 'fill-opacity': 0.12 }), COLS[k], COLS[k]);
+      if (!k) shape.setAttribute('stroke-dasharray', '5 4');
+      g.appendChild(shape);
+      /* 从原始箱子的中心指向挪过以后的中心 */
+      var arrow = k && (Math.abs(a.dx) + Math.abs(a.dy) > 0) ? pathLine(g, [o0, pts[0]], COLS[k], 1.6, '3 3') : null;
+      var track = pathLine(mclip, pts, COLS[k], k ? 2 : 2.6, k ? null : '5 4');
+      var d = dotAt(mclip, pts[0][0], pts[0][1], k ? 4 : 3.6, COLS[k]);
+      return { g: g, shape: shape, arrow: arrow, track: track, d: d, pts: pts };
     });
-    var pel0 = mp(kpts(CLIPS.orig, 0)[KI.Pelvis]);
-    dotAt(mclip, pel0[0], pel0[1], 6, C_INK2);
-    mclip.appendChild(svgText(pel0[0] + 10, pel0[1] + 5, '人', 'demo-x-ink2', 12));
+    var mapNote = group(mclip);
+    mapNote.appendChild(svgText(46, 262, '线：箱子中心的轨迹', 'demo-x-mut', 10.5));
+    var nowLab = svgRich(344, 116, '', { size: 12, anchor: 'end', cls: 'demo-x-ink', w: 170 });
+    mclip.appendChild(nowLab);
     /* 左下：衰减曲线 */
     var DEC = group(s);
     rectBox(DEC, 30, 286, 330, 124, C_BORDER, C_SURFACE2);
@@ -1123,33 +1160,45 @@
     var dP = pathLine(DEC, decP, C_ACCENT, 2.4), dR = pathLine(DEC, decR, C_BAD, 2.4);
     DEC.appendChild(paint(svgText(dx0 + 96, dy0 - dh + 14, '平移 τ = 50 帧', null, 11.5), C_ACCENT));
     DEC.appendChild(paint(svgText(dx0 + 8, dy0 - 6, '转角 τ = 25 帧', null, 11.5), C_BAD));
-    /* 右：六台 G1 */
-    var GRID = group(s);
+    /* 右：六台 G1，按同一个比例、各自居中放进格子 */
+    var GRID = group(s), G1S = 84;
     var sprites = AUGS.map(function (a, k) {
       var g = group(GRID), x = 374 + (k % 3) * 134, y = 40 + Math.floor(k / 3) * 186;
       rectBox(g, x, y, 128, 178, COLS[k], C_SURFACE2);
       g.appendChild(paint(svgText(x + 64, y + 18, a.zh.replace(' + ', '+'), null, 10.5, 'middle'), COLS[k]));
-      var clip = clipTo(g, x, y + 24, 128, 154);
-      return { g: g, spr: g1Sprite(clip, 'aug_' + a.key), x: x, y: y };
+      var clip = clipTo(g, x, y + 24, 128, 154), M = G1_SHEETS['aug_' + a.key], kk = G1S / M.R;
+      var left = x + (128 - M.cw * kk) / 2, bottom = y + 174;
+      return { g: g, spr: g1Sprite(clip, 'aug_' + a.key), x: x, y: y, ox: left + M.ax * kk, oy: bottom - (M.ch - M.ay) * kk };
     });
 
     function draw(t, clock) {
       var now = nowOf(t, clock);
       setOpacity(MAP, seg(t, 0.4, 1.0));
-      tracks.forEach(function (tr, k) {
-        var u = k ? seg(t, 3.8 + k * 0.4, 5.6 + k * 0.4) : seg(t, 0.6, 2.4);
-        drawOnPath(tr.p, u);
-        var i = Math.min(tr.pts.length - 1, Math.round(u * (tr.pts.length - 1)));
-        moveDot(tr.d, tr.pts[i]);
-        setOpacity(tr.d, k ? seg(t, 3.8 + k * 0.4, 4.0 + k * 0.4) : 1);
+      /* 第 k 种扩增出场的时刻（和右边那台 G1 一起）：对着旁白念到「往前、往左、往右、转正负 45 度」的时候 */
+      var AT = [0.6, 6.5, 7.3, 7.9, 9.5, 10.1];
+      function at(k) { return AT[k]; }
+      var cur = -1;
+      augs.forEach(function (A, k) {
+        var a = at(k), next = k && k < 5 ? at(k + 1) : 10.6;
+        if (k && t >= a) cur = k;
+        /* 框一次只画一个：原始的虚线框一直在，扩增的框轮流出场；10.6 s 以后框都收起，只留起点和轨迹 */
+        if (k) setOpacity(A.g, seg(t, a, a + 0.3) * (1 - seg(t, next, next + 0.3)));
+        else setOpacity(A.g, seg(t, 0.6, 1.0) * (1 - 0.6 * seg(t, 10.6, 10.9)));
+        setOpacity(A.d, seg(t, a, a + 0.3));
+        var u = k ? seg(t, 10.8 + k * 0.15, 12.8 + k * 0.15) : seg(t, 0.8, 2.6);
+        drawOnPath(A.track, u);
+        setOpacity(A.track, u > 0 ? 1 : 0); // 圆头线帽在长度为 0 时会留一个点
       });
-      setOpacity(DEC, seg(t, 7.0, 7.6));
-      drawOnPath(dP, seg(t, 7.4, 8.6)); drawOnPath(dR, seg(t, 8.2, 9.4));
+      nowLab.setText(cur > 0 && t < 10.6 ? '**' + AUGS[cur].zh + '**' : '');
+      nowLab.setCls(cur > 0 ? 'demo-x-ink' : 'demo-x-mut');
+      setOpacity(mapNote, seg(t, 10.8, 11.2));
+      setOpacity(DEC, seg(t, 10.6, 11.2));
+      drawOnPath(dP, seg(t, 11.0, 12.2)); drawOnPath(dR, seg(t, 11.8, 13.0));
       var row = loopRow(now, NR, 11, 0.6);
       sprites.forEach(function (sp, k) {
-        setOpacity(sp.g, k ? seg(t, 3.8 + k * 0.4, 4.2 + k * 0.4) : seg(t, 0.6, 1.2));
+        setOpacity(sp.g, k ? seg(t, at(k), at(k) + 0.4) : seg(t, 0.6, 1.2));
         var A = G1_SHEETS['aug_' + AUGS[k].key].anchor;
-        sp.spr.put(row, camOf('aug_' + AUGS[k].key, 92, sp.x + 30, sp.y + 166, A[0], A[1]));
+        sp.spr.put(row, camOf('aug_' + AUGS[k].key, G1S, sp.ox, sp.oy, A[0], A[1]));
       });
     }
     return { el: s, draw: draw };
@@ -1308,7 +1357,7 @@
     var s = sceneSvg('表 II 的小多图：三行是三类任务（人-物、人-地形、纯机器人），三列是最深穿透（cm）、打滑时长、接触保持；' +
       '每格里是各方法的柱子，OmniRetarget 绿色；人-物这一行 GMR 的接触保持最高 0.99，因为它的手插进了箱子');
     s.appendChild(svgText(30, 28, '表 II：参考动作本身的质量', 'demo-x-ink2', 13.5));
-    var colsDef = [{ i: 1, zh: '最深穿透（cm）↓', max: 10 }, { i: 2, zh: '打滑时长 ↓', max: 0.2 }, { i: 4, zh: '接触保持 ↑', max: 1 }];
+    var colsDef = [{ i: 1, zh: '最深穿透（cm）↓', max: 10 }, { i: 2, zh: '打滑时长（比例）↓', max: 0.2 }, { i: 4, zh: '接触保持（比例）↑', max: 1 }];
     var tasks = ['object', 'terrain', 'robot'];
     var head = group(s);
     colsDef.forEach(function (c, j) { head.appendChild(svgText(250 + j * 180 + 80, 56, c.zh, 'demo-x-ink', 12.5, 'middle')); });
@@ -1341,7 +1390,7 @@
     var why = group(s);
     why.appendChild(svgRich(400, 404, 'GMR 接触保持最高：人手关键点按比例缩放后去贴，手常常**插进箱子**里（图 6b）', { size: 12, anchor: 'middle', cls: 'demo-x-ink2', w: 740 }));
     var cap = group(s);
-    cap.appendChild(svgRich(400, 404, '接触保持：该接触的时间里，有多少真接触住了', { size: 12, anchor: 'middle', cls: 'demo-x-mut', w: 740 }));
+    cap.appendChild(svgRich(400, 404, '两个时长都是 0–1 的比例，不是秒：打滑 ÷ 支撑脚该粘住的时长，接触 ÷ 该接触的时长', { size: 12, anchor: 'middle', cls: 'demo-x-mut', w: 740 }));
 
     function draw(t) {
       setOpacity(head, seg(t, 0.4, 1.0));
@@ -1466,7 +1515,7 @@
       var now = nowOf(t, clock);
       setOpacity(F1, seg(t, 0.4, 1.0) * (1 - seg(t, 3.6, 4.0)));
       setOpacity(hlA, seg(t, 1.0, 1.4) * (0.7 + 0.3 * Math.cos(now * 4)));
-      setOpacity(F5, seg(t, 3.8, 4.2));
+      setOpacity(F5, seg(t, 4.0, 4.4)); // 图 1 淡出完再换图 5，两张图注不叠在一起
       setOpacity(nums, seg(t, 0.8, 1.4) * (1 - seg(t, 3.6, 3.8)));
       setOpacity(flip, seg(t, 7.0, 7.6));
       setOpacity(DATA, seg(t, 10.4, 11.0));
@@ -1542,14 +1591,14 @@
     },
     {
       title: '一条演示扩成六条',
-      dur: 16,
+      dur: 19.6,
       build: buildSceneAug,
       cues: [
         { at: 0.4, s: '**扩增**：人的网格不动，只改 G1 这边的场景，再解一遍同一道优化。' },
-        { at: 3.6, s: '代码给了 5 种：箱子起点往前、往左、往右挪 **20 cm**，或再转 **±45°**。' },
-        { at: 7.0, s: '搬起后偏移**指数衰减**回原轨迹：平移 $\\tau_p$ = 50 帧，转角 $\\tau_\\theta$ = 25 帧（代码值）。' },
-        { at: 10.4, s: '我们把 5 种都跑了：手贴在箱面上，最深穿透 ' + fmt(maxOf(AUG_STATS.map(function (a) { return a.penCm; })), 2) + ' cm，支撑脚每帧最多挪 ' + fmt(maxOf(AUG_STATS.map(function (a) { return a.slideMaxMm; })), 2) + ' mm。' },
-        { at: 13.4, s: '论文还能把箱子三个方向缩放（图 4c）；代码的人-物任务只开了位姿扩增。' }
+        { at: 3.6, s: '代码给了 5 种：箱子起点往前、往左、往右挪 **20 cm**，或再转 **±45°**。俯视图里人朝上，灰色虚线框是原来的箱子。' },
+        { at: 10.6, s: '搬起后偏移**指数衰减**回原轨迹：平移 $\\tau_p$ = 50 帧，转角 $\\tau_\\theta$ = 25 帧（代码值）。' },
+        { at: 14.0, s: '我们把 5 种都跑了：手贴在箱面上，最深穿透 ' + fmt(maxOf(AUG_STATS.map(function (a) { return a.penCm; })), 2) + ' cm，支撑脚每帧最多挪 ' + fmt(maxOf(AUG_STATS.map(function (a) { return a.slideMaxMm; })), 2) + ' mm。' },
+        { at: 17.0, s: '论文还能把箱子三个方向缩放（图 4c）；代码的人-物任务只开了位姿扩增。' }
       ]
     },
     {
@@ -1593,7 +1642,7 @@
       dur: 16,
       build: buildSceneTable2,
       cues: [
-        { at: 0.4, s: '三个指标：**穿透**（时长、最深）、**打滑**（时长、最大速度）、**接触保持**。' },
+        { at: 0.4, s: '三个指标：**穿透**（时长、最深）、**打滑**（时长、最大速度）、**接触保持**；三个时长都是 0–1 的**比例**，不是秒。' },
         { at: 3.6, s: '人-物（OMOMO）：OmniRetarget 穿透时长 0.00、最深 1.34 cm（基线 5.11–8.50 cm），打滑为 0。' },
         { at: 7.0, s: 'GMR 接触保持最高 0.99：手按比例缩放后去贴，常常**插进箱子**，看起来一直在接触。' },
         { at: 10.4, s: '人-地形（自采动捕）：接触保持 0.72，基线 0.45–0.67；穿透、打滑同样接近 0。' },
@@ -1629,7 +1678,7 @@
   function buildExplainerDemo(host) {
     K.explainer(host, {
       title: '十二幕动画：OmniRetarget 全流程速览',
-      sub: '约 198 秒自动播放。空格播放/暂停，← → 换幕；G1 的动作是我们照官方代码跑出的复现结果（按真实模型做 3D 渲染），表格与图来自论文。',
+      sub: '约 202 秒自动播放。空格播放/暂停，← → 换幕；G1 的动作是我们照官方代码跑出的复现结果（按真实模型做 3D 渲染），表格与图来自论文。',
       ariaLabel: 'OmniRetarget 十二幕讲解动画',
       notes: [
         '取数依据：表 I、表 II、图 1–7 与正文的数字照抄 arXiv 2509.26633 v3；图 7 的直方图是读图值（人-物 20 段 + 人-地形 19 段 = 正文的 39 段）。代码里的数（15 个关键点、100 个箱面点、信赖域 0.2、每帧 10 次、扩增 ±20 cm / ±45°、τ = 50 / 25 帧、锚定 $5e^{-t/10}$）读自 amazon-far/holosoma 的 `src/holosoma_retargeting`。',
