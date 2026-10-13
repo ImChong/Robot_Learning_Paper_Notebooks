@@ -1647,7 +1647,7 @@
     K.video(host, {
       title: '配音讲解视频：OmniRetarget 十二幕全流程',
       sub: '12 分 28 秒竖屏视频（1080×1920），中文配音 + 字幕。画面就是上面的十二幕动画，旁白把每一幕讲细；适合手机上看或转发。',
-      size: '12.7 MB',
+      size: '12.9 MB',
       fileName: 'OmniRetarget_讲解视频.mp4'
     });
   }
