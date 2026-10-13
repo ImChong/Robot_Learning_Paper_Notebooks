@@ -3635,6 +3635,18 @@
     "display_name": "Sim-to-Real",
     "papers": [
       {
+        "title": "Informationally Decoupled Trajectory Design for Sim-to-Real System Identification",
+        "path": "papers/10_Sim-to-Real/IDTD__Informationally_Decoupled_Trajectory_Design_for_Sim-to-Real_System_Identification/IDTD__Informationally_Decoupled_Trajectory_Design_for_Sim-to-Real_System_Identification.md",
+        "url": "/papers/10_Sim-to-Real/IDTD__Informationally_Decoupled_Trajectory_Design_for_Sim-to-Real_System_Identification/IDTD__Informationally_Decoupled_Trajectory_Design_for_Sim-to-Real_System_Identification.html",
+        "dir": "IDTD__Informationally_Decoupled_Trajectory_Design_for_Sim-to-Real_System_Identification",
+        "arxiv": "2610.10905",
+        "summary_zh": "IDTD 是一个给采样式系统辨识设计探索轨迹的目标函数：它让每个物理参数在轨迹的某一段里留下其他参数凑不出来的效果，避免辨识时「这个参数偏大、那个偏小，误差互相抵掉」。",
+        "published_date_zh": "2026年10月7日（arXiv v1）",
+        "published_date_en": "Oct 7, 2026 (arXiv v1)",
+        "zhname": "IDTD：面向 Sim-to-Real 系统辨识的信息解耦轨迹设计",
+        "zh_title": "IDTD：面向 Sim-to-Real 系统辨识的信息解耦轨迹设计"
+      },
+      {
         "title": "Bridging the Sim-to-Real Gap in Parallel-Link Leg Mechanisms via Simulator-Side Dynamics Normalization",
         "path": "papers/10_Sim-to-Real/Bridging_the_Sim-to-Real_Gap_in_Parallel-Link_Leg_Mechanisms/Bridging_the_Sim-to-Real_Gap_in_Parallel-Link_Leg_Mechanisms.md",
         "url": "/papers/10_Sim-to-Real/Bridging_the_Sim-to-Real_Gap_in_Parallel-Link_Leg_Mechanisms/Bridging_the_Sim-to-Real_Gap_in_Parallel-Link_Leg_Mechanisms.html",
