@@ -42,7 +42,7 @@ demos: ["omniretarget"]
 
 > 🎮 **本文内嵌 1 段讲解动画、1 段配音视频和 3 个交互演示**（不用装任何东西）：
 > [十二幕动画：OmniRetarget 全流程](#omniretarget-explainer-anim) —— 约 202 秒串完「只盯关键点交互就丢了 → 交互网格 → Laplacian 坐标 → 四条硬约束 → 序贯 SOCP → 一条演示扩成六条 → 别让整台机器人跟着箱子平移 → 地形与本体 → 极简强化学习 → 表 II → 下游强化学习 → 真机、数据与局限」。空格播放/暂停，← → 换幕，也可以直接点分幕标签跳着看。
-> [配音讲解视频](#omniretarget-video) —— 同样十二幕，加中文配音与字幕，12 分 45 秒竖屏，可下载
+> [配音讲解视频](#omniretarget-video) —— 同样十二幕，加中文配音与字幕，12 分 56 秒竖屏，可下载
 > [硬约束开关](#demo-constraints) —— 同一段搬箱子，官方代码 / 关掉不穿透 / 关掉脚粘地三种设定，逐帧看穿透深度与支撑脚滑动
 > [扩增浏览](#demo-aug) —— 改偏移和时间常数，看箱子起点的偏移怎样按指数衰减回原轨迹，并叠上五种扩增的复现结果
 > [表 II 与图 7](#demo-table) —— 三类任务的六个指标（均值 ± 标准差）与每段动作的成功率分布
@@ -76,7 +76,7 @@ demos: ["omniretarget"]
 
 ## 📺 配音讲解视频（可下载） {#omniretarget-video}
 
-<div class="paper-demo" data-demo="omniretarget-video" data-src="media/omniretarget_explainer_video.mp4" data-poster="media/omniretarget_explainer_video_poster.jpg"><p class="demo-fallback">（本节含讲解视频播放器，需要启用 JavaScript；也可以直接<a href="media/omniretarget_explainer_video.mp4" download="OmniRetarget_讲解视频.mp4">下载 mp4（12.9 MB）</a>）</p></div>
+<div class="paper-demo" data-demo="omniretarget-video" data-src="media/omniretarget_explainer_video.mp4" data-poster="media/omniretarget_explainer_video_poster.jpg"><p class="demo-fallback">（本节含讲解视频播放器，需要启用 JavaScript；也可以直接<a href="media/omniretarget_explainer_video.mp4" download="OmniRetarget_讲解视频.mp4">下载 mp4（13.4 MB）</a>）</p></div>
 
 > 📖 **动画之后的正文默认全部折叠**：动画覆盖到的那几节（要解决什么问题、方法详解、实验结果）按小节收起，再往后的具体实例、源码对照、与主线的关系、面试和附录各整块收起。想细读哪一块就点开对应的折叠条，内容一字未删；流程图和三个交互演示留在外面，目录里的标题依旧可以直接点，会自动展开所在折叠块，左侧目录顶部还有「展开全部文字」一键铺开。
 >
