@@ -1122,6 +1122,11 @@ def test_omniretarget_explainer_demos_and_worked_example_share_the_paper_numbers
     ):
         assert needle in narration, needle
     # 片头接上一期（GMR）的片尾预告，片尾只预告下一篇（Expressive WBC）；主动画不预告下一篇
+    # 第 1 幕结尾用一句话解释 SOCP：旁白、字幕轨与表 I 下的小卡片同一个说法
+    socp = "S O C P 是二阶锥规划，一种凸优化：除了线性约束，还允许「一个向量的长度不超过某个值」，求解器能又快又稳地找到最优解。"
+    assert f'(0, 16.0, 19.0, "{socp}")' in narration
+    assert "{ at: 16.0, s: '**SOCP** 是二阶锥规划，一种凸优化：除了线性约束，还允许「一个向量的长度不超过某个值」" in js
+    assert "'**SOCP** = 二阶锥规划，一种凸优化'" in js
     assert "上一期结尾预告：人和物体、地形有接触的时候，怎样在重定向里把这些交互也保住" in narration
     assert "下一篇讲 Expressive Whole-Body Control" in narration
     assert "**下一篇**：Expressive WBC" in intro and "arxiv: '2509.26633'" in intro

@@ -656,7 +656,7 @@
     cols.forEach(function (c, j) { t1.appendChild(svgText(612 + j * 44, 86, c, 'demo-x-mut', 11, 'middle')); });
     var t1rows = TABLE1.map(function (r, i) {
       var g = group(t1), y = 116 + i * 44, me = r[0] === 'OmniRetarget';
-      if (me) rectBox(g, 464, y - 25, 312, 40, C_GOOD, C_SURFACE2);
+      if (me) rectBox(g, 464, y - 25, 312, 47, C_GOOD, C_SURFACE2); // 下边留出「序贯 SOCP」那行小字
       g.appendChild(svgText(474, y, r[0], me ? 'demo-x-ink' : 'demo-x-ink2', 12.5));
       g.appendChild(svgText(474, y + 15, r[5], 'demo-x-mut', 9.5));
       for (var j = 1; j <= 4; j++) {
@@ -666,8 +666,20 @@
       }
       return g;
     });
+    /* 右下：SOCP 是什么（一句话） */
+    var socp = group(s);
+    rectBox(socp, 464, 322, 312, 86, C_ACCENT, C_SURFACE2);
+    socp.appendChild(svgRich(478, 345, '**SOCP** = 二阶锥规划，一种凸优化', { size: 13, cls: 'demo-x-ink', w: 230 }));
+    socp.appendChild(svgRich(478, 369, '约束可以是 $\\|\\mathbf{v}\\| \\le c$', { size: 12, cls: 'demo-x-ink2', w: 230 }));
+    socp.appendChild(svgText(478, 394, '向量长度不超过某个值 → 解得又快又稳', 'demo-x-mut', 11));
+    /* 二阶锥：一个冰淇淋筒，里面是可行的点 */
+    socp.appendChild(paint(svgEl('path', { d: 'M 712 340 L 738 396 L 764 340', fill: 'none', 'stroke-width': 1.6 }), null, C_ACCENT));
+    socp.appendChild(paint(svgEl('ellipse', { cx: 738, cy: 340, rx: 26, ry: 7, 'stroke-width': 1.6 }), C_SURFACE2, C_ACCENT));
+    var socpDot = paint(svgEl('circle', { cx: 738, cy: 362, r: 3.6 }), C_GOOD);
+    socp.appendChild(socpDot);
 
-    function draw(t) {
+    function draw(t, clock) {
+      var now = clock == null ? t : clock;
       setOpacity(figG, seg(t, 0.3, 0.9));
       setOpacity(hl[0], seg(t, 3.8, 4.2)); setOpacity(hl[1], seg(t, 5.0, 5.4));
       setOpacity(hl[2], seg(t, 7.2, 7.6)); setOpacity(hl[3], seg(t, 13.6, 14.0));
@@ -676,6 +688,11 @@
       setOpacity(patch, seg(t, 10.6, 11.2));
       setOpacity(t1, seg(t, 13.6, 14.0));
       t1rows.forEach(function (g, k) { setOpacity(g, seg(t, 13.8 + k * 0.25, 14.2 + k * 0.25)); });
+      setOpacity(socp, seg(t, 16.2, 16.6));
+      /* 可行点在锥里慢慢转一圈：离轴越远越靠上，始终不出锥面 */
+      var a = now * 1.6, h = 0.45 + 0.25 * Math.sin(now * 0.9);
+      socpDot.setAttribute('cx', (738 + Math.cos(a) * 22 * h).toFixed(1));
+      socpDot.setAttribute('cy', (392 - 50 * h + Math.sin(a) * 4 * h).toFixed(1));
     }
     return { el: s, draw: draw };
   }
@@ -1371,14 +1388,15 @@
   var OMNI_SCENES = [
     {
       title: '只盯关键点，交互就丢了',
-      dur: 16,
+      dur: 19,
       build: buildSceneProblem,
       cues: [
         { at: 0.4, s: '主流做法：把人的动作**重定向**成参考，再用强化学习去跟。搬箱子、爬台子时，要紧的是手和箱子、脚和台面的关系。' },
         { at: 3.6, s: 'PHC、GMR 只做**关键点匹配**，箱子和地形不进优化：图 6 里 PHC 的膝盖、手穿进箱子，GMR 的手插进箱子。' },
         { at: 7.0, s: 'VideoMimic 加了软的接触、碰撞惩罚，但**没有保证**、还得调；它的交互保得最差。' },
         { at: 10.4, s: '参考有瑕疵，下游只好加一堆临时正则：滞空时间、接触时长……又繁琐又脆弱。' },
-        { at: 13.4, s: '表 I：只有 OmniRetarget 同时做到**硬约束、物体、地形、扩增**，求解用序贯 SOCP。' }
+        { at: 13.4, s: '表 I：只有 OmniRetarget 同时做到**硬约束、物体、地形、扩增**，求解用序贯 SOCP。' },
+        { at: 16.0, s: '**SOCP** 是二阶锥规划，一种凸优化：除了线性约束，还允许「一个向量的长度不超过某个值」，求解器能又快又稳地找到最优解。' }
       ]
     },
     {
@@ -1518,7 +1536,7 @@
   function buildExplainerDemo(host) {
     K.explainer(host, {
       title: '十二幕动画：OmniRetarget 全流程速览',
-      sub: '约 192 秒自动播放。空格播放/暂停，← → 换幕；G1 的动作是我们照官方代码跑出的复现结果（按真实模型做 3D 渲染），表格与图来自论文。',
+      sub: '约 195 秒自动播放。空格播放/暂停，← → 换幕；G1 的动作是我们照官方代码跑出的复现结果（按真实模型做 3D 渲染），表格与图来自论文。',
       ariaLabel: 'OmniRetarget 十二幕讲解动画',
       notes: [
         '取数依据：表 I、表 II、图 1–7 与正文的数字照抄 arXiv 2509.26633 v3；图 7 的直方图是读图值（人-物 20 段 + 人-地形 19 段 = 正文的 39 段）。代码里的数（15 个关键点、100 个箱面点、信赖域 0.2、每帧 10 次、扩增 ±20 cm / ±45°、τ = 50 / 25 帧、锚定 $5e^{-t/10}$）读自 amazon-far/holosoma 的 `src/holosoma_retargeting`。',
@@ -1535,7 +1553,7 @@
   function buildVideoDemo(host) {
     K.video(host, {
       title: '配音讲解视频：OmniRetarget 十二幕全流程',
-      sub: '12 分 12 秒竖屏视频（1080×1920），中文配音 + 字幕。画面就是上面的十二幕动画，旁白把每一幕讲细；适合手机上看或转发。',
+      sub: '12 分 21 秒竖屏视频（1080×1920），中文配音 + 字幕。画面就是上面的十二幕动画，旁白把每一幕讲细；适合手机上看或转发。',
       size: '12.7 MB',
       fileName: 'OmniRetarget_讲解视频.mp4'
     });
