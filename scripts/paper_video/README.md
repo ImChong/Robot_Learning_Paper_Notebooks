@@ -24,7 +24,7 @@
 | `op3soccer` | `assets/js/demos/op3soccer.js` 十二幕（`soccer-explainer`） | 约 10 分 16 秒 |
 | `sonic` | `assets/js/demos/sonic.js` 七幕 | 约 5 分 32 秒 |
 | `gmr` | `assets/js/demos/gmr.js` 十三幕（`gmr-explainer`） | 约 12 分 2 秒 |
-| `omniretarget` | `assets/js/demos/omniretarget.js` 十二幕（`omniretarget-explainer`） | 约 12 分 21 秒 |
+| `omniretarget` | `assets/js/demos/omniretarget.js` 十二幕（`omniretarget-explainer`） | 约 12 分 28 秒 |
 | `humanml3d` | `assets/js/demos/humanml3d.js` 十二幕 | 约 10 分 59 秒 |
 | `smp` | `assets/js/demos/smp.js` 八幕 | 约 8 分 37 秒 |
 | `domain_randomization` | `assets/js/demos/domain_randomization.js` 八幕（`dr-explainer`） | 约 8 分 20 秒 |
@@ -40,6 +40,7 @@
 - 分镜 `draw(t, clock)` 的第二个参数是这一幕的真实时间：旁白比动画长、画面停在 `to` 之前时它照样往前走，步态这类循环动作可以用它继续动（网页播放器只传 `t`）。
 - 配音：`edge-tts`（`zh-CN-YunxiNeural`，需联网），旁白在 `papers/<paper>.py`。
 - 读音：「arXiv」念 archive，旁白里写 `archive`、`DISPLAY` 把字幕换回 `arXiv`（直接写 arXiv 会被逐字母或乱读）；会议名 CoRL 直接写成一个词、按一个词念，不要拆成「C o R L」（ToddlerBot 第一版这样写被逐字母念出来，看片反馈要求改成整词：同句合成整词版 3.14 s、逐字母版 3.89 s）；「数」单用会被念成 shǔ（「数都从图 8 读」），旁白改说「数字 / 数值」。旁白里的数字写阿拉伯数字（「75」不写「七十五」），字幕跟着显示数字；「2 + 量词」多数念 liǎng，个别（如「2 簇」念 èr）要 DTW 核对；比分式的「2 对 2」会被念成「两对两」，旁白写「二对二」；同一个量词在不同句子里也可能读法不同（真实世界人形行走里「2 项」念 liǎng，OP3 足球里「训练分 2 段」「力矩 2 项」却念成 èr），所以每一处「2 + 量词」都要单独比 DTW，念错的写成「两段」「两项」、字幕换回数字，念错的旁白保留汉字、用 `DISPLAY` 把字幕换成数字。拿不准的字用同句合成原字与各读音的同音字，比 log-mel DTW。多音字放进整句后读法可能和单独合成时不同：ToddlerBot 的「捏多重，夹爪就合多紧」短句里念 zhòng、整句里却念 chóng，旁白改写同音的「众」、字幕用 `DISPLAY` 换回「重」；「关节角的差」「策略把这个差学进去」整句里念 chà，旁白写「插」（chā）、字幕换回「差」（同篇「关节角之差」本来就念 chā，不用改），所以要拿整句比。表格的「一行 / 每一行 / 这一行」整句里常被念成 xíng（GMR 第 3 幕：「每一行」离「形」0.07、离「航」0.50），旁白写同音的「航」、字幕用 `DISPLAY` 换回「行」（按短语换，别误伤「偏航角」）；「调参」「单独调」整句里会念成 diào（GMR 第 1、10、13 幕，2026-10-12 看片反馈），「参」又比不出读音，旁白写两个字都只有一个读音的「条餐」「单独条」、字幕换回（「不调奖励」念对了，不用改）。希腊字母记号念成中文名，字幕用 `DISPLAY` 换回（ASAP 的 $\pi^{\Delta}$ 念「德尔塔模型」、字幕显示「Δ 模型」）；DTW 两个读音只差零点几、或两组同音字结论相反时（ASAP 的「相当于」「重定向」），别硬选，换个说法。
+- 字幕切行：`build.py` 的 `chunks()` 按标点切、每行约 17 字；一段没有标点的长句从中间切时，只在两个字母 / 数字之间以外的地方切，英文词和数字不会被拆到两行（OmniRetarget 第一版成片里出过「De / launay」「Laplac / ian」）。
 - 同步：每句旁白对应分镜的一段 `[from, to]`，旁白比动画长时画面停在 `to` 之前一刻。`[from, to]` 最好对齐分镜 cue 的 `at`，「要点」框才会和旁白同步。
 - 输出：`out/<paper>/<paper>_video.mp4`（H.264 + AAC，30 fps，`-crf 19`），不入库。在对话里交付给用户的就是这一版高画质原片；只有放进笔记 `media/` 的才按下面「放进笔记」再压小。对话附件上限 30 MiB，十分钟以上的原片会超：画面 `-c:v copy` 不动，只把音频降到 `-b:a 96k -ac 1`（旁白本来就是 24 kHz 单声道），真实世界人形行走从 30.3 降到 27.5 MiB，OP3 足球从 30.4 降到 27.7 MiB。
 
