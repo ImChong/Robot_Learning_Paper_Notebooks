@@ -1147,6 +1147,22 @@ def test_omniretarget_explainer_demos_and_worked_example_share_the_paper_numbers
     assert f'(0, 16.0, 19.0, "{socp}")' in narration
     assert "{ at: 16.0, s: '**SOCP** 是二阶锥规划，一种凸优化：除了线性约束，还允许「一个向量的长度不超过某个值」" in js
     assert "'**SOCP** = 二阶锥规划，一种凸优化'" in js
+    # 全局检查（2026-10-13）：术语第一次出现就用白话交代，示意图的每样东西都有标注
+    for needle in (
+        "分开时距离为正，插进去就是负的", "从关节角算手脚位置的正运动学", "这叫信赖域", "靠平滑项和下一幕要讲的信赖域来管",
+        "机身的朝向用四元数表示", "管机身的位置、朝向和两条腿的关节，共 19 维", "也就是雅可比",
+    ):
+        assert needle in narration, needle
+    assert "浮动基" not in narration and "5 乘以 e" not in narration
+    solver = js.split("function buildSceneSolver()", 1)[1].split("function buildSceneAug()", 1)[0]
+    for needle in ("'目标的等高线（中心最低）'", "'约束线性化：红色一侧不许进'", "'信赖域：步长上限'", "'这一步'", "'跑满 10 次'"):
+        assert needle in solver, needle
+    # 第 4 幕：关掉不穿透那台，这一帧哪里插进箱子、哪里陷进地面，套圈并写出部位
+    assert "var NOPEN_WHERE = {" in js and "插进箱子 " in js and "陷进地面 " in js
+    # 第 8 幕讲换机器人时把论文图 3 放大；第 9 幕的策略画出输出（关节目标角，交给 PD）
+    terrain = js.split("function buildSceneTerrain()", 1)[1].split("function buildSceneRL()", 1)[0]
+    assert "paperFig(BIG, 'fig3_cross_embodiment.webp'" in terrain
+    assert "'输出：关节目标角'" in js and "'交给 PD 控制器跟踪'" in js
     assert "上一期结尾预告：人和物体、地形有接触的时候，怎样在重定向里把这些交互也保住" in narration
     assert "下一篇讲 Expressive Whole-Body Control" in narration
     assert "**下一篇**：Expressive WBC" in intro and "arxiv: '2509.26633'" in intro

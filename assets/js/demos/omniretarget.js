@@ -183,6 +183,9 @@
   /* 五种扩增各自的最深穿透（cm）与支撑脚每帧滑动（mm），Python 按 SERIES 同样的规则算出 */
   var AUG_STATS = [{"key": "trans_0", "penCm": 0.258, "slideMaxMm": 1.438, "slideMeanMm": 1.206}, {"key": "trans_1", "penCm": 0.283, "slideMaxMm": 1.435, "slideMeanMm": 1.199}, {"key": "trans_2", "penCm": 0.278, "slideMaxMm": 1.433, "slideMeanMm": 1.222}, {"key": "rot_0", "penCm": 0.255, "slideMaxMm": 1.428, "slideMeanMm": 1.221}, {"key": "rot_1", "penCm": 0.197, "slideMaxMm": 1.433, "slideMeanMm": 1.221}];
   /* 爬平台演示 mocap_climb_seq_0（701 帧）三档：平台 0.8 / 1 / 1.2 倍，最深穿透（cm）与支撑脚每帧滑动（mm），Python 算的 */
+  /* 关掉不穿透那一组：每一行（第 0, 2, …, 194 帧）插进箱子 / 陷进地面最深的部位（> 1 cm），字母 = 15 个关键点的序号（a = Pelvis …），
+     '.' = 没有；MuJoCo 的 mj_geomDistance 逐个碰撞体算的，Python 算好写进来 */
+  var NOPEN_WHERE = { box: '..ddddddbbbbbbbooonnnnnnnnnnnnnnnooonooonnnnnnnnnnnooooooooooooonnnnoooooooooooooooooo.n..........', gnd: 'lmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmlllllllllmmmmmmmmmmlllllllllmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm' };
   var CLIMB = [{"key": "z0.8", "heightM": 0.56, "penCm": 0.261, "slideMeanMm": 1.027, "slideMaxMm": 1.42}, {"key": "orig", "heightM": 0.7, "penCm": 1.076, "slideMeanMm": 1.024, "slideMaxMm": 2.86}, {"key": "z1.2", "heightM": 0.84, "penCm": 0.284, "slideMeanMm": 1.065, "slideMaxMm": 1.433}];
   function dec(b64, unit) {
     var bin = window.atob(b64), n = bin.length / 2, out = new Float32Array(n);
@@ -957,8 +960,16 @@
     var clipA = clipTo(pA, 250, 66, 255, 224), clipB = clipTo(pB, 515, 66, 255, 224);
     var sprA = g1Sprite(clipA, 'orig_side'), sprB = g1Sprite(clipB, 'nopen_side');
     hline(clipA, 260, GY, 495, GY, C_BORDER, 1.4); hline(clipB, 525, GY, 760, GY, C_BORDER, 1.4);
-    var readA = paint(svgText(377, 308, '', null, 11.5, 'middle'), C_GOOD), readB = paint(svgText(642, 308, '', null, 11.5, 'middle'), C_BAD);
-    pA.appendChild(readA); pB.appendChild(readB);
+    var readA = paint(svgText(377, 304, '', null, 11.5, 'middle'), C_GOOD), readB = paint(svgText(642, 304, '', null, 11.5, 'middle'), C_BAD);
+    var readB2 = paint(svgText(642, 320, '', null, 11.5, 'middle'), C_WARN);
+    pA.appendChild(readA); pB.appendChild(readB); pB.appendChild(readB2);
+    /* 关掉不穿透那台：这一帧插进箱子最深的部位套红圈，陷进地面最深的套橙圈 */
+    var KP_ZH = { L_Hip: '左髋', R_Hip: '右髋', L_Knee: '左膝', R_Knee: '右膝', L_Wrist: '左手', R_Wrist: '右手', L_Toe: '左脚', R_Toe: '右脚',
+      L_Ankle: '左脚', R_Ankle: '右脚', Pelvis: '躯干', L_Shoulder: '左肩', R_Shoulder: '右肩', L_Elbow: '左肘', R_Elbow: '右肘' };
+    var markBox = paint(svgEl('circle', { r: 11, fill: 'none', 'stroke-width': 2.6 }), null, C_BAD);
+    var markGnd = paint(svgEl('circle', { r: 11, fill: 'none', 'stroke-width': 2.6 }), null, C_WARN);
+    clipB.appendChild(markBox); clipB.appendChild(markGnd);
+    function whereAt(key, row) { var ch = NOPEN_WHERE[key].charAt(row); return ch && ch !== '.' ? KP[ch.charCodeAt(0) - 97] : null; }
     /* 底：每一帧最深穿透 */
     var chart = group(s);
     var cx0 = 290, cy0 = 410, cw = 480, chh = 66, cmax = 0.08;
@@ -975,7 +986,7 @@
     var legendB = paint(svgText(cx0 + 240, cy0 - chh - 6, '开着：最深 ' + fmt(PEN.orig.anyMaxCm, 2) + ' cm', null, 11), C_GOOD);
     chart.appendChild(legendB);
     var big = group(s);
-    big.appendChild(paint(svgText(30, 300, '手进箱子 ' + fmt(PEN.nopen.boxMaxCm, 1) + ' cm', null, 15), C_BAD));
+    big.appendChild(paint(svgText(30, 300, '手、腿进箱子 ' + fmt(PEN.nopen.boxMaxCm, 1) + ' cm', null, 15), C_BAD));
     big.appendChild(paint(svgText(30, 324, '脚进地面 ' + fmt(PEN.nopen.gndMaxCm, 1) + ' cm', null, 15), C_WARN));
     var foot = group(s);
     foot.appendChild(svgText(30, 356, '关掉脚粘地：', 'demo-x-ink2', 12));
@@ -992,7 +1003,16 @@
       setOpacity(pA, seg(t, 0.6, 1.2));
       setOpacity(pB, seg(t, 7.0, 7.6));
       readA.textContent = '第 ' + f + ' 帧 · 最深 ' + fmt(Math.max(PEN.orig.box[f], PEN.orig.gnd[f]) * 1000, 1) + ' mm';
-      readB.textContent = '第 ' + f + ' 帧 · 箱 ' + fmt(PEN.nopen.box[f] * 100, 1) + ' cm · 地 ' + fmt(PEN.nopen.gnd[f] * 100, 1) + ' cm';
+      var wb = whereAt('box', row), wg = whereAt('gnd', row), camB = camOf('nopen_side', SC, 642, GY, pelB[0], pelB[1]);
+      readB.textContent = '第 ' + f + ' 帧 · ' + (wb ? KP_ZH[wb] + '插进箱子 ' + fmt(PEN.nopen.box[f] * 100, 1) + ' cm' : '箱子：没插进去');
+      readB2.textContent = wg ? KP_ZH[wg] + '陷进地面 ' + fmt(PEN.nopen.gnd[f] * 100, 1) + ' cm' : '';
+      var pulse = 1 + 0.18 * Math.sin(now * 6);
+      [[markBox, wb], [markGnd, wg]].forEach(function (m) {
+        if (!m[1]) { m[0].style.opacity = 0; return; }
+        var q = project(kpts(CLIPS.nopen, row)[KI[m[1]]], camB);
+        m[0].setAttribute('cx', q[0].toFixed(1)); m[0].setAttribute('cy', q[1].toFixed(1)); m[0].setAttribute('r', (11 * pulse).toFixed(1));
+        m[0].style.opacity = seg(t, 7.6, 8.0);
+      });
       setOpacity(chart, seg(t, 7.4, 8.0));
       drawOnPath(pBox, seg(t, 7.6, 9.6)); drawOnPath(pGnd, seg(t, 7.6, 9.6));
       setOpacity(pOk, seg(t, 10.4, 11.0)); setOpacity(legendB, seg(t, 10.4, 11.0));
@@ -1019,15 +1039,23 @@
     var half = paint(svgEl('path', { d: 'M 30 248 L 390 128 L 390 262 L 30 262 Z', opacity: 0.16 }), C_BAD);
     trClip.appendChild(half);
     var halfLine = hline(trClip, 30, 248, 390, 128, C_BAD, 1.8);
-    TR.appendChild(paint(svgText(306, 180, '约束线性化', null, 12, 'middle'), C_BAD));
+    /* 三样东西各配一句白话：等高线 = 目标（中心最低），红色一侧 = 线性化后不许进，虚线圈 = 这一步最多走多远 */
+    var ellLab = group(TR);
+    ellLab.appendChild(svgText(380, 88, '目标的等高线（中心最低）', 'demo-x-mut', 11.5, 'end'));
+    var halfLab = group(TR);
+    halfLab.appendChild(paint(svgText(380, 238, '约束线性化：红色一侧不许进', null, 12, 'end'), C_BAD));
     var trc = paint(svgEl('circle', { cx: cx, cy: cy, r: 56, fill: 'none', 'stroke-width': 2, 'stroke-dasharray': '5 4' }), null, C_ACCENT);
     TR.appendChild(trc);
+    var trLab = group(TR);
+    trLab.appendChild(paint(svgText(46, 88, '信赖域：步长上限', null, 12), C_ACCENT));
+    trLab.appendChild(svgMath(46, 112, '\\|dq\\|_2 \\le \\epsilon = 0.2', { size: 14, anchor: 'start', w: 160 }));
     var cur = dotAt(TR, cx, cy, 5, C_INK);
     TR.appendChild(svgText(cx - 10, cy + 22, '当前解', 'demo-x-ink2', 12, 'end'));
     var stepEnd = [cx + 38, cy - 41];
     var stepPath = pathLine(TR, [[cx, cy], stepEnd], C_GOOD, 2.6);
     var stepDot = dotAt(TR, stepEnd[0], stepEnd[1], 4.5, C_GOOD);
-    TR.appendChild(svgMath(250, 240, '\\|dq\\|_2 \\le \\epsilon = 0.2', { size: 15, anchor: 'middle', w: 220 }));
+    var stepLab = group(TR);
+    stepLab.appendChild(paint(svgText(stepEnd[0] + 8, stepEnd[1] - 6, '这一步', null, 12), C_GOOD));
     /* 右上：代价曲线（复现实验） */
     var CV = group(s);
     rectBox(CV, 410, 40, 360, 222, C_BORDER, C_SURFACE2);
@@ -1043,7 +1071,7 @@
     c0lab.appendChild(svgText(px0 + pw, py0 - (ph * COST_F0[COST_F0.length - 1]) / cmax - 8, fmt(COST_F0[COST_F0.length - 1], 2), 'demo-x-ink2', 10, 'end'));
     var zig = group(CV);
     rectBox(zig, 600, 74, 158, 66, C_BORDER, C_SURFACE);
-    zig.appendChild(svgText(608, 90, '第 76 帧：来回跳', 'demo-x-ink2', 11));
+    zig.appendChild(svgText(608, 90, '第 76 帧：第四位小数来回跳', 'demo-x-ink2', 11));
     var zmin = Math.min.apply(null, COST_F76), zmax = Math.max.apply(null, COST_F76);
     pathLine(zig, COST_F76.map(function (c, k) { return [612 + (134 * k) / (COST_F76.length - 1), 132 - (34 * (c - zmin)) / (zmax - zmin || 1)]; }), C_WARN, 1.6);
     /* 底：每帧迭代次数 */
@@ -1058,6 +1086,12 @@
     });
     hline(IT, 30, 342, 770, 342, C_BORDER, 1);
     IT.appendChild(svgText(30, 358, '↑ 第 0 帧 50 次', 'demo-x-ink2', 11));
+    /* 图例：橙 = 跑满 10 次，绿 = 提前停下（高度 = 次数） */
+    [[C_WARN, '跑满 10 次'], [C_GOOD, '提前停下（越矮次数越少）']].forEach(function (l, k) {
+      var lx = k ? 560 : 470;
+      IT.appendChild(paint(svgEl('rect', { x: lx, y: 349, width: 10, height: 10, rx: 2 }), l[0]));
+      IT.appendChild(svgText(lx + 15, 358, l[1], 'demo-x-ink2', 11));
+    });
     var itNote = group(IT);
     itNote.appendChild(svgRich(400, 380, '195 帧里 **' + ITER_FULL + '** 帧跑满 10 次（橙）', { size: 12.5, anchor: 'middle', cls: 'demo-x-ink2', w: 740 }));
     var warm = group(s);
@@ -1069,8 +1103,10 @@
     function draw(t, clock) {
       var now = nowOf(t, clock);
       setOpacity(TR, seg(t, 0.4, 1.0));
-      setOpacity(half, seg(t, 1.4, 1.8) * 0.16); setOpacity(halfLine, seg(t, 1.4, 1.8));
-      setOpacity(trc, seg(t, 3.8, 4.2));
+      setOpacity(ellLab, seg(t, 1.0, 1.4));
+      setOpacity(half, seg(t, 1.4, 1.8) * 0.16); setOpacity(halfLine, seg(t, 1.4, 1.8)); setOpacity(halfLab, seg(t, 1.6, 2.0));
+      setOpacity(trc, seg(t, 3.8, 4.2)); setOpacity(trLab, seg(t, 4.0, 4.4));
+      setOpacity(stepLab, seg(t, 5.2, 5.6));
       var u = seg(t, 4.6, 5.6) * (0.85 + 0.15 * Math.sin(now * 2));
       setPath(stepPath, [[cx, cy], [cx + (stepEnd[0] - cx) * u, cy + (stepEnd[1] - cy) * u]]);
       moveDot(stepDot, [cx + (stepEnd[0] - cx) * u, cy + (stepEnd[1] - cy) * u]);
@@ -1207,11 +1243,18 @@
 
   /* ── scene 7: 别让整台机器人跟着箱子平移 ── */
   function buildSceneAnchor() {
-    var s = sceneSvg('三台 G1 都把箱子起点往前挪了 20 cm，循环播放第 0–57 帧；身后的淡影是原始解，灰点是原始解里双脚的位置：' +
-      '去掉锚定的那台整台跟着箱子平移，官方代码（只有下身锚定代价）也平移了，按论文把第 0 帧的双脚钉住的那台脚站在原地、上身弯过去够箱子');
-    s.appendChild(svgText(30, 28, '箱子往前挪 20 cm：G1 该怎么跟', 'demo-x-ink2', 13.5));
+    var s = sceneSvg('三台 G1 都把箱子起点往前挪了 20 cm，画的是第 0 帧：身后的淡影是原始解，箭头从原始解指向这一台——' +
+      '上面一支是骨盆，下面一支是双脚（8 个接触球的平均）；去掉锚定的那台整台跟着箱子平移，官方代码（只有下身锚定代价）也平移了，' +
+      '按论文把第 0 帧的双脚钉住的那台脚站在原地、上身弯过去够箱子');
+    s.appendChild(svgText(30, 28, '箱子往前挪 20 cm：G1 该怎么跟（第 0 帧）', 'demo-x-ink2', 13.5));
     s.appendChild(svgMath(400, 56, '\\min\\; \\cdots + \\|q_t - \\bar q_t^{\\star}\\|_W^2', { size: 15, anchor: 'middle', w: 400 }));
-    var A = G1_SHEETS.anch_orig.anchor, SC = 158;
+    var A = G1_SHEETS.anch_orig.anchor, SC = 168;
+    /* 原始解的淡影染成冷灰蓝，和这一台分得开 */
+    var GHOST_TINT = '0.45 0 0 0 0.12  0 0.5 0 0 0.16  0 0 0.6 0 0.26  0 0 0 0.5 0';
+    function feetMean(c) {
+      var sp = spheres(c, 0);
+      return [mean(sp.map(function (q) { return q[0]; })), mean(sp.map(function (q) { return q[1]; })), 0];
+    }
     var panels = [
       { key: 'anch_none', sh: SHIFT.none, zh: '去掉锚定', sub: '我们的对照', col: C_BAD },
       { key: 'anch_code', sh: SHIFT.code, zh: '官方代码', sub: '只有下身锚定代价', col: C_WARN },
@@ -1222,30 +1265,35 @@
       g.appendChild(paint(svgText(x + 120, 96, p.zh, null, 13, 'middle'), p.col));
       g.appendChild(svgText(x + 120, 113, p.sub, 'demo-x-mut', 10.5, 'middle'));
       var clip = clipTo(g, x, 118, 240, 238);
-      var ghost = g1Sprite(clip, 'anch_orig', { ghost: 0.2 });
+      var cam = camOf(p.key, SC, x + 70, 330, A[0], A[1]);
+      var ghost = g1Sprite(clip, 'anch_orig', { ghost: 0.55, tint: GHOST_TINT });
       var spr = g1Sprite(clip, p.key);
-      var cam = camOf(p.key, SC, x + 74, 344, A[0], A[1]);
-      var fg = group(clip);
-      spheres(CLIPS.orig, 0).forEach(function (q) { var pq = project([q[0], q[1], 0], cam); dotAt(fg, pq[0], pq[1], 3, C_INK2); });
-      /* 骨盆正下方：原始解（灰）→ 这一台（彩色），箭头跟着帧走 */
-      var clipKey = { anch_none: 'noanchor', anch_code: 'trans_0', anch_pin: 'pin_trans_0' }[p.key];
-      var arr = group(clip), a0 = dotAt(arr, 0, 0, 4, C_INK2), a1 = dotAt(arr, 0, 0, 4.5, p.col), al = hline(arr, 0, 0, 0, 0, p.col, 2.4);
+      ghost.put(0, cam); spr.put(0, cam);
+      var clipKey = { anch_none: 'noanchor', anch_code: 'trans_0', anch_pin: 'pin_trans_0' }[p.key], c = CLIPS[clipKey];
+      /* 两支箭头：原始解（灰点）→ 这一台（彩色点）；骨盆画在骨盆的真实位置，脚画在地面上 */
+      var q0 = kpts(CLIPS.orig, 0)[KI.Pelvis], q1 = kpts(c, 0)[KI.Pelvis];
+      var P0 = project(q0, cam), P1 = project(q1, cam);
+      var F0 = project(feetMean(CLIPS.orig), cam), F1 = project(feetMean(c), cam);
+      var arr = group(clip);
+      [[P0, P1, 0, '骨盆'], [F0, F1, 14, '脚']].forEach(function (a) {
+        var y0 = a[0][1] + a[2], y1 = a[1][1] + a[2];
+        hline(arr, a[0][0], y0, a[1][0], y1, p.col, 2.6);
+        dotAt(arr, a[0][0], y0, 4, C_INK2);
+        dotAt(arr, a[1][0], y1, 4.6, p.col);
+        if (a[3] === '脚') { arr.appendChild(svgText(Math.min(a[0][0], a[1][0]) - 8, y0 + 4, a[3], 'demo-x-ink2', 11, 'end')); return; }
+        /* 骨盆的标签挪到左上角的空白处，用一条细线引过去：贴在箭头左边会压在淡影的手臂上 */
+        arr.appendChild(svgText(x + 10, y0 - 22, a[3], 'demo-x-ink2', 11));
+        hline(arr, x + 22, y0 - 18, a[0][0] - 4, y0 - 3, C_INK2, 1);
+      });
       var num = group(s);
-      num.appendChild(svgRich(x + 120, 380, '骨盆 **' + fmt(p.sh.pelvisCm, 1) + ' cm** · 脚 **' + fmt(p.sh.feetCm, p.sh.feetCm < 1 ? 1 : 1) + ' cm**', { size: 12.5, anchor: 'middle', cls: 'demo-x-ink', w: 240 }));
-      return { g: g, ghost: ghost, spr: spr, cam: cam, num: num, clip: CLIPS[clipKey], arr: arr, a0: a0, a1: a1, al: al };
+      num.appendChild(svgRich(x + 120, 380, '骨盆 **' + fmt(p.sh.pelvisCm, 1) + ' cm** · 脚 **' + fmt(p.sh.feetCm, 1) + ' cm**', { size: 12.5, anchor: 'middle', cls: 'demo-x-ink', w: 240 }));
+      return { g: g, num: num, arr: arr };
     });
     var cap = group(s);
-    cap.appendChild(svgText(400, 404, '第 0 帧相对原始解挪了多少', 'demo-x-mut', 11, 'middle'));
+    cap.appendChild(svgText(400, 404, '淡影 = 原始解；箭头 = 第 0 帧相对原始解挪了多少（灰点 → 彩色点）', 'demo-x-mut', 11, 'middle'));
 
-    function draw(t, clock) {
-      var now = nowOf(t, clock), row = loopRow(now, G1_SHEETS.anch_orig.n, 8, 0.8);
-      panels.forEach(function (p) {
-        p.ghost.put(row, p.cam); p.spr.put(row, p.cam);
-        var q0 = kpts(CLIPS.orig, row * 1.5)[KI.Pelvis], q1 = kpts(p.clip, row)[KI.Pelvis];
-        var P0 = project([q0[0], q0[1], 0], p.cam), P1 = project([q1[0], q1[1], 0], p.cam);
-        moveDot(p.a0, P0); moveDot(p.a1, P1); setLine(p.al, P0[0], P0[1], P1[0], P1[1]);
-        setOpacity(p.arr, seg(t, 1.0, 1.6));
-      });
+    function draw(t) {
+      panels.forEach(function (p) { setOpacity(p.arr, seg(t, 1.0, 1.6)); });
       setOpacity(panels[0].g, seg(t, 0.4, 1.0));
       setOpacity(panels[1].g, seg(t, 7.0, 7.6));
       setOpacity(panels[2].g, seg(t, 10.4, 11.0));
@@ -1284,6 +1332,16 @@
     emb.appendChild(svgText(192, 334, '图 3：H1、T1', 'demo-x-ink', 13));
     emb.appendChild(svgText(192, 356, '只改关键点对应', 'demo-x-ink2', 12));
     emb.appendChild(svgText(192, 376, '和碰撞模型', 'demo-x-ink2', 12));
+    /* 讲到换机器人时，三格先退下，论文图 3 放大占满上半部分；讲完缩回左下角 */
+    var BIG = group(s);
+    rectBox(BIG, 30, 40, 740, 236, C_BORDER, C_SURFACE2);
+    paperFig(BIG, 'fig3_cross_embodiment.webp', 235, 42, 330, 232, null, { ar: 640 / 438 });
+    BIG.appendChild(svgText(220, 120, '论文图 3', 'demo-x-ink', 13, 'end'));
+    BIG.appendChild(svgText(220, 146, '左：宇树 H1', 'demo-x-ink2', 12, 'end'));
+    BIG.appendChild(svgText(220, 168, '右：Booster T1', 'demo-x-ink2', 12, 'end'));
+    BIG.appendChild(svgText(580, 120, '只改两样：', 'demo-x-ink', 13));
+    BIG.appendChild(svgText(580, 146, '关键点对应关系', 'demo-x-ink2', 12));
+    BIG.appendChild(svgText(580, 168, '碰撞模型', 'demo-x-ink2', 12));
     var src = group(s);
     [['OMOMO', '人-物交互'], ['自采动捕', '人-地形交互'], ['LAFAN1', '平地动作']].forEach(function (r, k) {
       chip(src, 340 + k * 146, 336, 138, '**' + r[0] + '**：' + r[1], [C_OBJ, C_GOOD, C_ACCENT][k], { size: 11.5, h: 34 });
@@ -1291,13 +1349,16 @@
 
     function draw(t, clock) {
       var now = nowOf(t, clock), row = loopRow(now, G1_SHEETS.climb_z10.n, 6, 1.0);
+      /* 三格先退、图 3 再上；图 3 先退、三格再回来：不交叉淡入，免得字压在图上 */
+      var big = seg(t, 10.7, 11.0) * (1 - seg(t, 13.4, 13.7)), away = seg(t, 10.4, 10.7) * (1 - seg(t, 13.7, 14.0));
       cells.forEach(function (c, k) {
-        setOpacity(c.g, seg(t, 0.4 + k * 0.6, 1.0 + k * 0.6));
+        setOpacity(c.g, seg(t, 0.4 + k * 0.6, 1.0 + k * 0.6) * (1 - away));
         c.spr.put(row, c.cam);
         setOpacity(c.gp, seg(t, 3.8, 4.4));
       });
+      setOpacity(BIG, big);
       setOpacity(stats, seg(t, 7.0, 7.6));
-      setOpacity(emb, seg(t, 10.4, 11.0));
+      setOpacity(emb, seg(t, 13.4, 13.9));
       setOpacity(src, seg(t, 13.6, 14.2));
     }
     return { el: s, draw: draw };
@@ -1315,9 +1376,15 @@
     });
     OBS.appendChild(paint(svgText(30, 274, '看不到箱子，也看不到地形', null, 12.5), C_BAD));
     var POL = group(s);
-    rectBox(POL, 262, 140, 90, 56, C_INK2, C_SURFACE2);
-    POL.appendChild(svgMath(307, 172, '\\pi_\\theta', { size: 18, anchor: 'middle', w: 80 }));
-    hline(POL, 232, 168, 262, 168, C_BORDER, 1.6); hline(POL, 352, 168, 382, 168, C_BORDER, 1.6);
+    rectBox(POL, 262, 120, 90, 56, C_INK2, C_SURFACE2);
+    POL.appendChild(svgMath(307, 146, '\\pi_\\theta', { size: 18, anchor: 'middle', w: 80 }));
+    POL.appendChild(svgText(307, 166, '策略网络', 'demo-x-mut', 10.5, 'middle'));
+    hline(POL, 244, 148, 262, 148, C_BORDER, 1.6);
+    /* 输出：关节目标角，交给 PD 去跟（沿用 BeyondMimic） */
+    hline(POL, 307, 176, 307, 204, C_BORDER, 1.6);
+    pathLine(POL, [[302, 198], [307, 205], [312, 198]], C_BORDER, 1.6);
+    chip(POL, 257, 208, 100, '输出：关节目标角', C_INK2, { size: 11, h: 30 });
+    POL.appendChild(svgText(307, 254, '交给 PD 控制器跟踪', 'demo-x-mut', 10.5, 'middle'));
     var REW = group(s);
     REW.appendChild(svgText(390, 56, N_REWARDS + ' 项奖励（照搬 BeyondMimic，不调）', 'demo-x-ink', 13));
     var rews = REWARDS.map(function (w, k) { return chip(REW, 390 + (k % 3) * 128, 66 + Math.floor(k / 3) * 38, 122, w, C_GOOD, { size: 12, h: 30 }); });
