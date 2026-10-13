@@ -24,7 +24,7 @@
 | `op3soccer` | `assets/js/demos/op3soccer.js` 十二幕（`soccer-explainer`） | 约 10 分 16 秒 |
 | `sonic` | `assets/js/demos/sonic.js` 七幕 | 约 5 分 32 秒 |
 | `gmr` | `assets/js/demos/gmr.js` 十三幕（`gmr-explainer`） | 约 12 分 2 秒 |
-| `omniretarget` | `assets/js/demos/omniretarget.js` 十二幕（`omniretarget-explainer`） | 约 12 分 28 秒 |
+| `omniretarget` | `assets/js/demos/omniretarget.js` 十二幕（`omniretarget-explainer`） | 约 12 分 45 秒 |
 | `humanml3d` | `assets/js/demos/humanml3d.js` 十二幕 | 约 10 分 59 秒 |
 | `smp` | `assets/js/demos/smp.js` 八幕 | 约 8 分 37 秒 |
 | `domain_randomization` | `assets/js/demos/domain_randomization.js` 八幕（`dr-explainer`） | 约 8 分 20 秒 |
