@@ -356,7 +356,7 @@
             "has_open_source": true,
             "summary_zh": "ExBody 训练一个目标条件策略，目标拆成两半：表达目标只含上半身——9 个关节角（躯干 1 + 两臂各 4）和两肩、两肘、两手 6 个关键点的 3D 位置；根运动目标是根部的线速度、横滚 / 俯仰 / 偏航和高度。",
             "explainer_scenes": 13,
-            "video_seconds": 679,
+            "video_seconds": 736,
             "published_date_zh": "2024年2月26日（arXiv），RSS 2024",
             "published_date_en": "Feb 26, 2024 (arXiv), RSS 2024",
             "zhname": "ExBody：人形机器人的表达性全身控制",
