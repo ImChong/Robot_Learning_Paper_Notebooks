@@ -1122,10 +1122,82 @@ def test_omniretarget_explainer_demos_and_worked_example_share_the_paper_numbers
     ):
         assert needle in narration, needle
     # 片头接上一期（GMR）的片尾预告，片尾只预告下一篇（Expressive WBC）；主动画不预告下一篇
+    # 第 2 幕：Delaunay 提出来之后，用一句话讲规则（旁白、字幕轨、平面上的外接圆示意）
+    assert '(1, 10.4, 13.4, "德劳内剖分有一条规则：每个四面体的外接球里，不能再有别的点，所以只会把彼此相邻的点连起来。")' in narration
+    assert "{ at: 10.4, s: '**Delaunay** 的规则：每个四面体的**外接球**里不能有别的点" in js
+    assert "'✓ 外接圆里**没有**别的点'" in js and "'✗ 圈里**还有**一个点'" in js
+    # 第 3 幕：放大的手腕旁边画出整个人（骨架 + 箱子）和同一帧的 G1 渲染
+    lap = js.split("function buildSceneLaplacian()", 1)[1].split("function drawOnPath(", 1)[0]
+    assert "skeleton(bodyL" in lap and "boxWire(bodyL" in lap and "g1Sprite(bodyR, 'orig_side')" in lap and "clipCircle(" in lap
+    # 第 10 幕：三个「时长」都是 0–1 的比例（论文第 V-B 节按应有的时长归一化），表头、底注、旁白都说清楚
+    assert "zh: '打滑时长（比例）↓'" in js and "zh: '接触保持（比例）↑'" in js
+    assert "这几个时长都不是秒，而是比例：穿透除以整段的长度，打滑除以脚应该粘住的时长，接触除以应该接触的时长" in narration
+    assert "| 穿透时长（比例）↓ |" in note and "不是秒" in note
+    # 第 6 幕：俯视图人朝上，五种扩增的箱子起点在旁白念到时一个个出现（分镜 3.6–10.6 s 对着那一句旁白）
+    aug = js.split("function buildSceneAug()", 1)[1].split("function buildSceneAnchor()", 1)[0]
+    assert "var AT = [0.6, 6.5, 7.3, 7.9, 9.5, 10.1];" in aug and "function footprint(pose)" in aug
+    # 轨迹按帧号截到第 96 帧：原始解每 2 帧一行、扩增每 3 帧一行，按行数截原始轨迹只到第 64 帧（比别的短一截）
+    assert "for (var r = 0; r < c.n && r * c.step <= LAST_F; r++)" in aug
+    assert '(5, 3.6, 10.6, "物体位姿，开源代码给了 5 种' in narration and "左边的俯视图里，人站在下面、面朝上" in narration
+    # 第 10 幕：表 II 柱子上的数字写在柱顶上方、跟着柱子长高，不压在柱子上
+    t2 = js.split("function buildSceneTable2()", 1)[1].split("function buildSceneDownstream()", 1)[0]
+    assert "b.lab.setAttribute('y', (b.base - h - 5).toFixed(1));" in t2
+    # 第 1 幕结尾用一句话解释 SOCP：旁白、字幕轨与表 I 下的小卡片同一个说法
+    socp = "S O C P 是二阶锥规划，一种凸优化：除了线性约束，还允许「一个向量的长度不超过某个值」，求解器能又快又稳地找到最优解。"
+    assert f'(0, 16.0, 19.0, "{socp}")' in narration
+    assert "{ at: 16.0, s: '**SOCP** 是二阶锥规划，一种凸优化：除了线性约束，还允许「一个向量的长度不超过某个值」" in js
+    assert "'**SOCP** = 二阶锥规划，一种凸优化'" in js
+    # 全局检查（2026-10-13）：术语第一次出现就用白话交代，示意图的每样东西都有标注
+    for needle in (
+        "分开时距离为正，插进去就是负的", "从关节角算手脚位置的正运动学", "这叫信赖域", "靠平滑项和下一幕要讲的信赖域来管",
+        "机身的朝向用四元数表示", "管机身的位置、朝向和两条腿的关节，共 19 维", "也就是雅可比",
+    ):
+        assert needle in narration, needle
+    assert "浮动基" not in narration and "5 乘以 e" not in narration
+    solver = js.split("function buildSceneSolver()", 1)[1].split("function buildSceneAug()", 1)[0]
+    for needle in ("'目标的等高线（中心最低）'", "'约束线性化：红色一侧不许进'", "'信赖域：步长上限'", "'这一步'", "'跑满 10 次'"):
+        assert needle in solver, needle
+    # 第 4 幕：关掉不穿透那台，这一帧哪里插进箱子、哪里陷进地面，套圈并写出部位
+    assert "var NOPEN_WHERE = {" in js and "插进箱子 " in js and "陷进地面 " in js
+    # 第 8 幕讲换机器人时把论文图 3 放大；第 9 幕的策略画出输出（关节目标角，交给 PD）
+    terrain = js.split("function buildSceneTerrain()", 1)[1].split("function buildSceneRL()", 1)[0]
+    assert "paperFig(BIG, 'fig3_cross_embodiment.webp'" in terrain
+    assert "'输出：关节目标角'" in js and "'交给 PD 控制器跟踪'" in js
     assert "上一期结尾预告：人和物体、地形有接触的时候，怎样在重定向里把这些交互也保住" in narration
     assert "下一篇讲 Expressive Whole-Body Control" in narration
     assert "**下一篇**：Expressive WBC" in intro and "arxiv: '2509.26633'" in intro
     assert "Expressive" not in js and "下一篇" not in js
+
+
+def test_video_subtitles_never_break_inside_an_english_word():
+    """build.py 切字幕行时不在英文词、数字中间断开（OmniRetarget 第一版成片里出过「De / launay」「Laplac / ian」）。
+
+    build.py 一 import 就去合成语音，所以只把 word_char() 与 chunks() 两个函数抠出来跑。
+    """
+    import ast
+    import runpy
+
+    src = (ROOT / "scripts" / "paper_video" / "build.py").read_text(encoding="utf-8")
+    fns = [n for n in ast.parse(src).body if isinstance(n, ast.FunctionDef) and n.name in ("word_char", "chunks")]
+    ns = {"re": re, "display": lambda s: s}
+    exec(compile(ast.Module(body=fns, type_ignores=[]), "build.py", "exec"), ns)
+
+    def lines(s):
+        return [x["text"] for x in ns["chunks"](s, 0, 1)]
+
+    assert lines("形变能，就是所有顶点上，人和机器人Laplacian坐标之差的平方和。") == ["形变能，就是所有顶点上", "人和机器人Laplacian", "坐标之差的平方和"]
+    assert lines("对这 115 个点做Delaunay四面体剖分，就连成一张体积网格。") == ["对这 115 个点做", "Delaunay四面体剖分", "就连成一张体积网格"]
+
+    paper = runpy.run_path(str(ROOT / "scripts" / "paper_video" / "papers" / "omniretarget.py"))
+    for _, _, _, text in paper["SCRIPT"]:
+        for a, b in paper["DISPLAY"]:
+            text = text.replace(a, b)
+        # 在原句里找到每一行的结尾：断开的地方前后不能都是字母 / 数字（标点、空格处断开没问题）
+        pos = 0
+        for line in lines(text):
+            end = text.index(line, pos) + len(line)
+            assert not (end < len(text) and ns["word_char"](text[end - 1]) and ns["word_char"](text[end])), (line, text)
+            pos = end
 
 
 def test_umr_explainer_and_worked_examples_share_the_same_numbers():

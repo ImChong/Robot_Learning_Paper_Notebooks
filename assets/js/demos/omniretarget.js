@@ -105,7 +105,7 @@
       }
     }
   };
-  var T2_COLS = ['穿透时长', '最深穿透（cm）', '打滑时长', '最大打滑（cm/s）', '接触保持', '下游成功率'];
+  var T2_COLS = ['穿透时长（比例）', '最深穿透（cm）', '打滑时长（比例）', '最大打滑（cm/s）', '接触保持（比例）', '下游成功率'];
   var METHODS = ['PHC', 'GMR', 'VideoMimic', 'OmniRetarget'];
   /* 图 7：每段动作的成功率直方图（10% 一格，读图值），人-物 20 段 + 人-地形 19 段 = 第 V-B 节的 39 段 */
   var HIST = {
@@ -183,6 +183,9 @@
   /* 五种扩增各自的最深穿透（cm）与支撑脚每帧滑动（mm），Python 按 SERIES 同样的规则算出 */
   var AUG_STATS = [{"key": "trans_0", "penCm": 0.258, "slideMaxMm": 1.438, "slideMeanMm": 1.206}, {"key": "trans_1", "penCm": 0.283, "slideMaxMm": 1.435, "slideMeanMm": 1.199}, {"key": "trans_2", "penCm": 0.278, "slideMaxMm": 1.433, "slideMeanMm": 1.222}, {"key": "rot_0", "penCm": 0.255, "slideMaxMm": 1.428, "slideMeanMm": 1.221}, {"key": "rot_1", "penCm": 0.197, "slideMaxMm": 1.433, "slideMeanMm": 1.221}];
   /* 爬平台演示 mocap_climb_seq_0（701 帧）三档：平台 0.8 / 1 / 1.2 倍，最深穿透（cm）与支撑脚每帧滑动（mm），Python 算的 */
+  /* 关掉不穿透那一组：每一行（第 0, 2, …, 194 帧）插进箱子 / 陷进地面最深的部位（> 1 cm），字母 = 15 个关键点的序号（a = Pelvis …），
+     '.' = 没有；MuJoCo 的 mj_geomDistance 逐个碰撞体算的，Python 算好写进来 */
+  var NOPEN_WHERE = { box: '..ddddddbbbbbbbooonnnnnnnnnnnnnnnooonooonnnnnnnnnnnooooooooooooonnnnoooooooooooooooooo.n..........', gnd: 'lmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmlllllllllmmmmmmmmmmlllllllllmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm' };
   var CLIMB = [{"key": "z0.8", "heightM": 0.56, "penCm": 0.261, "slideMeanMm": 1.027, "slideMaxMm": 1.42}, {"key": "orig", "heightM": 0.7, "penCm": 1.076, "slideMeanMm": 1.024, "slideMaxMm": 2.86}, {"key": "z1.2", "heightM": 0.84, "penCm": 0.284, "slideMeanMm": 1.065, "slideMaxMm": 1.433}];
   function dec(b64, unit) {
     var bin = window.atob(b64), n = bin.length / 2, out = new Float32Array(n);
@@ -500,9 +503,9 @@
     anch_orig: {'file': 'g1_anch_orig.webp', 'R': 170, 'yaw': -1.0, 'pitch': 0.12, 'cw': 141, 'ch': 215, 'cols': 10, 'n': 20, 'ax': 46, 'ay': 206, 'step': 3, 'anchor': [0.6348, 0.8022, 0.0]},
     anch_code: {'file': 'g1_anch_code.webp', 'R': 170, 'yaw': -1.0, 'pitch': 0.12, 'cw': 141, 'ch': 217, 'cols': 10, 'n': 20, 'ax': 24, 'ay': 206, 'step': 3, 'anchor': [0.6348, 0.8022, 0.0]},
     anch_none: {'file': 'g1_anch_none.webp', 'R': 170, 'yaw': -1.0, 'pitch': 0.12, 'cw': 141, 'ch': 217, 'cols': 10, 'n': 20, 'ax': 24, 'ay': 206, 'step': 3, 'anchor': [0.6348, 0.8022, 0.0]},
-    climb_z08: {'file': 'g1_climb_z08.webp', 'R': 90, 'yaw': -1.35, 'pitch': 0.18, 'cw': 202, 'ch': 190, 'cols': 10, 'n': 101, 'ax': 95, 'ay': 184, 'step': 7, 'anchor': [-1.0, -0.5, 0.0]},
-    climb_z10: {'file': 'g1_climb_z10.webp', 'R': 90, 'yaw': -1.35, 'pitch': 0.18, 'cw': 203, 'ch': 193, 'cols': 10, 'n': 101, 'ax': 96, 'ay': 187, 'step': 7, 'anchor': [-1.0, -0.5, 0.0]},
-    climb_z12: {'file': 'g1_climb_z12.webp', 'R': 90, 'yaw': -1.35, 'pitch': 0.18, 'cw': 202, 'ch': 200, 'cols': 10, 'n': 101, 'ax': 95, 'ay': 197, 'step': 7, 'anchor': [-1.0, -0.5, 0.0]},
+    climb_z08: {'file': 'g1_climb_z08.webp', 'R': 90, 'yaw': -1.35, 'pitch': 0.18, 'cw': 204, 'ch': 194, 'cols': 10, 'n': 101, 'ax': 97, 'ay': 184, 'step': 7, 'anchor': [-1.0, -0.5, 0.0]},
+    climb_z10: {'file': 'g1_climb_z10.webp', 'R': 90, 'yaw': -1.35, 'pitch': 0.18, 'cw': 205, 'ch': 197, 'cols': 10, 'n': 101, 'ax': 98, 'ay': 187, 'step': 7, 'anchor': [-1.0, -0.5, 0.0]},
+    climb_z12: {'file': 'g1_climb_z12.webp', 'R': 90, 'yaw': -1.35, 'pitch': 0.18, 'cw': 204, 'ch': 204, 'cols': 10, 'n': 101, 'ax': 97, 'ay': 197, 'step': 7, 'anchor': [-1.0, -0.5, 0.0]},
     anch_pin: {'file': 'g1_anch_pin.webp', 'R': 170, 'yaw': -1.0, 'pitch': 0.12, 'cw': 150, 'ch': 216, 'cols': 10, 'n': 20, 'ax': 33, 'ay': 205, 'step': 3, 'anchor': [0.6348, 0.8022, 0.0]}
   };
   var spriteSeq = 0;
@@ -613,6 +616,17 @@
     g.setAttribute('clip-path', 'url(#' + id + ')');
     return g;
   }
+  /* 圆形裁剪（放大镜） */
+  function clipCircle(parent, cx, cy, r) {
+    var root = parent.ownerSVGElement || parent, defs = root.querySelector('defs');
+    if (!defs) { defs = svgEl('defs', {}); root.insertBefore(defs, root.firstChild); }
+    var id = 'omni-x-clip-' + (++clipSeq), cp = svgEl('clipPath', { id: id });
+    cp.appendChild(svgEl('circle', { cx: cx, cy: cy, r: r }));
+    defs.appendChild(cp);
+    var g = group(parent);
+    g.setAttribute('clip-path', 'url(#' + id + ')');
+    return g;
+  }
   /* 小折线图：xs / ys 已经是像素坐标 */
   function sparkPts(vals, x0, y0, w, h, vmax) {
     return vals.map(function (v, i) { return [x0 + (w * i) / (vals.length - 1), y0 - (h * Math.min(v, vmax)) / vmax]; });
@@ -656,7 +670,7 @@
     cols.forEach(function (c, j) { t1.appendChild(svgText(612 + j * 44, 86, c, 'demo-x-mut', 11, 'middle')); });
     var t1rows = TABLE1.map(function (r, i) {
       var g = group(t1), y = 116 + i * 44, me = r[0] === 'OmniRetarget';
-      if (me) rectBox(g, 464, y - 25, 312, 40, C_GOOD, C_SURFACE2);
+      if (me) rectBox(g, 464, y - 25, 312, 47, C_GOOD, C_SURFACE2); // 下边留出「序贯 SOCP」那行小字
       g.appendChild(svgText(474, y, r[0], me ? 'demo-x-ink' : 'demo-x-ink2', 12.5));
       g.appendChild(svgText(474, y + 15, r[5], 'demo-x-mut', 9.5));
       for (var j = 1; j <= 4; j++) {
@@ -666,8 +680,20 @@
       }
       return g;
     });
+    /* 右下：SOCP 是什么（一句话） */
+    var socp = group(s);
+    rectBox(socp, 464, 322, 312, 86, C_ACCENT, C_SURFACE2);
+    socp.appendChild(svgRich(478, 345, '**SOCP** = 二阶锥规划，一种凸优化', { size: 13, cls: 'demo-x-ink', w: 230 }));
+    socp.appendChild(svgRich(478, 369, '约束可以是 $\\|\\mathbf{v}\\| \\le c$', { size: 12, cls: 'demo-x-ink2', w: 230 }));
+    socp.appendChild(svgText(478, 394, '向量长度不超过某个值 → 解得又快又稳', 'demo-x-mut', 11));
+    /* 二阶锥：一个冰淇淋筒，里面是可行的点 */
+    socp.appendChild(paint(svgEl('path', { d: 'M 712 340 L 738 396 L 764 340', fill: 'none', 'stroke-width': 1.6 }), null, C_ACCENT));
+    socp.appendChild(paint(svgEl('ellipse', { cx: 738, cy: 340, rx: 26, ry: 7, 'stroke-width': 1.6 }), C_SURFACE2, C_ACCENT));
+    var socpDot = paint(svgEl('circle', { cx: 738, cy: 362, r: 3.6 }), C_GOOD);
+    socp.appendChild(socpDot);
 
-    function draw(t) {
+    function draw(t, clock) {
+      var now = clock == null ? t : clock;
       setOpacity(figG, seg(t, 0.3, 0.9));
       setOpacity(hl[0], seg(t, 3.8, 4.2)); setOpacity(hl[1], seg(t, 5.0, 5.4));
       setOpacity(hl[2], seg(t, 7.2, 7.6)); setOpacity(hl[3], seg(t, 13.6, 14.0));
@@ -676,6 +702,11 @@
       setOpacity(patch, seg(t, 10.6, 11.2));
       setOpacity(t1, seg(t, 13.6, 14.0));
       t1rows.forEach(function (g, k) { setOpacity(g, seg(t, 13.8 + k * 0.25, 14.2 + k * 0.25)); });
+      setOpacity(socp, seg(t, 16.2, 16.6));
+      /* 可行点在锥里慢慢转一圈：离轴越远越靠上，始终不出锥面 */
+      var a = now * 1.6, h = 0.45 + 0.25 * Math.sin(now * 0.9);
+      socpDot.setAttribute('cx', (738 + Math.cos(a) * 22 * h).toFixed(1));
+      socpDot.setAttribute('cy', (392 - 50 * h + Math.sin(a) * 4 * h).toFixed(1));
     }
     return { el: s, draw: draw };
   }
@@ -740,37 +771,87 @@
     same.appendChild(svgRich(426, 88, '同一套连接 · 箱子是**原尺寸**', { size: 12.5, cls: 'demo-x-ink2', w: 330 }));
     var dense = group(s);
     dense.appendChild(svgRich(400, 398, '网格建在**箱子坐标系**里：箱子转，手跟着转', { size: 12.5, anchor: 'middle', cls: 'demo-x-ink2', w: 740 }));
+    /* Delaunay 的规则（平面示意，G1 出场前占右框）：三角形的外接圆里不能有别的点；三维里是四面体和外接球 */
+    var del = group(s);
+    rectBox(del, BR.x, BR.y, BR.w, BR.h, C_BORDER, C_SURFACE2);
+    del.appendChild(svgRich(426, 68, '**Delaunay** 的规则（平面上画：三角形 + 外接圆）', { size: 12.5, cls: 'demo-x-ink2', w: 330 }));
+    function circum(a, b, c) {
+      var d = 2 * (a[0] * (b[1] - c[1]) + b[0] * (c[1] - a[1]) + c[0] * (a[1] - b[1]));
+      var A = a[0] * a[0] + a[1] * a[1], B = b[0] * b[0] + b[1] * b[1], C = c[0] * c[0] + c[1] * c[1];
+      var ux = (A * (b[1] - c[1]) + B * (c[1] - a[1]) + C * (a[1] - b[1])) / d, uy = (A * (c[0] - b[0]) + B * (a[0] - c[0]) + C * (b[0] - a[0])) / d;
+      return [ux, uy, Math.hypot(ux - a[0], uy - a[1])];
+    }
+    function triCase(tri, others, color, label, lx) {
+      var g = group(del), cc = circum(tri[0], tri[1], tri[2]);
+      var circle = paint(svgEl('circle', { cx: cc[0].toFixed(1), cy: cc[1].toFixed(1), r: cc[2].toFixed(1), fill: 'none', 'stroke-width': 1.6, 'stroke-dasharray': '5 4' }), null, color);
+      g.appendChild(circle);
+      var edges = pathLine(g, tri.concat([tri[0]]), color, 2.2);
+      var dots = tri.map(function (p) { return dotAt(g, p[0], p[1], 3.6, C_INK); });
+      var extra = others.map(function (p) { return dotAt(g, p[0], p[1], p[2] || 3.2, p[3] || C_MUTED); });
+      var cap = group(g);
+      cap.appendChild(svgRich(lx, 300, label, { size: 12.5, anchor: 'middle', cls: color === C_BAD ? 'demo-x-bad' : 'demo-x-good', w: 170 }));
+      return { g: g, circle: circle, edges: edges, dots: dots, extra: extra, cap: cap };
+    }
+    /* 两组点在 Python 里核过：左边三个外点都在圆外 22 px 以上，右边那个点在圆里 */
+    var good = triCase([[468, 232], [520, 150], [566, 226]], [[452, 146], [590, 160], [530, 280]], C_GOOD, '✓ 外接圆里**没有**别的点', 515);
+    var bad = triCase([[626, 238], [668, 140], [742, 222]], [[690, 200, 4.6, C_BAD]], C_BAD, '✗ 圈里**还有**一个点', 684);
+    var delRule = group(del);
+    delRule.appendChild(svgRich(590, 330, '三维里换成四面体和**外接球**：球里不能有别的点', { size: 12.5, anchor: 'middle', cls: 'demo-x-ink2', w: 340 }));
+    delRule.appendChild(svgRich(590, 354, '所以只把**彼此相邻**的点连起来', { size: 12.5, anchor: 'middle', cls: 'demo-x-ink', w: 340 }));
 
-    function draw(t) {
+    function draw(t, clock) {
+      var now = nowOf(t, clock);
       spr.put(F76_ROW, camR, [F76_PELVIS[0], F76_PELVIS[1], 0]);
       setOpacity(ghostSkel.g, seg(t, 0.4, 1.0) * 0.5);
       src.reveal(seg(t, 0.4, 1.2), seg(t, 1.4, 3.2), seg(t, 7.0, 10.0));
       setOpacity(count, seg(t, 3.6, 4.2));
       setOpacity(tets, seg(t, 7.2, 7.8));
-      setOpacity(R, seg(t, 10.4, 11.0));
-      tgt.reveal(seg(t, 10.6, 11.2), seg(t, 10.8, 12.0), seg(t, 11.2, 13.0));
-      setOpacity(same, seg(t, 10.8, 11.4));
-      setOpacity(dense, seg(t, 13.6, 14.2));
+      /* 10.4–13.4：Delaunay 的规则；旁白比分镜长时停在 13.4，卡片一直留着，先淡出、G1 再出场 */
+      setOpacity(del, seg(t, 10.5, 10.9) * (1 - seg(t, 13.4, 13.7)));
+      [good, bad].forEach(function (c, k) {
+        var t0 = 10.7 + k * 0.9;
+        setOpacity(c.dots[0], seg(t, t0, t0 + 0.2)); setOpacity(c.dots[1], seg(t, t0, t0 + 0.2)); setOpacity(c.dots[2], seg(t, t0, t0 + 0.2));
+        c.extra.forEach(function (d) { setOpacity(d, seg(t, t0, t0 + 0.2)); });
+        drawOnPath(c.edges, seg(t, t0 + 0.1, t0 + 0.5));
+        drawOnPath(c.circle, seg(t, t0 + 0.4, t0 + 0.9));
+        setOpacity(c.cap, seg(t, t0 + 0.7, t0 + 1.0));
+      });
+      var pulse = seg(t, 12.5, 12.7);
+      bad.extra[0].setAttribute('r', (4.6 + pulse * 1.6 * (0.5 + 0.5 * Math.sin(now * 5))).toFixed(2));
+      setOpacity(delRule, seg(t, 12.4, 12.8));
+      setOpacity(R, seg(t, 13.7, 14.2));
+      tgt.reveal(seg(t, 13.8, 14.3), seg(t, 14.0, 15.0), seg(t, 14.3, 16.0));
+      setOpacity(same, seg(t, 14.0, 14.5));
+      setOpacity(dense, seg(t, 16.6, 17.2));
     }
     return { el: s, draw: draw };
   }
 
   /* ── scene 3: Laplacian 坐标 ── */
   function buildSceneLaplacian() {
-    var s = sceneSvg('放大第 76 帧人的左手腕：它在网格里连着 22 个邻居（18 个箱面点，加左髋、左膝、左肘、左脚尖，后几个在画面外），邻居的平均位置画成十字，' +
-      '从十字指向手腕的箭头就是 Laplacian 坐标；左边人、右边 G1；整体平移时箭头不变；底下是 196 帧每一帧的形变能');
+    var s = sceneSvg('第 76 帧：左边是人（骨架和缩小后的箱子），右边是同一帧的 G1 渲染图；圆圈把左手腕放大：它在网格里连着 22 个邻居' +
+      '（18 个箱面点，加左髋、左膝、左肘、左脚尖），邻居的平均位置画成十字，从十字指向手腕的箭头就是 Laplacian 坐标；整体平移时箭头不变；底下是 196 帧每一帧的形变能');
     s.appendChild(svgText(30, 28, '一个顶点减去邻居的平均：只记相对位置', 'demo-x-ink2', 13.5));
     s.appendChild(svgMath(400, 58, 'L(p_i) = p_i - \\sum_{j \\in \\mathcal{N}(i)} w_{ij}\\, p_j,\\quad w_{ij} = \\frac{1}{|\\mathcal{N}(i)|}', { size: 16, anchor: 'middle', w: 560 }));
     var L = group(s), R = group(s);
     rectBox(L, 30, 84, 360, 246, C_BORDER, C_SURFACE2);
     rectBox(R, 410, 84, 360, 246, C_BORDER, C_SURFACE2);
-    var i = KI.L_Wrist, ZOOM = 640;
-    function cluster(parent, V, color, x0, title) {
-      var clip = clipTo(parent, x0, 84, 360, 246), mv = group(clip);
+    var i = KI.L_Wrist, ZOOM = 520, BODY_NB = LW.nb.filter(function (j) { return j < 15; });
+    /* 左小图：整个人 / 整台 G1（两边同一个比例，按 G1 那一侧放满） */
+    var head = [F76_PELVIS[0], F76_PELVIS[1], 1.32], ground = [F76_PELVIS[0], F76_PELVIS[1], 0];
+    function bodyBox(x0) { return { x: x0 + 6, y: 114, w: 150, h: 190, pad: 10 }; }
+    var camBR = fitCam(F76_TGT.concat([head, ground]), bodyBox(410), 'orig_side', F76_PELVIS[0], F76_PELVIS[1]);
+    var camBL = fitCam(F76_SRC.concat([ground]), bodyBox(30), 'orig_side', F76_PELVIS[0], F76_PELVIS[1], camBR.s);
+    function cluster(parent, V, color, x0, title, body) {
       parent.appendChild(svgText(x0 + 16, 106, title, 'demo-x-ink2', 12.5));
+      /* 右边的放大圈：以手腕为中心，同一个视角放大 */
+      var zx = x0 + 262, zy = 210, zr = 92;
+      var zoomBg = paint(svgEl('circle', { cx: zx, cy: zy, r: zr, 'stroke-width': 1.6 }), C_SURFACE, color);
+      parent.appendChild(zoomBg);
+      var clip = clipCircle(parent, zx, zy, zr - 1), mv = group(clip);
       var c = [0, 0, 0];
       LW.nb.forEach(function (j) { c[0] += V[j][0] / LW.nb.length; c[1] += V[j][1] / LW.nb.length; c[2] += V[j][2] / LW.nb.length; });
-      var cam = { yaw: G1_SHEETS.orig_side.yaw, pitch: G1_SHEETS.orig_side.pitch, s: ZOOM, ox: x0 + 190, oy: 196, cx: V[i][0], cy: V[i][1] };
+      var cam = { yaw: G1_SHEETS.orig_side.yaw, pitch: G1_SHEETS.orig_side.pitch, s: ZOOM, ox: zx, oy: zy, cx: V[i][0], cy: V[i][1] };
       function P(p) { return project([p[0], p[1], p[2] - V[i][2]], cam); }
       var spokes = LW.nb.map(function (j) { var a = P(V[i]), b = P(V[j]); return hline(mv, a[0], a[1], b[0], b[1], C_MUTED, 0.9); });
       var dots = LW.nb.map(function (j) { var b = P(V[j]); return dotAt(mv, b[0], b[1], j < 15 ? 3.6 : 2.6, j < 15 ? color : C_OBJ); });
@@ -778,18 +859,39 @@
       var cross = group(mv);
       hline(cross, cc[0] - 7, cc[1], cc[0] + 7, cc[1], C_INK, 2.2); hline(cross, cc[0], cc[1] - 7, cc[0], cc[1] + 7, C_INK, 2.2);
       var arrow = pathLine(mv, [cc, w], color, 3.4);
-      var head = dotAt(mv, w[0], w[1], 6, color);
-      return { mv: mv, spokes: spokes, dots: dots, cross: cross, arrow: arrow, head: head };
+      var headDot = dotAt(mv, w[0], w[1], 6, color);
+      /* 小图上：手腕套一个圈，连到放大圈；手腕到四个身体邻居（髋、膝、肘、脚尖）的连线 */
+      var bw = project(V[i], body.cam);
+      var link = group(parent);
+      var ring = paint(svgEl('circle', { cx: bw[0], cy: bw[1], r: 9, fill: 'none', 'stroke-width': 1.8 }), null, color);
+      link.appendChild(ring);
+      var dx = zx - bw[0], dy = zy - bw[1], dl = Math.hypot(dx, dy) || 1;
+      hline(link, bw[0] + (dx / dl) * 9, bw[1] + (dy / dl) * 9, zx - (dx / dl) * zr, zy - (dy / dl) * zr, color, 1.3, '4 3');
+      var bodySpokes = group(parent);
+      BODY_NB.forEach(function (j) {
+        var b = project(V[j], body.cam);
+        hline(bodySpokes, bw[0], bw[1], b[0], b[1], color, 1.2, '3 3');
+        dotAt(bodySpokes, b[0], b[1], 3.4, color);
+      });
+      return { mv: mv, spokes: spokes, dots: dots, cross: cross, arrow: arrow, head: headDot, link: link, bodySpokes: bodySpokes };
     }
-    var cl = cluster(L, MESH.src, C_HUMAN, 30, '人：左手腕和 ' + LW.nb.length + ' 个邻居'), cr = cluster(R, MESH.tgt, C_GOOD, 410, 'G1：同一个顶点、同一批邻居');
+    /* 人：骨架 + 缩到 0.68 倍的箱子线框 */
+    var bodyL = group(L);
+    var wireL = boxWire(bodyL, C_OBJ, 1.3);
+    wireL.put(F76_BOX, camBL, SCALE);
+    var skelL = skeleton(bodyL, C_HUMAN, { w: 2, r: 2.4 });
+    skelL.put(F76_SRC.slice(0, 15), camBL);
+    /* G1：同一帧的 3D 渲染（箱子一起渲在里面） */
+    var bodyR = group(R);
+    var spr = g1Sprite(bodyR, 'orig_side');
+    var cl = cluster(L, F76_SRC, C_HUMAN, 30, '人：左手腕和 ' + LW.nb.length + ' 个邻居', { cam: camBL });
+    var cr = cluster(R, F76_TGT, C_GOOD, 410, 'G1：同一个顶点、同一批邻居', { cam: camBR });
     function v3(a) { return '(' + a.map(function (x) { return fmt(x, 1); }).join(', ') + ') cm'; }
     var numL = group(s), numR = group(s);
-    numL.appendChild(svgRich(46, 318, '$L$ = ' + v3(LW.src), { size: 13, cls: 'demo-x-ink', w: 340 }));
-    numR.appendChild(svgRich(426, 318, '$L$ = ' + v3(LW.tgt) + '，差 **' + fmt(LW.diffCm, 1) + ' cm**', { size: 13, cls: 'demo-x-ink', w: 340 }));
-    var away = group(s);
-    away.appendChild(svgText(374, 126, '左髋、左膝、左脚尖在画面外 ↘', 'demo-x-mut', 10.5, 'end'));
+    numL.appendChild(svgRich(46, 322, '$L$ = ' + v3(LW.src), { size: 13, cls: 'demo-x-ink', w: 340 }));
+    numR.appendChild(svgRich(426, 322, '$L$ = ' + v3(LW.tgt) + '，差 **' + fmt(LW.diffCm, 1) + ' cm**', { size: 13, cls: 'demo-x-ink', w: 340 }));
     var shiftNote = group(s);
-    shiftNote.appendChild(svgRich(210, 292, '一起平移：箭头不变', { size: 12.5, anchor: 'middle', cls: 'demo-x-good', w: 340 }));
+    shiftNote.appendChild(svgRich(292, 106, '一起平移：箭头不变', { size: 12.5, anchor: 'middle', cls: 'demo-x-good', w: 160 }));
     /* 底部：每一帧的形变能（196 帧，复现实验） */
     var E = group(s);
     var ens = Array.prototype.slice.call(SER.orig.en), emax = 0.12;
@@ -803,19 +905,23 @@
 
     function draw(t, clock) {
       var now = nowOf(t, clock);
+      spr.put(F76_ROW, camBR, ground);
       setOpacity(L, seg(t, 0.4, 1.0));
+      setOpacity(cl.link, seg(t, 1.2, 1.8));
       cl.spokes.forEach(function (l, k) { setOpacity(l, seg(t, 3.6 + k * 0.05, 4.0 + k * 0.05)); });
       cl.dots.forEach(function (d, k) { setOpacity(d, seg(t, 3.6 + k * 0.05, 4.0 + k * 0.05)); });
-      setOpacity(away, seg(t, 4.4, 4.8));
-      setOpacity(cl.cross, seg(t, 5.0, 5.4)); setOpacity(cl.arrow, seg(t, 5.4, 5.8)); setOpacity(cl.head, seg(t, 0.6, 1.0));
+      setOpacity(cl.bodySpokes, seg(t, 4.4, 4.8));
+      setOpacity(cl.cross, seg(t, 5.0, 5.4)); setOpacity(cl.arrow, seg(t, 5.4, 5.8)); setOpacity(cl.head, seg(t, 1.2, 1.8));
       setOpacity(numL, seg(t, 5.8, 6.3));
-      /* 平移：整团来回挪，箭头跟着走、长短方向都不变 */
-      var sh = seg(t, 7.0, 7.4) * (1 - seg(t, 10.2, 10.4)) * 30 * Math.sin(now * 2.2);
+      /* 平移：圈里的整团来回挪，箭头跟着走、长短方向都不变 */
+      var sh = seg(t, 7.0, 7.4) * (1 - seg(t, 10.2, 10.4)) * 26 * Math.sin(now * 2.2);
       cl.mv.setAttribute('transform', 'translate(' + sh.toFixed(1) + ' ' + (sh * 0.4).toFixed(1) + ')');
       setOpacity(shiftNote, seg(t, 7.2, 7.6) * (1 - seg(t, 10.2, 10.4)));
       setOpacity(R, seg(t, 8.2, 8.8));
+      setOpacity(cr.link, seg(t, 8.4, 8.8));
       cr.spokes.forEach(function (l, k) { setOpacity(l, seg(t, 8.6 + k * 0.03, 9.0 + k * 0.03)); });
       cr.dots.forEach(function (d, k) { setOpacity(d, seg(t, 8.6 + k * 0.03, 9.0 + k * 0.03)); });
+      setOpacity(cr.bodySpokes, seg(t, 9.0, 9.3));
       setOpacity(cr.cross, seg(t, 9.0, 9.3)); setOpacity(cr.arrow, seg(t, 9.2, 9.6)); setOpacity(cr.head, seg(t, 8.4, 8.8));
       setOpacity(numR, seg(t, 9.6, 10.0));
       setOpacity(E, seg(t, 10.4, 11.0));
@@ -854,8 +960,16 @@
     var clipA = clipTo(pA, 250, 66, 255, 224), clipB = clipTo(pB, 515, 66, 255, 224);
     var sprA = g1Sprite(clipA, 'orig_side'), sprB = g1Sprite(clipB, 'nopen_side');
     hline(clipA, 260, GY, 495, GY, C_BORDER, 1.4); hline(clipB, 525, GY, 760, GY, C_BORDER, 1.4);
-    var readA = paint(svgText(377, 308, '', null, 11.5, 'middle'), C_GOOD), readB = paint(svgText(642, 308, '', null, 11.5, 'middle'), C_BAD);
-    pA.appendChild(readA); pB.appendChild(readB);
+    var readA = paint(svgText(377, 304, '', null, 11.5, 'middle'), C_GOOD), readB = paint(svgText(642, 304, '', null, 11.5, 'middle'), C_BAD);
+    var readB2 = paint(svgText(642, 320, '', null, 11.5, 'middle'), C_WARN);
+    pA.appendChild(readA); pB.appendChild(readB); pB.appendChild(readB2);
+    /* 关掉不穿透那台：这一帧插进箱子最深的部位套红圈，陷进地面最深的套橙圈 */
+    var KP_ZH = { L_Hip: '左髋', R_Hip: '右髋', L_Knee: '左膝', R_Knee: '右膝', L_Wrist: '左手', R_Wrist: '右手', L_Toe: '左脚', R_Toe: '右脚',
+      L_Ankle: '左脚', R_Ankle: '右脚', Pelvis: '躯干', L_Shoulder: '左肩', R_Shoulder: '右肩', L_Elbow: '左肘', R_Elbow: '右肘' };
+    var markBox = paint(svgEl('circle', { r: 11, fill: 'none', 'stroke-width': 2.6 }), null, C_BAD);
+    var markGnd = paint(svgEl('circle', { r: 11, fill: 'none', 'stroke-width': 2.6 }), null, C_WARN);
+    clipB.appendChild(markBox); clipB.appendChild(markGnd);
+    function whereAt(key, row) { var ch = NOPEN_WHERE[key].charAt(row); return ch && ch !== '.' ? KP[ch.charCodeAt(0) - 97] : null; }
     /* 底：每一帧最深穿透 */
     var chart = group(s);
     var cx0 = 290, cy0 = 410, cw = 480, chh = 66, cmax = 0.08;
@@ -872,7 +986,7 @@
     var legendB = paint(svgText(cx0 + 240, cy0 - chh - 6, '开着：最深 ' + fmt(PEN.orig.anyMaxCm, 2) + ' cm', null, 11), C_GOOD);
     chart.appendChild(legendB);
     var big = group(s);
-    big.appendChild(paint(svgText(30, 300, '手进箱子 ' + fmt(PEN.nopen.boxMaxCm, 1) + ' cm', null, 15), C_BAD));
+    big.appendChild(paint(svgText(30, 300, '手、腿进箱子 ' + fmt(PEN.nopen.boxMaxCm, 1) + ' cm', null, 15), C_BAD));
     big.appendChild(paint(svgText(30, 324, '脚进地面 ' + fmt(PEN.nopen.gndMaxCm, 1) + ' cm', null, 15), C_WARN));
     var foot = group(s);
     foot.appendChild(svgText(30, 356, '关掉脚粘地：', 'demo-x-ink2', 12));
@@ -889,7 +1003,16 @@
       setOpacity(pA, seg(t, 0.6, 1.2));
       setOpacity(pB, seg(t, 7.0, 7.6));
       readA.textContent = '第 ' + f + ' 帧 · 最深 ' + fmt(Math.max(PEN.orig.box[f], PEN.orig.gnd[f]) * 1000, 1) + ' mm';
-      readB.textContent = '第 ' + f + ' 帧 · 箱 ' + fmt(PEN.nopen.box[f] * 100, 1) + ' cm · 地 ' + fmt(PEN.nopen.gnd[f] * 100, 1) + ' cm';
+      var wb = whereAt('box', row), wg = whereAt('gnd', row), camB = camOf('nopen_side', SC, 642, GY, pelB[0], pelB[1]);
+      readB.textContent = '第 ' + f + ' 帧 · ' + (wb ? KP_ZH[wb] + '插进箱子 ' + fmt(PEN.nopen.box[f] * 100, 1) + ' cm' : '箱子：没插进去');
+      readB2.textContent = wg ? KP_ZH[wg] + '陷进地面 ' + fmt(PEN.nopen.gnd[f] * 100, 1) + ' cm' : '';
+      var pulse = 1 + 0.18 * Math.sin(now * 6);
+      [[markBox, wb], [markGnd, wg]].forEach(function (m) {
+        if (!m[1]) { m[0].style.opacity = 0; return; }
+        var q = project(kpts(CLIPS.nopen, row)[KI[m[1]]], camB);
+        m[0].setAttribute('cx', q[0].toFixed(1)); m[0].setAttribute('cy', q[1].toFixed(1)); m[0].setAttribute('r', (11 * pulse).toFixed(1));
+        m[0].style.opacity = seg(t, 7.6, 8.0);
+      });
       setOpacity(chart, seg(t, 7.4, 8.0));
       drawOnPath(pBox, seg(t, 7.6, 9.6)); drawOnPath(pGnd, seg(t, 7.6, 9.6));
       setOpacity(pOk, seg(t, 10.4, 11.0)); setOpacity(legendB, seg(t, 10.4, 11.0));
@@ -916,15 +1039,23 @@
     var half = paint(svgEl('path', { d: 'M 30 248 L 390 128 L 390 262 L 30 262 Z', opacity: 0.16 }), C_BAD);
     trClip.appendChild(half);
     var halfLine = hline(trClip, 30, 248, 390, 128, C_BAD, 1.8);
-    TR.appendChild(paint(svgText(306, 180, '约束线性化', null, 12, 'middle'), C_BAD));
+    /* 三样东西各配一句白话：等高线 = 目标（中心最低），红色一侧 = 线性化后不许进，虚线圈 = 这一步最多走多远 */
+    var ellLab = group(TR);
+    ellLab.appendChild(svgText(380, 88, '目标的等高线（中心最低）', 'demo-x-mut', 11.5, 'end'));
+    var halfLab = group(TR);
+    halfLab.appendChild(paint(svgText(380, 238, '约束线性化：红色一侧不许进', null, 12, 'end'), C_BAD));
     var trc = paint(svgEl('circle', { cx: cx, cy: cy, r: 56, fill: 'none', 'stroke-width': 2, 'stroke-dasharray': '5 4' }), null, C_ACCENT);
     TR.appendChild(trc);
+    var trLab = group(TR);
+    trLab.appendChild(paint(svgText(46, 88, '信赖域：步长上限', null, 12), C_ACCENT));
+    trLab.appendChild(svgMath(46, 112, '\\|dq\\|_2 \\le \\epsilon = 0.2', { size: 14, anchor: 'start', w: 160 }));
     var cur = dotAt(TR, cx, cy, 5, C_INK);
     TR.appendChild(svgText(cx - 10, cy + 22, '当前解', 'demo-x-ink2', 12, 'end'));
     var stepEnd = [cx + 38, cy - 41];
     var stepPath = pathLine(TR, [[cx, cy], stepEnd], C_GOOD, 2.6);
     var stepDot = dotAt(TR, stepEnd[0], stepEnd[1], 4.5, C_GOOD);
-    TR.appendChild(svgMath(250, 240, '\\|dq\\|_2 \\le \\epsilon = 0.2', { size: 15, anchor: 'middle', w: 220 }));
+    var stepLab = group(TR);
+    stepLab.appendChild(paint(svgText(stepEnd[0] + 8, stepEnd[1] - 6, '这一步', null, 12), C_GOOD));
     /* 右上：代价曲线（复现实验） */
     var CV = group(s);
     rectBox(CV, 410, 40, 360, 222, C_BORDER, C_SURFACE2);
@@ -940,7 +1071,7 @@
     c0lab.appendChild(svgText(px0 + pw, py0 - (ph * COST_F0[COST_F0.length - 1]) / cmax - 8, fmt(COST_F0[COST_F0.length - 1], 2), 'demo-x-ink2', 10, 'end'));
     var zig = group(CV);
     rectBox(zig, 600, 74, 158, 66, C_BORDER, C_SURFACE);
-    zig.appendChild(svgText(608, 90, '第 76 帧：来回跳', 'demo-x-ink2', 11));
+    zig.appendChild(svgText(608, 90, '第 76 帧：第四位小数来回跳', 'demo-x-ink2', 11));
     var zmin = Math.min.apply(null, COST_F76), zmax = Math.max.apply(null, COST_F76);
     pathLine(zig, COST_F76.map(function (c, k) { return [612 + (134 * k) / (COST_F76.length - 1), 132 - (34 * (c - zmin)) / (zmax - zmin || 1)]; }), C_WARN, 1.6);
     /* 底：每帧迭代次数 */
@@ -955,6 +1086,12 @@
     });
     hline(IT, 30, 342, 770, 342, C_BORDER, 1);
     IT.appendChild(svgText(30, 358, '↑ 第 0 帧 50 次', 'demo-x-ink2', 11));
+    /* 图例：橙 = 跑满 10 次，绿 = 提前停下（高度 = 次数） */
+    [[C_WARN, '跑满 10 次'], [C_GOOD, '提前停下（越矮次数越少）']].forEach(function (l, k) {
+      var lx = k ? 560 : 470;
+      IT.appendChild(paint(svgEl('rect', { x: lx, y: 349, width: 10, height: 10, rx: 2 }), l[0]));
+      IT.appendChild(svgText(lx + 15, 358, l[1], 'demo-x-ink2', 11));
+    });
     var itNote = group(IT);
     itNote.appendChild(svgRich(400, 380, '195 帧里 **' + ITER_FULL + '** 帧跑满 10 次（橙）', { size: 12.5, anchor: 'middle', cls: 'demo-x-ink2', w: 740 }));
     var warm = group(s);
@@ -966,8 +1103,10 @@
     function draw(t, clock) {
       var now = nowOf(t, clock);
       setOpacity(TR, seg(t, 0.4, 1.0));
-      setOpacity(half, seg(t, 1.4, 1.8) * 0.16); setOpacity(halfLine, seg(t, 1.4, 1.8));
-      setOpacity(trc, seg(t, 3.8, 4.2));
+      setOpacity(ellLab, seg(t, 1.0, 1.4));
+      setOpacity(half, seg(t, 1.4, 1.8) * 0.16); setOpacity(halfLine, seg(t, 1.4, 1.8)); setOpacity(halfLab, seg(t, 1.6, 2.0));
+      setOpacity(trc, seg(t, 3.8, 4.2)); setOpacity(trLab, seg(t, 4.0, 4.4));
+      setOpacity(stepLab, seg(t, 5.2, 5.6));
       var u = seg(t, 4.6, 5.6) * (0.85 + 0.15 * Math.sin(now * 2));
       setPath(stepPath, [[cx, cy], [cx + (stepEnd[0] - cx) * u, cy + (stepEnd[1] - cy) * u]]);
       moveDot(stepDot, [cx + (stepEnd[0] - cx) * u, cy + (stepEnd[1] - cy) * u]);
@@ -987,28 +1126,66 @@
 
   /* ── scene 6: 一条演示扩成六条 ── */
   function buildSceneAug() {
-    var s = sceneSvg('左边是俯视图：六条箱子轨迹的前 99 帧，原始的灰色虚线，五种扩增的起点挪 20 cm 或再转 ±45°，搬起后偏移按指数衰减回到原轨迹；' +
-      '左下是偏移随帧数衰减的曲线；右边六台 G1 各解一遍同一道优化，循环播放第 0–99 帧');
+    var s = sceneSvg('左边是俯视图（人朝上）：人站在下方，原始箱子是灰色虚线框，五种扩增把箱子的起点往前、往左、往右挪 20 cm 或再转 ±45°，画成彩色框；' +
+      '线是第 0–96 帧箱子中心的轨迹，搬起后偏移按指数衰减回到原轨迹；' +
+      '左下是偏移随帧数衰减的曲线；右边六台 G1 各解一遍同一道优化，循环播放第 0–96 帧');
     s.appendChild(svgText(30, 28, '人的网格不动，只改 G1 这边的箱子', 'demo-x-ink2', 13.5));
     var COLS = [C_MUTED, C_ACCENT, C_GOOD, C_WARN, C_BAD, '#9b7fd1'];
-    /* 左：俯视轨迹（只画前 99 帧：蹲下、搬起、刚开始走） */
+    /* 左：俯视图，转成「人朝上」：人站在原点，人 → 箱子的方向画成朝上（也就是代码里「人的坐标系」的 x 轴），
+       往左、往右就是画面的左右。先画人和原始箱子，再一个个画出五种扩增挪过的箱子起点（真实大小和转角），
+       最后画第 0–96 帧箱子中心的轨迹：起点不同，搬起来以后都慢慢回到原轨迹 */
     var MAP = group(s);
     rectBox(MAP, 30, 40, 330, 236, C_BORDER, C_SURFACE2);
-    MAP.appendChild(svgText(46, 62, '俯视：箱子中心（前 99 帧）', 'demo-x-ink2', 12.5));
+    MAP.appendChild(svgText(46, 62, '俯视：箱子的起点挪到哪（人朝上）', 'demo-x-ink2', 12.5));
     var mclip = clipTo(MAP, 30, 66, 330, 210);
-    var o = boxPose(CLIPS.orig, 0).p, mS = 300, mx = 200, my = 100;
-    function mp(p) { return [mx + (p[0] - o[0]) * mS, my - (p[1] - o[1]) * mS]; }
-    var NR = 33;
-    var tracks = AUGS.map(function (a, k) {
+    var pel = kpts(CLIPS.orig, 0)[KI.Pelvis], box0 = boxPose(CLIPS.orig, 0).p;
+    var fwd = Math.atan2(box0[1] - pel[1], box0[0] - pel[0]), mS = 150, mx = 186, my = 252;
+    var fc = Math.cos(fwd), fs = Math.sin(fwd);
+    /* 世界 → 画面：沿「前」的分量朝上，沿「左」的分量朝左 */
+    function mp(p) {
+      var dx = p[0] - pel[0], dy = p[1] - pel[1];
+      var f = dx * fc + dy * fs, l = -dx * fs + dy * fc;
+      return [mx - l * mS, my - f * mS];
+    }
+    /* 箱子在地面上的投影：模型包围盒的底面四个角，按这一帧的位姿摆好 */
+    function footprint(pose) {
+      return [[BOX.lo[0], BOX.lo[1]], [BOX.hi[0], BOX.lo[1]], [BOX.hi[0], BOX.hi[1]], [BOX.lo[0], BOX.hi[1]]].map(function (c) {
+        return mp(toWorld(pose, [c[0], c[1], 0]));
+      });
+    }
+    var NR = 33, LAST_F = 96; // 六台 G1 的贴图都是第 0–96 帧（每 3 帧一格）
+    /* 人：一个圆点 + 朝前的箭头 */
+    var who = group(mclip);
+    dotAt(who, mx, my, 7, C_INK2);
+    pathLine(who, [[mx, my - 10], [mx, my - 32]], C_INK2, 2);
+    pathLine(who, [[mx - 5, my - 26], [mx, my - 33], [mx + 5, my - 26]], C_INK2, 2);
+    who.appendChild(svgText(mx + 12, my + 5, '人（第 0 帧）', 'demo-x-ink2', 11.5));
+    /* 20 cm 比例尺 */
+    var bar = group(mclip);
+    var bx0 = 336 - 0.2 * mS;
+    hline(bar, bx0, 262, 336, 262, C_INK2, 2);
+    hline(bar, bx0, 257, bx0, 267, C_INK2, 1.5); hline(bar, 336, 257, 336, 267, C_INK2, 1.5);
+    bar.appendChild(svgText(bx0 + 0.1 * mS, 252, '20 cm', 'demo-x-mut', 10.5, 'middle'));
+    var o0 = mp(box0);
+    var augs = AUGS.map(function (a, k) {
       var c = CLIPS[a.key], pts = [];
-      for (var r = 0; r < Math.min(NR, c.n); r++) pts.push(mp(boxPose(c, r).p));
-      var p = pathLine(mclip, pts, COLS[k], k ? 2.2 : 2.8, k ? null : '5 4');
-      var d = dotAt(mclip, pts[0][0], pts[0][1], 5, COLS[k]);
-      return { p: p, d: d, pts: pts };
+      /* 按帧号截到第 96 帧：原始解每 2 帧存一行、扩增每 3 帧一行，按行数截会让原始轨迹只到第 64 帧 */
+      for (var r = 0; r < c.n && r * c.step <= LAST_F; r++) pts.push(mp(boxPose(c, r).p));
+      var g = group(mclip);
+      var fp = footprint(boxPose(c, 0));
+      var shape = paint(svgEl('path', { d: polyPath(fp) + ' Z', 'stroke-width': k ? 2 : 1.6, 'fill-opacity': 0.12 }), COLS[k], COLS[k]);
+      if (!k) shape.setAttribute('stroke-dasharray', '5 4');
+      g.appendChild(shape);
+      /* 从原始箱子的中心指向挪过以后的中心 */
+      var arrow = k && (Math.abs(a.dx) + Math.abs(a.dy) > 0) ? pathLine(g, [o0, pts[0]], COLS[k], 1.6, '3 3') : null;
+      var track = pathLine(mclip, pts, COLS[k], k ? 2 : 2.6, k ? null : '5 4');
+      var d = dotAt(mclip, pts[0][0], pts[0][1], k ? 4 : 3.6, COLS[k]);
+      return { g: g, shape: shape, arrow: arrow, track: track, d: d, pts: pts };
     });
-    var pel0 = mp(kpts(CLIPS.orig, 0)[KI.Pelvis]);
-    dotAt(mclip, pel0[0], pel0[1], 6, C_INK2);
-    mclip.appendChild(svgText(pel0[0] + 10, pel0[1] + 5, '人', 'demo-x-ink2', 12));
+    var mapNote = group(mclip);
+    mapNote.appendChild(svgText(46, 262, '线：箱子中心的轨迹', 'demo-x-mut', 10.5));
+    var nowLab = svgRich(344, 116, '', { size: 12, anchor: 'end', cls: 'demo-x-ink', w: 170 });
+    mclip.appendChild(nowLab);
     /* 左下：衰减曲线 */
     var DEC = group(s);
     rectBox(DEC, 30, 286, 330, 124, C_BORDER, C_SURFACE2);
@@ -1020,33 +1197,45 @@
     var dP = pathLine(DEC, decP, C_ACCENT, 2.4), dR = pathLine(DEC, decR, C_BAD, 2.4);
     DEC.appendChild(paint(svgText(dx0 + 96, dy0 - dh + 14, '平移 τ = 50 帧', null, 11.5), C_ACCENT));
     DEC.appendChild(paint(svgText(dx0 + 8, dy0 - 6, '转角 τ = 25 帧', null, 11.5), C_BAD));
-    /* 右：六台 G1 */
-    var GRID = group(s);
+    /* 右：六台 G1，按同一个比例、各自居中放进格子 */
+    var GRID = group(s), G1S = 84;
     var sprites = AUGS.map(function (a, k) {
       var g = group(GRID), x = 374 + (k % 3) * 134, y = 40 + Math.floor(k / 3) * 186;
       rectBox(g, x, y, 128, 178, COLS[k], C_SURFACE2);
       g.appendChild(paint(svgText(x + 64, y + 18, a.zh.replace(' + ', '+'), null, 10.5, 'middle'), COLS[k]));
-      var clip = clipTo(g, x, y + 24, 128, 154);
-      return { g: g, spr: g1Sprite(clip, 'aug_' + a.key), x: x, y: y };
+      var clip = clipTo(g, x, y + 24, 128, 154), M = G1_SHEETS['aug_' + a.key], kk = G1S / M.R;
+      var left = x + (128 - M.cw * kk) / 2, bottom = y + 174;
+      return { g: g, spr: g1Sprite(clip, 'aug_' + a.key), x: x, y: y, ox: left + M.ax * kk, oy: bottom - (M.ch - M.ay) * kk };
     });
 
     function draw(t, clock) {
       var now = nowOf(t, clock);
       setOpacity(MAP, seg(t, 0.4, 1.0));
-      tracks.forEach(function (tr, k) {
-        var u = k ? seg(t, 3.8 + k * 0.4, 5.6 + k * 0.4) : seg(t, 0.6, 2.4);
-        drawOnPath(tr.p, u);
-        var i = Math.min(tr.pts.length - 1, Math.round(u * (tr.pts.length - 1)));
-        moveDot(tr.d, tr.pts[i]);
-        setOpacity(tr.d, k ? seg(t, 3.8 + k * 0.4, 4.0 + k * 0.4) : 1);
+      /* 第 k 种扩增出场的时刻（和右边那台 G1 一起）：对着旁白念到「往前、往左、往右、转正负 45 度」的时候 */
+      var AT = [0.6, 6.5, 7.3, 7.9, 9.5, 10.1];
+      function at(k) { return AT[k]; }
+      var cur = -1;
+      augs.forEach(function (A, k) {
+        var a = at(k), next = k && k < 5 ? at(k + 1) : 10.6;
+        if (k && t >= a) cur = k;
+        /* 框一次只画一个：原始的虚线框一直在，扩增的框轮流出场；10.6 s 以后框都收起，只留起点和轨迹 */
+        if (k) setOpacity(A.g, seg(t, a, a + 0.3) * (1 - seg(t, next, next + 0.3)));
+        else setOpacity(A.g, seg(t, 0.6, 1.0) * (1 - 0.6 * seg(t, 10.6, 10.9)));
+        setOpacity(A.d, seg(t, a, a + 0.3));
+        var u = k ? seg(t, 10.8 + k * 0.15, 12.8 + k * 0.15) : seg(t, 0.8, 2.6);
+        drawOnPath(A.track, u);
+        setOpacity(A.track, u > 0 ? 1 : 0); // 圆头线帽在长度为 0 时会留一个点
       });
-      setOpacity(DEC, seg(t, 7.0, 7.6));
-      drawOnPath(dP, seg(t, 7.4, 8.6)); drawOnPath(dR, seg(t, 8.2, 9.4));
+      nowLab.setText(cur > 0 && t < 10.6 ? '**' + AUGS[cur].zh + '**' : '');
+      nowLab.setCls(cur > 0 ? 'demo-x-ink' : 'demo-x-mut');
+      setOpacity(mapNote, seg(t, 10.8, 11.2));
+      setOpacity(DEC, seg(t, 10.6, 11.2));
+      drawOnPath(dP, seg(t, 11.0, 12.2)); drawOnPath(dR, seg(t, 11.8, 13.0));
       var row = loopRow(now, NR, 11, 0.6);
       sprites.forEach(function (sp, k) {
-        setOpacity(sp.g, k ? seg(t, 3.8 + k * 0.4, 4.2 + k * 0.4) : seg(t, 0.6, 1.2));
+        setOpacity(sp.g, k ? seg(t, at(k), at(k) + 0.4) : seg(t, 0.6, 1.2));
         var A = G1_SHEETS['aug_' + AUGS[k].key].anchor;
-        sp.spr.put(row, camOf('aug_' + AUGS[k].key, 92, sp.x + 30, sp.y + 166, A[0], A[1]));
+        sp.spr.put(row, camOf('aug_' + AUGS[k].key, G1S, sp.ox, sp.oy, A[0], A[1]));
       });
     }
     return { el: s, draw: draw };
@@ -1054,11 +1243,18 @@
 
   /* ── scene 7: 别让整台机器人跟着箱子平移 ── */
   function buildSceneAnchor() {
-    var s = sceneSvg('三台 G1 都把箱子起点往前挪了 20 cm，循环播放第 0–57 帧；身后的淡影是原始解，灰点是原始解里双脚的位置：' +
-      '去掉锚定的那台整台跟着箱子平移，官方代码（只有下身锚定代价）也平移了，按论文把第 0 帧的双脚钉住的那台脚站在原地、上身弯过去够箱子');
-    s.appendChild(svgText(30, 28, '箱子往前挪 20 cm：G1 该怎么跟', 'demo-x-ink2', 13.5));
+    var s = sceneSvg('三台 G1 都把箱子起点往前挪了 20 cm，画的是第 0 帧：身后的淡影是原始解，箭头从原始解指向这一台——' +
+      '上面一支是骨盆，下面一支是双脚（8 个接触球的平均）；去掉锚定的那台整台跟着箱子平移，官方代码（只有下身锚定代价）也平移了，' +
+      '按论文把第 0 帧的双脚钉住的那台脚站在原地、上身弯过去够箱子');
+    s.appendChild(svgText(30, 28, '箱子往前挪 20 cm：G1 该怎么跟（第 0 帧）', 'demo-x-ink2', 13.5));
     s.appendChild(svgMath(400, 56, '\\min\\; \\cdots + \\|q_t - \\bar q_t^{\\star}\\|_W^2', { size: 15, anchor: 'middle', w: 400 }));
-    var A = G1_SHEETS.anch_orig.anchor, SC = 158;
+    var A = G1_SHEETS.anch_orig.anchor, SC = 168;
+    /* 原始解的淡影染成冷灰蓝，和这一台分得开 */
+    var GHOST_TINT = '0.45 0 0 0 0.12  0 0.5 0 0 0.16  0 0 0.6 0 0.26  0 0 0 0.5 0';
+    function feetMean(c) {
+      var sp = spheres(c, 0);
+      return [mean(sp.map(function (q) { return q[0]; })), mean(sp.map(function (q) { return q[1]; })), 0];
+    }
     var panels = [
       { key: 'anch_none', sh: SHIFT.none, zh: '去掉锚定', sub: '我们的对照', col: C_BAD },
       { key: 'anch_code', sh: SHIFT.code, zh: '官方代码', sub: '只有下身锚定代价', col: C_WARN },
@@ -1069,30 +1265,35 @@
       g.appendChild(paint(svgText(x + 120, 96, p.zh, null, 13, 'middle'), p.col));
       g.appendChild(svgText(x + 120, 113, p.sub, 'demo-x-mut', 10.5, 'middle'));
       var clip = clipTo(g, x, 118, 240, 238);
-      var ghost = g1Sprite(clip, 'anch_orig', { ghost: 0.2 });
+      var cam = camOf(p.key, SC, x + 70, 330, A[0], A[1]);
+      var ghost = g1Sprite(clip, 'anch_orig', { ghost: 0.55, tint: GHOST_TINT });
       var spr = g1Sprite(clip, p.key);
-      var cam = camOf(p.key, SC, x + 74, 344, A[0], A[1]);
-      var fg = group(clip);
-      spheres(CLIPS.orig, 0).forEach(function (q) { var pq = project([q[0], q[1], 0], cam); dotAt(fg, pq[0], pq[1], 3, C_INK2); });
-      /* 骨盆正下方：原始解（灰）→ 这一台（彩色），箭头跟着帧走 */
-      var clipKey = { anch_none: 'noanchor', anch_code: 'trans_0', anch_pin: 'pin_trans_0' }[p.key];
-      var arr = group(clip), a0 = dotAt(arr, 0, 0, 4, C_INK2), a1 = dotAt(arr, 0, 0, 4.5, p.col), al = hline(arr, 0, 0, 0, 0, p.col, 2.4);
+      ghost.put(0, cam); spr.put(0, cam);
+      var clipKey = { anch_none: 'noanchor', anch_code: 'trans_0', anch_pin: 'pin_trans_0' }[p.key], c = CLIPS[clipKey];
+      /* 两支箭头：原始解（灰点）→ 这一台（彩色点）；骨盆画在骨盆的真实位置，脚画在地面上 */
+      var q0 = kpts(CLIPS.orig, 0)[KI.Pelvis], q1 = kpts(c, 0)[KI.Pelvis];
+      var P0 = project(q0, cam), P1 = project(q1, cam);
+      var F0 = project(feetMean(CLIPS.orig), cam), F1 = project(feetMean(c), cam);
+      var arr = group(clip);
+      [[P0, P1, 0, '骨盆'], [F0, F1, 14, '脚']].forEach(function (a) {
+        var y0 = a[0][1] + a[2], y1 = a[1][1] + a[2];
+        hline(arr, a[0][0], y0, a[1][0], y1, p.col, 2.6);
+        dotAt(arr, a[0][0], y0, 4, C_INK2);
+        dotAt(arr, a[1][0], y1, 4.6, p.col);
+        if (a[3] === '脚') { arr.appendChild(svgText(Math.min(a[0][0], a[1][0]) - 8, y0 + 4, a[3], 'demo-x-ink2', 11, 'end')); return; }
+        /* 骨盆的标签挪到左上角的空白处，用一条细线引过去：贴在箭头左边会压在淡影的手臂上 */
+        arr.appendChild(svgText(x + 10, y0 - 22, a[3], 'demo-x-ink2', 11));
+        hline(arr, x + 22, y0 - 18, a[0][0] - 4, y0 - 3, C_INK2, 1);
+      });
       var num = group(s);
-      num.appendChild(svgRich(x + 120, 380, '骨盆 **' + fmt(p.sh.pelvisCm, 1) + ' cm** · 脚 **' + fmt(p.sh.feetCm, p.sh.feetCm < 1 ? 1 : 1) + ' cm**', { size: 12.5, anchor: 'middle', cls: 'demo-x-ink', w: 240 }));
-      return { g: g, ghost: ghost, spr: spr, cam: cam, num: num, clip: CLIPS[clipKey], arr: arr, a0: a0, a1: a1, al: al };
+      num.appendChild(svgRich(x + 120, 380, '骨盆 **' + fmt(p.sh.pelvisCm, 1) + ' cm** · 脚 **' + fmt(p.sh.feetCm, 1) + ' cm**', { size: 12.5, anchor: 'middle', cls: 'demo-x-ink', w: 240 }));
+      return { g: g, num: num, arr: arr };
     });
     var cap = group(s);
-    cap.appendChild(svgText(400, 404, '第 0 帧相对原始解挪了多少', 'demo-x-mut', 11, 'middle'));
+    cap.appendChild(svgText(400, 404, '淡影 = 原始解；箭头 = 第 0 帧相对原始解挪了多少（灰点 → 彩色点）', 'demo-x-mut', 11, 'middle'));
 
-    function draw(t, clock) {
-      var now = nowOf(t, clock), row = loopRow(now, G1_SHEETS.anch_orig.n, 8, 0.8);
-      panels.forEach(function (p) {
-        p.ghost.put(row, p.cam); p.spr.put(row, p.cam);
-        var q0 = kpts(CLIPS.orig, row * 1.5)[KI.Pelvis], q1 = kpts(p.clip, row)[KI.Pelvis];
-        var P0 = project([q0[0], q0[1], 0], p.cam), P1 = project([q1[0], q1[1], 0], p.cam);
-        moveDot(p.a0, P0); moveDot(p.a1, P1); setLine(p.al, P0[0], P0[1], P1[0], P1[1]);
-        setOpacity(p.arr, seg(t, 1.0, 1.6));
-      });
+    function draw(t) {
+      panels.forEach(function (p) { setOpacity(p.arr, seg(t, 1.0, 1.6)); });
       setOpacity(panels[0].g, seg(t, 0.4, 1.0));
       setOpacity(panels[1].g, seg(t, 7.0, 7.6));
       setOpacity(panels[2].g, seg(t, 10.4, 11.0));
@@ -1105,7 +1306,7 @@
   /* ── scene 8: 地形与本体 ── */
   function buildSceneTerrain() {
     var s = sceneSvg('上面三格是复现实验：holosoma 自带的爬平台演示，把平台按高度缩放成 0.8、1、1.2 倍（0.56、0.70、0.84 m，和论文图 4a 一样），' +
-      '三台 G1 都踩台阶上高台、再跳下来；地面上撒一层网格点；左下是论文图 3：H1 和 T1 搬箱子、爬平台；右下列出三类数据来源');
+      '三台 G1 都踩台阶上高台、再跳下来；地面上撒一层网格点；讲到换机器人时论文图 3 放大（H1 和 T1 搬箱子、爬平台），讲完缩到左下角；右下列出三类数据来源');
     s.appendChild(svgText(30, 28, '平台升高、机器人换了：同一套管线', 'demo-x-ink2', 13.5));
     var keys = ['climb_z08', 'climb_z10', 'climb_z12'];
     var TOP = group(s);
@@ -1131,6 +1332,16 @@
     emb.appendChild(svgText(192, 334, '图 3：H1、T1', 'demo-x-ink', 13));
     emb.appendChild(svgText(192, 356, '只改关键点对应', 'demo-x-ink2', 12));
     emb.appendChild(svgText(192, 376, '和碰撞模型', 'demo-x-ink2', 12));
+    /* 讲到换机器人时，三格先退下，论文图 3 放大占满上半部分；讲完缩回左下角 */
+    var BIG = group(s);
+    rectBox(BIG, 30, 40, 740, 236, C_BORDER, C_SURFACE2);
+    paperFig(BIG, 'fig3_cross_embodiment.webp', 235, 42, 330, 232, null, { ar: 640 / 438 });
+    BIG.appendChild(svgText(220, 120, '论文图 3', 'demo-x-ink', 13, 'end'));
+    BIG.appendChild(svgText(220, 146, '左：宇树 H1', 'demo-x-ink2', 12, 'end'));
+    BIG.appendChild(svgText(220, 168, '右：Booster T1', 'demo-x-ink2', 12, 'end'));
+    BIG.appendChild(svgText(580, 120, '只改两样：', 'demo-x-ink', 13));
+    BIG.appendChild(svgText(580, 146, '关键点对应关系', 'demo-x-ink2', 12));
+    BIG.appendChild(svgText(580, 168, '碰撞模型', 'demo-x-ink2', 12));
     var src = group(s);
     [['OMOMO', '人-物交互'], ['自采动捕', '人-地形交互'], ['LAFAN1', '平地动作']].forEach(function (r, k) {
       chip(src, 340 + k * 146, 336, 138, '**' + r[0] + '**：' + r[1], [C_OBJ, C_GOOD, C_ACCENT][k], { size: 11.5, h: 34 });
@@ -1138,13 +1349,16 @@
 
     function draw(t, clock) {
       var now = nowOf(t, clock), row = loopRow(now, G1_SHEETS.climb_z10.n, 6, 1.0);
+      /* 三格先退、图 3 再上；图 3 先退、三格再回来：不交叉淡入，免得字压在图上 */
+      var big = seg(t, 10.7, 11.0) * (1 - seg(t, 13.4, 13.7)), away = seg(t, 10.4, 10.7) * (1 - seg(t, 13.7, 14.0));
       cells.forEach(function (c, k) {
-        setOpacity(c.g, seg(t, 0.4 + k * 0.6, 1.0 + k * 0.6));
+        setOpacity(c.g, seg(t, 0.4 + k * 0.6, 1.0 + k * 0.6) * (1 - away));
         c.spr.put(row, c.cam);
         setOpacity(c.gp, seg(t, 3.8, 4.4));
       });
+      setOpacity(BIG, big);
       setOpacity(stats, seg(t, 7.0, 7.6));
-      setOpacity(emb, seg(t, 10.4, 11.0));
+      setOpacity(emb, seg(t, 13.4, 13.9));
       setOpacity(src, seg(t, 13.6, 14.2));
     }
     return { el: s, draw: draw };
@@ -1153,7 +1367,7 @@
   /* ── scene 9: 极简强化学习 ── */
   function buildSceneRL() {
     var s = sceneSvg('强化学习的配方：左边观测只有本体感受（参考关节、骨盆误差、自己的速度和关节、上一步动作），看不到箱子和地形；' +
-      '中间是策略；右边是 5 项奖励和 4 项机器人随机化；底下是物体的随机化与终止条件');
+      '中间是策略，输出关节目标角交给 PD 控制器跟踪；右边是 5 项奖励和 4 项机器人随机化；底下是物体的随机化与终止条件');
     s.appendChild(svgText(30, 28, '参考干净了，强化学习就能简单', 'demo-x-ink2', 13.5));
     var OBS = group(s);
     OBS.appendChild(svgText(30, 56, '观测：只有本体感受', 'demo-x-ink', 13));
@@ -1162,9 +1376,15 @@
     });
     OBS.appendChild(paint(svgText(30, 274, '看不到箱子，也看不到地形', null, 12.5), C_BAD));
     var POL = group(s);
-    rectBox(POL, 262, 140, 90, 56, C_INK2, C_SURFACE2);
-    POL.appendChild(svgMath(307, 172, '\\pi_\\theta', { size: 18, anchor: 'middle', w: 80 }));
-    hline(POL, 232, 168, 262, 168, C_BORDER, 1.6); hline(POL, 352, 168, 382, 168, C_BORDER, 1.6);
+    rectBox(POL, 262, 120, 90, 56, C_INK2, C_SURFACE2);
+    POL.appendChild(svgMath(307, 146, '\\pi_\\theta', { size: 18, anchor: 'middle', w: 80 }));
+    POL.appendChild(svgText(307, 166, '策略网络', 'demo-x-mut', 10.5, 'middle'));
+    hline(POL, 244, 148, 262, 148, C_BORDER, 1.6);
+    /* 输出：关节目标角，交给 PD 去跟（沿用 BeyondMimic） */
+    hline(POL, 307, 176, 307, 204, C_BORDER, 1.6);
+    pathLine(POL, [[302, 198], [307, 205], [312, 198]], C_BORDER, 1.6);
+    chip(POL, 257, 208, 100, '输出：关节目标角', C_INK2, { size: 11, h: 30 });
+    POL.appendChild(svgText(307, 254, '交给 PD 控制器跟踪', 'demo-x-mut', 10.5, 'middle'));
     var REW = group(s);
     REW.appendChild(svgText(390, 56, N_REWARDS + ' 项奖励（照搬 BeyondMimic，不调）', 'demo-x-ink', 13));
     var rews = REWARDS.map(function (w, k) { return chip(REW, 390 + (k % 3) * 128, 66 + Math.floor(k / 3) * 38, 122, w, C_GOOD, { size: 12, h: 30 }); });
@@ -1205,7 +1425,7 @@
     var s = sceneSvg('表 II 的小多图：三行是三类任务（人-物、人-地形、纯机器人），三列是最深穿透（cm）、打滑时长、接触保持；' +
       '每格里是各方法的柱子，OmniRetarget 绿色；人-物这一行 GMR 的接触保持最高 0.99，因为它的手插进了箱子');
     s.appendChild(svgText(30, 28, '表 II：参考动作本身的质量', 'demo-x-ink2', 13.5));
-    var colsDef = [{ i: 1, zh: '最深穿透（cm）↓', max: 10 }, { i: 2, zh: '打滑时长 ↓', max: 0.2 }, { i: 4, zh: '接触保持 ↑', max: 1 }];
+    var colsDef = [{ i: 1, zh: '最深穿透（cm）↓', max: 10 }, { i: 2, zh: '打滑时长（比例）↓', max: 0.2 }, { i: 4, zh: '接触保持（比例）↑', max: 1 }];
     var tasks = ['object', 'terrain', 'robot'];
     var head = group(s);
     colsDef.forEach(function (c, j) { head.appendChild(svgText(250 + j * 180 + 80, 56, c.zh, 'demo-x-ink', 12.5, 'middle')); });
@@ -1223,9 +1443,10 @@
           var v = T.rows[m][c.i], bw = 160 / ms.length - 8, bx = x0 + 4 + k * (bw + 8);
           if (!v) { g.appendChild(svgText(bx + bw / 2, base - 4, 'N/A', 'demo-x-mut', 8.5, 'middle')); return; }
           var b = vbar(g, bx, base, bw, M_COLOR[m], m === 'OmniRetarget' ? 0.95 : 0.7);
-          var lab = svgText(bx + bw / 2, base - 4, fmt(v[0], 2), 'demo-x-ink', 10, 'middle');
+          /* 数字写在柱顶上方，跟着柱子长高，不压在柱子上 */
+          var lab = svgText(bx + bw / 2, base - 5, fmt(v[0], 2), 'demo-x-ink', 11, 'middle');
           g.appendChild(lab);
-          bars.push({ b: b, h: (60 * Math.min(v[0], c.max)) / c.max, lab: lab });
+          bars.push({ b: b, h: (60 * Math.min(v[0], c.max)) / c.max, lab: lab, base: base });
         });
       });
       return { g: g, bars: bars };
@@ -1237,7 +1458,7 @@
     var why = group(s);
     why.appendChild(svgRich(400, 404, 'GMR 接触保持最高：人手关键点按比例缩放后去贴，手常常**插进箱子**里（图 6b）', { size: 12, anchor: 'middle', cls: 'demo-x-ink2', w: 740 }));
     var cap = group(s);
-    cap.appendChild(svgRich(400, 404, '接触保持：该接触的时间里，有多少真接触住了', { size: 12, anchor: 'middle', cls: 'demo-x-mut', w: 740 }));
+    cap.appendChild(svgRich(400, 404, '两个时长都是 0–1 的比例，不是秒：打滑 ÷ 支撑脚该粘住的时长，接触 ÷ 该接触的时长', { size: 12, anchor: 'middle', cls: 'demo-x-mut', w: 740 }));
 
     function draw(t) {
       setOpacity(head, seg(t, 0.4, 1.0));
@@ -1245,7 +1466,12 @@
       rowsG.forEach(function (r, k) {
         var a = [3.6, 10.4, 13.6][k];
         setOpacity(r.g, seg(t, a, a + 0.6));
-        r.bars.forEach(function (b, i) { setH(b.b, b.h * ease(seg(t, a + 0.3 + i * 0.03, a + 1.3 + i * 0.03))); setOpacity(b.lab, seg(t, a + 1.2, a + 1.6)); });
+        r.bars.forEach(function (b, i) {
+          var h = b.h * ease(seg(t, a + 0.3 + i * 0.03, a + 1.3 + i * 0.03));
+          setH(b.b, h);
+          b.lab.setAttribute('y', (b.base - h - 5).toFixed(1));
+          setOpacity(b.lab, seg(t, a + 1.2, a + 1.6));
+        });
       });
       setOpacity(gmrNote, seg(t, 7.2, 7.6) * (0.7 + 0.3 * Math.cos(t * 4)));
       setOpacity(why, seg(t, 7.2, 7.8));
@@ -1357,7 +1583,7 @@
       var now = nowOf(t, clock);
       setOpacity(F1, seg(t, 0.4, 1.0) * (1 - seg(t, 3.6, 4.0)));
       setOpacity(hlA, seg(t, 1.0, 1.4) * (0.7 + 0.3 * Math.cos(now * 4)));
-      setOpacity(F5, seg(t, 3.8, 4.2));
+      setOpacity(F5, seg(t, 4.0, 4.4)); // 图 1 淡出完再换图 5，两张图注不叠在一起
       setOpacity(nums, seg(t, 0.8, 1.4) * (1 - seg(t, 3.6, 3.8)));
       setOpacity(flip, seg(t, 7.0, 7.6));
       setOpacity(DATA, seg(t, 10.4, 11.0));
@@ -1371,26 +1597,28 @@
   var OMNI_SCENES = [
     {
       title: '只盯关键点，交互就丢了',
-      dur: 16,
+      dur: 19,
       build: buildSceneProblem,
       cues: [
         { at: 0.4, s: '主流做法：把人的动作**重定向**成参考，再用强化学习去跟。搬箱子、爬台子时，要紧的是手和箱子、脚和台面的关系。' },
         { at: 3.6, s: 'PHC、GMR 只做**关键点匹配**，箱子和地形不进优化：图 6 里 PHC 的膝盖、手穿进箱子，GMR 的手插进箱子。' },
         { at: 7.0, s: 'VideoMimic 加了软的接触、碰撞惩罚，但**没有保证**、还得调；它的交互保得最差。' },
         { at: 10.4, s: '参考有瑕疵，下游只好加一堆临时正则：滞空时间、接触时长……又繁琐又脆弱。' },
-        { at: 13.4, s: '表 I：只有 OmniRetarget 同时做到**硬约束、物体、地形、扩增**，求解用序贯 SOCP。' }
+        { at: 13.4, s: '表 I：只有 OmniRetarget 同时做到**硬约束、物体、地形、扩增**，求解用序贯 SOCP。' },
+        { at: 16.0, s: '**SOCP** 是二阶锥规划，一种凸优化：除了线性约束，还允许「一个向量的长度不超过某个值」，求解器能又快又稳地找到最优解。' }
       ]
     },
     {
       title: '交互网格：把人、箱子连成一张网',
-      dur: 16,
+      dur: 19,
       build: buildSceneMesh,
       cues: [
         { at: 0.4, s: '顶点有两种：人身上的**关键关节**，和物体、地面表面**随机撒的点**。' },
         { at: 3.6, s: '开源代码：人取 **15** 个关节，大箱子表面撒 **100** 个点，一共 115 个顶点。' },
         { at: 7.0, s: '做 **Delaunay 四面体剖分**：复现的这段搬箱子，每帧 ' + TETS.min + '–' + TETS.max + ' 个四面体（第 76 帧 ' + TETS_F76 + ' 个）。' },
-        { at: 10.4, s: 'G1 这边用**同一套连接关系**：对应的 15 个部位 + 同一只箱子的 100 个点；只要语义对上。' },
-        { at: 13.4, s: '物体、地面采得比身体密，接触才保得准；网格建在**箱子坐标系**里，箱子转、手跟着转。' }
+        { at: 10.4, s: '**Delaunay** 的规则：每个四面体的**外接球**里不能有别的点，所以只把**彼此相邻**的点连起来。' },
+        { at: 13.4, s: 'G1 这边用**同一套连接关系**：对应的 15 个部位 + 同一只箱子的 100 个点；只要语义对上。' },
+        { at: 16.4, s: '物体、地面采得比身体密，接触才保得准；网格建在**箱子坐标系**里，箱子转、手跟着转。' }
       ]
     },
     {
@@ -1431,14 +1659,14 @@
     },
     {
       title: '一条演示扩成六条',
-      dur: 16,
+      dur: 19.6,
       build: buildSceneAug,
       cues: [
         { at: 0.4, s: '**扩增**：人的网格不动，只改 G1 这边的场景，再解一遍同一道优化。' },
-        { at: 3.6, s: '代码给了 5 种：箱子起点往前、往左、往右挪 **20 cm**，或再转 **±45°**。' },
-        { at: 7.0, s: '搬起后偏移**指数衰减**回原轨迹：平移 $\\tau_p$ = 50 帧，转角 $\\tau_\\theta$ = 25 帧（代码值）。' },
-        { at: 10.4, s: '我们把 5 种都跑了：手贴在箱面上，最深穿透 ' + fmt(maxOf(AUG_STATS.map(function (a) { return a.penCm; })), 2) + ' cm，支撑脚每帧最多挪 ' + fmt(maxOf(AUG_STATS.map(function (a) { return a.slideMaxMm; })), 2) + ' mm。' },
-        { at: 13.4, s: '论文还能把箱子三个方向缩放（图 4c）；代码的人-物任务只开了位姿扩增。' }
+        { at: 3.6, s: '代码给了 5 种：箱子起点往前、往左、往右挪 **20 cm**，或再转 **±45°**。俯视图里人朝上，灰色虚线框是原来的箱子。' },
+        { at: 10.6, s: '搬起后偏移**指数衰减**回原轨迹：平移 $\\tau_p$ = 50 帧，转角 $\\tau_\\theta$ = 25 帧（代码值）。' },
+        { at: 14.0, s: '我们把 5 种都跑了：手贴在箱面上，最深穿透 ' + fmt(maxOf(AUG_STATS.map(function (a) { return a.penCm; })), 2) + ' cm，支撑脚每帧最多挪 ' + fmt(maxOf(AUG_STATS.map(function (a) { return a.slideMaxMm; })), 2) + ' mm。' },
+        { at: 17.0, s: '论文还能把箱子三个方向缩放（图 4c）；代码的人-物任务只开了位姿扩增。' }
       ]
     },
     {
@@ -1482,7 +1710,7 @@
       dur: 16,
       build: buildSceneTable2,
       cues: [
-        { at: 0.4, s: '三个指标：**穿透**（时长、最深）、**打滑**（时长、最大速度）、**接触保持**。' },
+        { at: 0.4, s: '三个指标：**穿透**（时长、最深）、**打滑**（时长、最大速度）、**接触保持**；三个时长都是 0–1 的**比例**，不是秒。' },
         { at: 3.6, s: '人-物（OMOMO）：OmniRetarget 穿透时长 0.00、最深 1.34 cm（基线 5.11–8.50 cm），打滑为 0。' },
         { at: 7.0, s: 'GMR 接触保持最高 0.99：手按比例缩放后去贴，常常**插进箱子**，看起来一直在接触。' },
         { at: 10.4, s: '人-地形（自采动捕）：接触保持 0.72，基线 0.45–0.67；穿透、打滑同样接近 0。' },
@@ -1518,7 +1746,7 @@
   function buildExplainerDemo(host) {
     K.explainer(host, {
       title: '十二幕动画：OmniRetarget 全流程速览',
-      sub: '约 192 秒自动播放。空格播放/暂停，← → 换幕；G1 的动作是我们照官方代码跑出的复现结果（按真实模型做 3D 渲染），表格与图来自论文。',
+      sub: '约 202 秒自动播放。空格播放/暂停，← → 换幕；G1 的动作是我们照官方代码跑出的复现结果（按真实模型做 3D 渲染），表格与图来自论文。',
       ariaLabel: 'OmniRetarget 十二幕讲解动画',
       notes: [
         '取数依据：表 I、表 II、图 1–7 与正文的数字照抄 arXiv 2509.26633 v3；图 7 的直方图是读图值（人-物 20 段 + 人-地形 19 段 = 正文的 39 段）。代码里的数（15 个关键点、100 个箱面点、信赖域 0.2、每帧 10 次、扩增 ±20 cm / ±45°、τ = 50 / 25 帧、锚定 $5e^{-t/10}$）读自 amazon-far/holosoma 的 `src/holosoma_retargeting`。',
@@ -1535,8 +1763,8 @@
   function buildVideoDemo(host) {
     K.video(host, {
       title: '配音讲解视频：OmniRetarget 十二幕全流程',
-      sub: '12 分 12 秒竖屏视频（1080×1920），中文配音 + 字幕。画面就是上面的十二幕动画，旁白把每一幕讲细；适合手机上看或转发。',
-      size: '12.7 MB',
+      sub: '12 分 56 秒竖屏视频（1080×1920），中文配音 + 字幕。画面就是上面的十二幕动画，旁白把每一幕讲细；适合手机上看或转发。',
+      size: '13.4 MB',
       fileName: 'OmniRetarget_讲解视频.mp4'
     });
   }

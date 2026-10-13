@@ -79,14 +79,21 @@ def to_wav(mp3, wav):
         return w.readframes(w.getnframes())
 
 
+def word_char(ch):
+    return ch.isascii() and ch.isalnum()
+
+
 def chunks(text, start, dur, limit=17):
     """Split one TTS sentence into subtitle lines of <= ~limit chars, timed by char share."""
     parts = []
     for p in re.split(r"(?<=[，、；：。！？,;:])", text):
         while len(p) > limit + 4:  # no punctuation to break on: cut near the middle, at a space if any
             mid = len(p) // 2
-            sp = [k for k in range(mid - 5, mid + 6) if 0 < k < len(p) and p[k] == " "]
-            k = min(sp, key=lambda k: abs(k - mid)) if sp else mid
+            # 不在英文词、数字中间断行（「De / launay」「Laplac / ian」）：只在两个字母数字之间以外的位置切
+            ok = [k for k in range(1, len(p)) if not (word_char(p[k - 1]) and word_char(p[k]))]
+            near = [k for k in ok if abs(k - mid) <= 5]
+            sp = [k for k in near if p[k] == " "]
+            k = min(sp or near or ok or [mid], key=lambda k: abs(k - mid))
             parts.append(p[:k])
             p = p[k:].lstrip()
         if p.strip():
