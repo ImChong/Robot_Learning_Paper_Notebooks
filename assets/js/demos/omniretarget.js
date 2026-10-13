@@ -613,6 +613,17 @@
     g.setAttribute('clip-path', 'url(#' + id + ')');
     return g;
   }
+  /* 圆形裁剪（放大镜） */
+  function clipCircle(parent, cx, cy, r) {
+    var root = parent.ownerSVGElement || parent, defs = root.querySelector('defs');
+    if (!defs) { defs = svgEl('defs', {}); root.insertBefore(defs, root.firstChild); }
+    var id = 'omni-x-clip-' + (++clipSeq), cp = svgEl('clipPath', { id: id });
+    cp.appendChild(svgEl('circle', { cx: cx, cy: cy, r: r }));
+    defs.appendChild(cp);
+    var g = group(parent);
+    g.setAttribute('clip-path', 'url(#' + id + ')');
+    return g;
+  }
   /* 小折线图：xs / ys 已经是像素坐标 */
   function sparkPts(vals, x0, y0, w, h, vmax) {
     return vals.map(function (v, i) { return [x0 + (w * i) / (vals.length - 1), y0 - (h * Math.min(v, vmax)) / vmax]; });
@@ -757,37 +768,87 @@
     same.appendChild(svgRich(426, 88, '同一套连接 · 箱子是**原尺寸**', { size: 12.5, cls: 'demo-x-ink2', w: 330 }));
     var dense = group(s);
     dense.appendChild(svgRich(400, 398, '网格建在**箱子坐标系**里：箱子转，手跟着转', { size: 12.5, anchor: 'middle', cls: 'demo-x-ink2', w: 740 }));
+    /* Delaunay 的规则（平面示意，G1 出场前占右框）：三角形的外接圆里不能有别的点；三维里是四面体和外接球 */
+    var del = group(s);
+    rectBox(del, BR.x, BR.y, BR.w, BR.h, C_BORDER, C_SURFACE2);
+    del.appendChild(svgRich(426, 68, '**Delaunay** 的规则（平面上画：三角形 + 外接圆）', { size: 12.5, cls: 'demo-x-ink2', w: 330 }));
+    function circum(a, b, c) {
+      var d = 2 * (a[0] * (b[1] - c[1]) + b[0] * (c[1] - a[1]) + c[0] * (a[1] - b[1]));
+      var A = a[0] * a[0] + a[1] * a[1], B = b[0] * b[0] + b[1] * b[1], C = c[0] * c[0] + c[1] * c[1];
+      var ux = (A * (b[1] - c[1]) + B * (c[1] - a[1]) + C * (a[1] - b[1])) / d, uy = (A * (c[0] - b[0]) + B * (a[0] - c[0]) + C * (b[0] - a[0])) / d;
+      return [ux, uy, Math.hypot(ux - a[0], uy - a[1])];
+    }
+    function triCase(tri, others, color, label, lx) {
+      var g = group(del), cc = circum(tri[0], tri[1], tri[2]);
+      var circle = paint(svgEl('circle', { cx: cc[0].toFixed(1), cy: cc[1].toFixed(1), r: cc[2].toFixed(1), fill: 'none', 'stroke-width': 1.6, 'stroke-dasharray': '5 4' }), null, color);
+      g.appendChild(circle);
+      var edges = pathLine(g, tri.concat([tri[0]]), color, 2.2);
+      var dots = tri.map(function (p) { return dotAt(g, p[0], p[1], 3.6, C_INK); });
+      var extra = others.map(function (p) { return dotAt(g, p[0], p[1], p[2] || 3.2, p[3] || C_MUTED); });
+      var cap = group(g);
+      cap.appendChild(svgRich(lx, 300, label, { size: 12.5, anchor: 'middle', cls: color === C_BAD ? 'demo-x-bad' : 'demo-x-good', w: 170 }));
+      return { g: g, circle: circle, edges: edges, dots: dots, extra: extra, cap: cap };
+    }
+    /* 两组点在 Python 里核过：左边三个外点都在圆外 22 px 以上，右边那个点在圆里 */
+    var good = triCase([[468, 232], [520, 150], [566, 226]], [[452, 146], [590, 160], [530, 280]], C_GOOD, '✓ 外接圆里**没有**别的点', 515);
+    var bad = triCase([[626, 238], [668, 140], [742, 222]], [[690, 200, 4.6, C_BAD]], C_BAD, '✗ 圈里**还有**一个点', 684);
+    var delRule = group(del);
+    delRule.appendChild(svgRich(590, 330, '三维里换成四面体和**外接球**：球里不能有别的点', { size: 12.5, anchor: 'middle', cls: 'demo-x-ink2', w: 340 }));
+    delRule.appendChild(svgRich(590, 354, '所以只把**彼此相邻**的点连起来', { size: 12.5, anchor: 'middle', cls: 'demo-x-ink', w: 340 }));
 
-    function draw(t) {
+    function draw(t, clock) {
+      var now = nowOf(t, clock);
       spr.put(F76_ROW, camR, [F76_PELVIS[0], F76_PELVIS[1], 0]);
       setOpacity(ghostSkel.g, seg(t, 0.4, 1.0) * 0.5);
       src.reveal(seg(t, 0.4, 1.2), seg(t, 1.4, 3.2), seg(t, 7.0, 10.0));
       setOpacity(count, seg(t, 3.6, 4.2));
       setOpacity(tets, seg(t, 7.2, 7.8));
-      setOpacity(R, seg(t, 10.4, 11.0));
-      tgt.reveal(seg(t, 10.6, 11.2), seg(t, 10.8, 12.0), seg(t, 11.2, 13.0));
-      setOpacity(same, seg(t, 10.8, 11.4));
-      setOpacity(dense, seg(t, 13.6, 14.2));
+      /* 10.4–13.4：Delaunay 的规则；旁白比分镜长时停在 13.4，卡片一直留着，先淡出、G1 再出场 */
+      setOpacity(del, seg(t, 10.5, 10.9) * (1 - seg(t, 13.4, 13.7)));
+      [good, bad].forEach(function (c, k) {
+        var t0 = 10.7 + k * 0.9;
+        setOpacity(c.dots[0], seg(t, t0, t0 + 0.2)); setOpacity(c.dots[1], seg(t, t0, t0 + 0.2)); setOpacity(c.dots[2], seg(t, t0, t0 + 0.2));
+        c.extra.forEach(function (d) { setOpacity(d, seg(t, t0, t0 + 0.2)); });
+        drawOnPath(c.edges, seg(t, t0 + 0.1, t0 + 0.5));
+        drawOnPath(c.circle, seg(t, t0 + 0.4, t0 + 0.9));
+        setOpacity(c.cap, seg(t, t0 + 0.7, t0 + 1.0));
+      });
+      var pulse = seg(t, 12.5, 12.7);
+      bad.extra[0].setAttribute('r', (4.6 + pulse * 1.6 * (0.5 + 0.5 * Math.sin(now * 5))).toFixed(2));
+      setOpacity(delRule, seg(t, 12.4, 12.8));
+      setOpacity(R, seg(t, 13.7, 14.2));
+      tgt.reveal(seg(t, 13.8, 14.3), seg(t, 14.0, 15.0), seg(t, 14.3, 16.0));
+      setOpacity(same, seg(t, 14.0, 14.5));
+      setOpacity(dense, seg(t, 16.6, 17.2));
     }
     return { el: s, draw: draw };
   }
 
   /* ── scene 3: Laplacian 坐标 ── */
   function buildSceneLaplacian() {
-    var s = sceneSvg('放大第 76 帧人的左手腕：它在网格里连着 22 个邻居（18 个箱面点，加左髋、左膝、左肘、左脚尖，后几个在画面外），邻居的平均位置画成十字，' +
-      '从十字指向手腕的箭头就是 Laplacian 坐标；左边人、右边 G1；整体平移时箭头不变；底下是 196 帧每一帧的形变能');
+    var s = sceneSvg('第 76 帧：左边是人（骨架和缩小后的箱子），右边是同一帧的 G1 渲染图；圆圈把左手腕放大：它在网格里连着 22 个邻居' +
+      '（18 个箱面点，加左髋、左膝、左肘、左脚尖），邻居的平均位置画成十字，从十字指向手腕的箭头就是 Laplacian 坐标；整体平移时箭头不变；底下是 196 帧每一帧的形变能');
     s.appendChild(svgText(30, 28, '一个顶点减去邻居的平均：只记相对位置', 'demo-x-ink2', 13.5));
     s.appendChild(svgMath(400, 58, 'L(p_i) = p_i - \\sum_{j \\in \\mathcal{N}(i)} w_{ij}\\, p_j,\\quad w_{ij} = \\frac{1}{|\\mathcal{N}(i)|}', { size: 16, anchor: 'middle', w: 560 }));
     var L = group(s), R = group(s);
     rectBox(L, 30, 84, 360, 246, C_BORDER, C_SURFACE2);
     rectBox(R, 410, 84, 360, 246, C_BORDER, C_SURFACE2);
-    var i = KI.L_Wrist, ZOOM = 640;
-    function cluster(parent, V, color, x0, title) {
-      var clip = clipTo(parent, x0, 84, 360, 246), mv = group(clip);
+    var i = KI.L_Wrist, ZOOM = 520, BODY_NB = LW.nb.filter(function (j) { return j < 15; });
+    /* 左小图：整个人 / 整台 G1（两边同一个比例，按 G1 那一侧放满） */
+    var head = [F76_PELVIS[0], F76_PELVIS[1], 1.32], ground = [F76_PELVIS[0], F76_PELVIS[1], 0];
+    function bodyBox(x0) { return { x: x0 + 6, y: 114, w: 150, h: 190, pad: 10 }; }
+    var camBR = fitCam(F76_TGT.concat([head, ground]), bodyBox(410), 'orig_side', F76_PELVIS[0], F76_PELVIS[1]);
+    var camBL = fitCam(F76_SRC.concat([ground]), bodyBox(30), 'orig_side', F76_PELVIS[0], F76_PELVIS[1], camBR.s);
+    function cluster(parent, V, color, x0, title, body) {
       parent.appendChild(svgText(x0 + 16, 106, title, 'demo-x-ink2', 12.5));
+      /* 右边的放大圈：以手腕为中心，同一个视角放大 */
+      var zx = x0 + 262, zy = 210, zr = 92;
+      var zoomBg = paint(svgEl('circle', { cx: zx, cy: zy, r: zr, 'stroke-width': 1.6 }), C_SURFACE, color);
+      parent.appendChild(zoomBg);
+      var clip = clipCircle(parent, zx, zy, zr - 1), mv = group(clip);
       var c = [0, 0, 0];
       LW.nb.forEach(function (j) { c[0] += V[j][0] / LW.nb.length; c[1] += V[j][1] / LW.nb.length; c[2] += V[j][2] / LW.nb.length; });
-      var cam = { yaw: G1_SHEETS.orig_side.yaw, pitch: G1_SHEETS.orig_side.pitch, s: ZOOM, ox: x0 + 190, oy: 196, cx: V[i][0], cy: V[i][1] };
+      var cam = { yaw: G1_SHEETS.orig_side.yaw, pitch: G1_SHEETS.orig_side.pitch, s: ZOOM, ox: zx, oy: zy, cx: V[i][0], cy: V[i][1] };
       function P(p) { return project([p[0], p[1], p[2] - V[i][2]], cam); }
       var spokes = LW.nb.map(function (j) { var a = P(V[i]), b = P(V[j]); return hline(mv, a[0], a[1], b[0], b[1], C_MUTED, 0.9); });
       var dots = LW.nb.map(function (j) { var b = P(V[j]); return dotAt(mv, b[0], b[1], j < 15 ? 3.6 : 2.6, j < 15 ? color : C_OBJ); });
@@ -795,18 +856,39 @@
       var cross = group(mv);
       hline(cross, cc[0] - 7, cc[1], cc[0] + 7, cc[1], C_INK, 2.2); hline(cross, cc[0], cc[1] - 7, cc[0], cc[1] + 7, C_INK, 2.2);
       var arrow = pathLine(mv, [cc, w], color, 3.4);
-      var head = dotAt(mv, w[0], w[1], 6, color);
-      return { mv: mv, spokes: spokes, dots: dots, cross: cross, arrow: arrow, head: head };
+      var headDot = dotAt(mv, w[0], w[1], 6, color);
+      /* 小图上：手腕套一个圈，连到放大圈；手腕到四个身体邻居（髋、膝、肘、脚尖）的连线 */
+      var bw = project(V[i], body.cam);
+      var link = group(parent);
+      var ring = paint(svgEl('circle', { cx: bw[0], cy: bw[1], r: 9, fill: 'none', 'stroke-width': 1.8 }), null, color);
+      link.appendChild(ring);
+      var dx = zx - bw[0], dy = zy - bw[1], dl = Math.hypot(dx, dy) || 1;
+      hline(link, bw[0] + (dx / dl) * 9, bw[1] + (dy / dl) * 9, zx - (dx / dl) * zr, zy - (dy / dl) * zr, color, 1.3, '4 3');
+      var bodySpokes = group(parent);
+      BODY_NB.forEach(function (j) {
+        var b = project(V[j], body.cam);
+        hline(bodySpokes, bw[0], bw[1], b[0], b[1], color, 1.2, '3 3');
+        dotAt(bodySpokes, b[0], b[1], 3.4, color);
+      });
+      return { mv: mv, spokes: spokes, dots: dots, cross: cross, arrow: arrow, head: headDot, link: link, bodySpokes: bodySpokes };
     }
-    var cl = cluster(L, MESH.src, C_HUMAN, 30, '人：左手腕和 ' + LW.nb.length + ' 个邻居'), cr = cluster(R, MESH.tgt, C_GOOD, 410, 'G1：同一个顶点、同一批邻居');
+    /* 人：骨架 + 缩到 0.68 倍的箱子线框 */
+    var bodyL = group(L);
+    var wireL = boxWire(bodyL, C_OBJ, 1.3);
+    wireL.put(F76_BOX, camBL, SCALE);
+    var skelL = skeleton(bodyL, C_HUMAN, { w: 2, r: 2.4 });
+    skelL.put(F76_SRC.slice(0, 15), camBL);
+    /* G1：同一帧的 3D 渲染（箱子一起渲在里面） */
+    var bodyR = group(R);
+    var spr = g1Sprite(bodyR, 'orig_side');
+    var cl = cluster(L, F76_SRC, C_HUMAN, 30, '人：左手腕和 ' + LW.nb.length + ' 个邻居', { cam: camBL });
+    var cr = cluster(R, F76_TGT, C_GOOD, 410, 'G1：同一个顶点、同一批邻居', { cam: camBR });
     function v3(a) { return '(' + a.map(function (x) { return fmt(x, 1); }).join(', ') + ') cm'; }
     var numL = group(s), numR = group(s);
-    numL.appendChild(svgRich(46, 318, '$L$ = ' + v3(LW.src), { size: 13, cls: 'demo-x-ink', w: 340 }));
-    numR.appendChild(svgRich(426, 318, '$L$ = ' + v3(LW.tgt) + '，差 **' + fmt(LW.diffCm, 1) + ' cm**', { size: 13, cls: 'demo-x-ink', w: 340 }));
-    var away = group(s);
-    away.appendChild(svgText(374, 126, '左髋、左膝、左脚尖在画面外 ↘', 'demo-x-mut', 10.5, 'end'));
+    numL.appendChild(svgRich(46, 322, '$L$ = ' + v3(LW.src), { size: 13, cls: 'demo-x-ink', w: 340 }));
+    numR.appendChild(svgRich(426, 322, '$L$ = ' + v3(LW.tgt) + '，差 **' + fmt(LW.diffCm, 1) + ' cm**', { size: 13, cls: 'demo-x-ink', w: 340 }));
     var shiftNote = group(s);
-    shiftNote.appendChild(svgRich(210, 292, '一起平移：箭头不变', { size: 12.5, anchor: 'middle', cls: 'demo-x-good', w: 340 }));
+    shiftNote.appendChild(svgRich(292, 106, '一起平移：箭头不变', { size: 12.5, anchor: 'middle', cls: 'demo-x-good', w: 160 }));
     /* 底部：每一帧的形变能（196 帧，复现实验） */
     var E = group(s);
     var ens = Array.prototype.slice.call(SER.orig.en), emax = 0.12;
@@ -820,19 +902,23 @@
 
     function draw(t, clock) {
       var now = nowOf(t, clock);
+      spr.put(F76_ROW, camBR, ground);
       setOpacity(L, seg(t, 0.4, 1.0));
+      setOpacity(cl.link, seg(t, 1.2, 1.8));
       cl.spokes.forEach(function (l, k) { setOpacity(l, seg(t, 3.6 + k * 0.05, 4.0 + k * 0.05)); });
       cl.dots.forEach(function (d, k) { setOpacity(d, seg(t, 3.6 + k * 0.05, 4.0 + k * 0.05)); });
-      setOpacity(away, seg(t, 4.4, 4.8));
-      setOpacity(cl.cross, seg(t, 5.0, 5.4)); setOpacity(cl.arrow, seg(t, 5.4, 5.8)); setOpacity(cl.head, seg(t, 0.6, 1.0));
+      setOpacity(cl.bodySpokes, seg(t, 4.4, 4.8));
+      setOpacity(cl.cross, seg(t, 5.0, 5.4)); setOpacity(cl.arrow, seg(t, 5.4, 5.8)); setOpacity(cl.head, seg(t, 1.2, 1.8));
       setOpacity(numL, seg(t, 5.8, 6.3));
-      /* 平移：整团来回挪，箭头跟着走、长短方向都不变 */
-      var sh = seg(t, 7.0, 7.4) * (1 - seg(t, 10.2, 10.4)) * 30 * Math.sin(now * 2.2);
+      /* 平移：圈里的整团来回挪，箭头跟着走、长短方向都不变 */
+      var sh = seg(t, 7.0, 7.4) * (1 - seg(t, 10.2, 10.4)) * 26 * Math.sin(now * 2.2);
       cl.mv.setAttribute('transform', 'translate(' + sh.toFixed(1) + ' ' + (sh * 0.4).toFixed(1) + ')');
       setOpacity(shiftNote, seg(t, 7.2, 7.6) * (1 - seg(t, 10.2, 10.4)));
       setOpacity(R, seg(t, 8.2, 8.8));
+      setOpacity(cr.link, seg(t, 8.4, 8.8));
       cr.spokes.forEach(function (l, k) { setOpacity(l, seg(t, 8.6 + k * 0.03, 9.0 + k * 0.03)); });
       cr.dots.forEach(function (d, k) { setOpacity(d, seg(t, 8.6 + k * 0.03, 9.0 + k * 0.03)); });
+      setOpacity(cr.bodySpokes, seg(t, 9.0, 9.3));
       setOpacity(cr.cross, seg(t, 9.0, 9.3)); setOpacity(cr.arrow, seg(t, 9.2, 9.6)); setOpacity(cr.head, seg(t, 8.4, 8.8));
       setOpacity(numR, seg(t, 9.6, 10.0));
       setOpacity(E, seg(t, 10.4, 11.0));
@@ -1401,14 +1487,15 @@
     },
     {
       title: '交互网格：把人、箱子连成一张网',
-      dur: 16,
+      dur: 19,
       build: buildSceneMesh,
       cues: [
         { at: 0.4, s: '顶点有两种：人身上的**关键关节**，和物体、地面表面**随机撒的点**。' },
         { at: 3.6, s: '开源代码：人取 **15** 个关节，大箱子表面撒 **100** 个点，一共 115 个顶点。' },
         { at: 7.0, s: '做 **Delaunay 四面体剖分**：复现的这段搬箱子，每帧 ' + TETS.min + '–' + TETS.max + ' 个四面体（第 76 帧 ' + TETS_F76 + ' 个）。' },
-        { at: 10.4, s: 'G1 这边用**同一套连接关系**：对应的 15 个部位 + 同一只箱子的 100 个点；只要语义对上。' },
-        { at: 13.4, s: '物体、地面采得比身体密，接触才保得准；网格建在**箱子坐标系**里，箱子转、手跟着转。' }
+        { at: 10.4, s: '**Delaunay** 的规则：每个四面体的**外接球**里不能有别的点，所以只把**彼此相邻**的点连起来。' },
+        { at: 13.4, s: 'G1 这边用**同一套连接关系**：对应的 15 个部位 + 同一只箱子的 100 个点；只要语义对上。' },
+        { at: 16.4, s: '物体、地面采得比身体密，接触才保得准；网格建在**箱子坐标系**里，箱子转、手跟着转。' }
       ]
     },
     {
@@ -1536,7 +1623,7 @@
   function buildExplainerDemo(host) {
     K.explainer(host, {
       title: '十二幕动画：OmniRetarget 全流程速览',
-      sub: '约 195 秒自动播放。空格播放/暂停，← → 换幕；G1 的动作是我们照官方代码跑出的复现结果（按真实模型做 3D 渲染），表格与图来自论文。',
+      sub: '约 198 秒自动播放。空格播放/暂停，← → 换幕；G1 的动作是我们照官方代码跑出的复现结果（按真实模型做 3D 渲染），表格与图来自论文。',
       ariaLabel: 'OmniRetarget 十二幕讲解动画',
       notes: [
         '取数依据：表 I、表 II、图 1–7 与正文的数字照抄 arXiv 2509.26633 v3；图 7 的直方图是读图值（人-物 20 段 + 人-地形 19 段 = 正文的 39 段）。代码里的数（15 个关键点、100 个箱面点、信赖域 0.2、每帧 10 次、扩增 ±20 cm / ±45°、τ = 50 / 25 帧、锚定 $5e^{-t/10}$）读自 amazon-far/holosoma 的 `src/holosoma_retargeting`。',
