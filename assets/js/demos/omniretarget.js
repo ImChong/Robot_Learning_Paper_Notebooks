@@ -500,9 +500,9 @@
     anch_orig: {'file': 'g1_anch_orig.webp', 'R': 170, 'yaw': -1.0, 'pitch': 0.12, 'cw': 141, 'ch': 215, 'cols': 10, 'n': 20, 'ax': 46, 'ay': 206, 'step': 3, 'anchor': [0.6348, 0.8022, 0.0]},
     anch_code: {'file': 'g1_anch_code.webp', 'R': 170, 'yaw': -1.0, 'pitch': 0.12, 'cw': 141, 'ch': 217, 'cols': 10, 'n': 20, 'ax': 24, 'ay': 206, 'step': 3, 'anchor': [0.6348, 0.8022, 0.0]},
     anch_none: {'file': 'g1_anch_none.webp', 'R': 170, 'yaw': -1.0, 'pitch': 0.12, 'cw': 141, 'ch': 217, 'cols': 10, 'n': 20, 'ax': 24, 'ay': 206, 'step': 3, 'anchor': [0.6348, 0.8022, 0.0]},
-    climb_z08: {'file': 'g1_climb_z08.webp', 'R': 90, 'yaw': -1.35, 'pitch': 0.18, 'cw': 202, 'ch': 190, 'cols': 10, 'n': 101, 'ax': 95, 'ay': 184, 'step': 7, 'anchor': [-1.0, -0.5, 0.0]},
-    climb_z10: {'file': 'g1_climb_z10.webp', 'R': 90, 'yaw': -1.35, 'pitch': 0.18, 'cw': 203, 'ch': 193, 'cols': 10, 'n': 101, 'ax': 96, 'ay': 187, 'step': 7, 'anchor': [-1.0, -0.5, 0.0]},
-    climb_z12: {'file': 'g1_climb_z12.webp', 'R': 90, 'yaw': -1.35, 'pitch': 0.18, 'cw': 202, 'ch': 200, 'cols': 10, 'n': 101, 'ax': 95, 'ay': 197, 'step': 7, 'anchor': [-1.0, -0.5, 0.0]},
+    climb_z08: {'file': 'g1_climb_z08.webp', 'R': 90, 'yaw': -1.35, 'pitch': 0.18, 'cw': 204, 'ch': 194, 'cols': 10, 'n': 101, 'ax': 97, 'ay': 184, 'step': 7, 'anchor': [-1.0, -0.5, 0.0]},
+    climb_z10: {'file': 'g1_climb_z10.webp', 'R': 90, 'yaw': -1.35, 'pitch': 0.18, 'cw': 205, 'ch': 197, 'cols': 10, 'n': 101, 'ax': 98, 'ay': 187, 'step': 7, 'anchor': [-1.0, -0.5, 0.0]},
+    climb_z12: {'file': 'g1_climb_z12.webp', 'R': 90, 'yaw': -1.35, 'pitch': 0.18, 'cw': 204, 'ch': 204, 'cols': 10, 'n': 101, 'ax': 97, 'ay': 197, 'step': 7, 'anchor': [-1.0, -0.5, 0.0]},
     anch_pin: {'file': 'g1_anch_pin.webp', 'R': 170, 'yaw': -1.0, 'pitch': 0.12, 'cw': 150, 'ch': 216, 'cols': 10, 'n': 20, 'ax': 33, 'ay': 205, 'step': 3, 'anchor': [0.6348, 0.8022, 0.0]}
   };
   var spriteSeq = 0;
@@ -1326,9 +1326,10 @@
           var v = T.rows[m][c.i], bw = 160 / ms.length - 8, bx = x0 + 4 + k * (bw + 8);
           if (!v) { g.appendChild(svgText(bx + bw / 2, base - 4, 'N/A', 'demo-x-mut', 8.5, 'middle')); return; }
           var b = vbar(g, bx, base, bw, M_COLOR[m], m === 'OmniRetarget' ? 0.95 : 0.7);
-          var lab = svgText(bx + bw / 2, base - 4, fmt(v[0], 2), 'demo-x-ink', 10, 'middle');
+          /* 数字写在柱顶上方，跟着柱子长高，不压在柱子上 */
+          var lab = svgText(bx + bw / 2, base - 5, fmt(v[0], 2), 'demo-x-ink', 11, 'middle');
           g.appendChild(lab);
-          bars.push({ b: b, h: (60 * Math.min(v[0], c.max)) / c.max, lab: lab });
+          bars.push({ b: b, h: (60 * Math.min(v[0], c.max)) / c.max, lab: lab, base: base });
         });
       });
       return { g: g, bars: bars };
@@ -1348,7 +1349,12 @@
       rowsG.forEach(function (r, k) {
         var a = [3.6, 10.4, 13.6][k];
         setOpacity(r.g, seg(t, a, a + 0.6));
-        r.bars.forEach(function (b, i) { setH(b.b, b.h * ease(seg(t, a + 0.3 + i * 0.03, a + 1.3 + i * 0.03))); setOpacity(b.lab, seg(t, a + 1.2, a + 1.6)); });
+        r.bars.forEach(function (b, i) {
+          var h = b.h * ease(seg(t, a + 0.3 + i * 0.03, a + 1.3 + i * 0.03));
+          setH(b.b, h);
+          b.lab.setAttribute('y', (b.base - h - 5).toFixed(1));
+          setOpacity(b.lab, seg(t, a + 1.2, a + 1.6));
+        });
       });
       setOpacity(gmrNote, seg(t, 7.2, 7.6) * (0.7 + 0.3 * Math.cos(t * 4)));
       setOpacity(why, seg(t, 7.2, 7.8));

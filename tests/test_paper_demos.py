@@ -1129,6 +1129,9 @@ def test_omniretarget_explainer_demos_and_worked_example_share_the_paper_numbers
     # 第 3 幕：放大的手腕旁边画出整个人（骨架 + 箱子）和同一帧的 G1 渲染
     lap = js.split("function buildSceneLaplacian()", 1)[1].split("function drawOnPath(", 1)[0]
     assert "skeleton(bodyL" in lap and "boxWire(bodyL" in lap and "g1Sprite(bodyR, 'orig_side')" in lap and "clipCircle(" in lap
+    # 第 10 幕：表 II 柱子上的数字写在柱顶上方、跟着柱子长高，不压在柱子上
+    t2 = js.split("function buildSceneTable2()", 1)[1].split("function buildSceneDownstream()", 1)[0]
+    assert "b.lab.setAttribute('y', (b.base - h - 5).toFixed(1));" in t2
     # 第 1 幕结尾用一句话解释 SOCP：旁白、字幕轨与表 I 下的小卡片同一个说法
     socp = "S O C P 是二阶锥规划，一种凸优化：除了线性约束，还允许「一个向量的长度不超过某个值」，求解器能又快又稳地找到最优解。"
     assert f'(0, 16.0, 19.0, "{socp}")' in narration
