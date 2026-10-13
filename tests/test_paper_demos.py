@@ -3499,6 +3499,35 @@ def test_exbody_explainer_demos_and_worked_example_share_the_paper_numbers():
     # 片头接上一期（OmniRetarget）的片尾预告，片尾只预告下一篇（H2O）
     assert narration.count("上一期结尾预告") == 1 and "下一篇讲 H2O" in narration and "H2O" in intro
     assert "## 🎬 十三幕动画" in note and 'demos: ["exbody"]' in note
+    # 全局检查（2026-10-13）：面板到 cue 之后才淡出。视频里旁白比分镜长时 t 停在 cue 前一点，
+    # 淡出若在 cue 之前，这一段剩下的旁白里面板一直是空的（第 1、3、6、9 幕都出过）
+    assert "return seg(t, a + 0.3, a + 0.7) * (b == null ? 1 : 1 - seg(t, b, b + 0.3));" in js
+    assert "1 - seg(t, b - 0.3, b)" not in js
+    # 术语第一次出现就用白话交代
+    for needle in (
+        "也就是能独立动的方向有几个", "增益，就是关节被拉离目标时往回拉的力度", "根部就是骨盆", "也就是身体左右歪、前后倾、朝哪个方向",
+        "也就是机器人自己的传感器测得到的", "P D 控制器像弹簧加阻尼", "用四个数描述一次三维旋转", "论文没写单位",
+        "只约束动作本身的小奖惩", "越远的奖励打的折越多", "每次换掉一个部件", "从易到难的课程",
+        "判别器是一个分类器，分辨动作来自数据还是来自策略", "用文字生成人体动作的扩散模型", "站直时的高度",
+    ):
+        assert needle in narration, needle
+    assert "标称高度" not in narration and "标称高度" not in js
+    # 示意图补标注：第 5 幕放大图 3 的子图并写中文；第 6 幕先讲两类关节、再画 T 字；第 8 幕图例不压曲线、空框 / 实心有图例；
+    # 第 10 幕念到速度、横滚俯仰时分别圈出图 5(b) 的子图；第 12 幕两张图都有图例、圈出拳击这个例外；第 13 幕按图注框出图 1 的四块
+    dist = js.split("function buildSceneDist()", 1)[1].split("function buildSceneRetarget()", 1)[0]
+    assert "figCrop(g, 'fig3_data_distribution.webp', 1400, 262)" in dist and "'论文图 3 局部放大'" in dist
+    retarget = js.split("function buildSceneRetarget()", 1)[1].split("function buildSceneRsi()", 1)[0]
+    assert "'H1 的 19 个电机分两类'" in retarget and "'第 1 步：人和 H1 都摆成 T 字（示意）'" in retarget
+    reward = js.split("function buildSceneReward()", 1)[1].split("function buildSceneReg()", 1)[0]
+    assert "X0 + (X1 - X0) * 0.4, Y1 + 18 + i * 17" in reward and "实心 = 这一帧拿到的" in reward
+    track = js.split("function buildSceneTrack()", 1)[1].split("function buildSceneAblation()", 1)[0]
+    assert "hlV = panelBox(0, 0.259), hlRP = panelBox(0.259, 0.515)" in track and "'右：训练好的策略'" in track
+    amp = js.split("function buildSceneAmp()", 1)[1].split("function buildSceneReal()", 1)[0]
+    assert amp.count("'+ AMP', 'demo-x-ink2'") == 2 and "var boxRing = ring(t5" in amp
+    real = js.split("function buildSceneReal()", 1)[1].split("var EXB_SCENES", 1)[0]
+    assert "f1Box(hl, 0.515, 0.668, 1, 1, C_UP)" in real and "f1Box(hl2, 0, 0.668, 0.515, 1, C_ROOT)" in real
+    # 第 4 幕表 II：短条的数字写在条的右边，不压在条上
+    assert "r.v.setAttribute('x', (BX + (r.inside ? 8 : r.full * u + 6)).toFixed(1));" in js
 
 
 def test_exbody_3d_sprite_sheets_match_their_metadata():
