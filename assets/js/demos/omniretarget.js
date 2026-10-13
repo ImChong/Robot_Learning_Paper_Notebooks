@@ -1091,13 +1091,13 @@
   /* ── scene 6: 一条演示扩成六条 ── */
   function buildSceneAug() {
     var s = sceneSvg('左边是俯视图（人朝上）：人站在下方，原始箱子是灰色虚线框，五种扩增把箱子的起点往前、往左、往右挪 20 cm 或再转 ±45°，画成彩色框；' +
-      '彩色线是前 99 帧箱子中心的轨迹，搬起后偏移按指数衰减回到原轨迹；' +
-      '左下是偏移随帧数衰减的曲线；右边六台 G1 各解一遍同一道优化，循环播放第 0–99 帧');
+      '线是第 0–96 帧箱子中心的轨迹，搬起后偏移按指数衰减回到原轨迹；' +
+      '左下是偏移随帧数衰减的曲线；右边六台 G1 各解一遍同一道优化，循环播放第 0–96 帧');
     s.appendChild(svgText(30, 28, '人的网格不动，只改 G1 这边的箱子', 'demo-x-ink2', 13.5));
     var COLS = [C_MUTED, C_ACCENT, C_GOOD, C_WARN, C_BAD, '#9b7fd1'];
     /* 左：俯视图，转成「人朝上」：人站在原点，人 → 箱子的方向画成朝上（也就是代码里「人的坐标系」的 x 轴），
        往左、往右就是画面的左右。先画人和原始箱子，再一个个画出五种扩增挪过的箱子起点（真实大小和转角），
-       最后画前 99 帧箱子中心的轨迹：起点不同，搬起来以后都慢慢回到原轨迹 */
+       最后画第 0–96 帧箱子中心的轨迹：起点不同，搬起来以后都慢慢回到原轨迹 */
     var MAP = group(s);
     rectBox(MAP, 30, 40, 330, 236, C_BORDER, C_SURFACE2);
     MAP.appendChild(svgText(46, 62, '俯视：箱子的起点挪到哪（人朝上）', 'demo-x-ink2', 12.5));
@@ -1117,7 +1117,7 @@
         return mp(toWorld(pose, [c[0], c[1], 0]));
       });
     }
-    var NR = 33;
+    var NR = 33, LAST_F = 96; // 六台 G1 的贴图都是第 0–96 帧（每 3 帧一格）
     /* 人：一个圆点 + 朝前的箭头 */
     var who = group(mclip);
     dotAt(who, mx, my, 7, C_INK2);
@@ -1133,7 +1133,8 @@
     var o0 = mp(box0);
     var augs = AUGS.map(function (a, k) {
       var c = CLIPS[a.key], pts = [];
-      for (var r = 0; r < Math.min(NR, c.n); r++) pts.push(mp(boxPose(c, r).p));
+      /* 按帧号截到第 96 帧：原始解每 2 帧存一行、扩增每 3 帧一行，按行数截会让原始轨迹只到第 64 帧 */
+      for (var r = 0; r < c.n && r * c.step <= LAST_F; r++) pts.push(mp(boxPose(c, r).p));
       var g = group(mclip);
       var fp = footprint(boxPose(c, 0));
       var shape = paint(svgEl('path', { d: polyPath(fp) + ' Z', 'stroke-width': k ? 2 : 1.6, 'fill-opacity': 0.12 }), COLS[k], COLS[k]);

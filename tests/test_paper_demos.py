@@ -1136,6 +1136,8 @@ def test_omniretarget_explainer_demos_and_worked_example_share_the_paper_numbers
     # 第 6 幕：俯视图人朝上，五种扩增的箱子起点在旁白念到时一个个出现（分镜 3.6–10.6 s 对着那一句旁白）
     aug = js.split("function buildSceneAug()", 1)[1].split("function buildSceneAnchor()", 1)[0]
     assert "var AT = [0.6, 6.5, 7.3, 7.9, 9.5, 10.1];" in aug and "function footprint(pose)" in aug
+    # 轨迹按帧号截到第 96 帧：原始解每 2 帧一行、扩增每 3 帧一行，按行数截原始轨迹只到第 64 帧（比别的短一截）
+    assert "for (var r = 0; r < c.n && r * c.step <= LAST_F; r++)" in aug
     assert '(5, 3.6, 10.6, "物体位姿，开源代码给了 5 种' in narration and "左边的俯视图里，人站在下面、面朝上" in narration
     # 第 10 幕：表 II 柱子上的数字写在柱顶上方、跟着柱子长高，不压在柱子上
     t2 = js.split("function buildSceneTable2()", 1)[1].split("function buildSceneDownstream()", 1)[0]
