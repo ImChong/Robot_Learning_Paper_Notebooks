@@ -3542,6 +3542,10 @@ def test_exbody_explainer_demos_and_worked_example_share_the_paper_numbers():
     assert "'人工设计：Fu 等人的做法（示意）'" in dist and "'人的数据：我们复现的挥手'" in dist and "K.mulberry32(13)" in dist
     assert "'站着的 H1：点画在这儿'" in track and "'图 6 的点怎么来？用我们复现的挥手演示'" in track
     assert "论文参考文献把这条引用 `fu2022learning` 连到了一篇无人机竞速论文" in note
+    # 第 10 幕：挥手时根部偏航从 −20.5° 走到 +45.4°（变了 60 多度），点按根坐标系记（先扣掉根部的转动），画面和旁白都要交代
+    yaws = [math.degrees(fr["rpy"][2]) for fr in wave["frames"]]
+    assert (_fmt(min(yaws), 1), _fmt(max(yaws), 1)) == ("-20.5", "45.4") and 60 <= max(yaws) - min(yaws) < 70
+    assert "'俯视朝向'" in track and "记点时已扣掉，照样对得上" in track and "身体朝向变了 60 多度" in narration
     for needle in ("在球坐标里随机撒出来的", "右手每一刻在哪，就点一个绿点", "记下双手相对身体的位置", "这段挥手 5 秒，就是 99 个时刻"):
         assert needle in narration, needle
 

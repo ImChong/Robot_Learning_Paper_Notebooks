@@ -1200,7 +1200,8 @@
     var s = sceneSvg('先是论文图 5：上排用数据里的根运动目标，策略的状态分布和训练数据很像；下排随机采样目标，红色是采样范围，先圈出速度那一张：策略覆盖了大部分，' +
       '再圈出横滚俯仰那一张：绿色比红框窄；' +
       '之后换成图 6：数据集和策略各一万个手的位置，几乎一样；右边用我们复现的挥手演示图 6 的点怎么来：左边的 H1 照着人挥手，每一刻把双手相对身体的位置' +
-      '记下的位置点到右边站着不动的 H1 上，虚线连起这一刻的手和刚点上的点，红点右手、蓝点左手；最后左下写出结论：全部动作采满一万个是左图，策略再采一万个是右图，两团形状一样说明上半身跟上了');
+      '记下的位置点到右边站着不动的 H1 上，虚线连起这一刻的手和刚点上的点，红点右手、蓝点左手；两台 H1 头顶各有一个俯视朝向的小圆，' +
+      '挥手的那台身体朝向变了 60 多度，记点时先按身体朝向扣掉，所以放到站着的 H1 上照样对得上；最后左下写出结论：全部动作采满一万个是左图，策略再采一万个是右图，两团形状一样说明上半身跟上了');
     s.appendChild(svgText(30, 28, '跟得怎么样：根运动（图 5）与双手（图 6）', 'demo-x-ink2', 13.5));
     var top = group(s);
     var fa = paperFig(top, 'fig5a_motion_sample.webp', 30, 44, 740, 150, '图 5(a)：根运动目标取自数据（4096 个环境 × 20 个点）', { ar: 1300 / 252 });
@@ -1228,8 +1229,27 @@
     var SC = 88, GY6 = 300, cw = CLIPS.wave, h1T = h1Mesh(botR, cw.sheet);
     var camS = camFor(STAND_SHEET, SC, 700, GY6, 0, 0), st = STAND_BODIES[0];
     h1Mesh(botR, STAND_SHEET).put([0, 0], camS, 0);
-    label(botR, 530, GY6 + 26, '照着人挥手', 'demo-x-mut', 10.5, 'middle');
-    label(botR, 700, GY6 + 26, '站着的 H1：点画在这儿', 'demo-x-mut', 10.5, 'middle');
+    label(botR, 530, GY6 + 22, '照着人挥手', 'demo-x-mut', 10.5, 'middle');
+    label(botR, 700, GY6 + 22, '站着的 H1：点画在这儿', 'demo-x-mut', 10.5, 'middle');
+    /* 俯视朝向：挥手时根部偏航从 −20.5° 走到 +45.4°，站着的 H1 一直是 0°。点是在根坐标系里记的（toLocal 先扣掉根部的转动，
+       和官方代码 global_to_local(base_quat, …) 一样），所以放到站着的 H1 上照样对得上；两个小圆把这件事画出来，虚线是站着那台的朝向。
+       世界方向 (dx, dy) 在俯视小圆里画成 (dx·cos + dy·sin, dx·sin − dy·cos)：和 3/4 视角同一个相机偏航，朝上是离镜头远 */
+    function dialDir(psi) {
+      var c = Math.cos(cw.sheet.yaw), sn = Math.sin(cw.sheet.yaw), dx = Math.cos(psi), dy = Math.sin(psi);
+      return [dx * c + dy * sn, dx * sn - dy * c];
+    }
+    var DR = 19, DL = [530, 119], DS = [700, 119], d0 = dialDir(0);
+    [DL, DS].forEach(function (d) {
+      botR.appendChild(paint(svgEl('circle', { cx: d[0], cy: d[1], r: DR + 4, 'stroke-width': 1.2 }), C_SURFACE, C_MUTED));
+      dotAt(botR, d[0], d[1], 2.2, C_MUTED);
+    });
+    hline(botR, DL[0], DL[1], DL[0] + d0[0] * DR, DL[1] + d0[1] * DR, C_MUTED, 1.8, '3 2');
+    var headL = arrow(botR, C_ROOT, 2.4), headS = arrow(botR, C_ROOT, 2.4);
+    headS.set(DS[0], DS[1], DS[0] + d0[0] * DR, DS[1] + d0[1] * DR);
+    label(botR, DL[0] + 28, DL[1] - 2, '俯视朝向', 'demo-x-mut', 10);
+    label(botR, DL[0] + 28, DL[1] + 12, '虚线：站着那台', 'demo-x-mut', 9.5);
+    label(botR, DS[0] - 28, DS[1] + 4, '俯视朝向', 'demo-x-mut', 10, 'end');
+    var yawTxt = label(botR, 610, 342, '', 'demo-x-ink', 11.5, 'middle');
     var LOC = [], hd = [];
     for (var i = 0; i < cw.n; i++) {
       var f = cw.frame(i), pair = [toLocal(f.kp[5], f), toLocal(f.kp[2], f)];
@@ -1242,8 +1262,8 @@
     var links = [hline(botR, 0, 0, 0, 0, C_BAD, 1.2, '4 3'), hline(botR, 0, 0, 0, 0, C_ACCENT, 1.2, '4 3')];
     var hands = [ring(botR, 0, 0, 6, 6, C_BAD), ring(botR, 0, 0, 6, 6, C_ACCENT)];
     var newest = [ring(botR, 0, 0, 5, 5, C_BAD), ring(botR, 0, 0, 5, 5, C_ACCENT)];
-    var cnt = label(botR, 610, 346, '', 'demo-x-ink', 11.5, 'middle');
-    label(botR, 610, 368, '红：右手　蓝：左手（左手一直垂着，挤成一小团）', 'demo-x-mut', 10.5, 'middle');
+    var cnt = label(botR, 610, 362, '', 'demo-x-ink2', 11, 'middle');
+    label(botR, 610, 382, '红：右手　蓝：左手（左手一直垂着，挤成一小团）', 'demo-x-mut', 10.5, 'middle');
     var concl = group(s);
     concl.appendChild(svgRich(30, 376, '全部动作采满 1 万个点 → 左图；策略照着做，再采 1 万个 → 右图', { size: 11.5, cls: 'demo-x-ink2', w: 410 }));
     concl.appendChild(svgRich(30, 400, '两团**形状一样** → 策略的上半身跟上了参考', { size: 12.5, cls: 'demo-x-ink', w: 410 }));
@@ -1269,6 +1289,9 @@
         setLine(links[h], a[0], a[1], +b.getAttribute('cx'), +b.getAttribute('cy'));
         [hands[h], newest[h], links[h]].forEach(function (n) { setOpacity(n, shown > 0 ? 1 : 0); });
       });
+      var deg = Math.round(fk.rpy[2] * 180 / Math.PI), dd = dialDir(fk.rpy[2]);
+      headL.set(DL[0], DL[1], DL[0] + dd[0] * DR, DL[1] + dd[1] * DR);
+      yawTxt.textContent = '左边朝向偏了 ' + sgn((deg > 0 ? '+' : '') + deg) + '°：记点时已扣掉，照样对得上';
       cnt.textContent = done ? cw.n + ' 个时刻点完：红点、蓝点各 ' + cw.n + ' 个' : '第 ' + shown + ' / ' + cw.n + ' 个时刻';
       setOpacity(concl, seg(t, 18.9, 19.3));
     }
@@ -1570,7 +1593,7 @@
         { at: 3.6, s: '图 5(b)：换成随机采样的命令（红色范围），策略的速度覆盖了大部分，比训练集还大。' },
         { at: 7.0, s: '所以部署时能直接用**摇杆**；横滚俯仰没铺满红框，论文推测是上身太重。' },
         { at: 10.4, s: '图 6：相对机器人各采 1 万个手的位置，数据集和策略**几乎一样**。' },
-        { at: 13.4, s: '图 6 的点怎么来：左边 H1 照着挥手，每一刻把双手**相对身体**的位置，点到右边站着的 H1 上。' },
+        { at: 13.4, s: '图 6 的点怎么来：左边 H1 照着挥手，每一刻把双手**相对身体**的位置，点到右边站着的 H1 上；它的朝向变了 60 多度，记点时已经扣掉。' },
         { at: 18.6, s: '挥手 5 秒是 99 个时刻；全部动作采满 1 万个是左图，策略再采 1 万个是右图，**形状一样** = 上半身跟上了。' }
       ]
     },
