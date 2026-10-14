@@ -5,14 +5,30 @@
 tests/、docs/ 等仓库文件都被 Jekyll 原样发布了出去。
 """
 
+import re
 from pathlib import Path
-
-import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
 LAYOUT = (ROOT / "_layouts/default.html").read_text(encoding="utf-8")
 HEAD = LAYOUT.split("</head>", 1)[0]
-CONFIG = yaml.safe_load((ROOT / "_config.yml").read_text(encoding="utf-8"))
+CONFIG_TEXT = (ROOT / "_config.yml").read_text(encoding="utf-8")
+
+
+def _config_list(key):
+    """``_config.yml`` 里 ``key:`` 下的列表项（CI 没装 PyYAML，这里不依赖它）。"""
+    match = re.search(rf"^{key}:\n((?:[ \t]+-[^\n]*\n|[ \t]*#[^\n]*\n)+)", CONFIG_TEXT, re.M)
+    assert match, f"{key}: 不是 _config.yml 里的列表"
+    return [
+        line.strip()[1:].strip().strip('"')
+        for line in match.group(1).splitlines()
+        if line.strip().startswith("-")
+    ]
+
+
+def _config_scalar(key):
+    match = re.search(rf'^{key}:[ \t]*"?([^"\n]*)"?[ \t]*$', CONFIG_TEXT, re.M)
+    assert match, f"{key}: 不在 _config.yml 里"
+    return match.group(1)
 
 
 def test_head_carries_description_canonical_and_open_graph():
@@ -39,8 +55,8 @@ def test_paper_description_comes_from_the_roadmap_summary():
 
 def test_canonical_is_absolute_and_index_free():
     assert 'page.url | replace: "index.html", "" | absolute_url' in HEAD
-    assert CONFIG["url"] == "https://imchong.github.io"
-    assert CONFIG["baseurl"] == "/Robot_Learning_Paper_Notebooks"
+    assert _config_scalar("url") == "https://imchong.github.io"
+    assert _config_scalar("baseurl") == "/Robot_Learning_Paper_Notebooks"
 
 
 def test_home_and_update_log_have_their_own_description():
@@ -50,14 +66,14 @@ def test_home_and_update_log_have_their_own_description():
 
 
 def test_sitemap_plugin_and_robots():
-    assert "jekyll-sitemap" in CONFIG["plugins"]
+    assert "jekyll-sitemap" in _config_list("plugins")
     assert 'gem "jekyll-sitemap"' in (ROOT / "Gemfile").read_text(encoding="utf-8")
     robots = (ROOT / "robots.txt").read_text(encoding="utf-8")
     assert "Sitemap: https://imchong.github.io/Robot_Learning_Paper_Notebooks/sitemap.xml" in robots
 
 
 def test_repo_only_files_are_not_published():
-    excluded = set(CONFIG["exclude"])
+    excluded = set(_config_list("exclude"))
     for path in ("skills/", "tests/", "docs/", "media/", "AGENTS.md", "skills-lock.json",
                  "pyproject.toml", "requirements-dev.txt", "requirements-site.txt",
                  "papers/todos/", "papers/DAILY_SUMMARY_LOG.md"):
