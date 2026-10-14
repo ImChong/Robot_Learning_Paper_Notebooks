@@ -1,0 +1,64 @@
+"""搜索引擎 / 分享卡片的元信息、sitemap 与「只发布站点内容」。
+
+此前页面只有 <title>：没有 description、canonical 和 Open Graph，分享出去没有摘要；
+站点也没有 sitemap.xml / robots.txt；而 skills/ 下带 front matter 的 SKILL.md、
+tests/、docs/ 等仓库文件都被 Jekyll 原样发布了出去。
+"""
+
+from pathlib import Path
+
+import yaml
+
+ROOT = Path(__file__).resolve().parents[1]
+LAYOUT = (ROOT / "_layouts/default.html").read_text(encoding="utf-8")
+HEAD = LAYOUT.split("</head>", 1)[0]
+CONFIG = yaml.safe_load((ROOT / "_config.yml").read_text(encoding="utf-8"))
+
+
+def test_head_carries_description_canonical_and_open_graph():
+    for needle in (
+        '<meta name="description" content="{{ seo_description | escape }}">',
+        '<link rel="canonical" href="{{ seo_url }}">',
+        '<meta property="og:title" content="{{ seo_title | escape }}">',
+        '<meta property="og:description" content="{{ seo_description | escape }}">',
+        '<meta property="og:url" content="{{ seo_url }}">',
+        '<meta name="twitter:card" content="summary">',
+    ):
+        assert needle in HEAD, needle
+
+
+def test_paper_description_comes_from_the_roadmap_summary():
+    # 论文页按 page.url 在 _data/papers.json 里找 summary_zh（含子分类），
+    # 没有总结退回中文名，最后退回 site.description。
+    assert 'cat[1].papers | where: "url", page.url | first' in HEAD
+    assert 'sc.papers | where: "url", page.url | first' in HEAD
+    assert 'seo_paper.summary_zh | remove: "$"' in HEAD
+    assert "seo_paper.zh_title | default: seo_paper.zhname" in HEAD
+    assert "seo_description | default: site.description" in HEAD
+
+
+def test_canonical_is_absolute_and_index_free():
+    assert 'page.url | replace: "index.html", "" | absolute_url' in HEAD
+    assert CONFIG["url"] == "https://imchong.github.io"
+    assert CONFIG["baseurl"] == "/Robot_Learning_Paper_Notebooks"
+
+
+def test_home_and_update_log_have_their_own_description():
+    for name in ("index.html", "updates.html"):
+        front = (ROOT / name).read_text(encoding="utf-8").split("---\n", 2)[1]
+        assert "description:" in front, name
+
+
+def test_sitemap_plugin_and_robots():
+    assert "jekyll-sitemap" in CONFIG["plugins"]
+    assert 'gem "jekyll-sitemap"' in (ROOT / "Gemfile").read_text(encoding="utf-8")
+    robots = (ROOT / "robots.txt").read_text(encoding="utf-8")
+    assert "Sitemap: https://imchong.github.io/Robot_Learning_Paper_Notebooks/sitemap.xml" in robots
+
+
+def test_repo_only_files_are_not_published():
+    excluded = set(CONFIG["exclude"])
+    for path in ("skills/", "tests/", "docs/", "media/", "AGENTS.md", "skills-lock.json",
+                 "pyproject.toml", "requirements-dev.txt", "requirements-site.txt",
+                 "papers/todos/", "papers/DAILY_SUMMARY_LOG.md"):
+        assert path in excluded, path
