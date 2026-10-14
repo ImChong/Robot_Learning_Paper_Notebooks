@@ -47,7 +47,7 @@ def test_all_paper_mermaid_fill_colors_are_covered_by_generic_cluster_rule():
     import re
 
     css = (ROOT / "assets" / "css" / "style.css").read_text(encoding="utf-8")
-    assert 'g.cluster:has(> rect[style*="fill:#"])' in css
+    assert 'g.cluster > rect[style*="fill:#"] ~ .cluster-label span' in css
 
     fills = set()
     for md in (ROOT / "papers").rglob("*.md"):
@@ -58,6 +58,19 @@ def test_all_paper_mermaid_fill_colors_are_covered_by_generic_cluster_rule():
     for color in sorted(fills):
         assert color.startswith("#")
         assert 'rect[style*="fill:#"]' in css
+
+
+def test_no_style_attribute_test_inside_has():
+    """`:has(... [style...])` 让 Chrome 在任何内联样式变化时重算整页样式。
+
+    灯箱拖动 / 缩放每帧都写 stage.style.transform，首页上每帧约 4000 个元素重算。
+    """
+    import re
+
+    css = (ROOT / "assets" / "css" / "style.css").read_text(encoding="utf-8")
+    css = re.sub(r"/\*.*?\*/", "", css, flags=re.DOTALL)
+    for match in re.finditer(r":has\(([^)]*)\)", css):
+        assert "[style" not in match.group(1), match.group(0)
 
 
 def test_sanitize_mermaid_svg_preserves_foreign_object_labels():
