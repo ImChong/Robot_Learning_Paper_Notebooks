@@ -172,6 +172,44 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net 'unsafe-inline'; style-src 'self' https://cdn.jsdelivr.net 'unsafe-inline'; font-src 'self' https://cdn.jsdelivr.net data:; img-src 'self' data: https:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; object-src 'none'; form-action 'none'">
   <meta name="referrer" content="strict-origin-when-cross-origin">
   <title>{% if page.title %}{{ page.title | escape }} | {% endif %}{{ site.title | escape }}</title>
+  {%- comment -%}
+    搜索引擎与分享卡片（微信 / X / Slack）读的元信息。论文页的简介取
+    _data/papers.json 里 prepare_pages.py 从「🎯 一句话总结」提取的 summary_zh
+    （首页路线图悬浮卡片用的同一句），按 page.url 查；没有总结的笔记退回中文名，
+    再退回站点描述。首页与更新记录在各自的 front matter 里写 description。
+  {%- endcomment -%}
+  {%- assign seo_description = page.description -%}
+  {%- assign seo_paper = nil -%}
+  {%- if page.layout == "paper" -%}
+    {%- for cat in site.data.papers -%}
+      {%- assign seo_paper = cat[1].papers | where: "url", page.url | first -%}
+      {%- unless seo_paper -%}
+        {%- for sc in cat[1].subcategories -%}
+          {%- assign seo_paper = sc.papers | where: "url", page.url | first -%}
+          {%- if seo_paper -%}{%- break -%}{%- endif -%}
+        {%- endfor -%}
+      {%- endunless -%}
+      {%- if seo_paper -%}{%- break -%}{%- endif -%}
+    {%- endfor -%}
+    {%- unless seo_description -%}
+      {%- if seo_paper.summary_zh -%}
+        {%- assign seo_description = seo_paper.summary_zh | remove: "$" -%}
+      {%- elsif seo_paper.zh_title or seo_paper.zhname -%}
+        {%- assign seo_description = seo_paper.zh_title | default: seo_paper.zhname -%}
+      {%- endif -%}
+    {%- endunless -%}
+  {%- endif -%}
+  {%- assign seo_description = seo_description | default: site.description -%}
+  {%- assign seo_title = page.title | default: site.title -%}
+  {%- assign seo_url = page.url | replace: "index.html", "" | absolute_url %}
+  <meta name="description" content="{{ seo_description | escape }}">
+  <link rel="canonical" href="{{ seo_url }}">
+  <meta property="og:site_name" content="{{ site.title | escape }}">
+  <meta property="og:type" content="{% if page.layout == 'paper' %}article{% else %}website{% endif %}">
+  <meta property="og:title" content="{{ seo_title | escape }}">
+  <meta property="og:description" content="{{ seo_description | escape }}">
+  <meta property="og:url" content="{{ seo_url }}">
+  <meta name="twitter:card" content="summary">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📚</text></svg>">
   {%- comment -%}
     Cache-bust local assets with their last-modified time so a corrected
@@ -180,6 +218,21 @@
   {%- endcomment -%}
   {% assign style_css = site.static_files | where: "path", "/assets/css/style.css" | first %}
   <link rel="stylesheet" href="{{ '/assets/css/style.css' | relative_url }}{% if style_css %}?v={{ style_css.modified_time | date: '%s' }}{% endif %}">
+  {%- comment -%}
+    KaTeX 只在用得上的页面加载（CSS + JS 约 300 KB，gzip 后约 90 KB，另有按需字体）：
+    392 篇笔记里 298 篇一条公式也没有。规则：论文页正文不含「$」且没有交互演示
+    （演示文案里的 $…$ 由 kit.js 交给 KaTeX）就不加载；首页（路线图悬浮卡片的简介
+    含公式）和更新记录照常加载。`content` 是本页渲染后的正文，含 mermaid 源码，
+    所以流程图标签里的公式也算在内（mermaid 在非 iOS 上用 KaTeX 渲染标签公式）。
+    不加载时 window.katexEnabled = false，底部的 DOMContentLoaded 处理不再轮询等它。
+  {%- endcomment -%}
+  {%- assign needs_katex = true -%}
+  {%- if page.layout == "paper" -%}
+    {%- assign has_demos = false -%}
+    {%- if page.demos and page.demos.size > 0 -%}{%- assign has_demos = true -%}{%- endif -%}
+    {%- unless has_demos or content contains "$" -%}{%- assign needs_katex = false -%}{%- endunless -%}
+  {%- endif -%}
+  {%- if needs_katex %}
   <!-- KaTeX (pinned + SRI) -->
   <link rel="stylesheet"
         href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css"
@@ -193,29 +246,120 @@
           src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"
           integrity="sha384-+VBxd3r6XgURycqtZ117nYw44OOcIax56Z4dCRWbxyPt0Koah1uHoK0o4+/RRE05"
           crossorigin="anonymous"></script>
-  <!-- DOMPurify (pinned + SRI) -->
-  <script src="https://cdn.jsdelivr.net/npm/dompurify@3.2.4/dist/purify.min.js"
+  {%- else %}
+  <script>window.katexEnabled = false;</script>
+  {%- endif %}
+  <!-- DOMPurify (pinned + SRI). Only mermaid's SVG goes through it, so it
+       can wait for the parser like everything else below. -->
+  <script defer
+          src="https://cdn.jsdelivr.net/npm/dompurify@3.2.4/dist/purify.min.js"
           integrity="sha384-eEu5CTj3qGvu9PdJuS+YlkNi7d2XxQROAFYOr59zgObtlcux1ae1Il3u7jvdCSWu"
           crossorigin="anonymous"></script>
-  <!-- Mermaid (pinned + SRI) -->
-  <script src="https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.min.js"
+  <!-- Mermaid (pinned + SRI).
+
+       2.5 MB (710 KB over the wire). It used to sit here without `defer`,
+       so every page — the home page included, where the roadmap is folded
+       away — waited for the whole download and parse before painting a
+       single word: on a throttled 4G phone the first paint of a note moved
+       from ~1.3 s to ~6.8 s on its account alone.
+
+       `async` (not `defer`): a deferred script would still gate
+       DOMContentLoaded, and the reveal of #paper-body hangs off that event,
+       so text, math and TOC would wait on the diagrams again. Async keeps it
+       off both the parse path and DOMContentLoaded; the diagrams fill in
+       behind their placeholders whenever it lands. initMermaid() below
+       tracks the tag (load / error / watchdog) and runs as soon as both
+       the parser and this script are done. -->
+  <script async id="mermaid-script"
+          src="https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.min.js"
           integrity="sha384-rbtjAdnIQE/aQJGEgXrVUlMibdfTSa4PQju4HDhN3sR2PmaKFzhEafuePsl9H/9I"
           crossorigin="anonymous"></script>
   {% assign mermaid_config_js = site.static_files | where: "path", "/assets/js/mermaid-config.js" | first %}
-  <script src="{{ '/assets/js/mermaid-config.js' | relative_url }}{% if mermaid_config_js %}?v={{ mermaid_config_js.modified_time | date: '%s' }}{% endif %}"></script>
+  <script src="{{ '/assets/js/mermaid-config.js' | relative_url }}{% if mermaid_config_js %}?v={{ mermaid_config_js.modified_time | date: '%s' }}{% endif %}" defer></script>
   {% assign mermaid_zoom_js = site.static_files | where: "path", "/assets/js/mermaid-zoom.js" | first %}
   <script src="{{ '/assets/js/mermaid-zoom.js' | relative_url }}{% if mermaid_zoom_js %}?v={{ mermaid_zoom_js.modified_time | date: '%s' }}{% endif %}" defer></script>
   <script>
     var mermaidRunPending = false;
 
+    /* mermaid.min.js is loaded `async` (see above), so it can land before or
+       after DOMContentLoaded — or never. Watch the tag itself: `load` and
+       `error` fire on the element, and a watchdog covers a request that just
+       hangs. Registered right here, in the very next script after the tag,
+       so neither event can slip past. */
+    var mermaidScriptState = 'loading'; // 'loading' | 'ready' | 'failed'
+    var mermaidWaitTimer = null;
+    var MERMAID_WAIT_TIMEOUT_MS = 20000;
+
+    (function () {
+      var tag = document.getElementById('mermaid-script');
+      if (!tag) {
+        mermaidScriptState = 'failed';
+        return;
+      }
+      tag.addEventListener('load', function () {
+        mermaidScriptState = 'ready';
+        onMermaidScriptSettled();
+      });
+      tag.addEventListener('error', function () {
+        mermaidScriptState = 'failed';
+        onMermaidScriptSettled();
+      });
+    })();
+
+    function currentSiteTheme() {
+      return document.documentElement.getAttribute('data-theme') || 'dark';
+    }
+
+    function onMermaidScriptSettled() {
+      if (mermaidWaitTimer) {
+        clearTimeout(mermaidWaitTimer);
+        mermaidWaitTimer = null;
+      }
+      // While the document is still parsing the DOMContentLoaded hook inside
+      // initMermaid() takes over: mermaid-config.js (`defer`) has not run yet
+      // and initialize() must see its config.
+      if (document.readyState !== 'loading') initMermaid(currentSiteTheme());
+    }
+
+    var mermaidInitQueued = false;
+
     function initMermaid(theme) {
+      var root = document.documentElement;
+      if (document.readyState === 'loading') {
+        // Called while the document is still parsing (the theme script at the
+        // bottom of <body>): the deferred scripts — mermaid-config.js among
+        // them — have not run yet. Come back once they have, unless paper.js
+        // (also deferred, so it runs first) has configured mermaid by then.
+        if (!mermaidInitQueued) {
+          mermaidInitQueued = true;
+          document.addEventListener('DOMContentLoaded', function () {
+            mermaidInitQueued = false;
+            if (!window.roadmapMermaidConfigured) initMermaid(currentSiteTheme());
+          }, { once: true });
+        }
+        return;
+      }
       if (typeof mermaid === 'undefined') {
+        if (mermaidScriptState === 'loading') {
+          // Still downloading: the load / error listeners above call back
+          // here. If it never settles, show the raw sources rather than
+          // leaving the (visibility: hidden) placeholders empty forever; a
+          // late arrival still renders, since the class is lifted below.
+          if (!mermaidWaitTimer) {
+            mermaidWaitTimer = setTimeout(function () {
+              mermaidWaitTimer = null;
+              if (typeof mermaid === 'undefined') root.classList.add('mermaid-unavailable');
+            }, MERMAID_WAIT_TIMEOUT_MS);
+          }
+          return;
+        }
         // Offline, or the CDN is blocked: nothing will ever turn the diagram
         // sources into SVG, so let the raw source show instead of leaving the
         // (visibility: hidden) placeholders empty forever.
         document.documentElement.classList.add('mermaid-unavailable');
         return;
       }
+      root.classList.remove('mermaid-unavailable');
       var config =
         typeof window.getMermaidSiteConfig === 'function'
           ? window.getMermaidSiteConfig(theme)
@@ -232,11 +376,11 @@
     }
 
     /* Rendering a paper's diagrams is seconds of synchronous layout work.
-       initMermaid() is called while the document is still parsing (from the
-       theme script at the bottom of <body>) and again from paper.js once the
-       ```mermaid fences have been converted, so doing the work inline blocked
-       parsing, DOMContentLoaded and therefore the reveal above — the text of
-       the page waited on the pictures.
+       initMermaid() is reached from the theme script at the bottom of <body>
+       (queued to DOMContentLoaded), from paper.js once the ```mermaid fences
+       have been converted, and from the async script's load event, so doing
+       the work inline blocked parsing, DOMContentLoaded and therefore the
+       reveal above — the text of the page waited on the pictures.
 
        Run it after the first revealed frame instead: text, math and TOC are
        already in place, and the diagrams fill in behind their own
@@ -1145,7 +1289,10 @@
          last diagram had been laid out. initKaTeX() rejects the `.mermaid`
          subtrees itself (mermaid renders its own math), so the two passes are
          independent and must not be chained. */
-      if (!window.initKaTeX()) {
+      if (window.katexEnabled === false) {
+        // No formulas on this page: <head> did not request KaTeX, so there
+        // is nothing to wait for (see the needs_katex rule up there).
+      } else if (!window.initKaTeX()) {
         // KaTeX is loaded with `defer`, so it has already executed by now
         // unless the request failed outright; keep polling in case it is a
         // slow proxy rather than a dead one, but give up instead of leaving a
