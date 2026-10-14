@@ -218,6 +218,21 @@
   {%- endcomment -%}
   {% assign style_css = site.static_files | where: "path", "/assets/css/style.css" | first %}
   <link rel="stylesheet" href="{{ '/assets/css/style.css' | relative_url }}{% if style_css %}?v={{ style_css.modified_time | date: '%s' }}{% endif %}">
+  {%- comment -%}
+    KaTeX 只在用得上的页面加载（CSS + JS 约 300 KB，gzip 后约 90 KB，另有按需字体）：
+    392 篇笔记里 298 篇一条公式也没有。规则：论文页正文不含「$」且没有交互演示
+    （演示文案里的 $…$ 由 kit.js 交给 KaTeX）就不加载；首页（路线图悬浮卡片的简介
+    含公式）和更新记录照常加载。`content` 是本页渲染后的正文，含 mermaid 源码，
+    所以流程图标签里的公式也算在内（mermaid 在非 iOS 上用 KaTeX 渲染标签公式）。
+    不加载时 window.katexEnabled = false，底部的 DOMContentLoaded 处理不再轮询等它。
+  {%- endcomment -%}
+  {%- assign needs_katex = true -%}
+  {%- if page.layout == "paper" -%}
+    {%- assign has_demos = false -%}
+    {%- if page.demos and page.demos.size > 0 -%}{%- assign has_demos = true -%}{%- endif -%}
+    {%- unless has_demos or content contains "$" -%}{%- assign needs_katex = false -%}{%- endunless -%}
+  {%- endif -%}
+  {%- if needs_katex %}
   <!-- KaTeX (pinned + SRI) -->
   <link rel="stylesheet"
         href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css"
@@ -231,6 +246,9 @@
           src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"
           integrity="sha384-+VBxd3r6XgURycqtZ117nYw44OOcIax56Z4dCRWbxyPt0Koah1uHoK0o4+/RRE05"
           crossorigin="anonymous"></script>
+  {%- else %}
+  <script>window.katexEnabled = false;</script>
+  {%- endif %}
   <!-- DOMPurify (pinned + SRI). Only mermaid's SVG goes through it, so it
        can wait for the parser like everything else below. -->
   <script defer
@@ -1271,7 +1289,10 @@
          last diagram had been laid out. initKaTeX() rejects the `.mermaid`
          subtrees itself (mermaid renders its own math), so the two passes are
          independent and must not be chained. */
-      if (!window.initKaTeX()) {
+      if (window.katexEnabled === false) {
+        // No formulas on this page: <head> did not request KaTeX, so there
+        // is nothing to wait for (see the needs_katex rule up there).
+      } else if (!window.initKaTeX()) {
         // KaTeX is loaded with `defer`, so it has already executed by now
         // unless the request failed outright; keep polling in case it is a
         // slow proxy rather than a dead one, but give up instead of leaving a
