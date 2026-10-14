@@ -4088,6 +4088,18 @@
     "display_name": "Simulation Benchmark",
     "papers": [
       {
+        "title": "Benchmarking Behavioral Steerability in Behavior Foundation Models",
+        "path": "papers/11_Simulation_Benchmark/RoboSteer__Benchmarking_Behavioral_Steerability_in_Behavior_Foundation_Models/RoboSteer__Benchmarking_Behavioral_Steerability_in_Behavior_Foundation_Models.md",
+        "url": "/papers/11_Simulation_Benchmark/RoboSteer__Benchmarking_Behavioral_Steerability_in_Behavior_Foundation_Models/RoboSteer__Benchmarking_Behavioral_Steerability_in_Behavior_Foundation_Models.html",
+        "dir": "RoboSteer__Benchmarking_Behavioral_Steerability_in_Behavior_Foundation_Models",
+        "arxiv": "2610.10198",
+        "summary_zh": "RoboSteer 是第一个专门测「行为基础模型能不能按用户意图改动作」的基准。",
+        "published_date_zh": "2026年10月7日（arXiv v1）",
+        "published_date_en": "Oct 7, 2026 (arXiv v1)",
+        "zhname": "RoboSteer：行为基础模型的行为可操控性基准",
+        "zh_title": "RoboSteer：行为基础模型的行为可操控性基准"
+      },
+      {
         "title": "CLAP: Cross-Embodiment Video World Models are Zero-Shot Physical Simulators",
         "path": "papers/11_Simulation_Benchmark/CLAP__Cross-Embodiment_Video_World_Models_are_Zero-Shot_Physical_Simulators/CLAP__Cross-Embodiment_Video_World_Models_are_Zero-Shot_Physical_Simulators.md",
         "url": "/papers/11_Simulation_Benchmark/CLAP__Cross-Embodiment_Video_World_Models_are_Zero-Shot_Physical_Simulators/CLAP__Cross-Embodiment_Video_World_Models_are_Zero-Shot_Physical_Simulators.html",
