@@ -3537,6 +3537,42 @@ def test_exbody_explainer_demos_and_worked_example_share_the_paper_numbers():
     assert amp.count("'+ AMP', 'demo-x-ink2'") == 2 and "var boxRing = ring(t5" in amp
     real = js.split("function buildSceneReal()", 1)[1].split("var EXB_SCENES", 1)[0]
     assert "f1Box(hl, 0.515, 0.668, 1, 1, C_UP)" in real and "f1Box(hl2, 0, 0.668, 0.515, 1, C_ROOT)" in real
+    # 第 5 幕结尾（2026-10-14 看片反馈「看不懂」后重做）：图 3 收起，左边是示意的随机撒点（Fu 等人的做法），右边是 H1 照着挥手、
+    # 右手每一刻点一个点；第 10 幕结尾：左边 H1 照着挥手，每一刻把双手相对身体的位置点到右边站着的 H1 上，演示图 6 的点怎么来
+    assert "'人工设计：Fu 等人的做法（示意）'" in dist and "'人的数据：我们复现的挥手'" in dist and "K.mulberry32(13)" in dist
+    assert "'站着的 H1：点画在这儿'" in track and "'图 6 的点怎么来？用我们复现的挥手演示'" in track
+    assert "论文参考文献把这条引用 `fu2022learning` 连到了一篇无人机竞速论文" in note
+    for needle in ("在球坐标里随机撒出来的", "右手每一刻在哪，就点一个绿点", "记下双手相对身体的位置", "这段挥手 5 秒，就是 99 个时刻"):
+        assert needle in narration, needle
+
+    def mulberry32(a):
+        a &= 0xFFFFFFFF
+
+        def rnd():
+            nonlocal a
+            a = (a + 0x6D2B79F5) & 0xFFFFFFFF
+            t = ((a ^ (a >> 15)) * (1 | a)) & 0xFFFFFFFF
+            t = ((t + ((t ^ (t >> 7)) * (61 | t))) & 0xFFFFFFFF) ^ t
+            return ((t ^ (t >> 14)) & 0xFFFFFFFF) / 4294967296
+
+        return rnd
+
+    def in_body(p):
+        x, y, z = p
+        if 0 <= z < 0.85:
+            return -0.12 < x < 0.25 and abs(y) < 0.28
+        if 0.85 <= z < 1.48:
+            return abs(x) < 0.15 and abs(y) < 0.22
+        return 1.48 <= z < 1.75 and abs(x) < 0.11 and abs(y) < 0.1
+
+    rng, ground, body = mulberry32(13), 0, 0
+    for _ in range(60):
+        rr, az, el = 0.3 + 0.65 * rng(), rng() * 2 * math.pi, (rng() * 2 - 1) * 1.25
+        z = 0.72 + rr * math.sin(el)
+        p = (0.05 + rr * math.cos(el) * math.cos(az), -0.15 + rr * math.cos(el) * math.sin(az), z)
+        ground += z < 0
+        body += z >= 0 and in_body(p)
+    assert (ground, body) == (3, 5) and "种子 13：3 个在地下、5 个扎进身体" in dist
     # 第 4 幕表 II：短条的数字写在条的右边，不压在条上
     assert "r.v.setAttribute('x', (BX + (r.inside ? 8 : r.full * u + 6)).toFixed(1));" in js
 

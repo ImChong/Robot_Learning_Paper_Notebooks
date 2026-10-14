@@ -469,17 +469,19 @@
       }
     };
   }
-  /* 相对根部的局部坐标：R(横滚, 俯仰, 偏航)ᵀ (p − root) */
-  function toLocal(p, f) {
-    var d = [p[0] - f.root[0], p[1] - f.root[1], p[2] - f.root[2]];
+  /* 根部的姿态：R = Rz(偏航) Ry(俯仰) Rx(横滚) */
+  function rootRot(f) {
     var r = f.rpy[0], pi = f.rpy[1], y = f.rpy[2];
     var cy = Math.cos(y), sy = Math.sin(y), cp = Math.cos(pi), sp = Math.sin(pi), cr = Math.cos(r), sr = Math.sin(r);
-    /* R = Rz(y) Ry(p) Rx(r)，局部 = Rᵀ d */
-    var R = [
+    return [
       [cy * cp, cy * sp * sr - sy * cr, cy * sp * cr + sy * sr],
       [sy * cp, sy * sp * sr + cy * cr, sy * sp * cr - cy * sr],
       [-sp, cp * sr, cp * cr]
     ];
+  }
+  /* 相对根部的局部坐标：Rᵀ (p − root) */
+  function toLocal(p, f) {
+    var d = [p[0] - f.root[0], p[1] - f.root[1], p[2] - f.root[2]], R = rootRot(f);
     return [R[0][0] * d[0] + R[1][0] * d[1] + R[2][0] * d[2], R[0][1] * d[0] + R[1][1] * d[1] + R[2][1] * d[2], R[0][2] * d[0] + R[1][2] * d[1] + R[2][2] * d[2]];
   }
   /* 帧号：按真实时间循环播放（20 fps） */
@@ -779,9 +781,9 @@
 
   /* ── scene 5: 人的数据自带分布 ── */
   function buildSceneDist() {
-    var s = sceneSvg('上方是论文图 3 的四个分布：速度、横滚俯仰、根高度、偏航角速度，依次圈出并在下方放大，右边用中文写出怎么看；最后下方左边是示意：在肩膀周围随机撒手的目标点，' +
-      '一部分落在地下或身体里，要再检查；右边是我们重算的挥手里右手的 99 个位置，天然都在能到的地方');
-    s.appendChild(svgText(30, 28, '图 3：训练数据的根运动目标分布', 'demo-x-ink2', 13.5));
+    var s = sceneSvg('上方是论文图 3 的四个分布：速度、横滚俯仰、根高度、偏航角速度，依次圈出并在下方放大，右边用中文写出怎么看；之后图 3 收起，换成「目标点从哪来」的左右对比：' +
+      '左边是示意，Fu 等人的做法是在球坐标里随机撒手的目标点，落到地下、扎进身体的变成红叉，要逐个检查扔掉；右边是我们复现的挥手，H1 照着人做，右手每一刻在哪就点一个绿点，全在地面以上、身体外面');
+    var ttl = label(s, 30, 28, '图 3：训练数据的根运动目标分布', 'demo-x-ink2', 13.5);
     var fig = paperFig(s, 'fig3_data_distribution.webp', 30, 40, 740, 146, '论文图 3（每段动作每 1 s 取一个点，共 ' + FIG3_POINTS + ' 个）', { ar: 1400 / 262 });
     var hl = [[0, 0.25], [0.25, 0.505], [0.505, 0.752], [0.752, 1]].map(function (u) {
       var a = fig.px(u[0] + 0.005, 0.02), b = fig.px(u[1] - 0.005, 0.98);
@@ -812,45 +814,90 @@
       g.appendChild(svgRich(470, 374, '论文图 3 局部放大', { size: 10, cls: 'demo-x-mut' }));
       zoomA.push(g);
     });
-    /* 下：随机撒点（示意） vs 人的数据（复现） */
-    var low = group(s);
-    var SC = 72, L = { ox: 210, oy: 406 }, Rr = { ox: 590, oy: 406 };
-    rectBox(low, 30, 236, 360, 176, C_BORDER, C_SURFACE2);
-    rectBox(low, 410, 236, 360, 176, C_BORDER, C_SURFACE2);
-    var camL = camFor(STAND_SHEET, SC, L.ox, L.oy, 0, 0), camR = camFor(STAND_SHEET, SC, Rr.ox, Rr.oy, 0, 0);
-    h1Mesh(low, STAND_SHEET).put([0, 0], camL, 0);
-    h1Mesh(low, STAND_SHEET).put([0, 0], camR, 0);
-    /* 示意：右肩周围半径 0.75 m 的球里撒 60 个手的目标点；落进躯干（自碰撞）的标红 */
-    var rng = K.mulberry32(7), sh = STAND_BODIES[BODY_NAMES.indexOf('right_shoulder_pitch_link')];
-    var randPts = [];
-    while (randPts.length < 60) {
-      var x = rng() * 2 - 1, y = rng() * 2 - 1, z = rng() * 2 - 1;
-      if (x * x + y * y + z * z > 1) continue;
-      var p = [sh[0] + 0.75 * x, sh[1] + 0.75 * y, sh[2] + 0.75 * z];
-      var inBody = Math.abs(p[0]) < 0.14 && Math.abs(p[1]) < 0.2 && p[2] > 0.9 && p[2] < 1.6;
-      randPts.push({ p: p, bad: inBody });
+    /* 第 13.4 s 起：图 3 收起，换成「目标点从哪来」的左右对比（论文第 III-A 节）。
+       左：示意。论文说 Fu 等人在球坐标里随机撒点，再检查点在不在地下、会不会撞到机器人自己；
+       右：我们复现的挥手，H1 照着人做，右手每一刻在哪就点一个点（世界坐标，相机不动） */
+    var ttl2 = label(s, 30, 28, '目标点从哪来：人工撒点 vs 人的数据', 'demo-x-ink2', 13.5);
+    var SC = 118, GY = 344, lowL = group(s), lowR = group(s);
+    rectBox(lowL, 30, 44, 360, 368, C_BORDER, C_SURFACE2);
+    rectBox(lowR, 410, 44, 360, 368, C_BORDER, C_SURFACE2);
+    lowL.appendChild(svgRich(44, 68, '人工设计：Fu 等人的做法（示意）', { size: 13, cls: 'demo-x-ink' }));
+    lowL.appendChild(svgRich(44, 90, '在球坐标里随机撒手的目标点', { size: 11.5, cls: 'demo-x-ink2' }));
+    lowR.appendChild(svgRich(424, 68, '人的数据：我们复现的挥手', { size: 13, cls: 'demo-x-ink' }));
+    lowR.appendChild(svgRich(424, 90, 'H1 照着人做，右手每一刻在哪，就点一个点', { size: 11.5, cls: 'demo-x-ink2' }));
+    [[lowL, 46, 374, 210], [lowR, 426, 754, 590]].forEach(function (g) {
+      hline(g[0], g[1], GY, g[2], GY, C_MUTED, 1.2, '5 4');
+      label(g[0], g[2], GY - 6, '地面', 'demo-x-mut', 10, 'end');
+    });
+    /* 左：以 C 为球心，半径、方位角、仰角各自均匀地撒 60 个点；在地下（z < 0）或落进腿、躯干、头的方框里算无效。
+       种子 13：3 个在地下、5 个扎进身体 */
+    var camL = camFor(STAND_SHEET, SC, 210, GY, 0, 0), SPH = [0.05, -0.15, 0.72], SPH_R = 0.95;
+    function inBody(p) {
+      if (p[2] >= 0 && p[2] < 0.85) return p[0] > -0.12 && p[0] < 0.25 && Math.abs(p[1]) < 0.28;
+      if (p[2] >= 0.85 && p[2] < 1.48) return Math.abs(p[0]) < 0.15 && Math.abs(p[1]) < 0.22;
+      if (p[2] >= 1.48 && p[2] < 1.75) return Math.abs(p[0]) < 0.11 && Math.abs(p[1]) < 0.1;
+      return false;
     }
-    var rdots = randPts.map(function (r) { var q = project(r.p, camL); return dotAt(low, q[0], q[1], r.bad ? 3.6 : 2.4, r.bad ? C_BAD : C_MUTED); });
-    var badN = randPts.filter(function (r) { return r.bad; }).length;
-    var badLbl = label(low, 40, 254, '示意：肩周围随机撒 60 个点，' + badN + ' 个撞进身体，得逐个查', 'demo-x-ink2', 11);
-    var cw = CLIPS.wave, hdots = [], st = STAND_BODIES[0];
-    for (var i = 0; i < cw.n; i++) {
-      var f = cw.frame(i), loc = toLocal(f.kp[5], f), q = project([st[0] + loc[0], st[1] + loc[1], st[2] + loc[2]], camR);
-      hdots.push(dotAt(low, q[0], q[1], 2.6, C_UP));
+    var sc0 = project(SPH, camL);
+    var sphere = paint(svgEl('circle', { cx: sc0[0].toFixed(1), cy: sc0[1].toFixed(1), r: (SPH_R * SC).toFixed(1), fill: 'none', 'stroke-width': 1.2 }), null, C_MUTED);
+    sphere.setAttribute('stroke-dasharray', '4 4');
+    lowL.appendChild(sphere);
+    label(lowL, sc0[0] - SPH_R * SC * 0.72, sc0[1] - SPH_R * SC * 0.72, '撒点范围', 'demo-x-mut', 10, 'end');
+    var rng = K.mulberry32(13), pts = [], behind = group(lowL);
+    h1Mesh(lowL, STAND_SHEET).put([0, 0], camL, 0);
+    var front = group(lowL), marks = group(lowL);
+    while (pts.length < 60) {
+      var rr = 0.3 + 0.65 * rng(), az = rng() * 2 * Math.PI, el = (rng() * 2 - 1) * 1.25;
+      var p = [SPH[0] + rr * Math.cos(el) * Math.cos(az), SPH[1] + rr * Math.cos(el) * Math.sin(az), SPH[2] + rr * Math.sin(el)];
+      var why = p[2] < 0 ? 'ground' : (inBody(p) ? 'body' : ''), q = project(p, camL);
+      var pt = { why: why, dot: dotAt(why ? marks : (q[2] > 0 ? behind : front), q[0], q[1], 2.6, C_MUTED) };
+      if (why) {
+        pt.x = group(marks);
+        hline(pt.x, q[0] - 4.5, q[1] - 4.5, q[0] + 4.5, q[1] + 4.5, C_BAD, 2.2);
+        hline(pt.x, q[0] - 4.5, q[1] + 4.5, q[0] + 4.5, q[1] - 4.5, C_BAD, 2.2);
+      }
+      pts.push(pt);
     }
-    var goodLbl = label(low, 420, 254, '重算的挥手：右手 99 个位置，天然不撞身体', 'demo-x-ink2', 11);
+    var nGround = pts.filter(function (r) { return r.why === 'ground'; }).length, nBody = pts.filter(function (r) { return r.why === 'body'; }).length;
+    var legL = group(lowL);
+    legL.appendChild(svgRich(44, 386, '灰点能用；**红叉**：' + nGround + ' 个在地下、' + nBody + ' 个扎进身体', { size: 11.5, cls: 'demo-x-ink2' }));
+    legL.appendChild(svgRich(44, 404, '红叉要逐个检查出来、扔掉，再重撒', { size: 11, cls: 'demo-x-mut' }));
+    /* 右：挥手在世界里的样子，相机对准整段的平均根部位置不动；右手（关键点 5）每一刻点一个点 */
+    var cw = CLIPS.wave, RC = [0, 0];
+    for (var i = 0; i < cw.n; i++) { RC[0] += cw.frame(i).root[0] / cw.n; RC[1] += cw.frame(i).root[1] / cw.n; }
+    var camR = camFor(cw.sheet, SC, 590, GY, RC[0], RC[1]), h1R = h1Mesh(lowR, cw.sheet), trail = [];
+    for (i = 0; i < cw.n; i++) { var hq = project(cw.frame(i).kp[5], camR); trail.push(dotAt(lowR, hq[0], hq[1], 2.6, C_UP)); }
+    var nowRing = ring(lowR, 0, 0, 7, 7, C_UP);
+    var cntR = label(lowR, 756, 68, '', 'demo-x-mut', 11, 'end');
+    var legR = group(lowR);
+    legR.appendChild(svgRich(424, 386, '**绿点**全在地面以上、身体外面：不用检查', { size: 11.5, cls: 'demo-x-ink2' }));
+    legR.appendChild(svgRich(424, 404, '论文：重定向后偶有自碰撞，交给碰撞惩罚', { size: 11, cls: 'demo-x-mut' }));
+    /* 右手的点按 t 一帧一帧点（16.6 s 起，原速 20 fps，21.55 s 点完）；点完以后 H1 按真实时间循环，点都留着 */
+    var ACC0 = 16.6, ACC1 = ACC0 + cw.n / cw.fps;
     function draw(t, clock) {
-      setOpacity(fig.g, seg(t, 0.3, 0.8));
+      var now = nowOf(t, clock);
+      setOpacity(ttl, 1 - seg(t, 13.4, 13.7));
+      setOpacity(fig.g, seg(t, 0.3, 0.8) * (1 - seg(t, 13.4, 13.7)));
       setOpacity(hl[0], win(t, 3.7, 7.0));
       setOpacity(hl[1], win(t, 7.1, 10.4));
       setOpacity(hl[2], win(t, 10.5, 13.4)); setOpacity(hl[3], win(t, 10.8, 13.4));
       setOpacity(zoomA[0], win(t, 3.6, 7.0)); setOpacity(zoomA[1], win(t, 7.0, 10.4)); setOpacity(zoomA[2], win(t, 10.4, 13.4));
-      setOpacity(low, seg(t, 13.7, 14.1));
-      rdots.forEach(function (d, i) { setOpacity(d, seg(t, 13.8 + i * 0.02, 14.0 + i * 0.02)); });
-      setOpacity(badLbl, seg(t, 14.5, 14.9));
-      var now = nowOf(t, clock), shown = Math.floor(clamp((now - 13.8) * 40, 0, cw.n));
-      hdots.forEach(function (d, i) { d.style.opacity = i < shown ? 0.85 : 0; });
-      setOpacity(goodLbl, seg(t, 14.7, 15.1));
+      setOpacity(ttl2, seg(t, 13.7, 14.1));
+      setOpacity(lowL, seg(t, 13.7, 14.1));
+      pts.forEach(function (r, j) {
+        var a = seg(t, 13.9 + j * 0.012, 14.1 + j * 0.012);
+        if (r.why) { setOpacity(r.dot, a * (1 - seg(t, 15.0, 15.4))); setOpacity(r.x, seg(t, 15.0, 15.4)); } else setOpacity(r.dot, a);
+      });
+      setOpacity(legL, seg(t, 15.2, 15.6));
+      setOpacity(lowR, seg(t, 16.7, 17.1));
+      var done = t >= ACC1, shown = done ? cw.n : clamp(Math.floor((t - ACC0) * cw.fps) + 1, 0, cw.n);
+      var k = done ? ((Math.floor((now - ACC1) * cw.fps) % cw.n) + cw.n) % cw.n : Math.max(0, shown - 1);
+      h1R.put(cw.frame(k).root, camR, k);
+      trail.forEach(function (d, j) { d.style.opacity = j < shown ? 0.85 : 0; });
+      nowRing.setAttribute('cx', trail[k].getAttribute('cx')); nowRing.setAttribute('cy', trail[k].getAttribute('cy'));
+      setOpacity(nowRing, shown > 0 ? 1 : 0);
+      cntR.textContent = '已点 ' + shown + ' / ' + cw.n + ' 个';
+      setOpacity(legR, seg(t, 18.0, 18.4));
     }
     return { el: s, draw: draw };
   }
@@ -1152,7 +1199,8 @@
   function buildSceneTrack() {
     var s = sceneSvg('先是论文图 5：上排用数据里的根运动目标，策略的状态分布和训练数据很像；下排随机采样目标，红色是采样范围，先圈出速度那一张：策略覆盖了大部分，' +
       '再圈出横滚俯仰那一张：绿色比红框窄；' +
-      '之后换成图 6：数据集和策略各一万个手的位置，几乎一样；右边是我们重算的挥手，双手的位置一帧帧落下');
+      '之后换成图 6：数据集和策略各一万个手的位置，几乎一样；右边用我们复现的挥手演示图 6 的点怎么来：左边的 H1 照着人挥手，每一刻把双手相对身体的位置' +
+      '记下的位置点到右边站着不动的 H1 上，虚线连起这一刻的手和刚点上的点，红点右手、蓝点左手；最后左下写出结论：全部动作采满一万个是左图，策略再采一万个是右图，两团形状一样说明上半身跟上了');
     s.appendChild(svgText(30, 28, '跟得怎么样：根运动（图 5）与双手（图 6）', 'demo-x-ink2', 13.5));
     var top = group(s);
     var fa = paperFig(top, 'fig5a_motion_sample.webp', 30, 44, 740, 150, '图 5(a)：根运动目标取自数据（4096 个环境 × 20 个点）', { ar: 1300 / 252 });
@@ -1171,19 +1219,36 @@
     paperFig(bot, 'fig6_hand_distribution.webp', 30, 50, 400, 246, '图 6：各 10000 个手的位置（红右手、蓝左手，相对机器人）', { ar: 637 / 392 });
     chip(bot, 30, 322, 194, '左：数据集（重定向后的动作）', C_ACCENT, { size: 11.5, h: 28 });
     chip(bot, 236, 322, 194, '右：训练好的策略', C_UP, { size: 11.5, h: 28 });
-    rectBox(bot, 450, 44, 320, 340, C_BORDER, C_SURFACE2);
-    label(bot, 610, 64, '我们重算的挥手：99 帧的双手位置', 'demo-x-ink2', 11.5, 'middle');
-    var SC = 120, camH = camFor(STAND_SHEET, SC, 610, 368, 0, 0);
-    h1Mesh(bot, STAND_SHEET).put([0, 0], camH, 0);
-    var cw = CLIPS.wave, st = STAND_BODIES[0], hd = [];
+    /* 右：图 6 的点怎么来。左边的 H1 照着挥手做；每一刻把双手相对根部的位置记下来，点到右边站着不动的 H1 上
+       （图 6 也是画在一台站着的机器人周围），虚线连起「这一刻的手」和「刚点上的点」 */
+    var botR = group(s);
+    rectBox(botR, 450, 44, 320, 350, C_BORDER, C_SURFACE2);
+    botR.appendChild(svgRich(464, 66, '图 6 的点怎么来？用我们复现的挥手演示', { size: 12, cls: 'demo-x-ink' }));
+    botR.appendChild(svgRich(464, 86, '每一刻记下双手**相对身体**的位置，点到右边', { size: 11, cls: 'demo-x-ink2' }));
+    var SC = 88, GY6 = 300, cw = CLIPS.wave, h1T = h1Mesh(botR, cw.sheet);
+    var camS = camFor(STAND_SHEET, SC, 700, GY6, 0, 0), st = STAND_BODIES[0];
+    h1Mesh(botR, STAND_SHEET).put([0, 0], camS, 0);
+    label(botR, 530, GY6 + 26, '照着人挥手', 'demo-x-mut', 10.5, 'middle');
+    label(botR, 700, GY6 + 26, '站着的 H1：点画在这儿', 'demo-x-mut', 10.5, 'middle');
+    var LOC = [], hd = [];
     for (var i = 0; i < cw.n; i++) {
-      var f = cw.frame(i);
-      [2, 5].forEach(function (j) {
-        var loc = toLocal(f.kp[j], f), q = project([st[0] + loc[0], st[1] + loc[1], st[2] + loc[2]], camH);
-        hd.push({ d: dotAt(bot, q[0], q[1], 2.6, j === 5 ? C_BAD : C_ACCENT), i: i });
-      });
+      var f = cw.frame(i), pair = [toLocal(f.kp[5], f), toLocal(f.kp[2], f)];
+      LOC.push(pair);
+      hd.push(pair.map(function (l, h) {
+        var q = project([st[0] + l[0], st[1] + l[1], st[2] + l[2]], camS);
+        return dotAt(botR, q[0], q[1], 2.4, h ? C_ACCENT : C_BAD);
+      }));
     }
-    var bl = label(bot, 610, 402, '红：右手　蓝：左手（相对根部，和图 6 一样）', 'demo-x-mut', 11, 'middle');
+    var links = [hline(botR, 0, 0, 0, 0, C_BAD, 1.2, '4 3'), hline(botR, 0, 0, 0, 0, C_ACCENT, 1.2, '4 3')];
+    var hands = [ring(botR, 0, 0, 6, 6, C_BAD), ring(botR, 0, 0, 6, 6, C_ACCENT)];
+    var newest = [ring(botR, 0, 0, 5, 5, C_BAD), ring(botR, 0, 0, 5, 5, C_ACCENT)];
+    var cnt = label(botR, 610, 346, '', 'demo-x-ink', 11.5, 'middle');
+    label(botR, 610, 368, '红：右手　蓝：左手（左手一直垂着，挤成一小团）', 'demo-x-mut', 10.5, 'middle');
+    var concl = group(s);
+    concl.appendChild(svgRich(30, 376, '全部动作采满 1 万个点 → 左图；策略照着做，再采 1 万个 → 右图', { size: 11.5, cls: 'demo-x-ink2', w: 410 }));
+    concl.appendChild(svgRich(30, 400, '两团**形状一样** → 策略的上半身跟上了参考', { size: 12.5, cls: 'demo-x-ink', w: 410 }));
+    /* 点按 t 一帧一帧点（13.6 s 起，原速 20 fps，18.55 s 点完，赶在下一句 18.6 s 之前）；点完以后 H1 按真实时间循环 */
+    var ACC0 = 13.6, ACC1 = ACC0 + cw.n / cw.fps;
     function draw(t, clock) {
       var now = nowOf(t, clock);
       setOpacity(top, win(t, 0.3, 10.4));
@@ -1191,9 +1256,21 @@
       setOpacity(hlV, win(t, 3.6, 7.0)); setOpacity(hlRP, win(t, 7.0, 10.4));
       setOpacity(caps[0], win(t, 0.4, 3.6)); setOpacity(caps[1], win(t, 3.6, 7.0)); setOpacity(caps[2], win(t, 7.0, 10.4));
       setOpacity(bot, seg(t, 10.7, 11.1));
-      var shown = clamp((now - 13.4) * 30, 0, cw.n);
-      hd.forEach(function (h) { h.d.style.opacity = h.i < shown ? 0.85 : 0; });
-      setOpacity(bl, seg(t, 13.6, 14.0));
+      setOpacity(botR, seg(t, 13.7, 14.1));
+      var done = t >= ACC1, shown = done ? cw.n : clamp(Math.floor((t - ACC0) * cw.fps) + 1, 0, cw.n);
+      var k = done ? ((Math.floor((now - ACC1) * cw.fps) % cw.n) + cw.n) % cw.n : Math.max(0, shown - 1);
+      var fk = cw.frame(k), cam = camFor(cw.sheet, SC, 530, GY6, fk.root[0], fk.root[1]);
+      h1T.put(fk.root, cam, k);
+      hd.forEach(function (pair, j) { pair.forEach(function (d) { d.style.opacity = j < shown ? 0.85 : 0; }); });
+      [fk.kp[5], fk.kp[2]].forEach(function (w, h) {
+        var a = project(w, cam), b = hd[k][h];
+        moveDot(hands[h], a);
+        newest[h].setAttribute('cx', b.getAttribute('cx')); newest[h].setAttribute('cy', b.getAttribute('cy'));
+        setLine(links[h], a[0], a[1], +b.getAttribute('cx'), +b.getAttribute('cy'));
+        [hands[h], newest[h], links[h]].forEach(function (n) { setOpacity(n, shown > 0 ? 1 : 0); });
+      });
+      cnt.textContent = done ? cw.n + ' 个时刻点完：红点、蓝点各 ' + cw.n + ' 个' : '第 ' + shown + ' / ' + cw.n + ' 个时刻';
+      setOpacity(concl, seg(t, 18.9, 19.3));
     }
     return { el: s, draw: draw };
   }
@@ -1425,14 +1502,15 @@
     },
     {
       title: '人的数据自带分布',
-      dur: 16,
+      dur: 22,
       build: buildSceneDist,
       cues: [
         { at: 0.4, s: '图 3：每段动作每隔 1 秒取一个点，共 1338 个点，画出根运动目标的分布。' },
         { at: 3.6, s: '速度：前后左右都有，**偏向往前走**，左右对称。' },
         { at: 7.0, s: '横滚很小、俯仰偏向前弯，像一颗**栗子**；俯仰越大，横滚越窄。' },
         { at: 10.4, s: '根高度挤在站直时的高度附近；左转右转比较平衡（画的是偏航角速度）。' },
-        { at: 13.4, s: '对比人工采样：随机撒的目标还要检查穿地、自碰；人的数据**天然避开**这些。' }
+        { at: 13.4, s: '左（示意）：Fu 等人在球坐标里**随机撒**手的目标，落到地下、扎进身体的要逐个检查、扔掉。' },
+        { at: 16.4, s: '右（我们的复现）：H1 照着人挥手，右手每一刻的位置都是人**真做过**的，不用检查；论文说这个分布本身就帮了学习。' }
       ]
     },
     {
@@ -1485,14 +1563,15 @@
     },
     {
       title: '跟得怎么样：根运动与双手',
-      dur: 16,
+      dur: 21.5,
       build: buildSceneTrack,
       cues: [
         { at: 0.4, s: '图 5(a)：根运动目标取自数据时，策略实际走出来的状态（绿点）和训练数据**很像**。' },
         { at: 3.6, s: '图 5(b)：换成随机采样的命令（红色范围），策略的速度覆盖了大部分，比训练集还大。' },
         { at: 7.0, s: '所以部署时能直接用**摇杆**；横滚俯仰没铺满红框，论文推测是上身太重。' },
         { at: 10.4, s: '图 6：相对机器人各采 1 万个手的位置，数据集和策略**几乎一样**。' },
-        { at: 13.4, s: '右边是我们重算的挥手：99 帧的双手位置，一帧帧落下。' }
+        { at: 13.4, s: '图 6 的点怎么来：左边 H1 照着挥手，每一刻把双手**相对身体**的位置，点到右边站着的 H1 上。' },
+        { at: 18.6, s: '挥手 5 秒是 99 个时刻；全部动作采满 1 万个是左图，策略再采 1 万个是右图，**形状一样** = 上半身跟上了。' }
       ]
     },
     {
@@ -1536,7 +1615,7 @@
   function buildExplainerDemo(host) {
     K.explainer(host, {
       title: '十三幕动画：ExBody 全流程速览',
-      sub: '约 208 秒自动播放。空格播放/暂停，← → 换幕；H1 的动作是我们照官方重定向步骤重算的 CMU 动作（按真实模型做 3D 渲染），表格与图来自论文。',
+      sub: '约 220 秒自动播放。空格播放/暂停，← → 换幕；H1 的动作是我们照官方重定向步骤重算的 CMU 动作（按真实模型做 3D 渲染），表格与图来自论文。',
       ariaLabel: 'ExBody 十三幕讲解动画',
       notes: [
         '取数依据：表 I–VIII、图 3–9 与正文的数字照抄 arXiv 2402.16796 v2；图 5 的随机采样范围是读图值。代码里的数（6144 个环境、66 + 36 维观测、参考取 0.1 s 后一帧、PD 增益、随机化与 20 ms 延迟、1043 → 780 段）读自 chengxuxin/expressive-humanoid。',
