@@ -118,6 +118,7 @@ QUAD_NOTE = _high_impact_note("Learning_Quadrupedal_Locomotion_over_Challenging_
 RH_NOTE = _high_impact_note("Real-World_Humanoid_Locomotion_with_RL")
 ASAP_NOTE = _high_impact_note("ASAP_Aligning_Simulation_and_Real-World_Physics_for_Agile_Humanoid_Skills")
 EXBODY_NOTE = _high_impact_note("Expressive_Whole-Body_Control_for_Humanoid_Robots")
+H2O_NOTE = _high_impact_note("H2O_Learning_Human-to-Humanoid_Real-Time_Whole-Body_Teleoperation")
 PHP_NOTE = (
     ROOT
     / "papers"
@@ -297,6 +298,7 @@ def test_notes_declare_their_demos_in_reading_order():
         BH_NOTE: ("berkeley_humanoid", ["bh-explainer", "bh-video", "bh-armature", "bh-actuator", "bh-dr"]),
         TB_NOTE: ("toddlerbot", ["tb-explainer", "tb-video", "tb-power", "tb-sysid", "tb-actuator"]),
         EXBODY_NOTE: ("exbody", ["exbody-explainer", "exbody-video", "exbody-retarget", "exbody-reward", "exbody-table"]),
+        H2O_NOTE: ("h2o", ["h2o-explainer", "h2o-video", "h2o-retarget", "h2o-reward", "h2o-tables"]),
     }
     for note, (bundle, placeholders) in expected.items():
         text = note.read_text(encoding="utf-8")
@@ -335,7 +337,7 @@ EXPLAINER_BUNDLES = (
     "gmr", "omniretarget", "diffusion_policy", "beyondmimic", "cosmos", "umr", "php", "pbfm",
     "gentle", "lcp", "transformer", "pi0", "pi05", "op3soccer", "smp", "humanml3d",
     "domain_randomization", "quadterrain", "realhumanoid", "asap", "inekf", "berkeley_humanoid",
-    "toddlerbot", "exbody",
+    "toddlerbot", "exbody", "h2o",
 )
 
 # 幕数由论文决定，不是统一模板：PPO / DeepMimic / AMP / ADD 的核心概念正好各 5 个，
@@ -480,6 +482,10 @@ EXPLAINER_BUNDLES = (
 # 附录的正则（表 VI）与训练设置（表 VII、代码的随机化）合一幕；结果按论文的问题：根运动与双手（图 5、6，同一个「跟得怎么样」）、
 # 随机命令与全身跟踪（表 IV、图 8）、AMP（表 IV、图 7、表 V）、真机与局限（图 1、9）。压成 12 幕会让表 II 的条和图 3、
 # 或表 III 的五条和表 VI 的十四项抢同一帧。
+# H2O 是 14 幕：第 I 节的三道坎、第 III 节的三段流水线各一幕；第 IV-A 节的重定向有四件事——改身材（β′）、不改会内八（图 3）、
+# 位置逆运动学怎么解（复现的迭代曲线）、为什么对末端不抄角度（和 ExBody 同一段挥手对照）——第 IV-B 节的 sim-to-data 一幕；
+# 第 IV-C 节的观测（138 维）、奖励（表 I）、随机化与终止（表 II）各一幕；结果按表 III、表 IV、真机（图 5–7）各一幕，
+# 局限一幕。压成 12 幕会让内八的俯视图和迭代曲线、或表 III 的四行和表 IV 的数据量抢同一帧。
 EXPLAINER_SCENES = {
     "ppo": (PPO_NOTE, 5),
     "awr": (AWR_NOTE, 6),
@@ -515,10 +521,11 @@ EXPLAINER_SCENES = {
     "berkeley_humanoid": (BH_NOTE, 12),
     "toddlerbot": (TB_NOTE, 12),
     "exbody": (EXBODY_NOTE, 13),
+    "h2o": (H2O_NOTE, 14),
 
     "humanml3d": (HUMANML3D_NOTE, 12),
 }
-CN_NUMERALS = {4: "四", 5: "五", 6: "六", 7: "七", 8: "八", 9: "九", 10: "十", 11: "十一", 12: "十二", 13: "十三"}
+CN_NUMERALS = {4: "四", 5: "五", 6: "六", 7: "七", 8: "八", 9: "九", 10: "十", 11: "十一", 12: "十二", 13: "十三", 14: "十四"}
 
 
 def test_explainer_scene_count_matches_the_title_and_note():
@@ -1979,7 +1986,7 @@ def test_narrated_video_placeholders_point_at_files_that_exist():
     for demo in ("calm-video", "pulse-video", "dp-video", "bm-video", "lcp-video", "cosmos-video", "groot-video",
                  "tf-video", "pi0-video", "pi05-video", "soccer-video", "sonic-video", "gmr-video",
                  "omniretarget-video", "humanml3d-video", "smp-video", "dr-video", "qt-video", "rh-video", "inekf-video", "bh-video",
-                 "tb-video", "exbody-video"):
+                 "tb-video", "exbody-video", "h2o-video"):
         assert demo in seen, f"{demo} 应该挂在对应的论文笔记里"
 
 
@@ -3605,5 +3612,185 @@ def test_exbody_3d_sprite_sheets_match_their_metadata():
     assert {p.name for p in sprite_dir.iterdir()} == {s["file"] for s in sheets.values()}
     assert total < 1.6e6, "贴图按幕懒加载，但总量也别失控"
     figs = {p.name for p in (ROOT / "assets/img/papers/exbody").glob("*.webp")}
+    used = set(re.findall(r"'(fig\w+\.webp)'", js))
+    assert used and used <= figs, used - figs
+
+
+H2O_CLIP_RE = re.compile(
+    r"    (\w+): \{ clip: '(\w+)', zh: '[^']+', fps: ([\d.]+), t0: ([\d.]+), n: (\d+), dz: ([\d.]+), sheet: SHEETS\.(\w+),\n"
+    r"      data: '([^']+)'(?:,\n      raw: '([^']+)')? \}"
+)
+
+
+def _h2o_int16(b64: str):
+    raw = base64.b64decode(b64)
+    return [int.from_bytes(raw[i : i + 2], "little", signed=True) for i in range(0, len(raw), 2)]
+
+
+def _h2o_pts(a, o, n):
+    return [[a[o + 3 * j + q] / 1000 for q in range(3)] for j in range(n)]
+
+
+def _h2o_clips(js: str):
+    """解码 h2o.js 的 `CLIPS`：每帧 147 个 int16（根 3、横滚俯仰偏航 3、19 个关节角、H1 的 13 个点、人的 27 个点、两只脚尖朝向）。"""
+    clips = {}
+    for m in H2O_CLIP_RE.finditer(js):
+        n, a = int(m.group(5)), _h2o_int16(m.group(8))
+        assert len(a) == 147 * n, m.group(1)
+        frames = []
+        for k in range(n):
+            o = k * 147
+            frames.append({
+                "root": [v / 1000 for v in a[o : o + 3]], "rpy": [v / 1000 for v in a[o + 3 : o + 6]],
+                "dof": [v / 1000 for v in a[o + 6 : o + 25]], "h1": _h2o_pts(a, o + 25, 13), "tgt": _h2o_pts(a, o + 64, 27),
+                "foot": [a[o + 145] / 10, a[o + 146] / 10],
+            })
+        clips[m.group(1)] = {"clip": m.group(2), "fps": float(m.group(3)), "n": n, "dz": float(m.group(6)),
+                             "sheet": m.group(7), "frames": frames}
+    return clips
+
+
+def test_h2o_explainer_demos_and_worked_example_share_the_paper_numbers():
+    """H2O：十四幕动画、三个演示、配音旁白与笔记「🚶 具体实例」用同一组数。
+
+    表 I–IV 照抄 arXiv 2403.04436 v1；PD、随机化的代码取值照抄 LeCAR-Lab/human2humanoid；五段 CMU 动作（14_25 挥手、14_01 拳击、
+    10_02 踢球、07_01 走路、49_06 侧手翻）是我们照官方 grad_fit_h1.py 重算的复现（SMPL 换成逐段缩放 CMU 骨架），嵌在 h2o.js 里，
+    这里用 Python 解码后把 11 对点的平均距离、第 1.4 s 的右手、抄角度对照、内八的脚尖朝向、例 5 的参考位置再算一遍。
+    """
+    js = (DEMO_JS_DIR / "h2o.js").read_text(encoding="utf-8")
+    note = H2O_NOTE.read_text(encoding="utf-8")
+    narration = (ROOT / "scripts" / "paper_video" / "papers" / "h2o.py").read_text(encoding="utf-8")
+    intro = (ROOT / "scripts" / "paper_video" / "papers" / "h2o.js").read_text(encoding="utf-8")
+
+    for line in (
+        "var FUNNEL = [13000, 10000, 8500];",
+        "{ key: 'dq', zh: '关节位置', k: 0.25, w: 24, sq: false, ex: 0.5,",
+        "{ key: 'dqd', zh: '关节速度', k: 0.25, w: 24, sq: true, ex: 2.0,",
+        "{ key: 'v', zh: '刚体速度', k: 10, w: 60, sq: false, ex: 0.2,",
+        "var TERM = { h: 0.3, g: 0.7, d: 0.5 };",
+        "{ key: 'priv', zh: '特权模仿器', dim: 778, real: false, all: [85.5, 50.0, 43.6, 6.9, 7.8], succ: [46.0, 40.9, 5.2, 6.2] },",
+        "{ key: 'reduced', zh: 'H2O-reduced', dim: 90, real: true, all: [53.2, 200.2, 115.8, 11.2, 13.8], succ: [182.5, 111.0, 3.0, 8.1] },",
+        "{ key: 'wosim', zh: 'H2O-w/o-sim2data', dim: 138, real: true, all: [67.9, 176.6, 95.0, 10.2, 12.2], succ: [163.1, 93.8, 3.0, 7.5] },",
+        "{ key: 'h2o', zh: 'H2O', dim: 138, real: true, all: [72.5, 166.7, 91.7, 8.9, 11.0], succ: [151.0, 88.8, 2.9, 7.0] }",
+        "var TABLE4 = [[0.1, 52.0, 198.0, 107.9, 12.4, 13.7], [1, 58.8, 183.8, 96.4, 10.7, 12.0], [10, 61.3, 174.3, 92.3, 10.8, 12.1], [100, 72.5, 166.7, 91.7, 8.9, 11.0]];",
+        "var PD = { kp: 300, kd: 6, q0: 0.8, scale: 0.25, a: 0.4, q: 0.8, qd: 0.5 };",
+        "var EX5 = { ref: [0.368, -0.480, 0.947], own: [0.319, -0.214, 0.107], diff: [0.049, -0.267, 0.841], vel: [-0.110, -0.198, 0.043], pz: STAND22[0][2] };",
+    ):
+        assert line in js, line
+    for k in ("'h2o-explainer'", "'h2o-video'", "'h2o-retarget'", "'h2o-reward'", "'h2o-tables'", "K.video(host"):
+        assert k in js, k
+
+    # 例 5：观测维度
+    assert 19 + 19 + 3 + 3 + 3 + 19 == 66 and 8 * 3 * 3 == 72 and 66 + 72 == 138 and 66 + 8 * 3 == 90 and 138 - 90 == 48
+    # 例 6：表 I 的六项任务奖励，假设误差 0.5 / 2（平方）/ 0.1 / 0.5 / 0.2 / 2
+    terms = [24 * math.exp(-0.25 * 0.5), 24 * math.exp(-0.25 * 4), 40 * math.exp(-0.5 * 0.1),
+             16 * math.exp(-0.1 * 0.5), 60 * math.exp(-10 * 0.2), 60 * math.exp(-0.01 * 2)]
+    assert [_fmt(x, 2) for x in terms] == ["21.18", "8.83", "38.05", "15.22", "8.12", "58.81"]
+    assert 24 + 24 + 40 + 16 + 60 + 60 == 224 and _fmt(sum(terms), 2) == "150.21"
+    assert "**150.21**" in note and "58.81 ≈ 150.2" in narration
+    assert (_fmt(60 * math.exp(-1), 2), _fmt(60 * math.exp(-3), 2), _fmt(60 * math.exp(-0.04), 2)) == ("22.07", "2.99", "57.65")
+    # 例 7：膝关节 PD 与 P / D 增益随机化
+    tau = 300 * (0.8 + 0.25 * 0.4 - 0.8) - 6 * 0.5
+    assert _fmt(tau, 1) == "27.0" and _fmt(0.75 * 30 - 1.25 * 3, 2) == "18.75" and _fmt(1.25 * 30 - 0.75 * 3, 2) == "35.25"
+    assert "= 27\\ \\text{N·m}" in note and "18.75" in note and "35.25" in note
+    assert _fmt(math.degrees(math.asin(0.7)), 1) == "44.4" and "44.4°" in note
+    # 例 8、例 9：读表
+    assert (_fmt(72.5 - 67.9, 1), _fmt(72.5 - 53.2, 1), _fmt(85.5 - 72.5, 1)) == ("4.6", "19.3", "13.0")
+    assert _fmt(100 * (1 - 166.7 / 176.6), 1) == "5.6" and _fmt(166.7 / 50.0, 1) == "3.3"
+    assert (_fmt(58.8 - 52.0, 1), _fmt(61.3 - 58.8, 1), _fmt(72.5 - 61.3, 1)) == ("6.8", "2.5", "11.2")
+    for s in ("4.6 个点", "19.3 个点", "72.5%", "67.9%", "53.2%"):
+        assert s in narration, s
+
+    # 复现：从嵌入的数据再算一遍
+    clips = _h2o_clips(js)
+    assert [(k, c["clip"]) for k, c in clips.items()] == [
+        ("wave", "14_25"), ("box", "14_01"), ("kick", "10_02"), ("walk", "07_01"), ("cart", "49_06"), ("waveRaw", "14_25")]
+    pairs = [(int(a), int(b)) for a, b in re.findall(r"\[(\d+), (\d+), '[^']+'\]", js[js.index("var PAIRS = [") : js.index("var KP8")])]
+    h1n = re.findall(r"'(\w+)'", re.search(r"var H1PTS = \[([^\]]+)\]", js).group(1))
+    hjn = re.findall(r"'(\w+)'", re.search(r"var HJ = \[([^\]]+)\]", js).group(1))
+    assert len(pairs) == 11 and len(h1n) == 13 and len(hjn) == 27
+    rh, rt = h1n.index("right_hand_link"), hjn.index("rhand")
+
+    def pair_mean(f):
+        return sum(math.dist(f["h1"][a], f["tgt"][b]) for a, b in pairs) / len(pairs)
+
+    def clip_mean(c):
+        return 1000 * sum(pair_mean(f) for f in c["frames"]) / c["n"]
+
+    # 例 3：挥手整段 35.5 mm；第 1.4 s（15 fps 的第 21 帧）41.5 mm，右手 (0.375, −0.394, 1.895) 对 (0.329, −0.421, 1.899)
+    wave = clips["wave"]
+    assert wave["fps"] == 15 and wave["n"] == 75 and wave["dz"] == 0.039 and "var WAVE_K42 = 21;" in js
+    assert _fmt(clip_mean(wave), 1) == "35.5" and "500 步 **35.5 mm**" in note and "500 步收敛到 35.5 毫米" in narration
+    f21 = wave["frames"][21]
+    assert _fmt(1000 * pair_mean(f21), 1) == "41.5"
+    assert [_fmt(v, 3) for v in f21["tgt"][rt][:2] + [f21["tgt"][rt][2] - wave["dz"]]] == ["0.375", "-0.394", "1.895"]
+    assert [_fmt(v, 3) for v in f21["h1"][rh][:2] + [f21["h1"][rh][2] - wave["dz"]]] == ["0.329", "-0.421", "1.899"]
+    assert "$(0.375, -0.394, 1.895)$" in note and "$(0.329, -0.421, 1.899)$" in note
+    # 其余四段的最终平均距离（笔记按 30 fps 全帧算，这里是嵌入的 15 fps 抽帧，差不到 0.5 mm）
+    for key, full in (("box", 31.5), ("kick", 51.8), ("walk", 45.8), ("cart", 76.1)):
+        assert abs(clip_mean(clips[key]) - full) < 0.5, key
+        assert f"{full}" in note, full
+    # 例 5：第 1.4 s 的参考右手，按根部偏航转进朝向坐标系，高度相对默认站姿的骨盆（0.991 m）
+    stand_z = float(re.search(r"var STAND22 = \[\[0\.0, 0\.0, ([\d.]+)\]", js).group(1))
+    yaw = f21["rpy"][2]
+    dx, dy = f21["h1"][rh][0] - f21["root"][0], f21["h1"][rh][1] - f21["root"][1]
+    ref = [math.cos(yaw) * dx + math.sin(yaw) * dy, -math.sin(yaw) * dx + math.cos(yaw) * dy, f21["h1"][rh][2] - stand_z]
+    assert stand_z == 0.991 and all(abs(a - b) < 0.002 for a, b in zip(ref, [0.368, -0.480, 0.947], strict=True)), ref
+    # 位置差按未取整的值算，和三位小数相减最多差 0.001
+    assert all(abs((a - b) - d) <= 0.0015 for a, b, d in zip([0.368, -0.480, 0.947], [0.319, -0.214, 0.107], [0.049, -0.267, 0.841], strict=True))
+    assert "\\hat{\\mathbf p} = (0.368, -0.480, 0.947)" in note and "(0.049, -0.267, 0.841)" in note
+    # 例 4：不改身材会内八（挥手，脚尖朝向向外为正）
+    foot = lambda c, j: sum(f["foot"][j] for f in c["frames"]) / c["n"]  # noqa: E731
+    assert (_fmt(foot(wave, 0), 1), _fmt(foot(wave, 1), 1)) == ("1.8", "-5.5")
+    raw = clips["waveRaw"]
+    assert raw["fps"] == 3.75 and foot(raw, 0) < -15 and foot(raw, 1) < -20  # 抽帧后 −19.3 / −24.4，全帧 −18.8 / −24.2
+    assert "| −18.8° / −24.2° | +1.8° / −5.5° |" in note and "18.8 度和 24.2 度" in narration
+    # 抄角度对照：ExBody 笔记同一段挥手的关节角，右手平均偏 218.6 mm，第 1.4 s 偏 293 mm
+    cm = re.search(r"var COPY = \{ n: (\d+), fps: (\d+), sheet: SHEETS\.copy34,\n    data: '([^']+)' \};", js)
+    a = _h2o_int16(cm.group(3))
+    n = int(cm.group(1))
+    assert n == 50 and int(cm.group(2)) == 10 and len(a) == 120 * n and "var COPY_K14 = 14;" in js
+    copy = [{"h1": _h2o_pts(a, k * 120, 13), "tgt": _h2o_pts(a, k * 120 + 39, 27)} for k in range(n)]
+    rhand = [1000 * math.dist(f["h1"][rh], f["tgt"][rt]) for f in copy]
+    assert _fmt(sum(rhand) / n, 1) == "218.6" and abs(rhand[14] - 293.3) < 0.5
+    assert _fmt(1000 * sum(pair_mean(f) for f in copy) / n, 1) == "68.0"
+    assert "| 右手 | **29.2 mm** | 218.6 mm |" in note and "右手 53.4 mm 对 293.3 mm" in note
+    assert "右手平均偏 218.6 对 29.2 毫米" in narration
+    # 逐段缩放：14 对点 77.4 → 35.9 mm
+    assert "**77.4 mm**" in note and "**35.9 mm**" in note and "77.4 毫米" in narration
+
+    # 片头接上一期（ExBody）的片尾预告，片尾只预告下一篇（OmniH2O）
+    assert narration.count("上一期结尾预告") == 1 and "下一篇讲 Omni H 2 O" in narration and "OmniH2O" in intro
+    assert "## 🎬 十四幕动画" in note and 'demos: ["h2o"]' in note
+    # 面板到 cue 之后才淡出（见 ExBody 的全局检查）
+    assert "return seg(t, a + 0.3, a + 0.7) * (b == null ? 1 : 1 - seg(t, b, b + 0.3));" in js
+    assert "1 - seg(t, b - 0.3, b)" not in js
+    # 视频文案的占位符都已填上
+    assert "__VIDEO_" not in js and "__VIDEO_" not in note
+
+
+def test_h2o_3d_sprite_sheets_match_their_metadata():
+    """H2O：H1 的 3D 逐帧贴图（Robot_Retarget_Online 的材质与光照，MuJoCo Menagerie 的 H1、关节限位按官方仓库）。
+
+    h2o.js 的 `SHEETS` 记着每张表的格子大小、列数、帧数与渲染相机；格子对不上图，裁出来的就是半个机器人。
+    """
+    js = (DEMO_JS_DIR / "h2o.js").read_text(encoding="utf-8")
+    sheets = json.loads(re.search(r"var SHEETS = (\{.*?\});\n", js).group(1))
+    clips = _h2o_clips(js)
+    sprite_dir = ROOT / "assets/img/papers/h2o/h1_3d"
+    total = 0
+    for sid, s in sheets.items():
+        path = sprite_dir / s["file"]
+        assert path.is_file(), s["file"]
+        total += path.stat().st_size
+        rows = math.ceil(s["n"] / s["cols"])
+        assert _webp_size(path) == (s["cw"] * s["cols"], s["ch"] * rows), sid
+        assert 0 < s["ax"] < s["cw"] and 0 < s["ay"] <= s["ch"] and s["R"] == 220, sid
+        assert (s["yaw"], s["pitch"]) == ((1.5708, 0.3) if sid.startswith("waveF") else (1.1, 0.1)), sid
+    for c in clips.values():
+        assert sheets[c["sheet"]]["n"] == c["n"], c["sheet"]
+    assert {p.name for p in sprite_dir.iterdir()} == {s["file"] for s in sheets.values()}
+    assert total < 2.6e6, "贴图按幕懒加载，但总量也别失控"
+    figs = {p.name for p in (ROOT / "assets/img/papers/h2o").glob("*.webp")}
     used = set(re.findall(r"'(fig\w+\.webp)'", js))
     assert used and used <= figs, used - figs

@@ -35,6 +35,7 @@
 | `berkeley_humanoid` | `assets/js/demos/berkeley_humanoid.js` 十二幕（`bh-explainer`） | 约 11 分 35 秒 |
 | `toddlerbot` | `assets/js/demos/toddlerbot.js` 十二幕（`tb-explainer`） | 约 13 分 30 秒 |
 | `exbody` | `assets/js/demos/exbody.js` 十三幕（`exbody-explainer`） | 约 13 分 17 秒 |
+| `h2o` | `assets/js/demos/h2o.js` 十四幕（`h2o-explainer`） | 约 13 分 27 秒 |
 
 - 画面：直接复用 `<paper>.js` 分镜的 `draw(t)`，数字与笔记算例一致；前后加片头、总结页（`papers/<paper>.js`）。
 - 分镜 `draw(t, clock)` 的第二个参数是这一幕的真实时间：旁白比动画长、画面停在 `to` 之前时它照样往前走，步态这类循环动作可以用它继续动（网页播放器只传 `t`）。
