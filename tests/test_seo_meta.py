@@ -1,8 +1,9 @@
 """搜索引擎 / 分享卡片的元信息、sitemap 与「只发布站点内容」。
 
 此前页面只有 <title>：没有 description、canonical 和 Open Graph，分享出去没有摘要；
-站点也没有 sitemap.xml / robots.txt；而 skills/ 下带 front matter 的 SKILL.md、
-tests/、docs/ 等仓库文件都被 Jekyll 原样发布了出去。
+站点也没有 sitemap.xml / robots.txt；而 tests/、docs/ 等仓库文件都被 Jekyll 原样
+发布了出去，误提交的飞书技能（skills/ 下带 front matter 的 SKILL.md）还被渲染成了
+22 个网页——那些文件已随本次改动从仓库删掉，exclude 里保留 skills/ 以防再装回来。
 """
 
 import re
