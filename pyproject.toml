@@ -13,7 +13,6 @@ extend-exclude = [
     "vendor",
     "papers",
     "skills",
-    ".agents",
     ".claude",
     ".jules",
     ".windsurf",
