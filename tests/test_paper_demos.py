@@ -3403,7 +3403,7 @@ def test_exbody_explainer_demos_and_worked_example_share_the_paper_numbers():
     """ExBody：十三幕动画、三个演示、配音旁白与笔记「🚶 具体实例」用同一组数。
 
     表 I–VIII 的数字照抄 arXiv 2402.16796 v2；观测维度、PD、随机化、1043 → 780 段照抄 chengxuxin/expressive-humanoid；
-    四段 CMU 动作（141_16 挥手、104_41 僵尸走、141_22 击掌、08_07 大步走）是我们照官方重定向步骤重算的复现，嵌在 exbody.js 里，
+    四段 CMU 动作（14_25 挥手、104_41 僵尸走、20_11 边走边击掌、08_07 大步走）是我们照官方重定向步骤重算的复现，嵌在 exbody.js 里，
     这里用 Python 解码后把例 2 的指数映射、右肘投影、前臂方向误差、例 4 的根运动目标再算一遍；例 5 的奖励按表 III 重算。
     """
     js = (DEMO_JS_DIR / "exbody.js").read_text(encoding="utf-8")
@@ -3422,7 +3422,7 @@ def test_exbody_explainer_demos_and_worked_example_share_the_paper_numbers():
         "var T5_MEAN = { ours: 0.051, amp: 0.087 };",
         "var PPO = { envs: 4096, gamma: 0.99, lam: 0.95, steps: 21, epochs: 5, minibatch: 4, entropy: 0.01, clip: 0.2, lr: '1e−3' };",
         "envs: 6144, steps: 24, lr: '2e−4', entropy: 0.005, clips: 780, clipsAll: 1043,",
-        "var EX_K = 10;",
+        "var EX_K = 28;",
     ):
         assert line in js, line
     for k in ("'exbody-explainer'", "'exbody-video'", "'exbody-retarget'", "'exbody-reward'", "'exbody-table'", "K.video(host"):
@@ -3461,33 +3461,44 @@ def test_exbody_explainer_demos_and_worked_example_share_the_paper_numbers():
     # 复现：从嵌入的数据再算一遍
     clips = _exbody_clips(js)
     assert set(clips) == {"wave", "zombie", "high5", "stride"}
-    assert [clips[k]["clip"] for k in ("wave", "zombie", "high5", "stride")] == ["141_16", "104_41", "141_22", "08_07"]
+    assert [clips[k]["clip"] for k in ("wave", "zombie", "high5", "stride")] == ["14_25", "104_41", "20_11", "08_07"]
     wave = clips["wave"]
-    f = wave["frames"][10]
-    assert wave["fps"] == 20 and wave["native"] == 60 and wave["n"] == 99  # 第 10 帧 = 0.5 s = 原始 60 fps 的第 30 帧
+    f = wave["frames"][28]
+    assert wave["fps"] == 20 and wave["native"] == 120 and wave["n"] == 99  # 第 28 帧 = 1.4 s = 原始 120 fps 的第 168 帧
+    assert "var EX_K = 28;" in js and round(28 / 20 * 120) == 168
     m = [f["dof"][16], f["dof"][15], f["dof"][17]]  # 右肩：dof 里是（俯仰, 横滚, 偏航）=（m_y, m_x, m_z）
-    assert [_fmt(x, 3) for x in m] == ["-1.559", "-0.277", "0.249"]
+    assert [_fmt(x, 3) for x in m] == ["-1.746", "-1.058", "0.049"]
     theta = math.sqrt(sum(x * x for x in m))
-    assert _fmt(theta, 3) == "1.603" and _fmt(math.degrees(theta), 1) == "91.8"
+    assert _fmt(theta, 3) == "2.042" and _fmt(math.degrees(theta), 1) == "117.0"
     axis = [x / theta for x in m]
-    assert [_fmt(x, 3) for x in axis] == ["-0.973", "-0.173", "0.155"]
+    assert [_fmt(x, 3) for x in axis] == ["-0.855", "-0.518", "0.024"]
     qw = math.cos(theta / 2)
-    assert _fmt(qw, 3) == "0.696" and [_fmt(x * math.sin(theta / 2), 3) for x in axis] == ["-0.699", "-0.124", "0.112"]
-    assert f["elbR"] == [0.751, 0.265] and _fmt(0.751 * 0.265, 3) == "0.199" and f["dof"][18] == 0.199
+    assert _fmt(qw, 3) == "0.522" and _fmt(math.sqrt(1 - 0.522**2), 3) == "0.853"
+    assert [_fmt(x * math.sin(theta / 2), 3) for x in axis] == ["-0.729", "-0.442", "0.020"]
+    assert f["elbR"] == [1.213, 0.981] and _fmt(1.213 * 0.981, 3) == "1.190" and f["dof"][18] == 1.19
+    assert _fmt(1.571 - 1.190, 3) == "0.381" and round(math.degrees(math.pi / 2 - 1.19)) == 22
     upper = [f["dof"][j] for j in range(10, 19)]
-    assert [_fmt(x, 3) for x in upper] == ["-0.313", "0.340", "0.186", "-0.088", "1.053", "-0.277", "-1.559", "0.249", "0.199"]
-    assert f["armErr"][1] == 41.4
+    assert [_fmt(x, 3) for x in upper] == ["0.007", "0.091", "0.363", "-0.055", "1.128", "-1.058", "-1.746", "0.049", "1.190"]
+    assert f["armErr"] == [24.3, 21.4]
     fore = sum(fr["armErr"][1] for fr in wave["frames"]) / wave["n"]
     upp = sum(fr["armErr"][0] for fr in wave["frames"]) / wave["n"]
     zup = sum(fr["armErr"][0] for fr in clips["zombie"]["frames"]) / clips["zombie"]["n"]
-    assert (_fmt(fore, 1), _fmt(upp, 1), _fmt(zup, 1)) == ("32.2", "9.7", "41.9")
-    assert max(fr["armErr"][1] for fr in wave["frames"]) == 50.1 and max(fr["armErr"][0] for fr in wave["frames"]) == 17.5
-    for s in ("(-1.559,\\ -0.277,\\ 0.249)$", "1.603", "91.8°", "0.199", "32.2°", "41.4°", "9.7°", "41.9°", "17.5°", "50.1°"):
+    assert (_fmt(fore, 1), _fmt(upp, 1), _fmt(zup, 1)) == ("21.5", "19.5", "41.9")
+    assert max(fr["armErr"][1] for fr in wave["frames"]) == 42.2 and max(fr["armErr"][0] for fr in wave["frames"]) == 40.7
+    for s in ("(-1.746,\\ -1.058,\\ 0.049)$", "2.042", "117.0°", "1.190", "21.5°", "24.3°", "21.4°", "19.5°", "41.9°", "40.7°", "42.2°"):
         assert s in note, s
-    for s in ("负 1.559、负 0.277、0.249", "1.603 弧度", "0.199 弧度", "32.2 度"):
+    for s in ("负 1.746、负 1.058、0.049", "2.042 弧度", "1.190 弧度", "19.5 度", "21.5 度", "第 1.4 秒"):
         assert s in narration, s
-    # 例 2 的关键点：右臂三点几乎一样高（水平侧举、前臂朝前）
-    assert "$(-0.043, -0.150, 0.430)$" in note and "$(0.170, -0.649, 0.440)$" in note
+    # 例 2 的关键点（根坐标系）：右手比右肩高 0.29 m，右臂斜着举过肩
+    assert "右肩 $(0.007, -0.156, 0.430)$" in note and "右手 $(0.228, -0.730, 0.720)$" in note
+    assert _fmt(0.720 - 0.430, 2) == "0.29"
+    # 换掉的两段（141_16 Wave Hello、141_22 High Five）腿脚动捕超出 ASF 限位：笔记写明原因，嵌入的动作里腿不再拧着
+    assert "为什么不用真机测过的 `141_16`「Wave Hello」" in note and "`141_22`「High Five」也有一半的帧脚部超限" in note
+    for k, c in clips.items():
+        legs = [fr["dof"][:10] for fr in c["frames"]]
+        hip_yaw = max(abs(lg[j]) for lg in legs for j in (0, 5))
+        ankle = max(abs(lg[j]) for lg in legs for j in (4, 9))
+        assert hip_yaw < 0.35 and ankle < 0.7, (k, hip_yaw, ankle)
     # 例 4：僵尸走第 5.0 s（第 40 帧）的根运动目标与平均前进速度
     z = clips["zombie"]
     zf = z["frames"][40]
@@ -3499,6 +3510,75 @@ def test_exbody_explainer_demos_and_worked_example_share_the_paper_numbers():
     # 片头接上一期（OmniRetarget）的片尾预告，片尾只预告下一篇（H2O）
     assert narration.count("上一期结尾预告") == 1 and "下一篇讲 H2O" in narration and "H2O" in intro
     assert "## 🎬 十三幕动画" in note and 'demos: ["exbody"]' in note
+    # 全局检查（2026-10-13）：面板到 cue 之后才淡出。视频里旁白比分镜长时 t 停在 cue 前一点，
+    # 淡出若在 cue 之前，这一段剩下的旁白里面板一直是空的（第 1、3、6、9 幕都出过）
+    assert "return seg(t, a + 0.3, a + 0.7) * (b == null ? 1 : 1 - seg(t, b, b + 0.3));" in js
+    assert "1 - seg(t, b - 0.3, b)" not in js
+    # 术语第一次出现就用白话交代
+    for needle in (
+        "也就是能独立动的方向有几个", "增益，就是关节被拉离目标时往回拉的力度", "根部就是骨盆", "也就是身体左右歪、前后倾、朝哪个方向",
+        "也就是机器人自己的传感器测得到的", "P D 控制器像弹簧加阻尼", "用四个数描述一次三维旋转", "论文没写单位",
+        "只约束动作本身的小奖惩", "越远的奖励打的折越多", "每次换掉一个部件", "从易到难的课程",
+        "判别器是一个分类器，分辨动作来自数据还是来自策略", "用文字生成人体动作的扩散模型", "站直时的高度",
+    ):
+        assert needle in narration, needle
+    assert "标称高度" not in narration and "标称高度" not in js
+    # 示意图补标注：第 5 幕放大图 3 的子图并写中文；第 6 幕先讲两类关节、再画 T 字；第 8 幕图例不压曲线、空框 / 实心有图例；
+    # 第 10 幕念到速度、横滚俯仰时分别圈出图 5(b) 的子图；第 12 幕两张图都有图例、圈出拳击这个例外；第 13 幕按图注框出图 1 的四块
+    dist = js.split("function buildSceneDist()", 1)[1].split("function buildSceneRetarget()", 1)[0]
+    assert "figCrop(g, 'fig3_data_distribution.webp', 1400, 262)" in dist and "'论文图 3 局部放大'" in dist
+    retarget = js.split("function buildSceneRetarget()", 1)[1].split("function buildSceneRsi()", 1)[0]
+    assert "'H1 的 19 个电机分两类'" in retarget and "'第 1 步：人和 H1 都摆成 T 字（示意）'" in retarget
+    reward = js.split("function buildSceneReward()", 1)[1].split("function buildSceneReg()", 1)[0]
+    assert "X0 + (X1 - X0) * 0.4, Y1 + 18 + i * 17" in reward and "实心 = 这一帧拿到的" in reward
+    track = js.split("function buildSceneTrack()", 1)[1].split("function buildSceneAblation()", 1)[0]
+    assert "hlV = panelBox(0, 0.259), hlRP = panelBox(0.259, 0.515)" in track and "'右：训练好的策略'" in track
+    amp = js.split("function buildSceneAmp()", 1)[1].split("function buildSceneReal()", 1)[0]
+    assert amp.count("'+ AMP', 'demo-x-ink2'") == 2 and "var boxRing = ring(t5" in amp
+    real = js.split("function buildSceneReal()", 1)[1].split("var EXB_SCENES", 1)[0]
+    assert "f1Box(hl, 0.515, 0.668, 1, 1, C_UP)" in real and "f1Box(hl2, 0, 0.668, 0.515, 1, C_ROOT)" in real
+    # 第 5 幕结尾（2026-10-14 看片反馈「看不懂」后重做）：图 3 收起，左边是示意的随机撒点（Fu 等人的做法），右边是 H1 照着挥手、
+    # 右手每一刻点一个点；第 10 幕结尾：左边 H1 照着挥手，每一刻把双手相对身体的位置点到右边站着的 H1 上，演示图 6 的点怎么来
+    assert "'人工设计：Fu 等人的做法（示意）'" in dist and "'人的数据：我们复现的挥手'" in dist and "K.mulberry32(13)" in dist
+    assert "'站着的 H1：点画在这儿'" in track and "'图 6 的点怎么来？用我们复现的挥手演示'" in track
+    assert "论文参考文献把这条引用 `fu2022learning` 连到了一篇无人机竞速论文" in note
+    # 第 10 幕：挥手时根部偏航从 −20.5° 走到 +45.4°（变了 60 多度），点按根坐标系记（先扣掉根部的转动），画面和旁白都要交代
+    yaws = [math.degrees(fr["rpy"][2]) for fr in wave["frames"]]
+    assert (_fmt(min(yaws), 1), _fmt(max(yaws), 1)) == ("-20.5", "45.4") and 60 <= max(yaws) - min(yaws) < 70
+    assert "'俯视朝向'" in track and "记点时已扣掉，照样对得上" in track and "身体朝向变了 60 多度" in narration
+    for needle in ("在球坐标里随机撒出来的", "右手每一刻在哪，就点一个绿点", "记下双手相对身体的位置", "这段挥手 5 秒，就是 99 个时刻"):
+        assert needle in narration, needle
+
+    def mulberry32(a):
+        a &= 0xFFFFFFFF
+
+        def rnd():
+            nonlocal a
+            a = (a + 0x6D2B79F5) & 0xFFFFFFFF
+            t = ((a ^ (a >> 15)) * (1 | a)) & 0xFFFFFFFF
+            t = ((t + ((t ^ (t >> 7)) * (61 | t))) & 0xFFFFFFFF) ^ t
+            return ((t ^ (t >> 14)) & 0xFFFFFFFF) / 4294967296
+
+        return rnd
+
+    def in_body(p):
+        x, y, z = p
+        if 0 <= z < 0.85:
+            return -0.12 < x < 0.25 and abs(y) < 0.28
+        if 0.85 <= z < 1.48:
+            return abs(x) < 0.15 and abs(y) < 0.22
+        return 1.48 <= z < 1.75 and abs(x) < 0.11 and abs(y) < 0.1
+
+    rng, ground, body = mulberry32(13), 0, 0
+    for _ in range(60):
+        rr, az, el = 0.3 + 0.65 * rng(), rng() * 2 * math.pi, (rng() * 2 - 1) * 1.25
+        z = 0.72 + rr * math.sin(el)
+        p = (0.05 + rr * math.cos(el) * math.cos(az), -0.15 + rr * math.cos(el) * math.sin(az), z)
+        ground += z < 0
+        body += z >= 0 and in_body(p)
+    assert (ground, body) == (3, 5) and "种子 13：3 个在地下、5 个扎进身体" in dist
+    # 第 4 幕表 II：短条的数字写在条的右边，不压在条上
+    assert "r.v.setAttribute('x', (BX + (r.inside ? 8 : r.full * u + 6)).toFixed(1));" in js
 
 
 def test_exbody_3d_sprite_sheets_match_their_metadata():
