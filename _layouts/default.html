@@ -193,29 +193,117 @@
           src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"
           integrity="sha384-+VBxd3r6XgURycqtZ117nYw44OOcIax56Z4dCRWbxyPt0Koah1uHoK0o4+/RRE05"
           crossorigin="anonymous"></script>
-  <!-- DOMPurify (pinned + SRI) -->
-  <script src="https://cdn.jsdelivr.net/npm/dompurify@3.2.4/dist/purify.min.js"
+  <!-- DOMPurify (pinned + SRI). Only mermaid's SVG goes through it, so it
+       can wait for the parser like everything else below. -->
+  <script defer
+          src="https://cdn.jsdelivr.net/npm/dompurify@3.2.4/dist/purify.min.js"
           integrity="sha384-eEu5CTj3qGvu9PdJuS+YlkNi7d2XxQROAFYOr59zgObtlcux1ae1Il3u7jvdCSWu"
           crossorigin="anonymous"></script>
-  <!-- Mermaid (pinned + SRI) -->
-  <script src="https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.min.js"
+  <!-- Mermaid (pinned + SRI).
+
+       2.5 MB (710 KB over the wire). It used to sit here without `defer`,
+       so every page — the home page included, where the roadmap is folded
+       away — waited for the whole download and parse before painting a
+       single word: on a throttled 4G phone the first paint of a note moved
+       from ~1.3 s to ~6.8 s on its account alone.
+
+       `async` (not `defer`): a deferred script would still gate
+       DOMContentLoaded, and the reveal of #paper-body hangs off that event,
+       so text, math and TOC would wait on the diagrams again. Async keeps it
+       off both the parse path and DOMContentLoaded; the diagrams fill in
+       behind their placeholders whenever it lands. initMermaid() below
+       tracks the tag (load / error / watchdog) and runs as soon as both
+       the parser and this script are done. -->
+  <script async id="mermaid-script"
+          src="https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.min.js"
           integrity="sha384-rbtjAdnIQE/aQJGEgXrVUlMibdfTSa4PQju4HDhN3sR2PmaKFzhEafuePsl9H/9I"
           crossorigin="anonymous"></script>
   {% assign mermaid_config_js = site.static_files | where: "path", "/assets/js/mermaid-config.js" | first %}
-  <script src="{{ '/assets/js/mermaid-config.js' | relative_url }}{% if mermaid_config_js %}?v={{ mermaid_config_js.modified_time | date: '%s' }}{% endif %}"></script>
+  <script src="{{ '/assets/js/mermaid-config.js' | relative_url }}{% if mermaid_config_js %}?v={{ mermaid_config_js.modified_time | date: '%s' }}{% endif %}" defer></script>
   {% assign mermaid_zoom_js = site.static_files | where: "path", "/assets/js/mermaid-zoom.js" | first %}
   <script src="{{ '/assets/js/mermaid-zoom.js' | relative_url }}{% if mermaid_zoom_js %}?v={{ mermaid_zoom_js.modified_time | date: '%s' }}{% endif %}" defer></script>
   <script>
     var mermaidRunPending = false;
 
+    /* mermaid.min.js is loaded `async` (see above), so it can land before or
+       after DOMContentLoaded — or never. Watch the tag itself: `load` and
+       `error` fire on the element, and a watchdog covers a request that just
+       hangs. Registered right here, in the very next script after the tag,
+       so neither event can slip past. */
+    var mermaidScriptState = 'loading'; // 'loading' | 'ready' | 'failed'
+    var mermaidWaitTimer = null;
+    var MERMAID_WAIT_TIMEOUT_MS = 20000;
+
+    (function () {
+      var tag = document.getElementById('mermaid-script');
+      if (!tag) {
+        mermaidScriptState = 'failed';
+        return;
+      }
+      tag.addEventListener('load', function () {
+        mermaidScriptState = 'ready';
+        onMermaidScriptSettled();
+      });
+      tag.addEventListener('error', function () {
+        mermaidScriptState = 'failed';
+        onMermaidScriptSettled();
+      });
+    })();
+
+    function currentSiteTheme() {
+      return document.documentElement.getAttribute('data-theme') || 'dark';
+    }
+
+    function onMermaidScriptSettled() {
+      if (mermaidWaitTimer) {
+        clearTimeout(mermaidWaitTimer);
+        mermaidWaitTimer = null;
+      }
+      // While the document is still parsing the DOMContentLoaded hook inside
+      // initMermaid() takes over: mermaid-config.js (`defer`) has not run yet
+      // and initialize() must see its config.
+      if (document.readyState !== 'loading') initMermaid(currentSiteTheme());
+    }
+
+    var mermaidInitQueued = false;
+
     function initMermaid(theme) {
+      var root = document.documentElement;
+      if (document.readyState === 'loading') {
+        // Called while the document is still parsing (the theme script at the
+        // bottom of <body>): the deferred scripts — mermaid-config.js among
+        // them — have not run yet. Come back once they have, unless paper.js
+        // (also deferred, so it runs first) has configured mermaid by then.
+        if (!mermaidInitQueued) {
+          mermaidInitQueued = true;
+          document.addEventListener('DOMContentLoaded', function () {
+            mermaidInitQueued = false;
+            if (!window.roadmapMermaidConfigured) initMermaid(currentSiteTheme());
+          }, { once: true });
+        }
+        return;
+      }
       if (typeof mermaid === 'undefined') {
+        if (mermaidScriptState === 'loading') {
+          // Still downloading: the load / error listeners above call back
+          // here. If it never settles, show the raw sources rather than
+          // leaving the (visibility: hidden) placeholders empty forever; a
+          // late arrival still renders, since the class is lifted below.
+          if (!mermaidWaitTimer) {
+            mermaidWaitTimer = setTimeout(function () {
+              mermaidWaitTimer = null;
+              if (typeof mermaid === 'undefined') root.classList.add('mermaid-unavailable');
+            }, MERMAID_WAIT_TIMEOUT_MS);
+          }
+          return;
+        }
         // Offline, or the CDN is blocked: nothing will ever turn the diagram
         // sources into SVG, so let the raw source show instead of leaving the
         // (visibility: hidden) placeholders empty forever.
         document.documentElement.classList.add('mermaid-unavailable');
         return;
       }
+      root.classList.remove('mermaid-unavailable');
       var config =
         typeof window.getMermaidSiteConfig === 'function'
           ? window.getMermaidSiteConfig(theme)
@@ -232,11 +320,11 @@
     }
 
     /* Rendering a paper's diagrams is seconds of synchronous layout work.
-       initMermaid() is called while the document is still parsing (from the
-       theme script at the bottom of <body>) and again from paper.js once the
-       ```mermaid fences have been converted, so doing the work inline blocked
-       parsing, DOMContentLoaded and therefore the reveal above — the text of
-       the page waited on the pictures.
+       initMermaid() is reached from the theme script at the bottom of <body>
+       (queued to DOMContentLoaded), from paper.js once the ```mermaid fences
+       have been converted, and from the async script's load event, so doing
+       the work inline blocked parsing, DOMContentLoaded and therefore the
+       reveal above — the text of the page waited on the pictures.
 
        Run it after the first revealed frame instead: text, math and TOC are
        already in place, and the diagrams fill in behind their own
