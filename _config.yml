@@ -16,12 +16,33 @@ kramdown:
 include:
   - papers
 
-# Exclude unnecessary files from build
+# GitHub Pages 的构建白名单里有这两个插件；本地 Gemfile 同步列出。
+# jekyll-sitemap 生成 /sitemap.xml（robots.txt 指向它），只收录真正发布的页面。
+plugins:
+  - jekyll-seo-tag
+  - jekyll-sitemap
+
+# Exclude unnecessary files from build.
+# 只有论文笔记、首页、更新记录和 assets/ 该发布；仓库里的协作说明、测试、
+# 截图与 README 用的演示动图都不是站点内容。飞书技能（skills/ 与 .agents/）
+# 曾被误提交并被渲染成 22 个网页，已从仓库删掉；这里仍列着 skills/ 与
+# skills-lock.json，万一本地再用 npx skills 装回来也不会发布。
 exclude:
   - README.md
+  - AGENTS.md
   - progress.json
   - papers/PROGRESS.md
+  - papers/DAILY_SUMMARY_LOG.md
+  - papers/todos/
   - scripts/
+  - tests/
+  - docs/
+  - media/
+  - skills/
+  - skills-lock.json
+  - pyproject.toml
+  - requirements-dev.txt
+  - requirements-site.txt
   - .obsidian/
   - "*.pdf"
   - Gemfile
