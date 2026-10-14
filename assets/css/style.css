@@ -1090,6 +1090,37 @@ details[open] > .roadmap-entry:hover .roadmap-entry-arrow { transform: rotate(-9
   to { stroke-dashoffset: 0; }
 }
 
+/* stroke-dashoffset 动画不走合成器：每一帧都要重绘整张路线图 SVG（几十个
+   foreignObject 标签），图滚出屏幕、被灯箱盖住也照样每帧重绘，手机上滚动和
+   拖动都会卡。下面几处在看不见或用不着的时候暂停它：
+   - 路线图滚出视口：attachRoadmapEdgeFlow() 用 IntersectionObserver 切换
+     .roadmap-flow-offscreen；
+   - 灯箱打开时，底下的内联路线图；
+   - 灯箱里拖动 / 双指缩放时（停下后接着流，平移只剩合成器上的 transform）。
+   选择器要以 #roadmap-mermaid / 视口类开头，权重才压得过上面的 animation 简写。 */
+#roadmap-mermaid.roadmap-flow-offscreen .roadmap-edge-flow,
+body.mermaid-lightbox-open #roadmap-mermaid .roadmap-edge-flow,
+.mermaid-lightbox__viewport.is-dragging .roadmap-edge-flow,
+.mermaid-lightbox__viewport.is-pinching .roadmap-edge-flow {
+  animation-play-state: paused;
+}
+
+/* 触屏 / 窄屏：虚线每秒只挪几个像素，按 60 帧算每帧位移通常不到 0.2px，却每帧
+   都要重绘整张图。steps() 把它量化成约 12.5 帧/秒（2.4s ÷ 30、3.2s ÷ 40，每步
+   80ms），看上去照样匀速流动，手机模拟实测重绘耗时降到约 1/3～1/4。每轮停在离 0
+   一步远处，下一轮从 36 / 26 重新开始，与 0 正好差一个 dash 周期，循环依旧无缝。 */
+@media (max-width: 600px), (hover: none) and (pointer: coarse) {
+  #roadmap-mermaid .roadmap-edge-flow,
+  .mermaid-lightbox__stage .roadmap-edge-flow {
+    animation-timing-function: steps(30);
+  }
+
+  #roadmap-mermaid .roadmap-edge-flow.edge-pattern-dotted,
+  .mermaid-lightbox__stage .roadmap-edge-flow.edge-pattern-dotted {
+    animation-timing-function: steps(40);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   #roadmap-mermaid .roadmap-edge-flow,
   .mermaid-lightbox__stage .roadmap-edge-flow {
@@ -1248,28 +1279,35 @@ body.mermaid-lightbox-open {
  * CSS cannot recolor the cluster rect. Darken pastel panels slightly and force
  * black subgraph titles in dark mode (inline page + fullscreen lightbox).
  * Match any custom hex fill on the cluster backdrop rect — not a fixed palette.
+ *
+ * Mermaid puts the rect first in g.cluster and the g.cluster-label after it, so
+ * the label is reached with `rect ~ .cluster-label`. Do not write this as
+ * `g.cluster:has(> rect[style*=…])`: a `[style]` test inside :has() makes
+ * Chrome restyle the whole document on every inline-style change anywhere —
+ * the lightbox writes stage.style.transform on each pan / pinch frame, which
+ * cost a ~4000-element recalc per frame on the home page.
  */
-[data-theme="dark"] :is(.paper-body .mermaid, .mermaid-lightbox__stage) svg g.cluster:has(> rect[style*="fill:#"]) > rect,
-[data-theme="dark"] :is(.paper-body .mermaid, .mermaid-lightbox__stage) svg g.cluster:has(> rect[fill^="#"]) > rect {
+[data-theme="dark"] :is(.paper-body .mermaid, .mermaid-lightbox__stage) svg g.cluster > rect[style*="fill:#"],
+[data-theme="dark"] :is(.paper-body .mermaid, .mermaid-lightbox__stage) svg g.cluster > rect[fill^="#"] {
   filter: brightness(0.68) saturate(1.05) contrast(1.04);
 }
 
-[data-theme="dark"] :is(.paper-body .mermaid, .mermaid-lightbox__stage) svg g.cluster:has(> rect[style*="fill:#"]) .cluster-label span,
-[data-theme="dark"] :is(.paper-body .mermaid, .mermaid-lightbox__stage) svg g.cluster:has(> rect[style*="fill:#"]) .cluster-label p,
-[data-theme="dark"] :is(.paper-body .mermaid, .mermaid-lightbox__stage) svg g.cluster:has(> rect[style*="fill:#"]) .cluster-label text,
-[data-theme="dark"] :is(.paper-body .mermaid, .mermaid-lightbox__stage) svg g.cluster:has(> rect[style*="fill:#"]) .cluster-label tspan,
-[data-theme="dark"] :is(.paper-body .mermaid, .mermaid-lightbox__stage) svg g.cluster:has(> rect[fill^="#"]) .cluster-label span,
-[data-theme="dark"] :is(.paper-body .mermaid, .mermaid-lightbox__stage) svg g.cluster:has(> rect[fill^="#"]) .cluster-label p,
-[data-theme="dark"] :is(.paper-body .mermaid, .mermaid-lightbox__stage) svg g.cluster:has(> rect[fill^="#"]) .cluster-label text,
-[data-theme="dark"] :is(.paper-body .mermaid, .mermaid-lightbox__stage) svg g.cluster:has(> rect[fill^="#"]) .cluster-label tspan {
+[data-theme="dark"] :is(.paper-body .mermaid, .mermaid-lightbox__stage) svg g.cluster > rect[style*="fill:#"] ~ .cluster-label span,
+[data-theme="dark"] :is(.paper-body .mermaid, .mermaid-lightbox__stage) svg g.cluster > rect[style*="fill:#"] ~ .cluster-label p,
+[data-theme="dark"] :is(.paper-body .mermaid, .mermaid-lightbox__stage) svg g.cluster > rect[style*="fill:#"] ~ .cluster-label text,
+[data-theme="dark"] :is(.paper-body .mermaid, .mermaid-lightbox__stage) svg g.cluster > rect[style*="fill:#"] ~ .cluster-label tspan,
+[data-theme="dark"] :is(.paper-body .mermaid, .mermaid-lightbox__stage) svg g.cluster > rect[fill^="#"] ~ .cluster-label span,
+[data-theme="dark"] :is(.paper-body .mermaid, .mermaid-lightbox__stage) svg g.cluster > rect[fill^="#"] ~ .cluster-label p,
+[data-theme="dark"] :is(.paper-body .mermaid, .mermaid-lightbox__stage) svg g.cluster > rect[fill^="#"] ~ .cluster-label text,
+[data-theme="dark"] :is(.paper-body .mermaid, .mermaid-lightbox__stage) svg g.cluster > rect[fill^="#"] ~ .cluster-label tspan {
   color: #000000 !important;
   fill: #000000 !important;
 }
 
-[data-theme="dark"] :is(.paper-body .mermaid, .mermaid-lightbox__stage) svg g.cluster:has(> rect[style*="fill:#"]) .cluster-label foreignObject,
-[data-theme="dark"] :is(.paper-body .mermaid, .mermaid-lightbox__stage) svg g.cluster:has(> rect[fill^="#"]) .cluster-label foreignObject,
-[data-theme="dark"] :is(.paper-body .mermaid, .mermaid-lightbox__stage) svg g.cluster:has(> rect[style*="fill:#"]) .cluster-label foreignObject *,
-[data-theme="dark"] :is(.paper-body .mermaid, .mermaid-lightbox__stage) svg g.cluster:has(> rect[fill^="#"]) .cluster-label foreignObject * {
+[data-theme="dark"] :is(.paper-body .mermaid, .mermaid-lightbox__stage) svg g.cluster > rect[style*="fill:#"] ~ .cluster-label foreignObject,
+[data-theme="dark"] :is(.paper-body .mermaid, .mermaid-lightbox__stage) svg g.cluster > rect[fill^="#"] ~ .cluster-label foreignObject,
+[data-theme="dark"] :is(.paper-body .mermaid, .mermaid-lightbox__stage) svg g.cluster > rect[style*="fill:#"] ~ .cluster-label foreignObject *,
+[data-theme="dark"] :is(.paper-body .mermaid, .mermaid-lightbox__stage) svg g.cluster > rect[fill^="#"] ~ .cluster-label foreignObject * {
   color: #000000 !important;
   fill: #000000 !important;
 }

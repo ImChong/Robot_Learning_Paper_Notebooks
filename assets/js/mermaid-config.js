@@ -107,6 +107,7 @@
     if (!container || !container.querySelector) return;
     var svg = container.querySelector('svg');
     if (!svg) return;
+    if (container.id === 'roadmap-mermaid') pauseRoadmapFlowOffscreen(container);
 
     var paths = svg.querySelectorAll('g.edgePaths path, path.flowchart-link');
     var index = 0;
@@ -132,6 +133,22 @@
       path.parentNode.insertBefore(flow, path.nextSibling);
     });
   };
+
+  /**
+   * 流动虚线是 stroke-dashoffset 动画，不走合成器：每帧重绘整张路线图，图滚出
+   * 屏幕后浏览器也不会停。首页路线图离开视口（含 <details> 收起）时加
+   * .roadmap-flow-offscreen，CSS 据此暂停动画。容器本身在中英切换时不换，
+   * 只需观察一次。
+   */
+  function pauseRoadmapFlowOffscreen(container) {
+    if (typeof IntersectionObserver !== 'function') return;
+    if (container.hasAttribute('data-roadmap-flow-watch')) return;
+    container.setAttribute('data-roadmap-flow-watch', '');
+    new IntersectionObserver(function (entries) {
+      var entry = entries[entries.length - 1];
+      container.classList.toggle('roadmap-flow-offscreen', !entry.isIntersecting);
+    }).observe(container);
+  }
 
   var SVG_NS = 'http://www.w3.org/2000/svg';
   /** 子图标题底色左右多出的留白（px），让连线在字前后就断开。 */

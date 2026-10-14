@@ -96,3 +96,58 @@ def test_flow_colour_is_themed():
     text = STYLE.read_text(encoding="utf-8")
     assert text.count("--roadmap-flow:") == 2, "need a dark and a light token"
     assert "stroke: var(--roadmap-flow" in text
+
+
+def test_flow_pauses_when_roadmap_is_off_screen():
+    """dashoffset 动画每帧重绘整张图，滚出屏幕也不会自己停。"""
+    text = CONFIG_JS.read_text(encoding="utf-8")
+    assert "IntersectionObserver" in text
+    assert "roadmap-flow-offscreen" in text
+    helper = re.search(
+        r"window\.attachRoadmapEdgeFlow = function \(container\) \{(.*?)\n  \};",
+        text,
+        re.DOTALL,
+    )
+    assert helper and "pauseRoadmapFlowOffscreen(container)" in helper.group(1)
+
+    block = _rule("#roadmap-mermaid.roadmap-flow-offscreen .roadmap-edge-flow,")
+    assert "animation-play-state: paused" in block
+
+
+def test_flow_pauses_under_and_while_moving_the_lightbox():
+    text = STYLE.read_text(encoding="utf-8")
+    match = re.search(
+        r"(?m)^#roadmap-mermaid\.roadmap-flow-offscreen \.roadmap-edge-flow,(.*?)\{",
+        text,
+        re.DOTALL,
+    )
+    assert match
+    selectors = match.group(1)
+    # The inline map keeps animating under the open lightbox otherwise.
+    assert "body.mermaid-lightbox-open #roadmap-mermaid .roadmap-edge-flow" in selectors
+    # Pan / pinch should only move the composited stage, not repaint it.
+    assert ".mermaid-lightbox__viewport.is-dragging .roadmap-edge-flow" in selectors
+    assert ".mermaid-lightbox__viewport.is-pinching .roadmap-edge-flow" in selectors
+
+
+def test_flow_is_quantised_on_touch_screens():
+    """触屏上用 steps() 把每帧重绘降到约 12.5 帧/秒。"""
+    text = STYLE.read_text(encoding="utf-8")
+    match = re.search(
+        r"@media \(max-width: 600px\), \(hover: none\) and \(pointer: coarse\) \{"
+        r"(.*?)\n\}",
+        text,
+        re.DOTALL,
+    )
+    assert match, "touch-screen override for the roadmap flow not found"
+    body = match.group(1)
+    for selector, duration in (
+        ("#roadmap-mermaid .roadmap-edge-flow,", 2.4),
+        ("#roadmap-mermaid .roadmap-edge-flow.edge-pattern-dotted,", 3.2),
+    ):
+        rule = re.search(re.escape(selector) + r"[^{]*\{([^}]*)\}", body)
+        assert rule, selector
+        steps = re.search(r"steps\((\d+)\)", rule.group(1))
+        assert steps, selector
+        # ~80 ms per step: still smooth for a few px/s of motion, far fewer repaints.
+        assert abs(duration / int(steps.group(1)) - 0.08) < 1e-9
