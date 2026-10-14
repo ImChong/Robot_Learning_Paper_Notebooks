@@ -41,15 +41,15 @@
         "13_Physics-Based_Animation",
         "14_Human_Motion"
       ],
-      "last_module": "10_Sim-to-Real",
-      "last_index": 692,
-      "last_title": "Informationally Decoupled Trajectory Design for Sim-to-Real System Identification (arXiv:2610.10905)",
-      "next_module": "11_Simulation_Benchmark",
-      "last_completed_date": "2026-10-13",
-      "note": "本日轮转到 10_Sim-to-Real。PROGRESS Sim-to-Real 章节中尚无笔记的最新论文是 IDTD (arXiv:2610.10905, 2026-10-07, UW–Madison)，即 PROGRESS #692，已确认在上游 README。用归一化 Schur 补解耦因子 + 分段覆盖 + 对数聚合设计采样式 SysID 的探索指令；Go2 / G1 辨识误差 7.31% / 1.28%，K1 真机开环预测代价降 14.4%。论文未开源，含整体流程 mermaid 与两参数算例，无源码时序图。",
-      "last_date": "2026-10-13",
+      "last_module": "11_Simulation_Benchmark",
+      "last_index": 671,
+      "last_title": "Benchmarking Behavioral Steerability in Behavior Foundation Models (arXiv:2610.10198)",
+      "next_module": "12_Hardware_Design",
+      "last_completed_date": "2026-10-14",
+      "note": "本日轮转到 11_Simulation_Benchmark。PROGRESS Simulation Benchmark 章节中尚无笔记的最新论文是 RoboSteer (arXiv:2610.10198, 2026-10-07, 浙大 × 宇树 × NUS × 中南)，即 PROGRESS #671，已确认在上游 README。三级行为可操控性基准(条件 / 约束 / 组合，773,716 道题)，BSₗ = BG × ∏IRₖ；9 个 BFM 统一到 G1 + GMR + SONIC 后，加约束 BS 大幅下降，Body Restrain 最难。无 GitHub，HF 上有数据集、评测器权重与基线适配脚本，统一打分脚本待放出；含整体流程 mermaid、按已发布资源整理的评测运行时序图与 BG × IR 算例。",
+      "last_date": "2026-10-14",
       "next_candidate": null,
-      "last_completed": "Informationally Decoupled Trajectory Design for Sim-to-Real System Identification (arXiv:2610.10905)"
+      "last_completed": "Benchmarking Behavioral Steerability in Behavior Foundation Models (arXiv:2610.10198)"
     },
     "last_summary_index": 532,
     "last_summary_date": "2026-09-18",
@@ -1728,6 +1728,17 @@
         "project_page": "",
         "code": "论文未给出代码 / 项目页链接；截至 2026-10-13 未见公开仓库",
         "source": "⏳ 无公开源码(故无源码时序图)，含整体流程 mermaid 与两参数 tr(F⁻¹) 选错轨迹算例"
+      },
+      {
+        "date": "2026-10-14",
+        "index": 671,
+        "title": "Benchmarking Behavioral Steerability in Behavior Foundation Models",
+        "folder": "papers/11_Simulation_Benchmark/RoboSteer__Benchmarking_Behavioral_Steerability_in_Behavior_Foundation_Models",
+        "module": "11_Simulation_Benchmark",
+        "arxiv": "2610.10198",
+        "project_page": "https://robosteer.github.io/",
+        "code": "无 GitHub；Hugging Face：YanCORANV/RoboSteer（数据集）、Leontc/RoboSteer-evaluator（评测器权重 + OMG 源码）、PhoebeCC/RoboSteer-Model-Resources（基线适配脚本），统一打分脚本待放出",
+        "source": "⏳ 部分开源(评测运行时序图按已发布 HF 资源与附录 C、D 整理) · 三级可操控性基准 + BG × IR 打分 · G1 + GMR + SONIC 统一评测 9 个 BFM"
       }
     ],
     "last_completed_index": 588,
