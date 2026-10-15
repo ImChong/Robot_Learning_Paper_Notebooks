@@ -41,15 +41,15 @@
         "13_Physics-Based_Animation",
         "14_Human_Motion"
       ],
-      "last_module": "11_Simulation_Benchmark",
-      "last_index": 671,
-      "last_title": "Benchmarking Behavioral Steerability in Behavior Foundation Models (arXiv:2610.10198)",
-      "next_module": "12_Hardware_Design",
-      "last_completed_date": "2026-10-14",
-      "note": "本日轮转到 11_Simulation_Benchmark。PROGRESS Simulation Benchmark 章节中尚无笔记的最新论文是 RoboSteer (arXiv:2610.10198, 2026-10-07, 浙大 × 宇树 × NUS × 中南)，即 PROGRESS #671，已确认在上游 README。三级行为可操控性基准(条件 / 约束 / 组合，773,716 道题)，BSₗ = BG × ∏IRₖ；9 个 BFM 统一到 G1 + GMR + SONIC 后，加约束 BS 大幅下降，Body Restrain 最难。无 GitHub，HF 上有数据集、评测器权重与基线适配脚本，统一打分脚本待放出；含整体流程 mermaid、按已发布资源整理的评测运行时序图与 BG × IR 算例。",
-      "last_date": "2026-10-14",
+      "last_module": "12_Hardware_Design",
+      "last_index": 656,
+      "last_title": "PhoneBot: A Low-Cost Open Humanoid Robot Platform Reusing Smartphones (arXiv:2610.08737)",
+      "next_module": "13_Physics-Based_Animation",
+      "last_completed_date": "2026-10-15",
+      "note": "本日轮转到 12_Hardware_Design。PROGRESS Hardware Design 章节中尚无笔记的最新论文是 PhoneBot (arXiv:2610.08737, 2026-10-06, UCLA RoMeLa)，即 PROGRESS #656，已确认在上游 README。手机当躯干 / IMU / 相机 / 电脑，13 × XL430 下身约 400 美元；XL430 力矩—速度包络建模 + 矢状面镜像 PPO，关节角对称误差 0.254→0.003 rad；4 部安卓手机跑通 TFLite 推理、视觉、SLAM 与语音交互。项目页为占位页、未见公开仓库，含整体流程 mermaid 与 XL430 力矩包络算例，无源码时序图。",
+      "last_date": "2026-10-15",
       "next_candidate": null,
-      "last_completed": "Benchmarking Behavioral Steerability in Behavior Foundation Models (arXiv:2610.10198)"
+      "last_completed": "PhoneBot: A Low-Cost Open Humanoid Robot Platform Reusing Smartphones (arXiv:2610.08737)"
     },
     "last_summary_index": 532,
     "last_summary_date": "2026-09-18",
@@ -1739,6 +1739,17 @@
         "project_page": "https://robosteer.github.io/",
         "code": "无 GitHub；Hugging Face：YanCORANV/RoboSteer（数据集）、Leontc/RoboSteer-evaluator（评测器权重 + OMG 源码）、PhoebeCC/RoboSteer-Model-Resources（基线适配脚本），统一打分脚本待放出",
         "source": "⏳ 部分开源(评测运行时序图按已发布 HF 资源与附录 C、D 整理) · 三级可操控性基准 + BG × IR 打分 · G1 + GMR + SONIC 统一评测 9 个 BFM"
+      },
+      {
+        "date": "2026-10-15",
+        "index": 656,
+        "title": "PhoneBot: A Low-Cost Open Humanoid Robot Platform Reusing Smartphones",
+        "folder": "papers/12_Hardware_Design/PhoneBot__A_Low-Cost_Open_Humanoid_Robot_Platform_Reusing_Smartphones",
+        "module": "12_Hardware_Design",
+        "arxiv": "2610.08737",
+        "project_page": "https://phonebot.dev",
+        "code": "论文称软硬件开源；截至 2026-10-15 项目页为占位页，RoMeLaUCLA 组织下未见对应仓库",
+        "source": "⏳ 未见公开源码(故无源码时序图)，含整体流程 mermaid 与 XL430 力矩包络算例"
       }
     ],
     "last_completed_index": 588,

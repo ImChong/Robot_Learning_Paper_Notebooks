@@ -3860,6 +3860,17 @@
     "display_name": "Hardware Design",
     "papers": [
       {
+        "title": "PhoneBot: A Low-Cost Open Humanoid Robot Platform Reusing Smartphones",
+        "path": "papers/12_Hardware_Design/PhoneBot__A_Low-Cost_Open_Humanoid_Robot_Platform_Reusing_Smartphones/PhoneBot__A_Low-Cost_Open_Humanoid_Robot_Platform_Reusing_Smartphones.md",
+        "url": "/papers/12_Hardware_Design/PhoneBot__A_Low-Cost_Open_Humanoid_Robot_Platform_Reusing_Smartphones/PhoneBot__A_Low-Cost_Open_Humanoid_Robot_Platform_Reusing_Smartphones.html",
+        "dir": "PhoneBot__A_Low-Cost_Open_Humanoid_Robot_Platform_Reusing_Smartphones",
+        "arxiv": "2610.08737",
+        "published_date_zh": "2026年10月6日（arXiv v1）",
+        "published_date_en": "Oct 6, 2026 (arXiv v1)",
+        "zhname": "PhoneBot：复用智能手机的低成本开源人形机器人平台",
+        "zh_title": "PhoneBot：复用智能手机的低成本开源人形机器人平台"
+      },
+      {
         "title": "A Dual-Cam Parallel Elastic Actuator with Shared Gas-Spring Compensation for Humanoid Ankles",
         "path": "papers/12_Hardware_Design/Dual-Cam_Parallel_Elastic_Actuator_with_Shared_Gas-Spring_for_Humanoid_Ankles/Dual-Cam_Parallel_Elastic_Actuator_with_Shared_Gas-Spring_for_Humanoid_Ankles.md",
         "url": "/papers/12_Hardware_Design/Dual-Cam_Parallel_Elastic_Actuator_with_Shared_Gas-Spring_for_Humanoid_Ankles/Dual-Cam_Parallel_Elastic_Actuator_with_Shared_Gas-Spring_for_Humanoid_Ankles.html",

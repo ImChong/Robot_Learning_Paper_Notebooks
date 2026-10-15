@@ -1036,7 +1036,7 @@
 
 | #   | 论文                                                                                                                                                                     | 日期      | 🌟  | 状态   |
 | --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- | --- | ---- |
-| 656  | [PhoneBot: A Low-Cost Open Humanoid Robot Platform Reusing Smartphones](https://arxiv.org/abs/2610.08737) | 2026.10 |  | ⏳ 待读 |
+| 656  | [PhoneBot: A Low-Cost Open Humanoid Robot Platform Reusing Smartphones](https://arxiv.org/abs/2610.08737) ✅ [笔记](12_Hardware_Design/PhoneBot__A_Low-Cost_Open_Humanoid_Robot_Platform_Reusing_Smartphones/PhoneBot__A_Low-Cost_Open_Humanoid_Robot_Platform_Reusing_Smartphones.md) | 2026.10 |  | ✅ 已总结 |
 | 657  | [GlowTact: Simple and Compact Vision-Based Tactile Sensing with High Sensitivity and Spatial Resolution](https://arxiv.org/abs/2609.32471) | 2026.09 |  | ⏳ 待读 |
 | 658  | [Tactile Sensing Array for Multi-Phalanx Sensing in Humanoid Hands](https://arxiv.org/abs/2609.30506) | 2026.09 |  | ⏳ 待读 |
 | 659  | [Visible-Reachable Workspace for Perception-Aware Humanoid Design](https://arxiv.org/abs/2609.08905) | 2026.09 |  | ⏳ 待读 |
