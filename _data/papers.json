@@ -481,11 +481,14 @@
             "url": "/papers/03_High_Impact_Selection/OmniH2O_Universal_Whole-Body_Teleoperation/OmniH2O_Universal_Whole-Body_Teleoperation.html",
             "dir": "OmniH2O_Universal_Whole-Body_Teleoperation",
             "arxiv": "2406.08858",
-            "summary_zh": "OmniH2O 把人类运动、VR 遥操、RGB 动作估计、语言/大模型规划和示范学习统一到一个\"运动学姿态目标\"接口上，再通过强化学习教师和可部署学生策略把目标落到全尺寸带灵巧手的人形机器人上。",
+            "has_open_source": true,
+            "summary_zh": "OmniH2O 把人类示范到人形全身控制的接口统一成运动学姿态（所有关节的三维旋转和位置）：VR 头显、RGB 摄像头、语言生成的动作（MDM）、GPT-4o、从遥操作数据学的扩散策略，都只负责给出运动目标，底层是同一个跟踪策略。",
+            "explainer_scenes": 17,
+            "video_seconds": 804,
             "published_date_zh": "2024年6月13日（arXiv）；CoRL 2024",
             "published_date_en": "Jun 13, 2024 (arXiv); CoRL 2024",
-            "zhname": "OmniH2O：通用灵巧的人到人形整体遥操与学习",
-            "zh_title": "OmniH2O：通用灵巧的人到人形整体遥操与学习"
+            "zhname": "OmniH2O：通用灵巧的人到人形全身遥操作与学习",
+            "zh_title": "OmniH2O：通用灵巧的人到人形全身遥操作与学习"
           },
           {
             "title": "iDP3: Generalizable Humanoid Manipulation with Improved 3D Diffusion Policies",

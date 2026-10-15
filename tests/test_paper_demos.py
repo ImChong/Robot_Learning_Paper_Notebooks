@@ -119,6 +119,7 @@ RH_NOTE = _high_impact_note("Real-World_Humanoid_Locomotion_with_RL")
 ASAP_NOTE = _high_impact_note("ASAP_Aligning_Simulation_and_Real-World_Physics_for_Agile_Humanoid_Skills")
 EXBODY_NOTE = _high_impact_note("Expressive_Whole-Body_Control_for_Humanoid_Robots")
 H2O_NOTE = _high_impact_note("H2O_Learning_Human-to-Humanoid_Real-Time_Whole-Body_Teleoperation")
+OMNIH2O_NOTE = _high_impact_note("OmniH2O_Universal_Whole-Body_Teleoperation")
 PHP_NOTE = (
     ROOT
     / "papers"
@@ -337,7 +338,7 @@ EXPLAINER_BUNDLES = (
     "gmr", "omniretarget", "diffusion_policy", "beyondmimic", "cosmos", "umr", "php", "pbfm",
     "gentle", "lcp", "transformer", "pi0", "pi05", "op3soccer", "smp", "humanml3d",
     "domain_randomization", "quadterrain", "realhumanoid", "asap", "inekf", "berkeley_humanoid",
-    "toddlerbot", "exbody", "h2o",
+    "toddlerbot", "exbody", "h2o", "omnih2o",
 )
 
 # 幕数由论文决定，不是统一模板：PPO / DeepMimic / AMP / ADD 的核心概念正好各 5 个，
@@ -522,10 +523,16 @@ EXPLAINER_SCENES = {
     "toddlerbot": (TB_NOTE, 12),
     "exbody": (EXBODY_NOTE, 13),
     "h2o": (H2O_NOTE, 14),
+    # OmniH2O 十七幕：问题 2 幕（H2O 留下的问题 / 运动学姿态接口）；第 3 节的数据、奖励、课程各一幕（站姿蹲姿版、最高抬脚、
+    # 惩罚课程各有自己的式子与证据）；教师、学生的 3 个点、25 步历史、DAgger 各一幕（附录表 4 / 6 与表 1(a)(b)(c) 分别对应）；
+    # 灵巧手与机载系统一幕；结果按表 1 主结果 + DAgger、表 1 其余三组消融、表 2 真机各一幕；Q2 的接口一幕，Q3 的 GPT-4o 与
+    # 数据集、表 3 的模仿学习各一幕；局限一幕。压成 14 幕会让历史纸带和 DAgger 流程、或表 1 和表 2 的条形图抢同一帧。
+    "omnih2o": (OMNIH2O_NOTE, 17),
 
     "humanml3d": (HUMANML3D_NOTE, 12),
 }
-CN_NUMERALS = {4: "四", 5: "五", 6: "六", 7: "七", 8: "八", 9: "九", 10: "十", 11: "十一", 12: "十二", 13: "十三", 14: "十四"}
+CN_NUMERALS = {4: "四", 5: "五", 6: "六", 7: "七", 8: "八", 9: "九", 10: "十", 11: "十一", 12: "十二", 13: "十三", 14: "十四",
+               15: "十五", 16: "十六", 17: "十七"}
 
 
 def test_explainer_scene_count_matches_the_title_and_note():
@@ -3796,4 +3803,143 @@ def test_h2o_3d_sprite_sheets_match_their_metadata():
     assert total < 2.6e6, "贴图按幕懒加载，但总量也别失控"
     figs = {p.name for p in (ROOT / "assets/img/papers/h2o").glob("*.webp")}
     used = set(re.findall(r"'(fig\w+\.webp)'", js))
+    assert used and used <= figs, used - figs
+
+
+def _omnih2o_clip(js: str):
+    """解码 omnih2o.js 的 `CLIP`：每帧 144 个 int16（毫米）——站姿版 23 个点、重建的根、人的 SMPL 24 个关节。"""
+    m = re.search(r"var CLIP = \{ fps: (\d+), n: (\d+), t0: ([\d.]+), per: (\d+), data: '([^']+)' \};", js)
+    fps, n, per = int(m.group(1)), int(m.group(2)), int(m.group(4))
+    a = _h2o_int16(m.group(5))
+    assert len(a) == per * n and per == 144
+    return fps, [{"st": _h2o_pts(a, k * per, 23), "root": _h2o_pts(a, k * per + 69, 1)[0], "human": _h2o_pts(a, k * per + 72, 24)} for k in range(n)]
+
+
+def test_omnih2o_explainer_demos_and_worked_example_share_the_paper_numbers():
+    """OmniH2O：十七幕动画、三个演示、配音旁白与笔记「🚶 具体实例」用同一组数。
+
+    表 1–3、表 17 照抄 arXiv 2406.08858 v1；课程、抬脚奖励的代码取值照抄 LeCAR-Lab/human2humanoid；H1 的动作是官方样例
+    stable_punch.pkl 里 KIT 572 号的左手出拳（站姿版取它的 pose_aa），嵌在 omnih2o.js 里，这里解码后把第 2.40 s 的 27 维目标、
+    第 2.67 s 打向侧面的左手、固定的根与头再算一遍。
+    """
+    js = (DEMO_JS_DIR / "omnih2o.js").read_text(encoding="utf-8")
+    note = OMNIH2O_NOTE.read_text(encoding="utf-8")
+    narration = (ROOT / "scripts" / "paper_video" / "papers" / "omnih2o.py").read_text(encoding="utf-8")
+    intro = (ROOT / "scripts" / "paper_video" / "papers" / "omnih2o.js").read_text(encoding="utf-8")
+
+    for line in (
+        "{ key: 'priv', zh: '特权教师', group: 'main', dim: 913, real: false, all: [94.77, 126.51, 70.68, 3.57, 6.20], succ: [122.71, 69.06, 2.22, 5.20] },",
+        "{ key: 'h2o', zh: 'H2O', group: 'main', dim: 138, real: true, all: [87.52, 148.13, 81.06, 5.12, 7.89], succ: [133.28, 75.99, 2.40, 5.75] },",
+        "{ key: 'omni', zh: 'OmniH2O', group: 'main', dim: 1665, real: true, all: [94.10, 141.11, 77.82, 3.70, 6.54], succ: [135.49, 75.75, 2.30, 5.47] },",
+        "{ key: 'woD', zh: '不用 DAgger', group: 'a', dim: 1665, real: false, all: [47.11, 223.27, 128.90, 15.03, 16.29], succ: [182.13, 119.54, 5.47, 9.10] },",
+        "{ key: 'p22', zh: '22 个点', group: 'c', dim: 1836, real: true, all: [94.72, 127.71, 70.39, 3.62, 6.25], succ: [123.87, 68.92, 2.22, 5.24] },",
+        "{ key: 'omni', zh: 'OmniH2O', group: 'main', dim: 1665, v: [47.94, 41.87, 1.84, 2.20] },",
+        "{ key: 'h0', zh: '历史 0 步', group: 'b', dim: 90, v: [83.26, 46.00, 4.86, 4.45] },",
+        "data: [['25% 数据', 1.30e-2, 4, [1, 9, 3, 3]], ['50% 数据', 7.48e-3, 6.5, [3, 10, 6, 9]], ['100% 数据', 5.25e-4, 8, [6, 10, 6, 10]]],",
+        "var CURR = { s0: 0.5, down: 0.9999, up: 1.0001, lo: 40, hi: 120, cap: 1 };",
+        "var CURR_CODE = { s0: 0.5, step: 1e-5, lo: 50, hi: 120, min: 0.25, cap: 1 };",
+        "var FEET = { h: 0.25, wCode: -2500, wPaper: 1000, ankle0: 0.068, air: 0.25, wAir: 1000, dt: 0.02 };",
+        "var SQUAT = { a: 0.8, z: 0.7995 };",
+        "var STAND_Z = 0.979;",
+        "var EX_K = 21, EX_LAG = 3;",
+        "var REACH_K = 25;",
+        "var RECON = { err: 44.3, yaw0: 166.9, yawReach: 98.6, lift: 0.0422 };",
+    ):
+        assert line in js, line
+    for k in ("'omnih2o-explainer'", "'omnih2o-video'", "'omnih2o-points'", "'omnih2o-reward'", "'omnih2o-tables'", "K.video(host"):
+        assert k in js, k
+
+    # 例 4：观测维数
+    assert 19 + 19 + 3 + 3 + 19 == 63 and 63 + 27 == 90 and 90 + 25 * 63 == 1665 == 26 * 63 + 27
+    assert 66 + 138 + 69 + 69 + 19 == 361 and 69 + 138 + 69 + 69 + 69 + 138 == 552 and 361 + 552 == 913
+    assert 63 * 25 + 63 + 9 * 9 == 1719 and 63 * 25 + 63 + 23 * 9 == 1845 and 63 * 25 + 63 + 72 == 1710 and 63 * 25 + 63 + 198 == 1836
+    for s in ("$90+25\\times63=1665=26\\times63+27$", "$1575+63+81=1719$", "$1575+63+207=1845$"):
+        assert s in note, s
+    # 例 5：一步的抬脚分数（代码 −2500 × max(0.25 − h, 0)，论文 +1000 × max(h − 0.25, 0)）
+    assert -2500 * (0.25 - 0.12) == -325 and _fmt(-325 * 0.02, 1) == "-6.5" and _fmt(-325 * 0.02 * 0.5, 2) == "-3.25"
+    assert _fmt(1000 * (0.30 - 0.25) * 0.02, 1) == "1.0" and 8 * -325 == -2600 and _fmt(0.25 - 0.068, 3) == "0.182"
+    assert "$-2500\\times(0.25-0.12)=-325$" in note and "4 秒累计扣 2600" in narration and "−2600" in js
+    # 例 6：惩罚课程
+    assert round(math.log(2) / math.log(1.0001)) == 6932 and round(math.log(2) / math.log(1 + 1e-5)) == 69315
+    assert "**6932**" in note and "69,315" in note and "6932 次" in narration
+    # 例 7、例 8：读表
+    assert (_fmt(94.77 - 94.10, 2), _fmt(94.10 - 87.52, 2), _fmt(94.10 - 47.11, 2), _fmt(141.11 - 127.71, 1)) == ("0.67", "6.58", "46.99", "13.4")
+    assert _fmt(100 * (1 - 47.94 / 87.33), 1) == "45.1" and _fmt(100 * (83.26 / 47.94 - 1), 1) == "73.7"
+    for s in ("0.67 个点", "6.58 个点", "47.11%", "94.10%", "87.33 毫米", "47.94 毫米", "降了 45%"):
+        assert s in narration, s
+    # 例 9：表 3 是表 17 四个任务的平均；50% 数据和「单帧图 → 单步」按表 17 是 7/10，表 3 写 6.5/10
+    assert sum([3, 10, 6, 9]) / 4 == 7 and sum([3, 10, 5, 10]) / 4 == 7 and sum([7, 10, 9, 9]) / 4 == 8.75 and sum([6, 10, 5, 10]) / 4 == 7.75
+    assert f"{sum([1.39e-3, 6.24e-4, 4.50e-3, 1.46e-2]) / 4:.2e}" == "5.28e-03" and f"{sum([4.79e-5, 6.42e-5, 3.41e-4, 2.42e-3]) / 4:.2e}" == "7.18e-04"
+    assert "| 50% 数据 | 3、10、6、9 | **7** | 6.5 ✗ |" in note
+    # 例 10：OmniH2O-6 的帧数
+    frames = [13234, 8535, 12759, 9380, 11118, 18436]
+    assert sum(frames) == 73462 and _fmt(sum(frames) / 30 / 60, 1) == "40.8" and "**40.8 分钟**" in note
+
+    # 复现：从嵌入的官方样例再算一遍
+    fps, clip = _omnih2o_clip(js)
+    assert fps == 15 and len(clip) == 60
+    # 站姿版：根一直在 (0, 0, 0.979)，头 = 骨盆往上 0.75 m
+    assert all(f["st"][0] == [0.0, 0.0, 0.979] and f["st"][22] == [0.0, 0.0, 1.729] for f in clip)
+    # 例 3：第 2.40 s（第 21 帧），机器人落后 3 帧；左手、右手、头；参考速度用 15 fps 的中心差分
+    k, lag, idx = 21, 3, [20, 21, 22]
+    assert 1.0 + k / fps == 2.4
+
+    def sub(p, q):
+        return [a - b for a, b in zip(p, q, strict=True)]
+
+    got = {
+        "ref": [sub(clip[k]["st"][j], clip[k]["st"][0]) for j in idx],
+        "own": [sub(clip[k - lag]["st"][j], clip[k - lag]["st"][0]) for j in idx],
+        "diff": [sub(clip[k]["st"][j], clip[k - lag]["st"][j]) for j in idx],
+        "vel": [[v * fps / 2 for v in sub(clip[k + 1]["st"][j], clip[k - 1]["st"][j])] for j in idx],
+    }
+    for key, rows in got.items():
+        want = re.search(key + r": (\[\[[^;]*?\]\])", js[js.index("var EX = {") :]).group(1)
+        want = json.loads(want)
+        # 关键点按毫米存，速度 = 差 × 7.5，常落在 0.0005 的正中，三位小数的舍入误差正好 5e-4
+        assert all(abs(a - b) <= 5e-4 + 1e-9 for r1, r2 in zip(rows, want, strict=True) for a, b in zip(r1, r2, strict=True)), key
+    for s in ("$(0.017, 0.368, 0.076)$", "$(0.238, 0.677, 0.468)$", "$(-0.232, 1.777, 1.110)$", "$(-0.049, 0.013, -0.029)$", "$(-0.337, -0.068, -0.038)$"):
+        assert s in note, s
+    assert _fmt(math.dist([0, 0, 0], got["vel"][0]), 2) == "2.11" and "约 2.11 m/s" in note
+    # 例 1：第 2.67 s（第 25 帧）左拳打到身体左侧
+    assert [_fmt(v, 3) for v in clip[25]["st"][20]] == ["0.138", "0.819", "1.551"] and "$(0.138, 0.819, 1.551)$" in note
+    # 重建的根抬了 0.0422 m，第一帧根在原点
+    assert clip[0]["root"][:2] == [0.0, 0.0]
+
+    # 旁白：数字列举用顿号，两个数之间不只隔一个逗号（「66 加 72，138 维」的教训）
+    spoken = re.findall(r'"([^"]*)"\),', narration[narration.index("SCRIPT = [") : narration.index("DISPLAY = [")])
+    assert len(spoken) == 91 and not any(re.search(r"\d\s*[，,]\s*\d", t) for t in spoken)
+    # 片头接上一期（H2O）的片尾预告，片尾只预告下一篇（MaskedMimic）
+    assert narration.count("上一期结尾预告") == 1 and "下一篇讲 MaskedMimic" in narration and "MaskedMimic" in intro
+    assert "## 🎬 十七幕动画" in note and 'demos: ["omnih2o"]' in note
+    # 面板到 cue 之后才淡出（见 ExBody 的全局检查）
+    assert "return seg(t, a + 0.3, a + 0.7) * (b == null ? 1 : 1 - seg(t, b, b + 0.3));" in js
+    assert "1 - seg(t, b - 0.3, b)" not in js
+    # 视频文案的占位符都已填上
+    assert "__VIDEO_" not in js and "__VIDEO_" not in note
+
+
+def test_omnih2o_3d_sprite_sheets_match_their_metadata():
+    """OmniH2O：H1 的 3D 逐帧贴图（Robot_Retarget_Online 的材质与光照，MuJoCo Menagerie 的 H1）。
+
+    三张表：站姿版（官方样例的 pose_aa）、蹲姿版与原始重定向的近似还原（我们做的）；格子对不上图，裁出来的就是半个机器人。
+    """
+    js = (DEMO_JS_DIR / "omnih2o.js").read_text(encoding="utf-8")
+    sheets = json.loads(re.search(r"var SHEETS = (\{.*?\});\n", js).group(1))
+    _, clip = _omnih2o_clip(js)
+    sprite_dir = ROOT / "assets/img/papers/omnih2o/h1_3d"
+    total = 0
+    assert set(sheets) == {"stable", "squat", "retarget"}
+    for sid, s in sheets.items():
+        path = sprite_dir / s["file"]
+        assert path.is_file(), s["file"]
+        total += path.stat().st_size
+        rows = math.ceil(s["n"] / s["cols"])
+        assert _webp_size(path) == (s["cw"] * s["cols"], s["ch"] * rows), sid
+        assert 0 < s["ax"] < s["cw"] and 0 < s["ay"] <= s["ch"] and s["R"] == 220 and (s["yaw"], s["pitch"]) == (1.1, 0.1), sid
+        assert s["n"] == len(clip), sid
+    assert {p.name for p in sprite_dir.iterdir()} == {s["file"] for s in sheets.values()}
+    assert total < 2.0e6, "贴图按幕懒加载，但总量也别失控"
+    figs = {p.name for p in (ROOT / "assets/img/papers/omnih2o").glob("*.webp")}
+    used = set(re.findall(r"'((?:fig|hw)\w+\.webp)'", js))
     assert used and used <= figs, used - figs
