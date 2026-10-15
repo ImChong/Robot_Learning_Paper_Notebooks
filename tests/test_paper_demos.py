@@ -3759,6 +3759,9 @@ def test_h2o_explainer_demos_and_worked_example_share_the_paper_numbers():
     # 逐段缩放：14 对点 77.4 → 35.9 mm
     assert "**77.4 mm**" in note and "**35.9 mm**" in note and "77.4 毫米" in narration
 
+    # 两个数之间只隔一个逗号会被 TTS 当成千分位：「66 加 72，138 维」念成七万两千一百三十八维（2026-10-15 看片反馈）
+    assert "66 加 72 等于 138 维" in narration and "66 加 24 等于 90 维" in narration
+    assert not re.search(r"\d\s*[，,]\s*\d{3}\s*维", narration)
     # 片头接上一期（ExBody）的片尾预告，片尾只预告下一篇（OmniH2O）
     assert narration.count("上一期结尾预告") == 1 and "下一篇讲 Omni H 2 O" in narration and "OmniH2O" in intro
     assert "## 🎬 十四幕动画" in note and 'demos: ["h2o"]' in note

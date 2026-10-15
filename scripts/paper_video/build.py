@@ -1,6 +1,10 @@
 """论文讲解视频：papers/<name>.py 的旁白 -> 逐段 TTS -> out/<name>/timeline.json + narration.wav.
 
-Usage: python3 build.py ppo|awr
+Usage: python3 build.py ppo|awr [--reuse]
+
+--reuse keeps the audio and subtitles of every line whose text is unchanged since the last build
+(read from out/<name>/timeline.json + segNN.wav) and only synthesizes the new or edited lines, so the
+unchanged scenes keep exactly the same timing and can be reused frame for frame (README「只改了几幕」).
 
 Each segment plays storyboard time [from, to] of one scene at 1x speed while
 its line is spoken; if the line runs longer, the scene holds on `to`.
@@ -37,6 +41,7 @@ if "speech.platform.bing.com" in edge_tts.communicate.WSS_URL and not os.environ
 
 HERE = Path(__file__).parent
 NAME = sys.argv[1] if len(sys.argv) > 1 else "ppo"
+REUSE = "--reuse" in sys.argv[2:]
 PAPER = importlib.import_module(f"papers.{NAME}")
 SCRIPT, DISPLAY = PAPER.SCRIPT, PAPER.DISPLAY
 OUT = HERE / "out" / NAME
@@ -116,18 +121,48 @@ def chunks(text, start, dur, limit=17):
     return out
 
 
+def previous_lines():
+    """text -> (pcm, subtitles relative to the start of the speech) from the last build, for --reuse."""
+    path = OUT / "timeline.json"
+    if not REUSE or not path.exists():
+        return {}
+    prev = json.load(open(path))
+    old = {}
+    for j, sg in enumerate(prev["segments"]):
+        wav_path = OUT / f"seg{j:02d}.wav"
+        if "text" not in sg or not wav_path.exists() or sg["text"] in old:
+            continue
+        with wave.open(str(wav_path)) as w:
+            audio = w.readframes(w.getnframes())
+        start = sg["t0"] + sg["lead"]
+        rel = [{**s, "t0": round(s["t0"] - start, 3), "t1": round(s["t1"] - start, 3)}
+               for s in prev["subs"] if sg["t0"] <= s["t0"] < sg["t1"]]
+        old[sg["text"]] = (audio, rel)
+    return old
+
+
 async def main():
     segs, subs, pcm = [], [], bytearray()
+    old = previous_lines()  # read every old segNN.wav before this build starts overwriting them
     t = 0.0
     prev_scene = None
     for i, (scene, a, b, text) in enumerate(SCRIPT):
         mp3, wav = OUT / f"seg{i:02d}.mp3", OUT / f"seg{i:02d}.wav"
-        sents = await tts(text, mp3)
-        audio = to_wav(mp3, wav)
+        reused = old.get(text)
+        if reused:
+            audio, rel_subs = reused
+            with wave.open(str(wav), "wb") as w:
+                w.setnchannels(1)
+                w.setsampwidth(2)
+                w.setframerate(SR)
+                w.writeframes(audio)
+        else:
+            sents = await tts(text, mp3)
+            audio = to_wav(mp3, wav)
         alen = len(audio) / 2 / SR
         # 服务偶尔只回一小段音频而不报错（一句 60 字的旁白只有 0.36 s）：明显短于字数就重合成
         for k in range(3):
-            if alen >= len(text) / 25:
+            if reused or alen >= len(text) / 25:
                 break
             print(f"seg{i:02d} only {alen:.2f}s for {len(text)} chars, retrying")
             await asyncio.sleep(2 ** k)
@@ -136,16 +171,19 @@ async def main():
             alen = len(audio) / 2 / SR
         lead = LEAD if scene != prev_scene else 0.0
         dur = max(b - a, lead + alen + GAP)
-        segs.append({"scene": scene, "t0": round(t, 3), "t1": round(t + dur, 3), "from": a, "to": b, "lead": lead})
+        segs.append({"scene": scene, "t0": round(t, 3), "t1": round(t + dur, 3), "from": a, "to": b, "lead": lead, "text": text})
         # audio
         pad = int(round((t + lead) * SR)) - len(pcm) // 2
         pcm += b"\x00\x00" * max(pad, 0) + audio
-        for off, d, s in sents:
-            # 先换成字幕写法再切行：逐字母念的缩写（「M L P」）带空格，按空格切行会把它拆到两行
-            subs += chunks(display(s.strip()), t + lead + off, d)
+        if reused:
+            subs += [{**s, "t0": round(t + lead + s["t0"], 3), "t1": round(t + lead + s["t1"], 3)} for s in rel_subs]
+        else:
+            for off, d, s in sents:
+                # 先换成字幕写法再切行：逐字母念的缩写（「M L P」）带空格，按空格切行会把它拆到两行
+                subs += chunks(display(s.strip()), t + lead + off, d)
         t += dur
         prev_scene = scene
-        print(f"{i:02d} {scene!s:>5} {alen:5.2f}s -> seg {dur:5.2f}s", file=sys.stderr)
+        print(f"{i:02d} {scene!s:>5} {alen:5.2f}s -> seg {dur:5.2f}s{'  (reused)' if reused else ''}", file=sys.stderr)
     t += 0.8
     pcm += b"\x00\x00" * (int(round(t * SR)) - len(pcm) // 2)
     with wave.open(str(OUT / "narration.wav"), "wb") as w:
