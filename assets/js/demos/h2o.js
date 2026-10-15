@@ -661,13 +661,20 @@
   /* ── scene 4: 不改身材，脚会内八 ── */
   function buildSceneToe() {
     var s = sceneSvg('左边：同一段挥手、同一套逆运动学，正前方稍往下看的两台 H1：左边按人本来的身材重定向，两膝并拢、脚尖朝里（红色箭头是脚尖方向），' +
-      '右边先改了身材，两腿分开、脚尖朝前；蓝点是人的两个踝。右边依次是论文图 3、原因、我们量到的角度');
+      '右边先改了身材，两腿分开、脚尖朝前；蓝线是叠在 H1 上的人体骨架（左边是人本来的身材，右边是改过的身材），蓝点是人的两个踝。右边依次是论文图 3、原因、我们量到的角度');
     s.appendChild(svgText(30, 28, '不改身材：脚会内八（我们的复现：挥手）', 'demo-x-ink2', 13.5));
+    /* 图例：蓝线 = 叠在 H1 上的人体骨架（就是逆运动学要对上的目标），和骨架一起出场 */
+    var legend = group(s);
+    hline(legend, 410, 24, 438, 24, C_HUMAN, 3);
+    label(legend, 446, 28, '蓝线：人的骨架，叠在 H1 上（左：本来的身材，右：改过的身材）', 'demo-x-ink2', 11.5);
     var left = group(s);
     rectBox(left, 30, 44, 360, 350, C_BORDER, C_SURFACE2);
     var cr = CLIPS.waveRaw, cw = CLIPS.wave, SC = 146, GY = 344;
     groundLine(left, 46, 374, GY);
     var hRaw = h1Mesh(left, cr.sheet), hFit = h1Mesh(left, SHEETS.waveFfit);
+    /* 人体骨架叠在 H1 上：左边是 CMU 本来的身材（矮、两腿并得近），右边是改过的身材（和 H1 一样宽、一样高） */
+    var skG = group(left);
+    var skR = humanSkel(skG, { sw: 2.4, head: 7 }), skF = humanSkel(skG, { sw: 2.4, head: 7 });
     label(left, 120, 66, '不改身材', 'demo-x-ink', 12.5, 'middle');
     label(left, 300, 66, '改了身材', 'demo-x-ink', 12.5, 'middle');
     var ov = group(left);
@@ -682,7 +689,7 @@
     var p2 = group(s);
     label(p2, R, 70, '为什么会内八', 'demo-x-ink', 14);
     label(p2, R, 100, 'H1 的腿从骨盆两侧约 0.2 m 处才往下长', 'demo-x-ink2', 12.5);
-    label(p2, R, 124, '人的两只脚只隔 ' + f2(TOE.wave_raw.human_ankle_w) + ' m', 'demo-x-ink2', 12.5);
+    label(p2, R, 124, '看左边的蓝线：人的两只脚只隔 ' + f2(TOE.wave_raw.human_ankle_w) + ' m', 'demo-x-ink2', 12.5);
     label(p2, R, 160, 'H1 想把两只脚收到人的脚上，', 'demo-x-ink', 12.5);
     label(p2, R, 184, '只能把髋往里转、往里收', 'demo-x-ink', 12.5);
     label(p2, R, 220, '膝和踝的俯仰轴跟着转，脚尖就朝里了', 'demo-x-mut', 12);
@@ -727,6 +734,10 @@
       });
       degTx[0].textContent = '脚尖 ' + sgn(f1(fr.foot[0])) + '° / ' + sgn(f1(fr.foot[1])) + '°';
       degTx[1].textContent = '脚尖 ' + sgn(f1(ff.foot[0])) + '° / ' + sgn(f1(ff.foot[1])) + '°';
+      skR.put(fr.tgt, camR);
+      skF.put(ff.tgt, camF);
+      setOpacity(skG, seg(t, 3.9, 4.4));
+      setOpacity(legend, seg(t, 3.9, 4.4));
       setOpacity(ov, seg(t, 3.9, 4.4));
       setOpacity(p1, win(t, 0.3, 3.6));
       setOpacity(p2, win(t, 3.6, 7.0));
@@ -1586,7 +1597,7 @@
       build: buildSceneToe,
       cues: [
         { at: 0.4, s: '论文图 3：不用 $\\boldsymbol\\beta\'$、直接对平均身材的人，H1 两膝并拢、脚尖朝里——「**内八**」，站不稳。' },
-        { at: 3.6, s: '原因：H1 的腿从骨盆两侧约 0.2 m 处才往下长；人的两脚只隔 ' + f2(TOE.wave_raw.human_ankle_w) + ' m，H1 只能把**髋往里转、往里收**。' },
+        { at: 3.6, s: '原因：H1 的腿从骨盆两侧约 0.2 m 处才往下长；**蓝线**是叠在 H1 上的人，两脚只隔 ' + f2(TOE.wave_raw.human_ankle_w) + ' m，H1 只能把**髋往里转、往里收**。' },
         { at: 7.0, s: '我们的挥手，不改身材：脚尖朝里 ' + f1(-TOE.wave_raw.foot[0]) + '° / ' + f1(-TOE.wave_raw.foot[1]) + '°，两踝 ' + f3(TOE.wave_raw.ankle_w) + ' m，' + Math.round(100 * TOE.wave_raw.yaw_limit_frac) + '% 的帧髋偏航顶到限位。' },
         { at: 10.4, s: '改了身材：左脚朝外 ' + f1(TOE.wave_fit.foot[0]) + '°、右脚朝里 ' + f1(-TOE.wave_fit.foot[1]) + '°，两踝 **' + f3(TOE.wave_fit.ankle_w) + ' m**，没有帧顶到限位。' },
         { at: 13.4, s: '踢球、走路也一样：先**改身材**，再**对位置**。' }
