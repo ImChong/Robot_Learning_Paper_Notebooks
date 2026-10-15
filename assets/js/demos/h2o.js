@@ -736,7 +736,7 @@
       degTx[1].textContent = '脚尖 ' + sgn(f1(ff.foot[0])) + '° / ' + sgn(f1(ff.foot[1])) + '°';
       skR.put(fr.tgt, camR);
       skF.put(ff.tgt, camF);
-      setOpacity(skG, seg(t, 3.9, 4.4));
+      setOpacity(skG, 0.6 * seg(t, 3.9, 4.4));  // 半透明：骨架和机身都看得见
       setOpacity(legend, seg(t, 3.9, 4.4));
       setOpacity(ov, seg(t, 3.9, 4.4));
       setOpacity(p1, win(t, 0.3, 3.6));
@@ -751,7 +751,7 @@
   /* ── scene 5: 位置逆运动学：从零姿态拉到目标上 ── */
   function buildSceneIk() {
     var s = sceneSvg('左边：挥手第 1.4 秒那一帧。H1 从全零姿态出发，按 Adadelta 一步步迭代，橙点（H1 的 11 个点）被拉向蓝点（改过身材的人），红线是两者的距离；' +
-      '右边是整段 149 帧的平均距离随迭代下降的曲线；最后整段动作播放，标出整段抬到地面的那一下');
+      '右边先是两个优化器（Adam、Adadelta）各一句话，再是整段 149 帧的平均距离随迭代下降的曲线；最后整段动作播放，标出整段抬到地面的那一下');
     s.appendChild(svgText(30, 28, '位置逆运动学：从零姿态拉到目标上（第 IV-A 节）', 'demo-x-ink2', 13.5));
     var left = group(s);
     rectBox(left, 30, 44, 360, 350, C_BORDER, C_SURFACE2);
@@ -779,6 +779,19 @@
     chip(p2, R, 156, 350, 'Adadelta，学习率 100，迭代 500 步', C_BORDER, { size: 12, left: true });
     chip(p2, R, 192, 350, '每一步之后截断到关节限位', C_BORDER, { size: 12, left: true });
     label(p2, R, 248, '论文写的是 Adam；代码里是 Adadelta', 'demo-x-mut', 11.5);
+    /* 两个优化器各一句话（PyTorch 的默认参数：Adam β₁ 0.9、β₂ 0.999；Adadelta ρ 0.9、ε 1e−6） */
+    var pOpt = group(s);
+    label(pOpt, R, 70, '两个优化器，各一句话', 'demo-x-ink', 14);
+    function optBox(y, h, color, head, lines) {
+      rectBox(pOpt, R, y, 360, h, color, C_SURFACE);
+      label(pOpt, R + 12, y + 22, head, 'demo-x-ink', 13);
+      lines.forEach(function (ln, i) { label(pOpt, R + 12, y + 46 + i * 20, ln, 'demo-x-ink2', 12); });
+    }
+    optBox(84, 96, C_ACCENT, 'Adam（改身材那一步，学习率 0.1）',
+      ['每个参数记着梯度的平均方向和平均大小，', '两者相除再乘学习率：每步大约走 0.1，', '和梯度本身多大无关']);
+    optBox(192, 96, C_WARN, 'Adadelta（逆运动学这一步，学习率 100）',
+      ['也除以梯度的平均大小，但学习率换成', '最近几步参数实际改了多少：起步只有约 0.003，', '学习率 100 把每一步放大到约 0.3 弧度']);
+    label(pOpt, R, 312, '步长按 PyTorch 的默认参数算（我们算的）', 'demo-x-mut', 11);
     /* 曲线：整段的平均距离（每 5 步一个点） */
     var p3 = group(s);
     var CX = R + 46, CY = 92, CW = 300, CH = 170, YMAX = 200;
@@ -820,16 +833,16 @@
     chip(p5, R, 154, 350, '走路整段抬了 ' + f1(100 * CLIPS.walk.dz) + ' cm：有些帧脚离地约 5 cm', C_WARN, { size: 12, left: true });
     label(p5, R, 210, '只按整段的最低点抬一次，不逐帧贴地', 'demo-x-mut', 11.5);
     label(p5, R, 232, '（我们的观察）', 'demo-x-mut', 11.5);
-    /* 迭代的显示节奏：3.8 s 到 10.0 s 之间依次走过记录下来的 15 个迭代 */
+    /* 迭代的显示节奏：3.8 s 到 13.2 s 之间依次走过记录下来的 15 个迭代（7.0–10.4 讲优化器时接着走） */
     function iterIndex(t) {
-      var u = clamp((t - 3.8) / 6.2, 0, 1);
+      var u = clamp((t - 3.8) / 9.4, 0, 1);
       return Math.min(IKIT.iters.length - 1, Math.floor(u * IKIT.iters.length));
     }
     function draw(t, clock) {
       var now = nowOf(t, clock), i = iterIndex(t), it = IKIT.iters[i];
       var root = IKIT.h1[i][0];
       var cam = camFor(SHEETS.ikiter, SC, 240, GY, root[0], root[1]);
-      var phaseA = 1 - seg(t, 10.4, 10.7), phaseB = seg(t, 10.4, 10.8) * (1 - seg(t, 13.4, 13.7)), phaseC = seg(t, 13.7, 14.1);
+      var phaseA = 1 - seg(t, 13.8, 14.1), phaseB = seg(t, 13.8, 14.2) * (1 - seg(t, 16.8, 17.1)), phaseC = seg(t, 17.1, 17.5);
       ik.put(root, cam, i);
       pl.put(IKIT.h1[i], IKIT.target, cam);
       itTx.textContent = 'Adadelta 第 ' + it + ' 步';
@@ -838,14 +851,14 @@
       setOpacity(pl.g, phaseA * seg(t, 0.6, 1.0));
       setOpacity(itTx, phaseA);
       errTx.style.opacity = phaseA;
-      var k = loopFrame(cw, t >= 10.4 ? now - 10.4 : 0, WAVE_K42), f = cw.frame(k);
+      var k = loopFrame(cw, t >= 13.8 ? now - 13.8 : 0, WAVE_K42), f = cw.frame(k);
       var cam2 = camFor(cw.sheet, SC, 240, GY, f.root[0], f.root[1]);
       play.put(f.root, cam2, k);
       pl2.put(f.h1, f.tgt, cam2);
       setOpacity(play.g, phaseB);
       setOpacity(pl2.g, phaseB);
       /* 走路：整段只抬一次，低的那只踝离地多少 */
-      var cwk = CLIPS.walk, kw = loopFrame(cwk, t >= 13.4 ? now - 13.4 : 0, 0), fw = cwk.frame(kw);
+      var cwk = CLIPS.walk, kw = loopFrame(cwk, t >= 16.8 ? now - 16.8 : 0, 0), fw = cwk.frame(kw);
       var cam3 = camFor(cwk.sheet, SC, 300, GY, fw.root[0], fw.root[1]);
       walk.put(fw.root, cam3, kw);
       var lo = fw.h1[2][2] < fw.h1[4][2] ? fw.h1[2] : fw.h1[4], qa = project(lo, cam3), qg = project([lo[0], lo[1], 0.08], cam3);
@@ -854,16 +867,17 @@
       liftTx2.textContent = '最低那帧 0.08 m；整段抬了 ' + f1(100 * cwk.dz) + ' cm';
       setOpacity(walk.g, phaseC);
       setOpacity(lift, phaseC);
-      setOpacity(leg, 1 - seg(t, 13.4, 13.7));
+      setOpacity(leg, 1 - seg(t, 16.8, 17.1));
       setOpacity(p1, win(t, 0.3, 3.6));
       setOpacity(p2, win(t, 3.6, 7.0));
-      setOpacity(p3, win(t, 7.0, 10.4));
+      setOpacity(pOpt, win(t, 7.0, 10.4));
+      setOpacity(p3, win(t, 10.4, 13.8));
       var n = Math.max(1, Math.round(curvePts.length * clamp(it / 500, 0.004, 1)));
       setPath(cPath, curvePts.slice(0, n));
       moveDot(cDot, curvePts[n - 1]);
-      setOpacity(p4, win(t, 10.4, 13.4));
-      pairBars.forEach(function (b, j) { setW(b[0], 2.2 * b[1] * ease(seg(t, 10.7 + j * 0.08, 11.2 + j * 0.08))); });
-      setOpacity(p5, win(t, 13.4));
+      setOpacity(p4, win(t, 13.8, 16.8));
+      pairBars.forEach(function (b, j) { setW(b[0], 2.2 * b[1] * ease(seg(t, 14.1 + j * 0.08, 14.6 + j * 0.08))); });
+      setOpacity(p5, win(t, 16.8));
     }
     return { el: s, draw: draw };
   }
@@ -1605,14 +1619,15 @@
     },
     {
       title: '位置逆运动学：从零姿态拉到目标上',
-      dur: 16,
+      dur: 19.4,
       build: buildSceneIk,
       cues: [
         { at: 0.4, s: '官方 `grad_fit_h1.py` 对 **11 对点**：骨盆、两膝、两踝、两肩、两肘、两手；根的位置和朝向直接用人的。' },
         { at: 3.6, s: '19 个关节角从 0 出发，按 $L$ 的梯度一步步走：Adadelta、学习率 100、500 步，每步**截断到关节限位**。' },
-        { at: 7.0, s: '挥手 149 帧一起解：平均距离 ' + f1(IK_STATS.wave_fit.first) + ' → ' + f1(IKIT.curve[10]) + '（50 步）→ **' + f1(IK_STATS.wave_fit.final) + ' mm**（500 步）。' },
-        { at: 10.4, s: '第 1.4 秒这一帧：' + f1(IKIT.err42[0]) + ' → ' + f1(IKIT.err42[IKIT.err42.length - 1]) + ' mm；**肩**差得最多——人举手时锁骨会抬、会收，H1 的肩固定在躯干上。' },
-        { at: 13.4, s: '最后整段**抬一次**，让最低的身体点离地 0.08 m：挥手抬了 ' + f1(100 * CLIPS.wave.dz) + ' cm，走路抬了 ' + f1(100 * CLIPS.walk.dz) + ' cm。' }
+        { at: 7.0, s: '**Adam**：梯度的平均方向除以平均大小，每步约走一个学习率；**Adadelta**：学习率换成最近几步的改动量，起步小，代码乘了 100。' },
+        { at: 10.4, s: '挥手 149 帧一起解：平均距离 ' + f1(IK_STATS.wave_fit.first) + ' → ' + f1(IKIT.curve[10]) + '（50 步）→ **' + f1(IK_STATS.wave_fit.final) + ' mm**（500 步）。' },
+        { at: 13.8, s: '第 1.4 秒这一帧：' + f1(IKIT.err42[0]) + ' → ' + f1(IKIT.err42[IKIT.err42.length - 1]) + ' mm；**肩**差得最多——人举手时锁骨会抬、会收，H1 的肩固定在躯干上。' },
+        { at: 16.8, s: '最后整段**抬一次**，让最低的身体点离地 0.08 m：挥手抬了 ' + f1(100 * CLIPS.wave.dz) + ' cm，走路抬了 ' + f1(100 * CLIPS.walk.dz) + ' cm。' }
       ]
     },
     {
@@ -1729,7 +1744,7 @@
   function buildExplainerDemo(host) {
     K.explainer(host, {
       title: '十四幕动画：H2O 全流程速览',
-      sub: '约 228 秒自动播放。空格播放/暂停，← → 换幕；H1 和人的骨架是我们照官方重定向脚本重算的 CMU 动作（按真实模型做 3D 渲染），表格与图来自论文。',
+      sub: '约 231 秒自动播放。空格播放/暂停，← → 换幕；H1 和人的骨架是我们照官方重定向脚本重算的 CMU 动作（按真实模型做 3D 渲染），表格与图来自论文。',
       ariaLabel: 'H2O 十四幕讲解动画',
       notes: [
         '取数依据：表 I–IV 与正文的数字照抄 arXiv 2403.04436 v1；代码里的数（14 对 / 11 对、Adadelta、截断与抬到 0.08 m、138 维的排布、PD 增益、随机化与终止的实现）读自 LeCAR-Lab/human2humanoid。',
