@@ -79,7 +79,7 @@ demos: ["omnih2o"]
 
 > 📖 **动画之后的正文默认全部折叠**：动画覆盖到的那几节（要解决什么问题、方法详解、实验结果）按小节收起，再往后的具体实例、源码对照、在路线中的位置、面试和附录各整块收起。想细读哪一块就点开对应的折叠条，内容一字未删；流程图和三个交互演示留在外面，目录里的标题依旧可以直接点，会自动展开所在折叠块，左侧目录顶部还有「展开全部文字」一键铺开。
 >
-> 动画第 1、3、6、7 幕里的 H1，动作取自官方样例 `stable_punch.pkl` 里 KIT 572 号受试者的左手出拳（第 1.00–4.93 s），和第一个交互演示、下文「🚶 具体实例」是同一组数字；第 3 幕的「蹲姿版」和「原始重定向」是我们做的，人的骨架是样例里存的 SMPL 关节。第 4、5 幕的步态与课程曲线是示意，第 7 幕「机器人落后 0.2 s」是假设。H1 的 3D 外形：材质与光照照抄 [Robot Retarget Online](https://imchong.github.io/Robot_Retarget_Online/) 的 three.js 场景，读它仓库里的 `unitree_h1/h1.xml`（MuJoCo Menagerie 的 H1，和官方仓库的 `h1.xml` 正运动学逐位相同），按关节角用正交相机逐帧离线渲染，身上的点按同一个相机投影叠在上面。表格和其余的图来自论文；第 10 幕最后一张是官方仓库 README 的硬件图（CC BY-NC 4.0）。
+> 动画第 1、3、6、7 幕里的 H1，动作取自官方样例 `stable_punch.pkl` 里 KIT 572 号受试者的左手出拳（第 1.00–4.93 s），和第一个交互演示、下文「🚶 具体实例」是同一组数字；第 3 幕的「蹲姿版」和「原始重定向」是我们做的，人的骨架是样例里存的 SMPL 关节。第 4、5 幕的步态与课程曲线是示意，第 7 幕「机器人落后 0.2 s」是假设。H1 的 3D 外形：材质与光照照抄 [Robot Retarget Online](https://imchong.github.io/Robot_Retarget_Online/) 的 three.js 场景，读它仓库里的 `unitree_h1/h1.xml`（MuJoCo Menagerie 的 H1，和官方仓库的 `h1.xml` 正运动学逐位相同），按关节角用正交相机逐帧离线渲染，身上的点按同一个相机投影叠在上面。表格和其余的图来自论文；第 10 幕最后一张是官方仓库 README 的硬件图（CC BY-NC 4.0）。第 10、14–17 幕的真机画面剪自[项目页](https://omni.human2humanoid.com/)的视频（写毛笔字、四种 VR 遥操作、上下身任务、MDM 语言指令、抗干扰、户外、GPT-4o、扩散策略的四个自主任务、三个失败案例），倍速照项目页标的写在画面上，只做讲解引用。
 
 ---
 
@@ -779,6 +779,6 @@ PMLR 定稿（2024-10-16 生成的 PDF）和 arXiv v1 的数字完全一样，�
 
 - arXiv：<https://arxiv.org/abs/2406.08858>（v1，2024-06-13，读的是 LaTeX 源码）
 - PMLR：<https://proceedings.mlr.press/v270/he25b.html>
-- 项目主页：<https://omni.human2humanoid.com/>
+- 项目主页：<https://omni.human2humanoid.com/>（动画第 10、14–17 幕的真机片段剪自这里的视频）
 - 代码：<https://github.com/LeCAR-Lab/human2humanoid>（`main`，2025-02-21；样例 `legged_gym/resources/motions/h1/stable_punch.pkl`）
 - H1 模型与材质：[Robot Retarget Online](https://github.com/ImChong/Robot_Retarget_Online) 仓库里的 MuJoCo Menagerie `unitree_h1`

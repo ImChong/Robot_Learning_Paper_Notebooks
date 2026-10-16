@@ -34,6 +34,8 @@
   /* 论文的图（arXiv 2406.08858 v1 的图 1–11）、官方仓库 README 的硬件图与 H1 的 3D 逐帧贴图都放在 assets/img/papers/omnih2o/ */
   var PAPER_IMG_BASE = assetBase('../../img/papers/omnih2o/');
   var H1_3D_BASE = PAPER_IMG_BASE ? PAPER_IMG_BASE + 'h1_3d/' : '';
+  /* 项目页 omni.human2humanoid.com 的真机视频，剪成片段放在 clips/（mp4 + 首帧 webp），用 K.svgClip 嵌进分镜 */
+  var CLIP_BASE = PAPER_IMG_BASE ? PAPER_IMG_BASE + 'clips/' : '';
   var el = K.el,
     fmt = K.fmt,
     clamp = K.clamp,
@@ -321,7 +323,7 @@
     var o = opts || {}, g = group(parent), pad = o.pad == null ? 3 : o.pad;
     g.appendChild(svgEl('rect', { x: x, y: y, width: w, height: h, rx: 5, fill: '#ffffff', stroke: 'none' }));
     g.appendChild(svgEl('image', { href: PAPER_IMG_BASE + file, x: (x + pad).toFixed(1), y: (y + pad).toFixed(1), width: (w - 2 * pad).toFixed(1), height: (h - 2 * pad).toFixed(1), preserveAspectRatio: 'xMidYMid meet' }));
-    if (caption) g.appendChild(svgText(o.capX == null ? x + w / 2 : o.capX, o.capY == null ? y + h + 12 : o.capY, caption, 'demo-x-mut', 9, o.capAnchor || 'middle'));
+    if (caption) g.appendChild(svgText(o.capX == null ? x + w / 2 : o.capX, o.capY == null ? y + h + 15 : o.capY, caption, 'demo-x-mut', 9, o.capAnchor || 'middle'));
     var iw = w - 2 * pad, ih = h - 2 * pad, cw = iw, ch = ih;
     if (o.ar) { if (iw / ih > o.ar) cw = ih * o.ar; else ch = iw / o.ar; }
     var ox = x + pad + (iw - cw) / 2, oy = y + pad + (ih - ch) / 2;
@@ -335,8 +337,17 @@
       viewBox: [(u0 * imgW).toFixed(1), (v0 * imgH).toFixed(1), cw.toFixed(1), chh.toFixed(1)].join(' ') });
     box.appendChild(svgEl('image', { href: PAPER_IMG_BASE + file, x: 0, y: 0, width: imgW, height: imgH, preserveAspectRatio: 'none' }));
     g.appendChild(box);
-    if (caption) g.appendChild(svgText(x + w / 2, y + h + 14, caption, 'demo-x-mut', 9.5, 'middle'));
+    if (caption) g.appendChild(svgText(x + w / 2, y + h + 18, caption, 'demo-x-mut', 9.5, 'middle'));
     return { g: g, h: h, x: x, y: y, w: w };
+  }
+  /* 项目页的一段真机视频：深色底框，下面一行小字写出处与倍速；draw 里调 .at(秒, 是否可见) */
+  function projClip(parent, id, x, y, w, h, caption, opts) {
+    var o = opts || {}, g = group(parent);
+    g.appendChild(svgEl('rect', { x: (x - 2).toFixed(1), y: (y - 2).toFixed(1), width: (w + 4).toFixed(1), height: (h + 4).toFixed(1), rx: 5, fill: '#111111', stroke: 'none' }));
+    var c = K.svgClip(x, y, w, h, CLIP_BASE + id + '.mp4', { poster: CLIP_BASE + id + '.webp' });
+    g.appendChild(c);
+    if (caption) label(g, o.capX == null ? x + w / 2 : o.capX, y + h + (o.capDy || 17), caption, 'demo-x-mut', o.capSize || 9.5, o.capAnchor || 'middle');
+    return { g: g, x: x, y: y, w: w, h: h, at: function (sec, vis) { c.at(sec, vis); } };
   }
   /* 三维 → 画布：z 朝上；绕竖轴转 yaw、抬头 pitch 的正交投影。cam = { yaw, pitch, s(像素/米), ox, oy, cx, cy }：
      (cx, cy) 是地面上对准画布 (ox, oy) 的那一点。H1 的贴图是同一套相机离线渲染的 */
@@ -516,7 +527,7 @@
     var s = sceneSvg('论文图 3 的总览：(a) 重定向与筛数据，(b) 仿真里先用强化学习训特权教师、再监督学生，(c) 真机上的各种接口；' +
       '旁白念到哪一块就框出哪一块：人的接口、自主智能体、三个点的运动目标、手的逆运动学');
     var FX = 12, FY = 36, FW = 566, FH = 349;
-    var fig = paperFig(s, 'fig3_pipeline.webp', FX, FY, FW, FH, '论文图 3', { ar: 1700 / 1049, pad: 2, capY: FY + FH + 12 });
+    var fig = paperFig(s, 'fig3_pipeline.webp', FX, FY, FW, FH, '论文图 3', { ar: 1700 / 1049, pad: 2, capY: FY + FH + 15 });
     function boxOn(u0, v0, u1, v1, color) {
       var a = fig.px(u0, v0), b = fig.px(u1, v1);
       var r = paint(svgEl('rect', { x: a[0] - 1, y: a[1] - 1, width: b[0] - a[0] + 2, height: b[1] - a[1] + 2, rx: 6, fill: 'none', 'stroke-width': 3.2 }), null, color);
@@ -588,8 +599,8 @@
     var heads = [['(a) 人：原动作', 'AMASS · KIT 572 号'], ['(b) 重定向到 H1', '我们的近似重建'], ['(c) 站姿版', '官方样例 stable_punch'], ['(d) 蹲姿版', '我们照论文做的']];
     var colTags = heads.map(function (h, i) {
       var g = group(cols);
-      label(g, XS[i], GY + 22, h[0], 'demo-x-ink', 12.5, 'middle');
-      label(g, XS[i], GY + 40, h[1], 'demo-x-mut', 10.5, 'middle');
+      label(g, XS[i], GY + 21, h[0], 'demo-x-ink', 12.5, 'middle');
+      label(g, XS[i], GY + 42, h[1], 'demo-x-mut', 10.5, 'middle');
       return g;
     });
     var hiC = rectBox(cols, XS[2] - 92, 66, 184, 336, C_GOOD, 'none'), hiD = rectBox(cols, XS[3] - 92, 66, 184, 336, C_WARN, 'none'), hiB = rectBox(cols, XS[1] - 92, 66, 184, 336, C_MUTED, 'none', '5 4');
@@ -671,12 +682,12 @@
     });
     label(tl, X0 + XW + 6, ROWS[0] - ZS * FEET.h + 4, '0.25 m', 'demo-x-mut', 10);
     [0, 1, 2, 3, 4].forEach(function (k) { label(tl, X0 + PX * k, ROWS[2] + 36, k + ' s', 'demo-x-mut', 10, 'middle'); });
-    tone(tl, X0, 50, '实线：左踝', C_H1, 11); tone(tl, X0 + 90, 50, '虚线：右踝', C_ACCENT, 11);
-    label(tl, X0 + 190, 50, '纵轴：踝关节连杆离地的高度', 'demo-x-mut', 11);
+    tone(tl, X0, 54, '实线：左踝', C_H1, 11); tone(tl, X0 + 90, 54, '虚线：右踝', C_ACCENT, 11);
+    label(tl, X0 + 190, 54, '纵轴：踝关节连杆离地的高度', 'demo-x-mut', 11);
     var p0 = group(s);
-    chip(p0, 128, 8, 540, '以前：奖励「腾空时间」「抬脚高度」→ 机器人为了平衡原地跺脚', C_BAD, { size: 12, h: 28 });
+    chip(p0, 128, 4, 540, '以前：奖励「腾空时间」「抬脚高度」→ 机器人为了平衡原地跺脚', C_BAD, { size: 12, h: 28 });
     var p1 = group(s);
-    chip(p1, 128, 8, 540, '新加一项：每一步落地那一刻，看这一步脚最高抬到多少', C_ACCENT, { size: 12, h: 28 });
+    chip(p1, 128, 4, 540, '新加一项：每一步落地那一刻，看这一步脚最高抬到多少', C_ACCENT, { size: 12, h: 28 });
     var p2 = group(s);
     p2.appendChild(svgMath(400, 24, 'r = -2500 \\cdot \\max(0.25 - h_{\\max},\\, 0)', { size: 16, anchor: 'middle', w: 420 }));
     var tot = group(s);
@@ -691,10 +702,10 @@
     rectBox(p4, 600, 236, 190, 150, C_WARN, C_SURFACE2);
     label(p4, 612, 258, '论文表 15 和代码不一样', 'demo-x-ink', 12);
     label(p4, 612, 282, '论文：超过 0.25 m 才加分', 'demo-x-ink2', 11);
-    label(p4, 612, 300, '（权重 +1000）', 'demo-x-mut', 10.5);
-    label(p4, 612, 322, '代码：不到 0.25 m 就扣分', 'demo-x-ink2', 11);
-    label(p4, 612, 340, '（权重 −2500）', 'demo-x-mut', 10.5);
-    label(p4, 612, 364, '踝关节站着就离地 0.068 m', 'demo-x-ink2', 11);
+    label(p4, 612, 302, '（权重 +1000）', 'demo-x-mut', 10.5);
+    label(p4, 612, 325, '代码：不到 0.25 m 就扣分', 'demo-x-ink2', 11);
+    label(p4, 612, 345, '（权重 −2500）', 'demo-x-mut', 10.5);
+    label(p4, 612, 369, '踝关节站着就离地 0.068 m', 'demo-x-ink2', 11);
     function draw(t) {
       var show = seg(t, 3.9, 4.4);
       GAITS.forEach(function (g, r) {
@@ -742,7 +753,7 @@
   function buildSceneCurr() {
     var s = sceneSvg('上图是假设的回合平均长度随训练上升，下面是惩罚系数 s：回合短于 40 步时 s 慢慢变小、40 到 120 步之间不变、长于 120 步时慢慢变大，' +
       '上限 1；右边是规则和官方代码的不同。曲线是示意');
-    var X0 = 70, XW = 430, Y1 = 64, H1P = 120, Y2 = 232, H2P = 130;
+    var X0 = 70, XW = 400, Y1 = 64, H1P = 120, Y2 = 232, H2P = 130;
     var plots = group(s);
     rectBox(plots, X0, Y1, XW, H1P, C_BORDER, C_SURFACE2);
     rectBox(plots, X0, Y2, XW, H2P, C_BORDER, C_SURFACE2);
@@ -831,7 +842,7 @@
       parts.forEach(function (p, i) {
         var w = p[1] * SCL, r = paint(svgEl('rect', { x: x.toFixed(1), y: y, width: Math.max(0, w - 1.5).toFixed(1), height: 22, rx: 2 }), colors[i % colors.length]);
         g.appendChild(r);
-        var lb = label(g, x + w / 2, y + 40 + (i % 2) * 15, p[0] + ' ' + p[1], 'demo-x-ink2', 10, 'middle');
+        var lb = label(g, x + w / 2, y + 40 + (i % 2) * 17, p[0] + ' ' + p[1], 'demo-x-ink2', 10, 'middle');
         segs.push([r, lb]);
         x += w;
       });
@@ -921,7 +932,7 @@
       var pel = project(fo.st[PT.pelvis], cam), hd = project(fo.st[PT.head], cam), el2 = project(fo.st[PT.lel], cam), hn = project(fo.st[PT.lh], cam);
       setLine(lnHead, pel[0], pel[1], hd[0], hd[1]); setLine(lnHand, el2[0], el2[1], hn[0], hn[1]);
       tHead.setAttribute('x', (hd[0] - 92).toFixed(1)); tHead.setAttribute('y', (hd[1] + 30).toFixed(1));
-      tHand.setAttribute('x', (hn[0] + 10).toFixed(1)); tHand.setAttribute('y', (hn[1] + 26).toFixed(1));
+      tHand.setAttribute('x', (hn[0] + 14).toFixed(1)); tHand.setAttribute('y', (hn[1] + 28).toFixed(1));
       setOpacity(build, win(t, 7.0, 10.4));
       setOpacity(tab, seg(t, 3.9, 4.3));
       setOpacity(p2, win(t, 7.0, 10.4));
@@ -955,8 +966,8 @@
     }
     var nowBox = rectBox(tape, TX - 3, TY - 3, CW + 3, CH + 6, C_INK, 'none');
     nowBox.style.fill = 'none'; nowBox.setAttribute('stroke-width', 2);
-    label(tape, TX + CW / 2, TY + CH + 18, '现在', 'demo-x-ink', 11, 'middle');
-    label(tape, TX + (NC - 0.5) * CW, TY + CH + 18, '25 步前', 'demo-x-mut', 11, 'middle');
+    label(tape, TX + CW / 2, TY + CH + 22, '现在', 'demo-x-ink', 11, 'middle');
+    label(tape, TX + (NC - 0.5) * CW, TY + CH + 22, '25 步前', 'demo-x-mut', 11, 'middle');
     var hist = rectBox(tape, TX + CW - 1, TY - 6, (NC - 1) * CW + 2, CH + 12, C_ACCENT, 'none', '5 4');
     hist.style.fill = 'none';
     label(tape, TX + CW + (NC - 1) * CW / 2, TY + CH + 34, '历史 25 步（0.5 s）', 'demo-x-ink2', 11.5, 'middle');
@@ -1076,24 +1087,24 @@
 
   /* ── scene 10: 灵巧手与机载系统（附录 A、官方 README 的硬件图） ── */
   function buildSceneSystem() {
-    var s = sceneSvg('左边：论文图 1 里 H1 用灵巧手写毛笔字；右边是机载系统的方框图：Vision Pro 经 Wi-Fi 把目标发给第一台 Orin NX，' +
+    var s = sceneSvg('左边：项目页视频里 H1 用灵巧手遥操作写「H2O」（4 倍速）；右边是机载系统的方框图：Vision Pro 经 Wi-Fi 把目标发给第一台 Orin NX，' +
       '它同时接腰上的 ZED 相机做里程计；第二台 Orin NX 跑策略和底层控制；手和手腕不经过策略，由逆运动学直接算；最后换成官方仓库 README 的硬件图');
     var left = group(s);
-    var fw = figPart(left, 'fig1_teaser.webp', 2386, 1494, 0.751, 0.0, 1.0, 0.268, 30, 54, 220, '论文图 1：灵巧手写字');
+    var fw = projClip(left, 'brush', 24, 54, 232, 130.5, '项目页视频：遥操作写「H2O」（4 倍速）');
     var parts = group(left);
-    chip(parts, 24, 54 + fw.h + 30, 232, 'Unitree H1：19 个电机', C_MUTED, { size: 11.5, left: true });
-    chip(parts, 24, 54 + fw.h + 64, 232, 'Inspire 灵巧手', C_ACCENT, { size: 11.5, left: true });
-    chip(parts, 24, 54 + fw.h + 98, 232, '达妙 DM-J4310-2EC 腕部电机', C_ACCENT, { size: 11.5, left: true });
+    chip(parts, 24, 54 + fw.h + 34, 232, 'Unitree H1：19 个电机', C_MUTED, { size: 11.5, left: true });
+    chip(parts, 24, 54 + fw.h + 68, 232, 'Inspire 灵巧手', C_ACCENT, { size: 11.5, left: true });
+    chip(parts, 24, 54 + fw.h + 102, 232, '达妙 DM-J4310-2EC 腕部电机', C_ACCENT, { size: 11.5, left: true });
     var B = {
-      vp: [280, 50, 150, 52], nx1: [460, 50, 150, 52], zed: [640, 50, 140, 52],
+      vp: [280, 50, 144, 52], nx1: [460, 50, 150, 52], zed: [640, 50, 140, 52],
       nx2: [460, 168, 150, 62], h1: [640, 168, 140, 62], ik: [280, 268, 150, 52], hand: [640, 268, 140, 52]
     };
     var dia = group(s);
     function box(key, color, l1, l2) {
       var r = B[key], g = group(dia);
       rectBox(g, r[0], r[1], r[2], r[3], color, C_SURFACE2);
-      label(g, r[0] + r[2] / 2, r[1] + 22, l1, 'demo-x-ink', 12, 'middle');
-      if (l2) label(g, r[0] + r[2] / 2, r[1] + 40, l2, 'demo-x-ink2', 10.5, 'middle');
+      label(g, r[0] + r[2] / 2, r[1] + 21, l1, 'demo-x-ink', 12, 'middle');
+      if (l2) label(g, r[0] + r[2] / 2, r[1] + 42, l2, 'demo-x-ink2', 10.5, 'middle');
       return g;
     }
     var gVp = box('vp', C_GOOD, 'Vision Pro', '头、双手、手部姿态');
@@ -1110,7 +1121,7 @@
       if (lab) label(g, (p[0] + q[0]) / 2, (p[1] + q[1]) / 2 - 6, lab, 'demo-x-mut', 10, 'middle');
       return g;
     }
-    var eWifi = edge([430, 76], [458, 76], C_GOOD, 'Wi-Fi');
+    var eWifi = edge([424, 76], [458, 76], C_GOOD, 'Wi-Fi');
     var eZed = edge([640, 76], [612, 76], C_MUTED, '');
     var eRos = edge([535, 102], [535, 166], C_MUTED, '');
     var tRos = label(dia, 542, 138, '网线 · ROS', 'demo-x-mut', 10);
@@ -1125,6 +1136,7 @@
     label(hw, 290, 60 + fh.h + 44, '头上的 RealSense 录第一人称 RGB，后面拿来做数据集', 'demo-x-ink', 12);
     label(hw, 290, 60 + fh.h + 66, '腰上的 ZED Mini 做视觉惯性里程计', 'demo-x-ink2', 11.5);
     function draw(t) {
+      fw.at(K.clipSince(t, 0), true);
       setOpacity(parts, seg(t, 0.6, 1.0));
       setOpacity(gH1, seg(t, 0.6, 1.0)); setOpacity(gHand, seg(t, 0.8, 1.2));
       setOpacity(gVp, seg(t, 3.9, 4.3)); setOpacity(gIk, seg(t, 4.3, 4.7)); setOpacity(eIk, seg(t, 4.3, 4.7)); setOpacity(eHand, seg(t, 4.7, 5.1));
@@ -1317,37 +1329,50 @@
 
   /* ── scene 14: 一个策略，接各种遥控（图 1、4、5、10） ── */
   function buildSceneInterfaces() {
-    var s = sceneSvg('依次换论文的图：图 1(a) 第一行用 VR 遥操作打网球、乒乓、羽毛球、浇花、写毛笔字；第二、三行蹲下拿篮子、拳击、搬篮子；' +
-      '图 4 语言指令和图 10 的 RGB 遥操作；图 5(a) 被人拳打脚踢；图 5(b) 户外的草地、坡和碎石');
+    var s = sceneSvg('依次播项目页的真机视频：VR 遥操作打网球、乒乓球、羽毛球、浇花；蹲下拿篮子、拳击、搬篮子、推车与架子上取放；' +
+      'MDM 语言指令（挥左手、T 字、往前走），旁边是论文图 10 的 RGB 遥操作；站着或用手柄走时被拳打脚踢；户外的草地、斜坡、碎石路');
+    var VX = 20, VY = 48, VW = 500, VH = 280, RX = 544;
+    function side(g, title, lines, y0) {
+      label(g, RX, y0 || 70, title, 'demo-x-ink', 13.5);
+      lines.forEach(function (l, i) { label(g, RX, (y0 || 70) + 30 + i * 24, l, 'demo-x-ink2', 12); });
+    }
     var p0 = group(s);
-    var a0 = figPart(p0, 'fig1_teaser.webp', 2386, 1494, 0, 0, 1, 0.268, 20, 60, 760, '论文图 1(a)：VR 遥操作 —— 网球、乒乓、羽毛球、浇花、写毛笔字');
-    label(p0, 400, 60 + a0.h + 56, '同一个策略，上身要准，手要灵', 'demo-x-ink', 14, 'middle');
+    var v0 = projClip(p0, 'teleop', VX, VY, VW, VH, '项目页视频（1 倍速）：网球、乒乓球 / 羽毛球、浇花');
+    side(p0, 'VR 遥操作：只跟头和双手', ['左上 网球', '右上 乒乓球', '左下 羽毛球', '右下 浇花', '上身要准，手要灵']);
     var p1 = group(s);
-    figPart(p1, 'fig1_teaser.webp', 2386, 1494, 0, 0.271, 1, 0.727, 40, 44, 720, '论文图 1(a)：蹲下拿篮子、拳击、把篮子放上架子、推车上取放');
+    var v1 = projClip(p1, 'wholebody', VX, VY, VW, VH, '项目页视频：上下身一起');
+    side(p1, '上下身一起，同一个策略', ['左上 蹲下拿篮子（2 倍速）', '右上 拳击（1 倍速）', '左下 来回搬篮子（4 倍速）', '右下 架子、推车上取放（4 倍速）']);
     var p2 = group(s);
-    var l4 = figPart(p2, 'fig4_language.webp', 1296, 203, 0, 0, 1, 1, 20, 44, 760, '论文图 4：MDM 把一句话变成动作，策略照着做');
-    figPart(p2, 'fig10_vrrgb.webp', 1307, 240, 0.555, 0, 1, 1, 200, 44 + l4.h + 40, 400, '论文图 10(b)：RGB 摄像头遥操作');
+    var v2 = projClip(p2, 'mdm', VX, VY, VW, VH, '项目页视频（1 倍速）：MDM 把一句话变成动作，策略照着做');
+    side(p2, '语言 → MDM → 运动目标', ['「挥左手」→「摆 T 字」', '→「往前走」']);
+    figPart(p2, 'fig10_vrrgb.webp', 1307, 240, 0.555, 0, 1, 1, RX, 168, 236, '论文图 10(b)：RGB 摄像头也能遥操作');
     var p3 = group(s);
-    figPart(p3, 'fig5_robust.webp', 1190, 234, 0, 0, 0.476, 1, 120, 50, 560, '论文图 5(a)：站着或用手柄走，被从各个角度拳打脚踢');
+    var v3 = projClip(p3, 'robust', VX, VY, VW, VH, '项目页视频（1 倍速）：抗干扰测试');
+    side(p3, '被拳打脚踢也站得稳', ['先是原地站着被踢、被推，', '再是用手柄前后走着被打；', '用的还是同一个跟踪策略']);
     var p4 = group(s);
-    figPart(p4, 'fig5_robust.webp', 1190, 234, 0.48, 0, 1, 1, 110, 50, 580, '论文图 5(b)：户外的草地、坡、碎石，同一个策略');
+    var OW = 760, OH = OW * 180 / 960;
+    var v4 = projClip(p4, 'outdoor', 20, 60, OW, OH, '');
+    ['草地', '斜坡', '碎石路'].forEach(function (n, i) { label(p4, 20 + OW * (2 * i + 1) / 6, 60 + OH + 22, n, 'demo-x-ink', 13, 'middle'); });
+    label(p4, 400, 60 + OH + 62, '户外也是同一个策略：不要动捕，历史里自己推速度', 'demo-x-ink2', 12.5, 'middle');
+    label(p4, 400, 60 + OH + 84, '项目页视频（1 倍速）', 'demo-x-mut', 9.5, 'middle');
+    var V = [[p0, v0, 0.3, 3.6], [p1, v1, 3.6, 7.0], [p2, v2, 7.0, 10.4], [p3, v3, 10.4, 13.4], [p4, v4, 13.4, null]];
     function draw(t) {
-      setOpacity(p0, win(t, 0.3, 3.6));
-      setOpacity(p1, win(t, 3.6, 7.0));
-      setOpacity(p2, win(t, 7.0, 10.4));
-      setOpacity(p3, win(t, 10.4, 13.4));
-      setOpacity(p4, win(t, 13.4));
+      V.forEach(function (r) {
+        var a = r[3] == null ? win(t, r[2]) : win(t, r[2], r[3]);
+        setOpacity(r[0], a);
+        r[1].at(K.clipSince(t, r[2] === 0.3 ? 0 : r[2]), a > 0.02);
+      });
     }
     return { el: s, draw: draw };
   }
 
   /* ── scene 15: GPT-4o 与 OmniH2O-6（图 6、图 11） ── */
   function buildSceneGpt() {
-    var s = sceneSvg('论文图 6：头上的摄像头拍一张图给 GPT-4o，它从几个动作原语里选：蓝靶出左拳、红靶出右拳；握手、拥抱、挥手道别；' +
+    var s = sceneSvg('项目页视频：头上的摄像头拍一张图给 GPT-4o，它从几个动作原语里选：蓝靶出左拳、红靶出右拳；握手、拥抱、挥手道别；' +
       '也可以让它直接回 6 个数。随后是论文图 11 的 OmniH2O-6 数据集：6 个任务的第一人称画面，以及每个任务录了多少帧');
     var p0 = group(s);
-    figPart(p0, 'fig6_gpt4o.webp', 1394, 209, 0, 0, 0.44, 1, 20, 50, 400, '论文图 6(a)：自主拳击');
-    rectBox(p0, 446, 50, 336, 196, C_WARN, C_SURFACE2);
+    var g0 = projClip(p0, 'gptbox', 20, 50, 400, 225, '项目页视频：GPT-4o 自主拳击（4 倍速）');
+    rectBox(p0, 446, 50, 336, 225, C_WARN, C_SURFACE2);
     label(p0, 460, 74, '给 GPT-4o 的提示（附录 L，节选）', 'demo-x-ink', 12);
     label(p0, 460, 100, '蓝靶出现：伸出左拳再收回', 'demo-x-ink2', 11.5);
     label(p0, 460, 122, '红靶出现：伸出右拳再收回', 'demo-x-ink2', 11.5);
@@ -1356,8 +1381,8 @@
     label(p0, 460, 196, '注意自己戴着蓝左、红右的拳套，', 'demo-x-mut', 11);
     label(p0, 460, 216, '别把它们当成靶', 'demo-x-mut', 11);
     var p1 = group(s);
-    figPart(p1, 'fig6_gpt4o.webp', 1394, 209, 0.445, 0, 1, 1, 20, 50, 500, '论文图 6(b)：握手、拥抱、挥手道别');
-    rectBox(p1, 540, 50, 242, 196, C_WARN, C_SURFACE2);
+    var g1 = projClip(p1, 'gptgreet', 20, 50, 500, 281, '项目页视频（1 倍速）：GPT-4o 自主握手 → 拥抱 → 挥手道别');
+    rectBox(p1, 540, 50, 242, 230, C_WARN, C_SURFACE2);
     label(p1, 552, 74, 'GPT-4o 回复慢，所以选原语', 'demo-x-ink', 11.5);
     label(p1, 552, 100, '也可以直接回 6 个数：', 'demo-x-ink2', 11.5);
     label(p1, 552, 122, '左右手相对骨盆的位置', 'demo-x-ink2', 11.5);
@@ -1388,8 +1413,9 @@
     label(p4, 392, 174, 'Open X-Embodiment 里也没有人形', 'demo-x-ink2', 11.5);
     label(p4, 392, 210, '数据集链接在项目主页（cmu.box.com）', 'demo-x-mut', 11);
     function draw(t) {
-      setOpacity(p0, win(t, 0.3, 3.6));
-      setOpacity(p1, win(t, 3.6, 7.0));
+      var a0 = win(t, 0.3, 3.6), a1 = win(t, 3.6, 7.0);
+      setOpacity(p0, a0); g0.at(K.clipSince(t, 0), a0 > 0.02);
+      setOpacity(p1, a1); g1.at(K.clipSince(t, 3.6), a1 > 0.02);
       setOpacity(p2, win(t, 7.0));
       p2.childNodes.forEach(function (n, i) { if (i > 0) setOpacity(n, 1 - seg(t, 10.4, 10.7)); });
       var u = ease(seg(t, 10.8, 11.8));
@@ -1403,21 +1429,26 @@
   /* ── scene 16: 从示范学自主（表 3、图 7） ── */
   function buildSceneLfd() {
     var s = sceneSvg('上面是自主的两层：模仿学习的策略看一张第一人称图，输出未来 8 帧的运动目标（含手指指令），交给 OmniH2O 的跟踪策略去执行；' +
-      '下面依次是表 3 的三组对比：BC、DDIM、DDPM；单步还是一次 8 步；数据量 25% / 50% / 100%；最后是论文图 7');
+      '下面先播项目页的四段自主视频（接住扔掉、下蹲、接锤子、石头剪刀布），再依次是表 3 的三组对比：BC、DDIM、DDPM；单步还是一次 8 步；数据量 25% / 50% / 100%');
     var dia = group(s);
     var NB = [[24, 52, 120, 52, '一张图', '头部相机'], [190, 52, 160, 52, '模仿学习策略', '扩散策略'], [396, 52, 160, 52, '未来 8 帧运动目标', '3 个点 + 手指'], [602, 52, 170, 52, 'OmniH2O 跟踪策略', '50 Hz → 关节目标']];
     var nb = NB.map(function (b, i) {
       var g = group(dia);
       rectBox(g, b[0], b[1], b[2], b[3], [C_MUTED, C_WARN, C_VR, C_GOOD][i], C_SURFACE2);
-      label(g, b[0] + b[2] / 2, b[1] + 22, b[4], 'demo-x-ink', 12, 'middle');
-      label(g, b[0] + b[2] / 2, b[1] + 40, b[5], 'demo-x-ink2', 10.5, 'middle');
+      label(g, b[0] + b[2] / 2, b[1] + 21, b[4], 'demo-x-ink', 12, 'middle');
+      label(g, b[0] + b[2] / 2, b[1] + 42, b[5], 'demo-x-ink2', 10.5, 'middle');
       if (i) { var a = arrow(g, C_MUTED, 2); a.set(NB[i - 1][0] + NB[i - 1][2] + 2, b[1] + b[3] / 2, b[0] - 2, b[1] + b[3] / 2, 7); }
       return g;
     });
     dia.appendChild(svgMath(400, 136, '\\pi_{\\text{LfD}}\\big(\\hat{\\mathbf{p}}^{\\text{Sparse-lfd}}_{t:t+\\phi} \\mid \\mathbf{I}_t\\big),\\ \\ \\phi = 8', { size: 15, anchor: 'middle', w: 520 }));
     var p1 = group(s);
-    label(p1, 400, 178, '不直接输出电机指令：复用跟踪策略学好的运动技能，需要的示范少得多', 'demo-x-ink2', 12, 'middle');
-    figPart(p1, 'fig7_lfd.webp', 1440, 217, 0, 0, 1, 1, 30, 200, 740, '论文图 7：自主完成接住扔掉、下蹲、接锤子、石头剪刀布');
+    var lv = projClip(p1, 'lfd', 30, 172, 380, 212.8, '');
+    label(p1, 440, 196, '项目页视频（1 倍速）：扩散策略自主完成', 'demo-x-ink', 12.5);
+    ['左上 接住再扔掉', '右上 下蹲', '左下 接锤子', '右下 石头剪刀布'].forEach(function (n, i) { label(p1, 440, 226 + i * 24, n, 'demo-x-ink2', 12); });
+    label(p1, 440, 334, '策略只看头部相机的一张图', 'demo-x-mut', 11);
+    var p1b = group(s);
+    label(p1b, 440, 362, '不直接输出电机指令：复用跟踪策略', 'demo-x-ink2', 12);
+    label(p1b, 440, 384, '学好的运动技能，需要的示范少得多', 'demo-x-ink2', 12);
     var LW = 190, MW = 300;
     function tableBars(parent, title, rows, colors) {
       var g = group(parent);
@@ -1434,7 +1465,9 @@
     void noteA; void noteB; void noteC;
     function draw(t) {
       nb.forEach(function (g, i) { setOpacity(g, seg(t, 0.5 + 0.5 * i, 0.9 + 0.5 * i)); });
-      setOpacity(p1, win(t, 3.6, 7.0));
+      var a1 = win(t, 0.3, 7.0);
+      setOpacity(p1, a1); lv.at(K.clipSince(t, 0), a1 > 0.02);
+      setOpacity(p1b, win(t, 3.6, 7.0));
       setOpacity(a.g, win(t, 7.0, 10.4)); a.c.set(ease(seg(t, 7.4, 8.4)));
       setOpacity(b.g, win(t, 10.4, 13.4)); b.c.set(ease(seg(t, 10.8, 11.8)));
       setOpacity(c.g, win(t, 13.4)); c.c.set(ease(seg(t, 13.8, 14.6)));
@@ -1444,7 +1477,8 @@
 
   /* ── scene 17: 局限 ── */
   function buildSceneLimits() {
-    var s = sceneSvg('四张卡片依次出现：要靠根部里程计换坐标，VIO 有噪声甚至跳变；没有安全保证；只给上身的稀疏目标上不了楼梯；' +
+    var s = sceneSvg('卡片依次出现：要靠根部里程计换坐标，VIO 有噪声甚至跳变；没有安全保证；只给上身的稀疏目标上不了楼梯；' +
+      '讲后两条时下面播项目页的三个失败案例（被墙卡住、脚下有障碍、扩散策略放不下锤子）；' +
       '模仿学习还要更多传感器和更好的算法；最后是我们读代码时看到的出入，以及 OmniH2O 的核心一句话');
     var W = 236, Y0 = 52;
     function cardAt(i, title, color) {
@@ -1459,6 +1493,14 @@
     ['策略很鲁棒，但没有保证，', '也没有安全检查；', '极端的外力、分布外的目标', '（比如目标突然跳很远）', '都没处理'].forEach(function (l, i) { label(c2.g, c2.x + 14, Y0 + 58 + i * 22, l, 'demo-x-ink2', 11.5); });
     var c3 = cardAt(2, '③ 还上不了楼梯', C_ACCENT);
     ['只给上身的 3 个点，', '下身怎么迈全靠策略猜；', '以后：更多传感器（激光雷达、', '腕部相机、触觉）和', '更好的模仿学习算法'].forEach(function (l, i) { label(c3.g, c3.x + 14, Y0 + 58 + i * 22, l, 'demo-x-ink2', 11.5); });
+    var fl = group(s), FW = 600, FH = FW * 180 / 960, FX = 170, FY = 282;
+    label(fl, 30, 306, '项目页的', 'demo-x-ink', 13);
+    label(fl, 30, 328, '失败案例', 'demo-x-ink', 13);
+    label(fl, 30, 352, '（1 倍速）', 'demo-x-mut', 10.5);
+    var fv = projClip(fl, 'fail', FX, FY, FW, FH, '');
+    ['被墙卡住就摔了（遥操作）', '脚下有障碍会绊倒（走路）', '放不下锤子（扩散策略）'].forEach(function (n, i) {
+      label(fl, FX + FW * (2 * i + 1) / 6, FY + FH + 19, n, 'demo-x-ink2', 11, 'middle');
+    });
     var bot1 = group(s);
     rectBox(bot1, 30, 280, 740, 112, C_BORDER, C_SURFACE2);
     label(bot1, 44, 304, '读代码时看到的（我们的观察）', 'demo-x-ink', 13);
@@ -1474,6 +1516,8 @@
       setOpacity(c1.g, seg(t, 0.6, 1.0));
       setOpacity(c2.g, seg(t, 3.9, 4.3));
       setOpacity(c3.g, seg(t, 7.3, 7.7));
+      var af = win(t, 3.6, 10.4);
+      setOpacity(fl, af); fv.at(K.clipSince(t, 3.6), af > 0.02);
       setOpacity(bot1, win(t, 10.4, 13.4));
       setOpacity(bot2, win(t, 13.4));
     }
@@ -1643,11 +1687,11 @@
       dur: 16,
       build: buildSceneInterfaces,
       cues: [
-        { at: 0.4, s: '同一个策略 $\\pi_{\\text{OmniH2O}}$：VR 遥操作打网球、乒乓、羽毛球，浇花，写毛笔字（图 1a）。' },
-        { at: 3.6, s: '上下身一起：蹲下拿篮子、拳击、把篮子放上架子。' },
-        { at: 7.0, s: '语言：接上文本生成动作的 MDM，「挥左手」「T 字」「往前走 0.5 米」（图 4）；RGB 摄像头也行（图 10）。' },
-        { at: 10.4, s: '抗干扰：站着或用手柄控制前后走时，被从各个角度拳打脚踢，自己站稳（图 5a）。' },
-        { at: 13.4, s: '户外：草地、坡、碎石，同一个策略（图 5b）。' }
+        { at: 0.4, s: '同一个策略 $\\pi_{\\text{OmniH2O}}$：VR 遥操作打网球、乒乓球、羽毛球，浇花（项目页视频）。' },
+        { at: 3.6, s: '上下身一起：蹲下拿篮子、拳击、搬篮子、在架子和推车上取放。' },
+        { at: 7.0, s: '语言：接上文本生成动作的 MDM，「挥左手」「T 字」「往前走 0.5 米」；普通 RGB 摄像头也能遥操作（图 10）。' },
+        { at: 10.4, s: '抗干扰：站着或用手柄控制前后走时，被从各个角度拳打脚踢，自己站稳。' },
+        { at: 13.4, s: '户外：草地、斜坡、碎石路，同一个策略。' }
       ]
     },
     {
@@ -1655,8 +1699,8 @@
       dur: 16,
       build: buildSceneGpt,
       cues: [
-        { at: 0.4, s: '自主方式一：头上的摄像头拍一张图给 **GPT-4o**，它从动作原语里选：蓝靶出左拳、红靶出右拳（图 6a）。' },
-        { at: 3.6, s: '握手、拥抱、挥手道别（图 6b）；GPT-4o 回复慢，所以选原语；也可以让它直接回 6 个数：双手相对骨盆的位置。' },
+        { at: 0.4, s: '自主方式一：头上的摄像头拍一张图给 **GPT-4o**，它从动作原语里选：蓝靶出左拳、红靶出右拳。' },
+        { at: 3.6, s: '握手、拥抱、挥手道别；GPT-4o 回复慢，所以选原语；也可以让它直接回 6 个数：双手相对骨盆的位置。' },
         { at: 7.0, s: '自主方式二：先用 VR 遥操作录数据 **OmniH2O-6**：头部 RGBD、头和双手相对根的目标、关节目标，30 Hz。' },
         { at: 10.4, s: '6 个任务：接住扔掉、下蹲、接锤子、石头剪刀布、拳击、篮子取放，共 73,462 帧，约 **40 分钟**。' },
         { at: 13.4, s: '论文说这是首个人形全身移动操作数据集：以前的数据集几乎都是固定底座的机械臂。' }
@@ -1668,7 +1712,7 @@
       build: buildSceneLfd,
       cues: [
         { at: 0.4, s: '$\\pi_{\\text{LfD}}$ 看一张图 $\\mathbf{I}_t$，输出未来 $\\phi = 8$ 帧的**运动目标**（含手指指令），交给 $\\pi_{\\text{OmniH2O}}$ 去执行。' },
-        { at: 3.6, s: '不直接输出电机指令：复用跟踪策略学好的运动技能，需要的示范少得多（图 7 的四个任务）。' },
+        { at: 3.6, s: '不直接输出电机指令：复用跟踪策略学好的运动技能，需要的示范少得多。' },
         { at: 7.0, s: '表 3（4 个任务 × 10 次的平均）：扩散策略 DDPM **8/10**、DDIM 7.75/10，普通行为克隆只有 **1/10**。' },
         { at: 10.4, s: '一次输出 8 步很关键：单步 6.5/10，单帧图 + 8 步 8/10，4 帧图 + 8 步 8.75/10。' },
         { at: 13.4, s: '数据越多越好：25% 4/10、50% 6.5/10、100% 8/10。' }
@@ -1680,7 +1724,7 @@
       build: buildSceneLimits,
       cues: [
         { at: 0.4, s: '要靠机器人的根部里程计，把接口给的姿态换到机器人坐标系；VIO 有噪声甚至跳变，目标会偏。' },
-        { at: 3.6, s: '安全：策略很鲁棒，但没有保证、没有安全检查；目标突然跳很远这种分布外输入没处理。' },
+        { at: 3.6, s: '安全：策略很鲁棒，但没有保证、没有安全检查；目标突然跳很远这种分布外输入没处理；项目页的失败案例：被墙卡住就摔了。' },
         { at: 7.0, s: '只给上身的稀疏目标还上不了楼梯；以后要更多传感器（激光雷达、腕部相机、触觉）和更好的模仿学习算法。' },
         { at: 10.4, s: '我们读代码看到：官方只放出站姿版的出拳样例；抬脚奖励、课程、DAgger 损失，代码和附录都有出入。' },
         { at: 13.4, s: 'OmniH2O 的核心：一个**运动学姿态接口** + 教师—学生，让同一个策略既能遥操作，又能当自主系统的底层。' }
@@ -1691,7 +1735,7 @@
   function buildExplainerDemo(host) {
     K.explainer(host, {
       title: '十七幕动画：OmniH2O 全流程速览',
-      sub: '约 272 秒自动播放。空格播放/暂停，← → 换幕；H1 用官方样例的动作按真实模型做 3D 渲染（蹲姿版与原始重定向是我们做的），表格与图来自论文。',
+      sub: '约 272 秒自动播放。空格播放/暂停，← → 换幕；H1 用官方样例的动作按真实模型做 3D 渲染（蹲姿版与原始重定向是我们做的），表格与图来自论文，真机片段剪自项目页的视频。',
       ariaLabel: 'OmniH2O 十七幕讲解动画',
       notes: [
         '取数依据：表 1–3、附录表 4–19 的数字照抄 arXiv 2406.08858 v1（与 PMLR 定稿一致）；代码里的数（站姿版样例、头和手的延长、27 / 913 / 1665 维的排布、抬脚奖励与课程、DAgger 的设置、把头的目标拉回 1 m）读自 LeCAR-Lab/human2humanoid。',

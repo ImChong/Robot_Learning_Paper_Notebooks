@@ -3942,4 +3942,54 @@ def test_omnih2o_3d_sprite_sheets_match_their_metadata():
     assert total < 2.0e6, "贴图按幕懒加载，但总量也别失控"
     figs = {p.name for p in (ROOT / "assets/img/papers/omnih2o").glob("*.webp")}
     used = set(re.findall(r"'((?:fig|hw)\w+\.webp)'", js))
-    assert used and used <= figs, used - figs
+    assert used and used == figs, ("没用到的图别留在仓库里", figs - used, "缺图", used - figs)
+
+
+def _mp4_boxes(data):
+    """顶层 box 的 (类型, 起点) 列表"""
+    out, i = [], 0
+    while i + 8 <= len(data):
+        size = int.from_bytes(data[i : i + 4], "big")
+        out.append((data[i + 4 : i + 8].decode("latin-1"), i))
+        if size < 8:
+            break
+        i += size
+    return out
+
+
+def test_storyboard_clips_live_where_render_finds_them():
+    """分镜里的真机片段（kit.js 的 svgClip）：render.mjs 只会把 assets/img/papers/<bundle>/clips/*.mp4 转成 VP9 给离线渲染用，
+    网页上是 H.264、faststart、无声的 mp4，每段配一张首帧 webp 当海报。"""
+    kit = (DEMO_JS_DIR / "kit.js").read_text(encoding="utf-8")
+    assert "svgClip: svgClip" in kit and "clipSince: clipSince" in kit
+    stage = (ROOT / "scripts/paper_video/stage.html").read_text(encoding="utf-8")
+    assert "window.__clipRender = true" in stage and "window.__wallSince" in stage and "CLIPDIR" in stage
+    render = (ROOT / "scripts/paper_video/render.mjs").read_text(encoding="utf-8")
+    assert "window.__clipWait" in render and "libvpx-vp9" in render
+    for path in DEMO_JS_DIR.glob("*.js"):
+        if path.name == "kit.js" or "svgClip(" not in path.read_text(encoding="utf-8"):
+            continue
+        clip_dir = ROOT / "assets/img/papers" / path.stem / "clips"
+        assert clip_dir.is_dir(), path.name
+        for mp4 in clip_dir.glob("*.mp4"):
+            data = mp4.read_bytes()
+            kinds = [k for k, _ in _mp4_boxes(data)]
+            assert "moov" in kinds and "mdat" in kinds and kinds.index("moov") < kinds.index("mdat"), (mp4.name, "要 faststart")
+            moov = data[dict(_mp4_boxes(data))["moov"] :]
+            assert b"avc1" in moov[:200000], (mp4.name, "网页用 H.264")
+            assert b"soun" not in moov[:200000], (mp4.name, "片段不带声音")
+            assert mp4.with_suffix(".webp").is_file(), (mp4.name, "缺海报")
+
+
+def test_omnih2o_project_page_clips():
+    """OmniH2O：第 10、14–17 幕的真机画面剪自项目页 omni.human2humanoid.com 的视频（10 段，按幕懒加载）。"""
+    js = (DEMO_JS_DIR / "omnih2o.js").read_text(encoding="utf-8")
+    clip_dir = ROOT / "assets/img/papers/omnih2o/clips"
+    used = set(re.findall(r"projClip\(\w+, '(\w+)'", js))
+    assert used == {"brush", "teleop", "wholebody", "mdm", "robust", "outdoor", "gptbox", "gptgreet", "lfd", "fail"}
+    assert {p.name for p in clip_dir.iterdir()} == {f"{u}.{ext}" for u in used for ext in ("mp4", "webp")}
+    assert sum(p.stat().st_size for p in clip_dir.iterdir()) < 4.0e6, "片段只在播到那一幕时才下载，但总量也别失控"
+    # 出处写在画面上和卡片说明里
+    assert js.count("项目页视频") >= 8 and "真机片段剪自项目页的视频" in js
+    note = OMNIH2O_NOTE.read_text(encoding="utf-8")
+    assert "真机画面剪自[项目页](https://omni.human2humanoid.com/)的视频" in note

@@ -84,6 +84,11 @@ html, body { width: 1080px; height: 1920px; overflow: hidden; background: var(--
 <div class="paper-demo" data-demo="DEMO_ID" style="display:none"></div>
 
 <script src="node_modules/katex/dist/katex.min.js"></script>
+<script>
+  // 分镜里的真机片段（kit.js 的 svgClip）：离线渲染时换成 render.mjs 转好的 VP9（这个 Chromium 解不了 H.264），逐帧 seek
+  window.__clipRender = true;
+  window.__clipSrc = function (src) { return 'CLIPDIR' + src.split('/').pop().replace(/\.mp4$/, '.webm'); };
+</script>
 <script src="REPO/assets/js/demos/kit.js"></script>
 <script>
   // Capture the storyboard instead of mounting the interactive player.
@@ -304,6 +309,17 @@ html, body { width: 1080px; height: 1920px; overflow: hidden; background: var(--
     return out;
   };
 
+  // seconds of video since storyboard time `a` was reached in the current scene (kit.js clipSince):
+  // the storyboard holds still while a line is read, so a clip that starts at cue `a` follows the timeline
+  var CUR = null;
+  window.__wallSince = function (a) {
+    if (!CUR) return 0;
+    var best = null;
+    TL.segments.forEach(function (s) { if (String(s.scene) === CUR.key && s.from <= a + 1e-6) best = s; });
+    if (!best) return CUR.t - CUR.t0;
+    return CUR.t - (best.t0 + best.lead + Math.min(a - best.from, Math.max(best.to - best.from - 1e-3, 0)));
+  };
+
   window.renderAt = function (t) {
     var segs = TL.segments, s = segs[segs.length - 1];
     for (var i = 0; i < segs.length; i++) if (t < segs[i].t1) { s = segs[i]; break; }
@@ -315,6 +331,7 @@ html, body { width: 1080px; height: 1920px; overflow: hidden; background: var(--
     while (idx < segs.length - 1 && String(segs[idx + 1].scene) === key) last = segs[++idx];
     // hold just before `to`, so the cue / element that starts at `to` waits for the next line
     var local = t - first.t0, st = s.from + Math.min(Math.max(t - s.t0 - s.lead, 0), Math.max(s.to - s.from - 1e-3, 0));
+    CUR = { t: t, key: key, t0: first.t0 };
     var sc = get(key);
     if (current !== sc) { sceneHost.textContent = ''; sceneHost.appendChild(sc.root); current = sc; }
     sc.draw(st, local, clamp((t - first.t0) / (last.t1 - first.t0), 0, 1));

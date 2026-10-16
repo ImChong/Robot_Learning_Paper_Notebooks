@@ -1,5 +1,6 @@
 // node check_layout.mjs <paper>        （先跑过 build.py，并用 render.mjs 生成过 stage.<paper>.built.html）
 // node check_layout.mjs <paper> story  分镜内部：文字压文字、文字压图（3D 贴图按当前帧的不透明像素裁边），每 0.25 s 抽一帧
+// node check_layout.mjs <paper> story near  同上，另外把「快压住」也记下：文字和文字 / 图 / 框线的间距不到 3px（OmniH2O 第 5 幕的 120、40 贴着右栏的框）
 // node check_layout.mjs <paper> cover  封面帧（stage.html 的 classicCover，最初的片头设计）：块互不重叠、都在画面里、
 //                                      大标题 / 中文名 / 一句话 / 每条目录各占一行、3:4 置顶裁剪后目录不贴底（不需要 build.py）
 // 每 0.5 s 抽一帧，用 DOM 量各块位置：可见块之间不许重叠、不许压字幕、片头 / 片尾相邻块间距 ≥ 10px，要读的东西必须在安全区 330–1440 之内
@@ -7,7 +8,8 @@
 import { chromium } from 'playwright-core';
 import fs from 'node:fs';
 
-const [name, mode] = process.argv.slice(2);
+const [name, mode, sub] = process.argv.slice(2);
+const PAD = mode === 'story' && sub === 'near' ? 3 : 0;  // 屏幕像素（1080 宽的画面）；两行字的字框隔 3–4px 是正常行距
 const tlPath = `out/${name}/timeline.json`;
 const tl = fs.existsSync(tlPath) ? JSON.parse(fs.readFileSync(tlPath, 'utf8'))
   : { total: 30, segments: [{ scene: 'intro', t0: 0, t1: 30, from: 0, to: 30, lead: 0 }], subs: [] };
@@ -76,7 +78,7 @@ if (mode === 'story') {
   for (let t = 0.1; t < tl.total; t += 0.25) {
     const seg = tl.segments.find((s) => t >= s.t0 && t < s.t1);
     if (!seg || typeof seg.scene !== 'number') continue;
-    const r = await pg.evaluate((t) => {
+    const r = await pg.evaluate(([t, pad]) => {
       window.renderAt(t);
       const out = [];
       const svgs = [...document.querySelectorAll('#scene .stage svg')].filter((e) => !e.parentElement.closest('svg'));
@@ -163,6 +165,12 @@ if (mode === 'story') {
           const qc = q && clipTo(im, q);
           if (qc) items.push({ k: 'img', s: (im.getAttribute('href') || '').split('/').pop(), r: qc, el: im });
         }
+        // 真机片段（kit.js 的 svgClip：foreignObject 里的 <video>）按整块图算
+        for (const v of root.querySelectorAll('foreignObject video')) {
+          if (alpha(v.parentElement, root) < 0.15) continue;
+          const qc = clipTo(v.parentElement, v.getBoundingClientRect());
+          if (qc) items.push({ k: 'img', s: (v.getAttribute('src') || '').split('/').pop(), r: qc, el: v });
+        }
         // 文字越出框线：有描边的框（面板、胶囊）里的文字，一部分在框里、一部分伸到框外
         for (const rc of root.querySelectorAll('rect')) {
           if (rc.closest('clipPath, defs') || alpha(rc, root) < 0.15) continue;
@@ -172,8 +180,13 @@ if (mode === 'story') {
           for (const A of items) {
             if (A.k !== 'text') continue;
             const ox = Math.min(A.r.right, q.right) - Math.max(A.r.left, q.left), oy = Math.min(A.r.bottom, q.bottom) - Math.max(A.r.top, q.top);
-            if (ox <= 0 || oy <= 0) continue;
             const area = (A.r.right - A.r.left) * (A.r.bottom - A.r.top);
+            // 框外的字贴着框线（near 模式）：外框放大 pad 后才碰到框
+            if (pad && (ox <= 0 || oy <= 0 || ox * oy < 0.02 * area) && ox > -pad && oy > -pad) {
+              out.push(`text「${A.s}」 near box edge (${Math.round(Math.max(-ox, -oy, 0))}px gap)`);
+              continue;
+            }
+            if (ox <= 0 || oy <= 0) continue;
             if (ox * oy < 0.3 * area) continue;
             const over = Math.max(q.left - A.r.left, A.r.right - q.right, q.top - A.r.top - 3, A.r.bottom - q.bottom - 3);
             if (over > 1) out.push(`text「${A.s}」 crosses box edge (${Math.round(over)}px out)`);
@@ -187,19 +200,27 @@ if (mode === 'story') {
           const A = items[i], B = items[j];
           if (A.k === 'img' && B.k === 'img') continue;
           const ox = Math.min(A.r.right, B.r.right) - Math.max(A.r.left, B.r.left), oy = Math.min(A.r.bottom, B.r.bottom) - Math.max(A.r.top, B.r.top);
-          if (!(ox > 2 && oy > 2)) continue;
+          const hit = ox > 2 && oy > 2, near = !hit && pad && ox > -pad && oy > -pad;
+          if (!hit && !near) continue;
           const sp = [A, B].find((z) => z.k === 'img' && z.r.ink), tx = sp && (sp === A ? B : A);
           if (sp) {
-            const inner = { left: Math.max(A.r.left, B.r.left), right: Math.min(A.r.right, B.r.right), top: Math.max(A.r.top, B.r.top), bottom: Math.min(A.r.bottom, B.r.bottom) };
+            const g = hit ? 0 : pad;  // near：文字外框放大 pad 再数不透明像素
+            const inner = { left: Math.max(tx.r.left - g, sp.r.left), right: Math.min(tx.r.right + g, sp.r.right), top: Math.max(tx.r.top - g, sp.r.top), bottom: Math.min(tx.r.bottom + g, sp.r.bottom) };
+            if (inner.right <= inner.left || inner.bottom <= inner.top) continue;
             const px = sp.r.ink(inner); if (px < 6) continue;
-            out.push(`${tx.k}「${tx.s}」 x ${sp.k}「${sp.s}」 (${Math.round(px)}px² ink)`);
+            out.push(`${tx.k}「${tx.s}」 ${hit ? 'x' : 'near'} ${sp.k}「${sp.s}」 (${Math.round(px)}px² ink)`);
             continue;
           }
-          out.push(`${A.k}「${A.s}」 x ${B.k}「${B.s}」 (${Math.round(ox)}×${Math.round(oy)}px)`);
+          if (A.k === 'img' || B.k === 'img') {
+            // 论文图 / 真机图（不裁边的整张图）：只算真压上，贴着图框不算
+            if (!hit) continue;
+          }
+          out.push(hit ? `${A.k}「${A.s}」 x ${B.k}「${B.s}」 (${Math.round(ox)}×${Math.round(oy)}px)`
+            : `${A.k}「${A.s}」 near ${B.k}「${B.s}」 (${Math.round(Math.max(-ox, -oy, 0))}px gap)`);
         }
       }
       return out;
-    }, t);
+    }, [t, PAD]);
     for (const x of r) {
       const key = `scene ${seg.scene + 1}: ${x.replace(/ \([^()]*px[^()]*\)$/, '')}`;
       const f = found.get(key);
