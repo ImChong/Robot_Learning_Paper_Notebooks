@@ -4464,6 +4464,17 @@
     "display_name": "Physics-Based Animation",
     "papers": [
       {
+        "title": "From Digital Human Interactions to Physics-Based Humanoid Skills: Physics-Grounded Post-Training of Interaction Generators",
+        "path": "papers/13_Physics-Based_Animation/DIGHT__Physics-Grounded_Post-Training_of_Interaction_Generators/DIGHT__Physics-Grounded_Post-Training_of_Interaction_Generators.md",
+        "url": "/papers/13_Physics-Based_Animation/DIGHT__Physics-Grounded_Post-Training_of_Interaction_Generators/DIGHT__Physics-Grounded_Post-Training_of_Interaction_Generators.html",
+        "dir": "DIGHT__Physics-Grounded_Post-Training_of_Interaction_Generators",
+        "arxiv": "2610.10322",
+        "published_date_zh": "2026年10月7日（arXiv v1）",
+        "published_date_en": "Oct 7, 2026 (arXiv v1)",
+        "zhname": "DIGHT：面向物理人形交互技能的交互生成器物理反馈后训练",
+        "zh_title": "DIGHT：面向物理人形交互技能的交互生成器物理反馈后训练"
+      },
+      {
         "title": "Lambda-Hold Control: Human-Like Movement Emerges from a Minimal Task Reward in Predictive Musculoskeletal Simulation",
         "path": "papers/13_Physics-Based_Animation/Lambda-Hold_Control__Human-Like_Movement_from_Minimal_Task_Reward/Lambda-Hold_Control__Human-Like_Movement_from_Minimal_Task_Reward.md",
         "url": "/papers/13_Physics-Based_Animation/Lambda-Hold_Control__Human-Like_Movement_from_Minimal_Task_Reward/Lambda-Hold_Control__Human-Like_Movement_from_Minimal_Task_Reward.html",

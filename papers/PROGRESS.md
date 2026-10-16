@@ -1100,7 +1100,7 @@
 
 | #   | 论文                                                                                                                                               | 日期      | 🌟  | 状态   |
 | --- | ------------------------------------------------------------------------------------------------------------------------------------------------ | ------- | --- | ---- |
-| 617  | [From Digital Human Interactions to Physics-Based Humanoid Skills: Physics-Grounded Post-Training of Interaction Generators](https://arxiv.org/abs/2610.10322) | 2026.10 |  | ⏳ 待读 |
+| 617  | [From Digital Human Interactions to Physics-Based Humanoid Skills: Physics-Grounded Post-Training of Interaction Generators](https://arxiv.org/abs/2610.10322) ✅ [笔记](13_Physics-Based_Animation/DIGHT__Physics-Grounded_Post-Training_of_Interaction_Generators/DIGHT__Physics-Grounded_Post-Training_of_Interaction_Generators.md) | 2026.10 |  | ✅ 已总结 |
 | 618  | [Co²Skill: Whole-Body Control via Skill Composition for Long-Horizon Human-Environment Interaction](https://arxiv.org/abs/2610.09291) | 2026.10 |  | ⏳ 待读 |
 | 619  | [LYRIC: Language-Driven Physics-Based Character Control for Contact-Rich Whole-Body Object Interaction](https://arxiv.org/abs/2609.19688) | 2026.09 |  | ⏳ 待读 |
 | 620  | [DSD: Learning Diverse and Reusable Motor Skills via Diffusion Skill Discovery](https://arxiv.org/abs/2609.17682) | 2026.09 |  | ⏳ 待读 |
