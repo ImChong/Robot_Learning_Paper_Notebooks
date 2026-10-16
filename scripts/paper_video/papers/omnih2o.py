@@ -31,7 +31,7 @@ VR、RGB、RGBD、MLP、LSTM、GRU、PPO、MDM、DDPM、DDIM、ROS、RTX、NX、
 
 # scene: "intro" / 0..16 (storyboard scene index) / "outro"; [from, to] is storyboard time
 SCRIPT = [
-    ("intro", 0, 2.4, "上一期结尾预告：换成 V R 头显，只跟头和双手三个点，还能把遥操作数据拿来训练自主策略。这一期就讲 Omni H 2 O。"),
+    ("intro", 0, 2.4, "上一期结尾预告：换成 V R 头显，只跟踪头和双手三个点，还能把遥操作数据拿来训练自主策略。这一期就讲 Omni H 2 O。"),
     ("intro", 2.4, 5.0, "它和 H 2 O 出自同一个团队，卡内基梅隆大学和上海交通大学，发表在 CoRL 2024，代码开源。"),
     ("intro", 5.0, 8.4, "核心想法：用运动学姿态作为通用接口，先训练一个什么都看得见的教师，再蒸馏出只看三个点的学生。17 幕动画讲清楚。"),
 
