@@ -868,6 +868,101 @@
     return fo;
   }
 
+  /* A muted video clip in a storyboard — real-robot footage cut from a paper's
+     project page (OmniH2O's teleoperation, GPT-4o, failure cases). The
+     <video> sits in a <foreignObject>; the scene calls `clip.at(sec, visible)`
+     from its draw, with `sec` = seconds since the clip started (clipSince).
+     On the page it plays while its scene keeps drawing it and pauses as soon
+     as the scene stops (hidden scene, paused player); it is `preload="none"`
+     with a poster, so nothing downloads until it first plays.
+     In the offline video (scripts/paper_video/stage.html sets
+     `window.__clipRender`), the source is swapped for a VP9 copy
+     (`window.__clipSrc`, the renderer's Chromium has no H.264), every frame
+     seeks to the exact time, and render.mjs awaits `window.__clipWait()`
+     before taking the screenshot. opts: { poster, loop (default true) }. */
+  var clips = [], clipTimer = 0;
+  var clipPending = window.__clipPending || (window.__clipPending = []);
+  if (!window.__clipWait) {
+    window.__clipWait = function () {
+      return Promise.all(clipPending.splice(0, clipPending.length));
+    };
+  }
+  function clipWatch() {
+    if (clipTimer) return;
+    clipTimer = window.setInterval(function () {
+      var now = Date.now();
+      clips.forEach(function (c) { if (!c.v.paused && now - c.last > 400) c.v.pause(); });
+    }, 300);
+  }
+  function svgClip(x, y, w, h, src, opts) {
+    var o = opts || {}, offline = !!window.__clipRender;
+    var fo = svgEl('foreignObject', { x: x, y: y, width: w, height: h });
+    var v = document.createElement('video');
+    v.muted = true;
+    v.defaultMuted = true;
+    v.setAttribute('muted', '');
+    v.setAttribute('playsinline', '');
+    v.setAttribute('aria-hidden', 'true');
+    v.loop = o.loop !== false;
+    v.preload = offline ? 'auto' : 'none';
+    if (o.poster && !offline) v.poster = o.poster;
+    v.style.cssText = 'display:block;width:100%;height:100%;object-fit:cover;background:#111';
+    v.src = offline && window.__clipSrc ? window.__clipSrc(src) : src;
+    fo.appendChild(v);
+    var c = { v: v, last: 0 };
+    clips.push(c);
+    function target(sec) {
+      var d = v.duration;
+      if (!(d > 0)) return Math.max(0, sec);
+      return v.loop ? ((sec % d) + d) % d : clamp(sec, 0, d - 0.001);
+    }
+    if (offline) {
+      clipPending.push(new Promise(function (res) {
+        if (v.readyState >= 2) res(); else { v.addEventListener('loadeddata', res, { once: true }); v.addEventListener('error', res, { once: true }); }
+      }));
+    }
+    fo.at = function (sec, visible) {
+      c.last = Date.now();
+      if (offline) {
+        if (visible === false || !(v.duration > 0)) return fo;
+        var t = target(sec);
+        if (Math.abs(v.currentTime - t) < 5e-4 && !v.seeking) return fo;
+        clipPending.push(new Promise(function (res) {
+          var done = false, finish = function () { if (!done) { done = true; res(); } };
+          v.addEventListener('seeked', function () {
+            if (v.requestVideoFrameCallback) v.requestVideoFrameCallback(finish);
+            window.requestAnimationFrame(function () { window.requestAnimationFrame(finish); });
+          }, { once: true });
+          window.setTimeout(finish, 3000);
+        }));
+        v.currentTime = t;
+        return fo;
+      }
+      if (visible === false) { if (!v.paused) v.pause(); return fo; }
+      clipWatch();
+      if (v.paused) {
+        if (v.duration > 0) v.currentTime = target(sec);
+        var p = v.play();
+        if (p && p.catch) p.catch(function () {});
+      } else if (v.duration > 0 && !v.seeking && v.readyState >= 3 && c.last - (c.seekAt || 0) > 1000) {
+        /* Catch up only once it can play, and at most once a second: re-seeking every frame
+           while the file is still loading would keep it at the first frame forever. */
+        var drift = Math.abs(v.currentTime - target(sec));
+        if (drift > 0.75 && drift < v.duration - 0.75) { v.currentTime = target(sec); c.seekAt = c.last; }
+      }
+      return fo;
+    };
+    fo.video = v;
+    return fo;
+  }
+  /* Seconds since storyboard time `a` was reached. On the page the storyboard
+     clock is wall time, so it is just t − a; in the narrated video the
+     storyboard holds still while a line is read, so stage.html answers from the
+     timeline (window.__wallSince) — clips keep playing through long lines. */
+  function clipSince(t, a) {
+    return typeof window.__wallSince === 'function' ? window.__wallSince(a) : t - a;
+  }
+
   function paint(node, fill, stroke) {
     if (fill) node.style.fill = fill;
     if (stroke) node.style.stroke = stroke;
@@ -1323,6 +1418,8 @@
     svgText: svgText,
     svgMath: svgMath,
     svgRich: svgRich,
+    svgClip: svgClip,
+    clipSince: clipSince,
     paint: paint,
     seg: seg,
     ease: ease,
