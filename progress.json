@@ -41,15 +41,15 @@
         "13_Physics-Based_Animation",
         "14_Human_Motion"
       ],
-      "last_module": "12_Hardware_Design",
-      "last_index": 656,
-      "last_title": "PhoneBot: A Low-Cost Open Humanoid Robot Platform Reusing Smartphones (arXiv:2610.08737)",
-      "next_module": "13_Physics-Based_Animation",
-      "last_completed_date": "2026-10-15",
-      "note": "本日轮转到 12_Hardware_Design。PROGRESS Hardware Design 章节中尚无笔记的最新论文是 PhoneBot (arXiv:2610.08737, 2026-10-06, UCLA RoMeLa)，即 PROGRESS #656，已确认在上游 README。手机当躯干 / IMU / 相机 / 电脑，13 × XL430 下身约 400 美元；XL430 力矩—速度包络建模 + 矢状面镜像 PPO，关节角对称误差 0.254→0.003 rad；4 部安卓手机跑通 TFLite 推理、视觉、SLAM 与语音交互。项目页为占位页、未见公开仓库，含整体流程 mermaid 与 XL430 力矩包络算例，无源码时序图。",
-      "last_date": "2026-10-15",
+      "last_module": "13_Physics-Based_Animation",
+      "last_index": 617,
+      "last_title": "From Digital Human Interactions to Physics-Based Humanoid Skills: Physics-Grounded Post-Training of Interaction Generators (arXiv:2610.10322)",
+      "next_module": "14_Human_Motion",
+      "last_completed_date": "2026-10-16",
+      "note": "本日轮转到 13_Physics-Based_Animation。PROGRESS Physics-Based Animation 章节中尚无笔记的最新论文是 DIGHT (arXiv:2610.10322, 2026-10-07, 浙大 × 北交)，即 PROGRESS #617，已确认在上游 README。交互生成器候选经冻结跟踪器仿真回放，构造 trk / fric / float / occ / quality 五组偏好做物理解耦扩散 DPO，再用对齐生成器微调跟踪器；InterHuman 五项物理误差平均降 22.1%，执行成功 88.73→92.19%，接触拓扑精确率 38.29→46.77%。项目页 Code 按钮为空、未见公开仓库，含整体流程 mermaid 与偏好 / DPO 玩具算例，无源码时序图。",
+      "last_date": "2026-10-16",
       "next_candidate": null,
-      "last_completed": "PhoneBot: A Low-Cost Open Humanoid Robot Platform Reusing Smartphones (arXiv:2610.08737)"
+      "last_completed": "From Digital Human Interactions to Physics-Based Humanoid Skills: Physics-Grounded Post-Training of Interaction Generators (arXiv:2610.10322)"
     },
     "last_summary_index": 532,
     "last_summary_date": "2026-09-18",
@@ -1750,6 +1750,17 @@
         "project_page": "https://phonebot.dev",
         "code": "论文称软硬件开源；截至 2026-10-15 项目页为占位页，RoMeLaUCLA 组织下未见对应仓库",
         "source": "⏳ 未见公开源码(故无源码时序图)，含整体流程 mermaid 与 XL430 力矩包络算例"
+      },
+      {
+        "date": "2026-10-16",
+        "index": 617,
+        "title": "From Digital Human Interactions to Physics-Based Humanoid Skills: Physics-Grounded Post-Training of Interaction Generators",
+        "folder": "papers/13_Physics-Based_Animation/DIGHT__Physics-Grounded_Post-Training_of_Interaction_Generators",
+        "module": "13_Physics-Based_Animation",
+        "arxiv": "2610.10322",
+        "project_page": "https://1233chen.github.io/DIGHT/",
+        "code": "截至 2026-10-16 项目页 Code 按钮链接为空，未见公开仓库",
+        "source": "⏳ 未见公开源码(故无源码时序图)，含整体流程 mermaid 与偏好构造 / 解耦 DPO 玩具算例"
       }
     ],
     "last_completed_index": 588,
