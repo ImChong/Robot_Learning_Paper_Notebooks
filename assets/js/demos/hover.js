@@ -1870,8 +1870,8 @@
   function buildVideoDemo(host) {
     K.video(host, {
       title: '配音讲解视频：HOVER 十六幕全流程',
-      sub: '__VIDEO_SUB__',
-      size: '__VIDEO_SIZE__',
+      sub: '12 分 17 秒竖屏视频（1080×1920），中文配音 + 字幕。画面就是上面的十六幕动画，旁白把每一幕讲细；适合手机上看或转发。',
+      size: '15.6 MB',
       fileName: 'HOVER_讲解视频.mp4'
     });
   }
