@@ -3923,6 +3923,9 @@ def test_omnih2o_explainer_demos_and_worked_example_share_the_paper_numbers():
     assert "1 - seg(t, b - 0.3, b)" not in js
     # 视频文案的占位符都已填上
     assert "__VIDEO_" not in js and "__VIDEO_" not in note
+    # 第 9 幕：损失回到学生是一支画到学生框的虚线箭头（第一版只画了半截、没箭头，看不出是什么）
+    assert "ua.set(upPts[0][0], upPts[0][1], upPts[1][0], upPts[1][1], 8);" in js and "'梯度回传'" in js
+    assert "up.slice(0, 2)" not in js
 
 
 def test_omnih2o_3d_sprite_sheets_match_their_metadata():
