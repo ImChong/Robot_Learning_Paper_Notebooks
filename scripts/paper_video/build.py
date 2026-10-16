@@ -88,35 +88,67 @@ def word_char(ch):
     return ch.isascii() and ch.isalnum()
 
 
+def math_mask(s):
+    """True at every index inside a `$…$` run: the subtitle shows it as one KaTeX formula, so no line break may fall there."""
+    mask, inside = [False] * len(s), False
+    for k, ch in enumerate(s):
+        if ch == "$":
+            inside = not inside
+            mask[k] = True
+        else:
+            mask[k] = inside
+    return mask
+
+
+def vis_len(s):
+    """Rough on-screen width in characters: a `$…$` run counts its glyphs, not its TeX source (`$e^{-2.9}$` is ~5, not 10)."""
+    def glyphs(m):
+        tex = re.sub(r"\\[A-Za-z]+", "x", m.group(1))
+        return "x" * len(re.sub(r"[{}^_\s]", "", tex))
+    return len(re.sub(r"\$([^$]*)\$", glyphs, s))
+
+
 def chunks(text, start, dur, limit=17):
-    """Split one TTS sentence into subtitle lines of <= ~limit chars, timed by char share."""
-    parts = []
-    for p in re.split(r"(?<=[，、；：。！？,;:])", text):
-        while len(p) > limit + 4:  # no punctuation to break on: cut near the middle, at a space if any
+    """Split one displayed TTS sentence into subtitle lines of <= ~limit chars, timed by char share.
+
+    `text` already went through display(); a `$…$` formula from DISPLAY is never split across lines."""
+    parts, cur = [], ""
+    inside = math_mask(text)
+    for k, ch in enumerate(text):
+        cur += ch
+        if ch in "，、；：。！？,;:" and not inside[k]:
+            parts.append(cur)
+            cur = ""
+    if cur:
+        parts.append(cur)
+    out_parts = []
+    for p in parts:
+        while vis_len(p) > limit + 4:  # no punctuation to break on: cut near the middle, at a space if any
             mid = len(p) // 2
-            # 不在英文词、数字中间断行（「De / launay」「Laplac / ian」）：只在两个字母数字之间以外的位置切
-            ok = [k for k in range(1, len(p)) if not (word_char(p[k - 1]) and word_char(p[k]))]
+            m = math_mask(p)
+            # 不在英文词、数字中间断行（「De / launay」「Laplac / ian」），也不切开公式：只在两个字母数字之间以外、公式以外的位置切
+            ok = [k for k in range(1, len(p)) if not (word_char(p[k - 1]) and word_char(p[k])) and not (m[k - 1] and m[k])]
             near = [k for k in ok if abs(k - mid) <= 5]
             sp = [k for k in near if p[k] == " "]
             k = min(sp or near or ok or [mid], key=lambda k: abs(k - mid))
-            parts.append(p[:k])
+            out_parts.append(p[:k])
             p = p[k:].lstrip()
         if p.strip():
-            parts.append(p)
+            out_parts.append(p)
     lines, cur = [], ""
-    for p in parts:
-        if cur and len(cur) + len(p) > limit:
+    for p in out_parts:
+        if cur and vis_len(cur) + vis_len(p) > limit:
             lines.append(cur)
             cur = p
         else:
             cur += p
     if cur:
         lines.append(cur)
-    total = sum(len(x) for x in lines) or 1
+    total = sum(vis_len(x) for x in lines) or 1
     out, t = [], start
     for x in lines:
-        d = dur * len(x) / total
-        out.append({"t0": round(t, 3), "t1": round(t + d, 3), "text": display(x.rstrip("，、；：。,;:"))})
+        d = dur * vis_len(x) / total
+        out.append({"t0": round(t, 3), "t1": round(t + d, 3), "text": x.rstrip("，、；：。,;:")})
         t += d
     return out
 

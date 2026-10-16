@@ -202,6 +202,7 @@ demos: ["ppo"]
 - **中文里夹公式的一行标注**（`在 $\mathcal{D}_{\mathrm{loco}}$ 里检索`、`温度 $\eta = 0.1$：几乎就是取最小值`）用 `K.svgRich(x, y, str, { size, anchor, cls, w })`：`str` 与 `rich()` 同一套标记，只有 `$…$` 交给 KaTeX，中文保持分镜自己的字体（塞进 `\text{}` 则继承 KaTeX 的 `KaTeX_Main, Times New Roman, serif`，有衬线中文字体的系统上会变成宋体），也比整句 `\text{}` 好读，方法同 `svgMath`，改文字用 `setText()`。**不要在 `svgText` 里用 `_`、`^`、Unicode 上下标或 `‖` 拼公式**，那是原生 SVG 文字，KaTeX 到不了，`x_i`、`λ_PPO` 会原样显示在页面上（`tests/test_paper_demos.py::test_storyboard_formulas_are_not_spelled_in_plain_text` 会拦）；代码标识符（`tpose_qpos`、`z_diff`）不算公式。
 - **每帧都在变的数字不要塞进公式**：拆成「静态公式标签 + `svgText` 数字」，否则每帧重排一次公式。
 - **Canvas 演示画不了公式**：`stage` / `plot` 那套是原生 Canvas，KaTeX 到不了，公式只能放在卡片标题、`demo-note` 等 HTML 部分。同一个标签既进 HTML 又画到 Canvas 上（坐标轴名、柱子底下的字）时，Canvas 那一处先过 `K.richToPlain()`，否则会画出 `$\Delta\theta$`；滑块的 `aria-label` 已经自动这样降级。
+- **配音视频的字幕**也一样：旁白念的是「e 的负 2.9 次方」「阿尔法」，字幕由 `scripts/paper_video/papers/<paper>.py` 的 `DISPLAY` 换成 `$e^{-2.9}$`、`$\alpha$`，`stage.html` 交给 KaTeX，不要再换成 `e^(−2.9)`、`α`、`3 × 10⁻³` 这类纯文本（细则见视频 README「字幕里的公式」）。分镜里的变量（`$z$`、`$\mathcal{E}$`、`$\epsilon$`）同样写进 `$…$`，MaskedMimic 的 `label()` / `tone()` 见到 `$` 自动改用 `svgRich`。
 - KaTeX 拿不到（CDN 被挡）时，`K.texToPlain()` 会把公式降级成可读的纯文本，不会漏出原始 TeX；公式本身写错也是降级，不会显示 KaTeX 的红色报错。
 
 ### 写演示的约束

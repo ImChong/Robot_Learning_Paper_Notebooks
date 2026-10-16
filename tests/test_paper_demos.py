@@ -1198,7 +1198,7 @@ def test_video_subtitles_never_break_inside_an_english_word():
     import runpy
 
     src = (ROOT / "scripts" / "paper_video" / "build.py").read_text(encoding="utf-8")
-    fns = [n for n in ast.parse(src).body if isinstance(n, ast.FunctionDef) and n.name in ("word_char", "chunks")]
+    fns = [n for n in ast.parse(src).body if isinstance(n, ast.FunctionDef) and n.name in ("word_char", "math_mask", "vis_len", "chunks")]
     ns = {"re": re, "display": lambda s: s}
     exec(compile(ast.Module(body=fns, type_ignores=[]), "build.py", "exec"), ns)
 
@@ -1218,6 +1218,16 @@ def test_video_subtitles_never_break_inside_an_english_word():
             end = text.index(line, pos) + len(line)
             assert not (end < len(text) and ns["word_char"](text[end - 1]) and ns["word_char"](text[end])), (line, text)
             pos = end
+
+    # DISPLAY 写成 $…$ 的公式（MaskedMimic 的字幕）整条留在一行，标点在公式里也不断开；按字形算长度，不按 TeX 源码
+    assert lines("每项都是 $e^{-c \\times \\text{误差}}$，误差越大越接近 0。") == ["每项都是 $e^{-c \\times \\text{误差}}$", "误差越大越接近 0"]
+    assert lines("偏差是 $\\tfrac{1}{2}, \\tfrac{1}{3}$ 和 $x + v_x$、$y + v_y$，高度固定。")[0].count("$") % 2 == 0
+    assert ns["vis_len"]("标准差是 $e^{-2.9}$") == len("标准差是 ") + 5
+    paper = runpy.run_path(str(ROOT / "scripts" / "paper_video" / "papers" / "maskedmimic.py"))
+    for _, _, _, text in paper["SCRIPT"]:
+        for a, b in paper["DISPLAY"]:
+            text = text.replace(a, b)
+        assert all(line.count("$") % 2 == 0 for line in lines(text)), text
 
 
 def test_umr_explainer_and_worked_examples_share_the_same_numbers():
@@ -4128,6 +4138,14 @@ def test_maskedmimic_explainer_demos_and_worked_example_share_the_paper_numbers(
     assert "1 - seg(t, b - 0.3, b)" not in js
     # 视频文案的占位符都已填上
     assert "__VIDEO_" not in js and "__VIDEO_" not in note
+    # 字幕和分镜里的公式都交给 KaTeX：DISPLAY 不再输出 e^(…)、上标数字，分镜文字里的希腊字母都在 $…$ 里
+    import runpy
+
+    display_out = [b for a, b in runpy.run_path(str(ROOT / "scripts" / "paper_video" / "papers" / "maskedmimic.py"))["DISPLAY"]]
+    assert not [d for d in display_out if re.search(r"e\^\(|[²³⁻÷αεμρτ]", d)]
+    code = re.sub(r"//[^\n]*", "", re.sub(r"/\*.*?\*/", "", js, flags=re.S))
+    plain = [x for x in re.findall(r"'((?:[^'\\]|\\.)*)'", code) if re.search(r"[αεμρτ²⁻÷]", x) and "$" not in x]
+    assert plain == [], plain
 
 
 def test_maskedmimic_3d_sprite_sheets_match_their_metadata():
