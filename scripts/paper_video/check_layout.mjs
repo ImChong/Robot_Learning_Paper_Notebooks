@@ -1,6 +1,7 @@
 // node check_layout.mjs <paper>        （先跑过 build.py，并用 render.mjs 生成过 stage.<paper>.built.html）
 // node check_layout.mjs <paper> story  分镜内部：文字压文字、文字压图（3D 贴图按当前帧的不透明像素裁边），每 0.25 s 抽一帧
 // node check_layout.mjs <paper> story near  同上，另外把「快压住」也记下：文字和文字 / 图 / 框线的间距不到 3px（OmniH2O 第 5 幕的 120、40 贴着右栏的框）
+// 末尾可加时间段（秒）只查改过的几幕：node check_layout.mjs <paper> story near 378,418
 // node check_layout.mjs <paper> cover  封面帧（stage.html 的 classicCover，最初的片头设计）：块互不重叠、都在画面里、
 //                                      大标题 / 中文名 / 一句话 / 每条目录各占一行、3:4 置顶裁剪后目录不贴底（不需要 build.py）
 // 每 0.5 s 抽一帧，用 DOM 量各块位置：可见块之间不许重叠、不许压字幕、片头 / 片尾相邻块间距 ≥ 10px，要读的东西必须在安全区 330–1440 之内
@@ -9,6 +10,7 @@ import { chromium } from 'playwright-core';
 import fs from 'node:fs';
 
 const [name, mode, sub] = process.argv.slice(2);
+const RANGE = (process.argv.slice(3).find((x) => /^\d+(\.\d+)?,\d+(\.\d+)?$/.test(x)) || '').split(',').filter(Boolean).map(Number);
 const PAD = mode === 'story' && sub === 'near' ? 3 : 0;  // 屏幕像素（1080 宽的画面）；两行字的字框隔 3–4px 是正常行距
 const tlPath = `out/${name}/timeline.json`;
 const tl = fs.existsSync(tlPath) ? JSON.parse(fs.readFileSync(tlPath, 'utf8'))
@@ -75,7 +77,7 @@ if (mode === 'story') {
     const h = im.getAttribute('href'); if (!h) return null; const p = new Image(); p.src = h; return p.decode().catch(() => null);
   })));
   const found = new Map();
-  for (let t = 0.1; t < tl.total; t += 0.25) {
+  for (let t = RANGE.length ? RANGE[0] : 0.1; t < (RANGE.length ? RANGE[1] : tl.total); t += 0.25) {
     const seg = tl.segments.find((s) => t >= s.t0 && t < s.t1);
     if (!seg || typeof seg.scene !== 'number') continue;
     const r = await pg.evaluate(([t, pad]) => {

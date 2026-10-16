@@ -1050,10 +1050,15 @@
     var bp = [[N.sim[0] + 40, N.sim[1]], [N.sim[0] + 40, N.sim[1] - 22], [N.stu[0] + 150, N.stu[1] - 22], [N.stu[0] + 150, N.stu[1]]];
     pathLine(back, bp, C_MUTED, 1.8, '5 4');
     label(back, (bp[1][0] + bp[2][0]) / 2, N.sim[1] - 28, '状态：本体感受 + 3 个点的目标', 'demo-x-mut', 10.5, 'middle');
-    var upd = group(s);
-    var up = [[N.loss[0] + 30, N.loss[1]], [N.loss[0] + 30, N.stu[1] + N.stu[3] + 22], [N.stu[0] + 30, N.stu[1] + N.stu[3] + 22], [N.stu[0] + 30, N.stu[1] + N.stu[3]]];
-    pathLine(upd, up.slice(0, 2), C_ACCENT, 1.8, '5 4');
-    label(upd, N.loss[0] + 36, N.loss[1] - 50, '更新学生', 'demo-x-ink2', 10.5);
+    /* 损失回到学生：梯度更新学生的参数（虚线箭头，小圆点往上跑）；旁边实线是学生自己的动作进损失 */
+    var upd = group(s), ux = N.stu[0] + 30, upPts = [[ux, N.loss[1] - 2], [ux, N.stu[1] + N.stu[3] + 2]];
+    var ua = arrow(upd, C_ACCENT, 1.8);
+    ua.set(upPts[0][0], upPts[0][1], upPts[1][0], upPts[1][1], 8);
+    upd.querySelector('line').setAttribute('stroke-dasharray', '5 4');
+    label(upd, ux + 8, N.loss[1] - 66, '梯度回传', 'demo-x-ink2', 10.5);
+    label(upd, ux + 8, N.loss[1] - 46, '更新学生', 'demo-x-ink2', 10.5);
+    var uTok = dotAt(upd, 0, 0, 4, C_ACCENT);
+    eg[4].g.appendChild(svgRich(mid(N.stu, 'b')[0] + 10, 218, '学生自己的 $\\mathbf{a}_t$', { size: 11, anchor: 'start', w: 130, cls: 'demo-x-ink2' }));
     var RX = 540;
     var p3 = group(s);
     label(p3, RX, 80, '为什么不直接用强化学习？', 'demo-x-ink', 13);
@@ -1071,6 +1076,7 @@
       setOpacity(nStu, seg(t, 0.4, 0.8)); setOpacity(nSim, seg(t, 0.4, 0.8)); setOpacity(back, seg(t, 0.8, 1.2));
       setOpacity(nPriv, seg(t, 3.9, 4.3)); setOpacity(nTea, seg(t, 4.3, 4.7));
       setOpacity(nLoss, seg(t, 7.3, 7.7)); setOpacity(upd, seg(t, 8.0, 8.4));
+      moveDot(uTok, pointOn(upPts, ((now * 0.6) + 0.5) % 1));
       eg.forEach(function (x, i) {
         setOpacity(x.g, seg(t, x.e.at, x.e.at + 0.4));
         var u = ((now * 0.6) + i * 0.2) % 1;
