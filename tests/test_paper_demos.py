@@ -4129,7 +4129,7 @@ def test_maskedmimic_explainer_demos_and_worked_example_share_the_paper_numbers(
 
     # 旁白：数字列举用顿号，两个数之间不只隔一个逗号（「66 加 72，138 维」的教训）
     spoken = re.findall(r'"([^"]*)"\),', narration[narration.index("SCRIPT = [") : narration.index("DISPLAY = [")])
-    assert len(spoken) == 97 and not any(re.search(r"\d\s*[，,]\s*\d", t) for t in spoken)
+    assert len(spoken) == 98 and not any(re.search(r"\d\s*[，,]\s*\d", t) for t in spoken)
     # 片头接上一期（OmniH2O）的片尾预告，片尾只预告下一篇（HOVER）
     assert narration.count("上一期结尾预告") == 1 and "下一篇讲 HOVER" in narration and "HOVER" in intro
     assert "## 🎬 十八幕动画" in note and 'demos: ["maskedmimic"]' in note

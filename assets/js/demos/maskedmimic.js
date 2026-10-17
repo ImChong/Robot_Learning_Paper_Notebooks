@@ -1211,7 +1211,7 @@
     return pts;
   }
   function buildSceneVae() {
-    var s = sceneSvg('左边是俯视的玩具：从 S 出发，1 秒内到 T，中间有根柱子；老师的示范有的从上绕、有的从下绕，' +
+    var s = sceneSvg('右边先一句话交代 VAE：编码器把输入压成随机的 z、解码器复原、z 被拉向先验；左边是俯视的玩具：从 S 出发，1 秒内到 T，中间有根柱子；老师的示范有的从上绕、有的从下绕，' +
       '直接回归把两种平均成一条直线、撞上柱子；条件 VAE 用潜变量 z 选「哪一种」；右边先放论文图 5 的结构，最后左边换成项目页里三个角色坐同一张沙发的视频');
     label(s, 24, 28, '部分目标是欠定的：「1 秒内到 $T$」有很多种走法', 'demo-x-ink2', 13.5);
     var LX = 24, LY = 44, LW = 400, LH = 352;
@@ -1239,6 +1239,25 @@
     var zMk = dotAt(zAxis, 0, ZY, 5.5, C_VIS), zEq = label(zAxis, 0, ZY + 18, '$z =$', 'demo-x-ink', 11.5, 'end'), zTxt = label(zAxis, 0, ZY + 18, '', 'demo-x-ink', 11.5);
     label(zAxis, ZX - 8, ZY + 4, '$z$', 'demo-x-ink', 13, 'end');
     var R = 446, RW = 330;
+    /* 第一句先交代 VAE 是什么（2026-10-17 看片反馈：讲到 VAE 要先一句话介绍）：编码器把输入压成随机的 z，解码器从 z 复原，z 被拉向先验 */
+    var pV = group(s), VY = 118;
+    label(pV, R, 64, 'VAE：变分自编码器', 'demo-x-ink', 14);
+    label(pV, R + 48, VY - 26, '输入 $x$', 'demo-x-ink2', 12, 'middle');
+    chip(pV, R, VY - 15, 96, '编码器', C_WARN, { size: 12.5, h: 30 });
+    arrow(pV, C_INK2, 1.6).set(R + 100, VY, R + 142, VY, 7);
+    pV.appendChild(paint(svgEl('circle', { cx: R + 165, cy: VY, r: 18, 'stroke-width': 1.8 }), C_SURFACE, C_VIS));
+    label(pV, R + 165, VY + 5, '$z$', 'demo-x-ink', 15, 'middle');
+    arrow(pV, C_INK2, 1.6).set(R + 188, VY, R + 230, VY, 7);
+    label(pV, R + 282, VY - 26, '复原的 $\\hat{x}$', 'demo-x-ink2', 12, 'middle');
+    chip(pV, R + 234, VY - 15, 96, '解码器', C_ACCENT, { size: 12.5, h: 30 });
+    var bell = [];
+    for (var b = 0; b <= 40; b++) { var bu = -2.6 + 5.2 * b / 40; bell.push([R + 165 + 16 * bu, VY + 62 - 24 * Math.exp(-0.5 * bu * bu)]); }
+    pathLine(pV, bell, C_VIS, 1.8);
+    hline(pV, R + 120, VY + 62, R + 210, VY + 62, C_BORDER, 1);
+    label(pV, R + 222, VY + 58, '先验：$z$ 被拉向它', 'demo-x-ink2', 12);
+    label(pV, R, VY + 100, '训练：编码器把 $x$ 压成随机的 $z$，', 'demo-x-ink2', 12.5);
+    label(pV, R, VY + 124, '解码器再从 $z$ 复原 $x$', 'demo-x-ink2', 12.5);
+    label(pV, R, VY + 148, '生成：直接从先验里取 $z$，交给解码器', 'demo-x-ink2', 12.5);
     var p1 = group(s);
     label(p1, R, 64, '部分目标是欠定的', 'demo-x-ink', 14);
     label(p1, R, 96, '只说「1 秒内到 $T$」，从上绕、从下绕、', 'demo-x-ink2', 12.5);
@@ -1284,7 +1303,8 @@
       moveDot(zMk, [zxNow, ZY]); zEq.setX(zxNow - 30); zTxt.setAttribute('x', (zxNow - 27).toFixed(1));
       zTxt.textContent = sgn(f2(z)) + (z > 0 ? '：从上绕' : '：从下绕');
       setOpacity(zAxis, ph >= 2 ? win(t, 7.0) : 0);
-      setOpacity(p1, win(t, 0.3, 3.6));
+      setOpacity(pV, win(t, 0.3, 1.8));
+      setOpacity(p1, win(t, 1.8, 3.6));
       setOpacity(p2, win(t, 3.6, 7.0));
       setOpacity(p3, win(t, 7.0, 10.4));
       setOpacity(p4, win(t, 10.4, 13.4));
@@ -2169,7 +2189,8 @@
       dur: 16,
       build: buildSceneVae,
       cues: [
-        { at: 0.4, s: '部分目标是**欠定**的：「1 秒内到 $T$」有很多种走法，老师的示范从上绕、从下绕都有（玩具示意）。' },
+        { at: 0.4, s: '**VAE**（变分自编码器）：编码器把输入压成随机的潜变量 $z$，解码器从 $z$ 复原；$z$ 被拉向先验，生成时直接从先验取 $z$。' },
+        { at: 1.8, s: '部分目标是**欠定**的：「1 秒内到 $T$」有很多种走法，老师的示范从上绕、从下绕都有（玩具示意）。' },
         { at: 3.6, s: '直接回归老师的动作 = 取平均：上绕和下绕平均成一条直线，**撞上柱子**。' },
         { at: 7.0, s: '学生做成**条件 VAE**：潜变量 $z$ 选「哪一种」，不同的 $z$ 对应不同但都合理的走法。' },
         { at: 10.4, s: '三个部件：先验 $\\rho$（只看部分目标）、编码器 $\\mathcal{E}$（看完整目标、只在训练时用）、解码器 $\\mathcal{D}$（看状态和 $z$ 出动作）。' },
