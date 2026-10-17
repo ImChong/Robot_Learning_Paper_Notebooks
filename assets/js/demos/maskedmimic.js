@@ -965,9 +965,10 @@
     label(p5, R, 64, '网络：Transformer', 'demo-x-ink', 14);
     var toks = ['状态', '未来 1', '未来 2', '…', '未来 $K$', '高度图'];
     toks.forEach(function (tk, i) { chip(p5, R + i * 55, 82, 50, tk, i === 0 ? C_ACCENT : i === 5 ? C_BORDER : C_FULL, { size: 10.5, h: 26 }); });
-    chip(p5, R, 126, RW, 'Transformer（代码 v2.3：4 层、4 头、宽 512）→ 动作均值', C_ACCENT, { size: 12, left: true });
-    label(p5, R, 186, '每种输入先编码成 token，注意力在 token 之间', 'demo-x-ink2', 12);
-    label(p5, R, 208, '找相关的信息；critic 是普通的全连接网络', 'demo-x-ink2', 12);
+    chip(p5, R, 126, RW, 'Transformer → 动作均值', C_ACCENT, { size: 12, left: true });
+    label(p5, R, 170, '超参取自代码 v2.3：4 层、4 头、宽 512', 'demo-x-mut', 11);
+    label(p5, R, 200, '每种输入先编码成 token，注意力在 token 之间', 'demo-x-ink2', 12);
+    label(p5, R, 222, '找相关的信息；critic 是普通的全连接网络', 'demo-x-ink2', 12);
     function draw(t, clock) {
       var now = nowOf(t, clock), ph = phase(t);
       /* 走路的那一段（第 3.0–7.6 s）循环播 */
@@ -1701,7 +1702,8 @@
     var floor = groundGrid(hs, LX + 2, LY + 2, LW - 4, LH - 4);
     var BACK = [4, 8, 12, 16, 20];
     var ghosts = BACK.map(function () { return smplMesh(hs, SHEETS.sit, { ghost: 0.25 }); });
-    label(hs, LX + 14, LY + 24, '影子：' + BACK.map(function (b) { return '−' + f2(b / CLIP.fps); }).join('、') + ' s（越淡越早；论文只说过去 40 步里取 5 帧，具体哪几帧是示意）', 'demo-x-ink2', 11.5);
+    label(hs, LX + 14, LY + 24, '影子：' + BACK.map(function (b) { return '−' + f2(b / CLIP.fps); }).join('、') + ' s（越淡越早）', 'demo-x-ink2', 11.5);
+    label(hs, LX + 14, LY + 46, '论文只说过去 40 步里取 5 帧，具体哪几帧是示意', 'demo-x-mut', 10.5);
     var actor = sampleActor(hs, { noChair: true });
     var R = 446, RW = 330;
     var p1 = group(s);
@@ -2110,9 +2112,9 @@
     var p2 = group(s);
     label(p2, R, 64, '2 m 以外：走过去', 'demo-x-ink', 14);
     chip(p2, R, 82, RW, '移动目标：朝物体方向、速度 1 m/s', C_VIS, { size: 12, left: true });
-    label(p2, R, 146, '论文没写给哪个关节；我们猜和转向一样是骨盆', 'demo-x-mut', 11);
     chip(p2, R, 118, RW, '文字：“the person walks normally”', C_TXT, { size: 12, left: true });
-    label(p2, R, 182, '两样一起给，走得又稳又自然', 'demo-x-ink2', 12);
+    label(p2, R, 176, '论文没写给哪个关节；我们猜和转向一样是骨盆', 'demo-x-mut', 11);
+    label(p2, R, 202, '两样一起给，走得又稳又自然', 'demo-x-ink2', 12);
     var p3 = group(s);
     label(p3, R, 64, '进入 2 m：只给包围盒', 'demo-x-ink', 14);
     chip(p3, R, 82, RW, '撤掉方向和文字，只给物体（8 个角 + 类别）', C_OBJ, { size: 11.5, left: true });
