@@ -371,7 +371,7 @@
             "has_open_source": true,
             "summary_zh": "MaskedMimic 把物理角色控制统一表述成动作补全（inpainting）：先用强化学习训一个全身跟踪老师 $\\pi^{\\text{FC}}$，它看当前状态、未来 $K$ 帧完整参考（每个关节相对自身、相对根各表示一次）和 16 ×…",
             "explainer_scenes": 18,
-            "video_seconds": 842,
+            "video_seconds": 908,
             "published_date_zh": "2024年9月22日",
             "published_date_en": "Sep 22, 2024",
             "zhname": "MaskedMimic：基于掩码动作补全的统一物理角色控制",

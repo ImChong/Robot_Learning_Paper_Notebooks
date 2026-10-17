@@ -344,13 +344,19 @@
   function setW(node, w) {
     node.setAttribute('width', Math.max(0, w).toFixed(1));
   }
+  /* 一行里有 $…$ 公式（变量、希腊字母）就交给 svgRich 排 KaTeX，否则是普通的 svgText；
+     svgRich 的标签要移动时用 setX / setY，不能直接改 x / y 属性 */
   function label(parent, x, y, str, cls, size, anchor) {
-    var n = svgText(x, y, str, cls || 'demo-x-ink2', size || 11, anchor);
+    var n = str.indexOf('$') >= 0
+      ? svgRich(x, y, str, { size: size || 11, cls: cls || 'demo-x-ink2', anchor: anchor || 'start', w: 420 })
+      : svgText(x, y, str, cls || 'demo-x-ink2', size || 11, anchor);
     parent.appendChild(n);
     return n;
   }
   function tone(parent, x, y, str, color, size, anchor) {
-    var n = paint(svgText(x, y, str, null, size || 11, anchor), color);
+    var n = str.indexOf('$') >= 0
+      ? svgRich(x, y, str, { size: size || 11, anchor: anchor || 'start', w: 160 }).setTone(color)
+      : paint(svgText(x, y, str, null, size || 11, anchor), color);
     parent.appendChild(n);
     return n;
   }
@@ -423,6 +429,34 @@
     g.appendChild(c);
     if (caption) label(g, o.capX == null ? x + w / 2 : o.capX, y + h + (o.capDy || 16), caption, 'demo-x-mut', o.capSize || 9.5, o.capAnchor || 'middle');
     return { g: g, x: x, y: y, w: w, h: h, at: function (sec, vis) { c.at(sec, vis); } };
+  }
+  /* 项目页的一串片段，一次只放一个例子（原先四个拼成 2 × 2，手机上人太小，2026-10-17 看片反馈）。
+     parts = [[秒, 名称, 颜色], …]，顺序和时长与片段一致。片段下面一排小条标出放到第几个、再写这一个是什么，
+     最下面一行小字写出处与倍速；compact 时不画小条，名称接在出处那一行后面。draw 里调 .at(秒, 是否可见) */
+  function seqClip(parent, id, x, y, w, h, caption, parts, opts) {
+    var o = opts || {}, g = group(parent), total = 0, last = -1;
+    parts.forEach(function (p) { total += p[0]; });
+    var c = projClip(g, id, x, y, w, h, o.compact ? '' : caption, { capDy: 50 });
+    var acc = 0, bars = o.compact ? [] : parts.map(function (p) {
+      var r = paint(svgEl('rect', { x: (x + acc / total * w).toFixed(1), y: (y + h + 7).toFixed(1), width: (p[0] / total * w - 4).toFixed(1), height: 5, rx: 2.5 }), p[2] || C_ACCENT);
+      acc += p[0];
+      g.appendChild(r);
+      return r;
+    });
+    var name = o.compact ? label(g, x + w / 2, y + h + 16, '', 'demo-x-mut', 10.5, 'middle') : label(g, x, y + h + 27, '', 'demo-x-ink', 13);
+    return {
+      g: g,
+      at: function (sec, vis) {
+        c.at(sec, vis);
+        var m = ((sec % total) + total) % total, idx = 0, a = 0;
+        parts.forEach(function (p, i) { if (m >= a) idx = i; a += p[0]; });
+        if (idx === last) return;
+        last = idx;
+        bars.forEach(function (r, i) { r.style.opacity = i === idx ? 1 : 0.25; });
+        var tag = (idx + 1) + ' / ' + parts.length + '　' + parts[idx][1];
+        name.textContent = o.compact ? caption + ' · ' + tag : tag;
+      }
+    };
   }
   /* 三维 → 画布：z 朝上；绕竖轴转 yaw、抬头 pitch 的正交投影。cam = { yaw, pitch, s(像素/米), ox, oy, cx, cy }：
      (cx, cy) 是地面上对准画布 (ox, oy) 的那一点。SMPL 角色的贴图是同一套相机离线渲染的 */
@@ -519,8 +553,34 @@
     var a = start || 0, b = end == null ? CLIP.n : end, n = b - a;
     return a + Math.floor(now * CLIP.fps) % n;
   }
-  function groundLine(parent, x1, x2, y) {
-    return hline(parent, x1, y, x2, y, C_BORDER, 1.4);
+  /* 地面网格：世界坐标里每 0.5 m 一条线，用和角色贴图同一套相机投影到画布（原先只画一条水平线，看不出是地面，2026-10-17 看片反馈）。
+     跟拍的镜头每帧重画：格子跟着世界坐标往后退，看得出角色在走。只画在 (x, y, w, h) 框里，离镜头对准的点越远越淡 */
+  var gridSeq = 0;
+  function groundGrid(parent, x, y, w, h, opts) {
+    var o = opts || {}, step = o.step || 0.5, R = o.R || 5, id = 'mm-ground-' + (++gridSeq);
+    var clip = svgEl('clipPath', { id: id });
+    clip.appendChild(svgEl('rect', { x: x, y: y, width: w, height: h }));
+    parent.appendChild(clip);
+    var g = group(parent);
+    g.setAttribute('clip-path', 'url(#' + id + ')');
+    /* 相机只抬头 0.15 rad，地面在画面上很扁：格子铺到 ±5 m，颜色用 C_MUTED，近处实、远处淡；不透明度压低，别抢角色的戏（同日看片反馈） */
+    var bands = [0.45, 0.28, 0.12].map(function (op) {
+      var p = paint(svgEl('path', { fill: 'none', 'stroke-width': 1.2 }), null, C_MUTED);
+      p.style.strokeOpacity = op;
+      g.appendChild(p);
+      return p;
+    });
+    function draw(cam) {
+      var cx = cam.cx || 0, cy = cam.cy || 0, d = ['', '', ''];
+      function line(off, a, b) {
+        var r = Math.abs(off) / R, k = r < 0.34 ? 0 : r < 0.67 ? 1 : 2, pa = project(a, cam), pb = project(b, cam);
+        d[k] += 'M' + pa[0].toFixed(1) + ' ' + pa[1].toFixed(1) + 'L' + pb[0].toFixed(1) + ' ' + pb[1].toFixed(1);
+      }
+      for (var i = Math.floor((cx - R) / step); i <= Math.ceil((cx + R) / step); i++) line(i * step - cx, [i * step, cy - R, 0], [i * step, cy + R, 0]);
+      for (var j = Math.floor((cy - R) / step); j <= Math.ceil((cy + R) / step); j++) line(j * step - cy, [cx - R, j * step, 0], [cx + R, j * step, 0]);
+      bands.forEach(function (p, b) { p.setAttribute('d', d[b] || 'M0 0'); });
+    }
+    return { g: g, draw: draw };
   }
   function f1(x) { return fmt(x, 1); }
   function f2(x) { return fmt(x, 2); }
@@ -564,17 +624,22 @@
       '右边依次出现：这个例子需要的三类能力、以前的两条路（一个任务一个控制器；技能潜空间 + 每个任务一个高层）、MaskedMimic 的目标与两条贡献');
     label(s, 24, 28, '论文的例子：爬上山坡去城堡，向卫兵挥手，进门，坐上王座', 'demo-x-ink2', 13.5);
     var VX = 24, VY = 44, VW = 400, VH = 225;
-    var v = projClip(s, 'castle', VX, VY, VW, VH, '项目页视频（1 倍速）：论文图 2 的城堡');
+    /* 左边：第 1、4、5 段放城堡（MaskedMimic 自己），第 2、3 段讲以前的路，换成以前的工作，一次放一个 */
+    var castle = group(s);
+    var v = projClip(castle, 'castle', VX, VY, VW, VH, '项目页视频（1 倍速）：论文图 2 的城堡');
     /* 片段的四段：5 + 5 + 5 + 6.5 s */
     var SEGS = [[0, 5, '(a) 跟着头的目标爬上山坡', C_VIS], [5, 10, '(b) 文字：向卫兵挥手', C_TXT], [10, 15, '(c) 头的目标 + 文字风格：碎石地上走', C_VIS], [15, 21.5, '(d) 物体：坐上王座', C_OBJ]];
-    var bar = group(s), segBars = SEGS.map(function (sg) {
+    var bar = group(castle), segBars = SEGS.map(function (sg) {
       var x = VX + sg[0] / 21.5 * VW, w = (sg[1] - sg[0]) / 21.5 * VW - 4;
       return paint(svgEl('rect', { x: x.toFixed(1), y: 296, width: w.toFixed(1), height: 6, rx: 3 }), sg[3]);
     });
     segBars.forEach(function (r) { bar.appendChild(r); });
-    var segName = label(s, VX, 326, '', 'demo-x-ink', 13);
-    label(s, VX, 352, '一句话的任务，要三类能力接在一起：', 'demo-x-mut', 11.5);
-    label(s, VX, 372, '不平地形上走、听文字做动作、和物体交互', 'demo-x-mut', 11.5);
+    var segName = label(castle, VX, 326, '', 'demo-x-ink', 13);
+    label(castle, VX, 352, '一句话的任务，要三类能力接在一起：', 'demo-x-mut', 11.5);
+    label(castle, VX, 372, '不平地形上走、听文字做动作、和物体交互', 'demo-x-mut', 11.5);
+    var priorG = group(s);
+    var prior = seqClip(priorG, 'prior', VX, VY, VW, VW * 300 / 480, '项目页视频（1 倍速）：以前的工作，一个系统管一类任务',
+      [[3.5, 'InterScene：和物体交互', C_OBJ], [3.5, 'Trace&Pace：不平地形上沿路径走', C_VIS], [3.5, 'PHC：全身跟踪', C_FULL], [3.5, 'PULSE：技能潜空间', C_ACCENT]]);
     var R = 446, RW = 330;
     var p1 = group(s);
     label(p1, R, 64, '这一句需要三类能力', 'demo-x-ink', 14);
@@ -583,8 +648,6 @@
     chip(p1, R, 154, RW, '和物体交互：坐上王座', C_OBJ, { size: 12, left: true });
     label(p1, R, 214, '以前的物理角色控制，', 'demo-x-ink2', 12.5);
     label(p1, R, 236, '这三样往往要三套系统', 'demo-x-ink2', 12.5);
-    var p23 = group(s);
-    var pv = projClip(p23, 'prior', R, 196, RW, RW * 310 / 640, '项目页视频：以前的工作（InterScene、Trace&Pace、PHC、PULSE）', { capSize: 9 });
     var p2 = group(s);
     label(p2, R, 64, '路一：一个任务一个控制器', 'demo-x-ink', 14);
     chip(p2, R, 82, 104, '地形行走', C_WARN, { size: 12 });
@@ -627,8 +690,10 @@
       setOpacity(p2, win(t, 3.6, 7.0));
       setOpacity(p3, win(t, 7.0, 10.4));
       var pvOn = win(t, 3.6, 10.4);
-      setOpacity(p23, pvOn);
-      pv.at(K.clipSince(t, 3.6), t >= 3.6 && t < 10.7);
+      /* 先淡出再淡入，不交叉：城堡在 cue 之后 0.3 s 内淡出，以前的工作从 cue + 0.3 起淡入；回来时反过来 */
+      setOpacity(castle, t < 10.4 ? 1 - seg(t, 3.6, 3.9) : seg(t, 10.7, 11.1));
+      setOpacity(priorG, pvOn);
+      prior.at(K.clipSince(t, 3.6), t >= 3.6 && t < 10.7);
       setOpacity(p4, win(t, 10.4, 13.4));
       setOpacity(p5, win(t, 13.4));
     }
@@ -638,20 +703,27 @@
   /* ── scene 2: 控制就是补全（图 1） ── */
   function buildSceneInpaint() {
     var s = sceneSvg('左边：官方样例里的一段参考动作（SAMP 的走过去坐扶手椅），SMPL 角色按真实几何做 3D 渲染；同一段动作依次换几种遮法：' +
-      '全部 24 个刚体（绿点）、只给头和双手、只给头未来的一串位置、只给椅子的包围盒、只给一句话；右边先用图像补全打比方，最后放论文图 1 的九种用法');
+      '能给的 6 个部位全给（绿圈）、只给头和双手、只给头未来的一串位置、只给椅子的包围盒、只给一句话；右边先用图像补全打比方，最后左右都淡出、放大论文图 1 的九种用法');
     label(s, 24, 28, '同一段参考动作，换一种遮法，就是换一个任务', 'demo-x-ink2', 13.5);
     var LX = 24, LY = 44, LW = 400, LH = 352;
-    rectBox(s, LX, LY, LW, LH, C_BORDER, C_SURFACE2);
+    /* 最后一段的后半（旁白念到「论文图 1」）左边和右栏都淡出，图 1 放大到 600 宽居中 */
+    var left = group(s);
+    rectBox(left, LX, LY, LW, LH, C_BORDER, C_SURFACE2);
     var cam = camAt(128, 224, 352, -0.25, -0.45);
-    groundLine(s, LX + 14, LX + LW - 14, 352 + 2);
-    var actor = sampleActor(s);
-    var all = dotLayer(s, 24, 3.6, C_VIS);
-    var vr = [ring(s, 0, 0, 9, 9, C_VIS), ring(s, 0, 0, 9, 9, C_VIS), ring(s, 0, 0, 9, 9, C_VIS)];
-    var path = group(s), pathDots = [];
+    groundGrid(left, LX + 2, LY + 2, LW - 4, LH - 4).draw(cam);
+    var actor = sampleActor(left);
+    var all = dotLayer(left, 24, 3.6, C_VIS);
+    var vr = [ring(left, 0, 0, 9, 9, C_VIS), ring(left, 0, 0, 9, 9, C_VIS), ring(left, 0, 0, 9, 9, C_VIS)];
+    var path = group(left), pathDots = [];
     for (var i = 0; i < 8; i++) pathDots.push(dotAt(path, 0, 0, 3.4, C_VIS));
-    var box = bboxLayer(s, C_OBJ);
-    var bub = group(s), bubIn = speech(bub, 0, 0, 228, '“the person walks normally”');
-    var modeName = label(s, LX + 14, LY + 24, '', 'demo-x-ink', 12.5);
+    var box = bboxLayer(left, C_OBJ);
+    var bub = group(left), bubIn = speech(bub, 0, 0, 228, '“the person walks normally”');
+    /* 组合那一段的文字是图 7f 的「举着双手往前走」，和右栏、旁白一致（2026-10-17 全局检查） */
+    var bub2 = group(left); speech(bub2, 0, 0, 300, '“a person raises both hands and walks forward”');
+    /* 学生能给的只有 6 个部位（双踝、骨盆、头、双手，第 7 节）；24 个刚体是老师看的 */
+    var KEY6 = [B.lank, B.rank, B.pelvis, B.head, B.lhand, B.rhand];
+    var six = KEY6.map(function () { return ring(left, 0, 0, 8, 8, C_VIS); });
+    var modeName = label(left, LX + 14, LY + 24, '', 'demo-x-ink', 12.5);
     var R = 446, RW = 330;
     var p0 = group(s);
     label(p0, R, 64, '关键洞察：控制 = 补全', 'demo-x-ink', 14);
@@ -673,8 +745,8 @@
     label(p0, R, 284, '训练时随机遮，用的时候用户决定给哪些', 'demo-x-mut', 11.5);
     var p1 = group(s);
     label(p1, R, 64, '全给：全身跟踪', 'demo-x-ink', 14);
-    chip(p1, R, 82, RW, '看得见：24 个刚体的位置和旋转，未来若干帧', C_VIS, { size: 11.5, left: true });
-    label(p1, R, 146, '这就是以前的跟踪器（PHC、第一阶段的老师）', 'demo-x-ink2', 12);
+    chip(p1, R, 82, RW, '6 个部位（双踝、骨盆、头、双手）的位置和旋转都给', C_VIS, { size: 11.5, left: true });
+    label(p1, R, 146, '学生能给的就是这 6 个部位；老师看的是全部 24 个刚体', 'demo-x-ink2', 12);
     label(p1, R, 168, '要做的事：给完整参考，照着做出来', 'demo-x-ink2', 12);
     var p2 = group(s);
     label(p2, R, 64, '只给头和双手：VR 跟踪', 'demo-x-ink', 14);
@@ -689,17 +761,21 @@
     chip(p3, R, 164, RW, '“the person walks normally”', C_TXT, { size: 12, left: true });
     label(p3, R, 226, '一个关节都不给，也要补出全身', 'demo-x-ink2', 12);
     var p4 = group(s);
-    var fig = paperFig(p4, 'fig1_teaser.webp', R - 6, 50, RW + 12, (RW + 12) * 859 / 1600 + 6, '论文图 1：一个模型，九种用法', { pad: 3 });
-    label(p4, R, 284, '还能组合：路径 + 一句话 = 带风格的走路', 'demo-x-ink2', 12);
-    label(p4, R, 306, '（图 1 下中：举着双手沿路径走）', 'demo-x-mut', 11.5);
-    void fig;
-    var MODES = ['完整参考（还没遮）', '全身：24 个刚体', 'VR 三点 + 头的路径', '物体 + 文字', '组合：头的路径 + 一句话'];
+    label(p4, R, 64, '还能组合', 'demo-x-ink', 14);
+    chip(p4, R, 82, RW, '头的路径 + 一句话「举着双手走」', C_VIS, { size: 12, left: true });
+    label(p4, R, 146, '= 举着双手沿路径走，带风格的走路', 'demo-x-ink2', 12.5);
+    label(p4, R, 170, '（论文图 1 下排中间那一格）', 'demo-x-mut', 11.5);
+    var p5 = group(s);
+    paperFig(p5, 'fig1_teaser.webp', 100, 40, 600, 600 * 859 / 1600 + 6, '', { pad: 3 });
+    label(p5, 400, 402, '论文图 1：一个模型，九种用法——跟踪、VR、路径、物体、文字和它们的组合', 'demo-x-ink2', 12.5, 'middle');
+    var MODES = ['完整参考（还没遮）', '全身：6 个部位都给', 'VR 三点 / 头的路径（两种用法）', '物体 / 文字（两种用法）', '组合：头的路径 + 一句话'];
     function draw(t, clock) {
       var now = nowOf(t, clock), k = loopFrame(now, 0), f = frame(k), ph = phase(t);
       actor.put(k, cam);
       modeName.textContent = MODES[ph];
       var P = all.put(f.b, cam);
-      setOpacity(all.g, ph === 1 ? win(t, 3.6, 7.0) : 0);
+      setOpacity(all.g, 0);
+      KEY6.forEach(function (j, i) { moveRing(six[i], P[j], 7 + 1.5 * Math.sin(now * 4)); six[i].style.opacity = ph === 1 ? win(t, 3.6, 7.0) : 0; });
       var vrOn = ph === 2 ? win(t, 7.0, 10.4) : 0;
       [B.head, B.lhand, B.rhand].forEach(function (j, i) { moveRing(vr[i], P[j], 8 + 2 * Math.sin(now * 4)); vr[i].style.opacity = vrOn; });
       var pathOn = ph === 2 ? vrOn : ph === 4 ? win(t, 13.4) : 0;
@@ -709,7 +785,9 @@
       setOpacity(box.g, ph === 3 ? win(t, 10.4, 13.4) : 0);
       var hd = P[B.head];
       bub.setAttribute('transform', 'translate(' + clamp(hd[0] - 30, LX + 8, LX + LW - 236).toFixed(1) + ',' + Math.max(LY + 34, hd[1] - 62).toFixed(1) + ')');
-      setOpacity(bub, ph === 3 ? win(t, 10.4, 13.4) : ph === 4 ? win(t, 13.4) : 0);
+      bub2.setAttribute('transform', 'translate(' + clamp(hd[0] - 30, LX + 8, LX + LW - 308).toFixed(1) + ',' + Math.max(LY + 34, hd[1] - 62).toFixed(1) + ')');
+      setOpacity(bub, ph === 3 ? win(t, 10.4, 13.4) : 0);
+      setOpacity(bub2, ph === 4 ? win(t, 13.4) : 0);
       /* 图像补全：遮住的那一块在 0.4–3.6 s 里先黑、再慢慢补回来 */
       var fillIn = seg(now % 3.2, 1.2, 2.4);
       holeCover.style.opacity = (1 - fillIn).toFixed(2);
@@ -717,57 +795,83 @@
       setOpacity(p1, win(t, 3.6, 7.0));
       setOpacity(p2, win(t, 7.0, 10.4));
       setOpacity(p3, win(t, 10.4, 13.4));
-      setOpacity(p4, win(t, 13.4));
+      setOpacity(p4, win(t, 13.4, 14.7));
+      setOpacity(left, 1 - seg(t, 14.7, 15.0));
+      setOpacity(p5, win(t, 14.7));
     }
     return { el: s, draw: draw };
   }
 
   /* ── scene 3: 两个阶段（图 3） ── */
   function buildSceneStages() {
-    var s = sceneSvg('左边是论文图 3 的总览，旁白念到哪一段就框出哪一段：① 用强化学习训全身跟踪的老师，② 用监督学习把老师蒸馏进只看部分目标的学生，' +
-      '③ 推理时直接用；右边是同一件事的大图，最后列出训练规模');
-    var fig = paperFig(s, 'fig3_overview.webp', 20, 34, 196, 360, '', { ar: 760 / 1564, pad: 2 });
+    var s = sceneSvg('左边是论文图 3，旁白念到哪一块就把那一块放大：① 用强化学习训全身跟踪的老师，② 用监督学习把老师蒸馏进只看部分目标的学生，' +
+      '③ 推理时直接用，说到三个角色坐沙发时再把第三块里的沙发原位放大；右边说明图里每个方块，最后换回整张图，讲为什么拆两段和训练规模');
+    /* 论文图 3 是竖排的三块（760 × 1564）。前三段把旁白讲的那一块单独放大摆在左边（宽 436，是整图缩略的 2.2 倍；
+       整图塞在 196 × 360 里，视频号上看不清，2026-10-17 看片反馈）；后两段讲「为什么拆两段」和训练规模，左边换回整张图、
+       框出前两块。三块的上下边界是按像素量的：0–0.318、0.321–0.700、0.703–1 */
+    var FIG3 = { w: 760, h: 1564, cuts: [[0, 0.318], [0.321, 0.700], [0.703, 1]] };
+    var envBox = null;
+    var big = FIG3.cuts.map(function (c, i) {
+      var g = group(s), w = 436, h = w * (c[1] - c[0]) * FIG3.h / FIG3.w, y = 44 + (340 - h) / 2;
+      var part = figPart(g, 'fig3_overview.webp', FIG3.w, FIG3.h, 0, c[0], 1, c[1], 24, y, w, '');
+      label(g, 24 + w / 2, y + h + 19, '论文图 3 · 第 ' + (i + 1) + ' 块（三块自上而下）', 'demo-x-mut', 10, 'middle');
+      /* 第三块右上的 Environment（三个角色坐在不平地形上的沙发上）在整图里是 x 503–689、y 1202–1324 */
+      if (i === 2) { var a = part.px(503 / FIG3.w, 1202 / FIG3.h), b = part.px(689 / FIG3.w, 1324 / FIG3.h); envBox = [a[0], a[1], b[0] - a[0], b[1] - a[1]]; }
+      return g;
+    });
+    /* 第三块里的沙发只有 107 × 70，看不清三个角色（2026-10-17 看片反馈）：旁白说到「三个角色坐在沙发上」时，
+       从第三块里原位放大成 PDF 里嵌的原图（1200 × 673）、铺满左边 */
+    var envHi = paint(svgEl('rect', { x: (envBox[0] - 3).toFixed(1), y: (envBox[1] - 3).toFixed(1), width: (envBox[2] + 6).toFixed(1), height: (envBox[3] + 6).toFixed(1), rx: 4, fill: 'none', 'stroke-width': 3 }), null, C_VIS);
+    big[2].appendChild(envHi);
+    var SOFA = [24, 44 + (340 - 436 * 673 / 1200) / 2, 436, 436 * 673 / 1200];
+    var zoom = group(s);
+    var zBack = svgEl('rect', { rx: 5, fill: '#ffffff', stroke: 'none' });
+    var zImg = svgEl('image', { href: PAPER_IMG_BASE + 'fig3_sofa.webp', preserveAspectRatio: 'xMidYMid slice' });
+    var zFrame = paint(svgEl('rect', { rx: 4, fill: 'none', 'stroke-width': 3 }), null, C_VIS);
+    zoom.appendChild(zBack); zoom.appendChild(zImg); zoom.appendChild(zFrame);
+    var zCap = label(zoom, SOFA[0] + SOFA[2] / 2, SOFA[1] + SOFA[3] + 21, '论文图 3 第三块的 Environment（原图放大）', 'demo-x-mut', 10.5, 'middle');
+    function zoomTo(k) {
+      var r = envBox.map(function (v, j) { return v + (SOFA[j] - v) * k; });
+      [[zBack, 3], [zImg, 0], [zFrame, 1.5]].forEach(function (e) {
+        e[0].setAttribute('x', (r[0] - e[1]).toFixed(1)); e[0].setAttribute('y', (r[1] - e[1]).toFixed(1));
+        e[0].setAttribute('width', (r[2] + 2 * e[1]).toFixed(1)); e[0].setAttribute('height', (r[3] + 2 * e[1]).toFixed(1));
+      });
+    }
+    var whole = group(s);
+    var fig = paperFig(whole, 'fig3_overview.webp', 20, 34, 196, 360, '', { ar: FIG3.w / FIG3.h, pad: 2 });
     function boxOn(v0, v1, color) {
       var a = fig.px(0, v0), b = fig.px(1, v1);
       var r = paint(svgEl('rect', { x: a[0] - 2, y: a[1] - 1, width: b[0] - a[0] + 4, height: b[1] - a[1] + 2, rx: 6, fill: 'none', 'stroke-width': 3.2 }), null, color);
-      s.appendChild(r);
+      whole.appendChild(r);
       return r;
     }
-    var b1 = boxOn(0, 0.335, C_FULL), b2 = boxOn(0.34, 0.665, C_WARN), b3 = boxOn(0.672, 1, C_BAD);
-    label(s, 118, 410, '论文图 3', 'demo-x-mut', 9.5, 'middle');
+    boxOn(FIG3.cuts[0][0], FIG3.cuts[0][1], C_FULL); boxOn(FIG3.cuts[1][0], FIG3.cuts[1][1], C_WARN);
+    label(whole, 118, 410, '论文图 3（框出的是两个训练阶段）', 'demo-x-mut', 9.5, 'middle');
     var R = 240, RW = 540;
-    function node(parent, x, y, w, str, color, opts) { return chip(parent, x, y, w, str, color, Object.assign({ h: 34, size: 12.5 }, opts || {})); }
-    function flow(parent, x1, y1, x2, y2, color) { var a = arrow(parent, color || C_INK2, 2); a.set(x1, y1, x2, y2, 8); return a; }
+    /* 前三段的右栏：大图旁边的窄栏，只讲图里每个方块是什么 */
+    var R2 = 482, RW2 = 294;
+    function item(parent, y, str, color) { return chip(parent, R2, y, RW2, str, color, { size: 11.5, left: true, h: 30 }); }
     var p1 = group(s);
-    rich(p1, R, 56, '① 第一阶段：强化学习训全身跟踪器 $\\pi^{\\text{FC}}$（老师）', 14, 'demo-x-ink');
-    node(p1, R, 80, 170, '参考动作（AMASS、SAMP）', C_FULL);
-    node(p1, R + 210, 80, 150, '$\\pi^{\\text{FC}}$：看完整的未来', C_FULL);
-    node(p1, R + 400, 80, 120, '仿真环境', C_BORDER);
-    flow(p1, R + 172, 97, R + 206, 97); flow(p1, R + 362, 97, R + 396, 97);
-    node(p1, R + 210, 150, 150, '跟踪奖励 $r_t$', C_GOOD);
-    flow(p1, R + 460, 116, R + 362, 160, C_GOOD);
-    label(p1, R, 222, 'fully-constrained：未来每一帧的完整姿态都给它', 'demo-x-ink2', 12.5);
-    label(p1, R, 246, '它学会的是「怎么用电机把这个动作做出来」', 'demo-x-ink2', 12.5);
+    rich(p1, R2, 56, '① 强化学习训老师 $\\pi^{\\text{FC}}$', 14, 'demo-x-ink');
+    item(p1, 76, '看完整目标 $g^{\\text{full}}_t$：接下来若干帧的完整姿态', C_FULL);
+    item(p1, 112, 'Score：比对 $s_t$ 和参考 $\\hat{s}_t$，给奖励 $r_t$', C_GOOD);
+    item(p1, 148, '输出动作 $a_t$，在仿真环境里执行', C_BORDER);
+    label(p1, R2, 210, 'fully-constrained：目标给得最全', 'demo-x-ink2', 12.5);
+    label(p1, R2, 234, '它学会「怎么用电机把动作做出来」', 'demo-x-ink2', 12.5);
     var p2 = group(s);
-    rich(p2, R, 56, '② 第二阶段：蒸馏出只看部分目标的 $\\pi^{\\text{PC}}$（学生）', 14, 'demo-x-ink');
-    node(p2, R, 80, 120, '$g^{\\text{full}}_t$ 完整目标', C_FULL);
-    node(p2, R + 160, 80, 100, '随机掩码 $\\mathcal{M}$', C_WARN);
-    node(p2, R + 300, 80, 110, '$g^{\\text{partial}}_t$', C_VIS);
-    node(p2, R + 440, 80, 90, '$\\pi^{\\text{PC}}$', C_WARN);
-    flow(p2, R + 122, 97, R + 156, 97); flow(p2, R + 262, 97, R + 296, 97); flow(p2, R + 412, 97, R + 436, 97);
-    node(p2, R, 150, 220, '$\\pi^{\\text{FC}}$（冻结）看完整目标', C_FULL);
-    node(p2, R + 300, 150, 230, '给每一步打动作标签 $a^{\\text{FC}}_t$', C_FULL);
-    flow(p2, R + 222, 167, R + 296, 167, C_FULL); flow(p2, R + 485, 148, R + 485, 118, C_FULL);
-    label(p2, R, 222, 'partially-constrained：只看被遮过的目标，', 'demo-x-ink2', 12.5);
-    label(p2, R, 246, '却要做出老师在完整目标下的动作', 'demo-x-ink2', 12.5);
+    rich(p2, R2, 56, '② 蒸馏出学生 $\\pi^{\\text{PC}}$', 14, 'demo-x-ink');
+    item(p2, 76, '参考可以是关节目标（绿球）或一句话', C_FULL);
+    item(p2, 112, 'Mask 随机遮掉一部分 → $g^{\\text{partial}}_t$', C_WARN);
+    item(p2, 148, '冻结的老师看完整目标，给标签 $a^{\\text{FC}}_t$', C_FULL);
+    label(p2, R2, 210, '学生只看被遮过的目标，却要做出', 'demo-x-ink2', 12.5);
+    label(p2, R2, 234, '老师在完整目标下的动作', 'demo-x-ink2', 12.5);
     var p3 = group(s);
-    rich(p3, R, 56, '③ 推理：不再训练，直接用 $\\pi^{\\text{PC}}$', 14, 'demo-x-ink');
-    node(p3, R, 80, 262, '用户的约束：几个关节 / 一句话 / 一个物体', C_VIS);
-    node(p3, R + 296, 80, 90, '$\\pi^{\\text{PC}}$', C_WARN);
-    node(p3, R + 420, 80, 116, '没见过的场景', C_BORDER);
-    flow(p3, R + 264, 97, R + 292, 97); flow(p3, R + 388, 97, R + 416, 97);
-    label(p3, R, 168, '图 3 第三块：三个角色坐在不平地形上的沙发上，', 'demo-x-ink2', 12.5);
-    label(p3, R, 192, '训练时既没见过这张沙发，也没见过这块地形', 'demo-x-ink2', 12.5);
+    rich(p3, R2, 56, '③ 推理：直接用 $\\pi^{\\text{PC}}$', 14, 'demo-x-ink');
+    item(p3, 76, '动画师给约束（这里是一张沙发）', C_VIS);
+    item(p3, 112, '约束就是 $g^{\\text{partial}}_t$，直接进学生', C_VIS);
+    item(p3, 148, '学生冻结（图里的小锁），不再训练', C_WARN);
+    label(p3, R2, 210, '图里三个角色坐在不平地形上的沙发上：', 'demo-x-ink2', 12.5);
+    label(p3, R2, 234, '物体摆在不平地形上，训练时没见过', 'demo-x-ink2', 12.5);
     var p4 = group(s);
     label(p4, R, 56, '为什么要拆成两段', 'demo-x-ink', 14);
     chip(p4, R, 74, RW, '动作数据只有运动学轨迹，没有力矩：先用强化学习学出「怎么做出来」', C_FULL, { size: 12, left: true });
@@ -783,9 +887,14 @@
     label(p5, R, 214, '老师的 300 亿步按 30 Hz 算是 10 亿秒，', 'demo-x-ink2', 12.5);
     label(p5, R, 238, '约 31.7 年的仿真经验', 'demo-x-ink2', 12.5);
     function draw(t) {
-      setOpacity(b1, win(t, 0.3, 3.6) + (t >= 10.4 && t < 13.4 ? win(t, 10.4, 13.4) : 0));
-      setOpacity(b2, win(t, 3.6, 7.0) + (t >= 10.4 && t < 13.4 ? win(t, 10.4, 13.4) : 0));
-      setOpacity(b3, win(t, 7.0, 10.4));
+      setOpacity(big[0], win(t, 0.3, 3.6));
+      setOpacity(big[1], win(t, 3.6, 7.0));
+      setOpacity(big[2], t < 8.7 ? win(t, 7.0) : 1 - seg(t, 9.0, 9.6));
+      envHi.style.opacity = seg(t, 8.2, 8.5);
+      zoomTo(ease(seg(t, 9.0, 9.6)));
+      zCap.style.opacity = seg(t, 9.6, 9.8);
+      setOpacity(zoom, t < 10.4 ? seg(t, 8.95, 9.05) : 1 - seg(t, 10.4, 10.7));
+      setOpacity(whole, win(t, 10.4));
       setOpacity(p1, win(t, 0.3, 3.6));
       setOpacity(p2, win(t, 3.6, 7.0));
       setOpacity(p3, win(t, 7.0, 10.4));
@@ -799,14 +908,21 @@
   function buildSceneTeacher() {
     var s = sceneSvg('左边：样例里走路的一帧，前面几个半透明的角色是它未来的参考姿态（各标「还有多久」）；接着画出头的目标相对头、相对根的两支箭，' +
       '地面上 16 × 16 的高度图采样点跟着朝向转；右边依次讲观测、关节特征、高度图、动作和网络');
-    rich(s, 24, 28, '老师 $\\pi^{\\text{FC}}$ 看到的：当前状态 + 未来 K 帧完整参考', 13.5, 'demo-x-ink2');
+    rich(s, 24, 28, '老师 $\\pi^{\\text{FC}}$ 看到的：当前状态 + 未来 $K$ 帧完整参考', 13.5, 'demo-x-ink2');
     var LX = 24, LY = 44, LW = 400, LH = 352;
     rectBox(s, LX, LY, LW, LH, C_BORDER, C_SURFACE2);
     var GY = 330, SC = 150, OX = 140;
-    groundLine(s, LX + 14, LX + LW - 14, GY + 2);
+    /* 框底下一行写着「半透明：τ = …」，格子停在它上面，别压字 */
+    var floor = groundGrid(s, LX + 2, LY + 2, LW - 4, LH - 50);
+    /* 高度图的采样点也裁在格子的范围里：16 × 16 的最后几行会伸到底下那行「半透明：τ = …」上（2026-10-17 全局检查） */
+    var hmClip = svgEl('clipPath', { id: 'mm-hm-clip' });
+    hmClip.appendChild(svgEl('rect', { x: LX + 2, y: LY + 2, width: LW - 4, height: LH - 50 }));
+    s.appendChild(hmClip);
     var hm = group(s), hmDots = [];
+    hm.setAttribute('clip-path', 'url(#mm-hm-clip)');
     for (var i = 0; i < 16 * 16; i++) hmDots.push(dotAt(hm, 0, 0, 1.6, C_MUTED));
-    var AHEAD = [3, 5, 8];
+    /* 老师只看未来 15 帧（0.5 s），最远的影子不能超过它：取 0.13 / 0.27 / 0.47 s（2026-10-17 全局检查） */
+    var AHEAD = [2, 4, 7];
     var ghosts = AHEAD.map(function () { return smplMesh(s, SHEETS.sit, { ghost: 0.28 }); });
     var gLegend = rich(s, LX + 14, LY + LH - 30, '半透明：$\\tau$ = ' + AHEAD.map(function (a) { return f2(a / CLIP.fps); }).join(' / ') + ' s 后的参考姿态', 11.5);
     var actor = sampleActor(s, { noChair: true });
@@ -815,11 +931,11 @@
     var tagL = label(s, LX + 14, LY + LH - 8, '实线：相对头　虚线：相对根', 'demo-x-ink2', 11.5);
     var R = 446, RW = 330;
     var p1 = group(s);
-    label(p1, R, 64, '观测 = 当前状态 + 未来 K 帧', 'demo-x-ink', 14);
+    label(p1, R, 64, '观测 = 当前状态 + 未来 $K$ 帧', 'demo-x-ink', 14);
     math(p1, R, 100, 'g^{\\text{FC}}_t = [\\hat{f}_{t+1}, \\ldots, \\hat{f}_{t+K}]', 16);
     label(p1, R, 140, '当前状态：姿态和速度，转到角色自己的坐标系', 'demo-x-ink2', 12);
-    label(p1, R, 162, '（原点在骨盆，x 朝前，z 朝上）', 'demo-x-mut', 11.5);
-    label(p1, R, 194, '每一帧目标都附上「离现在还有多久」τ', 'demo-x-ink2', 12);
+    label(p1, R, 162, '（原点在骨盆，$x$ 朝前，$z$ 朝上）', 'demo-x-mut', 11.5);
+    label(p1, R, 194, '每一帧目标都附上「离现在还有多久」$\\tau$', 'demo-x-ink2', 12);
     label(p1, R, 216, '代码 v2.3：老师看未来 15 帧（0.5 s）', 'demo-x-mut', 11.5);
     var p2 = group(s);
     label(p2, R, 64, '每个关节的目标，表示两次', 'demo-x-ink', 14);
@@ -830,7 +946,7 @@
     label(p2, R, 250, '（式 4，省略号是两份旋转）', 'demo-x-mut', 11.5);
     var p3 = group(s);
     label(p3, R, 64, '场景：一张高度图', 'demo-x-ink', 14);
-    chip(p3, R, 82, RW, '16 × 16 个采样点，间隔 10 cm（附录 A）', C_BORDER, { size: 12, left: true });
+    chip(p3, R, 82, RW, '16 × 16 个采样点，间隔 10 cm（附录 B）', C_BORDER, { size: 12, left: true });
     label(p3, R, 146, '跟着角色的朝向转；记下地形和物体表面的高度', 'demo-x-ink2', 12);
     label(p3, R, 168, '不平地形上，姿态按骨盆正下方的地面高度归一化', 'demo-x-ink2', 12);
     var p4 = group(s);
@@ -847,16 +963,18 @@
     label(p4, (bx0 + bx1) / 2, by + 16, '一个关节的目标角：均值附近 ±0.055 rad', 'demo-x-mut', 10.5, 'middle');
     var p5 = group(s);
     label(p5, R, 64, '网络：Transformer', 'demo-x-ink', 14);
-    var toks = ['状态', '未来 1', '未来 2', '…', '未来 K', '高度图'];
+    var toks = ['状态', '未来 1', '未来 2', '…', '未来 $K$', '高度图'];
     toks.forEach(function (tk, i) { chip(p5, R + i * 55, 82, 50, tk, i === 0 ? C_ACCENT : i === 5 ? C_BORDER : C_FULL, { size: 10.5, h: 26 }); });
-    chip(p5, R, 126, RW, 'Transformer（4 层、4 头、宽 512）→ 动作均值', C_ACCENT, { size: 12, left: true });
-    label(p5, R, 186, '每种输入先编码成 token，注意力在 token 之间', 'demo-x-ink2', 12);
-    label(p5, R, 208, '找相关的信息；critic 是普通的全连接网络', 'demo-x-ink2', 12);
+    chip(p5, R, 126, RW, 'Transformer → 动作均值', C_ACCENT, { size: 12, left: true });
+    label(p5, R, 170, '超参取自代码 v2.3：4 层、4 头、宽 512', 'demo-x-mut', 11);
+    label(p5, R, 200, '每种输入先编码成 token，注意力在 token 之间', 'demo-x-ink2', 12);
+    label(p5, R, 222, '找相关的信息；critic 是普通的全连接网络', 'demo-x-ink2', 12);
     function draw(t, clock) {
       var now = nowOf(t, clock), ph = phase(t);
       /* 走路的那一段（第 3.0–7.6 s）循环播 */
       var k = loopFrame(now, 15, 70), f = frame(k);
       var cam = camFollow(k, SC, OX, GY);
+      floor.draw(cam);
       ghosts.forEach(function (g, i) {
         var kk = Math.min(CLIP.n - 1, k + AHEAD[i]), pp = frame(kk).b[B.pelvis];
         g.put([pp[0], pp[1]], cam, kk);
@@ -916,7 +1034,7 @@
     label(p2, R, 160, '全局位置和旋转都在世界坐标系里比，', 'demo-x-ink2', 12.5);
     label(p2, R, 184, '偏一点点也会被记下来', 'demo-x-ink2', 12.5);
     var p3 = group(s);
-    label(p3, R, 64, '每一项都是指数：误差越大，越接近 0', 'demo-x-ink', 14);
+    label(p3, R, 64, '前五项都是指数：误差越大，越接近 0', 'demo-x-ink', 14);
     math(p3, R, 98, 'r^{\\text{gp}}_t = \\exp(-c^{\\text{gp}} \\cdot e^{\\text{gp}}_t),\\quad c^{\\text{gp}} = 100', 15);
     var PX = R + 40, PY = 120, PW = 300, PH = 140;
     hline(p3, PX, PY + PH, PX + PW, PY + PH, C_BORDER, 1.2); hline(p3, PX, PY, PX, PY + PH, C_BORDER, 1.2);
@@ -936,7 +1054,7 @@
     rich(p4, R, 242, '根高度低 5 cm：$\\exp(-100 \\times 0.05^2) = 0.78$', 12);
     var p5 = group(s);
     label(p5, R, 64, '代码与附录的出入（ProtoMotions v2.3）', 'demo-x-ink', 14);
-    chip(p5, R, 82, RW, '旋转项的系数：附录 c = 2，代码 c = 10', C_WARN, { size: 12, left: true });
+    chip(p5, R, 82, RW, '旋转项的系数：附录 $c = 2$，代码 $c = 10$', C_WARN, { size: 12, left: true });
     chip(p5, R, 118, RW, '能量的权重：附录 0.0005，代码 0.00001', C_WARN, { size: 12, left: true });
     chip(p5, R, 154, RW, '代码里速度、角速度也是全局量（gv / gav）', C_BORDER, { size: 12, left: true });
     label(p5, R, 214, '权重 0.5 / 0.3 / 0.2 / 0.1 / 0.1 一致', 'demo-x-ink2', 12);
@@ -982,9 +1100,9 @@
     chip(p1, R, 154, RW, '物体区：椅子、桌子、沙发摆在平地上', C_BAD, { size: 12, left: true });
     var p2 = group(s);
     label(p2, R, 64, '在哪儿出生', 'demo-x-ink', 14);
-    chip(p2, R, 82, RW, '不带物体的动作：平地或不平地形，位置随机', C_WARN, { size: 12, left: true });
+    chip(p2, R, 82, RW, '不带物体的动作：平地或不平地形，位置随机', C_VIS, { size: 12, left: true });
     chip(p2, R, 118, RW, '带物体交互的动作：只在物体区', C_BAD, { size: 12, left: true });
-    label(p2, R, 182, '物体区里没有坑洼，交互动作练得干净、可复现', 'demo-x-ink2', 12);
+    label(p2, R, 182, '物体区里的椅子、桌子、沙发都摆在平地上', 'demo-x-ink2', 12);
     var p3 = group(s);
     label(p3, R, 64, '提前终止：偏太多就重来', 'demo-x-ink', 14);
     var EX0 = R + 30, EY0 = 96, EW = 330, EH = 150;
@@ -1002,17 +1120,21 @@
     var TOY = [['走路', 0.001], ['跑步', 0.01], ['侧手翻', 0.08], ['后空翻', 0.3], ['霹雳舞', 0.45]];
     var wsum = TOY.reduce(function (a, r) { return a + Math.max(r[1], 3e-3); }, 0);
     var tRows = TOY.map(function (r, i) { return barRowAt(p4, R, 84 + i * 30, 70, r[0], C_WARN, 18, 11.5); });
-    rich(p4, R, 248, '概率 ∝ 失败率，下限 $3 \\times 10^{-3}$（玩具示意）', 11.5, 'demo-x-mut');
+    /* 「权重下限」说清楚：柱子是归一化后抽到的概率，不到 3 × 10⁻³ 的失败率按 3 × 10⁻³ 算（2026-10-17 全局检查） */
+    label(p4, R, 248, '柱子：抽到的概率，和失败率成正比（玩具示意）', 'demo-x-mut', 11.5);
+    rich(p4, R, 268, '从不失败的也按 $3 \\times 10^{-3}$ 算，不会完全抽不到', 11.5, 'demo-x-mut');
     var p5 = group(s);
     label(p5, R, 64, '只算平地上的失败', 'demo-x-ink', 14);
     chip(p5, R, 82, RW, '平地上失败 → 计入优先采样', C_GOOD, { size: 12, left: true });
     chip(p5, R, 118, RW, '前空翻上楼梯失败 → 不计：本来就不该成功', C_BAD, { size: 12, left: true });
-    label(p5, R, 182, '这样难动作（后空翻、侧手翻）才能攒够数据', 'demo-x-ink2', 12);
+    label(p5, R, 182, '优先采样让难动作多练几遍，才能攒够数据', 'demo-x-ink2', 12);
     function draw(t, clock) {
       var now = nowOf(t, clock), ph = phase(t);
       var hot = ph <= 2 ? [ph === 0 ? Math.floor((now * 0.9) % 3) : -1, ph === 1 ? 1 : -1, ph === 1 ? 2 : -1] : [];
       regions.forEach(function (r, i) {
-        var on = ph === 0 ? (Math.floor((now * 0.9) % 3) === i ? 1 : 0.15) : ph === 1 ? (i >= 1 ? 1 : 0.15) : 0;
+        /* 出生位置那一段三块都框上：平地和不平地形同一种颜色（不带物体的动作），物体区一种（2026-10-17 全局检查） */
+        var on = ph === 0 ? (Math.floor((now * 0.9) % 3) === i ? 1 : 0.15) : ph === 1 ? 1 : 0;
+        r.style.stroke = ph === 1 && i < 2 ? C_VIS : [C_ACCENT, C_WARN, C_BAD][i];
         r.style.opacity = (on * (ph <= 1 ? 1 : 0)).toFixed(2);
       });
       void hot;
@@ -1046,7 +1168,7 @@
     var LX = 24, LY = 44, LW = 400, LH = 352;
     rectBox(s, LX, LY, LW, LH, C_BORDER, C_SURFACE2);
     var cam = camAt(128, 236, 352, -0.25, -0.45);
-    groundLine(s, LX + 14, LX + LW - 14, 354);
+    groundGrid(s, LX + 2, LY + 2, LW - 4, LH - 4).draw(cam);
     var ghost = smplMesh(s, SHEETS.sit, { ghost: 0.3 });
     var actor = sampleActor(s);
     var rings = COND.map(function () { return ring(s, 0, 0, 9, 9, C_VIS); });
@@ -1133,34 +1255,55 @@
     return pts;
   }
   function buildSceneVae() {
-    var s = sceneSvg('左边是俯视的玩具：从 S 出发，1 秒内到 T，中间有根柱子；老师的示范有的从上绕、有的从下绕，' +
-      '直接回归把两种平均成一条直线、撞上柱子；条件 VAE 用潜变量 z 选「哪一种」；右边先放论文图 5 的结构，最后放项目页里三个角色坐同一张沙发的视频');
-    label(s, 24, 28, '部分目标是欠定的：「1 秒内到 T」有很多种走法', 'demo-x-ink2', 13.5);
+    var s = sceneSvg('右边先一句话交代 VAE：编码器把输入压成随机的 z、解码器复原、z 被拉向先验；左边是俯视的玩具：从 S 出发，1 秒内到 T，中间有根柱子；老师的示范有的从上绕、有的从下绕，' +
+      '直接回归把两种平均成一条直线、撞上柱子；条件 VAE 用潜变量 z 选「哪一种」；右边先放论文图 5 的结构，最后右边放项目页里三个角色坐同一张沙发的视频');
+    label(s, 24, 28, '部分目标是欠定的：「1 秒内到 $T$」有很多种走法', 'demo-x-ink2', 13.5);
     var LX = 24, LY = 44, LW = 400, LH = 352;
-    rectBox(s, LX, LY, LW, LH, C_BORDER, C_SURFACE2);
-    label(s, LX + 14, LY + 24, '俯视图（玩具示意）', 'demo-x-mut', 11.5);
-    var demos = group(s);
+    /* 第 4 段图 5 铺满整个宽度，左边的玩具让开、第 5 段再回来，所以框和玩具都放进 toy 这一组 */
+    var toy = group(s);
+    rectBox(toy, LX, LY, LW, LH, C_BORDER, C_SURFACE2);
+    label(toy, LX + 14, LY + 24, '俯视图（玩具示意）', 'demo-x-mut', 11.5);
+    var demos = group(toy);
     [-1.2, -0.7, -0.3, 0.3, 0.7, 1.2].forEach(function (z) { pathLine(demos, toyPath(z), C_FULL, 1.6, '4 4'); });
     var obst = paint(svgEl('circle', { cx: TOY.ox, cy: TOY.oy, r: TOY.or }), C_MUTED);
-    s.appendChild(obst);
-    label(s, TOY.ox, TOY.oy + 4, '柱子', 'demo-x-ink', 11.5, 'middle');
-    dotAt(s, TOY.sx, TOY.sy, 7, C_INK2); label(s, TOY.sx, TOY.sy + 24, 'S', 'demo-x-ink', 13, 'middle');
-    ring(s, TOY.tx, TOY.ty, 11, 11, C_VIS); label(s, TOY.tx, TOY.ty + 28, 'T（1 s 后）', 'demo-x-ink', 12, 'middle');
-    var avg = group(s), avgPath = pathLine(avg, [[TOY.sx, TOY.sy], [TOY.tx, TOY.ty]], C_BAD, 3);
+    toy.appendChild(obst);
+    label(toy, TOY.ox, TOY.oy + 4, '柱子', 'demo-x-ink', 11.5, 'middle');
+    dotAt(toy, TOY.sx, TOY.sy, 7, C_INK2); label(toy, TOY.sx, TOY.sy + 24, '$S$', 'demo-x-ink', 13, 'middle');
+    ring(toy, TOY.tx, TOY.ty, 11, 11, C_VIS); label(toy, TOY.tx, TOY.ty + 28, '$T$（1 s 后）', 'demo-x-ink', 12, 'middle');
+    var avg = group(toy), avgPath = pathLine(avg, [[TOY.sx, TOY.sy], [TOY.tx, TOY.ty]], C_BAD, 3);
     var avgDot = dotAt(avg, 0, 0, 6, C_BAD), crash = tone(avg, TOY.ox, TOY.oy - 48, '✗ 撞上柱子', C_BAD, 13, 'middle');
     void avgPath;
-    var pick = group(s), pickPath = pathLine(pick, [], C_VIS, 3.2), pickDot = dotAt(pick, 0, 0, 6, C_VIS);
-    var zAxis = group(s), ZX = LX + 60, ZW = 280, ZY = 360;
+    var pick = group(toy), pickPath = pathLine(pick, [], C_VIS, 3.2), pickDot = dotAt(pick, 0, 0, 6, C_VIS);
+    var zAxis = group(toy), ZX = LX + 60, ZW = 280, ZY = 360;
     hline(zAxis, ZX, ZY, ZX + ZW, ZY, C_BORDER, 1.2);
     var bellPts = [];
     for (var u = 0; u <= 60; u++) { var zz = -2.5 + 5 * u / 60; bellPts.push([ZX + ZW * u / 60, ZY - 26 * Math.exp(-0.5 * zz * zz)]); }
     pathLine(zAxis, bellPts, C_ACCENT, 2);
-    var zMk = dotAt(zAxis, 0, ZY, 5.5, C_VIS), zTxt = label(zAxis, 0, ZY + 18, '', 'demo-x-ink', 11.5, 'middle');
-    label(zAxis, ZX - 8, ZY + 4, 'z', 'demo-x-ink', 13, 'end');
+    var zMk = dotAt(zAxis, 0, ZY, 5.5, C_VIS), zEq = label(zAxis, 0, ZY + 18, '$z =$', 'demo-x-ink', 11.5, 'end'), zTxt = label(zAxis, 0, ZY + 18, '', 'demo-x-ink', 11.5);
+    label(zAxis, ZX - 8, ZY + 4, '$z$', 'demo-x-ink', 13, 'end');
     var R = 446, RW = 330;
+    /* 第一句先交代 VAE 是什么（2026-10-17 看片反馈：讲到 VAE 要先一句话介绍）：编码器把输入压成随机的 z，解码器从 z 复原，z 被拉向先验 */
+    var pV = group(s), VY = 118;
+    label(pV, R, 64, 'VAE：变分自编码器', 'demo-x-ink', 14);
+    label(pV, R + 48, VY - 26, '输入 $x$', 'demo-x-ink2', 12, 'middle');
+    chip(pV, R, VY - 15, 96, '编码器', C_WARN, { size: 12.5, h: 30 });
+    arrow(pV, C_INK2, 1.6).set(R + 100, VY, R + 142, VY, 7);
+    pV.appendChild(paint(svgEl('circle', { cx: R + 165, cy: VY, r: 18, 'stroke-width': 1.8 }), C_SURFACE, C_VIS));
+    label(pV, R + 165, VY + 5, '$z$', 'demo-x-ink', 15, 'middle');
+    arrow(pV, C_INK2, 1.6).set(R + 188, VY, R + 230, VY, 7);
+    label(pV, R + 282, VY - 26, '复原的 $\\hat{x}$', 'demo-x-ink2', 12, 'middle');
+    chip(pV, R + 234, VY - 15, 96, '解码器', C_ACCENT, { size: 12.5, h: 30 });
+    var bell = [];
+    for (var b = 0; b <= 40; b++) { var bu = -2.6 + 5.2 * b / 40; bell.push([R + 165 + 16 * bu, VY + 62 - 24 * Math.exp(-0.5 * bu * bu)]); }
+    pathLine(pV, bell, C_VIS, 1.8);
+    hline(pV, R + 120, VY + 62, R + 210, VY + 62, C_BORDER, 1);
+    label(pV, R + 222, VY + 58, '先验：$z$ 被拉向它', 'demo-x-ink2', 12);
+    label(pV, R, VY + 100, '训练：编码器把 $x$ 压成随机的 $z$，', 'demo-x-ink2', 12.5);
+    label(pV, R, VY + 124, '解码器再从 $z$ 复原 $x$', 'demo-x-ink2', 12.5);
+    label(pV, R, VY + 148, '生成：直接从先验里取 $z$，交给解码器', 'demo-x-ink2', 12.5);
     var p1 = group(s);
     label(p1, R, 64, '部分目标是欠定的', 'demo-x-ink', 14);
-    label(p1, R, 96, '只说「1 秒内到 T」，从上绕、从下绕、', 'demo-x-ink2', 12.5);
+    label(p1, R, 96, '只说「1 秒内到 $T$」，从上绕、从下绕、', 'demo-x-ink2', 12.5);
     label(p1, R, 120, '走快、走慢……老师的示范每种都有', 'demo-x-ink2', 12.5);
     chip(p1, R, 142, RW, '蓝色虚线：同一个约束下，几种都对的走法', C_FULL, { size: 12, left: true });
     var p2 = group(s);
@@ -1169,21 +1312,19 @@
     label(p2, R, 120, '就是一条直线，正好撞上柱子', 'demo-x-ink2', 12.5);
     chip(p2, R, 142, RW, '「中间动作」常常哪种都不像，也不稳', C_BAD, { size: 12, left: true });
     var p3 = group(s);
-    label(p3, R, 64, '条件 VAE：用潜变量 z 选「哪一种」', 'demo-x-ink', 14);
-    label(p3, R, 96, 'z 从一个高斯里取；不同的 z，', 'demo-x-ink2', 12.5);
+    label(p3, R, 64, '条件 VAE：用潜变量 $z$ 选「哪一种」', 'demo-x-ink', 14);
+    label(p3, R, 96, '$z$ 从一个高斯里取；不同的 $z$，', 'demo-x-ink2', 12.5);
     label(p3, R, 120, '对应不同但都合理的走法', 'demo-x-ink2', 12.5);
-    chip(p3, R, 142, RW, '绿线：这次取到的 z 对应的那一种', C_VIS, { size: 12, left: true });
+    chip(p3, R, 142, RW, '绿线：这次取到的 $z$ 对应的那一种', C_VIS, { size: 12, left: true });
     var p4 = group(s);
-    label(p4, R, 64, '三个部件（论文图 5 上半）', 'demo-x-ink', 14);
-    figPart(p4, 'fig5a_vae.webp', 1600, 494, 0, 0, 1, 1, R - 4, 80, RW + 8, '');
-    chip(p4, R, 196, 104, '先验 ρ', C_WARN, { size: 12 });
-    chip(p4, R + 113, 196, 104, '编码器 E', C_WARN, { size: 12 });
-    chip(p4, R + 226, 196, 104, '解码器 D', C_ACCENT, { size: 12 });
-    label(p4, R, 248, '先验只看部分目标；编码器看完整目标，', 'demo-x-ink2', 12);
-    label(p4, R, 270, '只在训练时用；解码器看状态和 z，出动作', 'demo-x-ink2', 12);
+    label(p4, 24, 62, '三个部件（论文图 5 上半）', 'demo-x-ink', 14);
+    figPart(p4, 'fig5a_vae.webp', 1600, 494, 0, 0, 1, 1, 27, 78, 746, '');
+    chip(p4, 24, 330, 244, '先验 $\\rho$：只看部分目标', C_WARN, { size: 12 });
+    chip(p4, 278, 330, 244, '编码器 $\\mathcal{E}$：看完整目标，只在训练时用', C_WARN, { size: 11.5 });
+    chip(p4, 532, 330, 244, '解码器 $\\mathcal{D}$：看状态和 $z$，出动作', C_ACCENT, { size: 12 });
     var p5 = group(s);
     var sv = projClip(p5, 'sofa', R, 56, RW, RW * 270 / 480, '项目页视频（1.5 倍速）：同一张沙发，三个角色坐法各不相同');
-    label(p5, R, 284, '推理时扔掉编码器，从先验里取 z；', 'demo-x-ink2', 12);
+    label(p5, R, 284, '推理时扔掉编码器，从先验里取 $z$；', 'demo-x-ink2', 12);
     label(p5, R, 306, '评测表格用的是先验的均值（更稳）', 'demo-x-ink2', 12);
     function draw(t, clock) {
       var now = nowOf(t, clock), ph = phase(t), a = (now % 2.4) / 2.0;
@@ -1197,72 +1338,113 @@
       var P = toyPath(z), u = Math.round(a * 40);
       setPath(pickPath, P.slice(0, u + 1)); moveDot(pickDot, P[u]);
       setOpacity(pick, ph >= 2 ? win(t, 7.0) : 0);
-      moveDot(zMk, [ZX + ZW * (z + 2.5) / 5, ZY]); zTxt.setAttribute('x', (ZX + ZW * (z + 2.5) / 5).toFixed(1));
-      zTxt.textContent = 'z = ' + sgn(f2(z)) + (z > 0 ? '：从上绕' : '：从下绕');
+      /* 「$z =$」是静态公式，跟着点走；后面的数字每帧都变，用普通文字（每帧重排公式太贵）。整行大致以点为中心 */
+      var zxNow = ZX + ZW * (z + 2.5) / 5;
+      moveDot(zMk, [zxNow, ZY]); zEq.setX(zxNow - 30); zTxt.setAttribute('x', (zxNow - 27).toFixed(1));
+      zTxt.textContent = sgn(f2(z)) + (z > 0 ? '：从上绕' : '：从下绕');
       setOpacity(zAxis, ph >= 2 ? win(t, 7.0) : 0);
-      setOpacity(p1, win(t, 0.3, 3.6));
+      setOpacity(pV, win(t, 0.3, 1.8));
+      setOpacity(p1, win(t, 1.8, 3.6));
       setOpacity(p2, win(t, 3.6, 7.0));
       setOpacity(p3, win(t, 7.0, 10.4));
       setOpacity(p4, win(t, 10.4, 13.4));
       setOpacity(p5, win(t, 13.4));
+      setOpacity(toy, t < 13.4 ? 1 - seg(t, 10.4, 10.7) : seg(t, 13.7, 14.0));
       sv.at(K.clipSince(t, 13.4), t >= 13.4);
     }
     return { el: s, draw: draw };
   }
 
-  /* ── scene 9: 编码器是先验的残差（式 6、7） ── */
+  /* ── scene 9: 先验与残差：推理时只用先验，训练时用编码器，编码器写成先验的残差（第 6.2 节，式 6–8，表 6） ── */
   function buildSceneResidual() {
-    var s = sceneSvg('左边是一维潜变量上的两个高斯：蓝的宽的是先验，橙的窄的是编码器；编码器的均值 = 先验的均值 + 残差，残差来回滑，下面实时读出两者的 KL；' +
-      '最后换成表 6 的两根柱子：先验不用残差结构，坐椅子的成功率从 96.9% 掉到 21.1%');
-    label(s, 24, 28, '编码器不自成一套：它只给先验加一个偏移', 'demo-x-ink2', 13.5);
+    var s = sceneSvg('前两段是学生三个部件的连线图：推理时用户只给部分目标，编码器灰着用不上，z 从先验取、交给解码器出动作；' +
+      '训练时编码器看完整目标，z 从编码器取，解码器模仿老师，KL 把编码器往先验拉。后三段换成一维潜变量上的两个高斯：' +
+      '编码器的均值 = 先验的均值 + 一个偏移（残差），偏移来回滑；再读出 KL；最后训练和推理取到的 z 交替画出来，右边是表 6 的消融');
+    label(s, 24, 28, '推理时只用先验，训练时用编码器；残差把两者连起来', 'demo-x-ink2', 13.5);
     var LX = 24, LY = 44, LW = 400, LH = 352;
     rectBox(s, LX, LY, LW, LH, C_BORDER, C_SURFACE2);
-    var plot = group(s), GX = LX + 30, GW = 340, GY = 300, GH = 190;
+    /* 前两段：三个部件怎么连（2026-10-17 看片反馈：「先验和残差用在哪」没看懂，先讲推理、再讲训练）。
+       方块之间留空，跑动的小点只走在连线上，不压字 */
+    var flow = group(s);
+    var mode = label(flow, LX + 14, LY + 24, '', 'demo-x-ink', 13);
+    var BW = 160, BH = 34, XL = 40, XR = 248, YI = 76, YM = 152, ZX = 224, ZY = 236, YD = 290;
+    var gP = chip(flow, XL, YI, BW, '部分目标 $g^{\\text{partial}}$', C_VIS, { size: 12, h: BH });
+    var gF = chip(flow, XR, YI, BW, '完整目标 $g^{\\text{full}}$', C_FULL, { size: 12, h: BH });
+    var bP = chip(flow, XL, YM, BW, '先验 $\\rho$', C_ACCENT, { size: 13, h: BH });
+    var bE = chip(flow, XR, YM, BW, '编码器 $\\mathcal{E}$', C_WARN, { size: 13, h: BH });
+    var bD = chip(flow, 124, YD, 200, '解码器 $\\mathcal{D}$ → 动作 $a$', C_BORDER, { size: 12.5, h: BH });
+    var zC = paint(svgEl('circle', { cx: ZX, cy: ZY, r: 19, 'stroke-width': 2 }), C_SURFACE, C_INK2);
+    flow.appendChild(zC);
+    var zT = label(flow, ZX, ZY + 5, '$z$', 'demo-x-ink', 15, 'middle');
+    void zT;
+    var EDGES = {
+      gp: [XL + BW / 2, YI + BH + 2, XL + BW / 2, YM - 4],
+      gf: [XR + BW / 2, YI + BH + 2, XR + BW / 2, YM - 4],
+      pz: [XL + BW / 2 + 20, YM + BH + 2, ZX - 16, ZY - 12],
+      ez: [XR + BW / 2 - 20, YM + BH + 2, ZX + 16, ZY - 12],
+      zd: [ZX, ZY + 20, ZX, YD - 4]
+    };
+    var ar = {}, run = {};
+    Object.keys(EDGES).forEach(function (k) {
+      var e = EDGES[k];
+      ar[k] = arrow(flow, C_INK2, 2); ar[k].set(e[0], e[1], e[2], e[3], 7);
+      run[k] = dotAt(flow, e[0], e[1], 3.6, C_VIS);
+    });
+    /* KL：先验和编码器之间一条双向虚线，「KL」写在线的上方 */
+    var kl = group(flow);
+    hline(kl, XL + BW + 4, YM + BH / 2, XR - 4, YM + BH / 2, C_BAD, 2, '4 3');
+    label(kl, (XL + BW + XR) / 2, YM + BH / 2 - 7, 'KL', 'demo-x-ink', 11.5, 'middle');
+    var outInf = label(flow, ZX, YD + BH + 24, '出动作，在仿真里执行', 'demo-x-ink2', 12, 'middle');
+    var outTrain = label(flow, ZX, YD + BH + 24, '和老师的动作 $a^{\\text{FC}}$ 比，越像越好', 'demo-x-ink2', 12, 'middle');
+    var noFull = label(flow, XR + BW / 2, YI - 8, '推理时没有：编码器用不上', 'demo-x-mut', 10.5, 'middle');
+    /* 后三段：一维潜变量上的两个高斯 */
+    var plot = group(s), GX = LX + 30, GW = 340, GY = 300;
     hline(plot, GX, GY, GX + GW, GY, C_BORDER, 1.2);
     function zx(z) { return GX + GW * (z + 3) / 6; }
     [-3, -2, -1, 0, 1, 2, 3].forEach(function (z) { label(plot, zx(z), GY + 16, sgn(String(z)), 'demo-x-mut', 10, 'middle'); });
-    label(plot, GX + GW, GY + 36, '潜变量 z 的一维（示意，实际 64 维）', 'demo-x-mut', 10, 'end');
+    label(plot, GX + GW, GY + 36, '潜变量 $z$ 的一维（示意，实际 64 维）', 'demo-x-mut', 10, 'end');
     var priorC = pathLine(plot, [], C_ACCENT, 2.4), encC = pathLine(plot, [], C_WARN, 2.4);
     var muP = hline(plot, 0, 0, 0, 0, C_ACCENT, 1.4, '4 3'), muE = arrow(plot, C_WARN, 2.2);
-    var tP = tone(plot, 0, 0, '先验 ρ', C_ACCENT, 12, 'middle'), tE = tone(plot, 0, 0, '编码器 E', C_WARN, 12, 'middle');
+    var tP = tone(plot, 0, 0, '先验 $\\rho$', C_ACCENT, 12, 'middle'), tE = tone(plot, 0, 0, '编码器 $\\mathcal{E}$', C_WARN, 12, 'middle');
+    var tOff = label(plot, 0, 0, '偏移', 'demo-x-ink2', 11, 'middle');
     var klTxt = label(plot, GX, LY + 30, '', 'demo-x-ink', 13);
     var samp = group(plot), sDots = [];
     for (var i = 0; i < 14; i++) sDots.push(dotAt(samp, 0, 0, 3.2, C_WARN));
-    var sLabel = label(samp, GX, GY + 58, '', 'demo-x-ink2', 11.5);
-    var abl = group(s);
-    label(abl, LX + 20, LY + 34, '表 6：坐椅子（测试物体）', 'demo-x-ink', 13);
-    var bA = barRowAt(abl, LX + 20, LY + 70, 120, 'MaskedMimic', C_GOOD, 28, 12), bB = barRowAt(abl, LX + 20, LY + 116, 120, '先验不用残差', C_BAD, 28, 12);
-    label(abl, LX + 20, LY + 190, '平均最小距离：10.5 cm → 57.4 cm', 'demo-x-ink2', 12);
-    label(abl, LX + 20, LY + 214, '论文：非残差的先验「管不住」潜空间，', 'demo-x-ink2', 12);
-    label(abl, LX + 20, LY + 238, '控制不了动作', 'demo-x-ink2', 12);
+    var sLabel = label(samp, GX, GY + 58, '训练：从编码器取 $z$', 'demo-x-ink2', 11.5);
     var R = 446, RW = 330;
     var p1 = group(s);
-    label(p1, R, 64, '先验：只看部分目标', 'demo-x-ink', 14);
-    math(p1, R, 104, '\\rho(z_t \\mid s_t, g^{\\text{partial}}_t) = \\mathcal{N}(\\mu^\\rho, \\sigma^\\rho)', 16);
-    label(p1, R, 146, '对角高斯：均值和标准差都由网络算出来', 'demo-x-ink2', 12);
-    label(p1, R, 168, '推理时，用户的约束只进先验', 'demo-x-ink2', 12);
+    label(p1, R, 64, '推理时：只有部分目标', 'demo-x-ink', 14);
+    label(p1, R, 96, '用户只给几个关节、一句话或一个物体，', 'demo-x-ink2', 12.5);
+    label(p1, R, 120, '没有完整目标，编码器用不上', 'demo-x-ink2', 12.5);
+    chip(p1, R, 142, RW, '$z$ 只能从先验 $\\rho$ 取，再交给解码器出动作', C_ACCENT, { size: 12, left: true });
+    label(p1, R, 206, '用户的约束，全靠先验接进模型', 'demo-x-ink', 12.5);
+    label(p1, R, 230, '评测时取先验的均值（第 7.2 节）', 'demo-x-mut', 11.5);
     var p2 = group(s);
-    label(p2, R, 64, '编码器：写成先验的残差（式 7）', 'demo-x-ink', 14);
-    math(p2, R, 104, '\\mathcal{E}(z_t \\mid s_t, g^{\\text{full}}_t) = \\mathcal{N}(\\mu^\\rho + \\mu^{\\mathcal{E}}, \\sigma^{\\mathcal{E}})', 15);
-    label(p2, R, 146, '均值 = 先验的均值 + 一个偏移，方差自己给', 'demo-x-ink2', 12);
-    label(p2, R, 168, '这个写法论文注明取自 ControlVAE', 'demo-x-mut', 11.5);
+    label(p2, R, 64, '训练时：编码器看完整目标', 'demo-x-ink', 14);
+    chip(p2, R, 82, RW, '$z$ 从编码器 $\\mathcal{E}$ 取，解码器模仿老师的动作', C_WARN, { size: 12, left: true });
+    chip(p2, R, 118, RW, 'KL 把编码器的分布往先验拉（式 8）', C_BAD, { size: 12, left: true });
+    label(p2, R, 182, '先验也一起学：只看部分目标，', 'demo-x-ink2', 12);
+    label(p2, R, 204, '去猜编码器给的 $z$ 落在哪', 'demo-x-ink2', 12);
     var p3 = group(s);
-    label(p3, R, 64, 'KL 只看残差和两个方差', 'demo-x-ink', 14);
-    math(p3, R, 104, 'D_{\\text{KL}} = \\tfrac{1}{2}\\big(\\ln\\tfrac{(\\sigma^\\rho)^2}{(\\sigma^{\\mathcal{E}})^2} + \\tfrac{(\\sigma^{\\mathcal{E}})^2 + (\\mu^{\\mathcal{E}})^2}{(\\sigma^\\rho)^2} - 1\\big)', 14, 'start', RW);
-    rich(p3, R, 150, '例：$\\sigma^\\rho = 1$、$\\sigma^{\\mathcal{E}} = 0.5$、残差 0.3 →', 12);
-    rich(p3, R, 174, '$\\tfrac{1}{2}(\\ln 4 + 0.25 + 0.09 - 1) = 0.363$（一维）', 12, 'demo-x-ink');
-    label(p3, R, 204, '残差越大罚得越多：编码器只能在先验附近微调', 'demo-x-ink2', 12);
+    label(p3, R, 64, '残差：编码器只给先验加一个偏移（式 7）', 'demo-x-ink', 14);
+    math(p3, R, 104, '\\mathcal{E}(z_t \\mid s_t, g^{\\text{full}}_t) = \\mathcal{N}(\\mu^\\rho + \\mu^{\\mathcal{E}}, \\sigma^{\\mathcal{E}})', 15);
+    label(p3, R, 146, '先验先猜一个 $z$；编码器看了完整答案，', 'demo-x-ink2', 12.5);
+    label(p3, R, 170, '只说往哪挪多少（$\\mu^{\\mathcal{E}}$），方差自己给', 'demo-x-ink2', 12.5);
+    label(p3, R, 200, '这个写法论文注明取自 ControlVAE', 'demo-x-mut', 11.5);
     var p4 = group(s);
-    label(p4, R, 64, '训练时从编码器取，推理时从先验取', 'demo-x-ink', 14);
-    chip(p4, R, 82, RW, '训练：z 从编码器（橙）采，解码器学这些 z', C_WARN, { size: 12, left: true });
-    chip(p4, R, 118, RW, '推理：只有先验（蓝），z 也落在附近', C_ACCENT, { size: 12, left: true });
-    label(p4, R, 182, '编码器离先验不远，解码器见过的 z', 'demo-x-ink2', 12);
-    label(p4, R, 204, '和推理时拿到的 z 就对得上', 'demo-x-ink2', 12);
+    label(p4, R, 64, 'KL 只看偏移和两个方差', 'demo-x-ink', 14);
+    rich(p4, R, 98, '例：$\\sigma^\\rho = 1$、$\\sigma^{\\mathcal{E}} = 0.5$、偏移 0.3 →', 12.5);
+    rich(p4, R, 124, '$\\tfrac{1}{2}(\\ln 4 + 0.25 + 0.09 - 1) = 0.363$（一维）', 12.5, 'demo-x-ink');
+    label(p4, R, 160, '偏移越大，罚得越多：', 'demo-x-ink2', 12.5);
+    label(p4, R, 184, '编码器只能在先验附近微调', 'demo-x-ink2', 12.5);
     var p5 = group(s);
-    label(p5, R, 64, '消融：去掉残差结构', 'demo-x-ink', 14);
-    chip(p5, R, 82, RW, '编码器自成一个高斯，和先验各走各的', C_BAD, { size: 12, left: true });
-    label(p5, R, 146, '训练时的 z 和推理时的 z 对不上，', 'demo-x-ink2', 12);
-    label(p5, R, 168, '解码器拿到没见过的 z，动作就乱了', 'demo-x-ink2', 12);
+    label(p5, R, 64, '为什么要残差', 'demo-x-ink', 14);
+    label(p5, R, 92, '论文：残差结构让先验真正管住潜空间', 'demo-x-ink2', 12);
+    label(p5, R, 116, '（我们的理解）训练时的 $z$ 就在先验附近，', 'demo-x-ink2', 12);
+    label(p5, R, 140, '推理时从先验取的 $z$，解码器都见过', 'demo-x-ink2', 12);
+    label(p5, R, 180, '表 6：坐上椅子的成功率', 'demo-x-ink', 12.5);
+    var bA = barRowAt(p5, R, 194, 104, 'MaskedMimic', C_GOOD, 22, 11.5), bB = barRowAt(p5, R, 226, 104, '先验不用残差', C_BAD, 22, 11.5);
+    label(p5, R, 276, '骨盆离可坐位置的平均最小距离 10.5 → 57.4 cm', 'demo-x-mut', 11);
     function gauss(mu, sig, peak) {
       var pts = [];
       for (var u = 0; u <= 120; u++) { var z = -3 + 6 * u / 120; pts.push([zx(z), GY - peak * Math.exp(-0.5 * Math.pow((z - mu) / sig, 2))]); }
@@ -1272,28 +1454,44 @@
     for (var q = 0; q < 14; q++) eps.push(K.gauss(rng));
     function draw(t, clock) {
       var now = nowOf(t, clock), ph = phase(t);
-      var mP = -0.4, sP = 1.0, sE = 0.5, r = ph === 2 ? 0.3 + 0.9 * Math.sin(now * 0.7) : 0.3;
-      if (ph === 2 && Math.abs(Math.sin(now * 0.7)) < 0.02) r = 0.3;
+      /* 连线图：推理时只亮「部分目标 → 先验 → z → 解码器」，编码器那一路灰掉；训练时编码器那一路和 KL 亮起来 */
+      var train = ph === 1, on = { gp: 1, gf: train ? 1 : 0, pz: train ? 0.3 : 1, ez: train ? 1 : 0, zd: 1 };
+      mode.textContent = train ? '训练时' : '推理时';
+      [gF, bE, ar.gf.g, ar.ez.g].forEach(function (e) { e.style.opacity = train ? 1 : 0.25; });
+      ar.pz.g.style.opacity = train ? 0.35 : 1;
+      Object.keys(EDGES).forEach(function (k, j) {
+        var e = EDGES[k], a = ((now * 0.8 + j * 0.23) % 1);
+        moveDot(run[k], [e[0] + (e[2] - e[0]) * a, e[1] + (e[3] - e[1]) * a]);
+        run[k].style.opacity = on[k] >= 1 ? 1 : 0;
+      });
+      kl.style.opacity = train ? 1 : 0;
+      outInf.style.opacity = train ? 0 : 1; outTrain.style.opacity = train ? 1 : 0;
+      noFull.style.opacity = train ? 0 : 1;
+      void gP; void bP; void bD;
+      setOpacity(flow, t < 7.0 ? 1 : 1 - seg(t, 7.0, 7.3));
+      /* 高斯：残差那一段偏移来回滑；KL 那一段先来回扫，2.5 s 后停在旁白念的 0.3（KL = 0.363） */
+      var settle = ph === 3 ? 1 - seg(K.clipSince(t, 10.4), 2.0, 2.5) : 1;
+      var mP = -0.4, sP = 1.0, sE = 0.5, r = ph === 2 || ph === 3 ? 0.3 + 0.9 * settle * Math.sin(now * 0.7) : 0.3;
       setPath(priorC, gauss(mP, sP, 70));
       setPath(encC, gauss(mP + r, sE, 140));
       setLine(muP, zx(mP), GY, zx(mP), GY - 160);
       muE.set(zx(mP), GY - 150, zx(mP + r), GY - 150, 7);
-      tP.setAttribute('x', zx(mP - 1.35).toFixed(1)); tP.setAttribute('y', (GY - 40).toFixed(1));
-      tE.setAttribute('x', zx(mP + r).toFixed(1)); tE.setAttribute('y', (GY - 160).toFixed(1));
-      encC.style.opacity = ph >= 1 ? 1 : 0; tE.style.opacity = ph >= 1 ? 1 : 0; muE.g.style.opacity = ph >= 1 ? 1 : 0;
-      klTxt.textContent = ph >= 2 ? '残差 ' + sgn(f2(r)) + '：KL = ' + f3(klResidual(r, sE, sP)) : '';
-      /* 第 4 段：训练时的样本（橙）在编码器里，推理时的样本（蓝）在先验里 */
-      var useP = ph === 3 && Math.floor(now / 1.6) % 2 === 1;
+      tP.setX(zx(mP - 1.35)).setY(GY - 40);
+      tE.setX(zx(mP + r)).setY(GY - 166);
+      tOff.setAttribute('x', ((zx(mP) + zx(mP + r)) / 2).toFixed(1)); tOff.setAttribute('y', (GY - 132).toFixed(1));
+      tOff.style.opacity = Math.abs(zx(mP + r) - zx(mP)) > 36 ? 1 : 0;
+      klTxt.textContent = ph === 2 ? '偏移 ' + sgn(f2(r)) : ph >= 3 ? '偏移 ' + sgn(f2(r)) + '：KL = ' + f3(klResidual(r, sE, sP)) : '';
+      /* 最后一段：训练时取到的 z（橙，从编码器）和推理时取到的 z（蓝，从先验）交替画出来，落在同一片 */
+      var useP = ph === 4 && Math.floor(now / 1.6) % 2 === 1;
       sDots.forEach(function (d, i) {
         var z = useP ? mP + sP * eps[i] : mP + r + sE * eps[i];
         moveDot(d, [zx(clamp(z, -3, 3)), GY - 8]); d.style.fill = useP ? C_ACCENT : C_WARN;
       });
-      sLabel.textContent = useP ? '推理：从先验取 z' : '训练：从编码器取 z';
-      setOpacity(samp, ph === 3 ? win(t, 10.4, 13.4) : 0);
-      setOpacity(plot, ph <= 3 ? 1 - seg(t, 13.4, 13.7) : 0);
-      var grow = ease(seg(t, 13.7, 14.9));
-      bA.set(220 * 96.9 / 100 * grow, '96.9%'); bB.set(220 * 21.1 / 100 * grow, '21.1%');
-      setOpacity(abl, win(t, 13.4));
+      sLabel.setText(useP ? '推理：从先验取 $z$' : '训练：从编码器取 $z$');
+      setOpacity(samp, ph === 4 ? win(t, 13.4) : 0);
+      setOpacity(plot, win(t, 7.0));
+      var grow = ease(seg(t, 13.9, 15.0));
+      bA.set(170 * 96.9 / 100 * grow, '96.9%'); bB.set(170 * 21.1 / 100 * grow, '21.1%');
       setOpacity(p1, win(t, 0.3, 3.6));
       setOpacity(p2, win(t, 3.6, 7.0));
       setOpacity(p3, win(t, 7.0, 10.4));
@@ -1317,6 +1515,12 @@
       { x: 70, y: 336, w: 300, str: '损失：动作的差 + $\\alpha \\cdot$ KL → 更新学生', c: C_BAD }
     ];
     nodes.forEach(function (n) { chip(s, n.x, n.y, n.w, n.str, n.c, { h: 36, size: 12.5 }); });
+    /* 小点穿过方块时会压在字上（2026-10-17 全局检查）：进了方块就藏起来，改成把这一块的边框点亮 */
+    var glow = nodes.map(function (n) {
+      var r = paint(svgEl('rect', { x: n.x - 3, y: n.y - 3, width: n.w + 6, height: 42, rx: 9, fill: 'none', 'stroke-width': 2.6 }), null, C_VIS);
+      s.appendChild(r);
+      return r;
+    });
     [[220, 122, 220, 164], [220, 206, 220, 248], [220, 290, 220, 332]].forEach(function (a) { var ar = arrow(s, C_INK2, 2); ar.set(a[0], a[1], a[2], a[3], 8); });
     var back = pathLine(s, [[70, 354], [44, 354], [44, 102], [66, 102]], C_INK2, 2, '5 4');
     void back;
@@ -1336,11 +1540,11 @@
     var p3 = group(s);
     label(p3, R, 64, '训练目标（式 8）', 'demo-x-ink', 14);
     math(p3, R, 104, '\\log \\mathcal{D}(a^{\\text{FC}} \\mid s, z) - \\alpha\\, D_{\\text{KL}}(\\mathcal{E} \\,\\|\\, \\rho)', 16);
-    label(p3, R, 146, 'z 从编码器取；最大化前一项、压小后一项', 'demo-x-ink2', 12);
-    label(p3, R, 170, '代码里解码器输出确定的动作，', 'demo-x-ink2', 12);
-    label(p3, R, 192, '第一项就是和老师动作的均方差', 'demo-x-ink2', 12);
+    label(p3, R, 146, '$z$ 从编码器取；最大化前一项、压小后一项', 'demo-x-ink2', 12);
+    label(p3, R, 170, '论文和代码里解码器都输出确定的动作，', 'demo-x-ink2', 12);
+    label(p3, R, 192, '代码把第一项换成和老师动作的均方差，取最小', 'demo-x-ink2', 12);
     var p4 = group(s);
-    label(p4, R, 64, 'KL 系数 α：先小后大', 'demo-x-ink', 14);
+    label(p4, R, 64, 'KL 系数 $\\alpha$：先小后大', 'demo-x-ink', 14);
     var KX = R + 36, KY = 92, KW = 280, KH = 140;
     function kx(e) { return KX + KW * e / 8000; }
     function ky(a) { return KY + KH * (1 - a / 0.0105); }
@@ -1352,7 +1556,15 @@
     label(p4, KX + KW, KY + KH + 36, 'epoch（代码 v2.3：3000 → 6000 线性升）', 'demo-x-mut', 10, 'end');
     label(p4, KX - 6, ky(0.01) + 4, '0.01', 'demo-x-mut', 10, 'end');
     label(p4, KX - 6, ky(0) + 4, '0', 'demo-x-mut', 10, 'end');
-    var kMk = dotAt(p4, 0, 0, 5, C_BAD), kTxt = label(p4, 0, 0, '', 'demo-x-ink', 11);
+    /* 一个点沿着曲线从第 0 个 epoch 走到第 8000 个（3.4 s 走一趟、停 0.6 s 再来），左上角读出 epoch 和 α
+       （原先点停在 4500、换段淡出时还跳到 6000 多，一闪就没了，2026-10-17 看片反馈）。
+       读数每帧都变：「α =」是静态公式，数字是普通文字 */
+    var kGuide = hline(p4, 0, 0, 0, 0, C_BAD, 1, '3 3');
+    var kMk = paint(svgEl('circle', { cx: 0, cy: 0, r: 6.5, 'stroke-width': 2 }), C_BAD, C_SURFACE);
+    p4.appendChild(kMk);
+    var kEp = label(p4, KX + 12, KY + 16, '', 'demo-x-ink', 12);
+    math(p4, KX + 12, KY + 40, '\\alpha =', 13);
+    var kVal = label(p4, KX + 42, KY + 40, '', 'demo-x-ink', 12.5);
     label(p4, R, 298, '起点 0.0001：编解码器先贴紧老师', 'demo-x-ink2', 12);
     label(p4, R, 320, '升到 0.01：潜空间收向先验，推理时好取', 'demo-x-ink2', 12);
     var p5 = group(s);
@@ -1362,7 +1574,7 @@
     label(p5, R, 182, '老师训练时也提前终止过，它在那些状态里', 'demo-x-ink2', 12);
     label(p5, R, 204, '给不出靠谱的动作', 'demo-x-ink2', 12);
     function draw(t, clock) {
-      var now = nowOf(t, clock), ph = phase(t);
+      var now = nowOf(t, clock);
       /* 小点沿着一圈跑：四个节点之间往下，再从左边绕回来 */
       var loop = [[220, 102], [220, 186], [220, 270], [220, 354], [44, 354], [44, 102], [220, 102]];
       var L = [], tot = 0;
@@ -1372,14 +1584,19 @@
         if (pos <= L[j]) { var a = pos / L[j]; q = [loop[j][0] + (loop[j + 1][0] - loop[j][0]) * a, loop[j][1] + (loop[j + 1][1] - loop[j][1]) * a]; break; }
         pos -= L[j];
       }
+      var inside = -1;
+      nodes.forEach(function (n, k) { if (q[0] >= n.x - 2 && q[0] <= n.x + n.w + 2 && q[1] >= n.y - 2 && q[1] <= n.y + 38) inside = k; });
       moveDot(runner, q);
-      var ep = ph === 3 ? 4500 : 1500 + 6000 * ((now * 0.12) % 1);
-      moveDot(kMk, [kx(ep), ky(klCoef(ep))]);
-      kTxt.setAttribute('x', (kx(ep) + 8).toFixed(1)); kTxt.setAttribute('y', (ky(klCoef(ep)) - 8).toFixed(1));
-      kTxt.textContent = '第 ' + Math.round(ep) + ' 个：α = ' + klCoef(ep).toFixed(5);
+      runner.style.opacity = inside < 0 ? 1 : 0;
+      glow.forEach(function (r, k) { r.style.opacity = k === inside ? 1 : 0; });
       setOpacity(p1, win(t, 0.3, 3.6));
       setOpacity(p2, win(t, 3.6, 7.0));
       setOpacity(p3, win(t, 7.0, 10.4));
+      var kc = ((K.clipSince(t, 10.4) % 4.0) + 4.0) % 4.0, ep = 8000 * Math.min(1, kc / 3.4), ka = klCoef(ep);
+      kMk.setAttribute('cx', kx(ep).toFixed(1)); kMk.setAttribute('cy', ky(ka).toFixed(1));
+      setLine(kGuide, kx(ep), ky(ka), kx(ep), KY + KH);
+      kEp.textContent = '第 ' + Math.round(ep) + ' 个 epoch';
+      kVal.textContent = ka.toFixed(5);
       setOpacity(p4, win(t, 10.4, 13.4));
       setOpacity(p5, win(t, 13.4));
     }
@@ -1391,7 +1608,8 @@
     var s = sceneSvg('上下两条时间轴，每条 6 行（双踝、骨盆、头、双手）× 50 步：上面每一步都重新随机抽掩码，像撒胡椒；下面按论文的结构化掩码，' +
       '一组掩码会连着用很多步，还有整段全遮的「空白」；一个 10 步宽的框在时间轴上滑，数这 10 步里位置露过的部位有几个');
     label(s, 24, 28, '一行一个部位，一列一步（30 Hz）；绿 = 给了位置，浅蓝 = 只给旋转', 'demo-x-ink2', 13);
-    var GX = 96, CW = 13, N = 50, RH = 16;
+    /* 一列 12 宽：50 列画到 696，右边的读数和「个部位露过位置」才放得进画面（13 宽时字伸出右边 27 px 被裁掉，2026-10-17 看片反馈） */
+    var GX = 96, CW = 12, N = 50, RH = 16;
     var SEQ_A = maskSequence(N, 0, 0, 11), SEQ_B = maskSequence(N, MASK.repeat, MASK.gap, 26);
     function gridAt(y0, seq, title) {
       var g = group(s);
@@ -1424,7 +1642,7 @@
     var p2 = group(s);
     rectBox(p2, 24, Y, RW, 112, C_VIS, C_SURFACE2);
     label(p2, 40, Y + 26, '结构化：一组掩码连着用', 'demo-x-ink', 13.5);
-    label(p2, 40, Y + 52, '新的一帧以 98% 的概率沿用上一帧的掩码，2% 才重抽：平均 50 步（约 1.7 s）才换一次', 'demo-x-ink2', 12);
+    label(p2, 40, Y + 52, '新的一帧以 98% 的概率沿用上一帧的掩码，2% 才重抽：不算空白，平均 50 步（约 1.7 s）才重抽一次', 'demo-x-ink2', 12);
     label(p2, 40, Y + 76, '有的部位一直露着，有的一直藏着；10 帧里露过位置的部位平均约 2.5 个（每步重抽是 5.94 个）', 'demo-x-ink2', 12);
     label(p2, 40, Y + 98, '这才像用户真用的时候：只给头和双手，就一直只有这三个', 'demo-x-mut', 11);
     var p3 = group(s);
@@ -1475,28 +1693,29 @@
       hline(nz, NX, y0, NX + NW, y0, C_BORDER, 1);
       return pathLine(nz, [], C_ACCENT, 2);
     }
-    var cA = lane(150, '每步重抽噪声 ε（示意）'), cB = lane(300, '整个回合用同一个 ε（示意）');
+    var cA = lane(150, '每步重抽噪声 $\\epsilon$（示意）'), cB = lane(300, '整个回合用同一个 $\\epsilon$（示意）');
     var mA = pathLine(nz, [], C_MUTED, 1.4, '4 3'), mB = pathLine(nz, [], C_MUTED, 1.4, '4 3');
-    label(nz, NX + NW, 324, '时间 →（虚线是先验的均值 μ）', 'demo-x-mut', 10, 'end');
+    label(nz, NX + NW, 324, '时间 →（虚线是先验的均值 $\\mu$）', 'demo-x-mut', 10, 'end');
     var rng = K.mulberry32(3), noise = [];
     for (var i = 0; i < 400; i++) noise.push(K.gauss(rng));
     var hs = group(s), GY = 352, SC = 150, OX = 300;
-    groundLine(hs, LX + 14, LX + LW - 14, GY + 2);
+    var floor = groundGrid(hs, LX + 2, LY + 2, LW - 4, LH - 4);
     var BACK = [4, 8, 12, 16, 20];
     var ghosts = BACK.map(function () { return smplMesh(hs, SHEETS.sit, { ghost: 0.25 }); });
     label(hs, LX + 14, LY + 24, '影子：' + BACK.map(function (b) { return '−' + f2(b / CLIP.fps); }).join('、') + ' s（越淡越早）', 'demo-x-ink2', 11.5);
+    label(hs, LX + 14, LY + 46, '论文只说过去 40 步里取 5 帧，具体哪几帧是示意', 'demo-x-mut', 10.5);
     var actor = sampleActor(hs, { noChair: true });
     var R = 446, RW = 330;
     var p1 = group(s);
     rich(p1, R, 64, '重参数化：$z = \\mu + \\sigma \\epsilon$', 14, 'demo-x-ink');
-    label(p1, R, 96, '如果 ε 每一步都重抽，', 'demo-x-ink2', 12.5);
-    label(p1, R, 120, 'z 在先验里跳来跳去，动作也跟着抖', 'demo-x-ink2', 12.5);
-    chip(p1, R, 142, RW, '上面那条：每步一个新的 ε', C_BAD, { size: 12, left: true });
+    label(p1, R, 96, '如果 $\\epsilon$ 每一步都重抽，', 'demo-x-ink2', 12.5);
+    label(p1, R, 120, '$z$ 在先验里跳来跳去，动作也跟着抖', 'demo-x-ink2', 12.5);
+    chip(p1, R, 142, RW, '上面那条：每步一个新的 $\\epsilon$', C_BAD, { size: 12, left: true });
     var p2 = group(s);
     label(p2, R, 64, '整局固定噪声', 'demo-x-ink', 14);
-    label(p2, R, 96, '一个回合只抽一次 ε，到回合结束才重抽；', 'demo-x-ink2', 12.5);
-    label(p2, R, 120, 'z 跟着 μ 平滑地变，行为前后连贯', 'demo-x-ink2', 12.5);
-    chip(p2, R, 142, RW, '下面那条：整局同一个 ε（训练、推理都这样）', C_VIS, { size: 11.5, left: true });
+    label(p2, R, 96, '一个回合只抽一次 $\\epsilon$，到回合结束才重抽；', 'demo-x-ink2', 12.5);
+    label(p2, R, 120, '$z$ 跟着 $\\mu$ 平滑地变，行为前后连贯', 'demo-x-ink2', 12.5);
+    chip(p2, R, 142, RW, '下面那条：整局同一个 $\\epsilon$（训练、推理都这样）', C_VIS, { size: 11.5, left: true });
     var p3 = group(s);
     label(p3, R, 64, '观测历史：过去 5 帧', 'demo-x-ink', 14);
     chip(p3, R, 82, RW, '过去 40 步（30 Hz，约 1.33 s）里每 8 步取一帧', C_FULL, { size: 11.5, left: true });
@@ -1510,7 +1729,7 @@
     label(p4, R, 182, '论文参考 SuperPADL 的做法', 'demo-x-mut', 11.5);
     var p5 = group(s);
     label(p5, R, 64, '消融与代码', 'demo-x-ink', 14);
-    chip(p5, R, 82, RW, '表 6：去掉历史 96.9% → 94.9%，10.5 → 12.7 cm', C_BAD, { size: 11.5, left: true });
+    chip(p5, R, 82, RW, '表 6 坐上椅子的成功率：去掉历史 96.9% → 94.9%', C_BAD, { size: 11.5, left: true });
     chip(p5, R, 118, RW, '代码 v2.3：存 120 步、取 15 帧，同样每 8 步一帧', C_BORDER, { size: 11.5, left: true });
     label(p5, R, 182, '也就是看过去 4 s，比论文写的 1.33 s 长', 'demo-x-ink2', 12);
     function draw(t, clock) {
@@ -1525,6 +1744,7 @@
       setPath(cA, a); setPath(cB, b); setPath(mA, ma); setPath(mB, mb);
       setOpacity(nz, ph <= 1 ? 1 - seg(t, 7.0, 7.3) : 0);
       var k = loopFrame(now, 30, 70), cam = camFollow(k, SC, OX, GY);
+      floor.draw(cam);
       ghosts.forEach(function (g, i) {
         var kk = Math.max(0, k - BACK[i]), pp = frame(kk).b[B.pelvis];
         g.put([pp[0], pp[1]], cam, kk);
@@ -1564,20 +1784,20 @@
     var modeTxt = label(s, 776, 128, '', 'demo-x-mut', 11.5, 'end');
     var net = group(s);
     rectBox(net, 120, 144, 560, 60, C_ACCENT, C_SURFACE2);
-    rich(net, 400, 170, 'Transformer 编码器：4 层、4 头、宽 512、前馈 1024，不用 dropout', 13, 'demo-x-ink', 'middle');
+    rich(net, 400, 170, 'Transformer 编码器：4 层、4 个注意力头、宽 512、前馈 1024，不用 dropout', 13, 'demo-x-ink', 'middle');
     label(net, 400, 192, '每种输入先过自己的全连接编码器 [256, 256]；同种输入共用一个', 'demo-x-mut', 11, 'middle');
     var a1 = arrow(net, C_INK2, 2); a1.set(400, 132, 400, 142, 7);
     chip(net, 250, 228, 130, '均值 $\\mu^\\rho$（64 维）', C_WARN, { size: 12, h: 30 });
     chip(net, 420, 228, 130, '对数标准差（64 维）', C_WARN, { size: 12, h: 30 });
     var a2 = arrow(net, C_INK2, 2); a2.set(315, 206, 315, 226, 7);
     var a3 = arrow(net, C_INK2, 2); a3.set(485, 206, 485, 226, 7);
-    label(net, 400, 282, '取 Transformer 的第一个输出，接两个头：latent → 256 → 128 → 64', 'demo-x-ink2', 11.5, 'middle');
+    label(net, 400, 282, '取 Transformer 的第一个输出，再接两个小网络：latent → 256 → 128 → 64', 'demo-x-ink2', 11.5, 'middle');
     var mlp = group(s);
-    chip(mlp, 60, 156, 300, '编码器 E：全连接 [1024, 1024, 1024]', C_WARN, { size: 12.5, h: 34 });
+    chip(mlp, 60, 156, 300, '编码器 $\\mathcal{E}$：全连接 [1024, 1024, 1024]', C_WARN, { size: 12.5, h: 34 });
     label(mlp, 60, 214, '输入总是完整的：当前姿态、高度图、', 'demo-x-ink2', 11.5);
     label(mlp, 60, 234, '全部未来姿态 + 哪些被遮了的掩码', 'demo-x-ink2', 11.5);
-    chip(mlp, 440, 156, 300, '解码器 D：全连接 [1024, 1024, 1024]', C_ACCENT, { size: 12.5, h: 34 });
-    label(mlp, 440, 214, '输入：当前状态、高度图、z（64 维）', 'demo-x-ink2', 11.5);
+    chip(mlp, 440, 156, 300, '解码器 $\\mathcal{D}$：全连接 [1024, 1024, 1024]', C_ACCENT, { size: 12.5, h: 34 });
+    label(mlp, 440, 214, '输入：当前状态、高度图、$z$（64 维）', 'demo-x-ink2', 11.5);
     label(mlp, 440, 234, '输出：69 维 PD 目标（确定的，不采样）', 'demo-x-ink2', 11.5);
     var Y = 304, RW = 752;
     function bottom(title, lines, color) {
@@ -1594,8 +1814,8 @@
     var p3 = bottom('输出一个高斯：64 维潜变量的分布', ['所有 token 一起进 Transformer，注意力在它们之间找相关的；',
       '第一个输出位置接两个全连接头，分别给均值和对数标准差（附录 B，图 10）'], C_WARN);
     var p4 = bottom('编码器、解码器是普通的全连接网络', ['编码器的输入总是完整的、尺寸固定，不需要 Transformer；它只在训练时用，输出相对先验的残差；',
-      '解码器不看目标：目标的信息全压在 z 里'], C_WARN);
-    var p5 = bottom('推理时只剩两块：先验 + 解码器', ['用户的约束 → 先验 → 取均值（评测时）或采样（要多样时）→ z → 解码器 → 69 维 PD 目标',
+      '解码器不看目标：目标的信息全压在 $z$ 里'], C_WARN);
+    var p5 = bottom('推理时只剩两块：先验 + 解码器', ['用户的约束 → 先验 → 取均值（评测时）或采样（要多样时）→ $z$ → 解码器 → 69 维 PD 目标',
       '和第一阶段的老师比，它的输入少得多，却要做出一样的动作'], C_ACCENT);
     function modeOf(ph) { return ph === 1 ? 'text' : 'full'; }
     function draw(t) {
@@ -1631,12 +1851,15 @@
 
   /* ── scene 14: 表 1、表 2：全身跟踪与 VR 跟踪（第 8.1 节） ── */
   function buildSceneTable12() {
-    var s = sceneSvg('左边播项目页的视频：全身跟踪（出拳、跳舞、侧手翻、跑步），后半换成 VR 三点做侧手翻、只跟头跑步；' +
+    var s = sceneSvg('左边一个一个播项目页的视频：全身跟踪（出拳、台阶上跳舞、侧手翻、跑步），后半换成 VR 三点做侧手翻、只跟头跑步；' +
       '右边是表 1 测试集的成功率与误差，接着是表 2 的 VR 跟踪；MaskedMimic 没有为 VR 专门训练');
     label(s, 24, 28, '一个模型、不针对任务微调，和专门的方法比', 'demo-x-ink2', 13.5);
-    var v1 = projClip(s, 'tracking', 24, 48, 380, 214, '项目页视频（1 倍速）：全身跟踪没见过的动作，绿球是目标关节');
-    var v2g = group(s);
-    var v2 = projClip(v2g, 'vr', 24, 290, 380, 107, '项目页视频：只给 VR 三点做侧手翻 / 只给头的路径跑步', { capDy: 15 });
+    /* 前三段放全身跟踪、后两段换成 VR 跟踪，同一个框，一次一个例子 */
+    var v1g = group(s), v2g = group(s);
+    var v1 = seqClip(v1g, 'tracking', 24, 48, 380, 214, '项目页视频（1 倍速）：全身跟踪没见过的动作，绿球是目标关节',
+      [[4, '出拳', C_FULL], [4, '台阶上跳舞', C_FULL], [5, '侧手翻', C_FULL], [4, '跑步', C_FULL]]);
+    var v2 = seqClip(v2g, 'vr', 24, 48, 380, 214, '项目页视频（1 倍速）：稀疏跟踪，绿球是给出的目标',
+      [[5.5, '只给 VR 三点（头和双手）：侧手翻', C_VIS], [5, '只给头的路径：跑步', C_VIS]]);
     var R = 430, RW = 350;
     var p1 = group(s);
     label(p1, R, 64, '表 1：全身跟踪（AMASS，平地）', 'demo-x-ink', 14);
@@ -1658,7 +1881,7 @@
     label(p3, R, 204, '学生比 PULSE 泛化好（35.1 对 54.1 mm）：', 'demo-x-ink2', 12);
     label(p3, R, 226, '老师更强，加上多任务、多场景一起训', 'demo-x-ink2', 12);
     var p4 = group(s);
-    label(p4, R, 64, '表 2：VR 跟踪，测试集', 'demo-x-ink', 14);
+    label(p4, R, 64, '表 2：VR 跟踪，测试集成功率', 'demo-x-ink', 14);
     label(p4, R, 88, '只给头的位置 + 旋转、双手的位置', 'demo-x-ink2', 12);
     var t2s = barChart(p4, R, 102, 104, 150, TABLE2.map(function (r) { return { zh: r.zh, v: r.v[2], color: r.key === 'mm' ? C_GOOD : C_MUTED }; }), 0, 100, pct);
     label(p4, R, 238, 'PULSE、ASE、CALM 要为 VR 另训一个高层；', 'demo-x-ink2', 12);
@@ -1670,8 +1893,9 @@
     label(p5, R, 244, '只算这三个点（MPOJPE）：训练集 39.5、测试集 45.8 mm', 'demo-x-ink2', 12);
     function draw(t) {
       var ph = phase(t);
-      v1.at(K.clipSince(t, 0), true);
+      v1.at(K.clipSince(t, 0), t < 10.7);
       v2.at(K.clipSince(t, 10.4), t >= 10.4);
+      setOpacity(v1g, 1 - seg(t, 10.4, 10.7));
       setOpacity(v2g, win(t, 10.4));
       t1s.set(ease(seg(t, 4.0, 5.2))); t1e.set(ease(seg(t, 4.6, 5.8)));
       t2s.set(ease(seg(t, 10.8, 12.0))); t2e.set(ease(seg(t, 13.8, 15.0)));
@@ -1694,13 +1918,14 @@
     var left = group(s);
     rectBox(left, LX, LY, LW, LH, C_BORDER, C_SURFACE2);
     var cam = camFollow(0, 160, 214, 360);
-    groundLine(left, LX + 14, LX + LW - 14, 362);
+    groundGrid(left, LX + 2, LY + 2, LW - 4, LH - 4).draw(cam);
     var actor = sampleActor(left, { noChair: true });
     var rings = [0, 1, 2, 3, 4, 5].map(function () { return ring(left, 0, 0, 10, 10, C_VIS); });
     var rowName = label(left, LX + 16, LY + 26, '', 'demo-x-ink', 13);
     var SETS = { pelvis: [B.pelvis], vr: [B.head, B.lhand, B.rhand], head: [B.head], hands: [B.lhand, B.rhand], feet: [B.lank, B.rank], full: [B.lank, B.rank, B.pelvis, B.head, B.lhand, B.rhand] };
     var tv = group(s);
-    var tvc = projClip(tv, 'terrain', LX, LY + 30, LW, LW * 310 / 640, '项目页视频（1 倍速）：坡上跳舞、平地 / 碎石上打空手道');
+    var tvc = seqClip(tv, 'terrain', LX, LY + 30, LW, LW * 212 / 480, '项目页视频（1 倍速）：同一个模型，平地和不平地形',
+      [[3.75, '坡上跳舞', C_VIS], [3.75, '平地上打空手道', C_VIS], [3.75, '碎石上跳舞', C_VIS], [3.75, '碎石上打空手道', C_VIS]]);
     label(tv, LX, LY + 18, '表 4 用的是随机生成的不平地形', 'demo-x-ink', 12.5);
     var R = 430, RW = 350;
     var rows3 = TABLE3.map(function (r) { return { zh: r.zh, v: r.v[2], key: r.key, color: r.key === 'pelvis' ? C_GOOD : r.key === 'feet' ? C_BAD : C_ACCENT }; });
@@ -1715,7 +1940,7 @@
     label(p2, R, 182, '论文的建议：VR 头显再加一个骨盆传感器，', 'demo-x-ink2', 12);
     label(p2, R, 204, '或者先从头显估出骨盆的位置', 'demo-x-ink2', 12);
     var p3 = group(s);
-    label(p3, R, 64, '表 4：不平地形，测试集', 'demo-x-ink', 14);
+    label(p3, R, 64, '表 4：不平地形，测试集成功率', 'demo-x-ink', 14);
     var t4 = barChart(p3, R, 82, 120, 150, [{ zh: '老师 · 全身', v: 98.2, color: C_FULL }, { zh: '学生 · 全身', v: 95.4, color: C_GOOD }, { zh: '学生 · VR', v: 93.6, color: C_GOOD }], 80, 100, pct, 22, 12);
     label(p3, R, 200, '误差：51 / 62.9 / 69.4 mm（VR 是 MPOJPE）', 'demo-x-ink2', 12);
     label(p3, R, 222, '平地上是 31.3 / 35.1 / 45.8 mm', 'demo-x-mut', 11.5);
@@ -1755,10 +1980,16 @@
 
   /* ── scene 16: 转向、路径、伸手（第 7.3、8.2 节，表 5） ── */
   function buildSceneTasks() {
-    var s = sceneSvg('左上播项目页的四段视频：转向、沿路径上台阶、伸手、举着双手沿路径走；左下和右边依次讲每个任务怎么「给目标」：' +
+    var s = sceneSvg('左上播项目页的视频：讲到哪个任务就放哪个（沿路径上台阶、转向、伸手），开头和结尾把四个任务一个一个放一遍；左下和右边依次讲每个任务怎么「给目标」：' +
       '路径跟随给头的近处 5 步和 0.8 秒后的远目标，转向给骨盆的朝向和 1 秒后的位置，伸手只给右手；最后是表 5');
     label(s, 24, 28, 'goal-engineering：不训练，只写一个状态机决定每一步给什么', 'demo-x-ink2', 13.5);
-    var v = projClip(s, 'tasks', 24, 48, 380, 214, '项目页视频（1 倍速）：转向 / 沿路径上台阶 / 伸手 / 路径 + 文字');
+    /* 第 2–4 段讲哪个任务就放哪个任务的视频；第 1、5 段把四个任务一个一个放一遍 */
+    var gSeq = group(s), gPath = group(s), gSteer = group(s), gReach = group(s);
+    var vSeq = seqClip(gSeq, 'tasks', 24, 48, 380, 214, '项目页视频（1 倍速）',
+      [[3, '路径跟随：上台阶'], [3, '转向（摇杆）'], [3, '伸手'], [3, '路径 + 文字「举着双手走」']], { compact: true });
+    var vPath = projClip(gPath, 'task_path', 24, 48, 380, 214, '项目页视频（1 倍速）：路径跟随，绿点是头要经过的路径');
+    var vSteer = projClip(gSteer, 'task_steer', 24, 48, 380, 214, '项目页视频（1 倍速）：转向，地上的箭头是目标方向');
+    var vReach = projClip(gReach, 'task_reach', 24, 48, 380, 214, '项目页视频（1 倍速）：伸手，绿球是右手的目标');
     var Y0 = 290, R = 430, RW = 350;
     var p1 = group(s);
     rectBox(p1, 24, Y0, 380, 108, C_ACCENT, C_SURFACE2);
@@ -1807,7 +2038,7 @@
     label(p4, 40, Y0 + 74, '更难救回来；给远一点，动作更自然、更稳', 'demo-x-ink2', 12);
     label(p4, R, 64, '伸手', 'demo-x-ink', 14);
     chip(p4, R, 82, RW, '只给右手的目标位置 + 还有多久', C_VIS, { size: 12, left: true });
-    chip(p4, R, 118, RW, '「还有多久」最多报 1/6 s', C_WARN, { size: 12, left: true });
+    chip(p4, R, 118, RW, '「还有多久」最多报 $1/6$ s', C_WARN, { size: 12, left: true });
     label(p4, R, 182, '目标随机变；每变一次有 2 s 伸过去并停住；', 'demo-x-ink2', 12);
     label(p4, R, 204, '到时手偏 0.5 m 以上算失败', 'demo-x-ink2', 12);
     var p5 = group(s);
@@ -1822,8 +2053,17 @@
       { zh: '转向 · 平地', v: 97.8, color: C_ACCENT }, { zh: '转向 · 地形', v: 93.8, color: C_ACCENT },
       { zh: '伸手 · 平地', v: 88.7, color: C_WARN }, { zh: '伸手 · 地形', v: 87.3, color: C_WARN }], 80, 100, pct, 18, 8);
     label(p5, R, 262, '误差：11.2 / 12.5 cm、8.4 / 8.4 cm/s、20.3 / 21.7 cm', 'demo-x-mut', 11);
+    label(p5, R, 284, '失败：路径偏 2 m、朝向偏 45°、伸手到时偏 0.5 m 以上', 'demo-x-mut', 11);
     function draw(t) {
-      v.at(K.clipSince(t, 0), true);
+      var a0 = t < 3.6 ? 1 : 1 - seg(t, 3.6, 3.9), a4 = win(t, 13.4);
+      setOpacity(gSeq, Math.max(a0, a4));
+      vSeq.at(t >= 13.4 ? K.clipSince(t, 13.4) : K.clipSince(t, 0), t < 3.9 || t >= 13.4);
+      setOpacity(gPath, win(t, 3.6, 7.0));
+      vPath.at(K.clipSince(t, 3.6), t >= 3.6 && t < 7.3);
+      setOpacity(gSteer, win(t, 7.0, 10.4));
+      vSteer.at(K.clipSince(t, 7.0), t >= 7.0 && t < 10.7);
+      setOpacity(gReach, win(t, 10.4, 13.4));
+      vReach.at(K.clipSince(t, 10.4), t >= 10.4 && t < 13.7);
       stV.textContent = '骨盆在 ' + vec(frame(EX_K).b[B.pelvis].slice(0, 2), 3) + '，速度 ' + vec(STEER.v) + ' m/s';
       stT.textContent = '→ 1 s 后的骨盆目标 ' + vec(STEER.target, 3);
       t5.set(ease(seg(t, 13.8, 15.0)));
@@ -1839,13 +2079,13 @@
   /* ── scene 17: 坐椅子：状态机与消融（第 8.3 节，表 6） ── */
   function buildSceneSit() {
     var s = sceneSvg('左边：官方样例里的角色走向扶手椅，地上画出椅子周围 2 m 的圈；状态机的两个状态写在上方：2 m 以外给「朝椅子走 1 m/s」和一句文字，' +
-      '进了 2 m 只给椅子的包围盒（红框）；右边讲设定、表 6 的消融，最后播项目页里坐椅子、凳子、桌子、沙发的视频');
+      '进了 2 m 只给椅子的包围盒（红框）；右边讲设定、表 6 的消融，最后一个一个播项目页里坐椅子、凳子、桌子的视频');
     label(s, 24, 28, '坐椅子：三种目标串起来，用一个两状态的状态机', 'demo-x-ink2', 13.5);
     var LX = 24, LY = 44, LW = 380, LH = 352;
     var left = group(s);
     rectBox(left, LX, LY, LW, LH, C_BORDER, C_SURFACE2);
     var cam = camAt(86, 214, 340, CHAIR.x, CHAIR.y);
-    groundLine(left, LX + 14, LX + LW - 14, 380);
+    groundGrid(left, LX + 2, LY + 2, LW - 4, LH - 4, { R: 6 }).draw(cam);
     var circ = [];
     for (var u = 0; u <= 72; u++) { var a = 2 * Math.PI * u / 72; circ.push(project([CHAIR.x + 2 * Math.cos(a), CHAIR.y + 2 * Math.sin(a), 0], cam)); }
     pathLine(left, circ, C_OBJ, 1.8, '6 4');
@@ -1855,11 +2095,12 @@
     var actor = sampleActor(left);
     var box = bboxLayer(left, C_OBJ);
     var dirA = arrow(left, C_VIS, 2.4);
-    var stA = chip(left, LX + 12, LY + 12, 356, '状态 1：骨盆朝椅子走 1 m/s + “the person walks normally”', C_VIS, { size: 11, left: true, h: 26 });
+    var stA = chip(left, LX + 12, LY + 12, 356, '状态 1：朝椅子走 1 m/s + “the person walks normally”', C_VIS, { size: 11, left: true, h: 26 });
     var stB = chip(left, LX + 12, LY + 44, 356, '状态 2：撤掉方向和文字，只给椅子的包围盒', C_OBJ, { size: 11, left: true, h: 26 });
     var dTxt = label(left, LX + LW - 14, LY + 92, '', 'demo-x-ink', 12, 'end');
     var oc = group(s);
-    var ocv = projClip(oc, 'objects', LX, LY + 40, LW, LW * 310 / 640, '项目页视频（2 倍速）：椅子、凳子、桌子、沙发都是训练时没见过的');
+    var ocv = seqClip(oc, 'objects', LX, LY + 40, LW, LW * 212 / 480, '项目页视频（2.5 倍速）：这些物体训练时都没见过',
+      [[3, '椅子', C_OBJ], [3, '凳子', C_OBJ], [3, '桌子', C_OBJ]]);
     label(oc, LX, LY + 22, '物体换了，状态机不用改', 'demo-x-ink', 12.5);
     var R = 430, RW = 350;
     var p1 = group(s);
@@ -1870,9 +2111,10 @@
     label(p1, R, 204, '只用来示意状态机在哪儿切换', 'demo-x-mut', 11.5);
     var p2 = group(s);
     label(p2, R, 64, '2 m 以外：走过去', 'demo-x-ink', 14);
-    chip(p2, R, 82, RW, '骨盆目标：朝物体方向、速度 1 m/s', C_VIS, { size: 12, left: true });
+    chip(p2, R, 82, RW, '移动目标：朝物体方向、速度 1 m/s', C_VIS, { size: 12, left: true });
     chip(p2, R, 118, RW, '文字：“the person walks normally”', C_TXT, { size: 12, left: true });
-    label(p2, R, 182, '两样一起给，走得又稳又自然', 'demo-x-ink2', 12);
+    label(p2, R, 176, '论文没写给哪个关节；我们猜和转向一样是骨盆', 'demo-x-mut', 11);
+    label(p2, R, 202, '两样一起给，走得又稳又自然', 'demo-x-ink2', 12);
     var p3 = group(s);
     label(p3, R, 64, '进入 2 m：只给包围盒', 'demo-x-ink', 14);
     chip(p3, R, 82, RW, '撤掉方向和文字，只给物体（8 个角 + 类别）', C_OBJ, { size: 11.5, left: true });
@@ -1880,9 +2122,13 @@
     label(p3, R, 168, '所以只给物体，模型就自己走近、转身、坐下', 'demo-x-ink2', 12);
     var swT = label(p3, R, 200, '', 'demo-x-ink', 12);
     var p4 = group(s);
-    label(p4, R, 64, '表 6：坐椅子（测试物体）+ 消融', 'demo-x-ink', 14);
-    var t6 = barChart(p4, R, 82, 120, 160, TABLE6.map(function (r) { return { zh: r.zh, v: r.v[0], color: r.key === 'mm' ? C_GOOD : r.v[0] < 50 ? C_BAD : C_WARN }; }), 0, 100, pct, 20, 10);
-    label(p4, R, 248, '误差：10.5、12.7、12.2、57.4、274.4 cm', 'demo-x-mut', 11.5);
+    /* 先写清百分比是什么：坐上椅子的成功率（2026-10-17 看片反馈：只写「表 6」看不出是成功率） */
+    label(p4, R, 64, '表 6：坐上椅子的成功率（测试物体）', 'demo-x-ink', 14);
+    label(p4, R, 88, '成功：回合里骨盆到过可坐位置 20 cm 以内', 'demo-x-ink2', 12);
+    label(p4, R, 108, '第一行是完整版，下面每行拿掉一个部件', 'demo-x-mut', 11.5);
+    var t6 = barChart(p4, R, 122, 120, 160, TABLE6.map(function (r) { return { zh: r.zh, v: r.v[0], color: r.key === 'mm' ? C_GOOD : r.v[0] < 50 ? C_BAD : C_WARN }; }), 0, 100, pct, 20, 10);
+    label(p4, R, 290, '骨盆离可坐位置的平均最小距离：', 'demo-x-mut', 11.5);
+    label(p4, R, 310, '10.5、12.7、12.2、57.4、274.4 cm', 'demo-x-mut', 11.5);
     var p5 = group(s);
     label(p5, R, 64, '成功的定义', 'demo-x-ink', 14);
     chip(p5, R, 82, RW, '骨盆到可坐位置 20 cm 以内，算坐上了', C_GOOD, { size: 12, left: true });
@@ -1924,9 +2170,10 @@
       '右边依次讲文字控制的边界、动作质量、goal-engineering 还靠手写、只在仿真角色上验证，最后一句话总结');
     label(s, 24, 28, '只给一句话能做什么，以及还做不到什么', 'demo-x-ink2', 13.5);
     var tg = group(s);
-    var tv = projClip(tg, 'text', 24, 48, 380, 184, '项目页视频（1 倍速）：只给文字，都从站立开始');
-    label(tg, 24, 270, '图 9 的例子：踢腿、单脚平衡、像迈克尔·杰克逊', 'demo-x-ink2', 12);
-    label(tg, 24, 292, '那样跳舞、举手往前走、跪下、敬礼、鞠躬、倒立', 'demo-x-ink2', 12);
+    var tv = seqClip(tg, 'text', 24, 48, 380, 380 * 212 / 480, '项目页视频（1 倍速）：只给文字，都从站立开始',
+      [[4, '「单脚站立平衡」', C_TXT], [4.5, '「倒立」', C_TXT], [4.5, '「举起双手，再跪下」', C_TXT], [4, '「举着双手走路」', C_TXT]]);
+    label(tg, 24, 302, '图 9 的例子：踢腿、单脚平衡、像迈克尔·杰克逊', 'demo-x-ink2', 12);
+    label(tg, 24, 324, '那样跳舞、举手往前走、跪下、敬礼、鞠躬、倒立', 'demo-x-ink2', 12);
     var bg = group(s);
     var bv = projClip(bg, 'bloopers', 24, 48, 380, 214, '项目页视频（1.5 倍速）：失败集锦');
     var R = 430, RW = 350;
@@ -1938,12 +2185,12 @@
     var p2 = group(s);
     label(p2, R, 64, '要长程推理的不行', 'demo-x-ink', 14);
     chip(p2, R, 82, RW, '“a person takes 4 steps and then raises their hands”', C_BAD, { size: 11, left: true });
-    label(p2, R, 146, '作者推测：历史只有 1.33 s，太短了，', 'demo-x-ink2', 12);
-    label(p2, R, 168, '记不住已经走了几步', 'demo-x-ink2', 12);
+    label(p2, R, 146, '作者推测：历史太短（40 步，约 1.33 s），', 'demo-x-ink2', 12);
+    label(p2, R, 168, '影响长程推理', 'demo-x-ink2', 12);
     var p3 = group(s);
     label(p3, R, 64, '动作质量（第 9 节）', 'demo-x-ink', 14);
     chip(p3, R, 82, RW, '有些动作会抖：可以用 AMP 式的判别奖励再微调', C_WARN, { size: 11.5, left: true });
-    chip(p3, R, 118, RW, '后空翻、霹雳舞这类难动作复现不了', C_WARN, { size: 11.5, left: true });
+    chip(p3, R, 118, RW, '后空翻、霹雳舞这类难动作还很难复现', C_WARN, { size: 11.5, left: true });
     chip(p3, R, 154, RW, '不平地形上照平地的走法走，不会挑落脚点', C_WARN, { size: 11.5, left: true });
     label(p3, R, 218, '作者推测：平地动作搬到地形上只按骨盆离地', 'demo-x-ink2', 11.5);
     label(p3, R, 238, '高度做了归一化', 'demo-x-ink2', 11.5);
@@ -1953,8 +2200,8 @@
     chip(p4, R, 118, RW, '希望用大语言模型自动生成目标', C_ACCENT, { size: 12, left: true });
     label(p4, R, 182, '以后：搬动物体、用工具、多个角色互动', 'demo-x-ink2', 12);
     var p5 = group(s);
-    label(p5, R, 64, '只在仿真角色上验证', 'demo-x-ink', 14);
-    chip(p5, R, 82, RW, 'SMPL 角色 69 个自由度，力矩和真机人形都不同', C_BORDER, { size: 11.5, left: true });
+    label(p5, R, 64, '我们补一句：只在仿真角色上验证', 'demo-x-ink', 14);
+    chip(p5, R, 82, RW, '论文没列为局限：SMPL 角色 69 个自由度，和真机人形结构不同', C_BORDER, { size: 11, left: true });
     label(p5, R, 146, '一句话：控制 = 补全。一个模型，', 'demo-x-ink', 13);
     label(p5, R, 170, '换一组「给哪些目标」就换一个任务', 'demo-x-ink', 13);
     function draw(t) {
@@ -1990,10 +2237,11 @@
       build: buildSceneInpaint,
       cues: [
         { at: 0.4, s: '关键洞察：把角色控制写成**动作补全**（inpainting）——遮住一部分目标，模型补出整个身体的动作。' },
-        { at: 3.6, s: '全给：24 个刚体的位置和旋转都看得见，就是普通的**全身跟踪**。' },
+        { at: 3.6, s: '全给：能给的 6 个部位（双踝、骨盆、头、双手）位置和旋转都给，就是普通的**全身跟踪**（老师看的是全部 24 个刚体）。' },
         { at: 7.0, s: '只给头和双手：**VR 跟踪**；只给头未来的一串位置：**路径跟随**。' },
         { at: 10.4, s: '只给椅子的**包围盒**：坐椅子；只给**一句话**：文字控制——一个关节都不给，也要补出全身。' },
-        { at: 13.4, s: '还能组合：路径 + 一句话 = 带风格的走路（论文图 1 的九种用法，同一个模型）。' }
+        { at: 13.4, s: '还能组合：路径 + 一句话 = 举着双手沿路径走。' },
+        { at: 14.7, s: '论文图 1 的九种用法，都是同一个模型。' }
       ]
     },
     {
@@ -2001,9 +2249,10 @@
       dur: 16,
       build: buildSceneStages,
       cues: [
-        { at: 0.4, s: '第一阶段：用强化学习训全身跟踪器 $\\pi^{\\text{FC}}$（fully-constrained），它看得到未来每一帧的完整参考。' },
+        { at: 0.4, s: '第一阶段：用强化学习训全身跟踪器 $\\pi^{\\text{FC}}$（fully-constrained），它看得到接下来若干帧的完整参考。' },
         { at: 3.6, s: '第二阶段：把 $\\pi^{\\text{FC}}$ 当老师，蒸馏出只看 $g^{\\text{partial}}_t = \\mathcal{M}(g^{\\text{full}}_t)$ 的学生 $\\pi^{\\text{PC}}$。' },
         { at: 7.0, s: '推理：不再训练，用户给部分目标，$\\pi^{\\text{PC}}$ 在没见过的场景里生成动作（图 3 第三块）。' },
+        { at: 8.7, s: '放大第三块的 Environment：三个角色坐在不平地形上的沙发上——物体摆在不平地形上，训练时没见过。' },
         { at: 10.4, s: '为什么拆两段：动作数据没有力矩，先用 RL 学「怎么做出来」；「给什么目标都行」的灵活性交给监督学习。' },
         { at: 13.4, s: '规模：Isaac Gym 16,384 个环境、4 张 A100、约两周；老师约 **300 亿步**、学生约 **100 亿步**；控制 30 Hz、仿真 120 Hz。' }
       ]
@@ -2016,7 +2265,7 @@
         { at: 0.4, s: '老师的观测：当前状态（转到角色自己的坐标系）+ 未来 $K$ 帧参考姿态，每帧附上「还有多久」$\\tau$。' },
         { at: 3.6, s: '每个关节的目标表示两次：相对**这个关节自己**、相对**根**（位置、旋转各一份，式 4）。' },
         { at: 7.0, s: '场景：16 × 16 的**高度图**，间隔 10 cm，跟着朝向转；不平地形上姿态按骨盆下面的地面高度归一化。' },
-        { at: 10.4, s: '动作：69 维 **PD 目标**；高斯策略的方差固定为 $e^{-2.9} \\approx 0.055$；不用残差力。' },
+        { at: 10.4, s: '动作：69 维 **PD 目标**；高斯策略的方差固定，标准差 $\\sigma = e^{-2.9} \\approx 0.055$；不用残差力。' },
         { at: 13.4, s: '网络：每种输入切成 token，进 **Transformer**；critic 是全连接网络。' }
       ]
     },
@@ -2027,7 +2276,7 @@
       cues: [
         { at: 0.4, s: '奖励跟踪五样东西：全局关节位置、全局关节旋转、根高度、关节速度、关节角速度，外加**能量惩罚**。' },
         { at: 3.6, s: '权重（附录 B.1）：位置 0.5、旋转 0.3、根高度 0.2、速度 0.1、角速度 0.1、能量 0.0005。' },
-        { at: 7.0, s: '每一项是 $\\exp(-c \\cdot e)$：位置与根高度 $c = 100$、旋转 2、速度 0.5、角速度 0.1——$c$ 越大越苛刻。' },
+        { at: 7.0, s: '前五项都是 $\\exp(-c \\cdot e)$：位置与根高度 $c = 100$、旋转 2、速度 0.5、角速度 0.1——$c$ 越大越苛刻。' },
         { at: 10.4, s: '例（按代码的写法）：每个刚体沿一个方向偏 10 cm，$e = 0.1^2/3$，位置项 $= e^{-0.333} = 0.72$。' },
         { at: 13.4, s: '代码（ProtoMotions v2.3）与附录的出入：旋转项 $c = 10$、能量权重 0.00001。' }
       ]
@@ -2040,7 +2289,7 @@
         { at: 0.4, s: '训练场三块（图 4）：**平地**、**不平地形**（台阶、碎石、坡）、**物体区**（椅子、桌子、沙发）。' },
         { at: 3.6, s: '不带物体的动作在平地或不平地形随机出生；带物体交互的只在物体区出生。' },
         { at: 7.0, s: '提前终止：平地上任一关节偏 **0.25 m** 就结束；不平地形放宽到 **0.5 m**，允许改一改原动作。' },
-        { at: 10.4, s: '优先采样：失败率越高的动作越常抽到，权重下限 $3 \\times 10^{-3}$（图中五个动作是玩具示意）。' },
+        { at: 10.4, s: '优先采样：失败率越高的动作越常抽到，从不失败的也按 $3 \\times 10^{-3}$ 算、不会完全抽不到（图中五个动作是玩具示意）。' },
         { at: 13.4, s: '只统计**平地上**的失败：前空翻上楼梯本来就不该成功。' }
       ]
     },
@@ -2061,7 +2310,8 @@
       dur: 16,
       build: buildSceneVae,
       cues: [
-        { at: 0.4, s: '部分目标是**欠定**的：「1 秒内到 T」有很多种走法，老师的示范从上绕、从下绕都有（玩具示意）。' },
+        { at: 0.4, s: '**VAE**（变分自编码器）：编码器把输入压成随机的潜变量 $z$，解码器从 $z$ 复原；$z$ 被拉向先验，生成时直接从先验取 $z$。' },
+        { at: 1.8, s: '部分目标是**欠定**的：「1 秒内到 $T$」有很多种走法，老师的示范从上绕、从下绕都有（玩具示意）。' },
         { at: 3.6, s: '直接回归老师的动作 = 取平均：上绕和下绕平均成一条直线，**撞上柱子**。' },
         { at: 7.0, s: '学生做成**条件 VAE**：潜变量 $z$ 选「哪一种」，不同的 $z$ 对应不同但都合理的走法。' },
         { at: 10.4, s: '三个部件：先验 $\\rho$（只看部分目标）、编码器 $\\mathcal{E}$（看完整目标、只在训练时用）、解码器 $\\mathcal{D}$（看状态和 $z$ 出动作）。' },
@@ -2073,11 +2323,11 @@
       dur: 16,
       build: buildSceneResidual,
       cues: [
-        { at: 0.4, s: '先验只看部分目标 $g^{\\text{partial}}_t$，输出潜变量上的对角高斯 $\\mathcal{N}(\\mu^\\rho, \\sigma^\\rho)$，均值和标准差都由网络算。' },
-        { at: 3.6, s: '编码器写成先验的**残差**：均值 $\\mu^\\rho + \\mu^{\\mathcal{E}}$，方差 $\\sigma^{\\mathcal{E}}$ 自己给（式 7，取自 ControlVAE）。' },
-        { at: 7.0, s: '两个高斯的 KL 只看残差和两个方差：$\\sigma^\\rho = 1$、$\\sigma^{\\mathcal{E}} = 0.5$、残差 0.3 时是 **0.363**（一维）。' },
-        { at: 10.4, s: '训练时 $z$ 从编码器取，推理时从先验取；编码器离先验不远，解码器见过的 $z$ 和推理时的对得上。' },
-        { at: 13.4, s: '表 6：先验不用残差结构，坐椅子成功率 **96.9% → 21.1%**，平均最小距离 10.5 → 57.4 cm。' }
+        { at: 0.4, s: '**推理时**：用户只给部分目标，没有完整参考，编码器用不上——$z$ 只能从**先验** $\\rho$ 取，再交给解码器出动作。' },
+        { at: 3.6, s: '**训练时**：编码器 $\\mathcal{E}$ 看完整目标，$z$ 从编码器取，解码器模仿老师；KL 把编码器的分布往先验拉（式 8）。' },
+        { at: 7.0, s: '**残差**（式 7）：编码器的均值 = 先验的均值 + 一个偏移，方差自己给——先验先猜，编码器只说往哪挪（取自 ControlVAE）。' },
+        { at: 10.4, s: 'KL 只看偏移和两个方差：$\\sigma^\\rho = 1$、$\\sigma^{\\mathcal{E}} = 0.5$、偏移 0.3 时是 **0.363**（一维）；偏移越大罚得越多。' },
+        { at: 13.4, s: '论文：残差让先验管住潜空间，表 6 去掉它，坐上椅子的成功率 **96.9% → 21.1%**。我们的理解：训练和推理取到的 $z$ 落在同一片。' }
       ]
     },
     {
@@ -2088,7 +2338,7 @@
         { at: 0.4, s: '环境里跑的是**学生**：学生走到哪儿，老师就在哪儿打标签（DAgger），走偏了也有人纠正。' },
         { at: 3.6, s: '同一时刻，老师 $\\pi^{\\text{FC}}$ 看完整目标给出 $a^{\\text{FC}}_t$；学生只看遮过的那一部分。' },
         { at: 7.0, s: '目标（式 8）：$\\log \\mathcal{D}(a^{\\text{FC}} \\mid s, z) - \\alpha\\, D_{\\text{KL}}(\\mathcal{E} \\,\\|\\, \\rho)$；代码里第一项就是动作的均方差。' },
-        { at: 10.4, s: 'KL 系数 $\\alpha$ 从 0.0001 线性升到 0.01（代码 v2.3：第 3000 到 6000 个 epoch）；第 4500 个 epoch 时 $\\alpha = 0.00505$。' },
+        { at: 10.4, s: 'KL 系数 $\\alpha$ 从 0.0001 线性升到 0.01（代码 v2.3：第 3000 到 6000 轮训练（epoch）之间）；第 4500 个 epoch 时 $\\alpha = 0.00505$。' },
         { at: 13.4, s: '采数据时老师、学生都用确定的动作；蒸馏时也提前终止，不让学生走到老师没见过的状态。' }
       ]
     },
@@ -2097,8 +2347,8 @@
       dur: 16,
       build: buildSceneMasking,
       cues: [
-        { at: 0.4, s: '每步重抽掩码：10 帧拼起来几乎全身都看得见（某个部位至少露一次的概率 **0.99**），训练太「容易」。' },
-        { at: 3.6, s: '结构化：新一帧以 **98%** 的概率沿用上一帧的掩码，2% 才重抽——平均 50 步（约 1.7 s）换一次。' },
+        { at: 0.4, s: '每步重抽掩码：10 帧拼起来几乎全身都看得见（某个部位的位置至少露一次的概率 **0.99**），训练太「容易」。' },
+        { at: 3.6, s: '结构化：新一帧以 **98%** 的概率沿用上一帧的掩码，2% 才重抽——不算空白，平均 50 步（约 1.7 s）重抽一次。' },
         { at: 7.0, s: '未来 11 帧：前 10 帧是紧接着的 10 帧，第 11 帧是随机的远期姿态（附录 B.2）。' },
         { at: 10.4, s: '每步 1% 的概率开一段**空白**：连续 1–9 帧全遮；有文字、物体或远期姿态时空白再乘 4。' },
         { at: 13.4, s: '每个回合：物体 20% 藏起来、文字 80% 藏起来、远期姿态 20% 给出；不用结构化掩码，成功率 **0%**。' }
@@ -2113,7 +2363,7 @@
         { at: 3.6, s: '**整局固定噪声**：一个回合只抽一次 $\\epsilon$，到回合结束才重抽，行为前后连贯。' },
         { at: 7.0, s: '**观测历史**：过去 40 步（30 Hz，约 1.33 s）里每 8 步取一帧，共 5 帧，转到当前坐标系、带上「多久以前」。' },
         { at: 10.4, s: '文字控制靠它生成连贯的长动作；坐椅子时动作多半从站着开始，有历史不容易卡在原地。' },
-        { at: 13.4, s: '表 6：去掉历史 96.9% → 94.9%、10.5 → 12.7 cm；代码 v2.3 存 120 步、取 15 帧（每 8 步一帧，4 s）。' }
+        { at: 13.4, s: '表 6：去掉历史，坐上椅子的成功率 96.9% → 94.9%、平均最小距离 10.5 → 12.7 cm；代码 v2.3 存 120 步、取 15 帧（每 8 步一帧，4 s）。' }
       ]
     },
     {
@@ -2123,7 +2373,7 @@
       cues: [
         { at: 0.4, s: '每种输入一个小编码器（[256, 256]），同种输入共用：5 帧历史 → 5 个 token，11 帧目标 → 11 个 token。' },
         { at: 3.6, s: '被遮掉的输入用**注意力掩码**排除，token 数可变：只给文字时剩 8 个，全给时 20 个。' },
-        { at: 7.0, s: 'Transformer：4 层、4 头、宽 512、前馈 1024；第一个输出接两个头，给 **64 维**潜变量的均值和对数标准差。' },
+        { at: 7.0, s: 'Transformer：4 层、4 个注意力头、宽 512、前馈 1024；第一个输出再接两个小网络，给 **64 维**潜变量的均值和对数标准差。' },
         { at: 10.4, s: '编码器、解码器都是全连接 [1024, 1024, 1024]：编码器的输入总是完整的，尺寸固定。' },
         { at: 13.4, s: '推理时只剩先验 + 解码器：约束 → 先验 → $z$ → 解码器 → 69 维 PD 目标。' }
       ]
@@ -2136,7 +2386,7 @@
         { at: 0.4, s: '表 1 全身跟踪（AMASS，平地）：成功 = 任何一帧平均关节偏差都不超过 0.5 m；MPJPE 单位 mm。' },
         { at: 3.6, s: '测试集：老师 FC **99.9%**、31.3 mm；PHC+ 99.2%、36.1；学生 MaskedMimic **99.2%**、35.1；PULSE 97.1%、54.1。' },
         { at: 7.0, s: '老师是一个网络，PHC 是一组专家：论文认为单网络泛化更好，专家多了在 DAgger 里也难维护。' },
-        { at: 10.4, s: '表 2 VR 跟踪（测试集）：MaskedMimic 没专门训，**98.1%**；PULSE 93.4%、ASE 37.6%、CALM 10.1%（它们要另训高层）。' },
+        { at: 10.4, s: '表 2 VR 跟踪（测试集成功率，只给头和双手）：MaskedMimic 没专门训，**98.1%**；PULSE 93.4%、ASE 37.6%、CALM 10.1%（它们要另训高层）。' },
         { at: 13.4, s: '全身 MPJPE 58.1 mm（PULSE 88.6）；只算头和双手的 MPOJPE 是 45.8 mm。' }
       ]
     },
@@ -2145,9 +2395,9 @@
       dur: 16,
       build: buildSceneTable34,
       cues: [
-        { at: 0.4, s: '表 3（测试集）：只给骨盆 **98.4%**、VR 三点 98.1%、只给头 97.9%、双手 93.4%、双脚 **91.8%**。' },
+        { at: 0.4, s: '表 3（测试集成功率）：只给骨盆 **98.4%**、VR 三点 98.1%、只给头 97.9%、双手 93.4%、双脚 **91.8%**。' },
         { at: 3.6, s: '脚最难、手次之；只给骨盆比头 + 双手还好——论文建议 VR 加一个**骨盆传感器**，或先估出骨盆。' },
-        { at: 7.0, s: '表 4 不平地形（测试集）：老师全身 98.2%、51 mm；学生全身 95.4%、62.9 mm；学生 VR 93.6%、69.4 mm。' },
+        { at: 7.0, s: '表 4 不平地形（测试集成功率与误差）：老师全身 98.2%、51 mm；学生全身 95.4%、62.9 mm；学生 VR 93.6%、69.4 mm。' },
         { at: 10.4, s: '地形随机生成（碎石、台阶、平滑和粗糙的坡）；目标仍取自 AMASS 的平地动作，训练集、测试集成功率差不多。' },
         { at: 13.4, s: '读表注意：MPOJPE 只算给了的关节，表 3 的误差不能横着比；表 3 全身 99.1% 与表 1 的 99.2% 有一点出入。' }
       ]
@@ -2160,8 +2410,8 @@
         { at: 0.4, s: '新任务不训练，只写一个**状态机**，每一步决定给什么目标（goal-engineering，像 prompt engineering）。' },
         { at: 3.6, s: '路径跟随：给头未来 5 步的位置和朝向 + **0.8 s** 后一个远目标；离路径超过 0.4 m 只给远目标。' },
         { at: 7.0, s: '转向：先给骨盆朝向，再给 1 s 后的骨盆位置 $[x + v_x, y + v_y, 0.9]$；样例 4.00 s 时速度 $(0.803, -0.007)$ m/s。' },
-        { at: 10.4, s: '伸手：只给右手的目标位置，「还有多久」最多报 1/6 s；目标每变一次有 2 s。' },
-        { at: 13.4, s: '表 5（各 5000 个回合，平地 / 地形）：路径 **96.3% / 96.3%**、转向 97.8% / 93.8%、伸手 88.7% / 87.3%。' }
+        { at: 10.4, s: '伸手：只给右手的目标位置，「还有多久」最多报 $1/6$ s；目标每变一次有 2 s。' },
+        { at: 13.4, s: '表 5 成功率（各 5000 个回合，平地 / 地形）：路径 **96.3% / 96.3%**、转向 97.8% / 93.8%、伸手 88.7% / 87.3%；路径偏 2 m、朝向偏 45°、伸手到时偏 0.5 m 以上算失败。' }
       ]
     },
     {
@@ -2170,10 +2420,10 @@
       build: buildSceneSit,
       cues: [
         { at: 0.4, s: '坐椅子把三种目标串起来：角色出生在离物体 2–10 m 的随机位置，物体是训练时没见过的。' },
-        { at: 3.6, s: '离物体 2 m 以外：骨盆目标「朝物体 **1 m/s**」+ 文字 “the person walks normally”。' },
+        { at: 3.6, s: '离物体 2 m 以外：移动目标「朝物体 **1 m/s**」+ 文字 “the person walks normally”。' },
         { at: 7.0, s: '进入 2 m：撤掉方向和文字，**只给包围盒**，模型自己走近、转身、坐下（样例在 6.20 s 跨进 2 m）。' },
-        { at: 10.4, s: '表 6：MaskedMimic **96.9%**；去掉历史 94.9%、去掉 VAE 93.2%、非残差先验 **21.1%**、不用结构化掩码 **0%**。' },
-        { at: 13.4, s: '成功 = 骨盆到可坐位置 20 cm 以内；椅子、凳子、桌子、沙发都是没见过的（项目页视频）。' }
+        { at: 10.4, s: '表 6 是**坐上椅子的成功率**：MaskedMimic **96.9%**；去掉历史 94.9%、去掉 VAE 93.2%、非残差先验 **21.1%**、不用结构化掩码 **0%**。' },
+        { at: 13.4, s: '成功 = 骨盆到可坐位置 20 cm 以内；椅子、凳子、桌子都是没见过的（项目页视频）。' }
       ]
     },
     {
@@ -2183,9 +2433,9 @@
       cues: [
         { at: 0.4, s: '只给文字（图 9）：从站姿开始，敬礼、踢腿、单脚平衡、倒立这类**原子动作**都做得出来。' },
         { at: 3.6, s: '「走 4 步再举手」这种要长程推理的做不好：作者推测是**历史太短**。' },
-        { at: 7.0, s: '动作质量：有的会抖；后空翻、霹雳舞复现不了；不平地形上照平地的走法走，不会挑落脚点。' },
+        { at: 7.0, s: '动作质量：有的会抖；后空翻、霹雳舞这类难动作还很难复现；不平地形上照平地的走法走，不会挑落脚点。' },
         { at: 10.4, s: 'goal-engineering 还靠手写：一大群角色、复杂场景时很费力，希望用大语言模型自动生成。' },
-        { at: 13.4, s: '只在仿真角色上验证（SMPL，69 个自由度）。核心一句话：**控制 = 补全**，换一组目标就换一个任务。' }
+        { at: 13.4, s: '我们补一句（论文没列为局限）：只在仿真角色上验证（SMPL，69 个自由度）。核心一句话：**控制 = 补全**，换一组目标就换一个任务。' }
       ]
     }
   ];
@@ -2210,8 +2460,8 @@
   function buildVideoDemo(host) {
     K.video(host, {
       title: '配音讲解视频：MaskedMimic 十八幕全流程',
-      sub: '14 分 2 秒竖屏视频（1080×1920），中文配音 + 字幕。画面就是上面的十八幕动画，旁白把每一幕讲细；适合手机上看或转发。',
-      size: '16.7 MB',
+      sub: '15 分 8 秒竖屏视频（1080×1920），中文配音 + 字幕。画面就是上面的十八幕动画，旁白把每一幕讲细；适合手机上看或转发。',
+      size: '18.4 MB',
       fileName: 'MaskedMimic_讲解视频.mp4'
     });
   }
@@ -2246,7 +2496,7 @@
     wrap.appendChild(svg);
     root.appendChild(wrap);
     var cam = camAt(118, 330, 340, -0.25, -0.45);
-    groundLine(svg, 40, 600, 342);
+    groundGrid(svg, 0, 0, 640, 380).draw(cam);
     var ghost = smplMesh(svg, SHEETS.sit, { ghost: 0.28 });
     var actor = sampleActor(svg);
     var box = bboxLayer(svg, C_OBJ);

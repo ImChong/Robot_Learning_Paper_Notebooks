@@ -1198,7 +1198,7 @@ def test_video_subtitles_never_break_inside_an_english_word():
     import runpy
 
     src = (ROOT / "scripts" / "paper_video" / "build.py").read_text(encoding="utf-8")
-    fns = [n for n in ast.parse(src).body if isinstance(n, ast.FunctionDef) and n.name in ("word_char", "chunks")]
+    fns = [n for n in ast.parse(src).body if isinstance(n, ast.FunctionDef) and n.name in ("word_char", "math_mask", "vis_len", "chunks")]
     ns = {"re": re, "display": lambda s: s}
     exec(compile(ast.Module(body=fns, type_ignores=[]), "build.py", "exec"), ns)
 
@@ -1218,6 +1218,16 @@ def test_video_subtitles_never_break_inside_an_english_word():
             end = text.index(line, pos) + len(line)
             assert not (end < len(text) and ns["word_char"](text[end - 1]) and ns["word_char"](text[end])), (line, text)
             pos = end
+
+    # DISPLAY 写成 $…$ 的公式（MaskedMimic 的字幕）整条留在一行，标点在公式里也不断开；按字形算长度，不按 TeX 源码
+    assert lines("每项都是 $e^{-c \\times \\text{误差}}$，误差越大越接近 0。") == ["每项都是 $e^{-c \\times \\text{误差}}$", "误差越大越接近 0"]
+    assert lines("偏差是 $\\tfrac{1}{2}, \\tfrac{1}{3}$ 和 $x + v_x$、$y + v_y$，高度固定。")[0].count("$") % 2 == 0
+    assert ns["vis_len"]("标准差是 $e^{-2.9}$") == len("标准差是 ") + 5
+    paper = runpy.run_path(str(ROOT / "scripts" / "paper_video" / "papers" / "maskedmimic.py"))
+    for _, _, _, text in paper["SCRIPT"]:
+        for a, b in paper["DISPLAY"]:
+            text = text.replace(a, b)
+        assert all(line.count("$") % 2 == 0 for line in lines(text)), text
 
 
 def test_umr_explainer_and_worked_examples_share_the_same_numbers():
@@ -4119,7 +4129,7 @@ def test_maskedmimic_explainer_demos_and_worked_example_share_the_paper_numbers(
 
     # 旁白：数字列举用顿号，两个数之间不只隔一个逗号（「66 加 72，138 维」的教训）
     spoken = re.findall(r'"([^"]*)"\),', narration[narration.index("SCRIPT = [") : narration.index("DISPLAY = [")])
-    assert len(spoken) == 96 and not any(re.search(r"\d\s*[，,]\s*\d", t) for t in spoken)
+    assert len(spoken) == 99 and not any(re.search(r"\d\s*[，,]\s*\d", t) for t in spoken)
     # 片头接上一期（OmniH2O）的片尾预告，片尾只预告下一篇（HOVER）
     assert narration.count("上一期结尾预告") == 1 and "下一篇讲 HOVER" in narration and "HOVER" in intro
     assert "## 🎬 十八幕动画" in note and 'demos: ["maskedmimic"]' in note
@@ -4128,6 +4138,14 @@ def test_maskedmimic_explainer_demos_and_worked_example_share_the_paper_numbers(
     assert "1 - seg(t, b - 0.3, b)" not in js
     # 视频文案的占位符都已填上
     assert "__VIDEO_" not in js and "__VIDEO_" not in note
+    # 字幕和分镜里的公式都交给 KaTeX：DISPLAY 不再输出 e^(…)、上标数字，分镜文字里的希腊字母都在 $…$ 里
+    import runpy
+
+    display_out = [b for a, b in runpy.run_path(str(ROOT / "scripts" / "paper_video" / "papers" / "maskedmimic.py"))["DISPLAY"]]
+    assert not [d for d in display_out if re.search(r"e\^\(|[²³⁻÷αεμρτ]", d)]
+    code = re.sub(r"//[^\n]*", "", re.sub(r"/\*.*?\*/", "", js, flags=re.S))
+    plain = [x for x in re.findall(r"'((?:[^'\\]|\\.)*)'", code) if re.search(r"[αεμρτ²⁻÷]", x) and "$" not in x]
+    assert plain == [], plain
 
 
 def test_maskedmimic_3d_sprite_sheets_match_their_metadata():
@@ -4153,14 +4171,35 @@ def test_maskedmimic_3d_sprite_sheets_match_their_metadata():
     assert used and used == figs, ("没用到的图别留在仓库里", figs - used, "缺图", used - figs)
 
 
+def _mp4_seconds(path):
+    """mp4 的时长（秒，带小数）：读 moov/mvhd 的 timescale 与 duration（version 0 / 1 都认）。"""
+    import struct
+
+    data = path.read_bytes()
+    i = data.find(b"mvhd")
+    version = data[i + 4]
+    if version == 1:
+        timescale, duration = struct.unpack(">IQ", data[i + 24 : i + 36])
+    else:
+        timescale, duration = struct.unpack(">II", data[i + 16 : i + 24])
+    return duration / timescale
+
+
 def test_maskedmimic_project_page_clips():
-    """MaskedMimic：第 1、8、14–18 幕的仿真画面剪自项目页的视频（10 段，按幕懒加载）。"""
+    """MaskedMimic：第 1、8、14–18 幕的仿真画面剪自项目页的视频（13 段，按幕懒加载）。
+
+    原先四个例子拼成 2 × 2，手机上人太小（2026-10-17 看片反馈），现在一次只放一个：seqClip 的 parts 时长加起来要等于片段时长，
+    否则下面的小条和名称会和画面错开。
+    """
     js = (DEMO_JS_DIR / "maskedmimic.js").read_text(encoding="utf-8")
     clip_dir = ROOT / "assets/img/papers/maskedmimic/clips"
-    used = set(re.findall(r"projClip\(\w+, '(\w+)'", js))
-    assert used == {"castle", "prior", "sofa", "tracking", "vr", "terrain", "tasks", "objects", "text", "bloopers"}
+    used = set(re.findall(r"(?:projClip|seqClip)\(\w+, '(\w+)'", js))
+    assert used == {"castle", "prior", "sofa", "tracking", "vr", "terrain", "tasks", "task_path", "task_steer", "task_reach", "objects", "text", "bloopers"}
+    for cid, parts in re.findall(r"seqClip\(\w+, '(\w+)',[^\[]*?(\[\[.*?\]\])", js, flags=re.S):
+        total = sum(float(x) for x in re.findall(r"\[\s*([0-9.]+),", parts))
+        assert abs(total - _mp4_seconds(clip_dir / f"{cid}.mp4")) < 0.02, (cid, total)
     assert {p.name for p in clip_dir.iterdir()} == {f"{u}.{ext}" for u in used for ext in ("mp4", "webp")}
-    assert sum(p.stat().st_size for p in clip_dir.iterdir()) < 3.0e6, "片段只在播到那一幕时才下载，但总量也别失控"
+    assert sum(p.stat().st_size for p in clip_dir.iterdir()) < 3.2e6, "片段只在播到那一幕时才下载，但总量也别失控"
     assert js.count("项目页视频") >= 8 and "仿真结果剪自项目页的视频" in js
     note = MASKEDMIMIC_NOTE.read_text(encoding="utf-8")
     assert "仿真画面剪自[项目页](https://research.nvidia.com/labs/par/maskedmimic/)的视频" in note
