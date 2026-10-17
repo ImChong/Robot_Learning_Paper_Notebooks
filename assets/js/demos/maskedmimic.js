@@ -906,7 +906,12 @@
     var GY = 330, SC = 150, OX = 140;
     /* 框底下一行写着「半透明：τ = …」，格子停在它上面，别压字 */
     var floor = groundGrid(s, LX + 2, LY + 2, LW - 4, LH - 50);
+    /* 高度图的采样点也裁在格子的范围里：16 × 16 的最后几行会伸到底下那行「半透明：τ = …」上（2026-10-17 全局检查） */
+    var hmClip = svgEl('clipPath', { id: 'mm-hm-clip' });
+    hmClip.appendChild(svgEl('rect', { x: LX + 2, y: LY + 2, width: LW - 4, height: LH - 50 }));
+    s.appendChild(hmClip);
     var hm = group(s), hmDots = [];
+    hm.setAttribute('clip-path', 'url(#mm-hm-clip)');
     for (var i = 0; i < 16 * 16; i++) hmDots.push(dotAt(hm, 0, 0, 1.6, C_MUTED));
     var AHEAD = [3, 5, 8];
     var ghosts = AHEAD.map(function () { return smplMesh(s, SHEETS.sit, { ghost: 0.28 }); });
@@ -1444,6 +1449,12 @@
       { x: 70, y: 336, w: 300, str: '损失：动作的差 + $\\alpha \\cdot$ KL → 更新学生', c: C_BAD }
     ];
     nodes.forEach(function (n) { chip(s, n.x, n.y, n.w, n.str, n.c, { h: 36, size: 12.5 }); });
+    /* 小点穿过方块时会压在字上（2026-10-17 全局检查）：进了方块就藏起来，改成把这一块的边框点亮 */
+    var glow = nodes.map(function (n) {
+      var r = paint(svgEl('rect', { x: n.x - 3, y: n.y - 3, width: n.w + 6, height: 42, rx: 9, fill: 'none', 'stroke-width': 2.6 }), null, C_VIS);
+      s.appendChild(r);
+      return r;
+    });
     [[220, 122, 220, 164], [220, 206, 220, 248], [220, 290, 220, 332]].forEach(function (a) { var ar = arrow(s, C_INK2, 2); ar.set(a[0], a[1], a[2], a[3], 8); });
     var back = pathLine(s, [[70, 354], [44, 354], [44, 102], [66, 102]], C_INK2, 2, '5 4');
     void back;
@@ -1507,7 +1518,11 @@
         if (pos <= L[j]) { var a = pos / L[j]; q = [loop[j][0] + (loop[j + 1][0] - loop[j][0]) * a, loop[j][1] + (loop[j + 1][1] - loop[j][1]) * a]; break; }
         pos -= L[j];
       }
+      var inside = -1;
+      nodes.forEach(function (n, k) { if (q[0] >= n.x - 2 && q[0] <= n.x + n.w + 2 && q[1] >= n.y - 2 && q[1] <= n.y + 38) inside = k; });
       moveDot(runner, q);
+      runner.style.opacity = inside < 0 ? 1 : 0;
+      glow.forEach(function (r, k) { r.style.opacity = k === inside ? 1 : 0; });
       setOpacity(p1, win(t, 0.3, 3.6));
       setOpacity(p2, win(t, 3.6, 7.0));
       setOpacity(p3, win(t, 7.0, 10.4));
@@ -1527,7 +1542,8 @@
     var s = sceneSvg('上下两条时间轴，每条 6 行（双踝、骨盆、头、双手）× 50 步：上面每一步都重新随机抽掩码，像撒胡椒；下面按论文的结构化掩码，' +
       '一组掩码会连着用很多步，还有整段全遮的「空白」；一个 10 步宽的框在时间轴上滑，数这 10 步里位置露过的部位有几个');
     label(s, 24, 28, '一行一个部位，一列一步（30 Hz）；绿 = 给了位置，浅蓝 = 只给旋转', 'demo-x-ink2', 13);
-    var GX = 96, CW = 13, N = 50, RH = 16;
+    /* 一列 12 宽：50 列画到 696，右边的读数和「个部位露过位置」才放得进画面（13 宽时字伸出右边 27 px 被裁掉，2026-10-17 看片反馈） */
+    var GX = 96, CW = 12, N = 50, RH = 16;
     var SEQ_A = maskSequence(N, 0, 0, 11), SEQ_B = maskSequence(N, MASK.repeat, MASK.gap, 26);
     function gridAt(y0, seq, title) {
       var g = group(s);

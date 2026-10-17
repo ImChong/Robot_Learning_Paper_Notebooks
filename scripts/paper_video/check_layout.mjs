@@ -173,6 +173,15 @@ if (mode === 'story') {
           const qc = clipTo(v.parentElement, v.getBoundingClientRect());
           if (qc) items.push({ k: 'img', s: (v.getAttribute('src') || '').split('/').pop(), r: qc, el: v });
         }
+        // 文字越出画面：fitStory 把 viewBox 缩到分镜画的东西上（左右各留 12），伸出去的字被 svg 裁掉一截
+        //（MaskedMimic 第 11 幕右边的「个部位露过位置」，2026-10-17 看片反馈）
+        const frame = root.getBoundingClientRect();
+        for (const A of items) {
+          if (A.k !== 'text') continue;
+          const out1 = Math.max(frame.left - A.r.left, A.r.right - frame.right, frame.top - A.r.top, A.r.bottom - frame.bottom);
+          if (out1 > 1) out.push(`text「${A.s}」 clipped by frame edge (${Math.round(out1)}px out)`);
+          else if (pad && out1 > -pad) out.push(`text「${A.s}」 near frame edge (${Math.round(-out1)}px gap)`);
+        }
         // 文字越出框线：有描边的框（面板、胶囊）里的文字，一部分在框里、一部分伸到框外
         for (const rc of root.querySelectorAll('rect')) {
           if (rc.closest('clipPath, defs') || alpha(rc, root) < 0.15) continue;
