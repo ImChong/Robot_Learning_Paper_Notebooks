@@ -797,17 +797,38 @@
   /* ── scene 3: 两个阶段（图 3） ── */
   function buildSceneStages() {
     var s = sceneSvg('左边是论文图 3，旁白念到哪一块就把那一块放大：① 用强化学习训全身跟踪的老师，② 用监督学习把老师蒸馏进只看部分目标的学生，' +
-      '③ 推理时直接用；右边说明图里每个方块，最后换回整张图，讲为什么拆两段和训练规模');
+      '③ 推理时直接用，说到三个角色坐沙发时再把第三块里的沙发原位放大；右边说明图里每个方块，最后换回整张图，讲为什么拆两段和训练规模');
     /* 论文图 3 是竖排的三块（760 × 1564）。前三段把旁白讲的那一块单独放大摆在左边（宽 436，是整图缩略的 2.2 倍；
        整图塞在 196 × 360 里，视频号上看不清，2026-10-17 看片反馈）；后两段讲「为什么拆两段」和训练规模，左边换回整张图、
        框出前两块。三块的上下边界是按像素量的：0–0.318、0.321–0.700、0.703–1 */
     var FIG3 = { w: 760, h: 1564, cuts: [[0, 0.318], [0.321, 0.700], [0.703, 1]] };
+    var envBox = null;
     var big = FIG3.cuts.map(function (c, i) {
       var g = group(s), w = 436, h = w * (c[1] - c[0]) * FIG3.h / FIG3.w, y = 44 + (340 - h) / 2;
-      figPart(g, 'fig3_overview.webp', FIG3.w, FIG3.h, 0, c[0], 1, c[1], 24, y, w, '');
+      var part = figPart(g, 'fig3_overview.webp', FIG3.w, FIG3.h, 0, c[0], 1, c[1], 24, y, w, '');
       label(g, 24 + w / 2, y + h + 19, '论文图 3 · 第 ' + (i + 1) + ' 块（三块自上而下）', 'demo-x-mut', 10, 'middle');
+      /* 第三块右上的 Environment（三个角色坐在不平地形上的沙发上）在整图里是 x 503–689、y 1202–1324 */
+      if (i === 2) { var a = part.px(503 / FIG3.w, 1202 / FIG3.h), b = part.px(689 / FIG3.w, 1324 / FIG3.h); envBox = [a[0], a[1], b[0] - a[0], b[1] - a[1]]; }
       return g;
     });
+    /* 第三块里的沙发只有 107 × 70，看不清三个角色（2026-10-17 看片反馈）：旁白说到「三个角色坐在沙发上」时，
+       从第三块里原位放大成 PDF 里嵌的原图（1200 × 673）、铺满左边 */
+    var envHi = paint(svgEl('rect', { x: (envBox[0] - 3).toFixed(1), y: (envBox[1] - 3).toFixed(1), width: (envBox[2] + 6).toFixed(1), height: (envBox[3] + 6).toFixed(1), rx: 4, fill: 'none', 'stroke-width': 3 }), null, C_VIS);
+    big[2].appendChild(envHi);
+    var SOFA = [24, 44 + (340 - 436 * 673 / 1200) / 2, 436, 436 * 673 / 1200];
+    var zoom = group(s);
+    var zBack = svgEl('rect', { rx: 5, fill: '#ffffff', stroke: 'none' });
+    var zImg = svgEl('image', { href: PAPER_IMG_BASE + 'fig3_sofa.webp', preserveAspectRatio: 'xMidYMid slice' });
+    var zFrame = paint(svgEl('rect', { rx: 4, fill: 'none', 'stroke-width': 3 }), null, C_VIS);
+    zoom.appendChild(zBack); zoom.appendChild(zImg); zoom.appendChild(zFrame);
+    var zCap = label(zoom, SOFA[0] + SOFA[2] / 2, SOFA[1] + SOFA[3] + 21, '论文图 3 第三块的 Environment（原图放大）', 'demo-x-mut', 10.5, 'middle');
+    function zoomTo(k) {
+      var r = envBox.map(function (v, j) { return v + (SOFA[j] - v) * k; });
+      [[zBack, 3], [zImg, 0], [zFrame, 1.5]].forEach(function (e) {
+        e[0].setAttribute('x', (r[0] - e[1]).toFixed(1)); e[0].setAttribute('y', (r[1] - e[1]).toFixed(1));
+        e[0].setAttribute('width', (r[2] + 2 * e[1]).toFixed(1)); e[0].setAttribute('height', (r[3] + 2 * e[1]).toFixed(1));
+      });
+    }
     var whole = group(s);
     var fig = paperFig(whole, 'fig3_overview.webp', 20, 34, 196, 360, '', { ar: FIG3.w / FIG3.h, pad: 2 });
     function boxOn(v0, v1, color) {
@@ -841,8 +862,8 @@
     item(p3, 76, '动画师给约束（这里是一张沙发）', C_VIS);
     item(p3, 112, '约束就是 $g^{\\text{partial}}_t$，直接进学生', C_VIS);
     item(p3, 148, '学生冻结（图里的小锁），不再训练', C_WARN);
-    label(p3, R2, 210, '图里三个角色坐在不平地形上的沙发上，', 'demo-x-ink2', 12.5);
-    label(p3, R2, 234, '这张沙发、这块地形训练时都没见过', 'demo-x-ink2', 12.5);
+    label(p3, R2, 210, '图里三个角色坐在不平地形上的沙发上：', 'demo-x-ink2', 12.5);
+    label(p3, R2, 234, '物体摆在不平地形上，训练时没见过', 'demo-x-ink2', 12.5);
     var p4 = group(s);
     label(p4, R, 56, '为什么要拆成两段', 'demo-x-ink', 14);
     chip(p4, R, 74, RW, '动作数据只有运动学轨迹，没有力矩：先用强化学习学出「怎么做出来」', C_FULL, { size: 12, left: true });
@@ -860,7 +881,11 @@
     function draw(t) {
       setOpacity(big[0], win(t, 0.3, 3.6));
       setOpacity(big[1], win(t, 3.6, 7.0));
-      setOpacity(big[2], win(t, 7.0, 10.4));
+      setOpacity(big[2], t < 8.7 ? win(t, 7.0) : 1 - seg(t, 9.0, 9.6));
+      envHi.style.opacity = seg(t, 8.2, 8.5);
+      zoomTo(ease(seg(t, 9.0, 9.6)));
+      zCap.style.opacity = seg(t, 9.6, 9.8);
+      setOpacity(zoom, t < 10.4 ? seg(t, 8.95, 9.05) : 1 - seg(t, 10.4, 10.7));
       setOpacity(whole, win(t, 10.4));
       setOpacity(p1, win(t, 0.3, 3.6));
       setOpacity(p2, win(t, 3.6, 7.0));
@@ -1212,11 +1237,10 @@
   }
   function buildSceneVae() {
     var s = sceneSvg('右边先一句话交代 VAE：编码器把输入压成随机的 z、解码器复原、z 被拉向先验；左边是俯视的玩具：从 S 出发，1 秒内到 T，中间有根柱子；老师的示范有的从上绕、有的从下绕，' +
-      '直接回归把两种平均成一条直线、撞上柱子；条件 VAE 用潜变量 z 选「哪一种」；右边先放论文图 5 的结构，最后左边换成项目页里三个角色坐同一张沙发的视频');
+      '直接回归把两种平均成一条直线、撞上柱子；条件 VAE 用潜变量 z 选「哪一种」；右边先放论文图 5 的结构，最后右边放项目页里三个角色坐同一张沙发的视频');
     label(s, 24, 28, '部分目标是欠定的：「1 秒内到 $T$」有很多种走法', 'demo-x-ink2', 13.5);
     var LX = 24, LY = 44, LW = 400, LH = 352;
-    /* 左边的玩具只在前三段：第 4 段图 5 铺满整个宽度，第 5 段换成沙发视频（视频号里人太小看不清，2026-10-17 看片反馈），
-       所以框和玩具都放进 toy 这一组 */
+    /* 第 4 段图 5 铺满整个宽度，左边的玩具让开、第 5 段再回来，所以框和玩具都放进 toy 这一组 */
     var toy = group(s);
     rectBox(toy, LX, LY, LW, LH, C_BORDER, C_SURFACE2);
     label(toy, LX + 14, LY + 24, '俯视图（玩具示意）', 'demo-x-mut', 11.5);
@@ -1280,12 +1304,9 @@
     chip(p4, 278, 330, 244, '编码器 $\\mathcal{E}$：看完整目标，只在训练时用', C_WARN, { size: 11.5 });
     chip(p4, 532, 330, 244, '解码器 $\\mathcal{D}$：看状态和 $z$，出动作', C_ACCENT, { size: 12 });
     var p5 = group(s);
-    /* 片段裁成 620 × 496（围着沙发放大约 2 倍）、缩到 440 × 352，铺满左边的框 */
-    var sv = projClip(p5, 'sofa', LX + 6, LY + 8, LW - 12, (LW - 12) * 352 / 440, '项目页视频（1.5 倍速，围着沙发裁剪放大）：同一张沙发，三个角色坐法各不相同');
-    label(p5, R, 64, '推理：只用先验', 'demo-x-ink', 14);
-    label(p5, R, 96, '推理时扔掉编码器，从先验里取 $z$；', 'demo-x-ink2', 12.5);
-    label(p5, R, 120, '$z$ 不同，同一张沙发坐法也不同', 'demo-x-ink2', 12.5);
-    chip(p5, R, 142, RW, '评测表格用的是先验的均值（更稳）', C_ACCENT, { size: 12, left: true });
+    var sv = projClip(p5, 'sofa', R, 56, RW, RW * 270 / 480, '项目页视频（1.5 倍速）：同一张沙发，三个角色坐法各不相同');
+    label(p5, R, 284, '推理时扔掉编码器，从先验里取 $z$；', 'demo-x-ink2', 12);
+    label(p5, R, 306, '评测表格用的是先验的均值（更稳）', 'demo-x-ink2', 12);
     function draw(t, clock) {
       var now = nowOf(t, clock), ph = phase(t), a = (now % 2.4) / 2.0;
       a = Math.min(1, a);
@@ -1309,7 +1330,7 @@
       setOpacity(p3, win(t, 7.0, 10.4));
       setOpacity(p4, win(t, 10.4, 13.4));
       setOpacity(p5, win(t, 13.4));
-      setOpacity(toy, 1 - seg(t, 10.4, 10.7));
+      setOpacity(toy, t < 13.4 ? 1 - seg(t, 10.4, 10.7) : seg(t, 13.7, 14.0));
       sv.at(K.clipSince(t, 13.4), t >= 13.4);
     }
     return { el: s, draw: draw };
@@ -1335,7 +1356,7 @@
     for (var i = 0; i < 14; i++) sDots.push(dotAt(samp, 0, 0, 3.2, C_WARN));
     var sLabel = label(samp, GX, GY + 58, '训练：从编码器取 $z$', 'demo-x-ink2', 11.5);
     var abl = group(s);
-    label(abl, LX + 20, LY + 34, '表 6：坐椅子（测试物体）', 'demo-x-ink', 13);
+    label(abl, LX + 20, LY + 34, '表 6：坐上椅子的成功率（测试物体）', 'demo-x-ink', 13);
     var bA = barRowAt(abl, LX + 20, LY + 70, 120, 'MaskedMimic', C_GOOD, 28, 12), bB = barRowAt(abl, LX + 20, LY + 116, 120, '先验不用残差', C_BAD, 28, 12);
     label(abl, LX + 20, LY + 190, '平均最小距离：10.5 cm → 57.4 cm', 'demo-x-ink2', 12);
     label(abl, LX + 20, LY + 214, '论文：非残差的先验「管不住」潜空间，', 'demo-x-ink2', 12);
@@ -1625,7 +1646,7 @@
     label(p4, R, 182, '论文参考 SuperPADL 的做法', 'demo-x-mut', 11.5);
     var p5 = group(s);
     label(p5, R, 64, '消融与代码', 'demo-x-ink', 14);
-    chip(p5, R, 82, RW, '表 6：去掉历史 96.9% → 94.9%，10.5 → 12.7 cm', C_BAD, { size: 11.5, left: true });
+    chip(p5, R, 82, RW, '表 6 坐上椅子的成功率：去掉历史 96.9% → 94.9%', C_BAD, { size: 11.5, left: true });
     chip(p5, R, 118, RW, '代码 v2.3：存 120 步、取 15 帧，同样每 8 步一帧', C_BORDER, { size: 11.5, left: true });
     label(p5, R, 182, '也就是看过去 4 s，比论文写的 1.33 s 长', 'demo-x-ink2', 12);
     function draw(t, clock) {
@@ -2016,9 +2037,13 @@
     label(p3, R, 168, '所以只给物体，模型就自己走近、转身、坐下', 'demo-x-ink2', 12);
     var swT = label(p3, R, 200, '', 'demo-x-ink', 12);
     var p4 = group(s);
-    label(p4, R, 64, '表 6：坐椅子（测试物体）+ 消融', 'demo-x-ink', 14);
-    var t6 = barChart(p4, R, 82, 120, 160, TABLE6.map(function (r) { return { zh: r.zh, v: r.v[0], color: r.key === 'mm' ? C_GOOD : r.v[0] < 50 ? C_BAD : C_WARN }; }), 0, 100, pct, 20, 10);
-    label(p4, R, 248, '误差：10.5、12.7、12.2、57.4、274.4 cm', 'demo-x-mut', 11.5);
+    /* 先写清百分比是什么：坐上椅子的成功率（2026-10-17 看片反馈：只写「表 6」看不出是成功率） */
+    label(p4, R, 64, '表 6：坐上椅子的成功率（测试物体）', 'demo-x-ink', 14);
+    label(p4, R, 88, '成功：回合里骨盆到过可坐位置 20 cm 以内', 'demo-x-ink2', 12);
+    label(p4, R, 108, '第一行是完整版，下面每行拿掉一个部件', 'demo-x-mut', 11.5);
+    var t6 = barChart(p4, R, 122, 120, 160, TABLE6.map(function (r) { return { zh: r.zh, v: r.v[0], color: r.key === 'mm' ? C_GOOD : r.v[0] < 50 ? C_BAD : C_WARN }; }), 0, 100, pct, 20, 10);
+    label(p4, R, 290, '骨盆离可坐位置的最近距离（平均）：', 'demo-x-mut', 11.5);
+    label(p4, R, 310, '10.5、12.7、12.2、57.4、274.4 cm', 'demo-x-mut', 11.5);
     var p5 = group(s);
     label(p5, R, 64, '成功的定义', 'demo-x-ink', 14);
     chip(p5, R, 82, RW, '骨盆到可坐位置 20 cm 以内，算坐上了', C_GOOD, { size: 12, left: true });
@@ -2142,6 +2167,7 @@
         { at: 0.4, s: '第一阶段：用强化学习训全身跟踪器 $\\pi^{\\text{FC}}$（fully-constrained），它看得到未来每一帧的完整参考。' },
         { at: 3.6, s: '第二阶段：把 $\\pi^{\\text{FC}}$ 当老师，蒸馏出只看 $g^{\\text{partial}}_t = \\mathcal{M}(g^{\\text{full}}_t)$ 的学生 $\\pi^{\\text{PC}}$。' },
         { at: 7.0, s: '推理：不再训练，用户给部分目标，$\\pi^{\\text{PC}}$ 在没见过的场景里生成动作（图 3 第三块）。' },
+        { at: 8.7, s: '放大第三块的 Environment：三个角色坐在不平地形上的沙发上——物体摆在不平地形上，训练时没见过。' },
         { at: 10.4, s: '为什么拆两段：动作数据没有力矩，先用 RL 学「怎么做出来」；「给什么目标都行」的灵活性交给监督学习。' },
         { at: 13.4, s: '规模：Isaac Gym 16,384 个环境、4 张 A100、约两周；老师约 **300 亿步**、学生约 **100 亿步**；控制 30 Hz、仿真 120 Hz。' }
       ]
@@ -2252,7 +2278,7 @@
         { at: 3.6, s: '**整局固定噪声**：一个回合只抽一次 $\\epsilon$，到回合结束才重抽，行为前后连贯。' },
         { at: 7.0, s: '**观测历史**：过去 40 步（30 Hz，约 1.33 s）里每 8 步取一帧，共 5 帧，转到当前坐标系、带上「多久以前」。' },
         { at: 10.4, s: '文字控制靠它生成连贯的长动作；坐椅子时动作多半从站着开始，有历史不容易卡在原地。' },
-        { at: 13.4, s: '表 6：去掉历史 96.9% → 94.9%、10.5 → 12.7 cm；代码 v2.3 存 120 步、取 15 帧（每 8 步一帧，4 s）。' }
+        { at: 13.4, s: '表 6：去掉历史，坐上椅子的成功率 96.9% → 94.9%、平均最近距离 10.5 → 12.7 cm；代码 v2.3 存 120 步、取 15 帧（每 8 步一帧，4 s）。' }
       ]
     },
     {
@@ -2311,7 +2337,7 @@
         { at: 0.4, s: '坐椅子把三种目标串起来：角色出生在离物体 2–10 m 的随机位置，物体是训练时没见过的。' },
         { at: 3.6, s: '离物体 2 m 以外：骨盆目标「朝物体 **1 m/s**」+ 文字 “the person walks normally”。' },
         { at: 7.0, s: '进入 2 m：撤掉方向和文字，**只给包围盒**，模型自己走近、转身、坐下（样例在 6.20 s 跨进 2 m）。' },
-        { at: 10.4, s: '表 6：MaskedMimic **96.9%**；去掉历史 94.9%、去掉 VAE 93.2%、非残差先验 **21.1%**、不用结构化掩码 **0%**。' },
+        { at: 10.4, s: '表 6 是**坐上椅子的成功率**：MaskedMimic **96.9%**；去掉历史 94.9%、去掉 VAE 93.2%、非残差先验 **21.1%**、不用结构化掩码 **0%**。' },
         { at: 13.4, s: '成功 = 骨盆到可坐位置 20 cm 以内；椅子、凳子、桌子、沙发都是没见过的（项目页视频）。' }
       ]
     },
