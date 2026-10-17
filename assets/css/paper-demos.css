@@ -18,6 +18,7 @@
   --demo-warn: #d7a75f;
   --demo-muted: #8a8a8a;
   --demo-grid: #37373a;
+  --demo-purple: #c586c0;
 }
 
 [data-theme="light"] {
@@ -30,6 +31,7 @@
   --demo-warn: #9a6b10;
   --demo-muted: #6b6b6b;
   --demo-grid: #e6e6e4;
+  --demo-purple: #8e44ad;
 }
 
 .paper-demo {

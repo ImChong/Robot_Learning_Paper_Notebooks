@@ -455,7 +455,8 @@
       accent: v('--demo-accent', '#569cd6'),
       good: v('--demo-good', '#4ec9a4'),
       bad: v('--demo-bad', '#e06c75'),
-      warn: v('--demo-warn', '#d7a75f')
+      warn: v('--demo-warn', '#d7a75f'),
+      purple: v('--demo-purple', '#c586c0')
     };
   }
 
@@ -1010,6 +1011,7 @@
     good: 'var(--demo-good)',
     bad: 'var(--demo-bad)',
     warn: 'var(--demo-warn)',
+    purple: 'var(--demo-purple)',
     muted: 'var(--demo-muted)',
     grid: 'var(--demo-grid)',
     border: 'var(--demo-border)',

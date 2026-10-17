@@ -10,10 +10,12 @@ Each segment plays storyboard time [from, to] of one scene at 1x speed while
 its line is spoken; if the line runs longer, the scene holds on `to`.
 """
 import asyncio
+import hashlib
 import importlib
 import json
 import os
 import re
+import shutil
 import ssl
 import subprocess
 import sys
@@ -49,6 +51,7 @@ SCRIPT, DISPLAY = PAPER.SCRIPT, PAPER.DISPLAY
 SPACE_CJK = getattr(PAPER, "SPACE_CJK", False)
 OUT = HERE / "out" / NAME
 OUT.mkdir(parents=True, exist_ok=True)
+CACHE = OUT / "tts_cache"  # 每句的 mp3 + 句子边界，按音色、语速、文字的哈希存；被 429 打断后重跑只补没合成的句子
 FFMPEG = imageio_ffmpeg.get_ffmpeg_exe()
 VOICE = "zh-CN-YunxiNeural"
 RATE = "+22%"
@@ -81,8 +84,13 @@ def display(s):
     return space_cjk(s) if SPACE_CJK else s
 
 
+PACE = float(os.environ.get("TTS_PACE", "0"))  # 每次请求前等几秒：服务按频率限流（429）时用，平时是 0
+
+
 async def tts(text, mp3, tries=6):
     for k in range(tries):
+        if PACE:
+            await asyncio.sleep(PACE)
         try:
             comm = edge_tts.Communicate(text, VOICE, rate=RATE, boundary="SentenceBoundary")
             sents = []
@@ -103,6 +111,21 @@ async def tts(text, mp3, tries=6):
                 raise
             print(f"  429 from the TTS service, waiting {20 * 2 ** k} s", file=sys.stderr)
             await asyncio.sleep(20 * 2 ** k)
+
+
+async def tts_cached(text, mp3, fresh=False):
+    """tts() with a cache keyed by voice, rate and text, so a build cut off by 429s resumes where it stopped."""
+    host = edge_tts.communicate.WSS_URL.split("?")[0]  # 新旧两个合成地址出的音频不完全一样，别混用
+    key = hashlib.sha1(f"{host}|{VOICE}|{RATE}|{text}".encode()).hexdigest()[:16]
+    cm, cj = CACHE / f"{key}.mp3", CACHE / f"{key}.json"
+    if not fresh and cm.exists() and cj.exists():
+        shutil.copyfile(cm, mp3)
+        return json.load(open(cj))
+    sents = await tts(text, mp3)
+    CACHE.mkdir(exist_ok=True)
+    shutil.copyfile(mp3, cm)
+    json.dump(sents, open(cj, "w"), ensure_ascii=False)
+    return sents
 
 
 def to_wav(mp3, wav):
@@ -219,7 +242,7 @@ async def main():
                 w.setframerate(SR)
                 w.writeframes(audio)
         else:
-            sents = await tts(text, mp3)
+            sents = await tts_cached(text, mp3)
             audio = to_wav(mp3, wav)
         alen = len(audio) / 2 / SR
         # 服务偶尔只回一小段音频而不报错（一句 60 字的旁白只有 0.36 s）：明显短于字数就重合成
@@ -228,7 +251,7 @@ async def main():
                 break
             print(f"seg{i:02d} only {alen:.2f}s for {len(text)} chars, retrying")
             await asyncio.sleep(2 ** k)
-            sents = await tts(text, mp3)
+            sents = await tts_cached(text, mp3, fresh=True)
             audio = to_wav(mp3, wav)
             alen = len(audio) / 2 / SR
         lead = LEAD if scene != prev_scene else 0.0

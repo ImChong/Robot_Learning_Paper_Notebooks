@@ -120,6 +120,7 @@ ASAP_NOTE = _high_impact_note("ASAP_Aligning_Simulation_and_Real-World_Physics_f
 EXBODY_NOTE = _high_impact_note("Expressive_Whole-Body_Control_for_Humanoid_Robots")
 H2O_NOTE = _high_impact_note("H2O_Learning_Human-to-Humanoid_Real-Time_Whole-Body_Teleoperation")
 OMNIH2O_NOTE = _high_impact_note("OmniH2O_Universal_Whole-Body_Teleoperation")
+HOVER_NOTE = _high_impact_note("HOVER_Versatile_Neural_Whole-Body_Controller")
 MASKEDMIMIC_NOTE = _high_impact_note("MaskedMimic_Unified_Physics-Based_Character_Control_Through_Masked_Motion_Inpainting")
 PHP_NOTE = (
     ROOT
@@ -339,7 +340,7 @@ EXPLAINER_BUNDLES = (
     "gmr", "omniretarget", "diffusion_policy", "beyondmimic", "cosmos", "umr", "php", "pbfm",
     "gentle", "lcp", "transformer", "pi0", "pi05", "op3soccer", "smp", "humanml3d",
     "domain_randomization", "quadterrain", "realhumanoid", "asap", "inekf", "berkeley_humanoid",
-    "toddlerbot", "exbody", "h2o", "omnih2o", "maskedmimic",
+    "toddlerbot", "exbody", "h2o", "omnih2o", "hover", "maskedmimic",
 )
 
 # 幕数由论文决定，不是统一模板：PPO / DeepMimic / AMP / ADD 的核心概念正好各 5 个，
@@ -529,6 +530,11 @@ EXPLAINER_SCENES = {
     # 灵巧手与机载系统一幕；结果按表 1 主结果 + DAgger、表 1 其余三组消融、表 2 真机各一幕；Q2 的接口一幕，Q3 的 GPT-4o 与
     # 数据集、表 3 的模仿学习各一幕；局限一幕。压成 14 幕会让历史纸带和 DAgger 流程、或表 1 和表 2 的条形图抢同一帧。
     "omnih2o": (OMNIH2O_NOTE, 17),
+    # HOVER 十六幕：问题两幕（每篇一套接口 / 全身运动学模仿是公共底座）；第 II-B 节的命令空间与表 I 的「前人都是子集」各一幕（一个讲三种目标与
+    # 95 维，一个讲六格与 49 位掩码）；第 II-C 节的重定向一幕；第 II-D 节的特权教师一幕；第 II-E 节的本体感受、模式掩码、稀疏掩码、DAgger 各一幕
+    # （式子和代码出入各不相同）；结果按表 III、表 IV、图 4、表 V + 图 5、图 6 各一幕，局限与代码一幕。压成 14 幕会让模式掩码的开关和稀疏掩码的
+    # 掩码条、或表 III 的柱和表 IV 的柱抢同一帧。
+    "hover": (HOVER_NOTE, 16),
     # MaskedMimic 十八幕：问题两幕（城堡的例子与以前的两条路 / 控制就是补全）；第 4 节两阶段一幕；第 5 节的老师按观测与网络、奖励、
     # 训练场与终止采样各一幕（式 3–4、附录 B.1 的 w 与 c、图 4 各有证据）；第 6 节按部分目标、为什么要 VAE、残差先验（式 6–7）、
     # DAgger 与 KL 调度（式 8）、结构化掩码、固定噪声与历史、先验网络各一幕；结果按表 1+2、表 3+4、表 5、表 6 各一幕，文字控制与局限一幕。
@@ -2009,7 +2015,7 @@ def test_narrated_video_placeholders_point_at_files_that_exist():
     for demo in ("calm-video", "pulse-video", "dp-video", "bm-video", "lcp-video", "cosmos-video", "groot-video",
                  "tf-video", "pi0-video", "pi05-video", "soccer-video", "sonic-video", "gmr-video",
                  "omniretarget-video", "humanml3d-video", "smp-video", "dr-video", "qt-video", "rh-video", "inekf-video", "bh-video",
-                 "tb-video", "exbody-video", "h2o-video"):
+                 "tb-video", "exbody-video", "h2o-video", "hover-video"):
         assert demo in seen, f"{demo} 应该挂在对应的论文笔记里"
 
 
@@ -4012,6 +4018,186 @@ def test_omnih2o_project_page_clips():
     assert js.count("项目页视频") >= 8 and "真机片段剪自项目页的视频" in js
     note = OMNIH2O_NOTE.read_text(encoding="utf-8")
     assert "真机画面剪自[项目页](https://omni.human2humanoid.com/)的视频" in note
+
+
+def _hover_walk(js: str):
+    """解码 hover.js 的 `WALK`：每帧 175 个 int16——根部 3（mm）、横滚俯仰偏航 3（mrad）、19 个关节角（mrad）、23 个刚体（mm）、CMU 骨架 27 个点（mm）。"""
+    m = re.search(r"var WALK = \{ clip: '07_01', fps: (\d+), n: (\d+), per: (\d+), data: '([^']+)' \};", js)
+    fps, n, per = int(m.group(1)), int(m.group(2)), int(m.group(3))
+    a = _h2o_int16(m.group(4))
+    assert len(a) == per * n and per == 175
+    frames = []
+    for k in range(n):
+        o = k * per
+        frames.append({"root": [v / 1000 for v in a[o : o + 3]], "rpy": [v / 1000 for v in a[o + 3 : o + 6]], "dof": [v / 1000 for v in a[o + 6 : o + 25]],
+                       "pts": _h2o_pts(a, o + 25, 23), "hum": _h2o_pts(a, o + 25 + 69, 27)})
+    return fps, frames
+
+
+def _rot_xyz(rpy):
+    """外旋 xyz：R = Rz · Ry · Rx（hover.js 的 rotXYZ）"""
+    r, p, y = rpy
+    cr, sr, cp, sp, cy, sy = math.cos(r), math.sin(r), math.cos(p), math.sin(p), math.cos(y), math.sin(y)
+    return [[cy * cp, cy * sp * sr - sy * cr, cy * sp * cr + sy * sr], [sy * cp, sy * sp * sr + cy * cr, sy * sp * cr - cy * sr], [-sp, cp * sr, cp * cr]]
+
+
+def _hover_command(frames, fps, kref, lag):
+    """照官方 student_observations.py 算 95 维命令（hover.js 的 command()）"""
+    ref, rob = frames[kref], frames[kref - lag]
+    r0, c, s_ = rob["pts"][0], math.cos(rob["rpy"][2]), math.sin(rob["rpy"][2])
+    kin = []
+    for p in ref["pts"]:
+        d = [p[i] - r0[i] for i in range(3)]
+        kin.append([c * d[0] + s_ * d[1], -s_ * d[0] + c * d[1], d[2]])
+    joint = [q - w for q, w in zip(ref["dof"], rob["dof"], strict=True)]
+    v = [(frames[kref + 1]["pts"][0][i] - frames[kref - 1]["pts"][0][i]) * fps / 2 for i in range(3)]
+    R = _rot_xyz(ref["rpy"])
+    vloc = [R[0][i] * v[0] + R[1][i] * v[1] + R[2][i] * v[2] for i in range(3)]
+    root = vloc + [ref["rpy"][0], ref["rpy"][1], ref["rpy"][2] - rob["rpy"][2], ref["pts"][0][2]]
+    return kin, joint, root
+
+
+def test_hover_explainer_demos_and_worked_example_share_the_paper_numbers():
+    """HOVER：十六幕动画、三个演示、配音旁白与笔记「🚶 具体实例」用同一组数。
+
+    表 III–V、图 3–4 照抄 arXiv 2410.21229；掩码、命令、观测维数照抄 NVlabs/HOVER（Isaac Lab 版）；H1 的动作是 H2O 笔记里我们照官方
+    grad_fit_h1.py 重算的 CMU 07_01 走路，嵌在 hover.js 里，这里解码后把第 1.33 s 的 95 维命令（机器人落后 0.2 s）再算一遍。
+    """
+    js = (DEMO_JS_DIR / "hover.js").read_text(encoding="utf-8")
+    note = HOVER_NOTE.read_text(encoding="utf-8")
+    narration = (ROOT / "scripts" / "paper_video" / "papers" / "hover.py").read_text(encoding="utf-8")
+    intro = (ROOT / "scripts" / "paper_video" / "papers" / "hover.js").read_text(encoding="utf-8")
+
+    for line in (
+        "var T3_ORACLE = [99.3, 119, 59.4, 2.63, 5.43, 0.153, 0.206, 0.456, 0.066, 0.065, 0.083, 0.282];",
+        "hover: [99.1, 185, 63.9, 3.01, 6.06, 0.148, 0.210, 0.452, 0.063, 0.068, 0.091, 0.279], boldS: [3, 7], boldH: [1, 2, 4, 5, 6, 8, 10]",
+        "hover: [98.9, 121, 60.6, 2.73, 5.49, 0.158, 0.207, 0.456, 0.065, 0.067, 0.086, 0.365], boldS: [3], boldH: [1, 2, 4, 5, 6, 8, 10, 11]",
+        "{ zh: '右手', spec: [220, 216, 6.77, 12.5], hover: [128, 141, 5.83, 10.8], boldS: [], boldH: [0, 1, 2, 3] },",
+        "{ zh: 'HumanPlus', spec: [51.0, 36.7, 0.128, 0.035], hover: [47.4, 35.3, 0.121, 0.038], boldS: [3], boldH: [0, 1, 2] },",
+        "{ zh: '右手', hover: [0.34, 0.25, 100, 191], other: [0.43, 0.29, 120, 374] },",
+        "{ zh: 'OmniH2O', hover: [0.162, 62.5, 128.4, 0.155, 0.457, 0.213], other: [0.199, 76.4, 149.3, 0.250, 0.456, 0.232] }",
+        "var COUNT = { upKin: 12, upJnt: 9, loKin: 11, loJnt: 10, root: 7 };",
+        "var TRAIN = { teachIter: 100000, teachSec: 0.84, stuIter: 10000, stuSec: 0.097 };",
+        "var EX_K = 20, EX_LAG = 3;",
+        "bits: [5, 10, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21] },",
+        "bits: [20, 21, 22] }",
+    ):
+        assert line in js, line
+    for k in ("'hover-explainer'", "'hover-video'", "'hover-mask'", "'hover-radar'", "'hover-tables'", "K.video(host"):
+        assert k in js, k
+
+    # 例 1：49 位掩码，照官方 DISTILL_MASK_MODES_ALL 的正则（re.match）数一遍
+    bodies = ["pelvis"] + [f"{s}_{j}_link" for s in ("left", "right") for j in ("hip_yaw", "hip_roll", "hip_pitch", "knee", "ankle")]
+    bodies = bodies[:1] + bodies[1:6] + bodies[6:] + ["torso_link"] + [f"{s}_{j}_link" for s in ("left", "right") for j in ("shoulder_pitch", "shoulder_roll", "shoulder_yaw", "elbow")]
+    bodies += ["left_hand_link", "right_hand_link", "head_link"]
+    joints = [f"{s}_{j}" for s in ("left", "right") for j in ("hip_yaw", "hip_roll", "hip_pitch", "knee", "ankle")] + ["torso"]
+    joints += [f"{s}_{j}" for s in ("left", "right") for j in ("shoulder_pitch", "shoulder_roll", "shoulder_yaw", "elbow")]
+    names = [b + "_local_pos_" for b in bodies] + [j + "_joint_pos" for j in joints] + ["root_linear_velocity_x", "root_linear_velocity_y",
+             "root_linear_velocity_z", "root_orientation_roll", "root_orientation_pitch", "root_orientation_yaw_delta", "root_height"]
+    assert len(bodies) == 23 and len(joints) == 19 and len(names) == 49
+    modes = {
+        "exbody": [".*torso_joint.*", ".*shoulder.*joint.*", ".*elbow.*joint.*", "root.*"],
+        "humanplus": [".*torso_joint.*", ".*shoulder.*joint.*", ".*elbow.*joint.*", ".*hip.*joint.*", ".*knee.*joint.*", ".*ankle.*joint.*", "root.*"],
+        "h2o": [".*shoulder.*link.*", ".*elbow.*link.*", ".*hand.*link.*", ".*ankle.*link.*"],
+        "omnih2o": [".*hand.*link.*", ".*head.*link.*"],
+    }
+    bits = {k: sorted({i for p in pats for i, n in enumerate(names) if re.match(p, n)}) for k, pats in modes.items()}
+    assert bits["exbody"] == list(range(33, 49)) and bits["humanplus"] == list(range(23, 49))
+    assert bits["h2o"] == [5, 10, *range(12, 22)] and bits["omnih2o"] == [20, 21, 22]
+    assert [len(b) for b in bits.values()] == [16, 26, 12, 3]
+    assert "ExBody 第 33–41、42–48 位（16 位）；HumanPlus 第 23–48 位（26 位）；H2O 第 5、10、12–21 位（12 位）；OmniH2O 第 20–22 位（3 位）" in note
+    # 例 4、例 5：维数与组合数
+    assert 23 * 3 + 19 + 7 == 95 and 23 + 19 + 7 == 49 and 19 + 19 + 3 + 3 == 44 and 44 + 19 == 63
+    assert 44 + 95 + 49 + 19 + 25 * 63 == 1782 and "| **合计** | **1782** |" in note
+    assert (2**12 + 2**9) * (2**11 + 2**10 + 2**7) == 14745600 == 4608 * 3200
+    assert "14{,}745{,}600" in note and "14745600 种" in narration and "4608 种" in narration
+    assert 0.5**3 == 1 / 8 and _fmt(100 * 0.5**12, 2) == "0.02"
+    # 例 6、例 7、例 9：加粗数与降幅
+    t3 = [(7, 2), (7, 3), (8, 1), (7, 1)]
+    for (h, sp), key in zip(t3, ("exbody", "humanplus", "h2o", "omnih2o"), strict=True):
+        seg = js[js.index(f"{{ key: '{key}', zh:") :]
+        bh = json.loads(re.search(r"boldH: (\[[^\]]*\])", seg).group(1))
+        bs = json.loads(re.search(r"boldS: (\[[^\]]*\])", seg).group(1))
+        assert (len(bh), len(bs)) == (h, sp), key
+    assert [_fmt(100 * (1 - b / a), 1) for a, b in ((275, 185), (266, 182), (137, 121), (149, 128))] == ["32.7", "31.6", "11.7", "14.1"]
+    assert [_fmt(100 * (1 - b / a), 1) for a, b in ((189, 138), (220, 128), (137, 120), (186, 133))] == ["27.0", "41.8", "12.4", "28.5"]
+    assert [_fmt(100 * (1 - b / a), 1) for a, b in ((51.3, 48.9), (51.0, 47.4), (51.2, 47.5))] == ["4.7", "7.1", "7.2"]
+    for s in ("7 / 7 / 8 / 7", "2 / 3 / 1 / 1", "−32.7%", "−41.8%", "−4.7%"):
+        assert s in note, s
+    # 例 8：图 4 的全局位置误差平均与缩放
+    hov, mm = [121, 185, 156, 191, 204, 128, 182, 171], [138, 220, 295, 374, 350, 198, 211, 249]
+    assert sum(hov) / 8 == 167.25 and sum(mm) / 8 == 254.375 and _fmt((374 - 128) / (374 - 121), 2) == "0.97"
+    assert "=167.25$" in note and "=254.4$" in note and "374 对 191 毫米" in narration
+    # 例 10：训练时长
+    assert _fmt(100000 * 0.84 / 3600, 1) == "23.3" and _fmt(10000 * 0.097 / 3600, 2) == "0.27" and round(84000 / 970) == 87
+
+    # 复现：从嵌入的走路再算一遍
+    fps, frames = _hover_walk(js)
+    assert fps == 15 and len(frames) == 40
+    # 头 = 骨盆坐标系里 (0, 0, 0.75)：用嵌入的横滚俯仰偏航转一下，和嵌入的头差不过 2 mm（毫米取整）
+    for f in frames:
+        R = _rot_xyz(f["rpy"])
+        head = [f["pts"][0][i] + 0.75 * R[i][2] for i in range(3)]
+        assert math.dist(head, f["pts"][22]) < 2e-3
+        assert f["dof"][4] == 0 and f["dof"][9] == 0  # 这段重定向里两踝一直是 0
+    kin, joint, root = _hover_command(frames, fps, 20, 3)
+    assert 20 / 15 == 4 / 3 and "第 1.33 s" in note
+    want = {
+        "左手": (kin[20], "(0.438, 0.189, -0.121)"), "右手": (kin[21], "(0.245, -0.336, -0.124)"), "头": (kin[22], "(0.343, 0.006, 0.783)"),
+        "骨盆": (kin[0], "(0.262, -0.035, 0.038)"), "根部速度": (root[:3], "(1.219, -0.047, 0.133)"),
+    }
+    for name, (v, s) in want.items():
+        assert "(" + ", ".join(_fmt(x, 3) for x in v) + ")" == s, name
+        assert "$" + s + "$" in note, name
+    upper = "(" + ", ".join(_fmt(x, 3) for x in joint[10:19]) + ")"
+    assert upper == "(0.275, 0.201, -0.119, -0.056, 0.536, -0.169, -0.034, 0.412, -0.130)" and "$" + upper + "$" in note
+    assert [_fmt(x, 3) for x in root[3:]] == ["-0.059", "0.105", "-0.043", "1.086"]
+    assert [_fmt(x, 3) for x in (joint[2], joint[3], joint[7], joint[8])] == ["-0.847", "0.707", "0.388", "-0.193"]
+    speeds = [math.hypot(frames[k + 1]["pts"][0][0] - frames[k - 1]["pts"][0][0], frames[k + 1]["pts"][0][1] - frames[k - 1]["pts"][0][1]) * fps / 2 for k in range(1, 39)]
+    assert _fmt(sum(speeds) / len(speeds), 2) == "1.36" and "平均 1.36 m/s" in note
+
+    # 旁白：数字列举用顿号，两个数之间不只隔一个逗号；片头接上一期（MaskedMimic）的片尾预告，片尾只预告下一篇（ExBody2）
+    spoken = re.findall(r'"([^"]*)"\),', narration[narration.index("SCRIPT = [") : narration.index("DISPLAY = [")])
+    assert len(spoken) == 86 and not any(re.search(r"\d\s*[，,]\s*\d", t) for t in spoken)
+    assert narration.count("上一期结尾预告") == 1 and "搬到真实的人形机器人上" in narration
+    assert "下一篇讲 ExBody 2" in narration and "ExBody2" in intro
+    # 2026-10-17 全局核对：推测与理解要标出来，README 的「up to 4 days」是「最多」
+    for s in ("我们推测，是因为真机只测了站立动作", "最多要处理 4 天", "代码注释的解释", "只有根部速度这一轴", "表 4 里，只算在跟的点"):
+        assert s in narration, s
+    assert "三类掩码" not in js + narration + note and "约 4 天" not in js + narration + note
+    for bad in ("差得", "当老师", "几乎", "一行", "重训"):
+        assert not any(bad in t for t in spoken), bad
+    assert "## 🎬 十六幕动画" in note and 'demos: ["hover"]' in note
+    # 面板到 cue 之后才淡出
+    assert "return seg(t, a + 0.3, a + 0.7) * (b == null ? 1 : 1 - seg(t, b, b + 0.3));" in js and "1 - seg(t, b - 0.3, b)" not in js
+    # 视频文案的占位符都已填上
+    assert "__VIDEO_" not in js and "__VIDEO_" not in note and "__WALK_DATA__" not in js
+
+
+def test_hover_assets_and_project_page_clips():
+    """HOVER：论文图 1–5 的裁剪、H2O 笔记沿用的走路贴图、项目页的 8 段片段（仿真 3 段、真机 5 段，按幕懒加载）。"""
+    js = (DEMO_JS_DIR / "hover.js").read_text(encoding="utf-8")
+    base = ROOT / "assets/img/papers/hover"
+    figs = {p.name for p in base.glob("*.webp")}
+    used = set(re.findall(r"'(fig\d_\w+\.webp)'", js))
+    assert used and used <= figs, ("缺图", used - figs)
+    assert figs - used <= {"fig6_switch.webp"}
+    sheet = json.loads(re.search(r"var SHEET = (\{[^}]*\});", js).group(1).replace("file:", '"file":').replace(" R:", ' "R":')
+                       .replace(" yaw:", ' "yaw":').replace(" pitch:", ' "pitch":').replace(" cw:", ' "cw":').replace(" ch:", ' "ch":')
+                       .replace(" cols:", ' "cols":').replace(" n:", ' "n":').replace(" ax:", ' "ax":').replace(" ay:", ' "ay":').replace("'", '"'))
+    sprite = ROOT / "assets/img/papers/h2o/h1_3d" / sheet["file"]
+    assert sprite.is_file() and _webp_size(sprite) == (sheet["cw"] * sheet["cols"], sheet["ch"] * math.ceil(sheet["n"] / sheet["cols"]))
+    assert "H1_3D_BASE = IMG_BASE ? IMG_BASE + 'h2o/h1_3d/'" in js
+    clip_dir = base / "clips"
+    used_clips = set(re.findall(r"projClip\(\w+, '(\w+)'", js))
+    assert used_clips == {"group", "sim_modes", "sim_hands", "sw_pitch", "sw_walk", "sw_turn", "vr_two", "vr_left"}
+    assert {p.name for p in clip_dir.iterdir()} == {f"{u}.{ext}" for u in used_clips for ext in ("mp4", "webp")}
+    assert sum(p.stat().st_size for p in clip_dir.iterdir()) < 2.5e6
+    assert set(re.findall(r"(\w+): [\d.]+", js[js.index("var CLIP_DUR = {") : js.index("};", js.index("var CLIP_DUR = {"))])) == used_clips
+    assert "var SWITCH_AT = { sw_walk: 8.4, sw_turn: 4.8, sw_pitch: 4.2 };" in js
+    assert js.count("项目页视频") >= 7
+    note = HOVER_NOTE.read_text(encoding="utf-8")
+    assert "剪自[项目页](https://hover-versatile-humanoid.github.io/)的视频" in note
 
 
 def _mm_clip(js: str):
