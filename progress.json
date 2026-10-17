@@ -41,15 +41,15 @@
         "13_Physics-Based_Animation",
         "14_Human_Motion"
       ],
-      "last_module": "13_Physics-Based_Animation",
-      "last_index": 617,
-      "last_title": "From Digital Human Interactions to Physics-Based Humanoid Skills: Physics-Grounded Post-Training of Interaction Generators (arXiv:2610.10322)",
-      "next_module": "14_Human_Motion",
-      "last_completed_date": "2026-10-16",
-      "note": "本日轮转到 13_Physics-Based_Animation。PROGRESS Physics-Based Animation 章节中尚无笔记的最新论文是 DIGHT (arXiv:2610.10322, 2026-10-07, 浙大 × 北交)，即 PROGRESS #617，已确认在上游 README。交互生成器候选经冻结跟踪器仿真回放，构造 trk / fric / float / occ / quality 五组偏好做物理解耦扩散 DPO，再用对齐生成器微调跟踪器；InterHuman 五项物理误差平均降 22.1%，执行成功 88.73→92.19%，接触拓扑精确率 38.29→46.77%。项目页 Code 按钮为空、未见公开仓库，含整体流程 mermaid 与偏好 / DPO 玩具算例，无源码时序图。",
-      "last_date": "2026-10-16",
+      "last_module": "14_Human_Motion",
+      "last_index": 596,
+      "last_title": "Streaming Multi-Track Timeline Control for 3D Human Motion Generation (arXiv:2610.03873)",
+      "next_module": "04_Loco-Manipulation_and_WBC",
+      "last_completed_date": "2026-10-17",
+      "note": "本日轮转到 14_Human_Motion。PROGRESS Human Motion 章节中尚无笔记的最新论文是 TimelineControl (arXiv:2610.03873, 2026-10-02, MBZUAI × École des Ponts)，即 PROGRESS #596，已确认在上游 README。流式多轨时间线控制：每条指令单独编码，RoTE + 可见性掩码 + sigmoid 多轨注意力；六部位因果潜空间 + 分类器部位偏置 + 门控融合；TimelineMotion R@3 0.603、FID 0.017，经 SONIC 在 G1 真机执行。官方仓库仅 README（代码 Coming soon），含整体框架 mermaid 与部位偏置算例，无源码时序图。",
+      "last_date": "2026-10-17",
       "next_candidate": null,
-      "last_completed": "From Digital Human Interactions to Physics-Based Humanoid Skills: Physics-Grounded Post-Training of Interaction Generators (arXiv:2610.10322)"
+      "last_completed": "Streaming Multi-Track Timeline Control for 3D Human Motion Generation (arXiv:2610.03873)"
     },
     "last_summary_index": 532,
     "last_summary_date": "2026-09-18",
@@ -1761,6 +1761,17 @@
         "project_page": "https://1233chen.github.io/DIGHT/",
         "code": "截至 2026-10-16 项目页 Code 按钮链接为空，未见公开仓库",
         "source": "⏳ 未见公开源码(故无源码时序图)，含整体流程 mermaid 与偏好构造 / 解耦 DPO 玩具算例"
+      },
+      {
+        "date": "2026-10-17",
+        "index": 596,
+        "title": "Streaming Multi-Track Timeline Control for 3D Human Motion Generation",
+        "folder": "papers/14_Human_Motion/TimelineControl__Streaming_Multi-Track_Timeline_Control_for_3D_Human_Motion",
+        "module": "14_Human_Motion",
+        "arxiv": "2610.03873",
+        "project_page": "https://mael-zys.github.io/TimelineControl/",
+        "code": "https://github.com/Mael-zys/TimelineControl（截至 2026-10-17 仅 README，代码 / 数据 / 模型标 Coming soon）",
+        "source": "⏳ 官方仓库未放代码(故无源码时序图)，含整体框架 mermaid 与部位偏置算例"
       }
     ],
     "last_completed_index": 588,
