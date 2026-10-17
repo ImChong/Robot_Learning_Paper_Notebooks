@@ -20,6 +20,7 @@ import sys
 import wave
 from pathlib import Path
 
+import aiohttp
 import edge_tts
 import edge_tts.communicate
 import edge_tts.constants
@@ -80,7 +81,7 @@ def display(s):
     return space_cjk(s) if SPACE_CJK else s
 
 
-async def tts(text, mp3, tries=4):
+async def tts(text, mp3, tries=6):
     for k in range(tries):
         try:
             comm = edge_tts.Communicate(text, VOICE, rate=RATE, boundary="SentenceBoundary")
@@ -96,6 +97,12 @@ async def tts(text, mp3, tries=4):
             if k == tries - 1:
                 raise
             await asyncio.sleep(2 ** k)
+        except aiohttp.WSServerHandshakeError as e:
+            # 2026-10-17：连着合成二十几句时服务会回 429（单句没事），退避 20、40、80… 秒再试
+            if e.status != 429 or k == tries - 1:
+                raise
+            print(f"  429 from the TTS service, waiting {20 * 2 ** k} s", file=sys.stderr)
+            await asyncio.sleep(20 * 2 ** k)
 
 
 def to_wav(mp3, wav):
