@@ -563,8 +563,8 @@
     parent.appendChild(clip);
     var g = group(parent);
     g.setAttribute('clip-path', 'url(#' + id + ')');
-    /* 相机只抬头 0.15 rad，地面在画面上很扁：格子铺到 ±5 m，颜色用 C_MUTED，近处实、远处淡 */
-    var bands = [0.8, 0.5, 0.22].map(function (op) {
+    /* 相机只抬头 0.15 rad，地面在画面上很扁：格子铺到 ±5 m，颜色用 C_MUTED，近处实、远处淡；不透明度压低，别抢角色的戏（同日看片反馈） */
+    var bands = [0.45, 0.28, 0.12].map(function (op) {
       var p = paint(svgEl('path', { fill: 'none', 'stroke-width': 1.2 }), null, C_MUTED);
       p.style.strokeOpacity = op;
       g.appendChild(p);
@@ -1458,10 +1458,15 @@
     label(p4, KX + KW, KY + KH + 36, 'epoch（代码 v2.3：3000 → 6000 线性升）', 'demo-x-mut', 10, 'end');
     label(p4, KX - 6, ky(0.01) + 4, '0.01', 'demo-x-mut', 10, 'end');
     label(p4, KX - 6, ky(0) + 4, '0', 'demo-x-mut', 10, 'end');
-    /* 这一块只在第 4 段（10.4–13.4 s）出现，取第 4500 个 epoch：点和读数都是静态的 */
-    var KEP = 4500;
-    dotAt(p4, kx(KEP), ky(klCoef(KEP)), 5, C_BAD);
-    label(p4, kx(KEP) + 8, ky(klCoef(KEP)) - 8, '第 ' + KEP + ' 个：$\\alpha = ' + klCoef(KEP).toFixed(5) + '$', 'demo-x-ink', 11);
+    /* 一个点沿着曲线从第 0 个 epoch 走到第 8000 个（3.4 s 走一趟、停 0.6 s 再来），左上角读出 epoch 和 α
+       （原先点停在 4500、换段淡出时还跳到 6000 多，一闪就没了，2026-10-17 看片反馈）。
+       读数每帧都变：「α =」是静态公式，数字是普通文字 */
+    var kGuide = hline(p4, 0, 0, 0, 0, C_BAD, 1, '3 3');
+    var kMk = paint(svgEl('circle', { cx: 0, cy: 0, r: 6.5, 'stroke-width': 2 }), C_BAD, C_SURFACE);
+    p4.appendChild(kMk);
+    var kEp = label(p4, KX + 12, KY + 16, '', 'demo-x-ink', 12);
+    math(p4, KX + 12, KY + 40, '\\alpha =', 13);
+    var kVal = label(p4, KX + 42, KY + 40, '', 'demo-x-ink', 12.5);
     label(p4, R, 298, '起点 0.0001：编解码器先贴紧老师', 'demo-x-ink2', 12);
     label(p4, R, 320, '升到 0.01：潜空间收向先验，推理时好取', 'demo-x-ink2', 12);
     var p5 = group(s);
@@ -1485,6 +1490,11 @@
       setOpacity(p1, win(t, 0.3, 3.6));
       setOpacity(p2, win(t, 3.6, 7.0));
       setOpacity(p3, win(t, 7.0, 10.4));
+      var kc = ((K.clipSince(t, 10.4) % 4.0) + 4.0) % 4.0, ep = 8000 * Math.min(1, kc / 3.4), ka = klCoef(ep);
+      kMk.setAttribute('cx', kx(ep).toFixed(1)); kMk.setAttribute('cy', ky(ka).toFixed(1));
+      setLine(kGuide, kx(ep), ky(ka), kx(ep), KY + KH);
+      kEp.textContent = '第 ' + Math.round(ep) + ' 个 epoch';
+      kVal.textContent = ka.toFixed(5);
       setOpacity(p4, win(t, 10.4, 13.4));
       setOpacity(p5, win(t, 13.4));
     }
