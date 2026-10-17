@@ -627,10 +627,12 @@
     /* 左边：第 1、4、5 段放城堡（MaskedMimic 自己），第 2、3 段讲以前的路，换成以前的工作，一次放一个 */
     var castle = group(s);
     var v = projClip(castle, 'castle', VX, VY, VW, VH, '项目页视频（1 倍速）：论文图 2 的城堡');
-    /* 片段的四段：5 + 5 + 5 + 6.5 s */
-    var SEGS = [[0, 5, '(a) 跟着头的目标爬上山坡', C_VIS], [5, 10, '(b) 文字：向卫兵挥手', C_TXT], [10, 15, '(c) 头的目标 + 文字风格：碎石地上走', C_VIS], [15, 21.5, '(d) 物体：坐上王座', C_OBJ]];
+    /* 片段的四段：5 + 5 + 5 + 8.5 s。原先最后一段只剪到角色刚要坐下（6.5 s），而且第 4 段回到城堡时接着循环，
+       坐王座那一下总落在画面外（2026-10-17 看片反馈）：现在最后一段剪到坐稳、围着王座放大，回到城堡时从 (c) 接着放、放完停在坐稳的那一帧 */
+    var CLIP_LEN = 23.5;
+    var SEGS = [[0, 5, '(a) 跟着头的目标爬上山坡', C_VIS], [5, 10, '(b) 文字：向卫兵挥手', C_TXT], [10, 15, '(c) 头的目标 + 文字风格：碎石地上走', C_VIS], [15, CLIP_LEN, '(d) 物体：坐上王座', C_OBJ]];
     var bar = group(castle), segBars = SEGS.map(function (sg) {
-      var x = VX + sg[0] / 21.5 * VW, w = (sg[1] - sg[0]) / 21.5 * VW - 4;
+      var x = VX + sg[0] / CLIP_LEN * VW, w = (sg[1] - sg[0]) / CLIP_LEN * VW - 4;
       return paint(svgEl('rect', { x: x.toFixed(1), y: 296, width: w.toFixed(1), height: 6, rx: 3 }), sg[3]);
     });
     segBars.forEach(function (r) { bar.appendChild(r); });
@@ -680,9 +682,9 @@
     label(p5, R + 10, 230, '复现以前各个系统的任务：全身跟踪、VR、', 'demo-x-ink2', 11.5);
     label(p5, R + 10, 250, '场景交互、地形、文字控制……同一个模型', 'demo-x-ink2', 11.5);
     function draw(t) {
-      var sec = K.clipSince(t, 0);
+      var sec = t < 10.4 ? K.clipSince(t, 0) : Math.min(CLIP_LEN - 0.05, 10 + K.clipSince(t, 10.4));
       v.at(sec, true);
-      var m = ((sec % 21.5) + 21.5) % 21.5, idx = 0;
+      var m = ((sec % CLIP_LEN) + CLIP_LEN) % CLIP_LEN, idx = 0;
       SEGS.forEach(function (sg, i) { if (m >= sg[0]) idx = i; });
       segBars.forEach(function (r, i) { r.style.opacity = i === idx ? 1 : 0.25; });
       segName.textContent = SEGS[idx][2];
@@ -703,7 +705,7 @@
   /* ── scene 2: 控制就是补全（图 1） ── */
   function buildSceneInpaint() {
     var s = sceneSvg('左边：官方样例里的一段参考动作（SAMP 的走过去坐扶手椅），SMPL 角色按真实几何做 3D 渲染；同一段动作依次换几种遮法：' +
-      '能给的 6 个部位全给（绿圈）、只给头和双手、只给头未来的一串位置、只给椅子的包围盒、只给一句话；右边先用图像补全打比方，最后左右都淡出、放大论文图 1 的九种用法');
+      '能给的 6 个部位全给（绿圈）、只给头和双手、只给头未来的一串位置、只给椅子的包围盒、只给一句话，组合那一段换成项目页里举着双手沿路径走的片段；右边先用图像补全打比方，最后左右都淡出、放大论文图 1 的九种用法');
     label(s, 24, 28, '同一段参考动作，换一种遮法，就是换一个任务', 'demo-x-ink2', 13.5);
     var LX = 24, LY = 44, LW = 400, LH = 352;
     /* 最后一段的后半（旁白念到「论文图 1」）左边和右栏都淡出，图 1 放大到 600 宽居中 */
@@ -718,12 +720,17 @@
     for (var i = 0; i < 8; i++) pathDots.push(dotAt(path, 0, 0, 3.4, C_VIS));
     var box = bboxLayer(left, C_OBJ);
     var bub = group(left), bubIn = speech(bub, 0, 0, 228, '“the person walks normally”');
-    /* 组合那一段的文字是图 7f 的「举着双手往前走」，和右栏、旁白一致（2026-10-17 全局检查） */
-    var bub2 = group(left); speech(bub2, 0, 0, 300, '“a person raises both hands and walks forward”');
     /* 学生能给的只有 6 个部位（双踝、骨盆、头、双手，第 7 节）；24 个刚体是老师看的 */
     var KEY6 = [B.lank, B.rank, B.pelvis, B.head, B.lhand, B.rhand];
     var six = KEY6.map(function () { return ring(left, 0, 0, 8, 8, C_VIS); });
     var modeName = label(left, LX + 14, LY + 24, '', 'demo-x-ink', 12.5);
+    /* 组合那一段：官方样例只会走过去坐下，举不起双手（2026-10-17 看片反馈），这一段左边换成项目页里「路径 + 一句话」的片段 */
+    var combo = group(left);
+    rectBox(combo, LX, LY, LW, LH, C_BORDER, C_SURFACE2);
+    var comboV = projClip(combo, 'combo', LX + 6, LY + 40, LW - 12, (LW - 12) * 270 / 480, '项目页视频（1 倍速）：绿点是头要经过的路径');
+    label(combo, LX + 14, LY + 312, '文字：“A person walks with its hands raised”', 'demo-x-ink2', 11.5);
+    label(combo, LX + 14, LY + 334, '路径只管头往哪走，举手是那句话补出来的', 'demo-x-mut', 11);
+    left.appendChild(modeName);  /* 左上角的「组合：…」压在片段的底框上面 */
     var R = 446, RW = 330;
     var p0 = group(s);
     label(p0, R, 64, '关键洞察：控制 = 补全', 'demo-x-ink', 14);
@@ -778,16 +785,17 @@
       KEY6.forEach(function (j, i) { moveRing(six[i], P[j], 7 + 1.5 * Math.sin(now * 4)); six[i].style.opacity = ph === 1 ? win(t, 3.6, 7.0) : 0; });
       var vrOn = ph === 2 ? win(t, 7.0, 10.4) : 0;
       [B.head, B.lhand, B.rhand].forEach(function (j, i) { moveRing(vr[i], P[j], 8 + 2 * Math.sin(now * 4)); vr[i].style.opacity = vrOn; });
-      var pathOn = ph === 2 ? vrOn : ph === 4 ? win(t, 13.4) : 0;
+      var pathOn = ph === 2 ? vrOn : 0;
       pathDots.forEach(function (d, i) { var q = project(frame(Math.min(CLIP.n - 1, k + 2 * (i + 1))).b[B.head], cam); moveDot(d, q); });
       setOpacity(path, pathOn);
       box.put(cam);
       setOpacity(box.g, ph === 3 ? win(t, 10.4, 13.4) : 0);
       var hd = P[B.head];
       bub.setAttribute('transform', 'translate(' + clamp(hd[0] - 30, LX + 8, LX + LW - 236).toFixed(1) + ',' + Math.max(LY + 34, hd[1] - 62).toFixed(1) + ')');
-      bub2.setAttribute('transform', 'translate(' + clamp(hd[0] - 30, LX + 8, LX + LW - 308).toFixed(1) + ',' + Math.max(LY + 34, hd[1] - 62).toFixed(1) + ')');
       setOpacity(bub, ph === 3 ? win(t, 10.4, 13.4) : 0);
-      setOpacity(bub2, ph === 4 ? win(t, 13.4) : 0);
+      setOpacity(combo, ph === 4 ? win(t, 13.4) : 0);
+      actor.g.style.opacity = ph === 4 ? 1 - seg(t, 13.4, 13.7) : 1;
+      comboV.at(K.clipSince(t, 13.4), t >= 13.4 && t < 15.0);
       /* 图像补全：遮住的那一块在 0.4–3.6 s 里先黑、再慢慢补回来 */
       var fillIn = seg(now % 3.2, 1.2, 2.4);
       holeCover.style.opacity = (1 - fillIn).toFixed(2);
