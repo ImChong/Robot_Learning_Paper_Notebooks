@@ -553,8 +553,34 @@
     var a = start || 0, b = end == null ? CLIP.n : end, n = b - a;
     return a + Math.floor(now * CLIP.fps) % n;
   }
-  function groundLine(parent, x1, x2, y) {
-    return hline(parent, x1, y, x2, y, C_BORDER, 1.4);
+  /* 地面网格：世界坐标里每 0.5 m 一条线，用和角色贴图同一套相机投影到画布（原先只画一条水平线，看不出是地面，2026-10-17 看片反馈）。
+     跟拍的镜头每帧重画：格子跟着世界坐标往后退，看得出角色在走。只画在 (x, y, w, h) 框里，离镜头对准的点越远越淡 */
+  var gridSeq = 0;
+  function groundGrid(parent, x, y, w, h, opts) {
+    var o = opts || {}, step = o.step || 0.5, R = o.R || 5, id = 'mm-ground-' + (++gridSeq);
+    var clip = svgEl('clipPath', { id: id });
+    clip.appendChild(svgEl('rect', { x: x, y: y, width: w, height: h }));
+    parent.appendChild(clip);
+    var g = group(parent);
+    g.setAttribute('clip-path', 'url(#' + id + ')');
+    /* 相机只抬头 0.15 rad，地面在画面上很扁：格子铺到 ±5 m，颜色用 C_MUTED，近处实、远处淡 */
+    var bands = [0.8, 0.5, 0.22].map(function (op) {
+      var p = paint(svgEl('path', { fill: 'none', 'stroke-width': 1.2 }), null, C_MUTED);
+      p.style.strokeOpacity = op;
+      g.appendChild(p);
+      return p;
+    });
+    function draw(cam) {
+      var cx = cam.cx || 0, cy = cam.cy || 0, d = ['', '', ''];
+      function line(off, a, b) {
+        var r = Math.abs(off) / R, k = r < 0.34 ? 0 : r < 0.67 ? 1 : 2, pa = project(a, cam), pb = project(b, cam);
+        d[k] += 'M' + pa[0].toFixed(1) + ' ' + pa[1].toFixed(1) + 'L' + pb[0].toFixed(1) + ' ' + pb[1].toFixed(1);
+      }
+      for (var i = Math.floor((cx - R) / step); i <= Math.ceil((cx + R) / step); i++) line(i * step - cx, [i * step, cy - R, 0], [i * step, cy + R, 0]);
+      for (var j = Math.floor((cy - R) / step); j <= Math.ceil((cy + R) / step); j++) line(j * step - cy, [cx - R, j * step, 0], [cx + R, j * step, 0]);
+      bands.forEach(function (p, b) { p.setAttribute('d', d[b] || 'M0 0'); });
+    }
+    return { g: g, draw: draw };
   }
   function f1(x) { return fmt(x, 1); }
   function f2(x) { return fmt(x, 2); }
@@ -684,7 +710,7 @@
     var left = group(s);
     rectBox(left, LX, LY, LW, LH, C_BORDER, C_SURFACE2);
     var cam = camAt(128, 224, 352, -0.25, -0.45);
-    groundLine(left, LX + 14, LX + LW - 14, 352 + 2);
+    groundGrid(left, LX + 2, LY + 2, LW - 4, LH - 4).draw(cam);
     var actor = sampleActor(left);
     var all = dotLayer(left, 24, 3.6, C_VIS);
     var vr = [ring(left, 0, 0, 9, 9, C_VIS), ring(left, 0, 0, 9, 9, C_VIS), ring(left, 0, 0, 9, 9, C_VIS)];
@@ -853,7 +879,8 @@
     var LX = 24, LY = 44, LW = 400, LH = 352;
     rectBox(s, LX, LY, LW, LH, C_BORDER, C_SURFACE2);
     var GY = 330, SC = 150, OX = 140;
-    groundLine(s, LX + 14, LX + LW - 14, GY + 2);
+    /* 框底下一行写着「半透明：τ = …」，格子停在它上面，别压字 */
+    var floor = groundGrid(s, LX + 2, LY + 2, LW - 4, LH - 50);
     var hm = group(s), hmDots = [];
     for (var i = 0; i < 16 * 16; i++) hmDots.push(dotAt(hm, 0, 0, 1.6, C_MUTED));
     var AHEAD = [3, 5, 8];
@@ -907,6 +934,7 @@
       /* 走路的那一段（第 3.0–7.6 s）循环播 */
       var k = loopFrame(now, 15, 70), f = frame(k);
       var cam = camFollow(k, SC, OX, GY);
+      floor.draw(cam);
       ghosts.forEach(function (g, i) {
         var kk = Math.min(CLIP.n - 1, k + AHEAD[i]), pp = frame(kk).b[B.pelvis];
         g.put([pp[0], pp[1]], cam, kk);
@@ -1096,7 +1124,7 @@
     var LX = 24, LY = 44, LW = 400, LH = 352;
     rectBox(s, LX, LY, LW, LH, C_BORDER, C_SURFACE2);
     var cam = camAt(128, 236, 352, -0.25, -0.45);
-    groundLine(s, LX + 14, LX + LW - 14, 354);
+    groundGrid(s, LX + 2, LY + 2, LW - 4, LH - 4).draw(cam);
     var ghost = smplMesh(s, SHEETS.sit, { ghost: 0.3 });
     var actor = sampleActor(s);
     var rings = COND.map(function () { return ring(s, 0, 0, 9, 9, C_VIS); });
@@ -1538,7 +1566,7 @@
     var rng = K.mulberry32(3), noise = [];
     for (var i = 0; i < 400; i++) noise.push(K.gauss(rng));
     var hs = group(s), GY = 352, SC = 150, OX = 300;
-    groundLine(hs, LX + 14, LX + LW - 14, GY + 2);
+    var floor = groundGrid(hs, LX + 2, LY + 2, LW - 4, LH - 4);
     var BACK = [4, 8, 12, 16, 20];
     var ghosts = BACK.map(function () { return smplMesh(hs, SHEETS.sit, { ghost: 0.25 }); });
     label(hs, LX + 14, LY + 24, '影子：' + BACK.map(function (b) { return '−' + f2(b / CLIP.fps); }).join('、') + ' s（越淡越早）', 'demo-x-ink2', 11.5);
@@ -1582,6 +1610,7 @@
       setPath(cA, a); setPath(cB, b); setPath(mA, ma); setPath(mB, mb);
       setOpacity(nz, ph <= 1 ? 1 - seg(t, 7.0, 7.3) : 0);
       var k = loopFrame(now, 30, 70), cam = camFollow(k, SC, OX, GY);
+      floor.draw(cam);
       ghosts.forEach(function (g, i) {
         var kk = Math.max(0, k - BACK[i]), pp = frame(kk).b[B.pelvis];
         g.put([pp[0], pp[1]], cam, kk);
@@ -1755,7 +1784,7 @@
     var left = group(s);
     rectBox(left, LX, LY, LW, LH, C_BORDER, C_SURFACE2);
     var cam = camFollow(0, 160, 214, 360);
-    groundLine(left, LX + 14, LX + LW - 14, 362);
+    groundGrid(left, LX + 2, LY + 2, LW - 4, LH - 4).draw(cam);
     var actor = sampleActor(left, { noChair: true });
     var rings = [0, 1, 2, 3, 4, 5].map(function () { return ring(left, 0, 0, 10, 10, C_VIS); });
     var rowName = label(left, LX + 16, LY + 26, '', 'demo-x-ink', 13);
@@ -1921,7 +1950,7 @@
     var left = group(s);
     rectBox(left, LX, LY, LW, LH, C_BORDER, C_SURFACE2);
     var cam = camAt(86, 214, 340, CHAIR.x, CHAIR.y);
-    groundLine(left, LX + 14, LX + LW - 14, 380);
+    groundGrid(left, LX + 2, LY + 2, LW - 4, LH - 4, { R: 6 }).draw(cam);
     var circ = [];
     for (var u = 0; u <= 72; u++) { var a = 2 * Math.PI * u / 72; circ.push(project([CHAIR.x + 2 * Math.cos(a), CHAIR.y + 2 * Math.sin(a), 0], cam)); }
     pathLine(left, circ, C_OBJ, 1.8, '6 4');
@@ -2325,7 +2354,7 @@
     wrap.appendChild(svg);
     root.appendChild(wrap);
     var cam = camAt(118, 330, 340, -0.25, -0.45);
-    groundLine(svg, 40, 600, 342);
+    groundGrid(svg, 0, 0, 640, 380).draw(cam);
     var ghost = smplMesh(svg, SHEETS.sit, { ghost: 0.28 });
     var actor = sampleActor(svg);
     var box = bboxLayer(svg, C_OBJ);
