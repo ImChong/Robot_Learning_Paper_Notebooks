@@ -1140,23 +1140,25 @@
   }
   function buildSceneVae() {
     var s = sceneSvg('左边是俯视的玩具：从 S 出发，1 秒内到 T，中间有根柱子；老师的示范有的从上绕、有的从下绕，' +
-      '直接回归把两种平均成一条直线、撞上柱子；条件 VAE 用潜变量 z 选「哪一种」；右边先放论文图 5 的结构，最后放项目页里三个角色坐同一张沙发的视频');
+      '直接回归把两种平均成一条直线、撞上柱子；条件 VAE 用潜变量 z 选「哪一种」；右边先放论文图 5 的结构，最后左边换成项目页里三个角色坐同一张沙发的视频');
     label(s, 24, 28, '部分目标是欠定的：「1 秒内到 $T$」有很多种走法', 'demo-x-ink2', 13.5);
     var LX = 24, LY = 44, LW = 400, LH = 352;
     rectBox(s, LX, LY, LW, LH, C_BORDER, C_SURFACE2);
-    label(s, LX + 14, LY + 24, '俯视图（玩具示意）', 'demo-x-mut', 11.5);
-    var demos = group(s);
+    /* 左边的玩具到最后一段换成沙发视频（视频号里人太小看不清，2026-10-17 看片反馈），所以都放进 toy 这一组 */
+    var toy = group(s);
+    label(toy, LX + 14, LY + 24, '俯视图（玩具示意）', 'demo-x-mut', 11.5);
+    var demos = group(toy);
     [-1.2, -0.7, -0.3, 0.3, 0.7, 1.2].forEach(function (z) { pathLine(demos, toyPath(z), C_FULL, 1.6, '4 4'); });
     var obst = paint(svgEl('circle', { cx: TOY.ox, cy: TOY.oy, r: TOY.or }), C_MUTED);
-    s.appendChild(obst);
-    label(s, TOY.ox, TOY.oy + 4, '柱子', 'demo-x-ink', 11.5, 'middle');
-    dotAt(s, TOY.sx, TOY.sy, 7, C_INK2); label(s, TOY.sx, TOY.sy + 24, '$S$', 'demo-x-ink', 13, 'middle');
-    ring(s, TOY.tx, TOY.ty, 11, 11, C_VIS); label(s, TOY.tx, TOY.ty + 28, '$T$（1 s 后）', 'demo-x-ink', 12, 'middle');
-    var avg = group(s), avgPath = pathLine(avg, [[TOY.sx, TOY.sy], [TOY.tx, TOY.ty]], C_BAD, 3);
+    toy.appendChild(obst);
+    label(toy, TOY.ox, TOY.oy + 4, '柱子', 'demo-x-ink', 11.5, 'middle');
+    dotAt(toy, TOY.sx, TOY.sy, 7, C_INK2); label(toy, TOY.sx, TOY.sy + 24, '$S$', 'demo-x-ink', 13, 'middle');
+    ring(toy, TOY.tx, TOY.ty, 11, 11, C_VIS); label(toy, TOY.tx, TOY.ty + 28, '$T$（1 s 后）', 'demo-x-ink', 12, 'middle');
+    var avg = group(toy), avgPath = pathLine(avg, [[TOY.sx, TOY.sy], [TOY.tx, TOY.ty]], C_BAD, 3);
     var avgDot = dotAt(avg, 0, 0, 6, C_BAD), crash = tone(avg, TOY.ox, TOY.oy - 48, '✗ 撞上柱子', C_BAD, 13, 'middle');
     void avgPath;
-    var pick = group(s), pickPath = pathLine(pick, [], C_VIS, 3.2), pickDot = dotAt(pick, 0, 0, 6, C_VIS);
-    var zAxis = group(s), ZX = LX + 60, ZW = 280, ZY = 360;
+    var pick = group(toy), pickPath = pathLine(pick, [], C_VIS, 3.2), pickDot = dotAt(pick, 0, 0, 6, C_VIS);
+    var zAxis = group(toy), ZX = LX + 60, ZW = 280, ZY = 360;
     hline(zAxis, ZX, ZY, ZX + ZW, ZY, C_BORDER, 1.2);
     var bellPts = [];
     for (var u = 0; u <= 60; u++) { var zz = -2.5 + 5 * u / 60; bellPts.push([ZX + ZW * u / 60, ZY - 26 * Math.exp(-0.5 * zz * zz)]); }
@@ -1188,9 +1190,12 @@
     label(p4, R, 248, '先验只看部分目标；编码器看完整目标，', 'demo-x-ink2', 12);
     label(p4, R, 270, '只在训练时用；解码器看状态和 $z$，出动作', 'demo-x-ink2', 12);
     var p5 = group(s);
-    var sv = projClip(p5, 'sofa', R, 56, RW, RW * 270 / 480, '项目页视频（1.5 倍速）：同一张沙发，三个角色坐法各不相同');
-    label(p5, R, 284, '推理时扔掉编码器，从先验里取 $z$；', 'demo-x-ink2', 12);
-    label(p5, R, 306, '评测表格用的是先验的均值（更稳）', 'demo-x-ink2', 12);
+    /* 片段裁成 620 × 496（围着沙发放大约 2 倍）、缩到 440 × 352，铺满左边的框 */
+    var sv = projClip(p5, 'sofa', LX + 6, LY + 8, LW - 12, (LW - 12) * 352 / 440, '项目页视频（1.5 倍速，围着沙发裁剪放大）：同一张沙发，三个角色坐法各不相同');
+    label(p5, R, 64, '推理：只用先验', 'demo-x-ink', 14);
+    label(p5, R, 96, '推理时扔掉编码器，从先验里取 $z$；', 'demo-x-ink2', 12.5);
+    label(p5, R, 120, '$z$ 不同，同一张沙发坐法也不同', 'demo-x-ink2', 12.5);
+    chip(p5, R, 142, RW, '评测表格用的是先验的均值（更稳）', C_ACCENT, { size: 12, left: true });
     function draw(t, clock) {
       var now = nowOf(t, clock), ph = phase(t), a = (now % 2.4) / 2.0;
       a = Math.min(1, a);
@@ -1213,6 +1218,7 @@
       setOpacity(p3, win(t, 7.0, 10.4));
       setOpacity(p4, win(t, 10.4, 13.4));
       setOpacity(p5, win(t, 13.4));
+      setOpacity(toy, 1 - seg(t, 13.4, 13.7));
       sv.at(K.clipSince(t, 13.4), t >= 13.4);
     }
     return { el: s, draw: draw };
