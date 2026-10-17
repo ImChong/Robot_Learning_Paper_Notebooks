@@ -627,10 +627,12 @@
     /* 左边：第 1、4、5 段放城堡（MaskedMimic 自己），第 2、3 段讲以前的路，换成以前的工作，一次放一个 */
     var castle = group(s);
     var v = projClip(castle, 'castle', VX, VY, VW, VH, '项目页视频（1 倍速）：论文图 2 的城堡');
-    /* 片段的四段：5 + 5 + 5 + 6.5 s */
-    var SEGS = [[0, 5, '(a) 跟着头的目标爬上山坡', C_VIS], [5, 10, '(b) 文字：向卫兵挥手', C_TXT], [10, 15, '(c) 头的目标 + 文字风格：碎石地上走', C_VIS], [15, 21.5, '(d) 物体：坐上王座', C_OBJ]];
+    /* 片段的四段：5 + 5 + 5 + 8.5 s。原先最后一段只剪到角色刚要坐下（6.5 s），而且第 4 段回到城堡时接着循环，
+       坐王座那一下总落在画面外（2026-10-17 看片反馈）：现在最后一段剪到坐稳、围着王座放大，回到城堡时从 (c) 接着放、放完停在坐稳的那一帧 */
+    var CLIP_LEN = 23.5;
+    var SEGS = [[0, 5, '(a) 跟着头的目标爬上山坡', C_VIS], [5, 10, '(b) 文字：向卫兵挥手', C_TXT], [10, 15, '(c) 头的目标 + 文字风格：碎石地上走', C_VIS], [15, CLIP_LEN, '(d) 物体：坐上王座', C_OBJ]];
     var bar = group(castle), segBars = SEGS.map(function (sg) {
-      var x = VX + sg[0] / 21.5 * VW, w = (sg[1] - sg[0]) / 21.5 * VW - 4;
+      var x = VX + sg[0] / CLIP_LEN * VW, w = (sg[1] - sg[0]) / CLIP_LEN * VW - 4;
       return paint(svgEl('rect', { x: x.toFixed(1), y: 296, width: w.toFixed(1), height: 6, rx: 3 }), sg[3]);
     });
     segBars.forEach(function (r) { bar.appendChild(r); });
@@ -680,9 +682,9 @@
     label(p5, R + 10, 230, '复现以前各个系统的任务：全身跟踪、VR、', 'demo-x-ink2', 11.5);
     label(p5, R + 10, 250, '场景交互、地形、文字控制……同一个模型', 'demo-x-ink2', 11.5);
     function draw(t) {
-      var sec = K.clipSince(t, 0);
+      var sec = t < 10.4 ? K.clipSince(t, 0) : Math.min(CLIP_LEN - 0.05, 10 + K.clipSince(t, 10.4));
       v.at(sec, true);
-      var m = ((sec % 21.5) + 21.5) % 21.5, idx = 0;
+      var m = ((sec % CLIP_LEN) + CLIP_LEN) % CLIP_LEN, idx = 0;
       SEGS.forEach(function (sg, i) { if (m >= sg[0]) idx = i; });
       segBars.forEach(function (r, i) { r.style.opacity = i === idx ? 1 : 0.25; });
       segName.textContent = SEGS[idx][2];
