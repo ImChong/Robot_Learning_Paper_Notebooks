@@ -4156,10 +4156,15 @@ def test_hover_explainer_demos_and_worked_example_share_the_paper_numbers():
     speeds = [math.hypot(frames[k + 1]["pts"][0][0] - frames[k - 1]["pts"][0][0], frames[k + 1]["pts"][0][1] - frames[k - 1]["pts"][0][1]) * fps / 2 for k in range(1, 39)]
     assert _fmt(sum(speeds) / len(speeds), 2) == "1.36" and "平均 1.36 m/s" in note
 
-    # 旁白：数字列举用顿号，两个数之间不只隔一个逗号；片头不接还没做的上一期，片尾只预告下一篇（ExBody2）
+    # 旁白：数字列举用顿号，两个数之间不只隔一个逗号；片头接上一期（MaskedMimic）的片尾预告，片尾只预告下一篇（ExBody2）
     spoken = re.findall(r'"([^"]*)"\),', narration[narration.index("SCRIPT = [") : narration.index("DISPLAY = [")])
     assert len(spoken) == 86 and not any(re.search(r"\d\s*[，,]\s*\d", t) for t in spoken)
-    assert "上一期结尾预告" not in narration and "下一篇讲 ExBody 2" in narration and "ExBody2" in intro
+    assert narration.count("上一期结尾预告") == 1 and "搬到真实的人形机器人上" in narration
+    assert "下一篇讲 ExBody 2" in narration and "ExBody2" in intro
+    # 2026-10-17 全局核对：推测与理解要标出来，README 的「up to 4 days」是「最多」
+    for s in ("我们推测，是因为真机只测了站立动作", "最多要处理 4 天", "代码注释的解释", "只有根部速度这一轴", "表 4 里，只算在跟的点"):
+        assert s in narration, s
+    assert "三类掩码" not in js + narration + note and "约 4 天" not in js + narration + note
     for bad in ("差得", "当老师", "几乎", "一行", "重训"):
         assert not any(bad in t for t in spoken), bad
     assert "## 🎬 十六幕动画" in note and 'demos: ["hover"]' in note

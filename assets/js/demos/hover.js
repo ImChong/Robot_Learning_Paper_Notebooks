@@ -433,7 +433,9 @@
     g.appendChild(svgEl('rect', { x: (x - 2).toFixed(1), y: (y - 2).toFixed(1), width: (w + 4).toFixed(1), height: (h + 4).toFixed(1), rx: 5, fill: '#111111', stroke: 'none' }));
     var c = K.svgClip(x, y, w, h, CLIP_BASE + id + '.mp4', { poster: CLIP_BASE + id + '.webp' });
     g.appendChild(c);
-    if (caption) label(g, o.capX == null ? x + w / 2 : o.capX, y + h + (o.capDy || 17), caption, 'demo-x-mut', o.capSize || 9.5, o.capAnchor || 'middle');
+    /* 一个镜头里并排几台机器人、各跑一种模式时，在片段正下方逐台标出模式（不压在片段上） */
+    (o.labels || []).forEach(function (t, i, all) { label(g, x + w * (i + 0.5) / all.length, y + h + 15, t, 'demo-x-ink2', 10.5, 'middle'); });
+    if (caption) label(g, o.capX == null ? x + w / 2 : o.capX, y + h + (o.capDy || (o.labels ? 33 : 17)), caption, 'demo-x-mut', o.capSize || 9.5, o.capAnchor || 'middle');
     return { g: g, x: x, y: y, w: w, h: h, at: function (sec, vis) { c.at(sec, vis); } };
   }
   /* 片段的时长（秒）：切模式的时刻按片段时间算，循环播放时取余 */
@@ -728,7 +730,7 @@
     label(p3, R, 222, '一套权重，换掩码就换模式', 'demo-x-ink2', 12.5);
     var p4 = group(s);
     label(p4, R, 64, '论文的假设：为什么通才更好', 'demo-x-ink', 14);
-    chip(p4, R, 84, 372, '平衡、协调、像人的动作：各种模式**共享**', C_HOVER, { size: 12, left: true });
+    chip(p4, R, 84, 372, '平衡、像人的动作、精确的肢体控制：各模式**共享**', C_HOVER, { size: 12, left: true });
     chip(p4, R, 122, 372, '专才：容易**过拟合**自己的奖励和训练环境', C_BAD, { size: 12, left: true });
     label(p4, R, 180, '这是论文提出的解释，没有单独的实验去验证', 'demo-x-mut', 11.5);
     var p5 = group(s);
@@ -786,7 +788,7 @@
     });
     label(p3, R, Y + 112, '走路、导航用；偏航给差值（本体感受估不出绝对偏航）', 'demo-x-mut', 11.5);
     var p4 = group(s);
-    var fig = paperPart(p4, 'fig1', 0, 0.443, 1, 0.725, R + 20, Y + 4, 362, '论文图 1 中间：亮着的格子在跟，右边是三类掩码');
+    var fig = paperPart(p4, 'fig1', 0, 0.443, 1, 0.725, R + 20, Y + 4, 362, '论文图 1 中间：亮着的格子在跟，右边的虚线框是掩码');
     var p5 = group(s);
     label(p5, R, Y + 10, '两条设计标准', 'demo-x-ink', 13);
     chip(p5, R, Y + 24, 402, '**通用性**：覆盖前人的配置，能接手柄、键盘、动捕、外骨骼、VR', C_HOVER, { size: 11, left: true });
@@ -854,9 +856,9 @@
     /* 每个 cue 亮一行：ExBody、H2O、OmniH2O、HumanPlus（+ MHC）、HOVER */
     var STEPS = [
       { at: 0.4, row: 0, mask: maskFrom(modeOf('exbody').bits), txt: 'ExBody：9 个上身关节角 + 根部 7 = 16 位', sub: '代码 DISTILL_MASK_MODES_ALL 里的 exbody' },
-      { at: 3.6, row: 1, mask: maskFrom(modeOf('h2o').bits), txt: 'H2O：12 个关键点 = 12 位', sub: '论文写 8 个点；代码的正则匹配到每侧 3 个肩部连杆' },
+      { at: 3.6, row: 1, mask: maskFrom(modeOf('h2o').bits), txt: 'H2O：12 个关键点 = 12 位', sub: '论文：肩、肘、手、踝共 8 个点；代码的正则多匹配了肩部连杆' },
       { at: 7.0, row: 2, mask: maskFrom(modeOf('omnih2o').bits), txt: 'OmniH2O：头和双手 = 3 位', sub: 'VR 头显给得出的就是这 3 个点' },
-      { at: 10.4, row: 3, mask: maskFrom(modeOf('humanplus').bits), txt: 'HumanPlus：19 个关节角 + 根部 7 = 26 位', sub: 'MHC 也是这几格，多模式但不能任意子集' },
+      { at: 10.4, row: 3, mask: maskFrom(modeOf('humanplus').bits), txt: 'HumanPlus：19 个关节角 + 根部 7 = 26 位', sub: 'MHC 也是这几格：多模式，但只有关节角和根部、不能任意子集' },
       { at: 13.4, row: 5, mask: null, txt: 'HOVER：49 位全有，可以任意组合', sub: '下一步：怎么在训练里随机挑这些组合' }
     ];
     function draw(t, clock) {
@@ -886,7 +888,7 @@
 
   /* ── scene 5: 数据：AMASS 重定向到 H1 ── */
   function buildSceneRetarget() {
-    var s = sceneSvg('左边：改过身材的人（灰色骨架）和重定向出来的 H1 并排走同一段路，第三步时人叠到 H1 上，11 对对应点之间连上细线；右边依次是重定向的四步和 README 的说明');
+    var s = sceneSvg('左边：按 H1 逐段缩放的 CMU 骨架（灰色，代替 SMPL）和重定向出来的 H1 并排走同一段路，第三步时骨架叠到 H1 上，11 对对应点之间连上细线；右边依次是重定向的四步和 README 的说明');
     s.appendChild(svgText(24, 26, '数据：AMASS 重定向到 H1（流程沿用 H2O）', 'demo-x-ink2', 13.5));
     var left = group(s);
     rectBox(left, 24, 38, 420, 360, C_BORDER, C_SURFACE2);
@@ -896,7 +898,7 @@
     var hum = humanSkel(left, { color: C_HUMAN, sw: 3 });
     var pairG = group(left), pairL = PAIRS.map(function () { return hline(pairG, 0, 0, 0, 0, C_BAD, 1.4); });
     var kinG = group(left), kinD = PAIRS.map(function () { return dotAt(kinG, 0, 0, 3.6, C_KIN); });
-    var tagH = label(left, 0, 0, '人（改过身材）', 'demo-x-mut', 10.5, 'middle');
+    var tagH = label(left, 0, 0, 'CMU 骨架（逐段缩放）', 'demo-x-mut', 10.5, 'middle');
     var tagR = label(left, 0, 0, 'H1', 'demo-x-mut', 10.5, 'middle');
     var R = 464, W = 312;
     var steps = [
@@ -908,9 +910,9 @@
     var sg = steps.map(function (st, i) { var g = group(s); chip(g, R, 60 + i * 44, W, st[0], st[1], { size: 11.5, left: true, h: 32 }); return g; });
     var p5 = group(s);
     label(p5, R, 262, 'README：AMASS 的许可不让分发重定向好的数据', 'demo-x-mut', 11);
-    label(p5, R, 282, '整个 AMASS 在 32 核机器上重定向要跑约 4 天', 'demo-x-mut', 11);
-    var foot = label(s, R, 330, '这段走路：H2O 笔记里我们照官方代码', 'demo-x-mut', 11);
-    var foot2 = label(s, R, 350, '重算的 CMU 07_01（不是论文的数据）', 'demo-x-mut', 11);
+    label(p5, R, 282, '整个 AMASS 在 32 核机器上重定向最多要跑 4 天', 'demo-x-mut', 11);
+    var foot = label(s, R, 330, '这段走路：H2O 笔记里我们重算的 CMU 07_01；', 'demo-x-mut', 11);
+    var foot2 = label(s, R, 350, '身材用逐段缩放代替 SMPL（不是论文的数据）', 'demo-x-mut', 11);
     function draw(t, clock) {
       var now = nowOf(t, clock), k = loopFrame(now, 0), f = frame(k);
       /* 第 ③ 步前人和 H1 并排；之后人慢慢挪到 H1 身上 */
@@ -980,7 +982,7 @@
       var neu = r[0] === '根部速度' || r[0] === '根部旋转';
       chip(p3, R + (i % 4) * 93, 192 + Math.floor(i / 4) * 34, 88, r[0] + ' ' + r[1], neu ? C_ROOT : C_HOVER, { size: 10.5, fill: neu ? C_SURFACE2 : C_SURFACE });
     });
-    label(p3, R, 282, '紫色两项是比 OmniH2O 多的：命令空间里有根部，教师得先学会跟', 'demo-x-mut', 11);
+    label(p3, R, 282, '紫色两项比 OmniH2O 多（我们的理解：命令空间里有根部）', 'demo-x-mut', 11);
     var p4 = group(s);
     label(p4, R, 70, '域随机化：照搬 OmniH2O', 'demo-x-ink', 13.5);
     ['摩擦', '连杆质量', '躯干质心', 'PD 增益', '力矩噪声', '控制延迟', '推一把', '地形'].forEach(function (n, i) {
@@ -1174,7 +1176,7 @@
     label(p3, R, Y + 14, '掩码本身也进观测（论文没写，代码里有）', 'demo-x-ink', 13);
     chip(p3, R, Y + 28, 196, '左膝目标 = 0（要伸直）', C_JNT, { size: 11 });
     chip(p3, R + 206, Y + 28, 196, '左膝没给目标', C_MUTED, { size: 11, dash: '4 3' });
-    label(p3, R, Y + 82, '乘过掩码后两者都是 0，学生分不清；', 'demo-x-ink2', 11.5);
+    label(p3, R, Y + 82, '代码注释：乘过掩码后两者都是 0，网络分不清；', 'demo-x-ink2', 11.5);
     label(p3, R, Y + 102, '再拼上 49 位掩码：1 是「目标为 0」，0 是「没给」', 'demo-x-ink2', 11.5);
     var p4 = group(s);
     label(p4, R, Y + 14, 'LaTeX 源码里注释掉的一行：能组合出多少种', 'demo-x-ink', 12.5);
@@ -1184,7 +1186,7 @@
     label(p4, R, Y + 128, '正式的 PDF 里没有这一行', 'demo-x-mut', 10.5);
     var p5 = group(s);
     label(p5, R, Y + 14, 'README：照这样随机关，会带来动作歧义', 'demo-x-ink', 13);
-    label(p5, R, Y + 38, '代码默认关掉稀疏；OmniH2O 模式 3 位全关的概率', 'demo-x-ink2', 11.5);
+    label(p5, R, Y + 38, '默认关掉稀疏；若打开，OmniH2O 模式 3 位全关的概率', 'demo-x-ink2', 11.5);
     rich(p5, R, Y + 60, '$0.5^3 = 1/8$：那个回合学生什么目标都没有', 11.5, 'demo-x-ink2');
     label(p5, R, Y + 84, '代码注释建议：只在同一身体区域里关掉一小部分', 'demo-x-mut', 11);
     var EP = 2.4;
@@ -1330,11 +1332,11 @@
     var s = sceneSvg('左边是项目页的仿真视频：同一个 HOVER 依次在头、H2O、OmniH2O 三种模式下跟同一段动作；右边是表 III 四种模式的全局位置误差，专才与 HOVER 各一条，' +
       '接着是每种模式加粗的项数、专才赢的那几项、论文图 3 的雷达图');
     s.appendChild(svgText(24, 26, '表 III：同一个 HOVER 套上固定掩码 vs 为这种模式专门训的专才', 'demo-x-ink2', 13.5));
-    var clip = projClip(s, 'sim_modes', 28, 46, 300, 169, '项目页视频（仿真）：同一个 HOVER，头 / H2O / OmniH2O 三种模式');
+    var clip = projClip(s, 'sim_modes', 28, 46, 300, 169, '项目页视频（仿真）：同一个 HOVER 同时跑三种模式', { labels: ['头模式', 'H2O 模式', 'OmniH2O 模式'] });
     var cg = group(s);
-    label(cg, 28, 252, '加粗（5 个种子下显著更好）的项数 / 12', 'demo-x-ink', 12);
+    label(cg, 28, 270, '加粗（5 个种子下显著更好）的项数 / 12', 'demo-x-ink', 12);
     var bolds = TABLE3.map(function (r, i) {
-      var g = group(cg), y = 270 + i * 30;
+      var g = group(cg), y = 283 + i * 28;
       label(g, 28, y + 15, r.zh, 'demo-x-ink2', 11.5);
       chip(g, 116, y, 100, 'HOVER **' + r.boldH.length + '**', C_HOVER, { size: 11, h: 24 });
       chip(g, 226, y, 100, '专才 ' + r.boldS.length, C_ACCENT, { size: 11, h: 24 });
@@ -1389,11 +1391,11 @@
   function buildSceneTable4() {
     var s = sceneSvg('左边是项目页的仿真视频：同一个 HOVER 在右手、双手、左手三种模式下跟动作；右边是表 IV：四种模式各训一个专才，只报在跟的那几个点的误差');
     s.appendChild(svgText(24, 26, '表 IV：只跟一只手、只跟头——再训四个专才比', 'demo-x-ink2', 13.5));
-    var clip = projClip(s, 'sim_hands', 28, 46, 300, 169, '项目页视频（仿真）：同一个 HOVER，右手 / 双手 / 左手三种模式');
+    var clip = projClip(s, 'sim_hands', 28, 46, 300, 169, '项目页视频（仿真）：同一个 HOVER 同时跑三种模式', { labels: ['右手模式', '双手模式', '左手模式'] });
     var lg = group(s);
-    label(lg, 28, 252, '只给一只手的参考时：', 'demo-x-ink2', 12);
-    label(lg, 28, 274, '专才只看得到这只手，要凭它把全身控制好', 'demo-x-ink2', 12);
-    label(lg, 28, 300, 'HOVER：同一套权重，只开对应的几位', 'demo-x-ink2', 12);
+    label(lg, 28, 270, '只给一只手的参考时：', 'demo-x-ink2', 12);
+    label(lg, 28, 292, '专才只看得到这只手，要凭它把全身控制好', 'demo-x-ink2', 12);
+    label(lg, 28, 318, 'HOVER：同一套权重，只开对应的几位', 'demo-x-ink2', 12);
     var R = 360;
     var p1 = group(s);
     label(p1, R, 64, '四种额外的模式', 'demo-x-ink', 14);
@@ -1424,7 +1426,7 @@
     chip(p5, R, 82, 416, '专才赢 2 项：左手的局部误差、头的加速度', C_ACCENT, { size: 11.5, left: true });
     label(p5, R, 140, '全局误差降幅：左手 −27%、右手 −42%、', 'demo-x-ink2', 12);
     label(p5, R, 162, '双手 −12%、头 −28%', 'demo-x-ink2', 12);
-    label(p5, R, 196, '输入越稀疏，专才越吃力', 'demo-x-ink2', 12);
+    label(p5, R, 196, '输入越稀疏，专才越吃力（我们的理解）', 'demo-x-ink2', 12);
     function draw(t, clock) {
       clip.at(K.clipSince(t, 0), true);
       bars.set(seg(t, 3.9, 5.2));
@@ -1452,16 +1454,17 @@
     label(p1, R, 180, '比 8 种模式 × 4 项误差：根部 RPY、上身关节、', 'demo-x-ink2', 12);
     label(p1, R, 202, '局部位置、全局位置', 'demo-x-ink2', 12);
     var p2 = group(s);
-    label(p2, R, 64, '全局位置误差（mm，越短越好）', 'demo-x-ink', 13);
+    label(p2, R, 64, '全身的全局位置误差（mm，越短越好）', 'demo-x-ink', 13);
     var bars = pairBars(p2, R, 76, 76, 270, FIG4.map(function (r) { return { zh: r.zh, a: r.other[3], b: r.hover[3] }; }), 380, C_PURPLE, C_HOVER, function (v) { return String(v); }, 36);
     legendRow(p2, R + 76, 380, [['多模式 RL', C_PURPLE], ['HOVER', C_HOVER]]);
     var p3 = group(s);
-    label(p3, R, 64, 'HOVER 在 32/32 项上误差更低', 'demo-x-ink', 14);
+    label(p3, R, 64, '论文：HOVER 在 32/32 项上误差更低', 'demo-x-ink', 14);
     label(p3, R, 92, '差得最多的是只跟一只手：', 'demo-x-ink2', 12);
     chip(p3, R, 104, 200, '右手：374 对 191（1.96 倍）', C_PURPLE, { size: 11.5 });
     chip(p3, R + 210, 104, 200, '左手：350 对 204（1.72 倍）', C_PURPLE, { size: 11.5 });
     label(p3, R, 166, '8 种模式平均：254.4 对 167.25 mm', 'demo-x-ink2', 12);
     label(p3, R, 194, '图上两位小数的根部 RPY 有两处一样（ExBody、HumanPlus）', 'demo-x-mut', 10.5);
+    label(p3, R, 216, '这里算全身所有点；表 IV 只算在跟的点，所以数不一样', 'demo-x-mut', 10.5);
     var p4 = group(s);
     label(p4, R, 64, '雷达图的缩放：网越大越好', 'demo-x-ink', 14);
     math(p4, R + 40, 118, '\\frac{E^{\\max} - E}{E^{\\max} - E^{\\min}}', 20);
@@ -1676,7 +1679,7 @@
         { at: 0.4, s: '四种接口底下是同一件事：**全身运动学模仿**——稳、像人的全身动作。' },
         { at: 3.6, s: '论文图 2：左边是重定向的动作库，中间是三种目标和两层掩码，右边是教师监督 HOVER 策略。' },
         { at: 7.0, s: '两步走：先用 PPO 训一个**特权教师**把全身都跟上，再用 DAgger 把它蒸馏进看**掩码后命令**的学生。' },
-        { at: 10.4, s: '论文的假设：平衡、协调、像人的动作在各种模式之间共享；专才容易过拟合自己的奖励。' },
+        { at: 10.4, s: '论文的假设：平衡、像人的动作、精确的肢体控制在各种模式之间共享；专才容易过拟合自己的奖励。' },
         { at: 13.4, s: '三条贡献：统一的多模式控制器；蒸馏让技能跨模式共享、比专才好；仿真和真机里无缝切换模式。' }
       ]
     },
@@ -1687,8 +1690,8 @@
       cues: [
         { at: 0.4, s: '① **运动学位置**：23 个刚体点的 3D 位置（20 个连杆 + 两手 + 头），69 维。' },
         { at: 3.6, s: '② **关节角**：19 个电机的目标角度。相当于丢掉了全局位置的运动学模仿。' },
-        { at: 7.0, s: '③ **根部**：线速度、横滚、俯仰、偏航之差、高度，7 维；合起来 $95 = 23 \\times 3 + 19 + 7$。' },
-        { at: 10.4, s: '论文图 1 中间：亮着的格子是正在跟的命令，右边的虚线框是三类掩码。' },
+        { at: 7.0, s: '③ **根部**：三个方向的线速度、横滚、俯仰、偏航之差、高度，7 维；合起来 $95 = 23 \\times 3 + 19 + 7$。' },
+        { at: 10.4, s: '论文图 1 中间：亮着的格子是正在跟的命令，右边的虚线框是掩码，决定打开哪几块。' },
         { at: 13.4, s: '两条标准：**通用性**（覆盖前人、能接各种设备）和**原子性**（维度独立、可任意组合）；分上下身两块。' }
       ]
     },
@@ -1698,9 +1701,9 @@
       build: buildSceneSubsets,
       cues: [
         { at: 0.4, s: '表 I：**ExBody** 跟上身关节角 + 根部。官方代码里是 9 个关节角 + 7 个根部量 = 16 位。' },
-        { at: 3.6, s: '**H2O** 跟关键点位置：论文写 8 个点，代码的正则匹配到每侧 3 个肩部连杆，实际是 12 位。' },
+        { at: 3.6, s: '**H2O** 跟关键点位置：论文写 8 个点（肩、肘、手、踝），代码的正则匹配到每侧 3 个肩部连杆，实际是 12 位。' },
         { at: 7.0, s: '**OmniH2O** 只跟头和双手 3 个点：3 位。' },
-        { at: 10.4, s: '**HumanPlus** 跟全身关节角 + 根部，26 位；v2 加的 **MHC** 也是这几格，多模式但不能任意子集。' },
+        { at: 10.4, s: '**HumanPlus** 跟全身关节角 + 根部，26 位；v2 加的 **MHC** 也是这几格：多模式，但只有关节角和根部、不能任意子集。' },
         { at: 13.4, s: '**HOVER** 六格全有、49 位都能开，还能跟踪**任意子集**。' }
       ]
     },
@@ -1710,10 +1713,10 @@
       build: buildSceneRetarget,
       cues: [
         { at: 0.4, s: '① 正运动学：由关节角算出 H1 的关键点位置。' },
-        { at: 3.6, s: '② 拟合 SMPL：优化人体模型的形状参数，把人改成 H1 的身材。' },
+        { at: 3.6, s: '② 拟合 SMPL：优化人体模型的形状参数，把人改成 H1 的身材。左边的灰色骨架是替身：CMU 骨架按 H1 逐段缩放。' },
         { at: 7.0, s: '③ 梯度下降：对齐人和 H1 对应的关键点，把 AMASS 的动作重定向到 H1。' },
         { at: 10.4, s: '④ 沿用 H2O 的 sim-to-data：在仿真里筛掉做不到的动作，得到数据集 $\\hat{Q}$。' },
-        { at: 13.4, s: 'README：AMASS 的许可不让分发重定向好的数据；整个 AMASS 在 32 核机器上要跑约 4 天。' }
+        { at: 13.4, s: 'README：AMASS 的许可不让分发重定向好的数据；整个 AMASS 在 32 核机器上最多要跑 4 天。' }
       ]
     },
     {
@@ -1723,7 +1726,7 @@
       cues: [
         { at: 0.4, s: '教师看所有刚体的位置、旋转、速度、角速度和上一步动作，加上与下一帧参考之差：$\\pi^{\\text{oracle}}$。' },
         { at: 3.6, s: '网络照搬 OmniH2O：三层 MLP，512、256、128。官方代码里观测 913 维。' },
-        { at: 7.0, s: '表 II 的奖励：惩罚 4 项、正则 12 项、任务 8 项；比 OmniH2O 多了**根部速度**和**根部旋转**。' },
+        { at: 7.0, s: '表 II 的奖励：惩罚 4 项、正则 12 项、任务 8 项；比 OmniH2O 多了**根部速度**和**根部旋转**（我们的理解：因为命令空间里有根部）。' },
         { at: 10.4, s: '域随机化照搬 OmniH2O：摩擦、质量、质心、PD 增益、力矩噪声、延迟、推一把、地形。' },
         { at: 13.4, s: '教师是上限：存活 99.3%、全局误差 119 mm；它不部署，只给学生当老师。' }
       ]
@@ -1735,9 +1738,9 @@
       cues: [
         { at: 0.4, s: '学生只看真机拿得到的：关节位置、关节速度、根角速度、重力方向，加上一步动作。' },
         { at: 3.6, s: '照搬 OmniH2O，叠最近 **25 步**的历史；没有全局线速度。' },
-        { at: 7.0, s: '再加上掩码后的 95 维命令，和**掩码本身**的 49 位。' },
-        { at: 10.4, s: '官方代码里学生一共 **1782 维**：44 + 95 + 49 + 19 + 25 × 63。' },
-        { at: 13.4, s: '对比 OmniH2O 的学生 1665 维：目标那一块从 27 维换成了 144 维。' }
+        { at: 7.0, s: '再加上掩码后的 95 维命令；官方代码里还拼上**掩码本身**的 49 位。' },
+        { at: 10.4, s: '官方代码里学生一共 **1782 维**：这一步 44 + 命令 95 + 掩码 49 + 上一步动作 19 + 历史 25 × 63。' },
+        { at: 13.4, s: '对比 OmniH2O 的学生 1665 维：目标那一块从 27 维换成了 95 + 49 = 144 维。' }
       ]
     },
     {
@@ -1759,9 +1762,9 @@
       cues: [
         { at: 0.4, s: '再乘**稀疏掩码**：挑中的模式里，每一位以 0.5 的概率保留。' },
         { at: 3.6, s: '论文的例子：上身只跟两只手的位置，下身只跟躯干的关节角。' },
-        { at: 7.0, s: '代码把**掩码本身**也拼进观测：不然「目标为 0」和「没给目标」分不清。' },
+        { at: 7.0, s: '代码把**掩码本身**也拼进观测；代码注释说：不然「目标恰好为 0」和「被关掉」分不清。' },
         { at: 10.4, s: 'LaTeX 源码里注释掉的一行：$(2^{12}+2^{9}) \\times (2^{11}+2^{10}+2^{7}) = 14{,}745{,}600$ 种。' },
-        { at: 13.4, s: 'README：这样随机关会带来**动作歧义**，代码默认关掉稀疏；3 位全关的概率是 1/8。' }
+        { at: 13.4, s: 'README：这样随机关会带来**动作歧义**，代码默认关掉稀疏；若打开，3 位全关的概率是 1/8。' }
       ]
     },
     {
@@ -1773,7 +1776,7 @@
         { at: 3.6, s: '同一个状态算出教师的特权观测，问冻结的教师该怎么做，得到 $\\hat a_t$。' },
         { at: 7.0, s: '损失是两个动作之差 $\\lVert \\hat a_t - a_t \\rVert_2^2$，用监督学习更新学生。' },
         { at: 10.4, s: '和行为克隆的区别：数据来自学生自己走出的状态，学生一偏，教师就在那里纠正。' },
-        { at: 13.4, s: '官方代码：每次迭代每个环境走 1 步就更新；教师训 23.3 小时，学生只要 0.27 小时。' }
+        { at: 13.4, s: '官方代码：每次迭代每个环境走 1 步就更新；README：RTX 4090 上教师 10 万次迭代 23.3 小时，学生 1 万次 0.27 小时。' }
       ]
     },
     {
@@ -1784,7 +1787,7 @@
         { at: 0.4, s: '专才只给它那种模式的观测、用强化学习训；HOVER 用同一套权重，套上对应的固定掩码。' },
         { at: 3.6, s: '全局位置误差：ExBody 模式 275 → 185 mm，HumanPlus 266 → 182，H2O 137 → 121，OmniH2O 149 → 128。' },
         { at: 7.0, s: '12 项里 HOVER 显著更好的：7、7、8、7 项；专才只有 2、3、1、1 项。' },
-        { at: 10.4, s: '论文图 3 把表 III 画成雷达图：绿色的网几乎处处包住蓝色。' },
+        { at: 10.4, s: '论文图 3 把表 III 画成雷达图：绿色的网几乎处处包住蓝色，只有根部速度一轴专才更好或持平。' },
         { at: 13.4, s: '论文：即使只看一种模式，从教师**蒸馏**也比用强化学习训专才好。' }
       ]
     },
@@ -1797,7 +1800,7 @@
         { at: 3.6, s: '在跟的点的全局误差：左手 189 → 138，右手 220 → 128，双手 137 → 120，头 186 → 133 mm。' },
         { at: 7.0, s: '局部误差也大多更低，只有左手模式专才更好：147 对 151。' },
         { at: 10.4, s: '加速度和速度误差：头模式的加速度专才更好，2.22 对 2.31。' },
-        { at: 13.4, s: '16 项里 HOVER 显著更好 14 项；输入越稀疏，专才越吃力。' }
+        { at: 13.4, s: '16 项里 HOVER 显著更好 14 项；我们的理解：输入越稀疏，专才越吃力。' }
       ]
     },
     {
@@ -1806,8 +1809,8 @@
       build: buildSceneFig4,
       cues: [
         { at: 0.4, s: '基线：**多模式强化学习**——命令上用同样的掩码过程，但不蒸馏，从头用强化学习训。' },
-        { at: 3.6, s: '8 种模式的全局位置误差：只跟右手时 374 对 191 mm，只跟左手时 350 对 204。' },
-        { at: 7.0, s: '8 种模式 × 4 项误差，HOVER **32/32** 项都更低。' },
+        { at: 3.6, s: '8 种模式下全身的全局位置误差：只跟右手时 374 对 191 mm，只跟左手时 350 对 204（表 IV 只算在跟的点，数不一样）。' },
+        { at: 7.0, s: '论文：8 种模式 × 4 项误差，HOVER **32/32** 项都更低；图上 ExBody、HumanPlus 的根部 RPY 两位小数相同。' },
         { at: 10.4, s: '雷达图把误差缩放成 $\\frac{E^{\\max}-E}{E^{\\max}-E^{\\min}}$，网越大越好。' },
         { at: 13.4, s: '结论：关键是从**跟踪全身运动学的教师**蒸馏；输入越稀疏，从头强化学习越难。' }
       ]
@@ -1821,7 +1824,7 @@
         { at: 3.6, s: '全局位置误差：ExBody 模式 51.3 → 48.9 mm，HumanPlus 51.0 → 47.4，OmniH2O 51.2 → 47.5。' },
         { at: 7.0, s: '12 项赢 11 项；唯一输的是 HumanPlus 模式的根部 RPY，0.038 对 0.035。' },
         { at: 10.4, s: '论文图 5：上身关节模式、根部俯仰模式，还有全身运动学模式下的跑步。' },
-        { at: 13.4, s: '真机只测站立动作，误差 47–49 mm，比仿真小得多，和专才的差距也只有 5–7%。' }
+        { at: 13.4, s: '真机误差 47–49 mm，比仿真小得多，和专才的差距也只有 5–7%；我们推测，是因为真机只测了站立动作。' }
       ]
     },
     {
@@ -1831,7 +1834,7 @@
       cues: [
         { at: 0.4, s: '图 6(a)：向前走的过程中，从 **ExBody 模式**突然切到 **H2O 模式**。' },
         { at: 3.6, s: '图 6(b)：转身、后退的过程中，从 **HumanPlus 模式**切到 **OmniH2O 模式**。' },
-        { at: 7.0, s: '切换时只换掩码，权重一点不变；切换前后的误差，论文没有给数字。' },
+        { at: 7.0, s: '切换时只换掩码（关掉关节角和根部、打开关键点位置），权重一点不变；切换前后的误差，论文没有给数字。' },
         { at: 10.4, s: '图 6(c)：Vision Pro 遥操作，随机遮掉头和手：**双手模式**只跟两只手。' },
         { at: 13.4, s: '**左手模式**只跟左手，人的右手怎么挥都不管——参考有遮挡时也能跟。' }
       ]
