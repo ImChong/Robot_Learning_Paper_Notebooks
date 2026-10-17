@@ -121,6 +121,7 @@ EXBODY_NOTE = _high_impact_note("Expressive_Whole-Body_Control_for_Humanoid_Robo
 H2O_NOTE = _high_impact_note("H2O_Learning_Human-to-Humanoid_Real-Time_Whole-Body_Teleoperation")
 OMNIH2O_NOTE = _high_impact_note("OmniH2O_Universal_Whole-Body_Teleoperation")
 HOVER_NOTE = _high_impact_note("HOVER_Versatile_Neural_Whole-Body_Controller")
+MASKEDMIMIC_NOTE = _high_impact_note("MaskedMimic_Unified_Physics-Based_Character_Control_Through_Masked_Motion_Inpainting")
 PHP_NOTE = (
     ROOT
     / "papers"
@@ -339,7 +340,7 @@ EXPLAINER_BUNDLES = (
     "gmr", "omniretarget", "diffusion_policy", "beyondmimic", "cosmos", "umr", "php", "pbfm",
     "gentle", "lcp", "transformer", "pi0", "pi05", "op3soccer", "smp", "humanml3d",
     "domain_randomization", "quadterrain", "realhumanoid", "asap", "inekf", "berkeley_humanoid",
-    "toddlerbot", "exbody", "h2o", "omnih2o", "hover",
+    "toddlerbot", "exbody", "h2o", "omnih2o", "hover", "maskedmimic",
 )
 
 # 幕数由论文决定，不是统一模板：PPO / DeepMimic / AMP / ADD 的核心概念正好各 5 个，
@@ -534,11 +535,16 @@ EXPLAINER_SCENES = {
     # （式子和代码出入各不相同）；结果按表 III、表 IV、图 4、表 V + 图 5、图 6 各一幕，局限与代码一幕。压成 14 幕会让模式掩码的开关和稀疏掩码的
     # 掩码条、或表 III 的柱和表 IV 的柱抢同一帧。
     "hover": (HOVER_NOTE, 16),
+    # MaskedMimic 十八幕：问题两幕（城堡的例子与以前的两条路 / 控制就是补全）；第 4 节两阶段一幕；第 5 节的老师按观测与网络、奖励、
+    # 训练场与终止采样各一幕（式 3–4、附录 B.1 的 w 与 c、图 4 各有证据）；第 6 节按部分目标、为什么要 VAE、残差先验（式 6–7）、
+    # DAgger 与 KL 调度（式 8）、结构化掩码、固定噪声与历史、先验网络各一幕；结果按表 1+2、表 3+4、表 5、表 6 各一幕，文字控制与局限一幕。
+    # 压成 15 幕会让残差的两个高斯和 DAgger 的流程、或掩码的时间轴和历史的影子抢同一帧。
+    "maskedmimic": (MASKEDMIMIC_NOTE, 18),
 
     "humanml3d": (HUMANML3D_NOTE, 12),
 }
 CN_NUMERALS = {4: "四", 5: "五", 6: "六", 7: "七", 8: "八", 9: "九", 10: "十", 11: "十一", 12: "十二", 13: "十三", 14: "十四",
-               15: "十五", 16: "十六", 17: "十七"}
+               15: "十五", 16: "十六", 17: "十七", 18: "十八"}
 
 
 def test_explainer_scene_count_matches_the_title_and_note():
@@ -1198,7 +1204,7 @@ def test_video_subtitles_never_break_inside_an_english_word():
     import runpy
 
     src = (ROOT / "scripts" / "paper_video" / "build.py").read_text(encoding="utf-8")
-    fns = [n for n in ast.parse(src).body if isinstance(n, ast.FunctionDef) and n.name in ("word_char", "chunks")]
+    fns = [n for n in ast.parse(src).body if isinstance(n, ast.FunctionDef) and n.name in ("word_char", "math_mask", "vis_len", "chunks")]
     ns = {"re": re, "display": lambda s: s}
     exec(compile(ast.Module(body=fns, type_ignores=[]), "build.py", "exec"), ns)
 
@@ -1218,6 +1224,16 @@ def test_video_subtitles_never_break_inside_an_english_word():
             end = text.index(line, pos) + len(line)
             assert not (end < len(text) and ns["word_char"](text[end - 1]) and ns["word_char"](text[end])), (line, text)
             pos = end
+
+    # DISPLAY 写成 $…$ 的公式（MaskedMimic 的字幕）整条留在一行，标点在公式里也不断开；按字形算长度，不按 TeX 源码
+    assert lines("每项都是 $e^{-c \\times \\text{误差}}$，误差越大越接近 0。") == ["每项都是 $e^{-c \\times \\text{误差}}$", "误差越大越接近 0"]
+    assert lines("偏差是 $\\tfrac{1}{2}, \\tfrac{1}{3}$ 和 $x + v_x$、$y + v_y$，高度固定。")[0].count("$") % 2 == 0
+    assert ns["vis_len"]("标准差是 $e^{-2.9}$") == len("标准差是 ") + 5
+    paper = runpy.run_path(str(ROOT / "scripts" / "paper_video" / "papers" / "maskedmimic.py"))
+    for _, _, _, text in paper["SCRIPT"]:
+        for a, b in paper["DISPLAY"]:
+            text = text.replace(a, b)
+        assert all(line.count("$") % 2 == 0 for line in lines(text)), text
 
 
 def test_umr_explainer_and_worked_examples_share_the_same_numbers():
@@ -4177,3 +4193,194 @@ def test_hover_assets_and_project_page_clips():
     assert js.count("项目页视频") >= 7
     note = HOVER_NOTE.read_text(encoding="utf-8")
     assert "剪自[项目页](https://hover-versatile-humanoid.github.io/)的视频" in note
+
+
+def _mm_clip(js: str):
+    """解码 maskedmimic.js 的 `CLIP`：每帧 76 个 int16——24 个刚体的世界位置（毫米）+ 骨盆四元数 xyzw（× 10⁴）。"""
+    m = re.search(r"var CLIP = \{ fps: (\d+), n: (\d+), t0: ([\d.]+), per: (\d+), data: '([^']+)' \};", js)
+    fps, n, t0, per = int(m.group(1)), int(m.group(2)), float(m.group(3)), int(m.group(4))
+    a = _h2o_int16(m.group(5))
+    assert len(a) == per * n and per == 76
+    frames = []
+    for k in range(n):
+        o = k * per
+        x, y, z, w = (a[o + 72 + q] / 1e4 for q in range(4))
+        nq = math.sqrt(x * x + y * y + z * z + w * w)
+        x, y, z, w = x / nq, y / nq, z / nq, w / nq
+        yaw = math.atan2(2 * (x * y + w * z), 1 - 2 * (y * y + z * z))
+        frames.append({"b": _h2o_pts(a, o, 24), "yaw": yaw})
+    return fps, t0, frames
+
+
+def test_maskedmimic_explainer_demos_and_worked_example_share_the_paper_numbers():
+    """MaskedMimic：十八幕动画、三个演示、配音旁白与笔记「🚶 具体实例」用同一组数。
+
+    表 1–6、附录 B 照抄 arXiv 2409.14393 v1；KL 调度的 epoch 取自 NVlabs/ProtoMotions 的 v2.3 标签；角色的动作是 ProtoMotions 自带的
+    官方样例 smpl_humanoid_sit_armchair.motion（SAMP 的坐扶手椅），嵌在 maskedmimic.js 里，这里解码后把第 4.00 s 头 1 s 后目标的
+    12 维、转向的骨盆目标、跨进椅子 2 m 的时刻与包围盒在角色坐标系里的 8 个角再算一遍。
+    """
+    js = (DEMO_JS_DIR / "maskedmimic.js").read_text(encoding="utf-8")
+    note = MASKEDMIMIC_NOTE.read_text(encoding="utf-8")
+    narration = (ROOT / "scripts" / "paper_video" / "papers" / "maskedmimic.py").read_text(encoding="utf-8")
+    intro = (ROOT / "scripts" / "paper_video" / "papers" / "maskedmimic.js").read_text(encoding="utf-8")
+
+    for line in (
+        "{ key: 'fc', zh: '老师 FC', v: [99.96, 30.4, 99.9, 31.3] },",
+        "{ key: 'mm', zh: 'MaskedMimic', v: [99.4, 32.9, 99.2, 35.1] },",
+        "{ key: 'pulse', zh: 'PULSE', v: [99.5, 57.8, 93.4, 88.6] },",
+        "{ key: 'calm', zh: 'CALM', v: [16.6, 130.7, 10.1, 122.4] }",
+        "{ key: 'pelvis', zh: '只给骨盆', v: [98.4, 31.4, 98.4, 33.4] },",
+        "{ key: 'feet', zh: '只给双脚', v: [92.7, 88, 91.8, 94.3] }",
+        "{ key: 'mmTest', zh: 'MaskedMimic · 测试集', full: [95.4, 62.9], vr: [93.6, 69.4] }",
+        "{ key: 'steer', zh: '转向', unit: 'cm/s', flat: [97.8, 8.4], terrain: [93.8, 8.4] },",
+        "{ key: 'nores', zh: '先验不用残差', v: [21.1, 57.4] },",
+        "{ key: 'nomask', zh: '不用结构化掩码', v: [0, 274.4] }",
+        "var MASK = { K: 11, near: 10, repeat: 0.98, gap: 0.01, gapMin: 1, gapMax: 9, gapLong: 4, hideObj: 0.2, hideText: 0.8, farPose: 0.2 };",
+        "var KL = { a0: 1e-4, a1: 1e-2, e0: 3000, e1: 6000 };",
+        "var HIST = { window: 40, every: 8, n: 5 };",
+        "var KL_EX = { muE: 0.3, sigE: 0.5, sigP: 1.0 };",
+        "var EX_K = 30, EX_DT = 15;",
+        "var SWITCH = { k: 63, t: 6.20, dist: 1.985, prev: 2.03, yawDeg: 77.3 };",
+        "var CHAIR = { x: 0, y: 0.9, hx: 0.26, hy: 0.267, h: 0.808 };",
+    ):
+        assert line in js, line
+    for k in ("'mm-explainer'", "'mm-video'", "'mm-masks'", "'mm-sampler'", "'mm-tables'", "K.video(host"):
+        assert k in js, k
+
+    # 例 4：残差先验的 KL（一维）；例 5：KL 系数第 4500 个 epoch
+    kl = 0.5 * (math.log(1 / 0.25) + 0.25 + 0.09 - 1)
+    assert _fmt(kl, 3) == "0.363" and _fmt(64 * kl, 1) == "23.2" and _fmt(0.5 * (math.log(4) + 0.25 + 1 - 1), 3) == "0.818"
+    assert "**0.363**" in note and "0.363" in narration and "0.00505" in js and "**0.00505**" in note
+    assert _fmt(1e-4 + 0.5 * (1e-2 - 1e-4), 5) == "0.00505" and _fmt(1e-4 + 0.25 * (1e-2 - 1e-4), 6) == "0.002575"
+    # 例 6：结构化掩码的玩具统计（附录 B.2 的伪代码）
+    en = 0.9 * (0.1 * 1 + 0.2 * 2 + 0.2 * 3 + 0.2 * 4 + 0.2 * 5 + 0.1 * 6) + 0.1 * (0.25 * 1 + 0.5 * 2 + 0.25 * 3)
+    pp = en / 6 * 2 / 3
+    assert _fmt(en, 2) == "3.35" and _fmt(pp, 3) == "0.372" and _fmt(1 - (1 - pp) ** 10, 3) == "0.990" and _fmt(6 * (1 - (1 - pp) ** 10), 2) == "5.94"
+    assert "**0.372**" in note and "**0.990**" in note and "**5.94**" in note and "5.94 个" in narration
+    # 例 7：历史窗口；例 8：奖励；训练量
+    assert [_fmt(8 * i / 30, 2) for i in range(1, 6)] == ["0.27", "0.53", "0.80", "1.07", "1.33"]
+    assert _fmt(math.exp(-100 * 0.1**2 / 3), 2) == "0.72" and _fmt(math.exp(-100 * 0.05**2), 2) == "0.78"
+    assert _fmt(0.5 * math.exp(-100 * 0.01 / 3) + 0.7, 3) == "1.058" and "1.058" in note
+    assert _fmt(3e10 / 30 / (365.25 * 86400), 1) == "31.7" and "31.7 年" in js
+    # 例 9：维数与 token 数
+    assert 8 * 3 + 6 + 1 == 31 and 2 + 5 + 1 + 1 + 11 == 20 and 2 + 5 + 1 == 8 and 2 + 5 + 11 == 18
+    # 例 10：读表
+    assert _fmt(100 * (1 - 0.1 / 0.8), 1) == "87.5" and _fmt(100 * (1 - 0.3 / 0.8), 1) == "62.5" and _fmt(6.6 / 1.9, 1) == "3.5"
+    assert [_fmt(96.9 - v, 1) for v in (94.9, 93.2, 21.1, 0)] == ["2.0", "3.7", "75.8", "96.9"]
+
+    # 复现：从嵌入的官方样例再算一遍
+    fps, t0, clip = _mm_clip(js)
+    assert fps == 15 and t0 == 2.0 and len(clip) == 180
+
+    def local(k, v):
+        c, s_ = math.cos(clip[k]["yaw"]), math.sin(clip[k]["yaw"])
+        return [c * v[0] + s_ * v[1], -s_ * v[0] + c * v[1], v[2]]
+
+    def sub(p, q):
+        return [a - b for a, b in zip(p, q, strict=True)]
+
+    # 例 1：第 4.00 s（第 30 帧），头 1 s 后（第 45 帧）的目标
+    k, dt = 30, 15
+    assert t0 + k / fps == 4.0
+    head, root, tgt = clip[k]["b"][13], clip[k]["b"][0], clip[k + dt]["b"][13]
+    rel_j, rel_r = local(k, sub(tgt, head)), local(k, sub(tgt, root))
+    assert [_fmt(v, 3) for v in tgt] == ["0.194", "-1.452", "1.506"]
+    assert [_fmt(v, 3) for v in rel_j] == ["0.744", "0.092", "0.007"] and [_fmt(v, 3) for v in rel_r] == ["0.822", "0.132", "0.569"]
+    assert _fmt(math.degrees(clip[k]["yaw"]), 1) == "2.3"
+    for s_ in ("$(0.744, 0.092, 0.007)$", "$(0.822, 0.132, 0.569)$", "$(0.194, -1.452, 1.506)$", "$[0.744, 0.092, 0.007, 0, 0, 0,\\ 0.822, 0.132, 0.569, 0, 0, 0]$"):
+        assert s_ in note, s_
+    assert "向前 0.744 米" in narration
+    # 例 2：转向的骨盆目标
+    v = [(clip[k + 1]["b"][0][q] - clip[k - 1]["b"][0][q]) * fps / 2 for q in range(2)]
+    assert [_fmt(x, 3) for x in v] == ["0.803", "-0.007"]
+    assert [_fmt(root[0] + v[0], 3), _fmt(root[1] + v[1], 3)] == ["0.181", "-1.624"] and "[0.181, -1.624, 0.9]" in note
+    # 例 3：第一次进入椅子 2 m 以内的帧，与这时包围盒的 8 个角
+    dist = [math.hypot(f["b"][0][0], f["b"][0][1] - 0.9) for f in clip]
+    sw = next(i for i, d in enumerate(dist) if d < 2.0)
+    assert sw == 63 and _fmt(t0 + sw / fps, 2) == "6.20" and _fmt(dist[sw], 3) == "1.985" and _fmt(dist[sw - 1], 2) == "2.03"
+    assert _fmt(math.degrees(clip[sw]["yaw"]), 1) == "77.3" and "6.2 秒" in narration
+    p0 = clip[sw]["b"][0]
+    corners = [[x, 0.9 + y] for y in (-0.267, 0.267) for x in (-0.26, 0.26)]
+    got = [[_fmt(c, 3) for c in local(sw, [cx - p0[0], cy - p0[1], 0])[:2]] for cx, cy in corners]
+    assert got == [["1.254", "1.408"], ["1.368", "0.901"], ["1.775", "1.525"], ["1.889", "1.018"]]
+    for a, b in got:
+        assert f"$({a}, {b})$" in note
+    # 第 12.00 s 坐稳：骨盆离地 0.564 m
+    assert _fmt(clip[150]["b"][0][2], 3) == "0.564"
+
+    # 旁白：数字列举用顿号，两个数之间不只隔一个逗号（「66 加 72，138 维」的教训）
+    spoken = re.findall(r'"([^"]*)"\),', narration[narration.index("SCRIPT = [") : narration.index("DISPLAY = [")])
+    assert len(spoken) == 99 and not any(re.search(r"\d\s*[，,]\s*\d", t) for t in spoken)
+    # 片头接上一期（OmniH2O）的片尾预告，片尾只预告下一篇（HOVER）
+    assert narration.count("上一期结尾预告") == 1 and "下一篇讲 HOVER" in narration and "HOVER" in intro
+    assert "## 🎬 十八幕动画" in note and 'demos: ["maskedmimic"]' in note
+    # 面板到 cue 之后才淡出
+    assert "return seg(t, a + 0.3, a + 0.7) * (b == null ? 1 : 1 - seg(t, b, b + 0.3));" in js
+    assert "1 - seg(t, b - 0.3, b)" not in js
+    # 视频文案的占位符都已填上
+    assert "__VIDEO_" not in js and "__VIDEO_" not in note
+    # 字幕和分镜里的公式都交给 KaTeX：DISPLAY 不再输出 e^(…)、上标数字，分镜文字里的希腊字母都在 $…$ 里
+    import runpy
+
+    display_out = [b for a, b in runpy.run_path(str(ROOT / "scripts" / "paper_video" / "papers" / "maskedmimic.py"))["DISPLAY"]]
+    assert not [d for d in display_out if re.search(r"e\^\(|[²³⁻÷αεμρτ]", d)]
+    code = re.sub(r"//[^\n]*", "", re.sub(r"/\*.*?\*/", "", js, flags=re.S))
+    plain = [x for x in re.findall(r"'((?:[^'\\]|\\.)*)'", code) if re.search(r"[αεμρτ²⁻÷]", x) and "$" not in x]
+    assert plain == [], plain
+
+
+def test_maskedmimic_3d_sprite_sheets_match_their_metadata():
+    """MaskedMimic：SMPL 角色的 3D 逐帧贴图与扶手椅（几何照抄 smpl_humanoid.xml 与官方 armchair.obj）。格子对不上图，裁出来就是半个人。"""
+    js = (DEMO_JS_DIR / "maskedmimic.js").read_text(encoding="utf-8")
+    sheets = json.loads(re.search(r"var SHEETS = (\{.*?\});\n", js).group(1))
+    _, _, clip = _mm_clip(js)
+    sprite_dir = ROOT / "assets/img/papers/maskedmimic/smpl_3d"
+    assert set(sheets) == {"sit", "chair"}
+    total = 0
+    for sid, s in sheets.items():
+        path = sprite_dir / s["file"]
+        assert path.is_file(), s["file"]
+        total += path.stat().st_size
+        rows = math.ceil(s["n"] / s["cols"])
+        assert _webp_size(path) == (s["cw"] * s["cols"], s["ch"] * rows), sid
+        assert 0 < s["ax"] < s["cw"] and 0 < s["ay"] <= s["ch"] and (s["yaw"], s["pitch"]) == (-0.4, 0.15), sid
+    assert sheets["sit"]["n"] == len(clip) and sheets["chair"]["n"] == 1
+    assert {p.name for p in sprite_dir.iterdir()} == {s["file"] for s in sheets.values()}
+    assert total < 1.2e6, "贴图按幕懒加载，但总量也别失控"
+    figs = {p.name for p in (ROOT / "assets/img/papers/maskedmimic").glob("*.webp")}
+    used = set(re.findall(r"'(fig\w+\.webp)'", js))
+    assert used and used == figs, ("没用到的图别留在仓库里", figs - used, "缺图", used - figs)
+
+
+def _mp4_seconds(path):
+    """mp4 的时长（秒，带小数）：读 moov/mvhd 的 timescale 与 duration（version 0 / 1 都认）。"""
+    import struct
+
+    data = path.read_bytes()
+    i = data.find(b"mvhd")
+    version = data[i + 4]
+    if version == 1:
+        timescale, duration = struct.unpack(">IQ", data[i + 24 : i + 36])
+    else:
+        timescale, duration = struct.unpack(">II", data[i + 16 : i + 24])
+    return duration / timescale
+
+
+def test_maskedmimic_project_page_clips():
+    """MaskedMimic：第 1、8、14–18 幕的仿真画面剪自项目页的视频（13 段，按幕懒加载）。
+
+    原先四个例子拼成 2 × 2，手机上人太小（2026-10-17 看片反馈），现在一次只放一个：seqClip 的 parts 时长加起来要等于片段时长，
+    否则下面的小条和名称会和画面错开。
+    """
+    js = (DEMO_JS_DIR / "maskedmimic.js").read_text(encoding="utf-8")
+    clip_dir = ROOT / "assets/img/papers/maskedmimic/clips"
+    used = set(re.findall(r"(?:projClip|seqClip)\(\w+, '(\w+)'", js))
+    assert used == {"castle", "prior", "sofa", "tracking", "vr", "terrain", "tasks", "task_path", "task_steer", "task_reach", "objects", "text", "bloopers"}
+    for cid, parts in re.findall(r"seqClip\(\w+, '(\w+)',[^\[]*?(\[\[.*?\]\])", js, flags=re.S):
+        total = sum(float(x) for x in re.findall(r"\[\s*([0-9.]+),", parts))
+        assert abs(total - _mp4_seconds(clip_dir / f"{cid}.mp4")) < 0.02, (cid, total)
+    assert {p.name for p in clip_dir.iterdir()} == {f"{u}.{ext}" for u in used for ext in ("mp4", "webp")}
+    assert sum(p.stat().st_size for p in clip_dir.iterdir()) < 3.2e6, "片段只在播到那一幕时才下载，但总量也别失控"
+    assert js.count("项目页视频") >= 8 and "仿真结果剪自项目页的视频" in js
+    note = MASKEDMIMIC_NOTE.read_text(encoding="utf-8")
+    assert "仿真画面剪自[项目页](https://research.nvidia.com/labs/par/maskedmimic/)的视频" in note

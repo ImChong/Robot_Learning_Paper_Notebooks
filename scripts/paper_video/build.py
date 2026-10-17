@@ -47,6 +47,8 @@ NAME = sys.argv[1] if len(sys.argv) > 1 else "ppo"
 REUSE = "--reuse" in sys.argv[2:]
 PAPER = importlib.import_module(f"papers.{NAME}")
 SCRIPT, DISPLAY = PAPER.SCRIPT, PAPER.DISPLAY
+# 字幕里中文和字母 / 数字 / 公式之间补一个空格（「0.25 m就」→「0.25 m 就」）；只对设了 SPACE_CJK = True 的篇目生效，旧篇目的字幕不变
+SPACE_CJK = getattr(PAPER, "SPACE_CJK", False)
 OUT = HERE / "out" / NAME
 OUT.mkdir(parents=True, exist_ok=True)
 CACHE = OUT / "tts_cache"  # 每句的 mp3 + 句子边界，按音色、语速、文字的哈希存；被 429 打断后重跑只补没合成的句子
@@ -58,16 +60,34 @@ LEAD = 0.45   # silence before the first line of each scene (scene fades in)
 GAP = 0.30    # breath after every line
 
 
+def space_cjk(s):
+    """中文与字母、数字、公式（`$…$`）之间补一个空格；公式里面不动，中文标点前后不加。"""
+    out, inside = [], False
+    for k, ch in enumerate(s):
+        if ch == "$":
+            inside = not inside
+        prev = s[k - 1] if k else ""
+        if prev and not (inside and ch != "$"):
+            cjk = "\u4e00" <= ch <= "\u9fff"
+            prev_cjk = "\u4e00" <= prev <= "\u9fff"
+            latin = ch.isascii() and (ch.isalnum() or ch in "$(")
+            prev_latin = prev.isascii() and (prev.isalnum() or prev in "$)%")
+            if (cjk and prev_latin) or (latin and prev_cjk):
+                out.append(" ")
+        out.append(ch)
+    return "".join(out)
+
+
 def display(s):
     for a, b in DISPLAY:
         s = s.replace(a, b)
-    return s
+    return space_cjk(s) if SPACE_CJK else s
 
 
 PACE = float(os.environ.get("TTS_PACE", "0"))  # 每次请求前等几秒：服务按频率限流（429）时用，平时是 0
 
 
-async def tts(text, mp3, tries=8):
+async def tts(text, mp3, tries=6):
     for k in range(tries):
         if PACE:
             await asyncio.sleep(PACE)
@@ -85,10 +105,12 @@ async def tts(text, mp3, tries=8):
             if k == tries - 1:
                 raise
             await asyncio.sleep(2 ** k)
-        except aiohttp.WSServerHandshakeError as e:  # 429 Too Many Requests now and then (2026-10-16): back off and retry
+        except aiohttp.WSServerHandshakeError as e:
+            # 2026-10-17：连着合成二十几句时服务会回 429（单句没事），退避 20、40、80… 秒再试
             if e.status != 429 or k == tries - 1:
                 raise
-            await asyncio.sleep(min(5 * 2 ** k, 90))
+            print(f"  429 from the TTS service, waiting {20 * 2 ** k} s", file=sys.stderr)
+            await asyncio.sleep(20 * 2 ** k)
 
 
 async def tts_cached(text, mp3, fresh=False):
@@ -116,35 +138,70 @@ def word_char(ch):
     return ch.isascii() and ch.isalnum()
 
 
+def math_mask(s):
+    """True at every index inside a `$…$` run: the subtitle shows it as one KaTeX formula, so no line break may fall there."""
+    mask, inside = [False] * len(s), False
+    for k, ch in enumerate(s):
+        if ch == "$":
+            inside = not inside
+            mask[k] = True
+        else:
+            mask[k] = inside
+    return mask
+
+
+def vis_len(s):
+    """Rough on-screen width in characters: a `$…$` run counts its glyphs, not its TeX source (`$e^{-2.9}$` is ~5, not 10)."""
+    def glyphs(m):
+        tex = re.sub(r"\\[A-Za-z]+", "x", m.group(1))
+        return "x" * len(re.sub(r"[{}^_\s]", "", tex))
+    return len(re.sub(r"\$([^$]*)\$", glyphs, s))
+
+
 def chunks(text, start, dur, limit=17):
-    """Split one TTS sentence into subtitle lines of <= ~limit chars, timed by char share."""
-    parts = []
-    for p in re.split(r"(?<=[，、；：。！？,;:])", text):
-        while len(p) > limit + 4:  # no punctuation to break on: cut near the middle, at a space if any
+    """Split one displayed TTS sentence into subtitle lines of <= ~limit chars, timed by char share.
+
+    `text` already went through display(); a `$…$` formula from DISPLAY is never split across lines."""
+    parts, cur = [], ""
+    inside = math_mask(text)
+    for k, ch in enumerate(text):
+        cur += ch
+        if ch in "，、；：。！？,;:" and not inside[k]:
+            parts.append(cur)
+            cur = ""
+    if cur:
+        parts.append(cur)
+    out_parts = []
+    for p in parts:
+        while vis_len(p) > limit + 4:  # no punctuation to break on: cut near the middle, at a space if any
             mid = len(p) // 2
-            # 不在英文词、数字中间断行（「De / launay」「Laplac / ian」）：只在两个字母数字之间以外的位置切
-            ok = [k for k in range(1, len(p)) if not (word_char(p[k - 1]) and word_char(p[k]))]
+            m = math_mask(p)
+            # 不在英文词、数字中间断行（「De / launay」「Laplac / ian」），也不切开公式：只在两个字母数字之间以外、公式以外的位置切
+            # 也不在数字和单位之间断（「10.5 / cm 涨到」），不在一个小数中间断（「2. / 042」）
+            unit = [k for k in range(1, len(p)) if p[:k].rstrip()[-1:].isdigit() and p[k:].lstrip()[:1].isascii() and p[k:].lstrip()[:1].isalpha()]
+            num = [k for k in range(1, len(p)) if (p[k - 1].isdigit() or p[k - 1] == ".") and (p[k].isdigit() or p[k] == ".")]
+            ok = [k for k in range(1, len(p)) if not (word_char(p[k - 1]) and word_char(p[k])) and not (m[k - 1] and m[k]) and k not in unit and k not in num]
             near = [k for k in ok if abs(k - mid) <= 5]
             sp = [k for k in near if p[k] == " "]
             k = min(sp or near or ok or [mid], key=lambda k: abs(k - mid))
-            parts.append(p[:k])
+            out_parts.append(p[:k])
             p = p[k:].lstrip()
         if p.strip():
-            parts.append(p)
+            out_parts.append(p)
     lines, cur = [], ""
-    for p in parts:
-        if cur and len(cur) + len(p) > limit:
+    for p in out_parts:
+        if cur and vis_len(cur) + vis_len(p) > limit:
             lines.append(cur)
             cur = p
         else:
             cur += p
     if cur:
         lines.append(cur)
-    total = sum(len(x) for x in lines) or 1
+    total = sum(vis_len(x) for x in lines) or 1
     out, t = [], start
     for x in lines:
-        d = dur * len(x) / total
-        out.append({"t0": round(t, 3), "t1": round(t + d, 3), "text": display(x.rstrip("，、；：。,;:"))})
+        d = dur * vis_len(x) / total
+        out.append({"t0": round(t, 3), "t1": round(t + d, 3), "text": x.rstrip("，、；：。,;:")})
         t += d
     return out
 
