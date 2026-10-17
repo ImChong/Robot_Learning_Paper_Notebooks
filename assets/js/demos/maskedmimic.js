@@ -1354,14 +1354,50 @@
     return { el: s, draw: draw };
   }
 
-  /* ── scene 9: 编码器是先验的残差（式 6、7） ── */
+  /* ── scene 9: 先验与残差：推理时只用先验，训练时用编码器，编码器写成先验的残差（第 6.2 节，式 6–8，表 6） ── */
   function buildSceneResidual() {
-    var s = sceneSvg('左边是一维潜变量上的两个高斯：蓝的宽的是先验，橙的窄的是编码器；编码器的均值 = 先验的均值 + 残差，残差来回滑，下面实时读出两者的 KL；' +
-      '最后换成表 6 的两根柱子：先验不用残差结构，坐椅子的成功率从 96.9% 掉到 21.1%');
-    label(s, 24, 28, '编码器不自成一套：它只给先验加一个偏移', 'demo-x-ink2', 13.5);
+    var s = sceneSvg('前两段是学生三个部件的连线图：推理时用户只给部分目标，编码器灰着用不上，z 从先验取、交给解码器出动作；' +
+      '训练时编码器看完整目标，z 从编码器取，解码器模仿老师，KL 把编码器往先验拉。后三段换成一维潜变量上的两个高斯：' +
+      '编码器的均值 = 先验的均值 + 一个偏移（残差），偏移来回滑；再读出 KL；最后训练和推理取到的 z 交替画出来，右边是表 6 的消融');
+    label(s, 24, 28, '推理时只用先验，训练时用编码器；残差把两者连起来', 'demo-x-ink2', 13.5);
     var LX = 24, LY = 44, LW = 400, LH = 352;
     rectBox(s, LX, LY, LW, LH, C_BORDER, C_SURFACE2);
-    var plot = group(s), GX = LX + 30, GW = 340, GY = 300, GH = 190;
+    /* 前两段：三个部件怎么连（2026-10-17 看片反馈：「先验和残差用在哪」没看懂，先讲推理、再讲训练）。
+       方块之间留空，跑动的小点只走在连线上，不压字 */
+    var flow = group(s);
+    var mode = label(flow, LX + 14, LY + 24, '', 'demo-x-ink', 13);
+    var BW = 160, BH = 34, XL = 40, XR = 248, YI = 76, YM = 152, ZX = 224, ZY = 236, YD = 290;
+    var gP = chip(flow, XL, YI, BW, '部分目标 $g^{\\text{partial}}$', C_VIS, { size: 12, h: BH });
+    var gF = chip(flow, XR, YI, BW, '完整目标 $g^{\\text{full}}$', C_FULL, { size: 12, h: BH });
+    var bP = chip(flow, XL, YM, BW, '先验 $\\rho$', C_ACCENT, { size: 13, h: BH });
+    var bE = chip(flow, XR, YM, BW, '编码器 $\\mathcal{E}$', C_WARN, { size: 13, h: BH });
+    var bD = chip(flow, 124, YD, 200, '解码器 $\\mathcal{D}$ → 动作 $a$', C_BORDER, { size: 12.5, h: BH });
+    var zC = paint(svgEl('circle', { cx: ZX, cy: ZY, r: 19, 'stroke-width': 2 }), C_SURFACE, C_INK2);
+    flow.appendChild(zC);
+    var zT = label(flow, ZX, ZY + 5, '$z$', 'demo-x-ink', 15, 'middle');
+    void zT;
+    var EDGES = {
+      gp: [XL + BW / 2, YI + BH + 2, XL + BW / 2, YM - 4],
+      gf: [XR + BW / 2, YI + BH + 2, XR + BW / 2, YM - 4],
+      pz: [XL + BW / 2 + 20, YM + BH + 2, ZX - 16, ZY - 12],
+      ez: [XR + BW / 2 - 20, YM + BH + 2, ZX + 16, ZY - 12],
+      zd: [ZX, ZY + 20, ZX, YD - 4]
+    };
+    var ar = {}, run = {};
+    Object.keys(EDGES).forEach(function (k) {
+      var e = EDGES[k];
+      ar[k] = arrow(flow, C_INK2, 2); ar[k].set(e[0], e[1], e[2], e[3], 7);
+      run[k] = dotAt(flow, e[0], e[1], 3.6, C_VIS);
+    });
+    /* KL：先验和编码器之间一条双向虚线，「KL」写在线的上方 */
+    var kl = group(flow);
+    hline(kl, XL + BW + 4, YM + BH / 2, XR - 4, YM + BH / 2, C_BAD, 2, '4 3');
+    label(kl, (XL + BW + XR) / 2, YM + BH / 2 - 7, 'KL', 'demo-x-ink', 11.5, 'middle');
+    var outInf = label(flow, ZX, YD + BH + 24, '出动作，在仿真里执行', 'demo-x-ink2', 12, 'middle');
+    var outTrain = label(flow, ZX, YD + BH + 24, '和老师的动作 $a^{\\text{FC}}$ 比，越像越好', 'demo-x-ink2', 12, 'middle');
+    var noFull = label(flow, XR + BW / 2, YI - 8, '推理时没有：编码器用不上', 'demo-x-mut', 10.5, 'middle');
+    /* 后三段：一维潜变量上的两个高斯 */
+    var plot = group(s), GX = LX + 30, GW = 340, GY = 300;
     hline(plot, GX, GY, GX + GW, GY, C_BORDER, 1.2);
     function zx(z) { return GX + GW * (z + 3) / 6; }
     [-3, -2, -1, 0, 1, 2, 3].forEach(function (z) { label(plot, zx(z), GY + 16, sgn(String(z)), 'demo-x-mut', 10, 'middle'); });
@@ -1369,44 +1405,45 @@
     var priorC = pathLine(plot, [], C_ACCENT, 2.4), encC = pathLine(plot, [], C_WARN, 2.4);
     var muP = hline(plot, 0, 0, 0, 0, C_ACCENT, 1.4, '4 3'), muE = arrow(plot, C_WARN, 2.2);
     var tP = tone(plot, 0, 0, '先验 $\\rho$', C_ACCENT, 12, 'middle'), tE = tone(plot, 0, 0, '编码器 $\\mathcal{E}$', C_WARN, 12, 'middle');
+    var tOff = label(plot, 0, 0, '偏移', 'demo-x-ink2', 11, 'middle');
     var klTxt = label(plot, GX, LY + 30, '', 'demo-x-ink', 13);
     var samp = group(plot), sDots = [];
     for (var i = 0; i < 14; i++) sDots.push(dotAt(samp, 0, 0, 3.2, C_WARN));
     var sLabel = label(samp, GX, GY + 58, '训练：从编码器取 $z$', 'demo-x-ink2', 11.5);
-    var abl = group(s);
-    label(abl, LX + 20, LY + 34, '表 6：坐上椅子的成功率（测试物体）', 'demo-x-ink', 13);
-    var bA = barRowAt(abl, LX + 20, LY + 70, 120, 'MaskedMimic', C_GOOD, 28, 12), bB = barRowAt(abl, LX + 20, LY + 116, 120, '先验不用残差', C_BAD, 28, 12);
-    label(abl, LX + 20, LY + 190, '骨盆离可坐位置的平均最小距离：10.5 → 57.4 cm', 'demo-x-ink2', 12);
-    label(abl, LX + 20, LY + 214, '论文：非残差的先验「管不住」潜空间，', 'demo-x-ink2', 12);
-    label(abl, LX + 20, LY + 238, '控制不了动作', 'demo-x-ink2', 12);
     var R = 446, RW = 330;
     var p1 = group(s);
-    label(p1, R, 64, '先验：只看部分目标', 'demo-x-ink', 14);
-    math(p1, R, 104, '\\rho(z_t \\mid s_t, g^{\\text{partial}}_t) = \\mathcal{N}(\\mu^\\rho, \\sigma^\\rho)', 16);
-    label(p1, R, 146, '对角高斯：均值和标准差都由网络算出来', 'demo-x-ink2', 12);
-    label(p1, R, 168, '推理时，用户的约束只进先验', 'demo-x-ink2', 12);
+    label(p1, R, 64, '推理时：只有部分目标', 'demo-x-ink', 14);
+    label(p1, R, 96, '用户只给几个关节、一句话或一个物体，', 'demo-x-ink2', 12.5);
+    label(p1, R, 120, '没有完整目标，编码器用不上', 'demo-x-ink2', 12.5);
+    chip(p1, R, 142, RW, '$z$ 只能从先验 $\\rho$ 取，再交给解码器出动作', C_ACCENT, { size: 12, left: true });
+    label(p1, R, 206, '用户的约束，全靠先验接进模型', 'demo-x-ink', 12.5);
+    label(p1, R, 230, '评测时取先验的均值（第 7.2 节）', 'demo-x-mut', 11.5);
     var p2 = group(s);
-    label(p2, R, 64, '编码器：写成先验的残差（式 7）', 'demo-x-ink', 14);
-    math(p2, R, 104, '\\mathcal{E}(z_t \\mid s_t, g^{\\text{full}}_t) = \\mathcal{N}(\\mu^\\rho + \\mu^{\\mathcal{E}}, \\sigma^{\\mathcal{E}})', 15);
-    label(p2, R, 146, '均值 = 先验的均值 + 一个偏移，方差自己给', 'demo-x-ink2', 12);
-    label(p2, R, 168, '这个写法论文注明取自 ControlVAE', 'demo-x-mut', 11.5);
+    label(p2, R, 64, '训练时：编码器看完整目标', 'demo-x-ink', 14);
+    chip(p2, R, 82, RW, '$z$ 从编码器 $\\mathcal{E}$ 取，解码器模仿老师的动作', C_WARN, { size: 12, left: true });
+    chip(p2, R, 118, RW, 'KL 把编码器的分布往先验拉（式 8）', C_BAD, { size: 12, left: true });
+    label(p2, R, 182, '先验也一起学：只看部分目标，', 'demo-x-ink2', 12);
+    label(p2, R, 204, '去猜编码器给的 $z$ 落在哪', 'demo-x-ink2', 12);
     var p3 = group(s);
-    label(p3, R, 64, 'KL 只看残差和两个方差', 'demo-x-ink', 14);
-    math(p3, R, 104, 'D_{\\text{KL}} = \\tfrac{1}{2}\\big(\\ln\\tfrac{(\\sigma^\\rho)^2}{(\\sigma^{\\mathcal{E}})^2} + \\tfrac{(\\sigma^{\\mathcal{E}})^2 + (\\mu^{\\mathcal{E}})^2}{(\\sigma^\\rho)^2} - 1\\big)', 14, 'start', RW);
-    rich(p3, R, 150, '例：$\\sigma^\\rho = 1$、$\\sigma^{\\mathcal{E}} = 0.5$、残差 0.3 →', 12);
-    rich(p3, R, 174, '$\\tfrac{1}{2}(\\ln 4 + 0.25 + 0.09 - 1) = 0.363$（一维）', 12, 'demo-x-ink');
-    label(p3, R, 204, '残差越大罚得越多：编码器只能在先验附近微调', 'demo-x-ink2', 12);
+    label(p3, R, 64, '残差：编码器只给先验加一个偏移（式 7）', 'demo-x-ink', 14);
+    math(p3, R, 104, '\\mathcal{E}(z_t \\mid s_t, g^{\\text{full}}_t) = \\mathcal{N}(\\mu^\\rho + \\mu^{\\mathcal{E}}, \\sigma^{\\mathcal{E}})', 15);
+    label(p3, R, 146, '先验先猜一个 $z$；编码器看了完整答案，', 'demo-x-ink2', 12.5);
+    label(p3, R, 170, '只说往哪挪多少（$\\mu^{\\mathcal{E}}$），方差自己给', 'demo-x-ink2', 12.5);
+    label(p3, R, 200, '这个写法论文注明取自 ControlVAE', 'demo-x-mut', 11.5);
     var p4 = group(s);
-    label(p4, R, 64, '训练时从编码器取，推理时从先验取', 'demo-x-ink', 14);
-    chip(p4, R, 82, RW, '训练：$z$ 从编码器（橙）采，解码器学这些 $z$', C_WARN, { size: 12, left: true });
-    chip(p4, R, 118, RW, '推理：只有先验（蓝），$z$ 也落在附近', C_ACCENT, { size: 12, left: true });
-    label(p4, R, 182, '编码器离先验不远，解码器见过的 $z$', 'demo-x-ink2', 12);
-    label(p4, R, 204, '和推理时拿到的 $z$ 就对得上', 'demo-x-ink2', 12);
+    label(p4, R, 64, 'KL 只看偏移和两个方差', 'demo-x-ink', 14);
+    rich(p4, R, 98, '例：$\\sigma^\\rho = 1$、$\\sigma^{\\mathcal{E}} = 0.5$、偏移 0.3 →', 12.5);
+    rich(p4, R, 124, '$\\tfrac{1}{2}(\\ln 4 + 0.25 + 0.09 - 1) = 0.363$（一维）', 12.5, 'demo-x-ink');
+    label(p4, R, 160, '偏移越大，罚得越多：', 'demo-x-ink2', 12.5);
+    label(p4, R, 184, '编码器只能在先验附近微调', 'demo-x-ink2', 12.5);
     var p5 = group(s);
-    label(p5, R, 64, '消融：去掉残差结构', 'demo-x-ink', 14);
-    chip(p5, R, 82, RW, '编码器直接输出均值，只靠 KL 往先验拉', C_BAD, { size: 12, left: true });
-    label(p5, R, 146, '（我们的理解）训练时和推理时的 $z$ 更难对上，', 'demo-x-ink2', 12);
-    label(p5, R, 168, '解码器拿到没怎么见过的 $z$，动作就乱了', 'demo-x-ink2', 12);
+    label(p5, R, 64, '为什么要残差', 'demo-x-ink', 14);
+    label(p5, R, 92, '论文：残差结构让先验真正管住潜空间', 'demo-x-ink2', 12);
+    label(p5, R, 116, '（我们的理解）训练时的 $z$ 就在先验附近，', 'demo-x-ink2', 12);
+    label(p5, R, 140, '推理时从先验取的 $z$，解码器都见过', 'demo-x-ink2', 12);
+    label(p5, R, 180, '表 6：坐上椅子的成功率', 'demo-x-ink', 12.5);
+    var bA = barRowAt(p5, R, 194, 104, 'MaskedMimic', C_GOOD, 22, 11.5), bB = barRowAt(p5, R, 226, 104, '先验不用残差', C_BAD, 22, 11.5);
+    label(p5, R, 276, '骨盆离可坐位置的平均最小距离 10.5 → 57.4 cm', 'demo-x-mut', 11);
     function gauss(mu, sig, peak) {
       var pts = [];
       for (var u = 0; u <= 120; u++) { var z = -3 + 6 * u / 120; pts.push([zx(z), GY - peak * Math.exp(-0.5 * Math.pow((z - mu) / sig, 2))]); }
@@ -1416,29 +1453,44 @@
     for (var q = 0; q < 14; q++) eps.push(K.gauss(rng));
     function draw(t, clock) {
       var now = nowOf(t, clock), ph = phase(t);
-      /* KL 那一段：残差先来回扫，2.5 s 后停在旁白念的 0.3（KL = 0.363） */
-      var settle = 1 - seg(K.clipSince(t, 7.0), 2.0, 2.5);
-      var mP = -0.4, sP = 1.0, sE = 0.5, r = ph === 2 ? 0.3 + 0.9 * settle * Math.sin(now * 0.7) : 0.3;
+      /* 连线图：推理时只亮「部分目标 → 先验 → z → 解码器」，编码器那一路灰掉；训练时编码器那一路和 KL 亮起来 */
+      var train = ph === 1, on = { gp: 1, gf: train ? 1 : 0, pz: train ? 0.3 : 1, ez: train ? 1 : 0, zd: 1 };
+      mode.textContent = train ? '训练时' : '推理时';
+      [gF, bE, ar.gf.g, ar.ez.g].forEach(function (e) { e.style.opacity = train ? 1 : 0.25; });
+      ar.pz.g.style.opacity = train ? 0.35 : 1;
+      Object.keys(EDGES).forEach(function (k, j) {
+        var e = EDGES[k], a = ((now * 0.8 + j * 0.23) % 1);
+        moveDot(run[k], [e[0] + (e[2] - e[0]) * a, e[1] + (e[3] - e[1]) * a]);
+        run[k].style.opacity = on[k] >= 1 ? 1 : 0;
+      });
+      kl.style.opacity = train ? 1 : 0;
+      outInf.style.opacity = train ? 0 : 1; outTrain.style.opacity = train ? 1 : 0;
+      noFull.style.opacity = train ? 0 : 1;
+      void gP; void bP; void bD;
+      setOpacity(flow, t < 7.0 ? 1 : 1 - seg(t, 7.0, 7.3));
+      /* 高斯：残差那一段偏移来回滑；KL 那一段先来回扫，2.5 s 后停在旁白念的 0.3（KL = 0.363） */
+      var settle = ph === 3 ? 1 - seg(K.clipSince(t, 10.4), 2.0, 2.5) : 1;
+      var mP = -0.4, sP = 1.0, sE = 0.5, r = ph === 2 || ph === 3 ? 0.3 + 0.9 * settle * Math.sin(now * 0.7) : 0.3;
       setPath(priorC, gauss(mP, sP, 70));
       setPath(encC, gauss(mP + r, sE, 140));
       setLine(muP, zx(mP), GY, zx(mP), GY - 160);
       muE.set(zx(mP), GY - 150, zx(mP + r), GY - 150, 7);
       tP.setX(zx(mP - 1.35)).setY(GY - 40);
-      tE.setX(zx(mP + r)).setY(GY - 160);
-      encC.style.opacity = ph >= 1 ? 1 : 0; tE.style.opacity = ph >= 1 ? 1 : 0; muE.g.style.opacity = ph >= 1 ? 1 : 0;
-      klTxt.textContent = ph >= 2 ? '残差 ' + sgn(f2(r)) + '：KL = ' + f3(klResidual(r, sE, sP)) : '';
-      /* 第 4 段：训练时的样本（橙）在编码器里，推理时的样本（蓝）在先验里 */
-      var useP = ph === 3 && Math.floor(now / 1.6) % 2 === 1;
+      tE.setX(zx(mP + r)).setY(GY - 166);
+      tOff.setAttribute('x', ((zx(mP) + zx(mP + r)) / 2).toFixed(1)); tOff.setAttribute('y', (GY - 132).toFixed(1));
+      tOff.style.opacity = Math.abs(zx(mP + r) - zx(mP)) > 36 ? 1 : 0;
+      klTxt.textContent = ph === 2 ? '偏移 ' + sgn(f2(r)) : ph >= 3 ? '偏移 ' + sgn(f2(r)) + '：KL = ' + f3(klResidual(r, sE, sP)) : '';
+      /* 最后一段：训练时取到的 z（橙，从编码器）和推理时取到的 z（蓝，从先验）交替画出来，落在同一片 */
+      var useP = ph === 4 && Math.floor(now / 1.6) % 2 === 1;
       sDots.forEach(function (d, i) {
         var z = useP ? mP + sP * eps[i] : mP + r + sE * eps[i];
         moveDot(d, [zx(clamp(z, -3, 3)), GY - 8]); d.style.fill = useP ? C_ACCENT : C_WARN;
       });
       sLabel.setText(useP ? '推理：从先验取 $z$' : '训练：从编码器取 $z$');
-      setOpacity(samp, ph === 3 ? win(t, 10.4, 13.4) : 0);
-      setOpacity(plot, ph <= 3 ? 1 - seg(t, 13.4, 13.7) : 0);
-      var grow = ease(seg(t, 13.7, 14.9));
-      bA.set(220 * 96.9 / 100 * grow, '96.9%'); bB.set(220 * 21.1 / 100 * grow, '21.1%');
-      setOpacity(abl, win(t, 13.4));
+      setOpacity(samp, ph === 4 ? win(t, 13.4) : 0);
+      setOpacity(plot, win(t, 7.0));
+      var grow = ease(seg(t, 13.9, 15.0));
+      bA.set(170 * 96.9 / 100 * grow, '96.9%'); bB.set(170 * 21.1 / 100 * grow, '21.1%');
       setOpacity(p1, win(t, 0.3, 3.6));
       setOpacity(p2, win(t, 3.6, 7.0));
       setOpacity(p3, win(t, 7.0, 10.4));
@@ -2269,11 +2321,11 @@
       dur: 16,
       build: buildSceneResidual,
       cues: [
-        { at: 0.4, s: '先验只看部分目标 $g^{\\text{partial}}_t$，输出潜变量上的对角高斯 $\\mathcal{N}(\\mu^\\rho, \\sigma^\\rho)$，均值和标准差都由网络算。' },
-        { at: 3.6, s: '编码器写成先验的**残差**：均值 $\\mu^\\rho + \\mu^{\\mathcal{E}}$，方差 $\\sigma^{\\mathcal{E}}$ 自己给（式 7，取自 ControlVAE）。' },
-        { at: 7.0, s: '两个高斯的 KL 只看残差和两个方差：$\\sigma^\\rho = 1$、$\\sigma^{\\mathcal{E}} = 0.5$、残差 0.3 时是 **0.363**（一维）。' },
-        { at: 10.4, s: '训练时 $z$ 从编码器取，推理时从先验取；编码器离先验不远，解码器见过的 $z$ 和推理时的对得上。' },
-        { at: 13.4, s: '表 6：先验不用残差结构，坐椅子成功率 **96.9% → 21.1%**，骨盆离可坐位置的平均最小距离 10.5 → 57.4 cm。' }
+        { at: 0.4, s: '**推理时**：用户只给部分目标，没有完整参考，编码器用不上——$z$ 只能从**先验** $\\rho$ 取，再交给解码器出动作。' },
+        { at: 3.6, s: '**训练时**：编码器 $\\mathcal{E}$ 看完整目标，$z$ 从编码器取，解码器模仿老师；KL 把编码器的分布往先验拉（式 8）。' },
+        { at: 7.0, s: '**残差**（式 7）：编码器的均值 = 先验的均值 + 一个偏移，方差自己给——先验先猜，编码器只说往哪挪（取自 ControlVAE）。' },
+        { at: 10.4, s: 'KL 只看偏移和两个方差：$\\sigma^\\rho = 1$、$\\sigma^{\\mathcal{E}} = 0.5$、偏移 0.3 时是 **0.363**（一维）；偏移越大罚得越多。' },
+        { at: 13.4, s: '论文：残差让先验管住潜空间，表 6 去掉它，坐上椅子的成功率 **96.9% → 21.1%**。我们的理解：训练和推理取到的 $z$ 落在同一片。' }
       ]
     },
     {
