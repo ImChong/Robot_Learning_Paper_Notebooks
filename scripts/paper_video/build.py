@@ -44,6 +44,8 @@ NAME = sys.argv[1] if len(sys.argv) > 1 else "ppo"
 REUSE = "--reuse" in sys.argv[2:]
 PAPER = importlib.import_module(f"papers.{NAME}")
 SCRIPT, DISPLAY = PAPER.SCRIPT, PAPER.DISPLAY
+# 字幕里中文和字母 / 数字 / 公式之间补一个空格（「0.25 m就」→「0.25 m 就」）；只对设了 SPACE_CJK = True 的篇目生效，旧篇目的字幕不变
+SPACE_CJK = getattr(PAPER, "SPACE_CJK", False)
 OUT = HERE / "out" / NAME
 OUT.mkdir(parents=True, exist_ok=True)
 FFMPEG = imageio_ffmpeg.get_ffmpeg_exe()
@@ -54,10 +56,28 @@ LEAD = 0.45   # silence before the first line of each scene (scene fades in)
 GAP = 0.30    # breath after every line
 
 
+def space_cjk(s):
+    """中文与字母、数字、公式（`$…$`）之间补一个空格；公式里面不动，中文标点前后不加。"""
+    out, inside = [], False
+    for k, ch in enumerate(s):
+        if ch == "$":
+            inside = not inside
+        prev = s[k - 1] if k else ""
+        if prev and not (inside and ch != "$"):
+            cjk = "\u4e00" <= ch <= "\u9fff"
+            prev_cjk = "\u4e00" <= prev <= "\u9fff"
+            latin = ch.isascii() and (ch.isalnum() or ch in "$(")
+            prev_latin = prev.isascii() and (prev.isalnum() or prev in "$)%")
+            if (cjk and prev_latin) or (latin and prev_cjk):
+                out.append(" ")
+        out.append(ch)
+    return "".join(out)
+
+
 def display(s):
     for a, b in DISPLAY:
         s = s.replace(a, b)
-    return s
+    return space_cjk(s) if SPACE_CJK else s
 
 
 async def tts(text, mp3, tries=4):
@@ -127,7 +147,10 @@ def chunks(text, start, dur, limit=17):
             mid = len(p) // 2
             m = math_mask(p)
             # 不在英文词、数字中间断行（「De / launay」「Laplac / ian」），也不切开公式：只在两个字母数字之间以外、公式以外的位置切
-            ok = [k for k in range(1, len(p)) if not (word_char(p[k - 1]) and word_char(p[k])) and not (m[k - 1] and m[k])]
+            # 也不在数字和单位之间断（「10.5 / cm 涨到」），不在一个小数中间断（「2. / 042」）
+            unit = [k for k in range(1, len(p)) if p[:k].rstrip()[-1:].isdigit() and p[k:].lstrip()[:1].isascii() and p[k:].lstrip()[:1].isalpha()]
+            num = [k for k in range(1, len(p)) if (p[k - 1].isdigit() or p[k - 1] == ".") and (p[k].isdigit() or p[k] == ".")]
+            ok = [k for k in range(1, len(p)) if not (word_char(p[k - 1]) and word_char(p[k])) and not (m[k - 1] and m[k]) and k not in unit and k not in num]
             near = [k for k in ok if abs(k - mid) <= 5]
             sp = [k for k in near if p[k] == " "]
             k = min(sp or near or ok or [mid], key=lambda k: abs(k - mid))
