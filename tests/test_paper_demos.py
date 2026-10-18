@@ -122,6 +122,7 @@ H2O_NOTE = _high_impact_note("H2O_Learning_Human-to-Humanoid_Real-Time_Whole-Bod
 OMNIH2O_NOTE = _high_impact_note("OmniH2O_Universal_Whole-Body_Teleoperation")
 HOVER_NOTE = _high_impact_note("HOVER_Versatile_Neural_Whole-Body_Controller")
 MASKEDMIMIC_NOTE = _high_impact_note("MaskedMimic_Unified_Physics-Based_Character_Control_Through_Masked_Motion_Inpainting")
+HOMIE_NOTE = _high_impact_note("HOMIE_Humanoid_Loco-Manipulation_with_Isomorphic_Exoskeleton_Cockpit")
 PHP_NOTE = (
     ROOT
     / "papers"
@@ -340,7 +341,7 @@ EXPLAINER_BUNDLES = (
     "gmr", "omniretarget", "diffusion_policy", "beyondmimic", "cosmos", "umr", "php", "pbfm",
     "gentle", "lcp", "transformer", "pi0", "pi05", "op3soccer", "smp", "humanml3d",
     "domain_randomization", "quadterrain", "realhumanoid", "asap", "inekf", "berkeley_humanoid",
-    "toddlerbot", "exbody", "h2o", "omnih2o", "hover", "maskedmimic",
+    "toddlerbot", "exbody", "h2o", "omnih2o", "hover", "maskedmimic", "homie",
 )
 
 # 幕数由论文决定，不是统一模板：PPO / DeepMimic / AMP / ADD 的核心概念正好各 5 个，
@@ -540,6 +541,11 @@ EXPLAINER_SCENES = {
     # DAgger 与 KL 调度（式 8）、结构化掩码、固定噪声与历史、先验网络各一幕；结果按表 1+2、表 3+4、表 5、表 6 各一幕，文字控制与局限一幕。
     # 压成 15 幕会让残差的两个高斯和 DAgger 的流程、或掩码的时间轴和历史的影子抢同一帧。
     "maskedmimic": (MASKEDMIMIC_NOTE, 18),
+    # HOMIE 十七幕：问题三幕（两条路各缺一半 / 一个驾驶舱 / 表 I 的十个系统）；第 III-B 节的下肢策略按训练设置、上身姿态课程（式 2–3）、
+    # 高度跟踪奖励（式 4）、训练场（命令比例、33 项奖励与随机化）、对称（式 5–6）各一幕，因为式子和代码出入各不相同；图 7 消融、GR-1（表 II）
+    # 各一幕；第 III-C 节的外骨骼（式 7）、手套与踏板（表 III）各一幕；表 IV、真机任务、图 11–12、仿真与自主策略（表 V）各一幕，局限与代码一幕。
+    # 压成 14 幕会让课程的采样分布和 r_knee 的两帧、或外骨骼的零点和手套的霍尔传感器抢同一帧。
+    "homie": (HOMIE_NOTE, 17),
 
     "humanml3d": (HUMANML3D_NOTE, 12),
 }
@@ -2015,7 +2021,7 @@ def test_narrated_video_placeholders_point_at_files_that_exist():
     for demo in ("calm-video", "pulse-video", "dp-video", "bm-video", "lcp-video", "cosmos-video", "groot-video",
                  "tf-video", "pi0-video", "pi05-video", "soccer-video", "sonic-video", "gmr-video",
                  "omniretarget-video", "humanml3d-video", "smp-video", "dr-video", "qt-video", "rh-video", "inekf-video", "bh-video",
-                 "tb-video", "exbody-video", "h2o-video", "hover-video"):
+                 "tb-video", "exbody-video", "h2o-video", "hover-video", "homie-video"):
         assert demo in seen, f"{demo} 应该挂在对应的论文笔记里"
 
 
@@ -4400,3 +4406,175 @@ def test_maskedmimic_project_page_clips():
     assert js.count("项目页视频") >= 8 and "仿真结果剪自项目页的视频" in js
     note = MASKEDMIMIC_NOTE.read_text(encoding="utf-8")
     assert "仿真画面剪自[项目页](https://research.nvidia.com/labs/par/maskedmimic/)的视频" in note
+
+
+def _homie_seq(js: str, key: str):
+    """解码 homie.js 的 `SEQ[key]`：每帧 24 个 int16——根部 x、y、z（mm）、偏航（mrad）、骨盆到较低踝的高度（mm）、目标高度（mm）、
+    命令 vx（mm/s）、左膝、右膝（mrad）、上身 15 个关节的目标角（mrad）。"""
+    m = re.search(key + r": \{ n: (\d+), data: '([^']+)' \}", js)
+    n, a = int(m.group(1)), _h2o_int16(m.group(2))
+    assert len(a) == 24 * n
+    return [a[24 * k : 24 * (k + 1)] for k in range(n)]
+
+
+def test_homie_explainer_demos_and_worked_example_share_the_paper_numbers():
+    """HOMIE：十七幕动画、三个演示、配音旁白与笔记「🚶 具体实例」用同一组数。
+
+    表 I–V、X 照抄 arXiv 2502.13013 v2；观测维数、命令比例、λ 的 0.99、r_knee 的归一化照抄 InternRobotics/OpenHomie；G1 的动作是我们在
+    MuJoCo 里跑官方 deploy.onnx 的几段回放，嵌在 homie.js 里，这里解码后把下蹲第 8、60 帧的 r_knee 再算一遍。
+    """
+    js = (DEMO_JS_DIR / "homie.js").read_text(encoding="utf-8")
+    note = HOMIE_NOTE.read_text(encoding="utf-8")
+    narration = (ROOT / "scripts" / "paper_video" / "papers" / "homie.py").read_text(encoding="utf-8")
+    intro = (ROOT / "scripts" / "paper_video" / "papers" / "homie.js").read_text(encoding="utf-8")
+
+    for line in (
+        "{ zh: '线速度误差', unit: 'm/s', g1: [0.194, 0.003], gr1: [0.273, 0.003] },",
+        "{ zh: '存活时间', unit: 's', g1: [19.947, 0.092], gr1: [19.960, 0.035] }",
+        "{ zh: 'HOMIE', hw: '不用 GPU / SoC', arm: 263, hand: 293 }",
+        "{ zh: '外骨骼（两臂）', usd: 430, khz: 0.26, acc: '$2^{12}$（360°）' },",
+        "var TABLE10_AVG = [24.8, 23.0, 14.2, 13.0, 8.0];",
+        "{ zh: '蹲下拿沙发上的番茄', en: 'Squat Pick', sr: 73.3, n: 15 },",
+        "var KNEE = { lo: -0.087267, hi: 2.8798, w: -0.75 };",
+        "var OURS = { n: 200, full: 174, alive: 18.43, lin: 0.087, ang: 0.204, h: 0.0045, sym: 0.0044, symN: 3472 };",
+        "var EX_DOWN = 8, EX_UP = 60;",
+        "var OBS_DIM = 76, HIST = 6, N_JOINT = 27, N_LOWER = 12, N_UPPER = 15;",
+        "var NET = { est: [456, 256, 256, 35], actor: [111, 512, 256, 256, 12], critic: [79, 512, 256, 256, 1], proto: 64 };",
+    ):
+        assert line in js, line
+    for k in ("'homie-explainer'", "'homie-video'", "'homie-curriculum'", "'homie-knee'", "'homie-tables'", "K.video(host"):
+        assert k in js, k
+    assert "## 🎬 十七幕动画" in note and 'demos: ["homie"]' in note
+
+    # 例 1：观测维数
+    obs = [int(d) for d in re.findall(r"\['[^']+', (\d+), '\w+'\]", js[js.index("var OBS = [") : js.index("var OBS_DIM")])]
+    assert obs == [4, 3, 3, 27, 27, 12] and sum(obs) == 76 and 6 * 76 == 456 and 35 + 76 == 111 and 76 + 3 == 79
+    assert 6 * (9 + 2 * 27 + 12) == 450 and "$6 \\times 75 = 450$" in note and "| **合计** | **76** | |" in note
+    # 例 2：课程（代码 λ = 20(1 − 0.99ρ_a)）
+    def lam(r, paper=False):
+        return 20 * (1 - (1 if paper else 0.99) * r)
+
+    def mean(r):
+        L = lam(r)
+        return 1 / L - 1 / (math.exp(L) - 1)
+
+    def over_half(r):
+        L = lam(r)
+        return (math.exp(-L / 2) - math.exp(-L)) / (1 - math.exp(-L))
+
+    assert [_fmt(mean(r), 3) for r in (0, 0.5, 0.9, 1.0)] == ["0.050", "0.099", "0.331", "0.483"]
+    assert [_fmt(100 * over_half(r), 1) for r in (0.5, 0.9, 1.0)] == ["0.6", "25.2", "47.5"]
+    assert [_fmt(2.094 * mean(r) / 2, 3) for r in (0, 0.5, 1.0)] == ["0.052", "0.104", "0.506"]
+    assert _fmt(math.degrees(2.094 * mean(1.0) / 2), 0) == "29" and _fmt(lam(1.0), 1) == "0.2" and lam(1.0, True) == 0
+    for s in ("| 0.5 | 10 | 10.1 | 0.099 | 0.050 | 0.6% |", "| 1.0 | 0 | 0.2 | 0.483 | 0.242 | 47.5% |", "0.052、0.104、0.506 rad"):
+        assert s in note, s
+    assert "的均值是 0.483 而不是 0.5" in js
+    # 例 3：解码下蹲那段，第 8、60 帧的 r_knee
+    sq = _homie_seq(js, "squat")
+    assert len(sq) == 90
+
+    def kn(q):
+        return (q - -0.087267) / (2.8798 - -0.087267)
+
+    rows = []
+    for k in (8, 60):
+        f = sq[k]
+        e = (f[2] - f[5]) / 1000
+        nL, nR = kn(f[7] / 1000), kn(f[8] / 1000)
+        r = -(abs((nL - 0.5) * e) + abs((nR - 0.5) * e))
+        rows.append((e, nL, r, 0.75 * r, f[5] / 1000, f[2] / 1000))
+    (e1, n1, r1, w1, h1, z1), (e2, n2, r2, w2, h2, z2) = rows
+    assert (_fmt(h1, 2), _fmt(h2, 2)) == ("0.40", "0.74") and (_fmt(z1, 3), _fmt(z2, 3)) == ("0.730", "0.423")
+    assert (_fmt(e1, 3), _fmt(e2, 3), _fmt(n1, 3), _fmt(n2, 3)) == ("0.330", "-0.317", "0.354", "0.770")
+    assert (_fmt(r1, 4), _fmt(r2, 4), _fmt(w1, 4), _fmt(w2, 3)) == ("-0.0967", "-0.1712", "-0.0725", "-0.128")
+    assert n1 < 0.5 < n2 and e1 > 0 > e2  # 太高时膝偏直、太低时膝很弯：公式鼓励的方向和正文的说法相反
+    for s in ("| 高度差 | +0.330 m | −0.317 m |", "| 归一化 $n$ | 0.354 | 0.770 |", "| × 0.75 | −0.0725 | **−0.128** |"):
+        assert s in note, s
+    assert "高出 0.33 米" in narration and "归一化只有 0.35" in narration and "归一化 0.77" in narration and "负 0.128" in narration
+    zmin = min(f[2] for f in sq) / 1000
+    assert _fmt(zmin, 3) == "0.410" and "骨盆最低到 0.410 m" in note
+    # 走路那段：0.5 m/s
+    wk = _homie_seq(js, "walk")
+    assert all(f[6] == 500 for f in wk) and _fmt((wk[-1][0] - wk[0][0]) / 1000 / ((len(wk) - 1) / 15), 2) == "0.50"
+    # 例 4：命令比例
+    assert "x < 1 / 3 ? 'squat' : x > 1 / 2 ? 'walk' : 'stand'" in js and abs(1 - 1 / 3 - 1 / 2 - 1 / 6) < 1e-12
+    assert "蹲三分之一、站着不动六分之一、走二分之一" in narration and "0.74 + $\\mathcal U(-0.5, 0)$，即 0.24–0.74 m" in note
+    # 例 5：镜像前后左右髋俯仰对调
+    a = [-1.050, -0.349, -0.358, 1.212, -0.124, -0.029, -0.748, 0.262, 0.543, 1.585, 0.305, 0.090]
+    af = [-0.758, -0.272, -0.540, 1.583, 0.319, -0.097, -1.049, 0.346, 0.362, 1.208, -0.117, 0.017]
+    assert "var SYM_EX = { a: [" + ", ".join(f"{x:.3f}" for x in a) + "]," in js
+    assert "af: [" + ", ".join(f"{x:.3f}" for x in af) + "], loss: 0.00071 };" in js
+    flip = [a[6], -a[7], -a[8], a[9], a[10], -a[11], a[0], -a[1], -a[2], a[3], a[4], -a[5]]
+    sq_sum = sum((x - y) ** 2 for x, y in zip(af, flip, strict=True))  # 代码的对称损失：对动作维求和；三位小数的读数算出 0.00069
+    assert abs(sq_sum - 0.00071) < 5e-5 and _fmt(sq_sum, 5) == "0.00069" and "0.00069" in note
+    assert "左髋俯仰负 1.05、右髋负 0.75" in narration and "左髋俯仰 −0.758、右髋俯仰 −1.049" in note
+    # 例 6、8：零点与价格
+    assert _fmt(1.20 - math.pi / 2, 3) == "-0.371" and "负 0.371 弧度" in narration and "$1.20 - 1.571 = -0.371$" in note
+    assert 430 + 2 * 30 + 20 == 510 and 32000 / 500 == 64 and "**510 美元**" in note and "六十四分之一" in narration
+    # 例 9：图 11 的读图值
+    fig11 = [(13.5, 8.6), (8.1, 4.0), (15.3, 7.6), (12.3, 8.9)]
+    ratios = [b / a for a, b in fig11]
+    assert [_fmt(x, 2) for x in ratios] == ["0.64", "0.49", "0.50", "0.72"] and _fmt(sum(ratios) / 4, 2) == "0.59"
+    assert "平均 0.59" in narration and "比值平均 0.59" in note
+    # 例 10：表 X 的平均
+    raw = [[34, 28, 15, 16, 9], [19, 16, 13, 7, 6], [19, 28, 14, 17, 12], [29, 21, 14, 13, 6], [23, 22, 15, 12, 7]]
+    assert [_fmt(sum(c) / 5, 1) for c in zip(*raw, strict=True)] == ["24.8", "23.0", "14.2", "13.0", "8.0"]
+    assert "从 24.8 秒降到 8.0 秒" in narration and "8.0 / 24.8 = 0.32" in note
+    # 奖励：表 VI 共 33 项
+    groups = js[js.index("var REWARDS = {") : js.index("};", js.index("var REWARDS = {"))]
+    assert len(re.findall(r"\['[^']+', -?[\d.e-]+\]", groups)) == 33
+    assert "共 33 项" in note and "奖励一共 33 项" in narration and "32 项" not in js + narration + note
+
+    # 旁白：数字列举用顿号；片尾只预告下一篇（TWIST），各幕不预告
+    spoken = re.findall(r'"([^"]*)"\),', narration[narration.index("SCRIPT = [") : narration.index("DISPLAY = [")])
+    assert len(spoken) == 3 + 17 * 5 + 3 and not any(re.search(r"\d\s*[，,]\s*\d", t) for t in spoken)
+    assert "下一篇讲 TWIST" in narration and "TWIST" in intro and "TWIST" not in js
+    for s in ("我们认为是笔误", "我们在 MuJoCo 里跑官方策略的回放", "不能和表 2 直接比"):
+        assert s in narration, s
+    for bad in ("差得", "几乎", "一行", "重训", "重采样"):
+        assert not any(bad in t for t in spoken), bad
+    # 面板到 cue 之后才淡出
+    assert "return seg(t, a + 0.3, a + 0.7) * (b == null ? 1 : 1 - seg(t, b, b + 0.3));" in js and "1 - seg(t, b - 0.3, b)" not in js
+    # 视频文案的占位符都已填上
+    assert "__VIDEO_" not in js and "__VIDEO_" not in note
+
+
+def test_homie_assets_and_project_page_clips():
+    """HOMIE：论文图的裁剪、G1 五段回放的 3D 贴图表、项目页的 13 段片段（按幕懒加载）。"""
+    js = (DEMO_JS_DIR / "homie.js").read_text(encoding="utf-8")
+    base = ROOT / "assets/img/papers/homie"
+    figs = {p.name for p in base.glob("*.webp")}
+    table = dict(re.findall(r"(fig\d+): \['(fig\d+_\w+\.webp)', \d+, \d+\]", js))
+    used = set(re.findall(r"(?:paperPart|figPart)\(\w+, '(fig\d+)'", js))
+    assert used == set(table) and {table[k] for k in used} == figs
+    for k, (name, w, h) in {k: re.search(k + r": \['(\w+\.webp)', (\d+), (\d+)\]", js).groups() for k in table}.items():
+        assert _webp_size_any(base / name) == (int(w), int(h)), k
+    sheets = re.findall(r"(\w+): \{ file: '(g1_\w+\.webp)', R: 220, yaw: ([\d.]+), pitch: 0\.1, cw: (\d+), ch: (\d+), cols: 12, n: (\d+), ax: [\d.]+, ay: [\d.]+ \}", js)
+    assert {s[0] for s in sheets} == {"walk", "squat", "upper", "upper_low", "stand_arms"}
+    for key, name, _yaw, cw, ch, n in sheets:
+        assert _webp_size(base / "g1_3d" / name) == (int(cw) * 12, int(ch) * math.ceil(int(n) / 12)), key
+        assert re.search(key + r": \{ n: " + n + ", data: '", js), key
+    assert {p.name for p in (base / "g1_3d").iterdir()} == {s[1] for s in sheets}
+    assert sum(p.stat().st_size for p in (base / "g1_3d").iterdir()) < 2.5e6
+    clip_dir = base / "clips"
+    used_clips = set(re.findall(r"projClip\(\w+, '(\w+)'", js)) | set(re.findall(r"\{ id: '(t_\w+)'", js))
+    assert used_clips == {"cockpit", "gr1gym", "arm", "glove", "handover", "sim", "il_squat", "il_pick",
+                          "t_bottle", "t_oven", "t_push", "t_colla", "t_bang"}
+    assert {p.name for p in clip_dir.iterdir()} == {f"{u}.{ext}" for u in used_clips for ext in ("mp4", "webp")}
+    assert sum(p.stat().st_size for p in clip_dir.iterdir()) < 2.5e6
+    assert js.count("项目页视频（原速）") >= 13
+    note = HOMIE_NOTE.read_text(encoding="utf-8")
+    assert "剪自[项目页](https://homietele.github.io/)的视频（项目页写明都是原速）" in note
+
+
+def _webp_size_any(path: Path):
+    """论文图是有损 webp（VP8），贴图是 VP8X；两种都读出画布尺寸。"""
+    head = path.read_bytes()[:30]
+    assert head[:4] == b"RIFF" and head[8:12] == b"WEBP", path.name
+    if head[12:16] == b"VP8X":
+        return _webp_size(path)
+    if head[12:16] == b"VP8 ":
+        return int.from_bytes(head[26:28], "little") & 0x3FFF, int.from_bytes(head[28:30], "little") & 0x3FFF
+    assert head[12:16] == b"VP8L", path.name
+    b = int.from_bytes(head[21:25], "little")
+    return (b & 0x3FFF) + 1, ((b >> 14) & 0x3FFF) + 1
