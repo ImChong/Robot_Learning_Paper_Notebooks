@@ -4383,7 +4383,7 @@ def _mp4_seconds(path):
 
 
 def test_maskedmimic_project_page_clips():
-    """MaskedMimic：第 1、8、14–18 幕的仿真画面剪自项目页的视频（13 段，按幕懒加载）。
+    """MaskedMimic：第 1、2、8、14–18 幕的仿真画面剪自项目页的视频（14 段，按幕懒加载）。
 
     原先四个例子拼成 2 × 2，手机上人太小（2026-10-17 看片反馈），现在一次只放一个：seqClip 的 parts 时长加起来要等于片段时长，
     否则下面的小条和名称会和画面错开。
@@ -4391,7 +4391,7 @@ def test_maskedmimic_project_page_clips():
     js = (DEMO_JS_DIR / "maskedmimic.js").read_text(encoding="utf-8")
     clip_dir = ROOT / "assets/img/papers/maskedmimic/clips"
     used = set(re.findall(r"(?:projClip|seqClip)\(\w+, '(\w+)'", js))
-    assert used == {"castle", "prior", "sofa", "tracking", "vr", "terrain", "tasks", "task_path", "task_steer", "task_reach", "objects", "text", "bloopers"}
+    assert used == {"castle", "combo", "prior", "sofa", "tracking", "vr", "terrain", "tasks", "task_path", "task_steer", "task_reach", "objects", "text", "bloopers"}
     for cid, parts in re.findall(r"seqClip\(\w+, '(\w+)',[^\[]*?(\[\[.*?\]\])", js, flags=re.S):
         total = sum(float(x) for x in re.findall(r"\[\s*([0-9.]+),", parts))
         assert abs(total - _mp4_seconds(clip_dir / f"{cid}.mp4")) < 0.02, (cid, total)

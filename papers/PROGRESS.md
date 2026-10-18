@@ -110,7 +110,7 @@
 
 | #   | 论文                                                                                                                                                               | 日期         | 🌟  | 状态   |
 | --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- | --- | ---- |
-| 876  | [CSF: Contextual Safety Filtering for Motion Generators](https://arxiv.org/abs/2610.12467) | 2026.10 |  | ⏳ 待读 |
+| 876  | [CSF: Contextual Safety Filtering for Motion Generators](https://arxiv.org/abs/2610.12467) ✅ [笔记](04_Loco-Manipulation_and_WBC/CSF__Contextual_Safety_Filtering_for_Motion_Generators/CSF__Contextual_Safety_Filtering_for_Motion_Generators.md) | 2026.10 |  | ✅ 已总结 |
 | 877  | [VioLA: Learning Generalist Humanoid Control Policies from Human Data](https://arxiv.org/abs/2610.12435) | 2026.10 |  | ⏳ 待读 |
 | 878  | [FAITH: Feasibility-Aware Safety-Filtered RL for High-Dimensional Systems](https://arxiv.org/abs/2610.12432) | 2026.10 |  | ⏳ 待读 |
 | 879  | [Humanoid World Action Model With Joint State-Action Generation](https://arxiv.org/abs/2610.12026) | 2026.10 |  | ⏳ 待读 |

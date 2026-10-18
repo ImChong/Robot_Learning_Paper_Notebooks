@@ -864,6 +864,19 @@
     "display_name": "Loco-Manipulation and WBC",
     "papers": [
       {
+        "title": "CSF: Contextual Safety Filtering for Motion Generators",
+        "path": "papers/04_Loco-Manipulation_and_WBC/CSF__Contextual_Safety_Filtering_for_Motion_Generators/CSF__Contextual_Safety_Filtering_for_Motion_Generators.md",
+        "url": "/papers/04_Loco-Manipulation_and_WBC/CSF__Contextual_Safety_Filtering_for_Motion_Generators/CSF__Contextual_Safety_Filtering_for_Motion_Generators.html",
+        "dir": "CSF__Contextual_Safety_Filtering_for_Motion_Generators",
+        "arxiv": "2610.12467",
+        "has_open_source": true,
+        "summary_zh": "CSF 对每条用自然语言写的规则（如「攻击性地击打另一个人」），让冻结的生成器自己生成一条危险参考，再从一组中性动作里挑出与当前指令最接近的良性版本生成安全参考；当前输出估计在「安全 → 危险」方向上的投影取负，就是仿射安全裕度。",
+        "published_date_zh": "2026年10月8日（arXiv v1）",
+        "published_date_en": "Oct 8, 2026 (arXiv v1)",
+        "zhname": "CSF：面向动作生成器的情境安全过滤",
+        "zh_title": "CSF：面向动作生成器的情境安全过滤"
+      },
+      {
         "title": "GigaBrain-WBC-0.5: A Behavior World Model for Robust Whole-Body Control with Environment Interaction",
         "path": "papers/04_Loco-Manipulation_and_WBC/GigaBrain-WBC-0.5__A_Behavior_World_Model_for_Robust_Whole-Body_Control/GigaBrain-WBC-0.5__A_Behavior_World_Model_for_Robust_Whole-Body_Control.md",
         "url": "/papers/04_Loco-Manipulation_and_WBC/GigaBrain-WBC-0.5__A_Behavior_World_Model_for_Robust_Whole-Body_Control/GigaBrain-WBC-0.5__A_Behavior_World_Model_for_Robust_Whole-Body_Control.html",

@@ -41,15 +41,15 @@
         "13_Physics-Based_Animation",
         "14_Human_Motion"
       ],
-      "last_module": "14_Human_Motion",
-      "last_index": 596,
-      "last_title": "Streaming Multi-Track Timeline Control for 3D Human Motion Generation (arXiv:2610.03873)",
-      "next_module": "04_Loco-Manipulation_and_WBC",
-      "last_completed_date": "2026-10-17",
-      "note": "本日轮转到 14_Human_Motion。PROGRESS Human Motion 章节中尚无笔记的最新论文是 TimelineControl (arXiv:2610.03873, 2026-10-02, MBZUAI × École des Ponts)，即 PROGRESS #596，已确认在上游 README。流式多轨时间线控制：每条指令单独编码，RoTE + 可见性掩码 + sigmoid 多轨注意力；六部位因果潜空间 + 分类器部位偏置 + 门控融合；TimelineMotion R@3 0.603、FID 0.017，经 SONIC 在 G1 真机执行。官方仓库仅 README（代码 Coming soon），含整体框架 mermaid 与部位偏置算例，无源码时序图。",
-      "last_date": "2026-10-17",
+      "last_module": "04_Loco-Manipulation_and_WBC",
+      "last_index": 876,
+      "last_title": "CSF: Contextual Safety Filtering for Motion Generators (arXiv:2610.12467)",
+      "next_module": "05_Locomotion",
+      "last_completed_date": "2026-10-18",
+      "note": "本日轮转到 04_Loco-Manipulation_and_WBC。PROGRESS Loco-Manipulation 章节中尚无笔记的最新论文是 CSF (arXiv:2610.12467, 2026-10-08, Caltech AMBER)，即 PROGRESS #876，已确认在上游 README。免训练语义安全过滤：冻结生成器为每条自然语言规则生成危险 / 安全参考，定义仿射裕度；语义门控选生效规则，安全参考跟踪 CBF-QP 在采样每一步修正输出估计；四个生成器危险事件率最多降 90%、良性保留 88–100%，ARDY + SONIC 在 G1 真机部署并有运行时护盾。官方仓库 lzyang2000/csf 已开源，含整体框架 mermaid、二维 QP 玩具算例与源码运行时序图。",
+      "last_date": "2026-10-18",
       "next_candidate": null,
-      "last_completed": "Streaming Multi-Track Timeline Control for 3D Human Motion Generation (arXiv:2610.03873)"
+      "last_completed": "CSF: Contextual Safety Filtering for Motion Generators (arXiv:2610.12467)"
     },
     "last_summary_index": 532,
     "last_summary_date": "2026-09-18",
@@ -1772,6 +1772,17 @@
         "project_page": "https://mael-zys.github.io/TimelineControl/",
         "code": "https://github.com/Mael-zys/TimelineControl（截至 2026-10-17 仅 README，代码 / 数据 / 模型标 Coming soon）",
         "source": "⏳ 官方仓库未放代码(故无源码时序图)，含整体框架 mermaid 与部位偏置算例"
+      },
+      {
+        "date": "2026-10-18",
+        "index": 876,
+        "title": "CSF: Contextual Safety Filtering for Motion Generators",
+        "folder": "papers/04_Loco-Manipulation_and_WBC/CSF__Contextual_Safety_Filtering_for_Motion_Generators",
+        "module": "04_Loco-Manipulation_and_WBC",
+        "arxiv": "2610.12467",
+        "project_page": "https://lzyang2000.github.io/csf/",
+        "code": "https://github.com/lzyang2000/csf",
+        "source": "✅ 官方仓库已开源（Apache-2.0），含整体框架 mermaid、二维 QP 玩具算例与源码运行时序图"
       }
     ],
     "last_completed_index": 588,
