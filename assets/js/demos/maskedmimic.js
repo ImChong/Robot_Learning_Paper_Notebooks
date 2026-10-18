@@ -428,7 +428,9 @@
     var c = K.svgClip(x, y, w, h, CLIP_BASE + id + '.mp4', { poster: CLIP_BASE + id + '.webp' });
     g.appendChild(c);
     if (caption) label(g, o.capX == null ? x + w / 2 : o.capX, y + h + (o.capDy || 16), caption, 'demo-x-mut', o.capSize || 9.5, o.capAnchor || 'middle');
-    return { g: g, x: x, y: y, w: w, h: h, at: function (sec, vis) { c.at(sec, vis); } };
+    /* 换幕时这一幕先淡入、cue 还没到，clipSince 是负的；片段默认循环，负数会绕到片尾，开头闪一下最后一个例子
+       （第 1 幕闪过坐王座、第 14、16、18 幕闪过最后一个例子，2026-10-18 看片反馈），所以负数一律按 0 算 */
+    return { g: g, x: x, y: y, w: w, h: h, at: function (sec, vis) { c.at(Math.max(0, sec), vis); } };
   }
   /* 项目页的一串片段，一次只放一个例子（原先四个拼成 2 × 2，手机上人太小，2026-10-17 看片反馈）。
      parts = [[秒, 名称, 颜色], …]，顺序和时长与片段一致。片段下面一排小条标出放到第几个、再写这一个是什么，
@@ -447,6 +449,7 @@
     return {
       g: g,
       at: function (sec, vis) {
+        sec = Math.max(0, sec);
         c.at(sec, vis);
         var m = ((sec % total) + total) % total, idx = 0, a = 0;
         parts.forEach(function (p, i) { if (m >= a) idx = i; a += p[0]; });
@@ -626,9 +629,12 @@
     var VX = 24, VY = 44, VW = 400, VH = 225;
     /* 左边：第 1、4、5 段放城堡（MaskedMimic 自己），第 2、3 段讲以前的路，换成以前的工作，一次放一个 */
     var castle = group(s);
-    var v = projClip(castle, 'castle', VX, VY, VW, VH, '项目页视频（1 倍速）：论文图 2 的城堡');
-    /* 片段的四段：5 + 5 + 5 + 8.5 s。原先最后一段只剪到角色刚要坐下（6.5 s），而且第 4 段回到城堡时接着循环，
-       坐王座那一下总落在画面外（2026-10-17 看片反馈）：现在最后一段剪到坐稳、围着王座放大，回到城堡时从 (c) 接着放、放完停在坐稳的那一帧 */
+    var v = projClip(castle, 'castle', VX, VY, VW, VH, '');
+    /* 第一段先把城堡片段完整放一遍（爬坡、挥手、碎石地、坐王座），再换成以前的工作（2026-10-18 看片反馈）：
+       第一段旁白约 11 s，片段 23.5 s，所以这一段按 2 倍速放；回到城堡时从 (c) 起按 1 倍速再放一遍到坐稳 */
+    var speedCap = label(castle, VX + VW / 2, VY + VH + 16, '', 'demo-x-mut', 9.5, 'middle');
+    /* 片段的四段：5 + 5 + 5 + 8.5 s。原先最后一段只剪到角色刚要坐下（6.5 s），坐王座那一下总落在画面外
+       （2026-10-17 看片反馈）：现在最后一段剪到坐稳、围着王座放大，放完停在坐稳的那一帧 */
     var CLIP_LEN = 23.5;
     var SEGS = [[0, 5, '(a) 跟着头的目标爬上山坡', C_VIS], [5, 10, '(b) 文字：向卫兵挥手', C_TXT], [10, 15, '(c) 头的目标 + 文字风格：碎石地上走', C_VIS], [15, CLIP_LEN, '(d) 物体：坐上王座', C_OBJ]];
     var bar = group(castle), segBars = SEGS.map(function (sg) {
@@ -682,7 +688,9 @@
     label(p5, R + 10, 230, '复现以前各个系统的任务：全身跟踪、VR、', 'demo-x-ink2', 11.5);
     label(p5, R + 10, 250, '场景交互、地形、文字控制……同一个模型', 'demo-x-ink2', 11.5);
     function draw(t) {
-      var sec = t < 10.4 ? K.clipSince(t, 0) : Math.min(CLIP_LEN - 0.05, 10 + K.clipSince(t, 10.4));
+      var first = t < 10.4;
+      var sec = first ? Math.min(CLIP_LEN - 0.05, 2 * Math.max(0, K.clipSince(t, 0))) : Math.min(CLIP_LEN - 0.05, 10 + Math.max(0, K.clipSince(t, 10.4)));
+      speedCap.textContent = '项目页视频（' + (first ? 2 : 1) + ' 倍速）：论文图 2 的城堡';
       v.at(sec, true);
       var m = ((sec % CLIP_LEN) + CLIP_LEN) % CLIP_LEN, idx = 0;
       SEGS.forEach(function (sg, i) { if (m >= sg[0]) idx = i; });
