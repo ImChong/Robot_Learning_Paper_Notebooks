@@ -386,7 +386,7 @@
             "has_open_source": true,
             "summary_zh": "HOVER 把 ExBody、HumanPlus、H2O、OmniH2O 各自的接口都看成全身运动学模仿的子集：先训一个什么都跟的特权教师，再用模式掩码和稀疏掩码蒸馏出一个学生，同一套权重换掩码就换模式。",
             "explainer_scenes": 16,
-            "video_seconds": 797,
+            "video_seconds": 802,
             "published_date_zh": "2024年10月28日（arXiv），ICRA 2025",
             "published_date_en": "Oct 28, 2024 (arXiv), ICRA 2025",
             "zhname": "HOVER：人形机器人的多模式通用神经全身控制器",
