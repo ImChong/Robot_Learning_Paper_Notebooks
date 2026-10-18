@@ -2479,7 +2479,7 @@
     K.video(host, {
       title: '配音讲解视频：MaskedMimic 十八幕全流程',
       sub: '15 分 8 秒竖屏视频（1080×1920），中文配音 + 字幕。画面就是上面的十八幕动画，旁白把每一幕讲细；适合手机上看或转发。',
-      size: '18.4 MB',
+      size: '18.5 MB',
       fileName: 'MaskedMimic_讲解视频.mp4'
     });
   }
