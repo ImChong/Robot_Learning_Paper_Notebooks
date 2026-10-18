@@ -1639,8 +1639,8 @@
   function buildVideoDemo(host) {
     K.video(host, {
       title: '配音讲解视频：HOMIE 十七幕全流程',
-      sub: '__VIDEO_LEN__竖屏视频（1080×1920），中文配音 + 字幕。画面就是上面的十七幕动画，旁白把每一幕讲细；适合手机上看或转发。',
-      size: '__VIDEO_SIZE__',
+      sub: '14 分 49 秒竖屏视频（1080×1920），中文配音 + 字幕。画面就是上面的十七幕动画，旁白把每一幕讲细；适合手机上看或转发。',
+      size: '17.1 MB',
       fileName: 'HOMIE_讲解视频.mp4'
     });
   }
