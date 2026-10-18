@@ -428,7 +428,9 @@
     var c = K.svgClip(x, y, w, h, CLIP_BASE + id + '.mp4', { poster: CLIP_BASE + id + '.webp' });
     g.appendChild(c);
     if (caption) label(g, o.capX == null ? x + w / 2 : o.capX, y + h + (o.capDy || 16), caption, 'demo-x-mut', o.capSize || 9.5, o.capAnchor || 'middle');
-    return { g: g, x: x, y: y, w: w, h: h, at: function (sec, vis) { c.at(sec, vis); } };
+    /* 换幕时这一幕先淡入、cue 还没到，clipSince 是负的；片段默认循环，负数会绕到片尾，开头闪一下最后一个例子
+       （第 1 幕闪过坐王座、第 14、16、18 幕闪过最后一个例子，2026-10-18 看片反馈），所以负数一律按 0 算 */
+    return { g: g, x: x, y: y, w: w, h: h, at: function (sec, vis) { c.at(Math.max(0, sec), vis); } };
   }
   /* 项目页的一串片段，一次只放一个例子（原先四个拼成 2 × 2，手机上人太小，2026-10-17 看片反馈）。
      parts = [[秒, 名称, 颜色], …]，顺序和时长与片段一致。片段下面一排小条标出放到第几个、再写这一个是什么，
@@ -447,6 +449,7 @@
     return {
       g: g,
       at: function (sec, vis) {
+        sec = Math.max(0, sec);
         c.at(sec, vis);
         var m = ((sec % total) + total) % total, idx = 0, a = 0;
         parts.forEach(function (p, i) { if (m >= a) idx = i; a += p[0]; });
@@ -626,11 +629,16 @@
     var VX = 24, VY = 44, VW = 400, VH = 225;
     /* 左边：第 1、4、5 段放城堡（MaskedMimic 自己），第 2、3 段讲以前的路，换成以前的工作，一次放一个 */
     var castle = group(s);
-    var v = projClip(castle, 'castle', VX, VY, VW, VH, '项目页视频（1 倍速）：论文图 2 的城堡');
-    /* 片段的四段：5 + 5 + 5 + 6.5 s */
-    var SEGS = [[0, 5, '(a) 跟着头的目标爬上山坡', C_VIS], [5, 10, '(b) 文字：向卫兵挥手', C_TXT], [10, 15, '(c) 头的目标 + 文字风格：碎石地上走', C_VIS], [15, 21.5, '(d) 物体：坐上王座', C_OBJ]];
+    var v = projClip(castle, 'castle', VX, VY, VW, VH, '');
+    /* 第一段先把城堡片段完整放一遍（爬坡、挥手、碎石地、坐王座），再换成以前的工作（2026-10-18 看片反馈）：
+       第一段旁白约 11 s，片段 23.5 s，所以这一段按 2 倍速放；回到城堡时从 (c) 起按 1 倍速再放一遍到坐稳 */
+    var speedCap = label(castle, VX + VW / 2, VY + VH + 16, '', 'demo-x-mut', 9.5, 'middle');
+    /* 片段的四段：5 + 5 + 5 + 8.5 s。原先最后一段只剪到角色刚要坐下（6.5 s），坐王座那一下总落在画面外
+       （2026-10-17 看片反馈）：现在最后一段剪到坐稳、围着王座放大，放完停在坐稳的那一帧 */
+    var CLIP_LEN = 23.5;
+    var SEGS = [[0, 5, '(a) 跟着头的目标爬上山坡', C_VIS], [5, 10, '(b) 文字：向卫兵挥手', C_TXT], [10, 15, '(c) 头的目标 + 文字风格：碎石地上走', C_VIS], [15, CLIP_LEN, '(d) 物体：坐上王座', C_OBJ]];
     var bar = group(castle), segBars = SEGS.map(function (sg) {
-      var x = VX + sg[0] / 21.5 * VW, w = (sg[1] - sg[0]) / 21.5 * VW - 4;
+      var x = VX + sg[0] / CLIP_LEN * VW, w = (sg[1] - sg[0]) / CLIP_LEN * VW - 4;
       return paint(svgEl('rect', { x: x.toFixed(1), y: 296, width: w.toFixed(1), height: 6, rx: 3 }), sg[3]);
     });
     segBars.forEach(function (r) { bar.appendChild(r); });
@@ -680,9 +688,11 @@
     label(p5, R + 10, 230, '复现以前各个系统的任务：全身跟踪、VR、', 'demo-x-ink2', 11.5);
     label(p5, R + 10, 250, '场景交互、地形、文字控制……同一个模型', 'demo-x-ink2', 11.5);
     function draw(t) {
-      var sec = K.clipSince(t, 0);
+      var first = t < 10.4;
+      var sec = first ? Math.min(CLIP_LEN - 0.05, 2 * Math.max(0, K.clipSince(t, 0))) : Math.min(CLIP_LEN - 0.05, 10 + Math.max(0, K.clipSince(t, 10.4)));
+      speedCap.textContent = '项目页视频（' + (first ? 2 : 1) + ' 倍速）：论文图 2 的城堡';
       v.at(sec, true);
-      var m = ((sec % 21.5) + 21.5) % 21.5, idx = 0;
+      var m = ((sec % CLIP_LEN) + CLIP_LEN) % CLIP_LEN, idx = 0;
       SEGS.forEach(function (sg, i) { if (m >= sg[0]) idx = i; });
       segBars.forEach(function (r, i) { r.style.opacity = i === idx ? 1 : 0.25; });
       segName.textContent = SEGS[idx][2];
@@ -703,7 +713,7 @@
   /* ── scene 2: 控制就是补全（图 1） ── */
   function buildSceneInpaint() {
     var s = sceneSvg('左边：官方样例里的一段参考动作（SAMP 的走过去坐扶手椅），SMPL 角色按真实几何做 3D 渲染；同一段动作依次换几种遮法：' +
-      '能给的 6 个部位全给（绿圈）、只给头和双手、只给头未来的一串位置、只给椅子的包围盒、只给一句话；右边先用图像补全打比方，最后左右都淡出、放大论文图 1 的九种用法');
+      '能给的 6 个部位全给（绿圈）、只给头和双手、只给头未来的一串位置、只给椅子的包围盒、只给一句话，组合那一段换成项目页里举着双手沿路径走的片段；右边先用图像补全打比方，最后左右都淡出、放大论文图 1 的九种用法');
     label(s, 24, 28, '同一段参考动作，换一种遮法，就是换一个任务', 'demo-x-ink2', 13.5);
     var LX = 24, LY = 44, LW = 400, LH = 352;
     /* 最后一段的后半（旁白念到「论文图 1」）左边和右栏都淡出，图 1 放大到 600 宽居中 */
@@ -718,12 +728,17 @@
     for (var i = 0; i < 8; i++) pathDots.push(dotAt(path, 0, 0, 3.4, C_VIS));
     var box = bboxLayer(left, C_OBJ);
     var bub = group(left), bubIn = speech(bub, 0, 0, 228, '“the person walks normally”');
-    /* 组合那一段的文字是图 7f 的「举着双手往前走」，和右栏、旁白一致（2026-10-17 全局检查） */
-    var bub2 = group(left); speech(bub2, 0, 0, 300, '“a person raises both hands and walks forward”');
     /* 学生能给的只有 6 个部位（双踝、骨盆、头、双手，第 7 节）；24 个刚体是老师看的 */
     var KEY6 = [B.lank, B.rank, B.pelvis, B.head, B.lhand, B.rhand];
     var six = KEY6.map(function () { return ring(left, 0, 0, 8, 8, C_VIS); });
     var modeName = label(left, LX + 14, LY + 24, '', 'demo-x-ink', 12.5);
+    /* 组合那一段：官方样例只会走过去坐下，举不起双手（2026-10-17 看片反馈），这一段左边换成项目页里「路径 + 一句话」的片段 */
+    var combo = group(left);
+    rectBox(combo, LX, LY, LW, LH, C_BORDER, C_SURFACE2);
+    var comboV = projClip(combo, 'combo', LX + 6, LY + 40, LW - 12, (LW - 12) * 270 / 480, '项目页视频（1 倍速）：绿点是头要经过的路径');
+    label(combo, LX + 14, LY + 312, '文字：“A person walks with its hands raised”', 'demo-x-ink2', 11.5);
+    label(combo, LX + 14, LY + 334, '路径只管头往哪走，举手是那句话补出来的', 'demo-x-mut', 11);
+    left.appendChild(modeName);  /* 左上角的「组合：…」压在片段的底框上面 */
     var R = 446, RW = 330;
     var p0 = group(s);
     label(p0, R, 64, '关键洞察：控制 = 补全', 'demo-x-ink', 14);
@@ -778,16 +793,17 @@
       KEY6.forEach(function (j, i) { moveRing(six[i], P[j], 7 + 1.5 * Math.sin(now * 4)); six[i].style.opacity = ph === 1 ? win(t, 3.6, 7.0) : 0; });
       var vrOn = ph === 2 ? win(t, 7.0, 10.4) : 0;
       [B.head, B.lhand, B.rhand].forEach(function (j, i) { moveRing(vr[i], P[j], 8 + 2 * Math.sin(now * 4)); vr[i].style.opacity = vrOn; });
-      var pathOn = ph === 2 ? vrOn : ph === 4 ? win(t, 13.4) : 0;
+      var pathOn = ph === 2 ? vrOn : 0;
       pathDots.forEach(function (d, i) { var q = project(frame(Math.min(CLIP.n - 1, k + 2 * (i + 1))).b[B.head], cam); moveDot(d, q); });
       setOpacity(path, pathOn);
       box.put(cam);
       setOpacity(box.g, ph === 3 ? win(t, 10.4, 13.4) : 0);
       var hd = P[B.head];
       bub.setAttribute('transform', 'translate(' + clamp(hd[0] - 30, LX + 8, LX + LW - 236).toFixed(1) + ',' + Math.max(LY + 34, hd[1] - 62).toFixed(1) + ')');
-      bub2.setAttribute('transform', 'translate(' + clamp(hd[0] - 30, LX + 8, LX + LW - 308).toFixed(1) + ',' + Math.max(LY + 34, hd[1] - 62).toFixed(1) + ')');
       setOpacity(bub, ph === 3 ? win(t, 10.4, 13.4) : 0);
-      setOpacity(bub2, ph === 4 ? win(t, 13.4) : 0);
+      setOpacity(combo, ph === 4 ? win(t, 13.4) : 0);
+      actor.g.style.opacity = ph === 4 ? 1 - seg(t, 13.4, 13.7) : 1;
+      comboV.at(K.clipSince(t, 13.4), t >= 13.4 && t < 15.0);
       /* 图像补全：遮住的那一块在 0.4–3.6 s 里先黑、再慢慢补回来 */
       var fillIn = seg(now % 3.2, 1.2, 2.4);
       holeCover.style.opacity = (1 - fillIn).toFixed(2);
@@ -911,7 +927,9 @@
     rich(s, 24, 28, '老师 $\\pi^{\\text{FC}}$ 看到的：当前状态 + 未来 $K$ 帧完整参考', 13.5, 'demo-x-ink2');
     var LX = 24, LY = 44, LW = 400, LH = 352;
     rectBox(s, LX, LY, LW, LH, C_BORDER, C_SURFACE2);
-    var GY = 330, SC = 150, OX = 140;
+    /* 骨盆跟拍在框的水平中线偏左一点（OX）：前面的影子往右上走，人和影子合起来才在框里居中；
+       原先 OX = 140，整团偏左约 77（2026-10-18 看片反馈） */
+    var GY = 330, SC = 150, OX = 214;
     /* 框底下一行写着「半透明：τ = …」，格子停在它上面，别压字 */
     var floor = groundGrid(s, LX + 2, LY + 2, LW - 4, LH - 50);
     /* 高度图的采样点也裁在格子的范围里：16 × 16 的最后几行会伸到底下那行「半透明：τ = …」上（2026-10-17 全局检查） */
@@ -924,11 +942,11 @@
     /* 老师只看未来 15 帧（0.5 s），最远的影子不能超过它：取 0.13 / 0.27 / 0.47 s（2026-10-17 全局检查） */
     var AHEAD = [2, 4, 7];
     var ghosts = AHEAD.map(function () { return smplMesh(s, SHEETS.sit, { ghost: 0.28 }); });
-    var gLegend = rich(s, LX + 14, LY + LH - 30, '半透明：$\\tau$ = ' + AHEAD.map(function (a) { return f2(a / CLIP.fps); }).join(' / ') + ' s 后的参考姿态', 11.5);
+    var gLegend = rich(s, LX + LW / 2, LY + LH - 30, '半透明：$\\tau$ = ' + AHEAD.map(function (a) { return f2(a / CLIP.fps); }).join(' / ') + ' s 后的参考姿态', 11.5, 'demo-x-ink2', 'middle');
     var actor = sampleActor(s, { noChair: true });
     var aJ = arrow(s, C_VIS, 2.4), aR = arrow(s, C_FULL, 2.4, '5 3');
     var tgt = ring(s, 0, 0, 7, 7, C_VIS);
-    var tagL = label(s, LX + 14, LY + LH - 8, '实线：相对头　虚线：相对根', 'demo-x-ink2', 11.5);
+    var tagL = label(s, LX + LW / 2, LY + LH - 8, '实线：相对头　虚线：相对根', 'demo-x-ink2', 11.5, 'middle');
     var R = 446, RW = 330;
     var p1 = group(s);
     label(p1, R, 64, '观测 = 当前状态 + 未来 $K$ 帧', 'demo-x-ink', 14);
@@ -1854,12 +1872,13 @@
     var s = sceneSvg('左边一个一个播项目页的视频：全身跟踪（出拳、台阶上跳舞、侧手翻、跑步），后半换成 VR 三点做侧手翻、只跟头跑步；' +
       '右边是表 1 测试集的成功率与误差，接着是表 2 的 VR 跟踪；MaskedMimic 没有为 VR 专门训练');
     label(s, 24, 28, '一个模型、不针对任务微调，和专门的方法比', 'demo-x-ink2', 13.5);
-    /* 前三段放全身跟踪、后两段换成 VR 跟踪，同一个框，一次一个例子 */
+    /* 前三段放全身跟踪、后两段换成 VR 跟踪，同一个框，一次一个例子。侧手翻在项目页原视频的 5.5–7.0 s，
+       VR 那段从 4.4 s 剪起，第二遍循环时正好在旁白念「做侧手翻」时翻过去 */
     var v1g = group(s), v2g = group(s);
     var v1 = seqClip(v1g, 'tracking', 24, 48, 380, 214, '项目页视频（1 倍速）：全身跟踪没见过的动作，绿球是目标关节',
       [[4, '出拳', C_FULL], [4, '台阶上跳舞', C_FULL], [5, '侧手翻', C_FULL], [4, '跑步', C_FULL]]);
     var v2 = seqClip(v2g, 'vr', 24, 48, 380, 214, '项目页视频（1 倍速）：稀疏跟踪，绿球是给出的目标',
-      [[5.5, '只给 VR 三点（头和双手）：侧手翻', C_VIS], [5, '只给头的路径：跑步', C_VIS]]);
+      [[3.1, '只给 VR 三点（头和双手）：侧手翻', C_VIS], [7.4, '只给头的路径：跑步', C_VIS]]);
     var R = 430, RW = 350;
     var p1 = group(s);
     label(p1, R, 64, '表 1：全身跟踪（AMASS，平地）', 'demo-x-ink', 14);
@@ -2461,7 +2480,7 @@
     K.video(host, {
       title: '配音讲解视频：MaskedMimic 十八幕全流程',
       sub: '15 分 8 秒竖屏视频（1080×1920），中文配音 + 字幕。画面就是上面的十八幕动画，旁白把每一幕讲细；适合手机上看或转发。',
-      size: '18.4 MB',
+      size: '18.5 MB',
       fileName: 'MaskedMimic_讲解视频.mp4'
     });
   }

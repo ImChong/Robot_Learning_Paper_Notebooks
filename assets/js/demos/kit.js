@@ -914,6 +914,8 @@
     function target(sec) {
       var d = v.duration;
       if (!(d > 0)) return Math.max(0, sec);
+      // 换幕淡入时 cue 还没到，clipSince 是负的；循环片段把负数绕到片尾，会在开头闪一下最后的画面（MaskedMimic 2026-10-18）
+      if (sec < 0) sec = 0;
       return v.loop ? ((sec % d) + d) % d : clamp(sec, 0, d - 0.001);
     }
     if (offline) {
