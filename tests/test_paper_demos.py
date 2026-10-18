@@ -4021,16 +4021,16 @@ def test_omnih2o_project_page_clips():
 
 
 def _hover_walk(js: str):
-    """解码 hover.js 的 `WALK`：每帧 175 个 int16——根部 3（mm）、横滚俯仰偏航 3（mrad）、19 个关节角（mrad）、23 个刚体（mm）、CMU 骨架 27 个点（mm）。"""
+    """解码 hover.js 的 `WALK`：每帧 166 个 int16——根部 3（mm）、横滚俯仰偏航 3（mrad）、19 个关节角（mrad）、23 个刚体（mm）、SMPL 的 24 个关节（mm）。"""
     m = re.search(r"var WALK = \{ clip: '07_01', fps: (\d+), n: (\d+), per: (\d+), data: '([^']+)' \};", js)
     fps, n, per = int(m.group(1)), int(m.group(2)), int(m.group(3))
     a = _h2o_int16(m.group(4))
-    assert len(a) == per * n and per == 175
+    assert len(a) == per * n and per == 166
     frames = []
     for k in range(n):
         o = k * per
         frames.append({"root": [v / 1000 for v in a[o : o + 3]], "rpy": [v / 1000 for v in a[o + 3 : o + 6]], "dof": [v / 1000 for v in a[o + 6 : o + 25]],
-                       "pts": _h2o_pts(a, o + 25, 23), "hum": _h2o_pts(a, o + 25 + 69, 27)})
+                       "pts": _h2o_pts(a, o + 25, 23), "hum": _h2o_pts(a, o + 25 + 69, 24)})
     return fps, frames
 
 
@@ -4060,8 +4060,9 @@ def _hover_command(frames, fps, kref, lag):
 def test_hover_explainer_demos_and_worked_example_share_the_paper_numbers():
     """HOVER：十六幕动画、三个演示、配音旁白与笔记「🚶 具体实例」用同一组数。
 
-    表 III–V、图 3–4 照抄 arXiv 2410.21229；掩码、命令、观测维数照抄 NVlabs/HOVER（Isaac Lab 版）；H1 的动作是 H2O 笔记里我们照官方
-    grad_fit_h1.py 重算的 CMU 07_01 走路，嵌在 hover.js 里，这里解码后把第 1.33 s 的 95 维命令（机器人落后 0.2 s）再算一遍。
+    表 III–V、图 3–4 照抄 arXiv 2410.21229；掩码、命令、观测维数照抄 NVlabs/HOVER（Isaac Lab 版）；H1 的动作是我们照官方 human2humanoid 的
+    grad_fit_h1_shape.py、grad_fit_h1.py 用 SMPL 在 AMASS 的 CMU 07_01 上重算的走路，嵌在 hover.js 里，这里解码后把第 1.33 s 的 95 维命令
+    （机器人落后 0.2 s）再算一遍。
     """
     js = (DEMO_JS_DIR / "hover.js").read_text(encoding="utf-8")
     note = HOVER_NOTE.read_text(encoding="utf-8")
@@ -4143,18 +4144,23 @@ def test_hover_explainer_demos_and_worked_example_share_the_paper_numbers():
     kin, joint, root = _hover_command(frames, fps, 20, 3)
     assert 20 / 15 == 4 / 3 and "第 1.33 s" in note
     want = {
-        "左手": (kin[20], "(0.438, 0.189, -0.121)"), "右手": (kin[21], "(0.245, -0.336, -0.124)"), "头": (kin[22], "(0.343, 0.006, 0.783)"),
-        "骨盆": (kin[0], "(0.262, -0.035, 0.038)"), "根部速度": (root[:3], "(1.219, -0.047, 0.133)"),
+        "左手": (kin[20], "(0.417, 0.154, -0.122)"), "右手": (kin[21], "(0.333, -0.356, -0.121)"), "头": (kin[22], "(0.204, -0.063, 0.793)"),
+        "骨盆": (kin[0], "(0.261, -0.059, 0.045)"), "根部速度": (root[:3], "(1.242, -0.054, 0.013)"),
     }
     for name, (v, s) in want.items():
         assert "(" + ", ".join(_fmt(x, 3) for x in v) + ")" == s, name
         assert "$" + s + "$" in note, name
     upper = "(" + ", ".join(_fmt(x, 3) for x in joint[10:19]) + ")"
-    assert upper == "(0.275, 0.201, -0.119, -0.056, 0.536, -0.169, -0.034, 0.412, -0.130)" and "$" + upper + "$" in note
-    assert [_fmt(x, 3) for x in root[3:]] == ["-0.059", "0.105", "-0.043", "1.086"]
-    assert [_fmt(x, 3) for x in (joint[2], joint[3], joint[7], joint[8])] == ["-0.847", "0.707", "0.388", "-0.193"]
+    assert upper == "(0.527, 0.260, -0.048, -0.166, 0.618, -0.162, 0.016, 0.346, -0.126)" and "$" + upper + "$" in note
+    assert [_fmt(x, 3) for x in root[3:]] == ["0.016", "-0.075", "-0.144", "1.087"]
+    assert [_fmt(x, 3) for x in (joint[2], joint[3], joint[7], joint[8])] == ["-0.798", "0.800", "0.543", "-0.279"]
     speeds = [math.hypot(frames[k + 1]["pts"][0][0] - frames[k - 1]["pts"][0][0], frames[k + 1]["pts"][0][1] - frames[k - 1]["pts"][0][1]) * fps / 2 for k in range(1, 39)]
     assert _fmt(sum(speeds) / len(speeds), 2) == "1.36" and "平均 1.36 m/s" in note
+    assert (_fmt(min(speeds), 2), _fmt(max(speeds), 2)) == ("1.16", "1.63") and "1.16–1.63 m/s" in note
+    # 2026-10-18 照官方两个脚本用 SMPL 重算：拟合形状与重定向的读数在分镜、旁白、笔记里一致
+    for s_js, s_say, s_note in (("−42.5", "负 42.5", "−42.5"), ("66 mm", "66 毫米", "66.2 mm")):
+        assert s_js in js and s_say in narration and s_note in note, s_js
+    assert "114.7 → 43.9 mm" in note and "1.107" in note and "替身" not in js + note
 
     # 旁白：数字列举用顿号，两个数之间不只隔一个逗号；片头接上一期（MaskedMimic）的片尾预告，片尾只预告下一篇（ExBody2）
     spoken = re.findall(r'"([^"]*)"\),', narration[narration.index("SCRIPT = [") : narration.index("DISPLAY = [")])
@@ -4175,7 +4181,7 @@ def test_hover_explainer_demos_and_worked_example_share_the_paper_numbers():
 
 
 def test_hover_assets_and_project_page_clips():
-    """HOVER：论文图 1–5 的裁剪、H2O 笔记沿用的走路贴图、项目页的 8 段片段（仿真 3 段、真机 5 段，按幕懒加载）。"""
+    """HOVER：论文图 1–5 的裁剪、H1 走路与第 5 幕两张 SMPL 人体的贴图、项目页的 8 段片段（仿真 3 段、真机 5 段，按幕懒加载）。"""
     js = (DEMO_JS_DIR / "hover.js").read_text(encoding="utf-8")
     base = ROOT / "assets/img/papers/hover"
     figs = {p.name for p in base.glob("*.webp")}
@@ -4185,9 +4191,14 @@ def test_hover_assets_and_project_page_clips():
     sheet = json.loads(re.search(r"var SHEET = (\{[^}]*\});", js).group(1).replace("file:", '"file":').replace(" R:", ' "R":')
                        .replace(" yaw:", ' "yaw":').replace(" pitch:", ' "pitch":').replace(" cw:", ' "cw":').replace(" ch:", ' "ch":')
                        .replace(" cols:", ' "cols":').replace(" n:", ' "n":').replace(" ax:", ' "ax":').replace(" ay:", ' "ay":').replace("'", '"'))
-    sprite = ROOT / "assets/img/papers/h2o/h1_3d" / sheet["file"]
+    sprite = base / "h1_3d" / sheet["file"]
     assert sprite.is_file() and _webp_size(sprite) == (sheet["cw"] * sheet["cols"], sheet["ch"] * math.ceil(sheet["n"] / sheet["cols"]))
-    assert "H1_3D_BASE = IMG_BASE ? IMG_BASE + 'h2o/h1_3d/'" in js
+    assert "H1_3D_BASE = IMG_BASE ? IMG_BASE + 'hover/h1_3d/'" in js
+    smpl = re.search(r"var SMPL_SHEET = \{ beta0: '(\w+\.webp)', fit: '(\w+\.webp)', R: 220, yaw: 1\.1, pitch: 0\.1, cw: (\d+), ch: (\d+), cols: 12, n: 40, ax: \d+, ay: \d+ \};", js)
+    for name in smpl.group(1, 2):
+        assert _webp_size(base / "h1_3d" / name) == (int(smpl.group(3)) * 12, int(smpl.group(4)) * 4), name
+    assert {p.name for p in (base / "h1_3d").iterdir()} == {sheet["file"], *smpl.group(1, 2)}
+    assert sum(p.stat().st_size for p in (base / "h1_3d").iterdir()) < 1.5e6
     clip_dir = base / "clips"
     used_clips = set(re.findall(r"projClip\(\w+, '(\w+)'", js))
     assert used_clips == {"group", "sim_modes", "sim_hands", "sw_pitch", "sw_walk", "sw_turn", "vr_two", "vr_left"}
