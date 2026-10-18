@@ -4060,8 +4060,8 @@ def _hover_command(frames, fps, kref, lag):
 def test_hover_explainer_demos_and_worked_example_share_the_paper_numbers():
     """HOVER：十六幕动画、三个演示、配音旁白与笔记「🚶 具体实例」用同一组数。
 
-    表 III–V、图 3–4 照抄 arXiv 2410.21229；掩码、命令、观测维数照抄 NVlabs/HOVER（Isaac Lab 版）；H1 的动作是我们照官方 human2humanoid 的
-    grad_fit_h1_shape.py、grad_fit_h1.py 用 SMPL 在 AMASS 的 CMU 07_01 上重算的走路，嵌在 hover.js 里，这里解码后把第 1.33 s 的 95 维命令
+    表 III–V、图 3–4 照抄 arXiv 2410.21229；掩码、命令、观测维数照抄 NVlabs/HOVER（Isaac Lab 版）；H1 的动作是我们用官方 human2humanoid 的
+    grad_fit_h1_shape.py、grad_fit_h1.py 以 SMPL 在 AMASS 的 CMU 07_01 上重算的走路，嵌在 hover.js 里，这里解码后把第 1.33 s 的 95 维命令
     （机器人落后 0.2 s）再算一遍。
     """
     js = (DEMO_JS_DIR / "hover.js").read_text(encoding="utf-8")
@@ -4144,21 +4144,21 @@ def test_hover_explainer_demos_and_worked_example_share_the_paper_numbers():
     kin, joint, root = _hover_command(frames, fps, 20, 3)
     assert 20 / 15 == 4 / 3 and "第 1.33 s" in note
     want = {
-        "左手": (kin[20], "(0.417, 0.154, -0.122)"), "右手": (kin[21], "(0.333, -0.356, -0.121)"), "头": (kin[22], "(0.204, -0.063, 0.793)"),
+        "左手": (kin[20], "(0.469, 0.099, -0.107)"), "右手": (kin[21], "(0.265, -0.361, -0.131)"), "头": (kin[22], "(0.204, -0.063, 0.793)"),
         "骨盆": (kin[0], "(0.261, -0.059, 0.045)"), "根部速度": (root[:3], "(1.242, -0.054, 0.013)"),
     }
     for name, (v, s) in want.items():
         assert "(" + ", ".join(_fmt(x, 3) for x in v) + ")" == s, name
         assert "$" + s + "$" in note, name
     upper = "(" + ", ".join(_fmt(x, 3) for x in joint[10:19]) + ")"
-    assert upper == "(0.527, 0.260, -0.048, -0.166, 0.618, -0.162, 0.016, 0.346, -0.126)" and "$" + upper + "$" in note
+    assert upper == "(0.340, 0.118, -0.144, -0.194, 0.568, -0.019, 0.000, 0.330, -0.086)" and "$" + upper + "$" in note
     assert [_fmt(x, 3) for x in root[3:]] == ["0.016", "-0.075", "-0.144", "1.087"]
-    assert [_fmt(x, 3) for x in (joint[2], joint[3], joint[7], joint[8])] == ["-0.798", "0.800", "0.543", "-0.279"]
+    assert [_fmt(x, 3) for x in (joint[2], joint[3], joint[7], joint[8])] == ["-0.782", "0.828", "0.543", "-0.280"]
     speeds = [math.hypot(frames[k + 1]["pts"][0][0] - frames[k - 1]["pts"][0][0], frames[k + 1]["pts"][0][1] - frames[k - 1]["pts"][0][1]) * fps / 2 for k in range(1, 39)]
     assert _fmt(sum(speeds) / len(speeds), 2) == "1.36" and "平均 1.36 m/s" in note
     assert (_fmt(min(speeds), 2), _fmt(max(speeds), 2)) == ("1.16", "1.63") and "1.16–1.63 m/s" in note
     # 2026-10-18 照官方两个脚本用 SMPL 重算：拟合形状与重定向的读数在分镜、旁白、笔记里一致
-    for s_js, s_say, s_note in (("−42.5", "负 42.5", "−42.5"), ("66 mm", "66 毫米", "66.2 mm")):
+    for s_js, s_say, s_note in (("−42.5", "负 42.5", "−42.5"), ("66 mm", "66 毫米", "66.3 mm")):
         assert s_js in js and s_say in narration and s_note in note, s_js
     assert "114.7 → 43.9 mm" in note and "1.107" in note and "替身" not in js + note
 
