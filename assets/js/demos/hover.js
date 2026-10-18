@@ -1518,6 +1518,8 @@
     return {
       g: g,
       set: function (sec) {
+        /* 换幕淡入时还没到 cue，sec 是负的：和 kit.js 的 svgClip 一样停在片段开头，不绕到片尾 */
+        if (sec < 0) sec = 0;
         var u = ((sec % CLIP_DUR[id]) + CLIP_DUR[id]) % CLIP_DUR[id], second = u >= SWITCH_AT[id];
         ca.style.opacity = second ? 0 : 1; cb.style.opacity = second ? 1 : 0;
       }
