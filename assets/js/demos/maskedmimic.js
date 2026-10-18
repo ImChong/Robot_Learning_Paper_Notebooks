@@ -919,7 +919,9 @@
     rich(s, 24, 28, '老师 $\\pi^{\\text{FC}}$ 看到的：当前状态 + 未来 $K$ 帧完整参考', 13.5, 'demo-x-ink2');
     var LX = 24, LY = 44, LW = 400, LH = 352;
     rectBox(s, LX, LY, LW, LH, C_BORDER, C_SURFACE2);
-    var GY = 330, SC = 150, OX = 140;
+    /* 骨盆跟拍在框的水平中线偏左一点（OX）：前面的影子往右上走，人和影子合起来才在框里居中；
+       原先 OX = 140，整团偏左约 77（2026-10-18 看片反馈） */
+    var GY = 330, SC = 150, OX = 214;
     /* 框底下一行写着「半透明：τ = …」，格子停在它上面，别压字 */
     var floor = groundGrid(s, LX + 2, LY + 2, LW - 4, LH - 50);
     /* 高度图的采样点也裁在格子的范围里：16 × 16 的最后几行会伸到底下那行「半透明：τ = …」上（2026-10-17 全局检查） */
@@ -932,11 +934,11 @@
     /* 老师只看未来 15 帧（0.5 s），最远的影子不能超过它：取 0.13 / 0.27 / 0.47 s（2026-10-17 全局检查） */
     var AHEAD = [2, 4, 7];
     var ghosts = AHEAD.map(function () { return smplMesh(s, SHEETS.sit, { ghost: 0.28 }); });
-    var gLegend = rich(s, LX + 14, LY + LH - 30, '半透明：$\\tau$ = ' + AHEAD.map(function (a) { return f2(a / CLIP.fps); }).join(' / ') + ' s 后的参考姿态', 11.5);
+    var gLegend = rich(s, LX + LW / 2, LY + LH - 30, '半透明：$\\tau$ = ' + AHEAD.map(function (a) { return f2(a / CLIP.fps); }).join(' / ') + ' s 后的参考姿态', 11.5, 'demo-x-ink2', 'middle');
     var actor = sampleActor(s, { noChair: true });
     var aJ = arrow(s, C_VIS, 2.4), aR = arrow(s, C_FULL, 2.4, '5 3');
     var tgt = ring(s, 0, 0, 7, 7, C_VIS);
-    var tagL = label(s, LX + 14, LY + LH - 8, '实线：相对头　虚线：相对根', 'demo-x-ink2', 11.5);
+    var tagL = label(s, LX + LW / 2, LY + LH - 8, '实线：相对头　虚线：相对根', 'demo-x-ink2', 11.5, 'middle');
     var R = 446, RW = 330;
     var p1 = group(s);
     label(p1, R, 64, '观测 = 当前状态 + 未来 $K$ 帧', 'demo-x-ink', 14);
