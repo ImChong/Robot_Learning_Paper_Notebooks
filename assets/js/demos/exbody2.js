@@ -2038,8 +2038,8 @@
   function buildVideoDemo(host) {
     K.video(host, {
       title: '配音讲解视频：ExBody2 十八幕全流程',
-      sub: '__VIDEO_LEN__竖屏视频（1080×1920），中文配音 + 字幕。画面就是上面的十八幕动画，旁白把每一幕讲细；适合手机上看或转发。',
-      size: '__VIDEO_SIZE__',
+      sub: '16 分 27 秒竖屏视频（1080×1920），中文配音 + 字幕。画面就是上面的十八幕动画，旁白把每一幕讲细；适合手机上看或转发。',
+      size: '19.3 MB',
       fileName: 'ExBody2_讲解视频.mp4'
     });
   }
