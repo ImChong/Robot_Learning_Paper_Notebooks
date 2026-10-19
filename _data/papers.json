@@ -2854,6 +2854,18 @@
     "display_name": "Locomotion",
     "papers": [
       {
+        "title": "Push the Limit: Learning High-Speed Sprinting and Aggressive Cornering on a Full-Scale Humanoid",
+        "path": "papers/05_Locomotion/Push_the_Limit__High-Speed_Sprinting_and_Aggressive_Cornering_on_a_Full-Scale_Humanoid/Push_the_Limit__High-Speed_Sprinting_and_Aggressive_Cornering_on_a_Full-Scale_Humanoid.md",
+        "url": "/papers/05_Locomotion/Push_the_Limit__High-Speed_Sprinting_and_Aggressive_Cornering_on_a_Full-Scale_Humanoid/Push_the_Limit__High-Speed_Sprinting_and_Aggressive_Cornering_on_a_Full-Scale_Humanoid.html",
+        "dir": "Push_the_Limit__High-Speed_Sprinting_and_Aggressive_Cornering_on_a_Full-Scale_Humanoid",
+        "arxiv": "2610.14840",
+        "summary_zh": "人形机器人直线冲刺已经很快，但跑起来不像人、也没人展示过高速转弯；用 AMP 做出来的步态像人，却只在中低速成立。",
+        "published_date_zh": "2026年10月10日（arXiv v1）",
+        "published_date_en": "Oct 10, 2026 (arXiv v1)",
+        "zhname": "Push the Limit：全尺寸人形机器人的高速冲刺与激进过弯",
+        "zh_title": "Push the Limit：全尺寸人形机器人的高速冲刺与激进过弯"
+      },
+      {
         "title": "Tac4Loco: Learning Spatiotemporal Plantar Pressure Representations for Humanoid Locomotion",
         "path": "papers/05_Locomotion/Tac4Loco__Spatiotemporal_Plantar_Pressure_Representations_for_Humanoid_Locomotion/Tac4Loco__Spatiotemporal_Plantar_Pressure_Representations_for_Humanoid_Locomotion.md",
         "url": "/papers/05_Locomotion/Tac4Loco__Spatiotemporal_Plantar_Pressure_Representations_for_Humanoid_Locomotion/Tac4Loco__Spatiotemporal_Plantar_Pressure_Representations_for_Humanoid_Locomotion.html",

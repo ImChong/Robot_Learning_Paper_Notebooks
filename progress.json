@@ -41,15 +41,15 @@
         "13_Physics-Based_Animation",
         "14_Human_Motion"
       ],
-      "last_module": "04_Loco-Manipulation_and_WBC",
-      "last_index": 876,
-      "last_title": "CSF: Contextual Safety Filtering for Motion Generators (arXiv:2610.12467)",
-      "next_module": "05_Locomotion",
-      "last_completed_date": "2026-10-18",
-      "note": "本日轮转到 04_Loco-Manipulation_and_WBC。PROGRESS Loco-Manipulation 章节中尚无笔记的最新论文是 CSF (arXiv:2610.12467, 2026-10-08, Caltech AMBER)，即 PROGRESS #876，已确认在上游 README。免训练语义安全过滤：冻结生成器为每条自然语言规则生成危险 / 安全参考，定义仿射裕度；语义门控选生效规则，安全参考跟踪 CBF-QP 在采样每一步修正输出估计；四个生成器危险事件率最多降 90%、良性保留 88–100%，ARDY + SONIC 在 G1 真机部署并有运行时护盾。官方仓库 lzyang2000/csf 已开源，含整体框架 mermaid、二维 QP 玩具算例与源码运行时序图。",
-      "last_date": "2026-10-18",
+      "last_module": "05_Locomotion",
+      "last_index": 1125,
+      "last_title": "Push the Limit: Learning High-Speed Sprinting and Aggressive Cornering on a Full-Scale Humanoid (arXiv:2610.14840)",
+      "next_module": "06_Manipulation",
+      "last_completed_date": "2026-10-19",
+      "note": "本日轮转到 05_Locomotion。PROGRESS Locomotion 章节中尚无笔记的最新论文是 Push the Limit (arXiv:2610.14840, 2026-10-10, 松延动力 Noetix × 清华, CoRL 2026)，即 PROGRESS #1125，已确认在上游 README。高速冲刺与激进过弯：因果 MHA 历史编码器、高速时改用航向方向奖励、按技能路由的 Multi-AMP 判别器；真机 100 m 7.14 m/s，5.5 m/s 过弯内倾 > 25°。论文未开源，含整体流程 mermaid 与偏航振荡扣分算例，无源码时序图。",
+      "last_date": "2026-10-19",
       "next_candidate": null,
-      "last_completed": "CSF: Contextual Safety Filtering for Motion Generators (arXiv:2610.12467)"
+      "last_completed": "Push the Limit: Learning High-Speed Sprinting and Aggressive Cornering on a Full-Scale Humanoid (arXiv:2610.14840)"
     },
     "last_summary_index": 532,
     "last_summary_date": "2026-09-18",
@@ -1783,6 +1783,17 @@
         "project_page": "https://lzyang2000.github.io/csf/",
         "code": "https://github.com/lzyang2000/csf",
         "source": "✅ 官方仓库已开源（Apache-2.0），含整体框架 mermaid、二维 QP 玩具算例与源码运行时序图"
+      },
+      {
+        "date": "2026-10-19",
+        "index": 1125,
+        "title": "Push the Limit: Learning High-Speed Sprinting and Aggressive Cornering on a Full-Scale Humanoid",
+        "folder": "papers/05_Locomotion/Push_the_Limit__High-Speed_Sprinting_and_Aggressive_Cornering_on_a_Full-Scale_Humanoid",
+        "module": "05_Locomotion",
+        "arxiv": "2610.14840",
+        "project_page": "",
+        "code": "论文未给出代码 / 项目页（仅 YouTube 视频 https://youtu.be/YWf62XkiApc）；截至 2026-10-19 未检索到公开实现",
+        "source": "⏳ 无公开源码(故无源码时序图)，含整体流程 mermaid 与偏航振荡扣分算例"
       }
     ],
     "last_completed_index": 588,
