@@ -735,11 +735,20 @@
     chip(p1, R + 218, 134, 156, '**全身运动学模仿**', C_HOVER, { size: 12.5, h: 44 });
     label(p1, R, 260, '接口不同，底下的目标一样：', 'demo-x-ink2', 12.5);
     label(p1, R, 282, '稳、像人的全身动作', 'demo-x-ink2', 12.5);
+    /* 论文图 2 很扁（1767 × 395），塞在右栏只有 372 宽、字看不清：这一段铺满整个卡片（盖住左边的 H1），框出三块 */
     var p2 = group(s);
-    label(p2, R, 64, '论文图 2：蒸馏的总览', 'demo-x-ink', 14);
-    var fig = paperPart(p2, 'fig2', 0, 0, 1, 1, R, 80, 372, '论文图 2（全图）');
-    var zoom = paperPart(p2, 'fig2', 0.13, 0.0, 0.72, 1.0, R, 80 + fig.h + 34, 300, '放大中间：下行全部目标 → 模式掩码 → 稀疏掩码');
-    label(p2, R, 80 + fig.h + 34 + zoom.h + 40, '右边：教师（下）的动作监督 HOVER 策略（上）', 'demo-x-mut', 11);
+    rectBox(p2, 24, 38, 752, 360, C_SURFACE, C_SURFACE);
+    label(p2, 30, 64, '论文图 2：蒸馏的总览', 'demo-x-ink', 14);
+    var fig = paperPart(p2, 'fig2', 0, 0, 1, 1, 30, 80, 740);
+    [[0, 0.118, '① 重定向好的动作库', C_ACCENT], [0.124, 0.727, '② 三种目标 → 模式掩码 → 稀疏掩码（从下往上）', C_PURPLE], [0.732, 1, '③ 教师（下）监督 HOVER（上）', C_HOVER]].forEach(function (r) {
+      var x0 = 30 + 740 * r[0], x1 = 30 + 740 * r[1];
+      var box = paint(svgEl('rect', { x: (x0 - 1).toFixed(1), y: 77, width: (x1 - x0 + 2).toFixed(1), height: (fig.h + 6).toFixed(1), rx: 6, fill: 'none', 'stroke-width': 2.2 }), null, r[3]);
+      p2.appendChild(box);
+      /* 第一块很窄，字比它宽：从框的左边起写，别越出卡片 */
+      label(p2, r[0] ? (x0 + x1) / 2 : x0, 80 + fig.h + 26, r[2], 'demo-x-ink2', 11.5, r[0] ? 'middle' : 'start');
+    });
+    label(p2, 30, 80 + fig.h + 64, '学生（HOVER）只看掩码后的命令和真机拿得到的本体感受；教师看特权本体感受和全部目标', 'demo-x-mut', 11);
+    rich(p2, 30, 80 + fig.h + 86, '监督学习：学生的动作 $a_t$ 对齐教师的 $\\hat a_t$（右边的虚线箭头）', 11, 'demo-x-mut');
     var p3 = group(s);
     label(p3, R, 64, '两步走', 'demo-x-ink', 14);
     chip(p3, R, 84, 372, '① **特权教师**：PPO，在 AMASS 重定向到 H1 的大规模动作上，全身都跟', C_WARN, { size: 11, left: true, h: 34 });
@@ -763,6 +772,7 @@
       bot.put(now, null, 0);
       setOpacity(p1, win(t, 0.3, 3.6));
       setOpacity(p2, win(t, 3.6, 7.0));
+      setOpacity(left, 1 - seg(t, 3.6, 3.9) * (1 - seg(t, 7.3, 7.6)));  // 图 2 铺满卡片：左栏连框带 H1 先淡出、图 2 收起后再回来，两者不同时半透明
       setOpacity(p3, win(t, 7.0, 10.4));
       setOpacity(p4, win(t, 10.4, 13.4));
       setOpacity(p5, win(t, 13.4));
@@ -1142,7 +1152,7 @@
     label(p1, R, Y + 60, '开着的格子，这一类目标的所有维度都给学生', 'demo-x-mut', 11);
     var p2 = group(s);
     label(p2, R, Y + 14, '论文图 2 的例子：上身跟关键点，下身跟关节角和根部', 'demo-x-ink', 12.5);
-    var fig = paperPart(p2, 'fig2', 0.13, 0.0, 0.72, 1.0, R, Y + 30, 300, '论文图 2：下行全部目标 → 中行模式掩码之后 → 上行稀疏掩码之后');
+    var fig = paperPart(p2, 'fig2', 0.13, 0.0, 0.72, 1.0, R, Y + 24, 356, '论文图 2：下行全部目标 → 中行模式掩码之后 → 上行稀疏掩码之后');
     var p3 = group(s);
     rich(p3, R, Y + 14, '论文：每一位都是 $\\mathcal{B}(0.5)$', 13, 'demo-x-ink');
     label(p3, R, Y + 40, '回合开始时抽一次，整个回合不变', 'demo-x-ink2', 11.5);
@@ -1283,13 +1293,14 @@
     aTea.set(SX + BW, TY + 20, LX + 30, LY + BH + 2, 9);
     aA.set(SX + BW, SY + 30, LX + 30, LY - 2, 9);
     aUp.set(LX + 140, LY - 4, SX + BW + 4, SY + 6, 9);
-    var tags = group(s);
+    /* 箭头上的字跟着各自的箭头出现：学生那一圈、教师那一路、到损失与回传 */
+    var tags = group(s), tagsT = group(s), tagsL = group(s);
     rich(tags, 258, 104, '状态', 10.5, 'demo-x-mut');
     rich(tags, 256, 178, '动作 $a_t$', 11, 'demo-x-good');
-    rich(tags, 252, 272, '同一个状态', 10.5, 'demo-x-mut');
-    rich(tags, 528, 228, '$\\hat a_t$', 12, 'demo-x-warn');
-    rich(tags, 528, 112, '$a_t$', 12, 'demo-x-good');
-    rich(tags, 640, 104, '更新学生', 11, 'demo-x-bad');
+    rich(tagsT, 252, 272, '同一个状态', 10.5, 'demo-x-mut');
+    rich(tagsT, 528, 228, '$\\hat a_t$', 12, 'demo-x-warn');
+    rich(tagsL, 528, 112, '$a_t$', 12, 'demo-x-good');
+    rich(tagsL, 640, 104, '更新学生', 11, 'demo-x-bad');
     var dots = [dotAt(s, 0, 0, 4, C_HOVER), dotAt(s, 0, 0, 4, C_HOVER), dotAt(s, 0, 0, 4, C_WARN), dotAt(s, 0, 0, 4, C_WARN), dotAt(s, 0, 0, 4, C_BAD)];
     var paths = [[240, 120, SX - 4, SY + 18], [SX, SY + 40, 244, 156], [240, 250, SX - 4, TY + 26], [SX + BW, TY + 20, LX + 30, LY + BH + 2], [LX + 140, LY - 4, SX + BW + 4, SY + 6]];
     var Y = 322;
@@ -1320,7 +1331,7 @@
       fx.forEach(function (n) { setOpacity(n.g || n, a1); });
       fy.forEach(function (n) { setOpacity(n.g || n, a2); });
       fz.forEach(function (n) { setOpacity(n.g || n, a3); });
-      setOpacity(tags, a1);
+      setOpacity(tags, a1); setOpacity(tagsT, a2); setOpacity(tagsL, a3);
       var vis = [a1, a1, a2, a2, a3];
       dots.forEach(function (d, i) {
         var p = paths[i], u = ((now * 0.6) + i * 0.17) % 1;
@@ -1404,7 +1415,7 @@
     label(p3, R, 252, '专才的动作更平滑、根部速度跟得更紧', 'demo-x-ink2', 12);
     label(p3, R, 274, '通才赢在位置和关节角：每种模式至少 7/12', 'demo-x-ink2', 12);
     var p4 = group(s);
-    var fig = paperPart(p4, 'fig3', 0, 0, 1, 1, R + 60, 46, 300, '论文图 3：绿是 HOVER，蓝是专才（网越大越好）');
+    var fig = paperPart(p4, 'fig3', 0, 0, 1, 1, R + 8, 46, 400, '论文图 3：绿是 HOVER，蓝是专才（网越大越好）');
     var p5 = group(s);
     label(p5, R, 64, '论文的结论', 'demo-x-ink', 14);
     chip(p5, R, 82, 416, '即使只看一种模式，从教师**蒸馏**也比用强化学习训专才好', C_HOVER, { size: 11.5, left: true });
@@ -1505,7 +1516,7 @@
     chip(p3, R + 210, 104, 200, '左手：350 对 204（1.72 倍）', C_PURPLE, { size: 11.5 });
     label(p3, R, 166, '8 种模式平均：254.4 对 167.25 mm', 'demo-x-ink2', 12);
     label(p3, R, 194, '图上两位小数的根部 RPY 有两处一样（ExBody、HumanPlus）', 'demo-x-mut', 10.5);
-    label(p3, R, 216, '这里算全身所有点；表 IV 只算在跟的点，所以数不一样', 'demo-x-mut', 10.5);
+    label(p3, R, 216, '这里算全身所有点；表 IV 只算在跟的点，所以数值不一样', 'demo-x-mut', 10.5);
     var p4 = group(s);
     label(p4, R, 64, '雷达图的缩放：网越大越好', 'demo-x-ink', 14);
     math(p4, R + 40, 118, '\\frac{E^{\\max} - E}{E^{\\max} - E^{\\min}}', 20);
@@ -1546,21 +1557,32 @@
     };
   }
 
+  /* 切模式片段下面的时间轴：两段（换掩码之前 / 之后）、换掩码的时刻和一个跟着片段走的播放头——片段是一整段视频，不是两段来回跳 */
+  function switchTimeline(parent, x, y, w, id, colA, colB, labA, cutLabel, cutStart) {
+    var g = group(parent), cutX = x + w * SWITCH_AT[id] / CLIP_DUR[id];
+    g.appendChild(paint(svgEl('rect', { x: x, y: y, width: (cutX - x - 1).toFixed(1), height: 6, rx: 2, opacity: 0.45 }), colA));
+    g.appendChild(paint(svgEl('rect', { x: (cutX + 1).toFixed(1), y: y, width: (x + w - cutX - 1).toFixed(1), height: 6, rx: 2, opacity: 0.9 }), colB));
+    label(g, x, y + 20, labA, 'demo-x-mut', 10);
+    label(g, cutStart ? cutX + 4 : cutX, y + 20, cutLabel, 'demo-x-mut', 10, cutStart ? 'start' : 'middle');
+    label(g, x + w, y + 20, fmt(CLIP_DUR[id], 1) + ' s', 'demo-x-mut', 10, 'end');
+    var head = hline(g, x, y - 3, x, y + 9, X.ink, 2);
+    return {
+      g: g,
+      set: function (sec) {
+        var u = Math.max(0, sec) % CLIP_DUR[id], hx = x + w * u / CLIP_DUR[id];
+        setLine(head, hx, y - 3, hx, y + 9);
+      }
+    };
+  }
+
   /* ── scene 14: 真机：表 V 与图 5 ── */
   function buildSceneReal() {
     var s = sceneSvg('左边是项目页的一整段真机视频，同一个策略中途不重启：前 4.2 秒命令是根部速度 0 m/s、H1 站在原地，之后只换掩码、改跟根部俯仰；片段下面的时间轴标出两段和播放到哪；右边是表 V 三种模式的全局位置误差、12 项赢 11 项、论文图 5、真机与仿真的误差对比');
     s.appendChild(svgText(24, 26, '真机：19 个自由度的 Unitree H1，20 段站立动作', 'demo-x-ink2', 13.5));
     var clip = projClip(s, 'sw_pitch', 40, 44, 256, 278, '项目页视频（真机）：同一个策略，中途不重启');
     var tag = switchTag(s, 40, 346, 256, 'sw_pitch', ['现在：根部速度模式，命令 0 m/s（站在原地）', C_ROOT], ['现在：根部俯仰模式，命令 −0.5 ~ 0.5 rad', C_ROOT]);
-    /* 片段是一整段：4.2 s 处只换掩码（项目页字幕从 Root Vel (0m/s) 换成 Root Pitch Angle −0.5 ~ 0.5）；时间轴标出两段和播到哪 */
-    var TL = { x: 40, y: 384, w: 256 }, cutX = TL.x + TL.w * SWITCH_AT.sw_pitch / CLIP_DUR.sw_pitch;
-    var tl = group(s);
-    tl.appendChild(paint(svgEl('rect', { x: TL.x, y: TL.y, width: (cutX - TL.x - 1).toFixed(1), height: 6, rx: 2, opacity: 0.45 }), C_ROOT));
-    tl.appendChild(paint(svgEl('rect', { x: (cutX + 1).toFixed(1), y: TL.y, width: (TL.x + TL.w - cutX - 1).toFixed(1), height: 6, rx: 2, opacity: 0.9 }), C_ROOT));
-    label(tl, TL.x, TL.y + 20, '根部速度', 'demo-x-mut', 10);
-    label(tl, cutX + 4, TL.y + 20, '4.2 s 换掩码 → 根部俯仰', 'demo-x-mut', 10);
-    label(tl, TL.x + TL.w, TL.y + 20, '17.3 s', 'demo-x-mut', 10, 'end');
-    var head = hline(tl, TL.x, TL.y - 3, TL.x, TL.y + 9, X.ink, 2);
+    /* 片段是一整段：4.2 s 处只换掩码（项目页字幕从 Root Vel (0m/s) 换成 Root Pitch Angle −0.5 ~ 0.5） */
+    var tl = switchTimeline(s, 40, 384, 256, 'sw_pitch', C_ROOT, C_ROOT, '根部速度', '4.2 s 换掩码 → 根部俯仰', true);
     var R = 330;
     var p1 = group(s);
     label(p1, R, 64, '真机评测', 'demo-x-ink', 14);
@@ -1591,8 +1613,7 @@
       var sec = K.clipSince(t, 0);
       clip.at(sec, true);
       tag.set(sec);
-      var u = Math.max(0, sec) % CLIP_DUR.sw_pitch, hx = TL.x + TL.w * u / CLIP_DUR.sw_pitch;
-      setLine(head, hx, TL.y - 3, hx, TL.y + 9);
+      tl.set(sec);
       bars.set(seg(t, 3.9, 5.2));
       setOpacity(p1, win(t, 0.3, 3.6));
       setOpacity(p2, win(t, 3.6, 7.0));
@@ -1606,14 +1627,17 @@
 
   /* ── scene 15: 边走边切模式 ── */
   function buildSceneSwitch() {
-    var s = sceneSvg('前半：两段项目页的真机视频并排，左边向前走时从 ExBody 模式切到 H2O 模式，右边转身后退时从 HumanPlus 模式切到 OmniH2O 模式，下面的标签按视频里字幕换掉的时刻切换；' +
+    var s = sceneSvg('前半：两段项目页的真机视频并排，左边向前走时从 ExBody 模式切到 H2O 模式，右边转身后退时从 HumanPlus 模式切到 OmniH2O 模式，下面的标签按视频里字幕换掉的时刻切换，时间轴标出换掩码的时刻和播到哪；' +
       '后半：Vision Pro 遥操作，先是只跟双手，再是只跟左手');
     s.appendChild(svgText(24, 26, '同一套权重，运行中突然换掩码', 'demo-x-ink2', 13.5));
     var A = group(s);
     var cW = projClip(A, 'sw_walk', 40, 44, 196, 263, '项目页视频（真机）：向前走');
     var cT = projClip(A, 'sw_turn', 268, 44, 196, 263, '项目页视频（真机）：转身、后退');
-    var tW = switchTag(A, 40, 334, 196, 'sw_walk', ['ExBody 模式', C_JNT], ['H2O 模式', C_KIN]);
-    var tT = switchTag(A, 268, 334, 196, 'sw_turn', ['HumanPlus 模式', C_JNT], ['OmniH2O 模式', C_KIN]);
+    var tW = switchTag(A, 40, 334, 196, 'sw_walk', ['现在：ExBody 模式', C_JNT], ['现在：H2O 模式', C_KIN]);
+    var tT = switchTag(A, 268, 334, 196, 'sw_turn', ['现在：HumanPlus 模式', C_JNT], ['现在：OmniH2O 模式', C_KIN]);
+    /* 两段都是一整段视频：中途只换掩码，时间轴标出换的时刻和播到哪 */
+    var lW = switchTimeline(A, 40, 374, 196, 'sw_walk', C_JNT, C_KIN, 'ExBody', '8.4 s 换掩码');
+    var lT = switchTimeline(A, 268, 374, 196, 'sw_turn', C_JNT, C_KIN, 'HumanPlus', '4.8 s 换掩码', true);
     var B = group(s);
     var cV = projClip(B, 'vr_two', 40, 56, 424, 239);
     var cL = projClip(B, 'vr_left', 40, 56, 424, 239);
@@ -1649,7 +1673,7 @@
     label(p5, R, 162, '（比如 VR 看不到一只手）', 'demo-x-mut', 11);
     function draw(t, clock) {
       var sa = K.clipSince(t, 0.4), visA = t < 10.4;
-      cW.at(sa, visA); cT.at(sa, visA); tW.set(sa); tT.set(sa);
+      cW.at(sa, visA); cT.at(sa, visA); tW.set(sa); tT.set(sa); lW.set(sa); lT.set(sa);
       cV.at(K.clipSince(t, 10.4), t >= 10.4 && t < 13.4);
       cL.at(K.clipSince(t, 13.4), t >= 13.4);
       setOpacity(A, 1 - seg(t, 10.4, 10.7));
@@ -1744,7 +1768,7 @@
       cues: [
         { at: 0.4, s: '① **运动学位置**：23 个刚体点的 3D 位置（20 个连杆 + 两手 + 头），69 维。' },
         { at: 3.6, s: '② **关节角**：19 个电机的目标角度。相当于丢掉了全局位置的运动学模仿。' },
-        { at: 7.0, s: '③ **根部**：三个方向的线速度、横滚、俯仰、偏航之差、高度，7 维；合起来 $95 = 23 \\times 3 + 19 + 7$。' },
+        { at: 7.0, s: '③ **根部**：三个方向的线速度、横滚、俯仰、偏航之差、高度，共 7 维；三块合起来是 95 维。' },
         { at: 10.4, s: '论文图 1 中间：亮着的格子是正在跟的命令，右边的虚线框是掩码，决定打开哪几块。' },
         { at: 13.4, s: '两条标准：**通用性**（覆盖前人、能接各种设备）和**原子性**（维度独立、可任意组合）；分上下身两块。' }
       ]
