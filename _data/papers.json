@@ -400,7 +400,7 @@
             "arxiv": "2412.13196",
             "summary_zh": "ExBody2 让真实的人形机器人全身跟着人体动作做，又稳又像：关键点在机器人自己的坐标系里跟、全局位置交给速度，数据按「上半身多样、下半身做得到」自动筛选，再从通才微调出专才。",
             "explainer_scenes": 18,
-            "video_seconds": 987,
+            "video_seconds": 1019,
             "published_date_zh": "2024年12月17日（arXiv）",
             "published_date_en": "Dec 17, 2024 (arXiv)",
             "zhname": "ExBody2：进阶的表达性人形全身控制",
