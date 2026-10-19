@@ -13,6 +13,7 @@ import json
 import math
 import random
 import re
+import struct
 from pathlib import Path
 
 from scripts.sanitize_paper_html import sanitize_paper_body_fragment
@@ -122,6 +123,13 @@ H2O_NOTE = _high_impact_note("H2O_Learning_Human-to-Humanoid_Real-Time_Whole-Bod
 OMNIH2O_NOTE = _high_impact_note("OmniH2O_Universal_Whole-Body_Teleoperation")
 HOVER_NOTE = _high_impact_note("HOVER_Versatile_Neural_Whole-Body_Controller")
 MASKEDMIMIC_NOTE = _high_impact_note("MaskedMimic_Unified_Physics-Based_Character_Control_Through_Masked_Motion_Inpainting")
+TWIST_NOTE = (
+    ROOT
+    / "papers"
+    / "07_Teleoperation"
+    / "TWIST__Teleoperated_Whole-Body_Imitation_System"
+    / "TWIST__Teleoperated_Whole-Body_Imitation_System.md"
+)
 PHP_NOTE = (
     ROOT
     / "papers"
@@ -340,7 +348,7 @@ EXPLAINER_BUNDLES = (
     "gmr", "omniretarget", "diffusion_policy", "beyondmimic", "cosmos", "umr", "php", "pbfm",
     "gentle", "lcp", "transformer", "pi0", "pi05", "op3soccer", "smp", "humanml3d",
     "domain_randomization", "quadterrain", "realhumanoid", "asap", "inekf", "berkeley_humanoid",
-    "toddlerbot", "exbody", "h2o", "omnih2o", "hover", "maskedmimic",
+    "toddlerbot", "exbody", "h2o", "omnih2o", "hover", "maskedmimic", "twist",
 )
 
 # 幕数由论文决定，不是统一模板：PPO / DeepMimic / AMP / ADD 的核心概念正好各 5 个，
@@ -540,6 +548,11 @@ EXPLAINER_SCENES = {
     # DAgger 与 KL 调度（式 8）、结构化掩码、固定噪声与历史、先验网络各一幕；结果按表 1+2、表 3+4、表 5、表 6 各一幕，文字控制与局限一幕。
     # 压成 15 幕会让残差的两个高斯和 DAgger 的流程、或掩码的时间轴和历史的影子抢同一帧。
     "maskedmimic": (MASKEDMIMIC_NOTE, 18),
+    # TWIST 十六幕：问题两幕（协调的全身遥操作还做不到 / 图 3 的三段流水线）；第 3.1 节的数据与重定向各一幕（「数据从哪来、采样占几成」
+    # 与「离线 / 在线重定向、图 8 左」是两件事）；第 3.2 节按跟什么（局部量）、教师看未来、奖励（表 1）、学生的观测、RL+BC（式 1 与 λ）
+    # 各一幕；结果按关键发现 1–3 各一幕（发现 4 并进重定向那一幕），上真机的链路与延迟、四类技能、部位误差、局限与代码各一幕。
+    # 压成 14 幕会让教师的 20 帧和学生的 1155 维、或图 6 的柱和图 7 的曲线抢同一帧。
+    "twist": (TWIST_NOTE, 16),
 
     "humanml3d": (HUMANML3D_NOTE, 12),
 }
@@ -4400,3 +4413,155 @@ def test_maskedmimic_project_page_clips():
     assert js.count("项目页视频") >= 8 and "仿真结果剪自项目页的视频" in js
     note = MASKEDMIMIC_NOTE.read_text(encoding="utf-8")
     assert "仿真画面剪自[项目页](https://research.nvidia.com/labs/par/maskedmimic/)的视频" in note
+
+
+def _twist_segment(js: str, key: str):
+    """twist.js 的 SEGS：每帧 115 个 int16（参考与机器人的 9 个关键点、根部高度、31 维目标、23 个关节角、跟踪五项的误差）。"""
+    m = re.search(key + r": \{ clip: '([^']+)', t0: ([\d.]+), fps: (\d+), n: (\d+), per: (\d+), data: '([^']+)' \}", js)
+    clip, t0, fps, n, per, b64 = m.groups()
+    t0, fps, n, per = float(t0), int(fps), int(n), int(per)
+    raw = base64.b64decode(b64)
+    a = struct.unpack(f"<{len(raw) // 2}h", raw)
+    assert per == 27 + 27 + 2 + 31 + 23 + 5 and len(a) == n * per
+    out = []
+    for j in range(n):
+        o = j * per
+
+        def pts(s, a=a):
+            return [[a[s + 3 * i] / 1000, a[s + 3 * i + 1] / 1000, a[s + 3 * i + 2] / 1000] for i in range(9)]
+
+        out.append({
+            "t": t0 + j / fps, "kref": pts(o), "krob": pts(o + 27), "zr": a[o + 54] / 1000, "zb": a[o + 55] / 1000,
+            "mimic": [a[o + 56 + q] / 1000 for q in range(31)], "dof": [a[o + 87 + d] / 1000 for d in range(23)],
+            "err": dict(zip(("kb", "dof", "vel", "pose", "rvel"),
+                            (a[o + 110] / 2e4, a[o + 111] / 1e4, a[o + 112] / 50, a[o + 113] / 1e4, a[o + 114] / 1e3), strict=True)),
+        })
+    return clip, t0, out
+
+
+def test_twist_explainer_demos_and_worked_example_share_the_paper_numbers():
+    """TWIST：十六幕动画、三个演示、配音旁白与笔记「🚶 具体实例」用同一组数。
+
+    表 1–2、图 6–8 照抄 arXiv 2505.02833 v1；观测维数、未来帧、奖励的系数、KL 系数的衰减、数据清单的采样权重照抄 YanjieZe/TWIST；
+    G1 的跟踪是我们用官方学生模型在 MuJoCo 里跟官方数据集的自录动捕（第 9、138 段），嵌在 twist.js 里，这里解码后把第 17.00 s 的
+    跟踪五项、关键点偏差、两段的平均和根部离参考的距离再算一遍。
+    """
+    js = (DEMO_JS_DIR / "twist.js").read_text(encoding="utf-8")
+    note = TWIST_NOTE.read_text(encoding="utf-8")
+    narration = (ROOT / "scripts" / "paper_video" / "papers" / "twist.py").read_text(encoding="utf-8")
+    intro = (ROOT / "scripts" / "paper_video" / "papers" / "twist.js").read_text(encoding="utf-8")
+
+    for line in (
+        "{ key: 'rlbc', zh: 'RL+BC（TWIST）', v: [0.083, 0.576, 0.255, 0.483, 0.101, 0.016] },",
+        "{ key: 'nomocap', zh: 'RL+BC 不用自录数据', v: [0.119, 0.637, 0.406, 0.761, 0.146, 0.024] },",
+        "{ key: 'rlbc', zh: 'RL+BC（TWIST）', v: [14.0, 11.3, 14.2, 17.6, 23.4] },",
+        "var FIG8L = [{ zh: 'TWIST 的在线重定向', v: [1.52, 2.09] }, { zh: '原来的在线重定向', v: [2.09, 2.36] }];",
+        "var DATA = { pub: 14988, pubH: 41.75, own: 142, ownH: 0.57, w100: 94, w50: 48 };",
+        "var FUT_STEPS = [1, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95];",
+        "var OBS = { frame: 58, nfut: 20, prop: 74, priv: 84, mimic: 31, hist: 10 };",
+        "part: [42.2, 34.3, 38.3, 55.9, 65.3] };",
+        "var EX_SEG = 'A', EX_J = 40;",
+    ):
+        assert line in js, line
+    for k in ("'twist-explainer'", "'twist-video'", "'twist-frames'", "'twist-reward'", "'twist-results'", "K.video(host"):
+        assert k in js, k
+    track = re.findall(r"\{ key: '(\w+)', zh: '[^']+', w: ([\d.]+), k: ([\d.]+),", js)
+    assert [(k, float(w), float(c)) for k, w, c in track] == [("kb", 2.0, 10), ("dof", 0.6, 0.15), ("vel", 0.2, 0.01), ("pose", 0.6, 5), ("rvel", 1.0, 1)]
+
+    # 例 1、例 3：采样比例与观测维数
+    share = (94 * 100 + 48 * 50) / (94 * 100 + 48 * 50 + 14988)
+    assert _fmt(share, 4) == "0.4405" and "=0.4405$" in note and "大约 44%" in narration
+    assert _fmt(100 * 142 / 15130, 2) == "0.94" and _fmt(100 * 0.57 / (41.75 + 0.57), 2) == "1.35"
+    assert 20 * 58 + 74 + 84 == 1318 and (31 + 74) * 11 == 1155 and 3 + 2 + 23 * 3 == 74 and 3 + 1 + 27 + 2 + 4 + 1 + 46 == 84
+    assert [round(s * 0.02, 2) for s in (1, 5, 95)] == [0.02, 0.1, 1.9]
+    for s in ("**1318 维**", "**1155**", "15,130", "14,988"):
+        assert s in note, s
+    # 例 7：KL 系数照代码连乘
+    lam, cross = 0.1, {}
+    for k in range(1, 30003):
+        lam *= 0.5 * (1 + math.cos(math.pi * k / 60000))
+        for th in (0.05, 0.01, 1e-3):
+            cross.setdefault(th, k) if lam < th else None
+        if k == 3000:
+            lam3000 = lam
+    assert cross == {0.05: 1448, 0.01: 2160, 1e-3: 2721} and _fmt(lam3000, 5) == "0.00021"
+    for s in ("第 **1448** 次", "第 **2160** 次", "第 **2721** 次"):
+        assert s in note, s
+    assert "大约第 1450 次降到 0.05，第 2160 次降到 0.01" in narration
+
+    # 复现：解码两段，再算第 17.00 s
+    clip, t0, A = _twist_segment(js, "A")
+    assert (clip, t0, len(A)) == ("9", 15.0, 160)
+    f = A[40]
+    assert _fmt(f["t"], 2) == "17.00" and (_fmt(f["zr"], 3), _fmt(f["zb"], 3)) == ("0.315", "0.356")
+    root = [_fmt(x, 3) for x in f["mimic"][:8]]
+    assert root == ["0.315", "-0.001", "0.041", "-2.145", "0.008", "-0.011", "-0.076", "-0.030"]
+    legs = "(" + ", ".join(_fmt(x, 3) for x in f["mimic"][8:14]) + ")"
+    assert legs == "(-1.834, 0.495, -0.301, 2.422, -0.697, -0.046)" and "左腿 $" + legs + "$" in note
+    w = [1.0, 0.8, 0.8, 1.0, 0.5, 0.5] * 2 + [0.6] * 3 + [0.8, 0.8, 0.8, 1.0] * 2
+    dof_err = sum(wi * (q - r) ** 2 for wi, q, r in zip(w, f["mimic"][8:], f["dof"], strict=True))
+    assert abs(dof_err - f["err"]["dof"]) < 1e-3 and _fmt(dof_err, 4) == "0.3258"
+    rows = [(k, f["err"][k], math.exp(-c * f["err"][k]), wt * math.exp(-c * f["err"][k])) for k, wt, c in
+            (("kb", 2.0, 10), ("dof", 0.6, 0.15), ("vel", 0.2, 0.01), ("pose", 0.6, 5), ("rvel", 1.0, 1))]
+    assert [_fmt(r[3], 4) for r in rows] == ["1.7344", "0.5714", "0.1156", "0.5887", "0.9950"]
+    assert _fmt(sum(r[3] for r in rows), 4) == "4.0051" and "**4.0051 / 4.4**" in note
+    assert _fmt(math.sqrt(f["err"]["kb"] / 9) * 1000, 1) == "39.8"
+    d = [math.dist(f["kref"][i], f["krob"][i]) * 1000 for i in range(9)]
+    zh = ["左手", "右手", "左踝", "右踝", "左膝", "右膝", "左肘", "右肘", "头"]
+    assert "、".join(f"{n} {_fmt(x, 1)}" for n, x in zip(zh, d, strict=True)) + " mm" in note
+    assert _fmt(sum(d) / 9, 1) == "55.7"
+    part_of = [3, 3, 4, 4, 2, 2, 1, 1, 0]
+
+    def parts(fr):
+        dd = [math.dist(fr["kref"][i], fr["krob"][i]) * 1000 for i in range(9)]
+        return [sum(v for v, p in zip(dd, part_of, strict=True) if p == k) / part_of.count(k) for k in range(5)]
+
+    assert [_fmt(x, 1) for x in parts(f)] == ["58.1", "66.1", "35.8", "94.6", "25.2"]
+    # 例 5：两段的平均
+    for key, want, tot in (("A", ["74.4", "63.5", "38.6", "83.1", "52.0"], "3.747 / 2.653"), ("B", ["57.5", "46.2", "64.1", "54.5", "98.0"], "3.258 / 1.064")):
+        _, _, F = _twist_segment(js, key)
+        P = [parts(fr) for fr in F]
+        assert [_fmt(sum(p[i] for p in P) / len(P), 1) for i in range(5)] == want, key
+        totals = [sum(wt * math.exp(-c * fr["err"][k]) for k, wt, c in
+                      (("kb", 2.0, 10), ("dof", 0.6, 0.15), ("vel", 0.2, 0.01), ("pose", 0.6, 5), ("rvel", 1.0, 1))) for fr in F]
+        assert f"{_fmt(sum(totals) / len(totals), 3)} / {_fmt(min(totals), 3)}" == tot and tot in note, key
+    # 例 6：根部在世界里离参考多远
+    m = re.search(r"var PATH = \{ n: (\d+), dt: ([\d.]+), data: '([^']+)' \}", js)
+    n = int(m.group(1))
+    raw = base64.b64decode(m.group(3))
+    a = struct.unpack(f"<{len(raw) // 2}h", raw)
+    gap = [math.hypot(a[4 * i] - a[4 * i + 2], a[4 * i + 1] - a[4 * i + 3]) / 1000 for i in range(n)]
+    assert (_fmt(min(gap[10:]), 2), _fmt(max(gap), 2)) == ("0.43", "1.38") and "0.43–1.38 m" in note
+    assert "0.4 到 1.4 米" in narration and "0.4–1.4 m" in js
+    # 例 9：复现对论文图 8 右
+    ratios = [r / p for r, p in zip([42.2, 34.3, 38.3, 55.9, 65.3], [14.0, 11.3, 14.2, 17.6, 23.4], strict=True)]
+    assert (_fmt(min(ratios), 1), _fmt(max(ratios), 1)) == ("2.7", "3.2")
+    assert "2.7–3.2 倍" in note and js.count("2.7–3.2 倍") == 3 and "大约是论文的三倍" in narration
+    assert "2–3 倍" not in js + note and "两到三倍" not in narration and "顺序和论文一样" not in narration
+
+    # 旁白：88 句；数字列举不只隔一个逗号（「降到 0.01，3000 次以后」用 WordBoundary 核对过：0.01 与「3000 次」是两个词、中间停 0.29 s，
+    # 没被当成千分位）；片尾只预告下一篇（TWIST2）；绕开多音字
+    spoken = re.findall(r'"([^"]*)"\),', narration[narration.index("SCRIPT = [") : narration.index("DISPLAY = [")])
+    checked = "降到 0.01，3000 次以后"
+    assert len(spoken) == 88 and sum(checked in t for t in spoken) == 1
+    assert not any(re.search(r"\d\s*[，,]\s*\d", t.replace(checked, "")) for t in spoken)
+    assert "下一篇讲 Twist 2" in narration and "TWIST2" in intro and "重定向" not in "".join(spoken)
+    for bad in ("差不多", "几乎", "一行", "重点", "时长"):
+        assert not any(bad in t for t in spoken), bad
+    assert "## 🎬 十六幕动画" in note and 'demos: ["twist"]' in note
+    assert "return seg(t, a + 0.3, a + 0.7) * (b == null ? 1 : 1 - seg(t, b, b + 0.3));" in js and "1 - seg(t, b - 0.3, b)" not in js
+    assert "__VIDEO_" not in js and "__VIDEO_" not in note and "__SEG_" not in js and "__PATH" not in js and "__FIG7__" not in js
+
+
+def test_twist_project_page_clips():
+    """TWIST：第 1、10–14、16 幕的真机 / 仿真画面剪自项目页的视频（13 段，按幕懒加载）；seqClip 的分段时长加起来要等于片段时长。"""
+    js = (DEMO_JS_DIR / "twist.js").read_text(encoding="utf-8")
+    clip_dir = ROOT / "assets/img/papers/twist/clips"
+    used = set(re.findall(r"(?:projClip|seqClip)\(\w+, '(\w+)'", js))
+    assert used == {"teaser_box", "rl", "rlbc", "dagger", "rlbc_unseen", "mocap_wo", "mocap_w", "force_wo", "force_w", "delay", "skills", "booster", "fail"}
+    assert {p.name for p in clip_dir.iterdir()} == {f"{u}.{ext}" for u in used for ext in ("mp4", "webp")}
+    total = sum(float(x) for x in re.findall(r"\[\s*([0-9.]+), '", js[js.index("var SKILL_PARTS") : js.index("var SKILL_PARTS") + 400]))
+    assert abs(total - _mp4_seconds(clip_dir / "skills.mp4")) < 0.02, total
+    assert sum(p.stat().st_size for p in clip_dir.iterdir()) < 2.5e6
+    note = TWIST_NOTE.read_text(encoding="utf-8")
+    assert "剪自[项目页](https://yanjieze.com/projects/TWIST/)的视频" in note
