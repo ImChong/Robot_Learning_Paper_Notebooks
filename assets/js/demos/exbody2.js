@@ -10,7 +10,7 @@
  *
  * Demos:
  *   exbody2-explainer — 十八幕讲解动画：表现力和稳定，要兼得 → 前人卡在哪 → 两步走：通才再专才 → 人的动作搬到 G1 →
- *                       特权教师看什么 → 奖励：表情目标 + 移动目标 → 全局关键点会越跑越偏 → 局部关键点 + 速度：解耦 →
+ *                       特权教师看什么 → 奖励：表达目标 + 移动目标 → 全局关键点会越跑越偏 → 局部关键点 + 速度：解耦 →
  *                       学生：10 步历史 + DAgger → 可行又多样 → 自动筛选：e(s) 与阈值 → 阈值扫一遍 → 专才：从通才微调 →
  *                       Cha-Cha → 和基线比 → 消融：历史长度与 DAgger → 动作从哪来、怎么部署 → 局限与没说清的地方
  *   exbody2-video     — 同一套十八幕的配音竖屏视频（scripts/paper_video/ 离线渲染）
@@ -50,7 +50,7 @@
     table = K.table;
 
   // ─── 论文里的数字（arXiv 2412.13196 v2 的正文、表 I–IV、附录表 V–XI、图 4、图 8） ─────────
-  /* 表 I：跟踪奖励。[名字, 组, 权重, 表达式]；e 是表情目标 G^e，m 是移动目标 G^m */
+  /* 表 I：跟踪奖励。[名字, 组, 权重, 表达式]；e 是表达目标 G^e，m 是移动目标 G^m */
   var T1 = [
     ['关节角', 'e', 3.0, '\\exp(-0.7\\,|\\mathbf q_{\\text{ref}}-\\mathbf q|)'],
     ['关键点位置', 'e', 2.0, '\\exp(-|\\mathbf p_{\\text{ref}}-\\mathbf p|)'],
@@ -162,8 +162,9 @@
   var RESID = [['大步走', '08_07', 34.8], ['挥手', '141_16', 31.6], ['Macarena', '143_35', 25.3], ['扭摆舞', '141_12', 33.9],
     ['开合跳 / 弯腰 / 下蹲', '13_29', 53.4], ['侧手翻', '49_06', 35.7], ['侧手翻接后空翻', '88_05', 45.2], ['跳起踢腿转身', '87_01', 33.0]];
   /* 大步走 08_07：15 fps 共 38 帧。每帧 65 个小端 int16：骨盆位置 3（mm）、横滚俯仰偏航 3（mrad，外旋 xyz）、23 个关节角（mrad）、
-     12 个关键点（mm；顺序见 KP_ZH，用 ASAP 的 MJCF 做正运动学）。第一帧骨盆挪到原点、整段水平位移转到 +x */
-  var WALK = { clip: '08_07', fps: 15, n: 38, per: 65, data: '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' };
+     12 个关键点（mm；顺序见 KP_ZH，用 ASAP 的 MJCF 做正运动学）。第一帧骨盆挪到原点、整段水平位移转到 +x；
+     ASAP 的重定向保留 SMPL 的根部高度，G1 的腿和人比例不同，脚会离地或陷进地里，所以每帧把网格最低点贴到地面（大步走、Macarena、扭摆舞、弯腰下蹲都这样修过） */
+  var WALK = { clip: '08_07', fps: 15, n: 38, per: 65, data: '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' };
   var KP_ZH = ['左肩', '左肘', '左手', '右肩', '右肘', '右手', '左髋', '左膝', '左踝', '右髋', '右膝', '右踝'];
   var KP_UPPER = [0, 1, 2, 3, 4, 5];
   /* 挥手 141_16 的第 0.5–3.5 s：15 fps 共 45 帧。每帧 89 个 int16：G1 骨盆 3、14 个 G1 上的点 42、缩放到 G1 身材的 SMPL 关节 42
@@ -172,12 +173,12 @@
   var PAIR_ZH = ['骨盆', '左髋', '左膝', '左踝', '右髋', '右膝', '右踝', '左肩', '左肘', '左手', '右肩', '右肘', '右手', '头'];
   /* 贴图表：R 像素/米，yaw / pitch 是正交相机，cw × ch 一格，(ax, ay) 是骨盆正下方地面点在格子里的位置 */
   var SHEETS = {
-    walk: { file: 'g1_walk.webp', R: 240, yaw: 0.4, pitch: 0.12, cw: 295, ch: 343, cols: 10, n: 38, ax: 141.0, ay: 335.5 },
+    walk: { file: 'g1_walk.webp', R: 240, yaw: 0.4, pitch: 0.12, cw: 295, ch: 335, cols: 10, n: 38, ax: 141.0, ay: 325.0 },
     wave: { file: 'g1_wave.webp', R: 240, yaw: 1.1, pitch: 0.1, cw: 179, ch: 358, cols: 10, n: 45, ax: 73.0, ay: 351.0 },
     smpl: { file: 'smpl_wave.webp', R: 240, yaw: 1.1, pitch: 0.1, cw: 241, ch: 436, cols: 10, n: 45, ax: 112.5, ay: 432.5 },
-    macarena: { file: 'g1_macarena.webp', R: 150, yaw: 1.1, pitch: 0.1, cw: 115, ch: 211, cols: 12, n: 45, ax: 31.0, ay: 218.0 },
-    twist: { file: 'g1_twist.webp', R: 150, yaw: 1.1, pitch: 0.1, cw: 165, ch: 223, cols: 12, n: 45, ax: 56.5, ay: 207.5 },
-    squat: { file: 'g1_squat.webp', R: 150, yaw: 1.1, pitch: 0.1, cw: 137, ch: 264, cols: 12, n: 45, ax: 41.5, ay: 257.5 },
+    macarena: { file: 'g1_macarena.webp', R: 150, yaw: 1.1, pitch: 0.1, cw: 115, ch: 210, cols: 12, n: 45, ax: 31.0, ay: 203.5 },
+    twist: { file: 'g1_twist.webp', R: 150, yaw: 1.1, pitch: 0.1, cw: 165, ch: 214, cols: 12, n: 45, ax: 56.5, ay: 207.0 },
+    squat: { file: 'g1_squat.webp', R: 150, yaw: 1.1, pitch: 0.1, cw: 137, ch: 216, cols: 12, n: 45, ax: 41.5, ay: 204.5 },
     flip: { file: 'g1_flip.webp', R: 150, yaw: 0.3, pitch: 0.1, cw: 251, ch: 309, cols: 12, n: 38, ax: 120.5, ay: 303.0 }
   };
   function decode(b64) {
@@ -281,7 +282,7 @@
     C_BORDER = X.border,
     C_SURFACE = X.surface,
     C_SURFACE2 = X.surface2;
-  /* 全片配色：表情目标（关节角、关键点）黄、移动目标（速度、姿态）紫、ExBody2 绿、参考 / 全局目标红、局部蓝 */
+  /* 全片配色：表达目标（关节角、关键点）黄、移动目标（速度、姿态）紫、ExBody2 绿、参考 / 全局目标红、局部蓝 */
   var C_EXP = C_WARN, C_MOV = C_PURPLE, C_OURS = C_GOOD, C_REF = C_BAD, C_LOC = C_ACCENT;
 
   /* 视频里一幕要讲一分钟左右：draw(t, clock) 的 clock 是这一幕的真实时间（旁白比分镜长时 t 停在一段的末尾，clock 照走），
@@ -472,6 +473,11 @@
   function loopFrame(now, n, fps, start) {
     return ((Math.floor((start || 0) + now * (fps || 15)) % n) + n) % n;
   }
+  /* 原地的动作（Macarena、扭摆舞、弯腰下蹲）来回播：放到最后一帧再倒着放，首尾不会突然跳一下 */
+  function pingFrame(now, n, fps) {
+    var k = loopFrame(now, 2 * n - 2, fps);
+    return k < n ? k : 2 * n - 2 - k;
+  }
   /* 地上的刻度：每 0.5 m 一道，随骨盆后退，表示在往前走 */
   function groundTicks(parent, x1, x2, y) {
     var g = group(parent);
@@ -660,7 +666,7 @@
       w.g1.forEach(function (p, i) { moveDot(dots1[i], project(p, cam1)); });
       /* 卡片 2 */
       /* 比例按贴图里最高的一帧定：举手、空翻时也不碰上面的两个标签 */
-      mac.at(c2.x + 64, CY + CH - 26, 74, loopFrame(now, SHEETS.macarena.n, 15));
+      mac.at(c2.x + 64, CY + CH - 26, 74, pingFrame(now, SHEETS.macarena.n, 15));
       flp.at(c2.x + 172, CY + CH - 26, 50, loopFrame(now, SHEETS.flip.n, 15));
       /* 卡片 3：机器人落后参考 0.3 m（假设），红点是参考的全局关键点 */
       var fk = loopFrame(now, WALK.n, WALK.fps), f = walkFrame(fk);
@@ -734,6 +740,13 @@
     var pairG = group(left), pairL = PAIR_ZH.map(function () { return hline(pairG, 0, 0, 0, 0, C_REF, 1.4); });
     var gD = PAIR_ZH.map(function () { return dotAt(pairG, 0, 0, 3.2, C_LOC, C_SURFACE); });
     var hD = PAIR_ZH.map(function () { return dotAt(pairG, 0, 0, 3.2, C_EXP, C_SURFACE); });
+    /* 放大镜：几厘米的残差在 172 px/m 下只有几个像素，右肘（这段里相距最远的一对）放大 3 倍看 */
+    var MAG = { c: [244, 122], r: 38, k: 3, i: PAIR_ZH.indexOf('右肘') };
+    var mag = group(left);
+    var magLead = hline(mag, 0, 0, 0, 0, C_MUTED, 1, '2 2');
+    mag.appendChild(paint(svgEl('circle', { cx: MAG.c[0], cy: MAG.c[1], r: MAG.r, 'stroke-width': 1.4 }), C_SURFACE, C_MUTED));
+    var magL = hline(mag, 0, 0, 0, 0, C_REF, 2), magG = dotAt(mag, 0, 0, 5, C_LOC, C_SURFACE), magH = dotAt(mag, 0, 0, 5, C_EXP, C_SURFACE);
+    var magT = label(mag, MAG.c[0], MAG.c[1] - MAG.r - 7, '', 'demo-x-ink2', 10, 'middle');
     var R = 464, W = 312;
     var p1 = group(s);
     label(p1, R, 64, '论文：把人体动作适配到', 'demo-x-ink', 13.5);
@@ -787,6 +800,13 @@
       });
       setOpacity(pairG, seg(t, 3.9, 4.5));
       setOpacity(bot.g, 1 - 0.45 * seg(t, 3.9, 4.5));
+      var ga = project(w.g1[MAG.i], camR), hb = project(w.hum[MAG.i], camR), mid = [(ga[0] + hb[0]) / 2, (ga[1] + hb[1]) / 2];
+      var dx = mid[0] - MAG.c[0], dy = mid[1] - MAG.c[1], dl = Math.sqrt(dx * dx + dy * dy) || 1;
+      setLine(magLead, mid[0], mid[1], MAG.c[0] + dx / dl * MAG.r, MAG.c[1] + dy / dl * MAG.r);
+      var g2 = [MAG.c[0] + (ga[0] - mid[0]) * MAG.k, MAG.c[1] + (ga[1] - mid[1]) * MAG.k], h2 = [MAG.c[0] + (hb[0] - mid[0]) * MAG.k, MAG.c[1] + (hb[1] - mid[1]) * MAG.k];
+      setLine(magL, g2[0], g2[1], h2[0], h2[1]); moveDot(magG, g2); moveDot(magH, h2);
+      magT.textContent = '右肘放大 3 倍：相距 ' + f1(dist3(w.g1[MAG.i], w.hum[MAG.i]) * 1000) + ' mm';
+      setOpacity(mag, seg(t, 4.6, 5.2) * (1 - seg(t, 13.4, 13.7)));
       var pb = seg(t, 7.4, 8.2);
       resBars.forEach(function (r) { r.b.set(r.v * 1000 * 2.8 * pb, f1(r.v * 1000) + ' mm'); });
       var pr = seg(t, 10.8, 11.6);
@@ -807,7 +827,7 @@
     var ground = groundTicks(left, 40, 368, GY), bot = sprite(left, 'walk');
     var vArr = arrow(left, C_MOV, 3);
     var kpD = KP_ZH.map(function () { return dotAt(left, 0, 0, 4, C_EXP, C_SURFACE); });
-    label(left, 204, 58, '12 个关键点（哪 12 个论文没写，这里是假设）', 'demo-x-mut', 10.5, 'middle');
+    label(left, 204, 58, '黄点：12 个关键点（论文没写是哪 12 个，我们的推测）', 'demo-x-mut', 10.5, 'middle');
     var R = 404, W = 372;
     function parts(g, y, list, color, total) {
       var x = R;
@@ -837,7 +857,11 @@
     rich(p3, R, 64, '跟踪目标 $g_t$：**69** 维', 13.5, 'demo-x-ink');
     var y3 = parts(p3, 80, GOAL_PARTS, C_EXP, DIM.goal);
     label(p3, R, y3 + 54, '全身的关节角和关键点都跟（ExBody 只跟上身）', 'demo-x-ink2', 12);
-    label(p3, R, y3 + 76, '速度、姿态也能当摇杆命令来给', 'demo-x-mut', 11);
+    label(p3, R, y3 + 82, '哪 12 个点论文没写。我们推测（左边黄点）：', 'demo-x-ink2', 11.5);
+    chip(p3, R, y3 + 92, 180, 'ExBody：两肩、两肘、两手', C_EXP, { size: 11, h: 26 });
+    chip(p3, R + 192, y3 + 92, 180, '+ 两髋、两膝、两踝', C_EXP, { size: 11, h: 26, dash: '4 3' });
+    label(p3, R, y3 + 140, '6 + 6 = 12 个点，12 × 3 = 36 维，和表 VII 对得上', 'demo-x-mut', 11);
+    label(p3, R, y3 + 162, '速度、姿态也能当摇杆命令来给', 'demo-x-mut', 11);
     var p4 = group(s);
     math(p4, R, 74, '\\hat{\\pi}(\\hat a_t \\mid p_t,\\ o_t,\\ g_t),\\quad \\hat a_t \\in \\mathbb{R}^{23}', 15);
     [512, 256, 128].forEach(function (n, i) {
@@ -871,10 +895,10 @@
     return { el: s, draw: draw };
   }
 
-  /* ── scene 6: 奖励：表情目标 + 移动目标（表 I） ── */
+  /* ── scene 6: 奖励：表达目标 + 移动目标（表 I） ── */
   function buildSceneReward() {
-    var s = sceneSvg('左边：表 I 六项奖励的权重条，黄色两项是表情目标（合计 5），紫色四项是移动目标（合计 14）；右边依次出现：表情目标、移动目标、一个假设的误差算出的六项得分、速度方向那一项按字面是反的（两条曲线）、九项正则');
-    s.appendChild(svgText(24, 26, '奖励：像不像（表情目标）+ 怎么动（移动目标）', 'demo-x-ink2', 13.5));
+    var s = sceneSvg('左边：表 I 六项奖励的权重条，黄色两项是表达目标（合计 5），紫色四项是移动目标（合计 14）；右边依次出现：表达目标、移动目标、一个假设的误差算出的六项得分、速度方向那一项按字面是反的（两条曲线）、九项正则');
+    s.appendChild(svgText(24, 26, '奖励：像不像（表达目标）+ 怎么动（移动目标）', 'demo-x-ink2', 13.5));
     var left = group(s);
     rectBox(left, 24, 38, 360, 360, C_BORDER, C_SURFACE2);
     math(left, 40, 72, 'r = \\sum_i w_i \\exp(-c_i \\cdot \\text{误差}_i)', 15);
@@ -882,12 +906,12 @@
       var b = barRowAt(left, 40, 100 + i * 34 + (r[1] === 'm' ? 16 : 0), 86, r[0], r[1] === 'e' ? C_EXP : C_MOV, 18, 11.5);
       return { b: b, w: r[2] };
     });
-    label(left, 40, 330, '表情目标 3 + 2 = 5', 'demo-x-ink2', 12);
+    label(left, 40, 330, '表达目标 3 + 2 = 5', 'demo-x-ink2', 12);
     label(left, 40, 352, '移动目标 6 + 6 + 1 + 1 = 14', 'demo-x-ink2', 12);
     label(left, 40, 380, '满分 19：「怎么动」几乎是「像不像」的三倍', 'demo-x-mut', 11);
     var R = 404, W = 372;
     var p1 = group(s);
-    rich(p1, R, 64, '表情目标 $G^e$：像不像', 13.5, 'demo-x-ink');
+    rich(p1, R, 64, '表达目标 $G^e$：像不像', 13.5, 'demo-x-ink');
     math(p1, R, 104, '3.0\\cdot\\exp(-0.7\\,|\\mathbf q_{\\text{ref}}-\\mathbf q|)', 14);
     label(p1, R, 128, '全身 23 个关节角', 'demo-x-mut', 11);
     math(p1, R, 168, '2.0\\cdot\\exp(-|\\mathbf p_{\\text{ref}}-\\mathbf p|)', 14);
@@ -1267,9 +1291,9 @@
       var now = nowOf(t, clock);
       /* 比例按每张贴图里最高的那一帧定：举手、空翻时头顶也不碰框里的标题 */
       spW.at(109, BY + BH - 28, 62, loopFrame(now, WALK.n, WALK.fps));
-      spM.at(266, BY + BH - 28, 72, loopFrame(now, SHEETS.macarena.n, 15));
-      spT.at(356, BY + BH - 28, 72, loopFrame(now, SHEETS.twist.n, 15));
-      spS.at(446, BY + BH - 28, 72, loopFrame(now, SHEETS.squat.n, 15));
+      spM.at(266, BY + BH - 28, 80, pingFrame(now, SHEETS.macarena.n, 15));
+      spT.at(356, BY + BH - 28, 80, pingFrame(now, SHEETS.twist.n, 15));
+      spS.at(446, BY + BH - 28, 80, pingFrame(now, SHEETS.squat.n, 15));
       spF.at(647, BY + BH - 28, 58, loopFrame(now, SHEETS.flip.n, 15));
       groups.forEach(function (g, i) {
         var at = [3.9, 7.3, 10.7][i];
@@ -1393,7 +1417,7 @@
     s.appendChild(svgText(24, 26, '五档阈值扫一遍：0.15 最好（论文图 4）', 'demo-x-ink2', 13.5));
     var left = group(s);
     rectBox(left, 24, 38, 410, 360, C_BORDER, C_SURFACE2);
-    var x = 76, y = 70, w = 330, h = 250, lo = 0.085, hi = 0.16;
+    var x = 76, y = 66, w = 330, h = 222, lo = 0.085, hi = 0.16;
     hline(left, x, y + h, x + w, y + h, C_BORDER, 1.2);
     hline(left, x, y, x, y + h, C_BORDER, 1.2);
     [0.09, 0.11, 0.13, 0.15].forEach(function (v) {
@@ -1408,6 +1432,13 @@
     FIG4_X.forEach(function (lab, i) { rich(left, px(i), y + h + 16, lab, 10, 'demo-x-ink2', 'middle'); });
     rich(left, x + w / 2, y + h + 36, '训练集的阈值 $\\tau$（$\\pi_0$ 是不筛）', 10, 'demo-x-mut', 'middle');
     var cols = [C_ACCENT, C_WARN, C_GOOD, C_BAD, C_PURPLE, C_MUTED];
+    /* 图例：两排三列，和图 4 一样六种误差；关键点三条单位 m，关节角三条单位 rad */
+    FIG4.forEach(function (sr, j) {
+      var lx = 44 + (j % 3) * 128, ly = y + h + 58 + Math.floor(j / 3) * 20;
+      hline(left, lx, ly - 4, lx + 20, ly - 4, cols[j], 2.4, j === 5 ? '5 3' : null);
+      dotAt(left, lx + 10, ly - 4, 3, cols[j]);
+      label(left, lx + 26, ly, sr.zh + '（' + sr.unit + '）', 'demo-x-ink2', 10);
+    });
     var series = FIG4.map(function (sr, j) {
       var ptsS = [];
       sr.v.forEach(function (v, i) { if (v != null) ptsS.push([px(i), py(v)]); });
@@ -1531,7 +1562,7 @@
     var R = 412, W = 364;
     var p1 = group(s);
     label(p1, R, 64, '舞蹈组里一段有代表性的：恰恰', 'demo-x-ink', 13.5);
-    label(p1, R, 90, '下半身动作剧烈，上半身表情丰富', 'demo-x-ink2', 12);
+    label(p1, R, 90, '下半身动作剧烈，上半身动作丰富', 'demo-x-ink2', 12);
     label(p1, R, 116, '比三种训法：', 'demo-x-ink2', 12);
     chip(p1, R, 128, W, '专才：在舞蹈数据上从通才微调', C_ACCENT, { size: 11.5, left: true });
     chip(p1, R, 164, W, '从头训：同样的舞蹈数据', C_WARN, { size: 11.5, left: true });
@@ -1791,7 +1822,7 @@
       var now = nowOf(t, clock);
       sps.forEach(function (sp) {
         var M = SHEETS[sp.key];
-        sp.s.at(sp.x, 238, sp.key === 'walk' ? 92 : 100, loopFrame(now, M.n, 15));
+        sp.s.at(sp.x, 238, sp.key === 'walk' ? 92 : 100, sp.key === 'walk' ? loopFrame(now, M.n, 15) : pingFrame(now, M.n, 15));
       });
       setOpacity(xs, seg(t, 0.8, 1.2));
       panels(t, [p1, p2, p3, p4, p5]);
@@ -1806,7 +1837,7 @@
       build: buildSceneProblem,
       cues: [
         { at: 0.4, s: '想让真实的人形机器人照着人体动作做：跳舞、出拳、蹲下、大步走——全身都像人，还得**稳稳站住**。' },
-        { at: 3.6, s: '难处之一：人和机器人的身体不一样，动力学、运动学都有差距，人能做的机器人不一定做得到。' },
+        { at: 3.6, s: '难处之一：人和机器人的身体不一样，动力学、运动学都有差距——人能做的动作，机器人不一定做得到。' },
         { at: 7.0, s: '论文图 1：从站立迈大步、43 秒的长舞、侧步、不同高度的出拳、上身动作、右勾拳，都在真机 G1 上。' },
         { at: 10.4, s: 'ExBody2：UC San Diego、UC Berkeley、MIT，arXiv 2412.13196；本片按 v2 讲，官方没有开源代码。' },
         { at: 13.4, s: '问题：**一个策略**跟任意的人体参考动作，在真机上全身都做出来，又像又稳。' }
@@ -1833,7 +1864,7 @@
         { at: 3.6, s: '(b)：按 $\\pi_0$ 的跟踪误差 $e(s)$ 从易到难排序，挑最优的子集训**通才**。' },
         { at: 7.0, s: '背后是可行性—多样性原则：上半身要多样，下半身要做得到。' },
         { at: 10.4, s: '(c)：在走路、跳舞、功夫这样一小组动作上，从通才微调出**专才**。' },
-        { at: 13.4, s: '(d)：部署到真机 G1，策略在机载电脑上 50 Hz 推理。' }
+        { at: 13.4, s: '(d)：部署到真机 G1，策略在机载电脑上推理，每秒 50 次。' }
       ]
     },
     {
@@ -1841,10 +1872,10 @@
       dur: 16,
       build: buildSceneRetarget,
       cues: [
-        { at: 0.4, s: '论文只写了一句「把人体动作适配到机器人的形态上」，附录图 7 的参考是 SMPL 人体；怎么做没写。' },
-        { at: 3.6, s: '我们用 ASAP 开源的 SMPL → G1 脚本复现：先拟合形状，让 14 对点对上，再逐帧解 23 个关节角。' },
+        { at: 0.4, s: '论文只写了一句「把人体动作适配到机器人的形态上」；附录图 7 的参考是 SMPL 人体，具体怎么做没写。' },
+        { at: 3.6, s: '我们用 ASAP 开源的 SMPL → G1 脚本复现（不是论文的做法）：先拟合形状，让 14 对点对上，再逐帧解出 23 个关节角。' },
         { at: 7.0, s: '这段挥手 14 对点平均差约 32 mm，肩和肘差得最多。' },
-        { at: 10.4, s: '侧手翻接后空翻也只差 45 mm、侧手翻 36 mm，和走路 35 mm 差不多：**运动学看不出做不做得到**。' },
+        { at: 10.4, s: '侧手翻接后空翻只差 45 mm、侧手翻 36 mm，和走路的 35 mm 差不多：**光看运动学，看不出真机能不能做**。' },
         { at: 13.4, s: 'G1 的 23 个自由度：腿 12、腰 3、两臂各 4（手腕锁住）；动作是 23 个关节的 PD 目标角。' }
       ]
     },
@@ -1855,17 +1886,17 @@
       cues: [
         { at: 0.4, s: '特权信息 $p_t$ 62 维：关节角之差、关键点之差、真实根速度；正文还提到摩擦、电机强度。' },
         { at: 3.6, s: '本体感受 $o_t$ 75 维：关节角、关节速度、上一步动作、根角速度、横滚俯仰偏航。' },
-        { at: 7.0, s: '跟踪目标 $g_t$ 69 维：全身 23 个关节角、12 个关键点（哪 12 个没写）、根部的速度姿态高度。' },
+        { at: 7.0, s: '跟踪目标 $g_t$ 69 维：全身 23 个关节角、12 个关键点、根部的速度姿态高度；哪 12 个点没写，我们推测是 ExBody 的上身 6 个加上对称的下身 6 个。' },
         { at: 10.4, s: '教师 $\\hat\\pi$ 用 PPO 训，三层 MLP 512 · 256 · 128，输出 23 个关节的 PD 目标角。' },
         { at: 13.4, s: '项目页的仿真片段：绿点是跟踪的关键点。教师只在仿真里用，不部署。' }
       ]
     },
     {
-      title: '奖励：表情目标 + 移动目标',
+      title: '奖励：表达目标 + 移动目标',
       dur: 16,
       build: buildSceneReward,
       cues: [
-        { at: 0.4, s: '表 I：表情目标是关节角 3.0、关键点 2.0，管**像不像**；五项都和 ExBody 一样。' },
+        { at: 0.4, s: '表 I：表达目标是关节角 3.0、关键点 2.0，管**像不像**；五项都和 ExBody 一样。' },
         { at: 3.6, s: '移动目标是线速度 6.0、速度方向 6.0、横滚俯仰 1.0、偏航 1.0，管**怎么动**；满分 14 对 5。' },
         { at: 7.0, s: '一个假设的误差算一步：六项合计约 15.8（满分 19）。' },
         { at: 10.4, s: '速度方向写成 $\\exp(-4\\cos)$，按字面方向越反奖励越高；我们推测原意是 $1-\\cos$。' },
@@ -1916,7 +1947,7 @@
         { at: 0.4, s: '附录表 X：人工做了 50 段、250 段两个子集，和 CMU 全集各训一个策略，在三个集合上评。' },
         { at: 3.6, s: '分布内：只有站和走的 50 段训得最好。' },
         { at: 7.0, s: '在全集上：250 段训的反而比在全集上训的更好（0.115 对 0.129）。' },
-        { at: 10.4, s: '分布外的 ACCAD：还是 250 段最好，50 段误差很大。' },
+        { at: 10.4, s: '分布外的 ACCAD：还是 250 段最好；只有站和走的 50 段，误差很大。' },
         { at: 13.4, s: '**可行性—多样性原则**：上半身越多样越好，下半身必须做得到。' }
       ]
     },
@@ -1926,7 +1957,7 @@
       build: buildSceneCuration,
       cues: [
         { at: 0.4, s: '250 段是人挑的。自动挑：先在全集上训一个初始策略 $\\pi_0$。' },
-        { at: 3.6, s: '用 $\\pi_0$ 跟一遍每段，打分 $e(s) = 0.1\\,E_{\\text{key}} + 0.9\\,E_{\\text{dof}}$，侧重下半身。' },
+        { at: 3.6, s: '用 $\\pi_0$ 把每段动作跟一遍、打分，侧重下半身：$e(s) = 0.1\\,E_{\\text{key}} + 0.9\\,E_{\\text{dof}}$。' },
         { at: 7.0, s: '按 $e(s)$ 排序画成累积分布（论文图 8）：最后 15% 陡升，最难的能到 0.37。' },
         { at: 10.4, s: '五档阈值 $\\tau$：0.075 到 0.175，分别留下约 14% 到 85% 的动作。' },
         { at: 13.4, s: '每档从 $\\pi_0$ 接着训，在全集上评，挑最好的一档。' }
@@ -1952,7 +1983,7 @@
         { at: 0.4, s: '三种训法：专才（从通才微调）、从头训（同样数据、同样总迭代）、通才。' },
         { at: 3.6, s: '表 IV：易、中、难和分布外的 ACCAD 四组上，专才的关节误差都最低。' },
         { at: 7.0, s: '比从头训低 8.4%、17.7%、11.9%、12.9%：中等组优势最大，并不是越难越大。' },
-        { at: 10.4, s: '但在难组和 ACCAD 上，通才的**速度误差**反而最低。' },
+        { at: 10.4, s: '但在难组和 ACCAD 上，通才的**速度误差**反而最低，论文说它见过的动作更多。' },
         { at: 13.4, s: '功夫这一组也有专才；怎么自动挑专才，论文没有实验。' }
       ]
     },
@@ -1961,9 +1992,9 @@
       dur: 16,
       build: buildSceneChacha,
       cues: [
-        { at: 0.4, s: '论文图 5：舞蹈组里的恰恰，下半身剧烈、上半身表情丰富。' },
+        { at: 0.4, s: '论文图 5：舞蹈组里的恰恰，下半身剧烈、上半身动作丰富。' },
         { at: 3.6, s: '三行依次是 SMPL 参考、仿真、真机，同一段舞的五个时刻。' },
-        { at: 7.0, s: '下面三行是逐帧的全身、上半身、下半身关节误差。' },
+        { at: 7.0, s: '放大图下面三排：逐帧的全身、上半身、下半身关节误差，横轴是时间。' },
         { at: 10.4, s: '蓝线（专才）几乎整段最低：全身误差多在 0.05 rad 上下。' },
         { at: 13.4, s: 'v1 也画了这段恰恰，但比的是四个方法；v2 换成了三种训法。' }
       ]
@@ -1989,7 +2020,7 @@
         { at: 3.6, s: '太长也不好：100 步的关节误差比 10 步高 13.5%。' },
         { at: 7.0, s: '50 步速度误差最低，但关节误差不如 10 步；论文取 10 步。' },
         { at: 10.4, s: '去掉 DAgger：速度 0.4195、关节 0.1496，全面变差。' },
-        { at: 13.4, s: '可是这一行的七个数，和表 II 的 ExBody† 一字不差。' }
+        { at: 13.4, s: '可是这一行的七个数，和表 II 里 ExBody† 那一行一字不差（我们发现的）。' }
       ]
     },
     {
@@ -2025,7 +2056,7 @@
       ariaLabel: 'ExBody2 十八幕讲解动画',
       notes: [
         '取数依据：表 I–IV、附录表 V–XI 的数字照抄 arXiv 2412.13196 v2 的 LaTeX 源码；图 4、图 8 的数是按像素颜色量出来的读图值；v1 的数（定期拉回的消融、25 步历史）读自 v1 的源码。官方没有开源代码。',
-        'G1 的动作是我们用 ASAP 开源的 `fit_smpl_shape.py`、`fit_smpl_motion.py`，以 SMPL 在 AMASS 的 CMU 动作上重定向的（大步走 `08_07`、挥手 `141_16`、Macarena `143_35`、扭摆舞 `141_12`、弯腰下蹲 `13_29`、侧手翻接后空翻 `88_05`），不是论文的数据；12 个关键点（两肩、两肘、两手、两髋、两膝、两踝）是假设。第 7、8 幕「机器人只走到 90% 的速度」与「每 1 s 拉回一次」、第 11 幕两个例子的 $e(s)$ 都是假设。',
+        'G1 的动作是我们用 ASAP 开源的 `fit_smpl_shape.py`、`fit_smpl_motion.py`，以 SMPL 在 AMASS 的 CMU 动作上重定向的（大步走 `08_07`、挥手 `141_16`、Macarena `143_35`、扭摆舞 `141_12`、弯腰下蹲 `13_29`、侧手翻接后空翻 `88_05`），不是论文的数据；ASAP 的重定向照搬 SMPL 的根部高度、脚会离地，我们每帧把网格最低点挪到地面。12 个关键点（两肩、两肘、两手、两髋、两膝、两踝）是我们的推测：36 维 = 12 × 3，前作 ExBody 的代码跟两肩、两肘、两手，ExBody2 跟全身，对称补上下身。第 7、8 幕「机器人只走到 90% 的速度」与「每 1 s 拉回一次」、第 11 幕两个例子的 $e(s)$ 都是假设。',
         'G1 的 3D 外形：材质与光照照抄 Robot Retarget Online（ImChong/Robot_Retarget_Online）的 three.js 场景，按关节角用正交相机逐帧离线渲染成贴图；第 4 幕的蓝色人体是 SMPL 中性模型、形状参数取 0。真机与仿真片段剪自项目页 exbody2.github.io 的视频。'
       ],
       scenes: EXBODY2_SCENES
@@ -2073,7 +2104,7 @@
     var sLag = stats.add('每个关键点落后'), sNorm = stats.add('36 维误差的长度'), sRew = stats.add('关键点奖励（满分 2）');
     var verdict = verdictBox(root);
     var tb = table(root);
-    note(root, ['关键点奖励照表 I 的 $2\\exp(-|\\mathbf p_{\\text{ref}}-\\mathbf p|)$，$|\\cdot|$ 按整个 36 维向量的 L2 长度算（ExBody 的代码这么做，ExBody2 没有代码，我们沿用）。12 个关键点是哪几个论文没写，这里取两肩、两肘、两手、两髋、两膝、两踝（假设）。',
+    note(root, ['关键点奖励照表 I 的 $2\\exp(-|\\mathbf p_{\\text{ref}}-\\mathbf p|)$，$|\\cdot|$ 按整个 36 维向量的 L2 长度算（ExBody 的代码这么做，ExBody2 没有代码，我们沿用）。12 个关键点是哪几个论文没写，这里取两肩、两肘、两手、两髋、两膝、两踝（我们的推测：36 维 = 12 × 3，ExBody 跟上身这 6 个，全身版对称补上下身 6 个）。',
       '「局部」是减去骨盆、再转到只转偏航的机器人坐标系；姿态一样时误差就是 0，位置的落后交给速度那几项去管。「漂一段再拉回」照论文的描述，周期论文没写；红线（一直不拉）、黄线（定期拉回）、蓝线（局部）对照着看。默认的第 1.0 s、90% 就是笔记「🚶 具体实例」的例 2、例 3。']);
     function render() {
       var mode = state.mode, k = state.k;

@@ -4235,6 +4235,12 @@ def test_hover_assets_and_project_page_clips():
     assert "剪自[项目页](https://hover-versatile-humanoid.github.io/)的视频" in note
 
 
+def mod_display(narration: str):
+    """papers/<paper>.py 里的 DISPLAY 列表（念法 → 字幕）。"""
+    block = narration[narration.index("DISPLAY = [") :]
+    return re.findall(r'\("((?:[^"\\]|\\.)*)", "((?:[^"\\]|\\.)*)"\)', block)
+
+
 def _exbody2_clip(js: str, name: str):
     """解码 exbody2.js 的 `WALK` / `WAVE`：小端 int16，每帧 per 个。"""
     m = re.search(rf"var {name} = \{{ clip: '(\w+)', fps: (\d+), n: (\d+), per: (\d+), data: '([^']+)' \}};", js)
@@ -4330,7 +4336,11 @@ def test_exbody2_explainer_demos_and_worked_example_share_the_paper_numbers():
     steps = [math.dist(root[k][:2], root[k - 1][:2]) * fps for k in range(1, n)]
     assert _fmt(sum(steps) / len(steps), 2) == "1.72" and (_fmt(min(steps), 2), _fmt(max(steps), 2)) == ("1.53", "2.06")
     assert "平均 1.72 m/s（15 fps 的相邻帧差分，1.53–2.06 m/s）" in note
-    assert root[15] == [1.737, -0.035, 0.856] and yaw[15] == -0.147 and _fmt(root[37][0], 3) == "4.235"
+    assert root[15] == [1.737, -0.035, 0.814] and yaw[15] == -0.147 and _fmt(root[37][0], 3) == "4.235"
+    assert "骨盆在 $(1.737, -0.035, 0.814)$ m" in note
+    # 每帧把网格最低点贴到地面（ASAP 的重定向照搬 SMPL 的根部高度，脚会离地）：较低那只脚的踝一直贴着地面
+    low = [min(kp[k][8][2], kp[k][11][2]) for k in range(n)]
+    assert 0.03 < min(low) and max(low) < 0.13 and "每帧把 G1 网格的最低点挪到地面" in note  # 蹬地时脚跟抬起、脚尖着地，踝高到 0.125 m
     c, s_ = math.cos(yaw[15]), math.sin(yaw[15])
     for j, zh in ((5, "右手"), (2, "左手"), (7, "左膝"), (11, "右踝")):
         p = kp[15][j]
@@ -4347,7 +4357,7 @@ def test_exbody2_explainer_demos_and_worked_example_share_the_paper_numbers():
     assert [_fmt(x, 3) for x in lag(15)] == ["0.174", "0.602", "1.096"] and [_fmt(x, 3) for x in lag(37)] == ["0.424", "1.467", "0.461"]
     assert "| 1.0 s | 1.737 m | 0.174 m | $0.174\\sqrt{12}=0.602$ | 1.096 |" in note
     assert "| 2.47 s | 4.235 m | 0.424 m | $0.424\\sqrt{12}=1.467$ | 0.461 |" in note
-    assert "1 秒后机器人落后 0.17 米，2.47 秒后落后 0.42 米" in narration and "从 2 掉到 0.46" in narration
+    assert "1 秒后机器人落后 0.17 米，2.47 秒后落后 0.42 米" in narration and "从二掉到 0.46" in narration
     worst = max(lag(k, period=1.0)[0] for k in range(n))
     window = max(math.dist(root[k + 15][:2], root[k][:2]) for k in range(n - 15))
     assert (_fmt(worst, 3), _fmt(window, 3), _fmt(0.1 * window, 3)) == ("0.163", "1.772", "0.177")
@@ -4377,6 +4387,12 @@ def test_exbody2_explainer_demos_and_worked_example_share_the_paper_numbers():
     # TTS 的切词：「筛掉下半身」会切成「掉下 | 半身」、「误差不如」切成「差不如」、「筛数据」切成「筛数 | 据」、「重定向」切成「重 | 定向」
     for bad in ("筛掉下", "留下半身", "差不如", "差比", "筛数据低", "重定向", "跟头", "相当于", "几乎", "一行", "调参"):
         assert not any(bad in t for t in spoken), bad
+    # 2026-10-19 看片反馈：「挑」单用念 tiǎo，一律写「挑选」；「表 2 里」念成「两里」，表号写成「表二」、字幕换回罗马数字；
+    # 「从图上量的」要念 liáng，旁白写同音的「粮」、字幕换回；expressive 译作「表达性」，没有「表情」
+    assert all(t.count("挑") == t.count("挑选") for t in spoken)
+    assert not any(re.search(r"表 \d", t) for t in spoken) and ("表二", "表 II") in mod_display(narration)
+    assert "从图上粮出来的" in narration and ("从图上粮出来的", "从图上量出来的") in mod_display(narration)
+    assert "表情" not in js + note + narration + intro
     assert "## 🎬 十八幕动画" in note and 'demos: ["exbody2"]' in note
     # 面板到 cue 之后才淡出
     assert "return seg(t, a + 0.3, a + 0.7) * (b == null ? 1 : 1 - seg(t, b, b + 0.3));" in js and "1 - seg(t, b - 0.3, b)" not in js
