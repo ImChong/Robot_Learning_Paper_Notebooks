@@ -4392,7 +4392,7 @@ def test_exbody2_explainer_demos_and_worked_example_share_the_paper_numbers():
     assert all(t.count("挑") == t.count("挑选") for t in spoken)
     assert not any(re.search(r"表 \d", t) for t in spoken) and ("表二", "表 II") in mod_display(narration)
     assert "从图上粮出来的" in narration and ("从图上粮出来的", "从图上量出来的") in mod_display(narration)
-    assert "表情" not in js + note + narration + intro
+    assert "表情" not in js + note + intro + "".join(spoken)
     assert "## 🎬 十八幕动画" in note and 'demos: ["exbody2"]' in note
     # 面板到 cue 之后才淡出
     assert "return seg(t, a + 0.3, a + 0.7) * (b == null ? 1 : 1 - seg(t, b, b + 0.3));" in js and "1 - seg(t, b - 0.3, b)" not in js
