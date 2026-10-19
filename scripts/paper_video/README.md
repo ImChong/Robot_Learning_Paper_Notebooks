@@ -39,6 +39,7 @@
 | `omnih2o` | `assets/js/demos/omnih2o.js` 十七幕（`omnih2o-explainer`） | 约 13 分 25 秒 |
 | `maskedmimic` | `assets/js/demos/maskedmimic.js` 十八幕（`mm-explainer`） | 约 15 分 8 秒 |
 | `hover` | `assets/js/demos/hover.js` 十六幕（`hover-explainer`） | 约 13 分 17 秒 |
+| `twist2` | `assets/js/demos/twist2.js` 十八幕（`twist2-explainer`） | 约 14 分 10 秒 |
 
 - 画面：直接复用 `<paper>.js` 分镜的 `draw(t)`，数字与笔记算例一致；前后加片头、总结页（`papers/<paper>.js`）。
 - 分镜 `draw(t, clock)` 的第二个参数是这一幕的真实时间：旁白比动画长、画面停在 `to` 之前时它照样往前走，步态这类循环动作可以用它继续动（网页播放器只传 `t`）。
