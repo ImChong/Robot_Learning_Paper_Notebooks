@@ -4184,6 +4184,8 @@ def test_hover_explainer_demos_and_worked_example_share_the_paper_numbers():
     assert "三类掩码" not in js + narration + note and "约 4 天" not in js + narration + note
     for bad in ("差得", "当老师", "几乎", "一行", "重训"):
         assert not any(bad in t for t in spoken), bad
+    # 2026-10-19：单字「挑」被念成 tiǎo（「手挑的」的「手」变调），一律写「挑选」，读 tiāo
+    assert not any(re.search(r"挑(?!选)", t) for t in spoken)
     assert "## 🎬 十六幕动画" in note and 'demos: ["hover"]' in note
     # 面板到 cue 之后才淡出
     assert "return seg(t, a + 0.3, a + 0.7) * (b == null ? 1 : 1 - seg(t, b, b + 0.3));" in js and "1 - seg(t, b - 0.3, b)" not in js
