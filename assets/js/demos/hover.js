@@ -654,7 +654,7 @@
   /* ── scene 1: 每篇一套接口 ── */
   function buildSceneInterfaces() {
     var s = sceneSvg('四台 H1 走同一段路，各自只跟一种接口：ExBody 跟上身关节角和根部、HumanPlus 跟全身关节角和根部、H2O 跟 12 个关键点、' +
-      'OmniH2O 跟头和双手三个点；下面依次出现：走路、表情动作、遥操作各用一种接口，一种接口要一套观测和奖励，一个控制器只会一种模式，上层的设备与策略五花八门，最后是问题');
+      'OmniH2O 跟头和双手三个点；下面依次出现：走路、表达性动作、遥操作各用一种接口，一种接口要一套观测和奖励，一个控制器只会一种模式，上层的设备与策略五花八门，最后是问题');
     s.appendChild(svgText(24, 26, '同一段走路，四篇工作各跟各的（官方代码里的四种模式）', 'demo-x-ink2', 13.5));
     var GY = 244, SC = 86;
     var bots = MODES.map(function (m, i) {
@@ -673,7 +673,7 @@
     var p1 = group(s);
     label(p1, 24, Y + 14, '每篇工作按自己的任务选了一种接口', 'demo-x-ink', 13.5);
     chip(p1, 24, Y + 28, 240, '走路、导航：跟**根部速度**', C_ROOT, { size: 12 });
-    chip(p1, 276, Y + 28, 240, '表情动作：跟**关节角**', C_JNT, { size: 12 });
+    chip(p1, 276, Y + 28, 240, '表达性动作：跟**关节角**', C_JNT, { size: 12 });
     chip(p1, 528, Y + 28, 248, '遥操作：跟几个**关键点的位置**', C_KIN, { size: 12 });
     label(p1, 24, Y + 86, '目标其实都是动作跟踪，只是跟的东西不一样', 'demo-x-mut', 11.5);
     var p2 = group(s);
@@ -1544,10 +1544,19 @@
 
   /* ── scene 14: 真机：表 V 与图 5 ── */
   function buildSceneReal() {
-    var s = sceneSvg('左边是项目页的真机视频：H1 先站着跟零的根部速度，再跟根部俯仰，弯腰又直起来；右边是表 V 三种模式的全局位置误差、12 项赢 11 项、论文图 5、真机与仿真的误差对比');
+    var s = sceneSvg('左边是项目页的一整段真机视频，同一个策略中途不重启：前 4.2 秒命令是根部速度 0 m/s、H1 站在原地，之后只换掩码、改跟根部俯仰；片段下面的时间轴标出两段和播放到哪；右边是表 V 三种模式的全局位置误差、12 项赢 11 项、论文图 5、真机与仿真的误差对比');
     s.appendChild(svgText(24, 26, '真机：19 个自由度的 Unitree H1，20 段站立动作', 'demo-x-ink2', 13.5));
-    var clip = projClip(s, 'sw_pitch', 40, 44, 256, 278, '项目页视频（真机）');
-    var tag = switchTag(s, 40, 346, 256, 'sw_pitch', ['根部速度模式：0 m/s', C_ROOT], ['根部俯仰模式：−0.5 ~ 0.5 rad', C_ROOT]);
+    var clip = projClip(s, 'sw_pitch', 40, 44, 256, 278, '项目页视频（真机）：同一个策略，中途不重启');
+    var tag = switchTag(s, 40, 346, 256, 'sw_pitch', ['现在：根部速度模式，命令 0 m/s（站在原地）', C_ROOT], ['现在：根部俯仰模式，命令 −0.5 ~ 0.5 rad', C_ROOT]);
+    /* 片段是一整段：4.2 s 处只换掩码（项目页字幕从 Root Vel (0m/s) 换成 Root Pitch Angle −0.5 ~ 0.5）；时间轴标出两段和播到哪 */
+    var TL = { x: 40, y: 384, w: 256 }, cutX = TL.x + TL.w * SWITCH_AT.sw_pitch / CLIP_DUR.sw_pitch;
+    var tl = group(s);
+    tl.appendChild(paint(svgEl('rect', { x: TL.x, y: TL.y, width: (cutX - TL.x - 1).toFixed(1), height: 6, rx: 2, opacity: 0.45 }), C_ROOT));
+    tl.appendChild(paint(svgEl('rect', { x: (cutX + 1).toFixed(1), y: TL.y, width: (TL.x + TL.w - cutX - 1).toFixed(1), height: 6, rx: 2, opacity: 0.9 }), C_ROOT));
+    label(tl, TL.x, TL.y + 20, '根部速度', 'demo-x-mut', 10);
+    label(tl, cutX + 4, TL.y + 20, '4.2 s 换掩码 → 根部俯仰', 'demo-x-mut', 10);
+    label(tl, TL.x + TL.w, TL.y + 20, '17.3 s', 'demo-x-mut', 10, 'end');
+    var head = hline(tl, TL.x, TL.y - 3, TL.x, TL.y + 9, X.ink, 2);
     var R = 330;
     var p1 = group(s);
     label(p1, R, 64, '真机评测', 'demo-x-ink', 14);
@@ -1578,6 +1587,8 @@
       var sec = K.clipSince(t, 0);
       clip.at(sec, true);
       tag.set(sec);
+      var u = Math.max(0, sec) % CLIP_DUR.sw_pitch, hx = TL.x + TL.w * u / CLIP_DUR.sw_pitch;
+      setLine(head, hx, TL.y - 3, hx, TL.y + 9);
       bars.set(seg(t, 3.9, 5.2));
       setOpacity(p1, win(t, 0.3, 3.6));
       setOpacity(p2, win(t, 3.6, 7.0));
@@ -1703,7 +1714,7 @@
       dur: 16,
       build: buildSceneInterfaces,
       cues: [
-        { at: 0.4, s: '走路、导航跟**根部速度**，表情动作跟**关节角**，遥操作跟几个**关键点的位置**：每篇工作选了一种接口。' },
+        { at: 0.4, s: '走路、导航跟**根部速度**，表达性动作跟**关节角**，遥操作跟几个**关键点的位置**：每篇工作选了一种接口。' },
         { at: 3.6, s: '一种接口就要自己的观测、自己的奖励设计、单独训一个策略；换一个任务，就得从头再来。' },
         { at: 7.0, s: '一个控制器只会一种模式：在不平的地上走路的控制器，很难无缝切到需要关节角的双臂精细操作。' },
         { at: 10.4, s: '上面接的东西也五花八门：手柄、动捕、外骨骼、VR，预训练的操作策略又输出关节角或末端位置。' },
@@ -1859,7 +1870,7 @@
       dur: 16,
       build: buildSceneReal,
       cues: [
-        { at: 0.4, s: '真机：19 个自由度的 Unitree H1，跟 $\\hat{Q}$ 里 20 段站立动作，每种设置测 5 次。' },
+        { at: 0.4, s: '真机：19 个自由度的 Unitree H1，跟 $\\hat{Q}$ 里 20 段站立动作，每种设置测 5 次。左边是同一个策略的一整段视频：前 4.2 s 命令根部速度 0 m/s，之后只换掩码、改跟根部俯仰。' },
         { at: 3.6, s: '全局位置误差：ExBody 模式 51.3 → 48.9 mm，HumanPlus 51.0 → 47.4，OmniH2O 51.2 → 47.5。' },
         { at: 7.0, s: '12 项赢 11 项；唯一输的是 HumanPlus 模式的根部 RPY，0.038 对 0.035。' },
         { at: 10.4, s: '论文图 5：上身关节模式、根部俯仰模式，还有全身运动学模式下的跑步。' },

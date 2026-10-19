@@ -33,7 +33,7 @@ demos: ["hover"]
 | **数据** | AMASS 重定向到 H1，沿用 H2O 的流程和仿真筛选，得到 $\hat Q$；真机测 20 段站立动作 |
 | **关键词** | Humanoid whole-body control, multi-mode control, command masking, policy distillation, DAgger |
 
-**一行定位**：同一个团队前面做了 H2O、OmniH2O，ExBody、HumanPlus 又各有一套接口——要走路就跟根部速度，要做表情动作就跟上身关节角，要遥操作就跟几个关键点的位置。HOVER 把这些接口放进**一个命令空间**，用掩码决定这一次跟哪几维，一个策略管所有模式。
+**一行定位**：同一个团队前面做了 H2O、OmniH2O，ExBody、HumanPlus 又各有一套接口——要走路就跟根部速度，要做表达性动作就跟上身关节角，要遥操作就跟几个关键点的位置。HOVER 把这些接口放进**一个命令空间**，用掩码决定这一次跟哪几维，一个策略管所有模式。
 
 ---
 
@@ -89,7 +89,7 @@ demos: ["hover"]
 <div class="mermaid">
 flowchart TB
     T1["导航：跟根部速度"] --> P["每篇一种接口<br/>一种接口训一个策略、调一套奖励"]
-    T2["表情动作：跟上身关节角（ExBody）"] --> P
+    T2["表达性动作：跟上身关节角（ExBody）"] --> P
     T3["遥操作：跟几个关键点（H2O / OmniH2O）"] --> P
     T4["预训练的操作策略：输出关节角或末端位置"] --> P
     P --> X1["换任务就得重训"]
@@ -105,12 +105,12 @@ flowchart TB
 ### 每篇一套接口（第 I 节）
 
 <details class="paper-fold" markdown="1">
-<summary>📖 展开文字：根部速度管走路、关节角管表情动作、关键点管遥操作；每种接口要自己的接口和奖励设计，一个控制器只能做一种模式</summary>
+<summary>📖 展开文字：根部速度管走路、关节角管表达性动作、关键点管遥操作；每种接口要自己的接口和奖励设计，一个控制器只能做一种模式</summary>
 
 人形可以做双臂操作、双足行走、敏捷的全身控制，但每篇工作都按自己的任务和场景选了一种全身控制的写法：
 
 - **根部速度跟踪**（真实世界行走一类）：支持移动；
-- **关节角跟踪**（ExBody、HumanPlus）：做表情丰富的动作；
+- **关节角跟踪**（ExBody、HumanPlus）：做表达性强的动作；
 - **选定关键点的运动学跟踪**（H2O、OmniH2O）：支持遥操作。
 
 它们的目标其实都是动作跟踪，但各要一套**专门的控制器接口和奖励设计**——开发重复、费时，得到的控制器也只会一种模式。论文举的例子：在不平的地面上用根部速度跟踪行走的机器人，很难无缝切换到需要关节角或末端跟踪的精细双臂操作。
@@ -653,7 +653,7 @@ ${ISAACLAB_PATH}/isaaclab.sh -p neural_wbc/inference_env/scripts/s2r_player.py -
 <summary>📖 展开文字：上承 ExBody、H2O、OmniH2O、HumanPlus 与 MaskedMimic；下启 HugWBC、HOMIE、SONIC 等「一个控制器、多种接口」的工作</summary>
 
 - **上承**：[ExBody](../Expressive_Whole-Body_Control_for_Humanoid_Robots/Expressive_Whole-Body_Control_for_Humanoid_Robots.html)（上身关节角 + 根部）、[H2O](../H2O_Learning_Human-to-Humanoid_Real-Time_Whole-Body_Teleoperation/H2O_Learning_Human-to-Humanoid_Real-Time_Whole-Body_Teleoperation.html)（8 个关键点；重定向和 sim-to-data 都从这里来）、[OmniH2O](../OmniH2O_Universal_Whole-Body_Teleoperation/OmniH2O_Universal_Whole-Body_Teleoperation.html)（头和双手 3 个点；教师—学生、25 步历史、域随机化都照搬）、[HumanPlus](../../07_Teleoperation/HumanPlus_Humanoid_Shadowing_and_Imitation_from_Humans/HumanPlus_Humanoid_Shadowing_and_Imitation_from_Humans.html)（全身关节角 + 根部）；[MaskedMimic](../MaskedMimic_Unified_Physics-Based_Character_Control_Through_Masked_Motion_Inpainting/MaskedMimic_Unified_Physics-Based_Character_Control_Through_Masked_Motion_Inpainting.html)（图形学里用蒸馏做灵活约束的多模式控制，HOVER 的相关工作点了它）；[四足野外盲走](../Learning_Quadrupedal_Locomotion_over_Challenging_Terrain/Learning_Quadrupedal_Locomotion_over_Challenging_Terrain.html)（特权教师 → 本体感受学生）。
-- **同期**：MHC（Dugar 等，多模式但只有关节角和根部）；[ExBody2](../ExBody2_Advanced_Expressive_Whole-Body_Control/ExBody2_Advanced_Expressive_Whole-Body_Control.html)（同样教师—学生，追求单一表情动作模式的跟踪精度）。
+- **同期**：MHC（Dugar 等，多模式但只有关节角和根部）；[ExBody2](../ExBody2_Advanced_Expressive_Whole-Body_Control/ExBody2_Advanced_Expressive_Whole-Body_Control.html)（同样教师—学生，追求单一表达性动作模式的跟踪精度）。
 - **下启**：[HugWBC](../HugWBC_A_Unified_and_General_Humanoid_Whole-Body_Controller/HugWBC_A_Unified_and_General_Humanoid_Whole-Body_Controller.html)（统一的步态与上身控制）、[HOMIE](../HOMIE_Humanoid_Loco-Manipulation_with_Isomorphic_Exoskeleton_Cockpit/HOMIE_Humanoid_Loco-Manipulation_with_Isomorphic_Exoskeleton_Cockpit.html)（外骨骼驾驶舱遥操作）、[SONIC](../SONIC_Supersizing_Motion_Tracking_for_Natural_Humanoid_Control/SONIC_Supersizing_Motion_Tracking_for_Natural_Humanoid_Control.html)（NVIDIA 后来把动作跟踪规模化，多种输入汇进一个空间）、[BFM](../Behavior_Foundation_Model_for_Humanoid_Robots/Behavior_Foundation_Model_for_Humanoid_Robots.html)（行为基础模型，笔记建议对照 HOVER 读）。
 - **工程意义**：「把各种接口看成全身模仿的子集，用掩码选维度」让上层（手柄、VR、动捕、规划器、操作策略）只管给目标、底层一个策略执行；「掩码本身也进观测」「教师看全部、学生看掩码后的命令」这两个细节在后来的多模式控制器里很常见（我们的观察）。
 

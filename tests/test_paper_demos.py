@@ -4186,6 +4186,11 @@ def test_hover_explainer_demos_and_worked_example_share_the_paper_numbers():
         assert not any(bad in t for t in spoken), bad
     # 2026-10-19：单字「挑」被念成 tiǎo（「手挑的」的「手」变调），一律写「挑选」，读 tiāo
     assert not any(re.search(r"挑(?!选)", t) for t in spoken)
+    # 2026-10-19：expressive 是「表达性」（和 ExBody 笔记一致），不是「表情」；「数」单用会念成 shǔ
+    assert "表情" not in js + narration + note
+    assert "所以数值不一样" in narration and "所以数不一样" not in narration
+    # 第 14 幕：同一段视频中途换掩码，时间轴标出两段与播放头
+    assert "4.2 s 换掩码 → 根部俯仰" in js and "同一个策略、中途不重启" in narration
     assert "## 🎬 十六幕动画" in note and 'demos: ["hover"]' in note
     # 面板到 cue 之后才淡出
     assert "return seg(t, a + 0.3, a + 0.7) * (b == null ? 1 : 1 - seg(t, b, b + 0.3));" in js and "1 - seg(t, b - 0.3, b)" not in js
