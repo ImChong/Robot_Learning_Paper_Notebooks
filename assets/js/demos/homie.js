@@ -1667,8 +1667,8 @@
       var r = state.r, P;
       /* 密度 */
       var g = begin(st1); P = g.P;
-      var pl = K.plot(g, { l: 34, r: 10, t: 16, b: 26 }, [0, 1], [0, 21]);
-      K.axes(g, pl, { xTicks: [0, 0.5, 1], yTicks: [0, 10, 20], xLabel: "ρ_a'" });
+      var pl = K.plot(g, { l: 34, r: 10, t: 16, b: 36 }, [0, 1], [0, 21]);
+      K.axes(g, pl, { xTicks: [0, 0.5, 1], yTicks: [0, 10, 20], xLabel: '抽到的上限 ρ′' });
       [0, 0.5, 0.9, 1].forEach(function (q) {
         var ps = []; for (var j = 0; j <= 100; j++) { var x = j / 100; ps.push([pl.sx(x), pl.sy(Math.min(21, density(x, q, state.paper)))]); }
         line(g.ctx, ps, P.grid, 1.2);
@@ -1681,7 +1681,7 @@
       for (var n = 0; n < N; n++) { var rho = sampleRho(r, rng(), state.paper), a = rho * rng(); sum += a; if (a > 0.5) over++; bins[Math.min(19, Math.floor(a * 20))]++; }
       var g2 = begin(st2);
       var mx = Math.max.apply(null, bins);
-      var pl2 = K.plot(g2, { l: 34, r: 10, t: 16, b: 26 }, [0, 1], [0, mx * 1.1]);
+      var pl2 = K.plot(g2, { l: 34, r: 10, t: 16, b: 36 }, [0, 1], [0, mx * 1.1]);
       K.axes(g2, pl2, { xTicks: [0, 0.5, 1], xLabel: '占限位的比例' });
       bins.forEach(function (c, i) {
         g2.ctx.fillStyle = P.warn; var x0 = pl2.sx(i / 20) + 1, x1 = pl2.sx((i + 1) / 20) - 1;
@@ -1690,7 +1690,7 @@
       text(g2.ctx, '4000 次抽样', pl2.x0 + 4, pl2.y1 + 10, P.muted);
       /* 一个关节 10 s 的目标轨迹 */
       var g3 = begin(st3);
-      var pl3 = K.plot(g3, { l: 40, r: 10, t: 16, b: 26 }, [0, 10], [-1.1, 2.2]);
+      var pl3 = K.plot(g3, { l: 40, r: 10, t: 22, b: 36 }, [0, 10], [-1.1, 2.2]);
       K.axes(g3, pl3, { xTicks: [0, 5, 10], yTicks: [-1, 0, 1, 2], xLabel: 's', yLabel: 'rad' });
       var rng2 = K.mulberry32(state.seed * 104729 + Math.round(r * 100)), cur = 0, pts = [[pl3.sx(0), pl3.sy(0)]];
       for (var k = 0; k < 10; k++) {
@@ -1736,7 +1736,7 @@
       if (state.manual) { e = state.e; qL = qR = state.q; }
       else { var f = frame('squat', state.k); e = f.root[2] - f.hcmd; qL = f.knee[0]; qR = f.knee[1]; }
       var g = begin(st), P = g.P, ctx = g.ctx;
-      var pl = K.plot(g, { l: 44, r: 14, t: 14, b: 30 }, [0, 1], [-0.5, 0.5]);
+      var pl = K.plot(g, { l: 62, r: 14, t: 24, b: 36 }, [0, 1], [-0.5, 0.5]);
       var nx = 60, ny = 40, cw = (pl.x1 - pl.x0) / nx, chh = (pl.y0 - pl.y1) / ny;
       for (var i = 0; i < nx; i++) for (var j = 0; j < ny; j++) {
         var n = (i + 0.5) / nx, ee = 0.5 - (j + 0.5) / ny;
