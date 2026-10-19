@@ -791,11 +791,25 @@
             "published_date_en": "Jun 6, 2026 (arXiv v1), CoRL 2026",
             "zhname": "Perceptive BFM：让人类动作先验适应机器人所处地形的感知行为基础模型",
             "zh_title": "Perceptive BFM：让人类动作先验适应机器人所处地形的感知行为基础模型"
+          },
+          {
+            "title": "Has GPT-6-Astra Achieved Embodied Intelligence?",
+            "path": "papers/03_High_Impact_Selection/Has_GPT-6-Astra_Achieved_Embodied_Intelligence/Has_GPT-6-Astra_Achieved_Embodied_Intelligence.md",
+            "url": "/papers/03_High_Impact_Selection/Has_GPT-6-Astra_Achieved_Embodied_Intelligence/Has_GPT-6-Astra_Achieved_Embodied_Intelligence.html",
+            "dir": "Has_GPT-6-Astra_Achieved_Embodied_Intelligence",
+            "arxiv": "2610.22471",
+            "has_open_source": true,
+            "summary_zh": "论文在 12 项基准和 8 种真实机器人配置上评估 GPT-6-Astra，并提出按真实需求、无同域示例和持续世界时钟设计的新基准；结论是具身能力显著，但实用部署仍受成本、示教和物理约束。",
+            "published_date_zh": "2026年10月15日（arXiv）",
+            "published_date_en": "Oct 15, 2026 (arXiv)",
+            "zhname": "GPT-6-Astra 是否已实现具身智能？",
+            "zh_title": "GPT-6-Astra 是否已实现具身智能？"
           }
         ],
         "zhname": "仿真到现实与基座模型",
         "sort_order_hint": "Paper tags ordered by publication date, oldest first",
-        "sort_order_hint_zh": "论文标签按发表时间旧→新排列"
+        "sort_order_hint_zh": "论文标签按发表时间旧→新排列",
+        "count": 14
       },
       {
         "name": "Simulation Platform & Tools",
