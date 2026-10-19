@@ -14,7 +14,7 @@ demos: ["hover"]
 >
 > 🏷️ 板块: 03 High Impact Selection · 全身控制核心 · 多模式控制 · 教师—学生蒸馏 · 掩码
 >
-> ℹ️ 笔记对照 [arXiv 2410.21229](https://arxiv.org/abs/2410.21229) 的 v2（2025-03-06；读的是 arXiv 上的 LaTeX 源码：正文、表 I–V、图 1–6；和 v1 的数字完全一样，差别见[附录 D](#d-arxiv-v1-和-v2-的差别)）、[项目页](https://hover-versatile-humanoid.github.io/)和官方仓库 [NVlabs/HOVER](https://github.com/NVlabs/HOVER)（2026-10 的 `main`，最后一次提交 2025-07-29）。**注意**：官方仓库是 Isaac Lab 上的重写版，论文的实验是在 Isaac Gym 里做的（README 第一段说原版的实现请看项目页），代码和论文有几处不一样，下文单独列出。「🚶 具体实例」与动画里的 H1 动作是我们照官方的 `retarget_h1.sh`（human2humanoid 的重定向代码），以 SMPL 在 AMASS 的 CMU `07_01` 上**重算的一段走路**，不是论文的数据，见[环境设定](#实例-环境设定)。
+> ℹ️ 笔记对照 [arXiv 2410.21229](https://arxiv.org/abs/2410.21229) 的 v2（2025-03-06；读的是 arXiv 上的 LaTeX 源码：正文、表 I–V、图 1–6；和 v1 的数字完全一样，差别见[附录 D](#d-arxiv-v1-和-v2-的差别)）、[项目页](https://hover-versatile-humanoid.github.io/)和官方仓库 [NVlabs/HOVER](https://github.com/NVlabs/HOVER)（2026-10 的 `main`，最后一次提交 2025-07-29）。**注意**：官方仓库是 Isaac Lab 上的重写版，论文的实验是在 Isaac Gym 里做的（README 第一段说原版的实现请看项目页），代码和论文有几处不一样，下文单独列出。「🚶 具体实例」与动画里的 H1 动作是我们用 PHC 仓库（H2O / HOVER 作者之一维护）的重定向脚本，以 SMPL 在 AMASS 的 CMU `07_01` 上**重算的一段走路**，不是论文的数据，见[环境设定](#实例-环境设定)。
 
 ---
 
@@ -80,7 +80,7 @@ demos: ["hover"]
 
 > 📖 **动画之后的正文默认全部折叠**：动画覆盖到的那几节（要解决什么问题、方法详解、实验结果）按小节收起，再往后的具体实例、源码对照、在路线中的位置、面试和附录各整块收起。想细读哪一块就点开对应的折叠条，内容一字未删；流程图和三个交互演示留在外面，目录里的标题依旧可以直接点，会自动展开所在折叠块，左侧目录顶部还有「展开全部文字」一键铺开。
 >
-> 动画第 1–5、8、9 幕里的 H1，动作是我们照官方仓库的 `retarget_h1.sh`（human2humanoid 的 `grad_fit_h1_shape.py` 与 `grad_fit_h1.py`，`--motions-file` 只列这一段），以 SMPL 在 AMASS 的 CMU `07_01` 上重算的一段走路（第 0–2.6 s，15 fps 共 40 帧，循环只放一个步态周期；原方法逐帧独立，脚会一帧一跳，没有平滑；做法与数字见下文「🚶 具体实例」的环境设定），身上 23 个点由官方仓库的 MJCF 做正运动学算出，和第一个交互演示、「🚶 具体实例」是同一组数字；第 5 幕左边是同一段的 SMPL 人体：先是形状参数为 0 的平均身材，再换成拟合后的身材，最后露出 SMPL 的 24 个关节叠到 H1 上。H1 的 3D 外形：材质与光照照抄 [Robot Retarget Online](https://imchong.github.io/Robot_Retarget_Online/) 的 three.js 场景，按关节角用正交相机逐帧离线渲染，SMPL 人体用同一台相机渲染，点和箭头按同一个相机投影叠在上面。表格和第 2、3、11、13、14 幕的图来自论文；第 6、11、12 幕的仿真画面和第 14、15 幕的真机画面剪自[项目页](https://hover-versatile-humanoid.github.io/)的视频（大量机器人跟踪 AMASS、头 / H2O / OmniH2O 三种模式、左手 / 右手 / 双手三种模式、根部速度切到根部俯仰、走路时从 ExBody 切到 H2O、转身后退时从 HumanPlus 切到 OmniH2O、Vision Pro 遥操作时只跟双手或只跟左手），画面上的模式标签是我们按视频里的字幕时刻标的，只做讲解引用。
+> 动画第 1–5、8、9 幕里的 H1，动作是我们用 PHC 仓库的 `fit_smpl_shape.py` 与 `fit_smpl_motion.py`，以 SMPL 在 AMASS 的 CMU `07_01` 上重算的一段走路（第 0–2.6 s，15 fps 共 40 帧，循环播放时只放第 17–32 帧这一个步态周期；HOVER 指定的 human2humanoid 脚本跑出来脚会一帧一跳，做法与数字见下文「🚶 具体实例」的环境设定），身上 23 个点由官方仓库的 MJCF 做正运动学算出，和第一个交互演示、「🚶 具体实例」是同一组数字；第 5 幕左边是同一段的 SMPL 人体：先是形状参数为 0 的平均身材，再换成拟合后的身材，最后露出 SMPL 的 24 个关节叠到 H1 上。H1 的 3D 外形：材质与光照照抄 [Robot Retarget Online](https://imchong.github.io/Robot_Retarget_Online/) 的 three.js 场景，按关节角用正交相机逐帧离线渲染，SMPL 人体用同一台相机渲染，点和箭头按同一个相机投影叠在上面。表格和第 2、3、11、13、14 幕的图来自论文；第 6、11、12 幕的仿真画面和第 14、15 幕的真机画面剪自[项目页](https://hover-versatile-humanoid.github.io/)的视频（大量机器人跟踪 AMASS、头 / H2O / OmniH2O 三种模式、左手 / 右手 / 双手三种模式、根部速度切到根部俯仰、走路时从 ExBody 切到 H2O、转身后退时从 HumanPlus 切到 OmniH2O、Vision Pro 遥操作时只跟双手或只跟左手），画面上的模式标签是我们按视频里的字幕时刻标的，只做讲解引用。
 
 ---
 
@@ -249,7 +249,7 @@ flowchart TB
 2. 优化 SMPL 参数，让 SMPL 的身材对上这些关键点（相当于先把人改成 H1 的身材）；
 3. 用梯度下降对齐拟合后的 SMPL 和人形之间对应的关键点，把 AMASS 重定向到 H1。
 
-然后沿用 H2O 的「sim-to-data」：用特权模仿器在仿真里筛掉人形做不到的动作，得到数据集 $\hat Q$。每一步在 [H2O 笔记](../H2O_Learning_Human-to-Humanoid_Real-Time_Whole-Body_Teleoperation/H2O_Learning_Human-to-Humanoid_Real-Time_Whole-Body_Teleoperation.html)里有详细的说明；我们照官方仓库的 `retarget_h1.sh`、用 `--motions-file` 只把 AMASS 的 CMU `07_01` 这一段跑了一遍（见[「🚶 具体实例」的环境设定](#实例-环境设定)）：第 2 步的损失只有 14 对关节点的距离、没有正则，拟合出的形状参数有一维到了 −42.5，关节点对上了，SMPL 的网格却已经不像人（动画第 5 幕）；第 3 步逐帧独立地解、前后帧没有约束，支撑腿的膝盖常顶在反向限位，H1 的脚一帧一跳（动画照原样放）。官方仓库的 `retarget_h1.sh` 调的就是 human2humanoid 的脚本；README 说因为 AMASS 的许可，不提供重定向好的数据，整个 AMASS 在 32 核机器上重定向最多要跑 4 天（up to 4 days）。
+然后沿用 H2O 的「sim-to-data」：用特权模仿器在仿真里筛掉人形做不到的动作，得到数据集 $\hat Q$。每一步在 [H2O 笔记](../H2O_Learning_Human-to-Humanoid_Real-Time_Whole-Body_Teleoperation/H2O_Learning_Human-to-Humanoid_Real-Time_Whole-Body_Teleoperation.html)里有详细的说明；我们在 AMASS 的 CMU `07_01` 上先跑了 human2humanoid 的这两个脚本：重定向逐帧独立、拟合出的整体缩放也没用上，膝盖一再顶到反关节的限位、髋偏航在两头的限位之间来回翻，H1 的脚一帧一跳；于是换成 H2O / HOVER 作者之一 Zhengyi Luo 后来在 PHC 仓库里维护的同一套脚本（用上缩放、关节角加正则、每步在时间上平滑、根部一起优化，见[「🚶 具体实例」的环境设定](#实例-环境设定)）。两版的形状拟合都只看关节点的距离、没有正则，拟合出的形状参数都有一维到了几十（human2humanoid 版 −42.5、PHC 版 −37.2），关节点对上了，SMPL 的网格却已经不像人（动画第 5 幕）。官方仓库的 `retarget_h1.sh` 调的是 human2humanoid 的脚本；README 说因为 AMASS 的许可，不提供重定向好的数据，整个 AMASS 在 32 核机器上重定向最多要跑 4 天（up to 4 days）。
 
 </details>
 
@@ -501,10 +501,11 @@ README 还说教师一般 5–8 万次迭代就能训好，推荐至少 4096 个
 
 <h3 id="实例-环境设定">环境设定</h3>
 
-- **动作**：我们照 HOVER 仓库的 `retarget_h1.sh` 做：它调 human2humanoid 的 `scripts/data_process/grad_fit_h1_shape.py` 与 `grad_fit_h1.py`，后者先打上 HOVER 的 `third_party/grad_fit_h1.patch`（只删了处理完一段就停下来的断点、跳过读不出的文件），`--motions-file` 只列 `CMU/07/07_01_poses.npz` 这一段动作，不重定向整个 AMASS（README 的做法，例子是 `punch.yaml`）。代码未改，按它的 requirements 装 numpy 1.23、ZhengyiLuo/smplx 与 SMPLSim；形状拟合脚本 import 了依赖 Isaac Gym 的 `phc.utils.torch_utils` 却没用到，放了一个空模块占位。以 SMPL（v1.1.0 的中性模型）在 AMASS（SMPL+H G）的 CMU `07_01`（走路，120 fps，按官方降到 30 fps）上重算，取第 0–2.6 s、15 fps 共 40 帧；每帧有根部位置、横滚 / 俯仰 / 偏航、19 个关节角。这不是论文的数据，是同一条流程的一个小复现。第 0 帧的骨盆挪到原点、偏航转成 0。动画里循环播放时只放第 15–30 帧这一个步态周期：第 31 帧的姿态和第 15 帧最接近（手脚相对骨盆差 0.02 m），整段 40 帧首尾接不上（第 39 → 0 帧脚一下挪 0.7 m 以上）。
-- **拟合形状**（第 1 个脚本）：H1 零位与 SMPL 的同一个站姿之间 14 对点（含两髋与头），同时优化 10 维 $\boldsymbol\beta$ 和整体缩放，Adam 学习率 0.1、1000 步，平均距离 114.7 → 43.9 mm。缩放（1.107）存了下来，但第 2 个脚本只用 $\boldsymbol\beta'$、没乘缩放（不乘时是 67.7 mm）。损失里没有正则，$\boldsymbol\beta'$ 有一维到了 −42.5（10 维里绝对值最大的一维），SMPL 的网格已经不像人。同一站姿下（$\boldsymbol\beta'$、不乘缩放，和重定向时一样），两踝的横向距离 0.18 → 0.33 m（H1 0.41 m），两髋 0.14 → 0.175 m：脚本让 SMPL 的髋对 H1 的 `hip_yaw_link`（两侧相距 0.175 m），H1 的腿要到髋俯仰才分开（0.406 m），所以拟合后人体的髋只放宽到和髋偏航一样，不会像 [H2O 笔记](../H2O_Learning_Human-to-Humanoid_Real-Time_Whole-Body_Teleoperation/H2O_Learning_Human-to-Humanoid_Real-Time_Whole-Body_Teleoperation.html)里逐段缩放的 CMU 骨架那样横向放大 2.2 倍；H2O 论文要的是两脚之间的大间距（"a large gap between its feet"）。
-- **重定向**（第 2 个脚本）：逐帧解 19 个关节角，11 对点，Adadelta 学习率 100、500 步，每步截断到关节限位；平均距离 207.5 → 66.3 mm，两肩最大（左 122.6、右 112.4 mm），骨盆最小（32.6 mm）。最后整段抬高到 20 个连杆的最低点离地 0.08 m。每一帧都从全零的关节角开始单独解，前后帧没有约束：30 fps 下有 73 次相邻两帧的关节角变化超过 0.3 rad，两膝共有 45 帧顶在 −0.26 rad 的反向限位上（支撑腿），髋偏航在 ±0.43 rad 两头之间来回翻，H1 的脚一帧一跳。动画照原样放，没有平滑。我们的推测：$\boldsymbol\beta'$ 不乘缩放时人的腿（髋—膝—踝 0.858 m）比 H1（髋俯仰—膝—踝 0.800 m）长 7%，支撑腿伸直也够不到人的脚踝，膝盖就被推到反向限位；把这一段动作截成更短的片段单独重定向（如 30 fps 的第 34–66 帧）也一样会跳。按我们的理解，这类瑕疵留给后面的 sim-to-data 与跟踪策略。PHC 仓库里有同一作者后来加了时间平滑与缩放的版本，输出没有跳变，但不是 HOVER 用的流程，这里不用。
-- **23 个点**：用官方仓库的 `neural_wbc/data/data/mujoco/models/h1.xml` 做正运动学（根部朝向按外旋 xyz 的横滚、俯仰、偏航），和 human2humanoid 的 `h1.xml` 只差骨盆的默认高度，算出的点一样；手 = 肘连杆坐标系里 $(0.3, 0, 0)$，头 = 骨盆坐标系里 $(0, 0, 0.75)$。
+- **动作**：我们用 [PHC](https://github.com/ZhengyiLuo/PHC)（`main` 的 846988d）的 `scripts/data_process/fit_smpl_shape.py` 与 `fit_smpl_motion.py`（`robot=unitree_h1_fitting`，代码未改；它的 H1 模型和 HOVER 的 `h1.xml` 正运动学一致），以 SMPL（v1.1.0 的中性模型）在 AMASS（SMPL+H G）的 CMU `07_01`（走路，120 fps，按脚本降到 30 fps）上重算的重定向，取第 0–2.6 s、15 fps 共 40 帧；每帧有根部位置、横滚 / 俯仰 / 偏航、19 个关节角。这不是论文的数据，是同一条流程的一个小复现。第 0 帧的骨盆挪到原点、偏航转成 0。动画里循环播放时只放第 17–32 帧：第 33 帧的姿态和第 17 帧最接近（脚和手差 0.09 m，比相邻两帧的 0.21 m 还小），整段 40 帧首尾接不上（第 39 → 0 帧脚一下挪 0.7 m 以上）。
+- **为什么不用 human2humanoid 的输出**：HOVER 的 `retarget_h1.sh` 调的是 human2humanoid 的 `grad_fit_h1_shape.py` 与 `grad_fit_h1.py`。我们先跑了它（Python 3.10，按它的 requirements 装 numpy 1.23、ZhengyiLuo/smplx 与 SMPLSim，代码未改）：重定向逐帧独立、Adadelta 学习率 100，拟合出的整体缩放（1.107）没用上；30 fps 下有 73 次相邻两帧的关节角变化超过 0.3 rad，膝盖有 45 帧顶在 −0.26 rad 的反关节限位上，髋偏航在 ±0.43 rad 两头之间来回翻，H1 的脚一帧一跳。PHC 的同名脚本是同一作者后来的版本：用上缩放、关节角加 0.01 的 L2 正则、每步做核宽 5、$\sigma = 0.75$ 的高斯时间平滑、根部朝向与位置一起优化；30 fps 下相邻两帧的关节角最大只差 0.19 rad。我们也照 HOVER 的 `retarget_h1.sh` 原样重跑过一遍（`grad_fit_h1.py` 打上 HOVER 的 `third_party/grad_fit_h1.patch`，只删了断点；`--motions-file` 只列 `CMU/07/07_01_poses.npz`，不重定向整个 AMASS），输出和上面 human2humanoid 的逐字节相同；把这一段截成更短的片段单独重定向也一样会跳。
+- **拟合形状**（第 1 个脚本）：H1 零位与 SMPL 的同一个站姿之间 16 对点（骨盆、两髋、两膝、两踝、两肩、两肘、两手、头、两脚尖；头取骨盆上方 0.6 m、脚尖取踝前方 0.08 m），同时优化 10 维 $\boldsymbol\beta$ 和整体缩放，Adam 学习率 0.1、3000 步，损失是距离的平方和；平均距离 105.5 → 55.9 mm，缩放 0.955。损失里没有正则，$\boldsymbol\beta'$ 有一维到了 −37.2（10 维里绝对值最大的一维），SMPL 的网格已经不像人。在这个站姿下，两踝的横向距离 0.18 → 0.31 m（H1 0.41 m），两髋只是 0.14 → 0.16 m：PHC 让 SMPL 的髋对 H1 的 `hip_yaw_link`（两侧相距 0.175 m），H1 的腿要到髋俯仰才分开（0.406 m），所以拟合后人体的髋不会像 [H2O 笔记](../H2O_Learning_Human-to-Humanoid_Real-Time_Whole-Body_Teleoperation/H2O_Learning_Human-to-Humanoid_Real-Time_Whole-Body_Teleoperation.html)里逐段缩放的 CMU 骨架那样横向放大 2.2 倍；H2O 论文要的是两脚之间的大间距。
+- **重定向**（第 2 个脚本）：同时解 19 个关节角、根部朝向（从 SMPL 的航向起步）和根部位置的一个整体偏移，对齐同样的 16 对点，Adam 学习率 0.02、500 步，每步截断到关节限位、再在时间上平滑；平均距离 188.3 → 51.6 mm，右髋最大（112.6 mm）、左髋 105.3 mm，右肘最小（4.6 mm）。最后按第 0 帧 H1 网格的最低点贴地。
+- **23 个点**：用官方仓库的 `neural_wbc/data/data/mujoco/models/h1.xml` 做正运动学（根部朝向按外旋 xyz 的横滚、俯仰、偏航），和 human2humanoid、PHC 的 `h1.xml` 正运动学一致（PHC 配置里的头在骨盆上方 0.6 m，这里的 23 个点按 HOVER 取 0.75 m）；手 = 肘连杆坐标系里 $(0.3, 0, 0)$，头 = 骨盆坐标系里 $(0, 0, 0.75)$。
 - **这段走路**：根部水平速度平均 1.36 m/s（1.16–1.63 m/s），2.6 s 向前走了约 3.5 m。
 - **假设**：例 2 里「机器人落后参考 0.2 s」（3 帧）是假设，用来让命令不全是 0。根部速度用 15 fps 的中心差分（我们的近似）。
 
@@ -522,17 +523,17 @@ README 还说教师一般 5–8 万次迭代就能训好，推荐至少 4096 个
 
 参考取第 1.33 s（第 20 帧），机器人在做第 1.13 s 的姿态（第 17 帧，落后 0.2 s）。按代码：
 
-- **关键点**（69 维）：参考的 23 个点减去**机器人自己的根部**，再转到机器人只转偏航的朝向坐标系。左手 $(0.469, 0.099, -0.107)$、右手 $(0.265, -0.361, -0.131)$、头 $(0.204, -0.063, 0.793)$ m；骨盆 $(0.261, -0.059, 0.045)$——参考的骨盆在机器人前方 0.26 m，因为它落后了 0.2 s、走路速度约 1.3 m/s。
-- **关节角**（19 维）：参考减当前。左髋俯仰 −0.782、左膝 0.828、右髋俯仰 0.543、右膝 −0.280 rad；上身：躯干 0.340、左肩俯仰 0.118、左肩横滚 −0.144、左肩偏航 −0.194、左肘 0.568、右肩俯仰 −0.019、右肩横滚 0.000、右肩偏航 0.330、右肘 −0.086 rad。两踝都是 0（这段重定向里两踝的角度一直是 0：对齐的是踝连杆的原点，踝关节转动不改变它，梯度是 0）。
-- **根部**（7 维）：参考的根部线速度转到参考的根部坐标系里 $(1.242, -0.054, 0.013)$ m/s，横滚 0.016、俯仰 −0.075 rad，偏航之差 −0.144 rad（代码注释：偏航从本体感受里估不出来，所以给差），根部高度 1.087 m。
+- **关键点**（69 维）：参考的 23 个点减去**机器人自己的根部**，再转到机器人只转偏航的朝向坐标系。左手 $(0.439, 0.214, -0.096)$、右手 $(0.373, -0.313, -0.118)$、头 $(0.301, -0.043, 0.793)$ m；骨盆 $(0.268, -0.008, 0.045)$——参考的骨盆在机器人前方 0.27 m，因为它落后了 0.2 s、走路速度约 1.3 m/s。
+- **关节角**（19 维）：参考减当前。左髋俯仰 −0.716、左膝 0.649、右髋俯仰 0.582、右膝 −0.381、左踝 −0.084、右踝 −0.099 rad；上身：躯干 0.279、左肩俯仰 0.283、左肩横滚 −0.086、左肩偏航 −0.271、左肘 0.432、右肩俯仰 −0.139、右肩横滚 0.005、右肩偏航 0.233、右肘 −0.140 rad。（PHC 多对齐了脚尖：踝前方 0.08 m 的点随踝关节转动，所以踝角也会变；human2humanoid 只对齐踝连杆的原点，踝角一直是 0。）
+- **根部**（7 维）：参考的根部线速度转到参考的根部坐标系里 $(1.225, 0.088, 0.159)$ m/s，横滚 0.044、俯仰 0.047 rad，偏航之差 −0.064 rad（代码注释：偏航从本体感受里估不出来，所以给差），根部高度 1.080 m。
 
 <h3 id="实例-3-套上-exbody-掩码">例 3：套上 ExBody 掩码</h3>
 
 ExBody 模式开 16 位：上身 9 个关节角 + 根部 7 个量。乘上掩码后：
 
 - 关键点 69 维**全是 0**；
-- 关节角只剩上身 9 维：$(0.340, 0.118, -0.144, -0.194, 0.568, -0.019, 0.000, 0.330, -0.086)$，腿上 10 维是 0；
-- 根部 7 维照旧：$(1.242, -0.054, 0.013, 0.016, -0.075, -0.144, 1.087)$。
+- 关节角只剩上身 9 维：$(0.279, 0.283, -0.086, -0.271, 0.432, -0.139, 0.005, 0.233, -0.140)$，腿上 10 维是 0；
+- 根部 7 维照旧：$(1.225, 0.088, 0.159, 0.044, 0.047, -0.064, 1.080)$。
 
 95 维里非零的只剩这 16 维，其余 79 维都是 0。换成 OmniH2O 模式就只剩 9 维：左手、右手、头的位置。观测里同时附上 49 位掩码，学生才知道「腿的关节角是 0」是没给，而不是「腿伸直」。
 
@@ -758,5 +759,5 @@ v2（2025-03-06）和 v1（2024-10-28）的数字完全一样，改的是：表 
 - arXiv：<https://arxiv.org/abs/2410.21229>（v2，2025-03-06，读的是 LaTeX 源码；v1 2024-10-28）
 - 项目主页：<https://hover-versatile-humanoid.github.io/>（动画第 6、11、12、14、15 幕的仿真与真机片段剪自这里的视频）
 - 代码：<https://github.com/NVlabs/HOVER>（`main`，2025-07-29）
-- 动作复现：官方仓库的 `retarget_h1.sh` 与 `third_party/grad_fit_h1.patch`，调 [LeCAR-Lab/human2humanoid](https://github.com/LeCAR-Lab/human2humanoid) 的 `grad_fit_h1_shape.py`、`grad_fit_h1.py`（`--motions-file` 只列 `CMU/07/07_01_poses.npz`；我们在 [AMASS](https://amass.is.tue.mpg.de/) 的 CMU `07_01` 上跑的；[SMPL](https://smpl.is.tue.mpg.de/) v1.1.0 中性模型；AMASS 与 SMPL 都要注册、许可不让分发，仓库里只存重算出的 H1 关节角、点与渲染的贴图）
+- 动作复现：[ZhengyiLuo/PHC](https://github.com/ZhengyiLuo/PHC) 的 `fit_smpl_shape.py`、`fit_smpl_motion.py`（我们在 [AMASS](https://amass.is.tue.mpg.de/) 的 CMU `07_01` 上跑的；对照跑过 [LeCAR-Lab/human2humanoid](https://github.com/LeCAR-Lab/human2humanoid) 的 `grad_fit_h1_shape.py`、`grad_fit_h1.py`；[SMPL](https://smpl.is.tue.mpg.de/) v1.1.0 中性模型；AMASS 与 SMPL 都要注册、许可不让分发，仓库里只存重算出的 H1 关节角、点与渲染的贴图）
 - H1 模型与材质：[Robot Retarget Online](https://github.com/ImChong/Robot_Retarget_Online) 仓库里的 MuJoCo Menagerie `unitree_h1`

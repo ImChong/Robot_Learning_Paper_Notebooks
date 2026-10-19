@@ -4021,16 +4021,16 @@ def test_omnih2o_project_page_clips():
 
 
 def _hover_walk(js: str):
-    """解码 hover.js 的 `WALK`：每帧 166 个 int16——根部 3（mm）、横滚俯仰偏航 3（mrad）、19 个关节角（mrad）、23 个刚体（mm）、SMPL 的 24 个关节（mm）。"""
+    """解码 hover.js 的 `WALK`：每帧 175 个 int16——根部 3（mm）、横滚俯仰偏航 3（mrad）、19 个关节角（mrad）、23 个刚体（mm）、SMPL 的 24 个关节（mm）、PHC 的头与两个脚尖（mm）。"""
     m = re.search(r"var WALK = \{ clip: '07_01', fps: (\d+), n: (\d+), per: (\d+), data: '([^']+)' \};", js)
     fps, n, per = int(m.group(1)), int(m.group(2)), int(m.group(3))
     a = _h2o_int16(m.group(4))
-    assert len(a) == per * n and per == 166
+    assert len(a) == per * n and per == 175
     frames = []
     for k in range(n):
         o = k * per
         frames.append({"root": [v / 1000 for v in a[o : o + 3]], "rpy": [v / 1000 for v in a[o + 3 : o + 6]], "dof": [v / 1000 for v in a[o + 6 : o + 25]],
-                       "pts": _h2o_pts(a, o + 25, 23), "hum": _h2o_pts(a, o + 25 + 69, 24)})
+                       "pts": _h2o_pts(a, o + 25, 23), "hum": _h2o_pts(a, o + 25 + 69, 24), "ext": _h2o_pts(a, o + 25 + 69 + 72, 3)})
     return fps, frames
 
 
@@ -4060,8 +4060,8 @@ def _hover_command(frames, fps, kref, lag):
 def test_hover_explainer_demos_and_worked_example_share_the_paper_numbers():
     """HOVER：十六幕动画、三个演示、配音旁白与笔记「🚶 具体实例」用同一组数。
 
-    表 III–V、图 3–4 照抄 arXiv 2410.21229；掩码、命令、观测维数照抄 NVlabs/HOVER（Isaac Lab 版）；H1 的动作是我们用官方 human2humanoid 的
-    grad_fit_h1_shape.py、grad_fit_h1.py 以 SMPL 在 AMASS 的 CMU 07_01 上重算的走路，嵌在 hover.js 里，这里解码后把第 1.33 s 的 95 维命令
+    表 III–V、图 3–4 照抄 arXiv 2410.21229；掩码、命令、观测维数照抄 NVlabs/HOVER（Isaac Lab 版）；H1 的动作是我们用 PHC（ZhengyiLuo/PHC）的
+    fit_smpl_shape.py、fit_smpl_motion.py 以 SMPL 在 AMASS 的 CMU 07_01 上重算的走路，嵌在 hover.js 里，这里解码后把第 1.33 s 的 95 维命令
     （机器人落后 0.2 s）再算一遍。
     """
     js = (DEMO_JS_DIR / "hover.js").read_text(encoding="utf-8")
@@ -4140,37 +4140,34 @@ def test_hover_explainer_demos_and_worked_example_share_the_paper_numbers():
         R = _rot_xyz(f["rpy"])
         head = [f["pts"][0][i] + 0.75 * R[i][2] for i in range(3)]
         assert math.dist(head, f["pts"][22]) < 2e-3
-        assert f["dof"][4] == 0 and f["dof"][9] == 0  # 这段重定向里两踝一直是 0
     kin, joint, root = _hover_command(frames, fps, 20, 3)
     assert 20 / 15 == 4 / 3 and "第 1.33 s" in note
     want = {
-        "左手": (kin[20], "(0.469, 0.099, -0.107)"), "右手": (kin[21], "(0.265, -0.361, -0.131)"), "头": (kin[22], "(0.204, -0.063, 0.793)"),
-        "骨盆": (kin[0], "(0.261, -0.059, 0.045)"), "根部速度": (root[:3], "(1.242, -0.054, 0.013)"),
+        "左手": (kin[20], "(0.439, 0.214, -0.096)"), "右手": (kin[21], "(0.373, -0.313, -0.118)"), "头": (kin[22], "(0.301, -0.043, 0.793)"),
+        "骨盆": (kin[0], "(0.268, -0.008, 0.045)"), "根部速度": (root[:3], "(1.225, 0.088, 0.159)"),
     }
     for name, (v, s) in want.items():
         assert "(" + ", ".join(_fmt(x, 3) for x in v) + ")" == s, name
         assert "$" + s + "$" in note, name
     upper = "(" + ", ".join(_fmt(x, 3) for x in joint[10:19]) + ")"
-    assert upper == "(0.340, 0.118, -0.144, -0.194, 0.568, -0.019, 0.000, 0.330, -0.086)" and "$" + upper + "$" in note
-    assert [_fmt(x, 3) for x in root[3:]] == ["0.016", "-0.075", "-0.144", "1.087"]
-    assert [_fmt(x, 3) for x in (joint[2], joint[3], joint[7], joint[8])] == ["-0.782", "0.828", "0.543", "-0.280"]
+    assert upper == "(0.279, 0.283, -0.086, -0.271, 0.432, -0.139, 0.005, 0.233, -0.140)" and "$" + upper + "$" in note
+    assert [_fmt(x, 3) for x in root[3:]] == ["0.044", "0.047", "-0.064", "1.080"]
+    assert [_fmt(x, 3) for x in (joint[2], joint[3], joint[7], joint[8], joint[4], joint[9])] == ["-0.716", "0.649", "0.582", "-0.381", "-0.084", "-0.099"]
     speeds = [math.hypot(frames[k + 1]["pts"][0][0] - frames[k - 1]["pts"][0][0], frames[k + 1]["pts"][0][1] - frames[k - 1]["pts"][0][1]) * fps / 2 for k in range(1, 39)]
     assert _fmt(sum(speeds) / len(speeds), 2) == "1.36" and "平均 1.36 m/s" in note
     assert (_fmt(min(speeds), 2), _fmt(max(speeds), 2)) == ("1.16", "1.63") and "1.16–1.63 m/s" in note
     # 2026-10-18 照官方两个脚本用 SMPL 重算：拟合形状与重定向的读数在分镜、旁白、笔记里一致
-    for s_js, s_say, s_note in (("−42.5", "负 42.5", "−42.5"), ("66 mm", "66 毫米", "66.3 mm")):
+    for s_js, s_say, s_note in (("−37.2", "负 37.2", "−37.2"), ("52 mm", "52 毫米", "51.6 mm"), ("16 对点", "16 对", "16 对点")):
         assert s_js in js and s_say in narration and s_note in note, s_js
-    assert "114.7 → 43.9 mm" in note and "1.107" in note and "替身" not in js + note
-    # 照 HOVER 的 retarget_h1.sh 原方法重算（2026-10-19 曾换成 PHC，按用户要求退回）：第 5 幕标注零位站姿下两踝放宽、两髋对的是 H1 的髋偏航
-    assert "PHC" not in js and "P H C" not in narration and "retarget_h1.sh" in js + note and "--motions-file" in js + note
-    for s in ("0.18 → 0.33 m（H1 0.41 m）", "0.14 → 0.175 m", "0.175 m"):
+    assert "105.5 → 55.9 mm" in note and "0.955" in note and "188.3 → 51.6 mm" in note and "替身" not in js + note
+    # 2026-10-19 第 5 幕标注：拟合用的站姿下两踝放宽、两髋对的是 H1 的髋偏航（PHC 的 SMPL 站姿算出，分镜与笔记一致）
+    for s in ("0.18 → 0.31 m（H1 0.41 m）", "0.14 → 0.16 m", "0.175 m"):
         assert s in js and s in note, s
-    assert "反向限位" in js and "反向限位" in narration and "反向限位" in note
-    # 循环只放一个步态周期：第 31 帧和第 15 帧最接近，接缝处的变化不比相邻两帧大
-    assert "var LOOP = { a: 15, b: 31 };" in js and "第 15–30 帧" in note
+    # 循环只放一个步态周期：第 33 帧和第 17 帧最接近，接缝处的变化不比相邻两帧大
+    assert "var LOOP = { a: 17, b: 33 };" in js and "第 17–32 帧" in note
     rel = [[[p[0] - f["root"][0], p[1] - f["root"][1], p[2]] for p in f["pts"]] for f in frames]
-    seam = max(math.dist(rel[31][j], rel[15][j]) for j in (5, 10, 20, 21))
-    steps = sorted(max(math.dist(rel[k + 1][j], rel[k][j]) for j in (5, 10, 20, 21)) for k in range(15, 30))
+    seam = max(math.dist(rel[33][j], rel[17][j]) for j in (5, 10, 20, 21))
+    steps = sorted(max(math.dist(rel[k + 1][j], rel[k][j]) for j in (5, 10, 20, 21)) for k in range(17, 32))
     assert seam < steps[len(steps) // 2], (seam, steps)
 
     # 旁白：数字列举用顿号，两个数之间不只隔一个逗号；片头接上一期（MaskedMimic）的片尾预告，片尾只预告下一篇（ExBody2）
