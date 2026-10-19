@@ -76,7 +76,7 @@ demos: ["hover"]
 
 ## 📺 配音讲解视频（可下载） {#hover-video}
 
-<div class="paper-demo" data-demo="hover-video" data-src="media/hover_explainer_video.mp4" data-poster="media/hover_explainer_video_poster.jpg"><p class="demo-fallback">（本节含讲解视频播放器，需要启用 JavaScript；也可以直接<a href="media/hover_explainer_video.mp4" download="HOVER_讲解视频.mp4">下载 mp4（17.1 MB）</a>）</p></div>
+<div class="paper-demo" data-demo="hover-video" data-src="media/hover_explainer_video.mp4" data-poster="media/hover_explainer_video_poster.jpg"><p class="demo-fallback">（本节含讲解视频播放器，需要启用 JavaScript；也可以直接<a href="media/hover_explainer_video.mp4" download="HOVER_讲解视频.mp4">下载 mp4（17.6 MB）</a>）</p></div>
 
 > 📖 **动画之后的正文默认全部折叠**：动画覆盖到的那几节（要解决什么问题、方法详解、实验结果）按小节收起，再往后的具体实例、源码对照、在路线中的位置、面试和附录各整块收起。想细读哪一块就点开对应的折叠条，内容一字未删；流程图和三个交互演示留在外面，目录里的标题依旧可以直接点，会自动展开所在折叠块，左侧目录顶部还有「展开全部文字」一键铺开。
 >
