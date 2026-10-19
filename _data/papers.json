@@ -386,7 +386,7 @@
             "has_open_source": true,
             "summary_zh": "HOVER 把 ExBody、HumanPlus、H2O、OmniH2O 各自的接口都看成全身运动学模仿的子集：先训一个什么都跟的特权教师，再用模式掩码和稀疏掩码蒸馏出一个学生，同一套权重换掩码就换模式。",
             "explainer_scenes": 16,
-            "video_seconds": 797,
+            "video_seconds": 835,
             "published_date_zh": "2024年10月28日（arXiv），ICRA 2025",
             "published_date_en": "Oct 28, 2024 (arXiv), ICRA 2025",
             "zhname": "HOVER：人形机器人的多模式通用神经全身控制器",
@@ -793,11 +793,24 @@
             "published_date_en": "Jun 6, 2026 (arXiv v1), CoRL 2026",
             "zhname": "Perceptive BFM：让人类动作先验适应机器人所处地形的感知行为基础模型",
             "zh_title": "Perceptive BFM：让人类动作先验适应机器人所处地形的感知行为基础模型"
+          },
+          {
+            "title": "Has GPT-6-Astra Achieved Embodied Intelligence?",
+            "path": "papers/03_High_Impact_Selection/Has_GPT-6-Astra_Achieved_Embodied_Intelligence/Has_GPT-6-Astra_Achieved_Embodied_Intelligence.md",
+            "url": "/papers/03_High_Impact_Selection/Has_GPT-6-Astra_Achieved_Embodied_Intelligence/Has_GPT-6-Astra_Achieved_Embodied_Intelligence.html",
+            "dir": "Has_GPT-6-Astra_Achieved_Embodied_Intelligence",
+            "arxiv": "2610.22471",
+            "summary_zh": "论文用统一协议测量 GPT-6-Astra 的具身能力：允许从训练集示例构建上下文知识包，并把仿真执行步数扩展到标准预算的最多 10 倍；再通过系统消融和 8 种真实机器人配置，分析高层推理、低层控制及现实部署之间的差距。",
+            "published_date_zh": "2026年10月15日（arXiv）",
+            "published_date_en": "Oct 15, 2026 (arXiv)",
+            "zhname": "GPT-6-Astra 是否已实现具身智能？",
+            "zh_title": "GPT-6-Astra 是否已实现具身智能？"
           }
         ],
         "zhname": "仿真到现实与基座模型",
         "sort_order_hint": "Paper tags ordered by publication date, oldest first",
-        "sort_order_hint_zh": "论文标签按发表时间旧→新排列"
+        "sort_order_hint_zh": "论文标签按发表时间旧→新排列",
+        "count": 14
       },
       {
         "name": "Simulation Platform & Tools",
@@ -2855,6 +2868,18 @@
   "05_Locomotion": {
     "display_name": "Locomotion",
     "papers": [
+      {
+        "title": "Push the Limit: Learning High-Speed Sprinting and Aggressive Cornering on a Full-Scale Humanoid",
+        "path": "papers/05_Locomotion/Push_the_Limit__High-Speed_Sprinting_and_Aggressive_Cornering_on_a_Full-Scale_Humanoid/Push_the_Limit__High-Speed_Sprinting_and_Aggressive_Cornering_on_a_Full-Scale_Humanoid.md",
+        "url": "/papers/05_Locomotion/Push_the_Limit__High-Speed_Sprinting_and_Aggressive_Cornering_on_a_Full-Scale_Humanoid/Push_the_Limit__High-Speed_Sprinting_and_Aggressive_Cornering_on_a_Full-Scale_Humanoid.html",
+        "dir": "Push_the_Limit__High-Speed_Sprinting_and_Aggressive_Cornering_on_a_Full-Scale_Humanoid",
+        "arxiv": "2610.14840",
+        "summary_zh": "人形机器人直线冲刺已经很快，但跑起来不像人、也没人展示过高速转弯；用 AMP 做出来的步态像人，却只在中低速成立。",
+        "published_date_zh": "2026年10月10日（arXiv v1）",
+        "published_date_en": "Oct 10, 2026 (arXiv v1)",
+        "zhname": "Push the Limit：全尺寸人形机器人的高速冲刺与激进过弯",
+        "zh_title": "Push the Limit：全尺寸人形机器人的高速冲刺与激进过弯"
+      },
       {
         "title": "Tac4Loco: Learning Spatiotemporal Plantar Pressure Representations for Humanoid Locomotion",
         "path": "papers/05_Locomotion/Tac4Loco__Spatiotemporal_Plantar_Pressure_Representations_for_Humanoid_Locomotion/Tac4Loco__Spatiotemporal_Plantar_Pressure_Representations_for_Humanoid_Locomotion.md",
