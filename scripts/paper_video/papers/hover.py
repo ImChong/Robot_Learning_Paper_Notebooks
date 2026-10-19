@@ -34,7 +34,7 @@ Humanoid Robots · arXiv 2410.21229 v2，ICRA 2025）讲解视频的旁白：ass
 H1 的脚有跳变：human2humanoid 的重定向逐帧独立、没用缩放，膝盖顶到反关节限位、髋偏航在两头限位间来回翻；改用同一作者在 PHC 仓库里的新版
 脚本重算（缩放、正则、时间平滑），循环只放一个步态周期；第 5 幕第 2、3、5 句旁白按新数字（16 对点、−37.2、52 毫米）再改一次。
 
-读音（edge-tts 的 zh-CN-YunxiNeural）：「挑」单用会被念成 tiǎo（「手挑的」里「手」跟着变调），一律写「挑选」，读 tiāo；HOVER 写成 Hover 按一个词念、字幕换回；CMU 写「C M U」；H2O 写「H 2 O」、OmniH2O 写「Omni H 2 O」、HumanPlus 写
+读音（edge-tts 的 zh-CN-YunxiNeural）：「挑」单用会被念成 tiǎo（「手挑的」里「手」跟着变调），一律写「挑选」，读 tiāo；数字后面别紧跟「只」（「表 4 只报」念成量词「四只」）；「切换模式」会被切成「切 | 换模式」，写成「模式之间无缝切换」「模式自动切换」；「得（děi）」写「要」；HOVER 写成 Hover 按一个词念、字幕换回；CMU 写「C M U」；H2O 写「H 2 O」、OmniH2O 写「Omni H 2 O」、HumanPlus 写
 「Human Plus」、ExBody2 写「ExBody 2」，字幕用 DISPLAY 换回；MLP、PPO、VR、SMPL、MHC、VLA 逐字母写，字幕换回；DAgger 写成英文单词 Dagger 念、
 字幕换回；arXiv 写 archive；NVIDIA 说「英伟达」、Unitree 说「宇树」，字幕换回；AMASS、ExBody、Isaac Gym、Isaac Lab、Vision Pro、ICRA
 直接写。绕开前几期记下的多音字与测不准的词：「差」单用说「之差」「误差」，「重训」说「重新训练」，「转」只用在「转身」里，「调」「得（děi）」
