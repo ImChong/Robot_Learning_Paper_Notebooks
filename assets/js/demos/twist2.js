@@ -1946,7 +1946,7 @@
     K.video(host, {
       title: '配音讲解视频：TWIST2 十八幕全流程',
       sub: '14 分 10 秒竖屏视频（1080×1920），中文配音 + 字幕。画面就是上面的十八幕动画，旁白把每一幕讲细；适合手机上看或转发。',
-      size: '__VIDEO_SIZE__',
+      size: '17.9 MB',
       fileName: 'TWIST2_讲解视频.mp4'
     });
   }
@@ -1955,7 +1955,7 @@
   function buildCmdDemo(host) {
     var root = card(host, {
       title: '命令浏览器：35 维命令、参考与跟出来的 G1',
-      sub: '官方仓库的两段 PICO 样例逐帧看：左边灰色是参考动作，绿色是官方权重在 MuJoCo 里跟出来的（我们的复现）；右边是这一帧的 35 维命令。切到「漂移」看一整段走路的俯视路线。'
+      sub: '官方仓库的两段 PICO 样例逐帧看：左边是参考动作，右边是官方权重在 MuJoCo 里跟出来的（我们的复现）；右边是这一帧的 35 维命令。切到「漂移」看一整段走路的俯视路线。'
     });
     var state = { seq: 'walk', k: EX_WALK };
     var row = controlsRow(root);
@@ -1965,7 +1965,7 @@
     } });
     var row2 = controlsRow(root);
     sl = slider(row2, { label: '帧', min: 0, max: 59, step: 1, value: EX_WALK, format: function (v) { return state.seq === 'drift' ? '第 ' + f1(v * DRIFT.dt) + ' s' : '第 ' + f2(SEQ[state.seq].t0 + v / 15) + ' s'; }, onInput: function (v) { state.k = v; render(); } });
-    var svg = sceneSvg('左边两台 G1：灰色是参考，绿色是跟出来的；右边是 35 维命令', '0 0 640 400');
+    var svg = sceneSvg('左边两台 G1：左边是参考（淡一些），右边是跟出来的；右边是 35 维命令', '0 0 640 400');
     var wrap = el('div', 'demo-stage');
     wrap.appendChild(svg);
     root.appendChild(wrap);

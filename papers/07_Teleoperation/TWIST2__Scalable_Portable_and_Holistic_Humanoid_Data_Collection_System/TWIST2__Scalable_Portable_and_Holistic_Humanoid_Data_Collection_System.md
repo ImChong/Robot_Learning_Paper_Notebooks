@@ -39,7 +39,7 @@ demos: ["twist2"]
 
 ## 🎯 一句话总结
 
-> TWIST2 是一套**便携、免动捕、保留完整全身控制**的人形遥操作与数据采集系统。论文先把控制拆成两层：**底层** $\pi_{\text{low}}$ 是一个和任务无关的通用动作跟踪器，每一步接收 35 维命令 $\mathbf p_{\text{cmd}}$（根部 $x$、$y$ 速度，根部高度，横滚、俯仰，偏航角速度，再加 29 个关节角），50 Hz 输出关节目标交给 PD；**高层** $\pi_{\text{high}}$ 负责产生命令，遥操作时是「操作员 + 重定向器」，自主时是扩散策略。硬件上，PICO 4 Ultra 头显、两个手柄和两个绑在小腿上的 PICO Motion Tracker 实时估计全身姿态（约 1000 美元、100 Hz、一分钟装好）；G1 头上外挂的 **TWIST2 Neck**（两台 Dynamixel XC330，250 美元）带着 ZED Mini，让操作员通过头显看到机器人的双目第一视角。人的身体用改过的 GMR 重定向（下身对位置和朝向、上身只对朝向），三指手当夹爪用（抓握量 $\alpha$ 在张开、闭合两个姿态之间插值），脖子直接取人头相对脊柱的偏航和俯仰。底层控制器用一阶段 PPO 在约 2 万段动作上训练。结果：一个人能遥操作 G1 连续叠 3 条毛巾、搬两个篮子推门过门；18.5 分钟采 98 条双臂取放（表 II）；拿掉立体视觉、脖子或第一视角都会变慢或更容易失败（表 III）；在采来的数据上训的扩散策略能自主弯腰取放杯子（54 次里 33 次成功）、把 T 形箱踢到目标（7 次里 6 次）。
+> TWIST2 是一套**便携、免动捕、保留完整全身控制**的人形遥操作与数据采集系统。论文先把控制拆成两层：**底层** $\pi _ {\text{low}}$ 是一个和任务无关的通用动作跟踪器，每一步接收 35 维命令 $\mathbf p _ {\text{cmd}}$（根部 $x$、$y$ 速度，根部高度，横滚、俯仰，偏航角速度，再加 29 个关节角），50 Hz 输出关节目标交给 PD；**高层** $\pi _ {\text{high}}$ 负责产生命令，遥操作时是「操作员 + 重定向器」，自主时是扩散策略。硬件上，PICO 4 Ultra 头显、两个手柄和两个绑在小腿上的 PICO Motion Tracker 实时估计全身姿态（约 1000 美元、100 Hz、一分钟装好）；G1 头上外挂的 **TWIST2 Neck**（两台 Dynamixel XC330，250 美元）带着 ZED Mini，让操作员通过头显看到机器人的双目第一视角。人的身体用改过的 GMR 重定向（下身对位置和朝向、上身只对朝向），三指手当夹爪用（抓握量 $\alpha$ 在张开、闭合两个姿态之间插值），脖子直接取人头相对脊柱的偏航和俯仰。底层控制器用一阶段 PPO 在约 2 万段动作上训练。结果：一个人能遥操作 G1 连续叠 3 条毛巾、搬两个篮子推门过门；18.5 分钟采 98 条双臂取放（表 II）；拿掉立体视觉、脖子或第一视角都会变慢或更容易失败（表 III）；在采来的数据上训的扩散策略能自主弯腰取放杯子（54 次里 33 次成功）、把 T 形箱踢到目标（7 次里 6 次）。
 
 > 🎮 **本文内嵌 1 段讲解动画、1 段配音视频和 3 个交互演示**（不用装任何东西）：
 > [十八幕动画：TWIST2 全流程](#twist2-explainer-anim) —— 约 288 秒串完「人形缺一套采集系统（表 I）→ 两层：高层给命令，底层来跟 → 命令：相对的根部，完整的关节 → G1 加一个 250 美元的脖子 → PICO 头显加两个追踪器 → 身体：下身对位置，上身只对朝向 → 手：三指手当夹爪 → 脖子：头转多少就转多少 → 底层控制器：数据与奖励 → 底层控制器：网络与跟踪 → 遥操作链路：不到 0.1 秒 → 一个人就能采 → 长时程遥操作 → 表 II：20 分钟采多少 → 表 III：拿掉哪一样 → 扩散策略出全身命令 → WB-Dex 与 Kick-T → 局限、数据与代码」。空格播放/暂停，← → 换幕，也可以直接点分幕标签跳着看。
@@ -77,7 +77,7 @@ demos: ["twist2"]
 
 ## 📺 配音讲解视频（可下载） {#twist2-video}
 
-<div class="paper-demo" data-demo="twist2-video" data-src="media/twist2_explainer_video.mp4" data-poster="media/twist2_explainer_video_poster.jpg"><p class="demo-fallback">（本节含讲解视频播放器，需要启用 JavaScript；也可以直接<a href="media/twist2_explainer_video.mp4" download="TWIST2_讲解视频.mp4">下载 mp4（__VIDEO_SIZE__）</a>）</p></div>
+<div class="paper-demo" data-demo="twist2-video" data-src="media/twist2_explainer_video.mp4" data-poster="media/twist2_explainer_video_poster.jpg"><p class="demo-fallback">（本节含讲解视频播放器，需要启用 JavaScript；也可以直接<a href="media/twist2_explainer_video.mp4" download="TWIST2_讲解视频.mp4">下载 mp4（17.9 MB）</a>）</p></div>
 
 > 📖 **动画之后的正文默认全部折叠**：动画覆盖到的那几节（要解决什么问题、方法详解、实验结果）按小节收起，再往后的具体实例、源码对照、在路线中的位置、面试和附录各整块收起。想细读哪一块就点开对应的折叠条，内容一字未删；流程图和三个交互演示留在外面，目录里的标题依旧可以直接点，会自动展开所在折叠块，左侧目录顶部还有「展开全部文字」一键铺开。
 >
@@ -180,21 +180,21 @@ flowchart LR
 <details class="paper-fold" markdown="1">
 <summary>📖 展开文字：底层是和任务无关的通用动作跟踪器，输入 35 维命令和本体感受，50 Hz 输出关节目标；高层出命令，遥操作版是「操作员 + 重定向器」，自主版是扩散策略</summary>
 
-目标是在一个统一框架里，让人形靠自己的第一视角和本体感受做各种全身灵巧任务。做法是两层：底层控制器 $\pi_{\text{low}}$ 和高层控制器 $\pi_{\text{high}}$。
+目标是在一个统一框架里，让人形靠自己的第一视角和本体感受做各种全身灵巧任务。做法是两层：底层控制器 $\pi _ {\text{low}}$ 和高层控制器 $\pi _ {\text{high}}$。
 
-**底层**：把 $\pi_{\text{low}}$ 写成一个**通用动作跟踪**问题，所以底层和任务无关。每一步它收到一个命令向量：
+**底层**：把 $\pi _ {\text{low}}$ 写成一个**通用动作跟踪**问题，所以底层和任务无关。每一步它收到一个命令向量：
 
 $$
 \mathbf{p}_{\text{cmd}}=\big[\,\dot{x}_{\text{ref}},\ \dot{y}_{\text{ref}},\ z_{\text{ref}},\ \phi_{\text{ref}},\ \theta_{\text{ref}},\ \dot{\psi}_{\text{ref}},\ \mathbf{q}_{\text{ref}}\,\big]
 $$
 
-依次是根部在 $x$、$y$ 方向的速度，根部高度，根部横滚、俯仰角，偏航角速度，和全身的关节角（G1 是 29 个，所以一共 $6+29=35$ 维）。它还看本体感受 $\mathbf s=[\omega,\dot\omega,\mathbf q,\dot{\mathbf q}]$（论文的写法：IMU 给的根部朝向和角速度，编码器给的关节位置和速度），输出关节目标 $\mathbf q_{\text{tgt}}=\pi_{\text{low}}(\mathbf s,\mathbf p_{\text{cmd}})$，**50 Hz**，再由 PD 控制器算力矩：
+依次是根部在 $x$、$y$ 方向的速度，根部高度，根部横滚、俯仰角，偏航角速度，和全身的关节角（G1 是 29 个，所以一共 $6+29=35$ 维）。它还看本体感受 $\mathbf s=[\omega,\dot\omega,\mathbf q,\dot{\mathbf q}]$（论文的写法：IMU 给的根部朝向和角速度，编码器给的关节位置和速度），输出关节目标 $\mathbf q _ {\text{tgt}}=\pi _ {\text{low}}(\mathbf s,\mathbf p _ {\text{cmd}})$，**50 Hz**，再由 PD 控制器算力矩：
 
 $$
 \tau = K_{\text{P}}(\mathbf q_{\text{tgt}}-\mathbf q) - K_{\text{D}}\dot{\mathbf q}
 $$
 
-**高层**：$\pi_{\text{high}}$ 根据第一视角图像产生任务相关的命令 $\mathbf p_{\text{cmd}}=\pi_{\text{high}}(\mathbf o,\mathbf s)$。有两个版本：遥操作版 $\pi_{\text{high}}^{\text{teleop}}$（就是**操作员 + 动作重定向器**）和视觉运动策略 $\pi_{\text{high}}^{\text{auto}}$（比如扩散策略）。先用遥操作版采集 $(\mathbf o,\mathbf s,\mathbf p_{\text{cmd}})$，再拿来训自主版。图 2 的说法：可控的自由度一共 45 个 = 脖子 2 + 身体 29 + 手 14。
+**高层**：$\pi _ {\text{high}}$ 根据第一视角图像产生任务相关的命令 $\mathbf p _ {\text{cmd}}=\pi _ {\text{high}}(\mathbf o,\mathbf s)$。有两个版本：遥操作版 $\pi _ {\text{high}}^{\text{teleop}}$（就是**操作员 + 动作重定向器**）和视觉运动策略 $\pi _ {\text{high}}^{\text{auto}}$（比如扩散策略）。先用遥操作版采集 $(\mathbf o,\mathbf s,\mathbf p _ {\text{cmd}})$，再拿来训自主版。图 2 的说法：可控的自由度一共 45 个 = 脖子 2 + 身体 29 + 手 14。
 
 </details>
 
@@ -259,7 +259,7 @@ $$
 - **下身**同时优化位置和朝向；
 - **上身**只优化朝向。
 
-把连杆分成下身 $\mathcal L_{\text{low}}$（骨盆、髋、膝、踝、脚）和上身 $\mathcal L_{\text{up}}$（脊柱、肩、肘、腕、头），位置项只对下身选出的点 $\mathcal P_{\text{low}}$（通常是脚 / 踝，可选骨盆）。为了降低对全局位姿噪声的敏感（也为了支持操作员「瞬移」），人的所有位置都先换到**骨盆坐标系**里。第二阶段（式 8）：
+把连杆分成下身 $\mathcal L _ {\text{low}}$（骨盆、髋、膝、踝、脚）和上身 $\mathcal L _ {\text{up}}$（脊柱、肩、肘、腕、头），位置项只对下身选出的点 $\mathcal P _ {\text{low}}$（通常是脚 / 踝，可选骨盆）。为了降低对全局位姿噪声的敏感（也为了支持操作员「瞬移」），人的所有位置都先换到**骨盆坐标系**里。第二阶段（式 8）：
 
 $$
 \mathbf q^{*}=\arg\min_{\mathbf q}\sum_{i\in\mathcal L_{\text{up}}\cup\mathcal L_{\text{low}}} w_i^{R}\,\big\lVert R_i^{\text{human}}-R_i^{\text{robot}}(\mathbf q)\big\rVert_F^2+\lambda_{\text{pos}}\sum_{k\in\mathcal P_{\text{low}}} w_k^{p}\,\big\lVert p_k^{\text{human,pelvis}}-p_k^{\text{robot}}(\mathbf q)\big\rVert_2^2
@@ -276,13 +276,13 @@ $$
 <details class="paper-fold" markdown="1">
 <summary>📖 展开文字：五指映射到三指不直观，干脆不估手的姿态、按手柄的键；张开 / 闭合两个标定姿态之间按 α 线性插值；握力抓和捏各一套</summary>
 
-把人手的五指直接映射到 Dex3-1 并不直观：它只有三根手指、自由度有限，功能上更像平行夹爪而不是多指灵巧手。所以手的重定向简化成夹爪：**不用手的姿态估计，用 PICO 手柄上的按键控制**。定义两个标定姿态：张开 $\mathbf q_{\text{open}}$ 和闭合 $\mathbf q_{\text{close}}$；从人的手部信号算出抓握量 $\alpha\in[0,1]$（0 全开、1 全闭），手的关节目标（式 7）：
+把人手的五指直接映射到 Dex3-1 并不直观：它只有三根手指、自由度有限，功能上更像平行夹爪而不是多指灵巧手。所以手的重定向简化成夹爪：**不用手的姿态估计，用 PICO 手柄上的按键控制**。定义两个标定姿态：张开 $\mathbf q _ {\text{open}}$ 和闭合 $\mathbf q _ {\text{close}}$；从人的手部信号算出抓握量 $\alpha\in[0,1]$（0 全开、1 全闭），手的关节目标（式 7）：
 
 $$
 \mathbf q_{\text{hand}}=(1-\alpha)\,\mathbf q_{\text{open}}+\alpha\,\mathbf q_{\text{close}}
 $$
 
-需要握力抓的任务（抓杯子）和需要精细捏的任务（叠衣服）各用一套 $\mathbf q_{\text{open}}$、$\mathbf q_{\text{close}}$。
+需要握力抓的任务（抓杯子）和需要精细捏的任务（叠衣服）各用一套 $\mathbf q _ {\text{open}}$、$\mathbf q _ {\text{close}}$。
 
 **官方代码**（`deploy_real/xrobot_teleop_to_robot_w_hand.py`）：$\alpha$ 不是直接从手柄读出来的，而是按住扳机（`index_trig`）就每个循环加 0.05、按住侧握键（`grip`）就减 0.05；遥操作循环 100 Hz，所以从全开到全闭要 20 个循环 = 0.2 s。握力抓的闭合姿态是拇指、中指、食指都卷起；捏的模式（`--pinch_mode`）把食指一直收着、用拇指和中指捏，张开姿态取在 80% 处，缩短开合的距离。
 
@@ -293,7 +293,7 @@ $$
 <details class="paper-fold" markdown="1">
 <summary>📖 展开文字：取人头相对脊柱的旋转，偏航 = atan2(r21, r11)、俯仰 = arcsin(−r31) 直接当两个电机的目标；代码里再乘 1.5</summary>
 
-设 $R_{\text{head}}$、$R_{\text{spine}}\in SO(3)$ 是人头和脊柱在世界系的旋转，相对旋转 $R_{\text{rel}}=R_{\text{spine}}^{\top}R_{\text{head}}=[r_{ij}]$，脖子的两个关节目标（式 10）：
+设 $R _ {\text{head}}$、$R _ {\text{spine}}\in SO(3)$ 是人头和脊柱在世界系的旋转，相对旋转 $R _ {\text{rel}}=R _ {\text{spine}}^{\top}R _ {\text{head}}=[r _ {ij}]$，脖子的两个关节目标（式 10）：
 
 $$
 q_{\text{neck}}^{\text{yaw}}=\psi=\operatorname{atan2}(r_{21},r_{11}),\qquad q_{\text{neck}}^{\text{pitch}}=\theta=\arcsin(-r_{31})
@@ -310,11 +310,11 @@ $$
 <details class="paper-fold" markdown="1">
 <summary>📖 展开文字：不用教师—学生两阶段，直接一阶段 PPO；约 2 万段动作（GMR 7k + TWIST 13k），73 段 PICO 采的很关键；r = r_track + r_reg；卷积历史编码器 + MLP</summary>
 
-要把重定向出的运动学动作放到真机上，需要一个读参考动作、输出 PD 目标的全身控制器 $\pi_{\text{low}}$。和以前用复杂的教师—学生流程训全身控制器的工作（TWIST、GMT、[OmniH2O](../../03_High_Impact_Selection/OmniH2O_Universal_Whole-Body_Teleoperation/OmniH2O_Universal_Whole-Body_Teleoperation.html)）不同，TWIST2 设计了一个**一阶段**的通用动作跟踪训练框架：
+要把重定向出的运动学动作放到真机上，需要一个读参考动作、输出 PD 目标的全身控制器 $\pi _ {\text{low}}$。和以前用复杂的教师—学生流程训全身控制器的工作（TWIST、GMT、[OmniH2O](../../03_High_Impact_Selection/OmniH2O_Universal_Whole-Body_Teleoperation/OmniH2O_Universal_Whole-Body_Teleoperation.html)）不同，TWIST2 设计了一个**一阶段**的通用动作跟踪训练框架：
 
 - **数据**：约 2 万段动作，其中 7k 段是用 GMR 重定向的，13k 段是 TWIST 原来的数据；来源有 AMASS、OMOMO 和自采的动捕。这样的混合让策略学会全向行走。
 - **PICO 采的 73 段**：和 TWIST 发现的一样，从遥操作设备本身采一小批动作对缩小域差距很关键；只采了 73 段，因为已经覆盖了走、蹲、操作这些日常动作。
-- **奖励**：$r=r_{\text{track}}+r_{\text{reg}}$，其中 $r_{\text{track}}=e^{-\alpha\lVert\mathbf p_{\text{cmd}}-\mathbf p_{\text{cur}}\rVert}$，$\mathbf p_{\text{cur}}$ 是机器人实际达到的状态；$r_{\text{reg}}$ 是正则项，比如动作变化的惩罚。
+- **奖励**：$r=r _ {\text{track}}+r _ {\text{reg}}$，其中 $r _ {\text{track}}=e^{-\alpha\lVert\mathbf p _ {\text{cmd}}-\mathbf p _ {\text{cur}}\rVert}$，$\mathbf p _ {\text{cur}}$ 是机器人实际达到的状态；$r _ {\text{reg}}$ 是正则项，比如动作变化的惩罚。
 - **网络**：PPO 训练，主要两部分：**卷积历史编码器**和 MLP 主干。作者发现把历史的本体感受和历史的参考动作压成一个紧凑的隐向量，能提升学习效率。
 
 **官方代码**（`train.sh` 训的任务是 `g1_stu_future`，配置在 `legged_gym/envs/g1/g1_mimic_future_config.py`）：
@@ -332,7 +332,7 @@ $$
 <details class="paper-fold" markdown="1">
 <summary>📖 展开文字：命令经 Redis 发给底层；双目画面 GStreamer H.265 推给头显、JPEG 经 ZMQ 推给录数据；手柄当控制中心，一个人就能开始、暂停、结束；暂停后插值恢复；所有模块 50 Hz 以上，延迟不到 0.1 s；后处理界面切分示范</summary>
 
-**第一视角全身遥操作**：从 PICO 拿到实时的人体动作，映射成命令 $\mathbf p_{\text{cmd}}$，经 **Redis** 发给 $\pi_{\text{low}}$。头显里有立体视觉：XRoboToolkit 的自定义着色器调整瞳距、把焦点放在约 3.3 英尺（约 1 m），操作员有深度感（图 8：机器人的画面浮在视野中央）。双目图像从 ZED Mini 用 **GStreamer** 以 H.265 推给 PICO，同时以 JPEG 经 **ZMQ** 推给录数据的进程。
+**第一视角全身遥操作**：从 PICO 拿到实时的人体动作，映射成命令 $\mathbf p _ {\text{cmd}}$，经 **Redis** 发给 $\pi _ {\text{low}}$。头显里有立体视觉：XRoboToolkit 的自定义着色器调整瞳距、把焦点放在约 3.3 英尺（约 1 m），操作员有深度感（图 8：机器人的画面浮在视野中央）。双目图像从 ZED Mini 用 **GStreamer** 以 H.265 推给 PICO，同时以 JPEG 经 **ZMQ** 推给录数据的进程。
 
 **一个操作员**：实用的采集系统应该只要一个人。近期的全身遥操作多半只展示能力，没说清怎么开始、暂停、结束；AMO 和 Mobile-TeleVision 要两个人（一个管上身、一个管下身）；TWIST 和 CLONE 遥操作只要一个人，但还要另一个人控制整个流程的开始和结束。TWIST2 给 PICO 手柄编了程，手柄就是控制中心（图 9：开始 / 结束录数据、开始 / 结束遥操作、手的开合），操作员不需要任何帮手。
 
@@ -351,15 +351,15 @@ $$
 <details class="paper-fold" markdown="1">
 <summary>📖 展开文字：输入第一视角 RGB（缩到 224×224）和历史命令；输出同样的 p_cmd；1D 卷积扩散策略，一次出 64 步；ResNet-18 用 R3M 预训练；本体感受加 10% 噪声；ONNX 在 4090 上 20 Hz，64 步里执行 48 步、30 Hz</summary>
 
-用遥操作采来的数据训练高层的视觉运动策略 $\pi_{\text{high}}^{\text{auto}}$（图 7：System 2 是扩散策略，System 1 是底层跟踪器）。
+用遥操作采来的数据训练高层的视觉运动策略 $\pi _ {\text{high}}^{\text{auto}}$（图 7：System 2 是扩散策略，System 1 是底层跟踪器）。
 
-- **观测**：ZED Mini 的 $360\times640$ RGB 图像，缩到 $224\times224$；本体感受用**历史命令** $\mathbf p_{\text{cmd}}$，不用原始的机器人状态 $\mathbf s$。两个理由：(1) 高层和底层解耦，可以分开训练、分开部署；(2) 在这个高维系统里不直接依赖带噪的原始状态，减少误差累积。
-- **动作**：和遥操作时一样的命令 $\mathbf p_{\text{cmd}}$，保证采数据和执行一致；所有本体感受输入都做归一化。
+- **观测**：ZED Mini 的 $360\times640$ RGB 图像，缩到 $224\times224$；本体感受用**历史命令** $\mathbf p _ {\text{cmd}}$，不用原始的机器人状态 $\mathbf s$。两个理由：(1) 高层和底层解耦，可以分开训练、分开部署；(2) 在这个高维系统里不直接依赖带噪的原始状态，减少误差累积。
+- **动作**：和遥操作时一样的命令 $\mathbf p _ {\text{cmd}}$，保证采数据和执行一致；所有本体感受输入都做归一化。
 - **网络**：[Diffusion Policy](../../01_Foundational_RL/Diffusion_Policy/Diffusion_Policy.html)，用一维卷积块建模动作序列；一次预测 **64 步**动作块（按 iDP3 / DP3 的做法预测样本），对应执行频率下约 2 秒的未来命令；视觉编码器是 ResNet-18，用 R3M 预训练。
 - **增强**：本体感受加 10% 的高斯噪声，让策略更多依赖视觉、别过拟合精确的状态；图像做随机裁剪、随机旋转、颜色抖动。
 - **部署**：转成 ONNX，在一张 RTX 4090 上推理 **20 Hz**；64 步里执行 48 步，执行频率 **30 Hz**，和采数据的频率一致。
 
-图 7 画的是 $p_t$ 到 $p_{t+31}$（32 步），和正文的 64 步对不上，以正文为准（我们的核对）。高层策略的代码还没放出来（README：会基于 iDP3 另开一个仓库）。
+图 7 画的是 $p_t$ 到 $p _ {t+31}$（32 步），和正文的 64 步对不上，以正文为准（我们的核对）。高层策略的代码还没放出来（README：会基于 iDP3 另开一个仓库）。
 
 </details>
 
@@ -515,7 +515,7 @@ $$
 
 | 部分 | 维数 |
 |---|---|
-| 当前命令 $\mathbf p_{\text{cmd}}$ | 35 |
+| 当前命令 $\mathbf p _ {\text{cmd}}$ | 35 |
 | 本体感受：根部角速度 3（× 0.25）+ 横滚俯仰 2 + 关节角减默认 29 + 关节速度 29（× 0.05，四个踝关节置 0）+ 上一步动作 29 | 92 |
 | 10 步历史，每步 35 + 92 | 1270 |
 | 「未来」命令（只取当前帧） | 35 |
@@ -533,7 +533,7 @@ $$
 
 <h3 id="实例-7-脖子">例 7：脖子</h3>
 
-人头相对脊柱向左转 30°、低头 20°（先偏航后俯仰），$R_{\text{rel}}=R_z(30^\circ)R_y(20^\circ)$，$r_{11}=\cos30^\circ\cos20^\circ=0.814$，$r_{21}=\sin30^\circ\cos20^\circ=0.470$，$r_{31}=-\sin20^\circ=-0.342$：$\psi=\operatorname{atan2}(0.470,0.814)=30^\circ$，$\theta=\arcsin(0.342)=20^\circ$，论文的式子原样取回两个角。代码再乘 1.5：偏航 45°、俯仰 30°——机器人的头比人转得多。
+人头相对脊柱向左转 30°、低头 20°（先偏航后俯仰），$R _ {\text{rel}}=R_z(30^\circ)R_y(20^\circ)$，$r _ {11}=\cos30^\circ\cos20^\circ=0.814$，$r _ {21}=\sin30^\circ\cos20^\circ=0.470$，$r _ {31}=-\sin20^\circ=-0.342$：$\psi=\operatorname{atan2}(0.470,0.814)=30^\circ$，$\theta=\arcsin(0.342)=20^\circ$，论文的式子原样取回两个角。代码再乘 1.5：偏航 45°、俯仰 30°——机器人的头比人转得多。
 
 <h3 id="实例-8-读表-ii">例 8：读表 II</h3>
 
@@ -597,7 +597,7 @@ TWIST2/
 |---|---|
 | 一阶段训练 | 任务 `g1_stu_future` 不加载教师（DAgger 的 KL 损失关掉）= PPO；价值网络看 1734 维特权观测；README 仍叫 teacher / student |
 | 约 2 万段：GMR 7k + TWIST 13k，PICO 73 段 | 19,426 段：TWIST 12,788 + OMOMO 5,841 + AMASS 724 + PICO 73（权重 10） |
-| $r_{\text{track}}=e^{-\alpha\lVert\mathbf p_{\text{cmd}}-\mathbf p_{\text{cur}}\rVert}$ + 正则 | 21 项：8 项跟踪（含关键点位置，局部 + 全局）、存活、抬脚时间、11 项惩罚 |
+| $r _ {\text{track}}=e^{-\alpha\lVert\mathbf p _ {\text{cmd}}-\mathbf p _ {\text{cur}}\rVert}$ + 正则 | 21 项：8 项跟踪（含关键点位置，局部 + 全局）、存活、抬脚时间、11 项惩罚 |
 | 50 Hz | 训练 0.002 s × 10、真机 `control_dt: 0.02` 都是 50 Hz；`sim2sim.sh` 用 100 Hz |
 | PD 增益未写 | 腿和腰一致；手腕训练 40 / 5、sim2sim 4 / 0.2、真机 20 / 1 |
 | $\alpha$ 从手部信号算出 | 按住扳机 / 侧握键每循环 ±0.05（100 Hz） |
@@ -656,7 +656,7 @@ A：只给根部速度，下身怎么动由控制器自己决定，做不了用�
 A：改 GMR 的第二阶段：下身同时对位置和朝向（脚的位置对准，减少打滑），上身只对朝向（不受全局位置跳变影响）；人的位置先换到骨盆坐标系。
 
 **Q5：为什么高层策略的本体感受用历史命令而不是机器人状态？**
-A：一是让高层和底层解耦，可以分开训练、部署；二是在高维系统里不依赖带噪的原始状态，减少误差累积。高层输出的也是同一个 $\mathbf p_{\text{cmd}}$，所以采数据和执行一致。
+A：一是让高层和底层解耦，可以分开训练、部署；二是在高维系统里不依赖带噪的原始状态，减少误差累积。高层输出的也是同一个 $\mathbf p _ {\text{cmd}}$，所以采数据和执行一致。
 
 **Q6：表 III 里「去掉第一视角」为什么最快？那还需要第一视角吗？**
 A：专家站在机器人旁边、用 VR 透视直接看，10 条只要 43 s；但这只对眼前的桌面任务成立，长时程的移动任务（走到别的房间）必须靠机器人的第一视角远程操作。去掉立体视觉会抓得偏高、去掉脖子会看不到视野外的东西，都会变慢、失败更多。
