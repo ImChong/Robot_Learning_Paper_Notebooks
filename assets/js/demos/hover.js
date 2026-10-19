@@ -931,15 +931,19 @@
     ];
     var sg = steps.map(function (st, i) { var g = group(s); chip(g, R, 60 + i * 44, W, st[0], st[1], { size: 11.5, left: true, h: 32 }); return g; });
     var pB = group(s);
-    rich(pB, R, 246, '拟合后 $\\beta\'$ 有一维到了 −37.2：关节点对上了，', 11, 'demo-x-mut');
-    label(pB, R, 266, '网格已经不像人（损失只看 16 对关节点）', 'demo-x-mut', 11);
+    rich(pB, R, 240, '拟合后 $\\beta\'$ 有一维到了 −37.2：关节点对上了，', 11, 'demo-x-mut');
+    label(pB, R, 260, '网格已经不像人（损失只看 16 对关节点）', 'demo-x-mut', 11);
+    /* 和 H2O 那一期逐段缩放的 CMU 骨架不同，SMPL 的髋对的是 H1 靠里的髋偏航，所以髋不会放宽 */
+    var pW = group(s);
+    label(pW, R, 280, '拟合用的站姿：两踝 0.18 → 0.31 m（H1 0.41 m）', 'demo-x-ink2', 11);
+    label(pW, R, 300, '两髋 0.14 → 0.16 m：对的是 H1 的髋偏航（0.175 m）', 'demo-x-ink2', 11);
     var pC = group(s);
-    label(pC, R, 292, '500 步后 16 对点平均还相距 52 mm（每步做时间平滑）', 'demo-x-mut', 11);
+    label(pC, R, 322, '500 步后 16 对点平均还相距 52 mm（每步做时间平滑）', 'demo-x-mut', 11);
     var p5 = group(s);
-    label(p5, R, 318, 'README：AMASS 的许可不让分发重定向好的数据', 'demo-x-mut', 11);
-    label(p5, R, 338, '整个 AMASS 在 32 核机器上重定向最多要跑 4 天', 'demo-x-mut', 11);
-    var foot = label(s, R, 370, '这段走路：AMASS 的 CMU 07_01，我们用 PHC 仓库的', 'demo-x-mut', 11);
-    var foot2 = label(s, R, 390, '两个脚本以 SMPL 重算的（不是论文的数据）', 'demo-x-mut', 11);
+    label(p5, R, 344, 'README：AMASS 的许可不让分发重定向好的数据', 'demo-x-mut', 11);
+    label(p5, R, 364, '整个 AMASS 在 32 核机器上重定向最多要跑 4 天', 'demo-x-mut', 11);
+    var foot = label(s, R, 386, '这段走路：AMASS 的 CMU 07_01，我们用 PHC 仓库的', 'demo-x-mut', 11);
+    var foot2 = label(s, R, 406, '两个脚本以 SMPL 重算的（不是论文的数据）', 'demo-x-mut', 11);
     function draw(t, clock) {
       var now = nowOf(t, clock), k = loopFrame(now, 0), f = frame(k);
       /* 第 ③ 步前人和 H1 并排；之后人慢慢挪到 H1 身上，网格变淡、露出 SMPL 的关节 */
@@ -967,6 +971,7 @@
       setOpacity(tagF, seg(t, 4.6, 5.2) * (1 - seg(t, 7.2, 7.6)));
       sg.forEach(function (g, i) { setOpacity(g, seg(t, [0.3, 3.9, 7.3, 10.7][i], [0.7, 4.3, 7.7, 11.1][i])); });
       setOpacity(pB, seg(t, 5.2, 5.6));
+      setOpacity(pW, seg(t, 6.0, 6.4));
       setOpacity(pC, seg(t, 8.6, 9.0));
       setOpacity(p5, seg(t, 13.7, 14.1));
       setOpacity(foot, seg(t, 0.6, 1.0)); setOpacity(foot2, seg(t, 0.6, 1.0));

@@ -4160,6 +4160,9 @@ def test_hover_explainer_demos_and_worked_example_share_the_paper_numbers():
     for s_js, s_say, s_note in (("−37.2", "负 37.2", "−37.2"), ("52 mm", "52 毫米", "51.6 mm"), ("16 对点", "16 对", "16 对点")):
         assert s_js in js and s_say in narration and s_note in note, s_js
     assert "105.5 → 55.9 mm" in note and "0.955" in note and "188.3 → 51.6 mm" in note and "替身" not in js + note
+    # 2026-10-19 第 5 幕标注：拟合用的站姿下两踝放宽、两髋对的是 H1 的髋偏航（PHC 的 SMPL 站姿算出，分镜与笔记一致）
+    for s in ("0.18 → 0.31 m（H1 0.41 m）", "0.14 → 0.16 m", "0.175 m"):
+        assert s in js and s in note, s
     # 循环只放一个步态周期：第 33 帧和第 17 帧最接近，接缝处的变化不比相邻两帧大
     assert "var LOOP = { a: 17, b: 33 };" in js and "第 17–32 帧" in note
     rel = [[[p[0] - f["root"][0], p[1] - f["root"][1], p[2]] for p in f["pts"]] for f in frames]
