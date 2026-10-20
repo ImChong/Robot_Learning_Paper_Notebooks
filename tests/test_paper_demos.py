@@ -4614,3 +4614,30 @@ def test_maskedmimic_project_page_clips():
     assert js.count("项目页视频") >= 8 and "仿真结果剪自项目页的视频" in js
     note = MASKEDMIMIC_NOTE.read_text(encoding="utf-8")
     assert "仿真画面剪自[项目页](https://research.nvidia.com/labs/par/maskedmimic/)的视频" in note
+
+
+def test_video_notes_link_their_project_page():
+    """有配音视频的笔记，基本信息表里都有「项目主页 / 项目页」一行，下载按钮上的大小和 mp4 对得上。
+
+    2026-10-20 看片反馈「详情页里少了项目页链接」：AWR、PPO、Cosmos、GR00T N1、Transformer 缺这一行，
+    DeepMimic 的链接已经 404（搬到 /projects/DeepMimic/）；没有项目页的（InEKF）也写一行说明。
+    大小按十进制 MB、保留一位小数（GR00T N1、SONIC 原先写的是 MiB，Berkeley Humanoid、OP3 足球、HumanML3D 重渲后没跟着改）。
+    """
+    notes = [p for p in (ROOT / "papers").rglob("*.md") if "_archived" not in p.parts]
+    found = 0
+    for note in notes:
+        text = note.read_text(encoding="utf-8")
+        m = re.search(r'data-demo="[\w-]+-video" data-src="([^"]+)"', text)
+        if not m:
+            continue
+        found += 1
+        start = text.index("## 📋 基本信息")
+        info = text[start : text.index("\n## ", start + 5)]
+        row = re.search(r"^\|\s*(?:\*\*)?项目(?:主页|页)[^|]*\|([^\n]+)$", info, re.M)
+        assert row, f"{note.name} 的基本信息表里没有项目页一行"
+        assert "](http" in row.group(1) or "没有单独的项目页" in row.group(1), note.name
+        assert "xbpeng.github.io/DeepMimic/" not in text, "DeepMimic 的项目页已搬到 /projects/DeepMimic/"
+        mb = (note.parent / m.group(1)).stat().st_size / 1e6
+        label = re.search(r"下载 mp4（([\d.]+) MB）", text)
+        assert label and abs(float(label.group(1)) - mb) < 0.06, (note.name, mb)
+    assert found >= 36
