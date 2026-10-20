@@ -858,10 +858,11 @@
     var y3 = parts(p3, 80, GOAL_PARTS, C_EXP, DIM.goal);
     label(p3, R, y3 + 54, '全身的关节角和关键点都跟（ExBody 只跟上身）', 'demo-x-ink2', 12);
     label(p3, R, y3 + 82, '哪 12 个点论文没写。我们推测（左边黄点）：', 'demo-x-ink2', 11.5);
-    chip(p3, R, y3 + 92, 180, 'ExBody：两肩、两肘、两手', C_EXP, { size: 11, h: 26 });
+    chip(p3, R, y3 + 92, 180, 'ExBody 跟的：两肩、两肘、两手', C_EXP, { size: 11, h: 26 });
     chip(p3, R + 192, y3 + 92, 180, '+ 两髋、两膝、两踝', C_EXP, { size: 11, h: 26, dash: '4 3' });
-    label(p3, R, y3 + 140, '6 + 6 = 12 个点，12 × 3 = 36 维，和表 VII 对得上', 'demo-x-mut', 11);
-    label(p3, R, y3 + 162, '速度、姿态也能当摇杆命令来给', 'demo-x-mut', 11);
+    label(p3, R, y3 + 140, 'ExBody 的代码里本来就定义了这 12 个，只用了上身 6 个', 'demo-x-ink2', 11);
+    label(p3, R, y3 + 162, '12 × 3 = 36 维，和表 VII 对得上', 'demo-x-mut', 11);
+    label(p3, R, y3 + 184, '速度、姿态也能当摇杆命令来给', 'demo-x-mut', 11);
     var p4 = group(s);
     math(p4, R, 74, '\\hat{\\pi}(\\hat a_t \\mid p_t,\\ o_t,\\ g_t),\\quad \\hat a_t \\in \\mathbb{R}^{23}', 15);
     [512, 256, 128].forEach(function (n, i) {
@@ -1773,26 +1774,77 @@
 
   /* ── scene 18: 局限与没说清的地方 ── */
   function buildSceneLimits() {
-    var s = sceneSvg('左边三个专才（走路、跳舞、功夫）各管一组，中间的切换打了叉；右边依次是论文写的局限、以后的方向、我们读下来没说清的几处、最后的三句话总结');
+    var s = sceneSvg('左边先是三个专才（走路、跳舞、功夫）各管一组、中间的切换打了叉，再依次换成：G1 身上我们推测的 12 个关键点（实心 6 个是前作 ExBody 用的）、速度方向那一项按字面和按原意随夹角怎么变、表 II 与表 XI 里完全相同的两行；右边依次是论文写的局限、以后的方向、方法里没写的三处、速度方向那一项、几处对不上的数');
     s.appendChild(svgText(24, 26, '局限，和论文没说清的地方', 'demo-x-ink2', 13.5));
     var left = group(s);
     rectBox(left, 24, 38, 360, 360, C_BORDER, C_SURFACE2);
+    /* 左 ①（0–7.0）：三个专才各管一组 */
+    var lA = group(left);
     var specs = [['走路专才', 'walk', 90], ['跳舞专才', 'twist', 204], ['功夫专才', 'macarena', 318]];
     var sps = specs.map(function (sp) {
-      var g = group(left);
+      var g = group(lA);
       rectBox(g, sp[2] - 52, 62, 104, 190, C_OURS, C_SURFACE);
       label(g, sp[2], 82, sp[0], 'demo-x-ink', 11.5, 'middle');
       return { s: sprite(g, sp[1]), x: sp[2], key: sp[1] };
     });
-    var xs = group(left);
+    var xs = group(lA);
     [[142, 156], [256, 270]].forEach(function (p) {
       var a = arrow(xs, C_MUTED, 2); a.set(p[0], 160, p[1], 160, 6);
       var cx = (p[0] + p[1]) / 2;
       hline(xs, cx - 5, 175, cx + 5, 185, C_BAD, 2.2); hline(xs, cx - 5, 185, cx + 5, 175, C_BAD, 2.2);
     });
-    label(left, 204, 292, '一次跟踪里在专才之间切换，', 'demo-x-ink2', 12, 'middle');
-    label(left, 204, 314, '动作类型之间的过渡可能不顺', 'demo-x-ink2', 12, 'middle');
-    label(left, 204, 352, '（示意：框里是我们重定向的 G1）', 'demo-x-mut', 10, 'middle');
+    label(lA, 204, 292, '一次跟踪里在专才之间切换，', 'demo-x-ink2', 12, 'middle');
+    label(lA, 204, 314, '动作类型之间的过渡可能不顺', 'demo-x-ink2', 12, 'middle');
+    label(lA, 204, 352, '（示意：框里是我们重定向的 G1）', 'demo-x-mut', 10, 'middle');
+    /* 左 ②（7.0–10.4）：推测的 12 个关键点。ExBody 的 h1_mimic.py 定义了 12 个关键体，只取肩、肘、手 6 个 */
+    var lB = group(left);
+    var GY = 368, SC = 150;
+    var ground = groundTicks(lB, 40, 368, GY), bot = sprite(lB, 'walk');
+    var kpD = KP_ZH.map(function (n, i) { return i < 6 ? dotAt(lB, 0, 0, 4.2, C_EXP, C_SURFACE) : dotAt(lB, 0, 0, 4.2, C_SURFACE, C_EXP); });
+    kpD.slice(6).forEach(function (c) { c.setAttribute('stroke-width', 2); });
+    dotAt(lB, 44, 57, 4.2, C_EXP, C_SURFACE);
+    label(lB, 54, 61, '实心：ExBody 跟的 6 个（两肩、两肘、两手）', 'demo-x-ink2', 11);
+    var hollow = dotAt(lB, 44, 79, 4.2, C_SURFACE, C_EXP); hollow.setAttribute('stroke-width', 2);
+    label(lB, 54, 83, '空心：代码里也定义了、没用（两髋、两膝、两踝）', 'demo-x-ink2', 11);
+    label(lB, 40, 105, '我们推测 ExBody2 跟全身，12 个都用', 'demo-x-mut', 10.5);
+    /* 左 ③（10.4–13.4）：速度方向那一项随夹角 θ 怎么变；θ 按真实时间 0° → 180° → 0° 来回转 */
+    var lC = group(left);
+    rich(lC, 40, 62, '机器人速度偏离参考方向 $\\theta$ 时，这一项得几分', 11.5, 'demo-x-ink2');
+    var O = [204, 196], VL = 104;
+    var aRef = arrow(lC, C_REF, 3); aRef.set(O[0], O[1], O[0] + VL, O[1], 10);
+    label(lC, O[0] + VL + 6, O[1] + 4, '参考', 'demo-x-bad', 11);
+    var aV = arrow(lC, C_MOV, 3);
+    var vTag = label(lC, 0, 0, '机器人', 'demo-x-ink2', 11, 'middle');
+    var arc = pathLine(lC, [], C_MUTED, 1.4);
+    /* 夹角的读数放在右上角固定的位置，不跟着弧走（小角度时会压住「机器人」） */
+    rich(lC, 300, 104, '夹角 $\\theta$', 11.5, 'demo-x-mut', 'end');
+    var thTag = label(lC, 306, 104, '', 'demo-x-ink', 12);
+    rich(lC, 40, 252, '按字面 $\\exp(-4\\cos\\theta)$', 11.5, 'demo-x-ink2');
+    var litV = label(lC, 368, 252, '', 'demo-x-bad', 12, 'end');
+    var litB = hbar(lC, 40, 260, 12, C_REF);
+    rich(lC, 40, 302, '原意 $\\exp(-4(1-\\cos\\theta))$', 11.5, 'demo-x-ink2');
+    var fixV = label(lC, 368, 302, '', 'demo-x-good', 12, 'end');
+    var fixB = hbar(lC, 40, 310, 12, C_OURS);
+    label(lC, 40, 350, '条满格：按字面 54.6，原意 1', 'demo-x-mut', 10.5);
+    label(lC, 40, 372, '「原意」是我们的推断，没有代码可以核对', 'demo-x-mut', 10.5);
+    /* 左 ④（13.4–）：表 II 的 ExBody† 与表 XI 的「去掉 DAgger」，7 个数一个不差 */
+    var lD = group(left);
+    label(lD, 40, 62, '同一组 7 个数，出现在两个设置下', 'demo-x-ink2', 12);
+    label(lD, 40, 92, '表 II · ExBody†（ExBody 的全身版）', 'demo-x-ink', 11.5);
+    var COLS = ['速度', '关键点', '上', '下', '关节', '上', '下'], CX = 36, CS = 48.5, CW = 45;
+    COLS.forEach(function (c, i) { label(lD, CX + i * CS + CW / 2, 112, c, 'demo-x-mut', 10, 'middle'); });
+    var T2B = T2.filter(function (r) { return r.zh === 'ExBody†'; })[0].v;
+    T2B.forEach(function (v, i) { chip(lD, CX + i * CS, 120, CW, v.toFixed(4), C_MUTED, { size: 10, h: 26 }); });
+    var eqs = T11_NODAGGER.map(function (v, i) {
+      var g = group(lD);
+      label(g, CX + i * CS + CW / 2, 168, '=', 'demo-x-good', 15, 'middle');
+      chip(g, CX + i * CS, 176, CW, v.toFixed(4), C_OURS, { size: 10, h: 26 });
+      return g;
+    });
+    label(lD, 40, 226, '表 XI · ExBody2 去掉 DAgger', 'demo-x-ink', 11.5);
+    label(lD, 40, 268, '一个是前作的全身版，一个是本文的消融；', 'demo-x-ink2', 12);
+    label(lD, 40, 290, '是同一次实验还是贴错了行，论文没交代', 'demo-x-ink2', 12);
+    label(lD, 40, 330, '（我们发现的）', 'demo-x-mut', 10.5);
     var R = 404, W = 372;
     var p1 = group(s);
     label(p1, R, 64, '论文写的局限', 'demo-x-ink', 13.5);
@@ -1804,27 +1856,74 @@
     label(p2, R, 116, '实时混合或切换专才，通才的覆盖面 +', 'demo-x-ink2', 12);
     label(p2, R, 140, '专才的精度，两全', 'demo-x-ink2', 12);
     var p3 = group(s);
-    label(p3, R, 64, '没说清的地方（我们的观察）①', 'demo-x-ink', 13.5);
-    ['重定向怎么做没写', '12 个关键点是哪几个没写', '漂多久、多久拉回没写；v2 删了这组消融', '速度方向的奖励按字面是反的'].forEach(function (n, i) {
-      chip(p3, R, 80 + i * 36, W, n, C_WARN, { size: 11.5, left: true });
-    });
+    label(p3, R, 64, '没说清 ①：方法里没写的三处', 'demo-x-ink', 13.5);
+    chip(p3, R, 80, W, '重定向：只写了「重定向到 G1」', C_WARN, { size: 11.5, left: true });
+    label(p3, R, 128, '我们用 ASAP 开源的脚本复现（第 4 幕）', 'demo-x-mut', 11);
+    chip(p3, R, 144, W, '12 个关键点：只写了 36 维', C_WARN, { size: 11.5, left: true });
+    label(p3, R, 192, '我们推测是 ExBody 代码里定义的那 12 个：', 'demo-x-ink2', 11.5);
+    label(p3, R, 213, '左右的肩、肘、手、髋、膝、踝（左图）', 'demo-x-ink2', 11.5);
+    rich(p3, R, 234, 'ExBody 只用上身 6 个（`h1_mimic.py` 第 78–82 行）', 10.5, 'demo-x-mut');
+    chip(p3, R, 252, W, '漂多久、多久拉回一次：没写', C_WARN, { size: 11.5, left: true });
+    label(p3, R, 300, '第 7、8 幕按每 1 s 拉回一次假设', 'demo-x-mut', 11);
+    label(p3, R, 321, '第一版有拉回的消融，第二版删了', 'demo-x-mut', 11);
     var p4 = group(s);
-    label(p4, R, 64, '没说清的地方（我们的观察）②', 'demo-x-ink', 13.5);
-    ['表 XI 去掉 DAgger 一行 = 表 II 的 ExBody†', '图 4 和表 II 差几位小数', 'CMU 写 1,919 段，AMASS 里是 2,082 段', '没有代码：环境数、迭代数、随机化范围'].forEach(function (n, i) {
-      chip(p4, R, 80 + i * 36, W, n, C_WARN, { size: 11.5, left: true });
-    });
+    label(p4, R, 64, '没说清 ②：速度方向那一项', 'demo-x-ink', 13.5);
+    math(p4, R, 100, '6.0\\cdot\\exp(-4.0\\cos(\\mathbf v_{\\text{ref}},\\mathbf v))', 14);
+    rich(p4, R, 128, '表 I 原文，没定义 $\\cos(\\cdot,\\cdot)$ 指什么', 11, 'demo-x-mut');
+    label(p4, R, 160, '按夹角余弦算：同向 0.018，反向 54.6', 'demo-x-ink2', 12);
+    label(p4, R, 182, '越往反方向走，奖励越高', 'demo-x-bad', 12);
+    label(p4, R, 218, '作者的意图应是「方向对齐」：', 'demo-x-ink', 12.5);
+    label(p4, R, 242, '① 正文说这一项是在跟踪方向', 'demo-x-ink2', 11.5);
+    rich(p4, R, 264, '② 表 I 其余五项都是 $\\exp(-c\\cdot\\text{误差})$', 11.5, 'demo-x-ink2');
+    label(p4, R, 286, '③ ExBody 代码里的方向奖励：对齐时最大', 'demo-x-ink2', 11.5);
+    math(p4, R, 324, '\\exp(-4(1-\\cos\\theta))', 14);
+    label(p4, R + 190, 324, '同向 1，反向 0.0003', 'demo-x-good', 11.5);
+    label(p4, R, 352, '（我们的推断；没有代码可以核对）', 'demo-x-mut', 10.5);
     var p5 = group(s);
-    label(p5, R, 64, '三句话记住 ExBody2', 'demo-x-ink', 13.5);
-    chip(p5, R, 82, W, '① 姿态归关键点，位置归速度：局部关键点', C_LOC, { size: 11.5, left: true, h: 32 });
-    chip(p5, R, 122, W, '② 让初始策略打分，筛掉下身做不到的动作', C_OURS, { size: 11.5, left: true, h: 32 });
-    chip(p5, R, 162, W, '③ 通才再微调成专才：更准，但各管一组', C_EXP, { size: 11.5, left: true, h: 32 });
+    label(p5, R, 64, '没说清 ③：几处数对不上，也没有代码', 'demo-x-ink', 13.5);
+    chip(p5, R, 80, W, '表 XI「去掉 DAgger」= 表 II 的 ExBody†', C_WARN, { size: 11.5, left: true });
+    label(p5, R, 128, '7 个数一个不差（左图）', 'demo-x-mut', 11);
+    chip(p5, R, 144, W, '阈值 0.15 的关节误差：图 4 读 0.106，表 II 写 0.1079', C_WARN, { size: 11.5, left: true });
+    chip(p5, R, 186, W, 'CMU：论文写 1,919 段，AMASS 里是 2,082 段', C_WARN, { size: 11.5, left: true });
+    label(p5, R, 234, '差的 163 段没交代', 'demo-x-mut', 11);
+    chip(p5, R, 250, W, '没有代码：环境数、迭代次数、随机化范围都没给', C_WARN, { size: 11.5, left: true });
+    label(p5, R, 298, '所以前面凡是论文没写的，都标了「推测」或「假设」', 'demo-x-mut', 11);
     function draw(t, clock) {
       var now = nowOf(t, clock);
-      sps.forEach(function (sp) {
-        var M = SHEETS[sp.key];
-        sp.s.at(sp.x, 238, sp.key === 'walk' ? 92 : 100, sp.key === 'walk' ? loopFrame(now, M.n, 15) : pingFrame(now, M.n, 15));
-      });
-      setOpacity(xs, seg(t, 0.8, 1.2));
+      setOpacity(lA, 1 - seg(t, 7.0, 7.3));
+      setOpacity(lB, win(t, 7.0, 10.4));
+      setOpacity(lC, win(t, 10.4, 13.4));
+      setOpacity(lD, win(t, 13.4));
+      if (t < 7.4) {
+        sps.forEach(function (sp) {
+          var M = SHEETS[sp.key];
+          sp.s.at(sp.x, 238, sp.key === 'walk' ? 92 : 100, sp.key === 'walk' ? loopFrame(now, M.n, 15) : pingFrame(now, M.n, 15));
+        });
+        setOpacity(xs, seg(t, 0.8, 1.2));
+      }
+      if (t > 6.9 && t < 10.8) {
+        var k = loopFrame(now, WALK.n, WALK.fps), f = walkFrame(k);
+        var cam = camOf('walk', SC, 190, GY, f.root[0], f.root[1]);
+        ground.put(f.root, cam);
+        bot.put(f.root, cam, k);
+        f.kp.forEach(function (p, i) { moveDot(kpD[i], project(p, cam)); });
+      }
+      if (t > 10.3 && t < 13.8) {
+        var th = Math.PI / 2 * (1 - Math.cos(2 * Math.PI * Math.max(0, now - 10.4) / 8)), c = Math.cos(th);
+        /* 机器人的箭头比参考短一点，同向时也看得见参考的箭头；标签放在箭头中段的法向上，不和「参考」挤在一起 */
+        var VV = 0.82 * VL, sn = Math.sin(th), tip = [O[0] + VV * c, O[1] - VV * sn];
+        aV.set(O[0], O[1], tip[0], tip[1], 10);
+        vTag.setAttribute('x', (O[0] + 0.55 * VV * c - 20 * sn).toFixed(1));
+        vTag.setAttribute('y', (O[1] - 0.55 * VV * sn - 16 * c + 4).toFixed(1));
+        var pts = [];
+        for (var q = 0; q <= 24; q++) { var a = th * q / 24; pts.push([O[0] + 30 * Math.cos(a), O[1] - 30 * Math.sin(a)]); }
+        setPath(arc, pts);
+        thTag.textContent = Math.round(th * 180 / Math.PI) + '°';
+        var lit = Math.exp(-4 * c), fix = Math.exp(-4 * (1 - c));
+        setW(litB, 328 * lit / Math.exp(4)); litV.textContent = lit < 1 ? lit.toFixed(3) : lit.toFixed(1);
+        setW(fixB, 328 * fix); fixV.textContent = fix < 0.001 ? fix.toFixed(4) : fix.toFixed(3);
+      }
+      eqs.forEach(function (g, i) { setOpacity(g, seg(t, 13.9 + i * 0.25, 14.2 + i * 0.25)); });
       panels(t, [p1, p2, p3, p4, p5]);
     }
     return { el: s, draw: draw };
@@ -1886,7 +1985,7 @@
       cues: [
         { at: 0.4, s: '特权信息 $p_t$ 62 维：关节角之差、关键点之差、真实根速度；正文还提到摩擦、电机强度。' },
         { at: 3.6, s: '本体感受 $o_t$ 75 维：关节角、关节速度、上一步动作、根角速度、横滚俯仰偏航。' },
-        { at: 7.0, s: '跟踪目标 $g_t$ 69 维：全身 23 个关节角、12 个关键点、根部的速度姿态高度；哪 12 个点没写，我们推测是 ExBody 的上身 6 个加上对称的下身 6 个。' },
+        { at: 7.0, s: '跟踪目标 $g_t$ 69 维：全身 23 个关节角、12 个关键点、根部的速度姿态高度；哪 12 个点没写，我们推测是 ExBody 代码里定义的那 12 个（它只用了上身 6 个）。' },
         { at: 10.4, s: '教师 $\\hat\\pi$ 用 PPO 训，三层 MLP 512 · 256 · 128，输出 23 个关节的 PD 目标角。' },
         { at: 13.4, s: '项目页的仿真片段：绿点是跟踪的关键点。教师只在仿真里用，不部署。' }
       ]
@@ -2042,9 +2141,9 @@
       cues: [
         { at: 0.4, s: '论文的局限：通才达不到专才的精度，专才之间又不能无缝组合、切换。' },
         { at: 3.6, s: '以后的方向：实时混合或切换专才，两全。' },
-        { at: 7.0, s: '没说清的：重定向、12 个关键点、漂移拉回的周期；速度方向的式子按字面是反的。' },
-        { at: 10.4, s: '还有：表 XI 和表 II 重复的一行、图表差几位小数、段数对不上、没有代码。' },
-        { at: 13.4, s: 'ExBody2：姿态归关键点、位置归速度；让初始策略打分筛数据；通才再微调成专才。' }
+        { at: 7.0, s: '方法里没写的三处：重定向（我们用 ASAP 复现）；12 个关键点（推测是 ExBody 代码里定义的那 12 个）；多久拉回（按 1 s 假设）。' },
+        { at: 10.4, s: '速度方向：按字面同向 0.018、反向 54.6；结合正文和 ExBody 的代码，原意应是 $1-\\cos$（我们的推断）。' },
+        { at: 13.4, s: '对不上的数：表 XI 去掉 DAgger = 表 II 的 ExBody†；图 4 的 0.106 对表 II 的 0.1079；CMU 1,919 对 2,082 段；没有代码。' }
       ]
     }
   ];
@@ -2056,7 +2155,7 @@
       ariaLabel: 'ExBody2 十八幕讲解动画',
       notes: [
         '取数依据：表 I–IV、附录表 V–XI 的数字照抄 arXiv 2412.13196 v2 的 LaTeX 源码；图 4、图 8 的数是按像素颜色量出来的读图值；v1 的数（定期拉回的消融、25 步历史）读自 v1 的源码。官方没有开源代码。',
-        'G1 的动作是我们用 ASAP 开源的 `fit_smpl_shape.py`、`fit_smpl_motion.py`，以 SMPL 在 AMASS 的 CMU 动作上重定向的（大步走 `08_07`、挥手 `141_16`、Macarena `143_35`、扭摆舞 `141_12`、弯腰下蹲 `13_29`、侧手翻接后空翻 `88_05`），不是论文的数据；ASAP 的重定向照搬 SMPL 的根部高度、脚会离地，我们每帧把网格最低点挪到地面。12 个关键点（两肩、两肘、两手、两髋、两膝、两踝）是我们的推测：36 维 = 12 × 3，前作 ExBody 的代码跟两肩、两肘、两手，ExBody2 跟全身，对称补上下身。第 7、8 幕「机器人只走到 90% 的速度」与「每 1 s 拉回一次」、第 11 幕两个例子的 $e(s)$ 都是假设。',
+        'G1 的动作是我们用 ASAP 开源的 `fit_smpl_shape.py`、`fit_smpl_motion.py`，以 SMPL 在 AMASS 的 CMU 动作上重定向的（大步走 `08_07`、挥手 `141_16`、Macarena `143_35`、扭摆舞 `141_12`、弯腰下蹲 `13_29`、侧手翻接后空翻 `88_05`），不是论文的数据；ASAP 的重定向照搬 SMPL 的根部高度、脚会离地，我们每帧把网格最低点挪到地面。12 个关键点（两肩、两肘、两手、两髋、两膝、两踝）是我们的推测：36 维 = 12 × 3，前作 ExBody 的代码（`h1_mimic.py` 第 78–82 行）本来就定义了这 12 个关键体，只用了上身 6 个，ExBody2 跟全身。第 7、8 幕「机器人只走到 90% 的速度」与「每 1 s 拉回一次」、第 11 幕两个例子的 $e(s)$ 都是假设。',
         'G1 的 3D 外形：材质与光照照抄 Robot Retarget Online（ImChong/Robot_Retarget_Online）的 three.js 场景，按关节角用正交相机逐帧离线渲染成贴图；第 4 幕的蓝色人体是 SMPL 中性模型、形状参数取 0。真机与仿真片段剪自项目页 exbody2.github.io 的视频。'
       ],
       scenes: EXBODY2_SCENES
@@ -2104,7 +2203,7 @@
     var sLag = stats.add('每个关键点落后'), sNorm = stats.add('36 维误差的长度'), sRew = stats.add('关键点奖励（满分 2）');
     var verdict = verdictBox(root);
     var tb = table(root);
-    note(root, ['关键点奖励照表 I 的 $2\\exp(-|\\mathbf p_{\\text{ref}}-\\mathbf p|)$，$|\\cdot|$ 按整个 36 维向量的 L2 长度算（ExBody 的代码这么做，ExBody2 没有代码，我们沿用）。12 个关键点是哪几个论文没写，这里取两肩、两肘、两手、两髋、两膝、两踝（我们的推测：36 维 = 12 × 3，ExBody 跟上身这 6 个，全身版对称补上下身 6 个）。',
+    note(root, ['关键点奖励照表 I 的 $2\\exp(-|\\mathbf p_{\\text{ref}}-\\mathbf p|)$，$|\\cdot|$ 按整个 36 维向量的 L2 长度算（ExBody 的代码这么做，ExBody2 没有代码，我们沿用）。12 个关键点是哪几个论文没写，这里取两肩、两肘、两手、两髋、两膝、两踝（我们的推测：36 维 = 12 × 3，ExBody 的代码里本来就定义了这 12 个关键体，只用了上身 6 个）。',
       '「局部」是减去骨盆、再转到只转偏航的机器人坐标系；姿态一样时误差就是 0，位置的落后交给速度那几项去管。「漂一段再拉回」照论文的描述，周期论文没写；红线（一直不拉）、黄线（定期拉回）、蓝线（局部）对照着看。默认的第 1.0 s、90% 就是笔记「🚶 具体实例」的例 2、例 3。']);
     function render() {
       var mode = state.mode, k = state.k;
