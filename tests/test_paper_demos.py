@@ -121,6 +121,7 @@ EXBODY_NOTE = _high_impact_note("Expressive_Whole-Body_Control_for_Humanoid_Robo
 H2O_NOTE = _high_impact_note("H2O_Learning_Human-to-Humanoid_Real-Time_Whole-Body_Teleoperation")
 OMNIH2O_NOTE = _high_impact_note("OmniH2O_Universal_Whole-Body_Teleoperation")
 HOVER_NOTE = _high_impact_note("HOVER_Versatile_Neural_Whole-Body_Controller")
+EXBODY2_NOTE = _high_impact_note("ExBody2_Advanced_Expressive_Whole-Body_Control")
 MASKEDMIMIC_NOTE = _high_impact_note("MaskedMimic_Unified_Physics-Based_Character_Control_Through_Masked_Motion_Inpainting")
 PHP_NOTE = (
     ROOT
@@ -340,7 +341,7 @@ EXPLAINER_BUNDLES = (
     "gmr", "omniretarget", "diffusion_policy", "beyondmimic", "cosmos", "umr", "php", "pbfm",
     "gentle", "lcp", "transformer", "pi0", "pi05", "op3soccer", "smp", "humanml3d",
     "domain_randomization", "quadterrain", "realhumanoid", "asap", "inekf", "berkeley_humanoid",
-    "toddlerbot", "exbody", "h2o", "omnih2o", "hover", "maskedmimic",
+    "toddlerbot", "exbody", "h2o", "omnih2o", "hover", "maskedmimic", "exbody2",
 )
 
 # 幕数由论文决定，不是统一模板：PPO / DeepMimic / AMP / ADD 的核心概念正好各 5 个，
@@ -540,6 +541,12 @@ EXPLAINER_SCENES = {
     # DAgger 与 KL 调度（式 8）、结构化掩码、固定噪声与历史、先验网络各一幕；结果按表 1+2、表 3+4、表 5、表 6 各一幕，文字控制与局限一幕。
     # 压成 15 幕会让残差的两个高斯和 DAgger 的流程、或掩码的时间轴和历史的影子抢同一帧。
     "maskedmimic": (MASKEDMIMIC_NOTE, 18),
+    # ExBody2 十八幕：问题两幕（表现力和稳定要兼得 / 前人卡在三处）；图 2 的流水线一幕；重定向一幕（论文只写了一句，我们的复现与残差）；
+    # 第 III-B 节的教师按输入（表 V–VII 的 62 / 75 / 69 维）与奖励（表 I、表 IX）各一幕；「全局关键点会漂」与「局部 + 速度」是同一段走路的
+    # 两种跟法，各有自己的误差曲线，各占一幕；学生（10 步历史、DAgger）一幕；第 III-A 节的数据按人工试（表 X）、自动筛选（e(s) 与图 8）、
+    # 阈值扫描（图 4）、专才（表 IV）各一幕；结果按图 5 恰恰、表 II + III、表 XI 各一幕；动作来源与部署一幕，局限与没说清的地方一幕。
+    # 压成 15 幕会让全局的误差曲线和局部的锯齿、或图 8 的累积分布和图 4 的 U 形抢同一帧。
+    "exbody2": (EXBODY2_NOTE, 18),
 
     "humanml3d": (HUMANML3D_NOTE, 12),
 }
@@ -2015,7 +2022,7 @@ def test_narrated_video_placeholders_point_at_files_that_exist():
     for demo in ("calm-video", "pulse-video", "dp-video", "bm-video", "lcp-video", "cosmos-video", "groot-video",
                  "tf-video", "pi0-video", "pi05-video", "soccer-video", "sonic-video", "gmr-video",
                  "omniretarget-video", "humanml3d-video", "smp-video", "dr-video", "qt-video", "rh-video", "inekf-video", "bh-video",
-                 "tb-video", "exbody-video", "h2o-video", "hover-video"):
+                 "tb-video", "exbody-video", "h2o-video", "hover-video", "exbody2-video"):
         assert demo in seen, f"{demo} 应该挂在对应的论文笔记里"
 
 
@@ -4228,6 +4235,199 @@ def test_hover_assets_and_project_page_clips():
     assert "剪自[项目页](https://hover-versatile-humanoid.github.io/)的视频" in note
 
 
+def mod_display(narration: str):
+    """papers/<paper>.py 里的 DISPLAY 列表（念法 → 字幕）。"""
+    block = narration[narration.index("DISPLAY = [") :]
+    return re.findall(r'\("((?:[^"\\]|\\.)*)", "((?:[^"\\]|\\.)*)"\)', block)
+
+
+def _exbody2_clip(js: str, name: str):
+    """解码 exbody2.js 的 `WALK` / `WAVE`：小端 int16，每帧 per 个。"""
+    m = re.search(rf"var {name} = \{{ clip: '(\w+)', fps: (\d+), n: (\d+), per: (\d+), data: '([^']+)' \}};", js)
+    clip, fps, n, per = m.group(1), int(m.group(2)), int(m.group(3)), int(m.group(4))
+    a = _h2o_int16(m.group(5))
+    assert len(a) == n * per
+    return clip, fps, n, per, a
+
+
+def _exbody2_row(js: str, var: str, zh: str):
+    """表 II / III / XI 里按名字取一行的 v。"""
+    block = js[js.index(f"var {var} = [") : js.index("];", js.index(f"var {var} = ["))]
+    return json.loads(re.search(rf"\{{ (?:zh: '{re.escape(zh)}'|n: {re.escape(zh)}), v: (\[[^\]]*\]) \}}", block).group(1))
+
+
+def test_exbody2_explainer_demos_and_worked_example_share_the_paper_numbers():
+    """ExBody2：十八幕动画、三个演示、配音旁白与笔记「🚶 具体实例」用同一组数。
+
+    表 I–IV、附录表 V–XI 照抄 arXiv 2412.13196 v2 的 LaTeX 源码，图 4、图 8 是读图值；G1 的动作是我们用 ASAP 开源的
+    fit_smpl_shape.py、fit_smpl_motion.py 以 SMPL 在 AMASS 的 CMU 上重定向的大步走 08_07 与挥手 141_16，嵌在 exbody2.js 里，
+    这里解码后把例 1–3 的关键点、落后距离、奖励与 14 对点的残差再算一遍。
+    """
+    js = (DEMO_JS_DIR / "exbody2.js").read_text(encoding="utf-8")
+    note = EXBODY2_NOTE.read_text(encoding="utf-8")
+    narration = (ROOT / "scripts" / "paper_video" / "papers" / "exbody2.py").read_text(encoding="utf-8")
+    intro = (ROOT / "scripts" / "paper_video" / "papers" / "exbody2.js").read_text(encoding="utf-8")
+
+    for line in (
+        "{ zh: 'ExBody2', v: [0.2930, 0.1000, 0.0960, 0.1040, 0.1079, 0.0953, 0.1253] }",
+        "{ zh: 'ExBody2 不筛数据', v: [0.2787, 0.1133, 0.1087, 0.1182, 0.1355, 0.1192, 0.1579] },",
+        "{ zh: 'ExBody2', v: [0.1074, 0.1092, 0.1054] }",
+        "var T11_NODAGGER = [0.4195, 0.1150, 0.1106, 0.1198, 0.1496, 0.1416, 0.1607];",
+        "var TAUS = [{ tau: 0.075, pct: 14.0 }, { tau: 0.10, pct: 37.8 }, { tau: 0.125, pct: 61.8 }, { tau: 0.15, pct: 76.9 }, { tau: 0.175, pct: 84.8 }];",
+        "var E_W = { alpha: 0.1, beta: 0.9 };",
+        "var DEPLOY = { hz: 50, delayLo: 18, delayHi: 30, lowHz: 500 };",
+        "var V1 = { resetVel: 0.1891, noResetVel: 0.2545, hist: 25 };",
+        "var EX4 = { dq: 0.30, dp: 0.10, dv: 0.10, angDeg: 10, drp: 0.05, dy: 0.10 };",
+        "var LAG = { ratio: 0.9, period: 1.0 };",
+    ):
+        assert line in js, line
+    for k in ("'exbody2-explainer'", "'exbody2-video'", "'exbody2-frames'", "'exbody2-curation'", "'exbody2-tables'", "K.video(host"):
+        assert k in js, k
+
+    # 表 I：表情目标 3 + 2 = 5，移动目标 6 + 6 + 1 + 1 = 14，满分 19
+    t1 = js[js.index("var T1 = [") : js.index("];", js.index("var T1 = ["))]
+    assert [float(w) for w in re.findall(r"'[em]', ([\d.]+),", t1)] == [3.0, 2.0, 6.0, 6.0, 1.0, 1.0]
+    # 例 4：一步奖励；速度方向一项按字面（cos）与按我们的推测（1 − cos）
+    c10 = math.cos(math.radians(10))
+    rest = [3 * math.exp(-0.7 * 0.30), 2 * math.exp(-0.10), 6 * math.exp(-4 * 0.10), math.exp(-0.05), math.exp(-0.10)]
+    assert _fmt(sum(rest) + 6 * math.exp(-4 * (1 - c10)), 3) == "15.766" and _fmt(sum(rest) + 6 * math.exp(-4 * c10), 3) == "10.236"
+    assert "按字面 10.236，按 $1-\\cos$ 15.766（满分 19）" in note and "大约 15.8，满分 19" in narration
+    assert (_fmt(math.exp(-4), 3), _fmt(math.exp(4), 1), _fmt(6 * math.exp(4), 1)) == ("0.018", "54.6", "327.6")
+    assert "只有 0.018，完全相反时反而是 54.6" in narration and "$6e^{4}=327.6$" in note
+    # 例 5：输入维数
+    assert 62 + 75 + 69 == 206 and 75 * 10 + 69 == 819 and 75 * 25 + 69 == 1944
+    assert "**206** 维" in note and "**819** 维" in note and "一共 819 维" in narration
+    # 例 6：e(s) 与阈值（图 8 的竖线是读图值，段数按 1,919 估）
+    e_walk, e_flip = 0.1 * 0.08 + 0.9 * 0.10, 0.1 * 0.60 + 0.9 * 0.30
+    assert (_fmt(e_walk, 3), _fmt(e_flip, 3)) == ("0.098", "0.330")
+    cdf = json.loads("[" + re.search(r"var CDF = \[(.*?)\];", js, re.S).group(1) + "]")
+
+    def pct_of(e):
+        for (p0, e0), (p1, e1) in zip(cdf, cdf[1:], strict=False):
+            if e <= e1:
+                return p0 + (p1 - p0) * (e - e0) / (e1 - e0)
+        return 100
+
+    assert round(pct_of(e_walk)) == 36 and "大约排在第 36 百分位" in note and "排在第 36 百分位" in narration
+    pcts = [float(p) for p in re.findall(r"pct: ([\d.]+) \}", js)]
+    assert [round(p / 100 * 1919 / 10) * 10 for p in pcts] == [270, 730, 1190, 1480, 1630]
+    assert "**0.15 约 77%、1,480 段**" in note and "约 1480 段" in narration
+    # 例 7–9：读表
+    ours, nofilt = _exbody2_row(js, "T2", "ExBody2"), _exbody2_row(js, "T2", "ExBody2 不筛数据")
+    exb_full, omni = _exbody2_row(js, "T2", "ExBody†"), _exbody2_row(js, "T2", "OmniH2O*")
+    assert [_fmt(100 * (1 - ours[4] / b[4]), 1) for b in (exb_full, omni, nofilt)] == ["27.9", "35.8", "20.4"]
+    assert _fmt(100 * (1 - 0.1074 / _exbody2_row(js, "T3", "ExBody2 不筛数据")[0]), 1) == "21.1"
+    assert "低 27.9%，比 Omni H 2 O 低 35.8%；筛数据本身就让它降了 20.4%" in narration and "比没筛过的版本低 21.1%" in narration
+    assert [_fmt(100 * (1 - s_ / f_), 1) for f_, s_ in ((0.0843, 0.0772), (0.0924, 0.0760), (0.1188, 0.1047), (0.1609, 0.1402))] == ["8.4", "17.7", "11.9", "12.9"]
+    assert "8.4%、17.7%、11.9% 和 12.9%" in narration
+    h0, h10, h100 = (_exbody2_row(js, "T11_HIST", n) for n in ("0", "10", "100"))
+    assert h10 == ours and _fmt(h0[0] / h10[0], 2) == "1.42" and _fmt(100 * (h100[4] / h10[4] - 1), 1) == "13.5"
+    # 表 XI 去掉 DAgger 一行和表 II 的 ExBody† 一行七个数相同（我们发现的）
+    assert json.loads(re.search(r"var T11_NODAGGER = (\[[^\]]*\]);", js).group(1)) == exb_full
+    # 例 10：部署
+    assert 1000 / 50 == 20 and (18 / 20, 30 / 20) == (0.9, 1.5) and 500 // 50 == 10
+
+    # 复现：从嵌入的大步走再算一遍（例 2、例 3）
+    clip, fps, n, per, a = _exbody2_clip(js, "WALK")
+    assert (clip, fps, n, per) == ("08_07", 15, 38, 65)
+    root = [[a[k * per + q] / 1000 for q in range(3)] for k in range(n)]
+    yaw = [a[k * per + 5] / 1000 for k in range(n)]
+    kp = [[[a[k * per + 29 + 3 * j + q] / 1000 for q in range(3)] for j in range(12)] for k in range(n)]
+    steps = [math.dist(root[k][:2], root[k - 1][:2]) * fps for k in range(1, n)]
+    assert _fmt(sum(steps) / len(steps), 2) == "1.72" and (_fmt(min(steps), 2), _fmt(max(steps), 2)) == ("1.53", "2.06")
+    assert "平均 1.72 m/s（15 fps 的相邻帧差分，1.53–2.06 m/s）" in note
+    assert root[15] == [1.737, -0.035, 0.814] and yaw[15] == -0.147 and _fmt(root[37][0], 3) == "4.235"
+    assert "骨盆在 $(1.737, -0.035, 0.814)$ m" in note
+    # 每帧把网格最低点贴到地面（ASAP 的重定向照搬 SMPL 的根部高度，脚会离地）：较低那只脚的踝一直贴着地面
+    low = [min(kp[k][8][2], kp[k][11][2]) for k in range(n)]
+    assert 0.03 < min(low) and max(low) < 0.13 and "每帧把 G1 网格的最低点挪到地面" in note  # 蹬地时脚跟抬起、脚尖着地，踝高到 0.125 m
+    c, s_ = math.cos(yaw[15]), math.sin(yaw[15])
+    for j, zh in ((5, "右手"), (2, "左手"), (7, "左膝"), (11, "右踝")):
+        p = kp[15][j]
+        dx, dy = p[0] - root[15][0], p[1] - root[15][1]
+        loc = (c * dx + s_ * dy, -s_ * dx + c * dy, p[2] - root[15][2])
+        row = f"| {zh} | $({', '.join(_fmt(x, 3) for x in p)})$ | $({', '.join(_fmt(x, 3) for x in loc)})$ |"
+        assert row in note, row
+
+    def lag(k, ratio=0.9, period=0):
+        k0 = (k // round(period * fps)) * round(period * fps) if period else 0
+        d = (1 - ratio) * math.dist(root[k][:2], root[k0][:2])
+        return d, d * math.sqrt(12), 2 * math.exp(-d * math.sqrt(12))
+
+    assert [_fmt(x, 3) for x in lag(15)] == ["0.174", "0.602", "1.096"] and [_fmt(x, 3) for x in lag(37)] == ["0.424", "1.467", "0.461"]
+    assert "| 1.0 s | 1.737 m | 0.174 m | $0.174\\sqrt{12}=0.602$ | 1.096 |" in note
+    assert "| 2.47 s | 4.235 m | 0.424 m | $0.424\\sqrt{12}=1.467$ | 0.461 |" in note
+    assert "1 秒后机器人落后 0.17 米，2.47 秒后落后 0.42 米" in narration and "从二掉到 0.46" in narration
+    worst = max(lag(k, period=1.0)[0] for k in range(n))
+    window = max(math.dist(root[k + 15][:2], root[k][:2]) for k in range(n - 15))
+    assert (_fmt(worst, 3), _fmt(window, 3), _fmt(0.1 * window, 3)) == ("0.163", "1.772", "0.177")
+    assert "最多落后 **0.163 m**" in note and "不会超过 0.177 m" in note and "最多 0.16 米" in narration
+    assert _fmt(6 * math.exp(-4 * 0.1 * 1.72), 2) == "3.02" and "$6e^{-4\\times0.172}=3.02$" in note and "从满分 6 掉到 3" in narration
+
+    # 复现：挥手 14 对点的平均距离（例 1、第 4 幕）
+    clip, fps, n, per, b = _exbody2_clip(js, "WAVE")
+    assert (clip, fps, n, per) == ("141_16", 15, 45, 89)
+    per_pair = [0.0] * 14
+    for k in range(n):
+        o = k * per
+        for i in range(14):
+            per_pair[i] += math.dist([b[o + 3 + 3 * i + q] / 1000 for q in range(3)], [b[o + 45 + 3 * i + q] / 1000 for q in range(3)]) / n
+    assert _fmt(1000 * sum(per_pair) / 14, 1) == "32.1" and "平均 32.1 mm" in note and "平均相距 32 毫米" in narration
+    assert [_fmt(1000 * x, 1) for x in sorted(per_pair, reverse=True)[:3]] == ["64.6", "52.4", "51.3"]
+    resid = dict(re.findall(r"\['[^']+', '(\d+_\d+)', ([\d.]+)\]", js))
+    assert resid == {"08_07": "34.8", "141_16": "31.6", "143_35": "25.3", "143_34": "25.8", "141_12": "33.9", "13_29": "53.4", "49_06": "35.7", "88_05": "45.2", "87_01": "33.0"}
+    for clip_id, v in resid.items():
+        assert re.search(rf"\| `{clip_id}` [^|]+\| [\d.]+ s \| {v} mm \|", note), clip_id
+
+    # 旁白：数字列举用顿号，两个数之间不只隔一个逗号；片头接上一期（HOVER）的片尾预告，片尾只预告下一篇（HugWBC）
+    spoken = re.findall(r'"([^"]*)"\),', narration[narration.index("SCRIPT = [") : narration.index("DISPLAY = [")])
+    assert len(spoken) == 3 + 18 * 5 + 3 and not any(re.search(r"\d\s*[，,]\s*\d", t) for t in spoken)
+    assert narration.count("上一期结尾预告") == 1 and "把速度跟踪和关键点跟踪分开，先筛掉机器人做不到的动作" in narration
+    assert "下一篇讲 Hug W B C" in narration and "HugWBC" in intro and "ExBody2" in intro
+    # TTS 的切词：「筛掉下半身」会切成「掉下 | 半身」、「误差不如」切成「差不如」、「筛数据」切成「筛数 | 据」、「重定向」切成「重 | 定向」
+    for bad in ("筛掉下", "留下半身", "差不如", "差比", "筛数据低", "重定向", "跟头", "相当于", "几乎", "一行", "调参"):
+        assert not any(bad in t for t in spoken), bad
+    # 2026-10-19 看片反馈：「挑」单用念 tiǎo，一律写「挑选」；「表 2 里」念成「两里」，表号写成「表二」、字幕换回罗马数字；
+    # 「从图上量的」要念 liáng，旁白写同音的「粮」、字幕换回；expressive 译作「表达性」，没有「表情」
+    assert all(t.count("挑") == t.count("挑选") for t in spoken)
+    assert not any(re.search(r"表 \d", t) for t in spoken) and ("表二", "表 II") in mod_display(narration)
+    assert "从图上粮出来的" in narration and ("从图上粮出来的", "从图上量出来的") in mod_display(narration)
+    assert "表情" not in js + note + intro + "".join(spoken)
+    assert "## 🎬 十八幕动画" in note and 'demos: ["exbody2"]' in note
+    # 面板到 cue 之后才淡出
+    assert "return seg(t, a + 0.3, a + 0.7) * (b == null ? 1 : 1 - seg(t, b, b + 0.3));" in js and "1 - seg(t, b - 0.3, b)" not in js
+    # 视频文案的占位符都已填上
+    assert "__VIDEO_" not in js and "__VIDEO_" not in note
+
+
+def test_exbody2_assets_and_project_page_clips():
+    """ExBody2：论文图 1、2、5、6、7 的裁剪，G1 / SMPL 的七张贴图表，项目页的 8 段片段（按幕懒加载）。"""
+    js = (DEMO_JS_DIR / "exbody2.js").read_text(encoding="utf-8")
+    base = ROOT / "assets/img/papers/exbody2"
+    figs = {p.name for p in base.glob("*.webp")}
+    used = set(re.findall(r"'(fig\d_\w+\.webp)'", js))
+    assert used == figs == {"fig1_teaser.webp", "fig2_pipeline.webp", "fig5_chacha.webp", "fig6_multisource.webp", "fig7_results.webp"}
+    sheets = re.findall(r"(\w+): \{ file: '(\w+\.webp)', R: \d+, yaw: [\d.]+, pitch: [\d.]+, cw: (\d+), ch: (\d+), cols: (\d+), n: (\d+), ax: [\d.]+, ay: [\d.]+ \}", js)
+    assert {k for k, *_ in sheets} == {"walk", "wave", "smpl", "macarena", "sidetwist", "chicken", "flip"}
+    # 2026-10-20 看片反馈：原来的弯腰下蹲、扭摆舞脚斜、重心在脚外，一看就站不住；原地的三段把踝关节放平、挑质心在两脚之间的 3 s
+    note = EXBODY2_NOTE.read_text(encoding="utf-8")
+    assert "只把两个踝关节" in note and "倾角 ≤ 1.4°、两脚离地 ≤ 1.1 cm、质心 100% 在脚内" in note and "'squat'" not in js
+    for _, name, cw, ch, cols, n in sheets:
+        cw, ch, cols, n = map(int, (cw, ch, cols, n))
+        assert _webp_size(base / "g1_3d" / name) == (cw * cols, ch * math.ceil(n / cols)), name
+    assert {p.name for p in (base / "g1_3d").iterdir()} == {name for _, name, *_ in sheets}
+    assert sum(p.stat().st_size for p in (base / "g1_3d").iterdir()) < 3e6
+    assert "G1_3D_BASE = IMG_BASE ? IMG_BASE + 'exbody2/g1_3d/'" in js
+    used_clips = set(re.findall(r"projClip\(\w+, '(\w+)'", js))
+    assert used_clips == {"waltz", "stride", "g1sim", "stroll", "kpop", "punch", "expressive", "box"}
+    clip_dir = base / "clips"
+    assert {p.name for p in clip_dir.iterdir()} == {f"{u}.{ext}" for u in used_clips for ext in ("mp4", "webp")}
+    assert sum(p.stat().st_size for p in clip_dir.iterdir()) < 2e6
+    assert js.count("项目页视频") >= 8
+    note = EXBODY2_NOTE.read_text(encoding="utf-8")
+    assert "<https://exbody2.github.io/>（动画第 1、3、5、8、13、15、17 幕的真机与仿真片段剪自这里的视频" in note
+
+
 def _mm_clip(js: str):
     """解码 maskedmimic.js 的 `CLIP`：每帧 76 个 int16——24 个刚体的世界位置（毫米）+ 骨盆四元数 xyzw（× 10⁴）。"""
     m = re.search(r"var CLIP = \{ fps: (\d+), n: (\d+), t0: ([\d.]+), per: (\d+), data: '([^']+)' \};", js)
@@ -4417,3 +4617,30 @@ def test_maskedmimic_project_page_clips():
     assert js.count("项目页视频") >= 8 and "仿真结果剪自项目页的视频" in js
     note = MASKEDMIMIC_NOTE.read_text(encoding="utf-8")
     assert "仿真画面剪自[项目页](https://research.nvidia.com/labs/par/maskedmimic/)的视频" in note
+
+
+def test_video_notes_link_their_project_page():
+    """有配音视频的笔记，基本信息表里都有「项目主页 / 项目页」一行，下载按钮上的大小和 mp4 对得上。
+
+    2026-10-20 看片反馈「详情页里少了项目页链接」：AWR、PPO、Cosmos、GR00T N1、Transformer 缺这一行，
+    DeepMimic 的链接已经 404（搬到 /projects/DeepMimic/）；没有项目页的（InEKF）也写一行说明。
+    大小按十进制 MB、保留一位小数（GR00T N1、SONIC 原先写的是 MiB，Berkeley Humanoid、OP3 足球、HumanML3D 重渲后没跟着改）。
+    """
+    notes = [p for p in (ROOT / "papers").rglob("*.md") if "_archived" not in p.parts]
+    found = 0
+    for note in notes:
+        text = note.read_text(encoding="utf-8")
+        m = re.search(r'data-demo="[\w-]+-video" data-src="([^"]+)"', text)
+        if not m:
+            continue
+        found += 1
+        start = text.index("## 📋 基本信息")
+        info = text[start : text.index("\n## ", start + 5)]
+        row = re.search(r"^\|\s*(?:\*\*)?项目(?:主页|页)[^|]*\|([^\n]+)$", info, re.M)
+        assert row, f"{note.name} 的基本信息表里没有项目页一行"
+        assert "](http" in row.group(1) or "没有单独的项目页" in row.group(1), note.name
+        assert "xbpeng.github.io/DeepMimic/" not in text, "DeepMimic 的项目页已搬到 /projects/DeepMimic/"
+        mb = (note.parent / m.group(1)).stat().st_size / 1e6
+        label = re.search(r"下载 mp4（([\d.]+) MB）", text)
+        assert label and abs(float(label.group(1)) - mb) < 0.06, (note.name, mb)
+    assert found >= 36

@@ -72,7 +72,7 @@ demos: ["humanml3d"]
 
 ## 📺 配音讲解视频（可下载） {#humanml3d-video}
 
-<div class="paper-demo" data-demo="humanml3d-video" data-src="media/humanml3d_explainer_video.mp4" data-poster="media/humanml3d_explainer_video_poster.jpg"><p class="demo-fallback">（本节含讲解视频播放器，需要启用 JavaScript；也可以直接<a href="media/humanml3d_explainer_video.mp4" download="HumanML3D_讲解视频.mp4">下载 mp4（11.7 MB）</a>）</p></div>
+<div class="paper-demo" data-demo="humanml3d-video" data-src="media/humanml3d_explainer_video.mp4" data-poster="media/humanml3d_explainer_video_poster.jpg"><p class="demo-fallback">（本节含讲解视频播放器，需要启用 JavaScript；也可以直接<a href="media/humanml3d_explainer_video.mp4" download="HumanML3D_讲解视频.mp4">下载 mp4（11.8 MB）</a>）</p></div>
 
 > 📖 **动画之后的正文默认全部折叠**：动画覆盖到的那几节（要解决什么问题、方法详解、实验结果）按小节收起，再往后的具体实例、源码对照、工程价值、讨论、面试与参考来源各整块收起。想细读哪一块就点开对应的折叠条，内容一字未删；流程图和三个交互演示留在外面，目录里的标题依旧可以直接点，会自动展开所在折叠块，左侧目录顶部还有「展开全部文字」一键铺开。
 >

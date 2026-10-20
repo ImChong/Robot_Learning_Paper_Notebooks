@@ -73,7 +73,7 @@ demos: ["op3soccer"]
 
 ## 📺 配音讲解视频（可下载） {#soccer-video}
 
-<div class="paper-demo" data-demo="soccer-video" data-src="media/soccer_explainer_video.mp4" data-poster="media/soccer_explainer_video_poster.jpg"><p class="demo-fallback">（本节含讲解视频播放器，需要启用 JavaScript；也可以直接<a href="media/soccer_explainer_video.mp4" download="OP3足球_讲解视频.mp4">下载 mp4（11.4 MB）</a>）</p></div>
+<div class="paper-demo" data-demo="soccer-video" data-src="media/soccer_explainer_video.mp4" data-poster="media/soccer_explainer_video_poster.jpg"><p class="demo-fallback">（本节含讲解视频播放器，需要启用 JavaScript；也可以直接<a href="media/soccer_explainer_video.mp4" download="OP3足球_讲解视频.mp4">下载 mp4（11.3 MB）</a>）</p></div>
 
 > 📖 **动画之后的正文默认全部折叠**：问题、环境、两阶段训练、奖励、sim-to-real 和实验按小节收起，具体实例、补充材料整理、面试和附录各收成一块。想细读哪一块就点开，内容一字未删；三个交互演示和两张流程图留在外面。目录里的标题可以直接点，会自动展开所在折叠块，左侧目录顶部还有「展开全部文字」。
 

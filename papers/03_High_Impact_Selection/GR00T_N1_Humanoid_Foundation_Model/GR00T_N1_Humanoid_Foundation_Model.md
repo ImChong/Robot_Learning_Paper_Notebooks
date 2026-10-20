@@ -26,6 +26,7 @@ demos: ["groot"]
 | **arXiv** | [2503.14734](https://arxiv.org/abs/2503.14734) |
 | **HTML** | [arxiv.org/html/2503.14734](https://arxiv.org/html/2503.14734) |
 | **PDF** | [arxiv.org/pdf/2503.14734](https://arxiv.org/pdf/2503.14734) |
+| **项目页** | [developer.nvidia.com/isaac/gr00t](https://developer.nvidia.com/isaac/gr00t)（arXiv 摘要页给的链接） |
 | **发布时间** | 2025-03（arXiv） |
 | **作者** | NVIDIA Project GR00T（研究负责 Linxi “Jim” Fan、Yuke Zhu） |
 | **机构** | NVIDIA |
@@ -69,7 +70,7 @@ GR00T N1 是一个开放权重的视觉-语言-动作模型：Eagle-2 读图像�
 
 ## 📺 配音讲解视频（可下载） {#groot-video}
 
-<div class="paper-demo" data-demo="groot-video" data-src="media/groot_explainer_video.mp4" data-poster="media/groot_explainer_video_poster.jpg"><p class="demo-fallback">（本节含讲解视频播放器，需要启用 JavaScript；也可以直接<a href="media/groot_explainer_video.mp4" download="GR00T_N1_讲解视频.mp4">下载 mp4（7.0 MB）</a>）</p></div>
+<div class="paper-demo" data-demo="groot-video" data-src="media/groot_explainer_video.mp4" data-poster="media/groot_explainer_video_poster.jpg"><p class="demo-fallback">（本节含讲解视频播放器，需要启用 JavaScript；也可以直接<a href="media/groot_explainer_video.mp4" download="GR00T_N1_讲解视频.mp4">下载 mp4（7.4 MB）</a>）</p></div>
 
 > 📖 **动画之后的正文默认全部折叠**：问题、双系统、流匹配、数据金字塔、潜动作、跨本体、实验数字和边界按小节收起，具体实例、源码对照、面试和附录各收成一块。想细读哪一块就点开，内容一字未删；下面那张流程图留在外面。目录里的标题可以直接点，会自动展开所在折叠块，左侧目录顶部还有「展开全部文字」。
 

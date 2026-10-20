@@ -18,6 +18,7 @@ demos: ["cosmos"]
 | 论文 | [arXiv:2501.03575](https://arxiv.org/abs/2501.03575) · [HTML](https://arxiv.org/html/2501.03575v3) · [PDF](https://arxiv.org/pdf/2501.03575) |
 | 作者 | NVIDIA（Niket Agarwal 等） |
 | 首次发布 | 2025 年 1 月 7 日（arXiv） |
+| 项目页 | [research.nvidia.com/labs/cosmos-lab/cosmos-predict1](https://research.nvidia.com/labs/cosmos-lab/cosmos-predict1/) |
 | 官方代码与模型 | [NVIDIA Cosmos-Predict1](https://github.com/nvidia-cosmos/cosmos-predict1) |
 
 ## 🎯 一句话理解
