@@ -8,7 +8,7 @@ window.PaperVideo = {
     var b = h('div', 'big', root, '<div style="font-size:52px;font-weight:900;line-height:1.2">进阶的表达性人形全身控制</div>' +
       '<div style="font-size:32px;color:var(--text-secondary);margin-top:8px">姿态归关键点，位置归速度</div>');
     var m = h('div', 'meta', root,
-      '<b>ExBody2: Advanced Expressive Humanoid Whole-Body Control</b><br>Mazeyu Ji 等 · UCSD、UC Berkeley、MIT');
+      '<b>ExBody2: Advanced Expressive Humanoid Whole-Body Control</b><br>Mazeyu Ji 等 · UCSD、伯克利、MIT · arXiv&nbsp;2024');
     m.style.fontSize = '27px';
     m.style.padding = '22px 34px';
     /* 十八条目录排成两列：左列 01–09、右列 10–18，单列的话封面上最后一行会落到 3:4 裁剪线以下 */
