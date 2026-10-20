@@ -3372,9 +3372,12 @@ def test_gmr_explainer_demos_and_worked_example_share_the_paper_numbers():
 
 
 def _webp_size(path: Path):
-    """读 webp 的画布尺寸（带透明通道的贴图是 VP8X：第 24–29 字节是宽、高减一，小端 24 位）。"""
+    """读 webp 的画布尺寸（带透明通道的贴图是 VP8X：第 24–29 字节是宽、高减一，小端 24 位；
+    不透明的有损图是 VP8：第 26–29 字节是宽、高，各取低 14 位）。"""
     head = path.read_bytes()[:30]
-    assert head[:4] == b"RIFF" and head[8:12] == b"WEBP" and head[12:16] == b"VP8X", path.name
+    assert head[:4] == b"RIFF" and head[8:12] == b"WEBP" and head[12:16] in (b"VP8X", b"VP8 "), path.name
+    if head[12:16] == b"VP8 ":
+        return int.from_bytes(head[26:28], "little") & 0x3FFF, int.from_bytes(head[28:30], "little") & 0x3FFF
     return int.from_bytes(head[24:27], "little") + 1, int.from_bytes(head[27:30], "little") + 1
 
 
@@ -4757,14 +4760,19 @@ def test_hugwbc_explainer_demos_and_worked_example_share_the_paper_numbers():
                 assert abs(z - (_hugwbc_swing(ph, lift) + 0.0698)) < 1.5e-3, (key, k, i, z)
     assert round(_hugwbc_toy(js, "walk")[12][1][2] * 1000) == 117 and "117 mm" in note
 
-    # 旁白：数字列举用顿号，两个数之间不只隔一个逗号；片头不接还没做的 ExBody2，片尾只预告下一篇（HOMIE）
+    # 旁白：数字列举用顿号，两个数之间不只隔一个逗号；片头接上一期（ExBody2）的片尾预告并说准单脚跳另训，片尾只预告下一篇（HOMIE）
     spoken = re.findall(r'"([^"]*)"\),', narration[narration.index("SCRIPT = [") : narration.index("DISPLAY = [")])
     assert len(spoken) == 86 and not any(re.search(r"\d\s*[，,]\s*\d", t) for t in spoken)
-    assert "上一期结尾预告" not in narration and "前面讲过的 Hover" in narration
+    exbody2 = (ROOT / "scripts" / "paper_video" / "papers" / "exbody2.py").read_text(encoding="utf-8")
+    preview = re.search(r"下一篇讲 Hug W B C：([^。]*)。", exbody2).group(1)
+    assert narration.count("上一期结尾预告：" + preview + "。") == 1 and "单脚跳另外训练了一个" in narration
     assert "下一篇讲 Homie" in narration and "HOMIE" in intro
+    # 2026-10-20 看片检查：表号写中文数字（「表 2 里」会念成「两里」），数字后面不紧跟「只」（「表 6 只」念成量词）
+    assert not any(re.search(r"表 ?\d", t) for t in spoken) and not any(re.search(r"\d\s*只", t) for t in spoken)
+    assert "单脚跳的低速前向和左右速度" in narration and "0.033" in js + note and "0.046" in js
     for s in ("我们读代码的结果", "我们整理的", "我们的理解", "读图的近似值"):
         assert s in narration, s
-    for bad in ("差得", "当老师", "几乎", "一行", "重训", "着地", "不干预训", "步长", "遥操作"):
+    for bad in ("差得", "当老师", "几乎", "一行", "重训", "着地", "不干预训", "步长", "遥操作", "挑", "数值", "还得"):
         assert not any(bad in t for t in spoken), bad
     assert "## 🎬 十六幕动画" in note and 'demos: ["hugwbc"]' in note
     # 面板到 cue 之后才淡出
@@ -4774,12 +4782,12 @@ def test_hugwbc_explainer_demos_and_worked_example_share_the_paper_numbers():
 
 
 def test_hugwbc_assets_and_project_page_clips():
-    """HugWBC：论文图 1–6、图 8 的裁剪，H1 运动学示意的 6 张贴图表，项目页的 5 段片段（按幕懒加载）。"""
+    """HugWBC：论文图 1–3、5、6、8 的裁剪（图 8 从矢量原图按 1.5 倍出，放大的热图格子不糊），H1 运动学示意的 6 张贴图表，项目页的 5 段片段（按幕懒加载）。"""
     js = (DEMO_JS_DIR / "hugwbc.js").read_text(encoding="utf-8")
     base = ROOT / "assets/img/papers/hugwbc"
     figs = {p.name for p in base.glob("*.webp")}
     used = set(re.findall(r"\['(fig\d_\w+\.webp)', \d+, \d+\]", js))
-    assert used == figs and len(used) == 8
+    assert used == figs and len(used) == 7
     sheets = re.findall(r"(\w+): \{ file: '(h1_\w+\.webp)', R: 200, yaw: [\d.]+, pitch: 0\.1, cw: (\d+), ch: (\d+), cols: (\d+), n: (\d+), ax: \d+, ay: \d+ \}", js)
     assert {s[0] for s in sheets} == {"walk", "walk_hi", "jump", "hop", "posture", "noise"}
     for key, name, cw, ch, cols, n in sheets:
@@ -4787,6 +4795,7 @@ def test_hugwbc_assets_and_project_page_clips():
     assert {p.name for p in (base / "h1_3d").iterdir()} == {s[1] for s in sheets}
     assert sum(p.stat().st_size for p in (base / "h1_3d").iterdir()) < 1.0e6
     assert "H1_3D_BASE = IMG_BASE ? IMG_BASE + 'hugwbc/h1_3d/'" in js
+    assert "fig8w: ['fig8_walk.webp', 2100, 2061]," in js and _webp_size(base / "fig8_walk.webp") == (2100, 2061)
     clip_dir = base / "clips"
     used_clips = set(re.findall(r"projClip\(\w+, '(\w+)'", js))
     assert used_clips == {"intro", "noise", "box", "posture", "lawn"}

@@ -387,10 +387,9 @@
     fig1: ['fig1_teaser.webp', 1292, 649],
     fig2: ['fig2_framework.webp', 2000, 800],
     fig3: ['fig3_contact.webp', 911, 380],
-    fig4: ['fig4_phase.webp', 1000, 1423],
     fig5: ['fig5_noise.webp', 779, 639],
     fig6: ['fig6_radar.webp', 1400, 679],
-    fig8w: ['fig8_walk.webp', 1400, 1374],
+    fig8w: ['fig8_walk.webp', 2100, 2061],
     fig8s: ['fig8_stand.webp', 900, 851]
   };
   function paperPart(parent, key, u0, v0, u1, v1, x, y, w, caption) {
@@ -584,18 +583,38 @@
   /* ── scene 1: 人会的，人形还做不到 ── */
   function buildSceneIntro() {
     var s = sceneSvg('左边：项目页视频里 HugWBC 控制的 Unitree H1，依次是户外走跑、侧向跳、单脚跳、跳着张开和交叉手臂；右边依次出现：人会的步态与可调的参数、' +
-      '以前学出来的人形行走的四个毛病、上身一被接管下身就失稳、HugWBC 的三件事、出处');
+      '以前学出来的人形行走的四个毛病、上身一被接管下身就失稳；讲 HugWBC 的三件事时换成铺满的论文图 2，按旁白依次框出命令、步态与输出、外部控制；最后是出处');
     s.appendChild(svgText(24, 26, '人会的这些，学出来的人形行走大多做不到', 'demo-x-ink2', 13.5));
     var VX = 44, VY = 44, VW = 320;
-    var clip = projClip(s, 'intro', VX, VY, VW, VW, '');
+    var vid = group(s);
+    var clip = projClip(vid, 'intro', VX, VY, VW, VW, '');
     var acc = 0, total = 0, bars = [];
     INTRO_PARTS.forEach(function (p) { total += p[0]; });
     INTRO_PARTS.forEach(function (p) {
       var r = paint(svgEl('rect', { x: (VX + acc / total * VW).toFixed(1), y: VY + VW + 8, width: (p[0] / total * VW - 4).toFixed(1), height: 5, rx: 2.5 }), C_ACCENT);
-      s.appendChild(r); bars.push(r); acc += p[0];
+      vid.appendChild(r); bars.push(r); acc += p[0];
     });
-    var name = label(s, VX, VY + VW + 30, '', 'demo-x-ink', 12.5);
-    label(s, VX + VW, VY + VW + 30, '项目页视频（1 倍速）', 'demo-x-mut', 10, 'end');
+    var name = label(vid, VX, VY + VW + 30, '', 'demo-x-ink', 12.5);
+    label(vid, VX + VW, VY + VW + 30, '项目页视频（1 倍速）', 'demo-x-mut', 10, 'end');
+    /* 第 4 段：论文图 2 铺满卡片，旁白念到哪件事就框出图里对应的部分（时刻按旁白的字幕量出来） */
+    var figG = group(s), FX = 24, FY = 40, FW = 752, FS = FW / 2000;
+    paperPart(figG, 'fig2', 0, 0, 1, 1, FX, FY, FW, '');
+    function f2box(x0, y0, x1, y1, color) {
+      var r = rectBox(figG, FX + x0 * FS, FY + y0 * FS, (x1 - x0) * FS, (y1 - y0) * FS, color, 'none');
+      r.setAttribute('stroke-width', 3);
+      return r;
+    }
+    var HL = [
+      [f2box(25, 15, 640, 740, C_ACCENT), f2box(640, 228, 1132, 392, C_ACCENT)],
+      [f2box(652, 428, 1312, 738, C_GOOD), f2box(1326, 70, 1536, 726, C_GOOD)],
+      [f2box(1544, 55, 1976, 606, C_WARN), f2box(900, 148, 1262, 240, C_WARN)]
+    ];
+    var HL_AT = [2.1, 4.8, 8.4];
+    var CY3 = FY + FW * 800 / 2000 + 12;
+    chip(figG, FX, CY3, 244, '① 命令 = **任务** + **行为**', C_ACCENT, { size: 11.5 });
+    chip(figG, FX + 254, CY3, 244, '② 一个策略：走、跳、站（单脚跳另训）', C_GOOD, { size: 11 });
+    chip(figG, FX + 508, CY3, 244, '③ 干预训练：上身交给别人', C_WARN, { size: 11.5 });
+    label(figG, FX + FW, CY3 + 44, '论文图 2：(a) 命令　(b) 策略与四种步态　(c) 输出　(d) 外部的上身控制', 'demo-x-mut', 9.5, 'end');
     var ps = panels(s, 5);
     label(ps[0], R, 64, '人会的', 'demo-x-ink', 14);
     chip(ps[0], R, 80, 110, '走、跑', C_ACCENT, { size: 12 });
@@ -615,19 +634,21 @@
     chip(ps[2], R, 134, RW, '下身策略没见过这种上身 → 容易失稳', C_BAD, { size: 12 });
     label(ps[2], R, 190, 'HOVER、OmniH2O：把上身目标塞进命令空间一起跟', 'demo-x-mut', 11);
     label(ps[2], R, 210, 'HugWBC：上身直接交给外部控制器，下身照样跟命令', 'demo-x-mut', 11);
-    label(ps[3], R, 64, 'HugWBC：统一、通用的全身控制器', 'demo-x-ink', 14);
-    chip(ps[3], R, 80, RW, '① 命令空间 = **任务命令** + **行为命令**', C_ACCENT, { size: 12, left: true });
-    chip(ps[3], R, 118, RW, '② 一个策略：走、跳、站（单脚跳另训一个）', C_GOOD, { size: 12, left: true });
-    chip(ps[3], R, 156, RW, '③ 干预训练：上身随时交给外部控制器', C_WARN, { size: 12, left: true });
-    label(ps[3], R, 214, 'Humanoid’s Unified and General Whole-Body Control', 'demo-x-mut', 11);
     label(ps[4], R, 64, '出处', 'demo-x-ink', 14);
     chip(ps[4], R, 80, RW, 'Yufei Xue、Wentao Dong（共同一作）等五位作者', C_BORDER, { size: 11.5, left: true });
     chip(ps[4], R, 118, RW, '上海交通大学 · 上海人工智能实验室 · RSS 2025', C_BORDER, { size: 11.5, left: true });
     chip(ps[4], R, 156, RW, 'Unitree H1（19 个自由度）· Isaac Gym · 代码 2025-06 开源', C_BORDER, { size: 11.5, left: true });
     var last = -1;
     function draw(t, clock) {
+      var ci = cueIndex(t);
+      /* 片段在第 4 段让位给论文图 2，第 5 段再回来 */
+      var vOp = ci < 3 ? 1 : ci === 3 ? 1 - seg(t, CUES[3], CUES[3] + 0.3) : seg(t, CUES[4] + 0.3, CUES[4] + 0.7);
+      setOpacity(vid, vOp);
+      setOpacity(figG, ci >= 3 ? win(t, CUES[3], CUES[4]) : 0);
+      var u = clock == null ? (t - CUES[3]) * 3 : K.clipSince(t, CUES[3]);
+      HL.forEach(function (g, k) { g.forEach(function (r) { setOpacity(r, ci === 3 && u >= HL_AT[k] ? 1 : 0); }); });
       var sec = Math.max(0, K.clipSince(t, 0));
-      clip.at(sec, true);
+      clip.at(sec, vOp > 0);
       var m = ((sec % total) + total) % total, idx = 0, a = 0;
       INTRO_PARTS.forEach(function (p, i) { if (m >= a) idx = i; a += p[0]; });
       if (idx !== last) {
@@ -758,7 +779,7 @@
   /* ── scene 3: 相位：一个数切换四种步态 ── */
   function buildScenePhase() {
     var s = sceneSvg('左边：一台 H1（运动学示意）按两只脚的相位走、跳、站、单脚跳，右上角是论文图 4 那样的相位环（内圈左脚紫、外圈右脚绿），下面是两只脚的时钟；右边依次出现相位的更新公式、四种步态各自的设定、一个策略管三种');
-    s.appendChild(svgText(24, 26, '相位：同一组命令切出四种步态（论文图 4）', 'demo-x-ink2', 13.5));
+    s.appendChild(svgText(24, 26, '相位：同一组命令切出四种步态（照论文图 4 重画）', 'demo-x-ink2', 13.5));
     var left = group(s);
     rectBox(left, 24, 38, 360, 360, C_BORDER, C_SURFACE2);
     var OX = 130, OY = 352, SC = 135;
@@ -849,6 +870,7 @@
     math(ps[1], R, 100, 'C = \\Phi\\!\\left(\\tfrac{\\bar\\phi}{\\sigma}\\right)\\left[1-\\Phi\\!\\left(\\tfrac{\\bar\\phi-0.5}{\\sigma}\\right)\\right] + \\Phi\\!\\left(\\tfrac{\\bar\\phi-1}{\\sigma}\\right)\\left[1-\\Phi\\!\\left(\\tfrac{\\bar\\phi-1.5}{\\sigma}\\right)\\right]', 12.5, 'start', RW);
     rich(ps[1], R, 140, '$\\Phi$：标准正态分布的累积分布函数', 11, 'demo-x-mut', 'start', RW);
     rich(ps[1], R, 160, '着地段第一项起作用，摆动段第二项起作用', 11, 'demo-x-mut', 'start', RW);
+    paperPart(ps[1], 'fig3', 0, 0, 1, 1, R + 4, 184, RW - 8, '论文图 3：橙 Loose（放松后），蓝 Normal（硬切换）');
     label(ps[2], R, 64, 'σ 决定坡有多缓', 'demo-x-ink', 14);
     rich(ps[2], R, 92, '切换点放松成区间 $[-3\\sigma, 3\\sigma]$、$[0.5-3\\sigma, 0.5+3\\sigma]$', 12, 'demo-x-ink2', 'start', RW);
     chip(ps[2], R, 108, RW, '官方代码 $\\sigma = 0.05$（`kappa_gait_probs`），坡宽 ±0.15', C_ACCENT, { size: 11.5 });
@@ -1288,7 +1310,7 @@
         if (v == null) { label(g, bx + bw / 2, GY + GH - 4, '–', 'demo-x-mut', 10, 'middle'); cells.push({ g: g, i: i, j: j }); return; }
         var h = GH * 0.82 * v / mx;
         g.appendChild(paint(svgEl('rect', { x: (bx + 1).toFixed(1), y: (GY + GH - h).toFixed(1), width: (bw - 2).toFixed(1), height: h.toFixed(1), rx: 2 }), GAIT_C[i]));
-        var tv = label(g, bx + bw / 2 + 3, GY + GH - h - 4, String(v).replace(/^0\./, '.'), 'demo-x-ink2', 8.5, 'start');
+        var tv = label(g, bx + bw / 2 + 3, GY + GH - h - 4, v.toFixed(3).replace(/^0\./, '.'), 'demo-x-ink2', 8.5, 'start');
         tv.setAttribute('transform', 'rotate(-90 ' + (bx + bw / 2 + 3).toFixed(1) + ' ' + (GY + GH - h - 4).toFixed(1) + ')');
         cells.push({ g: g, i: i, j: j });
       });
@@ -1308,7 +1330,7 @@
       TABLE11.forEach(function (r, i) {
         var bw = (bcol - 16) / 3, bx = x0 + 8 + i * bw, h = GH * 0.82 * r.v[j] / mx;
         t11.appendChild(paint(svgEl('rect', { x: (bx + 1).toFixed(1), y: (GY + GH - h).toFixed(1), width: (bw - 2).toFixed(1), height: h.toFixed(1), rx: 2 }), B_C[i]));
-        var tv = label(t11, bx + bw / 2 + 3, GY + GH - h - 4, String(r.v[j]).replace(/^0\./, '.'), 'demo-x-ink2', 8.5, 'start');
+        var tv = label(t11, bx + bw / 2 + 3, GY + GH - h - 4, r.v[j].toFixed(3).replace(/^0\./, '.'), 'demo-x-ink2', 8.5, 'start');
         tv.setAttribute('transform', 'rotate(-90 ' + (bx + bw / 2 + 3).toFixed(1) + ' ' + (GY + GH - h - 4).toFixed(1) + ')');
       });
     });
@@ -1321,8 +1343,8 @@
     rich(ps[0], 24, NY + 24, '脚的两项按整个步态周期算，其余按每一步算；站立只测姿态三项，单脚跳只测它的四个命令', 11.5, 'demo-x-mut', 'start', 760);
     rich(ps[1], 24, NY, '**走**：$v_x$ 低速 0.030 m/s、高速（> 1 m/s）0.216；$v_y$ 0.085，$\\omega$ 0.054 rad/s', 12.5, 'demo-x-ink2', 'start', 760);
     rich(ps[1], 24, NY + 24, '步频 0.028 Hz、抬脚 0.011 m；身高 0.064 m、俯仰 0.038 rad、腰 0.075 rad', 11.5, 'demo-x-mut', 'start', 760);
-    rich(ps[2], 24, NY, '**站、走最准，跳次之，单脚跳最差**：单脚跳高速、俯仰、腰的命令下会摔，策略先保平衡', 12.5, 'demo-x-ink2', 'start', 760);
-    rich(ps[2], 24, NY + 24, '论文：哪种步态训练时先学会，哪种就跟得准；跳的高速 $v_x$ 误差 0.532 m/s', 11.5, 'demo-x-mut', 'start', 760);
+    rich(ps[2], 24, NY, '**论文：站、走比跳、单脚跳准得多，单脚跳误差最大**——高速、俯仰、腰的命令下会摔，策略先保平衡', 12.5, 'demo-x-ink2', 'start', 760);
+    rich(ps[2], 24, NY + 24, '但表里单脚跳的低速 $v_x$（0.033）、$v_y$（0.046）比跳（0.090、0.069）还小；论文：训练时先学会的步态跟得准', 11.5, 'demo-x-mut', 'start', 760);
     rich(ps[3], 24, NY, '**侧向不如前向**：论文归因于 H1 的硬件；**调姿态比调脚难**：姿态更影响平衡，策略更保守', 12.5, 'demo-x-ink2', 'start', 760);
     rich(ps[3], 24, NY + 24, '论文文字说抬脚 $l$ 跟得最不准，但表里 $E_l$ 是 0.011 m，量纲不同、我们看不出它怎么比的', 11.5, 'demo-x-mut', 'start', 760);
     rich(ps[4], 24, NY, '**表 XI**：同样扫单个命令，HugWBC 七项都比 HOVER、ExBody 低（$v_x$ 低速 0.030 对 0.559 / 0.109）', 12.5, 'demo-x-ink2', 'start', 760);
@@ -1426,7 +1448,7 @@
     rich(nt[3], R, NY, '没干预时，HugWBC 的速度、脚也最准：干预训练本身让策略更稳', 11.5, 'demo-x-ink2', 'start', RW);
     rich(nt[3], R, NY + 20, '只有姿态三项不如不干预的策略（$h$ 0.037 对 0.026）', 10.5, 'demo-x-mut', 'start', RW);
     rich(nt[4], R, NY, '跳（表 X）：手臂被接管影响最大——跳要靠摆臂', 11.5, 'demo-x-ink2', 'start', RW);
-    rich(nt[4], R, NY + 20, '单脚跳没做干预训练；表 X 有两组数和站立重复，见笔记', 10.5, 'demo-x-mut', 'start', RW);
+    rich(nt[4], R, NY + 20, '表 X「不干预」的姿态误差，跳和站立基本一样，见笔记', 10.5, 'demo-x-mut', 'start', RW);
     function draw(t, clock) {
       var ci = cueIndex(t);
       clip.at(K.clipSince(t, 0), true);
@@ -1472,6 +1494,10 @@
     STRATS.forEach(function (st, i) { dotAt(lt, 30 + i * 118, 282, 5, STRAT_C[i]); label(lt, 38 + i * 118, 286, st.replace('（HugWBC）', ''), 'demo-x-ink2', 9.5); });
     var rt = group(s);
     var fig = paperPart(rt, 'fig6', 0, 0, 1, 1, R, 44, RW, '论文图 6：左 = 持续的力，右 = 推一秒；蓝 HugWBC，红 不做干预训练');
+    /* 讲图 6 的三段：雷达图放大到卡片中间（宽 480），标题挪到图上方 */
+    var big = group(s), BW = 480, BX = (800 - BW) / 2;
+    label(big, 400, 50, '论文图 6：左 = 一直加着的力，右 = 推一秒；蓝 HugWBC，红 不做干预训练', 'demo-x-mut', 10.5, 'middle');
+    paperPart(big, 'fig6', 0, 0, 1, 1, BX, 60, BW, '');
     var NY = 316;
     var ps = panels(s, 5);
     rich(ps[0], 24, NY, '**站着调姿态时脚应该不动**：表 V 量一回合（20 s）里两只脚总共挪了多远', 12.5, 'demo-x-ink2', 'start', 760);
@@ -1486,8 +1512,10 @@
     rich(ps[4], 24, NY + 24, '真机上它踩地更用力：正则和跟踪精度之间可能有取舍（论文的观察）', 11.5, 'demo-x-mut', 'start', 760);
     function draw(t, clock) {
       var ci = cueIndex(t);
-      setOpacity(lt, ci <= 1 || ci === 4 ? 1 : 0.35);
-      setOpacity(rt, ci >= 2 ? 1 : 0.35);
+      var small = ci <= 1 ? 1 : 1 - seg(t, CUES[2], CUES[2] + 0.3);
+      setOpacity(lt, small);
+      setOpacity(rt, 0.35 * small);
+      setOpacity(big, ci >= 2 ? win(t, CUES[2]) : 0);
       fadePanels(ps, t);
     }
     return { el: s, draw: draw };
@@ -1580,10 +1608,11 @@
     ['站立时相位置 0：时钟 0、接地概率 0.5', '抬脚：三角形目标生效，五次多项式权重 0', '估计器只估线速度', '干预：每 30 步重抽，翻转函数未调用', '角速度奖励权重 3，跟踪的 σ 是 0.25'].forEach(function (ln, i) {
       rich(ps[3], R, 92 + i * 22, '· ' + ln, 11.5, 'demo-x-ink2', 'start', RW);
     });
-    label(ps[4], R, 64, 'HugWBC 三句话', 'demo-x-ink', 14);
-    chip(ps[4], R, 80, RW, '① 命令空间 = 任务 + 行为（脚、姿态、步态）', C_ACCENT, { size: 11.5, left: true });
-    chip(ps[4], R, 118, RW, '② 相位与期望接地概率：一个策略切三种步态', C_GOOD, { size: 11.5, left: true });
-    chip(ps[4], R, 156, RW, '③ 干预训练：上身随时交给别人，腿照常跟命令', C_WARN, { size: 11.5, left: true });
+    label(ps[4], R, 64, '论文里对不上的几处', 'demo-x-ink', 14);
+    ['表 I：接触奖励的指数前少了负号', '表 V：表头单位写成 m/s，其实是位移（m）', '表 X：「不干预」的姿态误差，跳和站立几乎一样',
+      '正文说抬脚跟得最不准，表 III 里 $E_l$ 才 0.011 m', '正文说腰比俯仰准，站立那一行反过来'].forEach(function (ln, i) {
+      rich(ps[4], R, 92 + i * 22, '· ' + ln, 11.5, 'demo-x-ink2', 'start', RW);
+    });
     function draw(t, clock) {
       fadePanels(ps, t);
     }
@@ -1608,7 +1637,7 @@
       dur: 16,
       build: buildSceneCommands,
       cues: [
-        { at: 0.4, s: '**任务命令** $\\mathcal{K}$：目标速度 $v = (v_x, v_y, \\omega)$，决定往哪走。' },
+        { at: 0.4, s: '**任务命令** $\\mathcal{K}$：目标速度 $v = (v_x, v_y, \\omega)$。' },
         { at: 3.6, s: '**行为命令** $\\mathcal{B}$ 第一组「脚」：步频 $f$（1.5–3.5 Hz）、最高抬脚 $l$（0.1–0.35 m）。' },
         { at: 7.0, s: '第二组「姿态」：身高 $h$（往下 0–0.3 m）、身体俯仰 $p$（0–0.4 rad）、腰偏航 $w$（±1 rad）。' },
         { at: 10.4, s: '第三组「步态」：相位偏移 $\\psi$、两只脚的相位 $\\phi_1, \\phi_2$、支撑占比 $\\phi_{\\text{stance}}$。' },
@@ -1632,7 +1661,7 @@
       dur: 16,
       build: buildSceneContact,
       cues: [
-        { at: 0.4, s: '硬切换：$\\bar\\phi$ 过 0.5 的一瞬间，期望接地从 1 掉到 0。' },
+        { at: 0.4, s: '硬切换：$\\bar\\phi$ 一过 0.5，期望接地就从 1 掉到 0。' },
         { at: 3.6, s: '用标准正态的 CDF $\\Phi$ 把切换点放松成一段坡：期望接地概率 $C(\\bar\\phi)$。' },
         { at: 7.0, s: '$\\sigma$ 越大坡越缓；官方代码 $\\sigma = 0.05$，坡宽 ±0.15：$C(0.1) = 0.977$、$C(0.6) = 0.023$。' },
         { at: 10.4, s: '策略看到的是时钟 $Cl = \\sin 2\\pi\\bar\\phi$：走路时左右一正一负，跳时重合。' },
@@ -1718,7 +1747,7 @@
       cues: [
         { at: 0.4, s: '一次只扫一个命令，其余放默认值；误差是 L1 的回合平均。' },
         { at: 3.6, s: '走：$v_x$ 低速 0.030 m/s、高速 0.216；步频 0.028 Hz、抬脚 0.011 m。' },
-        { at: 7.0, s: '站、走最准，跳次之，单脚跳最差：它首先要不摔。' },
+        { at: 7.0, s: '论文说站、走最准，单脚跳误差最大；但表里单脚跳的低速 $v_x$、$v_y$ 比跳还小。' },
         { at: 10.4, s: '侧向不如前向（H1 的硬件）；调姿态比调脚难，策略更保守。' },
         { at: 13.4, s: '表 XI：同样的测法，HugWBC 七项都比 HOVER、ExBody 低——但这是让基线做它们不擅长的事。' }
       ]
@@ -1731,7 +1760,7 @@
         { at: 0.4, s: '两个命令一起扫，画误差热图；一个变了另一个照样跟得准，叫「正交」。' },
         { at: 3.6, s: '走：$v_x$、$\\omega$、$h$、$w$ 两两正交；$v_x$ 超过 1.5 m/s 后正交性下降。' },
         { at: 7.0, s: '步频是「离散的正交」：1.5、2 Hz 最好；$v_y$、$l$、$p$ 只在窄范围里正交。' },
-        { at: 10.4, s: '站：身高降 0.3 m，髋俯仰几乎没余量，俯仰跟不上。' },
+        { at: 10.4, s: '站：身高降 0.3 m 时，髋俯仰几乎没有余量，身体俯仰就跟不准了。' },
         { at: 13.4, s: '跳的正交范围比走小，单脚跳几乎没有；官方代码采命令时就截掉冲突的组合。' }
       ]
     },
@@ -1766,9 +1795,9 @@
       cues: [
         { at: 0.4, s: '直接部署到 Unitree H1：站着调身高、俯仰、腰，原地改步频。' },
         { at: 3.6, s: '表 VI：真机俯仰误差 0.067–0.101 rad、腰 0.055–0.072 rad，比仿真略大。' },
-        { at: 7.0, s: '跳与单脚跳也上了真机；表 VI 里跳的两项误差最小。' },
+        { at: 7.0, s: '跳与单脚跳也上了真机；表 VI 里，跳的两项误差是三种步态里最小的。' },
         { at: 10.4, s: '移动操作：外部控制上身搬箱子，下身照样蹲下、弯腰、走过去（2 倍速）。' },
-        { at: 13.4, s: '走出实验室：校园、商业街、草地，步态之间切换。' }
+        { at: 13.4, s: '走出实验室：在校园、商业街和草地上，走、跑、跳、单脚跳来回切换。' }
       ]
     },
     {
@@ -1777,10 +1806,10 @@
       build: buildSceneLimits,
       cues: [
         { at: 0.4, s: '局限（我们整理的）：单脚跳单独一个策略、只跟 4 个命令、没做干预训练；只在 H1 上做。' },
-        { at: 3.6, s: '命令之间会打架：高速、低身高、高步频时，有些组合做不到；上层要知道安全范围（我们的理解）。' },
+        { at: 3.6, s: '命令会打架：高速、低身高、高步频时，有的组合做不到；上层要避开（我们的理解）。' },
         { at: 7.0, s: '官方代码（2025-06）：Isaac Gym + legged_gym，`--task=h1int`；只有走、跳、站。' },
         { at: 10.4, s: '代码与论文有几处出入：站立的相位、抬脚目标、估计器、干预的重抽与切换（我们读代码的结果）。' },
-        { at: 13.4, s: 'HugWBC：命令空间 = 任务 + 行为，相位切步态，干预训练让上身随时可以交给别人。' }
+        { at: 13.4, s: '论文里对不上的几处：表 I 少了负号、表 V 的单位、表 X 的重复，以及正文与表 III、表 VI 不一致的两句。' }
       ]
     }
   ];

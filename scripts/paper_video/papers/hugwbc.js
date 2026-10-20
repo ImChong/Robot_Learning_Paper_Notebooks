@@ -8,7 +8,7 @@ window.PaperVideo = {
     var b = h('div', 'big', root, '<div style="font-size:52px;font-weight:900;line-height:1.2">人形机器人的统一通用全身控制器</div>' +
       '<div style="font-size:32px;color:var(--text-secondary);margin-top:8px">一个策略走、跳、站，上身随时交给别人</div>');
     var m = h('div', 'meta', root,
-      '<b>HugWBC: A Unified and General Humanoid Whole-Body Controller for Versatile Locomotion</b><br>Yufei Xue、Wentao Dong 等 · 上海交通大学、上海人工智能实验室 · RSS&nbsp;2025');
+      '<b>HugWBC: A Unified and General Humanoid Whole-Body Controller for Versatile Locomotion</b><br>Yufei Xue、Wentao Dong 等 · RSS&nbsp;2025<br>上海交通大学、上海人工智能实验室');
     m.style.fontSize = '27px';
     m.style.padding = '22px 34px';
     /* 十六条目录排成两列：左列 01–08、右列 09–16，单列的话封面上最后一行会落到 3:4 裁剪线以下 */
@@ -46,7 +46,7 @@ window.PaperVideo = {
     var items = [
       [ACC, '① 命令 = 任务 + 行为', '速度之外，还能调步频、抬脚、身高、俯仰、腰<br>相位与期望接地概率切出走、跳、站'],
       [GOOD, '② 一个策略，跟得准', '非对称 Actor-Critic + 对称损失<br>走路低速 $v_x$ 误差 0.030 m/s，比 HOVER、ExBody 低'],
-      [WARN, '③ 上身随时交给别人', '干预训练：噪声接管 + 课程 + 奖励遮罩<br>被噪声接管时 $v_x$ 误差 0.048，不干预训的 0.866']
+      [WARN, '③ 上身随时交给别人', '干预训练：噪声接管 + 课程 + 奖励遮罩<br>被噪声接管时 $v_x$ 误差 0.048，没做干预训练的 0.866']
     ];
     var pts = items.map(function (it) {
       var p = h('div', 'pt', root);
@@ -65,7 +65,7 @@ window.PaperVideo = {
     var next = h('div', 'pt', root);
     next.style.fontSize = '29px'; next.style.padding = '14px 30px';
     next.style.borderStyle = 'dashed';
-    K.rich(next, '**下一篇**：HOMIE —— 同构外骨骼加脚踏板，一个人坐进驾驶舱，遥操作人形边走边干活');
+    next.innerHTML = '<b>下一篇</b>：HOMIE —— 同构外骨骼加脚踏板，<br>一个人坐进驾驶舱，遥操作人形边走边干活';
     var foot = h('div', 'meta', root,
       '<b>完整笔记 · 3 个交互演示 · H1 运动学示意的 3D 渲染</b><br>imchong.github.io/Robot_Learning_Paper_Notebooks');
     foot.style.textAlign = 'center';
