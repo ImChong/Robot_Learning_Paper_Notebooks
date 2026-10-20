@@ -159,8 +159,8 @@
 
   // ─── 本笔记的复现：用 ASAP 开源的 SMPL → G1 重定向脚本，在 AMASS 的 CMU 上重算的动作 ─────────
   /* 例 1：14 对点的平均残差（mm），整段 30 fps */
-  var RESID = [['大步走', '08_07', 34.8], ['挥手', '141_16', 31.6], ['Macarena', '143_35', 25.3], ['扭摆舞', '141_12', 33.9],
-    ['开合跳 / 弯腰 / 下蹲', '13_29', 53.4], ['侧手翻', '49_06', 35.7], ['侧手翻接后空翻', '88_05', 45.2], ['跳起踢腿转身', '87_01', 33.0]];
+  var RESID = [['大步走', '08_07', 34.8], ['挥手', '141_16', 31.6], ['Macarena', '143_35', 25.3], ['小鸡舞', '143_34', 25.8], ['扭摆舞', '141_12', 33.9],
+    ['开合跳 / 扭腰 / 弯腰 / 下蹲', '13_29', 53.4], ['侧手翻', '49_06', 35.7], ['侧手翻接后空翻', '88_05', 45.2], ['跳起踢腿转身', '87_01', 33.0]];
   /* 大步走 08_07：15 fps 共 38 帧。每帧 65 个小端 int16：骨盆位置 3（mm）、横滚俯仰偏航 3（mrad，外旋 xyz）、23 个关节角（mrad）、
      12 个关键点（mm；顺序见 KP_ZH，用 ASAP 的 MJCF 做正运动学）。第一帧骨盆挪到原点、整段水平位移转到 +x；
      ASAP 的重定向保留 SMPL 的根部高度，G1 的腿和人比例不同，脚会离地或陷进地里，所以每帧把网格最低点贴到地面（大步走、Macarena、扭摆舞、弯腰下蹲都这样修过） */
@@ -176,9 +176,9 @@
     walk: { file: 'g1_walk.webp', R: 240, yaw: 0.4, pitch: 0.12, cw: 295, ch: 335, cols: 10, n: 38, ax: 141.0, ay: 325.0 },
     wave: { file: 'g1_wave.webp', R: 240, yaw: 1.1, pitch: 0.1, cw: 179, ch: 358, cols: 10, n: 45, ax: 73.0, ay: 351.0 },
     smpl: { file: 'smpl_wave.webp', R: 240, yaw: 1.1, pitch: 0.1, cw: 241, ch: 436, cols: 10, n: 45, ax: 112.5, ay: 432.5 },
-    macarena: { file: 'g1_macarena.webp', R: 150, yaw: 1.1, pitch: 0.1, cw: 115, ch: 210, cols: 12, n: 45, ax: 31.0, ay: 203.5 },
-    twist: { file: 'g1_twist.webp', R: 150, yaw: 1.1, pitch: 0.1, cw: 165, ch: 214, cols: 12, n: 45, ax: 56.5, ay: 207.0 },
-    squat: { file: 'g1_squat.webp', R: 150, yaw: 1.1, pitch: 0.1, cw: 137, ch: 216, cols: 12, n: 45, ax: 41.5, ay: 204.5 },
+    macarena: { file: 'g1_macarena.webp', R: 150, yaw: 1.1, pitch: 0.1, cw: 115, ch: 209, cols: 12, n: 45, ax: 31.0, ay: 201.5 },
+    chicken: { file: 'g1_chicken.webp', R: 150, yaw: 1.1, pitch: 0.1, cw: 134, ch: 208, cols: 12, n: 45, ax: 37.5, ay: 200.0 },
+    sidetwist: { file: 'g1_sidetwist.webp', R: 150, yaw: 1.1, pitch: 0.1, cw: 179, ch: 205, cols: 12, n: 45, ax: 82.0, ay: 197.5 },
     flip: { file: 'g1_flip.webp', R: 150, yaw: 0.3, pitch: 0.1, cw: 251, ch: 309, cols: 12, n: 38, ax: 120.5, ay: 303.0 }
   };
   function decode(b64) {
@@ -473,7 +473,7 @@
   function loopFrame(now, n, fps, start) {
     return ((Math.floor((start || 0) + now * (fps || 15)) % n) + n) % n;
   }
-  /* 原地的动作（Macarena、扭摆舞、弯腰下蹲）来回播：放到最后一帧再倒着放，首尾不会突然跳一下 */
+  /* 原地的动作（Macarena、左右扭腰、小鸡舞）来回播：放到最后一帧再倒着放，首尾不会突然跳一下 */
   function pingFrame(now, n, fps) {
     var k = loopFrame(now, 2 * n - 2, fps);
     return k < n ? k : 2 * n - 2 - k;
@@ -1240,7 +1240,7 @@
 
   /* ── scene 10: 可行又多样（附录表 X） ── */
   function buildSceneDatasets() {
-    var s = sceneSvg('上面三个数据集的框：50 段只有走路、250 段多了 Macarena、扭摆舞、弯腰下蹲、全集还有侧手翻接后空翻（都是我们重定向的 G1，示意）；左下按三个评测集依次长出关节误差的柱子；右边是文字');
+    var s = sceneSvg('上面三个数据集的框：50 段只有走路、250 段多了 Macarena、左右扭腰、小鸡舞（脚都踩平、重心落在两脚之间）、全集还有侧手翻接后空翻（都是我们重定向的 G1，示意）；左下按三个评测集依次长出关节误差的柱子；右边是文字');
     s.appendChild(svgText(24, 26, '先人工试：数据要多大、多杂（附录表 X）', 'demo-x-ink2', 13.5));
     var BY = 40, BH = 180;
     var b50 = group(s), b250 = group(s), bAll = group(s);
@@ -1250,7 +1250,7 @@
     rich(b50, 109, BY + 20, '$\\mathcal D_{50}$：站、走', 12, 'demo-x-ink', 'middle');
     rich(b250, 356, BY + 20, '$\\mathcal D_{250}$：+ 上身花样、跳舞、小跳', 12, 'demo-x-ink', 'middle');
     rich(bAll, 647, BY + 20, '$\\mathcal D_{\\text{CMU}}$：全集 1,919 段', 12, 'demo-x-ink', 'middle');
-    var spW = sprite(b50, 'walk'), spM = sprite(b250, 'macarena'), spT = sprite(b250, 'twist'), spS = sprite(b250, 'squat'), spF = sprite(bAll, 'flip');
+    var spW = sprite(b50, 'walk'), spM = sprite(b250, 'macarena'), spT = sprite(b250, 'sidetwist'), spS = sprite(b250, 'chicken'), spF = sprite(bAll, 'flip');
     label(bAll, 647, BY + BH - 8, '+ 俯卧撑、打滚、空翻', 'demo-x-bad', 10.5, 'middle');
     label(b250, 356, BY + BH - 8, '人工挑的，避开极端动作', 'demo-x-mut', 10.5, 'middle');
     label(b50, 109, BY + BH - 8, '可行，但单调', 'demo-x-mut', 10.5, 'middle');
@@ -1293,8 +1293,8 @@
       /* 比例按每张贴图里最高的那一帧定：举手、空翻时头顶也不碰框里的标题 */
       spW.at(109, BY + BH - 28, 62, loopFrame(now, WALK.n, WALK.fps));
       spM.at(266, BY + BH - 28, 80, pingFrame(now, SHEETS.macarena.n, 15));
-      spT.at(356, BY + BH - 28, 80, pingFrame(now, SHEETS.twist.n, 15));
-      spS.at(446, BY + BH - 28, 80, pingFrame(now, SHEETS.squat.n, 15));
+      spT.at(356, BY + BH - 28, 80, pingFrame(now, SHEETS.sidetwist.n, 15));
+      spS.at(450, BY + BH - 28, 80, pingFrame(now, SHEETS.chicken.n, 15));
       spF.at(647, BY + BH - 28, 58, loopFrame(now, SHEETS.flip.n, 15));
       groups.forEach(function (g, i) {
         var at = [3.9, 7.3, 10.7][i];
@@ -1780,7 +1780,7 @@
     rectBox(left, 24, 38, 360, 360, C_BORDER, C_SURFACE2);
     /* 左 ①（0–7.0）：三个专才各管一组 */
     var lA = group(left);
-    var specs = [['走路专才', 'walk', 90], ['跳舞专才', 'twist', 204], ['功夫专才', 'macarena', 318]];
+    var specs = [['走路专才', 'walk', 90], ['跳舞专才', 'chicken', 204], ['功夫专才', 'macarena', 318]];
     var sps = specs.map(function (sp) {
       var g = group(lA);
       rectBox(g, sp[2] - 52, 62, 104, 190, C_OURS, C_SURFACE);
@@ -2155,7 +2155,7 @@
       ariaLabel: 'ExBody2 十八幕讲解动画',
       notes: [
         '取数依据：表 I–IV、附录表 V–XI 的数字照抄 arXiv 2412.13196 v2 的 LaTeX 源码；图 4、图 8 的数是按像素颜色量出来的读图值；v1 的数（定期拉回的消融、25 步历史）读自 v1 的源码。官方没有开源代码。',
-        'G1 的动作是我们用 ASAP 开源的 `fit_smpl_shape.py`、`fit_smpl_motion.py`，以 SMPL 在 AMASS 的 CMU 动作上重定向的（大步走 `08_07`、挥手 `141_16`、Macarena `143_35`、扭摆舞 `141_12`、弯腰下蹲 `13_29`、侧手翻接后空翻 `88_05`），不是论文的数据；ASAP 的重定向照搬 SMPL 的根部高度、脚会离地，我们每帧把网格最低点挪到地面。12 个关键点（两肩、两肘、两手、两髋、两膝、两踝）是我们的推测：36 维 = 12 × 3，前作 ExBody 的代码（`h1_mimic.py` 第 78–82 行）本来就定义了这 12 个关键体，只用了上身 6 个，ExBody2 跟全身。第 7、8 幕「机器人只走到 90% 的速度」与「每 1 s 拉回一次」、第 11 幕两个例子的 $e(s)$ 都是假设。',
+        'G1 的动作是我们用 ASAP 开源的 `fit_smpl_shape.py`、`fit_smpl_motion.py`，以 SMPL 在 AMASS 的 CMU 动作上重定向的（大步走 `08_07`、挥手 `141_16`、Macarena `143_35`、左右扭腰 `13_29`、小鸡舞 `143_34`、侧手翻接后空翻 `88_05`），不是论文的数据；ASAP 的重定向照搬 SMPL 的根部高度、脚会离地，我们每帧把网格最低点挪到地面；它也不管脚的朝向，原地的三段我们只把两个踝关节改成让脚掌放平，并挑了脚平、两脚着地、重心一直落在两脚之间的 3 秒。12 个关键点（两肩、两肘、两手、两髋、两膝、两踝）是我们的推测：36 维 = 12 × 3，前作 ExBody 的代码（`h1_mimic.py` 第 78–82 行）本来就定义了这 12 个关键体，只用了上身 6 个，ExBody2 跟全身。第 7、8 幕「机器人只走到 90% 的速度」与「每 1 s 拉回一次」、第 11 幕两个例子的 $e(s)$ 都是假设。',
         'G1 的 3D 外形：材质与光照照抄 Robot Retarget Online（ImChong/Robot_Retarget_Online）的 three.js 场景，按关节角用正交相机逐帧离线渲染成贴图；第 4 幕的蓝色人体是 SMPL 中性模型、形状参数取 0。真机与仿真片段剪自项目页 exbody2.github.io 的视频。'
       ],
       scenes: EXBODY2_SCENES

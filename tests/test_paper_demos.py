@@ -4375,7 +4375,7 @@ def test_exbody2_explainer_demos_and_worked_example_share_the_paper_numbers():
     assert _fmt(1000 * sum(per_pair) / 14, 1) == "32.1" and "平均 32.1 mm" in note and "平均相距 32 毫米" in narration
     assert [_fmt(1000 * x, 1) for x in sorted(per_pair, reverse=True)[:3]] == ["64.6", "52.4", "51.3"]
     resid = dict(re.findall(r"\['[^']+', '(\d+_\d+)', ([\d.]+)\]", js))
-    assert resid == {"08_07": "34.8", "141_16": "31.6", "143_35": "25.3", "141_12": "33.9", "13_29": "53.4", "49_06": "35.7", "88_05": "45.2", "87_01": "33.0"}
+    assert resid == {"08_07": "34.8", "141_16": "31.6", "143_35": "25.3", "143_34": "25.8", "141_12": "33.9", "13_29": "53.4", "49_06": "35.7", "88_05": "45.2", "87_01": "33.0"}
     for clip_id, v in resid.items():
         assert re.search(rf"\| `{clip_id}` [^|]+\| [\d.]+ s \| {v} mm \|", note), clip_id
 
@@ -4408,7 +4408,10 @@ def test_exbody2_assets_and_project_page_clips():
     used = set(re.findall(r"'(fig\d_\w+\.webp)'", js))
     assert used == figs == {"fig1_teaser.webp", "fig2_pipeline.webp", "fig5_chacha.webp", "fig6_multisource.webp", "fig7_results.webp"}
     sheets = re.findall(r"(\w+): \{ file: '(\w+\.webp)', R: \d+, yaw: [\d.]+, pitch: [\d.]+, cw: (\d+), ch: (\d+), cols: (\d+), n: (\d+), ax: [\d.]+, ay: [\d.]+ \}", js)
-    assert {k for k, *_ in sheets} == {"walk", "wave", "smpl", "macarena", "twist", "squat", "flip"}
+    assert {k for k, *_ in sheets} == {"walk", "wave", "smpl", "macarena", "sidetwist", "chicken", "flip"}
+    # 2026-10-20 看片反馈：原来的弯腰下蹲、扭摆舞脚斜、重心在脚外，一看就站不住；原地的三段把踝关节放平、挑质心在两脚之间的 3 s
+    note = EXBODY2_NOTE.read_text(encoding="utf-8")
+    assert "只把两个踝关节" in note and "倾角 ≤ 1.4°、两脚离地 ≤ 1.1 cm、质心 100% 在脚内" in note and "'squat'" not in js
     for _, name, cw, ch, cols, n in sheets:
         cw, ch, cols, n = map(int, (cw, ch, cols, n))
         assert _webp_size(base / "g1_3d" / name) == (cw * cols, ch * math.ceil(n / cols)), name
