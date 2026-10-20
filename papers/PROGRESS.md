@@ -744,7 +744,7 @@
 
 | #   | 论文                                                                                                                                                        | 日期      | 🌟  | 状态   |
 | --- | --------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- | --- | ---- |
-| 1126  | [Spark-0: Scaling Spatially Aligned Tactile Pretraining for Robot Dexterous Manipulation](https://arxiv.org/abs/2610.22342) | 2026.10 |  | ⏳ 待读 |
+| 1126  | [Spark-0: Scaling Spatially Aligned Tactile Pretraining for Robot Dexterous Manipulation](https://arxiv.org/abs/2610.22342) ✅ [笔记](06_Manipulation/Spark-0__Spatially_Aligned_Tactile_Pretraining_for_Robot_Dexterous_Manipulation/Spark-0__Spatially_Aligned_Tactile_Pretraining_for_Robot_Dexterous_Manipulation.md) | 2026.10 | 🌟 | ✅ 已总结 |
 | 731  | [AutodidactWAM: Cross-Modal Self-Distillation from Generated Video to Robot Actions](https://arxiv.org/abs/2610.08119) | 2026.10 |  | ⏳ 待读 |
 | 732  | [MobileVISTA: Generative Data Augmentation for Pose Generalization in Mobile Manipulation](https://arxiv.org/abs/2610.07511) | 2026.10 |  | ⏳ 待读 |
 | 733  | [IronMind: Scaling Humanoid Dexterous Manipulation via Camera-Space Ego-Centric Pretraining](https://arxiv.org/abs/2609.39403) | 2026.09 |  | ⏳ 待读 |

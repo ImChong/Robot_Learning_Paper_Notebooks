@@ -798,8 +798,7 @@
             "url": "/papers/03_High_Impact_Selection/Has_GPT-6-Astra_Achieved_Embodied_Intelligence/Has_GPT-6-Astra_Achieved_Embodied_Intelligence.html",
             "dir": "Has_GPT-6-Astra_Achieved_Embodied_Intelligence",
             "arxiv": "2610.22471",
-            "has_open_source": true,
-            "summary_zh": "论文在 12 项基准和 8 种真实机器人配置上评估 GPT-6-Astra，并提出按真实需求、无同域示例和持续世界时钟设计的新基准；结论是具身能力显著，但实用部署仍受成本、示教和物理约束。",
+            "summary_zh": "论文用统一协议测量 GPT-6-Astra 的具身能力：允许从训练集示例构建上下文知识包，并把仿真执行步数扩展到标准预算的最多 10 倍；再通过系统消融和 8 种真实机器人配置，分析高层推理、低层控制及现实部署之间的差距。",
             "published_date_zh": "2026年10月15日（arXiv）",
             "published_date_en": "Oct 15, 2026 (arXiv)",
             "zhname": "GPT-6-Astra 是否已实现具身智能？",
@@ -1786,6 +1785,19 @@
   "06_Manipulation": {
     "display_name": "Manipulation",
     "papers": [
+      {
+        "title": "Spark-0: Scaling Spatially Aligned Tactile Pretraining for Robot Dexterous Manipulation",
+        "path": "papers/06_Manipulation/Spark-0__Spatially_Aligned_Tactile_Pretraining_for_Robot_Dexterous_Manipulation/Spark-0__Spatially_Aligned_Tactile_Pretraining_for_Robot_Dexterous_Manipulation.md",
+        "url": "/papers/06_Manipulation/Spark-0__Spatially_Aligned_Tactile_Pretraining_for_Robot_Dexterous_Manipulation/Spark-0__Spatially_Aligned_Tactile_Pretraining_for_Robot_Dexterous_Manipulation.html",
+        "dir": "Spark-0__Spatially_Aligned_Tactile_Pretraining_for_Robot_Dexterous_Manipulation",
+        "arxiv": "2610.22342",
+        "has_open_source": true,
+        "summary_zh": "Spark-0 用触觉手套采了 1,000 小时全手触觉的人类操作数据（HumanTouch），让触觉在预训练里扮演两个角色：「哪里接触」——把手套测到的接触点画成头部相机视角的接触图，和冻结的 Depth-Anything-3 几何特征…",
+        "published_date_zh": "2026年10月15日（arXiv v1）",
+        "published_date_en": "Oct 15, 2026 (arXiv v1)",
+        "zhname": "Spark-0：面向机器人灵巧操作的空间对齐触觉预训练规模化",
+        "zh_title": "Spark-0：面向机器人灵巧操作的空间对齐触觉预训练规模化"
+      },
       {
         "title": "Immiscible Diffusion Policy: Preserving Multimodal Robot Actions through Label-Free Noise Assignment",
         "path": "papers/06_Manipulation/Immiscible_Diffusion_Policy__Preserving_Multimodal_Robot_Actions_through_Label-Free_Noise_Assignment/Immiscible_Diffusion_Policy__Preserving_Multimodal_Robot_Actions_through_Label-Free_Noise_Assignment.md",
