@@ -795,6 +795,7 @@
     var cL = mp.curve(function () { return 0; }, C_LEFT, 2), cR = mp.curve(function () { return 0; }, C_RIGHT, 2, '5 3');
     var cur = hline(left, 0, 222, 0, 312, C_MUTED, 1.2, '3 3');
     label(left, 304, 330, '一个周期', 'demo-x-mut', 9.5, 'middle');
+    rich(left, 304, 348, '紫：左脚　绿虚线：右脚', 9.5, 'demo-x-mut', 'middle', 150);
     var ps = panels(s, 5);
     label(ps[0], R, 64, '每只脚一个相位 φ ∈ [0, 1)', 'demo-x-ink', 14);
     math(ps[0], R, 98, '\\phi_{t+1,1} = \\phi_{t,1} + f_t\\,\\mathrm{d}t,\\quad \\phi_{t+1,2} = \\phi_{t+1,1} + \\psi', 14, 'start', RW);
@@ -859,6 +860,9 @@
     P2.curve(function (u) { return clockOf(barPhi(u + 0.5)); }, C_RIGHT, 2.2, '5 3');
     var v2 = hline(left, 0, 262, 0, 372, C_MUTED, 1.2, '3 3');
     var d1 = dotAt(left, 0, 0, 4.5, C_LEFT), d2 = dotAt(left, 0, 0, 4.5, C_RIGHT);
+    /* 读法：纵轴 1 = 该触地、0 = 该摆动；两条线各是什么 */
+    rich(left, 58, 226, '灰虚线：硬切换　蓝线：放松后；1 = 该触地，0 = 该摆动', 9.5, 'demo-x-mut', 'start', 280);
+    rich(left, 58, 406, '紫：左脚　绿虚线：右脚', 9.5, 'demo-x-mut', 'start', 150);
     var clockG = group(left);
     setOpacity(clockG, 1);
     var ps = panels(s, 5);
@@ -1000,6 +1004,7 @@
     rich(left, 36, 60, '运动学示意：站着跟身高命令 $h$，实际慢半拍跟上', 10, 'demo-x-mut', 'start', 330);
     var penBar = bar(left, 60, 362, 12, C_BAD);
     var penLab = rich(left, 36, 356, '', 11, 'demo-x-ink2', 'start', 330);
+    rich(left, 36, 390, '红条：这一步的惩罚，越长罚得越多', 9.5, 'demo-x-mut', 'start', 200);
     var ps = panels(s, 5);
     label(ps[0], R, 64, '任务奖励：跟速度', 'demo-x-ink', 14);
     math(ps[0], R, 100, 'r = 2\\exp\\!\\left(-\\lVert v^{\\text{target}}_{xy} - v_{xy}\\rVert^2 / 0.2\\right)', 15, 'start', RW);
@@ -1029,8 +1034,9 @@
     chip(ps[4], R, 118, RW, '正则课程：先乘 0.2，每 100 次迭代开 0.8 次方', C_WARN, { size: 11, left: true });
     var curve = miniPlot(ps[4], R + 40, 166, RW - 50, 70, 0, 2000, 0, 1, { yTicks: [0, 1], xTicks: [0, 1000, 2000] });
     curve.curve(function (it) { return penaltyScale(it); }, C_WARN, 2, null, 200);
-    rich(ps[4], R + RW, 154, '正则项的系数', 10, 'demo-x-mut', 'end', 120);
+    rich(ps[4], R + RW, 154, '纵轴：正则项的系数', 10, 'demo-x-mut', 'end', 140);
     rich(ps[4], R + RW, 270, '约 1300 次迭代后超过 0.9', 10, 'demo-x-mut', 'end', 200);
+    rich(ps[4], R + 40, 270, '横轴：训练迭代次数', 10, 'demo-x-mut', 'start', 140);
     function draw(t, clock) {
       var now = nowOf(t, clock), cam = camOf('posture', SC, OX, OY);
       /* 命令每 3 s 换一次：0 → −0.2 → −0.1 → −0.3；实际按 0.6 s 的时间常数跟上 */
@@ -1062,12 +1068,13 @@
     var tgt = [ringAt(left, 0, 0, 6, C_WARN, 2.4), ringAt(left, 0, 0, 6, C_WARN, 2.4)];
     var tgtLab = rich(left, 36, 64, '', 11, 'demo-x-warn', 'start', 190);
     var mp = miniPlot(left, 230, 60, 140, 92, 0, 1, 0, 0.17, { yTicks: [0, 0.15], xTicks: [0, 0.5, 1] });
-    rich(left, 230, 184, '目标 $l^{\\text{target}}$（m）与 $1 - C$', 10, 'demo-x-mut', 'start', 150);
+    rich(left, 230, 184, '横轴：相位；纵轴：高度（m）', 10, 'demo-x-mut', 'start', 150);
+    rich(left, 230, 216, '实线：目标 $l^{\\text{target}}$　虚线：$1 - C$', 9.5, 'demo-x-mut', 'start', 150);
     mp.curve(function (u) { return 0.15 * (1 - contactProb(u)); }, C_SWING, 1.4, '3 3');
     mp.curve(function (u) { return swingTarget(u, 0.15); }, C_WARN, 2.4);
     var lin = mp.curve(function (u) { return codeLinearTarget(u, 0.15) - 0.07; }, C_BAD, 1.8, '6 3');
     var mk = dotAt(left, 0, 0, 4, C_LEFT);
-    var linLab = rich(left, 230, 200, '红虚线：代码的三角形', 9.5, 'demo-x-bad', 'start', 150);
+    var linLab = rich(left, 230, 232, '红虚线：代码的三角形', 9.5, 'demo-x-bad', 'start', 150);
     var ps = panels(s, 5);
     label(ps[0], R, 64, '接触—摆动奖励', 'demo-x-ink', 14);
     math(ps[0], R, 100, 'r = -\\textstyle\\sum_i (1-C_i)\\big[1-e^{-\\lVert f_i\\rVert^2/50}\\big] - \\textstyle\\sum_i C_i\\big[1-e^{-\\lVert v_{i,xy}\\rVert^2/5}\\big]', 12.5, 'start', RW);
@@ -1274,7 +1281,7 @@
       var ci = cueIndex(t), u = Math.max(0, since(t, clock, 0));
       var alpha = clamp(u / 7, 0, 1);
       setW(aBar, 300 * alpha);
-      aLab.setText('$\\alpha = ' + f2(alpha) + '$');
+      aLab.setText('$\\alpha = ' + f2(alpha) + '$　噪声占比：0 全是策略自己的，1 全是噪声');
       hi.forEach(function (h, k) { setOpacity(h, alpha * 3 >= k && alpha * 3 < k + 1.2 ? 1 : 0); });
       var showGrp = ci >= 2;
       setOpacity(grp, showGrp ? win(t, CUES[2]) : 0);
@@ -1323,6 +1330,9 @@
       });
     });
     hline(top, GX, GY + GH, GX + GW, GY + GH, C_BORDER, 1.2);
+    /* 纵轴读法：柱子是误差，越低越好；每列按这一列的最大值缩放 */
+    function yAxisNote(g) { var n = label(g, 50, GY + GH / 2, '误差：越低越好（每列各自缩放）', 'demo-x-mut', 9.5, 'middle'); n.setAttribute('transform', 'rotate(-90 50 ' + (GY + GH / 2) + ')'); }
+    yAxisNote(top);
     TABLE3.forEach(function (r, i) {
       dotAt(top, 80 + i * 90, 50, 6, GAIT_C[i]);
       label(top, 90 + i * 90, 54, r.zh, 'demo-x-ink2', 11.5);
@@ -1342,6 +1352,7 @@
       });
     });
     hline(t11, BX, GY + GH, BX + BW, GY + GH, C_BORDER, 1.2);
+    yAxisNote(t11);
     TABLE11.forEach(function (r, i) { dotAt(t11, 80 + i * 110, 50, 6, B_C[i]); label(t11, 90 + i * 110, 54, r.zh, 'demo-x-ink2', 11.5); });
     label(t11, 772, 54, '表 XI：走路，上身放在默认姿态当参考', 'demo-x-mut', 9.5, 'end');
     var NY = 290;
@@ -1397,15 +1408,18 @@
     paperPart(zC, 'fig8s', 0, 0, 1, 1, 34, 44, 340, '论文图 8(c)：站立，身高、俯仰、腰两两组合');
     var ps = panels(s, 5);
     label(ps[0], R, 64, '两个命令一起扫', 'demo-x-ink', 14);
-    rich(ps[0], R, 92, '每一格：两个命令各在范围里扫一遍，颜色是误差', 12, 'demo-x-ink2', 'start', RW);
+    rich(ps[0], R, 92, '每一格：横轴、纵轴各是一个命令的取值，颜色是误差', 12, 'demo-x-ink2', 'start', RW);
     chip(ps[0], R, 108, RW, '**正交**：一个命令在它的范围里随便变，另一个照样跟得准', C_GOOD, { size: 11.5 });
-    rich(ps[0], R, 166, '对角线上是单个命令的误差曲线；每行的色标范围不同', 11, 'demo-x-mut', 'start', RW);
+    rich(ps[0], R, 166, '红 = 误差小，蓝 = 误差大：红色越多越好', 11.5, 'demo-x-ink2', 'start', RW);
+    rich(ps[0], R, 188, '对角线上是单个命令的误差曲线；每行的色标范围不同', 11, 'demo-x-mut', 'start', RW);
     label(ps[1], R, 64, '走：大部分组合互不影响', 'demo-x-ink', 14);
     rich(ps[1], R, 92, '$v_x$、$\\omega$、$h$、$w$ 两两正交', 12, 'demo-x-ink2', 'start', RW);
     chip(ps[1], R, 108, RW, '$v_x$ 超过 1.5 m/s 后正交性下降：先保稳定', C_WARN, { size: 11.5 });
+    rich(ps[1], R, 166, '红 = 误差小，蓝 = 误差大', 11, 'demo-x-mut', 'start', RW);
     label(ps[2], R, 64, '步频与几个窄范围的命令', 'demo-x-ink', 14);
     rich(ps[2], R, 92, '步频是「离散的正交」：1.5、2 Hz 最好，高频变差', 12, 'demo-x-ink2', 'start', RW);
     rich(ps[2], R, 116, '$v_y$、$l$、$p$ 只在窄范围里和别的命令正交', 12, 'demo-x-ink2', 'start', RW);
+    rich(ps[2], R, 142, '红 = 误差小，蓝 = 误差大', 11, 'demo-x-mut', 'start', RW);
     label(ps[3], R, 64, '站：身高和俯仰打架', 'demo-x-ink', 14);
     rich(ps[3], R, 92, '$w$ 和另外两个几乎正交；$h$、$p$ 范围越大越冲突', 12, 'demo-x-ink2', 'start', RW);
     chip(ps[3], R, 108, RW, '身高降 0.3 m，髋俯仰几乎没余量了，$p$ 跟不上', C_BAD, { size: 11.5 });
@@ -1462,7 +1476,7 @@
       var gait = ci === 4 ? 'jump' : 'walk', col = ci === 3 ? 5 : 0;
       var data = TABLE4[gait], mx = 0;
       data.forEach(function (rw) { rw.forEach(function (v) { if (v[col] != null) mx = Math.max(mx, v[col]); }); });
-      head.setText((gait === 'walk' ? '走路' : '跳（表 X）') + '：' + T4_COLS[col] + ' 的误差' + (col === 0 ? '（m/s）' : '（m）'));
+      head.setText((gait === 'walk' ? '走路' : '跳（表 X）') + '：' + T4_COLS[col] + ' 的误差' + (col === 0 ? '（m/s）' : '（m）') + '，条越短越好');
       rowsB.forEach(function (rb) {
         var v = data[rb.i][rb.j][col];
         rb.r.set(240 * v / mx, String(v));
@@ -1486,6 +1500,7 @@
       hline(lt, lx(v), 68, lx(v), 252, C_BORDER, 0.8, '2 3');
       label(lt, lx(v), 264, String(v), 'demo-x-mut', 9, 'middle');
     });
+    label(lt, LX, 264, '越短越好；每格差 10 倍', 'demo-x-mut', 9, 'start');
     var bars5 = [];
     ['$D_h$（身高）', '$D_p$（俯仰）', '$D_w$（腰）'].forEach(function (dn, k) {
       var y0 = 74 + k * 62;
@@ -1505,7 +1520,7 @@
     var fig = paperPart(rt, 'fig6', 0, 0, 1, 1, R, 44, RW, '论文图 6：左 = 持续的力，右 = 推一秒；蓝 HugWBC，红 不做干预训练');
     /* 讲图 6 的三段：雷达图放大到卡片中间（宽 480），标题挪到图上方 */
     var big = group(s), BW = 480, BX = (800 - BW) / 2;
-    label(big, 400, 50, '论文图 6：左 = 一直加着的力，右 = 推一秒；蓝 HugWBC，红 不做干预训练', 'demo-x-mut', 10.5, 'middle');
+    label(big, 400, 50, '论文图 6：左 = 一直加着的力，右 = 推一秒；蓝 HugWBC，红 不做干预训练；离中心越远，扛得住的力越大', 'demo-x-mut', 10.5, 'middle');
     paperPart(big, 'fig6', 0, 0, 1, 1, BX, 60, BW, '');
     var NY = 316;
     var ps = panels(s, 5);
@@ -1558,7 +1573,8 @@
         rich(ps[1], R + 44 + (v[0] + v[1]) * 1200, yy + 11, '$E_' + q[0] + '$ ' + v[0] + ' ± ' + v[1], 9.5, 'demo-x-ink2', 'start', 140);
       });
     });
-    rich(ps[1], R, 228, '读电机编码器；其他命令没有动捕量不准。误差比仿真略大（传感器噪声、硬件磨损）', 10.5, 'demo-x-mut', 'start', RW);
+    rich(ps[1], R, 222, '紫 = 俯仰 $E_p$，黄 = 腰 $E_w$（rad）；条越短越好，细线是标准差', 10.5, 'demo-x-ink2', 'start', RW);
+    rich(ps[1], R, 242, '读电机编码器；其他命令没有动捕量不准。误差比仿真略大（传感器噪声、硬件磨损）', 10.5, 'demo-x-mut', 'start', RW);
     label(ps[2], R, 64, '跳与单脚跳也上了真机', 'demo-x-ink', 14);
     rich(ps[2], R, 92, '表 VI 里跳的两项误差都最小：0.067、0.055 rad', 12, 'demo-x-ink2', 'start', RW);
     rich(ps[2], R, 116, '项目页：单脚跳往各个方向、身高由高到低；跳着前进由慢到快', 11.5, 'demo-x-mut', 'start', RW);
@@ -1842,7 +1858,7 @@
   function buildVideoDemo(host) {
     K.video(host, {
       title: '配音讲解视频：HugWBC 十六幕全流程',
-      sub: '16 分 8 秒竖屏视频（1080×1920），中文配音 + 字幕。画面就是上面的十六幕动画，旁白把每一幕讲细；适合手机上看或转发。',
+      sub: '18 分 9 秒竖屏视频（1080×1920），中文配音 + 字幕。画面就是上面的十六幕动画，旁白把每一幕讲细；适合手机上看或转发。',
       size: '17.7 MB',
       fileName: 'HugWBC_讲解视频.mp4'
     });
