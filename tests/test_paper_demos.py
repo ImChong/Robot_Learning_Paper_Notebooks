@@ -4782,7 +4782,7 @@ def test_hugwbc_explainer_demos_and_worked_example_share_the_paper_numbers():
 
 
 def test_hugwbc_assets_and_project_page_clips():
-    """HugWBC：论文图 1–3、5、6、8 的裁剪（图 8 从矢量原图按 1.5 倍出，放大的热图格子不糊），H1 运动学示意的 6 张贴图表，项目页的 5 段片段（按幕懒加载）。"""
+    """HugWBC：论文图 1–3、5、6、8 的裁剪（图 8 从矢量原图按 1.5 倍出，放大的热图格子不糊），H1 运动学示意的 6 张贴图表，项目页的 6 段片段（按幕懒加载）。"""
     js = (DEMO_JS_DIR / "hugwbc.js").read_text(encoding="utf-8")
     base = ROOT / "assets/img/papers/hugwbc"
     figs = {p.name for p in base.glob("*.webp")}
@@ -4798,7 +4798,7 @@ def test_hugwbc_assets_and_project_page_clips():
     assert "fig8w: ['fig8_walk.webp', 2100, 2061]," in js and _webp_size(base / "fig8_walk.webp") == (2100, 2061)
     clip_dir = base / "clips"
     used_clips = set(re.findall(r"projClip\(\w+, '(\w+)'", js))
-    assert used_clips == {"intro", "noise", "box", "posture", "lawn"}
+    assert used_clips == {"intro", "noise", "hello", "box", "posture", "lawn"}
     assert {p.name for p in clip_dir.iterdir()} == {f"{u}.{ext}" for u in used_clips for ext in ("mp4", "webp")}
     assert sum(p.stat().st_size for p in clip_dir.iterdir()) < 2.0e6
     assert set(re.findall(r"(\w+): [\d.]+", js[js.index("var CLIP_DUR = {") : js.index("};", js.index("var CLIP_DUR = {"))])) == used_clips

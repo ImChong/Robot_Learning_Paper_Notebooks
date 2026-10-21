@@ -418,7 +418,7 @@
     };
   }
   /* 片段的时长（秒） */
-  var CLIP_DUR = { intro: 21.4, noise: 8.0, box: 18.0, posture: 19.9, lawn: 9.0 };
+  var CLIP_DUR = { intro: 21.4, noise: 8.0, hello: 11.5, box: 18.0, posture: 19.9, lawn: 9.0 };
   /* intro 是四段拼起来的：户外走跑、侧向跳、单脚跳、跳着张开 / 交叉手臂（各自在源视频里的时刻见笔记） */
   var INTRO_PARTS = [[4.0, '户外走、跑'], [6.0, '侧向跳'], [5.0, '单脚跳'], [6.4, '跳着张开、交叉手臂']];
   /* posture 片段里项目页字幕换掉的时刻（相对片段开头，逐帧比对左下角字幕量出来的）：Height ↓↑、Pitch ↓↑、Waist ←→、Frequency */
@@ -948,11 +948,12 @@
     link([[AX + 150, 59], [AX + 162, 59]]); link([[AX + 216, 59], [AX + 228, 59]]);
     link([[AX + 189, 74], [AX + 189, 104]]); link([[AX + 303, 74], [AX + 303, 90], [AX + 220, 90], [AX + 220, 104]]);
     link([[IX + IW, 129], [AX, 119]]); link([[AX + 266, 119], [AX + 278, 119]]); link([[AX + 328, 134], [AX + 328, 152]]);
-    link([[IX + IW, 167], [AX - 18, 167], [AX - 18, 215], [AX, 215]]); link([[IX + IW, 218], [AX - 18, 218]]);
+    /* 特权和地形两根线在 y = 218 汇合后进 critic（原先竖线只到 215，地形那根差 3 个单位没接上） */
+    link([[IX + IW, 167], [AX - 18, 167], [AX - 18, 218], [AX, 218]]); link([[IX + IW, 218], [AX - 18, 218]]);
     link([[IX + IW, 64], [AX - 30, 64], [AX - 30, 210], [AX, 210]]);
     var flowA = dotAt(d, 0, 0, 4, C_ACCENT), flowC = dotAt(d, 0, 0, 4, C_WARN);
     var ACT_PATH = [[IX + IW, 59], [AX, 59], [AX + 228, 59], [AX + 303, 59], [AX + 303, 90], [AX + 220, 90], [AX + 220, 104], [AX + 266, 119], [AX + 328, 119]];
-    var CRI_PATH = [[IX + IW, 167], [AX - 18, 167], [AX - 18, 215], [AX + 266, 215]];
+    var CRI_PATH = [[IX + IW, 167], [AX - 18, 167], [AX - 18, 218], [AX + 266, 218]];
     /* 数据点只在连线上画：路径穿过方框时藏起来，免得从框里的字上压过去 */
     var BOXES = [[IX, 44, IW, 30], [IX, 114, IW, 30], [IX, 152, IW, 30], [IX, 190, IW, 56], [AX, 44, 150, 30], [AX + 162, 44, 54, 30],
       [AX + 228, 44, 150, 30], [AX, 104, 266, 30], [AX + 278, 104, 100, 30], [AX + 278, 152, 100, 30], [AX, 200, 266, 30]];
@@ -1443,9 +1444,15 @@
 
   /* ── scene 13: 干预训练的消融（表 IV、表 X） ── */
   function buildSceneAblation() {
-    var s = sceneSvg('左边：项目页视频里真机的上身被噪声接管，下身照样站稳；右边是表 IV 的条形图：三种训练（噪声课程、AMASS 动作、不干预）各在三种测试下的误差，讲到哪项换哪项，最后换成跳（表 X）；下面一行字随旁白变');
+    var s = sceneSvg('左边：项目页视频，讲到哪组换哪段（上身被噪声接管、边走边挥手、跳着张开 / 交叉手臂）；右边是表 IV 的条形图：三种训练（噪声课程、AMASS 动作、不干预）各在三种测试下的误差，讲到哪项换哪项，最后换成跳（表 X）；下面一行字随旁白变');
     s.appendChild(svgText(24, 26, '干预训练的消融（表 IV：走路）', 'demo-x-ink2', 13.5));
-    var clip = projClip(s, 'noise', 44, 50, 300, 300, '项目页视频（1 倍速）：上身被均匀噪声接管');
+    /* 讲到哪组就换哪段：表 IV 开头和「不干预的被噪声接管」放噪声；AMASS 那组与「没有干预时」放边走边挥手（像人的手臂动作）；
+       跳（表 X）放跳着张开、交叉手臂（复用第 1 幕 intro 片段的最后一截） */
+    var clips = [
+      projClip(s, 'noise', 44, 50, 300, 300, '项目页视频（1 倍速）：上身被均匀噪声接管'),
+      projClip(s, 'hello', 44, 50, 300, 300, '项目页视频（1 倍速）：边走边挥手'),
+      projClip(s, 'intro', 44, 50, 300, 300, '项目页视频（1 倍速）：跳着张开、交叉手臂', { range: [15.0, 21.4] })
+    ];
     var chart = group(s);
     var CX = R, CY = 72;
     var head = rich(chart, CX, 54, '', 12.5, 'demo-x-ink', 'start', RW);
@@ -1472,7 +1479,9 @@
     rich(nt[4], R, NY + 20, '表 X「不干预」的姿态误差，跳和站立基本一样，见笔记', 10.5, 'demo-x-mut', 'start', RW);
     function draw(t, clock) {
       var ci = cueIndex(t);
-      clip.at(K.clipSince(t, 0), true);
+      /* 先淡出上一段、再淡入下一段，两条图注不叠在一起 */
+      var ops = [1 - seg(t, CUES[2], CUES[2] + 0.3), seg(t, CUES[2] + 0.3, CUES[2] + 0.6) * (1 - seg(t, CUES[4], CUES[4] + 0.3)), seg(t, CUES[4] + 0.3, CUES[4] + 0.6)];
+      clips.forEach(function (c, k) { setOpacity(c.g, ops[k]); c.at(K.clipSince(t, [0, CUES[2] + 0.3, CUES[4] + 0.3][k]), ops[k] > 0.01); });
       var gait = ci === 4 ? 'jump' : 'walk', col = ci === 3 ? 5 : 0;
       var data = TABLE4[gait], mx = 0;
       data.forEach(function (rw) { rw.forEach(function (v) { if (v[col] != null) mx = Math.max(mx, v[col]); }); });
@@ -1533,7 +1542,7 @@
     rich(ps[3], 24, NY, '大多数方向上 HugWBC 扛得更多：例如 0° 方向持续的力约 600 对 510 N，推一秒约 940 对 750 N', 12.5, 'demo-x-ink2', 'start', 760);
     rich(ps[3], 24, NY + 24, '读图近似值；8 个方向里各有 6 个更大，180° 等少数方向反而更小；论文没写 0° 指哪边', 11.5, 'demo-x-mut', 'start', 760);
     rich(ps[4], 24, NY, '**论文的解释**：干预让上身一直在晃，机器人练出了动态调整腿上力量来稳住的本事', 12.5, 'demo-x-ink2', 'start', 760);
-    rich(ps[4], 24, NY + 24, '真机上它踩地更用力：正则和跟踪精度之间可能有取舍（论文的观察）', 11.5, 'demo-x-mut', 'start', 760);
+    rich(ps[4], 24, NY + 24, '论文同一节还提到：真机上脚落地时更用力（触地的力更大），动作平稳和跟踪精度之间可能要取舍', 11.5, 'demo-x-mut', 'start', 760);
     function draw(t, clock) {
       var ci = cueIndex(t);
       var small = ci <= 1 ? 1 : 1 - seg(t, CUES[2], CUES[2] + 0.3);
@@ -1810,7 +1819,7 @@
         { at: 3.6, s: '噪声接管时：HugWBC 0.02–0.09 m；AMASS 训的 2.1–3.3 m；不干预的 17.5–25.7 m。' },
         { at: 7.0, s: '图 6：站立时在 8 个方向上加力，存活率超过 98% 算扛住；左是持续的力，右是推一秒。' },
         { at: 10.4, s: '大多数方向上 HugWBC 扛得更多（读图：0° 持续力约 600 对 510 N）。' },
-        { at: 13.4, s: '论文的解释：干预让上身一直在晃，机器人学会了用腿稳住；代价是踩地更用力。' }
+        { at: 13.4, s: '论文的解释：干预让上身一直在晃，机器人学会了用腿稳住；同一节还提到，真机上脚落地时更用力。' }
       ]
     },
     {
