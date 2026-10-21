@@ -847,7 +847,7 @@
 
 | #   | 论文                                                                                                                                                             | 日期      | 🌟  | 状态   |
 | --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- | --- | ---- |
-| 714  | [Toward Humanoid Robots in Construction: A Teleoperation Feasibility Study](https://arxiv.org/abs/2610.00718) | 2026.10 |  | ⏳ 待读 |
+| 714  | [Toward Humanoid Robots in Construction: A Teleoperation Feasibility Study](https://arxiv.org/abs/2610.00718) ✅ [笔记](07_Teleoperation/Toward_Humanoid_Robots_in_Construction__A_Teleoperation_Feasibility_Study/Toward_Humanoid_Robots_in_Construction__A_Teleoperation_Feasibility_Study.md) | 2026.10 |  | ✅ 已总结 |
 | 715  | [NEXUS: Perceptive Whole-Body Control for Terrain-Adaptive Teleoperation](https://arxiv.org/abs/2609.39000) | 2026.09 |  | ⏳ 待读 |
 | 716  | [GAE: General Action Expert for Real-Time Humanoid Teleoperation](https://arxiv.org/abs/2609.34233) | 2026.09 |  | ⏳ 待读 |
 | 717  | [MATE: Multi-Agent Virtual Teleoperation Platform for Humanoid Collaboration Data Collection](https://arxiv.org/abs/2609.26520) | 2026.09 |  | ⏳ 待读 |

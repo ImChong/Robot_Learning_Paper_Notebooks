@@ -2494,6 +2494,18 @@
         "zh_title": "超越重定向：基于原子动作基元的低延迟鲁棒人形全身遥操作"
       },
       {
+        "title": "Toward Humanoid Robots in Construction: A Teleoperation Feasibility Study",
+        "path": "papers/07_Teleoperation/Toward_Humanoid_Robots_in_Construction__A_Teleoperation_Feasibility_Study/Toward_Humanoid_Robots_in_Construction__A_Teleoperation_Feasibility_Study.md",
+        "url": "/papers/07_Teleoperation/Toward_Humanoid_Robots_in_Construction__A_Teleoperation_Feasibility_Study/Toward_Humanoid_Robots_in_Construction__A_Teleoperation_Feasibility_Study.html",
+        "dir": "Toward_Humanoid_Robots_in_Construction__A_Teleoperation_Feasibility_Study",
+        "arxiv": "2610.00718",
+        "summary_zh": "建筑业缺人、危险、自动化程度低，而人形机器人在杂乱工地上还做不到可靠的自主。",
+        "published_date_zh": "2026年9月30日（arXiv v1）",
+        "published_date_en": "Sep 30, 2026 (arXiv v1)",
+        "zhname": "迈向建筑工地的人形机器人：遥操作可行性研究",
+        "zh_title": "迈向建筑工地的人形机器人：遥操作可行性研究"
+      },
+      {
         "title": "Gated Residual Body-Hand Coordination for Whole-Body Humanoid Teleoperation",
         "path": "papers/07_Teleoperation/Gated_Residual_Body-Hand_Coordination_for_Whole-Body_Humanoid_Teleoperation/Gated_Residual_Body-Hand_Coordination_for_Whole-Body_Humanoid_Teleoperation.md",
         "url": "/papers/07_Teleoperation/Gated_Residual_Body-Hand_Coordination_for_Whole-Body_Humanoid_Teleoperation/Gated_Residual_Body-Hand_Coordination_for_Whole-Body_Humanoid_Teleoperation.html",
