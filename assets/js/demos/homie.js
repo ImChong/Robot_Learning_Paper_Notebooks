@@ -306,6 +306,11 @@
     parent.appendChild(n);
     return n;
   }
+  /* 数字、标签压在网格线或折线上时，描一圈和底色相同的边，线从字后面过去不打断字形 */
+  function halo(n) {
+    n.style.paintOrder = 'stroke'; n.style.stroke = C_SURFACE; n.style.strokeWidth = '3px'; n.style.strokeLinejoin = 'round';
+    return n;
+  }
   function tone(parent, x, y, str, color, size, anchor) {
     var n = paint(svgText(x, y, str, null, size || 11, anchor), color);
     parent.appendChild(n);
@@ -629,7 +634,7 @@
     });
     var groups = [[0, 4], [4, 7], [7, 10], [10, 11]];
     var notes = [
-      '同构机械臂（Mobile-ALOHA、GELLO、AirExo、ACE）：关节匹配，准、快，但只有夹爪，也不管全身',
+      '同构机械臂（Mobile-ALOHA、GELLO、AirExo、ACE）：关节匹配，又准又快；前三个只有夹爪，ACE 的手靠视觉，都不管全身',
       '视觉 / VR（DexCap、AnyTeleop、OpenTelevision）：先估姿态再解逆运动学，延迟高、怕遮挡、有误差',
       '能全身移动操作的（HumanPlus、OmniH2O、Mobile-TeleVision）：训练要用动捕数据做动作先验',
       'HOMIE：手臂、手都是关节匹配，能移动操作、能全身、不用动捕，约 500 美元',
@@ -645,6 +650,7 @@
     label(side, 690, 195, '整台人形', 'demo-x-mut', 10);
     label(side, 690, 216, '不用动捕：训练', 'demo-x-mut', 10);
     label(side, 690, 235, '不靠动捕数据', 'demo-x-mut', 10);
+    label(side, 690, 262, '读法：✓ 有，✗ 没有', 'demo-x-ink2', 10);
     function draw(t) {
       var cues = [0.4, 3.6, 7.0, 10.4];
       var k = t < 3.6 ? 0 : t < 7.0 ? 1 : t < 10.4 ? 2 : t < 13.4 ? 3 : 4;
@@ -744,7 +750,7 @@
     var pT = group(s);
     var TX = 28, TY = 400, TW = 256, TH = 70;
     hline(pT, TX, TY, TX + TW, TY, C_BORDER, 1.2);
-    rich(pT, TX, TY - TH - 6, '左肘目标角（$\\rho_a \\to 1$）：1 s 换一次，中间线性插值', 9.5, 'demo-x-mut');
+    rich(pT, TX, TY - TH - 10, '横轴时间、纵轴左肘目标角（$\\rho_a \\to 1$）：1 s 换一次，中间线性插值', 9.5, 'demo-x-mut');
     var trace = pathLine(pT, [], C_UP, 2);
     var cur = dotAt(pT, 0, 0, 4, C_UP);
     var ticks = [];
@@ -754,9 +760,10 @@
     for (var k = 0; k < SEQ.upper.n; k++) pts.push([TX + TW * k / (SEQ.upper.n - 1), traceY(frame('upper', k).upper[4])]);
     setPath(trace, pts);
     /* 右边：采样分布（代码的 λ） */
-    var R = 330, PX = 360, PY = 236, PW = 400, PH = 150;
+    var R = 330, PX = 360, PY = 236, PW = 400, PH = 128;
     var p1 = group(s);
     math(p1, R, 58, "p(\\rho_a' \\mid \\rho_a) = \\dfrac{\\lambda\\, e^{-\\lambda \\rho_a'}}{1 - e^{-\\lambda}},\\quad \\lambda = 20\\,(1 - \\rho_a)", 14);
+    rich(p1, R, 89, "读法：横轴是抽到的上限 $\\rho_a'$，纵轴是概率密度；四种颜色是四个 $\\rho_a$", 10, 'demo-x-ink2');
     hline(p1, PX, PY, PX + PW, PY, C_BORDER, 1.2);
     hline(p1, PX, PY, PX, PY - PH, C_BORDER, 1.2);
     [0, 0.5, 1].forEach(function (u) { label(p1, PX + u * PW, PY + 14, fmt(u, 1), 'demo-x-mut', 9.5, 'middle'); });
@@ -815,9 +822,10 @@
     var tLine = hline(bar, 40, 0, BX, 0, C_H, 2, '6 4'), pDot = dotAt(bar, BX, 0, 5, C_H);
     var tTag = rich(bar, BX + 40, 0, '$h_t$', 11, 'demo-x-ink2');
     var read = group(s);
-    var rH = rich(read, 24, 362, '', 11.5, 'demo-x-ink2');
-    var rN = rich(read, 24, 382, '', 11.5, 'demo-x-ink2');
-    var rR = rich(read, 24, 402, '', 11.5, 'demo-x-ink');
+    rich(read, 24, 46, '读法：竖条是高度，紫点是骨盆，虚线是目标', 10, 'demo-x-ink2');
+    var rH = rich(read, 24, 364, '', 11.5, 'demo-x-ink2');
+    var rN = rich(read, 24, 384, '', 11.5, 'demo-x-ink2');
+    var rR = rich(read, 24, 404, '', 11.5, 'demo-x-ink');
     var R = 300;
     var p1 = group(s);
     rich(p1, R, 62, '蹲下去才够得着低处：中间那只踏板给目标高度 $h_t$', 11.5, 'demo-x-ink2');
@@ -831,6 +839,7 @@
     hline(p2, NX + NW / 2, NY - 8, NX + NW / 2, NY + 8, C_MUTED, 1.5);
     label(p2, NX, NY + 20, '直（0）', 'demo-x-mut', 9.5); label(p2, NX + NW / 2, NY + 20, '1/2', 'demo-x-mut', 9.5, 'middle'); label(p2, NX + NW, NY + 20, '弯（1）', 'demo-x-mut', 9.5, 'end');
     var nDot = dotAt(p2, NX, NY, 6, C_LOW);
+    label(p2, NX + NW + 14, NY + 4, '蓝点：当前膝角', 'demo-x-ink2', 10);
     var p3 = group(s);
     var dA = frame('squat', EX_DOWN), eA = dA.root[2] - dA.hcmd, rA = KNEE.w * -rKnee(eA, dA.knee[0], dA.knee[1]);
     rectBox(p3, R, 222, 230, 108, C_LOW);
@@ -891,6 +900,7 @@
       }
     }
     var cursor = hline(pL, 0, LY, 0, LY + NROW * ROWH, C_BAD, 2);
+    pL.insertBefore(cursor, pL.firstChild);  // 压在格子下面，只在格子之间的缝里露出来，不从字上划过
     for (var q = 0; q <= NBLK; q++) label(pL, LX + 54 + q * (LW - 54) / NBLK - 2, LY + NROW * ROWH + 14, (q * 4) + ' s', 'demo-x-mut', 9.5, 'middle');
     legendRow(pL, LX + 54, LY + NROW * ROWH + 40, [['蹲', C_H], ['走', C_LOW], ['站', C_MUTED]]);
     var R = 392;
@@ -993,7 +1003,7 @@
     var fig = paperPart(s, 'fig7', 0, 0, 1, 1, FX, FY, FW);
     var box = hiBox(s, C_BAD);
     var notes = [
-      '每组 3 个种子，评测 1000 个环境 × 20 s，上身姿态按 $\\rho_a \\to 1$ 随机；横轴是训练步数（0–2000）',
+      '读法：横轴是训练步数（0–2000）；前四列是误差，越低越好；最后一列是存活时间，越高越好；红线是 ours',
       '上身课程：ours（红）三项跟踪误差都更低；不用课程和 rand 最后差不多，rand 存活时间涨得慢',
       '高度奖励：只放大高度奖励（hei）速度误差大得多（2000 步时约 0.37 对 0.19 m/s），高度误差也没更快',
       '对称：只增强（w/ aug）对称损失涨到 20 左右；不增强的两组（w/ sym、none）存活时间一直约 1 s',
@@ -1043,7 +1053,8 @@
       label(p3, R + 190, 106 + i * 22, fmt(r.g1[0], 3) + ' ± ' + fmt(r.g1[1], 3), 'demo-x-ink2', 11, 'middle');
       label(p3, R + 300, 106 + i * 22, fmt(r.gr1[0], 3) + ' ± ' + fmt(r.gr1[1], 3), 'demo-x-ink2', 11, 'middle');
     });
-    label(p3, R, 226, '两台都活满 20 s 左右；GR-1 速度误差大一些', 'demo-x-good', 11.5);
+    label(p3, R, 213, '读法：前四行是误差，越小越好；存活时间满分 20 s', 'demo-x-ink2', 10);
+    label(p3, R, 233, '两台都活满 20 s 左右；GR-1 速度误差大一些', 'demo-x-good', 11.5);
     var p4 = group(s);
     rectBox(p4, R, 246, 414, 110, C_HOMIE);
     label(p4, R + 10, 266, '我们的复现：官方 deploy.onnx（G1）在 MuJoCo 里', 'demo-x-ink', 11.5);
@@ -1140,6 +1151,7 @@
     label(pB, 24, 50 + f6.h + 46, '踏板也能改配置，重新分配命令', 'demo-x-mut', 10.5);
     var pC = group(s);
     label(pC, 160, 70, '表 III', 'demo-x-ink', 13, 'middle');
+    label(pC, 24, 88, '读法：条长是价格（美元）；每条下面是采集频率和精度', 'demo-x-ink2', 10);
     var maxUsd = 430, BX = 140;
     TABLE3.forEach(function (r, i) {
       var y = 96 + i * 62;
@@ -1184,6 +1196,7 @@
       bars.push({ r: r, ba: ba, bh: bh });
     });
     legendRow(pL, BX, 360, [['手臂', C_UP], ['手', C_HOMIE]]);
+    label(pL, 24, 386, '读法：条越长，每秒发给机器人的次数越多，越流畅', 'demo-x-ink2', 10);
     var R = 420;
     var p1 = group(s);
     label(p1, R, 62, '为什么快', 'demo-x-ink', 13);
@@ -1262,7 +1275,7 @@
     var s = sceneSvg('右边先放项目页里递番茄的片段，左边是论文图 11 四个任务的完成时间（我们从矢量图里量的），HOMIE 大约一半；之后右边换成表 X 五位新手连做五次的用时曲线');
     s.appendChild(svgText(24, 26, '图 11、图 12：一半的时间，五次就上手', 'demo-x-ink2', 13.5));
     var pL = group(s);
-    label(pL, 24, 62, '图 11：完成时间（s，读图近似值）', 'demo-x-ink', 12);
+    label(pL, 24, 62, '图 11：完成时间（s，读图近似值），越短越快', 'demo-x-ink', 12);
     var BX = 40, BY = 300, BH = 200, BW = 340;
     hline(pL, BX, BY, BX + BW, BY, C_BORDER, 1.2);
     [0, 5, 10, 15].forEach(function (v) { label(pL, BX - 4, BY - v / 16 * BH + 3, String(v), 'demo-x-mut', 9.5, 'end'); hline(pL, BX, BY - v / 16 * BH, BX + BW, BY - v / 16 * BH, C_BORDER, 0.6, '2 4'); });
@@ -1270,7 +1283,7 @@
       var x = BX + 20 + i * 82;
       var a = vbar(pL, x, 28, C_BAD, 0.75), b = vbar(pL, x + 32, 28, C_HOMIE);
       label(pL, x + 30, BY + 16, r.zh, 'demo-x-ink2', 11, 'middle');
-      var ta = label(pL, x + 14, 0, '', 'demo-x-mut', 9.5, 'middle'), tb = label(pL, x + 46, 0, '', 'demo-x-ink', 9.5, 'middle');
+      var ta = halo(label(pL, x + 14, 0, '', 'demo-x-mut', 9.5, 'middle')), tb = halo(label(pL, x + 46, 0, '', 'demo-x-ink', 9.5, 'middle'));
       var ratio = label(pL, x + 30, BY + 36, '×' + fmt(r.ours / r.vr, 2), 'demo-x-good', 10.5, 'middle');
       return { r: r, a: a, b: b, ta: ta, tb: tb, ratio: ratio };
     });
@@ -1290,6 +1303,7 @@
     label(pR2, R, 334, '项目页：约快 2 倍，尤其是要沿径向移动的任务', 'demo-x-mut', 10.5);
     var pR3 = group(s);
     label(pR3, R, 62, '表 X / 图 12：5 位新手，递手任务连做 5 次（s）', 'demo-x-ink', 12);
+    label(pR3, R, 80, '读法：横轴第几次，纵轴用时，越低越好', 'demo-x-ink2', 10);
     var UX = R + 30, UY = 290, UW = 330, UH = 200;
     hline(pR3, UX, UY, UX + UW, UY, C_BORDER, 1.2);
     [10, 20, 30].forEach(function (v) { label(pR3, UX - 4, UY - v / 36 * UH + 3, String(v), 'demo-x-mut', 9.5, 'end'); hline(pR3, UX, UY - v / 36 * UH, UX + UW, UY - v / 36 * UH, C_BORDER, 0.6, '2 4'); });
@@ -1298,11 +1312,12 @@
     function uy(v) { return UY - v / 36 * UH; }
     TABLE10.forEach(function (u) { pathLine(pR3, u.t.map(function (v, q) { return [ux(q), uy(v)]; }), C_WARN, 1.4).style.opacity = 0.45; });
     pathLine(pR3, [[ux(0), uy(8)], [ux(4), uy(8)]], C_MUTED, 2, '7 5');
-    label(pR3, ux(4) + 4, uy(8) - 6, '专家 8 s', 'demo-x-mut', 9.5, 'end');
+    halo(label(pR3, ux(1.2), uy(8) + 15, '专家 8 s（虚线）', 'demo-x-mut', 9.5));
+    label(pR3, UX + UW, uy(33), '细线：每位新手', 'demo-x-ink2', 9.5, 'end');
     var avg = pathLine(pR3, [], C_GOOD, 3);
     var avgPts = TABLE10_AVG.map(function (v, q) { return [ux(q), uy(v)]; });
-    var avgLab = label(pR3, ux(0) + 8, uy(24.8) - 8, '平均 24.8', 'demo-x-good', 10.5);
-    var avgLab2 = label(pR3, ux(4) - 8, uy(8.0) + 18, '8.0', 'demo-x-good', 10.5, 'end');
+    var avgLab = halo(label(pR3, UX - 6, uy(24.8) + 4, '平均 24.8', 'demo-x-good', 10.5, 'end'));
+    var avgLab2 = halo(label(pR3, ux(4) + 5, uy(8.0) + 4, '8.0', 'demo-x-good', 10.5));
     var pR4 = group(s);
     label(pR4, R, 330, '身高 160–185 cm、体重 55–90 kg，男 4 女 1，都没用过', 'demo-x-ink2', 11);
     label(pR4, R, 351, '上手流程 6 步、约 5 分钟：穿背带 → 调座椅和踏板 → 讲踏板 →', 'demo-x-ink2', 11);
@@ -1354,7 +1369,7 @@
     label(p3, R, 241, '三个回归头：手臂关节、灵巧手、高度命令；SmoothL1 损失', 'demo-x-ink2', 11);
     label(p3, R, 261, '序列长 7，往前看 3 步；8 块 A100 训 40 个 epoch', 'demo-x-mut', 10.5);
     var p4 = group(s);
-    label(p4, R, 288, '表 V：每个任务测 15 次', 'demo-x-ink', 12);
+    label(p4, R, 288, '表 V：成功率，条越长越好（各测 15 次）', 'demo-x-ink', 12);
     var bars = TABLE5.map(function (r, i) { return barRowAt(p4, R, 300 + i * 26, 120, r.zh, C_HOMIE, 18); });
     label(p4, R, 364, '主机 RTX 4080，有线连 G1，整个回路 10 Hz', 'demo-x-mut', 10.5);
     var p5 = group(s);
@@ -1431,7 +1446,7 @@
       build: buildSceneCockpit,
       cues: [
         { at: 0.4, s: '论文图 2：左边是驾驶舱和真机 / 仿真，右边是两个策略。' },
-        { at: 3.6, s: '脚踩踏板给出 $C_t = [v_x, \\omega_{yaw}, h_t]$，$\\pi_{loco}$ 在机载 Orin 上以 50 Hz 控制下肢。' },
+        { at: 3.6, s: '脚踩踏板给出 $C_t = [v_x, \\omega_{yaw}, h_t]$，$\\pi_{loco}$ 在机载 Orin 上以 50 Hz 控制下肢。' },
         { at: 7.0, s: '外骨骼读出 $q_{upper}$，**直接**设给上身，不解逆运动学；手套驱动灵巧手。' },
         { at: 10.4, s: '头部相机的第一视角经 Wi-Fi 传回舱内屏幕；通信全走 Wi-Fi，机器人可以离得很远。' },
         { at: 13.4, s: '遥操作时顺便采数据，训练自主策略 $\\pi_{auto}$，学会后替操作员给出 $C_t$ 和 $q_{upper}$。' }
@@ -1442,9 +1457,9 @@
       dur: 16,
       build: buildSceneTable1,
       cues: [
-        { at: 0.4, s: '同构机械臂（Mobile-ALOHA、GELLO、AirExo、ACE）：关节匹配，准、快，但只有夹爪、不管全身。' },
+        { at: 0.4, s: '表 I 里 ✓ 是有、✗ 是没有。同构机械臂（Mobile-ALOHA、GELLO、AirExo、ACE）关节匹配，又准又快；前三个只有夹爪，ACE 的手靠视觉，都不管全身。' },
         { at: 3.6, s: '视觉 / VR 方案：先估姿态再解逆运动学，延迟高、怕遮挡、有误差。' },
-        { at: 7.0, s: '能全身移动操作的 HumanPlus、OmniH2O、Mobile-TeleVision：训练都要动捕数据做动作先验。' },
+        { at: 7.0, s: '能全身移动操作的 HumanPlus、OmniH2O、Mobile-TeleVision：训练要用动捕数据做先验。' },
         { at: 10.4, s: 'HOMIE：手臂、手都是关节匹配，能移动操作、能全身、不用动捕。' },
         { at: 13.4, s: '只有 HOMIE 一行全是勾；价格约是 Mobile-ALOHA 的 $1/64$。' }
       ]
@@ -1457,7 +1472,7 @@
         { at: 0.4, s: '分工：下肢 12 个关节由策略 $\\pi_{loco}$ 输出；腰和两臂 15 个关节由外骨骼直接设定。' },
         { at: 3.6, s: '一步观测 76 维：命令、角速度、重力、27 个关节的角度和速度、上一步的 12 维动作。' },
         { at: 7.0, s: '叠 6 步共 456 维；估计器压成 3 维速度 + 32 维潜变量，再和当前观测一起出 12 个目标角。' },
-        { at: 10.4, s: 'PD 控制：目标角 = 默认角 + 0.25 × 动作，策略 50 Hz。' },
+        { at: 10.4, s: 'PD 控制：目标角 = 默认角 + 0.25 × 动作，策略 50 Hz。' },
         { at: 13.4, s: 'Isaac Gym 4096 个环境，RTX 4090 约 3 小时，**不用任何动捕数据**。' }
       ]
     },
@@ -1466,10 +1481,10 @@
       dur: 16,
       build: buildSceneCurriculum,
       cues: [
-        { at: 0.4, s: '操作员的手臂随时在动：下半身要在**任意上身姿态**下站稳、走、蹲。一上来就随机大幅摆，学不会。' },
+        { at: 0.4, s: '操作员的手臂随时在动：下半身要在**任意上身姿态**下站稳、行走、下蹲；一上来就大幅乱摆，策略学不会。' },
         { at: 3.6, s: '课程比例 $\\rho_a$ 从 0 开始，x 方向速度跟得好就加 0.05；$\\rho_a$ 越大，分布越往右铺开。' },
         { at: 7.0, s: "先按式 2 抽 $\\rho_a'$，再取 $a_i \\sim \\mathcal{U}(0, \\rho_a')$：每个关节往限位走 $a_i$ 那么远。" },
-        { at: 10.4, s: '每 1 s 重采样一次目标，这 1 s 里线性插值过去；不插值的话机器人站不稳。' },
+        { at: 10.4, s: '每 1 s 重采样一次目标，这 1 s 里线性插值过去；不插值的话机器人站不稳。' },
         { at: 13.4, s: '比 $\\mathcal{U}(0, \\rho_a)$ 平滑：任何时候 $[0, 1]$ 都有概率被采到。代码里 $\\lambda = 20(1 - 0.99\\rho_a)$。' }
       ]
     },
@@ -1478,10 +1493,10 @@
       dur: 16,
       build: buildSceneKnee,
       cues: [
-        { at: 0.4, s: '能蹲下去才够到低处。目标高度 $h_t$ 由中间那只踏板给，代码里蹲的范围是 0.24–0.74 m。' },
+        { at: 0.4, s: '能蹲下去才够到低处。目标高度 $h_t$ 由中间那只踏板给，代码里蹲的范围是 0.24–0.74 m。' },
         { at: 3.6, s: '式 4：高度差乘「归一化膝角减 1/2」，取负的绝对值；膝角在中间时这一项为 0。' },
-        { at: 7.0, s: '算例 A：比目标高 0.33 m、膝盖偏直，膝再弯一点罚得少——鼓励弯。' },
-        { at: 10.4, s: '算例 B：比目标低 0.32 m、膝盖偏弯，膝伸一点罚得少——鼓励伸。' },
+        { at: 7.0, s: '算例 A：比目标高 0.33 m、膝盖偏直，膝再弯一点罚得少——鼓励弯。' },
+        { at: 10.4, s: '算例 B：比目标低 0.32 m、膝盖偏弯，膝伸一点罚得少——鼓励伸。' },
         { at: 13.4, s: '代码权重 $-0.75$；论文正文那句「低于目标鼓励弯」和公式的方向相反（我们的理解：笔误）。' }
       ]
     },
@@ -1490,11 +1505,11 @@
       dur: 16,
       build: buildSceneTraining,
       cues: [
-        { at: 0.4, s: '每 4 s 重采样一次命令，一个回合 20 s；同一个环境会在蹲、走、站之间换来换去。' },
+        { at: 0.4, s: '每 4 s 重采样一次命令，一个回合 20 s；同一个环境会在蹲、走、站之间换来换去。' },
         { at: 3.6, s: '论文：1/3 的环境练蹲、2/3 练站和走。代码：蹲 1/3、站着不动 1/6、走 1/2。' },
-        { at: 7.0, s: '蹲时速度清零、高度在 0.24–0.74 m 随机；走时三个速度随机、高度 0.74 m。' },
+        { at: 7.0, s: '蹲时速度清零、高度在 0.24–0.74 m 随机；走时三个速度随机、高度 0.74 m。' },
         { at: 10.4, s: '代码里有 7 项奖励只在目标高度 $\\geq 0.735$ m 时才算，蹲着时不罚髋、踝偏离和两脚间距。' },
-        { at: 13.4, s: '域随机化：手上加重、躯干加重、每 4 s 推一下、摩擦、PD 增益；奖励一共 33 项。' }
+        { at: 13.4, s: '域随机化：手上加重、躯干加重、每 4 s 推一下、摩擦、PD 增益；奖励一共 33 项。' }
       ]
     },
     {
@@ -1514,10 +1529,10 @@
       dur: 16,
       build: buildSceneAblation,
       cues: [
-        { at: 0.4, s: '图 7：每组 3 个种子、1000 个环境 × 20 s，上身按 $\\rho_a \\to 1$ 随机。' },
-        { at: 3.6, s: '上身课程：ours 三项跟踪误差都更低、收敛更快。' },
+        { at: 0.4, s: '图 7：每组 3 个种子、1000 个环境 × 20 s，上身按 $\\rho_a \\to 1$ 随机。' },
+        { at: 3.6, s: '上身课程：ours 的三项跟踪误差都更低，收敛也更快。' },
         { at: 7.0, s: '只把高度奖励放大（hei）：速度误差大得多，高度误差最后也不比 ours 快。' },
-        { at: 10.4, s: '对称：只增强时对称损失涨到 20 左右；不做增强的两组，存活时间一直在 1 s 左右。' },
+        { at: 10.4, s: '对称：只增强时对称损失涨到 20 左右；不做增强的两组，存活时间一直在 1 s 左右。' },
         { at: 13.4, s: '增强提高数据效率，对称损失保住左右对称；项目页说训练快了 10 倍以上。' }
       ]
     },
@@ -1526,10 +1541,10 @@
       dur: 16,
       build: buildSceneGr1,
       cues: [
-        { at: 0.4, s: 'Fourier GR-1 比 G1 高 35 cm、重近 20 kg，手占体重的比例只有一半。' },
+        { at: 0.4, s: 'Fourier GR-1 比 G1 高 35 cm、重近 20 kg，手占体重的比例只有一半。' },
         { at: 3.6, s: '只改跟身材有关的几个数：站立高度、蹲的范围、两脚间距；训练流程不变。' },
-        { at: 7.0, s: '表 II：两台都活满 20 s 左右，GR-1 的速度误差大一些。' },
-        { at: 10.4, s: '我们在 MuJoCo 里回放官方 G1 策略：200 段里 174 段活满 20 s（定义不同，不能直接比）。' },
+        { at: 7.0, s: '表 II：两台都活满 20 s 左右，GR-1 的速度误差大一些。' },
+        { at: 10.4, s: '我们在 MuJoCo 里回放官方 G1 策略：200 段里 174 段活满 20 s（定义不同，不能直接比）。' },
         { at: 13.4, s: 'GR-1 的训练代码没有放出来。' }
       ]
     },
@@ -1562,10 +1577,10 @@
       dur: 16,
       build: buildSceneFreq,
       cues: [
-        { at: 0.4, s: '表 IV：输出给手臂、手的频率，HOMIE 是 263 Hz 和 293 Hz，视觉 / VR 方案 16–125 Hz。' },
+        { at: 0.4, s: '表 IV：输出给手臂、手的频率，HOMIE 是 263 Hz 和 293 Hz，视觉 / VR 方案 16–125 Hz。' },
         { at: 3.6, s: '不估姿态、不解逆运动学，读到就发：输出频率几乎等于采集频率。' },
-        { at: 7.0, s: 'Wi-Fi 一包 128 字节（32 个 float32），延迟 16 ms。' },
-        { at: 10.4, s: '在 G1 上手臂目标其实是 10 Hz 更新、每个插值 50 次；$\\pi_{loco}$ 在机载 Orin 上 50 Hz。' },
+        { at: 7.0, s: 'Wi-Fi 一包 128 字节（32 个 float32），延迟 16 ms。' },
+        { at: 10.4, s: '在 G1 上手臂目标其实是 10 Hz 更新、每个插值 50 次；$\\pi_{loco}$ 在机载 Orin 上 50 Hz。' },
         { at: 13.4, s: '图 9：同一副手套在仿真里驱动 Inspire、LEAP、Shadow、Schunk 四种手。' }
       ]
     },
@@ -1575,10 +1590,10 @@
       build: buildSceneReal,
       cues: [
         { at: 0.4, s: '蹲下去从地上捡瓶子：踏板压低高度，手臂伸向地面。' },
-        { at: 3.6, s: '抓住烤箱把手、边退边拉开门：腿和手同时在动。' },
-        { at: 7.0, s: '推一位坐在椅子上、约 60 kg 的人，大约是机器人体重的两倍。' },
+        { at: 3.6, s: '抓住烤箱把手，边退边拉开门：腿和手是同时在动的。' },
+        { at: 7.0, s: '推一位坐在椅子上、约 60 kg 的人，大约是机器人体重的两倍。' },
         { at: 10.4, s: '两台机器人、两位操作员配合传苹果。' },
-        { at: 13.4, s: '用木棍用力打，也站得住（项目页的鲁棒性实验）。' }
+        { at: 13.4, s: '用木棍用力打，机器人也站得住（项目页的鲁棒性实验）。' }
       ]
     },
     {
@@ -1589,8 +1604,8 @@
         { at: 0.4, s: '四个桌面任务比完成时间：抓放、扫码、递手、开烤箱，对手是 VR 方案 OpenTelevision。' },
         { at: 3.6, s: '图 11（读图）：HOMIE 的用时约为 VR 方案的 0.50–0.72，平均约 0.59。' },
         { at: 7.0, s: '要精确定位、定朝向时差距更大：VR 估姿态在切向上不准，外骨骼没有这个问题。' },
-        { at: 10.4, s: '表 X：5 位新手连做 5 次递手，平均从 24.8 s 降到 8.0 s，追上专家。' },
-        { at: 13.4, s: '身高 160–185 cm 都能用；从穿戴到开始做任务，上手流程约 5 分钟。' }
+        { at: 10.4, s: '表 X：5 位新手连做 5 次递手，平均从 24.8 s 降到 8.0 s，接近专家。' },
+        { at: 13.4, s: '身高 160–185 cm 都能用；从穿戴到开始做任务，上手流程约 5 分钟。' }
       ]
     },
     {
@@ -1599,9 +1614,9 @@
       build: buildSceneAuto,
       cues: [
         { at: 0.4, s: '把策略从 Isaac Gym 迁到 Isaac Sim 的 GRUtopia 场景：同一个驾驶舱也能开仿真里的机器人。' },
-        { at: 3.6, s: '采数据：两个任务各 50 条示范，10 Hz 记录图像、$q_t$、$q_{upper}$ 和 $C_t$。' },
+        { at: 3.6, s: '采数据：两个任务各 50 条示范，10 Hz 记录图像、$q_t$、$q_{upper}$ 和 $C_t$。' },
         { at: 7.0, s: '用 Seer 训练自主策略：看多视角图像和本体感受，输出手臂、手和高度命令。' },
-        { at: 10.4, s: '表 V：蹲下拿番茄 73.3%，抓放 80.0%（各测 15 次）。' },
+        { at: 10.4, s: '表 V：蹲下拿番茄 73.3%，抓放番茄 80.0%，各测 15 次。' },
         { at: 13.4, s: '这就是数据飞轮：接口只有 $C_t$ 和 $q_{upper}$，什么上层策略都能接上来。' }
       ]
     },
@@ -1612,7 +1627,7 @@
       cues: [
         { at: 0.4, s: '地形：接上 PIM 后仿真里能上台阶，真机上头部雷达晃、高程图粗，会撞台阶。' },
         { at: 3.6, s: '拇指设计不完全符合人手；没有力反馈；外骨骼不能遥操作腰。' },
-        { at: 7.0, s: '开源 OpenHomie：训练代码、部署代码和一个训好的 deploy.onnx；硬件文件要申请，禁止商用。' },
+        { at: 7.0, s: '开源 OpenHomie：训练与部署代码，加一个训好的 deploy.onnx；硬件文件要填表申请，而且禁止商用。' },
         { at: 10.4, s: '代码和论文有几处出入：命令多了 $v_y$、蹲走站的比例、$\\lambda$ 的写法、部署增益。' },
         { at: 13.4, s: 'HOMIE：踏板控走与蹲、外骨骼控手臂、手套控手指，下半身一个不用动捕的强化学习策略。' }
       ]

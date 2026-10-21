@@ -4903,7 +4903,7 @@ def test_homie_explainer_demos_and_worked_example_share_the_paper_numbers():
     assert all(f[6] == 500 for f in wk) and _fmt((wk[-1][0] - wk[0][0]) / 1000 / ((len(wk) - 1) / 15), 2) == "0.50"
     # 例 4：命令比例
     assert "x < 1 / 3 ? 'squat' : x > 1 / 2 ? 'walk' : 'stand'" in js and abs(1 - 1 / 3 - 1 / 2 - 1 / 6) < 1e-12
-    assert "蹲三分之一、站着不动六分之一、走二分之一" in narration and "0.74 + $\\mathcal U(-0.5, 0)$，即 0.24–0.74 m" in note
+    assert "下蹲占三分之一，原地站着占六分之一，行走占二分之一" in narration and "0.74 + $\\mathcal U(-0.5, 0)$，即 0.24–0.74 m" in note
     # 例 5：镜像前后左右髋俯仰对调
     a = [-1.050, -0.349, -0.358, 1.212, -0.124, -0.029, -0.748, 0.262, 0.543, 1.585, 0.305, 0.090]
     af = [-0.758, -0.272, -0.540, 1.583, 0.319, -0.097, -1.049, 0.346, 0.362, 1.208, -0.117, 0.017]
@@ -4934,10 +4934,16 @@ def test_homie_explainer_demos_and_worked_example_share_the_paper_numbers():
     spoken = re.findall(r'"([^"]*)"\),', narration[narration.index("SCRIPT = [") : narration.index("DISPLAY = [")])
     assert len(spoken) == 3 + 17 * 5 + 3 and not any(re.search(r"\d\s*[，,]\s*\d", t) for t in spoken)
     assert "下一篇讲 TWIST" in narration and "TWIST" in intro and "TWIST" not in js
-    for s in ("我们认为是笔误", "我们在 MuJoCo 里跑官方策略的回放", "不能和表 2 直接比"):
+    for s in ("我们认为是笔误", "我们在 MuJoCo 里跑官方策略的回放", "不能和表二直接比", "上一期结尾预告：同构外骨骼加脚踏板"):
         assert s in narration, s
-    for bad in ("差得", "几乎", "一行", "重训", "重采样"):
+    for bad in ("差得", "几乎", "一行", "重训", "重采样", "数值", "挑", "R" + "SS", "表 1", "表 2", "表 3", "表 4", "表 5"):
         assert not any(bad in t for t in spoken), bad
+    # 单字并列会被合成得几乎没声音（HugWBC 的「走、跳、站」），一律写双字词
+    assert not any(re.search(r"(?<![\u4e00-\u9fff])[\u4e00-\u9fff][、和][\u4e00-\u9fff](?![\u4e00-\u9fff])", t) for t in spoken)
+    # 每张图表第一次出现时念一句读法，分镜上也写一行（2026-10-21 HugWBC 的看片反馈）
+    for s in ("横轴是抽到的上限，纵轴是概率密度", "横轴是训练步数；前四列是误差，越低越好", "红条是 V R 方案，绿条是 Homie，越短越快", "横轴是第几次，纵轴是用时"):
+        assert s in narration, s
+    assert js.count("读法：") >= 8
     # 面板到 cue 之后才淡出
     assert "return seg(t, a + 0.3, a + 0.7) * (b == null ? 1 : 1 - seg(t, b, b + 0.3));" in js and "1 - seg(t, b - 0.3, b)" not in js
     # 视频文案的占位符都已填上
