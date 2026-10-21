@@ -121,6 +121,7 @@ EXBODY_NOTE = _high_impact_note("Expressive_Whole-Body_Control_for_Humanoid_Robo
 H2O_NOTE = _high_impact_note("H2O_Learning_Human-to-Humanoid_Real-Time_Whole-Body_Teleoperation")
 OMNIH2O_NOTE = _high_impact_note("OmniH2O_Universal_Whole-Body_Teleoperation")
 HOVER_NOTE = _high_impact_note("HOVER_Versatile_Neural_Whole-Body_Controller")
+HUGWBC_NOTE = _high_impact_note("HugWBC_A_Unified_and_General_Humanoid_Whole-Body_Controller")
 EXBODY2_NOTE = _high_impact_note("ExBody2_Advanced_Expressive_Whole-Body_Control")
 MASKEDMIMIC_NOTE = _high_impact_note("MaskedMimic_Unified_Physics-Based_Character_Control_Through_Masked_Motion_Inpainting")
 PHP_NOTE = (
@@ -341,7 +342,7 @@ EXPLAINER_BUNDLES = (
     "gmr", "omniretarget", "diffusion_policy", "beyondmimic", "cosmos", "umr", "php", "pbfm",
     "gentle", "lcp", "transformer", "pi0", "pi05", "op3soccer", "smp", "humanml3d",
     "domain_randomization", "quadterrain", "realhumanoid", "asap", "inekf", "berkeley_humanoid",
-    "toddlerbot", "exbody", "h2o", "omnih2o", "hover", "maskedmimic", "exbody2",
+    "toddlerbot", "exbody", "h2o", "omnih2o", "hover", "maskedmimic", "exbody2", "hugwbc",
 )
 
 # 幕数由论文决定，不是统一模板：PPO / DeepMimic / AMP / ADD 的核心概念正好各 5 个，
@@ -547,6 +548,12 @@ EXPLAINER_SCENES = {
     # 阈值扫描（图 4）、专才（表 IV）各一幕；结果按图 5 恰恰、表 II + III、表 XI 各一幕；动作来源与部署一幕，局限与没说清的地方一幕。
     # 压成 15 幕会让全局的误差曲线和局部的锯齿、或图 8 的累积分布和图 4 的 U 形抢同一帧。
     "exbody2": (EXBODY2_NOTE, 18),
+    # HugWBC 十六幕：问题一幕（人会的、以前学不会的、上身一被接管就失稳）；第 III-A 节的命令空间、相位与四种步态、期望接地概率各一幕（表 II、
+    # 式 1–2 与图 4、式 3–4 与图 3 各有自己的图）；第 III-B 节的非对称 Actor-Critic 一幕；表 I 的奖励按「速度与姿态」「着地与抬脚」两幕
+    # （式 8 的五次多项式和代码的三角形要单独一帧）；第 III-D 节的对称损失一幕；第 III-E 节的干预训练与第 III-E/F 节的噪声课程、两组机器人
+    # 各一幕；结果按表 III（+ 表 XI）、图 8、表 IV（+ 表 X）、表 V + 图 6、表 VI 与真机各一幕，局限与代码一幕。压成 14 幕会让接地概率的坡
+    # 和时钟、或表 IV 的条和表 V 的对数轴抢同一帧。
+    "hugwbc": (HUGWBC_NOTE, 16),
 
     "humanml3d": (HUMANML3D_NOTE, 12),
 }
@@ -2022,7 +2029,7 @@ def test_narrated_video_placeholders_point_at_files_that_exist():
     for demo in ("calm-video", "pulse-video", "dp-video", "bm-video", "lcp-video", "cosmos-video", "groot-video",
                  "tf-video", "pi0-video", "pi05-video", "soccer-video", "sonic-video", "gmr-video",
                  "omniretarget-video", "humanml3d-video", "smp-video", "dr-video", "qt-video", "rh-video", "inekf-video", "bh-video",
-                 "tb-video", "exbody-video", "h2o-video", "hover-video", "exbody2-video"):
+                 "tb-video", "exbody-video", "h2o-video", "hover-video", "exbody2-video", "hugwbc-video"):
         assert demo in seen, f"{demo} 应该挂在对应的论文笔记里"
 
 
@@ -3365,9 +3372,12 @@ def test_gmr_explainer_demos_and_worked_example_share_the_paper_numbers():
 
 
 def _webp_size(path: Path):
-    """读 webp 的画布尺寸（带透明通道的贴图是 VP8X：第 24–29 字节是宽、高减一，小端 24 位）。"""
+    """读 webp 的画布尺寸（带透明通道的贴图是 VP8X：第 24–29 字节是宽、高减一，小端 24 位；
+    不透明的有损图是 VP8：第 26–29 字节是宽、高，各取低 14 位）。"""
     head = path.read_bytes()[:30]
-    assert head[:4] == b"RIFF" and head[8:12] == b"WEBP" and head[12:16] == b"VP8X", path.name
+    assert head[:4] == b"RIFF" and head[8:12] == b"WEBP" and head[12:16] in (b"VP8X", b"VP8 "), path.name
+    if head[12:16] == b"VP8 ":
+        return int.from_bytes(head[26:28], "little") & 0x3FFF, int.from_bytes(head[28:30], "little") & 0x3FFF
     return int.from_bytes(head[24:27], "little") + 1, int.from_bytes(head[27:30], "little") + 1
 
 
@@ -4644,3 +4654,154 @@ def test_video_notes_link_their_project_page():
         label = re.search(r"下载 mp4（([\d.]+) MB）", text)
         assert label and abs(float(label.group(1)) - mb) < 0.06, (note.name, mb)
     assert found >= 36
+
+
+def _hugwbc_toy(js: str, key: str):
+    """解码 hugwbc.js 的 `TOY[key]`：每帧 15 个 int16（毫米）——骨盆、左踝、右踝、左手、右手的世界坐标。"""
+    a = _h2o_int16(re.search(key + r": '([^']+)'", js).group(1))
+    assert len(a) % 15 == 0
+    return [_h2o_pts(a, o, 5) for o in range(0, len(a), 15)]
+
+
+def _hugwbc_C(pb: float, sigma: float = 0.05) -> float:
+    phi = lambda x: 0.5 * (1 + math.erf(x / math.sqrt(2)))  # noqa: E731
+    return phi(pb / sigma) * (1 - phi((pb - 0.5) / sigma)) + phi((pb - 1) / sigma) * (1 - phi((pb - 1.5) / sigma))
+
+
+def _hugwbc_swing(pb: float, lift: float) -> float:
+    if pb < 0.5:
+        return 0.0
+    t = (0.25 - abs(pb - 0.75)) / 0.25
+    return lift * (10 * t**3 - 15 * t**4 + 6 * t**5)
+
+
+def test_hugwbc_explainer_demos_and_worked_example_share_the_paper_numbers():
+    """HugWBC：十六幕动画、三个演示、配音旁白与笔记「🚶 具体实例」用同一组数。
+
+    表 I–VI、表 X–XI 照抄 arXiv 2502.03206 v3；σ、正则课程、干预的重抽间隔取自 apexrl/HugWBC 的代码；H1 是我们按命令和论文式 (8) 的
+    目标抬脚轨迹摆出来的运动学示意（不是策略的输出），嵌在 hugwbc.js 里，这里解码后检查摆动脚的踝高就是五次多项式的目标加踝高。
+    """
+    js = (DEMO_JS_DIR / "hugwbc.js").read_text(encoding="utf-8")
+    note = HUGWBC_NOTE.read_text(encoding="utf-8")
+    narration = (ROOT / "scripts" / "paper_video" / "papers" / "hugwbc.py").read_text(encoding="utf-8")
+    intro = (ROOT / "scripts" / "paper_video" / "papers" / "hugwbc.js").read_text(encoding="utf-8")
+
+    for line in (
+        "{ zh: '走', v: [0.030, 0.216, 0.085, 0.054, 0.028, 0.011, 0.064, 0.038, 0.075] },",
+        "{ zh: '单脚跳', v: [0.033, null, 0.046, 0.078, null, null, 0.103, null, null] }",
+        "{ zh: 'HOVER', v: [0.559, 1.324, 0.328, 0.436, 0.270, 0.127, 0.082] },",
+        "{ zh: 'ExBody', v: [0.109, 0.242, 0.114, 0.587, 0.145, 0.122, 0.097] },",
+        "[[0.8658, 0.7511, 0.9116, 0.1930, 0.1913, 0.1658, 0.3622, 0.2241],",
+        "[[17.5358, 17.9732, 25.7132], [25.3802, 26.3496, 21.3078], [0.0159, 1.7065, 1.7152]]",
+        "{ zh: '走', p: [0.1006, 0.0581], w: [0.0571, 0.0489] },",
+        "linVel: 2, angVel: 2, height: -40, pitch: -10, waist: -2, swing: -30, contact: -2,",
+        "var SIGMA = 0.05;",
+        "var P_SWITCH = 0.005, T_INTERVAL = 90, DT = 0.02;",
+        "var TOY_L = { walk: 0.15, walk_hi: 0.35, jump: 0.15, hop: 0.15 };",
+        "var ANKLE_H = 0.0698;",
+    ):
+        assert line in js, line
+    for k in ("'hugwbc-explainer'", "'hugwbc-video'", "'hugwbc-gait'", "'hugwbc-intervene'", "'hugwbc-tables'", "K.video(host"):
+        assert k in js, k
+
+    # 例 2：期望接地概率（σ = 0.05）
+    want = {0: "0.5", 0.05: "0.8413", 0.1: "0.9772", 0.5: "0.5", 0.55: "0.1587", 0.6: "0.0228", 0.95: "0.1587"}
+    for pb, s in want.items():
+        assert _fmt(_hugwbc_C(pb), 4).rstrip("0").rstrip(".") == s.rstrip("0").rstrip("."), pb
+    for s in ("0.9772", "0.0228", "0.8413", "0.1587"):
+        assert s in note, s
+    assert "$C(0.1) = 0.977$" in js and "$C(0.6) = 0.023$" in js
+    assert "0.977" in narration and "0.023" in narration
+    # 例 1：两个时钟
+    assert _fmt(math.sin(2 * math.pi * 0.6), 3) == "-0.588" and "= -0.588$" in note and "= 0.588$" in note
+    # 例 3：抬脚目标与代码的三角形
+    assert _fmt(_hugwbc_swing(0.6, 1), 5) == "0.31744" and _fmt(_hugwbc_swing(0.6, 0.15), 4) == "0.0476"
+    assert [_fmt(_hugwbc_swing(p, 0.15), 4) for p in (0.55, 0.65, 0.7, 0.75)] == ["0.0087", "0.1024", "0.1413", "0.1500"]
+    assert _fmt(0.15 * (1 - abs(1 - (2 * 0.6 - 1) * 2)) + 0.07, 2) == "0.13"
+    assert _fmt(30 * (1 - _hugwbc_C(0.6)) * (0.0476 - 0.02) ** 2, 3) == "0.022"
+    for s in ("0.31744", "0.0476", "= 0.13$ m", "= 0.22$ m", "= -0.022$"):
+        assert s in note, s
+    for s in ("0.317", "0.048 米", "0.13 米"):
+        assert s in narration, s
+    # 例 4：速度与姿态奖励
+    assert _fmt(2 * math.exp(-0.09 / 0.2), 3) == "1.275" and _fmt(2 * math.exp(-0.01 / 0.2), 3) == "1.902"
+    assert "= 1.275$" in note and "1.28 分" in narration and "1.28" in js
+    assert _fmt(40 * 0.05**2, 3) == "0.100" and _fmt(2 * 0.05**2, 3) == "0.005"
+    # 例 5：干预多久换一次
+    assert round((1 - 0.005) / 0.005) == 199 and _fmt(199 * 0.02, 2) == "3.98"
+    assert _fmt(0.995**500, 3) == "0.082" and _fmt(0.995**200, 3) == "0.367"
+    for s in ("199", "3.98", "0.082", "0.367"):
+        assert s in note, s
+    assert "199 步" in narration and "199 步" in js
+    # 例 6：正则课程
+    scale = lambda it: 0.2 ** (0.8 ** (it // 100))  # noqa: E731
+    assert [_fmt(scale(i), 3) for i in (0, 100, 500, 1000, 1200, 1300)] == ["0.200", "0.276", "0.590", "0.841", "0.895", "0.915"]
+    assert "| 系数 | 0.2 | 0.276 | 0.590 | 0.841 | 0.895 | 0.915 |" in note and "1300 次迭代" in narration
+    # 例 7：训练规模
+    assert 4096 * 24 == 98304 and _fmt(98304 * 40000 * 0.02 / (365.25 * 86400), 2) == "2.49"
+    assert "98{,}304" in note and "2.49 年" in note
+    # 例 8–10：读表
+    assert [_fmt(a / b, 1) for a, b in ((0.216, 0.030), (0.532, 0.090), (0.109, 0.030), (0.559, 0.030), (0.587, 0.054))] == ["7.2", "5.9", "3.6", "18.6", "10.9"]
+    assert [_fmt(a / b, 1) for a, b in ((0.8658, 0.0755), (0.1697, 0.0645), (0.0483, 0.0264), (0.1006, 0.038))] == ["11.5", "2.6", "1.8", "2.6"]
+    for s in ("（11.5 倍）", "（2.6 倍）", "（1.8 倍）", "18.6 倍", "10.9 倍"):
+        assert s in note, s
+    for s in ("0.866 米每秒", "0.026 涨到 0.048", "0.057", "0.170", "17.5 到 25.7 米", "0.067 到 0.101 弧度"):
+        assert s in narration, s
+
+    # 运动学示意：摆动脚的踝高 = 式 (8) 的目标 + 踝高 0.0698 m，触地的脚贴地（毫米取整）
+    for key, lift in (("walk", 0.15), ("walk_hi", 0.35), ("jump", 0.15), ("hop", 0.15)):
+        frames = _hugwbc_toy(js, key)
+        assert len(frames) == 20, key
+        for k, f in enumerate(frames):
+            phi1 = k / 20
+            phases = {"walk": [phi1, (phi1 + 0.5) % 1], "walk_hi": [phi1, (phi1 + 0.5) % 1], "jump": [phi1, phi1], "hop": [phi1]}[key]
+            for i, ph in enumerate(phases):
+                z = f[1 + i][2]
+                assert abs(z - (_hugwbc_swing(ph, lift) + 0.0698)) < 1.5e-3, (key, k, i, z)
+    assert round(_hugwbc_toy(js, "walk")[12][1][2] * 1000) == 117 and "117 mm" in note
+
+    # 旁白：数字列举用顿号，两个数之间不只隔一个逗号；片头接上一期（ExBody2）的片尾预告并说准单脚跳另训，片尾只预告下一篇（HOMIE）
+    spoken = re.findall(r'"([^"]*)"\),', narration[narration.index("SCRIPT = [") : narration.index("DISPLAY = [")])
+    assert len(spoken) == 86 and not any(re.search(r"\d\s*[，,]\s*\d", t) for t in spoken)
+    exbody2 = (ROOT / "scripts" / "paper_video" / "papers" / "exbody2.py").read_text(encoding="utf-8")
+    preview = re.search(r"下一篇讲 Hug W B C：([^。]*)。", exbody2).group(1)
+    assert narration.count("上一期结尾预告：" + preview + "。") == 1 and "单脚跳另外训练了一个" in narration
+    assert "下一篇讲 Homie" in narration and "HOMIE" in intro
+    # 2026-10-20 看片检查：表号写中文数字（「表 2 里」会念成「两里」），数字后面不紧跟「只」（「表 6 只」念成量词）
+    assert not any(re.search(r"表 ?\d", t) for t in spoken) and not any(re.search(r"\d\s*只", t) for t in spoken)
+    assert "单脚跳的低速前向和左右速度" in narration and "0.033" in js + note and "0.046" in js
+    for s in ("我们读代码的结果", "我们整理的", "我们的理解", "读图的近似值"):
+        assert s in narration, s
+    for bad in ("差得", "当老师", "几乎", "一行", "重训", "着地", "不干预训", "步长", "遥操作", "挑", "数值", "还得"):
+        assert not any(bad in t for t in spoken), bad
+    assert "## 🎬 十六幕动画" in note and 'demos: ["hugwbc"]' in note
+    # 面板到 cue 之后才淡出
+    assert "return seg(t, a + 0.3, a + 0.7) * (b == null ? 1 : 1 - seg(t, b, b + 0.3));" in js and "1 - seg(t, b - 0.3, b)" not in js
+    # 视频文案的占位符都已填上
+    assert "__VIDEO_" not in js and "__VIDEO_" not in note
+
+
+def test_hugwbc_assets_and_project_page_clips():
+    """HugWBC：论文图 1–3、5、6、8 的裁剪（图 8 从矢量原图按 1.5 倍出，放大的热图格子不糊），H1 运动学示意的 6 张贴图表，项目页的 6 段片段（按幕懒加载）。"""
+    js = (DEMO_JS_DIR / "hugwbc.js").read_text(encoding="utf-8")
+    base = ROOT / "assets/img/papers/hugwbc"
+    figs = {p.name for p in base.glob("*.webp")}
+    used = set(re.findall(r"\['(fig\d_\w+\.webp)', \d+, \d+\]", js))
+    assert used == figs and len(used) == 7
+    sheets = re.findall(r"(\w+): \{ file: '(h1_\w+\.webp)', R: 200, yaw: [\d.]+, pitch: 0\.1, cw: (\d+), ch: (\d+), cols: (\d+), n: (\d+), ax: \d+, ay: \d+ \}", js)
+    assert {s[0] for s in sheets} == {"walk", "walk_hi", "jump", "hop", "posture", "noise"}
+    for key, name, cw, ch, cols, n in sheets:
+        assert _webp_size(base / "h1_3d" / name) == (int(cw) * int(cols), int(ch) * math.ceil(int(n) / int(cols))), key
+    assert {p.name for p in (base / "h1_3d").iterdir()} == {s[1] for s in sheets}
+    assert sum(p.stat().st_size for p in (base / "h1_3d").iterdir()) < 1.0e6
+    assert "H1_3D_BASE = IMG_BASE ? IMG_BASE + 'hugwbc/h1_3d/'" in js
+    assert "fig8w: ['fig8_walk.webp', 2100, 2061]," in js and _webp_size(base / "fig8_walk.webp") == (2100, 2061)
+    clip_dir = base / "clips"
+    used_clips = set(re.findall(r"projClip\(\w+, '(\w+)'", js))
+    assert used_clips == {"intro", "noise", "hello", "box", "posture", "lawn"}
+    assert {p.name for p in clip_dir.iterdir()} == {f"{u}.{ext}" for u in used_clips for ext in ("mp4", "webp")}
+    assert sum(p.stat().st_size for p in clip_dir.iterdir()) < 2.0e6
+    assert set(re.findall(r"(\w+): [\d.]+", js[js.index("var CLIP_DUR = {") : js.index("};", js.index("var CLIP_DUR = {"))])) == used_clips
+    assert js.count("项目页视频") >= 5
+    note = HUGWBC_NOTE.read_text(encoding="utf-8")
+    assert "剪自[项目页](https://hugwbc.github.io/)的视频" in note and "运动学示意" in note
