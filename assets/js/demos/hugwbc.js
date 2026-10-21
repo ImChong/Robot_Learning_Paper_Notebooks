@@ -920,7 +920,8 @@
     var inPro = chip(d, IX, 44, IW, '本体感受 **63** × 最近 5 步', C_ACCENT, { size: 11.5, h: 30 });
     var tape = group(d);
     for (var i = 0; i < 5; i++) rectBox(tape, IX + 8 + i * 37, 80, 31, 12, C_ACCENT, C_SURFACE);
-    label(tape, IX + IW / 2, 106, '角速度 3 · 重力 3 · 关节位置 19 · 速度 19 · 上一步动作 19', 'demo-x-mut', 8.5, 'middle');
+    /* 分量逐项写在下面的要点里；这里只写加法，整行收在输入列宽度以内，不伸到右边的竖线下面 */
+    label(tape, IX + IW / 2, 106, '每步 63 = 3 + 3 + 19 + 19 + 19', 'demo-x-mut', 8.5, 'middle');
     var inCmd = chip(d, IX, 114, IW, '命令 **11** + 时钟 **2**（含 $I(t)$）', C_GOOD, { size: 11.5, h: 30 });
     var inPri = chip(d, IX, 152, IW, '特权 **24**：线速度、身高误差…', C_WARN, { size: 11.5, h: 30 });
     var terr = group(d);
@@ -948,6 +949,10 @@
     var flowA = dotAt(d, 0, 0, 4, C_ACCENT), flowC = dotAt(d, 0, 0, 4, C_WARN);
     var ACT_PATH = [[IX + IW, 59], [AX, 59], [AX + 228, 59], [AX + 303, 59], [AX + 303, 90], [AX + 220, 90], [AX + 220, 104], [AX + 266, 119], [AX + 328, 119]];
     var CRI_PATH = [[IX + IW, 167], [AX - 18, 167], [AX - 18, 215], [AX + 266, 215]];
+    /* 数据点只在连线上画：路径穿过方框时藏起来，免得从框里的字上压过去 */
+    var BOXES = [[IX, 44, IW, 30], [IX, 114, IW, 30], [IX, 152, IW, 30], [IX, 190, IW, 56], [AX, 44, 150, 30], [AX + 162, 44, 54, 30],
+      [AX + 228, 44, 150, 30], [AX, 104, 266, 30], [AX + 278, 104, 100, 30], [AX + 278, 152, 100, 30], [AX, 200, 266, 30]];
+    function inBox(p) { return BOXES.some(function (b) { return p[0] > b[0] - 4 && p[0] < b[0] + b[2] + 4 && p[1] > b[1] - 4 && p[1] < b[1] + b[3] + 4; }); }
     var NY = 278;
     var ps = panels(s, 5);
     rich(ps[0], 24, NY, '**本体感受 63 维**：角速度 3、重力方向 3、19 个关节的位置和速度、上一步动作 19', 12.5, 'demo-x-ink2', 'start', 760);
@@ -972,8 +977,9 @@
       ][ci];
       [inPro, tape, inCmd, inPri, terr, enc, zc, est, low, act, pd, critic].forEach(function (n) { setOpacity(n, on.indexOf(n) >= 0 ? 1 : 0.28); });
       var u = (now * 0.35) % 1;
-      moveDot(flowA, pointOnPath(ACT_PATH, u)); moveDot(flowC, pointOnPath(CRI_PATH, u));
-      setOpacity(flowA, ci === 1 ? 0 : 1); setOpacity(flowC, ci === 1 || ci === 4 ? 1 : 0);
+      var pa = pointOnPath(ACT_PATH, u), pc = pointOnPath(CRI_PATH, u);
+      moveDot(flowA, pa); moveDot(flowC, pc);
+      setOpacity(flowA, ci === 1 || inBox(pa) ? 0 : 1); setOpacity(flowC, (ci === 1 || ci === 4) && !inBox(pc) ? 1 : 0);
       fadePanels(ps, t);
     }
     return { el: s, draw: draw };
@@ -989,7 +995,8 @@
     var ground = groundTicks(left, 30, 378);
     var bot = toyBot(left);
     var cmdL = hline(left, 0, 0, 0, 0, C_PURPLE, 2, '6 4'), actL = hline(left, 0, 0, 0, 0, C_PURPLE, 2.6);
-    var cmdLab = rich(left, 0, 0, '', 11, 'demo-x-ink2', 'start', 160), actLab = rich(left, 0, 0, '', 11, 'demo-x-ink2', 'start', 160);
+    /* 「实际」标签右对齐、放在实线左边同一高度：放在线上方时，命令虚线一升上来就从字中间穿过 */
+    var cmdLab = rich(left, 0, 0, '', 11, 'demo-x-ink2', 'start', 160), actLab = rich(left, 0, 0, '', 11, 'demo-x-ink2', 'end', 160);
     rich(left, 36, 60, '运动学示意：站着跟身高命令 $h$，实际慢半拍跟上', 10, 'demo-x-mut', 'start', 330);
     var penBar = bar(left, 60, 362, 12, C_BAD);
     var penLab = rich(left, 36, 356, '', 11, 'demo-x-ink2', 'start', 330);
@@ -1032,9 +1039,9 @@
       ground.put(cam, 0);
       bot.put('posture', cam, postureIndex('h', ha));
       var yc = project([0, 0, BASE_H + hc], cam)[1], ya = project([0, 0, BASE_H + ha], cam)[1];
-      setLine(cmdL, OX - 120, yc, OX + 70, yc); setLine(actL, OX - 120, ya, OX - 60, ya);
+      setLine(cmdL, OX - 90, yc, OX + 70, yc); setLine(actL, OX - 90, ya, OX - 30, ya);
       cmdLab.setText('命令 $h = ' + sgn(f2(hc)) + '$'); cmdLab.setX(OX + 74); cmdLab.setY(yc + 4);
-      actLab.setText('实际 ' + sgn(f2(ha))); actLab.setX(OX - 164); actLab.setY(ya - 6);
+      actLab.setText('实际 ' + sgn(f2(ha))); actLab.setX(OX - 96); actLab.setY(ya + 4);
       var pen = REWARD.height * (hc - ha) * (hc - ha);
       penBar.setAttribute('x', '200'); setW(penBar, Math.min(170, -pen * 600));
       penLab.setText('这一步：$-40 \\times ' + f3(Math.abs(hc - ha)) + '^2 = ' + sgn(f3(pen)) + '$');
@@ -1487,6 +1494,8 @@
         var y = y0 + 14 + i * 14, v = TABLE5[i][0][k];
         var b = bar(lt, LX + 70, y, 11, STRAT_C[i]);
         setW(b, lx(v) - (LX + 70));
+        /* 数值下面垫一块底色，竖向虚线网格不从数字上穿过 */
+        lt.appendChild(paint(svgEl('rect', { x: lx(v) + 3, y: y, width: String(v).length * 5 + 4, height: 11 }), C_SURFACE));
         label(lt, lx(v) + 5, y + 9, String(v), 'demo-x-ink', 9);
         bars5.push(b);
       });
