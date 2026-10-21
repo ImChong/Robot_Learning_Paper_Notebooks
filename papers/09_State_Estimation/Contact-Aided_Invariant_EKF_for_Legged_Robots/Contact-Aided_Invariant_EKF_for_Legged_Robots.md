@@ -26,6 +26,7 @@ demos: ["inekf"]
 |------|------|
 | **arXiv** | [1904.09251](https://arxiv.org/abs/1904.09251)（v1 2019-04-19、v2 2019-11-10，44 页） |
 | **PDF** | [arxiv.org/pdf/1904.09251](https://arxiv.org/pdf/1904.09251) |
+| **项目页** | 没有单独的项目页；代码和实测视频见下面「代码」「视频」两行 |
 | **期刊** | The International Journal of Robotics Research **39(4): 402–430**，2020（DOI [10.1177/0278364919894385](https://doi.org/10.1177/0278364919894385)） |
 | **会议版** | Contact-Aided Invariant Extended Kalman Filtering for **Legged** Robot State Estimation，RSS 2018（匹兹堡）；[arXiv:1805.10410](https://arxiv.org/abs/1805.10410)，DOI [10.15607/RSS.2018.XIV.050](https://doi.org/10.15607/RSS.2018.XIV.050) |
 | **作者** | Ross Hartley, Maani Ghaffari, Ryan M. Eustice, Jessy W. Grizzle（会议版顺序是 Hartley, Ghaffari Jadidi, Grizzle, Eustice） |

@@ -24,7 +24,7 @@ demos: ["deepmimic"]
 | **作者** | Xue Bin Peng, Pieter Abbeel, Sergey Levine, Michiel van de Panne |
 | **机构** | UC Berkeley, University of British Columbia |
 | **发布时间** | 2018-04-08 (arXiv), SIGGRAPH 2018 |
-| **项目主页** | [xbpeng.github.io/DeepMimic](https://xbpeng.github.io/DeepMimic/) |
+| **项目主页** | [xbpeng.github.io/projects/DeepMimic](https://xbpeng.github.io/projects/DeepMimic/index.html) |
 | **GitHub** | [xbpeng/MimicKit](https://github.com/xbpeng/MimicKit) |
 
 ---

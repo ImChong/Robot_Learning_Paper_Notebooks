@@ -21,6 +21,7 @@ demos: ["ppo"]
 |------|------|
 | **arXiv** | [1707.06347](https://arxiv.org/abs/1707.06347) |
 | **PDF** | [下载](https://arxiv.org/pdf/1707.06347) |
+| **项目页 / 博客** | [OpenAI 博客：Proximal Policy Optimization](https://openai.com/index/openai-baselines-ppo/)（2017-07-20，随 Baselines 发布；没有单独的项目页） |
 | **作者** | John Schulman, Filip Wolski, Prafulla Dhariwal, Alec Radford, Oleg Klimov |
 | **机构** | OpenAI |
 | **发布时间** | 2017年7月20日（arXiv） |

@@ -61,7 +61,7 @@ window.PaperVideo = {
       });
       return p;
     });
-    /* 下一篇的主题（不写集数）：发布清单里 HOVER 之后是 ExBody2 —— 只做表情动作一种模式，但做得更准 */
+    /* 下一篇的主题（不写集数）：发布清单里 HOVER 之后是 ExBody2 —— 只做表达性的全身跟踪一种接口，但做得更准 */
     var next = h('div', 'pt', root);
     next.style.fontSize = '29px'; next.style.padding = '14px 30px';
     next.style.borderStyle = 'dashed';
