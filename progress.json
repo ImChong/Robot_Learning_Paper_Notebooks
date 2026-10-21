@@ -41,15 +41,15 @@
         "13_Physics-Based_Animation",
         "14_Human_Motion"
       ],
-      "last_module": "06_Manipulation",
-      "last_index": 1126,
-      "last_title": "Spark-0: Scaling Spatially Aligned Tactile Pretraining for Robot Dexterous Manipulation (arXiv:2610.22342)",
-      "next_module": "07_Teleoperation",
-      "last_completed_date": "2026-10-20",
-      "note": "本日轮转到 06_Manipulation。PROGRESS Manipulation 章节中尚无笔记的最新论文是 Spark-0 (arXiv:2610.22342, 2026-10-15, Xspark AI × 清华 × 港大 × 港科大（广州）× 北大)，即 PROGRESS #1126，已确认在上游 README。空间对齐触觉预训练 VTLA：HumanTouch 1,000 h 全手触觉人类数据，接触图 + DA3 几何只在训练时监督 VLM 视觉 token，区域力 + 3D 触点只进动作专家，一份权重纯视觉 / 带触觉两种部署；Ego Humanoid 纯视觉 52.45 → 71.72，真机 44 → 52。官方仓库 XsparkAI/Spark-0 已开源，含整体流程 mermaid、门控 / 偏置算例与部署推理源码运行时序图。",
-      "last_date": "2026-10-20",
+      "last_module": "07_Teleoperation",
+      "last_index": 714,
+      "last_title": "Toward Humanoid Robots in Construction: A Teleoperation Feasibility Study (arXiv:2610.00718)",
+      "next_module": "08_Navigation",
+      "last_completed_date": "2026-10-21",
+      "note": "本日轮转到 07_Teleoperation。PROGRESS Teleoperation 章节中尚无笔记的最新论文是 Toward Humanoid Robots in Construction (arXiv:2610.00718, 2026-09-30, UC Irvine × Genova Construction, IROS 2026 Workshop)，即 PROGRESS #714，已确认在上游 README。坐姿 XR 遥操作：Quest 3 管头和手（xr_teleoperate），GLYDR 脚踏板经 GR00T WBC 管行走与下蹲；工地上搬工具 100%（约 18× 慢于人手）、刷漆 80%（约 3×）。论文未放出整合代码，源码时序图按 xr_teleoperate 画。下一篇轮转到 08_Navigation。",
+      "last_date": "2026-10-21",
       "next_candidate": null,
-      "last_completed": "Spark-0: Scaling Spatially Aligned Tactile Pretraining for Robot Dexterous Manipulation (arXiv:2610.22342)"
+      "last_completed": "Toward Humanoid Robots in Construction: A Teleoperation Feasibility Study (arXiv:2610.00718)"
     },
     "last_summary_index": 532,
     "last_summary_date": "2026-09-18",
