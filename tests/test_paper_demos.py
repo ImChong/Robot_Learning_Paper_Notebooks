@@ -4895,7 +4895,7 @@ def test_homie_explainer_demos_and_worked_example_share_the_paper_numbers():
     assert n1 < 0.5 < n2 and e1 > 0 > e2  # 太高时膝偏直、太低时膝很弯：公式鼓励的方向和正文的说法相反
     for s in ("| 高度差 | +0.329 m | −0.317 m |", "| 归一化 $n$ | 0.355 | 0.770 |", "| × 0.75 | −0.0718 | **−0.128** |"):
         assert s in note, s
-    assert "高出 0.33 米" in narration and "归一化只有 0.36" in narration and "归一化 0.77" in narration and "负 0.128" in narration
+    assert "高出 0.33 米" in narration and "归一化只有 0.36" in narration and "归一化以后是 0.77" in narration and "负 0.128" in narration
     zmin = min(f[2] for f in sq) / 1000
     assert _fmt(zmin, 3) == "0.411" and "骨盆最低到 0.411 m" in note
     # 走路那段：0.5 m/s
@@ -4949,13 +4949,16 @@ def test_homie_explainer_demos_and_worked_example_share_the_paper_numbers():
     spoken = re.findall(r'"([^"]*)"\),', narration[narration.index("SCRIPT = [") : narration.index("DISPLAY = [")])
     assert len(spoken) == 3 + 17 * 5 + 3 and not any(re.search(r"\d\s*[，,]\s*\d", t) for t in spoken)
     assert "下一篇讲 TWIST" in narration and "TWIST" in intro and "TWIST" not in js
-    for s in ("我们认为是笔误", "我们在 MuJoCo 里跑官方策略的回放", "不能和表二直接比", "上一期结尾预告：同构外骨骼加脚踏板"):
+    for s in ("我们认为是笔误", "我们在 MuJoCo 里跑官方策略的回放", "不能直接和表二比较", "上一期结尾预告：同构外骨骼加脚踏板"):
         assert s in narration, s
     for bad in ("差得", "几乎", "一行", "重训", "重采样", "数值", "挑", "R" + "SS", "表 1", "表 2", "表 3", "表 4", "表 5"):
         assert not any(bad in t for t in spoken), bad
     # 图号、表号里的「一」后面要紧跟停顿，否则会被当成数词变调：「论文图 1 就」念成 tú yí（2026-10-22 看片反馈，tone_cmp.py 量过）
     assert not any(re.search(r"[图表] ?(?:1|一)(?![\d：，。])", t) for t in spoken)
     assert "再看论文的图一：" in narration and "先看表一：" in narration
+    # 「操作员」「遥操作」要连读：TTS 把这些说法切错了词或在词中间停顿（2026-10-22 看片反馈，WordBoundary 切词查过）
+    for bad in ("操作员遥操作", "离操作员", "遥操作留", "遥操作系统", "遥操作腰", "穿同构外骨骼", "取绝对值", "逆运动学", "表四比的", "视觉和 V R 方案", "观测镜像", "表二直接"):
+        assert not any(bad in t for t in spoken), bad
     # 单字并列会被合成得几乎没声音（HugWBC 的「走、跳、站」），一律写双字词
     assert not any(re.search(r"(?<![\u4e00-\u9fff])[\u4e00-\u9fff][、和][\u4e00-\u9fff](?![\u4e00-\u9fff])", t) for t in spoken)
     # 每张图表第一次出现时念一句读法，分镜上也写一行（2026-10-21 HugWBC 的看片反馈）
