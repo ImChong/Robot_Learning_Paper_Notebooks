@@ -556,7 +556,8 @@
     else mark.appendChild(paint(svgEl('path', { d: 'M' + (L.x + 3) + ' ' + (L.y + 3) + ' L' + (L.x + L.w - 3) + ' ' + (L.y + L.h - 3) + ' M' + (L.x + L.w - 3) + ' ' + (L.y + 3) + ' L' + (L.x + 3) + ' ' + (L.y + L.h - 3), fill: 'none', 'stroke-width': 3, 'stroke-linecap': 'round' }), null, C_BAD));
     return {
       g: g,
-      put: function (k) {
+      /* k 是这一帧的帧号（播完后来回放），sec 是从 cue 起的秒数：✓ / ✗ 按 sec 出现，来回放时不再闪 */
+      put: function (k, sec) {
         var r = act.put(k), hp = handAt(key, k), y = sh.zy(hp[2]), x = project(hp, r.cam)[0];
         setLine(line, x, y, shelfX + 48, y);
         dot.setAttribute('cx', x.toFixed(1));
@@ -564,7 +565,7 @@
         /* 站稳以后（第 27 帧起）读数固定写最后一帧的值，不随来回放的微动跳 0.20 / 0.21 */
         val.textContent = f2(k >= 27 ? handAt(key, 39)[2] : hp[2]) + ' m';
         val.setAttribute('y', (good ? OY - 6 : y + 15).toFixed(1));
-        mark.style.opacity = seg(k, 26, 28);
+        mark.style.opacity = seg(sec * 15, 26, 28);
       }
     };
   }
@@ -616,11 +617,12 @@
       setOpacity(pB, win(t, 3.6, 13.4));
       setOpacity(arms.g, 1 - seg(t, 7.0, 7.3));
       arms.put(loopK('stand_arms', now));
-      var k = reachK(since(t, clock, 7.0));
+      /* 从 cue 起的真实秒数要按时间线算（K.clipSince）：视频里前几段旁白比分镜长，clock − 7.0 会多出好几秒，一出场就已经蹲完了 */
+      var sec = Math.max(0, K.clipSince(t, 7.0)), k = reachK(sec);
       setOpacity(stand.g, win(t, 7.0));
-      stand.put(k);
+      stand.put(k, sec);
       setOpacity(pC, win(t, 7.0, 10.4));
-      squat.put(k);
+      squat.put(k, sec);
       setOpacity(pD, win(t, 10.4, 13.4));
       setOpacity(pE, win(t, 13.4));
     }
