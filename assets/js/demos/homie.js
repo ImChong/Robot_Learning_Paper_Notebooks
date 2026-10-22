@@ -946,17 +946,26 @@
     var knob = dotAt(p2, SX0, SY, 7, C_ACCENT);
     var knobLab = rich(p2, SX0 + SW + 14, SY + 4, '', 11.5, 'demo-x-ink');
     label(p2, SX0, SY + 22, '速度跟得好就 +0.05', 'demo-x-mut', 10);
-    /* 第三段：按 ρ_a = 0.9 的曲线抽一个 ρ'（图上竖线），再在 [0, ρ'] 里抽 a_i，关节就往限位走这么远 */
+    /* 第三段：按 ρ_a = 0.9 的曲线抽一个 ρ'（图上竖线），再在 [0, ρ'] 里抽 a_i，关节就往限位走这么远。
+       每 2 s 抽一次，一步一步出：竖线挪到新的 ρ' → 绿条从默认角伸出 ρ' 那么长 → 黄点从默认角走到 a_i
+       （2026-10-22 看片反馈「默认角那条看不懂」：原先三样东西每秒同时跳，也没写读法） */
     var p3 = group(s);
     var drop = hline(p3, 0, PY, 0, PY - PH, C_GOOD, 2, '4 3');
     math(p3, R, 296, "a_i \\sim \\mathcal{U}(0, \\rho_a')", 14);
     var JX = R + 140, JW = 280, JY = 292;
     hline(p3, JX, JY, JX + JW, JY, C_BORDER, 4);
     label(p3, JX, JY + 16, '下限', 'demo-x-mut', 9.5, 'middle'); label(p3, JX + JW, JY + 16, '上限', 'demo-x-mut', 9.5, 'middle');
-    label(p3, JX + JW / 2, JY + 16, '默认角', 'demo-x-mut', 9.5, 'middle');
+    label(p3, JX + JW / 2, JY + 16, '默认角 0', 'demo-x-mut', 9.5, 'middle');
+    hline(p3, JX + JW / 2, JY - 8, JX + JW / 2, JY + 8, C_MUTED, 1.2);
     var span = paint(svgEl('rect', { x: JX + JW / 2, y: JY - 5, width: 0, height: 10, rx: 3, opacity: 0.35 }), C_GOOD);
     p3.appendChild(span);
     var aDot = dotAt(p3, JX + JW / 2, JY, 6, C_UP);
+    /* 两个标签在同一行：黄点走到绿条末端附近时，ρ' 的标签让开 */
+    var rhoTag = rich(p3, JX + JW / 2, JY - 11, "$\\rho_a'$", 10.5, 'demo-x-good', 'middle');
+    var aTag = rich(p3, JX + JW / 2, JY - 11, '$a_i$', 10.5, 'demo-x-warn', 'middle');
+    var p3r = group(p3);
+    label(p3r, R, 330, '读法：灰条是一个关节，两端是它的上下限，中间是默认角（两边按比例画）', 'demo-x-ink2', 10.5);
+    rich(p3r, R, 350, "绿条：这一次最多能偏多远（$\\rho_a'$）；黄点：实际抽到的目标角（$a_i$）", 10.5, 'demo-x-ink2');
     var p4 = group(s);
     label(p4, R, 330, '每 1 s 重采样一次目标，1 s 内线性插值过去', 'demo-x-ink2', 11.5);
     label(p4, R, 351, '论文：不插值的话，机器人在连续动作下站不稳', 'demo-x-mut', 10.5);
@@ -990,13 +999,21 @@
       setPath(liveC, lp);
       liveC.style.opacity = win(t, 3.6, 7.0);
       setOpacity(p3, win(t, 7.0));
-      /* 每 1 s 抽一次：ρ' 按 ρ_a = 0.9 的曲线（代码的 λ），a_i ~ U(0, ρ')，往哪一侧也随机 */
-      var n5 = Math.floor(since(t, clock, 7.0)), rp = sampleRho(0.9, hrand(n5 * 3 + 1)), ai = rp * hrand(n5 * 3 + 2), sd = hrand(n5 * 3 + 3) < 0.5 ? -1 : 1;
-      setLine(drop, PX + rp * PW, PY, PX + rp * PW, PY - PH);
+      /* 每 2 s 抽一次：ρ' 按 ρ_a = 0.9 的曲线（代码的 λ），a_i ~ U(0, ρ')，往哪一侧也随机。
+         0–0.4 s 竖线挪过去，0.4–0.9 s 绿条伸出，0.9–1.4 s 黄点从默认角走过去，之后停住 */
+      var s5 = since(t, clock, 7.0), n5 = Math.floor(s5 / 2), tau = s5 - 2 * n5;
+      var draw5 = function (n) { return { rp: sampleRho(0.9, hrand(n * 3 + 1)), u: hrand(n * 3 + 2), sd: hrand(n * 3 + 3) < 0.5 ? -1 : 1 }; };
+      var d5 = draw5(n5), rp = d5.rp, ai = rp * d5.u, sd = d5.sd, rpPrev = n5 > 0 ? draw5(n5 - 1).rp : rp;
+      var ease = function (v) { return v * v * (3 - 2 * v); };
+      var rpx = rpPrev + (rp - rpPrev) * ease(seg(tau, 0, 0.4)), gB = ease(seg(tau, 0.4, 0.9)), gA = ease(seg(tau, 0.9, 1.4));
+      setLine(drop, PX + rpx * PW, PY, PX + rpx * PW, PY - PH);
       drop.style.opacity = win(t, 7.0, 10.4);
-      var x0s = JX + JW / 2, xe = x0s + sd * rp * JW / 2;
+      var x0s = JX + JW / 2, xe = x0s + sd * rp * gB * JW / 2, xa = x0s + sd * ai * gA * JW / 2;
       span.setAttribute('x', Math.min(x0s, xe).toFixed(1)); span.setAttribute('width', Math.abs(xe - x0s).toFixed(1));
-      moveDot(aDot, x0s + sd * ai * JW / 2, JY);
+      moveDot(aDot, xa, JY);
+      rhoTag.setX(xe); setOpacity(rhoTag, gB * seg(Math.abs(xe - xa), 20, 28));
+      aTag.setX(xa); setOpacity(aTag, gA);
+      setOpacity(p3r, win(t, 7.0, 10.4));
       setOpacity(p4, win(t, 10.4));
       setOpacity(p5, win(t, 13.4));
     }
@@ -2021,7 +2038,7 @@
       cues: [
         { at: 0.4, s: '下半身要在**任意上身姿态**下站稳、行走、下蹲；一上来就大幅乱摆，策略学不会。' },
         { at: 3.6, s: '课程比例 $\\rho_a$ 从 0 开始，x 方向速度跟得好就加 0.05；$\\rho_a$ 越大，分布越往右铺开。' },
-        { at: 7.0, s: "先按式 2 抽 $\\rho_a'$，再取 $a_i \\sim \\mathcal{U}(0, \\rho_a')$：每个关节往限位走 $a_i$ 那么远。" },
+        { at: 7.0, s: "先按式 2 抽 $\\rho_a'$（绿线、绿条），再取 $a_i \\sim \\mathcal{U}(0, \\rho_a')$（黄点）：关节往限位偏 $a_i$ 那么远。" },
         { at: 10.4, s: '每 1 s 重采样一次目标，这 1 s 里线性插值过去；不插值的话机器人站不稳。' },
         { at: 13.4, s: '比 $\\mathcal{U}(0, \\rho_a)$ 平滑：任何时候 $[0, 1]$ 都有概率被采到。代码里 $\\lambda = 20(1 - 0.99\\rho_a)$。' }
       ]
