@@ -44,8 +44,8 @@ if (fs.existsSync(clipSrc)) {
 const html = fs.readFileSync(path.join(HERE, 'stage.html'), 'utf8')
   .replaceAll('REPO/', 'file://' + REPO + '/').replaceAll('CLIPDIR', 'file://' + clipOut + '/')
   .replaceAll('BUNDLE', name).replaceAll('DEMO_ID', demoId).replaceAll('PAPER', name);
-// one per paper, so several papers can render at once; a chunk gets its own, so several chunks of one paper can too
-const built = path.join(HERE, mode === 'chunk' ? `stage.${name}.${arg.split(',')[0]}.built.html` : `stage.${name}.built.html`);
+// one per paper, so several papers can render at once; a chunk or a clip gets its own, so several of them can render at once
+const built = path.join(HERE, mode === 'chunk' || mode === 'clip' ? `stage.${name}.${arg.split(',')[0]}.built.html` : `stage.${name}.built.html`);
 fs.writeFileSync(built, html);
 
 const browser = await chromium.launch({ executablePath: process.env.CHROME || undefined });
