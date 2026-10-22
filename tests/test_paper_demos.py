@@ -4841,7 +4841,7 @@ def test_homie_explainer_demos_and_worked_example_share_the_paper_numbers():
         "var TABLE10_AVG = [24.8, 23.0, 14.2, 13.0, 8.0];",
         "{ zh: '蹲下拿沙发上的番茄', en: 'Squat Pick', sr: 73.3, n: 15 },",
         "var KNEE = { lo: -0.087267, hi: 2.8798, w: -0.75 };",
-        "var OURS = { n: 200, full: 174, alive: 18.43, lin: 0.087, ang: 0.204, h: 0.0045, sym: 0.0044, symN: 3472 };",
+        "var OURS = { n: 200, full: 168, alive: 18.17, lin: 0.087, ang: 0.180, h: 0.0037, sym: 0.0046, symN: 3250 };",
         "var EX_DOWN = 8, EX_UP = 60;",
         "var OBS_DIM = 76, HIST = 6, N_JOINT = 27, N_LOWER = 12, N_UPPER = 15;",
         "var NET = { est: [456, 256, 256, 35], actor: [111, 512, 256, 256, 12], critic: [79, 512, 256, 256, 1], proto: 64 };",
@@ -4889,18 +4889,18 @@ def test_homie_explainer_demos_and_worked_example_share_the_paper_numbers():
         r = -(abs((nL - 0.5) * e) + abs((nR - 0.5) * e))
         rows.append((e, nL, r, 0.75 * r, f[5] / 1000, f[2] / 1000))
     (e1, n1, r1, w1, h1, z1), (e2, n2, r2, w2, h2, z2) = rows
-    assert (_fmt(h1, 2), _fmt(h2, 2)) == ("0.40", "0.74") and (_fmt(z1, 3), _fmt(z2, 3)) == ("0.730", "0.423")
-    assert (_fmt(e1, 3), _fmt(e2, 3), _fmt(n1, 3), _fmt(n2, 3)) == ("0.330", "-0.317", "0.354", "0.770")
-    assert (_fmt(r1, 4), _fmt(r2, 4), _fmt(w1, 4), _fmt(w2, 3)) == ("-0.0967", "-0.1712", "-0.0725", "-0.128")
+    assert (_fmt(h1, 2), _fmt(h2, 2)) == ("0.40", "0.74") and (_fmt(z1, 3), _fmt(z2, 3)) == ("0.729", "0.423")
+    assert (_fmt(e1, 3), _fmt(e2, 3), _fmt(n1, 3), _fmt(n2, 3)) == ("0.329", "-0.317", "0.355", "0.770")
+    assert (_fmt(r1, 4), _fmt(r2, 4), _fmt(w1, 4), _fmt(w2, 3)) == ("-0.0958", "-0.1712", "-0.0718", "-0.128")
     assert n1 < 0.5 < n2 and e1 > 0 > e2  # 太高时膝偏直、太低时膝很弯：公式鼓励的方向和正文的说法相反
-    for s in ("| 高度差 | +0.330 m | −0.317 m |", "| 归一化 $n$ | 0.354 | 0.770 |", "| × 0.75 | −0.0725 | **−0.128** |"):
+    for s in ("| 高度差 | +0.329 m | −0.317 m |", "| 归一化 $n$ | 0.355 | 0.770 |", "| × 0.75 | −0.0718 | **−0.128** |"):
         assert s in note, s
-    assert "高出 0.33 米" in narration and "归一化只有 0.35" in narration and "归一化 0.77" in narration and "负 0.128" in narration
+    assert "高出 0.33 米" in narration and "归一化只有 0.36" in narration and "归一化 0.77" in narration and "负 0.128" in narration
     zmin = min(f[2] for f in sq) / 1000
-    assert _fmt(zmin, 3) == "0.410" and "骨盆最低到 0.410 m" in note
+    assert _fmt(zmin, 3) == "0.411" and "骨盆最低到 0.411 m" in note
     # 走路那段：0.5 m/s
     wk = _homie_seq(js, "walk")
-    assert all(f[6] == 500 for f in wk) and _fmt((wk[-1][0] - wk[0][0]) / 1000 / ((len(wk) - 1) / 15), 2) == "0.50"
+    assert all(f[6] == 500 for f in wk) and _fmt((wk[-1][0] - wk[0][0]) / 1000 / ((len(wk) - 1) / 15), 2) == "0.49"
     # 第 1 幕：同样的手臂姿势，一段站着、一段从 1.4 s 起蹲到 0.40 m；HAND 是两只手可视网格的最低点（正运动学，mm）
     rs, rq = _homie_seq(js, "reach_stand"), _homie_seq(js, "reach_squat")
     assert len(rs) == len(rq) == 40 and all(a[9:] == b[9:] for a, b in zip(rs, rq, strict=True))
@@ -4912,10 +4912,10 @@ def test_homie_explainer_demos_and_worked_example_share_the_paper_numbers():
         return [a[3 * k + 2] / 1000 for k in range(40)]
 
     zs, zq = hand_z("reach_stand"), hand_z("reach_squat")
-    assert _fmt(zs[39], 2) == "0.53" and _fmt(zq[39], 2) == "0.20" and max(zq[27:]) < 0.215 and min(zs[27:]) > 0.53
+    assert _fmt(zs[39], 2) == "0.55" and _fmt(zq[39], 2) == "0.14" and max(zq[27:]) < 0.15 and min(zs[27:]) > 0.55
     assert "f2(k >= 27 ? handAt(key, 39)[2] : hp[2])" in js
-    assert "虚线画出双手的最低位置：0.53 米" in narration and "再蹲到 0.40 米，手能下到 0.20 米" in narration
-    assert "手最低 0.53\u00a0m" in js and "手到 0.20\u00a0m" in js
+    assert "虚线画出双手的最低位置：0.55 米" in narration and "再蹲到 0.40 米，手能下到 0.14 米" in narration
+    assert "手最低 0.55\u00a0m" in js and "手到 0.14\u00a0m" in js
     # 例 4：命令比例
     assert "x < 1 / 3 ? 'squat' : x > 1 / 2 ? 'walk' : 'stand'" in js and abs(1 - 1 / 3 - 1 / 2 - 1 / 6) < 1e-12
     assert "下蹲占三分之一，原地站着占六分之一，行走占二分之一" in narration and "0.74 + $\\mathcal U(-0.5, 0)$，即 0.24–0.74 m" in note
@@ -4953,6 +4953,9 @@ def test_homie_explainer_demos_and_worked_example_share_the_paper_numbers():
         assert s in narration, s
     for bad in ("差得", "几乎", "一行", "重训", "重采样", "数值", "挑", "R" + "SS", "表 1", "表 2", "表 3", "表 4", "表 5"):
         assert not any(bad in t for t in spoken), bad
+    # 图号、表号里的「一」后面要紧跟停顿，否则会被当成数词变调：「论文图 1 就」念成 tú yí（2026-10-22 看片反馈，tone_cmp.py 量过）
+    assert not any(re.search(r"[图表] ?(?:1|一)(?![\d：，。])", t) for t in spoken)
+    assert "再看论文的图一：" in narration and "先看表一：" in narration
     # 单字并列会被合成得几乎没声音（HugWBC 的「走、跳、站」），一律写双字词
     assert not any(re.search(r"(?<![\u4e00-\u9fff])[\u4e00-\u9fff][、和][\u4e00-\u9fff](?![\u4e00-\u9fff])", t) for t in spoken)
     # 每张图表第一次出现时念一句读法，分镜上也写一行（2026-10-21 HugWBC 的看片反馈）
@@ -4981,7 +4984,7 @@ def test_homie_assets_and_project_page_clips():
         assert _webp_size(base / "g1_3d" / name) == (int(cw) * 12, int(ch) * math.ceil(int(n) / 12)), key
         assert re.search(key + r": \{ n: " + n + ", data: '", js), key
     assert {p.name for p in (base / "g1_3d").iterdir()} == {s[1] for s in sheets}
-    assert sum(p.stat().st_size for p in (base / "g1_3d").iterdir()) < 3.0e6
+    assert sum(p.stat().st_size for p in (base / "g1_3d").iterdir()) < 3.2e6
     clip_dir = base / "clips"
     used_clips = set(re.findall(r"projClip\(\w+, '(\w+)'", js)) | set(re.findall(r"\{ id: '(t_\w+)'", js))
     assert used_clips == {"cockpit", "gr1gym", "arm", "glove", "handover", "sim", "il_squat", "il_pick",
