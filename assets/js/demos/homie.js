@@ -244,9 +244,11 @@
   function win(t, a, b) {
     return seg(t, a + 0.3, a + 0.7) * (b == null ? 1 : 1 - seg(t, b, b + 0.3));
   }
-  /* 一幕里从 cue 起算的真实秒数：网页上就是 t − cue；视频里旁白比分镜长时 t 会停，改按 clock 走 */
+  /* 一幕里从 cue 起算的真实秒数：网页上就是 t − cue；视频里旁白比分镜长时 t 会停，改按 cue 那一刻起的视频时间走（K.clipSince）。
+     不能用 clock − cue：clock 从这一幕开头算，前面几段旁白比分镜长，到 cue 那一刻 clock 早就大于 cue，
+     一次性的计数、填格子在这一段一开始就已经满了（第 16 幕的示范条一出场就是 50 / 50，2026-10-22） */
   function since(t, clock, cue) {
-    return clock == null ? t - cue : Math.max(0, clock - cue);
+    return clock == null ? t - cue : Math.max(0, K.clipSince(t, cue));
   }
   function group(parent) {
     var g = svgEl('g', {});
@@ -1806,21 +1808,29 @@
     label(p4, R, 62, '表 V：成功率，条越长越好（各测 15 次）', 'demo-x-ink', 12);
     var bars = TABLE5.map(function (r, i) { return barRowAt(p4, R, 80 + i * 34, 120, r.zh, C_HOMIE, 22); });
     label(p4, R, 160, '主机 RTX 4080，有线连 G1，整个回路 10 Hz', 'demo-x-mut', 10.5);
-    /* 第五段：数据飞轮——遥操作 → 示范数据 → π_auto → 替操作员给 C_t、q_upper，绕一圈 */
+    /* 第五段：数据飞轮——遥操作 → 示范数据 → π_auto → 替操作员给 C_t、q_upper，绕一圈。
+       四个卡片摆在圆环外面，小点沿整圈一直走、不从字上划过；走到哪个卡片跟前，哪个卡片亮一下 */
     var p5 = group(s);
-    var FC = [R + 178, 280], FR = 70;
-    /* 只画四个卡片之间的弧，小点走到卡片上就藏起来，不从字上划过 */
+    var FC = [R + 180, 280], FR = 48, FLY_W = 104, FLY_H = 26;
+    var ring = [];
+    for (var k16 = 0; k16 <= 72; k16++) { var aa = 2 * Math.PI * k16 / 72; ring.push([FC[0] + FR * Math.cos(aa), FC[1] + FR * Math.sin(aa)]); }
+    pathLine(p5, ring, C_BORDER, 1.6, '4 4');
+    /* 四段弧的中点各一个箭头，顺时针（屏幕上 y 朝下，角度增大就是顺时针） */
     for (var q16 = 0; q16 < 4; q16++) {
-      var arcPts = [];
-      for (var k16 = 0; k16 <= 10; k16++) { var aa = -Math.PI / 2 + q16 * Math.PI / 2 + 0.62 + (Math.PI / 2 - 1.24) * k16 / 10; arcPts.push([FC[0] + FR * Math.cos(aa), FC[1] + FR * Math.sin(aa)]); }
-      pathLine(p5, arcPts, C_BORDER, 1.4, '4 4');
+      var am = -Math.PI / 4 + q16 * Math.PI / 2, mx = FC[0] + FR * Math.cos(am), my = FC[1] + FR * Math.sin(am), dx = -Math.sin(am), dy = Math.cos(am);
+      arrowAt(p5, mx - 6 * dx, my - 6 * dy, mx + 6 * dx, my + 6 * dy, C_HOMIE, 1.8);
     }
     var FLY = ['遥操作', '示范数据', '$\\pi_{auto}$', '$C_t$、$q_{upper}$'];
-    FLY.forEach(function (q, i) {
-      var a = -Math.PI / 2 + i * Math.PI / 2;
-      chip(p5, FC[0] + FR * Math.cos(a) - 46, FC[1] + FR * Math.sin(a) - 13, 92, q, C_HOMIE, { size: 10.5, h: 26 });
+    var FLY_XY = [[FC[0] - FLY_W / 2, FC[1] - FR - 10 - FLY_H], [FC[0] + FR + 10, FC[1] - FLY_H / 2],
+      [FC[0] - FLY_W / 2, FC[1] + FR + 10], [FC[0] - FR - 10 - FLY_W, FC[1] - FLY_H / 2]];
+    var flyGlow = FLY.map(function (q, i) {
+      var gl = rectBox(p5, FLY_XY[i][0] - 3, FLY_XY[i][1] - 3, FLY_W + 6, FLY_H + 6, C_HOMIE, 'none');
+      gl.setAttribute('stroke-width', 2.6);
+      chip(p5, FLY_XY[i][0], FLY_XY[i][1], FLY_W, q, C_HOMIE, { size: 11, h: FLY_H });
+      return gl;
     });
-    var flyDot = dotAt(p5, FC[0], FC[1] - FR, 5, C_HOMIE);
+    var flyTrail = [0.5, 0.25].map(function (o) { var d = dotAt(p5, FC[0], FC[1] - FR, 4, C_HOMIE); d.style.opacity = o; return d; });
+    var flyDot = dotAt(p5, FC[0], FC[1] - FR, 5.5, C_HOMIE);
     rich(p5, 24, 352, '数据飞轮：接口只有 $C_t$ 和 $q_{upper}$，什么上层策略都能接上来', 11, 'demo-x-ink2');
     function draw(t, clock) {
       var now = nowOf(t, clock);
@@ -1850,9 +1860,14 @@
       var p = seg(t, 10.8, 11.8);
       bars.forEach(function (b, i) { b.set(200 * TABLE5[i].sr / 100 * p, p > 0.95 ? fmt(TABLE5[i].sr, 1) + '%（' + Math.round(TABLE5[i].sr * 15 / 100) + ' / 15）' : ''); });
       setOpacity(p5, win(t, 13.4));
-      var fa = -Math.PI / 2 + since(t, clock, 13.4) * 1.2, rel = ((fa + Math.PI / 2) % (Math.PI / 2) + Math.PI / 2) % (Math.PI / 2);
+      /* 一圈约 6.3 s；从「遥操作」出发 */
+      var fa = -Math.PI / 2 + since(t, clock, 13.4) * 1.0;
       moveDot(flyDot, FC[0] + FR * Math.cos(fa), FC[1] + FR * Math.sin(fa));
-      flyDot.style.opacity = rel > 0.66 && rel < Math.PI / 2 - 0.66 ? 1 : 0;
+      flyTrail.forEach(function (d, j) { var b = fa - 0.2 * (j + 1); moveDot(d, FC[0] + FR * Math.cos(b), FC[1] + FR * Math.sin(b)); });
+      flyGlow.forEach(function (gl, i) {
+        var d = Math.abs(((fa - (-Math.PI / 2 + i * Math.PI / 2)) % (2 * Math.PI) + 3 * Math.PI) % (2 * Math.PI) - Math.PI);
+        gl.style.opacity = Math.max(0, 1 - d / 0.6).toFixed(2);
+      });
     }
     return { el: s, draw: draw };
   }
