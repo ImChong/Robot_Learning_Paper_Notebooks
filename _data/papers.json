@@ -3200,6 +3200,18 @@
         "zh_title": "TAPNAV：基于触觉主动感知的人形机器人导航"
       },
       {
+        "title": "What the Elevation Map Cannot See: Semantic-Aware Locomotion and Execution-Aware Navigation for Humanoid Robot",
+        "path": "papers/08_Navigation/What_the_Elevation_Map_Cannot_See__Semantic-Aware_Locomotion_and_Execution-Aware_Navigation/What_the_Elevation_Map_Cannot_See__Semantic-Aware_Locomotion_and_Execution-Aware_Navigation.md",
+        "url": "/papers/08_Navigation/What_the_Elevation_Map_Cannot_See__Semantic-Aware_Locomotion_and_Execution-Aware_Navigation/What_the_Elevation_Map_Cannot_See__Semantic-Aware_Locomotion_and_Execution-Aware_Navigation.html",
+        "dir": "What_the_Elevation_Map_Cannot_See__Semantic-Aware_Locomotion_and_Execution-Aware_Navigation",
+        "arxiv": "2610.07396",
+        "summary_zh": "现有物理 VLN 基准默认两件事：危险都能从高程图里看出来、机器人走出来的轨迹就是命令的轨迹。",
+        "published_date_zh": "2026年10月5日（arXiv v1）",
+        "published_date_en": "Oct 5, 2026 (arXiv v1)",
+        "zhname": "高程图看不见的东西：面向人形机器人的语义感知行走与执行感知导航",
+        "zh_title": "高程图看不见的东西：面向人形机器人的语义感知行走与执行感知导航"
+      },
+      {
         "title": "TANGO: Humanoid Navigation in Cluttered Environments with a Whole-Body Vision-Language-Action Model",
         "path": "papers/08_Navigation/TANGO__Whole-Body_Vision-Language_Navigation_in_Cluttered_Environments/TANGO__Whole-Body_Vision-Language_Navigation_in_Cluttered_Environments.md",
         "url": "/papers/08_Navigation/TANGO__Whole-Body_Vision-Language_Navigation_in_Cluttered_Environments/TANGO__Whole-Body_Vision-Language_Navigation_in_Cluttered_Environments.html",

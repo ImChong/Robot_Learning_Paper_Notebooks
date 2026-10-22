@@ -900,7 +900,7 @@
 
 | #   | 论文                                                                                                                                                         | 日期      | 🌟  | 状态   |
 | --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- | --- | ---- |
-| 706  | [What the Elevation Map Cannot See: Semantic-Aware Locomotion and Execution-Aware Navigation for Humanoid Robot](https://arxiv.org/abs/2610.07396) | 2026.10 |  | ⏳ 待读 |
+| 706  | [What the Elevation Map Cannot See: Semantic-Aware Locomotion and Execution-Aware Navigation for Humanoid Robot](https://arxiv.org/abs/2610.07396) ✅ [笔记](08_Navigation/What_the_Elevation_Map_Cannot_See__Semantic-Aware_Locomotion_and_Execution-Aware_Navigation/What_the_Elevation_Map_Cannot_See__Semantic-Aware_Locomotion_and_Execution-Aware_Navigation.md) | 2026.10 |  | ✅ 已总结 |
 | 707  | [DODGER: Safety-Guided Reinforcement Learning for Robot Navigation Among Dynamic Obstacles](https://arxiv.org/abs/2609.38873) | 2026.09 |  | ⏳ 待读 |
 | 708  | [Learning Safe Humanoid Navigation from Reduced Order Models](https://arxiv.org/abs/2609.19272) | 2026.09 |  | ⏳ 待读 |
 | 709  | [RAVEN: Reinforcement-Adaptive Visibility-Graph Planning for Robust Humanoid Navigation with Collision-Free MPC](https://arxiv.org/abs/2607.15701) | 2026.07 |  | ⏳ 待读 |

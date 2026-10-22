@@ -41,15 +41,15 @@
         "13_Physics-Based_Animation",
         "14_Human_Motion"
       ],
-      "last_module": "07_Teleoperation",
-      "last_index": 714,
-      "last_title": "Toward Humanoid Robots in Construction: A Teleoperation Feasibility Study (arXiv:2610.00718)",
-      "next_module": "08_Navigation",
-      "last_completed_date": "2026-10-21",
-      "note": "本日轮转到 07_Teleoperation。PROGRESS Teleoperation 章节中尚无笔记的最新论文是 Toward Humanoid Robots in Construction (arXiv:2610.00718, 2026-09-30, UC Irvine × Genova Construction, IROS 2026 Workshop)，即 PROGRESS #714，已确认在上游 README。坐姿 XR 遥操作：Quest 3 管头和手（xr_teleoperate），GLYDR 脚踏板经 GR00T WBC 管行走与下蹲；工地上搬工具 100%（约 18× 慢于人手）、刷漆 80%（约 3×）。论文未放出整合代码，源码时序图按 xr_teleoperate 画。下一篇轮转到 08_Navigation。",
-      "last_date": "2026-10-21",
+      "last_module": "08_Navigation",
+      "last_index": 706,
+      "last_title": "What the Elevation Map Cannot See: Semantic-Aware Locomotion and Execution-Aware Navigation for Humanoid Robot (arXiv:2610.07396)",
+      "next_module": "09_State_Estimation",
+      "last_completed_date": "2026-10-22",
+      "note": "本日轮转到 08_Navigation。PROGRESS Navigation 章节中尚无笔记的最新论文是 What the Elevation Map Cannot See (arXiv:2610.07396, 2026-10-05, 佛罗里达大学)，即 PROGRESS #706，已确认在上游 README。AME 行走策略外挂 RGB + DINOv2 语义分支（真值图教师 → RGB-D 学生 DAgger）避开高程图看不出的倒瓶 / 手机 / 水渍，anti-deviation 用定位反馈纠正绕障偏差；导航 SR 19.5 → 29.8%。官方代码未开源，运行时序图按论文描述画。下一篇轮转到 09_State_Estimation。",
+      "last_date": "2026-10-22",
       "next_candidate": null,
-      "last_completed": "Toward Humanoid Robots in Construction: A Teleoperation Feasibility Study (arXiv:2610.00718)"
+      "last_completed": "What the Elevation Map Cannot See: Semantic-Aware Locomotion and Execution-Aware Navigation for Humanoid Robot (arXiv:2610.07396)"
     },
     "last_summary_index": 532,
     "last_summary_date": "2026-09-18",
