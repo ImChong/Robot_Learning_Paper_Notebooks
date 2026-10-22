@@ -41,7 +41,7 @@
 | `hover` | `assets/js/demos/hover.js` 十六幕（`hover-explainer`） | 约 13 分 23 秒 |
 | `exbody2` | `assets/js/demos/exbody2.js` 十八幕（`exbody2-explainer`） | 约 17 分钟 |
 | `hugwbc` | `assets/js/demos/hugwbc.js` 十六幕（`hugwbc-explainer`） | 约 18 分 30 秒 |
-| `homie` | `assets/js/demos/homie.js` 十七幕（`homie-explainer`） | 约 16 分 9 秒 |
+| `homie` | `assets/js/demos/homie.js` 十七幕（`homie-explainer`） | 约 16 分 23 秒 |
 
 - 画面：直接复用 `<paper>.js` 分镜的 `draw(t)`，数字与笔记算例一致；前后加片头、总结页（`papers/<paper>.js`）。
 - 分镜 `draw(t, clock)` 的第二个参数是这一幕的真实时间：旁白比动画长、画面停在 `to` 之前时它照样往前走，步态这类循环动作可以用它继续动（网页播放器只传 `t`）。

@@ -520,7 +520,7 @@
             "has_open_source": true,
             "summary_zh": "HOMIE 把人形遥操作拆成上下两半：下半身由一个强化学习策略 $\\pi _ {loco}$ 负责，它只认三个命令 $C_t = [v_x, \\omega _ {yaw}, h_t]$（前后速度、转向、躯干高度），由操作员脚下的三只踏板给…",
             "explainer_scenes": 17,
-            "video_seconds": 968,
+            "video_seconds": 983,
             "published_date_zh": "2025年2月18日（arXiv），RSS 2025",
             "published_date_en": "Feb 18, 2025 (arXiv), RSS 2025",
             "zhname": "HOMIE：同构外骨骼驾驶舱式人形遥操作系统",
