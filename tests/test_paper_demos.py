@@ -4901,6 +4901,21 @@ def test_homie_explainer_demos_and_worked_example_share_the_paper_numbers():
     # 走路那段：0.5 m/s
     wk = _homie_seq(js, "walk")
     assert all(f[6] == 500 for f in wk) and _fmt((wk[-1][0] - wk[0][0]) / 1000 / ((len(wk) - 1) / 15), 2) == "0.50"
+    # 第 1 幕：同样的手臂姿势，一段站着、一段从 1.4 s 起蹲到 0.40 m；HAND 是两只手可视网格的最低点（正运动学，mm）
+    rs, rq = _homie_seq(js, "reach_stand"), _homie_seq(js, "reach_squat")
+    assert len(rs) == len(rq) == 40 and all(a[9:] == b[9:] for a, b in zip(rs, rq, strict=True))
+    assert {f[5] for f in rs} == {740} and rq[0][5] == 740 and rq[-1][5] == 400
+
+    def hand_z(key):
+        a = _h2o_int16(re.search(r"    " + key + r": '([^']+)'", js[js.index("var HAND = {") :]).group(1))
+        assert len(a) == 3 * 40
+        return [a[3 * k + 2] / 1000 for k in range(40)]
+
+    zs, zq = hand_z("reach_stand"), hand_z("reach_squat")
+    assert _fmt(zs[39], 2) == "0.53" and _fmt(zq[39], 2) == "0.20" and max(zq[27:]) < 0.215 and min(zs[27:]) > 0.53
+    assert "f2(k >= 27 ? handAt(key, 39)[2] : hp[2])" in js
+    assert "虚线画出双手的最低位置：0.53 米" in narration and "再蹲到 0.40 米，手能下到 0.20 米" in narration
+    assert "手最低 0.53\u00a0m" in js and "手到 0.20\u00a0m" in js
     # 例 4：命令比例
     assert "x < 1 / 3 ? 'squat' : x > 1 / 2 ? 'walk' : 'stand'" in js and abs(1 - 1 / 3 - 1 / 2 - 1 / 6) < 1e-12
     assert "下蹲占三分之一，原地站着占六分之一，行走占二分之一" in narration and "0.74 + $\\mathcal U(-0.5, 0)$，即 0.24–0.74 m" in note
@@ -4951,7 +4966,7 @@ def test_homie_explainer_demos_and_worked_example_share_the_paper_numbers():
 
 
 def test_homie_assets_and_project_page_clips():
-    """HOMIE：论文图的裁剪、G1 五段回放的 3D 贴图表、项目页的 13 段片段（按幕懒加载）。"""
+    """HOMIE：论文图的裁剪、G1 七段回放的 3D 贴图表、项目页的 13 段片段（按幕懒加载）。"""
     js = (DEMO_JS_DIR / "homie.js").read_text(encoding="utf-8")
     base = ROOT / "assets/img/papers/homie"
     figs = {p.name for p in base.glob("*.webp")}
@@ -4961,12 +4976,12 @@ def test_homie_assets_and_project_page_clips():
     for k, (name, w, h) in {k: re.search(k + r": \['(\w+\.webp)', (\d+), (\d+)\]", js).groups() for k in table}.items():
         assert _webp_size_any(base / name) == (int(w), int(h)), k
     sheets = re.findall(r"(\w+): \{ file: '(g1_\w+\.webp)', R: 220, yaw: ([\d.]+), pitch: 0\.1, cw: (\d+), ch: (\d+), cols: 12, n: (\d+), ax: [\d.]+, ay: [\d.]+ \}", js)
-    assert {s[0] for s in sheets} == {"walk", "squat", "upper", "upper_low", "stand_arms"}
+    assert {s[0] for s in sheets} == {"walk", "squat", "upper", "upper_low", "stand_arms", "reach_stand", "reach_squat"}
     for key, name, _yaw, cw, ch, n in sheets:
         assert _webp_size(base / "g1_3d" / name) == (int(cw) * 12, int(ch) * math.ceil(int(n) / 12)), key
         assert re.search(key + r": \{ n: " + n + ", data: '", js), key
     assert {p.name for p in (base / "g1_3d").iterdir()} == {s[1] for s in sheets}
-    assert sum(p.stat().st_size for p in (base / "g1_3d").iterdir()) < 2.5e6
+    assert sum(p.stat().st_size for p in (base / "g1_3d").iterdir()) < 3.0e6
     clip_dir = base / "clips"
     used_clips = set(re.findall(r"projClip\(\w+, '(\w+)'", js)) | set(re.findall(r"\{ id: '(t_\w+)'", js))
     assert used_clips == {"cockpit", "gr1gym", "arm", "glove", "handover", "sim", "il_squat", "il_pick",
