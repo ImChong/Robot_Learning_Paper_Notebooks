@@ -41,15 +41,15 @@
         "13_Physics-Based_Animation",
         "14_Human_Motion"
       ],
-      "last_module": "05_Locomotion",
-      "last_index": 1125,
-      "last_title": "Push the Limit: Learning High-Speed Sprinting and Aggressive Cornering on a Full-Scale Humanoid (arXiv:2610.14840)",
-      "next_module": "06_Manipulation",
-      "last_completed_date": "2026-10-19",
-      "note": "本日轮转到 05_Locomotion。PROGRESS Locomotion 章节中尚无笔记的最新论文是 Push the Limit (arXiv:2610.14840, 2026-10-10, 松延动力 Noetix × 清华, CoRL 2026)，即 PROGRESS #1125，已确认在上游 README。高速冲刺与激进过弯：因果 MHA 历史编码器、高速时改用航向方向奖励、按技能路由的 Multi-AMP 判别器；真机 100 m 7.14 m/s，5.5 m/s 过弯内倾 > 25°。论文未开源，含整体流程 mermaid 与偏航振荡扣分算例，无源码时序图。",
-      "last_date": "2026-10-19",
+      "last_module": "08_Navigation",
+      "last_index": 706,
+      "last_title": "What the Elevation Map Cannot See: Semantic-Aware Locomotion and Execution-Aware Navigation for Humanoid Robot (arXiv:2610.07396)",
+      "next_module": "09_State_Estimation",
+      "last_completed_date": "2026-10-22",
+      "note": "本日轮转到 08_Navigation。PROGRESS Navigation 章节中尚无笔记的最新论文是 What the Elevation Map Cannot See (arXiv:2610.07396, 2026-10-05, 佛罗里达大学)，即 PROGRESS #706，已确认在上游 README。AME 行走策略外挂 RGB + DINOv2 语义分支（真值图教师 → RGB-D 学生 DAgger）避开高程图看不出的倒瓶 / 手机 / 水渍，anti-deviation 用定位反馈纠正绕障偏差；导航 SR 19.5 → 29.8%。官方代码未开源，运行时序图按论文描述画。下一篇轮转到 09_State_Estimation。",
+      "last_date": "2026-10-22",
       "next_candidate": null,
-      "last_completed": "Push the Limit: Learning High-Speed Sprinting and Aggressive Cornering on a Full-Scale Humanoid (arXiv:2610.14840)"
+      "last_completed": "What the Elevation Map Cannot See: Semantic-Aware Locomotion and Execution-Aware Navigation for Humanoid Robot (arXiv:2610.07396)"
     },
     "last_summary_index": 532,
     "last_summary_date": "2026-09-18",

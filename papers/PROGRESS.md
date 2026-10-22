@@ -744,7 +744,7 @@
 
 | #   | 论文                                                                                                                                                        | 日期      | 🌟  | 状态   |
 | --- | --------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- | --- | ---- |
-| 1126  | [Spark-0: Scaling Spatially Aligned Tactile Pretraining for Robot Dexterous Manipulation](https://arxiv.org/abs/2610.22342) | 2026.10 |  | ⏳ 待读 |
+| 1126  | [Spark-0: Scaling Spatially Aligned Tactile Pretraining for Robot Dexterous Manipulation](https://arxiv.org/abs/2610.22342) ✅ [笔记](06_Manipulation/Spark-0__Spatially_Aligned_Tactile_Pretraining_for_Robot_Dexterous_Manipulation/Spark-0__Spatially_Aligned_Tactile_Pretraining_for_Robot_Dexterous_Manipulation.md) | 2026.10 | 🌟 | ✅ 已总结 |
 | 731  | [AutodidactWAM: Cross-Modal Self-Distillation from Generated Video to Robot Actions](https://arxiv.org/abs/2610.08119) | 2026.10 |  | ⏳ 待读 |
 | 732  | [MobileVISTA: Generative Data Augmentation for Pose Generalization in Mobile Manipulation](https://arxiv.org/abs/2610.07511) | 2026.10 |  | ⏳ 待读 |
 | 733  | [IronMind: Scaling Humanoid Dexterous Manipulation via Camera-Space Ego-Centric Pretraining](https://arxiv.org/abs/2609.39403) | 2026.09 |  | ⏳ 待读 |
@@ -847,7 +847,7 @@
 
 | #   | 论文                                                                                                                                                             | 日期      | 🌟  | 状态   |
 | --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- | --- | ---- |
-| 714  | [Toward Humanoid Robots in Construction: A Teleoperation Feasibility Study](https://arxiv.org/abs/2610.00718) | 2026.10 |  | ⏳ 待读 |
+| 714  | [Toward Humanoid Robots in Construction: A Teleoperation Feasibility Study](https://arxiv.org/abs/2610.00718) ✅ [笔记](07_Teleoperation/Toward_Humanoid_Robots_in_Construction__A_Teleoperation_Feasibility_Study/Toward_Humanoid_Robots_in_Construction__A_Teleoperation_Feasibility_Study.md) | 2026.10 |  | ✅ 已总结 |
 | 715  | [NEXUS: Perceptive Whole-Body Control for Terrain-Adaptive Teleoperation](https://arxiv.org/abs/2609.39000) | 2026.09 |  | ⏳ 待读 |
 | 716  | [GAE: General Action Expert for Real-Time Humanoid Teleoperation](https://arxiv.org/abs/2609.34233) | 2026.09 |  | ⏳ 待读 |
 | 717  | [MATE: Multi-Agent Virtual Teleoperation Platform for Humanoid Collaboration Data Collection](https://arxiv.org/abs/2609.26520) | 2026.09 |  | ⏳ 待读 |
@@ -900,7 +900,7 @@
 
 | #   | 论文                                                                                                                                                         | 日期      | 🌟  | 状态   |
 | --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- | --- | ---- |
-| 706  | [What the Elevation Map Cannot See: Semantic-Aware Locomotion and Execution-Aware Navigation for Humanoid Robot](https://arxiv.org/abs/2610.07396) | 2026.10 |  | ⏳ 待读 |
+| 706  | [What the Elevation Map Cannot See: Semantic-Aware Locomotion and Execution-Aware Navigation for Humanoid Robot](https://arxiv.org/abs/2610.07396) ✅ [笔记](08_Navigation/What_the_Elevation_Map_Cannot_See__Semantic-Aware_Locomotion_and_Execution-Aware_Navigation/What_the_Elevation_Map_Cannot_See__Semantic-Aware_Locomotion_and_Execution-Aware_Navigation.md) | 2026.10 |  | ✅ 已总结 |
 | 707  | [DODGER: Safety-Guided Reinforcement Learning for Robot Navigation Among Dynamic Obstacles](https://arxiv.org/abs/2609.38873) | 2026.09 |  | ⏳ 待读 |
 | 708  | [Learning Safe Humanoid Navigation from Reduced Order Models](https://arxiv.org/abs/2609.19272) | 2026.09 |  | ⏳ 待读 |
 | 709  | [RAVEN: Reinforcement-Adaptive Visibility-Graph Planning for Robust Humanoid Navigation with Collision-Free MPC](https://arxiv.org/abs/2607.15701) | 2026.07 |  | ⏳ 待读 |

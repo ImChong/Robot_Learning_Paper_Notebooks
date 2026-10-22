@@ -24,6 +24,7 @@ demos: ["transformer"]
 |------|------|
 | **arXiv** | [1706.03762](https://arxiv.org/abs/1706.03762) |
 | **PDF** | [arxiv.org/pdf/1706.03762](https://arxiv.org/pdf/1706.03762) |
+| **项目页 / 博客** | [Google Research 博客：Transformer](https://research.google/blog/transformer-a-novel-neural-network-architecture-for-language-understanding/)（2017-08-31；没有单独的项目页） |
 | **会议** | NIPS 2017（第 31 届，Long Beach） |
 | **发布时间** | 2017年6月12日（arXiv v1），NIPS 2017 |
 | **作者** | Ashish Vaswani, Noam Shazeer, Niki Parmar, Jakob Uszkoreit, Llion Jones, Aidan N. Gomez, Łukasz Kaiser, Illia Polosukhin（同等贡献，排名随机） |
