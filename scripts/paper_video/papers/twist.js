@@ -50,22 +50,23 @@ window.PaperVideo = {
     ];
     var pts = items.map(function (it) {
       var p = h('div', 'pt', root);
-      p.style.fontSize = '31px'; p.style.padding = '12px 30px';
+      p.style.fontSize = '29px'; p.style.padding = '10px 30px';
       p.style.borderLeft = '10px solid ' + it[0];
       var n = h('div', 'n', p, it[1]); n.style.color = it[0];
       var body = h('div', '', p);
       it[2].split('<br>').forEach(function (line, q) {
         if (q) body.appendChild(document.createElement('br'));
         var span = h('span', '', body); K.rich(span, line);
-        if (q) { span.style.fontSize = '28px'; span.style.color = 'var(--text-secondary)'; }
+        if (q) { span.style.fontSize = '26px'; span.style.color = 'var(--text-secondary)'; }
       });
       return p;
     });
     /* 下一篇的主题（不写集数）：发布清单里 TWIST 之后是 TWIST2 —— 把动捕场地换成 PICO 头显 + 腿部追踪器 */
     var next = h('div', 'pt', root);
-    next.style.fontSize = '29px'; next.style.padding = '14px 30px';
+    next.style.fontSize = '28px'; next.style.padding = '12px 30px';
     next.style.borderStyle = 'dashed';
-    K.rich(next, '**下一篇**：TWIST2 —— 不用动捕场地，戴上头显和腿部追踪器，边遥操作边录示范');
+    /* 「边遥操作边录示范」用 word joiner 连成一块，不在「遥 / 操作」中间断行（HugWBC 片尾的教训） */
+    K.rich(next, '**下一篇**：TWIST2 —— 不用动捕场地，戴上头显和腿部追踪器，' + '边遥操作边录示范'.split('').join('\u2060'));
     var foot = h('div', 'meta', root,
       '<b>完整笔记 · 3 个交互演示 · G1 跟踪的 3D 复现</b><br>imchong.github.io/Robot_Learning_Paper_Notebooks');
     foot.style.textAlign = 'center';
