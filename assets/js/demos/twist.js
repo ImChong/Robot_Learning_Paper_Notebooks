@@ -947,7 +947,9 @@
     });
     var jb = [];
     for (var j = 0; j < 23; j++) jb.push(vbar(strip, R + 8 + j * 18, 12, C_JNT));
-    hline(strip, R, 232, R + W, 232, C_BORDER, 1);
+    /* 柱子的基线：关节角最大 2.52 rad（向上 37.8 px，离上面第二排紫框留 12 px），最小 −2.06 rad（向下 30.9 px，离读法留 20 px） */
+    var JB0 = 240, JK = 15;
+    hline(strip, R, JB0, R + W, JB0, C_BORDER, 1);
     readHint(strip, R, 300, '紫 = 根部 8 个量，黄 = 23 个关节角；下排柱高 = 角度，向上为正', 10.5);
     var top = group(s);
     var TX = R, TY = 60, TW = W, TH = 226;
@@ -991,8 +993,8 @@
       var vals = [f2(m[0]) + ' m', sgn(f2(m[1])), sgn(f2(m[2])), sgn(f2(m[3])), sgn(f2(m[4])), sgn(f2(m[5])), sgn(f2(m[6])), sgn(f2(m[7]))];
       rootTxt.forEach(function (n, q) { n.textContent = vals[q]; });
       for (var j = 0; j < 23; j++) {
-        var a = m[8 + j], h = Math.abs(a) * 17;
-        jb[j].node.setAttribute('y', (a >= 0 ? 232 - h : 232).toFixed(1));
+        var a = m[8 + j], h = Math.abs(a) * JK;
+        jb[j].node.setAttribute('y', (a >= 0 ? JB0 - h : JB0).toFixed(1));
         jb[j].node.setAttribute('height', h.toFixed(1));
       }
       var showTop = win(t, 10.4, 13.4);
