@@ -38,7 +38,7 @@ demos: ["hdmi"]
 
 ## 🎯 一句话总结
 
-> HDMI（HumanoiD iMitation for Interaction）把人形—物体交互写成**机器人—物体共同跟踪**：每一帧参考 $s_t^{\mathrm{ref}} = (s_t^{\mathrm{robot}}, s_t^{\mathrm{obj}}, c_t)$，外加定义在物体坐标系里的期望接触点；参考来自单目视频（GVHMR + LocoMujoco），物体轨迹和接触点每段人工标注（问答原话）。训练沿用 DeepMimic 的三件套（参考状态初始化、相位、误差终止）和 PPO，再加三个统一的设计：**统一的物体表示**（物体位姿和接触点都换到机器人根部坐标系，换物体不改网络）、**残差动作**（$\theta_t^{\mathrm{target}} = \theta_t^{\mathrm{ref}} + a_t$，跪姿这种离默认站姿很远的动作一开始就能在参考附近探索）、**交互奖励**（式 1：$\exp(-\lVert p_{\mathrm{eef}} - p_{\mathrm{target}}\rVert_2/\sigma_{\mathrm{pos}})$ 乘封顶为 1 的力项；式 2：按接触信号门控取平均）。官方代码里交互奖励的 $\sigma_{\mathrm{pos}} = 0.3$ m、$\sigma_{\mathrm{frc}} = 40$ N、$F_{\mathrm{thres}} = 10$ N，要接触时乘 5、不用接触时给 1；训练其实是**特权教师 + 蒸馏学生**两步（PPO-ROA），残差动作只在教师里。真机上 G1 靠动捕拿到骨盆和物体的位姿，**连续开门穿门 67 次（约 34 分钟）**，搬纸箱连续 7 次、楚门式鞠躬连续 3 次；仿真 14 个任务里 6 个上了真机。消融：交互奖励在多数任务上差别不大，关键在「参考不准」（搬行李箱，两个都去掉成功率 0）和「接触位置要准」（推大箱子，开着接触终止评测时从 0.98 掉到 0.32）；残差动作让 8 个任务的 24 项跟踪误差全都最低，搬行李箱时没有它学不会跪下。
+> HDMI（HumanoiD iMitation for Interaction）把人形—物体交互写成**机器人—物体共同跟踪**：参考里除了机器人的动作，还写进物体的轨迹、接触信号和物体坐标系里的期望接触点（$s_t^{\mathrm{ref}} = (s_t^{\mathrm{robot}}, s_t^{\mathrm{obj}}, c_t)$）；参考来自单目视频（GVHMR + LocoMujoco），物体轨迹和接触点每段人工标注（问答原话）。训练沿用 DeepMimic 的三件套（参考状态初始化、相位、误差终止）和 PPO，再加三个统一的设计：**统一的物体表示**（物体位姿和接触点都换到机器人根部坐标系，换物体不改网络）、**残差动作**（$\theta_t^{\mathrm{target}} = \theta_t^{\mathrm{ref}} + a_t$，跪姿这种离默认站姿很远的动作一开始就能在参考附近探索）、**交互奖励**（式 1：$\exp(-\lVert p _ {\mathrm{eef}} - p _ {\mathrm{target}}\rVert_2/\sigma _ {\mathrm{pos}})$ 乘封顶为 1 的力项；式 2：按接触信号门控取平均）。官方代码里交互奖励的 $\sigma _ {\mathrm{pos}} = 0.3$ m、$\sigma _ {\mathrm{frc}} = 40$ N、$F _ {\mathrm{thres}} = 10$ N，要接触时乘 5、不用接触时给 1；训练其实是**特权教师 + 蒸馏学生**两步（PPO-ROA），残差动作只在教师里。真机上 G1 靠动捕拿到骨盆和物体的位姿，**连续开门穿门 67 次（约 34 分钟）**，搬纸箱连续 7 次、楚门式鞠躬连续 3 次；仿真 14 个任务里 6 个上了真机。消融：交互奖励在多数任务上差别不大，关键在「参考不准」（搬行李箱，两个都去掉成功率 0）和「接触位置要准」（推大箱子，开着接触终止评测时从 0.98 掉到 0.32）；残差动作让 8 个任务的 24 项跟踪误差全都最低，搬行李箱时没有它学不会跪下。
 
 > 🎮 **本文内嵌 1 段讲解动画、1 段配音视频和 3 个交互演示**（不用装任何东西）：
 > [十八幕动画：HDMI 全流程](#hdmi-explainer-anim) —— 约 288 秒串完「只跟身体不够 → 三段流水线（图 2）→ 从视频到参考 → 一帧参考 → DeepMimic 式训练三件套 → 统一的物体表示（图 3）→ 残差动作 → 交互奖励（式 1–2）→ 奖励与终止（表 I、表 II）→ 代码里的教师与学生 → 上真机：动捕给位姿 → 开门穿门 67 次 → 搬箱子与楚门式鞠躬 → 仿真 14 个任务 → 交互奖励的消融（图 6）→ 交互奖励管什么（图 7）→ 残差动作的消融（图 8、图 9）→ 局限与之后」。空格播放/暂停，← → 换幕，也可以直接点分幕标签跳着看。
@@ -75,7 +75,7 @@ demos: ["hdmi"]
 
 ## 📺 配音讲解视频（可下载） {#hdmi-video}
 
-<div class="paper-demo" data-demo="hdmi-video" data-src="media/hdmi_explainer_video.mp4" data-poster="media/hdmi_explainer_video_poster.jpg"><p class="demo-fallback">（本节含讲解视频播放器，需要启用 JavaScript；也可以直接<a href="media/hdmi_explainer_video.mp4" download="HDMI_讲解视频.mp4">下载 mp4（__VIDEO_MB__ MB）</a>）</p></div>
+<div class="paper-demo" data-demo="hdmi-video" data-src="media/hdmi_explainer_video.mp4" data-poster="media/hdmi_explainer_video_poster.jpg"><p class="demo-fallback">（本节含讲解视频播放器，需要启用 JavaScript；也可以直接<a href="media/hdmi_explainer_video.mp4" download="HDMI_讲解视频.mp4">下载 mp4（19.8 MB）</a>）</p></div>
 
 > 📖 **动画之后的正文默认全部折叠**：动画覆盖到的那几节（要解决什么问题、方法详解、实验结果）按小节收起，再往后的具体实例、源码对照、在路线中的位置、面试和附录各整块收起。想细读哪一块就点开对应的折叠条，内容一字未删；流程图和三个交互演示留在外面，目录里的标题依旧可以直接点，会自动展开所在折叠块，左侧目录顶部还有「展开全部文字」一键铺开。
 >
@@ -245,7 +245,7 @@ $$
 <details class="paper-fold" markdown="1">
 <summary>📖 展开文字：视频重定向来的参考只是运动学的，接触不准、会穿模；对每个该接触的末端，位置项 exp(−距离/σ_pos) 乘封顶为 1 的力项，再按接触信号门控取平均；代码里 σ_pos 0.3 m、σ_frc 40 N、F_thres 10 N，要接触乘 5、不用接触给 1</summary>
 
-视频重定向来的参考**只是运动学上的轨迹**，接触常常不准，还可能穿模，只靠跟踪奖励不够。HDMI 加了一个统一的交互奖励 $R_{\mathrm{interaction}}$：参考说要接触（$c_t = 1$）时，鼓励策略建立并保持稳定的接触。对每个该接触的末端 $i$：
+视频重定向来的参考**只是运动学上的轨迹**，接触常常不准，还可能穿模，只靠跟踪奖励不够。HDMI 加了一个统一的交互奖励 $R _ {\mathrm{interaction}}$：参考说要接触（$c_t = 1$）时，鼓励策略建立并保持稳定的接触。对每个该接触的末端 $i$：
 
 $$
 R_{\mathrm{contact},i} = \exp\!\left(-\frac{\lVert p_{\mathrm{eef},i} - p_{\mathrm{target},i}\rVert_2}{\sigma_{\mathrm{pos}}}\right)\cdot \min\!\left(\exp\!\left(\frac{\lVert F_{\mathrm{contact},i}\rVert_2 - F_{\mathrm{thres}}}{\sigma_{\mathrm{frc}}}\right),\ 1\right)
@@ -253,7 +253,7 @@ R_{\mathrm{contact},i} = \exp\!\left(-\frac{\lVert p_{\mathrm{eef},i} - p_{\math
 $$
 
 - **位置项**：末端离物体上的目标接触点越近越好。注意分子是**距离本身**（L2 范数），不是平方。
-- **力项**：接触力不够就打折扣，超过 $F_{\mathrm{thres}}$ 封顶为 1——要的是「够但不过量」，论文说封顶也是为了部署安全。
+- **力项**：接触力不够就打折扣，超过 $F _ {\mathrm{thres}}$ 封顶为 1——要的是「够但不过量」，论文说封顶也是为了部署安全。
 
 再对所有该接触的末端取平均，用接触信号门控：
 
@@ -262,7 +262,7 @@ R_{\mathrm{interaction}} = \frac{1}{N_c}\sum_{i=1}^{N_c} R_{\mathrm{contact},i}\
 \tag{2}
 $$
 
-**代码**（`rewards.py` 的 `eef_contact_exp`，`hdmi-base.yaml`）：$\sigma_{\mathrm{pos}} = 0.3$ m、$\sigma_{\mathrm{frc}} = 40$ N、$F_{\mathrm{thres}} = 10$ N，论文都没给。实现和式 2 有两处不同：**要接触的末端得分乘 `gain = 5`**；**不用接触的末端直接给 1**（不是 0），再对两个末端取平均，权重 1。所以表 I 里接触奖励的「5.0」就是这个 gain。
+**代码**（`rewards.py` 的 `eef_contact_exp`，`hdmi-base.yaml`）：$\sigma _ {\mathrm{pos}} = 0.3$ m、$\sigma _ {\mathrm{frc}} = 40$ N、$F _ {\mathrm{thres}} = 10$ N，论文都没给。实现和式 2 有两处不同：**要接触的末端得分乘 `gain = 5`**；**不用接触的末端直接给 1**（不是 0），再对两个末端取平均，权重 1。所以表 I 里接触奖励的「5.0」就是这个 gain。
 
 **域随机化**（论文一句话：随机机器人和物体的惯性与摩擦）的代码范围见[上真机](#上真机动捕给位姿第-iv-节)那一节。
 
@@ -516,9 +516,9 @@ $$
 
 <h3 id="实例-3-两只手的交互奖励">例 3：两只手的交互奖励</h3>
 
-两只手都离接触点 5 cm，左手接触力 3 N、右手 15 N，这一帧要接触（$c_t = 1$）。代码参数 $\sigma_{\mathrm{pos}} = 0.3$ m、$\sigma_{\mathrm{frc}} = 40$ N、$F_{\mathrm{thres}} = 10$ N：
+两只手都离接触点 5 cm，左手接触力 3 N、右手 15 N，这一帧要接触（$c_t = 1$）。代码参数 $\sigma _ {\mathrm{pos}} = 0.3$ m、$\sigma _ {\mathrm{frc}} = 40$ N、$F _ {\mathrm{thres}} = 10$ N：
 
-| | 位置项 $e^{-0.05/0.3}$ | 力项 | $R_{\mathrm{contact}}$ | 代码：$5R$ |
+| | 位置项 $e^{-0.05/0.3}$ | 力项 | $R _ {\mathrm{contact}}$ | 代码：$5R$ |
 |---|---|---|---|---|
 | 左手（3 N） | 0.8465 | $e^{(3-10)/40} = 0.8395$ | 0.7106 | 3.5529 |
 | 右手（15 N） | 0.8465 | $\min(e^{5/40}, 1) = 1$ | 0.8465 | 4.2324 |
@@ -614,7 +614,7 @@ HDMI/
 | 用 PPO 优化 | PPO-ROA：特权教师 + 适应模块 + 学生（模仿教师均值），再用 PPO 微调学生 |
 | 残差动作 $\theta^{\mathrm{ref}} + a$ | 只在教师里；学生直接输出动作，但观测里有未来 5 帧的参考关节角 |
 | 观测：相位 + 本体 + 物体 | 学生 615 维：未来 5 帧的关键点与关节角 + 相位 356、本体 249、物体 10 |
-| 式 1 的 $\sigma_{\mathrm{pos}}$、$\sigma_{\mathrm{frc}}$、$F_{\mathrm{thres}}$ | 0.3 m、40 N、10 N |
+| 式 1 的 $\sigma _ {\mathrm{pos}}$、$\sigma _ {\mathrm{frc}}$、$F _ {\mathrm{thres}}$ | 0.3 m、40 N、10 N |
 | 式 2：门控平均 | 要接触 × 5，不用接触给 1，再取平均 |
 | 表 I 的跟踪四项 | 10 个 $0.5\exp(-\overline{e}/\sigma)$；另有两项存活奖励 1.0 |
 | 表 II：物体 1.2 rad | 物体朝向 0.8 rad；接触丢失是距离 ≥ 0.2 m 或力 < 1 N |
@@ -739,7 +739,7 @@ A：训练是教师—学生两步（残差只在教师）；学生还看未来 
 
 <h3 id="c-旧版笔记的改正">C. 旧版笔记的改正</h3>
 
-- 式 1 的位置项旧版写成了距离的平方，原文是 L2 距离本身；改正，并用代码的参数重算具体实例（旧版假设的 $\sigma_{\mathrm{pos}} = 0.01\ \text{m}^2$、$\sigma_{\mathrm{frc}} = 2$ N、$F_{\mathrm{thres}} = 5$ N 删去）。
+- 式 1 的位置项旧版写成了距离的平方，原文是 L2 距离本身；改正，并用代码的参数重算具体实例（旧版假设的 $\sigma _ {\mathrm{pos}} = 0.01\ \text{m}^2$、$\sigma _ {\mathrm{frc}} = 2$ N、$F _ {\mathrm{thres}} = 5$ N 删去）。
 - 残差动作的算例旧版是示意数（膝 1.8 / 0.3 rad），换成官方参考第 3.20 s 的真实关节角与代码的动作缩放。
 - 「接触丢失为位置偏差 0.2 m **且**接触力 1.0 N」：表 II 只列了两个阈值，代码是「或」；改正。
 - 「Truman's Bow」旧版译作「杜鲁门鞠躬」，按电影《楚门的世界》改译「楚门式鞠躬」（是不是致敬电影是我们的猜测）。

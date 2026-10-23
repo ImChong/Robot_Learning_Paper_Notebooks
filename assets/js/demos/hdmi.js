@@ -2113,8 +2113,8 @@
   function buildVideoDemo(host) {
     K.video(host, {
       title: '配音讲解视频：HDMI 十八幕全流程',
-      sub: '__VIDEO_SUB__',
-      size: '__VIDEO_SIZE__',
+      sub: '17 分 38 秒竖屏视频（1080×1920），中文配音 + 字幕。画面就是上面的十八幕动画，旁白把每一幕讲细；适合手机上看或转发。',
+      size: '19.8 MB',
       fileName: 'HDMI_讲解视频.mp4'
     });
   }
