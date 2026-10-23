@@ -3529,6 +3529,18 @@
         "zh_title": "PRIMO：基于人体动作跟踪数据与结构先验的人形机器人本体里程计"
       },
       {
+        "title": "A Multimodal Label Forecasting Method for Aperiodic Visuo-Motor Time Series",
+        "path": "papers/09_State_Estimation/A_Multimodal_Label_Forecasting_Method_for_Aperiodic_Visuo-Motor_Time_Series/A_Multimodal_Label_Forecasting_Method_for_Aperiodic_Visuo-Motor_Time_Series.md",
+        "url": "/papers/09_State_Estimation/A_Multimodal_Label_Forecasting_Method_for_Aperiodic_Visuo-Motor_Time_Series/A_Multimodal_Label_Forecasting_Method_for_Aperiodic_Visuo-Motor_Time_Series.html",
+        "dir": "A_Multimodal_Label_Forecasting_Method_for_Aperiodic_Visuo-Motor_Time_Series",
+        "arxiv": "2609.07930",
+        "summary_zh": "主流深度时间序列预测（TSF）基准——ETT、Electricity、Traffic、Weather 等——几乎都带明显周期，模型也围绕周期设计（时间戳编码、多周期分解）；本文换了一个没有周期的任务：根据头部相机画面和关节角，预测人形机器…",
+        "published_date_zh": "2026年9月7日（arXiv v1）",
+        "published_date_en": "Sep 7, 2026 (arXiv v1)",
+        "zhname": "EMP：面向非周期视觉—运动时间序列的多模态标签预测方法",
+        "zh_title": "EMP：面向非周期视觉—运动时间序列的多模态标签预测方法"
+      },
+      {
         "title": "KILVO: Kinematic-Inertial-LiDAR-Visual Odometry with Robust Multimodal Adaptation for Humanoid Robots",
         "path": "papers/09_State_Estimation/KILVO__Kinematic-Inertial-LiDAR-Visual_Odometry_for_Humanoid_Robots/KILVO__Kinematic-Inertial-LiDAR-Visual_Odometry_for_Humanoid_Robots.md",
         "url": "/papers/09_State_Estimation/KILVO__Kinematic-Inertial-LiDAR-Visual_Odometry_for_Humanoid_Robots/KILVO__Kinematic-Inertial-LiDAR-Visual_Odometry_for_Humanoid_Robots.html",
