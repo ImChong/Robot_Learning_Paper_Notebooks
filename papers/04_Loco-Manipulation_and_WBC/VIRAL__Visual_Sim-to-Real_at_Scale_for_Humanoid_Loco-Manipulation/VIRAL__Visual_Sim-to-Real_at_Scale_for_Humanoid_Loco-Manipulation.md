@@ -79,7 +79,7 @@ demos: ["viral"]
 
 ## 📺 配音讲解视频（可下载） {#viral-video}
 
-<div class="paper-demo" data-demo="viral-video" data-src="media/viral_explainer_video.mp4" data-poster="media/viral_explainer_video_poster.jpg"><p class="demo-fallback">（本节含讲解视频播放器，需要启用 JavaScript；也可以直接<a href="media/viral_explainer_video.mp4" download="VIRAL_讲解视频.mp4">下载 mp4（VIDEO_SIZE）</a>）</p></div>
+<div class="paper-demo" data-demo="viral-video" data-src="media/viral_explainer_video.mp4" data-poster="media/viral_explainer_video_poster.jpg"><p class="demo-fallback">（本节含讲解视频播放器，需要启用 JavaScript；也可以直接<a href="media/viral_explainer_video.mp4" download="VIRAL_讲解视频.mp4">下载 mp4（23.9 MB）</a>）</p></div>
 
 > 📖 **动画之后的正文默认全部折叠**：动画覆盖到的那几节（要解决什么问题、方法详解、实验结果）按小节收起，再往后的具体实例、源码对照、在路线中的位置、面试和附录各整块收起。想细读哪一块就点开对应的折叠条，内容一字未删；流程图和三个交互演示留在外面，目录里的标题依旧可以直接点，会自动展开所在折叠块，左侧目录顶部还有「展开全部文字」一键铺开。
 >
@@ -186,8 +186,8 @@ flowchart TB
 
 图 2 的两个阶段：
 
-- **第一阶段（强化学习）**：特权教师 $\pi_{\text{teacher}}$ 拿到全状态的本体感受和任务信息（外感知），输出全身控制器（WBC）的命令。训练时**不渲染图像**，跑在两台 8 卡 L40S 上（共 16 张 GPU）。
-- **第二阶段（监督学习）**：视觉学生 $\pi_{\text{student}}$ 只看 RGB 图和真机上拿得到的本体感受，用 DAgger 与行为克隆模仿教师。用 Isaac Lab 的**平铺渲染**做大规模视觉仿真，跑在八台 8 卡 L40S 上（共 64 张 GPU）。
+- **第一阶段（强化学习）**：特权教师 $\pi _ {\text{teacher}}$ 拿到全状态的本体感受和任务信息（外感知），输出全身控制器（WBC）的命令。训练时**不渲染图像**，跑在两台 8 卡 L40S 上（共 16 张 GPU）。
+- **第二阶段（监督学习）**：视觉学生 $\pi _ {\text{student}}$ 只看 RGB 图和真机上拿得到的本体感受，用 DAgger 与行为克隆模仿教师。用 Isaac Lab 的**平铺渲染**做大规模视觉仿真，跑在八台 8 卡 L40S 上（共 64 张 GPU）。
 - **上真机**：训练时随机化场景资产、材质、穹顶光、画质、相机外参和传感器延迟；硬件这边给三指手做系统辨识、标定相机外参。之后**不做任何微调**，学生用机载传感器在 G1 上连续走、放、抓、搬。
 
 图 2 标的频率：教师、学生、WBC 都是 **50 Hz**，PD 控制器 **200 Hz**。代码（`config/simulator/isaacsim.yaml`）：仿真 200 帧/秒（步长 0.005 s），每 4 步出一次动作，策略 50 Hz。
@@ -220,7 +220,7 @@ flowchart TB
 <details class="paper-fold" markdown="1">
 <summary>📖 展开文字：教师是目标条件的强化学习策略；输入是特权本体感受与外感知；输出是 HOMIE 命令的增量；HOMIE 当 API 把动作限制在安全可靠的范围；代码里策略实际输出 11 维</summary>
 
-教师 $\pi_{\text{teacher}}(a_t\mid o_t^{\text{priv}})$ 输出
+教师 $\pi _ {\text{teacher}}(a_t\mid o_t^{\text{priv}})$ 输出
 
 $$a_t=(\Delta\mathbf v_t,\ \Delta\omega_t^{\text{yaw}},\ \Delta\mathbf q_t^{\text{arm}},\ \Delta\mathbf q_t^{\text{finger}})$$
 
@@ -244,12 +244,12 @@ $$a_t=(\Delta\mathbf v_t,\ \Delta\omega_t^{\text{yaw}},\ \Delta\mathbf q_t^{\tex
 
 正文的四个关键奖励（$p$ 是位置，$h$ 是高度，$\psi$ 是偏航角）：
 
-1. **走向物体**：$r_{\text{walk}}=\exp\!\big(-4(\lVert p_{\text{robot}}-p_{\text{GraspObj}}\rVert-0.45)^2\big)$，离物体 0.45 m 时满分 1；
-2. **在托盘附近放下**：$r_{\text{place}}=-\lVert\mathbf f_{\text{PlaceObj}}\rVert\cdot\mathbb 1(\lVert p_{\text{PlaceObj}}-p_{\text{tray}}\rVert<0.3)$，瓶子到了托盘 0.3 m 以内，手指还在用力捏就扣分；
-3. **抓起**：$r_{\text{grasp-z}}=\min(h_{\text{GraspObj}}-h_{\text{table}}, 0.15)$ 加 $r_{\text{grasp-goal}}=\exp(-10\lVert p_{\text{GraspObj}}-p_{\text{goal}}\rVert^2)$；
-4. **转身**：$r_{\text{turn}}=-\lvert\psi_{\text{robot}}-\psi_{\text{desired}}\rvert$。
+1. **走向物体**：$r _ {\text{walk}}=\exp\!\big(-4(\lVert p _ {\text{robot}}-p _ {\text{GraspObj}}\rVert-0.45)^2\big)$，离物体 0.45 m 时满分 1；
+2. **在托盘附近放下**：$r _ {\text{place}}=-\lVert\mathbf f _ {\text{PlaceObj}}\rVert\cdot\mathbb 1(\lVert p _ {\text{PlaceObj}}-p _ {\text{tray}}\rVert<0.3)$，瓶子到了托盘 0.3 m 以内，手指还在用力捏就扣分；
+3. **抓起**：$r _ {\text{grasp-z}}=\min(h _ {\text{GraspObj}}-h _ {\text{table}}, 0.15)$ 加 $r _ {\text{grasp-goal}}=\exp(-10\lVert p _ {\text{GraspObj}}-p _ {\text{goal}}\rVert^2)$；
+4. **转身**：$r _ {\text{turn}}=-\lvert\psi _ {\text{robot}}-\psi _ {\text{desired}}\rvert$。
 
-总奖励按阶段加权：$r_t=\sum_{i=0}^{4}w_i\,\mathbb 1[s_t=i]\,r_t^{(i)}$。附录表 3 列了三十多项，分三组：终止与通用惩罚（终止 −2000、动作变化、关节速度 / 加速度、力矩、输出平滑 −9、右臂太快 −80、单脚着地时手指或手臂在动 −3000 / −1300）；朝向与命令的整形（阶段 0 朝向物体 −10000、速度命令超过 0.5 罚 −20、阶段 1–3 速度命令罚 −12）；任务与物体的奖励（走近 2.0、阶段 0–1 手保持握住 9.0、托盘附近放下 10.0、手离瓶子近 20.0、指尖方向 5.0、抓力 1.0、举起目标 10.0、举高 200.0、转身 15.0、右臂姿态 5.0 / 25.0；瓶子在桌上被推着滑 −1000、抓着时瓶子和手的竖直速度不一致 −3000、拿起时瓶子歪 −500 等）。
+总奖励按阶段加权：$r_t=\sum _ {i=0}^{4}w_i\,\mathbb 1[s_t=i]\,r_t^{(i)}$。附录表 3 列了三十多项，分三组：终止与通用惩罚（终止 −2000、动作变化、关节速度 / 加速度、力矩、输出平滑 −9、右臂太快 −80、单脚着地时手指或手臂在动 −3000 / −1300）；朝向与命令的整形（阶段 0 朝向物体 −10000、速度命令超过 0.5 罚 −20、阶段 1–3 速度命令罚 −12）；任务与物体的奖励（走近 2.0、阶段 0–1 手保持握住 9.0、托盘附近放下 10.0、手离瓶子近 20.0、指尖方向 5.0、抓力 1.0、举起目标 10.0、举高 200.0、转身 15.0、右臂姿态 5.0 / 25.0；瓶子在桌上被推着滑 −1000、抓着时瓶子和手的竖直速度不一致 −3000、拿起时瓶子歪 −500 等）。
 
 **代码里的样子**：
 
@@ -269,7 +269,7 @@ $$a_t=(\Delta\mathbf v_t,\ \Delta\omega_t^{\text{yaw}},\ \Delta\mathbf q_t^{\tex
 
 **代码**（`delta_action_base.py`）：每一步
 
-$$c_t=\operatorname{clip}(c_{t-1}+0.1\,a_t,\ -100,\ 100)$$
+$$c_t=\operatorname{clip}(c _ {t-1}+0.1\,a_t,\ -100,\ 100)$$
 
 $c$ 是累加的状态（11 维），HOMIE 的速度命令取前三维（再按上面的范围裁剪），右臂的关节目标 = 默认姿态 + 0.25 × 累加值，所以策略输出 1 时，手臂目标一步只动 0.025 rad；手的开合看累加值的正负。另外教师训练时，阶段 1–3（站在桌前预放、放、抓）会把速度命令强制清零。
 
@@ -330,7 +330,7 @@ $c$ 是累加的状态（11 维），HOMIE 的速度命令取前三维（再按�
 
 学生用 DAgger 和行为克隆（BC）的混合从教师蒸馏，两者的目标一样：
 
-$$\rho^o\triangleq\alpha\,\rho^o_{\pi_{\text{teacher}}}+(1-\alpha)\,\rho^o_{\pi_{\text{student}}},\qquad \mathcal L_{\text{distill}}=\mathbb E_{o_t\sim\rho^o}\Big[\big\lVert\pi_{\text{teacher}}(o_t^{\text{teacher}})-\pi_{\text{student}}(o_t^{\text{student}})\big\rVert_2^2\Big]$$
+$$\rho^o\triangleq\alpha\,\rho^o _ {\pi _ {\text{teacher}}}+(1-\alpha)\,\rho^o _ {\pi _ {\text{student}}},\qquad \mathcal L _ {\text{distill}}=\mathbb E _ {o_t\sim\rho^o}\Big[\big\lVert\pi _ {\text{teacher}}(o_t^{\text{teacher}})-\pi _ {\text{student}}(o_t^{\text{student}})\big\rVert_2^2\Big]$$
 
 区别只在观测从哪来：**教师开**的数据干净、接近最优，能很快给学生打下先验；**学生开**会走到教师理想分布之外的状态，学生在那里学会纠错，部署时不至于一错再错。
 
@@ -564,7 +564,7 @@ $$\rho^o\triangleq\alpha\,\rho^o_{\pi_{\text{teacher}}}+(1-\alpha)\,\rho^o_{\pi_
 
 <h3 id="实例-3-命令增量怎么累加">例 3：命令增量怎么累加</h3>
 
-代码：$c_t=c_{t-1}+0.1\,a_t$（50 Hz）。
+代码：$c_t=c _ {t-1}+0.1\,a_t$（50 Hz）。
 
 - **起步**：示范 A 第 0.5 s 的前进命令是 0.50 m/s。从 0 开始，策略每步输出 $a=1$，5 步（0.1 s）就到 0.5；之后输出 0 就保持。
 - **停下**：第 2.0 s 命令是 $(0.35, -0.32)$ m/s，2.62–2.84 s 降到 0。增量动作下，策略输出 $a_x=-1$、$a_y=+1$ 约 3–4 步就停住。
@@ -576,7 +576,7 @@ $$\rho^o\triangleq\alpha\,\rho^o_{\pi_{\text{teacher}}}+(1-\alpha)\,\rho^o_{\pi_
 
 示范 A 的几个时刻（按正文的公式；代码的写法略有不同，见上文）：
 
-| 时刻 | 骨盆—瓶子水平距离 $d$ | $r_{\text{walk}}=e^{-4(d-0.45)^2}$ |
+| 时刻 | 骨盆—瓶子水平距离 $d$ | $r _ {\text{walk}}=e^{-4(d-0.45)^2}$ |
 |---|---|---|
 | 0.00 s | 1.376 m | **0.032** |
 | 1.00 s | 1.008 m | 0.288 |
@@ -585,7 +585,7 @@ $$\rho^o\triangleq\alpha\,\rho^o_{\pi_{\text{teacher}}}+(1-\alpha)\,\rho^o_{\pi_
 | 5.00 s | 0.381 m | 0.981 |
 
 - 走得越近分越高，0.45 m 处满分；再近一点（站在桌前 0.38 m）也只扣一点。
-- **举高**：瓶子放在桌上时中心比桌面高 0.075 m，按正文 $\min(h-h_{\text{table}}, 0.15)=0.075$；7.5 s 时中心比桌面高 0.32 m，封顶 0.15。代码改成 $\operatorname{clip}(\Delta h, 0.075, 0.175)-0.075$，放在桌上是 0、举高 10 cm 封顶 0.1，再乘权重 200 和步长 0.02，每步最多 0.4。
+- **举高**：瓶子放在桌上时中心比桌面高 0.075 m，按正文 $\min(h-h _ {\text{table}}, 0.15)=0.075$；7.5 s 时中心比桌面高 0.32 m，封顶 0.15。代码改成 $\operatorname{clip}(\Delta h, 0.075, 0.175)-0.075$，放在桌上是 0、举高 10 cm 封顶 0.1，再乘权重 200 和步长 0.02，每步最多 0.4。
 - **走近**的权重 2.0、乘步长 0.02 后每步最多 0.04；一个阶段 0 的 6 s 里最多攒 12 分。终止惩罚 −2000 × 0.02 = −40，一次就是阶段 0 里走近奖励最多能攒的三倍多。
 
 <h3 id="实例-5-教师与学生的观测">例 5：教师与学生的观测</h3>
