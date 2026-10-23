@@ -21,6 +21,7 @@ demos: ["awr"]
 |------|------|
 | **arXiv** | [1910.00177](https://arxiv.org/abs/1910.00177) |
 | **PDF** | [下载](https://arxiv.org/pdf/1910.00177) |
+| **项目主页** | [xbpeng.github.io/projects/AWR](https://xbpeng.github.io/projects/AWR/) |
 | **作者** | Xue Bin Peng, Aviral Kumar, Grace Zhang, Sergey Levine |
 | **机构** | UC Berkeley |
 | **发布时间** | 2019年9月30日（arXiv） |

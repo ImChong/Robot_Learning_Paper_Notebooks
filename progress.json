@@ -41,15 +41,15 @@
         "13_Physics-Based_Animation",
         "14_Human_Motion"
       ],
-      "last_module": "05_Locomotion",
-      "last_index": 1125,
-      "last_title": "Push the Limit: Learning High-Speed Sprinting and Aggressive Cornering on a Full-Scale Humanoid (arXiv:2610.14840)",
-      "next_module": "06_Manipulation",
-      "last_completed_date": "2026-10-19",
-      "note": "本日轮转到 05_Locomotion。PROGRESS Locomotion 章节中尚无笔记的最新论文是 Push the Limit (arXiv:2610.14840, 2026-10-10, 松延动力 Noetix × 清华, CoRL 2026)，即 PROGRESS #1125，已确认在上游 README。高速冲刺与激进过弯：因果 MHA 历史编码器、高速时改用航向方向奖励、按技能路由的 Multi-AMP 判别器；真机 100 m 7.14 m/s，5.5 m/s 过弯内倾 > 25°。论文未开源，含整体流程 mermaid 与偏航振荡扣分算例，无源码时序图。",
-      "last_date": "2026-10-19",
+      "last_module": "09_State_Estimation",
+      "last_index": 700,
+      "last_title": "A Multimodal Label Forecasting Method for Aperiodic Visuo-Motor Time Series (arXiv:2609.07930)",
+      "next_module": "10_Sim-to-Real",
+      "last_completed_date": "2026-10-23",
+      "note": "本日轮转到 09_State_Estimation。PROGRESS State Estimation 章节中尚无笔记的最新论文是 A Multimodal Label Forecasting Method for Aperiodic Visuo-Motor Time Series (arXiv:2609.07930, 2026-09-07, 雪城大学, ICMLA 2026)，即 PROGRESS #700，已确认在上游 README。EMP 用头部相机画面、计划关节轨迹（含未来段）和实测关节角预测 Poppy 人形 P 步后是否摔倒，RP / SimP 两个数据集上准确率 95.45% / 95.90%。代码与数据集录用后公开，运行时序图按论文描述画。下一篇轮转到 10_Sim-to-Real。",
+      "last_date": "2026-10-23",
       "next_candidate": null,
-      "last_completed": "Push the Limit: Learning High-Speed Sprinting and Aggressive Cornering on a Full-Scale Humanoid (arXiv:2610.14840)"
+      "last_completed": "A Multimodal Label Forecasting Method for Aperiodic Visuo-Motor Time Series (arXiv:2609.07930)"
     },
     "last_summary_index": 532,
     "last_summary_date": "2026-09-18",
