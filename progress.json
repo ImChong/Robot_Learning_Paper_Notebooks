@@ -41,15 +41,15 @@
         "13_Physics-Based_Animation",
         "14_Human_Motion"
       ],
-      "last_module": "08_Navigation",
-      "last_index": 706,
-      "last_title": "What the Elevation Map Cannot See: Semantic-Aware Locomotion and Execution-Aware Navigation for Humanoid Robot (arXiv:2610.07396)",
-      "next_module": "09_State_Estimation",
-      "last_completed_date": "2026-10-22",
-      "note": "本日轮转到 08_Navigation。PROGRESS Navigation 章节中尚无笔记的最新论文是 What the Elevation Map Cannot See (arXiv:2610.07396, 2026-10-05, 佛罗里达大学)，即 PROGRESS #706，已确认在上游 README。AME 行走策略外挂 RGB + DINOv2 语义分支（真值图教师 → RGB-D 学生 DAgger）避开高程图看不出的倒瓶 / 手机 / 水渍，anti-deviation 用定位反馈纠正绕障偏差；导航 SR 19.5 → 29.8%。官方代码未开源，运行时序图按论文描述画。下一篇轮转到 09_State_Estimation。",
-      "last_date": "2026-10-22",
+      "last_module": "09_State_Estimation",
+      "last_index": 700,
+      "last_title": "A Multimodal Label Forecasting Method for Aperiodic Visuo-Motor Time Series (arXiv:2609.07930)",
+      "next_module": "10_Sim-to-Real",
+      "last_completed_date": "2026-10-23",
+      "note": "本日轮转到 09_State_Estimation。PROGRESS State Estimation 章节中尚无笔记的最新论文是 A Multimodal Label Forecasting Method for Aperiodic Visuo-Motor Time Series (arXiv:2609.07930, 2026-09-07, 雪城大学, ICMLA 2026)，即 PROGRESS #700，已确认在上游 README。EMP 用头部相机画面、计划关节轨迹（含未来段）和实测关节角预测 Poppy 人形 P 步后是否摔倒，RP / SimP 两个数据集上准确率 95.45% / 95.90%。代码与数据集录用后公开，运行时序图按论文描述画。下一篇轮转到 10_Sim-to-Real。",
+      "last_date": "2026-10-23",
       "next_candidate": null,
-      "last_completed": "What the Elevation Map Cannot See: Semantic-Aware Locomotion and Execution-Aware Navigation for Humanoid Robot (arXiv:2610.07396)"
+      "last_completed": "A Multimodal Label Forecasting Method for Aperiodic Visuo-Motor Time Series (arXiv:2609.07930)"
     },
     "last_summary_index": 532,
     "last_summary_date": "2026-09-18",
