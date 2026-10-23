@@ -5254,7 +5254,7 @@ def test_twist2_explainer_demos_and_worked_example_share_the_paper_numbers():
     assert 49 + 5 == 54 and 33 + 16 == 49 and _fmt(100 * 33 / 54, 1) == "61.1" and _fmt(100 * 6 / 7, 1) == "85.7"
     for s in ("每分钟 5.3 条", "$20/23=87.0\\%$", "用时多 66%", "$33/54=61.1\\%$", "$6/7=85.7\\%$"):
         assert s in note, s
-    for s in ("18.5 分钟采了 98 条", "112.3 秒", "61.1%", "7 次里 6 次"):
+    for s in ("18.5 分钟采满 98 格", "112.3 秒", "61.1%", "7 次里 6 次"):
         assert s in narration, s
     # 例 10：64 步动作块
     assert _fmt(64 / 30, 2) == "2.13" and 48 / 30 == 1.6

@@ -228,8 +228,10 @@
     return seg(t, a + 0.3, a + 0.7) * (b == null ? 1 : 1 - seg(t, b, b + 0.3));
   }
   /* 一幕里从 cue 起算的真实秒数：网页上就是 t − cue；视频里旁白比分镜长时 t 会停，循环的东西改按 clock 走 */
+  /* 一幕里从 cue 起算的秒数：网页上就是 t − cue；视频里按时间线算 cue 那一刻起过了多久（K.clipSince）。
+     不能用 clock − cue：clock 从这一幕开头算，前面几段旁白比分镜长时，到 cue 那一刻 clock 早已大于 cue（HOMIE 2026-10-22） */
   function since(t, clock, cue) {
-    return clock == null ? Math.max(0, t - cue) : Math.max(0, clock - cue);
+    return clock == null ? Math.max(0, t - cue) : Math.max(0, K.clipSince(t, cue));
   }
   function group(parent) {
     var g = svgEl('g', {});
@@ -535,50 +537,157 @@
     };
   }
 
+
+  /* ── 动效小部件：少写字，多让东西动起来（照 TWIST / HOMIE 的做法） ── */
+  /* 压在网格线、折线上的字描一圈底色 */
+  function halo(n) {
+    n.style.paintOrder = 'stroke'; n.style.stroke = C_SURFACE; n.style.strokeWidth = '3px'; n.style.strokeLinejoin = 'round';
+    return n;
+  }
+  /* 一行读法：横轴、纵轴、颜色、越大还是越小越好 */
+  function readHint(parent, x, y, str, size, w) {
+    return rich(parent, x, y, '**读法**　' + str, size || 10.5, 'demo-x-ink2', 'start', w);
+  }
+  /* 一段流向：一条虚线，几颗小点沿着走；at(秒, 起点, 终点, 是否可见)。起点终点都放在框外，小点不从字上划过 */
+  function flowSeg(parent, color, n, r, speed, noLine) {
+    var g = group(parent), ln = noLine ? null : hline(g, 0, 0, 0, 0, color, 1.2, '3 4'), dots = [];
+    for (var j = 0; j < (n || 3); j++) dots.push(dotAt(g, 0, 0, r || 3.4, color));
+    return {
+      g: g,
+      at: function (sec, a, b, vis) {
+        if (ln) setLine(ln, a[0], a[1], b[0], b[1]);
+        var tot = Math.max(1, Math.hypot(b[0] - a[0], b[1] - a[1]));
+        dots.forEach(function (c, j) {
+          var d = (((sec * (speed || 60) + j * tot / dots.length) % tot) + tot) % tot, u = d / tot;
+          moveDot(c, [a[0] + (b[0] - a[0]) * u, a[1] + (b[1] - a[1]) * u]);
+          c.style.opacity = vis === false ? 0 : Math.min(1, Math.min(d, tot - d) / 8);
+        });
+      }
+    };
+  }
+  /* 勾与叉 */
+  function tick(parent, x, y, sz, color) {
+    var p = paint(svgEl('path', { d: 'M' + x + ' ' + (y + sz * 0.5) + ' l' + sz * 0.35 + ' ' + sz * 0.38 + ' l' + sz * 0.65 + ' ' + (-sz * 0.8), fill: 'none', 'stroke-width': 3, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }), null, color || C_GOOD);
+    parent.appendChild(p);
+    return p;
+  }
+  function cross(parent, x, y, sz, color) {
+    var p = paint(svgEl('path', { d: 'M' + x + ' ' + y + ' l' + sz + ' ' + sz + ' M' + (x + sz) + ' ' + y + ' l' + (-sz) + ' ' + sz, fill: 'none', 'stroke-width': 3, 'stroke-linecap': 'round' }), null, color || C_BAD);
+    parent.appendChild(p);
+    return p;
+  }
+  /* 数字从 0 数到 v（u ∈ [0, 1]），千分位 */
+  function countTo(v, u, digits) {
+    var x = v * clamp(u, 0, 1);
+    return digits ? x.toFixed(digits) : Math.round(x).toLocaleString('en-US');
+  }
+  /* 确定性随机：第 i 个、种子 sd 的 [0, 1) 随机数（mulberry32） */
+  function rnd(i, sd) {
+    var a = (i * 2654435761 + (sd || 1) * 40503) >>> 0;
+    a = (a + 0x6d2b79f5) >>> 0;
+    var q = Math.imul(a ^ (a >>> 15), 1 | a);
+    q = (q + Math.imul(q ^ (q >>> 7), 61 | q)) ^ q;
+    return ((q ^ (q >>> 14)) >>> 0) / 4294967296;
+  }
+  /* 一排小方格：n 格、每行 cols 格，前 k 格涂色（k 可以是小数，最后一格按比例淡入） */
+  function squareGrid(parent, x, y, n, cols, sz, gap, color, off) {
+    var g = group(parent), cells = [];
+    for (var i = 0; i < n; i++) {
+      var r = paint(svgEl('rect', { x: x + (i % cols) * (sz + gap), y: y + Math.floor(i / cols) * (sz + gap), width: sz, height: sz, rx: 2 }), off || C_BORDER);
+      g.appendChild(r); cells.push(r);
+    }
+    return {
+      g: g,
+      fill: function (k, colorOf) {
+        cells.forEach(function (c, i) {
+          var on = clamp(k - i, 0, 1);
+          c.style.fill = on > 0 ? (colorOf ? colorOf(i) : color) : (off || C_BORDER);
+          c.style.opacity = on > 0 ? 0.35 + 0.65 * on : 0.55;
+        });
+      }
+    };
+  }
+
+  /* 一台静止的 G1（参考动作的第 k 帧）加上投影好的 13 个关键点；第一次 draw 时才设贴图 */
+  function poseFig(parent, name, k, sc, ox, oy, ghost) {
+    var mesh = g1Mesh(parent, name + '_ref', { ghost: ghost }), f = frame(name, k), r = f.ref.root;
+    var cam = camFor(name + '_ref', sc, ox, oy, r[0], r[1]);
+    var pts = f.ref.kp.map(function (p) { return project(p, cam); });
+    var woke = false;
+    return { pts: pts, cam: cam, wake: function () { if (!woke) { woke = true; mesh.put(r, cam, k); } } };
+  }
+  var KP_UP = [KP.torso, KP.head, KP.lelb, KP.relb, KP.lwr, KP.rwr], KP_LO = [KP.pelvis, KP.lknee, KP.rknee, KP.lank, KP.rank, KP.ltoe, KP.rtoe];
+
   /* ── scene 1: 人形缺一套采集系统（表 I） ── */
   function buildSceneProblem() {
-    var s = sceneSvg('依次出现：大模型和 VLA 靠大规模数据，双臂有 ALOHA 这类采集系统、人形没有；现有人形遥操作的三类；' +
-      '项目页里 TWIST 的操作员穿着动捕服；TWIST2 的设备：头显、手柄、两个小腿追踪器；论文表 I 的 7 项对比，只有 TWIST2 全勾');
+    var s = sceneSvg('依次出现：数据从采集系统流向大模型和 VLA，人形机器人这一格是问号；三台小 G1 标出三类遥操作各跟哪些部位；' +
+      '项目页里 TWIST 的操作员穿着动捕服，右边是「便携 × 全身控制」的示意图，右上角空着；TWIST2 的设备，示意图的右上角亮起；论文表 I 的 7 项对比，只有 TWIST2 全勾');
     s.appendChild(svgText(24, 26, '数据推动了机器人学习，人形却缺一套好用的采集系统', 'demo-x-ink2', 13.5));
     var p1 = group(s);
     chip(p1, 40, 60, 210, 'GPT-4：大语言模型', C_VIS, { size: 12.5, h: 34 });
     chip(p1, 300, 60, 210, '$\\pi_0$、$\\pi_{0.5}$：VLA', C_VIS, { size: 12.5, h: 34 });
     chip(p1, 560, 60, 210, 'ALOHA、GELLO：双臂采集', C_T2, { size: 12.5, h: 34 });
-    arrowAt(p1, 252, 77, 296, 77, C_MUTED, 2);
-    arrowAt(p1, 558, 77, 514, 77, C_MUTED, 2);
-    label(p1, 405, 122, '大规模数据 ← 好用的数据采集系统', 'demo-x-ink2', 13, 'middle');
-    rectBox(p1, 190, 160, 420, 120, C_BAD, C_SURFACE2, '6 4');
-    label(p1, 400, 200, '人形机器人：？', 'demo-x-ink', 18, 'middle');
-    label(p1, 400, 236, '还没有一个同样有效的采集框架', 'demo-x-bad', 14, 'middle');
-    label(p1, 400, 262, '论文认为这是人形没赶上这一波的主要原因', 'demo-x-mut', 11.5, 'middle');
+    var fA = flowSeg(p1, C_T2, 3, 3.6, 30), fB = flowSeg(p1, C_T2, 3, 3.6, 30);
+    label(p1, 405, 122, '好用的采集系统 → 大规模数据 → 模型', 'demo-x-ink2', 13, 'middle');
+    rectBox(p1, 190, 146, 420, 160, C_BAD, C_SURFACE2, '6 4');
+    var ghostBot = poseFig(p1, 'walk', 15, 100, 290, 298, 0.55);
+    label(p1, 470, 230, '?', 'demo-x-bad', 64, 'middle');
+    label(p1, 470, 278, '人形：还缺这样的系统', 'demo-x-bad', 13, 'middle');
     var p2 = group(s);
     var cats = [
-      ['a) 解耦控制', 'HOMIE、Mobile-TeleVision', '上身、下身分开控制', C_MUTED],
-      ['b) 部分全身', 'AMO、CLONE', '手臂和躯干协调，腿只跟根部速度', C_WARN],
-      ['c) 完整全身', 'HumanPlus、TWIST', '手臂、躯干、腿的每个关节都跟人', C_T2]
+      ['a) 解耦', 'HOMIE、Mobile-TeleVision', '上下身分开', C_MUTED],
+      ['b) 部分全身', 'AMO、CLONE', '腿只跟根部速度', C_WARN],
+      ['c) 完整全身', 'HumanPlus、TWIST', '每个关节都跟人', C_T2]
     ];
+    var figs = [];
     cats.forEach(function (c, i) {
       var x = 30 + i * 252;
-      rectBox(p2, x, 52, 236, 210, c[3], C_SURFACE2);
-      label(p2, x + 118, 84, c[0], 'demo-x-ink', 16, 'middle');
-      label(p2, x + 118, 116, c[1], 'demo-x-ink2', 12.5, 'middle');
-      rich(p2, x + 118, 160, c[2], 11.5, 'demo-x-mut', 'middle', 220);
+      rectBox(p2, x, 52, 236, 236, c[3], C_SURFACE2);
+      label(p2, x + 118, 78, c[0], 'demo-x-ink', 15, 'middle');
+      label(p2, x + 118, 98, c[1], 'demo-x-mut', 11, 'middle');
+      var pf = poseFig(p2, 'walk', 15, 120, x + 118, 268, 0.6), pts = pf.pts;
+      figs.push(pf);
+      if (i === 0) {
+        hline(p2, x + 40, pts[KP.pelvis][1] - 8, x + 196, pts[KP.pelvis][1] - 8, C_BAD, 1.6, '5 4');
+        KP_UP.forEach(function (k) { dotAt(p2, pts[k][0], pts[k][1], 4.2, C_VIS); });
+        KP_LO.forEach(function (k) { dotAt(p2, pts[k][0], pts[k][1], 4.2, C_MUTED); });
+      } else if (i === 1) {
+        KP_UP.forEach(function (k) { dotAt(p2, pts[k][0], pts[k][1], 4.2, C_JNT); });
+        arrowAt(p2, pts[KP.pelvis][0] - 10, 276, pts[KP.pelvis][0] + 52, 276, C_ROOT, 3);
+      } else {
+        KP_UP.concat(KP_LO).forEach(function (k) { dotAt(p2, pts[k][0], pts[k][1], 4.2, C_T2); });
+      }
+      label(p2, x + 118, 306, c[2], 'demo-x-ink2', 12, 'middle');
     });
-    label(p2, 400, 300, '表 I 把近期的人形遥操作分成这三类', 'demo-x-ink2', 13, 'middle');
+    legendRow(p2, 30, 336, [['跟人的关节', C_T2], ['跟速度（箭头）', C_ROOT], ['上下身分开管', C_VIS]]);
     var p3 = group(s);
     var clip1 = projClip(p3, 'twist_mocap', 30, 50, 352, 198, 'TWIST：操作员穿着动捕服（项目页视频，4×）');
-    chip(p3, 404, 64, 372, '**VR**（AMO、CLONE）：便携，但腿只跟根部速度', C_WARN, { size: 12, left: true, h: 34 });
-    label(p3, 414, 120, '只会带简单行走的移动技能，做不了动态的全身协调', 'demo-x-mut', 11);
-    chip(p3, 404, 150, 372, '**动捕**（TWIST）：完整全身，最灵活', C_T2, { size: 12, left: true, h: 34 });
-    label(p3, 414, 206, '但贵、不便携、要标定，离不开实验室', 'demo-x-bad', 11.5);
-    label(p3, 404, 250, '能不能既保留完整全身控制，又便携、能规模化？', 'demo-x-ink', 13);
+    /* 示意图：便携 × 全身控制（定性位置，按表 I 的勾） */
+    var SC = group(s), PX = 440, PY = 60, PW = 320, PH = 200;
+    rectBox(SC, PX, PY, PW, PH, C_BORDER, C_SURFACE2);
+    label(SC, PX + PW, PY + PH + 18, '便携 →', 'demo-x-mut', 11, 'end');
+    var yl = label(SC, PX - 8, PY + 8, '全身控制 →', 'demo-x-mut', 11, 'end');
+    yl.setAttribute('transform', 'rotate(-90 ' + (PX - 8) + ' ' + (PY + 8) + ')');
+    function sp(u, v) { return [PX + u * PW, PY + PH - v * PH]; }
+    var pVR = sp(0.78, 0.3), pMC = sp(0.18, 0.84), pT2 = sp(0.82, 0.84);
+    dotAt(SC, pVR[0], pVR[1], 8, C_WARN); label(SC, pVR[0] - 12, pVR[1] + 4, 'VR：AMO、CLONE', 'demo-x-ink2', 11, 'end');
+    dotAt(SC, pMC[0], pMC[1], 8, C_T2); label(SC, pMC[0] + 14, pMC[1] + 4, '动捕：TWIST', 'demo-x-ink2', 11);
+    var hole = paint(svgEl('circle', { cx: pT2[0], cy: pT2[1], r: 18, fill: 'none', 'stroke-width': 2, 'stroke-dasharray': '4 4' }), null, C_BAD);
+    SC.appendChild(hole);
+    var holeQ = label(SC, pT2[0], pT2[1] + 6, '?', 'demo-x-bad', 18, 'middle');
+    var t2dot = dotAt(SC, pT2[0], pT2[1], 10, C_VIS), t2lab = label(SC, pT2[0] - 16, pT2[1] - 16, 'TWIST2', 'demo-x-ink', 13, 'end');
+    readHint(SC, PX, PY + PH + 42, '示意：越往右越便携，越往上全身控制越完整；右上角最好', 10.5);
     var p4 = group(s);
     var fig = paperPart(p4, 'fig1', 0.405, 0.16, 0.595, 0.97, 60, 46, 150, '论文图 1（中间）');
-    chip(p4, 250, 60, 520, '**PICO 4 Ultra** 头显 + 两个手柄 + 两个绑在小腿上的追踪器（约 1000 美元）', C_VIS, { size: 11.5, left: true, h: 34 });
-    chip(p4, 250, 106, 520, '外挂的**两自由度脖子**（250 美元）+ ZED Mini 双目相机（400 美元）', C_JNT, { size: 11.5, left: true, h: 34 });
-    chip(p4, 250, 152, 520, '保留**完整全身控制**；一个人、一分钟就能架起来', C_T2, { size: 11.5, left: true, h: 34 });
-    label(p4, 250, 222, 'TWIST2：可扩展、便携、整体式的人形数据采集系统', 'demo-x-ink', 14);
-    void fig;
+    [['PICO 头显 + 手柄', 0.16], ['外挂的两自由度脖子', 0.07], ['两个小腿追踪器', 0.8]].forEach(function (c, i) {
+      var yy = 46 + fig.h * c[1], ty = 80 + i * 90;
+      hline(p4, 196, ty - 4, 214, ty - 4, C_VIS, 1.2);
+      hline(p4, 160, yy, 196, ty - 4, C_VIS, 1.2, '3 3');
+      dotAt(p4, 160, yy, 3.2, C_VIS);
+      label(p4, 218, ty, c[0], 'demo-x-ink2', 12);
+    });
+    label(p4, 218, ty0(3), '一个人、一分钟架好', 'demo-x-ink', 13);
+    function ty0(i) { return 80 + i * 90 - 10; }
     var p5 = group(s);
     label(p5, 24, 58, '论文表 I：便携与可规模化 · 整体控制', 'demo-x-ink', 13);
     var GX = 200, CW = 80, RY = 98, RH = 34;
@@ -590,22 +699,30 @@
       label(p5, 30, y + 17, r.name, last ? 'demo-x-good' : 'demo-x-ink', 13);
       label(p5, 118, y + 17, r.cat + ' · ' + r.src, 'demo-x-mut', 10.5);
       r.v.forEach(function (v, j) {
-        var n = label(p5, GX + j * CW + CW / 2, y + 18, v ? '✓' : '✗', v ? 'demo-x-good' : 'demo-x-bad', 15, 'middle');
-        cells.push({ n: n, i: i, j: j });
+        var g = group(p5), cx = GX + j * CW + CW / 2 - 8;
+        if (v) tick(g, cx, y + 6, 16, C_GOOD); else cross(g, cx + 2, y + 8, 12, C_BAD);
+        cells.push({ n: g, i: i, j: j });
       });
     });
-    label(p5, 24, 290, '以前要么为了全身控制牺牲便携（TWIST），要么为了便携牺牲全身控制（AMO、CLONE）', 'demo-x-mut', 11);
-    label(p5, 24, 312, 'Amazon FAR、Stanford、USC、UC Berkeley、CMU · arXiv 2511.02832 · ICRA 2026', 'demo-x-mut', 11);
+    readHint(p5, 24, 290, '每行一个系统、每列一项能力；绿勾有、红叉没有，全勾最好', 11);
     function draw(t, clock) {
-      var v3 = win(t, 7.0, 10.4);
+      var now = nowOf(t, clock), v1 = win(t, 0.3, 3.6), v2 = win(t, 3.6, 7.0), v3 = win(t, 7.0, 10.4), v4 = win(t, 10.4, 13.4);
+      if (v1 > 0) ghostBot.wake();
+      if (v2 > 0) figs.forEach(function (f) { f.wake(); });
+      fA.at(now, [252, 77], [296, 77], v1 > 0);
+      fB.at(now, [558, 77], [514, 77], v1 > 0);
       clip1.at(K.clipSince(t, 7.0), v3 > 0);
-      setOpacity(p1, win(t, 0.3, 3.6));
-      setOpacity(p2, win(t, 3.6, 7.0));
+      setOpacity(p1, v1);
+      setOpacity(p2, v2);
       setOpacity(p3, v3);
-      setOpacity(p4, win(t, 10.4, 13.4));
+      setOpacity(SC, win(t, 7.0, 13.4));
+      var pop = seg(t, 10.8, 11.3);
+      setOpacity(t2dot, pop); setOpacity(t2lab, pop);
+      setOpacity(holeQ, 1 - pop);
+      hole.setAttribute('r', (18 + 3 * Math.sin(now * 4) * (1 - pop)).toFixed(1));
+      setOpacity(p4, v4);
       setOpacity(p5, win(t, 13.4));
       cells.forEach(function (c) { c.n.style.opacity = seg(t, 13.8 + c.i * 0.25 + c.j * 0.04, 14.1 + c.i * 0.25 + c.j * 0.04); });
-      void clock;
     }
     return { el: s, draw: draw };
   }
@@ -613,14 +730,15 @@
   /* ── scene 2: 两层：高层给命令，底层来跟 ── */
   function buildSceneTwoLevel() {
     var s = sceneSvg('上面一条流程：高层（遥操作是人加重定向器，自主是扩散策略）产生 35 维命令，经底层的通用动作跟踪器 50 Hz 变成关节目标，' +
-      'PD 算出力矩，G1 执行；下面依次讲底层、PD、高层的两个版本、采数据再训练自主版，最后是论文图 2');
+      'PD 算出力矩，G1 执行，小点沿着箭头走；下面依次是左膝角度的命令与实际曲线、PD 像弹簧一样把关节拉向目标、高层的两个版本轮流亮起、' +
+      '采数据的格子一格格填满再去训练自主版，最后是论文图 2');
     s.appendChild(svgText(24, 26, '两层：高层只管给命令，底层只管跟', 'demo-x-ink2', 13.5));
     var dg = group(s);
     var hi = group(dg);
     rectBox(hi, 24, 64, 190, 128, C_VIS, C_SURFACE2);
     math(hi, 119, 88, '\\pi_{\\text{high}}', 17, 'middle');
-    chip(hi, 34, 104, 170, '遥操作：人 + 重定向器', C_VIS, { size: 11 });
-    chip(hi, 34, 144, 170, '自主：扩散策略', C_T2, { size: 11 });
+    var cTele = chip(hi, 34, 104, 170, '遥操作：人 + 重定向器', C_VIS, { size: 11 });
+    var cAuto = chip(hi, 34, 144, 170, '自主：扩散策略', C_T2, { size: 11 });
     var cmd = group(dg);
     rectBox(cmd, 250, 106, 120, 46, C_ROOT, C_SURFACE);
     math(cmd, 310, 125, '\\mathbf{p}_{\\text{cmd}}', 16, 'middle');
@@ -632,10 +750,7 @@
     var pd = group(dg);
     rectBox(pd, 612, 106, 64, 46, C_BORDER, C_SURFACE);
     label(pd, 644, 134, 'PD', 'demo-x-ink', 14, 'middle');
-    arrowAt(dg, 214, 129, 246, 129, C_MUTED, 2);
-    arrowAt(dg, 370, 129, 402, 129, C_MUTED, 2);
-    arrowAt(dg, 576, 129, 608, 129, C_MUTED, 2);
-    arrowAt(dg, 676, 129, 704, 129, C_MUTED, 2);
+    var flows = [[214, 246], [370, 402], [576, 608], [676, 704]].map(function () { return flowSeg(dg, C_ROOT, 2, 3, 22); });
     rich(dg, 592, 100, '$\\mathbf{q}_{\\text{tgt}}$', 11, 'demo-x-mut', 'middle');
     rich(dg, 690, 100, '$\\tau$', 11, 'demo-x-mut', 'middle');
     var bot = player(dg, 'walk', 'sim', 74, 744, 186, null);
@@ -643,41 +758,81 @@
     rich(dg, 491, 200, '本体感受 $\\mathbf{s}$', 11, 'demo-x-mut', 'middle');
     arrowAt(dg, 491, 190, 491, 170, C_MUTED, 1.6, '3 3');
     var Y = 236;
-    var p1 = group(s);
-    label(p1, 24, Y, '底层 = 一个和任务无关的通用动作跟踪器', 'demo-x-ink', 14);
-    chip(p1, 24, Y + 16, 360, '输入：命令 $\\mathbf{p}_{\\text{cmd}}$ + 本体感受 $\\mathbf{s}$', C_WARN, { size: 12, left: true, h: 32 });
-    chip(p1, 400, Y + 16, 376, '$\\mathbf{s}$：IMU 的朝向和角速度，编码器的关节角和速度', C_BORDER, { size: 11.5, left: true, h: 32 });
-    label(p1, 24, Y + 82, '跟什么都行：走路、蹲下、踢、搬东西，换任务不用换底层', 'demo-x-mut', 11.5);
+    /* p1：命令和实际：同一段走路的左膝角度（官方样例与我们的复现），光标跟着上面的机器人走 */
+    var p1 = group(s), CX = 24, CW = 470, CY = Y + 6, CH = 96;
+    rectBox(p1, CX, CY, CW, CH, C_BORDER, C_SURFACE2);
+    var W = SEQ.walk, kmax = 1.3;
+    function cpt(k, v) { return [CX + 6 + k / (W.n - 1) * (CW - 12), CY + CH - 6 - v / kmax * (CH - 12)]; }
+    var refPts = [], simPts = [];
+    for (var k = 0; k < W.n; k++) { var fk = frame('walk', k); refPts.push(cpt(k, fk.ref.dof[3])); simPts.push(cpt(k, fk.sim.dof[3])); }
+    pathLine(p1, refPts, C_REF, 2.4, '5 4');
+    pathLine(p1, simPts, C_T2, 2.4);
+    var cur = hline(p1, 0, CY + 4, 0, CY + CH - 4, C_BAD, 1.4);
+    var curDot = dotAt(p1, 0, 0, 4.5, C_T2);
+    readHint(p1, CX, CY + CH + 22, '横轴时间（4 s）、纵轴左膝角度；灰虚线是命令，绿线是机器人，越重合越好', 10.5, CW);
+    label(p1, 520, CY + 26, '底层：通用动作跟踪器', 'demo-x-ink', 14);
+    rich(p1, 520, CY + 54, '看命令 $\\mathbf{p}_{\\text{cmd}}$ 和本体感受 $\\mathbf{s}$', 12, 'demo-x-ink2');
+    label(p1, 520, CY + 80, '跟什么都行，换任务不换底层', 'demo-x-mut', 11.5);
+    /* p2：PD 像一根弹簧：目标角每 2 s 换一边，关节被拉过去（示意） */
     var p2 = group(s);
-    label(p2, 24, Y, '底层 50 Hz 输出 29 个关节目标，PD 算力矩', 'demo-x-ink', 14);
-    math(p2, 60, Y + 50, '\\tau = K_{\\mathrm{P}}\\,(\\mathbf{q}_{\\text{tgt}} - \\mathbf{q}) - K_{\\mathrm{D}}\\,\\dot{\\mathbf{q}}', 20);
-    rich(p2, 24, Y + 104, '官方代码：关节目标 = 0.5 × 动作 + 默认姿态；膝的 $K_{\\mathrm{P}}$ 150、髋 100、踝 40', 11.5, 'demo-x-mut');
+    math(p2, 24, Y + 44, '\\tau = K_{\\mathrm{P}}\\,(\\mathbf{q}_{\\text{tgt}} - \\mathbf{q}) - K_{\\mathrm{D}}\\,\\dot{\\mathbf{q}}', 20);
+    rich(p2, 24, Y + 86, '官方代码：膝的 $K_{\\mathrm{P}}$ 150、髋 100、踝 40', 11.5, 'demo-x-mut');
+    var HX = 620, HY = Y + 52, LL = 84;
+    var tgtLine = hline(p2, HX, HY, HX, HY, C_REF, 2, '5 4');
+    var link = hline(p2, HX, HY, HX, HY, C_JNT, 6);
+    dotAt(p2, HX, HY, 7, C_BORDER);
+    var tq = arrow(p2, C_BAD, 2.4);
+    var tqLab = label(p2, 0, 0, '力矩', 'demo-x-bad', 10.5, 'middle');
+    legendRow(p2, 24, Y + 118, [['目标角', C_REF], ['关节', C_JNT], ['力矩（示意）', C_BAD]]);
+    /* p3：高层的两个版本轮流亮起，吐的是同一种命令 */
     var p3 = group(s);
-    label(p3, 24, Y, '高层产生命令，有两个版本', 'demo-x-ink', 14);
-    chip(p3, 24, Y + 16, 370, '**遥操作版** = 操作员 + 动作重定向器', C_VIS, { size: 12, left: true, h: 32 });
-    chip(p3, 406, Y + 16, 370, '**自主版** = 视觉运动策略（扩散策略）', C_T2, { size: 12, left: true, h: 32 });
-    label(p3, 24, Y + 82, '两个版本吐出的是同一种 35 维命令，接的是同一个底层', 'demo-x-mut', 11.5);
+    label(p3, 24, Y + 30, '两个版本吐的是同一种 35 维命令，接的是同一个底层', 'demo-x-ink', 14);
+    var swTag = label(p3, 24, Y + 64, '', 'demo-x-ink2', 12.5);
+    /* p4：遥操作时一格格录下来，再拿去训练自主版 */
     var p4 = group(s);
-    label(p4, 24, Y, '先遥操作采数据，再训练自主版', 'demo-x-ink', 14);
-    chip(p4, 24, Y + 16, 240, '遥操作：人在环', C_VIS, { size: 12, h: 32 });
-    arrowAt(p4, 268, Y + 32, 300, Y + 32, C_MUTED, 2);
-    chip(p4, 304, Y + 16, 220, '录下 $(\\mathbf{o}, \\mathbf{s}, \\mathbf{p}_{\\text{cmd}})$', C_ROOT, { size: 12, h: 32 });
-    arrowAt(p4, 528, Y + 32, 560, Y + 32, C_MUTED, 2);
-    chip(p4, 564, Y + 16, 212, '训练扩散策略', C_T2, { size: 12, h: 32 });
-    label(p4, 24, Y + 82, '采到的命令就是自主策略的「动作」：采数据和执行一致', 'demo-x-mut', 11.5);
+    chip(p4, 24, Y + 8, 150, '遥操作', C_VIS, { size: 12.5, h: 32 });
+    chip(p4, 296, Y + 8, 210, '录下 $(\\mathbf{o}, \\mathbf{s}, \\mathbf{p}_{\\text{cmd}})$', C_ROOT, { size: 12, h: 32 });
+    chip(p4, 626, Y + 8, 150, '训练扩散策略', C_T2, { size: 12.5, h: 32 });
+    var fRec = flowSeg(p4, C_VIS, 3, 3.4, 40), fTrain = flowSeg(p4, C_T2, 3, 3.4, 40);
+    var grid = squareGrid(p4, 296, Y + 54, 40, 20, 8.5, 2, C_ROOT);
+    var gTag = label(p4, 296, Y + 94, '', 'demo-x-mut', 11);
     var p5 = group(s);
     var f2 = paperPart(p5, 'fig2', 0, 0.06, 1, 1, 30, 46, 740, '论文图 2：便携设备 → 整体全身遥操作 → 视觉运动策略');
     label(p5, 30, 46 + f2.h + 44, '可控的自由度 45 个 = 脖子 2 + 身体 29 + 手 14', 'demo-x-ink', 13);
     function draw(t, clock) {
       var now = nowOf(t, clock);
-      bot.put(now);
+      var r = bot.put(now);
       var d = 1 - seg(t, 13.4, 13.7);
       setOpacity(dg, d);
       var c = t < 3.6 ? 1 : t < 7.0 ? 2 : t < 10.4 ? 3 : 4;
       setOpacity(hi, c === 3 || c === 4 ? 1 : 0.35);
       setOpacity(lo, c === 1 || c === 2 || c === 4 ? 1 : 0.35);
       setOpacity(pd, c === 2 ? 1 : 0.35);
-      setOpacity(cmd, 1);
+      [[214, 246], [370, 402], [576, 608], [676, 704]].forEach(function (a, i) { flows[i].at(now, [a[0], 129], [a[1], 129], d > 0); });
+      /* p1 的光标 */
+      var kk = r.k, pp = simPts[kk];
+      setLine(cur, pp[0], CY + 4, pp[0], CY + CH - 4); moveDot(curDot, pp);
+      /* p2 的弹簧：二阶欠阻尼，ζ = 0.5、ωn = 6 rad/s（示意） */
+      var per = 2, u = now % (2 * per), side = u < per ? 1 : -1, tau = u % per;
+      var th1 = 0.6 * side, th0 = -th1, zeta = 0.5, wn = 6, wd = wn * Math.sqrt(1 - zeta * zeta);
+      var th = th1 + (th0 - th1) * Math.exp(-zeta * wn * tau) * (Math.cos(wd * tau) + zeta / Math.sqrt(1 - zeta * zeta) * Math.sin(wd * tau));
+      function tip(a, L) { return [HX + L * Math.sin(a), HY + L * Math.cos(a)]; }
+      var tg = tip(th1, LL + 10), lk = tip(th, LL);
+      setLine(tgtLine, HX, HY, tg[0], tg[1]); setLine(link, HX, HY, lk[0], lk[1]);
+      var err = th1 - th, ta = tip(th, LL), tb = tip(th + clamp(err, -0.9, 0.9) * 0.6, LL);
+      tq.set(ta[0], ta[1], tb[0], tb[1], 7);
+      tqLab.setAttribute('x', (tb[0] + (tb[0] > ta[0] ? 16 : -16)).toFixed(1)); tqLab.setAttribute('y', (tb[1] + 18).toFixed(1));
+      setOpacity(tqLab, Math.abs(err) > 0.12 ? 1 : 0);
+      /* p3：两个版本轮流 */
+      var alt = Math.floor(since(t, clock, 7.0) / 1.6) % 2;
+      if (c === 3) { setOpacity(cTele, alt ? 0.3 : 1); setOpacity(cAuto, alt ? 1 : 0.3); } else { setOpacity(cTele, 1); setOpacity(cAuto, 1); }
+      swTag.textContent = alt ? '现在亮的：自主（扩散策略）' : '现在亮的：遥操作（人 + 重定向器）';
+      /* p4：录数据 */
+      var g4 = since(t, clock, 10.6), filled = Math.min(40, g4 * 14);
+      grid.fill(filled);
+      gTag.textContent = '已录 ' + Math.floor(filled) + ' 段（示意）';
+      fRec.at(now, [178, Y + 24], [292, Y + 24], c === 4);
+      fTrain.at(now, [510, Y + 24], [622, Y + 24], c === 4 && filled > 8);
       setOpacity(p1, win(t, 0.3, 3.6));
       setOpacity(p2, win(t, 3.6, 7.0));
       setOpacity(p3, win(t, 7.0, 10.4));
@@ -703,10 +858,14 @@
     label(hdr, R, 58, '这一帧的 35 维命令', 'demo-x-ink', 13);
     var tag = label(hdr, R + W, 58, '', 'demo-x-mut', 10.5, 'end');
     var p1 = group(s);
-    label(p1, R, 330, '35 = 根部 6 + 关节 29；每 0.02 s 发一帧', 'demo-x-ink2', 12);
+    readHint(p1, R, 318, '上面 6 行是根部（紫字），下面 29 根柱是关节角（黄），柱子朝上为正、越长角度越大', 10.5, W);
+    label(p1, R, 344, '35 = 根部 6 + 关节 29；每 0.02 s 发一帧', 'demo-x-ink2', 12);
+    /* p2：根部 6 行闪一下：全是相对量 */
+    var rootHi = paint(svgEl('rect', { x: R - 6, y: 76 - 3, width: W + 12, height: 6 * 21 + 4, rx: 6, fill: 'none', 'stroke-width': 2.4 }), null, C_ROOT);
+    s.insertBefore(rootHi, cp.g);
     var p2 = group(s);
-    chip(p2, R, 316, W, '根部全是**相对量**：速度、角速度、高度、倾角', C_ROOT, { size: 11.5, left: true });
-    label(p2, R, 368, '没有「机器人在世界里的哪儿」→ 不依赖全局状态估计', 'demo-x-mut', 11);
+    label(p2, R, 330, '根部 6 项全是相对量：速度、角速度、高度、倾角', 'demo-x-ink', 12.5);
+    label(p2, R, 354, '不用知道机器人在世界里的哪儿 → 不依赖全局定位', 'demo-x-mut', 11.5);
     var p3 = group(s);
     rectBox(p3, R - 4, 44, W + 8, 296, C_BORDER, C_SURFACE);
     label(p3, R + 6, 64, '俯视：整段走路 13.9 s（我们在 MuJoCo 里的复现）', 'demo-x-ink', 12);
@@ -719,10 +878,14 @@
     var dRef = dotAt(p3, 0, 0, 5.5, C_REF), dRob = dotAt(p3, 0, 0, 5.5, C_T2), link = hline(p3, 0, 0, 0, 0, C_BAD, 1.6, '3 3');
     legendRow(p3, R + 6, 84, [['参考（对齐起点和朝向）', C_REF], ['官方控制器跟出来的', C_T2]]);
     var dRead = label(p3, R + W - 4, 334, '', 'demo-x-bad', 11.5, 'end');
-    label(p3, R + 6, 334, '终点差 0.99 m，中途最大 2.01 m', 'demo-x-ink2', 11);
+    label(p3, R + 6, 334, '终点相距 0.99 m，中途最大 2.01 m', 'demo-x-ink2', 11);
+    readHint(p3, R - 4, 362, '俯视：灰虚线是参考，绿线是机器人；红虚线连同一时刻的两点，越短越好', 10.5, W + 8);
+    /* p4：腿的 12 根柱框起来 */
+    var legHi = paint(svgEl('rect', { x: R - 10, y: 76 + 6 * 21, width: W * 12 / 29 + 13, height: 98, rx: 6, fill: 'none', 'stroke-width': 2.4 }), null, C_JNT);
+    s.insertBefore(legHi, cp.g);
     var p4 = group(s);
-    chip(p4, R, 316, W, '下身给 **12 个关节角**，不只给根部速度（AMO、CLONE 那样）', C_JNT, { size: 11.5, left: true });
-    label(p4, R, 368, '下身的动作控制得更准：用脚踢、蹲着够东西、跳舞', 'demo-x-mut', 11);
+    label(p4, R, 330, '下身给 12 个关节角，不只给根部速度', 'demo-x-ink', 12.5);
+    label(p4, R, 354, '用脚踢、蹲着够东西、跳舞，都靠腿的关节角', 'demo-x-mut', 11.5);
     var p5 = group(s);
     chip(p5, R, 316, 200, '根部速度 0.05 / 0.06 m/s', C_ROOT, { size: 11 });
     chip(p5, R + 210, 316, 200, '膝 2.28 / 2.21 rad', C_JNT, { size: 11 });
@@ -744,8 +907,10 @@
       setOpacity(hdr, showCmd);
       setOpacity(p1, win(t, 0.3, 3.6));
       setOpacity(p2, win(t, 3.6, 7.0));
+      setOpacity(rootHi, win(t, 3.6, 7.0) * (0.55 + 0.45 * Math.sin(now * 5)));
       setOpacity(p3, win(t, 7.0, 10.4));
       setOpacity(p4, win(t, 10.4, 13.4));
+      setOpacity(legHi, win(t, 10.4) * (t >= 13.4 ? 1 : 0.55 + 0.45 * Math.sin(now * 5)));
       setOpacity(p5, win(t, 13.4));
       var u = (since(t, clock, 7.3) % 15) / 14, i = Math.min(D.ref.length - 1, Math.floor(u * (D.ref.length - 1)));
       var a = mp(D.ref[i]), b = mp(D.rob[i]);
@@ -778,20 +943,31 @@
     var clipMj = projClip(s, 'neck_mujoco', 34, 70, 310, 174, '项目页视频：MuJoCo 里的 TWIST2 Neck');
     var R = 380, W = 396;
     var p1 = group(s);
-    label(p1, R, 64, 'Unitree G1：29 个自由度', 'demo-x-ink', 14);
-    chip(p1, R, 82, W, '腰 3 + 两条腿各 6 + 两只手臂各 7', C_JNT, { size: 12, left: true });
-    chip(p1, R, 120, W, '两只 **Dex3-1** 三指手，各 7 个自由度', C_JNT, { size: 12, left: true });
-    label(p1, R, 182, '再加脖子 2 个：可控的一共 45 个', 'demo-x-ink2', 12);
+    label(p1, R, 64, '可控的自由度：一格一个，共 45 个', 'demo-x-ink', 14);
+    var dofGrid = squareGrid(p1, R, 82, 45, 15, 22, 4, C_JNT);
+    function dofColor(i) { return i < 29 ? C_JNT : i < 43 ? C_VIS : C_T2; }
+    legendRow(p1, R, 182, [['G1 身体 29', C_JNT], ['Dex3-1 两只手 14', C_VIS], ['脖子 2', C_T2]]);
     var p2 = group(s);
-    label(p2, R, 64, '作者发现：脖子对遥操作很关键', 'demo-x-ink', 14);
-    chip(p2, R, 82, W, 'G1 原装的头不能动，视野是固定的', C_BAD, { size: 12, left: true });
-    chip(p2, R, 120, W, '长时程的任务要**主动去看**：找东西、低头看手', C_VIS, { size: 12, left: true });
-    label(p2, R, 182, '后面的用户研究：去掉脖子，采集变得非常吃力', 'demo-x-mut', 11.5);
+    label(p2, R, 64, '俯视示意：视野里的东西才亮', 'demo-x-ink', 14);
+    var fovs = [['原装的头：不能动', R + 96, false], ['加上脖子：能转头', R + 300, true]].map(function (c) {
+      var g = group(p2), cx = c[1], cy = 220;
+      var wedge = paint(svgEl('path', { d: '' }), C_VIS);
+      wedge.style.opacity = 0.18; g.appendChild(wedge);
+      dotAt(g, cx, cy, 9, C_MUTED);
+      var objs = [-1.0, 0.0, 1.05].map(function (a, j) {
+        var ox = cx + 104 * Math.sin(a), oy = cy - 104 * Math.cos(a);
+        return { a: a, d: paint(svgEl('rect', { x: ox - 9, y: oy - 9, width: 18, height: 18, rx: 4 }), C_BORDER), x: ox, y: oy, j: j };
+      });
+      objs.forEach(function (o) { g.appendChild(o.d); });
+      label(g, cx, cy + 30, c[0], 'demo-x-ink2', 12, 'middle');
+      return { wedge: wedge, objs: objs, cx: cx, cy: cy, moves: c[2] };
+    });
+    label(p2, R, 290, '长时程的任务要主动去看：找东西、低头看手', 'demo-x-mut', 11.5);
     var p3 = group(s);
     label(p3, R, 64, 'TWIST2 Neck：外挂、不拆原装的头', 'demo-x-ink', 14);
-    chip(p3, R, 82, W, '两台 Dynamixel **XC330-T288**：一台偏航、一台俯仰', C_JNT, { size: 11.5, left: true });
-    chip(p3, R, 120, W, 'U2D2 连接，机载 12 V / 5 A 供电，结构件 3D 打印', C_BORDER, { size: 11.5, left: true });
-    chip(p3, R, 158, W, '不拆头和激光雷达就能装上、卸下；参考 ToddlerBot', C_BORDER, { size: 11.5, left: true });
+    chip(p3, R, 82, W, '两台 **XC330** 舵机：偏航 + 俯仰', C_JNT, { size: 12, left: true });
+    chip(p3, R, 120, W, 'U2D2 连接 · 机载 12 V 供电 · 3D 打印', C_BORDER, { size: 12, left: true });
+    chip(p3, R, 158, W, '不拆原装的头就能装上（参考 ToddlerBot）', C_BORDER, { size: 12, left: true });
     var nk = paperPart(p3, 'fig3', 0.05, 0.05, 0.98, 0.98, R + 90, 200, 200, '论文图 3');
     void nk;
     var p4 = group(s);
@@ -799,8 +975,8 @@
     var bNeck = barRowAt(p4, R, 82, 110, '脖子', C_JNT, 18);
     var bZed = barRowAt(p4, R, 108, 110, 'ZED Mini', C_VIS, 18);
     var bPico = barRowAt(p4, R, 134, 110, 'PICO 一套', C_VIS, 18);
-    label(p4, R, 190, '两个自由度就够：日常很少用横滚', 'demo-x-ink2', 12);
-    label(p4, R, 214, '做了 MuJoCo 模型（图 4），方便仿真、统一数据', 'demo-x-mut', 11.5);
+    readHint(p4, R, 178, '条越长越贵：脖子只有 PICO 一套的四分之一', 10.5, W);
+    label(p4, R, 210, '两个自由度就够用；还有 MuJoCo 模型（图 4）', 'demo-x-ink2', 12);
     var p5 = group(s);
     var f15 = paperPart(p5, 'fig15', 0, 0, 1, 1, 30, 46, 740, '论文图 15：造好的三个 TWIST2 Neck（项目页后来写的是 4 个）');
     label(p5, 30, 46 + f15.h + 44, '作者的估计：G1 加上这个脖子，大约有人 80% 的核心功能', 'demo-x-ink', 13);
@@ -817,6 +993,14 @@
       var vc = win(t, 7.0, 10.4), vm = win(t, 10.4, 13.4);
       setOpacity(clipCad.g, vc); clipCad.at(K.clipSince(t, 7.0), vc > 0);
       setOpacity(clipMj.g, vm); clipMj.at(K.clipSince(t, 10.4), vm > 0);
+      dofGrid.fill(seg(t, 0.6, 2.6) * 45, dofColor);
+      var yawN = 1.05 * Math.sin(now * 1.1);
+      fovs.forEach(function (f) {
+        var a0 = f.moves ? yawN : 0, h = 0.5, rr = 128;
+        var pa = [f.cx + rr * Math.sin(a0 - h), f.cy - rr * Math.cos(a0 - h)], pb = [f.cx + rr * Math.sin(a0 + h), f.cy - rr * Math.cos(a0 + h)];
+        f.wedge.setAttribute('d', 'M' + f.cx + ' ' + f.cy + ' L' + pa[0].toFixed(1) + ' ' + pa[1].toFixed(1) + ' A' + rr + ' ' + rr + ' 0 0 1 ' + pb[0].toFixed(1) + ' ' + pb[1].toFixed(1) + ' Z');
+        f.objs.forEach(function (o) { o.d.style.fill = Math.abs(o.a - a0) < h ? (o.j === 1 ? C_JNT : C_T2) : C_BORDER; });
+      });
       setOpacity(p1, win(t, 0.3, 3.6));
       setOpacity(p2, win(t, 3.6, 7.0));
       setOpacity(p3, win(t, 7.0, 10.4));
@@ -830,49 +1014,105 @@
     return { el: s, draw: draw };
   }
 
+  /* 一个简笔画的人：脚底中点 (x, y)、身高 h 像素；返回身上几个位置，方便挂追踪器、头显 */
+  function stickFig(parent, x, y, h, color) {
+    var g = group(parent), u = h / 10, c = color || C_MUTED;
+    var head = [x, y - 9.2 * u], neck = [x, y - 8.3 * u], hip = [x, y - 5 * u];
+    var pts = { head: head, hip: hip, lknee: [x - 0.7 * u, y - 2.6 * u], rknee: [x + 0.7 * u, y - 2.6 * u], lfoot: [x - 0.9 * u, y], rfoot: [x + 0.9 * u, y],
+      lhand: [x - 2.2 * u, y - 4.6 * u], rhand: [x + 2.2 * u, y - 4.6 * u], lsh: [x - 1.1 * u, y - 7.9 * u], rsh: [x + 1.1 * u, y - 7.9 * u] };
+    pts.lcalf = [(pts.lknee[0] + pts.lfoot[0]) / 2, (pts.lknee[1] + pts.lfoot[1]) / 2];
+    pts.rcalf = [(pts.rknee[0] + pts.rfoot[0]) / 2, (pts.rknee[1] + pts.rfoot[1]) / 2];
+    pts.lthigh = [(pts.lknee[0] + hip[0]) / 2, (pts.lknee[1] + hip[1]) / 2];
+    pts.rthigh = [(pts.rknee[0] + hip[0]) / 2, (pts.rknee[1] + hip[1]) / 2];
+    pathLine(g, [neck, hip], c, 3);
+    pathLine(g, [pts.lsh, pts.rsh], c, 3);
+    pathLine(g, [pts.lsh, pts.lhand], c, 3); pathLine(g, [pts.rsh, pts.rhand], c, 3);
+    pathLine(g, [hip, pts.lknee, pts.lfoot], c, 3); pathLine(g, [hip, pts.rknee, pts.rfoot], c, 3);
+    g.appendChild(paint(svgEl('circle', { cx: head[0], cy: head[1], r: 0.8 * u, fill: 'none', 'stroke-width': 3 }), null, c));
+    return { g: g, pts: pts };
+  }
+
   /* ── scene 5: PICO 头显加两个追踪器 ── */
   function buildScenePico() {
-    var s = sceneSvg('左边是项目页的视频：操作员走进来、戴上头显、标定、连上机器人，一分钟就能开始；右边依次是 PICO 的配置、为什么只用两个追踪器、' +
-      '100 Hz 与免标定、和 HTC Vive Tracker 的对比、论文图 6 里 PICO 输出的人体骨架');
+    var s = sceneSvg('左边是项目页的视频：操作员走进来、戴上头显、标定、连上机器人，一分钟就能开始；右边依次是论文图 1 里的设备（引线标出头显、手柄、小腿上的追踪器）、' +
+      '两个追踪器与更多追踪器的对比、100 Hz 的动作流和一分钟的计时、HTC Vive 要在房间里架基站而 PICO 不用、论文图 6 里 PICO 输出的人体骨架');
     s.appendChild(svgText(24, 26, '不用动捕棚：PICO 头显 + 两个小腿追踪器', 'demo-x-ink2', 13.5));
     var clip = projClip(s, 'portable_setup', 24, 46, 400, 225, '项目页视频（8×）：戴头显 → 标定 → 连机器人 → 就绪');
     label(s, 24, 310, '论文图 1：从进门到装好约 1 分钟', 'demo-x-ink2', 12);
     var R = 444, W = 332;
     var p1 = group(s);
     var who = paperPart(p1, 'fig1', 0.405, 0.16, 0.595, 0.97, R, 50, 130, '论文图 1');
-    chip(p1, R + 144, 60, 188, 'PICO 4 Ultra 头显', C_VIS, { size: 11 });
-    chip(p1, R + 144, 98, 188, '两个手柄', C_VIS, { size: 11 });
-    chip(p1, R + 144, 136, 188, '两个 Motion Tracker', C_VIS, { size: 11 });
-    label(p1, R + 144, 186, '追踪器绑在两条小腿上', 'demo-x-ink2', 11.5);
-    void who;
+    [['PICO 4 Ultra 头显', 0.13, 76], ['两个手柄', 0.45, 140], ['两个追踪器（绑在小腿）', 0.8, 204]].forEach(function (c) {
+      var yy = 50 + who.h * c[1];
+      dotAt(p1, R + 96, yy, 3.4, C_VIS);
+      pathLine(p1, [[R + 96, yy], [R + 150, c[2] - 4], [R + 160, c[2] - 4]], C_VIS, 1.3, '3 3');
+      label(p1, R + 166, c[2], c[0], 'demo-x-ink2', 12);
+    });
+    /* p2：两个追踪器 vs 更多 */
     var p2 = group(s);
     label(p2, R, 64, '追踪器越多越好吗？', 'demo-x-ink', 14);
-    chip(p2, R, 82, W, 'PICO 支持更多追踪器', C_BORDER, { size: 11.5, left: true });
-    chip(p2, R, 120, W, '作者发现：**两个**的模式姿态估计更稳', C_T2, { size: 11.5, left: true });
-    label(p2, R, 182, '整套约 1000 美元，比光学动捕便宜得多', 'demo-x-ink2', 12);
+    var figA = stickFig(p2, R + 80, 236, 140, C_MUTED), figB = stickFig(p2, R + 250, 236, 140, C_MUTED);
+    var trA = ['lcalf', 'rcalf'].map(function (k) { return dotAt(p2, figA.pts[k][0], figA.pts[k][1], 6, C_T2); });
+    var trB = ['lcalf', 'rcalf', 'lthigh', 'rthigh', 'hip'].map(function (k) { return dotAt(p2, figB.pts[k][0], figB.pts[k][1], 6, C_MUTED); });
+    label(p2, R + 80, 262, '两个：更稳', 'demo-x-good', 12.5, 'middle');
+    label(p2, R + 250, 262, '更多：PICO 也支持', 'demo-x-mut', 12, 'middle');
+    label(p2, R, 292, '作者的经验 · 整套约 1000 美元', 'demo-x-ink2', 11.5);
+    /* p3：100 Hz 的动作流 + 一分钟架好 */
     var p3 = group(s);
-    label(p3, R, 64, 'XRoboToolkit 流出全身动作', 'demo-x-ink', 14);
-    var bHz = barRowAt(p3, R, 84, 96, '动作流', C_VIS, 18);
-    label(p3, R, 136, '不像动捕要繁重的标定', 'demo-x-ink2', 12);
-    label(p3, R, 158, '从进门到装好约 1 分钟', 'demo-x-ink2', 12);
+    label(p3, R, 64, 'XRoboToolkit：每秒流出 100 帧全身动作', 'demo-x-ink', 13);
+    rectBox(p3, R, 78, W, 40, C_BORDER, C_SURFACE2);
+    var ticks = [];
+    for (var q = 0; q < 50; q++) { var tk = hline(p3, 0, 86, 0, 110, C_VIS, 1.6); ticks.push(tk); }
+    label(p3, R, 134, '框里是 0.5 s：50 根竖线 = 50 帧', 'demo-x-mut', 11);
+    var CCX = R + 60, CCY = 210, CR = 42;
+    p3.appendChild(paint(svgEl('circle', { cx: CCX, cy: CCY, r: CR, fill: 'none', 'stroke-width': 3 }), null, C_BORDER));
+    var sweep = paint(svgEl('path', { d: '' }), C_T2);
+    sweep.style.opacity = 0.35; p3.appendChild(sweep);
+    var hand = hline(p3, CCX, CCY, CCX, CCY - CR, C_T2, 3);
+    label(p3, R + 120, 200, '从进门到装好约 1 分钟', 'demo-x-ink', 13);
+    label(p3, R + 120, 224, '不用繁重的标定', 'demo-x-mut', 11.5);
+    /* p4：HTC Vive 要在房间里架基站；PICO 头显自己看外面 */
     var p4 = group(s);
-    label(p4, R, 64, '对比：HTC Vive Tracker', 'demo-x-ink', 14);
-    chip(p4, R, 82, W, 'Boston Dynamics 近期的演示用它', C_BORDER, { size: 11.5, left: true });
-    chip(p4, R, 120, W, 'PICO 不用额外架**第三视角相机**', C_T2, { size: 11.5, left: true });
-    label(p4, R, 182, '所以能带到任何地方', 'demo-x-ink2', 12);
+    label(p4, R, 64, '对比 HTC Vive 追踪器', 'demo-x-ink', 14);
+    [[R, 'Vive：要在房间里架设备', true], [R + 172, 'PICO：只靠头显自己', false]].forEach(function (c) {
+      var g = group(p4), x0 = c[0];
+      rectBox(g, x0, 80, 160, 160, C_BORDER, C_SURFACE2);
+      var fg = stickFig(g, x0 + 80, 220, 110, C_MUTED);
+      if (c[2]) {
+        [[x0 + 14, 92], [x0 + 146, 92]].forEach(function (b) {
+          g.appendChild(paint(svgEl('rect', { x: b[0] - 7, y: b[1] - 7, width: 14, height: 14, rx: 2 }), C_WARN));
+          hline(g, b[0], b[1], fg.pts.head[0], fg.pts.head[1], C_WARN, 1, '2 3');
+          hline(g, b[0], b[1], fg.pts.lcalf[0], fg.pts.lcalf[1], C_WARN, 1, '2 3');
+        });
+      } else {
+        dotAt(g, fg.pts.head[0], fg.pts.head[1], 7, C_VIS);
+        [-0.5, 0.5].forEach(function (a) {
+          var hx = fg.pts.head[0], hy = fg.pts.head[1];
+          hline(g, hx, hy, hx + 44 * Math.sin(a) * 1.6, hy - 44 * Math.cos(a) * 0.6, C_VIS, 1, '2 3');
+        });
+      }
+      label(g, x0 + 80, 258, c[1], c[2] ? 'demo-x-ink2' : 'demo-x-good', 11.5, 'middle');
+    });
+    label(p4, R, 292, '不用另外架第三视角的设备，带到哪里都能用', 'demo-x-ink2', 11.5);
     var p5 = group(s);
     label(p5, R, 64, 'PICO 给的是 24 个关节的人体骨架', 'demo-x-ink', 13);
     paperPart(p5, 'fig6', 0, 0.06, 0.41, 1, R + 40, 80, 230, '论文图 6 左：VR 的人体');
     function draw(t, clock) {
+      var now = nowOf(t, clock);
       clip.at(K.clipSince(t, 0), true);
       setOpacity(p1, win(t, 0.3, 3.6));
       setOpacity(p2, win(t, 3.6, 7.0));
       setOpacity(p3, win(t, 7.0, 10.4));
       setOpacity(p4, win(t, 10.4, 13.4));
       setOpacity(p5, win(t, 13.4));
-      var g = seg(t, 7.4, 8.4);
-      bHz.set(200 * g, g > 0.95 ? '100 Hz' : '');
-      void clock;
+      trA.forEach(function (d, i) { d.setAttribute('r', (6 + 1.2 * Math.sin(now * 6 + i)).toFixed(2)); });
+      /* 100 Hz：框宽 = 0.5 s，竖线按真实时间往左走（放慢 25 倍，看得清） */
+      var sp = (W - 8) / 50, off = (now * sp * 4) % sp;
+      ticks.forEach(function (tk, q) { var x = R + 4 + q * sp + sp - off; setLine(tk, x, 86, x, 110); });
+      var g3 = clamp(since(t, clock, 7.4) / 3, 0, 1), ang = g3 * 2 * Math.PI;
+      var ex = CCX + CR * Math.sin(ang), ey = CCY - CR * Math.cos(ang);
+      setLine(hand, CCX, CCY, ex, ey);
+      sweep.setAttribute('d', g3 <= 0 ? '' : 'M' + CCX + ' ' + CCY + ' L' + CCX + ' ' + (CCY - CR) + ' A' + CR + ' ' + CR + ' 0 ' + (ang > Math.PI ? 1 : 0) + ' 1 ' + ex.toFixed(1) + ' ' + ey.toFixed(1) + ' Z');
     }
     return { el: s, draw: draw };
   }
@@ -896,14 +1136,17 @@
     var R = 364, W = 412;
     var p1 = group(s);
     label(p1, R, 64, '沿用 GMR：实时把人的姿态解成 G1 的关节角', 'demo-x-ink', 13);
-    chip(p1, R, 82, W, '第一阶段：让各连杆的**朝向**一致', C_JNT, { size: 12, left: true });
-    chip(p1, R, 120, W, '第二阶段：再精调全局的**位置**', C_VIS, { size: 12, left: true });
+    chip(p1, R, 84, 180, '① 先对齐朝向', C_JNT, { size: 12.5, h: 34 });
+    chip(p1, R + 232, 84, 180, '② 再精调位置', C_VIS, { size: 12.5, h: 34 });
+    var fStage = flowSeg(p1, C_MUTED, 3, 3.4, 40);
     paperPart(p1, 'fig6', 0.5, 0.03, 1, 1, R + 60, 168, 230, '论文图 6 右：G1 上对应的连杆');
     var p2 = group(s);
     label(p2, R, 64, 'PICO 的全局位置不准 → 改第二阶段', 'demo-x-ink', 13);
-    chip(p2, R, 82, W, '**下身**（骨盆、髋、膝、踝、脚）：位置 + 朝向', C_VIS, { size: 12, left: true });
-    chip(p2, R, 120, W, '**上身**（脊柱、肩、肘、腕、头）：只对朝向', C_JNT, { size: 12, left: true });
-    label(p2, R, 182, '人的位置先换到骨盆坐标系里再比', 'demo-x-ink2', 12);
+    dotAt(p2, R + 8, 96, 6, C_VIS);
+    label(p2, R + 22, 101, '下身：位置 + 朝向（左边的蓝点）', 'demo-x-ink2', 12.5);
+    p2.appendChild(paint(svgEl('circle', { cx: R + 8, cy: 128, r: 7, fill: 'none', 'stroke-width': 2.2 }), null, C_JNT));
+    label(p2, R + 22, 133, '上身：只对朝向（左边的黄圈）', 'demo-x-ink2', 12.5);
+    label(p2, R, 176, '人的位置先换到骨盆坐标系里再比', 'demo-x-mut', 11.5);
     var p3 = group(s);
     label(p3, R, 64, '式 8：朝向项对所有连杆，位置项只对下身的点', 'demo-x-ink', 13);
     var m8 = svgMath(R + W / 2, 120, '\\min_{\\mathbf{q}} \\sum_{i} w_i^{R} \\lVert R_i^{h} - R_i^{r}(\\mathbf{q}) \\rVert_F^2 + \\lambda_{\\text{pos}} \\sum_{k \\in \\mathcal{P}_{\\text{low}}} w_k^{p} \\lVert p_k^{h} - p_k^{r}(\\mathbf{q}) \\rVert^2', { size: 13, anchor: 'middle', w: W });
@@ -911,21 +1154,20 @@
     rich(p3, R, 182, '$\\mathcal{P}_{\\text{low}}$：脚 / 踝，可选骨盆；$p_k^{h}$ 在人的骨盆坐标系里', 11.5, 'demo-x-mut');
     var p4 = group(s);
     label(p4, R, 64, '两个好处', 'demo-x-ink', 14);
-    chip(p4, R, 82, W, '脚的位置对准：**脚更不打滑**', C_VIS, { size: 12, left: true });
-    chip(p4, R, 120, W, '上身没有位置项：全局位置跳变（「瞬移」）也没有伪影', C_JNT, { size: 12, left: true });
-    label(p4, R, 182, '上身的重定向只取决于局部的旋转', 'demo-x-ink2', 12);
+    tick(p4, R, 84, 18, C_GOOD);
+    label(p4, R + 26, 100, '脚的位置对准：脚更不打滑', 'demo-x-ink2', 12.5);
+    tick(p4, R, 120, 18, C_GOOD);
+    label(p4, R + 26, 136, '全局位置突然跳一下，上身也不受影响', 'demo-x-ink2', 12.5);
+    label(p4, R, 176, '上身只看局部的旋转', 'demo-x-mut', 11.5);
     var p5 = group(s);
     label(p5, R, 64, '官方配置 xrobot_to_g1.json（第二阶段）', 'demo-x-ink', 13);
-    label(p5, R + 210, 90, '位置', 'demo-x-mut', 11, 'middle');
-    label(p5, R + 300, 90, '朝向', 'demo-x-mut', 11, 'middle');
+    var wBars = [];
     IK_W.forEach(function (r, i) {
-      var y = 116 + i * 30;
-      label(p5, R, y, r[0], 'demo-x-ink2', 12);
-      label(p5, R + 210, y, String(r[1]), r[1] ? 'demo-x-ink' : 'demo-x-bad', 13, 'middle');
-      label(p5, R + 300, y, String(r[2]), 'demo-x-ink', 13, 'middle');
+      var y = 84 + i * 50;
+      wBars.push([barRowAt(p5, R, y, 130, r[0], C_VIS, 14, 11.5), barRowAt(p5, R, y + 18, 130, '', C_JNT, 14, 11.5), r]);
     });
-    label(p5, R, 226, 'teleop.sh 把身高设成 1.6 m：比真实身高小一点', 'demo-x-ink2', 11.5);
-    label(p5, R, 248, '注释：补 PICO 估计的偏差', 'demo-x-mut', 11);
+    readHint(p5, R, 246, '每组两根条：蓝是位置权重、黄是朝向权重，越长越重要', 10.5, W);
+    label(p5, R, 274, 'teleop.sh 把身高设成 1.6 m，补 PICO 的偏差', 'demo-x-ink2', 11.5);
     function draw(t, clock) {
       var now = nowOf(t, clock);
       var r = bot.put(now), kp = r.f.ref.kp;
@@ -933,6 +1175,12 @@
       [KP.pelvis, KP.lknee, KP.rknee].forEach(function (k, i) { moveDot(mids[i], project(kp[k], r.cam)); });
       [KP.torso, KP.lelb, KP.relb, KP.lwr, KP.rwr, KP.head].forEach(function (k, i) { var p = project(kp[k], r.cam); ups[i].setAttribute('cx', p[0].toFixed(1)); ups[i].setAttribute('cy', p[1].toFixed(1)); });
       setOpacity(ov, seg(t, 3.9, 4.4));
+      fStage.at(now, [R + 184, 101], [R + 228, 101], t < 3.9);
+      var gw = seg(t, 13.8, 14.8);
+      wBars.forEach(function (w) {
+        w[0].set(2.4 * w[2][1] * gw, gw > 0.95 ? String(w[2][1]) : '');
+        w[1].set(2.4 * w[2][2] * gw, gw > 0.95 ? String(w[2][2]) : '');
+      });
       setOpacity(p1, win(t, 0.3, 3.6));
       setOpacity(p2, win(t, 3.6, 7.0));
       setOpacity(p3, win(t, 7.0, 10.4));
@@ -957,9 +1205,17 @@
     var R = 380, W = 396;
     var p1 = group(s);
     label(p1, R, 64, '五根手指映射到三根手指，不直观', 'demo-x-ink', 14);
-    chip(p1, R, 82, W, 'Dex3-1：三根手指（拇指、中指、食指），7 个自由度', C_BORDER, { size: 11.5, left: true });
-    chip(p1, R, 120, W, '功能上更像**平行夹爪**，不像多指灵巧手', C_JNT, { size: 12, left: true });
-    label(p1, R, 182, '所以干脆当夹爪用：不估计人手的姿态', 'demo-x-ink2', 12);
+    [0, 1, 2, 3, 4].forEach(function (k) { p1.appendChild(paint(svgEl('rect', { x: R + 10 + k * 16, y: 92 + Math.abs(k - 2) * 6, width: 11, height: 48 - Math.abs(k - 2) * 6, rx: 5 }), C_MUTED)); });
+    label(p1, R + 46, 160, '人手 5 指', 'demo-x-mut', 11, 'middle');
+    arrowAt(p1, R + 104, 116, R + 160, 116, C_MUTED, 2);
+    label(p1, R + 132, 106, '?', 'demo-x-bad', 18, 'middle');
+    [0, 1, 2].forEach(function (k) { p1.appendChild(paint(svgEl('rect', { x: R + 176 + k * 18, y: 94, width: 13, height: 46, rx: 6 }), C_JNT)); });
+    label(p1, R + 202, 160, 'Dex3-1：3 指', 'demo-x-mut', 11, 'middle');
+    var jawA = paint(svgEl('rect', { x: 0, y: 96, width: 12, height: 44, rx: 3 }), C_T2), jawB = paint(svgEl('rect', { x: 0, y: 96, width: 12, height: 44, rx: 3 }), C_T2);
+    p1.appendChild(jawA); p1.appendChild(jawB);
+    hline(p1, R + 290, 92, R + 380, 92, C_T2, 4);
+    label(p1, R + 335, 160, '更像平行夹爪', 'demo-x-good', 11.5, 'middle');
+    label(p1, R, 196, '所以干脆当夹爪用，不估计人手的姿态', 'demo-x-ink2', 12);
     var p2 = group(s);
     label(p2, R, 64, '式 7：在张开、闭合两个姿态之间插值', 'demo-x-ink', 13);
     math(p2, R + W / 2, 110, '\\mathbf{q}_{\\text{hand}} = (1-\\alpha)\\,\\mathbf{q}_{\\text{open}} + \\alpha\\,\\mathbf{q}_{\\text{close}}', 17, 'middle');
@@ -970,22 +1226,30 @@
     var cPin = chip(p3, R, 120, W, '**捏**：食指收着，拇指和中指捏——叠衣服', C_VIS, { size: 12, left: true });
     label(p3, R, 182, '按任务选一套（代码里是 --pinch_mode 开关）', 'demo-x-mut', 11.5);
     var p4 = group(s);
-    label(p4, R, 64, '官方代码：α 不是读出来的，是一点点加的', 'demo-x-ink', 13);
-    chip(p4, R, 82, W, '按住扳机：每个循环 $\\alpha$ + 0.05；按住侧握键：− 0.05', C_T2, { size: 11.5, left: true });
-    chip(p4, R, 120, W, '遥操作循环 100 Hz：**0.2 s** 从全开到全闭', C_BORDER, { size: 11.5, left: true });
-    label(p4, R, 182, '松开就停在当前的 α，可以半握', 'demo-x-ink2', 12);
+    rich(p4, R, 64, '官方代码：$\\alpha$ 是按着键一点点加的', 13, 'demo-x-ink');
+    var AX = R, AY = 80, AW = W, AH = 120;
+    rectBox(p4, AX, AY, AW, AH, C_BORDER, C_SURFACE2);
+    function aOf(u) { var a = u < 0.2 ? u / 0.2 : u < 0.6 ? 1 : u < 0.8 ? 1 - (u - 0.6) / 0.2 : 0; return Math.round(a * 20) / 20; }
+    var stairs = [];
+    for (var q = 0; q <= 240; q++) { var uu = q / 200; stairs.push([AX + 8 + uu / 1.2 * (AW - 16), AY + AH - 10 - aOf(uu) * (AH - 24)]); }
+    pathLine(p4, stairs, C_T2, 2.2);
+    var aCur = hline(p4, 0, AY + 4, 0, AY + AH - 4, C_BAD, 1.4);
+    var trig = chip(p4, AX, AY + AH + 10, 120, '按住扳机', C_T2, { size: 11.5, h: 26 });
+    var grip = chip(p4, AX + 132, AY + AH + 10, 130, '按住侧握键', C_WARN, { size: 11.5, h: 26 });
+    readHint(p4, AX, AY + AH + 62, '横轴时间（1.2 s）、纵轴抓握量；每 10 ms 加或减 0.05，0.2 s 合到底', 10.5, AW);
     var p5 = group(s);
-    rich(p5, R, 64, '例：握力抓，$\\alpha = 0.5$', 13, 'demo-x-ink');
-    label(p5, R + 140, 88, '闭合', 'demo-x-mut', 10.5, 'end');
-    label(p5, R + 230, 88, '目标', 'demo-x-mut', 10.5, 'end');
-    HAND_ZH.forEach(function (n, i) {
-      var y = 110 + i * 22, half = handPose(0.5, false)[i];
-      label(p5, R, y, n, 'demo-x-ink2', 11.5);
-      label(p5, R + 140, y, sgn(f2(HAND.close[i])), 'demo-x-mut', 11.5, 'end');
-      label(p5, R + 230, y, sgn(f3(half)), 'demo-x-good', 12, 'end');
+    rich(p5, R, 64, '例：握力抓，$\\alpha = 0.5$（单位 rad）', 13, 'demo-x-ink');
+    var ZX = R + 230;
+    hline(p5, ZX, 80, ZX, 248, C_BORDER, 1);
+    var hBars = HAND_ZH.map(function (n, i) {
+      var y = 84 + i * 23, cl = HAND.close[i], half = handPose(0.5, false)[i];
+      label(p5, R, y + 13, n, 'demo-x-ink2', 11.5);
+      var bc = paint(svgEl('rect', { x: cl < 0 ? ZX + cl * 70 : ZX, y: y + 2, width: Math.abs(cl) * 70, height: 8, rx: 2 }), C_MUTED);
+      var bh = paint(svgEl('rect', { x: ZX, y: y + 11, width: 0, height: 8, rx: 2 }), C_T2);
+      p5.appendChild(bc); p5.appendChild(bh);
+      return { bh: bh, half: half };
     });
-    label(p5, R + 250, 110, '张开全是 0，', 'demo-x-mut', 11);
-    label(p5, R + 250, 132, '目标就是闭合的一半', 'demo-x-mut', 11);
+    readHint(p5, R, 270, '灰条是闭合姿态、绿条是目标；张开全是 0，所以绿条正好是灰条的一半', 10.5, W);
     function draw(t, clock) {
       var now = nowOf(t, clock), pinch, alpha;
       if (t < 7.0) { pinch = false; alpha = 0.5 - 0.5 * Math.cos(now * 1.4); }
@@ -998,6 +1262,15 @@
       aRead.setText('抓握量 $\\alpha$ = ' + f2(alpha));
       setOpacity(cPow, t >= 7.0 && t < 10.4 ? (pinch ? 0.35 : 1) : 1);
       setOpacity(cPin, t >= 7.0 && t < 10.4 ? (pinch ? 1 : 0.35) : 1);
+      var jaw = 22 * (0.5 + 0.5 * Math.cos(now * 2));
+      jawA.setAttribute('x', (R + 335 - 6 - 14 - jaw).toFixed(1)); jawB.setAttribute('x', (R + 335 - 6 + 14 + jaw).toFixed(1));
+      if (t >= 10.4 && t < 13.4) {
+        var u4 = since(t, clock, 10.6) % 1.2, cx4 = AX + 8 + u4 / 1.2 * (AW - 16);
+        setLine(aCur, cx4, AY + 4, cx4, AY + AH - 4);
+        setOpacity(trig, u4 < 0.2 ? 1 : 0.3); setOpacity(grip, u4 >= 0.6 && u4 < 0.8 ? 1 : 0.3);
+      }
+      var g5 = seg(t, 13.8, 14.8);
+      hBars.forEach(function (h) { var w = Math.abs(h.half) * 70 * g5; h.bh.setAttribute('width', w.toFixed(1)); h.bh.setAttribute('x', (h.half < 0 ? ZX - w : ZX).toFixed(1)); });
       setOpacity(p1, win(t, 0.3, 3.6));
       setOpacity(p2, win(t, 3.6, 7.0));
       setOpacity(p3, win(t, 7.0, 10.4));
@@ -1015,35 +1288,65 @@
     var clip = projClip(s, 'neck_move', 24, 46, 400, 225, '项目页视频：人的头和 TWIST2 Neck（1×）');
     var R = 444, W = 332;
     var p1 = group(s);
-    label(p1, R, 64, '只看头相对脊柱怎么转', 'demo-x-ink', 14);
-    rich(p1, R, 96, '$R_{\\text{head}}$、$R_{\\text{spine}}$：人头、脊柱在世界系的旋转', 11.5, 'demo-x-ink2', 'start', W);
-    rich(p1, R, 124, '相对旋转 $R_{\\text{rel}} = R_{\\text{spine}}^{\\top} R_{\\text{head}}$', 12.5, 'demo-x-ink', 'start', W);
-    label(p1, R, 160, '人整个身体转身时，脖子不动', 'demo-x-ink2', 12);
-    label(p1, R, 182, '只有头相对身体转，脖子才转', 'demo-x-ink2', 12);
+    label(p1, R, 64, '只看头相对脊柱转了多少（俯视示意）', 'demo-x-ink', 13);
+    var TX = R + 80, TY = 150, RX = R + 250;
+    var torso = paint(svgEl('ellipse', { cx: TX, cy: TY, rx: 46, ry: 16, fill: 'none', 'stroke-width': 3 }), null, C_MUTED);
+    p1.appendChild(torso);
+    p1.appendChild(paint(svgEl('circle', { cx: TX, cy: TY, r: 13 }), C_SURFACE2, C_MUTED));
+    var hNose = arrow(p1, C_VIS, 3), rNose = arrow(p1, C_JNT, 3);
+    label(p1, TX, 222, '人：身体 + 头', 'demo-x-mut', 11, 'middle');
+    p1.appendChild(paint(svgEl('circle', { cx: RX, cy: TY, r: 16 }), C_SURFACE2, C_JNT));
+    label(p1, RX, 222, '机器人的脖子', 'demo-x-mut', 11, 'middle');
+    var relTag = rich(p1, R, 256, '', 12.5, 'demo-x-ink');
+    var phaseTag = label(p1, R, 280, '', 'demo-x-mut', 11.5);
     var p2 = group(s);
     label(p2, R, 64, '式 10：取偏航和俯仰，直接当电机目标', 'demo-x-ink', 13);
     math(p2, R + W / 2, 108, '\\psi = \\operatorname{atan2}(r_{21}, r_{11}),\\quad \\theta = \\arcsin(-r_{31})', 15, 'middle');
     label(p2, R, 156, '例：头左转 30°、低头 20°', 'demo-x-ink2', 12);
-    rich(p2, R, 180, '$r_{11} = 0.814$，$r_{21} = 0.470$，$r_{31} = -0.342$', 11.5, 'demo-x-ink2');
-    rich(p2, R, 204, '→ $\\psi$ = 30°，$\\theta$ = 20°，原样取回', 12, 'demo-x-good');
+    label(p2, R, 182, '→ 偏航 30°、俯仰 20°，原样取回', 'demo-x-good', 12);
     var p3 = group(s);
     var f5 = paperPart(p3, 'fig5', 0, 0, 1, 1, R, 50, W, '论文图 5：低头、抬头、左转、右转');
     label(p3, R, 50 + f5.h + 40, '两个自由度就能模仿人颈的主要动作；横滚日常很少用', 'demo-x-ink2', 11);
     var p4 = group(s);
     label(p4, R, 64, '官方代码：在 PICO 的坐标系里分解，再乘 1.5', 'demo-x-ink', 12.5);
-    chip(p4, R, 82, W, '脊柱取 PICO 骨架的 Spine3（注释：Neck 和头几乎对齐）', C_BORDER, { size: 11, left: true });
     var bH = barRowAt(p4, R, 130, 92, '人：偏航', C_REF, 16);
     var bR = barRowAt(p4, R, 154, 92, '脖子：偏航', C_JNT, 16);
     var bH2 = barRowAt(p4, R, 184, 92, '人：俯仰', C_REF, 16);
     var bR2 = barRowAt(p4, R, 208, 92, '脖子：俯仰', C_JNT, 16);
-    label(p4, R, 252, '机器人的头比人转得多（neck_retarget_scale = 1.5）', 'demo-x-mut', 11);
+    readHint(p4, R, 252, '灰条是人头转的角度，黄条是脖子电机的目标：黄条是灰条的 1.5 倍', 10.5, W);
     var p5 = group(s);
-    label(p5, R, 64, '状态切换时的脖子', 'demo-x-ink', 14);
-    chip(p5, R, 82, W, '暂停：停在暂停前最后的角度', C_JNT, { size: 12, left: true });
-    chip(p5, R, 120, W, '空闲、退出：回到 0', C_BORDER, { size: 12, left: true });
-    label(p5, R, 182, '脖子的 2 个角也录进数据，和身体、手一起', 'demo-x-ink2', 12);
+    label(p5, R, 64, '状态切换时的脖子（示意）', 'demo-x-ink', 14);
+    var SX = R, SY = 82, SW = W, SH = 130;
+    rectBox(p5, SX, SY, SW, SH, C_BORDER, C_SURFACE2);
+    function sx(tt) { return SX + 6 + tt / 8 * (SW - 12); }
+    function sy(v) { return SY + SH / 2 - v / 50 * (SH / 2 - 10); }
+    [[0, 3.5, '遥操作', C_T2], [3.5, 6, '暂停', C_JNT], [6, 8, '空闲', C_MUTED]].forEach(function (z) {
+      var bd = paint(svgEl('rect', { x: sx(z[0]), y: SY + 2, width: sx(z[1]) - sx(z[0]), height: 16 }), z[3]);
+      bd.style.opacity = 0.22; p5.appendChild(bd);
+      label(p5, (sx(z[0]) + sx(z[1])) / 2, SY + 14, z[2], 'demo-x-ink2', 10.5, 'middle');
+    });
+    function humanYaw(tt) { return 26 * Math.sin(tt * 1.7); }
+    function neckYaw(tt) { return tt < 3.5 ? 1.5 * humanYaw(tt) : tt < 6 ? 1.5 * humanYaw(3.5) : tt < 6.4 ? 1.5 * humanYaw(3.5) * (1 - (tt - 6) / 0.4) : 0; }
+    var hp = [], np = [];
+    for (var q = 0; q <= 160; q++) { var tt = q / 20; hp.push([sx(tt), sy(humanYaw(tt))]); np.push([sx(tt), sy(neckYaw(tt))]); }
+    pathLine(p5, hp, C_REF, 2, '5 4');
+    pathLine(p5, np, C_JNT, 2.6);
+    var sCur = hline(p5, 0, SY + 20, 0, SY + SH - 4, C_BAD, 1.4);
+    readHint(p5, SX, SY + SH + 24, '横轴时间、纵轴偏航角；灰虚线是人头，黄线是脖子', 10.5, SW);
+    label(p5, SX, SY + SH + 50, '脖子的两个角也录进数据', 'demo-x-ink2', 12);
     function draw(t, clock) {
+      var now = nowOf(t, clock);
       clip.at(K.clipSince(t, 0), true);
+      /* p1：前 2.5 s 整个人转身（头跟着身体），后 2.5 s 只有头转 */
+      var cyc = now % 5, B, H;
+      if (cyc < 2.5) { B = 0.7 * Math.sin(cyc / 2.5 * 2 * Math.PI); H = B; } else { B = 0; H = 0.55 * Math.sin((cyc - 2.5) / 2.5 * 2 * Math.PI); }
+      torso.setAttribute('transform', 'rotate(' + (B * 180 / Math.PI).toFixed(1) + ' ' + TX + ' ' + TY + ')');
+      hNose.set(TX, TY, TX + 44 * Math.sin(H), TY - 44 * Math.cos(H), 8);
+      var rel = H - B;
+      rNose.set(RX, TY, RX + 44 * Math.sin(rel), TY - 44 * Math.cos(rel), 8);
+      relTag.setText('头相对身体：' + Math.round(rel * 180 / Math.PI) + '°　→ 脖子跟着转这么多');
+      phaseTag.textContent = cyc < 2.5 ? '整个人转身：头相对身体没动，脖子不动' : '只有头在转：脖子跟着转';
+      if (t >= 13.4) { var tt5 = since(t, clock, 13.7) % 8, cx5 = sx(tt5); setLine(sCur, cx5, SY + 20, cx5, SY + SH - 4); }
       setOpacity(p1, win(t, 0.3, 3.6));
       setOpacity(p2, win(t, 3.6, 7.0));
       setOpacity(p3, win(t, 7.0, 10.4));
@@ -1054,7 +1357,6 @@
       bR.set(30 * NECK_SCALE * k * g, g > 0.95 ? '45°' : '');
       bH2.set(20 * k * g, g > 0.95 ? '20°' : '');
       bR2.set(20 * NECK_SCALE * k * g, g > 0.95 ? '30°' : '');
-      void clock;
     }
     return { el: s, draw: draw };
   }
@@ -1071,32 +1373,49 @@
     var totalW = DATASET.reduce(function (a, d) { return a + d.n * d.w; }, 0);
     var bars2 = DATASET.map(function (d, i) { return barRowAt(L, 24, 232 + i * 26, 112, d.zh, i === 3 ? C_VIS : C_T2, 14, 10.5); });
     var share = label(L, 24, 352, '', 'demo-x-ink2', 11.5);
+    readHint(L, 24, 376, '上面按段数、下面按抽中的概率；条越长占得越多', 10.5, 340);
     var R = 384, W = 392;
     var p1 = group(s);
-    label(p1, R, 64, '不用教师—学生两阶段', 'demo-x-ink', 14);
-    chip(p1, R, 82, W, '以前（TWIST、GMT、OmniH2O）：先训特权教师，再蒸馏学生', C_BORDER, { size: 11, left: true, strike: true });
-    chip(p1, R, 120, W, 'TWIST2：**一阶段** PPO，直接训部署用的策略', C_T2, { size: 12, left: true });
-    label(p1, R, 182, '代码：价值网络看特权信息，策略只看真机拿得到的', 'demo-x-mut', 11.5);
+    label(p1, R, 64, '以前：先训教师，再蒸馏学生', 'demo-x-mut', 12.5);
+    chip(p1, R, 76, 150, '特权教师', C_BORDER, { size: 12, h: 30 });
+    chip(p1, R + 230, 76, 150, '学生', C_BORDER, { size: 12, h: 30 });
+    arrowAt(p1, R + 154, 91, R + 226, 91, C_MUTED, 1.6);
+    cross(p1, R + 386, 82, 16, C_BAD);
+    label(p1, R, 146, 'TWIST2：一阶段 PPO，直接训', 'demo-x-ink', 13);
+    chip(p1, R, 158, 150, '仿真环境', C_BORDER, { size: 12, h: 30 });
+    chip(p1, R + 230, 158, 150, '部署用的策略', C_T2, { size: 12, h: 30 });
+    var fRL = flowSeg(p1, C_T2, 3, 3.4, 40);
+    tick(p1, R + 386, 162, 20, C_GOOD);
+    label(p1, R, 222, '价值网络看特权信息，策略只看真机拿得到的', 'demo-x-mut', 11.5);
     var p2 = group(s);
-    label(p2, R, 64, '数据：约 2 万段', 'demo-x-ink', 14);
-    chip(p2, R, 82, W, 'GMR 重定向的 7k 段 + TWIST 原来的 13k 段', C_T2, { size: 12, left: true });
-    chip(p2, R, 120, W, '来源：AMASS、OMOMO、自采的动捕', C_BORDER, { size: 12, left: true });
-    label(p2, R, 182, '混在一起，策略学会全向行走', 'demo-x-ink2', 12);
+    label(p2, R, 64, '数据：约 2 万段（一格 1000 段）', 'demo-x-ink', 14);
+    var dGrid = squareGrid(p2, R, 80, 20, 10, 32, 6, C_VIS);
+    legendRow(p2, R, 172, [['GMR 重定向 7k', C_VIS], ['TWIST 原来的 13k', C_T2]]);
+    label(p2, R, 204, '来源：AMASS、OMOMO、自采的动作捕捉', 'demo-x-ink2', 12);
     var p3 = group(s);
     label(p3, R, 64, 'PICO 自己采的 73 段，很关键', 'demo-x-ink', 14);
-    chip(p3, R, 82, W, '从遥操作设备本身采一小批：缩小设备的域差', C_VIS, { size: 12, left: true });
-    chip(p3, R, 120, W, '73 段已经覆盖走、蹲、操作这些日常动作', C_BORDER, { size: 12, left: true });
-    label(p3, R, 182, '代码里权重 10：一开始抽到它的概率约 3.6%', 'demo-x-ink2', 12);
+    label(p3, R, 92, '用遥操作设备自己采一小批，缩小设备的差距', 'demo-x-ink2', 12);
+    var p3big = label(p3, R + 70, 160, '0.38%', 'demo-x-mut', 26, 'middle');
+    arrowAt(p3, R + 140, 152, R + 220, 152, C_VIS, 2.4);
+    label(p3, R + 180, 140, '权重 × 10', 'demo-x-ink2', 11.5, 'middle');
+    var p3big2 = label(p3, R + 300, 160, '3.6%', 'demo-x-good', 30, 'middle');
+    label(p3, R + 70, 186, '按段数', 'demo-x-mut', 11, 'middle');
+    label(p3, R + 300, 186, '一开始抽中的概率', 'demo-x-mut', 11, 'middle');
     var p4 = group(s);
     label(p4, R, 64, '奖励：跟踪 + 正则', 'demo-x-ink', 14);
     math(p4, R + W / 2, 112, 'r_{\\text{track}} = e^{-\\alpha \\lVert \\mathbf{p}_{\\text{cmd}} - \\mathbf{p}_{\\text{cur}} \\rVert}', 19, 'middle');
-    rich(p4, R, 160, '$\\mathbf{p}_{\\text{cur}}$：机器人实际达到的状态', 11.5, 'demo-x-ink2');
-    rich(p4, R, 184, '$r = r_{\\text{track}} + r_{\\text{reg}}$，正则比如动作变化的惩罚', 11.5, 'demo-x-ink2');
+    var EX = R, EY = 136, EW = W, EH = 110;
+    rectBox(p4, EX, EY, EW, EH, C_BORDER, C_SURFACE2);
+    function ep(e) { return [EX + 8 + e / 3 * (EW - 16), EY + EH - 8 - Math.exp(-e) * (EH - 20)]; }
+    var eps = []; for (var q = 0; q <= 60; q++) eps.push(ep(q / 20));
+    pathLine(p4, eps, C_T2, 2.4);
+    var eDot = dotAt(p4, 0, 0, 6, C_BAD);
+    readHint(p4, EX, EY + EH + 22, '横轴是跟踪误差、纵轴是奖励（示意）；误差越小越接近 1', 10.5, EW);
     var p5 = group(s);
     label(p5, R, 64, '官方代码：21 项（只画正的）', 'demo-x-ink', 13);
     var rb = REWARD.map(function (r, i) { return barRowAt(p5, R, 76 + i * 22, 118, r[0], i < 8 ? C_T2 : C_MUTED, 13, 10.5); });
-    label(p5, R, 310, '惩罚 11 项：动作变化 −0.05、关节限位 −5、绊脚 −1.25…', 'demo-x-mut', 10.5);
-    label(p5, R, 330, '跟踪的不只是命令：还有关键点位置（局部、全局）', 'demo-x-mut', 10.5);
+    readHint(p5, R, 312, '条越长权重越大；绿的是跟踪项，灰的是存活和抬脚', 10.5, W);
+    label(p5, R, 336, '另有 11 项惩罚：动作变化、关节限位、绊脚…', 'demo-x-mut', 11);
     function draw(t, clock) {
       var g = seg(t, 0.4, 1.6), max = DATASET[0].n;
       bars.forEach(function (b, i) { var d = DATASET[i]; b.set(160 * d.n / max * g, g > 0.95 ? d.n.toLocaleString('en-US') + ' 段' : ''); });
@@ -1105,12 +1424,16 @@
       share.textContent = g2 > 0.95 ? 'PICO：段数占 0.38%，按权重占 3.6%' : '';
       var g5 = seg(t, 13.8, 14.8);
       rb.forEach(function (b, i) { b.set(42 * REWARD[i][1] * g5, g5 > 0.95 ? f1(REWARD[i][1]) : ''); });
+      var now = nowOf(t, clock);
+      fRL.at(now, [R + 154, 173], [R + 226, 173], t < 3.9);
+      dGrid.fill(seg(t, 4.0, 6.0) * 20, function (i) { return i < 7 ? C_VIS : C_T2; });
+      var e4 = 1.5 + 1.4 * Math.sin(now * 1.3), ee = ep(e4);
+      moveDot(eDot, ee);
       setOpacity(p1, win(t, 0.3, 3.6));
       setOpacity(p2, win(t, 3.6, 7.0));
       setOpacity(p3, win(t, 7.0, 10.4));
       setOpacity(p4, win(t, 10.4, 13.4));
       setOpacity(p5, win(t, 13.4));
-      void clock;
     }
     return { el: s, draw: draw };
   }
@@ -1121,11 +1444,11 @@
       '右边依次是网络结构、1432 维观测、价值网络与训练规模、域随机化、这次复现的跟踪误差');
     s.appendChild(svgText(24, 26, '底层控制器：卷积历史编码器 + MLP，官方权重跟得怎么样', 'demo-x-ink2', 13.5));
     rectBox(s, 24, 40, 340, 360, C_BORDER, C_SURFACE2);
-    var refBot = player(s, 'squat', 'ref', 118, 110, 250, null, { ghost: 0.55 });
-    var simBot = player(s, 'squat', 'sim', 118, 272, 250, null);
-    label(s, 110, 272, '参考（PICO 样例）', 'demo-x-mut', 10.5, 'middle');
-    label(s, 272, 272, '官方控制器（MuJoCo）', 'demo-x-good', 10.5, 'middle');
-    var PX = 54, PY = 300, PW = 290, PH = 76;
+    var refBot = player(s, 'squat', 'ref', 118, 110, 244, null, { ghost: 0.55 });
+    var simBot = player(s, 'squat', 'sim', 118, 272, 244, null);
+    label(s, 110, 270, '参考（PICO 样例）', 'demo-x-mut', 10.5, 'middle');
+    label(s, 272, 270, '官方控制器（MuJoCo）', 'demo-x-good', 10.5, 'middle');
+    var PX = 54, PY = 294, PW = 290, PH = 58;
     hline(s, PX, PY + PH, PX + PW, PY + PH, C_BORDER, 1);
     label(s, PX, PY - 4, '骨盆高度（m）', 'demo-x-mut', 9.5);
     var zr = [], zs = [];
@@ -1134,7 +1457,8 @@
     pathLine(s, zr.map(function (z, k) { return zp(k, z); }), C_REF, 1.8, '4 3');
     pathLine(s, zs.map(function (z, k) { return zp(k, z); }), C_T2, 2.2);
     var cur = hline(s, 0, PY, 0, PY + PH, C_BAD, 1.2, '2 2');
-    label(s, PX + PW, PY + PH + 14, '4 s', 'demo-x-mut', 9.5, 'end');
+    readHint(s, 34, 372, '横轴时间（4 s）、纵轴骨盆高度', 10, 324);
+    label(s, 34, 390, '灰虚线是参考、绿线是机器人，越重合越好', 'demo-x-ink2', 10);
     var R = 384, W = 392;
     var p1 = group(s);
     label(p1, R, 64, '网络：历史压成一个向量，再进 MLP', 'demo-x-ink', 13);
@@ -1148,25 +1472,47 @@
     arrowAt(p1, R + 182, 172, R + 206, 158, C_MUTED, 1.8);
     arrowAt(p1, R + 300, 112, R + 300, 124, C_MUTED, 1.8);
     label(p1, R + 300, 196, '→ 29 个关节的动作', 'demo-x-ink2', 11.5, 'middle');
-    label(p1, R, 236, '论文：压缩历史本体感受和历史参考，提升学习效率', 'demo-x-mut', 11);
+    var netFlows = [0, 1, 2, 3].map(function () { return flowSeg(p1, C_MUTED, 2, 2.6, 18, true); });
     var p2 = group(s);
     label(p2, R, 64, '策略看到的：1432 维', 'demo-x-ink', 14);
     math(p2, R + W / 2, 108, '(35 + 92) \\times (10 + 1) + 35 = 1432', 17, 'middle');
-    label(p2, R, 152, '35：命令；92：角速度、横滚俯仰、关节角、关节速度、上一步动作', 'demo-x-ink2', 11);
-    label(p2, R, 174, '10 步历史；最后的 35 维「未来」，配置里就是当前这一帧', 'demo-x-ink2', 11);
-    label(p2, R, 196, '脚本注释写 1402，算错了；ONNX 的输入确实是 1432', 'demo-x-mut', 11);
+    var obsSeg = [[1270, '10 步历史', C_MUTED], [127, '当前', C_VIS], [35, '未来', C_ROOT]], obsRects = [];
+    var ox = R;
+    obsSeg.forEach(function (o) {
+      var w = o[0] / 1432 * W, rr = paint(svgEl('rect', { x: ox, y: 134, width: 0, height: 26, rx: 2 }), o[2]);
+      p2.appendChild(rr); obsRects.push({ r: rr, x: ox, w: w });
+      ox += w;
+    });
+    legendRow(p2, R, 184, obsSeg.map(function (o) { return [o[1] + ' ' + o[0], o[2]]; }));
+    label(p2, R, 216, '每步 127 = 命令 35 + 本体感受 92', 'demo-x-ink2', 12);
+    label(p2, R, 240, '脚本注释写 1402，算错了；ONNX 的输入确实是 1432', 'demo-x-mut', 11);
     var p3 = group(s);
     label(p3, R, 64, '价值网络看特权信息：1734 维', 'demo-x-ink', 14);
-    chip(p3, R, 82, W, '未来 20 帧参考（最远 1.9 s）、真实线速度、接触', C_BORDER, { size: 11.5, left: true });
-    chip(p3, R, 120, W, '质量、摩擦、电机强度：只在仿真里知道', C_BORDER, { size: 11.5, left: true });
-    label(p3, R, 182, '4096 个并行环境；官方权重是第 2 万次迭代', 'demo-x-ink2', 12);
+    hline(p3, R, 98, R + W, 98, C_BORDER, 1.4);
+    var fut = [];
+    for (var q = 0; q < 20; q++) fut.push(paint(svgEl('rect', { x: R + 4 + q * (W - 8) / 20, y: 88, width: 10, height: 20, rx: 2 }), C_ROOT));
+    fut.forEach(function (r) { p3.appendChild(r); });
+    label(p3, R, 126, '未来 20 帧参考（最远 1.9 s）', 'demo-x-ink2', 11.5);
+    label(p3, R + W, 126, '+ 真实线速度、接触、质量、摩擦', 'demo-x-ink2', 11.5, 'end');
+    var envGrid = squareGrid(p3, R, 146, 64, 32, 10, 2, C_T2);
+    label(p3, R, 194, '4096 个并行环境（一格 64 个）', 'demo-x-ink2', 12);
     var p4 = group(s);
     label(p4, R, 64, '域随机化（官方代码）', 'demo-x-ink', 14);
-    [['摩擦 0.6–2', '质量 ±5 kg'], ['质心 ±0.1 m', '电机强度 0.8–1.2'], ['每 8 s 推一下', '动作延迟、重力 ±0.1']].forEach(function (r, i) {
-      chip(p4, R, 82 + i * 38, 190, r[0], C_BORDER, { size: 11.5 });
-      chip(p4, R + 202, 82 + i * 38, 190, r[1], C_BORDER, { size: 11.5 });
+    var dr = [
+      ['摩擦', 0.6, 2, 0, 2.5, function (v) { return f2(v); }],
+      ['质量（kg）', -5, 5, -6, 6, function (v) { return sgn(f1(v)); }],
+      ['质心（m）', -0.1, 0.1, -0.15, 0.15, function (v) { return sgn(f2(v)); }],
+      ['电机强度', 0.8, 1.2, 0.6, 1.4, function (v) { return f2(v); }]
+    ].map(function (d, i) {
+      var y = 92 + i * 30, g = group(p4), px = function (v) { return R + 96 + (v - d[3]) / (d[4] - d[3]) * (W - 150); };
+      label(g, R, y + 4, d[0], 'demo-x-ink2', 11.5);
+      hline(g, px(d[3]), y, px(d[4]), y, C_BORDER, 1.4);
+      var band = paint(svgEl('rect', { x: px(d[1]).toFixed(1), y: y - 4, width: (px(d[2]) - px(d[1])).toFixed(1), height: 8, rx: 4 }), C_VIS);
+      band.style.opacity = 0.35; g.appendChild(band);
+      return { d: dotAt(g, px(d[1]), y, 5, C_VIS), v: label(g, R + W, y + 4, '', 'demo-x-ink', 11.5, 'end'), px: px, lo: d[1], hi: d[2], f: d[5] };
     });
-    label(p4, R, 220, '论文正文没写这些；为了上真机', 'demo-x-mut', 11);
+    readHint(p4, R, 222, '浅色带是随机范围，小点是这一回合抽到的值', 10.5, W);
+    label(p4, R, 248, '还有：每 8 s 推一下、动作延迟、重力', 'demo-x-ink2', 11.5);
     var p5 = group(s);
     label(p5, R, 64, '我们的复现：官方权重跟这段蹲下', 'demo-x-ink', 13);
     var zRef = minZ('squat', 'ref'), zSim = minZ('squat', 'sim');
@@ -1179,6 +1525,14 @@
       simBot.put(now, k);
       var p = zp(k, 0.35);
       setLine(cur, p[0], PY, p[0], PY + PH);
+      [[R + 182, 96, R + 206, 96], [R + 182, 134, R + 206, 146], [R + 182, 172, R + 206, 158], [R + 300, 112, R + 300, 124]].forEach(function (a, i) { netFlows[i].at(now, [a[0], a[1]], [a[2], a[3]], t < 3.9); });
+      var g2 = seg(t, 4.0, 5.2), acc = 0;
+      obsRects.forEach(function (o) { o.r.setAttribute('width', (o.w * clamp(g2 * 1432 / 1270 - acc, 0, 1)).toFixed(1)); acc += o.w / W * 1432 / 1270; });
+      var g3 = seg(t, 7.4, 8.4);
+      fut.forEach(function (r, q) { r.style.opacity = 0.2 + 0.8 * clamp(g3 * 20 - q, 0, 1); });
+      envGrid.fill(seg(t, 8.0, 9.6) * 64);
+      var kk = Math.floor(Math.max(0, since(t, clock, 10.4)) / 0.7);
+      dr.forEach(function (d, i) { var v = d.lo + (d.hi - d.lo) * rnd(kk, i + 3); moveDot(d.d, [d.px(v), 92 + i * 30]); d.v.textContent = d.f(v); });
       setOpacity(p1, win(t, 0.3, 3.6));
       setOpacity(p2, win(t, 3.6, 7.0));
       setOpacity(p3, win(t, 7.0, 10.4));
@@ -1238,26 +1592,33 @@
     }
     var Y = 318, W = 432;
     var p1 = group(s);
-    label(p1, R, Y, '动作这条路', 'demo-x-ink', 13);
-    label(p1, R, Y + 24, 'PICO 的全身动作 → 重定向成 35 维命令 → 经 Redis 发给底层', 'demo-x-ink2', 11.5);
-    label(p1, R, Y + 46, '人怎么动，机器人就怎么动', 'demo-x-mut', 11);
+    label(p1, R, Y, '动作这条路（上面亮着的箭头）', 'demo-x-ink', 13);
+    label(p1, R, Y + 26, 'PICO → 重定向成 35 维命令 → Redis → 底层', 'demo-x-ink2', 12);
     var p2 = group(s);
-    label(p2, R, Y, '画面这条路', 'demo-x-ink', 13);
-    label(p2, R, Y + 24, 'ZED Mini 的双目画面 → GStreamer（H.265）→ 头显', 'demo-x-ink2', 11.5);
-    label(p2, R, Y + 46, '同时 JPEG 经 ZMQ → 录数据的进程', 'demo-x-ink2', 11.5);
+    label(p2, R, Y, '画面这条路（上面亮着的箭头）', 'demo-x-ink', 13);
+    label(p2, R, Y + 26, '双目画面 → 头显；同时另存一份去录数据', 'demo-x-ink2', 12);
     var p3 = group(s);
-    label(p3, R, Y, '立体视觉：操作员有深度感', 'demo-x-ink', 13);
-    label(p3, R, Y + 24, 'XRoboToolkit 的着色器调瞳距，焦点放在约 3.3 英尺（约 1 m）', 'demo-x-ink2', 11.5);
-    label(p3, R, Y + 46, '论文图 8：机器人的画面浮在视野中央', 'demo-x-mut', 11);
+    label(p3, R, Y, '立体视觉：两只眼看到的画面略有不同', 'demo-x-ink', 13);
+    var eyes = [[R + 20, Y + 20], [R + 20, Y + 52]];
+    eyes.forEach(function (e) { p3.appendChild(paint(svgEl('ellipse', { cx: e[0], cy: e[1], rx: 11, ry: 7, fill: 'none', 'stroke-width': 2 }), null, C_VIS)); dotAt(p3, e[0] + 3, e[1], 3, C_VIS); });
+    var focus = dotAt(p3, R + 250, Y + 36, 6, C_JNT);
+    var rayA = hline(p3, R + 32, Y + 20, R + 250, Y + 36, C_VIS, 1.2, '4 3'), rayB = hline(p3, R + 32, Y + 52, R + 250, Y + 36, C_VIS, 1.2, '4 3');
+    label(p3, R + 266, Y + 34, '焦点约 1 m', 'demo-x-ink2', 12);
+    label(p3, R + 266, Y + 54, '→ 有深度感', 'demo-x-good', 12);
     var p4 = group(s);
     label(p4, R, Y, '延迟', 'demo-x-ink', 13);
     var bT2 = barRowAt(p4, R, Y + 12, 84, 'TWIST2', C_T2, 16);
     var bT1 = barRowAt(p4, R, Y + 36, 84, 'TWIST', C_BAD, 16);
-    label(p4, R, Y + 80, '玩具：手以 0.5 m/s 移动，落后 5 cm 对 25 cm', 'demo-x-mut', 11);
+    readHint(p4, R, Y + 80, '条越短延迟越低', 10.5, W);
     var p5 = group(s);
     label(p5, R, Y, '官方代码里的频率', 'demo-x-ink', 13);
-    label(p5, R, Y + 24, '遥操作循环 100 Hz · 底层策略 50 Hz · 录数据 30 Hz', 'demo-x-ink2', 11.5);
-    label(p5, R, Y + 46, '头显里两种模式：第一视角 / 透视（看真实的机器人）', 'demo-x-mut', 11);
+    var hzRows = [['遥操作 100 Hz', 100, C_VIS], ['底层 50 Hz', 50, C_WARN], ['录数据 30 Hz', 30, C_T2]].map(function (h, r) {
+      var y = Y + 14 + r * 20, g = group(p5), tk = [];
+      label(g, R, y + 11, h[0], 'demo-x-ink2', 11);
+      for (var q = 0; q < Math.round(h[1] * 0.2) + 1; q++) tk.push(hline(g, 0, y, 0, y + 14, h[2], 1.6));
+      return { tk: tk, hz: h[1], y: y };
+    });
+    readHint(p5, R, Y + 86, '每根竖线是一帧；同样 0.2 s 里，越密频率越高', 10.5, W);
     function draw(t, clock) {
       var now = nowOf(t, clock), vp = win(t, 13.4), ve = 1 - seg(t, 13.4, 13.7);
       setOpacity(clipE.g, ve); clipE.at(K.clipSince(t, 0), ve > 0);
@@ -1268,6 +1629,10 @@
         var on = !focus || (focus === 'act' && e.kind === 'act') || (focus === 'img' && e.kind === 'img') || (focus === 'imgrec' && e.kind !== 'act');
         setOpacity(e.g, on ? 1 : 0.25);
         moveDot(e.dot, along(e.pts, ((now * 1.6 + i * 0.37) % 1)));
+      });
+      hzRows.forEach(function (h) {
+        var x0 = R + 110, w0 = W - 120, dt = 1 / h.hz, off = (now * 0.25) % dt;
+        h.tk.forEach(function (tk, q) { var x = x0 + ((q * dt + dt - off) / 0.2) * w0; setLine(tk, x, h.y, x, h.y + 14); tk.style.opacity = x <= x0 + w0 ? 1 : 0; });
       });
       setOpacity(p1, win(t, 0.3, 3.6));
       setOpacity(p2, win(t, 3.6, 7.0));
@@ -1296,15 +1661,20 @@
     var R = 388, W = 388;
     var p1 = group(s);
     label(p1, R, 64, '以前要几个人？', 'demo-x-ink', 14);
-    [['AMO、Mobile-TeleVision', '2 人：一个管上身、一个管下身'], ['TWIST、CLONE', '1 人遥操作 + 1 人管开始和结束'], ['TWIST2', '1 人，不用帮手']].forEach(function (r, i) {
-      chip(p1, R, 82 + i * 40, W, '**' + r[0] + '**：' + r[1], i === 2 ? C_T2 : C_BORDER, { size: 11.5, left: true, h: 32 });
+    [['AMO、Mobile-TeleVision', [C_VIS, C_VIS], '上身、下身各一人'], ['TWIST、CLONE', [C_VIS, C_MUTED], '另一人管开始和结束'], ['TWIST2', [C_T2], '一个人就够']].forEach(function (r, i) {
+      var y = 100 + i * 62;
+      label(p1, R, y, r[0], i === 2 ? 'demo-x-good' : 'demo-x-ink', 13);
+      label(p1, R, y + 22, r[2], 'demo-x-mut', 11);
+      r[1].forEach(function (c, k) { stickFig(p1, R + 250 + k * 46, y + 26, 50, c); });
     });
-    label(p1, R, 220, '多数工作只展示能力，没说清怎么开始、暂停、结束', 'demo-x-mut', 11);
     var p2 = group(s);
-    label(p2, R, 64, '手柄当控制中心（图 9）', 'demo-x-ink', 14);
-    chip(p2, R, 82, W, '开始 / 结束**录数据**', C_T2, { size: 12, left: true });
-    chip(p2, R, 120, W, '开始 / 结束**遥操作**', C_VIS, { size: 12, left: true });
-    chip(p2, R, 158, W, '手的**合 / 开**（扳机 / 侧握键）', C_JNT, { size: 12, left: true });
+    label(p2, R, 64, '手柄当控制中心（左边图 9 里框出来的键）', 'demo-x-ink', 13);
+    var keyTags = [['开始 / 结束录数据', C_T2], ['开始 / 结束遥操作', C_VIS], ['手的合与开', C_JNT]].map(function (k, i) {
+      return chip(p2, R, 86 + i * 44, 260, k[0], k[1], { size: 13, left: true, h: 34 });
+    });
+    var figHi = paint(svgEl('rect', { x: 24, y: 46, width: 10, height: 10, rx: 6, fill: 'none', 'stroke-width': 3 }), null, C_T2);
+    p2.appendChild(figHi);
+    var FIGR = [[0, 0.33, C_T2], [0.33, 0.56, C_VIS], [0.56, 1, C_JNT]];
     var p3 = group(s);
     label(p3, R, 64, '官方代码的按键（TELEOP.md）', 'demo-x-ink', 13);
     [['右手 A', '空闲 / 遥操作 / 暂停之间切换'], ['左手 X', '退出，插值回默认姿态'], ['左手 Y', '开始 / 停止录一段（语音提示）'], ['左摇杆按下', '急停：直接结束底层进程']].forEach(function (r, i) {
@@ -1320,7 +1690,7 @@
     label(p4, GX, GY + GH + 16, '暂停', 'demo-x-mut', 10);
     label(p4, GX + GW * 0.4, GY + GH + 16, '恢复', 'demo-x-mut', 10);
     label(p4, GX + GW * 0.62, GY + GH + 16, '1 s 线性插值', 'demo-x-good', 10);
-    label(p4, R, 246, '人在暂停时换了姿势，恢复时也不会让机器人猛地一跳', 'demo-x-mut', 11);
+    readHint(p4, R, 248, '横轴时间、纵轴关节目标；灰虚线是人，绿线是发给机器人的，越平滑越安全', 10.5, W);
     var p5 = group(s);
     label(p5, R, 64, '采完：切段、去掉空闲和失败', 'demo-x-ink', 13);
     var segs = [[0, 0.06, 'idle'], [0.06, 0.24, 'ok'], [0.24, 0.29, 'idle'], [0.29, 0.45, 'ok'], [0.45, 0.55, 'fail'], [0.55, 0.72, 'ok'], [0.72, 0.78, 'idle'], [0.78, 0.95, 'ok'], [0.95, 1, 'idle']];
@@ -1329,11 +1699,15 @@
       p5.appendChild(r);
       return { r: r, kind: sg[2] };
     });
-    label(p5, R, 140, '一段连续录像 → 后处理界面切成每次完成一个任务的一段', 'demo-x-ink2', 11.5);
-    legendRow(p5, R, 166, [['示范', C_T2], ['失败', C_BAD], ['空闲', C_MUTED]]);
+    legendRow(p5, R, 144, [['示范', C_T2], ['失败', C_BAD], ['空闲', C_MUTED]]);
+    readHint(p5, R, 172, '一条是一段连续录像（示意）；只留下绿的，红的和灰的切掉', 10.5, W);
     function draw(t, clock) {
       var now = nowOf(t, clock), cyc = now % 6, state = cyc < 1 ? 0 : cyc < 4 ? 1 : cyc < 5 ? 2 : 1;
       st.forEach(function (c, i) { setOpacity(c, i === state ? 1 : 0.35); });
+      var kk2 = Math.floor(Math.max(0, since(t, clock, 3.9)) / 1.2) % 3, fr = FIGR[kk2];
+      figHi.setAttribute('x', (24 + fr[0] * 340 + 2).toFixed(1)); figHi.setAttribute('width', ((fr[1] - fr[0]) * 340 - 4).toFixed(1));
+      figHi.setAttribute('y', 48); figHi.setAttribute('height', (fig.h - 4).toFixed(1)); figHi.style.stroke = fr[2];
+      keyTags.forEach(function (k, i) { setOpacity(k, i === kk2 ? 1 : 0.35); });
       setOpacity(p1, win(t, 0.3, 3.6));
       setOpacity(p2, win(t, 3.6, 7.0));
       setOpacity(p3, win(t, 7.0, 10.4));
@@ -1365,25 +1739,33 @@
     var R = 444, W = 332;
     var p1 = group(s);
     label(p1, R, 64, '叠毛巾（图 10 上）', 'demo-x-ink', 14);
-    ['看到毛巾，拉到面前', '抓起来抖开', '捏住两个角，对折', '再折成三折或四折，压平', '整齐地放到左手边'].forEach(function (x, i) {
-      label(p1, R, 94 + i * 24, (i + 1) + '. ' + x, 'demo-x-ink2', 12);
+    var steps1 = ['看到毛巾，拉到面前', '抓起来抖开', '捏住两个角，对折', '再折一次，压平', '整齐地放到左手边'].map(function (x, i) {
+      return chip(p1, R, 80 + i * 34, W, (i + 1) + '　' + x, C_T2, { size: 12, left: true, h: 28 });
     });
-    label(p1, R, 230, '要精细地控制手腕和手、主动看、全身去够', 'demo-x-mut', 11);
     var p2 = group(s);
     label(p2, R, 64, '能连续叠几条？', 'demo-x-ink', 14);
-    chip(p2, R, 82, W, '随机放在桌上的 **3 条**毛巾，连着叠完', C_T2, { size: 12, left: true });
-    chip(p2, R, 120, W, '瓶颈在电机：比如**电机过热**', C_BAD, { size: 12, left: true });
-    label(p2, R, 182, '不是遥操作系统本身', 'demo-x-ink2', 12);
+    var towels = [0, 1, 2].map(function (k) {
+      var g = group(p2);
+      var r = paint(svgEl('rect', { x: R + 10 + k * 90, y: 90, width: 70, height: 50, rx: 6 }), C_BORDER);
+      g.appendChild(r);
+      var tk = tick(g, R + 32 + k * 90, 104, 24, C_SURFACE);
+      return { r: r, tk: tk };
+    });
+    label(p2, R, 164, '随机放的 3 条毛巾，连着叠完', 'demo-x-ink2', 12.5);
+    var therm = group(p2);
+    rectBox(therm, R + 10, 186, 160, 18, C_BORDER, C_SURFACE2);
+    var heat = hbar(therm, R + 11, 187, 16, C_BAD);
+    label(therm, R + 182, 200, '瓶颈：电机过热', 'demo-x-bad', 12);
     var p3 = group(s);
     label(p3, R, 64, '搬篮子穿过门（图 10 下）', 'demo-x-ink', 14);
-    ['调整脚的位置', '弯腰捡起左边的篮子，再捡右边的', '篮子是随手放的：先靠主动视觉找到它'].forEach(function (x, i) {
-      label(p3, R, 94 + i * 24, (i + 1) + '. ' + x, 'demo-x-ink2', 12);
+    var steps3 = ['挪动脚步', '弯腰捡起左边的篮子', '再捡右边的', '篮子随手放：靠主动视觉找'].map(function (x, i) {
+      return chip(p3, R, 80 + i * 34, W, (i + 1) + '　' + x, C_VIS, { size: 12, left: true, h: 28 });
     });
     var p4 = group(s);
     label(p4, R, 64, '推门、走过门、放到架子上', 'demo-x-ink', 14);
-    chip(p4, R, 82, W, '用手臂推开门，走过去，轻放到架子上', C_BORDER, { size: 12, left: true });
-    chip(p4, R, 120, W, '所有的走动都靠操作员**自己的下身动作**', C_JNT, { size: 12, left: true });
-    label(p4, R, 182, '不用摇杆给速度：一个人全包', 'demo-x-ink2', 12);
+    tick(p4, R, 84, 18, C_GOOD); label(p4, R + 26, 100, '推开门、走过去、放到架子上', 'demo-x-ink2', 12.5);
+    tick(p4, R, 120, 18, C_GOOD); label(p4, R + 26, 136, '走动全靠操作员自己的腿', 'demo-x-ink2', 12.5);
+    cross(p4, R + 2, 160, 14, C_BAD); label(p4, R + 26, 172, '不用摇杆给速度', 'demo-x-mut', 12);
     var p5 = group(s);
     label(p5, R, 64, '论文的观察：两样是关键', 'demo-x-ink', 14);
     chip(p5, R, 82, W, '① 第一视角的**主动感知**', C_VIS, { size: 12, left: true });
@@ -1397,12 +1779,17 @@
       setOpacity(cFoot.g, v5 * (foot ? 1 : 0)); cFoot.at(s5 % 18.9, v5 > 0 && foot);
       setOpacity(cBrick.g, v5 * (foot ? 0 : 1)); cBrick.at(Math.max(0, s5 % 18.9 - CLIP_DUR.football), v5 > 0 && !foot);
       tagL.textContent = t < 7.0 ? '1 / 2　叠毛巾' : t < 13.4 ? '2 / 2　搬篮子穿过门' : (foot ? '项目页还有：踢足球' : '项目页还有：从地上捡砖');
+      var now = nowOf(t, clock), hi1 = Math.floor(now / 1.1) % 5, hi3 = Math.floor(now / 1.1) % 4;
+      steps1.forEach(function (c, i) { setOpacity(c, i === hi1 ? 1 : 0.35); });
+      steps3.forEach(function (c, i) { setOpacity(c, i === hi3 ? 1 : 0.35); });
+      var g2 = since(t, clock, 3.9);
+      towels.forEach(function (tw, k) { var on = g2 > 0.6 + k * 0.8; tw.r.style.fill = on ? C_T2 : C_BORDER; setOpacity(tw.tk, on ? 1 : 0); });
+      setW(heat, 158 * clamp(g2 / 2.8, 0, 1));
       setOpacity(p1, win(t, 0.3, 3.6));
       setOpacity(p2, win(t, 3.6, 7.0));
       setOpacity(p3, win(t, 7.0, 10.4));
       setOpacity(p4, win(t, 10.4, 13.4));
       setOpacity(p5, win(t, 13.4));
-      void clock;
     }
     return { el: s, draw: draw };
   }
@@ -1416,20 +1803,22 @@
     var R = 444, W = 332;
     var p1 = group(s);
     label(p1, R, 64, '双臂取放', 'demo-x-ink', 14);
-    var b1 = barRowAt(p1, R, 82, 70, '时长', C_BORDER, 18);
-    var b2 = barRowAt(p1, R, 110, 70, '条数', C_T2, 18);
-    label(p1, R, 170, '成功率 100%，平均每条 11 s', 'demo-x-ink2', 12);
+    var gd1 = squareGrid(p1, R, 78, 98, 14, 18, 4, C_T2);
+    var cnt1 = label(p1, R + W, 64, '', 'demo-x-good', 13, 'end');
+    readHint(p1, R, 252, '一格一条示范；18.5 分钟采满 98 格', 10.5, W);
+    label(p1, R, 276, '成功率 100%，平均每条 11 s', 'demo-x-ink2', 12);
     var p2 = group(s);
     label(p2, R, 64, '移动取放（要走过去）', 'demo-x-ink', 14);
-    var b3 = barRowAt(p2, R, 82, 70, '时长', C_BORDER, 18);
-    var b4 = barRowAt(p2, R, 110, 70, '条数', C_T2, 18);
-    label(p2, R, 170, '成功率 100%，平均每条 25 s', 'demo-x-ink2', 12);
+    var gd2 = squareGrid(p2, R, 78, 46, 14, 18, 4, C_VIS);
+    var cnt2 = label(p2, R + W, 64, '', 'demo-x-ink', 13, 'end');
+    readHint(p2, R, 252, '一格一条示范；19.5 分钟采了 46 格', 10.5, W);
+    label(p2, R, 276, '成功率 100%，平均每条 25 s', 'demo-x-ink2', 12);
     var p3 = group(s);
     label(p3, R, 64, '换算成每分钟几条', 'demo-x-ink', 14);
     var b5 = barRowAt(p3, R, 82, 86, '双臂取放', C_T2, 18);
     var b6 = barRowAt(p3, R, 110, 86, '移动取放', C_T2, 18);
-    rich(p3, R, 170, '$18.5 \\times 60 / 98 = 11.3$ s 一条', 12, 'demo-x-ink2');
-    rich(p3, R, 194, '$19.5 \\times 60 / 46 = 25.4$ s 一条', 12, 'demo-x-ink2');
+    readHint(p3, R, 156, '条越长，一分钟采得越多', 10.5, W);
+    label(p3, R, 184, '每条：11.3 s 对 25.4 s，要走过去就慢一倍多', 'demo-x-ink2', 12);
     var p4 = group(s);
     label(p4, R, 64, '几处说法不一样（以表 II 为准）', 'demo-x-ink', 13);
     [['摘要', '15 分钟 100 条'], ['引言', '20 分钟约 100 条'], ['图 1', '15～20 分钟 100 条'], ['表 II', '18.5 分钟 98 条'], ['项目页', '15 分钟 128 条']].forEach(function (r, i) {
@@ -1438,16 +1827,16 @@
     });
     var p5 = group(s);
     label(p5, R, 64, '一个人、20 分钟、成功率 100%', 'demo-x-ink', 14);
-    chip(p5, R, 82, W, '专家操作员**连续**采，中途不用别人帮忙', C_T2, { size: 12, left: true });
-    chip(p5, R, 120, W, '采完再用后处理界面切段、去掉空闲', C_BORDER, { size: 12, left: true });
-    label(p5, R, 182, '新手能多快？下一张表', 'demo-x-ink2', 12);
+    stickFig(p5, R + 40, 200, 110, C_T2);
+    label(p5, R + 100, 110, '专家一个人连续采', 'demo-x-ink2', 12.5);
+    label(p5, R + 100, 136, '中途不用别人帮忙', 'demo-x-ink2', 12.5);
+    label(p5, R + 100, 176, '新手能多快？看下一张表', 'demo-x-mut', 11.5);
     function draw(t, clock) {
       clip.at(K.clipSince(t, 0), true);
       var g1 = seg(t, 0.8, 1.8), g2 = seg(t, 4.0, 5.0), g3 = seg(t, 7.4, 8.4);
-      b1.set(9 * TABLE2[0].min * g1, g1 > 0.95 ? '18.5 分钟' : '');
-      b2.set(1.7 * TABLE2[0].n * g1, g1 > 0.95 ? '98 条' : '');
-      b3.set(9 * TABLE2[1].min * g2, g2 > 0.95 ? '19.5 分钟' : '');
-      b4.set(1.7 * TABLE2[1].n * g2, g2 > 0.95 ? '46 条' : '');
+      var u1 = seg(t, 0.8, 3.2), u2 = seg(t, 4.0, 6.4);
+      gd1.fill(98 * u1); cnt1.textContent = Math.round(98 * u1) + ' 条 · ' + f1(18.5 * u1) + ' 分钟';
+      gd2.fill(46 * u2); cnt2.textContent = Math.round(46 * u2) + ' 条 · ' + f1(19.5 * u2) + ' 分钟';
       b5.set(30 * TABLE2[0].n / TABLE2[0].min * g3, g3 > 0.95 ? f1(TABLE2[0].n / TABLE2[0].min) + ' 条' : '');
       b6.set(30 * TABLE2[1].n / TABLE2[1].min * g3, g3 > 0.95 ? f1(TABLE2[1].n / TABLE2[1].min) + ' 条' : '');
       setOpacity(p1, win(t, 0.3, 3.6));
@@ -1467,11 +1856,14 @@
     s.appendChild(svgText(24, 26, '表 III：采 10 条示范，拿掉哪一样都更难', 'demo-x-ink2', 13.5));
     var L1 = group(s);
     label(L1, 24, 64, '用户研究', 'demo-x-ink', 14);
-    chip(L1, 24, 82, 250, '**专家**：用这套系统采过很多数据', C_T2, { size: 11.5, left: true, h: 32 });
-    chip(L1, 24, 124, 250, '**新手**：测试时第一次用', C_VIS, { size: 11.5, left: true, h: 32 });
-    label(L1, 24, 190, '任务：采 10 条成功的示范', 'demo-x-ink2', 12);
-    label(L1, 24, 214, '新手先用完整系统，再逐个拿掉功能', 'demo-x-ink2', 12);
-    label(L1, 24, 236, '（越用越熟，这样拆开每个部件的作用）', 'demo-x-mut', 11);
+    var who = [['专家：采过很多数据', C_T2], ['新手：第一次用', C_VIS]].map(function (w, i) {
+      var y = 84 + i * 84;
+      stickFig(L1, 44, y + 62, 60, w[1]);
+      label(L1, 80, y + 12, w[0], 'demo-x-ink2', 12);
+      return squareGrid(L1, 80, y + 24, 10, 10, 18, 4, w[1]);
+    });
+    label(L1, 24, 270, '各采 10 条成功的示范', 'demo-x-ink2', 12);
+    label(L1, 24, 294, '新手先用完整系统，再逐个拿掉一样', 'demo-x-mut', 11.5);
     var PAN = [[0.006, 0.288], [0.296, 0.578], [0.586, 0.994]];
     var figs = PAN.map(function (u, i) {
       var g = group(s);
@@ -1489,8 +1881,9 @@
       return { g: g, b: b, v: v, sub: sub, r: r };
     });
     var cap = group(s);
-    var capT = label(cap, BX, 340, '', 'demo-x-ink2', 12);
-    var capT2 = label(cap, BX, 362, '', 'demo-x-mut', 11);
+    readHint(s, BX, 336, '条越短越快；小字是成功次数，和新手、专家各自的用时', 10.5, 460);
+    var capT = label(cap, BX, 362, '', 'demo-x-ink2', 12);
+    var capT2 = label(cap, BX, 384, '', 'demo-x-mut', 11);
     var p5 = group(s);
     chip(p5, 24, 82, 270, '主动的第一视角**立体视觉**是必须的', C_T2, { size: 12, left: true, h: 34 });
     label(p5, 24, 150, '去掉立体：多花 45% 的时间', 'demo-x-ink2', 12);
@@ -1505,6 +1898,8 @@
     ];
     function draw(t, clock) {
       var c = t < 3.6 ? 0 : t < 7.0 ? 1 : t < 10.4 ? 2 : t < 13.4 ? 3 : 4;
+      var gw = seg(t, 0.8, 3.0) * 10;
+      who.forEach(function (g) { g.fill(gw); });
       setOpacity(L1, win(t, 0.3, 3.6));
       figs.forEach(function (g, i) { setOpacity(g, win(t, 3.6 + 3.4 * i, i === 2 ? 13.4 : 7.0 + 3.4 * i)); });
       setOpacity(p5, win(t, 13.4));
@@ -1543,25 +1938,49 @@
     arrowAt(flow, 194, 108, 232, 92, C_MUTED, 1.8);
     arrowAt(flow, 394, 86, 432, 86, C_MUTED, 1.8);
     arrowAt(flow, 590, 86, 628, 86, C_MUTED, 1.8);
+    var dpFlows = [0, 1, 2, 3].map(function () { return flowSeg(flow, C_ROOT, 2, 3, 18, true); });
+    var DPA = [[194, 66, 232, 82], [194, 108, 232, 92], [394, 86, 432, 86], [590, 86, 628, 86]];
     var Y = 168, W = 752;
     var p2 = group(s);
     label(p2, 24, Y, '输入', 'demo-x-ink', 14);
-    chip(p2, 24, Y + 16, 360, 'ZED Mini 的 360 × 640 RGB → 缩到 **224 × 224**', C_VIS, { size: 12, left: true, h: 32 });
-    rich(p2, 400, Y + 36, '本体感受：**历史命令** $\\mathbf{p}_{t-1}, \\mathbf{p}_{t-2}, \\dots$', 12.5, 'demo-x-ink2');
-    label(p2, 24, Y + 90, '不用机器人的原始状态 s；输入都做归一化', 'demo-x-mut', 11.5);
+    var thumb = svgEl('image', { x: 24, y: Y + 14, width: 116, height: 116, preserveAspectRatio: 'xMidYMid slice' });
+    p2.appendChild(thumb);
+    rectBox(p2, 24, Y + 14, 116, 116, C_VIS, 'none');
+    label(p2, 150, Y + 60, '第一视角图像', 'demo-x-ink2', 12.5);
+    label(p2, 150, Y + 84, '360 × 640 → 224 × 224', 'demo-x-mut', 11.5);
+    var HX0 = 420, HW0 = 340;
+    rectBox(p2, HX0, Y + 14, HW0, 116, C_BORDER, C_SURFACE2);
+    var hTrace = pathLine(p2, [], C_ROOT, 2.4), hDots = [0, 1, 2, 3, 4, 5].map(function () { return dotAt(p2, 0, 0, 4, C_ROOT); });
+    label(p2, HX0, Y + 150, '历史命令（左膝，最近 2 s）：不用机器人的原始状态', 'demo-x-ink2', 11.5);
     var p3 = group(s);
     label(p3, 24, Y, '为什么用历史命令，不用机器人状态？', 'demo-x-ink', 14);
-    chip(p3, 24, Y + 16, 370, '① 和底层**解耦**：分开训练、分开部署', C_T2, { size: 12, left: true, h: 32 });
-    chip(p3, 406, Y + 16, 370, '② 不依赖**带噪的原始状态**，少攒误差', C_T2, { size: 12, left: true, h: 32 });
-    label(p3, 24, Y + 90, '输出的也是同一个 35 维命令：采数据和执行一致', 'demo-x-mut', 11.5);
+    chip(p3, 24, Y + 24, 130, '高层', C_T2, { size: 13, h: 40 });
+    chip(p3, 230, Y + 24, 130, '底层', C_WARN, { size: 13, h: 40 });
+    hline(p3, 192, Y + 14, 192, Y + 74, C_MUTED, 1.6, '5 4');
+    label(p3, 192, Y + 104, '① 解耦：分开训练、分开部署', 'demo-x-ink2', 12, 'middle');
+    var NX0 = 420, NW0 = 340;
+    rectBox(p3, NX0, Y + 14, NW0, 70, C_BORDER, C_SURFACE2);
+    var noisy = [], clean = [];
+    for (var q = 0; q <= 80; q++) {
+      var xx = NX0 + 6 + q / 80 * (NW0 - 12), base = Y + 49 + 18 * Math.sin(q / 9);
+      clean.push([xx, base]); noisy.push([xx, base + 9 * (rnd(q, 7) - 0.5) + 5 * Math.sin(q * 1.7)]);
+    }
+    pathLine(p3, noisy, C_MUTED, 1.6);
+    pathLine(p3, clean, C_ROOT, 2.4);
+    legendRow(p3, NX0, Y + 104, [['机器人状态：带噪声', C_MUTED], ['历史命令：干净', C_ROOT]]);
+    label(p3, NX0, Y + 128, '② 不依赖带噪的状态，少累积误差（示意）', 'demo-x-ink2', 12);
     var p4 = group(s);
     label(p4, 24, Y, '网络', 'demo-x-ink', 14);
-    chip(p4, 24, Y + 16, 360, 'Diffusion Policy：一维卷积建模动作序列', C_T2, { size: 12, left: true, h: 32 });
-    chip(p4, 400, Y + 16, 376, '视觉：ResNet-18，用 R3M 预训练', C_VIS, { size: 12, left: true, h: 32 });
-    label(p4, 24, Y + 90, '一次预测 64 步（约 2 秒）；按 iDP3 / DP3 的做法直接预测样本', 'demo-x-mut', 11.5);
+    chip(p4, 24, Y + 16, 220, '视觉：ResNet-18（R3M）', C_VIS, { size: 12, h: 32 });
+    chip(p4, 24, Y + 58, 220, '一维卷积的扩散策略', C_T2, { size: 12, h: 32 });
+    var DX0 = 280, DW0 = 480, DH0 = 110;
+    rectBox(p4, DX0, Y + 12, DW0, DH0, C_BORDER, C_SURFACE2);
+    var dnz = pathLine(p4, [], C_ROOT, 2.2);
+    var dStep = label(p4, DX0 + DW0 - 8, Y + 30, '', 'demo-x-mut', 11, 'end');
+    readHint(p4, DX0, Y + 144, '示意：横轴是未来 64 步、纵轴是某一维命令；从噪声一步步去噪成平滑的命令', 10.5, DW0);
     var p5 = group(s);
     label(p5, 24, Y, '增强与部署', 'demo-x-ink', 14);
-    label(p5, 24, Y + 26, '本体感受加 10% 高斯噪声，图像随机裁剪、旋转、颜色抖动 · ONNX 在一张 RTX 4090 上 20 Hz', 'demo-x-ink2', 11.5);
+    label(p5, 24, Y + 26, '增强：本体加 10% 噪声、图像随机裁剪等 · ONNX 在一张 4090 上 20 Hz', 'demo-x-ink2', 11.5);
     var TX = 24, TY = Y + 50, TW = W, cw = TW / DP.chunk;
     var boxes = [];
     for (var i = 0; i < DP.chunk; i++) {
@@ -1573,7 +1992,26 @@
     label(p5, TX, TY + 44, '一次预测 64 步', 'demo-x-ink2', 11.5);
     label(p5, TX + 48 * cw, TY + 44, '执行前 48 步（30 Hz，1.6 s）再重新预测', 'demo-x-good', 11.5, 'middle');
     label(p5, TX + TW, TY + 44, '64 / 30 = 2.1 s', 'demo-x-mut', 11, 'end');
+    readHint(p5, TX, TY + 72, '一格是一步命令；红线是正在执行的那一步，最后灰的 16 步不执行就重新预测', 10.5, TW);
+    var thumbWoke = false, Wd = SEQ.walk;
     function draw(t, clock) {
+      var now = nowOf(t, clock);
+      if (!thumbWoke && t >= 3.6 && CLIP_BASE) { thumbWoke = true; thumb.setAttribute('href', CLIP_BASE + 'pico_ego.webp'); }
+      DPA.forEach(function (a, i) { dpFlows[i].at(now, [a[0], a[1]], [a[2], a[3]], t >= 3.9); });
+      /* p2：最近 2 s 的历史命令，往左滚 */
+      var k0 = Math.floor(now * Wd.fps), hp = [];
+      for (var q = 0; q < 30; q++) { var kk = ((k0 - 29 + q) % Wd.n + Wd.n) % Wd.n; hp.push([HX0 + 8 + q / 29 * (HW0 - 16), Y + 120 - frame('walk', kk).ref.dof[3] / 1.3 * 96]); }
+      setPath(hTrace, hp);
+      hDots.forEach(function (d, i) { moveDot(d, hp[29 - i * 5]); });
+      /* p4：去噪示意，每 2.4 s 一轮、8 步 */
+      var cyc = (since(t, clock, 10.6) % 2.4) / 2.0, step = Math.min(8, Math.floor(cyc * 8)), lam = step / 8, dp = [];
+      for (var q2 = 0; q2 < 64; q2++) {
+        var sm = 0.45 * Math.sin(q2 / 64 * Math.PI * 2.2) + 0.2 * Math.sin(q2 / 64 * Math.PI * 5.1);
+        var nz = (rnd(q2, 11 + step) - 0.5) * 1.6;
+        dp.push([DX0 + 8 + q2 / 63 * (DW0 - 16), Y + 12 + DH0 / 2 - (lam * sm + (1 - lam) * nz) * (DH0 / 2 - 10)]);
+      }
+      setPath(dnz, dp);
+      dStep.textContent = '去噪第 ' + step + ' / 8 步（示意）';
       setOpacity(P1, win(t, 0.3, 3.6));
       setOpacity(flow, seg(t, 3.9, 4.3));
       setOpacity(p2, win(t, 3.6, 7.0));
@@ -1598,9 +2036,9 @@
     var R = 444, W = 332;
     var p1 = group(s);
     label(p1, R, 64, 'WB-Dex：全身灵巧取放', 'demo-x-ink', 14);
-    chip(p1, R, 82, W, '弯腰从架子上拿起杯子，放进地上的箱子', C_T2, { size: 12, left: true });
-    chip(p1, R, 120, W, '训练用 **170 条**遥操作示范', C_BORDER, { size: 12, left: true });
-    label(p1, R, 182, '腰、腿、手臂、手一起动', 'demo-x-ink2', 12);
+    label(p1, R, 90, '弯腰从架子上拿杯子，放进地上的箱子', 'demo-x-ink2', 12);
+    var g170 = squareGrid(p1, R, 104, 170, 17, 15, 4, C_T2);
+    var c170 = label(p1, R, 314, '', 'demo-x-ink2', 12);
     var p2 = group(s);
     label(p2, R, 64, '图 14：54 次试验落在哪', 'demo-x-ink', 14);
     var SK = { x0: R, x1: R + 120, x2: R + 240, y: 84, h: 150 };
@@ -1624,17 +2062,19 @@
     label(sk, SK.x1, SK.y + hR + 30 + hRF + 16, '没够到 5', 'demo-x-bad', 11.5);
     label(sk, SK.x2 + 6, SK.y + hS / 2, '抓起放好 33', 'demo-x-good', 11.5);
     label(sk, SK.x2 + 6, SK.y + hS + 18 + hG / 2 + 4, '抓失败 16', 'demo-x-ink2', 11.5);
+    readHint(p2, R, 314, '带子越粗次数越多；从左往右，先分够到没有，再分抓好没有', 10.5, W);
     var p3 = group(s);
     label(p3, R, 64, '失败多在「抓」', 'demo-x-ink', 14);
     var b1 = barRowAt(p3, R, 82, 120, '够到 49 / 54', C_VIS, 18);
     var b2 = barRowAt(p3, R, 110, 120, '够到后抓好 33 / 49', C_WARN, 18);
     var b3 = barRowAt(p3, R, 138, 120, '整体 33 / 54', C_T2, 18);
-    label(p3, R, 192, '杯子很轻，要非常准：一点漂移就抓空', 'demo-x-ink2', 12);
+    readHint(p3, R, 176, '条越长成功率越高', 10.5, W);
+    label(p3, R, 204, '杯子很轻，一点漂移就抓空', 'demo-x-ink2', 12);
     var p4 = group(s);
     label(p4, R, 64, 'Kick-T：用脚把 T 形箱踢到目标', 'demo-x-ink', 13.5);
-    chip(p4, R, 82, W, '训练用 **50 条**示范：左脚踢，右脚跟一步保持平衡', C_BORDER, { size: 11.5, left: true });
+    chip(p4, R, 82, W, '**50 条**示范：左脚踢，右脚再往前迈一步', C_BORDER, { size: 11.5, left: true });
     var kicks = [];
-    for (var i = 0; i < KICKT.n; i++) kicks.push(label(p4, R + 20 + i * 42, 158, i < KICKT.ok ? '✓' : '✗', i < KICKT.ok ? 'demo-x-good' : 'demo-x-bad', 22, 'middle'));
+    for (var i = 0; i < KICKT.n; i++) { var gk = group(p4); if (i < KICKT.ok) tick(gk, R + 8 + i * 44, 138, 26, C_GOOD); else cross(gk, R + 12 + i * 44, 142, 18, C_BAD); kicks.push(gk); }
     label(p4, R, 196, '7 次里 6 次送到目标（85.7%）', 'demo-x-ink', 12.5);
     var p5 = group(s);
     label(p5, R, 64, '边界', 'demo-x-ink', 14);
@@ -1646,6 +2086,8 @@
       setOpacity(cDex.g, vd); cDex.at(K.clipSince(t, 0), vd > 0);
       setOpacity(cKick.g, vk); cKick.at(K.clipSince(t, 10.4), vk > 0);
       setOpacity(cGhost.g, vg); cGhost.at(K.clipSince(t, 13.4), vg > 0);
+      var u1 = seg(t, 0.8, 3.0);
+      g170.fill(170 * u1); c170.textContent = '训练用 ' + Math.round(170 * u1) + ' 条遥操作示范（一格一条）';
       setOpacity(p1, win(t, 0.3, 3.6));
       setOpacity(p2, win(t, 3.6, 7.0));
       setOpacity(p3, win(t, 7.0, 10.4));
@@ -1658,7 +2100,6 @@
       b2.set(200 * WBDEX.success / WBDEX.reach * g, g > 0.95 ? '67.3%' : '');
       b3.set(200 * WBDEX.success / WBDEX.total * g, g > 0.95 ? '61.1%' : '');
       kicks.forEach(function (n, i) { setOpacity(n, seg(t, 10.9 + i * 0.3, 11.1 + i * 0.3)); });
-      void clock;
     }
     return { el: s, draw: draw };
   }
@@ -1668,8 +2109,12 @@
     var s = sceneSvg('左边是官方控制器在 MuJoCo 里跟官方样例走路的 G1；右边依次是两条局限、作者对规模化人形数据的三点主张、我们读代码看到的出入、总结');
     s.appendChild(svgText(24, 26, '局限、数据与代码', 'demo-x-ink2', 13.5));
     rectBox(s, 24, 40, 300, 330, C_BORDER, C_SURFACE2);
-    var bot = player(s, 'walk', 'sim', 160, 174, 330, [26, 42, 296, 326]);
-    label(s, 174, 392, '官方权重在 MuJoCo 里跟官方样例（我们的复现）', 'demo-x-mut', 10, 'middle');
+    var bot = player(s, 'walk', 'ref', 160, 174, 330, [26, 42, 296, 326]);
+    label(s, 174, 392, '官方 PICO 样例的走路（参考动作）', 'demo-x-mut', 10, 'middle');
+    var trk = group(s);
+    var tOn = [KP.head, KP.lwr, KP.rwr].map(function () { return dotAt(trk, 0, 0, 6, C_VIS); });
+    var tCalf = [0, 1].map(function () { return dotAt(trk, 0, 0, 6, C_VIS); });
+    var tOff = [KP.lelb, KP.relb, KP.lknee, KP.rknee].map(function () { var c = paint(svgEl('circle', { r: 8, fill: 'none', 'stroke-width': 2.4 }), null, C_BAD); trk.appendChild(c); return c; });
     var R = 344, W = 432;
     var p1 = group(s);
     label(p1, R, 64, '局限 1：跟不上高动态的动作', 'demo-x-ink', 14);
@@ -1677,18 +2122,22 @@
     label(p1, R, 144, '叠毛巾的瓶颈则在电机过热', 'demo-x-ink2', 12);
     var p2 = group(s);
     label(p2, R, 64, '局限 2：PICO 不如动捕准', 'demo-x-ink', 14);
-    chip(p2, R, 82, W, '**肘和膝**没有追踪器，估得不准，动作质量下降', C_BAD, { size: 12, left: true });
-    label(p2, R, 144, '加更多追踪器反而不稳：便携的代价', 'demo-x-ink2', 12);
+    dotAt(p2, R + 8, 96, 6, C_VIS); label(p2, R + 22, 101, '有设备：头显、两个手柄、小腿上的追踪器', 'demo-x-ink2', 12.5);
+    p2.appendChild(paint(svgEl('circle', { cx: R + 8, cy: 128, r: 8, fill: 'none', 'stroke-width': 2.4 }), null, C_BAD));
+    label(p2, R + 22, 133, '肘和膝没有：只能估，动作质量下降', 'demo-x-ink2', 12.5);
+    label(p2, R, 176, '这是便携的代价', 'demo-x-mut', 12);
     var p3 = group(s);
     label(p3, R, 64, '作者对「规模化人形数据」的三点主张', 'demo-x-ink', 13);
-    chip(p3, R, 82, W, '① 先**统一硬件**：G1 + Dex3-1 + TWIST2 Neck', C_T2, { size: 11.5, left: true });
-    chip(p3, R, 120, W, '② 让采集**平民化**：便携、便宜，不只会走', C_T2, { size: 11.5, left: true });
-    chip(p3, R, 158, W, '③ **共享数据**：HuggingFace + twist-data 可视化', C_T2, { size: 11.5, left: true });
+    var claims = [
+      chip(p3, R, 82, W, '① 先**统一硬件**：G1 + Dex3-1 + TWIST2 Neck', C_T2, { size: 11.5, left: true }),
+      chip(p3, R, 120, W, '② 让采集**平民化**：便携、便宜', C_T2, { size: 11.5, left: true }),
+      chip(p3, R, 158, W, '③ **共享数据**：HuggingFace + twist-data 网站', C_T2, { size: 11.5, left: true })
+    ];
     label(p3, R, 214, '统一格式：底盘速度、高度、倾角、偏航角速度 + 身体 / 手 / 脖子的关节角', 'demo-x-mut', 10.5);
     var p4 = group(s);
     label(p4, R, 64, '读官方代码看到的', 'demo-x-ink', 14);
-    ['「一阶段」= 不加载教师的 DAgger-PPO 任务', '奖励 21 项，还跟关键点位置', 'sim2sim 用 100 Hz，训练和真机是 50 Hz', '高层扩散策略还没开源（说会基于 iDP3）'].forEach(function (x, i) {
-      label(p4, R, 94 + i * 26, '· ' + x, 'demo-x-ink2', 12);
+    var facts = ['「一阶段」= 不加载教师的 DAgger-PPO', '奖励 21 项，还跟关键点位置', 'sim2sim 用 100 Hz，训练和真机是 50 Hz', '高层扩散策略还没开源'].map(function (x, i) {
+      return chip(p4, R, 80 + i * 38, W, x, i === 3 ? C_BAD : C_BORDER, { size: 12, left: true });
     });
     var p5 = group(s);
     label(p5, R, 64, 'TWIST2 一句话', 'demo-x-ink', 14);
@@ -1696,7 +2145,15 @@
       chip(p5, R, 82 + i * 38, W, x, [C_VIS, C_JNT, C_WARN, C_T2][i], { size: 12, left: true });
     });
     function draw(t, clock) {
-      bot.put(nowOf(t, clock));
+      var r = bot.put(nowOf(t, clock)), kp = r.f.ref.kp;
+      [KP.head, KP.lwr, KP.rwr].forEach(function (k, i) { moveDot(tOn[i], project(kp[k], r.cam)); });
+      [[KP.lknee, KP.lank], [KP.rknee, KP.rank]].forEach(function (pr, i) {
+        var a = project(kp[pr[0]], r.cam), c = project(kp[pr[1]], r.cam); moveDot(tCalf[i], [(a[0] + c[0]) / 2, (a[1] + c[1]) / 2]);
+      });
+      [KP.lelb, KP.relb, KP.lknee, KP.rknee].forEach(function (k, i) { var p = project(kp[k], r.cam); tOff[i].setAttribute('cx', p[0].toFixed(1)); tOff[i].setAttribute('cy', p[1].toFixed(1)); });
+      setOpacity(trk, win(t, 3.6, 7.0));
+      claims.forEach(function (c, i) { setOpacity(c, seg(t, 7.4 + i * 0.6, 7.8 + i * 0.6)); });
+      facts.forEach(function (c, i) { setOpacity(c, seg(t, 10.8 + i * 0.5, 11.2 + i * 0.5)); });
       setOpacity(p1, win(t, 0.3, 3.6));
       setOpacity(p2, win(t, 3.6, 7.0));
       setOpacity(p3, win(t, 7.0, 10.4));
@@ -1712,11 +2169,11 @@
       dur: 16,
       build: buildSceneProblem,
       cues: [
-        { at: 0.4, s: '大模型和 VLA（$\\pi_0$、$\\pi_{0.5}$）靠大规模数据，双臂操作有 ALOHA、GELLO 这样的采集系统；**人形还没有**。' },
-        { at: 3.6, s: '表 I 的三类：解耦（上下身分开）、部分全身（腿只跟根部速度）、完整全身（每个关节都跟人）。' },
-        { at: 7.0, s: 'VR 方案便携，但腿只跟速度；TWIST 是完整全身，但要光学动捕，离不开实验室。' },
-        { at: 10.4, s: 'TWIST2：PICO 头显 + 两个小腿追踪器 + 250 美元的脖子，**保留完整全身控制**，一个人就能采。' },
-        { at: 13.4, s: '表 I 的 7 项（便携、免标定、单人、全身跟踪、第一视角、脚、手腕），只有 TWIST2 全勾。ICRA 2026。' }
+        { at: 0.4, s: '大模型、VLA 靠大规模数据，双臂有 ALOHA 这样的采集系统；**人形还没有**。' },
+        { at: 3.6, s: '表 I 的三类：解耦、部分全身（腿只跟速度）、完整全身（每个关节都跟人）。' },
+        { at: 7.0, s: 'VR 方案便携，但腿只跟速度；TWIST 是完整全身，却离不开动作捕捉场地。' },
+        { at: 10.4, s: 'TWIST2：PICO 头显 + 两个小腿追踪器 + 一个脖子，**保留完整全身控制**。' },
+        { at: 13.4, s: '表 I 的 7 项能力，只有 TWIST2 **全部打勾**；右上角的位置终于有人了。' }
       ]
     },
     {
@@ -1724,11 +2181,11 @@
       dur: 16,
       build: buildSceneTwoLevel,
       cues: [
-        { at: 0.4, s: '底层 $\\pi_{\\text{low}}$ 是一个和任务无关的**通用动作跟踪器**：看命令 $\\mathbf{p}_{\\text{cmd}}$ 和本体感受 $\\mathbf{s}$。' },
-        { at: 3.6, s: '50 Hz 输出 29 个关节目标，PD 算力矩：$\\tau = K_{\\mathrm{P}}(\\mathbf{q}_{\\text{tgt}} - \\mathbf{q}) - K_{\\mathrm{D}}\\dot{\\mathbf{q}}$。' },
-        { at: 7.0, s: '高层 $\\pi_{\\text{high}}$ 产生命令：遥操作版 = 操作员 + 重定向器，自主版 = 扩散策略。' },
-        { at: 10.4, s: '先遥操作录下 $(\\mathbf{o}, \\mathbf{s}, \\mathbf{p}_{\\text{cmd}})$，再拿来训练自主版；底层两边共用。' },
-        { at: 13.4, s: '论文图 2：便携设备 → 整体全身遥操作 → 视觉运动策略；可控的自由度 45 个 = 脖子 2 + 身体 29 + 手 14。' }
+        { at: 0.4, s: '底层 $\\pi_{\\text{low}}$ 是**通用动作跟踪器**：命令给什么，它就跟什么。' },
+        { at: 3.6, s: '50 Hz 输出 29 个关节目标，再由 PD 像弹簧一样算出力矩。' },
+        { at: 7.0, s: '高层产生命令：遥操作时是人 + 重定向器，自主时换成扩散策略。' },
+        { at: 10.4, s: '先遥操作，录下图像、状态和命令，再拿来训练自主的高层。' },
+        { at: 13.4, s: '论文图 2：可控的自由度共 45 个 = 脖子 2 + 身体 29 + 手 14。' }
       ]
     },
     {
@@ -1736,11 +2193,11 @@
       dur: 16,
       build: buildSceneCommand,
       cues: [
-        { at: 0.4, s: '35 维命令：根部 $x$、$y$ 速度、高度、横滚、俯仰、偏航角速度，加 **29 个关节角**。' },
-        { at: 3.6, s: '根部只给**相对量**：不用知道机器人在世界里的哪儿，不依赖全局状态估计，长时间也稳。' },
-        { at: 7.0, s: '代价是路线会漂：官方控制器跟一段 13.9 s 的走路，终点差 0.99 m、中途最大 2.01 m（我们的复现）。' },
-        { at: 10.4, s: '下身给 12 个关节角，不只给根部速度：用脚踢、蹲着够东西、跳舞都靠它。' },
-        { at: 13.4, s: '蹲到最低：根部速度只有 0.05 m/s，膝却弯到 2.28 rad——告诉机器人怎么蹲的是腿的关节角。' }
+        { at: 0.4, s: '35 维命令 = 根部 6 项（速度、高度、倾角、偏航角速度）+ **29 个关节角**。' },
+        { at: 3.6, s: '根部只给**相对量**：不依赖全局定位，长时间运行也稳定。' },
+        { at: 7.0, s: '代价是路线会漂：13.9 s 的走路，终点相距 0.99 m（我们的复现）。' },
+        { at: 10.4, s: '下身给 12 个关节角，不只给根部速度：踢、蹲、跳舞都靠它。' },
+        { at: 13.4, s: '蹲到最低：根部速度只有 0.05 m/s，膝却弯到 2.28 rad。' }
       ]
     },
     {
@@ -1748,11 +2205,11 @@
       dur: 16,
       build: buildSceneNeckHW,
       cues: [
-        { at: 0.4, s: 'Unitree G1：29 个自由度（腰 3、腿 6 × 2、手臂 7 × 2），加两只 Dex3-1 三指手，各 7 个。' },
-        { at: 3.6, s: '作者发现脖子对长时程遥操作很关键：原装的头不能动，找东西、看手都得**主动去看**。' },
-        { at: 7.0, s: 'TWIST2 Neck：外挂、不拆原装的头；两台 XC330 管偏航和俯仰，U2D2 连接，机载 12 V 供电，3D 打印。' },
-        { at: 10.4, s: '脖子 250 美元，ZED Mini 双目相机另加 400 美元；两个自由度够用；还有 MuJoCo 模型。' },
-        { at: 13.4, s: '论文图 15：已经造了 3 个（项目页写 4 个）；作者估计 G1 加脖子约有人 80% 的核心功能。' }
+        { at: 0.4, s: 'G1 身体 29 + 两只三指手 14 + 脖子 2：一共 45 个自由度。' },
+        { at: 3.6, s: '原装的头不能动，视野外的东西看不到；长时程任务要**主动去看**。' },
+        { at: 7.0, s: 'TWIST2 Neck：两台 XC330 舵机管偏航和俯仰，外挂、3D 打印。' },
+        { at: 10.4, s: '脖子 250 美元，ZED Mini 另加 400 美元；还做了 MuJoCo 模型。' },
+        { at: 13.4, s: '论文图 15：已经造了 3 个；作者估计约有人 80% 的核心功能。' }
       ]
     },
     {
@@ -1760,11 +2217,11 @@
       dur: 16,
       build: buildScenePico,
       cues: [
-        { at: 0.4, s: 'PICO 4 Ultra 头显、两个手柄、两个绑在**小腿**上的 Motion Tracker，实时估计全身姿态。' },
-        { at: 3.6, s: 'PICO 支持更多追踪器，但两个的模式更稳；整套约 1000 美元。' },
-        { at: 7.0, s: 'XRoboToolkit 以 100 Hz 流出动作；不用繁重的标定，从进门到装好约 1 分钟。' },
-        { at: 10.4, s: '和 HTC Vive Tracker 比：不用额外架第三视角相机，去哪都能用。' },
-        { at: 13.4, s: 'PICO 给的是 24 个关节的人体骨架，每个关节有全局位置和朝向（论文图 6 左）。' }
+        { at: 0.4, s: 'PICO 4 Ultra 头显、两个手柄、两个绑在**小腿**上的追踪器。' },
+        { at: 3.6, s: 'PICO 支持更多追踪器，但作者发现两个的模式更稳；整套约 1000 美元。' },
+        { at: 7.0, s: 'XRoboToolkit 每秒流出 100 帧动作；从进门到装好约 1 分钟。' },
+        { at: 10.4, s: '和 HTC Vive 比：不用另外架设第三视角的设备，带到哪里都能用。' },
+        { at: 13.4, s: 'PICO 给的是 24 个关节的骨架，每个关节有全局位置和朝向。' }
       ]
     },
     {
@@ -1772,11 +2229,11 @@
       dur: 16,
       build: buildSceneBodyRetarget,
       cues: [
-        { at: 0.4, s: '沿用 GMR 实时重定向：原版两阶段，先对齐各连杆的朝向，再精调全局位置。' },
-        { at: 3.6, s: 'PICO 的全局位置不准：第二阶段改成**下身对位置和朝向，上身只对朝向**。' },
-        { at: 7.0, s: '式 8：朝向项对所有连杆，位置项只对下身的点 $\\mathcal{P}_{\\text{low}}$，人的位置先换到骨盆坐标系。' },
-        { at: 10.4, s: '好处：脚的位置对准、不打滑；上身没有位置项，全局位置跳变也没有伪影。' },
-        { at: 13.4, s: '官方配置：脚的位置权重 100、上身 0；遥操作脚本把身高设成 1.6 m，补 PICO 的偏差。' }
+        { at: 0.4, s: '沿用 GMR 的实时重定向：原版先对齐朝向，再精调全局位置。' },
+        { at: 3.6, s: 'PICO 的全局位置不准：**下身对位置和朝向，上身只对朝向**。' },
+        { at: 7.0, s: '式 8：朝向项对所有连杆，位置项只对下身；位置先换到骨盆坐标系。' },
+        { at: 10.4, s: '好处：脚不打滑；全局位置突然跳一下，上身也不受影响。' },
+        { at: 13.4, s: '官方配置：脚的位置权重 100、上身 0；身高设成 1.6 m 来补偿偏差。' }
       ]
     },
     {
@@ -1784,11 +2241,11 @@
       dur: 16,
       build: buildSceneHand,
       cues: [
-        { at: 0.4, s: '五指映射到 Dex3-1 的三根手指不直观；它更像**平行夹爪**。' },
-        { at: 3.6, s: '不估人手的姿态，按手柄的键：$\\mathbf{q}_{\\text{hand}} = (1-\\alpha)\\mathbf{q}_{\\text{open}} + \\alpha\\mathbf{q}_{\\text{close}}$（式 7）。' },
-        { at: 7.0, s: '两套姿态：握（抓杯子）和捏（叠衣服），按任务选。' },
-        { at: 10.4, s: '代码：按住扳机 $\\alpha$ 每循环加 0.05，侧握键减 0.05；100 Hz 下 0.2 s 合到底。' },
-        { at: 13.4, s: '例：握力抓 $\\alpha = 0.5$，7 个关节的目标就是闭合姿态的一半。' }
+        { at: 0.4, s: '五指映射到三根手指并不直观；Dex3-1 用起来更像**平行夹爪**。' },
+        { at: 3.6, s: '不估计人手的姿态：按手柄的键，在张开和闭合之间插值（式 7）。' },
+        { at: 7.0, s: '两套姿态：握，用来抓杯子；捏，用来叠衣服；按任务选一套。' },
+        { at: 10.4, s: '代码：按住扳机每 10 ms 加 0.05，0.2 s 就从全开到全闭。' },
+        { at: 13.4, s: '例：$\\alpha = 0.5$ 时，7 个关节的目标正好是闭合姿态的一半。' }
       ]
     },
     {
@@ -1796,11 +2253,11 @@
       dur: 16,
       build: buildSceneNeckRetarget,
       cues: [
-        { at: 0.4, s: '只看头**相对脊柱**的旋转：$R_{\\text{rel}} = R_{\\text{spine}}^{\\top} R_{\\text{head}}$。' },
-        { at: 3.6, s: '式 10：偏航 $\\psi = \\operatorname{atan2}(r_{21}, r_{11})$、俯仰 $\\theta = \\arcsin(-r_{31})$，直接当两台电机的目标。' },
-        { at: 7.0, s: '论文图 5：低头、抬头、左转、右转，两个自由度就够；横滚日常很少用。' },
-        { at: 10.4, s: '官方代码在 PICO 的坐标系里分解，再乘 1.5：人转 30°，机器人转 45°。' },
-        { at: 13.4, s: '暂停时脖子停在最后的角度，空闲时回到 0；脖子的 2 个角也录进数据。' }
+        { at: 0.4, s: '只看人头**相对脊柱**转了多少：整个人转身时，脖子不动。' },
+        { at: 3.6, s: '式 10 从相对旋转里取出偏航角和俯仰角，直接作为两台电机的目标。' },
+        { at: 7.0, s: '论文图 5：低头、抬头、向左、向右，两个自由度就够用。' },
+        { at: 10.4, s: '官方代码再乘 1.5：人头偏 30°，机器人的头偏 45°，看得更开。' },
+        { at: 13.4, s: '暂停时停在最后的角度，空闲时回到 0；两个角度也录进数据。' }
       ]
     },
     {
@@ -1808,11 +2265,11 @@
       dur: 16,
       build: buildSceneTrackerData,
       cues: [
-        { at: 0.4, s: '不用教师—学生两阶段（TWIST、GMT、OmniH2O 那样），**一阶段 PPO** 直接训。' },
-        { at: 3.6, s: '约 2 万段动作：GMR 重定向 7k + TWIST 原来的 13k；来源 AMASS、OMOMO、自采动捕。' },
-        { at: 7.0, s: 'PICO 自己采的 73 段很关键：缩小设备的域差；代码里权重 10，一开始抽到的概率约 3.6%。' },
-        { at: 10.4, s: '奖励 $r = r_{\\text{track}} + r_{\\text{reg}}$，$r_{\\text{track}} = e^{-\\alpha\\lVert\\mathbf{p}_{\\text{cmd}} - \\mathbf{p}_{\\text{cur}}\\rVert}$。' },
-        { at: 13.4, s: '官方代码：21 项，关节角、关键点各 2.0，还跟关键点的位置；惩罚 11 项。' }
+        { at: 0.4, s: '不用教师—学生两个阶段：**一阶段 PPO** 直接训练部署用的策略。' },
+        { at: 3.6, s: '约 2 万段动作：GMR 重定向的 7k 段 + TWIST 原来的 13k 段。' },
+        { at: 7.0, s: 'PICO 自采的 73 段很关键：权重 10，一开始被抽中的概率约 3.6%。' },
+        { at: 10.4, s: '奖励 = 跟踪项 + 正则项；跟踪误差越小，跟踪项越接近 1。' },
+        { at: 13.4, s: '官方代码一共 21 项：关节角、关键点的权重各 2.0，惩罚 11 项。' }
       ]
     },
     {
@@ -1820,11 +2277,11 @@
       dur: 16,
       build: buildSceneTrackerNet,
       cues: [
-        { at: 0.4, s: '卷积历史编码器把 10 步历史压成 128 维，和当前一步、「未来」命令一起进 MLP。' },
-        { at: 3.6, s: '策略看到 $(35 + 92) \\times (10 + 1) + 35 = 1432$ 维；脚本注释写 1402，算错了。' },
-        { at: 7.0, s: '价值网络看 1734 维特权信息：未来 20 帧参考、真实线速度、接触、质量摩擦。4096 个环境。' },
-        { at: 10.4, s: '域随机化：摩擦、质量、质心、电机强度、推一下、动作延迟、重力。' },
-        { at: 13.4, s: '复现：官方权重跟这段蹲下，骨盆最低 0.404 m（参考 0.419 m），关节平均误差 0.081 rad。' }
+        { at: 0.4, s: '卷积历史编码器把 10 步历史压成 128 维，和当前、未来命令一起进 MLP。' },
+        { at: 3.6, s: '策略一共看 1432 维：10 步历史 + 当前一步 + 未来命令。' },
+        { at: 7.0, s: '价值网络看 1734 维特权信息；训练时并行 4096 个环境。' },
+        { at: 10.4, s: '域随机化：摩擦、质量、质心、电机强度，还有推一下和延迟。' },
+        { at: 13.4, s: '复现：骨盆最低 0.404 m（参考 0.419 m），关节平均误差 0.081 rad。' }
       ]
     },
     {
@@ -1832,11 +2289,11 @@
       dur: 16,
       build: buildScenePipeline,
       cues: [
-        { at: 0.4, s: '动作这条路：PICO → 重定向成 35 维命令 → 经 **Redis** 发给底层。' },
-        { at: 3.6, s: '画面这条路：ZED Mini → GStreamer（H.265）→ 头显；同时 JPEG 经 ZMQ → 录数据。' },
-        { at: 7.0, s: '着色器调瞳距、焦点约 1 m：操作员有**深度感**，机器人的画面浮在视野中央。' },
-        { at: 10.4, s: '所有模块 50 Hz 以上，延迟不到 0.1 s；TWIST 是 0.5 s。' },
-        { at: 13.4, s: '代码：遥操作 100 Hz、底层 50 Hz、录数据 30 Hz；头显里还有透视模式。' }
+        { at: 0.4, s: '动作：PICO → 重定向成 35 维命令 → 经 **Redis** 发给底层。' },
+        { at: 3.6, s: '画面：ZED Mini 的双目画面推到头显，同时另存一份去录数据。' },
+        { at: 7.0, s: '头显里是立体视觉：焦点约 1 m，操作员看得出远近，有**深度感**。' },
+        { at: 10.4, s: '所有模块都在 50 Hz 以上，整条链路延迟不到 0.1 s；TWIST 是 0.5 s。' },
+        { at: 13.4, s: '代码：遥操作 100 Hz、底层 50 Hz、录数据 30 Hz；头显还有透视模式。' }
       ]
     },
     {
@@ -1844,11 +2301,11 @@
       dur: 16,
       build: buildSceneSingleOp,
       cues: [
-        { at: 0.4, s: 'AMO、Mobile-TeleVision 要两个人；TWIST、CLONE 还要一个人管开始结束；TWIST2 一个人。' },
-        { at: 3.6, s: '手柄是**控制中心**（图 9）：开始 / 结束录数据、开始 / 结束遥操作、手的合与开。' },
-        { at: 7.0, s: '代码：右手 A 切遥操作 / 暂停，左手 Y 录一段，左手 X 退出，左摇杆按下急停。' },
-        { at: 10.4, s: '安全：暂停后恢复，从最后的姿态线性插值 1 s 过去，不会猛地一跳。' },
-        { at: 13.4, s: '连续录的长序列，用后处理界面切成一段段示范，去掉空闲和失败。' }
+        { at: 0.4, s: 'AMO 要两个人，TWIST 还要一人管开始结束；TWIST2 **一个人就够**。' },
+        { at: 3.6, s: '手柄就是控制中心（图 9）：录数据、遥操作、手的合与开。' },
+        { at: 7.0, s: '按键：右手 A 切遥操作 / 暂停，左手 Y 录一段，按下左摇杆急停。' },
+        { at: 10.4, s: '暂停后恢复：从最后的姿态线性插值 1 s 过去，不会猛地一跳。' },
+        { at: 13.4, s: '连续的长录像，事后切成一段段示范，去掉空闲和失败的部分。' }
       ]
     },
     {
@@ -1856,11 +2313,11 @@
       dur: 16,
       build: buildSceneLongHorizon,
       cues: [
-        { at: 0.4, s: '叠毛巾：找到、拉到面前、抖开、对折、再折、压平、放到左边（项目页视频 16 倍速）。' },
-        { at: 3.6, s: '能连续叠 **3 条**随机放的毛巾；瓶颈在电机过热。' },
-        { at: 7.0, s: '搬篮子穿门：调脚步，弯腰捡起左右两个篮子；篮子随手放，靠主动视觉找。' },
-        { at: 10.4, s: '推开门、走过去、放到架子上；所有走动都靠操作员自己的下身动作。' },
-        { at: 13.4, s: '论文的观察：关键是第一视角的主动感知和平滑的**全身跟踪**。' }
+        { at: 0.4, s: '叠毛巾：找到、拉近、抖开、对折、压平、放好（项目页 16 倍速）。' },
+        { at: 3.6, s: '能连续叠 **3 条**随机放的毛巾；瓶颈不在系统，在电机过热。' },
+        { at: 7.0, s: '搬篮子穿过门：挪动脚步、弯腰捡篮子，篮子要靠主动视觉去找。' },
+        { at: 10.4, s: '推开门、走过去、放上架子：所有走动都来自操作员自己的腿。' },
+        { at: 13.4, s: '论文的观察：关键是第一视角的主动感知，加上平滑的**全身跟踪**。' }
       ]
     },
     {
@@ -1868,11 +2325,11 @@
       dur: 16,
       build: buildSceneTable2,
       cues: [
-        { at: 0.4, s: '表 II：双臂取放 18.5 分钟采 **98 条**，成功率 100%，每条 11 s。' },
-        { at: 3.6, s: '移动取放 19.5 分钟 46 条，成功率 100%，每条 25 s。' },
-        { at: 7.0, s: '换算：每分钟 5.3 条对 2.4 条；移动取放要走过去，一条多花一倍多。' },
-        { at: 10.4, s: '摘要、引言、图 1、项目页的说法都不一样，以表 II 为准。' },
-        { at: 13.4, s: '一个专家操作员连续采，中途不用别人帮忙。' }
+        { at: 0.4, s: '表 II：双臂取放，18.5 分钟采了 **98 条**，成功率 100%。' },
+        { at: 3.6, s: '移动取放：19.5 分钟采了 46 条，成功率也是 100%，每条 25 s。' },
+        { at: 7.0, s: '每分钟 5.3 条对 2.4 条：移动取放要走过去，每条多花一倍多。' },
+        { at: 10.4, s: '摘要、引言、图 1、项目页的说法都不一样，这里以表 II 为准。' },
+        { at: 13.4, s: '这些都是一个专家操作员连续采的，中途不用别人帮忙。' }
       ]
     },
     {
@@ -1880,11 +2337,11 @@
       dur: 16,
       build: buildSceneTable3,
       cues: [
-        { at: 0.4, s: '用户研究：一个专家、一个第一次用的新手，各采 10 条；新手先用完整系统，再逐个拿掉。' },
-        { at: 3.6, s: '完整系统 20 / 23 次成功、平均 67.8 s；去掉立体视觉 98.3 s，抓得偏高。' },
-        { at: 7.0, s: '去掉脖子 112.3 s，看不到视野外的东西；新手 17 次只成 7 次。' },
-        { at: 10.4, s: '去掉第一视角：专家 43 s 最快，但只因为站在机器人旁边；长时程移动做不到。' },
-        { at: 13.4, s: '结论：主动的第一视角**立体视觉**是必须的。' }
+        { at: 0.4, s: '用户研究：一个专家、一个新手，各采 10 条；新手逐个拿掉一样。' },
+        { at: 3.6, s: '完整系统 23 次成功 20 次、平均 67.8 s；去掉立体视觉要 98.3 s。' },
+        { at: 7.0, s: '去掉脖子最慢：112.3 s，看不到视野外；新手 17 次只成功 7 次。' },
+        { at: 10.4, s: '去掉第一视角：专家 43 s 最快，只因为人站在旁边；走远就做不到。' },
+        { at: 13.4, s: '结论：主动的第一视角**立体视觉**是必须的，缺一样都更慢。' }
       ]
     },
     {
@@ -1892,11 +2349,11 @@
       dur: 16,
       build: buildSceneDP,
       cues: [
-        { at: 0.4, s: '论文图 7：System 2 是扩散策略，System 1 是同一个通用跟踪器。' },
-        { at: 3.6, s: '输入：224 × 224 的第一视角图像 + **历史命令**（不用机器人的原始状态）。' },
-        { at: 7.0, s: '为什么？和底层解耦、分开训练部署；不依赖带噪的状态，少攒误差。' },
-        { at: 10.4, s: '一维卷积的扩散策略，一次出 64 步命令；视觉是 R3M 预训练的 ResNet-18。' },
-        { at: 13.4, s: 'ONNX 在 4090 上 20 Hz；64 步里执行 48 步，30 Hz，1.6 s 后重新预测。' }
+        { at: 0.4, s: '论文图 7：System 2 是扩散策略，System 1 还是那个通用跟踪器。' },
+        { at: 3.6, s: '输入：224 × 224 的第一视角图像 + **历史命令**，不用原始状态。' },
+        { at: 7.0, s: '为什么？和底层解耦、分开部署；不依赖带噪的状态，少累积误差。' },
+        { at: 10.4, s: '一维卷积的扩散策略，去噪出 64 步命令；视觉是 R3M 的 ResNet-18。' },
+        { at: 13.4, s: 'ONNX 在 4090 上 20 Hz；64 步里执行 48 步，1.6 s 后重新预测。' }
       ]
     },
     {
@@ -1904,11 +2361,11 @@
       dur: 16,
       build: buildSceneAuto,
       cues: [
-        { at: 0.4, s: 'WB-Dex：弯腰从架子上拿杯子、放进地上的箱子；170 条示范（项目页视频 8 倍速）。' },
-        { at: 3.6, s: '图 14：54 次里 49 次够到，其中 33 次抓起放好、16 次抓失败；5 次没够到。' },
+        { at: 0.4, s: 'WB-Dex：弯腰从架子上拿杯子、放进地上的箱子；170 条示范。' },
+        { at: 3.6, s: '图 14：54 次里 49 次够到，其中 33 次抓起放好、16 次抓失败。' },
         { at: 7.0, s: '失败多在抓：杯子很轻，一点漂移就抓空；整体成功率 61.1%。' },
-        { at: 10.4, s: 'Kick-T：50 条示范，左脚踢、右脚跟一步；**7 次里 6 次**送到目标。' },
-        { at: 13.4, s: '只会往前踢，还不会绕着箱子调角度；左边是策略预测的未来全身关节。' }
+        { at: 10.4, s: 'Kick-T：50 条示范，左脚踢、右脚再迈一步；**7 次里 6 次**送到目标。' },
+        { at: 13.4, s: '只会往前踢，还不会绕着箱子换角度；左边是预测的未来全身关节。' }
       ]
     },
     {
@@ -1916,14 +2373,19 @@
       dur: 16,
       build: buildSceneLimits,
       cues: [
-        { at: 0.4, s: '局限 1：通用跟踪器跟不上冲刺这类高动态的动作。' },
-        { at: 3.6, s: '局限 2：PICO 不如动捕准，肘和膝没有追踪器，动作质量下降。' },
-        { at: 7.0, s: '作者主张：先统一硬件，让采集平民化，数据公开共享（HuggingFace、twist-data）。' },
-        { at: 10.4, s: '代码：一阶段 = 不加载教师的 DAgger-PPO；奖励 21 项；高层策略还没开源。' },
-        { at: 13.4, s: 'TWIST2：便携免动捕 + 第一视角脖子 + 一阶段通用跟踪器 + 扩散策略出全身命令。' }
+        { at: 0.4, s: '局限一：跟不上冲刺这类又快又复杂的动作；叠毛巾则卡在电机过热。' },
+        { at: 3.6, s: '局限二：PICO 不如动作捕捉准，肘和膝上没有设备，动作质量下降。' },
+        { at: 7.0, s: '作者主张：先统一硬件，让采集平民化，再把数据公开共享。' },
+        { at: 10.4, s: '代码：一阶段就是不加载教师的 DAgger-PPO；高层策略还没开源。' },
+        { at: 13.4, s: 'TWIST2：便携免动捕 + 第一视角脖子 + 通用跟踪器 + 扩散策略。' }
       ]
     }
   ];
+  /* 要点里数字和单位之间用不换行空格（公式里不动），免得单位单独落到下一行开头（HOMIE 2026-10-21） */
+  function nb(str) {
+    return str.split(/(\$[^$]*\$)/).map(function (p, i) { return i % 2 ? p : p.replace(/(\d)(\*\*)? (?=[^\s\d+\-−→×<>=\/·（(])/g, '$1$2\u00a0').replace(/(\d)–(\d)/g, '$1–\u2060$2'); }).join('');
+  }
+  TWIST2_SCENES.forEach(function (sc) { sc.cues.forEach(function (c) { c.s = nb(c.s); }); });
 
   function buildExplainerDemo(host) {
     K.explainer(host, {

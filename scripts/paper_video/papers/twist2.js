@@ -6,7 +6,7 @@ window.PaperVideo = {
     var root = h('div', 'card');
     var a = h('div', 'big', root, '<div style="font-size:118px;font-weight:900;letter-spacing:2px;color:var(--demo-accent);line-height:1.08">TWIST2</div>');
     var b = h('div', 'big', root, '<div style="font-size:52px;font-weight:900;line-height:1.2">便携、免动捕的人形数据采集系统</div>' +
-      '<div style="font-size:32px;color:var(--text-secondary);margin-top:8px">一台头显、一个人，就能边遥操作边采数据</div>');
+      '<div style="font-size:32px;color:var(--text-secondary);margin-top:8px">一台头显、一个人，就能边遥\u2060操\u2060作边采数据</div>');
     var m = h('div', 'meta', root,
       '<b>TWIST2: Scalable, Portable, and Holistic Humanoid Data Collection System</b><br>Yanjie Ze 等 · Amazon FAR 等 · ICRA&nbsp;2026');
     m.style.fontSize = '27px';
@@ -46,7 +46,7 @@ window.PaperVideo = {
     var head = h('div', 'head', root, '<div class="act">三句话记住 TWIST2</div><div class="title">便携地采，全身地学</div>');
     var items = [
       [ACC, '① 便携、免动捕，保留完整全身', 'PICO 头显 + 两个小腿追踪器，约 1000 美元<br>250 美元的脖子：第一视角立体视觉'],
-      [WARN, '② 一个 35 维的命令接口', '根部给相对量 + 29 个关节角<br>一阶段 PPO 的通用跟踪器，遥操作和自主共用'],
+      [WARN, '② 一个 35 维的命令接口', '根部给相对量 + 29 个关节角<br>一阶段 PPO 的通用跟踪器，遥\u2060操\u2060作和自主共用'],
       [GOOD, '③ 采得快，还能学自主', '18.5 分钟 98 条；拿掉脖子慢 66%<br>扩散策略：WB-Dex 33/54，Kick-T 6/7']
     ];
     var pts = items.map(function (it) {
@@ -62,13 +62,13 @@ window.PaperVideo = {
       });
       return p;
     });
-    /* 下一篇的主题（不写集数）：发布清单里 TWIST2 之后是 FALCON —— 搬、推、拉时手上的外力 */
+    /* 下一篇的主题（不写集数）：发布清单里 TWIST2 之后是 FALCON —— 上下身两个智能体，扛住手上的外力 */
     var next = h('div', 'pt', root);
     next.style.fontSize = '29px'; next.style.padding = '14px 30px';
     next.style.borderStyle = 'dashed';
-    K.rich(next, '**下一篇**：FALCON —— 上下身两个智能体，扛住搬、推、拉时手上的外力');
+    K.rich(next, '**下一篇**：FALCON —— 上下身两个智能体，在搬运东西时扛住手上的外力');
     var foot = h('div', 'meta', root,
-      '<b>完整笔记 · 3 个交互演示 · G1 的 3D 渲染</b><br>imchong.github.io/Robot_Learning_Paper_Notebooks');
+      '<b>完整笔记 · 3 个交互演示 · G1 跟踪的三维复现</b><br>imchong.github.io/Robot_Learning_Paper_Notebooks');
     foot.style.textAlign = 'center';
     foot.style.fontSize = '27px';
     foot.style.padding = '16px 30px';
