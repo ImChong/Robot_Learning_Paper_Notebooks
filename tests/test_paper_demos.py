@@ -133,6 +133,13 @@ TWIST_NOTE = (
     / "TWIST__Teleoperated_Whole-Body_Imitation_System"
     / "TWIST__Teleoperated_Whole-Body_Imitation_System.md"
 )
+DOORMAN_NOTE = (
+    ROOT
+    / "papers"
+    / "04_Loco-Manipulation_and_WBC"
+    / "Opening_the_Sim-to-Real_Door_for_Humanoid_Pixel-to-Action_Policy_Transfer"
+    / "Opening_the_Sim-to-Real_Door_for_Humanoid_Pixel-to-Action_Policy_Transfer.md"
+)
 PHP_NOTE = (
     ROOT
     / "papers"
@@ -352,6 +359,7 @@ EXPLAINER_BUNDLES = (
     "gentle", "lcp", "transformer", "pi0", "pi05", "op3soccer", "smp", "humanml3d",
     "domain_randomization", "quadterrain", "realhumanoid", "asap", "inekf", "berkeley_humanoid",
     "toddlerbot", "exbody", "h2o", "omnih2o", "hover", "maskedmimic", "exbody2", "hugwbc", "homie", "twist",
+    "doorman",
 )
 
 # 幕数由论文决定，不是统一模板：PPO / DeepMimic / AMP / ADD 的核心概念正好各 5 个，
@@ -573,6 +581,11 @@ EXPLAINER_SCENES = {
     # 各一幕；结果按关键发现 1–3 各一幕（发现 4 并进重定向那一幕），上真机的链路与延迟、四类技能、部位误差、局限与代码各一幕。
     # 压成 14 幕会让教师的 20 帧和学生的 1155 维、或图 6 的柱和图 7 的曲线抢同一帧。
     "twist": (TWIST_NOTE, 16),
+    # DoorMan 十七幕：问题一幕（开门要同时做到四件事、以前的系统、论文的两个挑战）；图 2 的三步一幕；第 3.1 节的动作（19 维、增量、
+    # 站在 HOMIE 上）与教师的观测（特权信息、246 维、网络）各一幕；第 3.2 节按六个阶段的奖励（附录表 2）、卡在抓门把（窄桥）、分阶段重置
+    # （式 1–3）、图 6 右的缓冲区大小各一幕；学生（DAgger）、GRPO（式 4–5）、图 6 左各一幕；第 3.4 节的程序化的门与视觉随机化各一幕；
+    # 表 1、图 5、泛化与失败、局限与代码各一幕。压成 14 幕会让窄桥的链和重置的快照栈、或 GRPO 的组内优势和图 6 左的曲线抢同一帧。
+    "doorman": (DOORMAN_NOTE, 17),
 
     "humanml3d": (HUMANML3D_NOTE, 12),
 }
@@ -2048,7 +2061,7 @@ def test_narrated_video_placeholders_point_at_files_that_exist():
     for demo in ("calm-video", "pulse-video", "dp-video", "bm-video", "lcp-video", "cosmos-video", "groot-video",
                  "tf-video", "pi0-video", "pi05-video", "soccer-video", "sonic-video", "gmr-video",
                  "omniretarget-video", "humanml3d-video", "smp-video", "dr-video", "qt-video", "rh-video", "inekf-video", "bh-video",
-                 "tb-video", "exbody-video", "h2o-video", "hover-video", "exbody2-video", "hugwbc-video", "homie-video"):
+                 "tb-video", "exbody-video", "h2o-video", "hover-video", "exbody2-video", "hugwbc-video", "homie-video", "doorman-video"):
         assert demo in seen, f"{demo} 应该挂在对应的论文笔记里"
 
 
@@ -5173,3 +5186,150 @@ def test_twist_project_page_clips():
     assert sum(p.stat().st_size for p in clip_dir.iterdir()) < 2.5e6
     note = TWIST_NOTE.read_text(encoding="utf-8")
     assert "剪自[项目页](https://yanjieze.com/projects/TWIST/)的视频" in note
+
+
+def test_doorman_explainer_demos_and_worked_example_share_the_paper_numbers():
+    """DoorMan：十七幕动画、三个演示、配音旁白与笔记「🚶 具体实例」用同一组数。
+
+    图 5、表 1 照抄 arXiv 2512.01061 v1；图 6 是从论文矢量图里按网格线抽的读图值；动作、观测维数、阶段预算、重置比例、
+    奖励的式子照抄 NVlabs/GR00T-VisualSim2Real 的 doorman 分支。例 6 的玩具链与例 7 的 8 条回合在这里用 Python 再算一遍。
+    """
+    js = (DEMO_JS_DIR / "doorman.js").read_text(encoding="utf-8")
+    note = DOORMAN_NOTE.read_text(encoding="utf-8")
+    narration = (ROOT / "scripts" / "paper_video" / "papers" / "doorman.py").read_text(encoding="utf-8")
+    intro = (ROOT / "scripts" / "paper_video" / "papers" / "doorman.js").read_text(encoding="utf-8")
+
+    for line in (
+        "{ key: 'doorman', zh: 'DoorMan', succ: 83, time: 15.40 },",
+        "{ key: 'expert', zh: '专家遥操作', succ: 80, time: 20.02 },",
+        "{ key: 'novice', zh: '新手遥操作', succ: 60, time: 22.55 }",
+        "{ n: 1, zh: '不随机', dl: false, v: [10.8, 5.0, 20.0] },",
+        "{ n: 6, zh: '+ 100% 纹理', dl: true, v: [85.8, 80.8, 85.0] }",
+        "var RESET_RATIOS = [0.5, 0.1, 0.1, 0.1, 0.1, 0.1];",
+        "var SNAP_PER_STAGE = 200;",
+        "var TOY_P = [0.9, 0.8, 0.05, 0.6, 0.7];",
+        "var EX_GROUP = [1, 1, 0, 1, 0, 1, 1, 0];",
+        "var ACT = { homie: 3, arm: 14, finger: 2, scale: 0.3, clip: 15, cmdScale: 0.25 };",
+        "var GPU = [['教师 PPO', 1, 6], ['学生 DAgger', 32, 24], ['学生 GRPO', 64, 12]];",
+        "var REWARD_TERMS = 30;",
+    ):
+        assert line in js, line
+    for k in ("'doorman-explainer'", "'doorman-video'", "'doorman-stages'", "'doorman-grpo'", "'doorman-results'", "K.video(host"):
+        assert k in js, k
+
+    # 例 1：19 维、增量累加
+    assert 3 + 14 + 2 == 19 and _fmt(4 * 0.3, 1) == "1.2" and _fmt(1.2 * 0.25, 1) == "0.3" and round(15 / 0.3) == 50
+    assert "$c=4\\times0.3=1.2$" in note and "$=1.2\\times0.25=0.3$" in note
+    assert "累加到 1.2，再乘以 0.25，速度命令就是 0.3" in narration
+    # 例 2：教师 246 维、学生 122 维（bundle 里的拼法加起来也要对得上）
+    assert 43 + 9 + 43 + 31 + 3 + 2 + 3 + 3 + 48 + 6 + 8 + 19 + 18 + 3 + 7 == 246 and 3 + 3 + 29 + 29 + 31 + 19 + 7 + 1 == 122
+    for name in ("TEACH_OBS", "STU_OBS"):
+        block = js[js.index(f"var {name} = ") : js.index("];", js.index(f"var {name} = "))]
+        assert sum(int(x) for x in re.findall(r"', (\d+)\]", block)) == {"TEACH_OBS": 246, "STU_OBS": 122}[name], name
+    assert "var TEACH_DIM = 246, STU_DIM = 122, IMG_H = 216, IMG_W = 384;" in js and 216 * 384 * 3 == 248832
+    assert "=246$$" in note and "=122$ 维" in note and "248{,}832" in note
+    assert "共看 246 维" in narration and "接上 122 维的本体特征" in narration
+    # 例 3：六个阶段的预算（50 Hz）
+    times = [int(x) for x in re.findall(r"short: '[^']+', time: (\d+),", js)]
+    assert times == [250, 100, 100, 100, 100, 200] and sum(times) / 50 == 17
+    assert "$5+2+2+2+2+4=17$ s" in note and "一共 17 秒" in narration
+    # 例 4：阶段 3 的一步
+    handle = max(-1.0, min(1.0, 0.3 + min(0.4, 0.785398) / 0.785398))
+    hinge = max(-1.0, min(1.0, 10 * 0.02 + 0.05 / 1.5708))
+    terms = (6 * handle, 6 * hinge, 0.3 * 8)
+    assert [_fmt(x, 3) for x in terms[:2]] == ["4.856", "1.391"] and _fmt(terms[2], 1) == "2.4"
+    assert _fmt(sum(terms), 3) == "8.647" and _fmt(sum(terms) * 0.02, 3) == "0.173"
+    for s in ("**4.856**", "**1.391**", "**2.4**", "8.647", "0.173"):
+        assert s in note, s
+    # 例 5：有快照的阶段才参与抽样，按比例重新归一化
+    def probs(filled):
+        r = [0.5, 0.1, 0.1, 0.1, 0.1, 0.1]
+        tot = sum(x for x, f in zip(r, filled, strict=True) if f)
+        return [x / tot if f else 0 for x, f in zip(r, filled, strict=True)]
+
+    assert [_fmt(x, 3) for x in probs([1, 1, 0, 0, 0, 0])[:2]] == ["0.833", "0.167"]
+    assert [_fmt(x, 3) for x in probs([1, 1, 1, 0, 0, 0])[:3]] == ["0.714", "0.143", "0.143"]
+    assert "0.833 / 0.167" in note and "0.714 / 0.143 / 0.143" in note
+    # 例 6：玩具链
+    P = [0.9, 0.8, 0.05, 0.6, 0.7]
+
+    def visits(alpha):
+        out = []
+        for k in range(6):
+            tot = 0.0
+            for y in range(k + 1):
+                p = alpha[y]
+                for j in range(y, k):
+                    p *= P[j]
+                tot += p
+            out.append(tot)
+        return out
+
+    v0, v1 = visits([1, 0, 0, 0, 0, 0]), visits([0.5, 0.1, 0.1, 0.1, 0.1, 0.1])
+    assert " | ".join(_fmt(x, 3) for x in v0) == "1.000 | 0.900 | 0.720 | 0.036 | 0.022 | 0.015"
+    assert " | ".join(_fmt(x, 3) for x in v1) == "0.500 | 0.550 | 0.540 | 0.127 | 0.176 | 0.223"
+    for row in (v0, v1):
+        assert "| " + " | ".join(_fmt(x, 3) for x in row) + " |" in note
+    assert _fmt(v1[5] / v0[5], 1) == "14.8" and "| 3.5 | 8.2 | 14.8 |" in note
+    assert "只有 3.6%" in narration and "从 1.5% 涨到 22%" in narration and "大约 15 倍" in narration
+    # 例 7：GRPO 的组内优势（总体标准差；样本标准差另算一遍）
+    R = [1, 1, 0, 1, 0, 1, 1, 0]
+    m = sum(R) / 8
+    sd = math.sqrt(sum((r - m) ** 2 for r in R) / 8)
+    sd1 = math.sqrt(sum((r - m) ** 2 for r in R) / 7)
+    assert (_fmt(m, 3), _fmt(sd, 3), _fmt((1 - m) / sd, 3), _fmt((0 - m) / sd, 3)) == ("0.625", "0.484", "0.775", "-1.291")
+    assert (_fmt(sd1, 3), _fmt((1 - m) / sd1, 3), _fmt((0 - m) / sd1, 3)) == ("0.518", "0.725", "-1.208")
+    assert "+0.775" in note and "-1.291" in note and "+0.725 / −1.208" in note
+    assert "平均 0.625，标准差 0.484" in narration and "正 0.775" in narration and "负 1.291" in narration
+    # 例 8：读图 5
+    assert (_fmt(100 * (22.55 - 15.40) / 22.55, 1), _fmt(22.55 - 15.40, 2)) == ("31.7", "7.15")
+    assert (_fmt(100 * (20.02 - 15.40) / 20.02, 1), _fmt(20.02 - 15.40, 2)) == ("23.1", "4.62")
+    assert (_fmt(100 * 23 / 83, 1), _fmt(100 * 23 / 60, 1)) == ("27.7", "38.3")
+    assert "比专家快 23.1%，比新手快 31.7%，每扇门快 7.15 秒" in narration and "31.7\\%" in note and "27.7\\%" in note
+    # 例 9：读表 1
+    T = {1: [10.8, 5.0, 20.0], 2: [67.5, 65.8, 70.0], 3: [58.3, 50.8, 76.7], 4: [79.2, 77.5, 77.5], 5: [73.3, 55.8, 76.7], 6: [85.8, 80.8, 85.0]}
+    for n, v in T.items():
+        assert f"{{ n: {n}, " in js and str(v).replace(".0,", ".0,") in js.replace("v: [", "["), n
+    assert [_fmt(a - b, 1) for a, b in zip(T[5], T[6], strict=True)] == ["-12.5", "-25.0", "-8.3"]
+    assert [_fmt(100 * (b - a) / b, 1) for a, b in zip(T[5], T[6], strict=True)] == ["14.6", "30.9", "9.8"]
+    assert [_fmt(a - b, 1) for a, b in zip(T[4], T[6], strict=True)] == ["-6.6", "-3.3", "-7.5"]
+    assert [_fmt(sum(v) / 3, 1) for v in T.values()] == ["11.9", "67.8", "61.9", "78.1", "68.6", "83.9"]
+    assert "| −12.5 | −25.0 | −8.3 |" in note and "| 14.6% | 30.9% | 9.8% |" in note
+    # 例 10：读图 6（左：GRPO 的首尾与教师；右：缓冲区）
+    left = re.findall(r"\{ key: '(\w+)', zh: '[^']+', teacher: ([\d.]+), v: \[([^\]]+)\] \}", js)
+    assert [k for k, _, _ in left] == ["push", "pull", "bar"]
+    first = [float(v.split(",")[0]) for _, _, v in left]
+    last = [float(v.split(",")[-1]) for _, _, v in left]
+    assert [_fmt(x, 3) for x in first] == ["0.676", "0.573", "0.487"] and [_fmt(x, 3) for x in last] == ["0.860", "0.815", "0.873"]
+    assert [t for _, t, _ in left] == ["0.861", "0.815", "0.877"] and all(len(v.split(",")) == 51 for _, _, v in left)
+    assert "0.676 / 0.573 / 0.487 涨到 0.860 / 0.815 / 0.873" in note and "0.861 / 0.815 / 0.877" in note
+    right = {k: [float(x) for x in v.split(",")] for k, v in re.findall(r"\{ key: '(b\w+)', zh: '[^']+', v: \[([^\]]+)\] \}", js)}
+    assert (_fmt(right["b100"][10], 2), _fmt(right["b100"][34], 2), _fmt(right["b0"][76], 2)) == ("3.67", "4.45", "1.25")
+    assert "第 500 次约 3.67、第 1700 次约 4.45" in note and "第 3800 次约 1.25" in note
+    assert "3.7 左右" in narration and "到第 3800 次也只有 1.25" in narration
+
+    # 旁白：93 句；片尾只预告下一篇（CHIP）；绕开多音字与会被切错的词（用 WordBoundary 对照 jieba 查过）
+    spoken = re.findall(r'"([^"]*)"\),', narration[narration.index("SCRIPT = [") : narration.index("DISPLAY = [")])
+    assert len(spoken) == 93
+    assert not any(re.search(r"\d\s*[，,]\s*\d", t) for t in spoken)
+    assert "下一篇讲 CHIP" in narration and "CHIP" in intro
+    for bad in ("几乎", "一行", "重点", "时长", "张卡", "得在", "为 0", "当基线", "仿真里才有", "比人遥操作"):
+        assert not any(bad in t for t in spoken), bad
+    assert "## 🎬 十七幕动画" in note and 'demos: ["doorman"]' in note
+    assert "__VIDEO_" not in js and "__VIDEO_" not in note
+
+
+def test_doorman_project_page_clips():
+    """DoorMan：真机 / 仿真画面剪自项目页的视频（10 段，按幕懒加载）；seqClip 的分段时长加起来要等于片段时长。"""
+    js = (DEMO_JS_DIR / "doorman.js").read_text(encoding="utf-8")
+    clip_dir = ROOT / "assets/img/papers/doorman/clips"
+    used = set(re.findall(r"(?:projClip|seqClip)\(\w+, '(\w+)'", js))
+    assert used == {"hero", "ego", "sim_notex", "sim_tex", "sim_doors", "sim_fly", "teleop", "handles", "panels", "fail"}
+    assert {p.name for p in clip_dir.iterdir()} == {f"{u}.{ext}" for u in used for ext in ("mp4", "webp")}
+    for name, clip in (("TELEOP_PARTS", "teleop"), ("HANDLE_PARTS", "handles"), ("PANEL_PARTS", "panels"), ("FAIL_PARTS", "fail")):
+        block = js[js.index(f"var {name} = ") : js.index(";", js.index(f"var {name} = "))]
+        total = sum(float(x) for x in re.findall(r"\[([0-9.]+), '", block))
+        assert abs(total - _mp4_seconds(clip_dir / f"{clip}.mp4")) < 0.05, (name, total)
+    assert sum(p.stat().st_size for p in clip_dir.iterdir()) < 2.5e6
+    note = DOORMAN_NOTE.read_text(encoding="utf-8")
+    assert "剪自[项目页](https://doorman-humanoid.github.io/)的视频" in note
