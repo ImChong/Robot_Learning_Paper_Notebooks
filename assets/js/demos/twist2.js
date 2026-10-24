@@ -930,8 +930,9 @@
     var bot = player(L, 'squat', 'ref', 190, 189, 344, [26, 42, 326, 316]);
     /* 自由度的标签放在机器人两边，引线连到对应的关键点（每帧按投影重算） */
     var dof = group(L);
-    var DOFS = [['手臂 7 × 2', 32, 132, 96, KP.lelb], ['三指手 7 × 2', 32, 214, 96, KP.lwr],
-      ['腰 3', 266, 168, 76, KP.torso], ['腿 6 × 2', 266, 262, 76, KP.rknee]];
+    /* 机器人面朝镜头：它的右臂在画面左边、左膝在画面右边，引线连同侧的点，不横穿身体 */
+    var DOFS = [['手臂 7 × 2', 32, 132, 96, KP.relb], ['三指手 7 × 2', 32, 214, 96, KP.rwr],
+      ['腰 3', 266, 168, 76, KP.torso], ['腿 6 × 2', 266, 262, 76, KP.lknee]];
     var leads = DOFS.map(function (d) {
       chip(dof, d[1], d[2], d[3], d[0], C_JNT, { size: 11, h: 24 });
       var x0 = d[1] < 189 ? d[1] + d[3] : d[1];
@@ -982,7 +983,8 @@
     label(p5, 30, 46 + f15.h + 44, '作者的估计：G1 加上这个脖子，大约有人 80% 的核心功能', 'demo-x-ink', 13);
     function draw(t, clock) {
       var now = nowOf(t, clock);
-      var r = bot.put(now, Math.floor(now * 15) % 6), kp = r.f.ref.kp;
+      /* 站着标自由度：固定在蹲下样例的第 0 帧（原先循环前 6 帧，每 0.4 s 从半蹲弹回站姿，看着像抽搐） */
+      var r = bot.put(now, 0), kp = r.f.ref.kp;
       leads.forEach(function (q) { var p = project(kp[q.k], r.cam); setLine(q.l, q.x0, q.y0, p[0], p[1]); moveDot(q.d, p); });
       var hp = project(kp[KP.head], r.cam);
       headRing.setAttribute('cx', hp[0].toFixed(1)); headRing.setAttribute('cy', (hp[1] - 6).toFixed(1));
