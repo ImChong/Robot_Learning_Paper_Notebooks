@@ -397,7 +397,7 @@
     walk_sim: { file: 'g1_walk_sim.webp', R: 220, yaw: 1.1, pitch: 0.1, cw: 154, ch: 303, cols: 12, n: 60, ax: 70, ay: 291 },
     squat_ref: { file: 'g1_squat_ref.webp', R: 220, yaw: 1.1, pitch: 0.1, cw: 200, ch: 309, cols: 12, n: 60, ax: 79, ay: 296 },
     squat_sim: { file: 'g1_squat_sim.webp', R: 220, yaw: 1.1, pitch: 0.1, cw: 188, ch: 300, cols: 12, n: 60, ax: 69, ay: 288 },
-    hand: { file: 'g1_hand.webp', R: 1300, yaw: 0.6, pitch: 0.35, cw: 300, ch: 201, cols: 11, n: 22, ax: 150, ay: 80 }
+    hand: { file: 'g1_hand.webp', R: 1300, yaw: 0.6, pitch: 0.35, cw: 300, ch: 191, cols: 11, n: 22, ax: 150, ay: 80 }
   };
   function camFor(sheet, s, ox, oy, cx, cy) {
     var M = SHEETS[sheet];
@@ -459,6 +459,16 @@
     return { g: g, draw: draw };
   }
   /* 一台按真实时间循环播放的 G1（参考或跟出来的）+ 地面网格；put(now) 返回这一帧 */
+  /* 循环播放不跳帧：两段样例首尾的姿态对不上（走路差 0.67 rad、蹲下差 0.74 rad），整段 4 s 循环每圈都会跳一下。
+     走路只放一个步态周期：第 17–34 帧，第 35 帧和第 17 帧关节最多差 0.127 rad、关键点 2.5 cm，比相邻两帧的差还小；
+     蹲下先蹲再站，正着放完倒着放回去。i 是从头数的第几帧，返回帧号 k 和走路转了几圈 lap */
+  var LOOP = { walk: [17, 35] };
+  function loopFrame(name, i) {
+    var S = SEQ[name], L = LOOP[name];
+    if (L) { var len = L[1] - L[0]; return { k: L[0] + ((i % len) + len) % len, lap: Math.floor(i / len) }; }
+    var per = 2 * (S.n - 1), u = ((i % per) + per) % per;
+    return { k: u <= S.n - 1 ? u : per - u, lap: 0 };
+  }
   function player(parent, name, who, s, ox, oy, box, opts) {
     var o = opts || {}, g = group(parent);
     var grid = box ? groundGrid(g, box[0], box[1], box[2], box[3]) : null;
@@ -466,9 +476,17 @@
     return {
       g: g, mesh: mesh,
       put: function (now, kFixed) {
-        var S = SEQ[name], k = kFixed != null ? kFixed : Math.floor(now * S.fps) % S.n;
+        var S = SEQ[name], lp = kFixed != null ? { k: kFixed, lap: 0 } : loopFrame(name, Math.floor(now * S.fps)), k = lp.k;
         var f = frame(name, k), r = f[who].root, cam = camFor(name + '_' + who, s, ox, oy, r[0], r[1]);
-        if (grid) grid.draw(cam);
+        if (grid) {
+          /* 每转一圈根部跳回周期起点，地面要接着往后退：把走过的路加回去 */
+          var L = LOOP[name], gc = cam;
+          if (L && lp.lap) {
+            var a = frame(name, L[0])[who].root, b = frame(name, L[1])[who].root;
+            gc = { yaw: cam.yaw, pitch: cam.pitch, s: cam.s, ox: cam.ox, oy: cam.oy, cx: cam.cx + lp.lap * (b[0] - a[0]), cy: cam.cy + lp.lap * (b[1] - a[1]) };
+          }
+          grid.draw(gc);
+        }
         mesh.put(r, cam, k);
         return { f: f, cam: cam, k: k };
       }
@@ -765,6 +783,9 @@
     function cpt(k, v) { return [CX + 6 + k / (W.n - 1) * (CW - 12), CY + CH - 6 - v / kmax * (CH - 12)]; }
     var refPts = [], simPts = [];
     for (var k = 0; k < W.n; k++) { var fk = frame('walk', k); refPts.push(cpt(k, fk.ref.dof[3])); simPts.push(cpt(k, fk.sim.dof[3])); }
+    /* 上面的机器人只循环放一个步态周期（第 17–35 帧），光标在这一段里来回，底色标出来 */
+    var lx0 = cpt(LOOP.walk[0], 0)[0], lx1 = cpt(LOOP.walk[1], 0)[0], band = svgEl('rect', { x: lx0, y: CY + 3, width: lx1 - lx0, height: CH - 6, rx: 3 });
+    band.style.fill = C_T2; band.style.opacity = 0.1; p1.appendChild(band);
     pathLine(p1, refPts, C_REF, 2.4, '5 4');
     pathLine(p1, simPts, C_T2, 2.4);
     var cur = hline(p1, 0, CY + 4, 0, CY + CH - 4, C_BAD, 1.4);
@@ -1259,7 +1280,7 @@
       else if (t < 13.4) { var u = since(t, clock, 10.6) % 1.2; pinch = false; alpha = u < 0.2 ? u / 0.2 : u < 0.6 ? 1 : u < 0.8 ? 1 - (u - 0.6) / 0.2 : 0; alpha = Math.round(alpha * 20) / 20; }
       else { pinch = false; alpha = 0.5; }
       hand.put([0, 0, 0], { yaw: 0, pitch: 0, s: 1417, ox: 189, oy: 157 }, (pinch ? 11 : 0) + Math.round(alpha * 10));
-      modeTag.textContent = (pinch ? '捏' : '握') + '：官方代码里的张开 / 闭合姿态（左手）';
+      modeTag.textContent = pinch ? '捏：官方姿态插值，指尖碰到就停（左手）' : '握：官方代码里的张开 / 闭合姿态（左手）';
       setW(aFill, 288 * alpha);
       aRead.setText('抓握量 $\\alpha$ = ' + f2(alpha));
       setOpacity(cPow, t >= 7.0 && t < 10.4 ? (pinch ? 0.35 : 1) : 1);
@@ -1522,7 +1543,7 @@
     chip(p5, R, 120, W, '29 个关节平均误差 ' + f3(meanJointErr('squat', 0, 29)) + ' rad（腿 ' + f3(meanJointErr('squat', 0, 12)) + '）', C_T2, { size: 12, left: true });
     label(p5, R, 182, '走路那段 4 s：' + f3(meanJointErr('walk', 0, 29)) + ' rad；不是论文的实验', 'demo-x-mut', 11.5);
     function draw(t, clock) {
-      var now = nowOf(t, clock), k = Math.floor(now * SEQ.squat.fps) % SEQ.squat.n;
+      var now = nowOf(t, clock), k = loopFrame('squat', Math.floor(now * SEQ.squat.fps)).k;
       refBot.put(now, k);
       simBot.put(now, k);
       var p = zp(k, 0.35);
@@ -2002,7 +2023,7 @@
       DPA.forEach(function (a, i) { dpFlows[i].at(now, [a[0], a[1]], [a[2], a[3]], t >= 3.9); });
       /* p2：最近 2 s 的历史命令，往左滚 */
       var k0 = Math.floor(now * Wd.fps), hp = [];
-      for (var q = 0; q < 30; q++) { var kk = ((k0 - 29 + q) % Wd.n + Wd.n) % Wd.n; hp.push([HX0 + 8 + q / 29 * (HW0 - 16), Y + 120 - frame('walk', kk).ref.dof[3] / 1.3 * 96]); }
+      for (var q = 0; q < 30; q++) { var kk = loopFrame('walk', k0 - 29 + q).k; hp.push([HX0 + 8 + q / 29 * (HW0 - 16), Y + 120 - frame('walk', kk).ref.dof[3] / 1.3 * 96]); }
       setPath(hTrace, hp);
       hDots.forEach(function (d, i) { moveDot(d, hp[29 - i * 5]); });
       /* p4：去噪示意，每 2.4 s 一轮、8 步 */
@@ -2506,7 +2527,7 @@
     var r2 = rich(svg, 345, 256, '', 12, 'demo-x-good');
     var r3 = rich(svg, 345, 282, '', 12, 'demo-x-ink');
     var tb = table(root);
-    note(root, ['手：$\\mathbf{q}_{\\text{hand}} = (1-\\alpha)\\mathbf{q}_{\\text{open}} + \\alpha\\mathbf{q}_{\\text{close}}$。握的张开姿态是 7 个 0；捏的张开姿态取在「张开捏 → 闭合捏」的 80% 处（`ratio_open = 0.8`），食指一直收着。3D 特写是按这些关节角离线渲染的 11 档。',
+    note(root, ['手：$\\mathbf{q}_{\\text{hand}} = (1-\\alpha)\\mathbf{q}_{\\text{open}} + \\alpha\\mathbf{q}_{\\text{close}}$。握的张开姿态是 7 个 0；捏的张开姿态取在「张开捏 → 闭合捏」的 80% 处（`ratio_open = 0.8`），食指一直收着。3D 特写是按这些关节角离线渲染的 11 档；捏到 $\\alpha \\approx 0.62$ 拇指和中指的指尖就碰上了，按官方姿态接着插值会穿模，所以画面停在碰上的那一档（下面表里的目标角照旧是官方插值）。',
       '脖子：人头相对脊柱先偏航 $\\psi$、再俯仰 $\\theta$，$R_{\\text{rel}} = R_z(\\psi)R_y(\\theta)$，式 10 原样取回两个角；官方代码在 PICO 的坐标系里按 xyz 分解再换轴，并乘 `neck_retarget_scale = 1.5`。']);
     function render() {
       var a = Math.round(state.alpha * 10);
