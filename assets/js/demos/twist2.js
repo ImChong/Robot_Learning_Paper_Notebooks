@@ -1055,10 +1055,39 @@
     return { g: g, pts: pts };
   }
 
+  /* 侧面走路的简笔画：脚底中点 (x, y)、身高 h；ph 是步态相位，dir = ±1 是朝向；返回头和两条小腿中点 */
+  function walker(parent, h, color) {
+    var g = group(parent), u = h / 10, c = color || C_MUTED;
+    var body = hline(g, 0, 0, 0, 0, c, 3);
+    var limbs = [0, 1, 2, 3].map(function () { return pathLine(g, [[0, 0], [0, 0], [0, 0]], c, 3); });
+    var head = paint(svgEl('circle', { cx: 0, cy: 0, r: 0.8 * u, fill: 'none', 'stroke-width': 3 }), null, c);
+    g.appendChild(head);
+    return {
+      g: g,
+      put: function (x, y, ph, dir) {
+        var d = dir || 1, bob = 0.12 * u * Math.abs(Math.sin(ph));
+        var hip = [x, y - 5 * u - bob], neck = [x, y - 8.3 * u - bob], hd = [x, y - 9.2 * u - bob], sh = [x, y - 7.9 * u - bob], calf = [];
+        [0, Math.PI].forEach(function (o, k) {
+          var a = 0.45 * Math.sin(ph + o), b = 0.55 * Math.max(0, Math.sin(ph + o - 1.2));
+          var knee = [hip[0] + d * 2.6 * u * Math.sin(a), hip[1] + 2.6 * u * Math.cos(a)];
+          var foot = [knee[0] + d * 2.4 * u * Math.sin(a - b), Math.min(y, knee[1] + 2.4 * u * Math.cos(a - b))];
+          setPath(limbs[k], [hip, knee, foot]);
+          calf.push([(knee[0] + foot[0]) / 2, (knee[1] + foot[1]) / 2]);
+          var aa = -0.4 * Math.sin(ph + o);
+          var el = [sh[0] + d * 1.7 * u * Math.sin(aa), sh[1] + 1.7 * u * Math.cos(aa)];
+          setPath(limbs[2 + k], [sh, el, [el[0] + d * 1.6 * u * Math.sin(aa + 0.5), el[1] + 1.6 * u * Math.cos(aa + 0.5)]]);
+        });
+        setLine(body, neck[0], neck[1], hip[0], hip[1]);
+        head.setAttribute('cx', hd[0].toFixed(1)); head.setAttribute('cy', hd[1].toFixed(1));
+        return { head: hd, lcalf: calf[0], rcalf: calf[1] };
+      }
+    };
+  }
+
   /* ── scene 5: PICO 头显加两个追踪器 ── */
   function buildScenePico() {
     var s = sceneSvg('左边是项目页的视频：操作员走进来、戴上头显、标定、连上机器人，一分钟就能开始；右边依次是论文图 1 里的设备（引线标出头显、手柄、小腿上的追踪器）、' +
-      '两个追踪器与更多追踪器的对比、100 Hz 的动作流和一分钟的计时、HTC Vive 要在房间里架基站而 PICO 不用、论文图 6 里 PICO 输出的人体骨架');
+      '两个追踪器与更多追踪器的对比、100 Hz 的动作流和一分钟的计时、HTC Vive 要先在房间里架两台基站、光束扫到追踪器才定位，而 PICO 的设备都戴在身上、人往前走地面往后退，最后是论文图 6 里 PICO 输出的人体骨架');
     s.appendChild(svgText(24, 26, '不用动捕棚：PICO 头显 + 两个小腿追踪器', 'demo-x-ink2', 13.5));
     var clip = projClip(s, 'portable_setup', 24, 46, 400, 225, '项目页视频（8×）：戴头显 → 标定 → 连机器人 → 就绪');
     label(s, 24, 310, '论文图 1：从进门到装好约 1 分钟', 'demo-x-ink2', 12);
@@ -1094,29 +1123,98 @@
     var hand = hline(p3, CCX, CCY, CCX, CCY - CR, C_T2, 3);
     label(p3, R + 120, 200, '从进门到装好约 1 分钟', 'demo-x-ink', 13);
     label(p3, R + 120, 224, '不用繁重的标定', 'demo-x-mut', 11.5);
-    /* p4：HTC Vive 要在房间里架基站；PICO 头显自己看外面 */
+    /* p4：HTC Vive 要先在房间里架基站，基站扫到追踪器才定位；PICO 的设备都戴在身上，走到哪用到哪（示意） */
     var p4 = group(s);
-    label(p4, R, 64, '对比 HTC Vive 追踪器', 'demo-x-ink', 14);
-    [[R, 'Vive：要在房间里架设备', true], [R + 172, 'PICO：只靠头显自己', false]].forEach(function (c) {
-      var g = group(p4), x0 = c[0];
-      rectBox(g, x0, 80, 160, 160, C_BORDER, C_SURFACE2);
-      var fg = stickFig(g, x0 + 80, 220, 110, C_MUTED);
-      if (c[2]) {
-        [[x0 + 14, 92], [x0 + 146, 92]].forEach(function (b) {
-          g.appendChild(paint(svgEl('rect', { x: b[0] - 7, y: b[1] - 7, width: 14, height: 14, rx: 2 }), C_WARN));
-          hline(g, b[0], b[1], fg.pts.head[0], fg.pts.head[1], C_WARN, 1, '2 3');
-          hline(g, b[0], b[1], fg.pts.lcalf[0], fg.pts.lcalf[1], C_WARN, 1, '2 3');
-        });
-      } else {
-        dotAt(g, fg.pts.head[0], fg.pts.head[1], 7, C_VIS);
-        [-0.5, 0.5].forEach(function (a) {
-          var hx = fg.pts.head[0], hy = fg.pts.head[1];
-          hline(g, hx, hy, hx + 44 * Math.sin(a) * 1.6, hy - 44 * Math.cos(a) * 0.6, C_VIS, 1, '2 3');
-        });
-      }
-      label(g, x0 + 80, 258, c[1], c[2] ? 'demo-x-ink2' : 'demo-x-good', 11.5, 'middle');
+    label(p4, R, 64, '对比 HTC Vive 追踪器（示意）', 'demo-x-ink', 14);
+    function panelClip(x0) {
+      var id = 'tw2-vive-' + (++gridSeq), cp = svgEl('clipPath', { id: id });
+      cp.appendChild(svgEl('rect', { x: x0 + 1, y: 81, width: 158, height: 158, rx: 6 }));
+      p4.appendChild(cp);
+      var g = group(p4); g.setAttribute('clip-path', 'url(#' + id + ')');
+      return g;
+    }
+    var VX = R, PX5 = R + 172, FLOOR = 232;
+    /* 左：Vive。两台基站架在三脚架上，光束来回扫，扫到哪个追踪器哪个亮一下 */
+    rectBox(p4, VX, 80, 160, 160, C_BORDER, C_SURFACE2);
+    var vClip = panelClip(VX);
+    hline(vClip, VX, FLOOR, VX + 160, FLOOR, C_BORDER, 1.2);
+    var STA = [[VX + 16, 100, 1], [VX + 144, 100, -1]];
+    /* 架基站：三脚架从地面长上来，基站再亮起 */
+    var stations = STA.map(function (b) {
+      var g = group(p4), head = group(g);
+      var legs = [-8, 0, 8].map(function (dx) { return { l: hline(g, b[0] + dx, FLOOR, b[0] + dx, FLOOR, C_WARN, 1.2), dx: dx }; });
+      head.appendChild(paint(svgEl('rect', { x: b[0] - 7, y: b[1] - 7, width: 14, height: 14, rx: 2 }), C_WARN));
+      label(head, b[0] + b[2] * 11, 97, '基站', 'demo-x-mut', 9.5, b[2] > 0 ? 'start' : 'end');
+      return { g: g, head: head, legs: legs, b: b };
     });
-    label(p4, R, 292, '不用另外架第三视角的设备，带到哪里都能用', 'demo-x-ink2', 11.5);
+    var beams = STA.map(function () { var l = hline(vClip, 0, 0, 0, 0, C_WARN, 1.6); l.style.opacity = 0.75; return l; });
+    var vWalk = walker(p4, 96, C_MUTED);
+    var vTrk = [0, 1, 2].map(function () { return dotAt(p4, 0, 0, 4.5, C_MUTED); });
+    var vLab = label(p4, VX + 80, 258, '', 'demo-x-ink2', 11.5, 'middle');
+    /* 右：PICO。头显往外看自己定位，小腿追踪器把数据传给头显；地面往后退，走到哪都能用 */
+    rectBox(p4, PX5, 80, 160, 160, C_BORDER, C_SURFACE2);
+    var pClip = panelClip(PX5);
+    hline(pClip, PX5, FLOOR, PX5 + 160, FLOOR, C_BORDER, 1.2);
+    var ticks5 = [];
+    for (var q5 = 0; q5 < 10; q5++) ticks5.push(hline(pClip, 0, FLOOR, 0, FLOOR + 5, C_BORDER, 1.2));
+    var scen = [0, 1].map(function (i) {
+      var g = group(pClip);
+      /* 路过的门和树，只画轮廓，从人身后经过也不挡人 */
+      if (i === 0) rectBox(g, -9, FLOOR - 40, 18, 40, C_MUTED, 'none');
+      else { hline(g, 0, FLOOR, 0, FLOOR - 20, C_MUTED, 1.6); g.appendChild(paint(svgEl('circle', { cx: 0, cy: FLOOR - 28, r: 8, fill: 'none', 'stroke-width': 1.6 }), null, C_MUTED)); }
+      return g;
+    });
+    var fov = paint(svgEl('path', { d: '' }), C_VIS); fov.style.opacity = 0.18; pClip.appendChild(fov);
+    var pWalk = walker(p4, 96, C_MUTED);
+    var pFlows = [0, 1].map(function () { return flowSeg(p4, C_T2, 2, 2.4, 70, true); });
+    var pHead = dotAt(p4, 0, 0, 6, C_VIS), pTrk = [0, 1].map(function () { return dotAt(p4, 0, 0, 4.5, C_T2); });
+    label(p4, PX5 + 80, 258, 'PICO：戴上就走，到哪都能用', 'demo-x-good', 11, 'middle');
+    label(p4, R, 292, '论文：不用另外架第三视角的设备，带到哪里都能用', 'demo-x-ink2', 11.5);
+    function drawVive(t, clock) {
+      var c = since(t, clock, 10.4), up = [seg(c, 0.2, 0.9), seg(c, 0.9, 1.6)], live = c > 2.0;
+      stations.forEach(function (st, i) {
+        var top = FLOOR - (FLOOR - st.b[1] - 7) * seg(up[i], 0, 0.7);
+        st.legs.forEach(function (q) { setLine(q.l, st.b[0] + q.dx * (FLOOR - top) / (FLOOR - st.b[1] - 7), FLOOR, st.b[0], top); });
+        setOpacity(st.g, up[i] > 0 ? 1 : 0);
+        setOpacity(st.head, seg(up[i], 0.6, 1));
+      });
+      vLab.textContent = c < 2.0 ? 'Vive：先架两台基站' : 'Vive：基站扫到才能定位';
+      /* 架好以后在两台三脚架之间来回走 */
+      var wx = VX + 80, dir = 1, ph = 0;
+      if (live) { var u = c - 2.0; wx = VX + 80 + 24 * Math.sin(0.9 * u); dir = Math.cos(0.9 * u) >= 0 ? 1 : -1; ph = u * 7; }
+      var pts = vWalk.put(wx, FLOOR, ph, dir), trk = [pts.head, pts.lcalf, pts.rcalf];
+      var hits = [false, false, false];
+      STA.forEach(function (b, i) {
+        var th = (15 + 65 * (((c * 1.1) + i * 0.5) % 1)) * Math.PI / 180, dx = b[2] * Math.cos(th), dy = Math.sin(th);
+        setLine(beams[i], b[0], b[1], b[0] + dx * 240, b[1] + dy * 240);
+        beams[i].style.opacity = live ? 0.75 : 0;
+        trk.forEach(function (p, j) {
+          var rx = p[0] - b[0], ry = p[1] - b[1];
+          if (live && rx * dx + ry * dy > 0 && Math.abs(rx * dy - ry * dx) < 7) hits[j] = true;
+        });
+      });
+      vTrk.forEach(function (d, j) {
+        moveDot(d, trk[j]);
+        d.style.fill = live ? C_WARN : C_MUTED;
+        d.setAttribute('r', hits[j] ? 7 : 4.5);
+        d.style.opacity = live ? 1 : 0.5;
+      });
+    }
+    function drawPico(t, clock) {
+      var c = since(t, clock, 10.4), ph = c * 7, v = 34, off = c * v;
+      var pts = pWalk.put(PX5 + 80, FLOOR, ph, 1);
+      /* 刻度和路过的东西都只在框里移动、到边上淡出：被裁掉的部分也算进分镜的外框，跑出框会改掉整幕的缩放 */
+      ticks5.forEach(function (l, i) { var x = PX5 + 4 + ((((i * 16 - off) % 152) + 152) % 152); setLine(l, x, FLOOR, x, FLOOR + 5); });
+      scen.forEach(function (g, i) {
+        var x = PX5 + 12 + ((((30 + i * 72 - off) % 136) + 136) % 136);
+        g.setAttribute('transform', 'translate(' + x.toFixed(1) + ' 0)');
+        g.style.opacity = (0.35 * Math.min(1, (x - PX5 - 12) / 18, (PX5 + 148 - x) / 18)).toFixed(3);
+      });
+      var hx = pts.head[0], hy = pts.head[1];
+      fov.setAttribute('d', 'M' + hx.toFixed(1) + ' ' + hy.toFixed(1) + ' L' + (hx + 60).toFixed(1) + ' ' + (hy - 26).toFixed(1) + ' L' + (hx + 60).toFixed(1) + ' ' + (hy + 26).toFixed(1) + ' Z');
+      moveDot(pHead, pts.head);
+      [pts.lcalf, pts.rcalf].forEach(function (p, j) { moveDot(pTrk[j], p); pFlows[j].at(c, p, pts.head, true); });
+    }
     var p5 = group(s);
     label(p5, R, 64, 'PICO 给的是 24 个关节的人体骨架', 'demo-x-ink', 13);
     paperPart(p5, 'fig6', 0, 0.06, 0.41, 1, R + 40, 80, 230, '论文图 6 左：VR 的人体');
@@ -1127,6 +1225,7 @@
       setOpacity(p2, win(t, 3.6, 7.0));
       setOpacity(p3, win(t, 7.0, 10.4));
       setOpacity(p4, win(t, 10.4, 13.4));
+      if (t >= 10.1 && t < 13.8) { drawVive(t, clock); drawPico(t, clock); }
       setOpacity(p5, win(t, 13.4));
       trA.forEach(function (d, i) { d.setAttribute('r', (6 + 1.2 * Math.sin(now * 6 + i)).toFixed(2)); });
       /* 100 Hz：框宽 = 0.5 s，竖线按真实时间往左走（放慢 25 倍，看得清） */
@@ -2431,7 +2530,7 @@
     K.video(host, {
       title: '配音讲解视频：TWIST2 十八幕全流程',
       sub: '17 分 11 秒竖屏视频（1080×1920），中文配音 + 字幕。画面就是上面的十八幕动画，旁白把每一幕讲细；适合手机上看或转发。',
-      size: '21.6 MB',
+      size: '21.7 MB',
       fileName: 'TWIST2_讲解视频.mp4'
     });
   }
