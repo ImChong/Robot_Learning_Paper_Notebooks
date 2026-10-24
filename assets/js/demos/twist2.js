@@ -1605,13 +1605,19 @@
       p2.appendChild(rr); obsRects.push({ r: rr, x: ox, w: w });
       ox += w;
     });
-    /* 未来 35 维只占 1432 的 2.4%，条上不到 10 px，单独标出来 */
-    var futSeg = obsRects[2], futMark = group(p2);
-    futMark.appendChild(paint(svgEl('rect', { x: futSeg.x - 4, y: 131, width: futSeg.w + 3, height: 32, rx: 3, fill: 'none', 'stroke-width': 2 }), null, C_ROOT));
-    label(futMark, futSeg.x + futSeg.w - 1, 125, '未来命令 35', 'demo-x-ink', 11.5, 'end');
     legendRow(p2, R, 184, obsSeg.map(function (o) { return [o[1] + ' ' + o[0], o[2]]; }));
-    label(p2, R, 216, '每步 127 = 命令 35 + 本体感受 92', 'demo-x-ink2', 12);
-    label(p2, R, 240, '脚本注释写 1402，算错了；ONNX 的输入确实是 1432', 'demo-x-mut', 11);
+    /* 每一步的 127 维拆开：命令 35 + 本体感受 92（IMU 5 + 关节角 29 + 关节速度 29 + 上一步动作 29，读自官方代码） */
+    label(p2, R, 216, '每一步 127 维 = 命令 35 + 本体感受 92', 'demo-x-ink2', 12);
+    var stepSeg = [[35, '命令 35', C_ROOT], [5, '', C_BAD], [29, '关节角 29', C_JNT], [29, '关节速度 29', C_T2], [29, '上一步动作 29', C_VIS]], stepRects = [], sx = R;
+    var stepLab = group(p2);
+    stepSeg.forEach(function (o) {
+      var w = o[0] / 127 * W, rr = paint(svgEl('rect', { x: sx, y: 226, width: 0, height: 20, rx: 2 }), o[2]);
+      p2.appendChild(rr); stepRects.push({ r: rr, x: sx, w: w });
+      if (o[1]) label(stepLab, sx + w / 2, 262, o[1], 'demo-x-mut', 10.5, 'middle');
+      sx += w;
+    });
+    label(stepLab, stepRects[1].x, 282, '红的 5 维是 IMU：根部角速度 3 + 横滚、俯仰 2', 'demo-x-mut', 10.5);
+    label(p2, R, 314, '脚本注释写 1402，算错了；ONNX 的输入确实是 1432', 'demo-x-mut', 11);
     var p3 = group(s);
     label(p3, R, 64, '价值网络看特权信息：1734 维', 'demo-x-ink', 14);
     hline(p3, R, 98, R + W, 98, C_BORDER, 1.4);
@@ -1655,7 +1661,9 @@
       var g2 = seg(t, 4.0, 5.2);
       /* 按总宽度从左往右填：历史 → 当前 → 未来（原先按 1270 归一，当前只填到 13%、未来几乎看不见） */
       obsRects.forEach(function (o) { o.r.setAttribute('width', (o.w * clamp((g2 * W - (o.x - R)) / o.w, 0, 1)).toFixed(1)); });
-      setOpacity(futMark, seg(t, 5.2, 5.6) * (0.65 + 0.35 * Math.sin(now * 4)));
+      var g2b = seg(t, 5.3, 6.3);
+      stepRects.forEach(function (o) { o.r.setAttribute('width', (o.w * clamp((g2b * W - (o.x - R)) / o.w, 0, 1)).toFixed(1)); });
+      setOpacity(stepLab, seg(t, 6.0, 6.4));
       var g3 = seg(t, 7.4, 8.4);
       fut.forEach(function (r, q) { r.style.opacity = 0.2 + 0.8 * clamp(g3 * 20 - q, 0, 1); });
       envGrid.fill(seg(t, 8.0, 9.6) * 64);
