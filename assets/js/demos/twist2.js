@@ -1605,6 +1605,10 @@
       p2.appendChild(rr); obsRects.push({ r: rr, x: ox, w: w });
       ox += w;
     });
+    /* 未来 35 维只占 1432 的 2.4%，条上不到 10 px，单独标出来 */
+    var futSeg = obsRects[2], futMark = group(p2);
+    futMark.appendChild(paint(svgEl('rect', { x: futSeg.x - 4, y: 131, width: futSeg.w + 3, height: 32, rx: 3, fill: 'none', 'stroke-width': 2 }), null, C_ROOT));
+    label(futMark, futSeg.x + futSeg.w - 1, 125, '未来命令 35', 'demo-x-ink', 11.5, 'end');
     legendRow(p2, R, 184, obsSeg.map(function (o) { return [o[1] + ' ' + o[0], o[2]]; }));
     label(p2, R, 216, '每步 127 = 命令 35 + 本体感受 92', 'demo-x-ink2', 12);
     label(p2, R, 240, '脚本注释写 1402，算错了；ONNX 的输入确实是 1432', 'demo-x-mut', 11);
@@ -1648,8 +1652,10 @@
       var p = zp(k, 0.35);
       setLine(cur, p[0], PY, p[0], PY + PH);
       [[R + 182, 96, R + 206, 96], [R + 182, 134, R + 206, 146], [R + 182, 172, R + 206, 158], [R + 300, 112, R + 300, 124]].forEach(function (a, i) { netFlows[i].at(now, [a[0], a[1]], [a[2], a[3]], t < 3.9); });
-      var g2 = seg(t, 4.0, 5.2), acc = 0;
-      obsRects.forEach(function (o) { o.r.setAttribute('width', (o.w * clamp(g2 * 1432 / 1270 - acc, 0, 1)).toFixed(1)); acc += o.w / W * 1432 / 1270; });
+      var g2 = seg(t, 4.0, 5.2);
+      /* 按总宽度从左往右填：历史 → 当前 → 未来（原先按 1270 归一，当前只填到 13%、未来几乎看不见） */
+      obsRects.forEach(function (o) { o.r.setAttribute('width', (o.w * clamp((g2 * W - (o.x - R)) / o.w, 0, 1)).toFixed(1)); });
+      setOpacity(futMark, seg(t, 5.2, 5.6) * (0.65 + 0.35 * Math.sin(now * 4)));
       var g3 = seg(t, 7.4, 8.4);
       fut.forEach(function (r, q) { r.style.opacity = 0.2 + 0.8 * clamp(g3 * 20 - q, 0, 1); });
       envGrid.fill(seg(t, 8.0, 9.6) * 64);
@@ -1737,7 +1743,8 @@
     var hzRows = [['遥操作 100 Hz', 100, C_VIS], ['底层 50 Hz', 50, C_WARN], ['录数据 30 Hz', 30, C_T2]].map(function (h, r) {
       var y = Y + 14 + r * 20, g = group(p5), tk = [];
       label(g, R, y + 11, h[0], 'demo-x-ink2', 11);
-      for (var q = 0; q < Math.round(h[1] * 0.2) + 1; q++) tk.push(hline(g, 0, y, 0, y + 14, h[2], 1.6));
+      /* 固定画：0.2 s 里每一帧一根竖线（滚动起来看着花） */
+      for (var q = 0; q < Math.round(h[1] * 0.2) + 1; q++) { var xq = R + 110 + (q / h[1] / 0.2) * (W - 120); tk.push(hline(g, xq, y, xq, y + 14, h[2], 1.6)); }
       return { tk: tk, hz: h[1], y: y };
     });
     readHint(p5, R, Y + 86, '每根竖线是一帧；同样 0.2 s 里，越密频率越高', 10.5, W);
@@ -1751,10 +1758,6 @@
         var on = !focus || (focus === 'act' && e.kind === 'act') || (focus === 'img' && e.kind === 'img') || (focus === 'imgrec' && e.kind !== 'act');
         setOpacity(e.g, on ? 1 : 0.25);
         moveDot(e.dot, along(e.pts, ((now * 1.6 + i * 0.37) % 1)));
-      });
-      hzRows.forEach(function (h) {
-        var x0 = R + 110, w0 = W - 120, dt = 1 / h.hz, off = (now * 0.25) % dt;
-        h.tk.forEach(function (tk, q) { var x = x0 + ((q * dt + dt - off) / 0.2) * w0; setLine(tk, x, h.y, x, h.y + 14); tk.style.opacity = x <= x0 + w0 ? 1 : 0; });
       });
       setOpacity(p1, win(t, 0.3, 3.6));
       setOpacity(p2, win(t, 3.6, 7.0));
@@ -2530,7 +2533,7 @@
     K.video(host, {
       title: '配音讲解视频：TWIST2 十八幕全流程',
       sub: '17 分 11 秒竖屏视频（1080×1920），中文配音 + 字幕。画面就是上面的十八幕动画，旁白把每一幕讲细；适合手机上看或转发。',
-      size: '21.7 MB',
+      size: '21.6 MB',
       fileName: 'TWIST2_讲解视频.mp4'
     });
   }
