@@ -133,6 +133,13 @@ TWIST_NOTE = (
     / "TWIST__Teleoperated_Whole-Body_Imitation_System"
     / "TWIST__Teleoperated_Whole-Body_Imitation_System.md"
 )
+FALCON_NOTE = (
+    ROOT
+    / "papers"
+    / "04_Loco-Manipulation_and_WBC"
+    / "FALCON__Learning_Force-Adaptive_Humanoid_Loco-Manipulation"
+    / "FALCON__Learning_Force-Adaptive_Humanoid_Loco-Manipulation.md"
+)
 PHP_NOTE = (
     ROOT
     / "papers"
@@ -352,6 +359,7 @@ EXPLAINER_BUNDLES = (
     "gentle", "lcp", "transformer", "pi0", "pi05", "op3soccer", "smp", "humanml3d",
     "domain_randomization", "quadterrain", "realhumanoid", "asap", "inekf", "berkeley_humanoid",
     "toddlerbot", "exbody", "h2o", "omnih2o", "hover", "maskedmimic", "exbody2", "hugwbc", "homie", "twist",
+    "falcon",
 )
 
 # 幕数由论文决定，不是统一模板：PPO / DeepMimic / AMP / ADD 的核心概念正好各 5 个，
@@ -573,6 +581,11 @@ EXPLAINER_SCENES = {
     # 各一幕；结果按关键发现 1–3 各一幕（发现 4 并进重定向那一幕），上真机的链路与延迟、四类技能、部位误差、局限与代码各一幕。
     # 压成 14 幕会让教师的 20 帧和学生的 1155 维、或图 6 的柱和图 7 的曲线抢同一帧。
     "twist": (TWIST_NOTE, 16),
+    # FALCON 十七幕：问题两幕（手上有力 / 两条老路）；第 3 节的目标空间、两个智能体（3.1 节）、上身残差（隐式补偿，代码）各一幕；
+    # 3.2 节的力课程按式 3–4（力的上限）、式 5（狄利克雷比例与代码的三角波）、课程系数与阻力 / 滤波、施力点与附录 A.3 的力估计各一幕，
+    # 奖励与随机化（表 5–6）一幕；结果按表 1、图 3 + 表 2–3、图 4–5、表 4、图 1 + 图 8、图 6 各一幕，局限与代码一幕。
+    # 压成 14 幕会让式 4 的七根候选条和狄利克雷三角形、或表 1 的柱和图 3 的曲线抢同一帧。
+    "falcon": (FALCON_NOTE, 17),
 
     "humanml3d": (HUMANML3D_NOTE, 12),
 }
@@ -5173,3 +5186,110 @@ def test_twist_project_page_clips():
     assert sum(p.stat().st_size for p in clip_dir.iterdir()) < 2.5e6
     note = TWIST_NOTE.read_text(encoding="utf-8")
     assert "剪自[项目页](https://yanjieze.com/projects/TWIST/)的视频" in note
+
+
+def test_falcon_explainer_demos_and_worked_example_share_the_paper_numbers():
+    """FALCON：十七幕动画、三个演示、配音旁白与笔记「🚶 具体实例」用同一组数。
+
+    表 1–6 照抄 arXiv 2505.06776 v2；力的上限（式 4 的代码写法：τ^g 乘 0、ε = 0.01、上限 × 0.9）、课程、裁剪照抄 LeCAR-Lab/FALCON；
+    G1 左臂在各姿态的雅可比与重力项（BOUND_GRID）、站着 / 走路 / 图 11 的复现是我们用官方 onnx 在 MuJoCo 里算的，嵌在 falcon.js 里，
+    这里解码后把例 1–4、例 7 再算一遍。
+    """
+    js = (DEMO_JS_DIR / "falcon.js").read_text(encoding="utf-8")
+    note = FALCON_NOTE.read_text(encoding="utf-8")
+    narration = (ROOT / "scripts" / "paper_video" / "papers" / "falcon.py").read_text(encoding="utf-8")
+    intro = (ROOT / "scripts" / "paper_video" / "papers" / "falcon.js").read_text(encoding="utf-8")
+
+    for line in (
+        "{ key: 'falcon', fam: 'falcon', zh: 'FALCON + 力课程', v: [0.21, 0.24, 0.37, 0.27, 0.30, 0.45] }",
+        "{ key: 'mwb', fam: 'mwb', zh: '单策略 + 力课程', v: [0.43, 0.50, 0.73, 0.28, 0.32, 0.44] },",
+        "{ key: 'pid', fam: 'ik', zh: 'PID + 力课程', v: [0.24, 0.31, 0.60, 0.32, 0.35, 0.46] },",
+        "{ key: 'wo', zh: '不看力矩上限', v: [0.42, 0.45, 0.61, 0.45, 0.46, 0.54] },",
+        "{ key: 'falcon', zh: 'FALCON', v: [0.39, 0.42] }",
+        "var GAUGE = { cart: 107.9, door: 47.3, g1: 57.4, t1: 66.3 };",
+        "var CURR = { init: 0.1, up: 210, down: 200, step: 0.02 };",
+        "var CLIP = { lo: [-40, -40, -50], hi: [40, 40, 5] }, ZERO_P = 0.25;",
+        "var TLIM = [25, 25, 25, 25, 25, 5, 5];",
+        "var ACCAD_STATS = { frames: 4934, zLimit: [['腕俯仰', 2992], ['肩俯仰', 1472], ['肩横滚', 441], ['其他', 29]], median: [75.9, 77.3, 120.1] };",
+        "hold: { force: 20, falcon: { eup: 0.184, wp: -0.010, wpTarget: -0.790, drop: 1.2, tau: 3.12 }, pd: { eup: 1.751, wp: 0.593, drop: 92.0, tau: 2.38 } },",
+        "walk: { mass: 1.2, falcon: { eup: 0.178, root: 0.273, wp: 0.018 }, pd: { eup: 1.369, root: 0.451, wp: 0.449 } },",
+        "lever: [{ r: 0, arm: 0.046, tau: 0.92 }, { r: 0.5, arm: 0.136, tau: 2.72 }, { r: 1, arm: 0.226, tau: 4.52 }]",
+    ):
+        assert line in js, line
+    for k in ("'falcon-explainer'", "'falcon-video'", "'falcon-bounds'", "'falcon-sampler'", "'falcon-tables'", "K.video(host"):
+        assert k in js, k
+    for k in ('data-demo="falcon-bounds"', 'data-demo="falcon-sampler"', 'data-demo="falcon-tables"', 'data-demo="falcon-explainer"'):
+        assert k in note, k
+
+    # 例 1：默认姿态（肩俯仰 0、肘 0）左手的上限，照代码（τ^g 乘 0）与照论文（带 τ^g）
+    grid = json.loads(re.search(r"var BOUND_GRID = (\{.*?\});\n", js).group(1))
+    cell = grid["cells"][grid["sp"].index(0.0) * len(grid["el"]) + grid["el"].index(0.0)]
+    lim = [t * 0.9 for t in (25, 25, 25, 25, 25, 5, 5)]
+
+    def bounds(use_g):
+        hi, lo, arg = [], [], []
+        for i in range(3):
+            c = [((lim[j] - (cell["tg"][j] if use_g else 0)) / (abs(cell["J"][i][j]) + 0.01), j) for j in range(7)]
+            d = [(-lim[j] - (cell["tg"][j] if use_g else 0)) / (abs(cell["J"][i][j]) + 0.01) for j in range(7)]
+            hi.append(min(c)[0])
+            arg.append(min(c)[1])
+            lo.append(max(d))
+        return hi, lo, arg
+
+    hi, lo, arg = bounds(False)
+    assert [_fmt(x, 1) for x in hi] == ["106.0", "107.2", "80.4"] and arg == [0, 2, 5]
+    hig, log, _ = bounds(True)
+    assert (_fmt(hig[2], 1), _fmt(log[2], 1), _fmt(hig[0], 1), _fmt(log[0], 1)) == ("87.5", "-73.2", "115.8", "-96.1")
+    for s in ("**106.0 N**", "**107.2 N**", "**80.4 N**", "= 87.5$ N", "= -73.2$ N", "往下只剩 73.2 N、往上变成 87.5 N"):
+        assert s in note, s
+    assert "向前 106 牛" in narration and "向左 107 牛" in narration and "向上 80 牛" in narration
+    assert "只剩 73 牛，往上变成 88 牛" in narration and "左 107.2 N（肩偏航）" in js and "107.3" not in js + note
+
+    # 例 2：252 段 4,934 帧里竖直方向由谁决定
+    assert 2992 + 1472 + 441 + 29 == 4934 and _fmt(100 * 2992 / 4934, 1) == "60.6"
+    assert "| 腕俯仰 | 2,992 | 60.6% |" in note and "六成的帧都是腕俯仰先顶到上限" in narration
+
+    # 例 3：一组 γ（复现里那一回合）怎么变成一步的力
+    gamma = json.loads(re.search(r'"gamma":(\[[^\]]*\])', js).group(1))
+    assert gamma == [0.307, 0.445, 0.247]
+    box = [h * g for h, g in zip(hi, gamma, strict=True)]
+    assert [_fmt(x, 1) for x in box] == ["32.5", "47.7", "19.8"]
+    top = [min(max(b + 0.5, lo_), hi_) for b, lo_, hi_ in zip(box, (-40, -40, -50), (40, 40, 5), strict=True)]
+    assert [_fmt(x, 1) for x in top] == ["33.0", "40.0", "5.0"]
+    assert "$(33.0, 40.0, 5.0)$ N" in note and "$\\gamma = (0.307, 0.445, 0.247)$" in note
+
+    # 例 4：课程从 0.1 到 1
+    assert round((1 - 0.1) / 0.02) == 45 and "**至少 45 个撑满的回合**" in note and "至少要 45 个撑满的回合" in js
+
+    # 例 5–8：复现的数字在笔记、旁白、动画里一致
+    for s in ("| 0.184 | 1.751 |", "| 1.2 | 92.0 |", "| 0.178 | 1.369 |", "| 0.273 | 0.451 |", "| 0.38 | 1.75 | 3.12 | 4.48 | 5.00 |"):
+        assert s in note, s
+    assert _fmt(1.369 / 0.178, 1) == "7.7" and "误差差了约 7.7 倍" in js and "相差大约 7.7 倍" in narration
+    assert [_fmt(20 * a, 2) for a in (0.046, 0.136, 0.226)] == ["0.92", "2.72", "4.52"]
+    assert "从 0.92 涨到 4.52 牛米" in narration and _fmt(1.2 * 9.81, 1) == "11.8"
+    for s in ("Falcon 把目标挪到了负 0.79 弧度", "0.18 对 1.75 弧度", "1 毫米对 92 毫米", "0.27 对 0.45 米每秒", "手腕垂了 0.46 弧度"):
+        assert s in narration, s
+
+    # 旁白：93 句；数字之间不只隔一个逗号；片尾只预告下一篇（HDMI）；绕开多音字与切错的词
+    spoken = re.findall(r'"([^"]*)"\),', narration[narration.index("SCRIPT = [") : narration.index("DISPLAY = [")])
+    assert len(spoken) == 93
+    assert not any(re.search(r"\d\s*[，,]\s*\d", t) for t in spoken)
+    assert "下一篇讲 HDMI" in narration and "HDMI" in intro and "HDMI" not in js
+    for bad in ("差不多", "几乎", "一行", "重点", "时长", "卡住", "多重", "条越长", "均匀地", "不用力", "加上身", "看论文图", "竖直"):
+        assert not any(bad in t for t in spoken), bad
+    assert "## 🎬 十七幕动画" in note and 'demos: ["falcon"]' in note
+    assert "VIDEO_MB" not in note and "@@" not in js
+
+
+def test_falcon_project_page_clips():
+    """FALCON：第 1、15、16 幕的真机画面剪自项目页的视频（10 段，按幕懒加载）；seqClip 的分段时长加起来要等于片段时长。"""
+    js = (DEMO_JS_DIR / "falcon.js").read_text(encoding="utf-8")
+    clip_dir = ROOT / "assets/img/papers/falcon/clips"
+    used = set(re.findall(r"(?:projClip|seqClip)\(\w+, '(\w+)'", js))
+    assert used == {"teaser", "vr_lift", "cart_base", "cart_falcon", "door_base", "door_falcon", "lift_base", "lift_falcon", "stance_pull", "autonomy"}
+    assert {p.name for p in clip_dir.iterdir()} == {f"{u}.{ext}" for u in used for ext in ("mp4", "webp")}
+    total = sum(float(x) for x in re.findall(r"\[([0-9.]+), '", js[js.index("var TEASER_PARTS") : js.index("var TEASER_PARTS") + 200]))
+    assert abs(total - _mp4_seconds(clip_dir / "teaser.mp4")) < 0.05, total
+    assert sum(p.stat().st_size for p in clip_dir.iterdir()) < 2.5e6
+    note = FALCON_NOTE.read_text(encoding="utf-8")
+    assert "剪自[项目页](https://lecar-lab.github.io/falcon-humanoid/)的视频" in note
