@@ -3742,6 +3742,19 @@
     "display_name": "Sim-to-Real",
     "papers": [
       {
+        "title": "Contact-UAN: Unsupervised Actuator Networks as a Residual World Model for Humanoid Control",
+        "path": "papers/10_Sim-to-Real/Contact-UAN__Unsupervised_Actuator_Networks_as_a_Residual_World_Model/Contact-UAN__Unsupervised_Actuator_Networks_as_a_Residual_World_Model.md",
+        "url": "/papers/10_Sim-to-Real/Contact-UAN__Unsupervised_Actuator_Networks_as_a_Residual_World_Model/Contact-UAN__Unsupervised_Actuator_Networks_as_a_Residual_World_Model.html",
+        "dir": "Contact-UAN__Unsupervised_Actuator_Networks_as_a_Residual_World_Model",
+        "arxiv": "2610.18991",
+        "has_open_source": true,
+        "summary_zh": "Contact-UAN 不重建整个世界模型，只在仿真器的关节位置目标上加一个学出来的残差，修正执行器误差，解决仿真策略上真机后「动作像，力不对」（跑步费扭矩、力控跟不准、跳跃落地失败）的问题。",
+        "published_date_zh": "2026年10月13日（arXiv v1）",
+        "published_date_en": "Oct 13, 2026 (arXiv v1)",
+        "zhname": "Contact-UAN：面向人形控制的无监督执行器网络残差世界模型",
+        "zh_title": "Contact-UAN：面向人形控制的无监督执行器网络残差世界模型"
+      },
+      {
         "title": "Informationally Decoupled Trajectory Design for Sim-to-Real System Identification",
         "path": "papers/10_Sim-to-Real/IDTD__Informationally_Decoupled_Trajectory_Design_for_Sim-to-Real_System_Identification/IDTD__Informationally_Decoupled_Trajectory_Design_for_Sim-to-Real_System_Identification.md",
         "url": "/papers/10_Sim-to-Real/IDTD__Informationally_Decoupled_Trajectory_Design_for_Sim-to-Real_System_Identification/IDTD__Informationally_Decoupled_Trajectory_Design_for_Sim-to-Real_System_Identification.html",
