@@ -1,0 +1,29 @@
+---
+layout: default
+title: "Page not found"
+description: "这个地址没有对应的笔记页面：回到首页搜索论文，或从学习路线图开始读。"
+permalink: /404.html
+sitemap: false
+noindex: true
+---
+<section class="not-found" aria-labelledby="not-found-title">
+  <p class="not-found-code" aria-hidden="true">404</p>
+  <h1 id="not-found-title" data-en="This page does not exist" data-zh="这个页面不存在">This page does not exist</h1>
+  <p class="not-found-lede"
+     data-en="Notes sometimes move when their folder is renamed. Search the full list by title or arXiv ID, or start from the learning roadmap."
+     data-zh="笔记有时会随目录改名换地址。回到首页按论文标题或 arXiv 编号搜索，或者从学习路线图开始读。">Notes sometimes move when their folder is renamed. Search the full list by title or arXiv ID, or start from the learning roadmap.</p>
+  <div class="not-found-actions">
+    <a class="not-found-primary" href="{{ '/' | relative_url }}#paper-search">
+      <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-magnifying-glass"></use></svg>
+      <span data-en="Search all notes" data-zh="搜索全部笔记">Search all notes</span>
+    </a>
+    <a class="not-found-secondary" href="{{ '/' | relative_url }}#roadmap-title">
+      <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-map-trifold"></use></svg>
+      <span data-en="Open the roadmap" data-zh="打开学习路线图">Open the roadmap</span>
+    </a>
+    <a class="not-found-link" href="{{ '/updates.html' | relative_url }}">
+      <span data-en="Recent updates" data-zh="最近更新">Recent updates</span>
+      <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-arrow-right"></use></svg>
+    </a>
+  </div>
+</section>
