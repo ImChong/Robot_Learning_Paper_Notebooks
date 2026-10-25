@@ -110,6 +110,23 @@
 
 | #   | 论文                                                                                                                                                               | 日期         | 🌟  | 状态   |
 | --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- | --- | ---- |
+| 1134  | [Memory before Goal: Role of Pre-History Memory for Humanoid Loco-Manipulation](https://arxiv.org/abs/2610.31166) | 2026.10 |  | ⏳ 待读 |
+| 1135  | [Robot Motion Transition with Human Motion Prior](https://arxiv.org/abs/2610.30817) | 2026.10 |  | ⏳ 待读 |
+| 1136  | [Motion Retargeting with Spatiotemporal Preferences for Humanoid Loco-Manipulation](https://arxiv.org/abs/2610.30540) | 2026.10 |  | ⏳ 待读 |
+| 1137  | [SP-HLM: Sparse-Pose-Driven Motion Generation and Whole-Body Control for Humanoid Loco-Manipulation](https://arxiv.org/abs/2610.30044) | 2026.10 |  | ⏳ 待读 |
+| 1138  | [SMR: Learning Streaming Motion Retargeting for Humanoids from Human Semantic](https://arxiv.org/abs/2610.29169) | 2026.10 |  | ⏳ 待读 |
+| 1139  | [One Policy, Many Styles: Where to Aggregate Preferences for Steerable Humanoid Control?](https://arxiv.org/abs/2610.28925) | 2026.10 |  | ⏳ 待读 |
+| 1140  | [VLM-Guided Contact Retargeting and Generative Partner Modeling for Humanoid-Human Interaction](https://arxiv.org/abs/2610.28523) | 2026.10 |  | ⏳ 待读 |
+| 1141  | [SuperMimic: Scaling Humanoid Whole-Body Control with One Differentiable World Model](https://arxiv.org/abs/2610.28480) | 2026.10 |  | ⏳ 待读 |
+| 1142  | [Fast Motion Retargeting Pipeline for Scalable Humanoid Robot Learning](https://arxiv.org/abs/2610.28470) | 2026.10 |  | ⏳ 待读 |
+| 1143  | [HAF-VLA: Hierarchical Action Flow Framework for Humanoid Vision-Language-Action Control](https://arxiv.org/abs/2610.26584) | 2026.10 |  | ⏳ 待读 |
+| 1144  | [OmniInteract: Towards Unified Whole-Body Interaction Control for Dual Humanoids](https://arxiv.org/abs/2610.26043) | 2026.10 |  | ⏳ 待读 |
+| 1145  | [SWAP: Test-Time Steerable Humanoid Whole-Body Collision Avoidance](https://arxiv.org/abs/2610.25711) | 2026.10 |  | ⏳ 待读 |
+| 1146  | [Humanoid SRL: Augmenting Humanoids with Supernumerary Limbs for Coordinated Loco-Manipulation](https://arxiv.org/abs/2610.25628) | 2026.10 |  | ⏳ 待读 |
+| 1147  | [DiPLO: Self-distilled Diffusion Planning for Loco-manipulation](https://arxiv.org/abs/2610.24847) | 2026.10 |  | ⏳ 待读 |
+| 1148  | [Action-Aligned Latent Planning for Versatile Humanoid Loco-Manipulation](https://arxiv.org/abs/2610.24675) | 2026.10 |  | ⏳ 待读 |
+| 1149  | [CoEvolve: Self-Evolving Code Policies from Skills to Strategies for Humanoid Robots](https://arxiv.org/abs/2610.23288) | 2026.10 |  | ⏳ 待读 |
+| 1150  | [BeJEPA: A Goal-Conditioned Humanoid Behavior World Model via Unsupervised RL](https://arxiv.org/abs/2610.23127) | 2026.10 |  | ⏳ 待读 |
 | 1105  | [Whole-Body Dexterity](https://arxiv.org/abs/2610.22184) | 2026.10 |  | ⏳ 待读 |
 | 1106  | [Compliant GMT: Making General Motion Tracking Compliant via Residual Reference Adaptation](https://arxiv.org/abs/2610.22119) | 2026.10 |  | ⏳ 待读 |
 | 1107  | [KODA: Kinematics--Observation Data Alignment for Humanoid Learning from Human Egocentric Demonstration](https://arxiv.org/abs/2610.21152) | 2026.10 |  | ⏳ 待读 |
@@ -530,11 +547,17 @@
 | 575  | [GigaBrain-WBC-0.5: A Behavior World Model for Robust Whole-Body Control with Environment Interaction](https://arxiv.org/abs/2608.18234) ✅ [笔记](04_Loco-Manipulation_and_WBC/GigaBrain-WBC-0.5__A_Behavior_World_Model_for_Robust_Whole-Body_Control/GigaBrain-WBC-0.5__A_Behavior_World_Model_for_Robust_Whole-Body_Control.md) | 2026-08-18 |  | ✅ 已总结 |
 
 
-### Locomotion（202篇）
+### Locomotion（208篇）
 
 
 | #   | 论文                                                                                                                                                              | 日期      | 🌟  | 状态   |
 | --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- | --- | ---- |
+| 1151  | [Humanoid Mobility via Attention-based Contacts](https://arxiv.org/abs/2610.31608) | 2026.10 |  | ⏳ 待读 |
+| 1152  | [MPBRS: Multi-Potential-Based Reward Shaping for Unified Reward Configuration in Humanoid Locomotion](https://arxiv.org/abs/2610.30334) | 2026.10 |  | ⏳ 待读 |
+| 1153  | [Do Earth-Trained Humanoid Controllers Walk on the Moon? Gravity, Terrain, and Soil Transfer](https://arxiv.org/abs/2610.30080) | 2026.10 |  | ⏳ 待读 |
+| 1154  | [Test-Time Motion Steering for Perceptive Humanoid Fall Recovery](https://arxiv.org/abs/2610.30061) | 2026.10 |  | ⏳ 待读 |
+| 1155  | [Watch Your Step: Anticipated Perception for Humanoid Locomotion](https://arxiv.org/abs/2610.29612) | 2026.10 |  | ⏳ 待读 |
+| 1156  | [Validation of Human Motor Development Scales with Humanoid Robots](https://arxiv.org/abs/2610.25701) | 2026.10 |  | ⏳ 待读 |
 | 1125  | [Push the Limit: Learning High-Speed Sprinting and Aggressive Cornering on a Full-Scale Humanoid](https://arxiv.org/abs/2610.14840) ✅ [笔记](05_Locomotion/Push_the_Limit__High-Speed_Sprinting_and_Aggressive_Cornering_on_a_Full-Scale_Humanoid/Push_the_Limit__High-Speed_Sprinting_and_Aggressive_Cornering_on_a_Full-Scale_Humanoid.md) | 2026.10 |  | ✅ 已总结 |
 | 762  | [DAMP: Humanoid Locomotion via Denoised Belief Learning and Adversarial Motion Priors](https://arxiv.org/abs/2610.11505) | 2026.10 |  | ⏳ 待读 |
 | 763  | [HuMBLE: Human Motion-Driven Behavior Learning for Embodied Locomotion](https://arxiv.org/abs/2610.10489) | 2026.10 |  | ⏳ 待读 |
@@ -739,11 +762,14 @@
 | 525  | [Benchmarking Potential Based Rewards for Learning Humanoid Locomotion](https://arxiv.org/abs/2307.10142)                                                      | 2023.07 |     | ⏳ 待读 |
 
 
-### Manipulation（96篇）
+### Manipulation（99篇）
 
 
 | #   | 论文                                                                                                                                                        | 日期      | 🌟  | 状态   |
 | --- | --------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- | --- | ---- |
+| 1157  | [EmbodyHOI: Embodiment-Aware Generation of Hand-Object Interactions for Humanoid Dexterous Manipulation](https://arxiv.org/abs/2610.27242) | 2026.10 |  | ⏳ 待读 |
+| 1158  | [Data-Efficient Learning from Demonstration for Humanoid Robots via Feature-Level Perception and Prompt-Based Object Detection](https://arxiv.org/abs/2610.26170) | 2026.10 |  | ⏳ 待读 |
+| 1159  | [Compositional Humanoid Manipulation through Isomorphic Teleoperation and Independent Skill Routing](https://arxiv.org/abs/2610.26169) | 2026.10 |  | ⏳ 待读 |
 | 1126  | [Spark-0: Scaling Spatially Aligned Tactile Pretraining for Robot Dexterous Manipulation](https://arxiv.org/abs/2610.22342) ✅ [笔记](06_Manipulation/Spark-0__Spatially_Aligned_Tactile_Pretraining_for_Robot_Dexterous_Manipulation/Spark-0__Spatially_Aligned_Tactile_Pretraining_for_Robot_Dexterous_Manipulation.md) | 2026.10 | 🌟 | ✅ 已总结 |
 | 731  | [AutodidactWAM: Cross-Modal Self-Distillation from Generated Video to Robot Actions](https://arxiv.org/abs/2610.08119) | 2026.10 |  | ⏳ 待读 |
 | 732  | [MobileVISTA: Generative Data Augmentation for Pose Generalization in Mobile Manipulation](https://arxiv.org/abs/2610.07511) | 2026.10 |  | ⏳ 待读 |
@@ -842,11 +868,13 @@
 | 577  | [RoboEdit: Turning Human Manipulation Videos into Scalable Robot Experience](https://arxiv.org/abs/2608.18948) ✅ [笔记](06_Manipulation/RoboEdit__Turning_Human_Manipulation_Videos_into_Scalable_Robot_Experience/RoboEdit__Turning_Human_Manipulation_Videos_into_Scalable_Robot_Experience.md) | 2026.08 | 2026-08-24 | ✅ 已总结 |
 
 
-### Teleoperation（46篇）
+### Teleoperation（48篇）
 
 
 | #   | 论文                                                                                                                                                             | 日期      | 🌟  | 状态   |
 | --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- | --- | ---- |
+| 1160  | [HuMiT: Low-Latency Whole-Body Humanoid Teleoperation via Compact Reference Tracking](https://arxiv.org/abs/2610.29903) | 2026.10 |  | ⏳ 待读 |
+| 1161  | [Evaluating Lightweight Contact Feedback in Dual-Operator Collaborative Humanoid Teleoperation](https://arxiv.org/abs/2610.24257) | 2026.10 |  | ⏳ 待读 |
 | 714  | [Toward Humanoid Robots in Construction: A Teleoperation Feasibility Study](https://arxiv.org/abs/2610.00718) ✅ [笔记](07_Teleoperation/Toward_Humanoid_Robots_in_Construction__A_Teleoperation_Feasibility_Study/Toward_Humanoid_Robots_in_Construction__A_Teleoperation_Feasibility_Study.md) | 2026.10 |  | ✅ 已总结 |
 | 715  | [NEXUS: Perceptive Whole-Body Control for Terrain-Adaptive Teleoperation](https://arxiv.org/abs/2609.39000) | 2026.09 |  | ⏳ 待读 |
 | 716  | [GAE: General Action Expert for Real-Time Humanoid Teleoperation](https://arxiv.org/abs/2609.34233) | 2026.09 |  | ⏳ 待读 |
@@ -895,11 +923,12 @@
 | 585  | [X-OP: Cross-Morphology Whole-Body Teleoperation via MPC Retargeting](https://arxiv.org/abs/2606.07934) ✅ [笔记](07_Teleoperation/X-OP__Cross-Morphology_Whole-Body_Teleoperation_via_MPC_Retargeting/X-OP__Cross-Morphology_Whole-Body_Teleoperation_via_MPC_Retargeting.md) | 2026.06 | 2026-09-10 | ✅ 已总结 |
 
 
-### Navigation（32篇）
+### Navigation（33篇）
 
 
 | #   | 论文                                                                                                                                                         | 日期      | 🌟  | 状态   |
 | --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- | --- | ---- |
+| 1162  | [Adaptive Traversal Tubes for Posture-Aware Navigation of Bipedal Humanoids](https://arxiv.org/abs/2610.27688) | 2026.10 | 🌟 | ⏳ 待读 |
 | 706  | [What the Elevation Map Cannot See: Semantic-Aware Locomotion and Execution-Aware Navigation for Humanoid Robot](https://arxiv.org/abs/2610.07396) ✅ [笔记](08_Navigation/What_the_Elevation_Map_Cannot_See__Semantic-Aware_Locomotion_and_Execution-Aware_Navigation/What_the_Elevation_Map_Cannot_See__Semantic-Aware_Locomotion_and_Execution-Aware_Navigation.md) | 2026.10 |  | ✅ 已总结 |
 | 707  | [DODGER: Safety-Guided Reinforcement Learning for Robot Navigation Among Dynamic Obstacles](https://arxiv.org/abs/2609.38873) | 2026.09 |  | ⏳ 待读 |
 | 708  | [Learning Safe Humanoid Navigation from Reduced Order Models](https://arxiv.org/abs/2609.19272) | 2026.09 |  | ⏳ 待读 |
@@ -934,11 +963,12 @@
 | 586  | [TANGO: Humanoid Navigation in Cluttered Environments with a Whole-Body Vision-Language-Action Model](https://arxiv.org/abs/2609.09158) ✅ [笔记](08_Navigation/TANGO__Whole-Body_Vision-Language_Navigation_in_Cluttered_Environments/TANGO__Whole-Body_Vision-Language_Navigation_in_Cluttered_Environments.md) | 2026-09-08 | 2026-09-11 | ✅ 已总结 |
 
 
-### State Estimation（26篇）
+### State Estimation（27篇）
 
 
 | #   | 论文                                                                                                                                       | 日期      | 🌟  | 状态   |
 | --- | ---------------------------------------------------------------------------------------------------------------------------------------- | ------- | --- | ---- |
+| 1163  | [Vision as Proprioception: Estimating Humanoid Robot Pose from Video](https://arxiv.org/abs/2610.25288) | 2026.10 | 🌟 | ⏳ 待读 |
 | 699  | [PRIMO: Prior-Informed Odometry from Human-Motion Tracking for Humanoid Robots](https://arxiv.org/abs/2609.23610) ✅ [笔记](09_State_Estimation/PRIMO__Prior-Informed_Odometry_from_Human-Motion_Tracking_for_Humanoid_Robots/PRIMO__Prior-Informed_Odometry_from_Human-Motion_Tracking_for_Humanoid_Robots.md) | 2026.09 | 🌟 | ✅ 已总结 |
 | 700  | [A Multimodal Label Forecasting Method for Aperiodic Visuo-Motor Time Series](https://arxiv.org/abs/2609.07930) ✅ [笔记](09_State_Estimation/A_Multimodal_Label_Forecasting_Method_for_Aperiodic_Visuo-Motor_Time_Series/A_Multimodal_Label_Forecasting_Method_for_Aperiodic_Visuo-Motor_Time_Series.md) | 2026.09 |  | ✅ 已总结 |
 | 701  | [FOCUS: Foot Observation Confidence for Robust Humanoid Proprioceptive Odometry](https://arxiv.org/abs/2609.02222) | 2026.09 |  | ⏳ 待读 |
@@ -999,11 +1029,12 @@
 | 388  | [Learning Agile and Dynamic Motor Skills for Legged Robots](https://arxiv.org/abs/1901.08652)                                                  | 2019.01 |     | ⏳ 待读 |
 
 
-### Simulation Benchmark（49篇）
+### Simulation Benchmark（50篇）
 
 
 | #   | 论文                                                                                                                                         | 日期      | 🌟  | 状态   |
 | --- | ------------------------------------------------------------------------------------------------------------------------------------------ | ------- | --- | ---- |
+| 1164  | [LocoManiLab: A Unified Testbed for Data, Policies, Controllers, and Deployment in Humanoid Loco-Manipulation](https://arxiv.org/abs/2610.30876) | 2026.10 |  | ⏳ 待读 |
 | 1128  | [RoboQuest: Generalist Physical Agents that Search, Inspect and Test](https://arxiv.org/abs/2610.10388) ✅ [笔记](11_Simulation_Benchmark/RoboQuest__Generalist_Physical_Agents_that_Search_Inspect_and_Test/RoboQuest__Generalist_Physical_Agents_that_Search_Inspect_and_Test.md) | 2026.10 | 🌟 | ✅ 已总结 |
 | 671  | [Benchmarking Behavioral Steerability in Behavior Foundation Models](https://arxiv.org/abs/2610.10198) ✅ [笔记](11_Simulation_Benchmark/RoboSteer__Benchmarking_Behavioral_Steerability_in_Behavior_Foundation_Models/RoboSteer__Benchmarking_Behavioral_Steerability_in_Behavior_Foundation_Models.md) | 2026.10 |  | ✅ 已总结 |
 | 672  | [BiGym 2.0: Benchmarking Learned and Agent-Developed Policies for Humanoid Household Manipulation](https://arxiv.org/abs/2610.07594) | 2026.10 | 🌟 | ⏳ 待读 |
@@ -1055,11 +1086,12 @@
 | 589  | [HumanoidMimicGen: Data Generation for Loco-Manipulation via Whole-Body Planning](https://arxiv.org/abs/2605.27724) ✅ [笔记](11_Simulation_Benchmark/HumanoidMimicGen__Data_Generation_for_Loco-Manipulation_via_Whole-Body_Planning/HumanoidMimicGen__Data_Generation_for_Loco-Manipulation_via_Whole-Body_Planning.md) | 2026-05-26 |  | ✅ 已总结 |
 
 
-### Hardware Design（58篇）
+### Hardware Design（60篇）
 
 
 | #   | 论文                                                                                                                                                                     | 日期      | 🌟  | 状态   |
 | --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- | --- | ---- |
+| 1165  | [PHD-Hand: A Printable Humanoid Dexterous Hand with Linkage-Driven 3-DOA Digits](https://arxiv.org/abs/2610.29030) | 2026.10 |  | ⏳ 待读 |
 | 1129  | [Design and Analysis of a Nonlinear Parallel Mechanism Coupling for Dynamic Humanoid Legs](https://arxiv.org/abs/2610.16604) | 2026.10 |  | ⏳ 待读 |
 | 656  | [PhoneBot: A Low-Cost Open Humanoid Robot Platform Reusing Smartphones](https://arxiv.org/abs/2610.08737) ✅ [笔记](12_Hardware_Design/PhoneBot__A_Low-Cost_Open_Humanoid_Robot_Platform_Reusing_Smartphones/PhoneBot__A_Low-Cost_Open_Humanoid_Robot_Platform_Reusing_Smartphones.md) | 2026.10 |  | ✅ 已总结 |
 | 657  | [GlowTact: Simple and Compact Vision-Based Tactile Sensing with High Sensitivity and Spatial Resolution](https://arxiv.org/abs/2609.32471) | 2026.09 |  | ⏳ 待读 |
@@ -1070,6 +1102,7 @@
 | 662  | [Toward Geometry-Scalable Whole-Body Touch for Humanoids: A 3D-Printed Conformal EIT Skin](https://arxiv.org/abs/2608.02080) | 2026.08 |  | ⏳ 待读 |
 | 663  | [Towards Shared Embodied Intelligence in Humanoid Robots through Optimization Development and Testing of the Human Aware ergoCub Robot](https://arxiv.org/abs/2605.26991) | 2026.05 |  | ⏳ 待读 |
 | 664  | [LEGO: Latent-space Exploration for Geometry-aware Optimization of Humanoid Kinematic Design](https://arxiv.org/abs/2604.08636) | 2026.04 |  | ⏳ 待读 |
+| 1167  | [Ruka-v2: Tendon Driven Open-Source Dexterous Hand with Wrist and Abduction for Robot Learning](https://arxiv.org/abs/2603.26660) | 2026.03 |  | ⏳ 待读 |
 | 665  | [Dynamic Properties and Motion Reproducibility of a Compact Pneumatically Actuated Humanoid Upper Body for Data-Driven Control](https://arxiv.org/abs/2603.14787) | 2026.03 |  | ⏳ 待读 |
 | 666  | [MOBIUS: A Multi-Modal Bipedal Robot that can Walk, Crawl, Climb, and Roll](https://arxiv.org/abs/2511.01774) | 2025.11 |  | ⏳ 待读 |
 | 667  | [MEVITA: Open-Source Bipedal Robot Assembled from E-Commerce Components via Sheet Metal Welding](https://arxiv.org/abs/2508.17684) | 2025.08 | 🌟 | ⏳ 待读 |
@@ -1120,11 +1153,12 @@
 | 531  | [Zeroth Bot](https://github.com/zeroth-robotics/zeroth-bot)                                                                                                            | -       |     | ⏳ 待读 |
 
 
-### Physics-Based Character Animation（77篇）
+### Physics-Based Character Animation（78篇）
 
 
 | #   | 论文                                                                                                                                               | 日期      | 🌟  | 状态   |
 | --- | ------------------------------------------------------------------------------------------------------------------------------------------------ | ------- | --- | ---- |
+| 1166  | [PhysibleMDM: Enforcing Inference-Time Physical Feasibility Constraints on Motion Diffusion Models via Noise Optimization](https://arxiv.org/abs/2610.30500) | 2026.10 |  | ⏳ 待读 |
 | 1130  | [Walk Like This: Stylized Locomotion for Physics-Based Characters through Example-Driven Diffusion](https://arxiv.org/abs/2610.18147) | 2026.10 |  | ⏳ 待读 |
 | 1131  | [Scalable Multi-Human Cooperative Manipulation via Commander-Executor Coordination](https://arxiv.org/abs/2610.14911) | 2026.10 | 🌟 | ⏳ 待读 |
 | 617  | [From Digital Human Interactions to Physics-Based Humanoid Skills: Physics-Grounded Post-Training of Interaction Generators](https://arxiv.org/abs/2610.10322) ✅ [笔记](13_Physics-Based_Animation/DIGHT__Physics-Grounded_Post-Training_of_Interaction_Generators/DIGHT__Physics-Grounded_Post-Training_of_Interaction_Generators.md) | 2026.10 |  | ✅ 已总结 |
