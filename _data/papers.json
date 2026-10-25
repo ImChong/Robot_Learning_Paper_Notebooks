@@ -2665,7 +2665,10 @@
         "url": "/papers/07_Teleoperation/TWIST2__Scalable_Portable_and_Holistic_Humanoid_Data_Collection_System/TWIST2__Scalable_Portable_and_Holistic_Humanoid_Data_Collection_System.html",
         "dir": "TWIST2__Scalable_Portable_and_Holistic_Humanoid_Data_Collection_System",
         "arxiv": "2511.02832",
-        "summary_zh": "TWIST2 提出一个便携、免动捕（mocap-free）的人形遥操作与数据采集系统，在推进可扩展性的同时保留完整全身控制。",
+        "has_open_source": true,
+        "summary_zh": "TWIST2 是一套便携、免动捕、保留完整全身控制的人形遥操作与数据采集系统。",
+        "explainer_scenes": 18,
+        "video_seconds": 1030,
         "published_date_zh": "2025年11月",
         "published_date_en": "Nov 2025",
         "zhname": "TWIST2：可扩展、便携、整体式的人形数据采集系统",
@@ -3744,6 +3747,19 @@
     "display_name": "Sim-to-Real",
     "papers": [
       {
+        "title": "Contact-UAN: Unsupervised Actuator Networks as a Residual World Model for Humanoid Control",
+        "path": "papers/10_Sim-to-Real/Contact-UAN__Unsupervised_Actuator_Networks_as_a_Residual_World_Model/Contact-UAN__Unsupervised_Actuator_Networks_as_a_Residual_World_Model.md",
+        "url": "/papers/10_Sim-to-Real/Contact-UAN__Unsupervised_Actuator_Networks_as_a_Residual_World_Model/Contact-UAN__Unsupervised_Actuator_Networks_as_a_Residual_World_Model.html",
+        "dir": "Contact-UAN__Unsupervised_Actuator_Networks_as_a_Residual_World_Model",
+        "arxiv": "2610.18991",
+        "has_open_source": true,
+        "summary_zh": "Contact-UAN 不重建整个世界模型，只在仿真器的关节位置目标上加一个学出来的残差，修正执行器误差，解决仿真策略上真机后「动作像，力不对」（跑步费扭矩、力控跟不准、跳跃落地失败）的问题。",
+        "published_date_zh": "2026年10月13日（arXiv v1）",
+        "published_date_en": "Oct 13, 2026 (arXiv v1)",
+        "zhname": "Contact-UAN：面向人形控制的无监督执行器网络残差世界模型",
+        "zh_title": "Contact-UAN：面向人形控制的无监督执行器网络残差世界模型"
+      },
+      {
         "title": "Informationally Decoupled Trajectory Design for Sim-to-Real System Identification",
         "path": "papers/10_Sim-to-Real/IDTD__Informationally_Decoupled_Trajectory_Design_for_Sim-to-Real_System_Identification/IDTD__Informationally_Decoupled_Trajectory_Design_for_Sim-to-Real_System_Identification.md",
         "url": "/papers/10_Sim-to-Real/IDTD__Informationally_Decoupled_Trajectory_Design_for_Sim-to-Real_System_Identification/IDTD__Informationally_Decoupled_Trajectory_Design_for_Sim-to-Real_System_Identification.html",
@@ -4205,6 +4221,19 @@
   "11_Simulation_Benchmark": {
     "display_name": "Simulation Benchmark",
     "papers": [
+      {
+        "title": "RoboQuest: Generalist Physical Agents that Search, Inspect and Test",
+        "path": "papers/11_Simulation_Benchmark/RoboQuest__Generalist_Physical_Agents_that_Search_Inspect_and_Test/RoboQuest__Generalist_Physical_Agents_that_Search_Inspect_and_Test.md",
+        "url": "/papers/11_Simulation_Benchmark/RoboQuest__Generalist_Physical_Agents_that_Search_Inspect_and_Test/RoboQuest__Generalist_Physical_Agents_that_Search_Inspect_and_Test.html",
+        "dir": "RoboQuest__Generalist_Physical_Agents_that_Search_Inspect_and_Test",
+        "arxiv": "2610.10388",
+        "has_open_source": true,
+        "summary_zh": "RoboQuest 是一个把关键信息藏起来、逼机器人靠物理交互去找的移动操作基准。",
+        "published_date_zh": "2026年10月7日（arXiv v1）",
+        "published_date_en": "Oct 7, 2026 (arXiv v1)",
+        "zhname": "RoboQuest：会搜索、检查与试探的通用物理智能体基准",
+        "zh_title": "RoboQuest：会搜索、检查与试探的通用物理智能体基准"
+      },
       {
         "title": "Benchmarking Behavioral Steerability in Behavior Foundation Models",
         "path": "papers/11_Simulation_Benchmark/RoboSteer__Benchmarking_Behavioral_Steerability_in_Behavior_Foundation_Models/RoboSteer__Benchmarking_Behavioral_Steerability_in_Behavior_Foundation_Models.md",

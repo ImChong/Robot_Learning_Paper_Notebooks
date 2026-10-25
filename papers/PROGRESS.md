@@ -972,7 +972,7 @@
 
 | #   | 论文                                                                                                                                             | 日期      | 🌟  | 状态   |
 | --- | ---------------------------------------------------------------------------------------------------------------------------------------------- | ------- | --- | ---- |
-| 1127  | [Contact-UAN: Unsupervised Actuator Networks as a Residual World Model for Humanoid Control](https://arxiv.org/abs/2610.18991) | 2026.10 |  | ⏳ 待读 |
+| 1127  | [Contact-UAN: Unsupervised Actuator Networks as a Residual World Model for Humanoid Control](https://arxiv.org/abs/2610.18991) ✅ [笔记](10_Sim-to-Real/Contact-UAN__Unsupervised_Actuator_Networks_as_a_Residual_World_Model/Contact-UAN__Unsupervised_Actuator_Networks_as_a_Residual_World_Model.md) | 2026.10 |  | ✅ 已总结 |
 | 692  | [Informationally Decoupled Trajectory Design for Sim-to-Real System Identification](https://arxiv.org/abs/2610.10905) ✅ [笔记](10_Sim-to-Real/IDTD__Informationally_Decoupled_Trajectory_Design_for_Sim-to-Real_System_Identification/IDTD__Informationally_Decoupled_Trajectory_Design_for_Sim-to-Real_System_Identification.md) | 2026.10 |  | ✅ 已总结 |
 | 693  | [Bundled Contact Gradients: Stabilizing Differentiable Simulation for Deployable Dynamic Tasks](https://arxiv.org/abs/2609.30951) | 2026.09 |  | ⏳ 待读 |
 | 694  | [Online Sim-to-Real Adaptation via Closed-Loop System Modeling](https://arxiv.org/abs/2609.28878) | 2026.09 |  | ⏳ 待读 |
@@ -1004,7 +1004,7 @@
 
 | #   | 论文                                                                                                                                         | 日期      | 🌟  | 状态   |
 | --- | ------------------------------------------------------------------------------------------------------------------------------------------ | ------- | --- | ---- |
-| 1128  | [RoboQuest: Generalist Physical Agents that Search, Inspect and Test](https://arxiv.org/abs/2610.10388) | 2026.10 | 🌟 | ⏳ 待读 |
+| 1128  | [RoboQuest: Generalist Physical Agents that Search, Inspect and Test](https://arxiv.org/abs/2610.10388) ✅ [笔记](11_Simulation_Benchmark/RoboQuest__Generalist_Physical_Agents_that_Search_Inspect_and_Test/RoboQuest__Generalist_Physical_Agents_that_Search_Inspect_and_Test.md) | 2026.10 | 🌟 | ✅ 已总结 |
 | 671  | [Benchmarking Behavioral Steerability in Behavior Foundation Models](https://arxiv.org/abs/2610.10198) ✅ [笔记](11_Simulation_Benchmark/RoboSteer__Benchmarking_Behavioral_Steerability_in_Behavior_Foundation_Models/RoboSteer__Benchmarking_Behavioral_Steerability_in_Behavior_Foundation_Models.md) | 2026.10 |  | ✅ 已总结 |
 | 672  | [BiGym 2.0: Benchmarking Learned and Agent-Developed Policies for Humanoid Household Manipulation](https://arxiv.org/abs/2610.07594) | 2026.10 | 🌟 | ⏳ 待读 |
 | 673  | [R2RI: A Multi-View Event and RGB Dataset for Robot-to-Robot Interaction](https://arxiv.org/abs/2610.07117) | 2026.10 | 🌟 | ⏳ 待读 |
