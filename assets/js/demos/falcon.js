@@ -571,9 +571,33 @@
       }
     };
   }
-  /* 帧号：按真实时间循环播放（25 帧/秒） */
+  /* 帧号：按真实时间循环播放（25 帧/秒）。走路的几段截的是整步态周期，首尾只差 0.06–0.12 rad，接得上 */
   function loopFrame(now, n) {
     return ((Math.floor(now * 25) % n) + n) % n;
+  }
+  /* 帧号：在 [lo, hi) 里正着放完再倒着放（25 帧/秒）。力采样那一段首尾差 0.65 rad、力差 40 N，
+     第 0 帧还有仿真起步的一抖、第 1.0 s 力才从 0 跳上来，所以从第 32 帧（1.28 s）起来回放，不从尾跳回头（TWIST2 的蹲下也是这么放的） */
+  function pingFrame(now, lo, hi) {
+    var n = hi - lo, k = ((Math.floor(now * 25) % (2 * n - 2)) + (2 * n - 2)) % (2 * n - 2);
+    return lo + (k < n ? k : 2 * n - 2 - k);
+  }
+  var CURR_LO = 32;
+  /* 跟拍的贴图里机器人始终在画面中间，脚下画一排地面刻度，按这一段根部沿朝向的平均速度往后退，看得出是在走、不是原地踏步
+     （TWIST2 的地面网格）。速度是复现记录里量的：根部沿初始朝向的位移 ÷ 这一段的时长 */
+  var WALK_V = { walk_falcon: 0.460, walk_pd: 0.512, f11_30: -1.078, f11_40: -1.085 };
+  function groundTicks(parent, opts) {
+    var o = opts || {}, n = o.n || 6, sp = o.sp || 0.18, span = n * sp, half = span / 2, g = group(parent), ls = [];
+    for (var k = 0; k < n; k++) ls.push(hline(g, 0, 0, 0, 0, C_MUTED, 2.2));
+    return {
+      g: g,
+      put: function (cam, off) {
+        ls.forEach(function (l, k) {
+          var x = ((k * sp - off) % span + span) % span - half, a = project([x, -0.18, 0], cam), b = project([x, 0.18, 0], cam);
+          setLine(l, a[0], a[1], b[0], b[1]);
+          l.style.opacity = (0.75 * (1 - Math.abs(x) / half)).toFixed(2);
+        });
+      }
+    };
   }
   /* 一张带框的小折线图：xs 是数据的横坐标，返回 { set(upto) } 按进度画到 upto */
   function curveIn(box, pts, color, width, dash) {
@@ -847,7 +871,7 @@
     label(p5, R, 248, '两个网络都是 512–256–128 的 MLP', 'demo-x-ink2', 11.5);
     function draw(t, clock) {
       var now = nowOf(t, clock);
-      mL.put(camL, loopFrame(now, SHEETS.curr.n));
+      mL.put(camL, pingFrame(now, CURR_LO, SHEETS.curr.n));
       var ph = (now / 0.6) % 1;
       rowsS.forEach(function (g, i) {
         var y = 126 + (i - ph) * 21;
@@ -1197,7 +1221,7 @@
     rich(p5, R, 280, '论文说按区间**均匀**采；代码是三角波扫过区间', 11.5, 'demo-x-mut');
     var drawn = false;
     function draw(t, clock) {
-      var now = nowOf(t, clock), F = Fr(), j = loopFrame(now, F.length), f = F[j];
+      var now = nowOf(t, clock), F = Fr(), j = pingFrame(now, CURR_LO, F.length), f = F[j];
       mesh.put(cam, j);
       fa[0].put(f.pl, f.FL, cam, true); fa[1].put(f.pr, f.FR, cam, true);
       lab.textContent = '左手 |F| = ' + f1(Math.hypot(f.FL[0], f.FL[1], f.FL[2])) + ' N，右手 ' + f1(Math.hypot(f.FR[0], f.FR[1], f.FR[2])) + ' N';
@@ -1665,6 +1689,7 @@
     var L = group(s);
     var camA = camAt(205, 100, 392), camB = camAt(205, 284, 392);
     groundShadow(L, 100, 392, 58); groundShadow(L, 284, 392, 58);
+    var gtA = groundTicks(L), gtB = groundTicks(L);
     var mA = g1Mesh(L, 'walk_falcon'), mB = g1Mesh(L, 'walk_pd');
     var faA = [forceArrow(L, { k: 0.009 }), forceArrow(L, { k: 0.009 })], faB = [forceArrow(L, { k: 0.009 }), forceArrow(L, { k: 0.009 })];
     tone(L, 100, 66, 'FALCON', C_UP, 13, 'middle');
@@ -1703,6 +1728,7 @@
     var FA = function () { return runFrames('walk_falcon'); }, FB = function () { return runFrames('walk_pd'); };
     function draw(t, clock) {
       var now = nowOf(t, clock), A = FA(), B = FB(), ja = loopFrame(now, A.length), jb = loopFrame(now, B.length), a = A[ja], b = B[jb];
+      gtA.put(camA, WALK_V.walk_falcon * now); gtB.put(camB, WALK_V.walk_pd * now);
       mA.put(camA, ja); mB.put(camB, jb);
       faA[0].put(a.pl, a.FL, camA, true); faA[1].put(a.pr, a.FR, camA, true);
       faB[0].put(b.pl, b.FL, camB, true); faB[1].put(b.pr, b.FR, camB, true);
@@ -1847,6 +1873,7 @@
     var L = group(s);
     var camA = camAt(190, 100, 330), camB = camAt(190, 286, 330);
     groundShadow(L, 100, 330, 54); groundShadow(L, 286, 330, 54);
+    var gtA = groundTicks(L), gtB = groundTicks(L);
     var mA = g1Mesh(L, 'f11_30'), mB = g1Mesh(L, 'f11_40');
     var fa = [forceArrow(L, { k: 0.005 }), forceArrow(L, { k: 0.005 }), forceArrow(L, { k: 0.005 }), forceArrow(L, { k: 0.005 })];
     tone(L, 100, 66, '每只手 30 N（约 3 kg）', C_UP, 12, 'middle');
@@ -1884,6 +1911,7 @@
     var FA = function () { return runFrames('f11_30'); }, FB = function () { return runFrames('f11_40'); };
     function draw(t, clock) {
       var now = nowOf(t, clock), A = FA(), B = FB(), ja = loopFrame(now, A.length), jb = loopFrame(now, B.length), a = A[ja], b = B[jb];
+      gtA.put(camA, WALK_V.f11_30 * now); gtB.put(camB, WALK_V.f11_40 * now);
       mA.put(camA, ja); mB.put(camB, jb);
       fa[0].put(a.pl, a.FL, camA, true); fa[1].put(a.pr, a.FR, camA, true);
       fa[2].put(b.pl, b.FL, camB, true); fa[3].put(b.pr, b.FR, camB, true);
@@ -2132,8 +2160,8 @@
   function buildVideoDemo(host) {
     K.video(host, {
       title: '配音讲解视频：FALCON 十七幕全流程',
-      sub: '17 分 43 秒竖屏视频（1080×1920），中文配音 + 字幕。画面就是上面的十七幕动画，旁白把每一幕讲细；适合手机上看或转发。',
-      size: '19.0 MB',
+      sub: '18 分 3 秒竖屏视频（1080×1920），中文配音 + 字幕。画面就是上面的十七幕动画，旁白把每一幕讲细；适合手机上看或转发。',
+      size: '19.4 MB',
       fileName: 'FALCON_讲解视频.mp4'
     });
   }

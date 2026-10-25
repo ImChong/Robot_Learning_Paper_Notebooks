@@ -76,11 +76,11 @@ demos: ["falcon"]
 
 ## 📺 配音讲解视频（可下载） {#falcon-video}
 
-<div class="paper-demo" data-demo="falcon-video" data-src="media/falcon_explainer_video.mp4" data-poster="media/falcon_explainer_video_poster.jpg"><p class="demo-fallback">（本节含讲解视频播放器，需要启用 JavaScript；也可以直接<a href="media/falcon_explainer_video.mp4" download="FALCON_讲解视频.mp4">下载 mp4（19.0 MB）</a>）</p></div>
+<div class="paper-demo" data-demo="falcon-video" data-src="media/falcon_explainer_video.mp4" data-poster="media/falcon_explainer_video_poster.jpg"><p class="demo-fallback">（本节含讲解视频播放器，需要启用 JavaScript；也可以直接<a href="media/falcon_explainer_video.mp4" download="FALCON_讲解视频.mp4">下载 mp4（19.4 MB）</a>）</p></div>
 
 > 📖 **动画之后的正文默认全部折叠**：动画覆盖到的那几节（要解决什么问题、方法详解、实验结果）按小节收起，再往后的具体实例、源码对照、在路线中的位置、面试和附录各整块收起。想细读哪一块就点开对应的折叠条，内容一字未删；流程图和三个交互演示留在外面，目录里的标题依旧可以直接点，会自动展开所在折叠块，左侧目录顶部还有「展开全部文字」一键铺开。
 >
-> 动画第 2、3、5、6、7、14、17 幕里的 G1 是我们的复现：用官方开源的 `sim2real/models/falcon/g1_29dof.onnx`，照官方 `loco_manip.py` 的观测、动作与 PD 在 MuJoCo 里跑（站着每只手往下加到 20 N、0.5 m/s 走路每只手 11.8 N、照图 11 往后走加到 30 / 40 N、照代码的采样器加三维力），3D 外形照抄 [Robot Retarget Online](https://imchong.github.io/Robot_Retarget_Online/) 的 three.js 材质与光照，按关节角用正交相机逐帧离线渲染，力的箭头按同一个相机投影叠在上面；这些数和交互演示、「🚶 具体实例」是同一组。第 4、9、13、15、16、17 幕用论文图 2、7、5、8、9、11 的裁剪，第 11–13 幕的柱和曲线照论文表 1–4 与图 3、图 4 的数重画（图 3、图 4 在论文里是位图，曲线是按颜色逐列读出来的近似值）；第 1、15、16 幕的真机画面剪自[项目页](https://lecar-lab.github.io/falcon-humanoid/)的视频（画面里标了倍速），只做讲解引用。
+> 动画第 2、3、5、6、7、14、17 幕里的 G1 是我们的复现：用官方开源的 `sim2real/models/falcon/g1_29dof.onnx`，照官方 `loco_manip.py` 的观测、动作与 PD 在 MuJoCo 里跑（站着每只手往下加到 20 N、0.5 m/s 走路每只手 11.8 N、照图 11 往后走加到 30 / 40 N、照代码的采样器加三维力），3D 外形照抄 [Robot Retarget Online](https://imchong.github.io/Robot_Retarget_Online/) 的 three.js 材质与光照，按关节角用正交相机逐帧离线渲染，力的箭头按同一个相机投影叠在上面；第 3、7 幕的力采样那段跳过仿真起步的前 1.28 s、来回播放，第 14、17 幕脚下的地面刻度按复现里根部的平均速度后退（跟拍的贴图里机器人始终在画面中间）；这些数和交互演示、「🚶 具体实例」是同一组。第 4、9、13、15、16、17 幕用论文图 2、7、5、8、9、11 的裁剪，第 11–13 幕的柱和曲线照论文表 1–4 与图 3、图 4 的数重画（图 3、图 4 在论文里是位图，曲线是按颜色逐列读出来的近似值）；第 1、15、16 幕的真机画面剪自[项目页](https://lecar-lab.github.io/falcon-humanoid/)的视频（画面里标了倍速），只做讲解引用。
 
 ---
 
