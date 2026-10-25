@@ -4217,6 +4217,19 @@
     "display_name": "Simulation Benchmark",
     "papers": [
       {
+        "title": "RoboQuest: Generalist Physical Agents that Search, Inspect and Test",
+        "path": "papers/11_Simulation_Benchmark/RoboQuest__Generalist_Physical_Agents_that_Search_Inspect_and_Test/RoboQuest__Generalist_Physical_Agents_that_Search_Inspect_and_Test.md",
+        "url": "/papers/11_Simulation_Benchmark/RoboQuest__Generalist_Physical_Agents_that_Search_Inspect_and_Test/RoboQuest__Generalist_Physical_Agents_that_Search_Inspect_and_Test.html",
+        "dir": "RoboQuest__Generalist_Physical_Agents_that_Search_Inspect_and_Test",
+        "arxiv": "2610.10388",
+        "has_open_source": true,
+        "summary_zh": "RoboQuest 是一个把关键信息藏起来、逼机器人靠物理交互去找的移动操作基准。",
+        "published_date_zh": "2026年10月7日（arXiv v1）",
+        "published_date_en": "Oct 7, 2026 (arXiv v1)",
+        "zhname": "RoboQuest：会搜索、检查与试探的通用物理智能体基准",
+        "zh_title": "RoboQuest：会搜索、检查与试探的通用物理智能体基准"
+      },
+      {
         "title": "Benchmarking Behavioral Steerability in Behavior Foundation Models",
         "path": "papers/11_Simulation_Benchmark/RoboSteer__Benchmarking_Behavioral_Steerability_in_Behavior_Foundation_Models/RoboSteer__Benchmarking_Behavioral_Steerability_in_Behavior_Foundation_Models.md",
         "url": "/papers/11_Simulation_Benchmark/RoboSteer__Benchmarking_Behavioral_Steerability_in_Behavior_Foundation_Models/RoboSteer__Benchmarking_Behavioral_Steerability_in_Behavior_Foundation_Models.html",

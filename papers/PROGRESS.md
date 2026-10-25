@@ -1004,7 +1004,7 @@
 
 | #   | 论文                                                                                                                                         | 日期      | 🌟  | 状态   |
 | --- | ------------------------------------------------------------------------------------------------------------------------------------------ | ------- | --- | ---- |
-| 1128  | [RoboQuest: Generalist Physical Agents that Search, Inspect and Test](https://arxiv.org/abs/2610.10388) | 2026.10 | 🌟 | ⏳ 待读 |
+| 1128  | [RoboQuest: Generalist Physical Agents that Search, Inspect and Test](https://arxiv.org/abs/2610.10388) ✅ [笔记](11_Simulation_Benchmark/RoboQuest__Generalist_Physical_Agents_that_Search_Inspect_and_Test/RoboQuest__Generalist_Physical_Agents_that_Search_Inspect_and_Test.md) | 2026.10 | 🌟 | ✅ 已总结 |
 | 671  | [Benchmarking Behavioral Steerability in Behavior Foundation Models](https://arxiv.org/abs/2610.10198) ✅ [笔记](11_Simulation_Benchmark/RoboSteer__Benchmarking_Behavioral_Steerability_in_Behavior_Foundation_Models/RoboSteer__Benchmarking_Behavioral_Steerability_in_Behavior_Foundation_Models.md) | 2026.10 |  | ✅ 已总结 |
 | 672  | [BiGym 2.0: Benchmarking Learned and Agent-Developed Policies for Humanoid Household Manipulation](https://arxiv.org/abs/2610.07594) | 2026.10 | 🌟 | ⏳ 待读 |
 | 673  | [R2RI: A Multi-View Event and RGB Dataset for Robot-to-Robot Interaction](https://arxiv.org/abs/2610.07117) | 2026.10 | 🌟 | ⏳ 待读 |
