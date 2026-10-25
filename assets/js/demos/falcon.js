@@ -781,7 +781,9 @@
       jit.push(hbar(LB, 290, yy, 7, i < 15 ? C_LOW : C_UP, 0.85));
     }
     hline(LB, 290, 70, 290, 364, C_MUTED, 1.2);
-    label(LB, 360, 140, '腿', 'demo-x-ink2', 11.5, 'middle'); label(LB, 360, 300, '手臂', 'demo-x-ink2', 11.5, 'middle');
+    /* 条最长 64，往右最多到 354；括号放在 362，标签放在括号右边，不和条重叠 */
+    hline(LB, 362, 74, 362, 74 + 14 * 9.8 + 7, C_LOW, 2); hline(LB, 362, 74 + 15 * 9.8, 362, 74 + 28 * 9.8 + 7, C_UP, 2);
+    label(LB, 370, 150, '腿', 'demo-x-ink2', 11.5); label(LB, 370, 292, '手臂', 'demo-x-ink2', 11.5);
     label(LB, 290, 384, '每一维的探索噪声（示意）', 'demo-x-mut', 10, 'middle');
     /* 左 C：两个网络读同一份观测 */
     var LC = group(s);
