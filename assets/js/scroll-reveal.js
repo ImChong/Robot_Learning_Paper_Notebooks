@@ -15,7 +15,7 @@
   var main = document.querySelector('main');
   if (!main) return;
 
-  var REVEAL_MS = 700;
+  var REVEAL_MS = 800;
   var STAGGER_MS = 70;
   var BATCH_MAX = 1000;
   var SELECTOR = [

@@ -1,0 +1,80 @@
+"""Site chrome follows one design system (see AGENTS.md「站点样式」).
+
+The redesign moved style.css onto a closed set of values: Geist / Geist Mono
+(self-hosted), the Tailwind type scale, one accent hue, custom easing, and no
+italics. These checks keep later edits from drifting back.
+"""
+
+import re
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+STYLE = (ROOT / "assets" / "css" / "style.css").read_text(encoding="utf-8")
+LAYOUT = (ROOT / "_layouts" / "default.html").read_text(encoding="utf-8")
+
+TYPE_SCALE_PX = {12, 14, 16, 18, 20, 24, 30, 36, 48}
+
+
+def _declarations(prop: str) -> list[str]:
+    return re.findall(r"(?m)^\s*" + re.escape(prop) + r"\s*:\s*([^;]+);", STYLE)
+
+
+def test_fonts_are_self_hosted_geist():
+    for name in (
+        "geist-latin-wght-normal.woff2",
+        "geist-latin-ext-wght-normal.woff2",
+        "geist-mono-latin-wght-normal.woff2",
+        "geist-mono-latin-ext-wght-normal.woff2",
+    ):
+        assert (ROOT / "assets" / "fonts" / name).is_file(), name
+        assert f"url('../fonts/{name}')" in STYLE, name
+    assert (ROOT / "assets" / "licenses" / "OFL-Geist.txt").is_file()
+
+
+def test_no_legacy_font_stacks_or_italics():
+    families = _declarations("font-family")
+    for value in families:
+        assert "Arial" not in value and "Helvetica" not in value, value
+        assert "Georgia" not in value and "Libertine" not in value, value
+    assert "font-style: italic" not in STYLE
+
+
+def test_font_sizes_sit_on_the_type_scale():
+    for value in _declarations("font-size"):
+        value = value.strip()
+        if value == "inherit" or value.endswith("em") and not value.endswith("rem"):
+            continue  # relative sizes for inline code / KaTeX / counts inside headings
+        match = re.fullmatch(r"(\d+)px", value)
+        assert match, f"font-size off the scale: {value}"
+        assert int(match.group(1)) in TYPE_SCALE_PX, value
+
+
+def test_no_permanent_global_transition():
+    # A `*` transition made every node on the home page animate on hover / resize;
+    # colours now only fade while html.theme-switching is set.
+    assert not re.search(r"(?m)^\*,\s*\*::before,\s*\*::after\s*\{\s*transition", STYLE)
+    assert "html.theme-switching *" in STYLE
+    assert "classList.add('theme-switching')" in LAYOUT
+
+
+def test_transitions_use_the_shared_easing():
+    for value in _declarations("transition"):
+        if value.strip() == "none":
+            continue
+        assert "ease" not in re.sub(r"var\(--ease\)", "", value), value
+
+
+def test_theme_follows_system_until_the_user_picks_one():
+    assert "prefers-color-scheme: light" in LAYOUT
+    # Loading a page must not write the theme back, or it stops following the OS.
+    assert "setTheme(getPreferred(), false, false);" in LAYOUT
+
+
+def test_shell_has_skip_link_404_and_share_image():
+    assert 'class="skip-link" href="#main-content"' in LAYOUT
+    assert 'id="main-content"' in LAYOUT
+    not_found = (ROOT / "404.html").read_text(encoding="utf-8")
+    assert "permalink: /404.html" in not_found
+    assert "noindex: true" in not_found
+    assert (ROOT / "assets" / "img" / "og-default.png").is_file()
+    assert (ROOT / "assets" / "img" / "favicon.svg").is_file()

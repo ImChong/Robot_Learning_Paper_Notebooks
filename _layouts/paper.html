@@ -2,11 +2,11 @@
 layout: default
 ---
 <article class="paper-content">
-  <nav class="breadcrumb">
-    <a href="{{ '/' | relative_url }}" data-en="🏠 Home" data-zh="🏠 首页">🏠 Home</a>
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="{{ '/' | relative_url }}"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-house"></use></svg><span data-en="Home" data-zh="首页">Home</span></a>
     {% assign path_parts = page.url | split: '/' %}
     {% if path_parts.size > 3 %}
-      <span class="sep">›</span>
+      <span class="sep" aria-hidden="true"><svg class="icon" focusable="false"><use href="#i-caret-right"></use></svg></span>
       <span class="crumb-category">{{ path_parts[2] | replace: '_', ' ' | escape }}</span>
     {% endif %}
   </nav>
@@ -14,7 +14,7 @@ layout: default
   <div class="paper-layout">
     <aside class="toc-sidebar" id="toc-sidebar">
       <div class="toc-wrapper">
-        <h3 class="toc-title" data-en="📑 Contents" data-zh="📑 目录">📑 目录</h3>
+        <h3 class="toc-title" data-en="Contents" data-zh="目录">目录</h3>
         <nav class="toc-nav" id="toc-nav"></nav>
       </div>
     </aside>
@@ -25,15 +25,15 @@ layout: default
 
     <aside class="right-sidebar" id="right-sidebar">
       <div class="right-sidebar-wrapper">
-        <a href="#" class="right-sidebar-link" onclick="window.scrollTo({top:0,behavior:'smooth'});return false;" data-en="↑ Back to top" data-zh="↑ 回到顶部">↑ Back to top</a>
+        <button type="button" class="right-sidebar-link" data-scroll-top><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-arrow-up"></use></svg><span data-en="Back to top" data-zh="回到顶部">回到顶部</span></button>
         <div id="sidebar-paper-nav"></div>
-        <a href="{{ '/' | relative_url }}" class="right-sidebar-link" data-en="← Back to list" data-zh="← 返回论文列表">← 返回论文列表</a>
+        <a href="{{ '/' | relative_url }}" class="right-sidebar-link"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-arrow-left"></use></svg><span data-en="Back to list" data-zh="返回论文列表">返回论文列表</span></a>
       </div>
     </aside>
   </div>
 
   <div class="paper-nav" id="paper-nav">
-    <a href="{{ '/' | relative_url }}" class="back-link" data-en="← Back to list" data-zh="← 返回论文列表">← 返回论文列表</a>
+    <a href="{{ '/' | relative_url }}" class="back-link"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-arrow-left"></use></svg><span data-en="Back to list" data-zh="返回论文列表">返回论文列表</span></a>
   </div>
 </article>
 
