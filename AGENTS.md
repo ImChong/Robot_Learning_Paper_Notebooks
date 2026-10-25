@@ -221,6 +221,18 @@ demos: ["ppo"]
 - **玩具模型要标注是玩具**：浏览器里跑的小实验（RSI/ET 消融、off-policy buffer、对抗训练等）只复现机制，不是论文的仿真。这类演示必须在 `demo-note` 里写明「这是简化模型，数值不能和论文直接比」，并且**结论要经得起换种子**——写进正文的定量说法（谁比谁高多少）必须是多种子平均后仍成立的。
 - **提交前跑** `python3 -m pytest tests/test_paper_demos.py -v`，并按下文「Pull Request：须附「修复页」渲染截图」附上渲染截图。
 
+## 站点样式（`assets/css/style.css`）
+
+2026-10-25 按 [redesign-skill](https://github.com/elayadesign/redesign-skill) 的审计重做了站点外壳（页头、首页、论文页框架、更新记录、404）。改样式时沿用这套取值，`tests/test_design_tokens.py` 会拦住跑偏的写法：
+
+- **字体**：拉丁字母用自托管的 Geist / Geist Mono（`assets/fonts/`，OFL），中文落到系统无衬线（PingFang SC / Noto Sans SC / 微软雅黑）。写 `var(--font-sans)` / `var(--font-mono)`，不要再写 Arial、Georgia；不用斜体，字重只用 400–700。
+- **字号**：只用 Tailwind 字号表 12 / 14 / 16 / 18 / 20 / 24 / 30 / 36 / 48 px；行内代码、KaTeX、标题里的计数这类跟着上下文缩放的可以写 `em`。论文正文 18px、行高 1.75（中文需要比字号表配的 28px 更宽的行距，这是有意的例外）。
+- **间距与圆角**：间距只用 0 2 4 8 12 16 24 32 40 48 64 80 96 px；圆角用 `--radius-sm / md / lg / xl / 2xl`（4 / 6 / 8 / 12 / 16），嵌套时内圆角 = 外圆角 − 间隙。
+- **颜色**：深色底 `#181818 / #1F1F1F / #272727 / #313131`；全站只有一个强调色（arXiv 红，深色模式提亮成 `#e77474` 保证对比度）。新颜色先加成 `:root` 里的变量，深浅两套都要定义。交互演示的 `--demo-*` 配色是独立的一套，不受这里约束。
+- **动效**：过渡统一 `var(--ease)`（`cubic-bezier(0.32, 0.72, 0, 1)`），颜色类 `var(--dur-micro)`（240ms），位移类 `var(--dur)`（700ms）；不要再加全局 `*` 过渡，主题切换时的渐变由 `html.theme-switching` 负责。
+- **图标**：界面图标用 Phosphor（`_includes/icons.html` 的 sprite，`<svg class="icon"><use href="#i-名字"></use></svg>`），不要用 emoji 当界面图标；图标不能放进带 `data-en` / `data-zh` 的元素里（切换语言会整段替换 textContent）。笔记正文里的 emoji 不受限制。
+- **z-index**：用 `--z-*` 变量，不要写新的魔法数字。
+
 ## Cursor Cloud specific instructions
 
 ### Services overview
