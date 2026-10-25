@@ -938,8 +938,8 @@
     label(p5, R, 64, '官方 onnx：两个网络并排', 'demo-x-ink', 14);
     var layers = [575, 512, 256, 128];
     layers.forEach(function (n, k) {
-      chip(p5, R + k * 80, 92, 70, String(n), k ? C_LOW : C_REF, { size: 11.5, h: 28 });
-      chip(p5, R + k * 80, 176, 70, String(n), k ? C_UP : C_REF, { size: 11.5, h: 28 });
+      chip(p5, R + k * 72, 92, 60, String(n), k ? C_LOW : C_REF, { size: 11.5, h: 28 });
+      chip(p5, R + k * 72, 176, 60, String(n), k ? C_UP : C_REF, { size: 11.5, h: 28 });
     });
     chip(p5, R + 300, 92, 52, '15', C_LOW, { size: 12, h: 28 });
     chip(p5, R + 300, 176, 52, '14', C_UP, { size: 12, h: 28 });
