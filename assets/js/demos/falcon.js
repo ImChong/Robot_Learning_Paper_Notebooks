@@ -202,6 +202,18 @@
     setOpacity = K.setOpacity,
     sceneSvg = K.sceneSvg,
     polyPath = K.polyPath;
+  /* 视频里分镜按 1080 宽、约 1.18 倍放大，9–10.5 号字只有 11–12 px，手机上看不清：9–9.5 号放到 11，10–10.5 号放到 11.5 */
+  function minFont(size) {
+    return size == null ? size : size < 9.75 ? Math.max(size, 11) : size < 11 ? Math.max(size, 11.5) : size;
+  }
+  var kitText = svgText, kitRich = svgRich;
+  svgText = function (x, y, str, cls, size, anchor) { return kitText(x, y, str, cls, minFont(size), anchor); };
+  svgRich = function (x, y, str, opts) {
+    var o = {}, k;
+    for (k in opts || {}) o[k] = opts[k];
+    o.size = minFont(o.size);
+    return kitRich(x, y, str, o);
+  };
 
   var X = K.xColors;
   var C_ACCENT = X.accent,
@@ -768,7 +780,7 @@
     var aA = tone(LA, 248, 158, '', C_F, 12);
     var aF = label(LA, 248, 182, '', 'demo-x-mut', 11);
     label(LA, 236, 222, 'MuJoCo 复现：官方 onnx 的', 'demo-x-mut', 10);
-    label(LA, 236, 241, '上身输出置零，只剩 PD', 'demo-x-mut', 10);
+    label(LA, 236, 244, '上身输出置零，只剩 PD', 'demo-x-mut', 10);
     /* 左 B：一个大网络输出 29 维，每一维都在抖 */
     var LB = group(s);
     rectBox(LB, 40, 70, 120, 290, C_MUTED, C_SURFACE);
@@ -901,7 +913,7 @@
     groundShadow(L, 170, 392, 64);
     var mL = g1Mesh(L, 'curr');
     label(L, 24, 70, '训练时的上身目标：ACCAD 的一段动作', 'demo-x-ink2', 11.5);
-    label(L, 24, 88, '（我们用官方 onnx 在 MuJoCo 里回放）', 'demo-x-mut', 10);
+    label(L, 24, 92, '（我们用官方 onnx 在 MuJoCo 里回放）', 'demo-x-mut', 10);
     var R = 424, W = 352;
     var p1 = group(s);
     label(p1, R, 64, '29 个关节，分成两半', 'demo-x-ink', 14);
@@ -978,7 +990,7 @@
     });
     label(p5, R, 136, '一步 115 维：', 'demo-x-ink2', 11.5);
     label(p5, R, 156, '动作 29 · 角速度 3 · 命令 8 · 关节角 29', 'demo-x-mut', 10.5);
-    label(p5, R, 174, '关节速度 29 · 重力 3 · 上身目标 14', 'demo-x-mut', 10.5);
+    label(p5, R, 177, '关节速度 29 · 重力 3 · 上身目标 14', 'demo-x-mut', 10.5);
     var cnt5 = tone(p5, R, 220, '', C_REF, 20);
     label(p5, R, 248, '两个网络都是 512–256–128 的 MLP', 'demo-x-ink2', 11.5);
     function draw(t, clock) {
@@ -1113,8 +1125,8 @@
     groundShadow(L, 96, 392, 58); groundShadow(L, 276, 392, 58);
     var mA = g1Mesh(L, 'hold_falcon'), mB = g1Mesh(L, 'hold_pd');
     var faA = [forceArrow(L, { k: 0.009 }), forceArrow(L, { k: 0.009 })], faB = [forceArrow(L, { k: 0.009 }), forceArrow(L, { k: 0.009 })];
-    tone(L, 96, 66, 'FALCON', C_UP, 13, 'middle');
-    label(L, 276, 66, '上身输出置零：只剩 PD', 'demo-x-ink2', 12, 'middle');
+    tone(L, 96, 69, 'FALCON', C_UP, 13, 'middle');
+    label(L, 276, 69, '上身输出置零：只剩 PD', 'demo-x-ink2', 12, 'middle');
     var fLab = label(L, 186, 92, '', 'demo-x-ink', 12, 'middle');
     label(L, 24, 46, 'MuJoCo 复现：官方 onnx（不是论文的实验）', 'demo-x-mut', 10);
     var R = 424, W = 352;
@@ -1363,7 +1375,7 @@
     var mesh = g1Mesh(L, 'curr');
     var fa = [forceArrow(L, { k: 0.005 }), forceArrow(L, { k: 0.005 })];
     var lab = label(L, 24, 70, '', 'demo-x-ink2', 11.5);
-    label(L, 24, 88, '照官方代码采的力（MuJoCo 复现，α = 1）', 'demo-x-mut', 10);
+    label(L, 24, 92, '照官方代码采的力（MuJoCo 复现，α = 1）', 'demo-x-mut', 10);
     var CUR = RUNS.curr, GAM = CUR.gamma;
     var R = 424, W = 352;
     /* 第 1 段：三角形里撒点 */
@@ -1378,7 +1390,7 @@
     var gp = triPt(GAM), gDot = dotAt(p1, gp[0], gp[1], 6, C_F);
     rich(p1, R, 292, '狄利克雷分布 (1, 1, 1)：三角形里均匀撒', 11.5);
     tone(p1, R + 246, 130, 'γ = (' + GAM.map(function (v) { return f2(v); }).join(', ') + ')', C_F, 11.5);
-    label(p1, R + 246, 148, '这一回合抽到的', 'demo-x-mut', 10);
+    label(p1, R + 246, 151, '这一回合抽到的', 'demo-x-mut', 10);
     /* 第 2 段：三个方向的区间与当前值（左手） */
     var p2 = group(s);
     label(p2, R, 64, '每个方向在缩过的区间里取', 'demo-x-ink', 13.5);
@@ -1515,7 +1527,7 @@
     var cx = R + 120, cy = 190;
     ringAt(p3, cx, cy, 22, C_MUTED, 2);
     var heading = arrow(p3, C_LOW, 3); heading.set(cx, cy, cx, cy - 70, 10);
-    tone(p3, cx + 8, cy - 62, '前进方向', C_LOW, 11);
+    tone(p3, cx, cy - 80, '前进方向', C_LOW, 11, 'middle');
     var rawF = arrow(p3, C_MUTED, 2.4, '5 4'), projF = arrow(p3, C_F, 3.2);
     var p3l = label(p3, R + 220, 150, '', 'demo-x-ink2', 11);
     label(p3, R, 290, '投到前进方向的反方向、取绝对值（俯视图）', 'demo-x-mut', 10.5);
@@ -1594,12 +1606,12 @@
     label(L, sh[0] + 46, sh[1] + 4, '肩', 'demo-x-mut', 10.5, 'start'); label(L, elb[0], 304, '肘', 'demo-x-mut', 10.5, 'middle');
     var fpt = dotAt(L, hd[0], hd[1], 6, C_F), fArr = arrow(L, C_F, 3.4);
     var lever = hline(L, pitchX, hd[1] + 50, pitchX, hd[1] + 50, C_PURPLE, 2.4);
-    var levT = tone(L, 0, hd[1] + 66, '', C_PURPLE, 11, 'middle');
+    var levT = tone(L, 0, hd[1] + 80, '', C_PURPLE, 11, 'middle');
     var TBX = 352, TBY0 = 340, TBH = 220;
     rectBox(L, TBX - 12, TBY0 - TBH, 24, TBH, C_BORDER, C_SURFACE);
     var tqBar = paint(svgEl('rect', { x: TBX - 9, y: TBY0, width: 18, height: 0, rx: 3 }), C_F); L.appendChild(tqBar);
     hline(L, TBX - 18, TBY0 - TBH * 4.5 / 5, TBX + 18, TBY0 - TBH * 4.5 / 5, C_BAD, 2, '4 3');
-    label(L, TBX + 4, TBY0 - TBH * 4.5 / 5 - 8, '4.5（上限 × 0.9）', 'demo-x-mut', 9.5, 'end');
+    label(L, TBX - 24, TBY0 - TBH * 4.5 / 5 + 4, '4.5（上限 × 0.9）', 'demo-x-mut', 9.5, 'end');
     var tqT = label(L, TBX, TBY0 + 20, '', 'demo-x-ink', 11.5, 'middle');
     label(L, TBX, TBY0 + 40, '腕俯仰力矩 N·m', 'demo-x-mut', 9.5, 'middle');
     label(L, 24, 400, '官方 MJCF 的左臂网格（默认姿态，侧视）；20 N 向下', 'demo-x-mut', 10);
@@ -1634,7 +1646,7 @@
     rich(p4, R, 140, '$J_{EE}$ 要按**施力点**算（示意：补偿按原点算）', 11.5);
     var cmp = [barRowAt(p4, R, 156, 92, '补偿给的', C_REF, 18, 11), barRowAt(p4, R, 184, 92, '实际要的', C_F, 18, 11)];
     var gapT = tone(p4, R + 92, 226, '', C_F, 12);
-    label(p4, R, 244, '腕俯仰力矩（N·m），20 N 向下', 'demo-x-mut', 10);
+    label(p4, R, 247, '腕俯仰力矩（N·m），20 N 向下', 'demo-x-mut', 10);
     rich(p4, R, 274, '论文：还得靠力传感器来定位施力点', 12);
     rich(p4, R, 298, '而且假设准静态，关节在动时误差更大', 12, 'demo-x-mut');
     var p5 = group(s);
@@ -1650,9 +1662,9 @@
     var faH0 = fa5(P[3][0]), faH1 = fa5(P[3][0] + 0.18);
     label(p5, R + 110, 170, '小臂与手（官方 MJCF，侧视）', 'demo-x-mut', 10, 'middle');
     var rfD = dotAt(p5, faH0[0], faH0[1], 5.5, C_F), rfA = arrow(p5, C_F, 3);
-    label(p5, R + 222, 112, '训练时', 'demo-x-ink2', 11.5);
-    label(p5, R + 222, 134, '点、方向、大小', 'demo-x-ink2', 11.5);
-    label(p5, R + 222, 156, '都随机', 'demo-x-ink2', 11.5);
+    label(p5, R + 250, 112, '训练时', 'demo-x-ink2', 11.5);
+    label(p5, R + 250, 134, '点、方向、大小', 'demo-x-ink2', 11.5);
+    label(p5, R + 250, 156, '都随机', 'demo-x-ink2', 11.5);
     chip(p5, R, 200, 128, '本体感受的历史', C_REF, { size: 11.5, h: 30 });
     chip(p5, R + 208, 200, 144, '策略自己适应', C_UP, { size: 12, h: 30 });
     var f95 = flowSeg(p5, C_REF, 3, 3, 36);
@@ -1789,10 +1801,10 @@
     math(p1, R, 104, 'E^{upper} = \\tfrac{1}{T}\\textstyle\\sum_t \\lvert q^{upper}_t - q^{upper*}_t \\rvert', 15);
     /* 14 个上身关节的误差一根根在变，虚线是它们的平均：这就是上身误差（示意） */
     var jb11 = [];
-    hline(p1, R, 206, R + W, 206, C_BORDER, 1.4);
-    for (var j11 = 0; j11 < 14; j11++) jb11.push(paint(svgEl('rect', { x: R + 6 + j11 * 24.5, y: 206, width: 16, height: 0, rx: 2 }), C_UP));
+    hline(p1, R, 206, R + 318, 206, C_BORDER, 1.4);
+    for (var j11 = 0; j11 < 14; j11++) jb11.push(paint(svgEl('rect', { x: R + 6 + j11 * 22.5, y: 206, width: 16, height: 0, rx: 2 }), C_UP));
     jb11.forEach(function (r) { p1.appendChild(r); });
-    var mean11 = hline(p1, R, 206, R + W, 206, C_F, 1.8, '5 4'), meanT = tone(p1, R + W, 132, '', C_F, 11, 'end');
+    var mean11 = hline(p1, R, 206, R + 318, 206, C_F, 1.8, '5 4'), meanT = tone(p1, R + 324, 132, '', C_F, 11);
     label(p1, R, 222, '14 个上身关节（示意），虚线是平均', 'demo-x-mut', 10);
     rich(p1, R, 250, '另一个是根速度误差 $E^{root}$；都是**越小越好**', 12);
     rich(p1, R, 274, '三档力：$\\alpha_g$ = 0（无）、0.5（中）、1（大）', 12);
@@ -1838,7 +1850,7 @@
       var now = nowOf(t, clock);
       var sum11 = 0;
       jb11.forEach(function (r, i) { var h = 18 + 52 * (0.5 + 0.5 * Math.sin(now * (0.7 + 0.13 * i) + i * 1.9)); sum11 += h; r.setAttribute('y', (206 - h).toFixed(1)); r.setAttribute('height', h.toFixed(1)); });
-      var m11 = sum11 / 14; setLine(mean11, R, 206 - m11, R + W, 206 - m11); meanT.setAttribute('y', (206 - m11 - 6).toFixed(1)); meanT.textContent = '平均';
+      var m11 = sum11 / 14; setLine(mean11, R, 206 - m11, R + 318, 206 - m11); meanT.setAttribute('y', (206 - m11 + 4).toFixed(1)); meanT.textContent = '平均';
       var u3 = seg(t, 7.4, 8.4), u3b = seg(t, 8.6, 9.4);
       hb3.forEach(function (b, i) { b.set(240 * H3[i][1] / 0.8 * u3, u3 > 0.9 ? f2(H3[i][1]) : ''); });
       half3.style.opacity = u3b; halfT.textContent = u3b > 0.5 ? '单策略的一半 0.365' : '';
@@ -1882,8 +1894,9 @@
     halo(label(L, 62, 258, '(b) 上身关节跟踪误差', 'demo-x-ink2', 11));
     var cA = [curveIn(pa, FIG3.alpha.blue, C_REF), curveIn(pa, FIG3.alpha.orange, C_UP)];
     var cE = [curveIn(pe, FIG3.err.blue, C_REF), curveIn(pe, FIG3.err.orange, C_UP)];
-    legendRow(L, 54, 404, [['不看力矩上限', C_REF, 70], ['按力矩上限算', C_UP, 70]], 10);
-    label(L, 394, 404, '横轴：训练迭代（读图近似值）', 'demo-x-mut', 9.5, 'end');
+    /* 图例放在上图上面：字放大后和右下的横轴说明挤在一行放不下 */
+    legendRow(L, 54, 56, [['不看力矩上限', C_REF, 70], ['按力矩上限算', C_UP, 70]], 10);
+    label(L, 394, 406, '横轴：训练迭代（读图近似值）', 'demo-x-mut', 9.5, 'end');
     var R = 424, W = 352;
     var p1 = group(s);
     label(p1, R, 64, '对照：在固定范围里随便加力', 'demo-x-ink', 13.5);
@@ -1960,7 +1973,7 @@
         var y = 76 + i * 156, b = plotBox(parent, 64, y, 330, 110, 0, sp.x1, sp.y0, sp.y1);
         sp.ticks.forEach(function (v) { label(parent, 58, b.py(v) + 4, sgn(fmt(v, sp.dg)), 'demo-x-mut', 9.5, 'end'); });
         /* 横轴刻度照原图（每 2k 一格），看得出哪条线画到哪；图名放在框上面，线不压字 */
-        for (var xt = 0; xt <= sp.x1; xt += 2000) label(parent, b.px(xt), y + 125, xt ? (xt / 1000) + 'k' : '0', 'demo-x-mut', 9, 'middle');
+        for (var xt = 0; xt <= sp.x1; xt += 2000) label(parent, b.px(xt), y + 127, xt ? (xt / 1000) + 'k' : '0', 'demo-x-mut', 9, 'middle');
         label(parent, 64, y - 9, sp.zh, 'demo-x-ink2', 11);
         var c = [curveIn(b, FIG4[sp.key][sp.cols[0]], C_REF), curveIn(b, FIG4[sp.key][sp.cols[1]], C_UP)];
         return { b: b, c: c };
@@ -2038,8 +2051,8 @@
     var gtA = groundTicks(L), gtB = groundTicks(L);
     var mA = g1Mesh(L, 'walk_falcon'), mB = g1Mesh(L, 'walk_pd');
     var faA = [forceArrow(L, { k: 0.009 }), forceArrow(L, { k: 0.009 })], faB = [forceArrow(L, { k: 0.009 }), forceArrow(L, { k: 0.009 })];
-    tone(L, 100, 66, 'FALCON', C_UP, 13, 'middle');
-    label(L, 284, 66, '上身输出置零：只剩 PD', 'demo-x-ink2', 12, 'middle');
+    tone(L, 100, 69, 'FALCON', C_UP, 13, 'middle');
+    label(L, 284, 69, '上身输出置零：只剩 PD', 'demo-x-ink2', 12, 'middle');
     label(L, 24, 46, 'MuJoCo 复现：官方 onnx，0.5 m/s，每只手 11.8 N 向下', 'demo-x-mut', 10);
     var R = 424, W = 352;
     var p1 = group(s);
@@ -2252,8 +2265,8 @@
     var fa = [forceArrow(L, { k: 0.005 }), forceArrow(L, { k: 0.005 }), forceArrow(L, { k: 0.005 }), forceArrow(L, { k: 0.005 })];
     tone(L, 100, 66, '每只手 30 N（约 3 kg）', C_UP, 12, 'middle');
     tone(L, 286, 66, '每只手 40 N（约 4 kg）', C_F, 12, 'middle');
-    var tqA = barRowAt(L, 24, 352, 92, '腕俯仰力矩', C_UP, 14, 10.5), tqB = barRowAt(L, 210, 352, 0, '', C_F, 14, 10.5);
-    hline(L, 116 + 80, 346, 116 + 80, 372, C_BAD, 1.6, '3 3'); hline(L, 210 + 80, 346, 210 + 80, 372, C_BAD, 1.6, '3 3');
+    var tqA = barRowAt(L, 24, 352, 92, '腕俯仰力矩', C_UP, 14, 10.5), tqB = barRowAt(L, 232, 352, 0, '', C_F, 14, 10.5);
+    hline(L, 116 + 80, 346, 116 + 80, 372, C_BAD, 1.6, '3 3'); hline(L, 232 + 80, 346, 232 + 80, 372, C_BAD, 1.6, '3 3');
     label(L, 24, 392, '虚线：5 N·m 的上限；MuJoCo 复现官方 onnx（论文图 11 的设置）', 'demo-x-mut', 9.5);
     var R = 424, W = 352;
     var p1 = group(s);
@@ -2287,7 +2300,7 @@
     rich(p3, R, 96, '真机上手腕扛大力矩，很快就过热', 12.5);
     rich(p3, R, 120, '默认姿态下，每只手只能稳定搬约 **2 kg**', 12.5);
     rich(p3, R, 144, 'MuJoCo 里（只截断力矩）能搬 **3 kg** 以上', 12.5);
-    paperPart(p3, 'fig11', 0.28, 0, 0.6, 0.93, R + 60, 168, 230, '论文图 11(b)：MuJoCo 里 2、3、4 kg');
+    paperPart(p3, 'fig11', 0.28, 0, 0.6, 0.93, R + 60, 165, 230, '论文图 11(b)：MuJoCo 里 2、3、4 kg');
     var p4 = group(s);
     label(p4, R, 64, '我们照图 11 跑了一遍', 'demo-x-ink', 13.5);
     rich(p4, R, 96, '−1 m/s 往后走，力按 0、10、20、30、40 N 加', 12);
@@ -2307,8 +2320,8 @@
       mA.put(camA, ja); mB.put(camB, jb);
       fa[0].put(a.pl, a.FL, camA, true); fa[1].put(a.pr, a.FR, camA, true);
       fa[2].put(b.pl, b.FL, camB, true); fa[3].put(b.pr, b.FR, camB, true);
-      tqA.set(80 * Math.abs(a.tau) / 5, f1(Math.abs(a.tau)));
-      tqB.set(80 * Math.abs(b.tau) / 5, f1(Math.abs(b.tau)));
+      tqA.set(80 * Math.abs(a.tau) / 5, f1(Math.abs(a.tau))); tqA.val.setAttribute('x', 116 + 80 + 5);
+      tqB.set(80 * Math.abs(b.tau) / 5, f1(Math.abs(b.tau))); tqB.val.setAttribute('x', 232 + 80 + 5);
       REPRO.fig11.forEach(function (r, i) { var u = seg(t, 10.8 + i * 0.25, 11.3 + i * 0.25); f11[i].set(220 * r.tau / 5 * u, u > 0.9 ? f2(r.tau) : ''); });
       ok5.forEach(function (g, i) { g.style.opacity = seg(t, 13.7 + i * 0.4, 14.0 + i * 0.4); });
       var h0 = runFrames('hold_falcon')[0];
