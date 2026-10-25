@@ -599,6 +599,25 @@
       }
     };
   }
+  /* 圆弧上的点：圆心 c、半径 r，角度 a0 → a1（弧度，SVG 坐标：y 朝下，π → 2π 是上半圆） */
+  function arcPts(c, r, a0, a1, n) {
+    var out = [], k = n || 32;
+    for (var i = 0; i <= k; i++) { var a = a0 + (a1 - a0) * i / k; out.push([c[0] + r * Math.cos(a), c[1] + r * Math.sin(a)]); }
+    return out;
+  }
+  /* 一串方框依次亮起：boxes = [[x, y, w, h]]，at(相位 0–1) 让第 floor(相位 × n) 个亮 */
+  function pulseBoxes(parent, boxes, color) {
+    var rs = boxes.map(function (b) {
+      var r = paint(svgEl('rect', { x: b[0] - 2, y: b[1] - 2, width: b[2] + 4, height: b[3] + 4, rx: 8, fill: 'none', 'stroke-width': 3 }), null, color || C_ACCENT);
+      parent.appendChild(r); r.style.opacity = 0; return r;
+    });
+    return {
+      at: function (ph) {
+        var k = Math.floor((((ph % 1) + 1) % 1) * rs.length);
+        rs.forEach(function (r, i) { r.style.opacity = i === k ? 1 : 0; });
+      }
+    };
+  }
   /* 一张带框的小折线图：xs 是数据的横坐标，返回 { set(upto) } 按进度画到 upto */
   function curveIn(box, pts, color, width, dash) {
     var p = pathLine(box.g, [], color, width || 2.2, dash);
@@ -618,7 +637,8 @@
   /* ── scene 1: 手上有力，全身都得跟着用力 ── */
   function buildSceneIntro() {
     var s = sceneSvg('左边是项目页的三段真机视频依次放：G1 提着重物、G1 拉 50 kg 的车、T1 拉坐着人的车；右边依次出现：三类带力任务和力的范围、' +
-      '一台 G1 手上挂着向下的力、小点沿手臂流到腿、以前的工作、G1 各关节的力矩上限条形图（手腕最短），最后是 FALCON 的一句话总结');
+      '一台 G1 手上挂着向下的力、小点沿手臂流到腿、以前的工作（一块指针只在「轻」那头晃的表盘、一只质心标好的吊箱）、G1 各关节的力矩上限条形图（手腕最短），' +
+      '最后是本体感受流向两个智能体、力课程的条从小往大长');
     s.appendChild(svgText(24, 26, '手上有力，全身都得跟着用力', 'demo-x-ink2', 13.5));
     var clip = seqClip(s, 'teaser', 24, 44, 380, 214, '项目页视频（原速）', TEASER_PARTS);
     var R = 424, W = 352;
@@ -650,17 +670,29 @@
     var steps2 = ['手', '肘', '肩', '躯干', '骨盆', '膝', '脚'];
     var stepT = steps2.map(function (n, i) { return label(p2, R + 236, 112 + i * 30, n, 'demo-x-ink2', 12.5); });
     var stepArrow = steps2.slice(1).map(function (n, i) { return label(p2, R + 220, 112 + i * 30 + 16, '↓', 'demo-x-mut', 10, 'middle'); });
-    /* 第 3 段：以前的工作 */
+    /* 第 3 段：以前的工作——左边一块表盘，指针只在「轻」的一头晃；右边一只箱子吊着，质心标好、质量事先给定（示意） */
     var p3 = group(s);
-    label(p3, R, 64, '以前的工作', 'demo-x-ink', 14);
-    chip(p3, R, 84, W, '人形 + 强化学习：多是**轻的**任务', C_MUTED, { size: 12.5, left: true, h: 34 });
-    var light = group(p3);
-    rectBox(light, R + 40, 138, 34, 26, C_GOOD, C_SURFACE); tick(light, R + 84, 140, 20, C_GOOD);
-    rectBox(light, R + 170, 128, 56, 40, C_BAD, C_SURFACE); cross(light, R + 238, 138, 18, C_BAD);
-    label(light, R + 57, 186, '轻', 'demo-x-ink2', 11, 'middle'); label(light, R + 198, 186, '重、力未知', 'demo-x-ink2', 11, 'middle');
-    chip(p3, R, 208, W, '四足 + 机械臂：已经有不少力自适应的工作', C_MUTED, { size: 12.5, left: true, h: 34 });
-    label(p3, R, 266, '这些方法或者事先要知道物体的质量、质心，', 'demo-x-mut', 11);
-    label(p3, R, 288, '或者只在准静态下估计外力', 'demo-x-mut', 11);
+    label(p3, R, 64, '以前的工作（示意）', 'demo-x-ink', 14);
+    rectBox(p3, R, 80, 170, 206, C_MUTED, C_SURFACE);
+    label(p3, R + 85, 104, '人形 + 强化学习', 'demo-x-ink', 12, 'middle');
+    var DC = [R + 85, 206], DR = 58;
+    pathLine(p3, arcPts(DC, DR, Math.PI, 2 * Math.PI), C_BORDER, 7);
+    pathLine(p3, arcPts(DC, DR, Math.PI, Math.PI * 1.18), C_GOOD, 7);
+    label(p3, DC[0] - DR, DC[1] + 20, '轻', 'demo-x-ink2', 11, 'middle');
+    label(p3, DC[0] + DR, DC[1] + 20, '重', 'demo-x-ink2', 11, 'middle');
+    var needle = hline(p3, DC[0], DC[1], DC[0] - DR + 10, DC[1], C_F, 3);
+    dotAt(p3, DC[0], DC[1], 5, C_F);
+    label(p3, R + 85, 262, '多是轻的任务', 'demo-x-ink2', 12, 'middle');
+    rectBox(p3, R + 182, 80, 170, 206, C_MUTED, C_SURFACE);
+    label(p3, R + 267, 104, '四足 + 机械臂', 'demo-x-ink', 12, 'middle');
+    var hook = hline(p3, R + 267, 114, R + 267, 140, C_MUTED, 2);
+    var crate = group(p3);
+    rectBox(crate, R + 232, 140, 70, 56, C_MUTED, C_SURFACE);
+    var com = group(crate);
+    ringAt(com, R + 267, 162, 7, C_REF, 2); hline(com, R + 257, 162, R + 277, 162, C_REF, 1.6); hline(com, R + 267, 152, R + 267, 172, C_REF, 1.6);
+    label(crate, R + 267, 188, '质量已知', 'demo-x-ink2', 10.5, 'middle');
+    label(p3, R + 267, 238, '质量、质心事先给定', 'demo-x-ink2', 11.5, 'middle');
+    label(p3, R + 267, 262, '或只估准静态的力', 'demo-x-ink2', 11.5, 'middle');
     /* 第 4 段：G1 的关节力矩上限 */
     var p4 = group(s);
     label(p4, R, 64, '人形更难：力矩上限更紧（G1，N·m）', 'demo-x-ink', 14);
@@ -673,12 +705,18 @@
     var p5 = group(s);
     label(p5, R, 64, 'FALCON：力自适应的人形移动操作', 'demo-x-ink', 14);
     label(p5, R, 86, 'Force-Adaptive Humanoid Loco-Manipulation', 'demo-x-mut', 11);
-    chip(p5, R, 102, 170, '下身智能体', C_LOW, { size: 12.5, h: 32 });
-    chip(p5, R + 182, 102, 170, '上身智能体', C_UP, { size: 12.5, h: 32 });
-    chip(p5, R, 146, W, '按力矩上限算的**三维力课程**', C_F, { size: 12.5, h: 32 });
-    rich(p5, R, 204, '**不用**力传感器，也**不**估计外力', 12.5);
-    label(p5, R, 232, '卡内基梅隆大学、Field AI、日产美国', 'demo-x-ink2', 12);
-    label(p5, R, 254, 'L4DC 2026 口头报告 · 代码与模型全部开源', 'demo-x-mut', 11.5);
+    chip(p5, R, 120, 96, '本体感受', C_REF, { size: 12, h: 32 });
+    chip(p5, R + 160, 100, 192, '下身智能体', C_LOW, { size: 12.5, h: 30 });
+    chip(p5, R + 160, 144, 192, '上身智能体', C_UP, { size: 12.5, h: 30 });
+    var f5 = [flowSeg(p5, C_REF, 3, 3, 36), flowSeg(p5, C_REF, 3, 3, 36)];
+    rich(p5, R, 206, '力课程 $\\alpha_g$', 12);
+    hline(p5, R + 90, 201, R + 352, 201, C_BORDER, 8);
+    var cur5 = hbar(p5, R + 90, 197, 8, C_F, 1);
+    var cur5T = tone(p5, R + 352, 224, '', C_F, 11, 'end');
+    label(p5, R + 90, 224, '按力矩上限算，从小往大加', 'demo-x-mut', 10.5);
+    rich(p5, R, 256, '**不用**力传感器，也**不**估计外力', 12.5);
+    label(p5, R, 280, '卡内基梅隆大学、Field AI、日产美国', 'demo-x-ink2', 12);
+    label(p5, R, 302, 'L4DC 2026 口头报告 · 代码与模型全部开源', 'demo-x-mut', 11.5);
     var F0 = function () { return runFrames('hold_falcon')[0]; };
     function draw(t, clock) {
       var now = nowOf(t, clock);
@@ -693,6 +731,15 @@
       stepT.forEach(function (n, i) { n.style.opacity = i <= k2 ? 1 : 0.3; });
       stepArrow.forEach(function (n, i) { n.style.opacity = i < k2 ? 1 : 0.3; });
       tq.forEach(function (b, i) { var u = seg(t, 10.7 + i * 0.15, 11.3 + i * 0.15); b.set(200 * TORQUE[i][1] / 139 * u, u > 0.95 ? String(TORQUE[i][1]) : ''); });
+      var na = Math.PI + Math.PI * (0.07 + 0.05 * Math.sin(now * 2.1) + 0.025 * Math.sin(now * 5.3));
+      setLine(needle, DC[0], DC[1], DC[0] + (DR - 10) * Math.cos(na), DC[1] + (DR - 10) * Math.sin(na));
+      var bob = 3 * Math.sin(now * 1.7);
+      crate.setAttribute('transform', 'translate(0,' + bob.toFixed(1) + ')');
+      setLine(hook, R + 267, 114, R + 267, 140 + bob);
+      com.style.opacity = 0.55 + 0.45 * (0.5 + 0.5 * Math.sin(now * 3));
+      f5.forEach(function (f, i) { f.at(now, [R + 98, 130 + i * 12], [R + 158, 115 + i * 44], true); });
+      var al = 0.1 + 0.9 * clamp((now % 6) / 5, 0, 1);
+      setW(cur5, 262 * al); cur5T.textContent = f2(al);
       setOpacity(p1, win(t, 0.3, 3.6));
       setOpacity(p2, win(t, 3.6, 7.0));
       setOpacity(p3, win(t, 7.0, 10.4));
@@ -705,7 +752,8 @@
   /* ── scene 2: 两条老路，各缺一半 ── */
   function buildSceneParadigms() {
     var s = sceneSvg('左边先是一台 G1 站着、两只手往下受力：上身只靠 PD 时手腕慢慢垂下去，旁边的读数是腕俯仰的误差；然后换成一个大网络输出全身 29 维动作、' +
-      '每一维都在抖；最后是两个网络并排读同一份观测。右边依次讲两条老路各是什么、各缺什么，最后是 FALCON 的拆法');
+      '每一维都在抖；最后是两个网络并排读同一份观测。右边依次出现：老路一的两条流水线（下身强化学习、上身逆运动学再 PD）、' +
+      '一根和左边同一帧的腕俯仰杠杆（受力越大垂得越多，误差乘刚度就是 PD 的力矩）、老路二、走路和操作拔河、FALCON 的拆法');
     s.appendChild(svgText(24, 26, '两条老路，各缺一半', 'demo-x-ink2', 13.5));
     /* 左 A：上身只有 PD 的 G1（我们的复现：上身智能体的输出置零），手腕慢慢垂下 */
     var LA = group(s);
@@ -746,15 +794,33 @@
     var p1 = group(s);
     label(p1, R, 64, '老路一：下身强化学习，上身逆运动学', 'demo-x-ink', 13.5);
     label(p1, R, 84, 'Lower-RL-Upper-IK（PMP、HOMIE）', 'demo-x-mut', 11);
-    chip(p1, R, 100, W, '下身：强化学习策略，管走路', C_LOW, { size: 12.5, left: true, h: 32 });
-    chip(p1, R, 142, W, '上身：逆运动学算关节角，再交给 PD 跟', C_UP, { size: 12.5, left: true, h: 32 });
-    rich(p1, R, 204, '优点：样本效率高，上身目标很准', 12);
+    label(p1, R, 112, '下身', 'demo-x-ink2', 11.5);
+    var P1A = [[R + 36, 100, 84, '速度命令'], [R + 150, 100, 112, '强化学习策略'], [R + 292, 100, 60, '腿']];
+    P1A.forEach(function (b) { chip(p1, b[0], b[1], b[2], b[3], C_LOW, { size: 11.5, h: 30 }); });
+    label(p1, R, 170, '上身', 'demo-x-ink2', 11.5);
+    var P1B = [[R + 36, 158, 76, '手的目标'], [R + 136, 158, 80, '逆运动学'], [R + 240, 158, 44, 'PD'], [R + 304, 158, 48, '手臂']];
+    P1B.forEach(function (b) { chip(p1, b[0], b[1], b[2], b[3], C_UP, { size: 11.5, h: 30 }); });
+    var f1s = [];
+    [P1A, P1B].forEach(function (row, ri) {
+      for (var k = 0; k + 1 < row.length; k++) f1s.push({ f: flowSeg(p1, ri ? C_UP : C_LOW, 2, 2.8, 22, true), a: [row[k][0] + row[k][2] + 3, row[k][1] + 15], b: [row[k + 1][0] - 3, row[k + 1][1] + 15] });
+    });
+    rich(p1, R, 222, '优点：样本效率高，上身目标很准', 12);
     var p2 = group(s);
     label(p2, R, 64, '缺：上身没有力补偿', 'demo-x-ink', 13.5);
-    math(p2, R, 104, '\\tau = k_p\\,(q^{*} - q) - k_d\\,\\dot q', 16);
-    rich(p2, R, 138, 'PD 要出力，就**得先有误差**', 12.5);
-    rich(p2, R, 162, '腕俯仰的刚度只有 $k_p = 4$ N·m/rad', 12);
-    rich(p2, R, 194, '上下身之间也没有全身动力学的协调', 12);
+    math(p2, R, 100, '\\tau = k_p\\,(q^{*} - q) - k_d\\,\\dot q', 16);
+    rich(p2, R, 130, 'PD 要出力，就**得先有误差**', 12.5);
+    /* 腕俯仰当一根杠杆：虚线是目标（0），灰杆是实际角度（和左边回放同一帧），红箭是手上的力 */
+    var LV = [R + 60, 160], LL = 170;
+    ringAt(p2, LV[0], LV[1], 9, C_REF, 3);
+    hline(p2, LV[0], LV[1], LV[0] + LL + 20, LV[1], C_REF, 1.6, '5 4');
+    label(p2, LV[0] + LL + 24, LV[1] + 4, '目标', 'demo-x-ink2', 11);
+    var lvBar = hline(p2, LV[0], LV[1], LV[0] + LL, LV[1], C_MUTED, 9);
+    lvBar.setAttribute('stroke-linecap', 'round');
+    var lvArc = pathLine(p2, [], C_F, 2.4);
+    var lvF = arrow(p2, C_F, 3);
+    label(p2, LV[0] - 14, LV[1] + 4, '腕', 'demo-x-ink2', 11, 'end');
+    var lvT = tone(p2, R, 318, '', C_F, 12);
+    rich(p2, R, 342, '腕俯仰的刚度只有 $k_p = 4$ N·m/rad', 11.5);
     var p3 = group(s);
     label(p3, R, 64, '老路二：一个策略管全身', 'demo-x-ink', 13.5);
     label(p3, R, 84, 'Monolithic-WB-RL（Expressive WBC、HOVER 的设计）', 'demo-x-mut', 11);
@@ -762,9 +828,23 @@
     rich(p3, R, 162, '优点：表达力够，全身一起动', 12);
     var p4 = group(s);
     label(p4, R, 64, '缺：探索效率低', 'demo-x-ink', 13.5);
-    rich(p4, R, 100, '动作空间大：29 维一起探索', 12.5);
-    rich(p4, R, 126, '走路和操作，两个目标**关联很弱**', 12.5);
-    rich(p4, R, 152, '容易一半身体压过另一半', 12.5);
+    /* 拔河：绳结在中间来回被拉，常常偏到一边去（示意） */
+    var TY = 150, TC = R + 176;
+    chip(p4, R, TY - 18, 64, '走路', C_LOW, { size: 12, h: 36 });
+    chip(p4, R + 288, TY - 18, 64, '操作', C_UP, { size: 12, h: 36 });
+    hline(p4, TC, TY - 30, TC, TY + 30, C_MUTED, 1.2, '3 4');
+    var rope = hline(p4, R + 66, TY, R + 286, TY, C_MUTED, 3);
+    var knot = dotAt(p4, TC, TY, 8, C_F);
+    label(p4, R, 212, '走路的奖励', 'demo-x-ink2', 11);
+    label(p4, R, 240, '操作的奖励', 'demo-x-ink2', 11);
+    var rwL = hbar(p4, R + 76, 202, 12, C_LOW, 1), rwU = hbar(p4, R + 76, 230, 12, C_UP, 1);
+    rich(p4, R, 282, '29 维一起探索，两个目标**关联很弱**', 12);
+    label(p4, R, 304, '容易一半身体压过另一半（示意）', 'demo-x-mut', 11);
+    function tugAt(now) {
+      var u = 0.7 * Math.sin(now * 0.8) + 0.3 * Math.sin(now * 2.1 + 1.3), x = TC + 96 * u;
+      moveDot(knot, [x, TY]);
+      setW(rwL, 200 * (0.5 - 0.45 * u)); setW(rwU, 200 * (0.5 + 0.45 * u));
+    }
     var p5 = group(s);
     label(p5, R, 64, 'FALCON：拆开训，但互相看得见', 'demo-x-ink', 13.5);
     rich(p5, R, 100, '两个智能体，**奖励分开**', 12.5);
@@ -781,6 +861,14 @@
       aT.textContent = '目标 0.00 rad';
       aA.textContent = '实际 ' + sgn(f2(f.wp)) + ' rad';
       aF.textContent = '每只手往下 ' + Math.round(-f.fz) + ' N';
+      var th = Math.max(0, f.wp), ex = [LV[0] + LL * Math.cos(th), LV[1] + LL * Math.sin(th)];
+      setLine(lvBar, LV[0], LV[1], ex[0], ex[1]);
+      setPath(lvArc, th > 0.02 ? arcPts(LV, 64, 0, th, 16) : []);
+      lvF.set(ex[0], ex[1], ex[0], ex[1] - f.fz * 2.2, 9);
+      var e2 = Math.round(th * 100) / 100;
+      lvT.textContent = '误差 ' + f2(e2) + ' rad × 4 = ' + f2(4 * e2) + ' N·m（PD 出的力矩）';
+      f1s.forEach(function (o) { o.f.at(now, o.a, o.b, true); });
+      tugAt(now);
       jit.forEach(function (b, i) {
         var a = 0.5 + 0.5 * rnd(i + Math.floor(now * 10) * 31, 7), w = 64 * a;
         b.setAttribute('x', (290 - w * (rnd(i + Math.floor(now * 10) * 17, 3) < 0.5 ? 1 : 0)).toFixed(1)); setW(b, w);
@@ -802,7 +890,8 @@
   /* ── scene 3: 统一的目标空间 ── */
   function buildSceneGoals() {
     var s = sceneSvg('左边一台 G1 照着一段 ACCAD 动作摆手臂；右边依次出现：29 个关节分成下身 15、上身 14；本体感受的 5 步历史一行一行往上滚；' +
-      '移动目标的几个命令；操作目标从哪来；最后一条 115 维的观测按组成分段，乘 5 步历史等于 575 维');
+      '移动目标的几个命令；操作目标从哪来（训练时一段段动作像胶片一样走、部署时两节臂用逆运动学追着目标点）；' +
+      '最后一条 115 维的观测按组成分段，乘 5 步历史等于 575 维');
     s.appendChild(svgText(24, 26, '统一的目标空间', 'demo-x-ink2', 13.5));
     var L = group(s);
     var camL = camAt(210, 170, 392);
@@ -850,11 +939,31 @@
     label(p4, R, 64, '操作目标', 'demo-x-ink', 14);
     math(p4, R + 82, 64, '\\mathcal{G}^u_t = q^{upper*}_t', 15);
     chip(p4, R, 82, W, '上身 14 个目标关节角', C_UP, { size: 12.5, h: 32 });
-    rich(p4, R, 144, '**训练**：从 AMASS 里采', 12.5);
-    rich(p4, R, 166, '开源配置是 ACCAD 的 252 段（0.45 小时）', 11, 'demo-x-mut');
-    rich(p4, R, 186, '三成的回合固定在其中一帧', 11, 'demo-x-mut');
-    rich(p4, R, 222, '**部署**：由逆运动学解出来', 12.5);
-    rich(p4, R, 244, '官方脚本只解肩、肘 8 个关节，手腕置 0', 11, 'demo-x-mut');
+    /* 左：训练时的目标是一段段动作，像胶片一样往左走；右：部署时目标点在动，两节臂用逆运动学现场跟上 */
+    rich(p4, R, 140, '**训练**：从 AMASS 里采', 12);
+    rectBox(p4, R, 152, 168, 64, C_BORDER, C_SURFACE);
+    var film = group(p4), filmF = [];
+    for (var fi = 0; fi < 4; fi++) {
+      var fg = group(film);
+      rectBox(fg, 0, 160, 50, 48, C_UP, C_SURFACE);
+      var pts4 = [];
+      for (var q4 = 0; q4 <= 10; q4++) pts4.push([5 + q4 * 4, 184 - 14 * Math.sin(q4 * 0.6 + fi * 1.7) * (0.5 + 0.5 * rnd(fi, 9))]);
+      pathLine(fg, pts4, C_UP, 2);
+      filmF.push(fg);
+    }
+    var filmClip = svgEl('clipPath', { id: 'falcon-film-clip' });
+    filmClip.appendChild(svgEl('rect', { x: R + 2, y: 152, width: 164, height: 64 }));
+    s.appendChild(filmClip); film.setAttribute('clip-path', 'url(#falcon-film-clip)');
+    label(p4, R, 238, 'ACCAD 的 252 段（0.45 小时）', 'demo-x-mut', 10.5);
+    label(p4, R, 258, '三成的回合固定在其中一帧', 'demo-x-mut', 10.5);
+    rich(p4, R + 184, 140, '**部署**：逆运动学现场解', 12);
+    rectBox(p4, R + 184, 152, 168, 120, C_BORDER, C_SURFACE);
+    var IKB = [R + 214, 176], IL1 = 56, IL2 = 52;
+    dotAt(p4, IKB[0], IKB[1], 6, C_MUTED);
+    var ik1 = hline(p4, 0, 0, 0, 0, C_UP, 6), ik2 = hline(p4, 0, 0, 0, 0, C_UP, 5);
+    ik1.setAttribute('stroke-linecap', 'round'); ik2.setAttribute('stroke-linecap', 'round');
+    var ikE = dotAt(p4, 0, 0, 5, C_UP), ikT = ringAt(p4, 0, 0, 8, C_REF, 2.4);
+    label(p4, R + 184, 292, '只解肩、肘 8 个关节，手腕置 0', 'demo-x-mut', 10.5);
     var p5 = group(s);
     label(p5, R, 64, '代码：两个网络读的是同一条向量', 'demo-x-ink', 13.5);
     var obsG = group(p5), ox = R, obsR = [];
@@ -880,6 +989,17 @@
         g.style.opacity = vis * (i >= 4 ? 1 : 0.55);
       });
       locV[0].textContent = (Math.floor(now / 2) % 2 ? '0.50' : '0.30') + ', 0.00 m/s';
+      filmF.forEach(function (fg, i) {
+        var x = R + 4 + ((i * 58 - now * 30) % 232 + 232) % 232 - 58;
+        fg.setAttribute('transform', 'translate(' + x.toFixed(1) + ',0)');
+      });
+      var tg4 = [R + 276 + 28 * Math.cos(now * 1.1), 216 + 20 * Math.sin(now * 1.7)];
+      var dx = tg4[0] - IKB[0], dy = tg4[1] - IKB[1], dd = clamp(Math.hypot(dx, dy), 10, IL1 + IL2 - 1);
+      var cb = clamp((IL1 * IL1 + IL2 * IL2 - dd * dd) / (2 * IL1 * IL2), -1, 1), ca = clamp((IL1 * IL1 + dd * dd - IL2 * IL2) / (2 * IL1 * dd), -1, 1);
+      var a0 = Math.atan2(dy, dx) - Math.acos(ca), el4 = [IKB[0] + IL1 * Math.cos(a0), IKB[1] + IL1 * Math.sin(a0)];
+      var a1 = a0 + Math.PI - Math.acos(cb), en4 = [el4[0] + IL2 * Math.cos(a1), el4[1] + IL2 * Math.sin(a1)];
+      setLine(ik1, IKB[0], IKB[1], el4[0], el4[1]); setLine(ik2, el4[0], el4[1], en4[0], en4[1]);
+      moveDot(ikE, en4); moveDot(ikT, tg4);
       obsR.forEach(function (r, i) { r.style.opacity = seg(t, 13.6 + i * 0.08, 13.8 + i * 0.08); });
       var u = seg(t, 14.5, 15.4);
       cnt5.textContent = u > 0 ? '115 × 5 步 = ' + Math.round(115 + (575 - 115) * u) + ' 维' : '';
@@ -895,7 +1015,8 @@
   /* ── scene 4: 两个智能体：奖励分开、观测共享 ── */
   function buildSceneDual() {
     var s = sceneSvg('左边是论文图 2(a) 的中间：上身智能体（橙）和下身智能体（绿）各有策略和价值网络，讲到哪一半就框出哪一半；右边依次出现：' +
-      '两条奖励的式子、观测流向两个网络再拼成 29 维动作、两组奖励的项数、critic 多看的东西、官方 onnx 里两个网络并排的结构');
+      '两条奖励的式子、观测流向两个网络再拼成 29 维动作、两组奖励的项数、actor 和 critic 各收到哪些输入（紫色两样只流向 critic）、' +
+      '官方 onnx 里两个网络并排的结构（亮框一层层走到输出）');
     s.appendChild(svgText(24, 26, '两个智能体：奖励分开、观测共享', 'demo-x-ink2', 13.5));
     var fig = paperPart(s, 'fig2', 0.31, 0.0, 0.79, 0.565, 24, 52, 380, '论文图 2(a) 的中间：上身智能体（橙）、下身智能体（绿）');
     var fx = function (u) { return 24 + (u - 0.31) / 0.48 * 380; }, fy = function (v) { return 52 + v / 0.565 * fig.h; };
@@ -930,10 +1051,16 @@
     label(p3, R, 262, '上身：关节跟踪 + 9 项惩罚（力矩、加速度、限位……）', 'demo-x-mut', 10.5);
     var p4 = group(s);
     label(p4, R, 64, '非对称 actor-critic', 'demo-x-ink', 14);
-    chip(p4, R, 84, W, 'actor：575 维（5 步历史）', C_REF, { size: 12, left: true, h: 30 });
-    chip(p4, R, 124, W, 'critic：再多看根部线速度、两只手上的外力', C_CRIT, { size: 12, left: true, h: 30 });
-    rich(p4, R, 186, '这两样真机上拿不到，只在训练时给 critic', 12);
-    label(p4, R, 210, '代码里 critic 读 128 维、只看当前一步', 'demo-x-mut', 11);
+    /* 左边三样输入，右边 actor、critic：本体感受两边都给，紫色两样只流向 critic */
+    chip(p4, R, 92, 112, '本体感受 575', C_REF, { size: 11.5, h: 30 });
+    chip(p4, R, 162, 112, '根部线速度', C_CRIT, { size: 11.5, h: 30 });
+    chip(p4, R, 206, 112, '两只手上的外力', C_CRIT, { size: 11.5, h: 30 });
+    chip(p4, R + 220, 92, 132, 'actor（策略）', C_UP, { size: 12, h: 32 });
+    chip(p4, R + 220, 178, 132, 'critic（价值）', C_CRIT, { size: 12, h: 32 });
+    var f4 = [[C_REF, [R + 115, 107], [R + 217, 108]], [C_REF, [R + 115, 113], [R + 217, 186]], [C_CRIT, [R + 115, 177], [R + 217, 194]], [C_CRIT, [R + 115, 221], [R + 217, 202]]]
+      .map(function (o) { return { f: flowSeg(p4, o[0], 3, 3, 40), a: o[1], b: o[2] }; });
+    rich(p4, R, 268, '紫色两样真机上拿不到，只在训练时给 critic', 12);
+    label(p4, R, 292, '代码里 critic 读 128 维、只看当前一步', 'demo-x-mut', 11);
     var p5 = group(s);
     label(p5, R, 64, '官方 onnx：两个网络并排', 'demo-x-ink', 14);
     var layers = [575, 512, 256, 128];
@@ -945,6 +1072,12 @@
     chip(p5, R + 300, 176, 52, '14', C_UP, { size: 12, h: 28 });
     chip(p5, R + 240, 240, 112, '拼成 29 维', C_MUTED, { size: 12, h: 30 });
     label(p5, R, 254, 'Gemm + ELU × 3，再一层输出', 'demo-x-mut', 10.5);
+    /* 一次前向：亮框从输入一层层走到输出，两个网络同时走，最后拼成 29 维 */
+    var pz5 = [92, 176].map(function (y) {
+      var bx = [0, 1, 2, 3].map(function (k) { return [R + k * 75, y, 60, 28]; });
+      bx.push([R + 300, y, 52, 28]); bx.push([R + 240, 240, 112, 30]);
+      return pulseBoxes(p5, bx, C_REF);
+    });
     function draw(t, clock) {
       var now = nowOf(t, clock);
       hiUp.style.opacity = (t < 3.6 ? 0.5 + 0.5 * Math.sin(now * 3) : 0) * win(t, 0.3, 3.6);
@@ -955,6 +1088,8 @@
       f2[3].at(now, [R + 234, 202], [R + 270, 166], true);
       sqL.forEach(function (r, k) { r.style.opacity = seg(t, 7.3 + k * 0.03, 7.4 + k * 0.03); });
       sqU.forEach(function (r, k) { r.style.opacity = seg(t, 8.6 + k * 0.06, 8.7 + k * 0.06); });
+      f4.forEach(function (o) { o.f.at(now, o.a, o.b, true); });
+      pz5.forEach(function (pz) { pz.at(now / 3); });
       setOpacity(p1, win(t, 0.3, 3.6));
       setOpacity(p2, win(t, 3.6, 7.0));
       setOpacity(p3, win(t, 7.0, 10.4));
@@ -967,7 +1102,8 @@
   /* ── scene 5: 隐式补偿：上身输出的是残差 ── */
   function buildSceneResidual() {
     var s = sceneSvg('左边两台 G1 并排站着，每只手往下受力、从 0 慢慢加到 20 N：左边是 FALCON，手一直端平；右边把上身智能体的输出置零、只剩 PD，手腕慢慢垂下。' +
-      '右边依次出现：上身目标等于参考加残差的式子、实验设置、腕俯仰的目标和实际角度、两种做法的误差条、一句话总结');
+      '右边依次出现：上身目标等于参考加残差的式子和一条数轴（目标在参考两边挪）、实验设置、腕俯仰的目标和实际角度、两种做法的误差条、' +
+      '本体感受的历史像纸带一样流进上身智能体，腕俯仰的目标跟着往反方向挪');
     s.appendChild(svgText(24, 26, '隐式补偿：上身输出的是残差', 'demo-x-ink2', 13.5));
     var L = group(s);
     var camA = camAt(205, 96, 392), camB = camAt(205, 276, 392);
@@ -982,9 +1118,17 @@
     var p1 = group(s);
     label(p1, R, 64, '上身智能体输出的是「残差」', 'demo-x-ink', 14);
     math(p1, R, 108, 'q^{tgt} = q^{upper*} + 0.25\\,a^u', 17);
-    rich(p1, R, 150, '论文图 2 里，$q^{upper}$ 和 $a^u$ 之间有个加号', 12);
-    label(p1, R, 174, '代码：residual_upper_body_action', 'demo-x-mut', 10.5);
-    rich(p1, R, 214, '上身智能体只管「在参考上挪多少」', 12);
+    /* 数轴：蓝点是参考角，橙箭头是 0.25 × 动作，橙圈是目标；动作一变，目标就在参考两边挪（示意） */
+    var NY = 176, NC = R + 176, NK = 380;
+    hline(p1, R + 16, NY, R + 336, NY, C_BORDER, 2);
+    [-0.3, -0.15, 0.15, 0.3].forEach(function (v) { hline(p1, NC + v * NK, NY - 5, NC + v * NK, NY + 5, C_MUTED, 1.2); });
+    dotAt(p1, NC, NY, 7, C_REF);
+    rich(p1, NC, NY + 30, '参考 $q^{upper*}$', 11.5, 'demo-x-ink2', 'middle');
+    var rsA = arrow(p1, C_UP, 3), rsT = ringAt(p1, NC, NY, 9, C_UP, 2.6);
+    var rsL = tone(p1, NC, NY - 22, '', C_UP, 11.5, 'middle');
+    rich(p1, R, 244, '论文图 2 里，$q^{upper*}$ 和 $a^u$ 之间有个加号', 12);
+    label(p1, R, 268, '代码：residual_upper_body_action', 'demo-x-mut', 10.5);
+    rich(p1, R, 300, '上身智能体只管「在参考上挪多少」', 12);
     var p2 = group(s);
     label(p2, R, 64, '我们的复现', 'demo-x-ink', 14);
     rich(p2, R, 94, '官方 onnx，在 MuJoCo 里站着', 12.5);
@@ -1017,10 +1161,29 @@
     readHint(p4, R, 268, '条越短越好', 10.5);
     var p5 = group(s);
     label(p5, R, 64, '这就是「隐式」力补偿', 'demo-x-ink', 14);
-    rich(p5, R, 98, '没有力传感器，也没有力估计器', 12.5);
-    rich(p5, R, 124, '外力是从**本体感受的历史**里看出来的：', 12.5);
-    rich(p5, R, 148, '关节角被压偏了、速度变了、上一步的动作……', 12, 'demo-x-mut');
-    rich(p5, R, 186, '上身智能体把目标往反方向挪，让 PD 出够力', 12.5);
+    /* 本体感受的 5 步历史像纸带一样往左走，流进上身智能体；右下是腕俯仰的目标，跟着左边回放同一帧往反方向挪 */
+    label(p5, R, 92, '本体感受的历史（5 步）', 'demo-x-ink2', 11.5);
+    var tape = group(p5), tapeC = [];
+    for (var ti = 0; ti < 6; ti++) {
+      var tg5 = group(tape);
+      [[C_REF, 0], [C_PURPLE, 1], [C_UP, 2]].forEach(function (c) {
+        var rr = paint(svgEl('rect', { x: 0, y: 102 + c[1] * 9, width: 44, height: 7, rx: 2 }), c[0]); rr.style.opacity = 0.75; tg5.appendChild(rr);
+      });
+      tapeC.push(tg5);
+    }
+    var tapeClip = svgEl('clipPath', { id: 'falcon-tape-clip' });
+    tapeClip.appendChild(svgEl('rect', { x: R, y: 98, width: 254, height: 34 }));
+    s.appendChild(tapeClip); tape.setAttribute('clip-path', 'url(#falcon-tape-clip)');
+    chip(p5, R + 60, 160, 136, '上身智能体', C_UP, { size: 12, h: 30 });
+    var f5a = flowSeg(p5, C_REF, 3, 3, 30), f5b = flowSeg(p5, C_UP, 3, 3, 30);
+    var GY5 = 244, GK5 = 300;
+    hline(p5, R + 30, GY5, R + 330, GY5, C_BORDER, 2);
+    function gx5(v) { return R + 300 + v * GK5; }
+    [-0.8, -0.4, 0].forEach(function (v) { hline(p5, gx5(v), GY5 - 5, gx5(v), GY5 + 5, C_MUTED, 1.2); label(p5, gx5(v), GY5 + 20, sgn(fmt(v, 1)), 'demo-x-mut', 9.5, 'middle'); });
+    var g5T = ringAt(p5, gx5(0), GY5, 8, C_UP, 2.6), g5A = dotAt(p5, gx5(0), GY5, 5, C_REF);
+    var g5L = tone(p5, R + 330, GY5 - 16, '', C_UP, 11, 'end');
+    label(p5, R, 292, '腕俯仰（rad）：橙圈是目标，蓝点是实际', 'demo-x-mut', 10.5);
+    rich(p5, R, 316, '没有力传感器，也没有力估计器', 12);
     var FA = function () { return runFrames('hold_falcon'); }, FB = function () { return runFrames('hold_pd'); };
     function draw(t, clock) {
       var A = FA(), B = FB();
@@ -1030,6 +1193,17 @@
       faA[0].put(a.pl, a.FL, camA, true); faB[0].put(b.pl, b.FL, camB, true);
       faA[1].put(a.pr, a.FR, camA, true); faB[1].put(b.pr, b.FR, camB, true);
       fLab.textContent = '每只手往下 ' + Math.round(-a.fz) + ' N';
+      var now = nowOf(t, clock), act = 1.1 * Math.sin(now * 1.3), xr = NC + 0.25 * act * NK;
+      rsA.set(NC, NY, xr, NY, 8); moveDot(rsT, [xr, NY]);
+      rsL.setAttribute('x', xr.toFixed(1)); rsL.textContent = '目标 = 参考 ' + (act < 0 ? '−' : '+') + ' ' + f2(Math.abs(0.25 * act));
+      tapeC.forEach(function (g, i) {
+        var x = R + ((i * 50 - now * 25) % 300 + 300) % 300 - 46;
+        g.setAttribute('transform', 'translate(' + x.toFixed(1) + ',0)');
+      });
+      f5a.at(now, [R + 128, 136], [R + 128, 157], true);
+      f5b.at(now, [R + 128, 193], [R + 128, 234], true);
+      moveDot(g5T, [gx5(a.wpT), GY5]); moveDot(g5A, [gx5(a.wp), GY5]);
+      g5L.textContent = '目标 ' + sgn(f2(a.wpT)) + '　实际 ' + sgn(f2(a.wp));
       setLine(cur2, tl.px(a.t), 166, tl.px(a.t), 232);
       [a, b].forEach(function (f, i) {
         var g = gauges[i];
@@ -1054,7 +1228,7 @@
 
   /* ── scene 6: 手腕最多能吃多大的力（式 3–4） ── */
   function buildSceneBound() {
-    var s = sceneSvg('左边一台 G1 站在默认姿态，左手上画出前、左、上三个方向；右边依次出现：力矩约束的式子、每个方向上限的式子、' +
+    var s = sceneSvg('左边一台 G1 站在默认姿态，左手上画出前、左、上三个方向；右边依次出现：力矩约束的式子和 7 个关节已用掉的力矩比例（往上的力越加越大，腕俯仰最先顶满）、每个方向上限的式子和 z 方向 7 个候选值、' +
       '三个方向各 7 个关节的候选值（最短那根就是上限，分别由肩俯仰、肩偏航、腕俯仰卡住）、代码和论文写法的差别、在 252 段动作上统计谁卡住');
     s.appendChild(svgText(24, 26, '手腕最多能吃多大的力（式 3–4）', 'demo-x-ink2', 13.5));
     var L = group(s);
@@ -1068,15 +1242,28 @@
     var p1 = group(s);
     label(p1, R, 64, '手上的力，不能让任何关节超限', 'demo-x-ink', 13.5);
     math(p1, R, 108, '-\\tau^{\\lim} \\le \\tau^g + J_{EE}^{\\top} f^{ee} \\le \\tau^{\\lim}', 16);
-    rich(p1, R, 150, '$J_{EE}$：手的雅可比，把力换成各关节的力矩', 12);
-    rich(p1, R, 174, '$\\tau^g$：抵消重力已经用掉的力矩', 12);
-    rich(p1, R, 198, '每条臂 7 个关节，只看这条臂', 12, 'demo-x-mut');
+    /* 手上往上的力一点点加大，左臂 7 个关节各自用掉的力矩比例跟着涨；腕俯仰最先顶满（默认姿态，按代码：上限 × 0.9、不算重力） */
+    var cell0 = DEF_CELL(), bd0 = boundsOf(cell0.J, cell0.tg, false);
+    var fT6 = label(p1, R, 140, '', 'demo-x-ink', 12);
+    var use6 = JOINT_ZH.map(function (nm, j) {
+      var y = 154 + j * 22;
+      label(p1, R + 52, y + 11, nm, 'demo-x-ink2', 11, 'end');
+      hline(p1, R + 60, y + 7, R + 290, y + 7, C_BORDER, 10);
+      return { b: hbar(p1, R + 60, y + 2, 10, C_MUTED, 1), v: label(p1, R + 298, y + 11, '', 'demo-x-ink2', 10.5), j: j };
+    });
+    var lim6 = tone(p1, R, 330, '', C_F, 12);
+    label(p1, R, 352, '条：已用掉的力矩 ÷ 上限（按代码：上限 × 0.9，不算重力）', 'demo-x-mut', 10);
     var p2 = group(s);
     label(p2, R, 64, '每个方向分开算', 'demo-x-ink', 14);
     math(p2, R, 112, 'f_i^{\\max} = \\min_j \\frac{\\tau_j^{\\lim} - \\tau_j^g}{|J^{ji}_{EE}| + \\epsilon}', 17);
-    rich(p2, R, 160, '关节 $j$ 还剩的力矩 ÷ 它对方向 $i$ 的力臂', 12);
-    rich(p2, R, 184, '7 个关节里**取最小**：最先顶到上限的说了算', 12);
-    rich(p2, R, 208, '下限 $f_i^{\\min}$ 同理（换成 $-\\tau^{\\lim}$、取最大）', 11.5, 'demo-x-mut');
+    /* z 方向：每个关节给一个候选值（还剩的力矩 ÷ 力臂），一根根长出来，最短的那根就是上限 */
+    var cand6 = JOINT_ZH.map(function (nm, j) {
+      var y = 150 + j * 22, v = Math.min(TLIM[j] * 0.9 / (Math.abs(cell0.J[2][j]) + 0.01), 400);
+      label(p2, R + 52, y + 11, nm, 'demo-x-ink2', 11, 'end');
+      return { b: hbar(p2, R + 60, y + 2, 10, j === bd0.argHi[2] ? C_F : C_MUTED, 1), v: v, t: label(p2, R + 66, y + 11, '', 'demo-x-ink2', 10.5), j: j };
+    });
+    rich(p2, R, 326, 'z 方向，7 个关节里**取最小**（超过 400 N 截断）', 11.5);
+    rich(p2, R, 348, '下限 $f_i^{\\min}$ 同理（换成 $-\\tau^{\\lim}$、取最大）', 11, 'demo-x-mut');
     var p3 = group(s);
     label(p3, R, 64, '默认姿态，左手（代码的做法，N）', 'demo-x-ink', 13.5);
     var cell = DEF_CELL(), bd = boundsOf(cell.J, cell.tg, false);
@@ -1117,6 +1304,20 @@
         a.t.setAttribute('x', (e[0] + [6, 6, 6][i]).toFixed(1)); a.t.setAttribute('y', (e[1] + [5, -2, 0][i]).toFixed(1));
         var on = t < 7.0 || t > 13.4 ? 0.7 : 0.55 + 0.45 * (0.5 + 0.5 * Math.sin(now * 2 + i * 2));
         a.a.g.style.opacity = on; a.t.style.opacity = on;
+      });
+      var cyc = now % 5.5, fz6 = bd0.hi[2] * clamp(cyc / 4, 0, 1);
+      fT6.textContent = '手上往上的力 ' + f1(fz6) + ' N';
+      use6.forEach(function (u) {
+        var fr = fz6 * (Math.abs(cell0.J[2][u.j]) + 0.01) / (TLIM[u.j] * 0.9);
+        setW(u.b, 230 * Math.min(1, fr)); u.b.style.fill = fr > 0.995 ? C_F : C_MUTED;
+        u.v.textContent = Math.round(fr * 100) + '%';
+      });
+      lim6.textContent = cyc >= 4 ? '腕俯仰先顶满：上限 ' + f1(bd0.hi[2]) + ' N' : '';
+      cand6.forEach(function (c) {
+        var u = seg(t, 4.0 + c.j * 0.3, 4.5 + c.j * 0.3), w = 230 * c.v / 400 * u;
+        setW(c.b, w); c.t.setAttribute('x', (R + 66 + w).toFixed(1));
+        c.t.textContent = u > 0.9 ? (c.v >= 400 ? '> 400' : f1(c.v)) : '';
+        if (c.j === bd0.argHi[2]) c.b.style.opacity = t > 6.2 ? 0.6 + 0.4 * Math.sin(now * 5) : 1;
       });
       rows3.forEach(function (r) {
         var u = seg(t, 7.4 + r.i * 0.7, 8.2 + r.i * 0.7);
@@ -1267,7 +1468,8 @@
   /* ── scene 8: 力一点点加上去 ── */
   function buildSceneCurriculum() {
     var s = sceneSvg('左边是一个环境的课程系数随回合变化的示意：每个回合一根柱，柱高是回合撑了多少步，过了 210 步的线系数就加一点、不到 200 步就减一点；' +
-      '右边依次出现：力乘课程系数的式子、代码里的规则、走路时把水平力投到和前进方向相反的方向、低通滤波、力大时放宽行走高度的奖励');
+      '右边依次出现：力乘课程系数的式子、代码里的规则（一个回合一根条往右长，过了 210 步 α 加 0.02、不到 200 步减 0.02）、' +
+      '走路时把水平力投到和前进方向相反的方向、低通滤波、力大时放宽行走高度的奖励');
     s.appendChild(svgText(24, 26, '力一点点加上去', 'demo-x-ink2', 13.5));
     var TR = currTrace(120);
     var L = group(s);
@@ -1279,10 +1481,10 @@
     var aLine = pathLine(pa.g, [], C_F, 2.2);
     hline(pl.g, pl.px(0), pl.py(210), pl.px(120), pl.py(210), C_GOOD, 1.4, '5 4');
     hline(pl.g, pl.px(0), pl.py(200), pl.px(120), pl.py(200), C_BAD, 1.4, '5 4');
-    halo(label(L, 390, pl.py(210) - 4, '210 步：α + 0.02', 'demo-x-ink2', 9.5, 'end'));
-    halo(label(L, 390, pl.py(200) + 12, '200 步：α − 0.02', 'demo-x-ink2', 9.5, 'end'));
+    hline(L, 44, 366, 64, 366, C_GOOD, 1.4, '5 4'); label(L, 70, 370, '210 步：α + 0.02', 'demo-x-ink2', 10);
+    hline(L, 200, 366, 220, 366, C_BAD, 1.4, '5 4'); label(L, 226, 370, '200 步：α − 0.02', 'demo-x-ink2', 10);
     var bars = TR.map(function (r, k) { var b = paint(svgEl('rect', { x: pl.px(k) + 0.4, y: pl.py(0), width: 2.1, height: 0 }), r.len > CURR.up ? C_GOOD : r.len < CURR.down ? C_BAD : C_MUTED); pl.g.appendChild(b); return b; });
-    label(L, 44, 372, '横轴：回合；上：课程系数 α；下：回合撑了多少步', 'demo-x-mut', 10);
+    label(L, 44, 392, '横轴：回合；上：课程系数 α；下：回合撑了多少步', 'demo-x-mut', 10);
     var aNow = tone(L, 394, 71, '', C_F, 12, 'end');
     var R = 424, W = 352;
     var p1 = group(s);
@@ -1292,11 +1494,19 @@
     rich(p1, R, 174, '评估时三档：$\\alpha_g$ = 0、0.5、1', 12, 'demo-x-mut');
     var p2 = group(s);
     label(p2, R, 64, '代码：每个环境自己一个 α', 'demo-x-ink', 13.5);
-    chip(p2, R, 84, W, '初始 0.1，夹在 0 到 1 之间', C_MUTED, { size: 12, left: true, h: 30 });
-    chip(p2, R, 122, W, '回合撑过 **210 步**（4.2 s）：+0.02', C_GOOD, { size: 12, left: true, h: 30 });
-    chip(p2, R, 160, W, '回合不到 **200 步**：−0.02', C_BAD, { size: 12, left: true, h: 30 });
-    rich(p2, R, 222, '看的是**活得多久**，不是跟得多准', 12);
-    label(p2, R, 246, '从 0.1 涨到 1，至少要 45 个撑满的回合', 'demo-x-mut', 11);
+    /* 一个回合一根条往右长：过了 210 步的绿线，上面的 α 就加 0.02；没到 200 步的红线就减 0.02 */
+    label(p2, R, 98, 'α', 'demo-x-ink', 12);
+    hline(p2, R + 24, 94, R + 300, 94, C_BORDER, 10);
+    var aBar2 = hbar(p2, R + 24, 89, 10, C_F, 1), aTxt2 = label(p2, R + 352, 98, '', 'demo-x-ink', 11.5, 'end');
+    var aDel2 = tone(p2, R + 352, 120, '', C_GOOD, 12, 'end');
+    function ex2(v) { return R + v / 300 * W; }
+    hline(p2, ex2(0), 186, ex2(300), 186, C_BORDER, 1.4);
+    hline(p2, ex2(210), 140, ex2(210), 196, C_GOOD, 1.4, '5 4'); hline(p2, ex2(200), 140, ex2(200), 196, C_BAD, 1.4, '5 4');
+    label(p2, ex2(210) + 4, 150, '210', 'demo-x-ink2', 10); label(p2, ex2(200) - 4, 150, '200', 'demo-x-ink2', 10, 'end');
+    label(p2, R, 208, '0', 'demo-x-mut', 9.5); label(p2, R + W, 208, '300 步', 'demo-x-mut', 9.5, 'end');
+    var epB = hbar(p2, R, 162, 18, C_MUTED, 1), epT = label(p2, R, 134, '', 'demo-x-ink2', 11);
+    rich(p2, R, 248, '初始 0.1，夹在 0 到 1 之间；看的是**活得多久**', 12);
+    label(p2, R, 272, '从 0.1 涨到 1，至少要 45 个撑满的回合', 'demo-x-mut', 11);
     var p3 = group(s);
     label(p3, R, 64, '走路时：水平力只留下阻力', 'demo-x-ink', 13.5);
     var cx = R + 120, cy = 190;
@@ -1332,6 +1542,15 @@
       setPath(aLine, TR.slice(0, n).map(function (r, k) { return [pa.px(k), pa.py(r.a)]; }));
       bars.forEach(function (b, k) { var h = k < n ? pl.py(0) - pl.py(Math.min(TR[k].len, 300)) : 0; b.setAttribute('y', (pl.py(0) - h).toFixed(1)); b.setAttribute('height', h.toFixed(1)); });
       aNow.textContent = n ? 'α = ' + f2(TR[n - 1].a) : '';
+      var ep = now / 1.3, k2 = Math.floor(ep) % (TR.length - 1), pr = ep - Math.floor(ep), L2 = TR[k2].len;
+      var grow = Math.min(1, pr * 1.6), done = pr > 0.62;
+      setW(epB, W * L2 / 300 * grow);
+      epB.style.fill = done ? (L2 > CURR.up ? C_GOOD : L2 < CURR.down ? C_BAD : C_MUTED) : C_MUTED;
+      epT.textContent = '第 ' + (k2 + 1) + ' 个回合：' + Math.round(L2 * grow) + ' 步';
+      var a2 = done ? TR[k2 + 1].a : TR[k2].a;
+      setW(aBar2, 276 * a2); aTxt2.textContent = f2(a2);
+      aDel2.textContent = done ? (L2 > CURR.up ? '+0.02' : L2 < CURR.down ? '−0.02' : '') : '';
+      aDel2.style.fill = L2 > CURR.up ? C_GOOD : C_BAD;
       var ang = now * 0.9, Fx = 30 * Math.cos(ang), Fy = 30 * Math.sin(ang), sc = 2.2;
       rawF.set(cx, cy, cx + Fy * sc, cy - Fx * sc, 9);
       var proj = Math.abs(Fx);
@@ -1350,8 +1569,9 @@
 
   /* ── scene 9: 施力点随机：为什么不显式估计力 ── */
   function buildScenePoint() {
-    var s = sceneSvg('左边是 G1 左臂的侧视图（按真实模型的关节位置画）：前臂和手，红点是施力点，沿着手从腕往前滑，箭头是 20 N 向下的力，右边一根竖条是腕俯仰要出的力矩，' +
-      '点越往外力矩越大；右边依次出现：代码里的施力点、三个位置的力矩、论文图 7 的力估计结果、逆动力学补偿的式子、FALCON 的做法');
+    var s = sceneSvg('左边是 G1 左臂的侧视图（按官方模型的网格离线渲染）：红点是施力点，沿着手从手连杆原点往前滑，箭头是 20 N 向下的力，右边一根竖条是腕俯仰要出的力矩，' +
+      '点越往外力矩越大；右边依次出现：代码里的施力点（一个个随机比例落在手上、十格计数差不多一样高）、三个位置的力矩、论文图 7 的力估计结果、' +
+      '逆动力学补偿的式子和「补偿给的」「实际要的」两根条、FALCON 的做法（手上的力随机换点、方向、大小，本体感受的历史流进策略）');
     s.appendChild(svgText(24, 26, '施力点随机：为什么不显式估计力', 'demo-x-ink2', 13.5));
     var L = group(s);
     var cell = DEF_CELL(), P = cell.pts;  // 肩、肘、腕横滚、手连杆原点、外延点（x 前，z 上，相对骨盆）
@@ -1359,12 +1579,16 @@
     function sx(p) { return [ox + p[0] * SC, 250 - (p[1] - P[3][1]) * SC]; }
     var sh = sx(P[0]), elb = sx(P[1]), wr = sx(P[2]), hd = sx(P[3]), ex = sx(P[4]);
     var pitchX = hd[0] - 0.046 * SC;
-    pathLine(L, [sh, elb], C_MUTED, 16); pathLine(L, [elb, wr, [pitchX, hd[1]]], C_MUTED, 12);
-    pathLine(L, [hd, ex], C_UP, 10).style.opacity = 0.55;
+    /* 官方 MJCF 的左臂（肩俯仰连杆到手），默认姿态，从右侧看、720 px/m 离线渲染；原点（骨盆）和上面的 sx() 同一套 */
+    var ARM = { file: 'arm_side.webp', cw: 310, ch: 214, ax: 35, ay: 245 }, pelY = 250 + P[3][1] * SC;
+    var armBox = svgEl('svg', { x: ox - ARM.ax, y: (pelY - ARM.ay).toFixed(1), width: ARM.cw, height: ARM.ch, viewBox: '0 0 ' + ARM.cw + ' ' + ARM.ch, overflow: 'hidden' });
+    var armImg = svgEl('image', { x: 0, y: 0, width: ARM.cw, height: ARM.ch });
+    armBox.appendChild(armImg); L.appendChild(armBox);
+    pathLine(L, [[hd[0], hd[1] - 54], [ex[0], ex[1] - 54]], C_UP, 4, '6 4').style.opacity = 0.8;
     ringAt(L, pitchX, hd[1], 9, C_REF, 3);
-    tone(L, pitchX, hd[1] + 30, '腕俯仰', C_REF, 11.5, 'middle');
-    label(L, (hd[0] + ex[0]) / 2, hd[1] - 22, '施力点可以落在这一段', 'demo-x-ink2', 11, 'middle');
-    label(L, sh[0], sh[1] - 14, '肩', 'demo-x-mut', 10.5, 'middle'); label(L, elb[0], elb[1] + 26, '肘', 'demo-x-mut', 10.5, 'middle');
+    tone(L, pitchX - 26, hd[1] + 52, '腕俯仰', C_REF, 11.5, 'end');
+    label(L, (hd[0] + ex[0]) / 2, hd[1] - 64, '施力点可以落在这一段', 'demo-x-ink2', 11, 'middle');
+    label(L, sh[0] + 46, sh[1] + 4, '肩', 'demo-x-mut', 10.5, 'start'); label(L, elb[0], 304, '肘', 'demo-x-mut', 10.5, 'middle');
     var fpt = dotAt(L, hd[0], hd[1], 6, C_F), fArr = arrow(L, C_F, 3.4);
     var lever = hline(L, pitchX, hd[1] + 50, pitchX, hd[1] + 50, C_PURPLE, 2.4);
     var levT = tone(L, 0, hd[1] + 66, '', C_PURPLE, 11, 'middle');
@@ -1375,14 +1599,21 @@
     label(L, TBX + 4, TBY0 - TBH * 4.5 / 5 - 8, '4.5（上限 × 0.9）', 'demo-x-mut', 9.5, 'end');
     var tqT = label(L, TBX, TBY0 + 20, '', 'demo-x-ink', 11.5, 'middle');
     label(L, TBX, TBY0 + 40, '腕俯仰力矩 N·m', 'demo-x-mut', 9.5, 'middle');
-    label(L, 24, 400, '侧视图按 G1 模型的关节位置画；20 N 向下', 'demo-x-mut', 10);
+    label(L, 24, 400, '官方 MJCF 的左臂网格（默认姿态，侧视）；20 N 向下', 'demo-x-mut', 10);
     var R = 424, W = 352;
     var p1 = group(s);
     label(p1, R, 64, '施力点沿手随机', 'demo-x-ink', 14);
-    rich(p1, R, 96, '论文：从腕偏航连杆到手的末端', 12.5);
-    rich(p1, R, 124, '代码：手连杆原点和往前 0.18 m 的点之间，', 12);
-    rich(p1, R, 146, '按比例 $r \\sim \\mathcal{U}(0, 1)$ 取一点', 12);
-    label(p1, R, 172, 'Booster T1 的比例是 0.5–2.0；评估时固定 0.5', 'demo-x-mut', 10.5);
+    /* 一次抽一个比例 r：小点落在这一段上，下面按十格数一数，格子差不多一样高 */
+    var SX0 = R + 20, SX1 = R + 320, SY = 104;
+    hline(p1, SX0, SY, SX1, SY, C_UP, 5).setAttribute('stroke-linecap', 'round');
+    label(p1, SX0, SY + 20, '手连杆原点', 'demo-x-mut', 10, 'middle'); label(p1, SX1, SY + 20, '往前 0.18 m', 'demo-x-mut', 10, 'middle');
+    var smpD = dotAt(p1, SX0, SY, 6, C_F), hist = [];
+    hline(p1, SX0, 226, SX1, 226, C_BORDER, 1.4);
+    for (var hb = 0; hb < 10; hb++) hist.push(paint(svgEl('rect', { x: SX0 + hb * 30 + 3, y: 226, width: 24, height: 0, rx: 2 }), C_F));
+    hist.forEach(function (r) { p1.appendChild(r); });
+    label(p1, R, 248, '十格计数（示意）：每格差不多一样多', 'demo-x-mut', 10);
+    rich(p1, R, 274, '代码：按比例 $r \\sim \\mathcal{U}(0, 1)$ 取一点', 12);
+    label(p1, R, 298, '论文：从腕偏航连杆到手的末端；T1 的比例 0.5–2.0', 'demo-x-mut', 10.5);
     var p2 = group(s);
     label(p2, R, 64, '同样 20 N，点越往外，手腕越吃力', 'demo-x-ink', 13.5);
     var lv = REPRO.lever.map(function (r, i) { return barRowAt(p2, R, 92 + i * 34, 96, '比例 ' + fmt(r.r, 1) + '（' + Math.round(r.arm * 1000) + ' mm）', C_F, 18, 11); });
@@ -1396,14 +1627,27 @@
     var p4 = group(s);
     label(p4, R, 64, '可估准了，补偿还是会错', 'demo-x-ink', 13.5);
     math(p4, R, 106, '\\tau = K_p(q - q^{*}) + K_d\\,\\dot q + J_{EE}^{\\top}\\tilde F', 15);
-    rich(p4, R, 146, '$J_{EE}$ 要按**施力点**算：点一变，补偿就不对', 12);
-    rich(p4, R, 170, '论文：还得靠力传感器来定位施力点', 12);
-    rich(p4, R, 194, '而且假设准静态，关节在动时误差更大', 12);
+    /* 假设补偿按手连杆原点算（示意）：施力点跟着左边的红点滑，实际要的力矩一直在变，补偿那根不动 */
+    rich(p4, R, 140, '$J_{EE}$ 要按**施力点**算（示意：补偿按原点算）', 11.5);
+    var cmp = [barRowAt(p4, R, 156, 92, '补偿给的', C_REF, 18, 11), barRowAt(p4, R, 184, 92, '实际要的', C_F, 18, 11)];
+    var gapT = tone(p4, R + 92, 226, '', C_F, 12);
+    label(p4, R, 244, '腕俯仰力矩（N·m），20 N 向下', 'demo-x-mut', 10);
+    rich(p4, R, 274, '论文：还得靠力传感器来定位施力点', 12);
+    rich(p4, R, 298, '而且假设准静态，关节在动时误差更大', 12, 'demo-x-mut');
     var p5 = group(s);
     label(p5, R, 64, 'FALCON：不估计力', 'demo-x-ink', 14);
-    chip(p5, R, 84, W, '训练时施力点、方向、大小都随机', C_F, { size: 12, left: true, h: 30 });
-    chip(p5, R, 124, W, '策略从本体感受历史里自己适应', C_UP, { size: 12, left: true, h: 30 });
-    rich(p5, R, 186, '部署时不需要力传感器，也不需要力估计器', 12);
+    /* 一只手：每隔一会儿换一个施力点、方向、大小；下面本体感受的历史流进策略 */
+    rectBox(p5, R, 80, W, 96, C_BORDER, C_SURFACE);
+    hline(p5, R + 40, 128, R + 200, 128, C_MUTED, 9).setAttribute('stroke-linecap', 'round');
+    label(p5, R + 120, 160, '手（示意）', 'demo-x-mut', 10, 'middle');
+    var rfD = dotAt(p5, R + 120, 128, 5.5, C_F), rfA = arrow(p5, C_F, 3);
+    label(p5, R + 222, 112, '训练时', 'demo-x-ink2', 11.5);
+    label(p5, R + 222, 134, '点、方向、大小', 'demo-x-ink2', 11.5);
+    label(p5, R + 222, 156, '都随机', 'demo-x-ink2', 11.5);
+    chip(p5, R, 200, 128, '本体感受的历史', C_REF, { size: 11.5, h: 30 });
+    chip(p5, R + 208, 200, 144, '策略自己适应', C_UP, { size: 12, h: 30 });
+    var f95 = flowSeg(p5, C_REF, 3, 3, 36);
+    rich(p5, R, 262, '部署时不需要力传感器，也不需要力估计器', 12);
     function draw(t, clock) {
       var now = nowOf(t, clock);
       var r = t >= 3.6 && t < 7.0 ? [0, 0.5, 1][Math.floor(since(t, clock, 3.6) / 1.4) % 3] : 0.5 + 0.5 * Math.sin(now * 1.1);
@@ -1417,6 +1661,16 @@
       tqBar.setAttribute('y', (TBY0 - h).toFixed(1)); tqBar.setAttribute('height', h.toFixed(1));
       tqT.textContent = f2(tq);
       REPRO.lever.forEach(function (rr, i) { var u = seg(t, 4.0 + i * 0.5, 4.6 + i * 0.5); lv[i].set(200 * rr.tau / 5 * u, u > 0.9 ? f2(rr.tau) : ''); });
+      if (!armImg.getAttribute('href') && G1_3D_BASE) armImg.setAttribute('href', G1_3D_BASE + ARM.file);
+      var ns = Math.floor(now / 0.07), cyc9 = ns % 240, base9 = Math.floor(ns / 240) * 240, cnt = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+      for (var q9 = 0; q9 <= cyc9; q9++) cnt[Math.min(9, Math.floor(rnd(q9 + base9, 41) * 10))]++;
+      hist.forEach(function (r, i) { r.setAttribute('y', (226 - cnt[i] * 2.4).toFixed(1)); r.setAttribute('height', (cnt[i] * 2.4).toFixed(1)); });
+      moveDot(smpD, [SX0 + (SX1 - SX0) * rnd(cyc9 + base9, 41), SY]);
+      cmp[0].set(200 * 0.92 / 5, '0.92'); cmp[1].set(200 * tq / 5, f2(tq));
+      gapT.textContent = '差 ' + f2(tq - 0.92) + ' N·m';
+      var k5 = Math.floor(now / 0.9), pr5 = rnd(k5, 51), an5 = rnd(k5, 52) * 2 * Math.PI, mg5 = 20 + 36 * rnd(k5, 53), px5 = R + 44 + 152 * pr5;
+      moveDot(rfD, [px5, 128]); rfA.set(px5, 128, px5 + mg5 * Math.cos(an5) * 0.85, 128 + mg5 * Math.sin(an5) * 0.75, 9);
+      f95.at(now, [R + 131, 215], [R + 205, 215], true);
       setOpacity(p1, win(t, 0.3, 3.6));
       setOpacity(p2, win(t, 3.6, 7.0));
       setOpacity(p3, win(t, 7.0, 10.4));
@@ -1428,7 +1682,8 @@
 
   /* ── scene 10: 奖励与域随机化（表 5–6） ── */
   function buildSceneReward() {
-    var s = sceneSvg('左边是表 5 额外加的奖励：六项惩罚和六项任务奖励，条长是权重；右边依次出现：惩罚各管什么、任务奖励、代码里两组奖励的项数和与表格不同的地方、' +
+    var s = sceneSvg('左边是表 5 额外加的奖励：六项惩罚和六项任务奖励，条长是权重；右边依次出现：惩罚各管什么（一项项亮，左边对应的条同时亮）、' +
+      '任务奖励的式子和一条指数曲线、代码里两组奖励的项数和 σ 取 0.1 与 0.01 的两条曲线、' +
       '表 6 的域随机化（每个参数一条数轴，小点在范围里跳）、代码与表 6 的出入');
     s.appendChild(svgText(24, 26, '奖励与域随机化（表 5、表 6）', 'demo-x-ink2', 13.5));
     var L = group(s);
@@ -1441,22 +1696,39 @@
     var R = 424, W = 352;
     var p1 = group(s);
     label(p1, R, 64, '六项惩罚：受力时也要站得稳', 'demo-x-ink', 13.5);
-    rich(p1, R, 96, '髋关节别乱拧、膝别反着弯、踝别侧翻', 12);
-    rich(p1, R, 120, '站着时两脚别前后错开、根部别偏出两脚中间', 12);
-    rich(p1, R, 144, '站着时脚别离地', 12);
+    /* 一项一项亮：右边说这项管什么，左边对应的条同时亮 */
+    var PEN_ZH = ['髋关节别乱拧', '膝别反着弯', '站着时两脚别前后错开', '根部别偏出两脚中间', '站着时脚别离地', '踝别侧翻'];
+    var pen1 = PEN_ZH.map(function (n, i) {
+      var g = group(p1);
+      dotAt(g, R + 6, 92 + i * 30, 4, C_F);
+      label(g, R + 18, 96 + i * 30, n, 'demo-x-ink2', 12.5);
+      return g;
+    });
+    label(p1, R, 288, '左边对应的条跟着亮', 'demo-x-mut', 10.5);
     var p2 = group(s);
     label(p2, R, 64, '六项任务奖励', 'demo-x-ink', 13.5);
     math(p2, R, 104, 'r = \\exp\\!\\big(-\\lVert q^{upper} - q^{ref} \\rVert^2 / \\sigma\\big)', 15);
-    rich(p2, R, 140, '下身：根部速度、行走高度、腰的三个关节', 12);
-    rich(p2, R, 164, '上身：**只有**上身关节的跟踪', 12);
-    rich(p2, R, 188, '下蹲、扭腰是这一篇新加的目标', 11.5, 'demo-x-mut');
+    rich(p2, R, 136, '下身：根部速度、行走高度、腰的三个关节', 12);
+    rich(p2, R, 160, '上身：**只有**上身关节的跟踪', 12);
+    var pr2 = plotBox(p2, R, 176, W, 96, 0, 0.5, 0, 1.05);
+    var crv = [];
+    for (var c2 = 0; c2 <= 50; c2++) crv.push([pr2.px(c2 * 0.01), pr2.py(Math.exp(-c2 * 0.01 / 0.1))]);
+    pathLine(pr2.g, crv, C_UP, 2.4);
+    var rD2 = dotAt(pr2.g, pr2.px(0), pr2.py(1), 5.5, C_F), rT2 = tone(p2, R + W - 8, 196, '', C_F, 11.5, 'end');
+    label(p2, R, 292, '横轴：误差的平方；纵轴：这一项的奖励（σ 取代码的 0.1）', 'demo-x-mut', 10);
     var p3 = group(s);
     label(p3, R, 64, '代码里的两组奖励', 'demo-x-ink', 13.5);
     chip(p3, R, 84, 170, '下身 39 项', C_LOW, { size: 12.5, h: 32 });
     chip(p3, R + 182, 84, 170, '上身 10 项', C_UP, { size: 12.5, h: 32 });
-    rich(p3, R, 146, '上身跟踪的 $\\sigma$：代码 0.1，表 5 写 0.01', 12);
-    rich(p3, R, 170, '表 5 根部线速度 y 那一行，式子里写的是 x', 12);
-    rich(p3, R, 194, '惩罚类奖励前期打折：系数从 0.1 起慢慢加', 12);
+    rich(p3, R, 140, '上身跟踪的 $\\sigma$：代码 0.1，表 5 写 0.01', 12);
+    var pr3 = plotBox(p3, R, 152, W, 84, 0, 0.5, 0, 1.05);
+    var c3a = [], c3b = [];
+    for (var c3 = 0; c3 <= 50; c3++) { var xv = c3 * 0.01; c3a.push([pr3.px(xv), pr3.py(Math.exp(-xv / 0.1))]); c3b.push([pr3.px(xv), pr3.py(Math.exp(-xv / 0.01))]); }
+    pathLine(pr3.g, c3a, C_UP, 2.4); pathLine(pr3.g, c3b, C_MUTED, 2.2, '5 4');
+    var d3a = dotAt(pr3.g, 0, 0, 5, C_UP), d3b = dotAt(pr3.g, 0, 0, 5, C_MUTED);
+    legendRow(p3, R, 256, [['代码 0.1', C_UP, 48], ['表 5 写的 0.01', C_MUTED, 72]], 10.5);
+    rich(p3, R, 282, '表 5 根部线速度 y 那一行，式子里写的是 x', 11.5);
+    rich(p3, R, 304, '惩罚类奖励前期打折：系数从 0.1 起慢慢加', 11.5);
     var p4 = group(s);
     label(p4, R, 64, '表 6：域随机化', 'demo-x-ink', 13.5);
     var rr = TAB6.map(function (d, i) { return rangeRow(p4, R, 96 + i * 34, W, d.zh, d.lo, d.hi, d.ax[0], d.ax[1], d.f, C_REF); });
@@ -1471,6 +1743,13 @@
       penB.forEach(function (b, i) { var w = Math.abs(parseFloat(TAB5_PEN[i][1].replace('−', '-'))), u = seg(t, 0.6 + i * 0.12, 1.1 + i * 0.12); b.set(150 * w / 5 * u, u > 0.9 ? TAB5_PEN[i][1] : ''); });
       taskB.forEach(function (b, i) { var w = parseFloat(TAB5_TASK[i][1]), u = seg(t, 3.9 + i * 0.12, 4.4 + i * 0.12); b.set(150 * w / 5 * u, u > 0.9 ? TAB5_TASK[i][1] : ''); });
       rr.forEach(function (r, i) { r.at(now, 3 + i, 0.8); });
+      var k10 = Math.floor(now / 1.4) % 6;
+      pen1.forEach(function (g, i) { g.style.opacity = i === k10 ? 1 : 0.35; });
+      penB.forEach(function (b, i) { b.g.style.opacity = t < 3.6 ? (i === k10 ? 1 : 0.4) : 1; });
+      var e2 = 0.25 + 0.22 * Math.sin(now * 0.9), rv = Math.exp(-e2 / 0.1);
+      moveDot(rD2, [pr2.px(e2), pr2.py(rv)]); rT2.textContent = '奖励 ' + f2(rv);
+      var e3 = 0.12 + 0.1 * Math.sin(now * 0.9);
+      moveDot(d3a, [pr3.px(e3), pr3.py(Math.exp(-e3 / 0.1))]); moveDot(d3b, [pr3.px(e3), pr3.py(Math.exp(-e3 / 0.01))]);
       rr5.forEach(function (r, i) { r.at(now, 13 + i, 0.8); });
       setOpacity(p1, win(t, 0.3, 3.6));
       setOpacity(p2, win(t, 3.6, 7.0));
@@ -1484,7 +1763,8 @@
   /* ── scene 11: 表 1：六个基线、三档力 ── */
   function buildSceneTable1() {
     var s = sceneSvg('左边是表 1 的条形图：八种方法在大力档的上身关节误差，FALCON 最短；后面换成根速度误差，再换成不加力课程的几种；右边依次出现：' +
-      '两个指标和三档力、六个基线的关系、上身误差的比较、根速度误差、力课程的作用');
+      '两个指标（14 个关节误差和它们的平均）和三档力、六个基线的关系、上身误差的比较（单策略那根折一半正好是 FALCON）、根速度误差、' +
+      '力课程的作用（三个方法从不加课程走到加了课程）');
     s.appendChild(svgText(24, 26, '表 1：六个基线、三档力', 'demo-x-ink2', 13.5));
     var L = group(s);
     var ttlL = label(L, 24, 64, '', 'demo-x-ink', 12.5);
@@ -1496,10 +1776,16 @@
     var p1 = group(s);
     label(p1, R, 64, '在 IsaacGym 里比，G1', 'demo-x-ink', 13.5);
     math(p1, R, 104, 'E^{upper} = \\tfrac{1}{T}\\textstyle\\sum_t \\lvert q^{upper}_t - q^{upper*}_t \\rvert', 15);
-    rich(p1, R, 140, '另一个是根速度误差 $E^{root}$；都是**越小越好**', 12);
-    rich(p1, R, 166, '上身目标：252 段 ACCAD 动作', 12);
-    rich(p1, R, 190, '三档力：$\\alpha_g$ = 0（无）、0.5（中）、1（大）', 12);
-    label(p1, R, 216, '论文没写误差的单位，只比大小', 'demo-x-mut', 10.5);
+    /* 14 个上身关节的误差一根根在变，虚线是它们的平均：这就是上身误差（示意） */
+    var jb11 = [];
+    hline(p1, R, 206, R + W, 206, C_BORDER, 1.4);
+    for (var j11 = 0; j11 < 14; j11++) jb11.push(paint(svgEl('rect', { x: R + 6 + j11 * 24.5, y: 206, width: 16, height: 0, rx: 2 }), C_UP));
+    jb11.forEach(function (r) { p1.appendChild(r); });
+    var mean11 = hline(p1, R, 206, R + W, 206, C_F, 1.8, '5 4'), meanT = tone(p1, R + W, 132, '', C_F, 11, 'end');
+    label(p1, R, 222, '14 个上身关节（示意），虚线是平均', 'demo-x-mut', 10);
+    rich(p1, R, 250, '另一个是根速度误差 $E^{root}$；都是**越小越好**', 12);
+    rich(p1, R, 274, '三档力：$\\alpha_g$ = 0（无）、0.5（中）、1（大）', 12);
+    label(p1, R, 296, '上身目标：252 段 ACCAD 动作；论文没写误差的单位', 'demo-x-mut', 10.5);
     var p2 = group(s);
     label(p2, R, 64, '六个基线，训练设置都一样', 'demo-x-ink', 13.5);
     chip(p2, R, 82, W, '下身 RL + 上身 IK：PD、PD + 力课程、PID、PD + 力估计', C_MUTED, { size: 11, left: true, h: 30 });
@@ -1509,10 +1795,13 @@
     rich(p2, R, 240, 'PD + 力估计：学出外力，按逆动力学补偿', 11.5);
     var p3 = group(s);
     label(p3, R, 64, '大力档，上身误差', 'demo-x-ink', 13.5);
-    rich(p3, R, 96, 'FALCON **0.37**', 14);
-    rich(p3, R, 124, 'PID 0.60 · 力估计 0.53 · 单策略 0.73', 12);
-    rich(p3, R, 156, '约是单策略的一半：摘要里的「2 倍」', 12);
-    rich(p3, R, 180, '约是 PID 的 0.6 倍', 12, 'demo-x-mut');
+    /* 单策略那根条从中间折一半，FALCON 那根正好长到这条虚线 */
+    var H3 = [['单策略', 0.73, C_REF], ['PID', 0.60, C_MUTED], ['PD + 力估计', 0.53, C_MUTED], ['FALCON', 0.37, C_UP]];
+    var hb3 = H3.map(function (r, i) { return barRowAt(p3, R, 90 + i * 30, 84, r[0], r[2], 18, 11.5); });
+    function x3(v) { return R + 84 + 240 * v / 0.8; }
+    var half3 = hline(p3, x3(0.365), 82, x3(0.365), 214, C_F, 1.8, '5 4'), halfT = tone(p3, x3(0.365) + 6, 230, '', C_F, 11);
+    rich(p3, R, 262, '约是单策略的一半：摘要里的「2 倍」', 12);
+    label(p3, R, 286, '约是 PID 的 0.6 倍', 'demo-x-mut', 11);
     var p4 = group(s);
     label(p4, R, 64, '根速度误差，各家差不多', 'demo-x-ink', 13.5);
     rich(p4, R, 96, '加了力课程的：0.44–0.47', 12.5);
@@ -1520,11 +1809,34 @@
     rich(p4, R, 156, 'FALCON 的优势主要在上身', 12.5);
     var p5 = group(s);
     label(p5, R, 64, '力课程：谁都受益，FALCON 最多', 'demo-x-ink', 13.5);
-    rich(p5, R, 96, '不加力课程，大力档上身：', 12);
-    rich(p5, R, 120, 'FALCON 1.06、单策略 1.65、PD 1.44', 12);
-    rich(p5, R, 152, '没有外力时，FALCON 不加课程反而最低（0.14）', 12);
-    label(p5, R, 176, '加了课程是 0.21：为扛力付出一点代价', 'demo-x-mut', 10.5);
-    function draw(t) {
+    /* 大力档上身误差：空心点是不加力课程，箭头走到加了课程的值 */
+    var D5 = [['上身 PD', 1.44, 1.42, C_MUTED], ['单策略', 1.65, 0.73, C_REF], ['FALCON', 1.06, 0.37, C_UP]];
+    function x5(v) { return R + 76 + 260 * v / 1.8; }
+    hline(p5, x5(0), 196, x5(1.8), 196, C_BORDER, 1.2);
+    [0, 0.5, 1, 1.5].forEach(function (v) { label(p5, x5(v), 212, fmt(v, 1), 'demo-x-mut', 9.5, 'middle'); });
+    var db5 = D5.map(function (r, i) {
+      var y = 96 + i * 32;
+      label(p5, R + 68, y + 4, r[0], 'demo-x-ink2', 11.5, 'end');
+      ringAt(p5, x5(r[1]), y, 6, r[3], 2.2);
+      return { a: arrow(p5, r[3], 2.6), d: dotAt(p5, x5(r[1]), y, 5.5, r[3]), t: label(p5, x5(r[2]), y - 12, '', 'demo-x-ink', 11, 'middle'), r: r, y: y };
+    });
+    legendRow(p5, R, 236, [['空心：不加力课程', C_MUTED, 92], ['实心：加了', C_MUTED, 56]], 10);
+    rich(p5, R, 268, '没有外力时，FALCON 不加课程反而最低（0.14）', 12);
+    label(p5, R, 290, '加了课程是 0.21：为扛力付出一点代价', 'demo-x-mut', 10.5);
+    function draw(t, clock) {
+      var now = nowOf(t, clock);
+      var sum11 = 0;
+      jb11.forEach(function (r, i) { var h = 18 + 52 * (0.5 + 0.5 * Math.sin(now * (0.7 + 0.13 * i) + i * 1.9)); sum11 += h; r.setAttribute('y', (206 - h).toFixed(1)); r.setAttribute('height', h.toFixed(1)); });
+      var m11 = sum11 / 14; setLine(mean11, R, 206 - m11, R + W, 206 - m11); meanT.setAttribute('y', (206 - m11 - 6).toFixed(1)); meanT.textContent = '平均';
+      var u3 = seg(t, 7.4, 8.4), u3b = seg(t, 8.6, 9.4);
+      hb3.forEach(function (b, i) { b.set(240 * H3[i][1] / 0.8 * u3, u3 > 0.9 ? f2(H3[i][1]) : ''); });
+      half3.style.opacity = u3b; halfT.textContent = u3b > 0.5 ? '单策略的一半 0.365' : '';
+      var u5 = seg(t, 13.9, 15.0);
+      db5.forEach(function (o) {
+        var v = o.r[1] + (o.r[2] - o.r[1]) * u5, xe = x5(v);
+        o.a.set(x5(o.r[1]), o.y, xe, o.y, 8); moveDot(o.d, [xe, o.y]);
+        o.t.textContent = u5 > 0.95 ? f2(o.r[1]) + ' → ' + f2(o.r[2]) : '';
+      });
       var mode = t < 10.4 ? 2 : t < 13.4 ? 5 : 2;
       var showWo = t >= 13.4;
       ttlL.textContent = mode === 2 ? '大力档（α = 1）的上身关节误差' : '大力档的根速度误差';
@@ -1547,7 +1859,7 @@
   /* ── scene 12: 不看力矩上限会怎样（图 3、表 2、表 3） ── */
   function buildSceneTorqueAware() {
     var s = sceneSvg('左边是论文图 3 重画的两张曲线：上面是课程系数，按力矩上限算的（橙）一路涨到 0.95，不看上限的（蓝）涨到 0.78 后掉回 0.6；下面是上身跟踪误差，' +
-      '橙线一直更低；右边依次出现：对照的设置、两张图的读法与结论、表 2 和表 3 的条形图');
+      '橙线一直更低；右边依次出现：对照的设置（x–z 平面上小点落进固定的加力范围，落在扛得住的范围外的变红）、两张图的读法与结论、表 2 和表 3 的条形图');
     s.appendChild(svgText(24, 26, '不看力矩上限会怎样（图 3、表 2、表 3）', 'demo-x-ink2', 13.5));
     var L = group(s);
     var pa = plotBox(L, 54, 70, 340, 140, 0, 16000, 0, 1);
@@ -1565,8 +1877,25 @@
     var p1 = group(s);
     label(p1, R, 64, '对照：在固定范围里随便加力', 'demo-x-ink', 13.5);
     chip(p1, R, 84, W, 'x、y：±100 N；z：−100 到 5 N', C_REF, { size: 12, left: true, h: 30 });
-    rich(p1, R, 140, '不管力矩上限，常常加到关节扛不住的力', 12);
-    rich(p1, R, 164, '评估时两边都在力矩上限算出的范围里加力', 11.5, 'demo-x-mut');
+    /* x–z 平面：蓝框是对照组加力的范围，紫虚线框是默认姿态左手扛得住的范围（按代码的上限：x ±106、z ±80）；
+       小点一个个落进蓝框，落在紫框外的变红 */
+    var cell12 = DEF_CELL(), bd12 = boundsOf(cell12.J, cell12.tg, false);
+    var sp12 = plotBox(p1, R, 128, 240, 160, -125, 125, -110, 95);
+    function rc12(x0, x1, z0, z1, col, dash) { var r = paint(svgEl('rect', { x: sp12.px(x0), y: sp12.py(z1), width: sp12.px(x1) - sp12.px(x0), height: sp12.py(z0) - sp12.py(z1), fill: 'none', 'stroke-width': 1.8 }), null, col); if (dash) r.setAttribute('stroke-dasharray', dash); sp12.g.appendChild(r); }
+    rc12(-100, 100, -100, 5, C_REF);
+    rc12(bd12.lo[0], bd12.hi[0], bd12.lo[2], bd12.hi[2], C_CRIT, '5 4');
+    var dots12 = [];
+    for (var d12 = 0; d12 < 60; d12++) {
+      var fx = -100 + 200 * rnd(d12, 61), fz = -100 + 105 * rnd(d12, 62);
+      dots12.push({ c: dotAt(sp12.g, sp12.px(fx), sp12.py(fz), 3.2, fz < bd12.lo[2] ? C_F : C_REF), bad: fz < bd12.lo[2] });
+    }
+    label(p1, R + 252, 150, '横轴 x，纵轴 z', 'demo-x-mut', 10);
+    label(p1, R + 252, 176, '蓝框：随便加', 'demo-x-ink2', 11);
+    label(p1, R + 252, 198, '紫虚线：扛得住', 'demo-x-ink2', 11);
+    var bad12 = tone(p1, R + 252, 230, '', C_F, 12);
+    label(p1, R + 252, 250, '红点超出上限', 'demo-x-mut', 10);
+    label(p1, R, 310, '默认姿态、左手（按代码的上限，示意）', 'demo-x-mut', 10);
+    label(p1, R, 330, '评估时两边都在上限算出的范围里加力', 'demo-x-mut', 10);
     var p2 = group(s);
     label(p2, R, 64, '图 3(a)：课程推不上去', 'demo-x-ink', 13.5);
     readHint(p2, R, 92, '横轴是训练迭代，纵轴是课程系数 α，越高说明能扛的力越大', 10.5, W);
@@ -1590,7 +1919,10 @@
     var t3 = [barRowAt(p5, R, 108, 112, '上身：范围小', C_UP, 18, 11), barRowAt(p5, R, 132, 112, '上身：范围大', C_UP, 18, 11)];
     rich(p5, R, 184, '几乎没变：0.37 对 0.36', 12.5);
     rich(p5, R, 208, '论文：按力矩上限算的课程对范围不敏感', 11.5, 'demo-x-mut');
-    function draw(t) {
+    function draw(t, clock) {
+      var now = nowOf(t, clock), n12 = Math.floor(now / 0.15) % 80, nb = 0, nn = 0;
+      dots12.forEach(function (d, i) { var on = i < n12; d.c.style.opacity = on ? 1 : 0; if (on) { nn++; if (d.bad) nb++; } });
+      bad12.textContent = nn ? '超出 ' + Math.round(100 * nb / nn) + '%' : '';
       var u = seg(t, 3.9, 6.8), u2 = seg(t, 7.3, 9.8);
       cA.forEach(function (c) { c.set(t < 3.6 ? -1 : 16000 * u); });
       cE.forEach(function (c) { c.set(t < 7.0 ? -1 : 16000 * u2); });
@@ -1819,8 +2151,8 @@
 
   /* ── scene 16: 自主搬周转箱 ── */
   function buildSceneAutonomy() {
-    var s = sceneSvg('左上是项目页的自主搬箱视频（4 倍速），左下是论文图 9 的流程图；右边依次出现：任务、状态机的四个状态轮流亮起、动捕定位、' +
-      'FoundationPose 估计箱子位姿再交给逆运动学、FALCON 在其中的位置');
+    var s = sceneSvg('左上是项目页的自主搬箱视频（4 倍速），左下是论文图 9 的流程图；右边依次出现：任务的四步轮流亮起、状态机的四个状态轮流亮起、' +
+      '动捕定位的俯视示意（机器人在取货台和放置台之间来回、状态跟着换）、FoundationPose 到上身目标的流程、FALCON 在其中的位置');
     s.appendChild(svgText(24, 26, '自主搬周转箱', 'demo-x-ink2', 13.5));
     var clip = projClip(s, 'autonomy', 44, 46, 340, 191, '项目页视频（4 倍速）', { capCls: 'demo-x-ink2', capSize: 10 });
     paperPart(s, 'fig9', 0, 0, 1, 1, 24, 263, 380, '论文图 9：自主搬箱的流程');
@@ -1829,6 +2161,7 @@
     label(p1, R, 64, '仓库里的周转箱：重量事先不知道', 'demo-x-ink', 13.5);
     var steps = ['走到取货台', '拿起箱子', '端着走', '在放置区放下'];
     var st1 = steps.map(function (n, i) { return chip(p1, R + (i % 2) * 182, 88 + Math.floor(i / 2) * 44, 170, (i + 1) + '　' + n, C_UP, { size: 12, h: 32 }); });
+    var pz16 = pulseBoxes(p1, steps.map(function (n, i) { return [R + (i % 2) * 182, 88 + Math.floor(i / 2) * 44, 170, 32]; }), C_UP);
     rich(p1, R, 200, '只在 G1 上做了这个任务', 12);
     var p2 = group(s);
     label(p2, R, 64, '状态机：四个状态', 'demo-x-ink', 13.5);
@@ -1837,14 +2170,28 @@
     rich(p2, R, 212, '走的时候用下身智能体的速度命令，站着的时候换手上的目标', 11.5, 'demo-x-mut');
     var p3 = group(s);
     label(p3, R, 64, '在哪：动捕定位', 'demo-x-ink', 13.5);
-    rich(p3, R, 96, '动捕给出机器人、取货台、放置台的 6D 位姿', 12);
-    rich(p3, R, 120, '到了取货台，状态机就切到「站着拿起」', 12);
+    /* 俯视示意：机器人在取货台和放置台之间来回；动捕的相机在四角，到了台子跟前状态就换 */
+    rectBox(p3, R, 80, W, 170, C_BORDER, C_SURFACE);
+    var TA = [R + 60, 165], TB = [R + 292, 165];
+    chip(p3, TA[0] - 40, 182, 80, '取货台', C_LOW, { size: 11, h: 26 });
+    chip(p3, TB[0] - 40, 182, 80, '放置台', C_UP, { size: 11, h: 26 });
+    [[R + 12, 92], [R + W - 12, 92], [R + 12, 238], [R + W - 12, 238]].forEach(function (c) {
+      p3.appendChild(paint(svgEl('path', { d: 'M' + (c[0] - 6) + ' ' + (c[1] + 5) + ' L' + c[0] + ' ' + (c[1] - 6) + ' L' + (c[0] + 6) + ' ' + (c[1] + 5) + ' Z' }), C_MUTED));
+    });
+    var rob16 = dotAt(p3, TA[0], TA[1], 9, C_REF), box16 = paint(svgEl('rect', { x: 0, y: 0, width: 14, height: 10, rx: 2 }), C_UP);
+    p3.appendChild(box16);
+    var mc16 = [flowSeg(p3, C_MUTED, 1, 2.4, 80), flowSeg(p3, C_MUTED, 1, 2.4, 80)];
+    var st16 = tone(p3, R + W / 2, 240, '', C_REF, 12, 'middle');
+    rich(p3, R, 276, '动捕给出机器人、取货台、放置台的 6D 位姿', 12);
+    rich(p3, R, 300, '到了取货台，状态机就切到「站着拿起」', 12);
     var p4 = group(s);
     label(p4, R, 64, '箱子在哪：FoundationPose', 'demo-x-ink', 13.5);
-    rich(p4, R, 96, '先扫描箱子，做出带纹理的 3D 模型', 12);
-    rich(p4, R, 120, '从 G1 的相机画面估计箱子的 6D 位姿', 12);
-    rich(p4, R, 144, '箱子两侧预先标好抓取点', 12);
-    rich(p4, R, 168, '抓取点 → 逆运动学 → 上身目标关节角', 12);
+    var PB4 = [[R, 84, 160, '扫描：带纹理的 3D 模型', C_MUTED], [R + 192, 84, 160, '相机画面', C_MUTED], [R + 96, 148, 160, '箱子的 6D 位姿', C_REF],
+      [R + 96, 208, 160, '两侧的抓取点', C_UP], [R + 96, 268, 160, '逆向运动学 → 上身目标', C_UP]];
+    PB4.forEach(function (b) { chip(p4, b[0], b[1], b[2], b[3], b[4], { size: 11, h: 30 }); });
+    var fl4 = [[[R + 80, 117], [R + 150, 145]], [[R + 272, 117], [R + 202, 145]], [[R + 176, 181], [R + 176, 205]], [[R + 176, 241], [R + 176, 265]]]
+      .map(function (ab) { return { f: flowSeg(p4, C_REF, 2, 3, 26), a: ab[0], b: ab[1] }; });
+    label(p4, R, 324, '箱子两侧预先标好抓取点（FoundationPose 估位姿）', 'demo-x-mut', 10.5);
     var p5 = group(s);
     label(p5, R, 64, 'FALCON 只负责执行', 'demo-x-ink', 13.5);
     chip(p5, R, 84, W, '任务层：动捕 + 视觉 + 状态机 + 逆运动学', C_MUTED, { size: 12, left: true, h: 30 });
@@ -1856,6 +2203,18 @@
       st1.forEach(function (g, i) { g.style.opacity = seg(t, 0.8 + i * 0.5, 1.1 + i * 0.5); });
       var k = Math.floor(now / 1.2) % 4;
       st2.forEach(function (g, i) { g.style.opacity = i === k ? 1 : 0.35; });
+      pz16.at(now / 4.8);
+      var cyc = (now % 8) / 8, ST16 = ['不拿箱子走', '站着拿起', '拿着箱子走', '站着放下'], ph16, pos16, carry = false;
+      if (cyc < 0.35) { ph16 = 0; pos16 = TB[0] + (TA[0] - TB[0]) * (cyc / 0.35); }
+      else if (cyc < 0.5) { ph16 = 1; pos16 = TA[0]; carry = cyc > 0.43; }
+      else if (cyc < 0.85) { ph16 = 2; pos16 = TA[0] + (TB[0] - TA[0]) * ((cyc - 0.5) / 0.35); carry = true; }
+      else { ph16 = 3; pos16 = TB[0]; carry = cyc < 0.93; }
+      moveDot(rob16, [pos16, TA[1]]);
+      box16.setAttribute('x', (pos16 - 7).toFixed(1)); box16.setAttribute('y', (TA[1] - 26).toFixed(1)); box16.style.opacity = carry ? 1 : 0;
+      st16.textContent = '状态：' + ST16[ph16];
+      mc16[0].at(now, [R + 18, 98], [pos16 - 10, TA[1] - 6], true); mc16[1].at(now + 0.4, [R + W - 18, 98], [pos16 + 10, TA[1] - 6], true);
+      fl4.forEach(function (o) { o.f.at(now, o.a, o.b, true); });
+
       setOpacity(p1, win(t, 0.3, 3.6));
       setOpacity(p2, win(t, 3.6, 7.0));
       setOpacity(p3, win(t, 7.0, 10.4));
@@ -1868,7 +2227,8 @@
   /* ── scene 17: 局限与代码 ── */
   function buildSceneLimits() {
     var s = sceneSvg('左边两台 G1 以 1 m/s 往后退，每只手往下受力：左边 30 N，手端平；右边 40 N，手腕垂下去，下面两根条是左手腕俯仰的力矩，右边那根顶到上限。' +
-      '右边依次出现：只管手上的力、只有力没有力矩、电机发热、我们照论文图 11 的复现、开源的内容');
+      '右边依次出现：只管手上的力（一台 G1 手上的绿点、肩背膝上的红点）、只有力没有力矩（一支直的力箭头、一个被拧着转的把手）、' +
+      '电机发热、我们照论文图 11 的复现、开源的内容');
     s.appendChild(svgText(24, 26, '局限与代码', 'demo-x-ink2', 13.5));
     var L = group(s);
     var camA = camAt(190, 100, 330), camB = camAt(190, 286, 330);
@@ -1884,12 +2244,30 @@
     var R = 424, W = 352;
     var p1 = group(s);
     label(p1, R, 64, '论文写的局限一：只管手上的力', 'demo-x-ink', 13.5);
-    rich(p1, R, 96, '身体其他部位的接触不管', 12.5);
-    rich(p1, R, 120, '多点接触也不管：靠墙、抵住、和人一起抬', 12.5);
+    /* 一台 G1：两只手上的力在训练里（绿），肩、背、髋这些地方的接触不在（红点一闪一闪，示意） */
+    var cam17 = camAt(150, R + 80, 300);
+    groundShadow(p1, R + 80, 300, 44);
+    var m17 = g1Mesh(p1, 'hold_falcon');
+    var c17ok = [dotAt(p1, 0, 0, 6, C_GOOD), dotAt(p1, 0, 0, 6, C_GOOD)];
+    /* 红点放在模型的肩、躯干背面、膝上（BODY_PATH：手、肘、肩、躯干、骨盆、膝、踝） */
+    var c17no = [BODY_PATH[2], [BODY_PATH[3][0] - 0.1, BODY_PATH[3][1], BODY_PATH[3][2] + 0.12], BODY_PATH[5]].map(function (p3d) { return { p: p3d, d: dotAt(p1, 0, 0, 6, C_F) }; });
+    tick(p1, R + 180, 98, 16, C_GOOD); label(p1, R + 204, 112, '手上的力', 'demo-x-ink2', 12);
+    cross(p1, R + 182, 134, 13, C_F); label(p1, R + 204, 146, '身体其他部位的接触', 'demo-x-ink2', 12);
+    label(p1, R + 180, 184, '多点接触也不管：', 'demo-x-ink2', 12);
+    label(p1, R + 180, 206, '靠墙、抵住、和人一起抬', 'demo-x-ink2', 12);
     var p2 = group(s);
     label(p2, R, 64, '局限二：只有力，没有力矩', 'demo-x-ink', 13.5);
-    rich(p2, R, 96, '课程只往手上加力', 12.5);
-    rich(p2, R, 120, '拧把手、偏心的负载这类转动扰动处理不了', 12.5);
+    /* 左：手上一支直的力箭头（课程里有）；右：门把手被拧着转、一支弯箭头（课程里没有） */
+    rectBox(p2, R, 84, 170, 150, C_GOOD, C_SURFACE); rectBox(p2, R + 182, 84, 170, 150, C_F, C_SURFACE);
+    var hand2 = dotAt(p2, R + 85, 150, 12, C_MUTED), fA2 = arrow(p2, C_F, 3.2);
+    tick(p2, R + 12, 96, 14, C_GOOD); label(p2, R + 85, 222, '力：课程里有', 'demo-x-ink2', 11.5, 'middle');
+    var hub2 = [R + 267, 154];
+    ringAt(p2, hub2[0], hub2[1], 8, C_MUTED, 3);
+    var lever2 = hline(p2, hub2[0], hub2[1], hub2[0] + 54, hub2[1], C_MUTED, 8); lever2.setAttribute('stroke-linecap', 'round');
+    var tqArc = pathLine(p2, [], C_F, 3), tqHead = arrowHead(p2, C_F);
+    cross(p2, R + 194, 96, 12, C_F); label(p2, R + 267, 222, '力矩：课程里没有', 'demo-x-ink2', 11.5, 'middle');
+    rich(p2, R, 262, '课程只往手上加**力**', 12.5);
+    rich(p2, R, 286, '拧把手、偏心的负载这类转动扰动处理不了', 12);
     var p3 = group(s);
     label(p3, R, 64, '附录：电机会发热', 'demo-x-ink', 13.5);
     rich(p3, R, 96, '真机上手腕扛大力矩，很快就过热', 12.5);
@@ -1919,6 +2297,16 @@
       tqB.set(80 * Math.abs(b.tau) / 5, f1(Math.abs(b.tau)));
       REPRO.fig11.forEach(function (r, i) { var u = seg(t, 10.8 + i * 0.25, 11.3 + i * 0.25); f11[i].set(220 * r.tau / 5 * u, u > 0.9 ? f2(r.tau) : ''); });
       ok5.forEach(function (g, i) { g.style.opacity = seg(t, 13.7 + i * 0.4, 14.0 + i * 0.4); });
+      var h0 = runFrames('hold_falcon')[0];
+      m17.put(cam17, 0);
+      [h0.pl, h0.pr].forEach(function (p, i) { moveDot(c17ok[i], project(p, cam17)); });
+      c17no.forEach(function (o, i) { moveDot(o.d, project(o.p, cam17)); o.d.style.opacity = 0.35 + 0.65 * (0.5 + 0.5 * Math.sin(now * 3 + i * 2)); });
+      var fm = 30 + 14 * Math.sin(now * 1.6);
+      fA2.set(R + 85, 150, R + 85 + fm * 0.4, 150 + fm, 9);
+      var ang2 = 0.5 * Math.sin(now * 1.4);
+      setLine(lever2, hub2[0], hub2[1], hub2[0] + 54 * Math.cos(ang2), hub2[1] + 54 * Math.sin(ang2));
+      var a0 = ang2 - 0.9, a1 = ang2 + 0.9, arc2 = arcPts(hub2, 36, a0, a1, 18);
+      setPath(tqArc, arc2); tqHead.set(arc2[16][0], arc2[16][1], arc2[18][0], arc2[18][1], 9);
       setOpacity(p1, win(t, 0.3, 3.6));
       setOpacity(p2, win(t, 3.6, 7.0));
       setOpacity(p3, win(t, 7.0, 10.4));
@@ -2161,7 +2549,7 @@
     K.video(host, {
       title: '配音讲解视频：FALCON 十七幕全流程',
       sub: '18 分 3 秒竖屏视频（1080×1920），中文配音 + 字幕。画面就是上面的十七幕动画，旁白把每一幕讲细；适合手机上看或转发。',
-      size: '19.4 MB',
+      size: '19.8 MB',
       fileName: 'FALCON_讲解视频.mp4'
     });
   }
