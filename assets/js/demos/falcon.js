@@ -1571,7 +1571,7 @@
   function buildScenePoint() {
     var s = sceneSvg('左边是 G1 左臂的侧视图（按官方模型的网格离线渲染）：红点是施力点，沿着手从手连杆原点往前滑，箭头是 20 N 向下的力，右边一根竖条是腕俯仰要出的力矩，' +
       '点越往外力矩越大；右边依次出现：代码里的施力点（一个个随机比例落在手上、十格计数差不多一样高）、三个位置的力矩、论文图 7 的力估计结果、' +
-      '逆动力学补偿的式子和「补偿给的」「实际要的」两根条、FALCON 的做法（手上的力随机换点、方向、大小，本体感受的历史流进策略）');
+      '逆动力学补偿的式子和「补偿给的」「实际要的」两根条、FALCON 的做法（同一条左臂只截小臂和手，手上的力随机换点、方向、大小，本体感受的历史流进策略）');
     s.appendChild(svgText(24, 26, '施力点随机：为什么不显式估计力', 'demo-x-ink2', 13.5));
     var L = group(s);
     var cell = DEF_CELL(), P = cell.pts;  // 肩、肘、腕横滚、手连杆原点、外延点（x 前，z 上，相对骨盆）
@@ -1636,11 +1636,17 @@
     rich(p4, R, 298, '而且假设准静态，关节在动时误差更大', 12, 'demo-x-mut');
     var p5 = group(s);
     label(p5, R, 64, 'FALCON：不估计力', 'demo-x-ink', 14);
-    /* 一只手：每隔一会儿换一个施力点、方向、大小；下面本体感受的历史流进策略 */
+    /* 同一张左臂贴图只截小臂和手（肘到指尖），每隔一会儿在手上换一个施力点、方向、大小；下面本体感受的历史流进策略 */
     rectBox(p5, R, 80, W, 96, C_BORDER, C_SURFACE);
-    hline(p5, R + 40, 128, R + 200, 128, C_MUTED, 9).setAttribute('stroke-linecap', 'round');
-    label(p5, R + 120, 160, '手（示意）', 'demo-x-mut', 10, 'middle');
-    var rfD = dotAt(p5, R + 120, 128, 5.5, C_F), rfA = arrow(p5, C_F, 3);
+    var FA5 = { x0: 40, y0: 126, w: 270, h: 84 }, fk5 = 196 / FA5.w, fx5 = R + 12, fy5 = 92;
+    var faBox = svgEl('svg', { x: fx5, y: fy5, width: (FA5.w * fk5).toFixed(1), height: (FA5.h * fk5).toFixed(1), viewBox: [FA5.x0, FA5.y0, FA5.w, FA5.h].join(' '), overflow: 'hidden' });
+    var faImg = svgEl('image', { x: 0, y: 0, width: ARM.cw, height: ARM.ch });
+    faBox.appendChild(faImg); p5.appendChild(faBox);
+    /* 手上那一段：手连杆原点到往前 0.18 m 的点，和左边大图同一套坐标（贴图里骨盆在 (ax, ay)，720 px/m） */
+    function fa5(xm) { return [fx5 + (ARM.ax + xm * SC - FA5.x0) * fk5, fy5 + (ARM.ay - P[3][1] * SC - FA5.y0) * fk5]; }
+    var faH0 = fa5(P[3][0]), faH1 = fa5(P[3][0] + 0.18);
+    label(p5, R + 110, 170, '小臂与手（官方 MJCF，侧视）', 'demo-x-mut', 10, 'middle');
+    var rfD = dotAt(p5, faH0[0], faH0[1], 5.5, C_F), rfA = arrow(p5, C_F, 3);
     label(p5, R + 222, 112, '训练时', 'demo-x-ink2', 11.5);
     label(p5, R + 222, 134, '点、方向、大小', 'demo-x-ink2', 11.5);
     label(p5, R + 222, 156, '都随机', 'demo-x-ink2', 11.5);
@@ -1668,8 +1674,10 @@
       moveDot(smpD, [SX0 + (SX1 - SX0) * rnd(cyc9 + base9, 41), SY]);
       cmp[0].set(200 * 0.92 / 5, '0.92'); cmp[1].set(200 * tq / 5, f2(tq));
       gapT.textContent = '差 ' + f2(tq - 0.92) + ' N·m';
-      var k5 = Math.floor(now / 0.9), pr5 = rnd(k5, 51), an5 = rnd(k5, 52) * 2 * Math.PI, mg5 = 20 + 36 * rnd(k5, 53), px5 = R + 44 + 152 * pr5;
-      moveDot(rfD, [px5, 128]); rfA.set(px5, 128, px5 + mg5 * Math.cos(an5) * 0.85, 128 + mg5 * Math.sin(an5) * 0.75, 9);
+      if (!faImg.getAttribute('href') && G1_3D_BASE) faImg.setAttribute('href', G1_3D_BASE + ARM.file);
+      var k5 = Math.floor(now / 0.9), pr5 = rnd(k5, 51), an5 = rnd(k5, 52) * 2 * Math.PI, mg5 = 20 + 30 * rnd(k5, 53);
+      var px5 = faH0[0] + (faH1[0] - faH0[0]) * pr5, py5 = faH0[1];
+      moveDot(rfD, [px5, py5]); rfA.set(px5, py5, px5 + mg5 * Math.cos(an5) * 0.85, py5 + mg5 * Math.sin(an5) * 0.75, 9);
       f95.at(now, [R + 131, 215], [R + 205, 215], true);
       setOpacity(p1, win(t, 0.3, 3.6));
       setOpacity(p2, win(t, 3.6, 7.0));
