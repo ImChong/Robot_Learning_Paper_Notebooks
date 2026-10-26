@@ -91,8 +91,8 @@
   --border: #313131;
   --code-bg: #1F1F1F;
   --code-border: #313131;
-  --header-bg: rgba(24, 24, 24, 0.82);
-  --header-border: #272727;
+  --header-bg: #252526;
+  --header-border: #3c3c3c;
   --card-bg: #1F1F1F;
   --card-shadow: rgba(2, 8, 16, 0.45);
   --blockquote-border: #569cd6;
@@ -118,8 +118,8 @@
   --border: #e0e0e0;
   --code-bg: #f5f5f5;
   --code-border: #e0e0e0;
-  --header-bg: rgba(255, 255, 255, 0.82);
-  --header-border: #e8e8e8;
+  --header-bg: #fafafa;
+  --header-border: #ddd;
   --card-bg: #f8f8f8;
   --card-shadow: rgba(90, 20, 20, 0.10);
   --blockquote-border: #b31b1b;
@@ -279,6 +279,10 @@ html {
   background: transparent;
 }
 
+/* legacy-header:start */
+/* 页头保持改版前的设计（维护者 2026-10-26 的选择）：emoji 标题、文字 GitHub 链接、
+   带边框的按钮。这一段原样取自改版前的 style.css，只有 z-index 换成同值的 token，
+   并补回原先由全局 `*` 过渡提供的颜色过渡。tests/test_design_tokens.py 跳过这一段。 */
 /* ===== Header ===== */
 .site-header {
   background: var(--header-bg);
@@ -288,8 +292,7 @@ html {
   right: 0;
   left: 0;
   z-index: var(--z-header);
-  -webkit-backdrop-filter: blur(16px) saturate(140%);
-  backdrop-filter: blur(16px) saturate(140%);
+  backdrop-filter: blur(8px);
   padding-top: env(safe-area-inset-top, 0px);
 }
 
@@ -304,93 +307,162 @@ html {
 }
 
 .site-title {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 16px;
-  font-weight: 600;
-  letter-spacing: -0.01em;
-  line-height: 24px;
+  font-family: 'Arial', 'Helvetica Neue', sans-serif;
+  font-size: 1.15rem;
+  font-weight: 700;
   color: var(--text);
   text-decoration: none;
-  transition: color var(--dur-micro) var(--ease);
+  transition: color 0.3s ease;
 }
 .site-title:hover {
   color: var(--link);
 }
 
-.site-title .icon {
-  width: 20px;
-  height: 20px;
-  color: var(--link);
-}
-
-.site-title-sep {
-  color: var(--border);
-  font-weight: 400;
-}
-
-.site-title-zh {
-  color: var(--text-secondary);
-  font-weight: 500;
-}
-
 .header-right {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 1rem;
 }
 
-/* Header controls share one shape: 32px tall, ghost by default. */
-.github-link,
-.theme-toggle,
-.lang-toggle,
-.sponsor-toggle {
+.github-link {
+  display: inline-flex;
+  align-items: center;
+  height: 30px;
+  padding: 0 2px;
+  font-family: 'Arial', sans-serif;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  text-decoration: none;
+  box-sizing: border-box;
+  transition: color 0.3s ease;
+}
+.github-link:hover {
+  color: var(--link);
+}
+
+.theme-toggle {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0 0.6rem;
+  cursor: pointer;
+  font-size: 0.85rem;
+  line-height: 1;
+  min-width: 36px;
+  height: 30px;
+  text-align: center;
+  box-sizing: border-box;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  height: 32px;
-  min-width: 32px;
-  padding: 0 8px;
-  font-family: inherit;
-  font-size: 14px;
-  font-weight: 600;
-  line-height: 20px;
-  color: var(--text-secondary);
-  background: transparent;
-  border: 1px solid transparent;
-  border-radius: var(--radius-lg);
-  text-decoration: none;
+  transition: border-color 0.3s ease;
+}
+.theme-toggle:hover {
+  border-color: var(--link);
+}
+
+/* ===== Language Toggle ===== */
+.lang-toggle {
+  flex-shrink: 0;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0 0.6rem;
   cursor: pointer;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  transition: border-color 0.3s ease, background 0.3s ease, color 0.3s ease;
+  line-height: 1;
   user-select: none;
+  min-width: 36px;
+  height: 30px;
+  text-align: center;
   box-sizing: border-box;
-  -webkit-tap-highlight-color: transparent;
-  transition: color var(--dur-micro) var(--ease), background-color var(--dur-micro) var(--ease), border-color var(--dur-micro) var(--ease), transform var(--dur-micro) var(--ease);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.lang-toggle:hover {
+  background: var(--link);
+  color: #fff;
+  border-color: var(--link);
 }
 
-.github-link:hover,
-.theme-toggle:hover,
-.lang-toggle:hover,
+/* ===== Sponsor ===== */
+.sponsor-toggle {
+  flex-shrink: 0;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0 0.6rem;
+  cursor: pointer;
+  font-size: 0.85rem;
+  line-height: 1;
+  color: #e2566a;
+  transition: border-color 0.3s ease, background 0.3s ease;
+  user-select: none;
+  min-width: 36px;
+  height: 30px;
+  text-align: center;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .sponsor-toggle:hover {
-  color: var(--text);
-  background: var(--bg-hover);
+  border-color: #e2566a;
+  background: rgba(226, 86, 106, 0.12);
+}
+.sponsor-icon {
+  color: #e2566a;
 }
 
-.github-link:active,
-.theme-toggle:active,
-.lang-toggle:active,
-.sponsor-toggle:active {
-  transform: scale(0.98);
+@media (max-width: 600px) {
+  .header-inner {
+    display: flex;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    padding: 0.6rem 0.5rem;
+    gap: 0.5rem;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+  .site-title {
+    display: block;
+    flex: 1 1 0;
+    width: auto;
+    max-width: none;
+    min-width: 0;
+    line-height: 1.25;
+    font-size: 1rem;
+    white-space: nowrap;
+    overflow: hidden;
+    overflow-wrap: normal;
+    text-overflow: ellipsis;
+  }
+  .header-right {
+    flex: 0 0 auto;
+    gap: 0.35rem;
+    justify-content: flex-end;
+    margin-left: auto;
+  }
+  .github-link {
+    font-size: 0.78rem;
+    white-space: nowrap;
+  }
+  .lang-toggle,
+  .theme-toggle,
+  .sponsor-toggle {
+    min-width: 32px;
+    height: 30px;
+    padding: 0 0.45rem;
+  }
 }
-
-.github-link .icon,
-.theme-toggle .icon,
-.lang-toggle .icon,
-.sponsor-toggle .icon {
-  width: 18px;
-  height: 18px;
-}
+/* legacy-header:end */
 
 /* ===== Container ===== */
 .container {
@@ -2176,23 +2248,6 @@ html[data-lang-mode="zh"] .footer-text-zh {
   display: block;
 }
 
-/* ===== Language Toggle ===== */
-.lang-toggle {
-  flex-shrink: 0;
-  padding: 0 12px;
-  border-color: var(--border);
-}
-
-/* ===== Sponsor ===== */
-.sponsor-toggle {
-  flex-shrink: 0;
-}
-
-.sponsor-toggle:hover {
-  color: var(--link);
-  background: var(--accent-soft);
-}
-
 body.sponsor-dialog-open {
   overflow: hidden;
 }
@@ -2323,67 +2378,6 @@ body.sponsor-dialog-open {
   .category-title {
     font-size: 20px;
     line-height: 28px;
-  }
-  .header-inner {
-    display: flex;
-    flex-wrap: nowrap;
-    justify-content: flex-start;
-    padding: 8px 12px;
-    gap: 8px;
-    width: 100%;
-    max-width: 100%;
-    min-width: 0;
-    box-sizing: border-box;
-  }
-  .site-title {
-    display: flex;
-    flex: 1 1 0;
-    width: auto;
-    max-width: none;
-    min-width: 0;
-    line-height: 20px;
-    font-size: 16px;
-    white-space: nowrap;
-    overflow: hidden;
-    overflow-wrap: normal;
-  }
-  /* One title on a phone: the one in the reading language. */
-  .site-title-sep,
-  .site-title-zh {
-    display: none;
-  }
-  html[data-lang-mode="zh"] .site-title-en {
-    display: none;
-  }
-  html[data-lang-mode="zh"] .site-title-zh {
-    display: inline;
-    color: var(--text);
-    font-weight: 600;
-  }
-  .site-title-en,
-  .site-title-zh {
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  .header-right {
-    flex: 0 0 auto;
-    gap: 4px;
-    justify-content: flex-end;
-    margin-left: auto;
-  }
-  /* The footer carries the source link; the header keeps the room for the title. */
-  .github-link,
-  .lang-toggle .icon {
-    display: none;
-  }
-  .github-link,
-  .lang-toggle,
-  .theme-toggle,
-  .sponsor-toggle {
-    min-width: 32px;
-    height: 32px;
-    padding: 0 8px;
   }
   .category-title,
   .subcategory-title,
@@ -2530,7 +2524,7 @@ body.sponsor-dialog-open {
        second row. */
     flex-wrap: nowrap;
     align-items: center;
-    gap: 12px;
+    gap: 0.75rem;
     width: 100%;
     max-width: 100%;
     min-width: 0;

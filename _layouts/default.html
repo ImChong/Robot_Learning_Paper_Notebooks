@@ -226,8 +226,7 @@
   <meta name="twitter:image" content="{{ og_image }}">
   <meta name="theme-color" content="#181818" media="(prefers-color-scheme: dark)">
   <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
-  <link rel="icon" type="image/svg+xml" href="{{ '/assets/img/favicon.svg' | relative_url }}">
-  <link rel="apple-touch-icon" href="{{ '/assets/img/apple-touch-icon.png' | relative_url }}">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📚</text></svg>">
   {%- comment -%}
     Latin UI font (Geist, self-hosted). Preload the one subset every page uses so
     headings do not swap fonts after first paint.
@@ -1438,7 +1437,10 @@
         if (persist) {
           try { localStorage.setItem('theme', theme); } catch (e) { /* private mode */ }
         }
-        if (toggle) toggle.setAttribute('aria-pressed', theme === 'dark' ? 'true' : 'false');
+        if (toggle) {
+          toggle.textContent = theme === 'dark' ? '☀️' : '🌙';
+          toggle.setAttribute('aria-pressed', theme === 'dark' ? 'true' : 'false');
+        }
 
         initMermaid(theme);
       }

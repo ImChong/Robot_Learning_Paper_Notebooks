@@ -9,7 +9,12 @@ import re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-STYLE = (ROOT / "assets" / "css" / "style.css").read_text(encoding="utf-8")
+_STYLE_ALL = (ROOT / "assets" / "css" / "style.css").read_text(encoding="utf-8")
+# The site header keeps its pre-redesign look by the maintainer's choice; that block
+# is copied verbatim from the old stylesheet and is exempt from the rules below.
+STYLE = re.sub(
+    r"/\* legacy-header:start \*/.*?/\* legacy-header:end \*/", "", _STYLE_ALL, flags=re.S
+)
 LAYOUT = (ROOT / "_layouts" / "default.html").read_text(encoding="utf-8")
 
 TYPE_SCALE_PX = {12, 14, 16, 18, 20, 24, 30, 36, 48}
@@ -77,4 +82,10 @@ def test_shell_has_skip_link_404_and_share_image():
     assert "permalink: /404.html" in not_found
     assert "noindex: true" in not_found
     assert (ROOT / "assets" / "img" / "og-default.png").is_file()
-    assert (ROOT / "assets" / "img" / "favicon.svg").is_file()
+
+
+def test_header_and_tab_icon_keep_the_original_design():
+    header = (ROOT / "_includes" / "header.html").read_text(encoding="utf-8")
+    assert "📚 {{ site.title | escape }} | {{ site.description | escape }}" in header
+    assert "<text y='.9em' font-size='90'>📚</text>" in LAYOUT
+    assert _STYLE_ALL.count("/* legacy-header:start */") == 1

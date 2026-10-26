@@ -232,6 +232,7 @@ demos: ["ppo"]
 - **动效**：过渡统一 `var(--ease)`（`cubic-bezier(0.32, 0.72, 0, 1)`），颜色类 `var(--dur-micro)`（240ms），位移类 `var(--dur)`（700ms）；不要再加全局 `*` 过渡，主题切换时的渐变由 `html.theme-switching` 负责。
 - **图标**：界面图标用 Phosphor（`_includes/icons.html` 的 sprite，`<svg class="icon"><use href="#i-名字"></use></svg>`），不要用 emoji 当界面图标；图标不能放进带 `data-en` / `data-zh` 的元素里（切换语言会整段替换 textContent）。笔记正文里的 emoji 不受限制。
 - **z-index**：用 `--z-*` 变量，不要写新的魔法数字。
+- **例外：页头和浏览器标签页图标保持改版前的设计**（2026-10-26 维护者的选择）：`_includes/header.html` 与 `style.css` 里 `/* legacy-header:start */` … `/* legacy-header:end */` 那一段原样取自改版前（📚 emoji 标题、文字 GitHub 链接、带边框的 ☀️ / 🌙 / ☕ 按钮、Arial），favicon 仍是 📚 emoji；改页头时照这一段原有的写法，测试跳过它。
 
 ## Cursor Cloud specific instructions
 
