@@ -390,9 +390,10 @@
     rob: { file: 'g1_suit_rob.webp', R: 170, yaw: 0.9, pitch: 0.18, cw: 387, ch: 261, cols: 12, n: 149, ax: 208, ay: 245 },
     dflt: { file: 'g1_dflt.webp', R: 170, yaw: 0.9, pitch: 0.18, cw: 387, ch: 261, cols: 1, n: 1, ax: 208, ay: 245 }
   };
-  /* 一台 G1（连同箱子）：贴图表里的一格；put(cam, 帧号) 让锚点 A0 落在 (ox, oy)。贴图第一次用到才设 href */
+  /* 一台 G1（连同箱子）：贴图表里的一格；put(cam, 帧号) 让锚点 A0 落在 (ox, oy)。贴图第一次用到才设 href。
+     opts.crop = [x0, y0, x1, y1]（格子里的像素）只显示这一块，小格子里放机器人时用，免得透明的空白也算进分镜的外框 */
   function g1Mesh(parent, key, opts) {
-    var o = opts || {}, M = SHEETS[key], g = group(parent), rows = Math.ceil(M.n / M.cols);
+    var o = opts || {}, M = SHEETS[key], g = group(parent), rows = Math.ceil(M.n / M.cols), C = o.crop || [0, 0, M.cw, M.ch];
     g.setAttribute('class', 'demo-x-g1mesh');
     var box = svgEl('svg', { overflow: 'hidden', preserveAspectRatio: 'none', width: 0, height: 0 });
     var img = svgEl('image', { x: 0, y: 0, width: M.cw * M.cols, height: M.ch * rows, preserveAspectRatio: 'none' });
@@ -406,12 +407,12 @@
         if (!woke && G1_3D_BASE) { woke = true; img.setAttribute('href', G1_3D_BASE + M.file); }
         var k = cam.s / M.R;
         var f = clamp(Math.round(fr || 0), 0, M.n - 1);
-        box.setAttribute('x', (cam.ox - M.ax * k).toFixed(1));
-        box.setAttribute('y', (cam.oy - M.ay * k).toFixed(1));
-        box.setAttribute('width', (M.cw * k).toFixed(1));
-        box.setAttribute('height', (M.ch * k).toFixed(1));
+        box.setAttribute('x', (cam.ox - (M.ax - C[0]) * k).toFixed(1));
+        box.setAttribute('y', (cam.oy - (M.ay - C[1]) * k).toFixed(1));
+        box.setAttribute('width', ((C[2] - C[0]) * k).toFixed(1));
+        box.setAttribute('height', ((C[3] - C[1]) * k).toFixed(1));
         if (f !== lastF) {
-          box.setAttribute('viewBox', [(f % M.cols) * M.cw, Math.floor(f / M.cols) * M.ch, M.cw, M.ch].join(' '));
+          box.setAttribute('viewBox', [(f % M.cols) * M.cw + C[0], Math.floor(f / M.cols) * M.ch + C[1], C[2] - C[0], C[3] - C[1]].join(' '));
           lastF = f;
         }
       }
@@ -717,8 +718,8 @@
     boxIcon(p3, R + 60, 170, 50, 60);
     var hand = dotAt(p3, R + 40, 186, 6, C_EEF), tgt3 = dotAt(p3, R + 60, 196, 6, C_TGT), gap = hline(p3, 0, 0, 0, 0, C_ERR, 2, '3 2');
     label(p3, R + 84, 252, '手没真正碰到箱子', 'demo-x-mut', 10.5, 'middle');
-    var kneel = K.stickFigure('var(--text)', 3);
-    p3.appendChild(kneel.el);
+    /* 跪着搬箱子的 G1（官方仓库录下的仿真回放第 40–50 帧，参考第 2.9–3.5 s），原先是火柴人 */
+    var kneel = g1Mesh(p3, 'rob', { crop: [4, 96, 178, 245] }), camK = camAt(144.5, R + 367.4, 238.7);
     label(p3, R + 268, 252, '跪着、弯着腰', 'demo-x-mut', 10.5, 'middle');
     /* 第 4 段：以前的做法 */
     var p4 = group(s);
@@ -737,7 +738,7 @@
     boxIcon(p4, R + 266, 122, 52, 22);
     label(p4, R + 162, 266, '② 或者靠高层规划器指挥', 'demo-x-ink2', 12);
     chip(p4, R, 252, 150, '视觉语言模型 / 规划器', C_PURPLE, { size: 11.5, h: 30 });
-    var f4 = [0, 1, 2].map(function () { return flowSeg(p4, C_PURPLE, 2, 2.8, 26, true); });
+    var f4 = [0, 1, 2].map(function () { return flowSeg(p4, C_PURPLE, 2, 2.8, 26, false); });
     var xA = cross(p4, R + W - 14, 82, 14, C_BAD), xB = cross(p4, R + W - 14, 255, 14, C_BAD);
     label(p4, R + 162, 290, '换一个任务，就要重新设计一遍', 'demo-x-mut', 11.5);
     /* 第 5 段：HDMI 的通用框架 */
@@ -760,8 +761,7 @@
       var hx = R + 40 + 8 * Math.sin(now * 2.2);
       moveDot(hand, [hx, 186]); setLine(gap, hx, 186, R + 60, 196);
       void tgt3;
-      var wob = 6 * Math.sin(now * 2.6);
-      kneel.pose(R + 268, 200, { lean: 20 + wob, armA: [55, 35], armB: [45, 25], legA: [75, 0], legB: [-5, -90] });
+      kneel.put(camK, loopFrame(now, 40, 51));
       xA.style.opacity = seg(t, 11.0, 11.4); xB.style.opacity = seg(t, 11.8, 12.2);
       var u4 = since(t, clock, 10.4), hot = Math.floor(now / 1.2) % 3;
       cards4.forEach(function (c, i) {
@@ -819,7 +819,11 @@
     hline(p3, PX3, PY3 + 13, PX3, 244, C_GOOD, 1.4, '3 4');
     chip(p3, R + 61, 246, 170, '关节目标 $\\theta_t^{\\mathrm{target}}$', C_GOOD, { size: 12, h: 30 });
     label(p3, R, 300, '策略的输出加在参考关节角上：残差动作', 'demo-x-mut', 10.5);
-    var fl3 = [0, 1, 2, 3].map(function (k) { return flowSeg(p3, [C_ACCENT, C_ACCENT, C_MUTED, C_GOOD][k], 2, 3, 24, true); });
+    /* 三路观测都要连到策略（2026-10-26 看片反馈：原先只有相位连过去） */
+    var OBS3 = [0, 1, 2].map(function (i) { return [[R + 46 + i * 100, 116], [R + 35 + i * 30, 138]]; });
+    OBS3.forEach(function (l) { hline(p3, l[0][0], l[0][1], l[1][0], l[1][1], C_TGT, 1.2, '3 4'); });
+    var fl3o = OBS3.map(function () { return flowSeg(p3, C_TGT, 2, 3, 24, true); });
+    var fl3 = [C_ACCENT, C_MUTED, C_GOOD].map(function (c) { return flowSeg(p3, c, 2, 3, 24, true); });
     var p4 = group(s);
     label(p4, R, 64, '② 训练：奖励三块', 'demo-x-ink', 13.5);
     [['交互', '引导并保持接触', C_TGT], ['机器人跟踪', '跟上参考的身体动作', C_ACCENT], ['物体跟踪', '物体也走参考的轨迹', C_GOOD]].forEach(function (r, i) {
@@ -840,10 +844,10 @@
       var now = nowOf(t, clock);
       fl1.forEach(function (f, i) { f.at(now + i * 0.4, [R + W / 2, 84 + i * 52 + 34], [R + W / 2, 84 + (i + 1) * 52 - 2], true); });
       fl2.forEach(function (f, i) { f.at(now + i * 0.4, [R + W / 2, 84 + i * 46 + 32], [R + W / 2, 84 + (i + 1) * 46 - 2], true); });
-      fl3[0].at(now, [R + 65, 116], [R + 65, 138], true);
-      fl3[1].at(now + 0.3, [R + 65, 172], [PX3 - 10, PY3 - 9], true);
-      fl3[2].at(now + 0.3, [R + 227, 172], [PX3 + 10, PY3 - 9], true);
-      fl3[3].at(now + 0.6, [PX3, PY3 + 13], [PX3, 244], true);
+      fl3o.forEach(function (f, i) { f.at(now + i * 0.2, OBS3[i][0], OBS3[i][1], true); });
+      fl3[0].at(now + 0.3, [R + 65, 172], [PX3 - 10, PY3 - 9], true);
+      fl3[1].at(now + 0.3, [R + 227, 172], [PX3 + 10, PY3 - 9], true);
+      fl3[2].at(now + 0.6, [PX3, PY3 + 13], [PX3, 244], true);
       /* 两路小点到加号的那一下，加号亮一下 */
       var tot3 = Math.hypot(PX3 - 10 - (R + 65), PY3 - 9 - 172), glow3 = 0;
       for (var q3 = 0; q3 < 2; q3++) glow3 = Math.max(glow3, seg(((((now + 0.3) * 24 + q3 * tot3 / 2) % tot3) + tot3) % tot3 / tot3, 0.82, 1));
@@ -1176,7 +1180,7 @@
     [['本体感受', C_ACCENT], ['相位 $\\phi$', C_MUTED], ['物体 + 接触点', C_TGT]].forEach(function (c, i) { chip(p3, R + i * 118, 84, 110, c[0], c[1], { size: 12, h: 32 }); });
     var net3 = chip(p3, R + 96, 160, 160, '同一个策略网络', C_GOOD, { size: 12.5, h: 36 });
     void net3;
-    var fl6 = [0, 1, 2].map(function () { return flowSeg(p3, C_MUTED, 2, 3, 26, true); });
+    var fl6 = [0, 1, 2].map(function () { return flowSeg(p3, C_MUTED, 2, 3, 26, false); });
     label(p3, R, 234, '换一种物体，不用改网络结构', 'demo-x-ink2', 12.5);
     var p4 = group(s);
     label(p4, R, 64, '代码里物体只占 10 维', 'demo-x-ink', 14);
@@ -1512,7 +1516,7 @@
     label(p5, R, 150, '奖励分四组，价值网络每组输出一个值', 'demo-x-ink2', 12);
     var groups5 = ['跟踪', '物体', '运动', '脚'].map(function (n, i) { return chip(p5, R + i * 88, 166, 80, n, [C_ACCENT, C_GOOD, C_MUTED, C_PURPLE][i], { size: 11.5, h: 28 }); });
     chip(p5, R + 96, 236, 160, '优势：四组加起来', C_TGT, { size: 11.5, h: 28 });
-    var fl5 = [0, 1, 2, 3].map(function () { return flowSeg(p5, C_MUTED, 1, 2.8, 18, true); });
+    var fl5 = [0, 1, 2, 3].map(function () { return flowSeg(p5, C_MUTED, 1, 2.8, 18, false); });
     void groups5;
     function draw(t, clock) {
       var now = nowOf(t, clock);
@@ -1561,6 +1565,8 @@
     link(148, 176, Y1 + 22, C_TGT); link(276, 304, Y1 + 22, C_TGT); link(434, 462, Y1 + 22, C_TGT); link(612, 634, Y1 + 22, C_TGT); link(658, 680, Y1 + 22, C_TGT);
     link(210, 238, Y2 + 22, C_ACCENT); link(368, 396, Y2 + 22, C_ACCENT);
     link(280, 308, Y3 + 22, C_GOOD); link(468, 496, Y3 + 22, C_GOOD);
+    /* 猜出来的 256 维接到学生的输入（2026-10-26 看片反馈：图里的输入要都连上） */
+    flows.push({ f: flowSeg(top, C_ACCENT, 2, 2.8, 24, false), a: [452, Y2 + BH + 2], b: [262, Y3 - 2] });
     var rLine = arrow(top, C_MUTED, 1.4); rLine.set(646, Y1 + 60, 646, Y1 + 36, 6);
     var R = 24, W = 752, PY = 322;
     function two(g, l1, l2) { rich(g, R, PY, l1, 14.5, null, 'start', W); rich(g, R, PY + 28, l2, 14.5, null, 'start', W); }
@@ -1636,37 +1642,37 @@
     label(pA, RX, 92, '关键点位置：16 个 × 3（$x, y, z$）× 未来 5 帧', 'demo-x-ink', 12.5);
     var G1W = 324 / 16, rowsA1 = [], rowHiA = [];
     FUT_LAB.forEach(function (lab, r) {
-      var y = 100 + r * 17;
+      var y = 104 + r * 19;
       label(pA, GX - 6, y + 8.5, lab, 'demo-x-mut', 11, 'end');
       rowHiA.push(paint(svgEl('rect', { x: GX - 3, y: y - 2, width: 330, height: 13, rx: 3, fill: 'none', 'stroke-width': 1.4 }), null, C_TGT));
       pA.appendChild(rowHiA[r]);
       rowsA1.push(cellRow(pA, GX, y, 48, 5.4, 9, 6.15, C_TGT, 3, G1W - 3 * 6.15));
     });
-    var pickBox = paint(svgEl('rect', { x: (GX + KP_PICK * G1W - 2.5).toFixed(1), y: 96, width: (3 * 6.15 + 3.6).toFixed(1), height: 85, rx: 3, fill: 'none', 'stroke-width': 1.8 }), null, C_BAD);
+    var pickBox = paint(svgEl('rect', { x: (GX + KP_PICK * G1W - 2.5).toFixed(1), y: 100, width: (3 * 6.15 + 3.6).toFixed(1), height: 93, rx: 3, fill: 'none', 'stroke-width': 1.8 }), null, C_BAD);
     pA.appendChild(pickBox);
-    var cntA1 = label(pA, RX, 196, '每个点 3 维：$x, y, z$（红框是左手腕）', 'demo-x-ink2', 12.5);
-    var cntA2 = label(pA, RX, 196, '$16 \\times 3 \\times 5 = 240$ 维', 'demo-x-ink', 13);
+    var cntA1 = label(pA, RX, 212, '每个点 3 维：$x, y, z$（红框是左手腕）', 'demo-x-ink2', 12.5);
+    var cntA2 = label(pA, RX, 212, '$16 \\times 3 \\times 5 = 240$ 维', 'demo-x-ink', 13);
     var grpA2 = group(pA), rowsA2 = [];
-    label(grpA2, RX, 220, '关节角：23 个（29 个去掉手腕的 6 个）× 未来 5 帧', 'demo-x-ink', 12.5);
+    label(grpA2, RX, 236, '关节角：23 个（29 个去掉手腕的 6 个）× 未来 5 帧', 'demo-x-ink', 12.5);
     FUT_LAB.forEach(function (lab, r) {
-      var y = 228 + r * 12.5;
+      var y = 244 + r * 12.5;
       rowsA2.push(cellRow(grpA2, GX, y, 23, 12, 9, 324 / 23, C_TGT));
     });
-    label(grpA2, GX - 6, 264, '5 帧', 'demo-x-mut', 11, 'end');
-    var cntA3 = label(pA, RX, 304, '$23 \\times 5 = 115$ 维', 'demo-x-ink', 13);
+    label(grpA2, GX - 6, 280, '5 帧', 'demo-x-mut', 11, 'end');
+    var cntA3 = label(pA, RX, 322, '$23 \\times 5 = 115$ 维', 'demo-x-ink', 13);
     var grpA3 = group(pA);
-    label(grpA3, RX, 326, '相位：参考已经播放的比例', 'demo-x-ink', 12.5);
+    label(grpA3, RX, 344, '相位：参考已经播放的比例', 'demo-x-ink', 12.5);
     var PB0 = GX + 14, PBW = 776 - 24 - PB0;
-    grpA3.appendChild(paint(svgEl('rect', { x: GX - 34, y: 333, width: 12, height: 10, rx: 1.2 }), C_TGT));
-    grpA3.appendChild(paint(svgEl('rect', { x: PB0, y: 334, width: PBW, height: 8, rx: 4 }), C_SURFACE2));
-    var phFill = paint(svgEl('rect', { x: PB0, y: 334, width: 0, height: 8, rx: 4 }), C_TGT);
+    grpA3.appendChild(paint(svgEl('rect', { x: GX - 34, y: 354, width: 12, height: 10, rx: 1.2 }), C_TGT));
+    grpA3.appendChild(paint(svgEl('rect', { x: PB0, y: 355, width: PBW, height: 8, rx: 4 }), C_SURFACE2));
+    var phFill = paint(svgEl('rect', { x: PB0, y: 355, width: 0, height: 8, rx: 4 }), C_TGT);
     grpA3.appendChild(phFill);
-    var phDot = dotAt(grpA3, PB0, 338, 5.5, C_TGT);
+    var phDot = dotAt(grpA3, PB0, 359, 5.5, C_TGT);
     phDot.style.stroke = '#fff'; phDot.style.strokeWidth = '1.4px';
-    label(grpA3, PB0 - 8, 342, '0', 'demo-x-mut', 11, 'end');
-    label(grpA3, PB0 + PBW + 8, 342, '1', 'demo-x-mut', 11, 'start');
-    var phLab = label(grpA3, PB0 + PBW / 2, 360, '这一帧约 0.5', 'demo-x-ink2', 11.5, 'middle');
-    var totA = label(pA, 776, 380, '$240 + 115 + 1 = 356$ 维', 'demo-x-ink', 14, 'end');
+    label(grpA3, PB0 - 8, 363, '0', 'demo-x-mut', 11, 'end');
+    label(grpA3, PB0 + PBW + 8, 363, '1', 'demo-x-mut', 11, 'start');
+    var phLab = label(grpA3, 776, 344, '这一帧约 0.5', 'demo-x-ink2', 11.5, 'end');
+    var totA = label(pA, 776, 386, '$240 + 115 + 1 = 356$ 维', 'demo-x-ink', 14, 'end');
 
     // ② 本体感受：角速度、重力方向、29 个关节角的历史（第 0, 1, 2, 3, 4, 8 步）、前 3 步动作（23 维，没有手腕）
     var pB = group(s);
@@ -1752,6 +1758,7 @@
     var xyA = arrow(xyC, C_GOOD, 2.8);
     xyA.set(TO[0] + 6, TO[1] - 0.4, bO[0], bO[1], 10);
     var xyFlow = flowSeg(xyC, C_GOOD, 2, 2.6, 30, true);
+    xyFlow.at(0, [TO[0] + 6, TO[1]], bO, false); // 没画到这一块之前也别停在原点
     dotAt(xyC, bO[0], bO[1], 4.5, C_GOOD);
     var headC = group(pC), hRef = arrow(headC, C_MUTED, 1.6, '3 3'), hBox = arrow(headC, C_GOOD, 2.6);
     var hEnd = tv(OBS10.xy[0] + 0.2 * cb, OBS10.xy[1] + 0.2 * sb);
@@ -1815,7 +1822,7 @@
         setOpacity(grpA3, seg(u, 10.5, 10.7));
         var ph = 0.5 * seg(u, 11.1, 11.8);
         phFill.setAttribute('width', (ph * PBW).toFixed(1));
-        moveDot(phDot, [PB0 + ph * PBW, 338]);
+        moveDot(phDot, [PB0 + ph * PBW, 359]);
         setOpacity(phLab, seg(u, 11.8, 12.0));
         setOpacity(totA, seg(u, 12.0, 12.3));
       }
@@ -1889,9 +1896,11 @@
     var fl1 = [0, 1, 2].map(function () { return flowSeg(p1, C_MUTED, 2, 3, 20, true); });
     var p2 = group(s);
     label(p2, R, 64, '动作捕捉：标记点贴在骨盆和物体上', 'demo-x-ink', 14);
-    var fig2 = K.stickFigure('var(--text)', 3); p2.appendChild(fig2.el); fig2.pose(R + 110, 200, K.poseWalk(0.1));
-    boxIcon(p2, R + 210, 176, 56, 50);
-    var marks = [[R + 104, 198], [R + 116, 198], [R + 216, 180], [R + 258, 180], [R + 238, 172]];
+    /* 抱着箱子的 G1（仿真回放第 4.70 s），原先是火柴人；标记点按这一帧的骨盆和箱子位置投影 */
+    var camM = camAt(102, R + 192, 234.6), fM = suitFrames()[EX_J].rob;
+    var botM = g1Mesh(p2, 'rob', { crop: [118, 14, 224, 248] });
+    var marks = [[0, 0.05, 0], [0, -0.05, 0]].map(function (d) { return project([fM.pel[0] + d[0], fM.pel[1] + d[1], fM.pel[2] + d[2]], camM); })
+      .concat([[0, 0.12, 0.2], [0, -0.12, 0.2], [0, 0, 0.2]].map(function (d) { return project([fM.cen[0] + d[0], fM.cen[1] + d[1], fM.cen[2] + d[2]], camM); }));
     marks.forEach(function (p) { var c = dotAt(p2, p[0], p[1], 4, C_TGT); c.style.stroke = '#fff'; c.style.strokeWidth = '1px'; });
     var cams = [[R + 20, 96], [R + 330, 96]].map(function (p) { var r = paint(svgEl('rect', { x: p[0] - 10, y: p[1] - 7, width: 20, height: 14, rx: 3 }), C_MUTED); p2.appendChild(r); return p; });
     var rays = [];
@@ -1903,7 +1912,7 @@
     chip(p3, R + 202, 84, 150, '物体的全局位姿', C_GOOD, { size: 12, h: 32 });
     chip(p3, R + 60, 148, 232, '物体相对根部的位姿', C_TGT, { size: 12, h: 32 });
     chip(p3, R + 60, 210, 232, '策略的输入（和训练时一样）', C_GOOD, { size: 12, h: 32 });
-    var fl3 = [flowSeg(p3, C_ACCENT, 2, 3, 22, true), flowSeg(p3, C_GOOD, 2, 3, 22, true), flowSeg(p3, C_TGT, 2, 3, 22, true)];
+    var fl3 = [flowSeg(p3, C_ACCENT, 2, 3, 22, false), flowSeg(p3, C_GOOD, 2, 3, 22, false), flowSeg(p3, C_TGT, 2, 3, 22, false)];
     var p4 = group(s);
     label(p4, R, 64, '域随机化（代码里的范围）', 'demo-x-ink', 14);
     var rows4 = [
@@ -1925,6 +1934,7 @@
     function draw(t, clock) {
       var now = nowOf(t, clock);
       fl1.forEach(function (f, i) { f.at(now + i * 0.4, [R + W / 2, 82 + i * 46 + 34], [R + W / 2, 82 + (i + 1) * 46 - 2], true); });
+      if (t >= 3.4) botM.put(camM, EX_J);
       rays.forEach(function (r, i) { setLine(r.l, r.c[0], r.c[1] + 8, r.m[0], r.m[1]); r.l.style.opacity = 0.35 + 0.65 * (0.5 + 0.5 * Math.sin(now * 3 + i)); });
       fl3[0].at(now, [R + 75, 118], [R + 140, 146], true);
       fl3[1].at(now + 0.3, [R + 277, 118], [R + 212, 146], true);
@@ -2077,6 +2087,9 @@
   /* ── scene 14: 仿真里的 14 个任务 ── */
   var SIM_PARTS = [[4.5, '用手推门'], [4.5, '用脚开门'], [4.5, '打开折叠椅坐下'], [4.5, '推着大球滚'], [4.5, '推倒木板走过去'], [4.5, '箱子扛上肩'],
     [4.5, '搬凳子'], [4.5, '楚门式鞠躬'], [4.5, '搬面包箱'], [4.5, '推大箱子'], [4.5, '搬泡沫垫'], [3.6, '搬行李箱']];
+  /* 各段的起点按旁白的实际长度排（11.7 / 6.5 / 7.6 / 8.2 s），最后一段拉长到 12 个任务放完（0.4 + 53.1 s）：
+     原先这一幕 16 s、视频里约 43 s，片段只放到第 10 个，旁白念到的搬泡沫垫、搬行李箱没出现（2026-10-26 看片反馈） */
+  var SIM_B = [0, 11.7, 18.2, 25.8, 34.0];
   function buildSceneSim() {
     var s = sceneSvg('左边是项目页的仿真视频，12 个任务按 2.5 倍速一个接一个放，下面标着放到第几个；右边依次出现：14 个仿真任务、' +
       '放到哪个任务哪个格子就亮、14 个里 6 个上了真机和原因、消融用的 8 个任务');
@@ -2112,12 +2125,12 @@
       SIM_PARTS.forEach(function (p, k) { if (m >= a) idx = k; a += p[0]; });
       grid.forEach(function (g, k) { setOpacity(g, k === idx ? 1 : 0.3); });
       dots1.forEach(function (d, k) { d.style.opacity = clamp(seg(since(t, clock, 0.4), 0.3, 1.8) * 14 - k, 0, 1); });
-      dots4.forEach(function (d, k) { d.style.opacity = clamp(seg(since(t, clock, 10.4), 0.3, 1.8) * 14 - k, 0, 1); });
-      g5.forEach(function (g, k) { setOpacity(g, seg(since(t, clock, 13.4), 0.3 + k * 0.15, 0.6 + k * 0.15)); });
-      setOpacity(p1, win(t, 0.3, 3.6));
-      setOpacity(p2, win(t, 3.6, 10.4));
-      setOpacity(p4, win(t, 10.4, 13.4));
-      setOpacity(p5, win(t, 13.4));
+      dots4.forEach(function (d, k) { d.style.opacity = clamp(seg(since(t, clock, SIM_B[3]), 0.3, 1.8) * 14 - k, 0, 1); });
+      g5.forEach(function (g, k) { setOpacity(g, seg(since(t, clock, SIM_B[4]), 0.3 + k * 0.15, 0.6 + k * 0.15)); });
+      setOpacity(p1, win(t, 0.3, SIM_B[1]));
+      setOpacity(p2, win(t, SIM_B[1], SIM_B[3]));
+      setOpacity(p4, win(t, SIM_B[3], SIM_B[4]));
+      setOpacity(p5, win(t, SIM_B[4]));
     }
     return { el: s, draw: draw };
   }
@@ -2354,7 +2367,7 @@
     smalls.forEach(function (r) { p3.appendChild(r); });
     label(p3, R + W / 2, 128, '13 个专门的策略', 'demo-x-mut', 10.5, 'middle');
     var gen = chip(p3, R + 96, 196, 160, '一个通才模型', C_GOOD, { size: 12.5, h: 34 });
-    var fl3 = [0, 1, 2, 3, 4].map(function () { return flowSeg(p3, C_MUTED, 1, 2.6, 18, true); });
+    var fl3 = [0, 1, 2, 3, 4].map(function () { return flowSeg(p3, C_MUTED, 1, 2.6, 18, false); });
     label(p3, R + W / 2, 252, '把很多技能的数据合在一起训（之后的方向）', 'demo-x-mut', 10.5, 'middle');
     var p4 = group(s);
     label(p4, R, 64, '我们补充两点', 'demo-x-ink', 14);
@@ -2565,14 +2578,14 @@
     },
     {
       title: '仿真里的 14 个任务',
-      dur: 16,
+      dur: 53.9,
       build: buildSceneSim,
       cues: [
         { at: 0.4, s: '仿真里 14 个任务，同一个框架、同一套超参数。' },
-        { at: 3.6, s: '推门、踢门、打开折叠椅坐下、推球、推倒木板……' },
-        { at: 7.0, s: '扛箱子、搬凳子、搬面包箱、推大箱子、搬泡沫垫、搬行李箱。' },
-        { at: 10.4, s: '14 个里 6 个上了真机：球没法贴标记点，也缺结实的折叠椅。' },
-        { at: 13.4, s: '消融：其中 8 个任务，IsaacSim、4096 个并行环境。' }
+        { at: 11.7, s: '推门、踢门、打开折叠椅坐下、推球、推倒木板……' },
+        { at: 18.2, s: '扛箱子、搬凳子、搬面包箱、推大箱子、搬泡沫垫、搬行李箱。' },
+        { at: 25.8, s: '14 个里 6 个上了真机：球没法贴标记点，也缺结实的折叠椅。' },
+        { at: 34.0, s: '消融：其中 8 个任务，IsaacSim、4096 个并行环境。' }
       ]
     },
     {
@@ -2633,7 +2646,7 @@
   function buildExplainerDemo(host) {
     K.explainer(host, {
       title: '十八幕动画：HDMI 全流程速览',
-      sub: '约 365 秒自动播放。空格播放/暂停，← → 换幕；G1 是官方开源的搬行李箱参考与仓库里录下的仿真回放，按真实模型做 3D 渲染，表格与图来自论文和官方代码。',
+      sub: '约 403 秒自动播放。空格播放/暂停，← → 换幕；G1 是官方开源的搬行李箱参考与仓库里录下的仿真回放，按真实模型做 3D 渲染，表格与图来自论文和官方代码。',
       ariaLabel: 'HDMI 十八幕讲解动画',
       notes: [
         '取数依据：表 I–II 照抄 arXiv 2509.16757 v3；图 6、图 7a、图 8、图 9a 的数是我们从论文的矢量图里抽出来的（柱高、误差棒中点、折线顶点），只保留到小数点后三位。',
