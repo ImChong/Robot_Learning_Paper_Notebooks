@@ -99,6 +99,19 @@
   var FUT_STEPS = [1, 2, 8, 16, 32];
   var OBS = { cmd: 5 * 16 * 3 + 5 * 23 + 1, prop: 3 + 3 + 6 * 29 + 3 * 23, obj: 2 + 2 + 2 * 3 };
   var OBS_ALL = OBS.cmd + OBS.prop + OBS.obj; // 615
+  /* 第 10 幕把 615 维展开时用的一帧：仿真回放第 210 帧（参考第 4.70 s，即贴图第 EX_J 帧），世界坐标、单位 mm。
+     kp：16 个关键点（骨盆、四个髋、躯干、两膝、两肩、两踝、两肘、两腕，官方 tracking_keypoint_names）在现在与未来第 1, 2, 8, 16, 32 步的位置；
+     joints：29 个关节所在连杆的原点（腰 3，再左右各 13：髋 3、膝、踝 2、肩 3、肘、腕 3），wrist 标出手腕的 6 个；
+     xy / head / cb：按官方 object_xy_b、object_heading_b、ref_contact_pos_b 的写法算出的这一帧物体观测（机器人坐标系、只取水平朝向，不加噪声，我们算的） */
+  var OBS10 = {
+    kp: [[[-515,-951,783],[-492,-904,674],[-523,-1028,689],[-435,-907,529],[-418,-1113,600],[-523,-945,826],[-469,-931,340],[-354,-1145,420],[-517,-855,1078],[-520,-1055,1069],[-554,-953,35],[-493,-1146,137],[-458,-849,904],[-440,-1114,898],[-279,-806,912],[-270,-1156,956]],[[-501,-954,784],[-479,-906,675],[-505,-1031,690],[-428,-907,528],[-393,-1110,605],[-509,-948,827],[-468,-928,339],[-322,-1138,427],[-505,-856,1078],[-506,-1056,1071],[-554,-953,35],[-449,-1145,138],[-447,-850,903],[-428,-1114,899],[-268,-806,911],[-258,-1155,957]],[[-486,-957,784],[-466,-909,675],[-487,-1035,691],[-421,-907,526],[-370,-1107,608],[-494,-951,827],[-466,-927,339],[-294,-1130,432],[-492,-857,1077],[-491,-1057,1072],[-554,-953,35],[-407,-1143,137],[-436,-851,903],[-416,-1114,900],[-257,-805,909],[-245,-1155,955]],[[-391,-971,775],[-385,-918,666],[-376,-1045,681],[-370,-910,513],[-252,-1078,592],[-400,-966,818],[-436,-927,331],[-181,-1074,411],[-401,-872,1068],[-386,-1072,1063],[-552,-951,37],[-190,-1102,97],[-361,-863,889],[-330,-1119,882],[-186,-803,884],[-152,-1153,917]],[[-258,-970,758],[-253,-911,652],[-222,-1036,662],[-228,-891,501],[-119,-1056,544],[-271,-970,800],[-282,-939,321],[-96,-1051,352],[-285,-906,1059],[-224,-1095,1032],[-510,-998,108],[-114,-1066,35],[-274,-871,879],[-188,-1110,842],[-122,-770,853],[-4,-1103,846]],[[-101,-922,766],[-120,-858,666],[-61,-972,663],[-31,-742,586],[17,-995,519],[-108,-928,810],[48,-696,415],[-7,-1012,328],[-153,-894,1071],[-15,-1035,1036],[-55,-788,130],[-114,-1066,35],[-161,-830,895],[2,-1015,848],[-55,-679,882],[174,-949,847]]],
+    joints: [[-515,-951,783],[-523,-945,826],[-523,-945,826],[-492,-904,674],[-478,-858,638],[-435,-907,529],[-469,-931,340],[-552,-950,52],[-554,-953,35],[-517,-855,1078],[-513,-815,1077],[-490,-833,978],[-458,-849,904],[-360,-826,903],[-324,-817,907],[-279,-806,912],[-523,-1028,689],[-519,-1085,671],[-418,-1113,600],[-354,-1145,420],[-493,-1144,154],[-493,-1146,137],[-520,-1055,1069],[-516,-1095,1066],[-481,-1107,969],[-440,-1114,898],[-347,-1138,927],[-313,-1146,942],[-270,-1156,956]],
+    wrist: [0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,0,0,0,0,0,0,0,0,0,0,1,1,1],
+    pel: [-515,-951,783], yaw: -0.2336, box: [-39,-1034,724], boxYaw: 0.0143,
+    xy: [0.483,0.03], head: [0.969,0.245], cb: [[0.277,0.212,0.112],[0.343,-0.134,0.182]],
+    /* 箱子碰撞盒八个角投到机器人坐标系水平面上的凸包（这一帧箱子往机器人那边倾了约 20°，接触点在侧面的高处，所以不画成平放的矩形） */
+    hull: [[0.142,0.179],[0.197,-0.11],[0.325,-0.161],[0.511,-0.114],[0.455,0.175],[0.328,0.226]]
+  };
   /* 默认站姿与动作缩放（hdmi-base.yaml 的 action_scaling；关节目标 = 默认 + 缩放 × 动作，手腕不在动作里，共 23 个动作） */
   var DEFAULT_KNEE = 0.669, KNEE_SCALE = 0.35;
   /* 第 3.20 s（贴图第 45 帧）跪得最低的那一帧：左膝参考 2.731 rad；23 个动作里 8 个离默认站姿超过 1 个动作单位 */
@@ -1523,29 +1536,32 @@
   /* ── scene 10: 代码里的教师与学生（论文没写） ── */
   function buildSceneTeacher() {
     var s = sceneSvg('上面是官方代码里的训练结构：第一行是看特权信息的教师，加在参考关节角上的残差动作只在这里；第二行的适应模块从普通观测猜教师的特权特征；' +
-      '第三行是学生的动作网络，模仿教师的动作均值；讲到哪一块就亮哪一块。最后一段下面是学生的 615 维观测和未来 5 帧参考的时间轴');
+      '第三行是学生的动作网络，模仿教师的动作均值；讲到哪一块就亮哪一块。之后下面是学生的 615 维观测和未来 5 帧参考的时间轴；' +
+      '最后结构图淡出，按三块展开 615 维：同一台 G1（仿真回放第 4.70 s）上依次标出 16 个关键点与它们未来 5 帧的位置、29 个关节与角速度和重力，' +
+      '物体那一块换成俯视图，画出箱子相对机器人的位置、朝向与两个接触点；右边按维数一格一格填满');
     s.appendChild(svgText(24, 26, '代码里的教师与学生（论文没写）', 'demo-x-ink2', 13.5));
     var Y1 = 56, Y2 = 148, Y3 = 240, BH = 44;
-    function box(x, y, w, str, color) { return chip(s, x, y, w, str, color, { size: 14, h: BH }); }
+    var top = group(s); // 上面的结构图：展开 615 维时整块淡出
+    function box(x, y, w, str, color) { return chip(top, x, y, w, str, color, { size: 14, h: BH }); }
     var tea = [box(20, Y1, 128, '特权观测', C_TGT), box(176, Y1, 100, '编码器', C_TGT), box(304, Y1, 130, '256 维特征', C_TGT), box(462, Y1, 150, '教师动作网络', C_TGT)];
-    var plusT = group(s);
+    var plusT = group(top);
     ringAt(plusT, 646, Y1 + 22, 12, C_TGT, 2); label(plusT, 646, Y1 + 27.5, '+', 'demo-x-ink', 16, 'middle');
     var refJ = box(560, Y1 + 60, 116, '参考关节角', C_MUTED);
     var actT = box(680, Y1, 96, '动作', C_TGT);
     var ada = [box(20, Y2, 190, '普通观测（615 维）', C_ACCENT), box(238, Y2, 130, '适应模块', C_ACCENT), box(396, Y2, 140, '猜的 256 维', C_ACCENT)];
     var stu = [box(20, Y3, 260, '普通观测 + 猜的 256 维', C_GOOD), box(308, Y3, 160, '学生动作网络', C_GOOD), box(496, Y3, 96, '动作', C_GOOD)];
-    var mse1 = group(s);
+    var mse1 = group(top);
     var m1 = arrow(mse1, C_BAD, 1.8, '4 3'); m1.set(369, Y1 + BH + 2, 450, Y2 - 2, 8);
     label(mse1, 440, Y2 - 18, '均方误差', 'demo-x-ink2', 12.5, 'start');
-    var mse2 = group(s);
+    var mse2 = group(top);
     var m2 = arrow(mse2, C_BAD, 1.8, '4 3'); m2.set(740, Y1 + BH + 2, 596, Y3 + 8, 8);
     label(mse2, 664, Y3 - 6, '模仿均值', 'demo-x-ink2', 12.5, 'start');
     var flows = [];
-    function link(a, b, y, color) { flows.push({ f: flowSeg(s, color, 2, 2.8, 24, true), a: [a, y], b: [b, y] }); }
+    function link(a, b, y, color) { flows.push({ f: flowSeg(top, color, 2, 2.8, 24, true), a: [a, y], b: [b, y] }); }
     link(148, 176, Y1 + 22, C_TGT); link(276, 304, Y1 + 22, C_TGT); link(434, 462, Y1 + 22, C_TGT); link(612, 634, Y1 + 22, C_TGT); link(658, 680, Y1 + 22, C_TGT);
     link(210, 238, Y2 + 22, C_ACCENT); link(368, 396, Y2 + 22, C_ACCENT);
     link(280, 308, Y3 + 22, C_GOOD); link(468, 496, Y3 + 22, C_GOOD);
-    var rLine = arrow(s, C_MUTED, 1.4); rLine.set(646, Y1 + 60, 646, Y1 + 36, 6);
+    var rLine = arrow(top, C_MUTED, 1.4); rLine.set(646, Y1 + 60, 646, Y1 + 36, 6);
     var R = 24, W = 752, PY = 322;
     function two(g, l1, l2) { rich(g, R, PY, l1, 14.5, null, 'start', W); rich(g, R, PY + 28, l2, 14.5, null, 'start', W); }
     var p1 = group(s);
@@ -1576,6 +1592,268 @@
     });
     label(p5, TX, by + 44, '0.02', 'demo-x-mut', 11, 'start');
     label(p5, TX + TW, by + 44, '0.64', 'demo-x-mut', 11, 'end');
+
+    /* ── 展开 615 维（三段旁白各一块）：结构图淡出，左边同一台 G1（仿真回放第 4.70 s，贴图第 EX_J 帧），右边按维数一格一格填 ── */
+    var CA = 16.0, CB = 31.1, CC = 48.1;
+    /* 出场时刻按 WordBoundary 切词的时间写；视频里实际合成的三句比它慢 5–8%（14.76 / 14.04、16.70 / 15.98、9.36 / 8.65 s），按比例换算 */
+    var SA = 14.76 / 14.04, SB = 16.70 / 15.98, SC = 9.36 / 8.65;
+    var hdr = group(s);
+    label(hdr, 776, 26, '学生的观测：共 615 维', 'demo-x-ink', 13.5, 'end');
+    var hSegs = [], hx = 24, HW = 676;
+    [[OBS.cmd, '未来参考 + 相位 356', C_TGT], [OBS.prop, '本体感受 249', C_ACCENT], [OBS.obj, '物体 10', C_GOOD]].forEach(function (c, i) {
+      var w = c[0] / OBS_ALL * HW, g = group(hdr);
+      g.appendChild(paint(svgEl('rect', { x: hx.toFixed(1), y: 38, width: Math.max(3, w - 2).toFixed(1), height: 12, rx: 3 }), c[2]));
+      label(g, i === 2 ? hx + w + 6 : hx + 4, 68, c[1], 'demo-x-ink2', 12, 'start');
+      hSegs.push(g);
+      hx += w;
+    });
+    var bot10 = g1Mesh(hdr, 'rob'), cam10 = camAt(170, 216, 356), botOn = false;
+    function P10(p) { return project([p[0] / 1000, p[1] / 1000, p[2] / 1000], cam10); }
+    /* 一排格子：n 格、每格 w × h、间距 pitch；每 every 格多空 gap；返回格子数组 */
+    function cellRow(parent, x, y, n, w, h, pitch, color, every, gap) {
+      var out = [];
+      for (var i = 0; i < n; i++) {
+        var cx = x + i * pitch + (every ? Math.floor(i / every) * gap : 0);
+        var r = paint(svgEl('rect', { x: cx.toFixed(1), y: y.toFixed(1), width: w, height: h, rx: 1.2 }), color);
+        r.style.opacity = 0.15;
+        parent.appendChild(r);
+        out.push(r);
+      }
+      return out;
+    }
+    function fillCells(cells, a) { var v = (0.15 + 0.75 * a).toFixed(3); cells.forEach(function (c) { c.style.opacity = v; }); }
+    var RX = 404, GX = 452;
+    var FUT_LAB = FUT_STEPS.map(function (k) { return '+' + f2(k * 0.02) + ' s'; });
+
+    // ① 未来参考 + 相位：16 个关键点（及其未来 5 帧）、23 个关节角 × 5、相位 1
+    var pA = group(s);
+    var kpNow = OBS10.kp[0].map(P10);
+    var trailA = OBS10.kp[0].map(function (_, i) { return pathLine(pA, OBS10.kp.map(function (f) { return P10(f[i]); }), C_TGT, 1.1, '2 2'); });
+    var ghostA = [1, 2, 3, 4, 5].map(function (k) { return OBS10.kp[k].map(function (p) { var q = P10(p); return dotAt(pA, q[0], q[1], 2.6, C_TGT); }); });
+    var kpDots = kpNow.map(function (q) { var c = dotAt(pA, q[0], q[1], 4.2, C_TGT); c.style.stroke = '#fff'; c.style.strokeWidth = '1.2px'; return c; });
+    var KP_PICK = 14; // 左手腕
+    var pickRing = ringAt(pA, kpNow[KP_PICK][0], kpNow[KP_PICK][1], 9, C_BAD, 2);
+    label(pA, RX, 92, '关键点位置：16 个 × 3（$x, y, z$）× 未来 5 帧', 'demo-x-ink', 12.5);
+    var G1W = 324 / 16, rowsA1 = [], rowHiA = [];
+    FUT_LAB.forEach(function (lab, r) {
+      var y = 100 + r * 17;
+      label(pA, GX - 6, y + 8.5, lab, 'demo-x-mut', 11, 'end');
+      rowHiA.push(paint(svgEl('rect', { x: GX - 3, y: y - 2, width: 330, height: 13, rx: 3, fill: 'none', 'stroke-width': 1.4 }), null, C_TGT));
+      pA.appendChild(rowHiA[r]);
+      rowsA1.push(cellRow(pA, GX, y, 48, 5.4, 9, 6.15, C_TGT, 3, G1W - 3 * 6.15));
+    });
+    var pickBox = paint(svgEl('rect', { x: (GX + KP_PICK * G1W - 2.5).toFixed(1), y: 96, width: (3 * 6.15 + 3.6).toFixed(1), height: 85, rx: 3, fill: 'none', 'stroke-width': 1.8 }), null, C_BAD);
+    pA.appendChild(pickBox);
+    var cntA1 = label(pA, RX, 196, '每个点 3 维：$x, y, z$（红框是左手腕）', 'demo-x-ink2', 12.5);
+    var cntA2 = label(pA, RX, 196, '$16 \\times 3 \\times 5 = 240$ 维', 'demo-x-ink', 13);
+    var grpA2 = group(pA), rowsA2 = [];
+    label(grpA2, RX, 220, '关节角：23 个（29 个去掉手腕的 6 个）× 未来 5 帧', 'demo-x-ink', 12.5);
+    FUT_LAB.forEach(function (lab, r) {
+      var y = 228 + r * 12.5;
+      rowsA2.push(cellRow(grpA2, GX, y, 23, 12, 9, 324 / 23, C_TGT));
+    });
+    label(grpA2, GX - 6, 264, '5 帧', 'demo-x-mut', 11, 'end');
+    var cntA3 = label(pA, RX, 304, '$23 \\times 5 = 115$ 维', 'demo-x-ink', 13);
+    var grpA3 = group(pA);
+    label(grpA3, RX, 326, '相位：参考已经播放的比例', 'demo-x-ink', 12.5);
+    var PB0 = GX + 14, PBW = 776 - 24 - PB0;
+    grpA3.appendChild(paint(svgEl('rect', { x: GX - 34, y: 333, width: 12, height: 10, rx: 1.2 }), C_TGT));
+    grpA3.appendChild(paint(svgEl('rect', { x: PB0, y: 334, width: PBW, height: 8, rx: 4 }), C_SURFACE2));
+    var phFill = paint(svgEl('rect', { x: PB0, y: 334, width: 0, height: 8, rx: 4 }), C_TGT);
+    grpA3.appendChild(phFill);
+    var phDot = dotAt(grpA3, PB0, 338, 5.5, C_TGT);
+    phDot.style.stroke = '#fff'; phDot.style.strokeWidth = '1.4px';
+    label(grpA3, PB0 - 8, 342, '0', 'demo-x-mut', 11, 'end');
+    label(grpA3, PB0 + PBW + 8, 342, '1', 'demo-x-mut', 11, 'start');
+    var phLab = label(grpA3, PB0 + PBW / 2, 360, '这一帧约 0.5', 'demo-x-ink2', 11.5, 'middle');
+    var totA = label(pA, 776, 380, '$240 + 115 + 1 = 356$ 维', 'demo-x-ink', 14, 'end');
+
+    // ② 本体感受：角速度、重力方向、29 个关节角的历史（第 0, 1, 2, 3, 4, 8 步）、前 3 步动作（23 维，没有手腕）
+    var pB = group(s);
+    var pel = P10(OBS10.pel);
+    var gyro = group(pB);
+    var gyEll = paint(svgEl('ellipse', { cx: pel[0], cy: pel[1], rx: 36, ry: 10, fill: 'none', 'stroke-width': 1.8, 'stroke-dasharray': '4 3' }), null, C_ACCENT);
+    gyro.appendChild(gyEll);
+    var gyDot = dotAt(gyro, pel[0] + 36, pel[1], 4.2, C_ACCENT);
+    var grav = arrow(pB, C_ACCENT, 2.6);
+    grav.set(pel[0], pel[1] + 4, pel[0], pel[1] + 74, 10);
+    var jDots = OBS10.joints.map(function (p, i) { var q = P10(p), c = dotAt(pB, q[0], q[1], 3.3, C_ACCENT); c.style.stroke = '#fff'; c.style.strokeWidth = '1px'; return c; });
+    var wristRings = [13, 26].map(function (i) { var q = P10(OBS10.joints[i + 1]); return ringAt(pB, q[0], q[1], 11, C_BAD, 2); });
+    var grpB1 = group(pB), grpB2 = group(pB);
+    label(grpB1, RX, 96, '根部角速度', 'demo-x-ink', 12.5);
+    var cellsAng = cellRow(grpB1, RX + 76, 87, 3, 12, 10, 14, C_ACCENT);
+    label(grpB2, 590, 96, '重力方向', 'demo-x-ink', 12.5);
+    var cellsGrav = cellRow(grpB2, 590 + 64, 87, 3, 12, 10, 14, C_ACCENT);
+    var grpB3 = group(pB);
+    label(grpB3, RX, 128, '关节角：29 个 × 6 步', 'demo-x-ink', 12.5);
+    /* 关节的格子按「上 23 个是动作里有的、下 6 个是手腕」排，和右边动作的 23 格上沿对齐 */
+    var HP = 24, HX0 = RX, CH = 3.1, CP = 3.8, HY = 140, HIST = [8, 7, 6, 5, 4, 3, 2, 1, 0], USED = { 0: 5.8, 1: 6.8, 2: 7.2, 3: 7.6, 4: 8.1, 8: 8.6 };
+    var histCols = {};
+    HIST.forEach(function (k, c) {
+      var x = HX0 + c * HP;
+      if (USED[k] == null) {
+        grpB3.appendChild(paint(svgEl('rect', { x: x, y: HY - 2, width: 18, height: 29 * CP + 3, rx: 3, fill: 'none', 'stroke-width': 1.1, 'stroke-dasharray': '3 3' }), null, C_BORDER));
+      } else {
+        var col = [];
+        for (var r = 0; r < 29; r++) {
+          var cell = paint(svgEl('rect', { x: x + 2, y: (HY + r * CP).toFixed(1), width: 14, height: CH, rx: 0.8 }), C_ACCENT);
+          cell.style.opacity = 0.15;
+          grpB3.appendChild(cell);
+          col.push(cell);
+        }
+        histCols[k] = col;
+      }
+      label(grpB3, x + 9, HY + 29 * CP + 16, k === 0 ? '现在' : '−' + k, 'demo-x-mut', 11, 'middle');
+    });
+    var wristBr = group(pB);
+    var WB_Y0 = HY + 23 * CP - 1, WB_Y1 = HY + 29 * CP;
+    hline(wristBr, HX0 + 9 * HP - 2, WB_Y0, HX0 + 9 * HP - 2, WB_Y1, C_BAD, 2);
+    hline(wristBr, HX0 - 4, WB_Y0 - 0.5, HX0 + 9 * HP - 2, WB_Y0 - 0.5, C_BAD, 1.2, '3 2');
+    var cntB1 = label(pB, RX, 290, '$29 \\times 6 = 174$ 维（每步 0.02 s）', 'demo-x-ink', 13);
+    var grpB4 = group(pB), actCols = [];
+    label(grpB4, 660, 128, '前 3 步动作：23 个', 'demo-x-ink', 12.5);
+    [3, 2, 1].forEach(function (k, c) {
+      var x = 664 + c * HP, col = [];
+      for (var r = 0; r < 23; r++) {
+        var cell = paint(svgEl('rect', { x: x + 2, y: (HY + r * CP).toFixed(1), width: 14, height: CH, rx: 0.8 }), C_ACCENT);
+        cell.style.opacity = 0.15;
+        grpB4.appendChild(cell);
+        col.push(cell);
+      }
+      actCols.push({ k: k, col: col });
+      label(grpB4, x + 9, HY + 23 * CP + 16, '−' + k, 'demo-x-mut', 11, 'middle');
+    });
+    var cntB2 = label(pB, 660, 290, '$23 \\times 3 = 69$ 维', 'demo-x-ink', 13);
+    var noteB = label(pB, RX, 318, '红线下面 6 格是手腕：在观测里，但不在动作里（$29 - 6 = 23$）', 'demo-x-ink2', 12);
+    var totB = label(pB, 776, 372, '$3 + 3 + 174 + 69 = 249$ 维', 'demo-x-ink', 14, 'end');
+
+    // ③ 物体：箱子的水平位置 2、朝向 2、两个接触点 6，都在机器人自己的坐标系里（原点在骨盆，只取水平朝向）
+    var pC = group(s);
+    /* 俯视图（这个相机几乎是平视，地面被压扁，画在 3D 贴图上看不出方向）：原点在骨盆，x 朝右（前）、y 朝上（左），每米 380 px；
+       箱子画的是官方 suitcase-simplified.xml 碰撞盒（箱子坐标系里 x ∈ [−0.2, 0]、y ∈ [−0.15, 0.15]、z ∈ [0, 0.4]）从上往下看的轮廓；原点在离机器人远的那条底边中点 */
+    var TO = [110, 250], TK = 380;
+    function tv(x, y) { return [TO[0] + x * TK, TO[1] - y * TK]; }
+    var hb = Math.atan2(OBS10.head[1], OBS10.head[0]), cb = Math.cos(hb), sb = Math.sin(hb);
+    var frameC = group(pC);
+    var axX = arrow(frameC, C_MUTED, 2.2), axY = arrow(frameC, C_MUTED, 2.2);
+    axX.set(TO[0], TO[1], tv(0.66, 0)[0], TO[1], 9); axY.set(TO[0], TO[1], TO[0], tv(0, 0.4)[1], 9);
+    label(frameC, tv(0.66, 0)[0], TO[1] + 20, '$x$ 朝前', 'demo-x-ink2', 12, 'end');
+    label(frameC, TO[0] + 10, tv(0, 0.4)[1] + 6, '$y$ 朝左', 'demo-x-ink2', 12, 'start');
+    var body = paint(svgEl('ellipse', { cx: TO[0], cy: TO[1], rx: 20, ry: 58, 'stroke-width': 1.4 }), C_SURFACE2, C_BORDER);
+    frameC.appendChild(body);
+    dotAt(frameC, TO[0], TO[1], 4.5, C_MUTED);
+    label(frameC, TO[0] - 26, TO[1] + 4, '骨盆', 'demo-x-mut', 11.5, 'end');
+    var xyC = group(pC);
+    var boxPoly = paint(svgEl('path', { d: fmtPath(OBS10.hull.concat([OBS10.hull[0]]).map(function (q) { return tv(q[0], q[1]); })),
+      'stroke-width': 1.6, opacity: 0.85 }), C_SURFACE2, C_GOOD);
+    xyC.appendChild(boxPoly);
+    var bO = tv(OBS10.xy[0], OBS10.xy[1]);
+    hline(xyC, bO[0], bO[1], bO[0], TO[1], C_GOOD, 1.1, '3 3');
+    var xyA = arrow(xyC, C_GOOD, 2.8);
+    xyA.set(TO[0] + 6, TO[1] - 0.4, bO[0], bO[1], 10);
+    var xyFlow = flowSeg(xyC, C_GOOD, 2, 2.6, 30, true);
+    dotAt(xyC, bO[0], bO[1], 4.5, C_GOOD);
+    var headC = group(pC), hRef = arrow(headC, C_MUTED, 1.6, '3 3'), hBox = arrow(headC, C_GOOD, 2.6);
+    var hEnd = tv(OBS10.xy[0] + 0.2 * cb, OBS10.xy[1] + 0.2 * sb);
+    hRef.set(bO[0], bO[1], bO[0] + 0.2 * TK, bO[1], 7); hBox.set(bO[0], bO[1], hEnd[0], hEnd[1], 9);
+    var arcR = 0.13 * TK;
+    headC.appendChild(paint(svgEl('path', { d: 'M ' + (bO[0] + arcR).toFixed(1) + ' ' + bO[1].toFixed(1) + ' A ' + arcR + ' ' + arcR + ' 0 0 0 ' +
+      (bO[0] + arcR * cb).toFixed(1) + ' ' + (bO[1] - arcR * sb).toFixed(1), fill: 'none', 'stroke-width': 1.6 }), null, C_GOOD));
+    var conC = group(pC);
+    var tgtP = OBS10.cb.map(function (c) { return tv(c[0], c[1]); });
+    tgtP.forEach(function (q) { hline(conC, TO[0], TO[1], q[0], q[1], C_TGT, 1.4, '3 3'); });
+    var tgtDots = tgtP.map(function (q) { var c = dotAt(conC, q[0], q[1], 5.5, C_TGT); c.style.stroke = '#fff'; c.style.strokeWidth = '1.2px'; return c; });
+    label(conC, tgtP[0][0] - 10, tgtP[0][1] - 4, '左', 'demo-x-ink2', 12, 'end');
+    label(conC, tgtP[1][0] + 8, tgtP[1][1] + 22, '右', 'demo-x-ink2', 12, 'start');
+    label(pC, 24, 366, '俯视图：机器人自己的坐标系（仿真回放第 4.70 s）', 'demo-x-mut', 11.5);
+    function vec(v) { return '(' + v.map(function (x) { return (x < 0 ? '−' : '') + f2(Math.abs(x)); }).join(', ') + ')'; }
+    var rowsC = [
+      ['箱子的水平位置', 2, C_GOOD, vec(OBS10.xy) + ' m', 1.0],
+      ['朝向（余弦、正弦）', 2, C_GOOD, vec(OBS10.head) + '，夹角 ' + f2(Math.atan2(OBS10.head[1], OBS10.head[0])) + ' rad', 2.9],
+      ['左手要接触的点', 3, C_TGT, vec(OBS10.cb[0]) + ' m', 4.8],
+      ['右手要接触的点', 3, C_TGT, vec(OBS10.cb[1]) + ' m', 5.4]
+    ].map(function (r, i) {
+      var g = group(pC), y = 100 + i * 36;
+      label(g, RX, y, r[0], 'demo-x-ink', 12.5);
+      cellRow(g, 528, y - 10, r[1], 12, 10, 14, r[2]).forEach(function (c) { c.style.opacity = 0.9; });
+      label(g, 582, y, r[3], 'demo-x-ink2', 12.5);
+      return { g: g, at: r[4] };
+    });
+    var noteC1 = label(pC, RX, 244, '都在机器人自己的坐标系里：原点在骨盆，', 'demo-x-ink2', 12.5);
+    var noteC2 = label(pC, RX, 266, '$x$ 朝前、$y$ 朝左，只跟着水平朝向', 'demo-x-ink2', 12.5);
+    var hintC = readHint(pC, RX, 296, '俯视图：绿箭头指到箱子原点，绿弧是夹角，黄点是接触点', 11.5, 372);
+    label(pC, RX, 340, '数是我们按这一帧算的（训练时还加了噪声）', 'demo-x-mut', 11.5);
+    var totC = label(pC, 776, 372, '$2 + 2 + 3 + 3 = 10$ 维', 'demo-x-ink', 14, 'end');
+
+    function drawObs(t, clock, now) {
+      var on = win(t, CA);
+      setOpacity(hdr, on);
+      if (on <= 0) { setOpacity(pA, 0); setOpacity(pB, 0); setOpacity(pC, 0); return; }
+      if (!botOn) { bot10.put(cam10, EX_J); botOn = true; }
+      var act = t < CB ? 0 : t < CC ? 1 : 2;
+      hSegs.forEach(function (g, i) { setOpacity(g, i === act ? 1 : 0.3); });
+      var oA = win(t, CA, CB), oB = win(t, CB, CC), oC = win(t, CC);
+      setOpacity(bot10.g, 1 - seg(t, CC, CC + 0.3));
+      setOpacity(pA, oA); setOpacity(pB, oB); setOpacity(pC, oC);
+      if (oA > 0) {
+        var u = since(t, clock, CA) / SA, cyc = u > 6.6 ? Math.floor(now / 0.6) % 5 : -1;
+        kpDots.forEach(function (c, i) { c.style.opacity = seg(u, 2.4 + i * 0.06, 2.5 + i * 0.06).toFixed(3); });
+        ghostA.forEach(function (row, r) {
+          var a = seg(u, 3.7 + r * 0.16, 3.85 + r * 0.16) * (cyc === r ? 1 : 0.75 - r * 0.1);
+          row.forEach(function (c) { c.style.opacity = a.toFixed(3); c.setAttribute('r', cyc === r ? 3.6 : 2.6); });
+          fillCells(rowsA1[r], seg(u, 3.7 + r * 0.16, 3.85 + r * 0.16));
+          rowHiA[r].style.opacity = cyc === r ? 1 : 0;
+          fillCells(rowsA2[r], seg(u, 8.5 + r * 0.16, 8.65 + r * 0.16));
+        });
+        trailA.forEach(function (p) { p.style.opacity = (0.55 * seg(u, 3.7, 4.5)).toFixed(3); });
+        var pk = seg(u, 4.8, 5.0) * (1 - seg(u, 7.0, 7.3));
+        setOpacity(pickRing, pk); setOpacity(pickBox, pk);
+        setOpacity(cntA1, seg(u, 4.8, 5.0) * (1 - seg(u, 5.8, 6.0)));
+        setOpacity(cntA2, seg(u, 5.8, 6.0));
+        setOpacity(grpA2, seg(u, 7.1, 7.3));
+        setOpacity(cntA3, seg(u, 9.5, 9.7));
+        setOpacity(grpA3, seg(u, 10.5, 10.7));
+        var ph = 0.5 * seg(u, 11.1, 11.8);
+        phFill.setAttribute('width', (ph * PBW).toFixed(1));
+        moveDot(phDot, [PB0 + ph * PBW, 338]);
+        setOpacity(phLab, seg(u, 11.8, 12.0));
+        setOpacity(totA, seg(u, 12.0, 12.3));
+      }
+      if (oB > 0) {
+        var v = since(t, clock, CB) / SB;
+        setOpacity(gyro, seg(v, 1.7, 1.9));
+        moveDot(gyDot, [pel[0] + 36 * Math.cos(now * 3), pel[1] + 10 * Math.sin(now * 3)]);
+        setOpacity(grav.g, seg(v, 2.9, 3.1));
+        setOpacity(grpB1, seg(v, 1.7, 1.9)); setOpacity(grpB2, seg(v, 2.9, 3.1));
+        fillCells(cellsAng, seg(v, 1.9, 2.2)); fillCells(cellsGrav, seg(v, 3.1, 3.4));
+        var wr = seg(v, 14.2, 14.4);
+        jDots.forEach(function (c, i) {
+          c.style.opacity = seg(v, 4.3 + i * 0.025, 4.4 + i * 0.025).toFixed(3);
+          c.style.fill = OBS10.wrist[i] && wr > 0.5 ? C_MUTED : C_ACCENT;
+        });
+        wristRings.forEach(function (c) { setOpacity(c, wr); });
+        setOpacity(grpB3, seg(v, 4.3, 4.5));
+        Object.keys(USED).forEach(function (k) { fillCells(histCols[k], seg(v, USED[k], USED[k] + 0.2)); });
+        setOpacity(cntB1, seg(v, 9.1, 9.3));
+        setOpacity(grpB4, seg(v, 10.6, 10.8));
+        actCols.forEach(function (c, i) { fillCells(c.col, seg(v, 11.2 + i * 0.2, 11.4 + i * 0.2)); });
+        setOpacity(cntB2, seg(v, 13.1, 13.3));
+        setOpacity(totB, seg(v, 13.7, 13.9));
+        setOpacity(wristBr, wr); setOpacity(noteB, wr);
+      }
+      if (oC > 0) {
+        var w = since(t, clock, CC) / SC, em = seg(w, 6.9, 7.1);
+        setOpacity(frameC, 0.55 + 0.45 * em);
+        setOpacity(xyC, seg(w, 1.0, 1.2));
+        xyFlow.at(now, [TO[0] + 6, TO[1]], bO, w >= 1.2);
+        setOpacity(headC, seg(w, 2.9, 3.1));
+        setOpacity(conC, seg(w, 4.8, 5.0));
+        rowsC.forEach(function (r) { setOpacity(r.g, seg(w, r.at, r.at + 0.2)); });
+        setOpacity(noteC1, em); setOpacity(noteC2, em); setOpacity(hintC, seg(w, 7.6, 7.8));
+        setOpacity(totC, seg(w, 8.2, 8.4));
+        tgtDots.forEach(function (c) { c.setAttribute('r', (5.5 + 1.2 * Math.max(0, Math.sin(now * 4))).toFixed(2)); });
+      }
+    }
     function draw(t, clock) {
       var now = nowOf(t, clock);
       flows.forEach(function (fl, i) { fl.f.at(now + i * 0.15, fl.a, fl.b, true); });
@@ -1590,7 +1868,9 @@
       setOpacity(p2, win(t, 3.6, 7.0));
       setOpacity(p3, win(t, 7.0, 10.4));
       setOpacity(p4, win(t, 10.4, 13.4));
-      setOpacity(p5, win(t, 13.4));
+      setOpacity(p5, win(t, 13.4, CA));
+      setOpacity(top, 1 - seg(t, CA, CA + 0.3));
+      drawObs(t, clock, now);
     }
     return { el: s, draw: draw };
   }
@@ -2234,14 +2514,17 @@
     },
     {
       title: '代码里的教师与学生',
-      dur: 16,
+      dur: 57.8,
       build: buildSceneTeacher,
       cues: [
         { at: 0.4, s: '论文只说用 PPO；代码先训特权教师，再蒸馏学生（借鉴 ROA）。' },
         { at: 3.6, s: '教师：特权信息编码成 256 维；残差动作只用在教师这里。' },
         { at: 7.0, s: '适应模块猜那 256 维；学生动作网络模仿教师的均值，不加参考关节角。' },
         { at: 10.4, s: '学生再用 PPO 微调；部署的应该是学生（我们的推断）。' },
-        { at: 13.4, s: '学生看 615 维：未来 5 帧参考 + 相位 356、本体 249、物体 10。' }
+        { at: 13.4, s: '学生看 615 维：未来 5 帧参考 + 相位 356、本体 249、物体 10。' },
+        { at: 16.0, s: '未来参考 356 = 16 个关键点 × 3 × 5 帧（240）+ 23 个关节角 × 5 帧（115）+ 相位 1。' },
+        { at: 31.1, s: '本体感受 249 = 角速度 3 + 重力方向 3 + 关节角 29 × 6 步（174）+ 前 3 步动作 23 × 3（69）。' },
+        { at: 48.1, s: '物体 10 = 水平位置 2 + 朝向 2 + 两个接触点 3 × 2，都在机器人自己的坐标系里。' }
       ]
     },
     {
@@ -2350,7 +2633,7 @@
   function buildExplainerDemo(host) {
     K.explainer(host, {
       title: '十八幕动画：HDMI 全流程速览',
-      sub: '约 323 秒自动播放。空格播放/暂停，← → 换幕；G1 是官方开源的搬行李箱参考与仓库里录下的仿真回放，按真实模型做 3D 渲染，表格与图来自论文和官方代码。',
+      sub: '约 365 秒自动播放。空格播放/暂停，← → 换幕；G1 是官方开源的搬行李箱参考与仓库里录下的仿真回放，按真实模型做 3D 渲染，表格与图来自论文和官方代码。',
       ariaLabel: 'HDMI 十八幕讲解动画',
       notes: [
         '取数依据：表 I–II 照抄 arXiv 2509.16757 v3；图 6、图 7a、图 8、图 9a 的数是我们从论文的矢量图里抽出来的（柱高、误差棒中点、折线顶点），只保留到小数点后三位。',

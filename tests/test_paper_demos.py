@@ -5499,6 +5499,18 @@ def test_hdmi_explainer_demos_and_worked_example_share_the_paper_numbers():
     assert 5 * 16 * 3 + 5 * 23 + 1 == 356 and 3 + 3 + 6 * 29 + 3 * 23 == 249 and 356 + 249 + 10 == 615
     assert [round(s * 0.02, 2) for s in (1, 2, 8, 16, 32)] == [0.02, 0.04, 0.16, 0.32, 0.64]
     assert "学生一共看 615 维" in narration and "615 维" in note
+    # 第 10 幕把 615 维展开：16 个关键点 × 现在与未来 5 帧、29 个关节（6 个手腕）、物体观测与笔记、旁白同一组数
+    obs10 = js[js.index("var OBS10 = {") : js.index("};", js.index("var OBS10 = {"))]
+    kp = json.loads(re.search(r"kp: (\[\[\[.*?\]\]\]),", obs10).group(1))
+    assert len(kp) == 6 and all(len(f) == 16 and all(len(p) == 3 for p in f) for f in kp)
+    wrist = json.loads(re.search(r"wrist: (\[[01,]+\])", obs10).group(1))
+    assert len(wrist) == 29 and sum(wrist) == 6
+    xy, head = json.loads(re.search(r"xy: (\[[^\]]+\])", obs10).group(1)), json.loads(re.search(r"head: (\[[^\]]+\])", obs10).group(1))
+    assert abs(head[0] ** 2 + head[1] ** 2 - 1) < 2e-3 and _fmt(math.atan2(head[1], head[0]), 2) == "0.25"
+    assert f"({_fmt(xy[0], 2)}, {_fmt(xy[1], 2)}) m" == "(0.48, 0.03) m" and "(0.48, 0.03) m" in note
+    assert "(0.28, 0.21, 0.11)" in note and "(0.34, −0.13, 0.18)" in note
+    for line in ("16 个关键点在这 5 个时刻的位置", "29 个关节的角度", "左右手要接触的点各 3 维"):
+        assert line in narration
     # 例 3：交互奖励（距离 5 cm，左 3 N、右 15 N）
     pos = math.exp(-0.05 / 0.3)
     left, right = pos * math.exp((3 - 10) / 40), pos * min(math.exp((15 - 10) / 40), 1)
@@ -5541,9 +5553,9 @@ def test_hdmi_explainer_demos_and_worked_example_share_the_paper_numbers():
     assert all(joint[0][i] < min(joint[1][i], joint[2][i]) for i in range(8))
     assert "0.090、0.142 和 0.151 弧度" in narration and "| 关节位置误差（rad） | **0.090** | 0.142 | 0.151 |" in note
 
-    # 旁白：98 句；数字列举不只隔一个逗号；片尾只预告下一篇（VIRAL）；绕开多音字
+    # 旁白：102 句；数字列举不只隔一个逗号；片尾只预告下一篇（VIRAL）；绕开多音字
     spoken = re.findall(r'"([^"]*)"\),', narration[narration.index("SCRIPT = [") : narration.index("DISPLAY = [")])
-    assert len(spoken) == 99
+    assert len(spoken) == 102
     assert not any(re.search(r"\d\s*[，,]\s*\d", t) for t in spoken)
     assert "下一篇讲 VIRAL" in narration and "VIRAL" in intro and "VIRAL" not in js and "重定向" not in "".join(spoken)
     for bad in ("差不多", "几乎", "一行", "重点", "时长", "搬行李箱", "标的是", "当作", "卡住"):
