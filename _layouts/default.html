@@ -1014,7 +1014,7 @@
 
         var meta = [];
         if (info.arxiv) meta.push('arXiv ' + info.arxiv);
-        if (info.open_source) meta.push(zh ? '含开源代码' : 'Open source code');
+        if (info.open_source) meta.push(zh ? '⭐️ 含开源代码' : '⭐️ Open source code');
         if (meta.length) roadmapCardPart(card, 'div', 'roadmap-node-card__meta', meta.join(' · '));
 
         var external = /^https:\/\//.test(url);

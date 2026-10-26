@@ -310,7 +310,7 @@ description: "论文笔记站点的更新记录：按日列出新增与修订的
       ? '<a class="updates-item-link" href="' + escapeHtml(href) + '">' + escapeHtml(title) + '</a>'
       : '<span class="updates-item-link">' + escapeHtml(title) + '</span>';
     var openSourceHtml = note && note.o
-      ? '<span class="updates-item-opensource" role="img" aria-label="笔记含开源源码链接" title="笔记含开源源码链接"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-code"></use></svg></span>'
+      ? '<span class="updates-item-opensource" role="img" aria-label="笔记含开源源码链接" title="笔记含开源源码链接"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-star"></use></svg></span>'
       : '';
     return '<li class="updates-item' + (folded ? ' updates-item-folded' : '') + '">' +
       '<span class="updates-badge ' + badgeClass + '">' + escapeHtml(badgeText) + '</span>' +

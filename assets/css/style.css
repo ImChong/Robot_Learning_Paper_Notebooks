@@ -101,6 +101,8 @@
   --kbd-bg: #272727;
   --roadmap-flow: #7ec8ff;
   --accent-soft: rgba(86, 156, 214, 0.14);
+  --icon-star: #f5c542;
+  --icon-pin: #f0605a;
   --scrim: rgba(2, 6, 12, 0.55);
   --hero-from: #FFFFFF;
   --hero-to: #9B9B9B;
@@ -128,6 +130,8 @@
   --kbd-bg: #eee;
   --roadmap-flow: #e0564f;
   --accent-soft: rgba(179, 27, 27, 0.08);
+  --icon-star: #e3a008;
+  --icon-pin: #d93a35;
   --scrim: rgba(20, 6, 6, 0.45);
   --hero-from: #000000;
   --hero-to: #666666;
@@ -576,9 +580,11 @@ a.index-chip-link:hover .index-chip-arrow {
   margin: 0 0 8px;
 }
 
+/* Open-source star and roadmap pin keep the colours of the ⭐️ / 📍 they replace. */
 .index-legend .icon,
-.paper-card .paper-opensource .icon {
-  color: var(--link);
+.paper-card .paper-opensource .icon,
+.updates-item-opensource {
+  color: var(--icon-star);
 }
 
 .paper-count {
@@ -913,6 +919,14 @@ body.index-search-active .paper-list-toggle-group {
   border-left-color: var(--link);
   font-weight: 600;
   background: var(--accent-soft);
+}
+
+.toc-link-roadmap .icon {
+  width: 14px;
+  height: 14px;
+  margin-right: 4px;
+  color: var(--icon-pin);
+  vertical-align: -2px;
 }
 
 /* Sidebar TOC: inline KaTeX cloned from headings or rendered in-place. */
@@ -1458,7 +1472,7 @@ body.index-search-active .paper-list-toggle-group {
 .roadmap-entry-label .icon {
   width: 20px;
   height: 20px;
-  color: var(--link);
+  color: var(--icon-pin);
 }
 .roadmap-entry-hint {
   display: block;
@@ -3017,7 +3031,6 @@ a.updates-item-link:hover {
   flex: none;
   display: inline-flex;
   line-height: 1;
-  color: var(--link);
   align-self: center;
 }
 
@@ -3231,6 +3244,10 @@ a.updates-item-link:hover {
 .not-found-secondary {
   color: var(--text);
   border: 1px solid var(--border);
+}
+
+.not-found-secondary .icon {
+  color: var(--icon-pin);
 }
 
 .not-found-secondary:hover {

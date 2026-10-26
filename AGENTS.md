@@ -230,7 +230,7 @@ demos: ["ppo"]
 - **间距与圆角**：间距只用 0 2 4 8 12 16 24 32 40 48 64 80 96 px；圆角用 `--radius-sm / md / lg / xl / 2xl`（4 / 6 / 8 / 12 / 16），嵌套时内圆角 = 外圆角 − 间隙。
 - **颜色**：深色底 `#181818 / #1F1F1F / #272727 / #313131`；每套主题只有一个强调色：深色是蓝（`#569cd6`），浅色是 arXiv 红（`#b31b1b`），沿用改版前的分工。新颜色先加成 `:root` 里的变量，深浅两套都要定义。交互演示的 `--demo-*` 配色是独立的一套，不受这里约束。
 - **动效**：过渡统一 `var(--ease)`（`cubic-bezier(0.32, 0.72, 0, 1)`），颜色类 `var(--dur-micro)`（240ms），位移类 `var(--dur)`（700ms）；不要再加全局 `*` 过渡，主题切换时的渐变由 `html.theme-switching` 负责。
-- **图标**：界面图标用 Phosphor（`_includes/icons.html` 的 sprite，`<svg class="icon"><use href="#i-名字"></use></svg>`），不要用 emoji 当界面图标；图标不能放进带 `data-en` / `data-zh` 的元素里（切换语言会整段替换 textContent）。笔记正文里的 emoji 不受限制。
+- **图标**：界面图标用 Phosphor（`_includes/icons.html` 的 sprite，`<svg class="icon"><use href="#i-名字"></use></svg>`），不要用 emoji 当界面图标（含开源源码的论文标星 `#i-star`、学习路线图用图钉 `#i-map-pin`，都是 fill 版，颜色取 `--icon-star` / `--icon-pin`，对应原来的 ⭐️ / 📍）；图标不能放进带 `data-en` / `data-zh` 的元素里（切换语言会整段替换 textContent）。笔记正文里的 emoji 不受限制。
 - **z-index**：用 `--z-*` 变量，不要写新的魔法数字。
 - **例外：页头和浏览器标签页图标保持改版前的设计**（2026-10-26 维护者的选择）：`_includes/header.html` 与 `style.css` 里 `/* legacy-header:start */` … `/* legacy-header:end */` 那一段原样取自改版前（📚 emoji 标题、文字 GitHub 链接、带边框的 ☀️ / 🌙 / ☕ 按钮、Arial），favicon 仍是 📚 emoji；改页头时照这一段原有的写法，测试跳过它。
 
