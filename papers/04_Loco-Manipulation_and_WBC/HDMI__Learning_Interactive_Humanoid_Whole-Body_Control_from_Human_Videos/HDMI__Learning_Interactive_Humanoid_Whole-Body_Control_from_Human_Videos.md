@@ -41,7 +41,7 @@ demos: ["hdmi"]
 > HDMI（HumanoiD iMitation for Interaction）把人形—物体交互写成**机器人—物体共同跟踪**：参考里除了机器人的动作，还写进物体的轨迹、接触信号和物体坐标系里的期望接触点（$s_t^{\mathrm{ref}} = (s_t^{\mathrm{robot}}, s_t^{\mathrm{obj}}, c_t)$）；参考来自单目视频（GVHMR + LocoMujoco），物体轨迹和接触点每段人工标注（问答原话）。训练沿用 DeepMimic 的三件套（参考状态初始化、相位、误差终止）和 PPO，再加三个统一的设计：**统一的物体表示**（物体位姿和接触点都换到机器人根部坐标系，换物体不改网络）、**残差动作**（$\theta_t^{\mathrm{target}} = \theta_t^{\mathrm{ref}} + a_t$，跪姿这种离默认站姿很远的动作一开始就能在参考附近探索）、**交互奖励**（式 1：$\exp(-\lVert p _ {\mathrm{eef}} - p _ {\mathrm{target}}\rVert_2/\sigma _ {\mathrm{pos}})$ 乘封顶为 1 的力项；式 2：按接触信号门控取平均）。官方代码里交互奖励的 $\sigma _ {\mathrm{pos}} = 0.3$ m、$\sigma _ {\mathrm{frc}} = 40$ N、$F _ {\mathrm{thres}} = 10$ N，要接触时乘 5、不用接触时给 1；训练其实是**特权教师 + 蒸馏学生**两步（PPO-ROA），残差动作只在教师里。真机上 G1 靠动捕拿到骨盆和物体的位姿，**连续开门穿门 67 次（约 34 分钟）**，搬纸箱连续 7 次、楚门式鞠躬连续 3 次；仿真 14 个任务里 6 个上了真机。消融：交互奖励在多数任务上差别不大，关键在「参考不准」（搬行李箱，两个都去掉成功率 0）和「接触位置要准」（推大箱子，开着接触终止评测时从 0.98 掉到 0.32）；残差动作让 8 个任务的 24 项跟踪误差全都最低，搬行李箱时没有它学不会跪下。
 
 > 🎮 **本文内嵌 1 段讲解动画、1 段配音视频和 3 个交互演示**（不用装任何东西）：
-> [十八幕动画：HDMI 全流程](#hdmi-explainer-anim) —— 约 288 秒串完「只跟身体不够 → 三段流水线（图 2）→ 从视频到参考 → 一帧参考 → DeepMimic 式训练三件套 → 统一的物体表示（图 3）→ 残差动作 → 交互奖励（式 1–2）→ 奖励与终止（表 I、表 II）→ 代码里的教师与学生 → 上真机：动捕给位姿 → 开门穿门 67 次 → 搬箱子与楚门式鞠躬 → 仿真 14 个任务 → 交互奖励的消融（图 6）→ 交互奖励管什么（图 7）→ 残差动作的消融（图 8、图 9）→ 局限与之后」。空格播放/暂停，← → 换幕，也可以直接点分幕标签跳着看。
+> [十八幕动画：HDMI 全流程](#hdmi-explainer-anim) —— 约 320 秒串完「只跟身体不够 → 三段流水线（图 2）→ 从视频到参考 → 一帧参考 → DeepMimic 式训练三件套 → 统一的物体表示（图 3）→ 残差动作 → 交互奖励（式 1–2）→ 奖励与终止（表 I、表 II）→ 代码里的教师与学生 → 上真机：动捕给位姿 → 开门穿门 67 次 → 搬箱子与楚门式鞠躬 → 仿真 14 个任务 → 交互奖励的消融（图 6）→ 交互奖励管什么（图 7）→ 残差动作的消融（图 8、图 9）→ 局限与之后」。空格播放/暂停，← → 换幕，也可以直接点分幕标签跳着看。
 > [配音讲解视频](#hdmi-video) —— 同样十八幕，加中文配音与字幕，竖屏，可下载
 > [参考与回放逐帧看](#demo-reference) —— 官方的搬行李箱参考和仓库里录下的仿真回放并排看，每一帧双手离期望接触点多远、位置项多少
 > [交互奖励计算器](#demo-reward) —— 两只手各给一个距离和接触力，按式 1–2 与官方代码的参数算交互奖励
@@ -75,7 +75,7 @@ demos: ["hdmi"]
 
 ## 📺 配音讲解视频（可下载） {#hdmi-video}
 
-<div class="paper-demo" data-demo="hdmi-video" data-src="media/hdmi_explainer_video.mp4" data-poster="media/hdmi_explainer_video_poster.jpg"><p class="demo-fallback">（本节含讲解视频播放器，需要启用 JavaScript；也可以直接<a href="media/hdmi_explainer_video.mp4" download="HDMI_讲解视频.mp4">下载 mp4（20.2 MB）</a>）</p></div>
+<div class="paper-demo" data-demo="hdmi-video" data-src="media/hdmi_explainer_video.mp4" data-poster="media/hdmi_explainer_video_poster.jpg"><p class="demo-fallback">（本节含讲解视频播放器，需要启用 JavaScript；也可以直接<a href="media/hdmi_explainer_video.mp4" download="HDMI_讲解视频.mp4">下载 mp4（20.4 MB）</a>）</p></div>
 
 > 📖 **动画之后的正文默认全部折叠**：动画覆盖到的那几节（要解决什么问题、方法详解、实验结果）按小节收起，再往后的具体实例、源码对照、在路线中的位置、面试和附录各整块收起。想细读哪一块就点开对应的折叠条，内容一字未删；流程图和三个交互演示留在外面，目录里的标题依旧可以直接点，会自动展开所在折叠块，左侧目录顶部还有「展开全部文字」一键铺开。
 >

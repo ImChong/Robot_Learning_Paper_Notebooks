@@ -1753,7 +1753,7 @@
         "has_open_source": true,
         "summary_zh": "HDMI（HumanoiD iMitation for Interaction）把人形—物体交互写成机器人—物体共同跟踪：参考里除了机器人的动作，还写进物体的轨迹、接触信号和物体坐标系里的期望接触点…",
         "explainer_scenes": 18,
-        "video_seconds": 1077,
+        "video_seconds": 1098,
         "published_date_zh": "2025年9月20日",
         "published_date_en": "Sep 20, 2025",
         "zhname": "HDMI：从人类视频学习人形全身交互控制",

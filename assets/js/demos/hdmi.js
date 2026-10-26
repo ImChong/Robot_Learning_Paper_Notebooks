@@ -356,7 +356,7 @@
   function projClip(parent, id, x, y, w, h, caption, opts) {
     var o = opts || {}, g = group(parent);
     g.appendChild(svgEl('rect', { x: (x - 2).toFixed(1), y: (y - 2).toFixed(1), width: (w + 4).toFixed(1), height: (h + 4).toFixed(1), rx: 5, fill: '#111111', stroke: 'none' }));
-    var c = K.svgClip(x, y, w, h, CLIP_BASE + id + '.mp4', { poster: CLIP_BASE + id + '.webp' });
+    var c = K.svgClip(x, y, w, h, CLIP_BASE + id + '.mp4', { poster: CLIP_BASE + id + '.webp', loop: o.loop });
     g.appendChild(c);
     if (caption) label(g, o.capX == null ? x + w / 2 : o.capX, y + h + (o.capDy || 15), caption, o.capCls || 'demo-x-mut', o.capSize || 9.5, o.capAnchor || 'middle');
     return { g: g, x: x, y: y, w: w, h: h, at: function (sec, vis) { c.at(sec, vis); } };
@@ -1095,7 +1095,7 @@
       setPath(errPath, pts);
       for (q = 60; q >= 0; q--) { if (errAt(sec * 1.2 - 3 + q / 20) > 0.8) run += 1; else break; }
       var steps = Math.min(25, Math.round(run * 25 / 20));
-      cells.forEach(function (c, i) { c.style.fill = i < steps ? (steps >= 25 ? 'var(--demo-bad)' : 'var(--demo-warn)') : C_SURFACE2; });
+      cells.forEach(function (c, i) { c.style.fill = i < steps ? 'var(--demo-bad)' : C_SURFACE2; }); // 旁白说「一格一格变红」：填上的格子就是红的
       cntLab.textContent = steps >= 25 ? '连续超标 25 步：终止' : '连续超标 ' + steps + ' 步';
       rows5.forEach(function (r, i) { r.at(since(t, clock, 13.4), 11 + i, 0.9); });
       setOpacity(p1, win(t, 0.3, 3.6));
@@ -1686,8 +1686,8 @@
     var cl = [
       projClip(s, 'box_real', 24, 44, 380, 214, '项目页视频：跪下搬纸箱（参考是 OMOMO 的搬行李箱）'),
       projClip(s, 'bread_real', 24, 44, 380, 214, '项目页视频：从人手里接过面包箱，转身再递回去'),
-      projClip(s, 'foam_real', 24, 44, 380, 214, '项目页视频：搬泡沫垫'),
-      projClip(s, 'truman_real', 24, 44, 380, 214, '项目页视频：楚门式鞠躬')
+      projClip(s, 'foam_real', 24, 44, 380, 214, '项目页视频：搬泡沫垫（完整一段）', { loop: false }),
+      projClip(s, 'truman_real', 24, 44, 380, 214, '项目页视频：楚门式鞠躬（完整一段）', { loop: false })
     ];
     var f5 = group(s);
     paperPart(f5, 'fig5', 0, 0, 1, 1, 24, 290, 380, '论文图 5：上台阶、鞠躬、坐下、挥手');
@@ -1721,7 +1721,9 @@
     label(p5, R, 186, '整段连续完成 3 次', 'demo-x-ink2', 13);
     label(p5, R, 210, '上台阶有风险，操作员偶尔在背后轻扶', 'demo-x-mut', 11);
     label(p5, R, 234, '名字我们猜是在致敬电影《楚门的世界》', 'demo-x-mut', 10.5);
-    var WIN = [[0, 7.0], [7.0, 10.4], [10.4, 13.4], [13.4, null]], CUE = [0, 7.0, 10.4, 13.4];
+    /* 泡沫垫（13.1 s）和楚门式鞠躬（23.0 s）两段整段放完再换：旁白讲完后画面接着放（2026-10-26 看片反馈） */
+    var T_TRU = 24.0;
+    var WIN = [[0, 7.0], [7.0, 10.4], [10.4, T_TRU], [T_TRU, null]], CUE = [0, 7.0, 10.4, T_TRU];
     function draw(t, clock) {
       var now = nowOf(t, clock);
       cl.forEach(function (c, i) {
@@ -1729,7 +1731,7 @@
         setOpacity(c.g, i === 0 ? (b == null ? 1 : 1 - seg(t, b, b + 0.3)) : win(t, a, b));
         c.at(K.clipSince(t, CUE[i]), vis);
       });
-      setOpacity(f5, win(t, 13.4));
+      setOpacity(f5, win(t, T_TRU));
       c1.at(now); c4.at(now); c5a.at(now); c5b.at(now);
       big.textContent = countTo(7, seg(since(t, clock, 3.6), 0.3, 1.6));
       big3.textContent = countTo(2, seg(since(t, clock, 7.0), 0.3, 1.2));
@@ -1738,8 +1740,8 @@
       setOpacity(p1, win(t, 0.3, 3.6));
       setOpacity(p2, win(t, 3.6, 7.0));
       setOpacity(p3, win(t, 7.0, 10.4));
-      setOpacity(p4, win(t, 10.4, 13.4));
-      setOpacity(p5, win(t, 13.4));
+      setOpacity(p4, win(t, 10.4, T_TRU));
+      setOpacity(p5, win(t, T_TRU));
     }
     return { el: s, draw: draw };
   }
@@ -1862,12 +1864,16 @@
     label(P2, R, 64, '图 7a：搬行李箱（不完美参考）', 'demo-x-ink', 13.5);
     var spA = stepPlot(P2, R + 24, 80, W - 30, 150, 0, 1, [0, 0.5, 1]);
     var lA = ['b', 'r', 'g'].map(function (k, i) { return pathLine(P2, [], V_COLOR[i], 2.4); });
-    readHint(P2, R, 268, '横轴是训练步数，纵轴是成功率；蓝、红、绿同图 6', 10.5, W);
+    readHint(P2, R, 268, '横轴是训练步数，纵轴是成功率；颜色同图 6', 10.5, W);
+    /* 隔了一幕，观众已经记不住图 6 的颜色了：图例再列一遍（2026-10-26 看片反馈） */
+    var LEG16 = [['完整方法', V_COLOR[0], 52], ['只去掉交互奖励', V_COLOR[1], 92], ['两个都去掉', V_COLOR[2], 66]];
+    legendRow(P2, R, 294, LEG16, 11);
     var P3 = group(s);
     label(P3, R, 64, '图 7a：换成完美参考重训', 'demo-x-ink', 13.5);
     var spB = stepPlot(P3, R + 24, 80, W - 30, 150, 0, 1, [0, 0.5, 1]);
     var lB = ['b', 'r', 'g'].map(function (k, i) { return pathLine(P3, [], V_COLOR[i], 2.4); });
     label(P3, R, 268, '三种都能成功：交互奖励管的正是参考不准', 'demo-x-ink2', 11.5);
+    legendRow(P3, R, 294, LEG16, 11);
     var P4 = group(s), R4 = 604;
     label(P4, R4, 76, '官方数据', 'demo-x-ink', 14);
     ['仓库里录下的一段仿真回放', '帧数 = 参考去掉前 25 帧', '接触标签逐帧相同'].forEach(function (str, i) { label(P4, R4, 104 + i * 24, str, 'demo-x-ink2', 12.5); });
@@ -2215,14 +2221,14 @@
     },
     {
       title: '搬箱子与楚门式鞠躬',
-      dur: 16,
+      dur: 47.5,
       build: buildSceneBox,
       cues: [
         { at: 0.4, s: '搬箱子：跪下、抓住、抬起、带着走；参考是 OMOMO 的搬行李箱。' },
         { at: 3.6, s: '连续成功 7 次，衔接顺畅。' },
         { at: 7.0, s: '搬面包箱：完整做完 2 次；快速转身 180° 时两腿偶尔相碰。' },
         { at: 10.4, s: '搬泡沫垫：走过去、抓起、侧着走、放下。' },
-        { at: 13.4, s: '楚门式鞠躬：上台阶到走回来，连续 3 次（有人轻扶）。' }
+        { at: 24.0, s: '楚门式鞠躬：上台阶到走回来，连续 3 次（有人轻扶）。' }
       ]
     },
     {
@@ -2295,7 +2301,7 @@
   function buildExplainerDemo(host) {
     K.explainer(host, {
       title: '十八幕动画：HDMI 全流程速览',
-      sub: '约 288 秒自动播放。空格播放/暂停，← → 换幕；G1 是官方开源的搬行李箱参考与仓库里录下的仿真回放，按真实模型做 3D 渲染，表格与图来自论文和官方代码。',
+      sub: '约 320 秒自动播放。空格播放/暂停，← → 换幕；G1 是官方开源的搬行李箱参考与仓库里录下的仿真回放，按真实模型做 3D 渲染，表格与图来自论文和官方代码。',
       ariaLabel: 'HDMI 十八幕讲解动画',
       notes: [
         '取数依据：表 I–II 照抄 arXiv 2509.16757 v3；图 6、图 7a、图 8、图 9a 的数是我们从论文的矢量图里抽出来的（柱高、误差棒中点、折线顶点），只保留到小数点后三位。',
@@ -2310,8 +2316,8 @@
   function buildVideoDemo(host) {
     K.video(host, {
       title: '配音讲解视频：HDMI 十八幕全流程',
-      sub: '17 分 58 秒竖屏视频（1080×1920），中文配音 + 字幕。画面就是上面的十八幕动画，旁白把每一幕讲细；适合手机上看或转发。',
-      size: '20.2 MB',
+      sub: '18 分 18 秒竖屏视频（1080×1920），中文配音 + 字幕。画面就是上面的十八幕动画，旁白把每一幕讲细；适合手机上看或转发。',
+      size: '20.4 MB',
       fileName: 'HDMI_讲解视频.mp4'
     });
   }
