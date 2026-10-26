@@ -41,15 +41,15 @@
         "13_Physics-Based_Animation",
         "14_Human_Motion"
       ],
-      "last_module": "11_Simulation_Benchmark",
-      "last_index": 1128,
-      "last_title": "RoboQuest: Generalist Physical Agents that Search, Inspect and Test (arXiv:2610.10388)",
-      "next_module": "12_Hardware_Design",
-      "last_completed_date": "2026-10-25",
-      "note": "本日轮转到 11_Simulation_Benchmark。PROGRESS Simulation Benchmark 章节中尚无笔记的最新论文是 RoboQuest (arXiv:2610.10388, 2026-10-07, NTU DeCLaRe Lab)，即 PROGRESS #1128，已确认在上游 README。十个把关键信息藏起来的 RoboCasa365 移动操作任务（搜索 / 检查 / 试探），智能体须物理按下 SUBMIT 交卷；GPT-6 Astra 最好 23.2%，执行技能单测 72–81%，失败主要来自证据没拿到与决策错误。代码与数据集已开源（declare-lab/RoboQuest），含整体流程 mermaid、实例与源码运行时序图。下一篇轮转到 12_Hardware_Design。",
-      "last_date": "2026-10-25",
+      "last_module": "12_Hardware_Design",
+      "last_index": 1165,
+      "last_title": "PHD-Hand: A Printable Humanoid Dexterous Hand with Linkage-Driven 3-DOA Digits (arXiv:2610.29030)",
+      "next_module": "13_Physics-Based_Animation",
+      "last_completed_date": "2026-10-26",
+      "note": "本日轮转到 12_Hardware_Design。PROGRESS Hardware Design 章节中尚无笔记的最新论文是 PHD-Hand (arXiv:2610.29030, 2026-10-21, NJIT, Humanoids 2026)，即 PROGRESS #1165，已确认在上游 README。TPU 二自由度柔性铰链做指根关节、0.6 mm 弹簧钢丝穿过铰链中心推动交叉四杆耦合的上两节（耦合比 0.77），根关节与上两节运动学完全解耦；每指 13 个主要零件、手长约 200 mm；根关节正解用仿射映射近似（R = 0.981，最大误差 < 2.7°）；用 Claude 生成 GUI 与转方块轨迹；Feix 33 种抓取、拇指对指与工具操作演示，约 200 小时测试。未开源，含整体流程 mermaid 与仿射映射算例，无源码运行时序图。下一篇轮转到 13_Physics-Based_Animation。",
+      "last_date": "2026-10-26",
       "next_candidate": null,
-      "last_completed": "RoboQuest: Generalist Physical Agents that Search, Inspect and Test (arXiv:2610.10388)"
+      "last_completed": "PHD-Hand: A Printable Humanoid Dexterous Hand with Linkage-Driven 3-DOA Digits (arXiv:2610.29030)"
     },
     "last_summary_index": 532,
     "last_summary_date": "2026-09-18",
@@ -1816,6 +1816,17 @@
         "project_page": "https://declare-lab.github.io/RoboQuest/",
         "code": "https://github.com/declare-lab/RoboQuest",
         "source": "✅ 已开源(任务、评测 harness、打分、500 个评测实例与五个模型结果；数据集在 Hugging Face declare-lab/RoboQuest) · 源码运行时序图按 run_benchmark.py / episode_runner.py / run_policy_trial 整理 · RoboCasa365 + MuJoCo · NTU DeCLaRe Lab"
+      },
+      {
+        "date": "2026-10-26",
+        "index": 1165,
+        "title": "PHD-Hand: A Printable Humanoid Dexterous Hand with Linkage-Driven 3-DOA Digits",
+        "folder": "papers/12_Hardware_Design/PHD-Hand__Printable_Humanoid_Dexterous_Hand_with_Linkage-Driven_3-DOA_Digits",
+        "module": "12_Hardware_Design",
+        "arxiv": "2610.29030",
+        "project_page": "",
+        "code": "",
+        "source": "⏳ 未开源(论文称整指一体打印参数调好后再开源) · 无源码运行时序图 · 补充视频 lnkd.in/p/er-NRfMn · Humanoids 2026 · NJIT"
       }
     ],
     "last_completed_index": 588,
