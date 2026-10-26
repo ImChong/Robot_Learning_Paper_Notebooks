@@ -76,8 +76,8 @@
 
 /* ===== Colour tokens (default / :root = dark) =====
    Dark surfaces sit on the #181818 / #1F1F1F / #272727 / #313131 steps. One accent
-   hue for both themes: arXiv red, lifted to #e77474 on dark so link text keeps the
-   6:1 contrast the old blue had. Shadows are tinted toward the accent hue. */
+   per theme, as the site always had: VS Code blue on dark, arXiv red on light.
+   Shadows and scrims are tinted toward that theme's accent. */
 :root,
 [data-theme="dark"] {
   --bg: #181818;
@@ -86,21 +86,22 @@
   --text: #d4d4d4;
   --text-secondary: #a0a0a0;
   --text-muted: #8a8a8a;
-  --link: #e77474;
-  --link-hover: #eea0a0;
+  --link: #569cd6;
+  --link-hover: #9cdcfe;
   --border: #313131;
   --code-bg: #1F1F1F;
   --code-border: #313131;
   --header-bg: rgba(24, 24, 24, 0.82);
   --header-border: #272727;
   --card-bg: #1F1F1F;
-  --card-shadow: rgba(10, 2, 2, 0.45);
-  --blockquote-border: #e77474;
+  --card-shadow: rgba(2, 8, 16, 0.45);
+  --blockquote-border: #569cd6;
   --blockquote-bg: #1F1F1F;
   --table-stripe: #272727;
   --kbd-bg: #272727;
-  --roadmap-flow: #ea8686;
-  --accent-soft: rgba(231, 116, 116, 0.14);
+  --roadmap-flow: #7ec8ff;
+  --accent-soft: rgba(86, 156, 214, 0.14);
+  --scrim: rgba(2, 6, 12, 0.55);
   --hero-from: #FFFFFF;
   --hero-to: #9B9B9B;
 }
@@ -127,6 +128,7 @@
   --kbd-bg: #eee;
   --roadmap-flow: #e0564f;
   --accent-soft: rgba(179, 27, 27, 0.08);
+  --scrim: rgba(20, 6, 6, 0.45);
   --hero-from: #000000;
   --hero-to: #666666;
 }
@@ -993,7 +995,7 @@ body.index-search-active .paper-list-toggle-group {
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(10, 4, 4, 0.48);
+  background: var(--scrim);
   -webkit-backdrop-filter: blur(4px);
   backdrop-filter: blur(4px);
   z-index: var(--z-overlay);
@@ -1606,7 +1608,7 @@ body.mermaid-lightbox-open {
 .mermaid-lightbox__backdrop {
   position: absolute;
   inset: 0;
-  background: rgba(10, 4, 4, 0.62);
+  background: var(--scrim);
   -webkit-backdrop-filter: blur(4px);
   backdrop-filter: blur(4px);
 }
@@ -2212,7 +2214,7 @@ body.sponsor-dialog-open {
 .sponsor-dialog__backdrop {
   position: absolute;
   inset: 0;
-  background: rgba(10, 4, 4, 0.55);
+  background: var(--scrim);
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
 }
@@ -2729,17 +2731,17 @@ body.sponsor-dialog-open {
 }
 
 /* GitHub-style activity heatmap. Level colors follow the one site accent —
-   dark: red ramp rising to --link / a lighter tint; light: arXiv red ending at
+   dark: VS Code blue ending at --link/--link-hover; light: arXiv red ending at
    --link/--link-hover. Both ramps pass the ordinal checks (monotone lightness,
    adjacent ΔL ≥ 0.06, faintest step ≥ 2:1 vs surface). */
 .updates-heatmap {
   --hm-cell-min: 9px; /* cell width floor: below it the container scrolls */
   --hm-gap: 3px;
   --hm-level-0: #272727;
-  --hm-level-1: #962d2d;
-  --hm-level-2: #c24444;
-  --hm-level-3: #e77474;
-  --hm-level-4: #f3bcbc;
+  --hm-level-1: #1d4f8c;
+  --hm-level-2: #2a6cb4;
+  --hm-level-3: #569cd6;
+  --hm-level-4: #9cdcfe;
   --hm-cell-line: rgba(255, 255, 255, 0.06);
   background: var(--card-bg);
   border: 1px solid var(--border);
