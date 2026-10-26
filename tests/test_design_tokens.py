@@ -55,11 +55,31 @@ def test_font_sizes_sit_on_the_type_scale():
 
 
 def test_no_permanent_global_transition():
-    # A `*` transition made every node on the home page animate on hover / resize;
-    # colours now only fade while html.theme-switching is set.
+    # A `*` transition made every node on the home page animate on hover / resize.
     assert not re.search(r"(?m)^\*,\s*\*::before,\s*\*::after\s*\{\s*transition", STYLE)
-    assert "html.theme-switching *" in STYLE
-    assert "classList.add('theme-switching')" in LAYOUT
+
+
+def test_theme_switch_fades_as_one_view_transition():
+    # Fading colours per node during the switch (html.theme-switching *) froze
+    # phones for seconds: 4000+ transitions on the home page, and every forced
+    # layout of a note's demo redraw had to recompute them. The switch is one
+    # View Transition now, and only where a mouse drives it.
+    assert "theme-switching" not in STYLE
+    assert "classList.add('theme-switching')" not in LAYOUT
+    assert "::view-transition-old(root)" in STYLE
+    assert "document.startViewTransition(" in LAYOUT
+    assert "matches('(hover: hover) and (pointer: fine)')" in LAYOUT
+    assert "!matches('(prefers-reduced-motion: reduce)')" in LAYOUT
+
+
+def test_root_smooth_scrolling_is_mouse_only():
+    # Root `scroll-behavior: smooth` turns every programmatic scroll smooth; on
+    # iOS WebKit that can interrupt the finger's scroll (webkit.org/b/312813)
+    # and the home page could not be pulled back to the top on an iPhone.
+    block = STYLE.split("html.smooth-scroll {", 1)[0].rsplit("@media", 1)[1]
+    assert "(hover: hover) and (pointer: fine)" in block
+    assert "(prefers-reduced-motion: no-preference)" in block
+    assert STYLE.count("scroll-behavior: smooth") == 1
 
 
 def test_transitions_use_the_shared_easing():

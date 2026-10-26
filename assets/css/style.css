@@ -137,15 +137,15 @@
   --hero-to: #666666;
 }
 
-/* ===== Transitions =====
-   Colours only animate while the theme is being switched (the toggle script sets
-   html.theme-switching for one transition); a permanent `*` transition made every
-   one of the ~4000 nodes on the home page transition on every hover and resize. */
-html.theme-switching,
-html.theme-switching *,
-html.theme-switching *::before,
-html.theme-switching *::after {
-  transition: background-color var(--dur-micro) var(--ease), color var(--dur-micro) var(--ease), border-color var(--dur-micro) var(--ease), fill var(--dur-micro) var(--ease) !important;
+/* ===== Theme switch =====
+   The toggle cross-fades the old and new frame as one View Transition
+   (default.html). Do not animate colours per node: a `*` transition, or one
+   switched on for the toggle, makes each of the ~4000 nodes on the home page
+   transition, and froze phones for seconds. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: var(--dur-micro);
+  animation-timing-function: var(--ease);
 }
 
 /* ===== Reset & Base ===== */
@@ -185,14 +185,19 @@ p, li, blockquote {
 }
 
 /* Smooth anchor scrolling, switched on after load (default.html) so the initial
-   #hash jump and paper.js's own post-fold repositioning stay instant. */
-html.smooth-scroll {
-  scroll-behavior: smooth;
-}
+   #hash jump and paper.js's own post-fold repositioning stay instant.
 
-@media (prefers-reduced-motion: reduce) {
+   Mouse and trackpad only. On the root it makes every programmatic scroll of
+   the page smooth, and on iOS WebKit a smooth programmatic scroll can
+   interrupt the finger's scroll and leave the page stuck partway
+   (webkit.org/b/312813). After the redesign an iPhone could no longer pull
+   the home page back to the top; this was the only root scroll property the
+   redesign added. Touch screens jump, as they did before; the TOC and
+   back-to-top buttons still scroll smoothly through their own
+   scrollTo({ behavior: 'smooth' }). */
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
   html.smooth-scroll {
-    scroll-behavior: auto;
+    scroll-behavior: smooth;
   }
 }
 
