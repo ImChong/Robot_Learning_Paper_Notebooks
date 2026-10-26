@@ -793,14 +793,20 @@
     var p3 = group(s);
     label(p3, R, 64, '② 训练：观测与动作', 'demo-x-ink', 13.5);
     ['相位 $\\phi$', '本体感受', '物体'].forEach(function (n, i) { chip(p3, R + i * 100, 84, 92, n, C_TGT, { size: 12, h: 30 }); });
-    chip(p3, R, 146, 130, 'HDMI 策略', C_ACCENT, { size: 12.5, h: 32 });
-    chip(p3, R + 166, 146, 126, '参考关节角', C_MUTED, { size: 12, h: 32 });
-    var plus = group(p3);
-    ringAt(plus, R + 150, 212, 12, C_ACCENT, 2);
-    label(plus, R + 150, 217, '+', 'demo-x-ink', 16, 'middle');
-    chip(p3, R + 196, 198, 96, '动作', C_GOOD, { size: 12, h: 30 });
-    label(p3, R, 262, '策略的输出加在参考关节角上：残差动作', 'demo-x-mut', 10.5);
-    var fl3 = [0, 1, 2].map(function () { return flowSeg(p3, C_ACCENT, 2, 3, 24, true); });
+    /* 相加要画出来：策略输出的动作 a_t 和参考关节角两路一起汇进加号，加出来的才是关节目标（2026-10-26 看片反馈：参考关节角没连到加号） */
+    var PX3 = R + 146, PY3 = 216;
+    chip(p3, R, 140, 130, 'HDMI 策略', C_ACCENT, { size: 12.5, h: 32 });
+    chip(p3, R + 162, 140, 130, '参考关节角', C_MUTED, { size: 12, h: 32 });
+    hline(p3, R + 65, 172, PX3 - 10, PY3 - 9, C_ACCENT, 1.4, '3 4');
+    hline(p3, R + 227, 172, PX3 + 10, PY3 - 9, C_MUTED, 1.4, '3 4');
+    rich(p3, R + 30, 206, '动作 $a_t$', 12, 'demo-x-ink2', 'start');
+    rich(p3, R + 196, 206, '$\\theta_t^{\\mathrm{ref}}$', 12.5, 'demo-x-ink2', 'start');
+    var plus = group(p3), plusRing = ringAt(plus, PX3, PY3, 13, C_ACCENT, 2);
+    label(plus, PX3, PY3 + 5, '+', 'demo-x-ink', 17, 'middle');
+    hline(p3, PX3, PY3 + 13, PX3, 244, C_GOOD, 1.4, '3 4');
+    chip(p3, R + 61, 246, 170, '关节目标 $\\theta_t^{\\mathrm{target}}$', C_GOOD, { size: 12, h: 30 });
+    label(p3, R, 300, '策略的输出加在参考关节角上：残差动作', 'demo-x-mut', 10.5);
+    var fl3 = [0, 1, 2, 3].map(function (k) { return flowSeg(p3, [C_ACCENT, C_ACCENT, C_MUTED, C_GOOD][k], 2, 3, 24, true); });
     var p4 = group(s);
     label(p4, R, 64, '② 训练：奖励三块', 'demo-x-ink', 13.5);
     [['交互', '引导并保持接触', C_TGT], ['机器人跟踪', '跟上参考的身体动作', C_ACCENT], ['物体跟踪', '物体也走参考的轨迹', C_GOOD]].forEach(function (r, i) {
@@ -821,9 +827,14 @@
       var now = nowOf(t, clock);
       fl1.forEach(function (f, i) { f.at(now + i * 0.4, [R + W / 2, 84 + i * 52 + 34], [R + W / 2, 84 + (i + 1) * 52 - 2], true); });
       fl2.forEach(function (f, i) { f.at(now + i * 0.4, [R + W / 2, 84 + i * 46 + 32], [R + W / 2, 84 + (i + 1) * 46 - 2], true); });
-      fl3[0].at(now, [R + 65, 116], [R + 65, 144], true);
-      fl3[1].at(now + 0.3, [R + 132, 162], [R + 136, 206], true);
-      fl3[2].at(now + 0.6, [R + 166, 212], [R + 194, 212], true);
+      fl3[0].at(now, [R + 65, 116], [R + 65, 138], true);
+      fl3[1].at(now + 0.3, [R + 65, 172], [PX3 - 10, PY3 - 9], true);
+      fl3[2].at(now + 0.3, [R + 227, 172], [PX3 + 10, PY3 - 9], true);
+      fl3[3].at(now + 0.6, [PX3, PY3 + 13], [PX3, 244], true);
+      /* 两路小点到加号的那一下，加号亮一下 */
+      var tot3 = Math.hypot(PX3 - 10 - (R + 65), PY3 - 9 - 172), glow3 = 0;
+      for (var q3 = 0; q3 < 2; q3++) glow3 = Math.max(glow3, seg(((((now + 0.3) * 24 + q3 * tot3 / 2) % tot3) + tot3) % tot3 / tot3, 0.82, 1));
+      plusRing.style.strokeWidth = (2 + 2.4 * glow3).toFixed(2) + 'px';
       var on = [win(t, 3.6, 7.0), win(t, 7.0, 10.4), win(t, 10.4, 13.4), win(t, 13.4)];
       boxes.forEach(function (b, i) { setOpacity(b, on[i]); });
       numG.forEach(function (g, i) { setOpacity(g, seg(t, 14.0 + i * 0.5, 14.4 + i * 0.5)); });
