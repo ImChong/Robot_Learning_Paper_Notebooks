@@ -1014,11 +1014,12 @@
 
   /* ── scene 5: DeepMimic 式训练三件套 ── */
   function buildSceneDeepMimic() {
-    var s = sceneSvg('左边是参考的三维回放，每隔两秒从一个随机的帧重新开始（参考状态初始化），下面是相位条和跟踪误差的计数；右边依次出现：' +
+    var s = sceneSvg('左边是官方仓库录下的仿真回放，每隔两秒从一个随机的帧重新开始（参考状态初始化），下面是相位条和跟踪误差的计数；右边依次出现：' +
       '三件套与 PPO、随机起点、相位、连续 25 步超标才终止、代码里的随机扰动范围');
     s.appendChild(svgText(24, 26, 'DeepMimic 式训练：初始化、相位、终止', 'demo-x-ink2', 13.5));
     var cam = camAt(140, 24 + 208 * 140 / 170, 52 + 245 * 140 / 170);
-    var bot = g1Mesh(s, 'ref');
+    /* 第 3–7 幕左边都放仿真回放：参考里人工标注的箱子拿着时也会上下飘（第 8 幕并排对比，2026-10-26 看片反馈） */
+    var bot = g1Mesh(s, 'rob');
     var startLab = label(s, 30, 48, '', 'demo-x-ink2', 11);
     /* 相位条 */
     var PX = 40, PW = 340;
@@ -1077,7 +1078,7 @@
       var ep = Math.floor(now / EP), st0 = Math.floor(rnd(ep, 7) * 130), j = st0 + Math.floor((now - ep * EP) * SUIT_FPS / SUIT_STEP);
       j = Math.min(j, SUIT.n - 1);
       bot.put(cam, j);
-      startLab.textContent = '这个回合从参考第 ' + f2(suitTime(st0)) + ' s 开始';
+      startLab.textContent = '仿真回放 · 这个回合从参考第 ' + f2(suitTime(st0)) + ' s 开始';
       var ph = j / (SUIT.n - 1);
       setW(phBar, (PW - 56) * ph);
       phVal.textContent = '相位 ' + f2(ph);
@@ -1110,12 +1111,12 @@
 
   /* ── scene 6: 统一的物体表示（图 3） ── */
   function buildSceneObjRep() {
-    var s = sceneSvg('左上是论文图 3 的三张图，黄点是期望接触点；左下是参考的三维回放，从骨盆指向箱子和两个接触点的箭头就是换到根部坐标系里的量；' +
+    var s = sceneSvg('左上是论文图 3 的三张图，黄点是期望接触点；左下是官方仓库录下的仿真回放，从骨盆指向箱子和两个接触点的箭头就是换到根部坐标系里的量；' +
       '右边依次出现：物体位姿换到根部坐标系、期望接触点、全部观测、代码里物体只占 10 维、以后换成相机');
     s.appendChild(svgText(24, 26, '统一的物体表示：都换到机器人的根部坐标系', 'demo-x-ink2', 13.5));
     var fig = paperPart(s, 'fig3', 0, 0, 1, 1, 24, 44, 380, '论文图 3：搬行李箱、用脚开门、打开折叠椅的期望接触点（黄）');
     var cam = camAt(118, 24 + 160 * 118 / 170 + 60, 188 + 245 * 118 / 170);
-    var bot = g1Mesh(s, 'ref');
+    var bot = g1Mesh(s, 'rob');
     var ov = contactOverlay(s, { r: 5 });
     var arrows = [arrow(s, C_ACCENT, 2), arrow(s, C_TGT, 1.8), arrow(s, C_TGT, 1.8)];
     var R = 424, W = 352;
@@ -1176,9 +1177,9 @@
     function draw(t, clock) {
       var now = nowOf(t, clock), j = loopFrame(now), f = suitFrames()[j];
       bot.put(cam, j);
-      ov.put(f, 'ref', cam, { err: false, eef: false });
-      var pel = [f.ref.pel[0], f.ref.pel[1], f.ref.pel[2]], a = project(pel, cam);
-      var b = project(f.ref.cen, cam), c1 = project(f.ref.tgt[0], cam), c2 = project(f.ref.tgt[1], cam);
+      ov.put(f, 'rob', cam, { err: false, eef: false });
+      var pel = [f.rob.pel[0], f.rob.pel[1], f.rob.pel[2]], a = project(pel, cam);
+      var b = project(f.rob.cen, cam), c1 = project(f.rob.tgt[0], cam), c2 = project(f.rob.tgt[1], cam);
       arrows[0].set(a[0], a[1], b[0], b[1]); arrows[1].set(a[0], a[1], c1[0], c1[1], 7); arrows[2].set(a[0], a[1], c2[0], c2[1], 7);
       setOpacity(arrows[0].g, seg(t, 0.7, 1.1));
       setOpacity(arrows[1].g, seg(t, 3.9, 4.3)); setOpacity(arrows[2].g, seg(t, 3.9, 4.3));
@@ -1222,13 +1223,14 @@
 
   /* ── scene 7: 残差动作空间 ── */
   function buildSceneResidual() {
-    var s = sceneSvg('左边是参考跪下抱箱子的那几帧，讲到普通动作空间时叠上半透明的默认站姿：动作为零时关节目标就是它，机器人会被弹起来；' +
+    var s = sceneSvg('左边是仿真回放里跪下抱箱子的那几帧（回放第 3.20 s 的左膝 2.71 rad，参考 2.73），讲到普通动作空间时叠上半透明的默认站姿：动作为零时关节目标就是它，机器人会被弹起来；' +
       '右边依次出现：默认站姿和跪姿的膝角、普通动作空间、残差动作的公式、左膝在两种动作空间里的探索范围、论文图 9c');
     s.appendChild(svgText(24, 26, '残差动作：探索围着参考姿态', 'demo-x-ink2', 13.5));
     var cam = camAt(150, 24 + 208 * 150 / 170, 50 + 245 * 150 / 170);
-    var bot = g1Mesh(s, 'ref'), ghost = g1Mesh(s, 'dflt', { ghost: 0.45 });
+    var bot = g1Mesh(s, 'rob'), ghost = g1Mesh(s, 'dflt', { ghost: 0.45 });
     var gLab = label(s, 30, 62, '', 'demo-x-ink2', 11);
     var tagG = label(s, 214, 300, '半透明：动作为零时的关节目标（默认站姿）', 'demo-x-mut', 10.5, 'middle');
+    var capS7 = label(s, 214, 300, '官方仓库录下的仿真回放（我们按 G1 三维模型渲染）', 'demo-x-mut', 10.5, 'middle');
     var R = 424, W = 352;
     var p1 = group(s);
     label(p1, R, 64, '跪、弯腰：离默认站姿很远', 'demo-x-ink', 14);
@@ -1313,6 +1315,7 @@
       var pop = t >= 3.6 && t < 10.4 ? 0.25 + 0.3 * (0.5 + 0.5 * Math.sin(now * 2.4)) : 0;
       setOpacity(ghost.g, pop);
       setOpacity(tagG, pop > 0 ? 1 : 0);
+      setOpacity(capS7, pop > 0 ? 0 : 1);
       setOpacity(p1, win(t, 0.3, 3.6));
       setOpacity(p2, win(t, 3.6, 7.0));
       setOpacity(p3, win(t, 7.0, 10.4));
@@ -1324,14 +1327,16 @@
 
   /* ── scene 8: 交互奖励（式 1–2） ── */
   function buildSceneReward() {
-    var s = sceneSvg('左边是官方仓库里录下的仿真回放，抱着箱子的那几帧：紫点是手，黄点是期望接触点，红色虚线是两者的距离；右边依次出现：' +
-      '为什么要交互奖励、位置项曲线、力项曲线（超过阈值封顶）、按接触信号门控的平均、代码里的参数');
+    var s = sceneSvg('左边抱着箱子的那几帧，先放官方参考（人工标注的箱子拿着时也上下飘，手离接触点十几厘米），再换成官方仓库录下的仿真回放（箱子贴在手上）：' +
+      '紫点是手，黄点是期望接触点，红色虚线是两者的距离；右边依次出现：为什么要交互奖励、参考与回放的左手距离曲线、位置项曲线、力项曲线（超过阈值封顶）、按接触信号门控的平均、代码里的参数');
     s.appendChild(svgText(24, 26, '交互奖励：手贴近接触点，力够但不过量', 'demo-x-ink2', 13.5));
     var cam = camAt(150, 24 + 208 * 150 / 170, 56 + 245 * 150 / 170);
-    var bot = g1Mesh(s, 'rob');
+    /* 先放参考（箱子相对手上下飘），再放回放（箱子贴着手）：第 3–7 幕放的都是回放，这里把两者对比给观众看（2026-10-26 看片反馈） */
+    var botRef = g1Mesh(s, 'ref'), bot = g1Mesh(s, 'rob');
     var ov = contactOverlay(s, { r: 6 });
     var dLab = label(s, 30, 48, '', 'demo-x-ink2', 11);
-    label(s, 214, 300, '官方仓库录下的仿真回放（我们按 G1 三维模型渲染）', 'demo-x-mut', 10, 'middle');
+    var capRef = label(s, 214, 300, '官方参考：箱子是人工标注的（我们按 G1 三维模型渲染）', 'demo-x-mut', 10, 'middle');
+    var capRob = label(s, 214, 300, '官方仓库录下的仿真回放（我们按 G1 三维模型渲染）', 'demo-x-mut', 10, 'middle');
     var R = 424, W = 352;
     var p1 = group(s);
     label(p1, R, 64, '只靠跟踪奖励不够', 'demo-x-ink', 14);
@@ -1348,6 +1353,30 @@
     label(p1, R + 85, 232, '接触常常不准', 'demo-x-ink', 12.5, 'middle');
     label(p1, R + 267, 232, '还可能穿模', 'demo-x-ink', 12.5, 'middle');
     label(p1, R, 268, '每个该接触的末端：位置项 × 力项', 'demo-x-ink2', 12);
+    /* 第 2 段：参考与回放的左手离接触点多远，跟着左边的帧走 */
+    var p1b = group(s), FS = suitFrames(), J0 = 40, J1 = 112;
+    label(p1b, R, 64, '左手离接触点多远', 'demo-x-ink', 14);
+    var DX = R + 30, DY = 84, DW = W - 40, DH = 150, DMAX = 0.25;
+    rectBox(p1b, DX, DY, DW, DH, C_BORDER, C_SURFACE);
+    function dx(j) { return DX + 6 + (j - J0) / (J1 - 1 - J0) * (DW - 12); }
+    function dy(v) { return DY + DH - 6 - clamp(v, 0, DMAX) / DMAX * (DH - 12); }
+    var shade = -1;
+    for (var jj = J0; jj <= J1; jj++) {
+      var on = jj < J1 && FS[jj].c;
+      if (on && shade < 0) shade = jj;
+      if (!on && shade >= 0) {
+        var sh = paint(svgEl('rect', { x: dx(shade).toFixed(1), y: DY + 1, width: (dx(jj - 1) - dx(shade)).toFixed(1), height: DH - 2 }), C_TGT);
+        sh.style.opacity = 0.14; p1b.appendChild(sh); shade = -1;
+      }
+    }
+    [0, 0.1, 0.2].forEach(function (v) { hline(p1b, DX, dy(v), DX + DW, dy(v), C_BORDER, 0.8, '2 3'); label(p1b, DX - 5, dy(v) + 4, String(v * 100) + ' cm', 'demo-x-mut', 9, 'end'); });
+    var crvRef = [], crvRob = [];
+    for (jj = J0; jj < J1; jj++) { crvRef.push([dx(jj), dy(handDist(FS[jj], 'ref')[0])]); crvRob.push([dx(jj), dy(handDist(FS[jj], 'rob')[0])]); }
+    pathLine(p1b, crvRef, C_BAD, 2.4); pathLine(p1b, crvRob, C_GOOD, 2.4);
+    var dHead = hline(p1b, 0, DY, 0, DY + DH, 'var(--text)', 1.6), dRef = dotAt(p1b, 0, 0, 5, C_BAD), dRob = dotAt(p1b, 0, 0, 5, C_GOOD);
+    legendRow(p1b, R, 258, [['参考（人工标注）', C_BAD, 100], ['仿真回放', C_GOOD, 56]], 11);
+    label(p1b, R + 236, 258, '黄底：要接触的帧', 'demo-x-ink2', 11);
+    readHint(p1b, R, 284, '横轴是时间，纵轴是左手到接触点的距离，越低越好', 10.5, W);
     var p2 = group(s);
     math(p2, R + W / 2, 70, '\\exp\\!\\left(-\\lVert p_{\\mathrm{eef}} - p_{\\mathrm{target}}\\rVert_2 / \\sigma_{\\mathrm{pos}}\\right)', 15, 'middle');
     var cp2 = curvePlot(p2, R + 20, 92, W - 30, 130, 0.5, posTerm, C_EEF, [0, 0.25, 0.5], ' m');
@@ -1379,10 +1408,17 @@
       var hx1b = R + 236 + 34 * (0.5 + 0.5 * Math.sin(now * 1.6));
       moveDot(hand1b, [hx1b, 164]);
       flash1.style.opacity = hx1b > R + 258 ? 0.9 : 0;
-      bot.put(cam, j);
-      ov.put(f, 'rob', cam);
-      var d = handDist(f, 'rob');
-      dLab.textContent = f.c ? '左手离接触点 ' + f1(d[0] * 100) + ' cm · 右手 ' + f1(d[1] * 100) + ' cm' : '这一帧不用接触';
+      bot.put(cam, j); botRef.put(cam, j);
+      var useRef = t < 3.75, wRef = 1 - seg(t, 3.6, 3.9);
+      setOpacity(botRef.g, wRef); setOpacity(bot.g, 1 - wRef);
+      setOpacity(capRef, 1 - seg(t, 3.6, 3.75)); setOpacity(capRob, seg(t, 3.75, 3.9));
+      var who = useRef ? 'ref' : 'rob';
+      ov.put(f, who, cam);
+      var dRefNow = handDist(f, 'ref'), d = handDist(f, 'rob'), dShow = useRef ? dRefNow : d;
+      dLab.textContent = f.c ? (useRef ? '参考：' : '回放：') + '左手离接触点 ' + f1(dShow[0] * 100) + ' cm · 右手 ' + f1(dShow[1] * 100) + ' cm' : '这一帧不用接触';
+      var jc = clamp(j, J0, J1 - 1);
+      setLine(dHead, dx(jc), DY, dx(jc), DY + DH);
+      moveDot(dRef, [dx(jc), dy(dRefNow[0])]); moveDot(dRob, [dx(jc), dy(d[0])]);
       cp2.dot(d[0]);
       cp3.dot(14 + 12 * Math.sin(now * 0.9));
       bar4.at(j);
@@ -1390,10 +1426,11 @@
       b5[0].set(rr / 5 * 200, f2(rr));
       b5[1].set(1 / 5 * 200, '1');
       setOpacity(p1, win(t, 0.3, 3.6));
-      setOpacity(p2, win(t, 3.6, 7.0));
-      setOpacity(p3, win(t, 7.0, 10.4));
-      setOpacity(p4, win(t, 10.4, 13.4));
-      setOpacity(p5, win(t, 13.4));
+      setOpacity(p1b, win(t, 3.6, 7.0));
+      setOpacity(p2, win(t, 7.0, 10.4));
+      setOpacity(p3, win(t, 10.4, 13.8));
+      setOpacity(p4, win(t, 13.8, 16.8));
+      setOpacity(p5, win(t, 16.8));
     }
     return { el: s, draw: draw };
   }
@@ -2161,14 +2198,15 @@
     },
     {
       title: '交互奖励（式 1–2）',
-      dur: 16,
+      dur: 19.4,
       build: buildSceneReward,
       cues: [
-        { at: 0.4, s: '视频重定向来的参考是纯运动学的：接触不准、还会穿模。' },
-        { at: 3.6, s: '位置项 $\\exp(-\\lVert p_{\\mathrm{eef}} - p_{\\mathrm{target}}\\rVert_2/\\sigma_{\\mathrm{pos}})$：用的是距离，不是平方。' },
-        { at: 7.0, s: '力项：力不够打折扣，超过 $F_{\\mathrm{thres}}$ 封顶为 1。' },
-        { at: 10.4, s: '式 2：对要接触的末端取平均，用接触信号 $c_{t,i}$ 门控。' },
-        { at: 13.4, s: '代码：$\\sigma_{\\mathrm{pos}} = 0.3$ m、$\\sigma_{\\mathrm{frc}} = 40$ N、$F_{\\mathrm{thres}} = 10$ N；要接触 ×5，否则给 1。' }
+        { at: 0.4, s: '视频重定向来的参考是纯运动学的：接触不准、还会穿模；左边的参考里，箱子相对手上下飘。' },
+        { at: 3.6, s: '换成仿真回放：箱子贴在手上，左右手离接触点平均 4.1 / 1.2 cm。' },
+        { at: 7.0, s: '位置项 $\\exp(-\\lVert p_{\\mathrm{eef}} - p_{\\mathrm{target}}\\rVert_2/\\sigma_{\\mathrm{pos}})$：用的是距离，不是平方。' },
+        { at: 10.4, s: '力项：力不够打折扣，超过 $F_{\\mathrm{thres}}$ 封顶为 1。' },
+        { at: 13.8, s: '式 2：对要接触的末端取平均，用接触信号 $c_{t,i}$ 门控。' },
+        { at: 16.8, s: '代码：$\\sigma_{\\mathrm{pos}} = 0.3$ m、$\\sigma_{\\mathrm{frc}} = 40$ N、$F_{\\mathrm{thres}} = 10$ N；要接触 ×5，否则给 1。' }
       ]
     },
     {
@@ -2301,7 +2339,7 @@
   function buildExplainerDemo(host) {
     K.explainer(host, {
       title: '十八幕动画：HDMI 全流程速览',
-      sub: '约 320 秒自动播放。空格播放/暂停，← → 换幕；G1 是官方开源的搬行李箱参考与仓库里录下的仿真回放，按真实模型做 3D 渲染，表格与图来自论文和官方代码。',
+      sub: '约 323 秒自动播放。空格播放/暂停，← → 换幕；G1 是官方开源的搬行李箱参考与仓库里录下的仿真回放，按真实模型做 3D 渲染，表格与图来自论文和官方代码。',
       ariaLabel: 'HDMI 十八幕讲解动画',
       notes: [
         '取数依据：表 I–II 照抄 arXiv 2509.16757 v3；图 6、图 7a、图 8、图 9a 的数是我们从论文的矢量图里抽出来的（柱高、误差棒中点、折线顶点），只保留到小数点后三位。',
@@ -2316,8 +2354,8 @@
   function buildVideoDemo(host) {
     K.video(host, {
       title: '配音讲解视频：HDMI 十八幕全流程',
-      sub: '18 分 18 秒竖屏视频（1080×1920），中文配音 + 字幕。画面就是上面的十八幕动画，旁白把每一幕讲细；适合手机上看或转发。',
-      size: '20.4 MB',
+      sub: '18 分 46 秒竖屏视频（1080×1920），中文配音 + 字幕。画面就是上面的十八幕动画，旁白把每一幕讲细；适合手机上看或转发。',
+      size: '21.0 MB',
       fileName: 'HDMI_讲解视频.mp4'
     });
   }
