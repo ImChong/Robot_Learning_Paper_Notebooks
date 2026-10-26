@@ -838,12 +838,14 @@
 
   /* ── scene 3: 从视频到参考轨迹 ── */
   function buildSceneVideo2Ref() {
-    var s = sceneSvg('左边是官方开源的搬行李箱参考，用 G1 的三维模型逐帧回放：站在箱子旁、跪下抱起箱子、走过去放下；右边依次出现：' +
+    var s = sceneSvg('左边是官方仓库录下的搬行李箱仿真回放，用 G1 的三维模型逐帧渲染：站在箱子旁、跪下抱起箱子、走过去放下；右边依次出现：' +
       '视频经 GVHMR 和 LocoMujoco 变成 G1 的动作；物体轨迹与接触靠人工标注；箱子高度随时间的曲线和拿起、放下两帧；OMOMO 这个例外；这段参考的帧数');
     s.appendChild(svgText(24, 26, '从视频到参考轨迹', 'demo-x-ink2', 13.5));
     var cam = camAt(160, 24 + 208 * 160 / 170, 52 + 245 * 160 / 170);
-    var bot = g1Mesh(s, 'ref');
-    label(s, 214, 318, '官方开源的参考（OMOMO 搬行李箱）· 我们按 G1 三维模型回放', 'demo-x-mut', 10, 'middle');
+    /* 左边放官方仓库录下的仿真回放（record_motion，照这段参考跑出来、箱子由仿真算出）：参考里人工标注的箱子拿着时也会上下漂、
+       离接触点平均 10–12 cm（第 16 幕讲），放在「参考里有什么」这两幕会被看成渲染出错（2026-10-26 看片反馈） */
+    var bot = g1Mesh(s, 'rob');
+    label(s, 214, 318, '官方仓库录下的仿真回放（OMOMO 搬行李箱）· G1 三维模型渲染', 'demo-x-mut', 10, 'middle');
     var tLab = label(s, 30, 62, '', 'demo-x-ink2', 11);
     var R = 424, W = 352;
     var p1 = group(s);
@@ -953,16 +955,17 @@
 
   /* ── scene 4: 一帧参考：机器人、物体、接触 ── */
   function buildSceneRefFrame() {
-    var s = sceneSvg('左边是同一段参考的三维回放，箱子两侧的黄点是期望接触点，下面的时间条上黄色一段是要接触的帧；右边依次出现：' +
+    var s = sceneSvg('左边是同一段搬行李箱的仿真回放，箱子两侧的黄点是期望接触点、紫点是手的末端，下面的时间条上黄色一段是要接触的帧；右边依次出现：' +
       '参考的三部分、机器人的状态、物体的状态、接触信号与接触点、这段参考里有多少帧要接触');
     s.appendChild(svgText(24, 26, '一帧参考：机器人、物体、接触', 'demo-x-ink2', 13.5));
     var cam = camAt(150, 24 + 208 * 150 / 170, 50 + 245 * 150 / 170);
-    var bot = g1Mesh(s, 'ref');
+    var bot = g1Mesh(s, 'rob');
     var ov = contactOverlay(s, { r: 6 });
     var bar = contactBar(s, 40, 286, 350, 14);
     label(s, 40, 318, '接触信号 $c_t$', 'demo-x-ink2', 10.5);
     var cueLab = rich(s, 215, 318, '', 10.5, 'demo-x-ink2', 'middle', 200);
-    var tLab = label(s, 30, 62, '', 'demo-x-ink2', 11);
+    label(s, 30, 46.5, '官方仓库录下的仿真回放', 'demo-x-mut', 10.5);
+    var tLab = label(s, 30, 68, '', 'demo-x-ink2', 11);
     var R = 424, W = 352;
     var head = group(s);
     math(head, R + W / 2, 70, 's_t^{\\mathrm{ref}} = (\\,s_t^{\\mathrm{robot}},\\; s_t^{\\mathrm{obj}},\\; c_t\\,)', 17, 'middle');
@@ -994,7 +997,7 @@
     function draw(t, clock) {
       var now = nowOf(t, clock), j = loopFrame(now), F = suitFrames(), f = F[j];
       bot.put(cam, j);
-      ov.put(f, 'ref', cam, { err: false });
+      ov.put(f, 'rob', cam, { err: false });
       bar.at(j);
       cueLab.setText(f.c ? '$c_t = 1$：要接触' : '$c_t = 0$：不用接触');
       tLab.textContent = '参考第 ' + f2(suitTime(j)) + ' s';
@@ -2307,8 +2310,8 @@
   function buildVideoDemo(host) {
     K.video(host, {
       title: '配音讲解视频：HDMI 十八幕全流程',
-      sub: '17 分 50 秒竖屏视频（1080×1920），中文配音 + 字幕。画面就是上面的十八幕动画，旁白把每一幕讲细；适合手机上看或转发。',
-      size: '20.0 MB',
+      sub: '17 分 58 秒竖屏视频（1080×1920），中文配音 + 字幕。画面就是上面的十八幕动画，旁白把每一幕讲细；适合手机上看或转发。',
+      size: '20.2 MB',
       fileName: 'HDMI_讲解视频.mp4'
     });
   }

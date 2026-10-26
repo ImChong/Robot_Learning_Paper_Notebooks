@@ -75,11 +75,11 @@ demos: ["hdmi"]
 
 ## 📺 配音讲解视频（可下载） {#hdmi-video}
 
-<div class="paper-demo" data-demo="hdmi-video" data-src="media/hdmi_explainer_video.mp4" data-poster="media/hdmi_explainer_video_poster.jpg"><p class="demo-fallback">（本节含讲解视频播放器，需要启用 JavaScript；也可以直接<a href="media/hdmi_explainer_video.mp4" download="HDMI_讲解视频.mp4">下载 mp4（20.0 MB）</a>）</p></div>
+<div class="paper-demo" data-demo="hdmi-video" data-src="media/hdmi_explainer_video.mp4" data-poster="media/hdmi_explainer_video_poster.jpg"><p class="demo-fallback">（本节含讲解视频播放器，需要启用 JavaScript；也可以直接<a href="media/hdmi_explainer_video.mp4" download="HDMI_讲解视频.mp4">下载 mp4（20.2 MB）</a>）</p></div>
 
 > 📖 **动画之后的正文默认全部折叠**：动画覆盖到的那几节（要解决什么问题、方法详解、实验结果）按小节收起，再往后的具体实例、源码对照、在路线中的位置、面试和附录各整块收起。想细读哪一块就点开对应的折叠条，内容一字未删；流程图和三个交互演示留在外面，目录里的标题依旧可以直接点，会自动展开所在折叠块，左侧目录顶部还有「展开全部文字」一键铺开。
 >
-> 动画第 3–8、16、18 幕里的 G1 和行李箱是我们按官方仓库的数据渲染的：`data/motion/g1/omomo/sub1_suitcase_011` 是搬行李箱的参考（OMOMO 重定向，472 帧），`record_motion/x65r1823` 是仓库里录下的一段 IsaacSim 回放（447 帧）；按关节角做正运动学，3D 外形照抄 [Robot Retarget Online](https://imchong.github.io/Robot_Retarget_Online/) 的 three.js 材质与光照，用正交相机逐帧离线渲染，期望接触点、手的末端点和两者的距离按同一个相机投影叠在上面；这两段和交互演示、「🚶 具体实例」是同一组数字。第 2、6、7、11、12、16、17 幕用论文图 2、3、9c、4a、5、7b / 7c、9b 的裁剪，第 9、15、16、17 幕的柱和曲线照表 I–II 与图 6–9a 的数重画（图 6–9a 是从论文 PDF 的矢量图里抽出的柱高与折线）；第 1、12–14 幕的真机与仿真画面剪自[项目页](https://hdmi-humanoid.github.io/)的视频（开门穿门、35 分钟加速剪辑、搬纸箱、面包箱、泡沫垫、楚门式鞠躬、12 个仿真任务；仿真片段按 2.5 倍速播放），只做讲解引用。
+> 动画第 3–8、16、18 幕里的 G1 和行李箱是我们按官方仓库的数据渲染的：`data/motion/g1/omomo/sub1_suitcase_011` 是搬行李箱的参考（OMOMO 重定向，472 帧），`record_motion/x65r1823` 是仓库里录下的一段 IsaacSim 回放（447 帧）；按关节角做正运动学，3D 外形照抄 [Robot Retarget Online](https://imchong.github.io/Robot_Retarget_Online/) 的 three.js 材质与光照，用正交相机逐帧离线渲染，期望接触点、手的末端点和两者的距离按同一个相机投影叠在上面；这两段和交互演示、「🚶 具体实例」是同一组数字。第 3、4 幕左边放的是回放：参考里的箱子是人工标注的，要接触的 170 帧里箱子原点在左手腕坐标系里的高度在 −0.47 到 −0.05 m 之间变（标准差 13.5 cm），手离接触点最远约 24 cm，放在讲「一帧参考里有什么」的两幕会被看成渲染出错；回放里箱子由仿真算出，同一个量的标准差只有 1.6 cm（我们自己量的）。参考本身留到第 16 幕和回放并排对比。第 2、6、7、11、12、16、17 幕用论文图 2、3、9c、4a、5、7b / 7c、9b 的裁剪，第 9、15、16、17 幕的柱和曲线照表 I–II 与图 6–9a 的数重画（图 6–9a 是从论文 PDF 的矢量图里抽出的柱高与折线）；第 1、12–14 幕的真机与仿真画面剪自[项目页](https://hdmi-humanoid.github.io/)的视频（开门穿门、35 分钟加速剪辑、搬纸箱、面包箱、泡沫垫、楚门式鞠躬、12 个仿真任务；仿真片段按 2.5 倍速播放），只做讲解引用。
 
 ---
 
