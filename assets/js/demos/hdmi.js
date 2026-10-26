@@ -165,6 +165,18 @@
     setOpacity = K.setOpacity,
     sceneSvg = K.sceneSvg,
     polyPath = K.polyPath;
+  /* 视频里分镜按 1080 宽、约 1.2 倍放大，9–10.5 号字只有 11–12 px，手机上看不清（FALCON 的看片反馈）：9–9.5 号放到 11，10–10.5 号放到 11.5 */
+  function minFont(size) {
+    return size == null ? size : size < 9.75 ? Math.max(size, 11) : size < 11 ? Math.max(size, 11.5) : size;
+  }
+  var kitText = svgText, kitRich = svgRich;
+  svgText = function (x, y, str, cls, size, anchor) { return kitText(x, y, str, cls, minFont(size), anchor); };
+  svgRich = function (x, y, str, opts) {
+    var o = {}, k;
+    for (k in opts || {}) o[k] = opts[k];
+    o.size = minFont(o.size);
+    return kitRich(x, y, str, o);
+  };
 
   var X = K.xColors;
   var C_ACCENT = X.accent,
@@ -392,10 +404,11 @@
       }
     };
   }
-  /* 帧号：按真实时间循环播放（16.7 帧/秒）；[a, b) 是循环的帧区间 */
+  /* 帧号：按真实时间来回播放（16.7 帧/秒，正放到头再倒放），不从最后一帧跳回第一帧（TWIST2 的看片反馈）；[a, b) 是播放的帧区间 */
   function loopFrame(now, a, b) {
-    var lo = a || 0, hi = b == null ? SUIT.n : b, n = hi - lo;
-    return lo + ((Math.floor(now * SUIT_FPS / SUIT_STEP) % n) + n) % n;
+    var lo = a || 0, hi = b == null ? SUIT.n : b, n = hi - lo, period = 2 * (n - 1);
+    var k = ((Math.floor(now * SUIT_FPS / SUIT_STEP) % period) + period) % period;
+    return lo + (k < n ? k : period - k);
   }
   /* 期望接触点（黄）、手的末端点（紫）和两者的距离（红线）；put(帧, 'ref'|'rob', cam, 显示) */
   function contactOverlay(parent, opts) {
@@ -475,7 +488,7 @@
       hline(g, x, py(v), x + w, py(v), C_BORDER, 0.8, '2 3');
       label(g, x - 4, py(v) + 3.5, String(v), 'demo-x-mut', 8.5, 'end');
     });
-    [0, 5, 10].forEach(function (i) { label(g, px(i), y + h + 15, String(100 + i * 100), 'demo-x-mut', 8.5, 'middle'); });
+    [0, 5, 10].forEach(function (i) { label(g, px(i), y + h + 18, String(100 + i * 100), 'demo-x-mut', 8.5, 'middle'); });
     return {
       g: g, px: px, py: py,
       line: function (arr, color, width) { return pathLine(g, arr.map(function (v, i) { return [px(i), py(v)]; }), color, width || 2.2); },
@@ -697,10 +710,23 @@
     /* 第 4 段：以前的做法 */
     var p4 = group(s);
     label(p4, R, 64, '以前的人形与物体交互', 'demo-x-ink', 14);
-    chip(p4, R, 82, W, '每个任务单独做参考、单独设计奖励（如搬箱子）', C_MUTED, { size: 11.5, h: 34, left: true });
-    chip(p4, R, 128, W, '靠视觉语言模型或基于模型的高层规划器', C_MUTED, { size: 11.5, h: 34, left: true });
-    var xA = cross(p4, R + W - 30, 90, 18, C_BAD), xB = cross(p4, R + W - 30, 136, 18, C_BAD);
-    label(p4, R + W / 2, 196, '换一个任务，就要重新设计一遍', 'demo-x-mut', 11, 'middle');
+    label(p4, R, 88, '① 每个任务单独做参考、设计奖励', 'demo-x-ink2', 12);
+    /* 三张任务卡：开门、搬箱子、推箱子；每张卡轮流蹦出自己的「参考」「奖励」 */
+    var cards4 = ['开门', '搬箱子', '推箱子'].map(function (n, i) {
+      var g = group(p4), x = R + i * 120;
+      var frame = rectBox(g, x, 98, 110, 112, C_BORDER, C_SURFACE);
+      label(g, x + 55, 166, n, 'demo-x-ink2', 12, 'middle');
+      var parts = [chip(g, x + 6, 176, 46, '参考', C_TGT, { size: 11, h: 24 }), chip(g, x + 58, 176, 46, '奖励', C_WARN, { size: 11, h: 24 })];
+      return { g: g, x: x, frame: frame, parts: parts };
+    });
+    var door4 = doorIcon(p4, R + 42, 108, 26, 36, C_ACCENT);
+    boxIcon(p4, R + 160, 122, 30, 28);
+    boxIcon(p4, R + 266, 122, 52, 22);
+    label(p4, R + 162, 266, '② 或者靠高层规划器指挥', 'demo-x-ink2', 12);
+    chip(p4, R, 252, 150, '视觉语言模型 / 规划器', C_PURPLE, { size: 11.5, h: 30 });
+    var f4 = [0, 1, 2].map(function () { return flowSeg(p4, C_PURPLE, 2, 2.8, 26, true); });
+    var xA = cross(p4, R + W - 14, 82, 14, C_BAD), xB = cross(p4, R + W - 14, 255, 14, C_BAD);
+    label(p4, R + 162, 290, '换一个任务，就要重新设计一遍', 'demo-x-mut', 11.5);
     /* 第 5 段：HDMI 的通用框架 */
     var p5 = group(s);
     label(p5, R, 64, 'HDMI：换任务只换视频', 'demo-x-ink', 14);
@@ -724,6 +750,13 @@
       var wob = 6 * Math.sin(now * 2.6);
       kneel.pose(R + 268, 200, { lean: 20 + wob, armA: [55, 35], armB: [45, 25], legA: [75, 0], legB: [-5, -90] });
       xA.style.opacity = seg(t, 11.0, 11.4); xB.style.opacity = seg(t, 11.8, 12.2);
+      var u4 = since(t, clock, 10.4), hot = Math.floor(now / 1.2) % 3;
+      cards4.forEach(function (c, i) {
+        c.parts.forEach(function (pg, q) { setOpacity(pg, seg(u4, 0.6 + i * 0.7 + q * 0.3, 0.9 + i * 0.7 + q * 0.3)); });
+        c.frame.style.stroke = u4 > 2.8 && i === hot ? C_WARN : C_BORDER;
+      });
+      door4.at(0.5 + 0.5 * Math.sin(now * 1.6));
+      f4.forEach(function (f, i) { f.at(now + i * 0.25, [R + 75, 250], [R + 55 + i * 120, 212], u4 > 2.6); });
       f5.forEach(function (f, i) { f.at(now + i * 0.3, [rx5[i][1] + 2, 120], [rx5[i + 1][0] - 2, 120], true); });
       bg5.forEach(function (g, i) { setOpacity(g, seg(t, 14.0 + i * 0.4, 14.4 + i * 0.4)); });
       setOpacity(p1, win(t, 0.3, 3.6));
@@ -823,10 +856,25 @@
     var fl1 = [0, 1].map(function () { return flowSeg(p1, C_MUTED, 2, 3, 20, true); });
     var p2 = group(s);
     label(p2, R, 64, '物体那一半：人工标注', 'demo-x-ink', 14);
-    chip(p2, R, 82, W, '物体的轨迹', C_TGT, { size: 12.5, h: 32 });
-    chip(p2, R, 124, W, '期望的接触位置', C_TGT, { size: 12.5, h: 32 });
-    chip(p2, R, 166, W, '每段视频一个专门的后处理脚本', C_MUTED, { size: 12, h: 32 });
-    label(p2, R, 222, '出处：官方仓库的问答（FAQ）', 'demo-x-mut', 10.5);
+    /* ① 物体的轨迹：播放头扫过一段视频，在拿起、放下两帧打上标记 */
+    label(p2, R, 90, '① 物体的轨迹：标出关键帧', 'demo-x-ink2', 12);
+    var film = [];
+    for (var q = 0; q < 10; q++) film.push(rectBox(p2, R + q * 35, 100, 31, 30, C_BORDER, C_SURFACE2));
+    var keyQ = [3, 7], keyTag = keyQ.map(function (qq, k) { return label(p2, R + qq * 35 + 15.5, 146, k ? '放下' : '拿起', 'demo-x-ink2', 11, 'middle'); });
+    var head2 = hline(p2, R, 96, R, 134, C_ACCENT, 2);
+    /* ② 期望的接触位置：在箱子两侧点上黄点 */
+    label(p2, R, 176, '② 接触位置：点在物体上', 'demo-x-ink2', 12);
+    boxIcon(p2, R + 30, 200, 76, 52);
+    var cpt2 = [dotAt(p2, R + 34, 222, 6, C_TGT), dotAt(p2, R + 102, 222, 6, C_TGT)];
+    cpt2.forEach(function (c) { c.style.stroke = '#ffffff'; c.style.strokeWidth = '1.2px'; });
+    var cursor2 = paint(svgEl('path', { d: 'M0 0 L0 14 L4 10 L8 17 L10 16 L6 9 L11 9 Z' }), 'var(--text)', null);
+    p2.appendChild(cursor2);
+    /* ③ 每段视频一个后处理脚本：代码一行一行长出来 */
+    label(p2, R + 176, 176, '③ 每段一个脚本', 'demo-x-ink2', 12);
+    rectBox(p2, R + 168, 188, 184, 76, C_BORDER, C_SURFACE2);
+    var code2 = [118, 150, 96, 136, 74].map(function (w, k) { return hbar(p2, R + 180 + (k % 2) * 12, 198 + k * 12, 6, k % 2 ? C_MUTED : C_ACCENT); });
+    var codeW = [118, 150, 96, 136, 74];
+    label(p2, R, 292, '出处：官方仓库的问答（FAQ）', 'demo-x-mut', 10.5);
     /* 第 3 段：箱子中心的高度随时间，标出拿起和放下 */
     var p3 = group(s);
     label(p3, R, 64, '例：行李箱的轨迹', 'demo-x-ink', 14);
@@ -847,17 +895,31 @@
     label(p3, R, PY + PH + 44, '拿着时跟着手腕走，其余时间放在地上，再插值平滑', 'demo-x-mut', 10.5);
     var p4 = group(s);
     label(p4, R, 64, '唯一的例外', 'demo-x-ink', 14);
-    chip(p4, R, 82, W, '其余参考都来自 RGB 视频', C_ACCENT, { size: 12.5, h: 32 });
-    chip(p4, R, 124, W, '搬行李箱：取自 OMOMO 数据集', C_TGT, { size: 12.5, h: 32 });
-    chip(p4, R, 166, W, '要用手抓握的（搬显示器、台灯）不做', C_MUTED, { size: 12, h: 32 });
-    cross(p4, R + W - 30, 173, 16, C_BAD);
-    label(p4, R, 222, 'OMOMO 质量高，但很多动作需要灵巧手', 'demo-x-mut', 10.5);
+    /* 六张任务卡：五张来自 RGB 视频，搬行李箱来自 OMOMO；要用手抓握的两张打叉 */
+    var tiles4 = [['开门穿门', 'RGB 视频'], ['用脚开门', 'RGB 视频'], ['搬面包箱', 'RGB 视频'], ['推大箱子', 'RGB 视频'], ['楚门式鞠躬', 'RGB 视频'], ['搬行李箱', 'OMOMO']].map(function (c, i) {
+      var g = group(p4), x = R + (i % 3) * 118, y = 80 + Math.floor(i / 3) * 62, om = c[1] === 'OMOMO';
+      rectBox(g, x, y, 110, 54, om ? C_TGT : C_ACCENT, C_SURFACE);
+      label(g, x + 55, y + 22, c[0], 'demo-x-ink2', 12, 'middle');
+      label(g, x + 55, y + 42, c[1], om ? 'demo-x-ink' : 'demo-x-mut', 11, 'middle');
+      return g;
+    });
+    label(p4, R, 226, '要用手抓握的，这一版不做：', 'demo-x-ink2', 12);
+    var grip4 = ['搬显示器', '搬台灯'].map(function (n, i) {
+      var g = group(p4), x = R + i * 118;
+      rectBox(g, x, 236, 110, 34, C_BORDER, C_SURFACE2);
+      label(g, x + 55, 258, n, 'demo-x-mut', 12, 'middle');
+      cross(g, x + 88, 246, 14, C_BAD);
+      return g;
+    });
+    label(p4, R + 244, 258, 'OMOMO 里很多', 'demo-x-mut', 11);
+    label(p4, R + 244, 280, '要灵巧手', 'demo-x-mut', 11);
     var p5 = group(s);
     label(p5, R, 64, '这段参考', 'demo-x-ink', 14);
     var st = [['472', '帧（50 帧/秒，9.44 s）'], ['28', '个机器人连杆 + 1 个箱子'], ['29', '个关节角']];
+    var stN = [];
     var stG = st.map(function (n, i) {
       var g = group(p5);
-      tone(g, R, 112 + i * 52, n[0], C_ACCENT, 28, 'start');
+      stN.push(tone(g, R, 112 + i * 52, n[0], C_ACCENT, 28, 'start'));
       label(g, R + 70, 110 + i * 52, n[1], 'demo-x-ink2', 12);
       return g;
     });
@@ -868,6 +930,18 @@
       fl1.forEach(function (f, i) { f.at(now + i * 0.4, [R + 64, 82 + i * 60 + 34], [R + 64, 82 + (i + 1) * 60 - 2], true); });
       moveDot(hDot, [hx(j), hy(suitFrames()[j].ref.cen[2])]);
       stG.forEach(function (g, i) { setOpacity(g, seg(t, 13.8 + i * 0.5, 14.2 + i * 0.5)); });
+      var u5 = since(t, clock, 13.4);
+      stN.forEach(function (n, i) { n.textContent = countTo(+st[i][0], seg(u5, 0.4 + i * 0.5, 1.6 + i * 0.5)); });
+      /* 人工标注：播放头 4 s 扫一遍；扫过的关键帧亮起；光标去点两个接触点；代码一行一行长出来 */
+      var u2 = since(t, clock, 3.6), ph = (now % 4) / 4;
+      head2.setAttribute('x1', (R + ph * 350).toFixed(1)); head2.setAttribute('x2', (R + ph * 350).toFixed(1));
+      film.forEach(function (r, q) { var key = keyQ.indexOf(q); r.style.stroke = key >= 0 && ph * 10 > q ? (key ? C_GOOD : C_ACCENT) : C_BORDER; r.style.strokeWidth = key >= 0 && ph * 10 > q ? '2.4px' : ''; });
+      keyTag.forEach(function (lb, k) { lb.style.opacity = ph * 10 > keyQ[k] ? 1 : 0.25; });
+      var cp = (now % 3) / 3, ci = cp < 0.5 ? 0 : 1, cx = [R + 34, R + 102][ci], back = [R + 150, R + 60][ci];
+      var ease = seg(cp % 0.5, 0, 0.3);
+      cursor2.setAttribute('transform', 'translate(' + (back + (cx - back) * ease).toFixed(1) + ' ' + (262 - 40 * ease).toFixed(1) + ')');
+      cpt2.forEach(function (c, k) { c.style.opacity = k === 0 ? (ci === 0 ? seg(cp, 0.3, 0.35) : 1) : (ci === 1 ? seg(cp, 0.8, 0.85) : 0); });
+      code2.forEach(function (b, k) { setW(b, codeW[k] * seg(u2, 0.8 + k * 0.4, 1.2 + k * 0.4)); });
       setOpacity(p1, win(t, 0.3, 3.6));
       setOpacity(p2, win(t, 3.6, 7.0));
       setOpacity(p3, win(t, 7.0, 10.4));
@@ -973,11 +1047,11 @@
     label(p3, R, 160, '左下的条就是相位，跟着回放往前走', 'demo-x-mut', 11);
     var p4 = group(s);
     label(p4, R, 64, '③ 误差太大就终止', 'demo-x-ink', 14);
-    var EX = R + 8, EY = 84, EW = W - 16, EH = 92;
+    var EX = R + 8, EY = 90, EW = W - 16, EH = 92;
     rectBox(p4, EX, EY, EW, EH, C_BORDER, C_SURFACE);
     var thY = EY + 30;
     hline(p4, EX, thY, EX + EW, thY, C_BAD, 1.4, '5 3');
-    label(p4, EX + EW - 4, thY - 5, '阈值', 'demo-x-ink2', 10, 'end');
+    label(p4, EX + EW, EY - 9, '红虚线：阈值', 'demo-x-ink2', 10.5, 'end');
     var errPath = pathLine(p4, [], C_ACCENT, 2);
     var cells = [];
     for (i = 0; i < 25; i++) cells.push(paint(svgEl('rect', { x: EX + i * (EW / 25), y: EY + EH + 14, width: EW / 25 - 2, height: 12, rx: 2 }), C_SURFACE2, C_BORDER));
@@ -1046,6 +1120,18 @@
     label(p1, R, 64, '物体位姿 → 根部坐标系', 'demo-x-ink', 14);
     rich(p1, R, 96, '不管什么物体，策略只看它**相对机器人根部**的位姿', 12, null, 'start', W);
     label(p1, R, 124, '左下蓝色箭头：从骨盆指向箱子', 'demo-x-mut', 11);
+    /* 小动图：根部坐标系的箭头指向一个轮换的物体（箱子 / 门 / 椅子），表示都一样 */
+    var OX = R + 50, OY = 238;
+    var axX = arrow(p1, C_BAD, 2), axY = arrow(p1, C_GOOD, 2);
+    axX.set(OX, OY, OX + 46, OY, 7); axY.set(OX, OY, OX, OY - 46, 7);
+    label(p1, OX, OY + 22, '根部坐标系', 'demo-x-ink2', 11.5, 'middle');
+    var objArrow = arrow(p1, C_ACCENT, 2.4);
+    var objs1 = [group(p1), group(p1), group(p1)];
+    boxIcon(objs1[0], R + 236, 186, 56, 46);
+    var door6 = doorIcon(objs1[1], R + 246, 168, 34, 64, C_ACCENT);
+    objs1[2].appendChild(paint(svgEl('path', { d: 'M' + (R + 238) + ' 206 h56 M' + (R + 242) + ' 206 v28 M' + (R + 290) + ' 206 v28 M' + (R + 290) + ' 206 v-34', fill: 'none', 'stroke-width': 4, 'stroke-linecap': 'round' }), null, C_TGT));
+    var objName1 = label(p1, R + 264, 260, '', 'demo-x-ink2', 12, 'middle');
+    label(p1, R + 150, 290, '换什么物体，都是同一种量：位置 + 朝向', 'demo-x-mut', 11, 'middle');
     var p2 = group(s);
     label(p2, R, 64, '再加期望接触点（图 3 的黄点）', 'demo-x-ink', 14);
     [['搬行李箱', '箱子两侧'], ['用脚开门', '门板下沿'], ['打开折叠椅', '座面的边']].forEach(function (r, i) {
@@ -1053,10 +1139,17 @@
       label(p2, R + 134, 82 + i * 42 + 20, r[1], 'demo-x-ink2', 12);
     });
     label(p2, R, 222, '同样换到根部坐标系，训练和部署时都一样', 'demo-x-mut', 10.5);
+    /* 论文图 3 的三张小图轮流框亮，右边对应的那一行标出来 */
+    var fb6 = [0, 1, 2].map(function (k) { return figBox(p2, fig, k / 3 + 0.005, 0.02, (k + 1) / 3 - 0.005, 0.98, C_TGT); });
+    var mark6 = paint(svgEl('path', { d: 'M0 0 l10 6 l-10 6 Z' }), C_TGT);
+    p2.appendChild(mark6);
     var p3 = group(s);
     label(p3, R, 64, '策略的观测', 'demo-x-ink', 14);
     [['本体感受', C_ACCENT], ['相位 $\\phi$', C_MUTED], ['物体 + 接触点', C_TGT]].forEach(function (c, i) { chip(p3, R + i * 118, 84, 110, c[0], c[1], { size: 12, h: 32 }); });
-    label(p3, R, 152, '换一种物体，不用改网络结构', 'demo-x-ink2', 12.5);
+    var net3 = chip(p3, R + 96, 160, 160, '同一个策略网络', C_GOOD, { size: 12.5, h: 36 });
+    void net3;
+    var fl6 = [0, 1, 2].map(function () { return flowSeg(p3, C_MUTED, 2, 3, 26, true); });
+    label(p3, R, 234, '换一种物体，不用改网络结构', 'demo-x-ink2', 12.5);
     var p4 = group(s);
     label(p4, R, 64, '代码里物体只占 10 维', 'demo-x-ink', 14);
     var cellsX = R, cw = W / 10, cols4 = [C_ACCENT, C_ACCENT, C_GOOD, C_GOOD, C_TGT, C_TGT, C_TGT, C_TGT, C_TGT, C_TGT];
@@ -1086,6 +1179,15 @@
       arrows[0].set(a[0], a[1], b[0], b[1]); arrows[1].set(a[0], a[1], c1[0], c1[1], 7); arrows[2].set(a[0], a[1], c2[0], c2[1], 7);
       setOpacity(arrows[0].g, seg(t, 0.7, 1.1));
       setOpacity(arrows[1].g, seg(t, 3.9, 4.3)); setOpacity(arrows[2].g, seg(t, 3.9, 4.3));
+      var kObj = Math.floor(now / 1.6) % 3;
+      objs1.forEach(function (g, k) { setOpacity(g, k === kObj ? 1 : 0); });
+      door6.at(0.3 + 0.3 * Math.sin(now * 1.8));
+      objArrow.set(OX, OY, R + 228, 214, 8);
+      objName1.textContent = ['箱子', '门', '椅子'][kObj];
+      var k6 = Math.floor(now / 1.4) % 3;
+      fb6.forEach(function (b, k) { b.style.opacity = k === k6 ? 1 : 0; });
+      mark6.setAttribute('transform', 'translate(' + (R - 16) + ' ' + (91 + k6 * 42) + ')');
+      fl6.forEach(function (f, k) { f.at(now + k * 0.3, [R + 55 + k * 118, 118], [R + 136 + k * 40, 158], true); });
       cells4.forEach(function (r, i) { r.style.opacity = clamp(seg(since(t, clock, 10.4), 0.2, 1.6) * 10 - i, 0, 1); });
       f5.at(now, [R + 152, 100], [R + 200, 100], true);
       setOpacity(p1, win(t, 0.3, 3.6));
@@ -1110,7 +1212,7 @@
     var pts = [];
     for (var i = 0; i <= 80; i++) { var v = i / 80 * xmax; pts.push([px(v), py(fn(v))]); }
     pathLine(g, pts, color, 2.4);
-    (xticks || []).forEach(function (v) { label(g, px(v), y + h + 15, String(v) + (xunit || ''), 'demo-x-mut', 8.5, 'middle'); });
+    (xticks || []).forEach(function (v) { label(g, px(v), y + h + 18, String(v) + (xunit || ''), 'demo-x-mut', 8.5, 'middle'); });
     var d = dotAt(g, 0, 0, 5.5, color), vl = hline(g, 0, 0, 0, 0, color, 1, '3 3');
     return { g: g, px: px, py: py, dot: function (v) { var q = clamp(v, 0, xmax); moveDot(d, [px(q), py(fn(q))]); setLine(vl, px(q), py(fn(q)), px(q), y + h); } };
   }
@@ -1127,21 +1229,47 @@
     var R = 424, W = 352;
     var p1 = group(s);
     label(p1, R, 64, '跪、弯腰：离默认站姿很远', 'demo-x-ink', 14);
-    [['默认站姿的膝角', '0.67 rad', C_MUTED], ['跪下时的左膝（参考）', '2.73 rad', C_ACCENT]].forEach(function (r, i) {
-      chip(p1, R, 84 + i * 48, 210, r[0], r[2], { size: 12, h: 34 });
-      tone(p1, R + 226, 84 + i * 48 + 23, r[1], r[2] === C_MUTED ? 'var(--text-secondary)' : r[2], 15, 'start');
-    });
-    label(p1, R, 206, '参考第 3.20 s，跪得最低的那一帧', 'demo-x-mut', 11);
+    /* 膝角刻度盘：0（伸直）到 π（折到底）；两根指针是默认站姿与第 3.20 s 的左膝 */
+    var GX = R + 176, GY = 212, GR = 112;
+    function gpt(a, r) { return [GX + r * Math.cos(a), GY - r * Math.sin(a)]; }
+    var gArc = [];
+    for (var ga = 0; ga <= 60; ga++) gArc.push(gpt(ga / 60 * Math.PI, GR));
+    pathLine(p1, gArc, C_BORDER, 2);
+    [0, 1, 2, 3].forEach(function (v) { var a0 = gpt(v, GR), a1 = gpt(v, GR + 7), lb = gpt(v, GR + 20); hline(p1, a0[0], a0[1], a1[0], a1[1], C_BORDER, 1.4); label(p1, lb[0], lb[1] + 4, v + ' rad', 'demo-x-mut', 9, 'middle'); });
+    var sweep1 = pathLine(p1, [], C_ACCENT, 6);
+    sweep1.style.opacity = 0.35;
+    var needles1 = [[DEFAULT_KNEE, C_MUTED], [KNEEL.knee, C_ACCENT]].map(function (c) { var e = gpt(c[0], GR - 10); return hline(p1, GX, GY, e[0], e[1], c[1], 3.2); });
+    dotAt(p1, GX, GY, 5, 'var(--text)');
+    var midA = gpt((DEFAULT_KNEE + KNEEL.knee) / 2, 58);
+    var dTxt1 = label(p1, midA[0], midA[1], '', 'demo-x-ink', 12.5, 'middle');
+    legendRow(p1, R, 240, [['默认站姿 0.67 rad', C_MUTED, 112], ['跪下时的左膝 2.73 rad', C_ACCENT, 136]], 11.5);
+    label(p1, R, 266, '刻度盘是膝角：0 伸直，越大弯得越深；取参考第 3.20 s 跪得最低的那一帧', 'demo-x-mut', 10.5);
+    /* 第 2、3 段共用一条关节角数轴：圆点是左膝的关节目标，三角是「动作 = 0」时的目标 */
+    var AX0 = R + 14, AW = W - 28, AY = 168;
+    function ax(v) { return AX0 + clamp(v, 0, 3.2) / 3.2 * AW; }
+    function axis(g) {
+      hline(g, AX0, AY, AX0 + AW, AY, C_BORDER, 1.4);
+      [0, 1, 2, 3].forEach(function (v) { hline(g, ax(v), AY, ax(v), AY + 5, C_BORDER, 1.2); label(g, ax(v), AY + 19, v + ' rad', 'demo-x-mut', 9, 'middle'); });
+      label(g, AX0, AY - 54, '左膝的关节目标', 'demo-x-mut', 11);
+    }
+    function tri(g, v, color) { g.appendChild(paint(svgEl('path', { d: 'M' + (ax(v) - 7) + ' ' + (AY + 26) + ' l7 -10 l7 10 Z' }), color)); }
     var p2 = group(s);
     label(p2, R, 64, '普通动作：围着默认站姿探索', 'demo-x-ink', 14);
-    chip(p2, R, 84, W, '动作 = 0 → 关节目标 = 默认站姿', C_MUTED, { size: 12.5, h: 34 });
-    chip(p2, R, 130, W, '回合从跪姿开始 → 第一步就被弹起来', C_BAD, { size: 12.5, h: 34 });
-    label(p2, R, 194, '马上失去平衡，采到的样本没用', 'demo-x-mut', 11);
+    axis(p2);
+    tri(p2, DEFAULT_KNEE, C_MUTED);
+    label(p2, ax(DEFAULT_KNEE), AY + 48, '动作 = 0：默认站姿', 'demo-x-ink2', 11.5, 'middle');
+    label(p2, ax(KNEEL.knee), AY + 48, '回合从跪姿开始', 'demo-x-ink2', 11.5, 'middle');
+    var dot2 = dotAt(p2, ax(KNEEL.knee), AY - 14, 7, C_BAD), trail2 = hline(p2, 0, 0, 0, 0, C_BAD, 2, '4 3');
+    var pop2 = label(p2, ax(1.6), AY - 30, '一出手就被撑起来', 'demo-x-ink', 12.5, 'middle');
+    label(p2, R, 268, '马上失去平衡，采到的样本没用', 'demo-x-mut', 11.5);
     var p3 = group(s);
     label(p3, R, 64, '残差动作', 'demo-x-ink', 14);
-    math(p3, R + W / 2, 110, '\\theta_t^{\\mathrm{target}} = \\theta_t^{\\mathrm{ref}} + a_t', 20, 'middle');
-    chip(p3, R, 140, W, '动作 = 0 → 关节目标 = 参考姿态', C_ACCENT, { size: 12.5, h: 34 });
-    label(p3, R, 202, '一开始的探索就围着当前的参考展开', 'demo-x-ink2', 12);
+    math(p3, R + W / 2, 98, '\\theta_t^{\\mathrm{target}} = \\theta_t^{\\mathrm{ref}} + a_t', 20, 'middle');
+    axis(p3);
+    tri(p3, KNEEL.knee, C_ACCENT);
+    label(p3, ax(KNEEL.knee) - 10, AY + 48, '动作 = 0：参考姿态', 'demo-x-ink2', 11.5, 'middle');
+    var dots3 = [0, 1, 2, 3, 4].map(function (k) { return dotAt(p3, 0, 0, 4.5, C_ACCENT); });
+    label(p3, R, 268, '一开始的探索就围着当前的参考展开', 'demo-x-ink2', 12);
     var p4 = group(s);
     label(p4, R, 64, '算一下：第 3.20 s 的左膝', 'demo-x-ink', 14);
     var NX = R + 10, NW = W - 20, NY = 180;
@@ -1169,6 +1297,16 @@
       var now = nowOf(t, clock), j = loopFrame(now, 36, 61);
       bot.put(cam, j); ghost.put(cam, 0);
       gLab.textContent = '参考第 ' + f2(suitTime(j)) + ' s';
+      /* 刻度盘：弧从默认站姿扫到跪姿；数轴：普通动作每 2.4 s 从 2.73 被拉回 0.67，残差动作只在 2.73 附近抖 */
+      var u1 = seg(since(t, clock, 0.4), 0.6, 2.0), aNow = DEFAULT_KNEE + (KNEEL.knee - DEFAULT_KNEE) * u1, sw = [];
+      for (var q = 0; q <= 30; q++) sw.push(gpt(DEFAULT_KNEE + (aNow - DEFAULT_KNEE) * q / 30, GR - 22));
+      setPath(sweep1, sw);
+      dTxt1.textContent = u1 > 0.98 ? '相差 2.06 rad' : '';
+      void needles1;
+      var c2 = (now % 2.4) / 2.4, k2 = KNEEL.knee + (DEFAULT_KNEE - KNEEL.knee) * seg(c2, 0.25, 0.45);
+      moveDot(dot2, [ax(k2), AY - 14]); setLine(trail2, ax(KNEEL.knee), AY - 14, ax(k2), AY - 14);
+      pop2.style.opacity = seg(c2, 0.4, 0.5) * (1 - seg(c2, 0.9, 1));
+      dots3.forEach(function (d, k) { var j3 = KNEEL.knee + 0.18 * Math.sin(now * (1.7 + k * 0.6) + k * 1.3); moveDot(d, [ax(j3), AY - 14 - k * 3]); });
       var pop = t >= 3.6 && t < 10.4 ? 0.25 + 0.3 * (0.5 + 0.5 * Math.sin(now * 2.4)) : 0;
       setOpacity(ghost.g, pop);
       setOpacity(tagG, pop > 0 ? 1 : 0);
@@ -1194,19 +1332,30 @@
     var R = 424, W = 352;
     var p1 = group(s);
     label(p1, R, 64, '只靠跟踪奖励不够', 'demo-x-ink', 14);
-    [['视频重定向来的参考是纯运动学的', C_MUTED], ['接触常常不准', C_BAD], ['还可能穿模', C_BAD]].forEach(function (c, i) { chip(p1, R, 84 + i * 46, W, c[0], c[1], { size: 12.5, h: 34 }); });
-    label(p1, R, 236, '每个该接触的末端：位置项 × 力项', 'demo-x-ink2', 12);
+    label(p1, R, 90, '视频重定向来的参考，只是运动学的轨迹', 'demo-x-ink2', 12);
+    /* 两个小动图：左边手悬在接触点外，右边手穿进箱子 */
+    var pan1 = [0, 1].map(function (k) { return rectBox(p1, R + k * 182, 102, 170, 112, C_BORDER, C_SURFACE); });
+    void pan1;
+    boxIcon(p1, R + 70, 140, 64, 52);
+    boxIcon(p1, R + 252, 140, 64, 52);
+    var tg1 = [dotAt(p1, R + 72, 164, 6, C_TGT), dotAt(p1, R + 254, 164, 6, C_TGT)];
+    tg1.forEach(function (c) { c.style.stroke = '#ffffff'; c.style.strokeWidth = '1.2px'; });
+    var hand1 = dotAt(p1, 0, 0, 5.5, C_EEF), gap1 = hline(p1, 0, 0, 0, 0, C_ERR, 2, '3 2');
+    var hand1b = dotAt(p1, 0, 0, 5.5, C_EEF), flash1 = rectBox(p1, R + 252, 140, 64, 52, C_BAD, 'none');
+    label(p1, R + 85, 232, '接触常常不准', 'demo-x-ink', 12.5, 'middle');
+    label(p1, R + 267, 232, '还可能穿模', 'demo-x-ink', 12.5, 'middle');
+    label(p1, R, 268, '每个该接触的末端：位置项 × 力项', 'demo-x-ink2', 12);
     var p2 = group(s);
     math(p2, R + W / 2, 70, '\\exp\\!\\left(-\\lVert p_{\\mathrm{eef}} - p_{\\mathrm{target}}\\rVert_2 / \\sigma_{\\mathrm{pos}}\\right)', 15, 'middle');
     var cp2 = curvePlot(p2, R + 20, 92, W - 30, 130, 0.5, posTerm, C_EEF, [0, 0.25, 0.5], ' m');
-    readHint(p2, R, 256, '横轴：手到接触点的距离；纵轴：位置项，越高越好', 10.5, W);
-    label(p2, R, 280, '注意是距离本身，不是距离的平方', 'demo-x-mut', 10.5);
+    readHint(p2, R, 266, '横轴：手到接触点的距离；纵轴：位置项，越高越好', 10.5, W);
+    label(p2, R, 292, '注意是距离本身，不是距离的平方', 'demo-x-mut', 10.5);
     var p3 = group(s);
     math(p3, R + W / 2, 70, '\\min\\!\\left(\\exp\\!\\left(\\frac{\\lVert F\\rVert - F_{\\mathrm{thres}}}{\\sigma_{\\mathrm{frc}}}\\right),\\,1\\right)', 15, 'middle');
     var cp3 = curvePlot(p3, R + 20, 96, W - 30, 126, 40, frcTerm, C_TGT, [0, 10, 20, 40], ' N');
     hline(p3, cp3.px(10), 96, cp3.px(10), 222, C_BAD, 1.4, '4 3');
-    label(p3, cp3.px(10) + 4, 110, '阈值：封顶为 1', 'demo-x-ink2', 10);
-    readHint(p3, R, 256, '横轴：接触力；纵轴：力项。力够就行，不鼓励更大的力', 10.5, W);
+    label(p3, cp3.px(40) - 6, 160, '过了阈值：封顶为 1', 'demo-x-ink2', 10, 'end');
+    readHint(p3, R, 266, '横轴：接触力；纵轴：力项。力够就行，不鼓励更大的力', 10.5, W);
     var p4 = group(s);
     math(p4, R + W / 2, 74, 'R_{\\mathrm{interaction}} = \\frac{1}{N_c}\\sum_{i=1}^{N_c} R_{\\mathrm{contact},i}\\cdot c_{t,i}', 16, 'middle');
     label(p4, R, 126, '对要接触的末端取平均，用接触信号门控', 'demo-x-ink2', 12);
@@ -1221,12 +1370,18 @@
     label(p5, R, 258, '上面那条：距离取左边这一帧的左手，接触力假设 15 N', 'demo-x-mut', 10.5);
     function draw(t, clock) {
       var now = nowOf(t, clock), j = loopFrame(now, 40, 112), f = suitFrames()[j];
+      /* 第 1 段的小动图：左手在接触点外来回晃（红虚线是差多远），右手穿进箱子时箱子闪红 */
+      var hx1 = R + 40 + 10 * Math.sin(now * 2.0);
+      moveDot(hand1, [hx1, 164]); setLine(gap1, hx1, 164, R + 72, 164);
+      var hx1b = R + 236 + 34 * (0.5 + 0.5 * Math.sin(now * 1.6));
+      moveDot(hand1b, [hx1b, 164]);
+      flash1.style.opacity = hx1b > R + 258 ? 0.9 : 0;
       bot.put(cam, j);
       ov.put(f, 'rob', cam);
       var d = handDist(f, 'rob');
       dLab.textContent = f.c ? '左手离接触点 ' + f1(d[0] * 100) + ' cm · 右手 ' + f1(d[1] * 100) + ' cm' : '这一帧不用接触';
       cp2.dot(d[0]);
-      cp3.dot(20 + 19 * Math.sin(now * 0.9));
+      cp3.dot(14 + 12 * Math.sin(now * 0.9));
       bar4.at(j);
       var rr = contactCode(d[0], 15, 1);
       b5[0].set(rr / 5 * 200, f2(rr));
@@ -1484,11 +1639,20 @@
     rich(p4, R, 300, '正文：又完成约 **7** 次；图 4：约 60 + 约 10 个来回', 11.5, null, 'start', W);
     var p5 = group(s);
     label(p5, R, 64, '左边的片段', 'demo-x-ink', 14);
-    label(p5, R, 96, '项目页的 35 分钟加速剪辑', 'demo-x-ink2', 12.5);
-    label(p5, R, 122, '画面里的计数一路走到 68', 'demo-x-ink2', 12.5);
-    label(p5, R, 148, '最后一段：第 68 次摔倒', 'demo-x-ink2', 12.5);
+    label(p5, R, 92, '项目页的加速剪辑：35 分钟压成 108 秒', 'demo-x-ink2', 12.5);
+    /* 35 分钟的时间轴：每次成功落一根绿刻度，第 68 次是红的 */
+    rectBox(p5, R, 108, W, 46, C_BORDER, C_SURFACE);
+    var runTicks = [];
+    for (var q = 0; q < 68; q++) runTicks.push(hline(p5, R + 8 + q * (W - 16) / 67, 114, R + 8 + q * (W - 16) / 67, 148, q < 67 ? C_GOOD : C_BAD, q < 67 ? 2 : 3.4));
+    label(p5, R, 172, '0 分钟', 'demo-x-mut', 11);
+    label(p5, R + W, 172, '约 35 分钟', 'demo-x-mut', 11, 'end');
+    var runNo = label(p5, R, 204, '', 'demo-x-ink', 14);
+    label(p5, R, 232, '绿：一次成功的来回；红：第 68 次摔倒', 'demo-x-mut', 11);
     function draw(t, clock) {
       var now = nowOf(t, clock);
+      var u12 = since(t, clock, 13.4), nRun = Math.floor(68 * seg(u12, 0.3, 3.0));
+      runTicks.forEach(function (r, q) { r.style.opacity = q < nRun ? 1 : 0.12; });
+      runNo.textContent = nRun > 0 ? (nRun < 68 ? '第 ' + nRun + ' 次：成功' : '第 68 次：摔倒') : '';
       clip.at(K.clipSince(t, 0), true);
       var k = Math.floor((now * 0.8) % 5);
       stG.forEach(function (g, i) { setOpacity(g, i === k ? 1 : 0.4); });
@@ -1538,7 +1702,6 @@
     var p3 = group(s);
     label(p3, R, 64, '搬面包箱', 'demo-x-ink', 14);
     var big3 = tone(p3, R, 142, '2', C_ACCENT, 56, 'start');
-    void big3;
     label(p3, R + 52, 118, '次完整做完', 'demo-x-ink2', 15);
     label(p3, R, 176, '难点：快速转身 180°', 'demo-x-ink2', 12.5);
     label(p3, R, 200, '两条腿偶尔会碰到一起', 'demo-x-ink2', 12.5);
@@ -1566,6 +1729,7 @@
       setOpacity(f5, win(t, 13.4));
       c1.at(now); c4.at(now); c5a.at(now); c5b.at(now);
       big.textContent = countTo(7, seg(since(t, clock, 3.6), 0.3, 1.6));
+      big3.textContent = countTo(2, seg(since(t, clock, 7.0), 0.3, 1.2));
       var ang = now * 2.2, cx = R + 290, cy = 150;
       sp.set(cx + 30 * Math.cos(ang - 0.6), cy + 30 * Math.sin(ang - 0.6), cx + 30 * Math.cos(ang), cy + 30 * Math.sin(ang), 9);
       setOpacity(p1, win(t, 0.3, 3.6));
@@ -1819,8 +1983,27 @@
     var R = 424, W = 352;
     var p1 = group(s);
     label(p1, R, 64, '局限一：依赖动作捕捉', 'demo-x-ink', 14);
-    chip(p1, R, 84, W, '机器人骨盆、物体的位姿都靠标记点', C_TGT, { size: 12.5, h: 34 });
-    chip(p1, R, 130, W, '没布置过的环境里用不了', C_BAD, { size: 12.5, h: 34 });
+    /* 左：动捕场地里四个相机都看得到标记点；右：没布置过的环境，没有相机 */
+    var rays1 = [];
+    [0, 1].forEach(function (k) {
+      var x = R + k * 182;
+      rectBox(p1, x, 84, 170, 150, k ? C_BAD : C_BORDER, C_SURFACE);
+      boxIcon(p1, x + 92, 176, 40, 32);
+      var pel = [x + 62, 168], bx = [x + 112, 166];
+      [pel, bx].forEach(function (q) { var d = dotAt(p1, q[0], q[1], 5.5, C_TGT); d.style.stroke = '#fff'; d.style.strokeWidth = '1.2px'; });
+      hline(p1, x + 62, 176, x + 62, 212, C_MUTED, 3);
+      if (!k) {
+        [[x + 14, 96], [x + 142, 96], [x + 14, 208], [x + 142, 208]].forEach(function (c) {
+          p1.appendChild(paint(svgEl('rect', { x: c[0], y: c[1], width: 14, height: 10, rx: 2 }), C_ACCENT));
+          [pel, bx].forEach(function (q) { rays1.push(hline(p1, c[0] + 7, c[1] + 5, q[0], q[1], C_ACCENT, 1, '3 3')); });
+        });
+      } else {
+        label(p1, x + 62, 150, '?', 'demo-x-ink', 18, 'middle');
+        label(p1, x + 112, 148, '?', 'demo-x-ink', 18, 'middle');
+      }
+    });
+    label(p1, R + 85, 254, '动捕场地：骨盆和物体都贴标记点', 'demo-x-ink2', 11.5, 'middle');
+    label(p1, R + 267, 254, '没布置过的环境：用不了', 'demo-x-ink2', 11.5, 'middle');
     var p2 = group(s);
     label(p2, R, 64, '下一步：机载传感器', 'demo-x-ink', 14);
     chip(p2, R, 84, 150, '动作捕捉', C_MUTED, { size: 12.5, h: 34 });
@@ -1838,9 +2021,14 @@
     label(p3, R + W / 2, 252, '把很多技能的数据合在一起训（之后的方向）', 'demo-x-mut', 10.5, 'middle');
     var p4 = group(s);
     label(p4, R, 64, '我们补充两点', 'demo-x-ink', 14);
-    chip(p4, R, 84, W, '14 个仿真任务，只有 6 个上了真机', C_MUTED, { size: 12, h: 34, left: true });
-    chip(p4, R, 130, W, '物体轨迹和接触点一段一段人工标注', C_MUTED, { size: 12, h: 34, left: true });
-    label(p4, R, 190, '问答：以后可能接入 OmniRetarget 这类自动流程', 'demo-x-mut', 10.5);
+    label(p4, R, 92, '① 14 个仿真任务，6 个上了真机', 'demo-x-ink2', 12);
+    var d14 = [];
+    for (i = 0; i < 14; i++) d14.push(dotAt(p4, R + 10 + i * 24, 112, 8, C_MUTED));
+    label(p4, R, 160, '② 物体轨迹和接触点，一段一段人工标注', 'demo-x-ink2', 12);
+    var clips4 = [0, 1, 2, 3, 4, 5].map(function (k) { return rectBox(p4, R + k * 58, 172, 50, 32, C_BORDER, C_SURFACE2); });
+    var pen4 = paint(svgEl('path', { d: 'M0 0 l10 -10 l4 4 l-10 10 Z' }), C_TGT);
+    p4.appendChild(pen4);
+    label(p4, R, 236, '问答：以后可能接入 OmniRetarget 这类自动流程', 'demo-x-mut', 10.5);
     var p5 = group(s);
     label(p5, R, 64, '开源（LeCAR-Lab/HDMI）', 'demo-x-ink', 14);
     var tree = [['active_adaptation/', '环境、奖励、PPO-ROA'], ['cfg/task/G1/hdmi/', '13 个任务的配置'], ['data/motion/', '参考动作数据'], ['scripts/', 'train.py、play.py'], ['EGalahad/sim2real', '真机部署（另一个仓库）']];
@@ -1858,8 +2046,14 @@
       mk.forEach(function (c) { c.style.opacity = blink; });
       setOpacity(camIcon, win(t, 3.6, 7.0));
       f2a.at(now, [R + 152, 101], [R + 200, 101], true);
-      fl3.forEach(function (fl, k) { fl.at(now + k * 0.2, [R + 15 + k * 79, 112], [R + 150 + k * 13, 194], true); });
+      fl3.forEach(function (fl, k) { fl.at(now + k * 0.2, [R + 15 + k * 79, 140], [R + 150 + k * 13, 194], true); });
       smalls.forEach(function (r, k) { r.style.opacity = 0.35 + 0.65 * (0.5 + 0.5 * Math.sin(now * 2 + k)); });
+      rays1.forEach(function (r, k) { r.style.opacity = 0.3 + 0.7 * (0.5 + 0.5 * Math.sin(now * 3 + k)); });
+      var u4 = since(t, clock, 10.4);
+      d14.forEach(function (d, k) { var on = k < 6 && u4 > 0.5 + k * 0.25; d.style.fill = on ? C_GOOD : C_MUTED; d.style.opacity = on ? 1 : 0.45; });
+      var cyc = (now % 6) / 6, ck = Math.floor(cyc * 6);
+      clips4.forEach(function (r, k) { r.style.stroke = k < ck ? C_TGT : C_BORDER; r.style.fill = k < ck ? C_SURFACE : C_SURFACE2; });
+      pen4.setAttribute('transform', 'translate(' + (R + ck * 58 + 30 + 8 * Math.sin(now * 9)).toFixed(1) + ' ' + (196 + 3 * Math.cos(now * 9)).toFixed(1) + ')');
       void gen;
       treeG.forEach(function (g, k) { setOpacity(g, seg(since(t, clock, 13.4), 0.3 + k * 0.35, 0.6 + k * 0.35)); });
       setOpacity(p1, win(t, 0.3, 3.6));
