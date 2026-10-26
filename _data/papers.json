@@ -3981,6 +3981,17 @@
     "display_name": "Hardware Design",
     "papers": [
       {
+        "title": "PHD-Hand: A Printable Humanoid Dexterous Hand with Linkage-Driven 3-DOA Digits",
+        "path": "papers/12_Hardware_Design/PHD-Hand__Printable_Humanoid_Dexterous_Hand_with_Linkage-Driven_3-DOA_Digits/PHD-Hand__Printable_Humanoid_Dexterous_Hand_with_Linkage-Driven_3-DOA_Digits.md",
+        "url": "/papers/12_Hardware_Design/PHD-Hand__Printable_Humanoid_Dexterous_Hand_with_Linkage-Driven_3-DOA_Digits/PHD-Hand__Printable_Humanoid_Dexterous_Hand_with_Linkage-Driven_3-DOA_Digits.html",
+        "dir": "PHD-Hand__Printable_Humanoid_Dexterous_Hand_with_Linkage-Driven_3-DOA_Digits",
+        "arxiv": "2610.29030",
+        "published_date_zh": "2026年10月21日（arXiv v1）",
+        "published_date_en": "Oct 21, 2026 (arXiv v1)",
+        "zhname": "PHD-Hand：每指三驱动、全连杆驱动的可打印人形灵巧手",
+        "zh_title": "PHD-Hand：每指三驱动、全连杆驱动的可打印人形灵巧手"
+      },
+      {
         "title": "PhoneBot: A Low-Cost Open Humanoid Robot Platform Reusing Smartphones",
         "path": "papers/12_Hardware_Design/PhoneBot__A_Low-Cost_Open_Humanoid_Robot_Platform_Reusing_Smartphones/PhoneBot__A_Low-Cost_Open_Humanoid_Robot_Platform_Reusing_Smartphones.md",
         "url": "/papers/12_Hardware_Design/PhoneBot__A_Low-Cost_Open_Humanoid_Robot_Platform_Reusing_Smartphones/PhoneBot__A_Low-Cost_Open_Humanoid_Robot_Platform_Reusing_Smartphones.html",
