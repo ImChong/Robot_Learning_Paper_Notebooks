@@ -4609,6 +4609,17 @@
     "display_name": "Physics-Based Animation",
     "papers": [
       {
+        "title": "PhysibleMDM: Enforcing Inference-Time Physical Feasibility Constraints on Motion Diffusion Models via Noise Optimization",
+        "path": "papers/13_Physics-Based_Animation/PhysibleMDM__Inference-Time_Physical_Feasibility_Constraints_on_Motion_Diffusion_Models/PhysibleMDM__Inference-Time_Physical_Feasibility_Constraints_on_Motion_Diffusion_Models.md",
+        "url": "/papers/13_Physics-Based_Animation/PhysibleMDM__Inference-Time_Physical_Feasibility_Constraints_on_Motion_Diffusion_Models/PhysibleMDM__Inference-Time_Physical_Feasibility_Constraints_on_Motion_Diffusion_Models.html",
+        "dir": "PhysibleMDM__Inference-Time_Physical_Feasibility_Constraints_on_Motion_Diffusion_Models",
+        "arxiv": "2610.30500",
+        "published_date_zh": "2026年10月21日（arXiv v1）",
+        "published_date_en": "Oct 21, 2026 (arXiv v1)",
+        "zhname": "PhysibleMDM：通过噪声优化在推理时为动作扩散模型施加物理可行性约束",
+        "zh_title": "PhysibleMDM：通过噪声优化在推理时为动作扩散模型施加物理可行性约束"
+      },
+      {
         "title": "From Digital Human Interactions to Physics-Based Humanoid Skills: Physics-Grounded Post-Training of Interaction Generators",
         "path": "papers/13_Physics-Based_Animation/DIGHT__Physics-Grounded_Post-Training_of_Interaction_Generators/DIGHT__Physics-Grounded_Post-Training_of_Interaction_Generators.md",
         "url": "/papers/13_Physics-Based_Animation/DIGHT__Physics-Grounded_Post-Training_of_Interaction_Generators/DIGHT__Physics-Grounded_Post-Training_of_Interaction_Generators.html",
