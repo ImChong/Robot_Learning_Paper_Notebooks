@@ -275,9 +275,21 @@ async def main():
         w.setnchannels(1)
         w.setsampwidth(2)
         w.setframerate(SR)
-        w.writeframes(bytes(pcm))
+        w.writeframes(room_tone(bytes(pcm)))
     json.dump({"total": round(t, 3), "segments": segs, "subs": subs}, open(OUT / "timeline.json", "w"), ensure_ascii=False, indent=1)
     print(f"total {t:.1f}s", file=sys.stderr)
+
+
+def room_tone(raw):
+    """整条旁白铺一层听不见的底噪（标准差 8，约 −72 dBFS，固定种子）。
+    分镜窗口比旁白长的地方（HDMI 第 13、14 幕让项目页视频放完）会有八九秒纯数字零。HDMI 2026-10-27 看片反馈
+    「最后是一整串动作」「仿真里一共 14 个任务」开头被切，但文件里这两句是完整的（faster-whisper 听写过）；
+    我们推测是蓝牙耳机或手机遇到几秒纯静音让音频输出休眠，下一句开头的一两个字被吞掉，没有在设备上证实。
+    底噪让输出一直有信号。"""
+    import numpy as np
+    x = np.frombuffer(raw, dtype=np.int16).astype(np.int32)
+    noise = np.random.default_rng(0).normal(0.0, 8.0, len(x)).round().astype(np.int32)
+    return np.clip(x + noise, -32768, 32767).astype(np.int16).tobytes()
 
 
 asyncio.run(main())
