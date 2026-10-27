@@ -5498,7 +5498,7 @@ def test_doorman_explainer_demos_and_worked_example_share_the_paper_numbers():
         assert sum(int(x) for x in re.findall(r"', (\d+)\]", block)) == {"TEACH_OBS": 246, "STU_OBS": 122}[name], name
     assert "var TEACH_DIM = 246, STU_DIM = 122, IMG_H = 216, IMG_W = 384;" in js and 216 * 384 * 3 == 248832
     assert "=246$$" in note and "=122$ 维" in note and "248{,}832" in note
-    assert "共看 246 维" in narration and "接上 122 维的本体特征" in narration
+    assert "共看 246 维" in narration and "接上一百二十二维的本体特征" in narration
     # 例 3：六个阶段的预算（50 Hz）
     times = [int(x) for x in re.findall(r"short: '[^']+', time: (\d+),", js)]
     assert times == [250, 100, 100, 100, 100, 200] and sum(times) / 50 == 17
@@ -5580,7 +5580,7 @@ def test_doorman_explainer_demos_and_worked_example_share_the_paper_numbers():
 
     # 旁白：93 句；片尾只预告下一篇（CHIP）；绕开多音字与会被切错的词（用 WordBoundary 对照 jieba 查过）
     spoken = re.findall(r'"([^"]*)"\),', narration[narration.index("SCRIPT = [") : narration.index("DISPLAY = [")])
-    assert len(spoken) == 93
+    assert len(spoken) == 97
     assert not any(re.search(r"\d\s*[，,]\s*\d", t) for t in spoken)
     assert "下一篇讲 CHIP" in narration and "CHIP" in intro
     for bad in ("几乎", "一行", "重点", "时长", "张卡", "得在", "为 0", "当基线", "仿真里才有", "比人遥操作"):

@@ -169,6 +169,19 @@
     setOpacity = K.setOpacity,
     sceneSvg = K.sceneSvg,
     polyPath = K.polyPath;
+  /* 视频里分镜按 1080 宽、约 1.2 倍放大，9–10.5 号字只有 11–12 px，手机上看不清（FALCON 2026-10-25 看片反馈）：
+     9–9.5 号放到 11，10–10.5 号放到 11.5 */
+  function minFont(size) {
+    return size == null ? size : size < 9.75 ? Math.max(size, 11) : size < 11 ? Math.max(size, 11.5) : size;
+  }
+  var kitText = svgText, kitRich = svgRich;
+  svgText = function (x, y, str, cls, size, anchor) { return kitText(x, y, str, cls, minFont(size), anchor); };
+  svgRich = function (x, y, str, opts) {
+    var o = {}, k;
+    for (k in opts || {}) o[k] = opts[k];
+    o.size = minFont(o.size);
+    return kitRich(x, y, str, o);
+  };
 
   var X = K.xColors;
   var C_ACCENT = X.accent,
@@ -179,7 +192,8 @@
     C_MUTED = X.muted,
     C_BORDER = X.border,
     C_SURFACE = X.surface,
-    C_SURFACE2 = X.surface2;
+    C_SURFACE2 = X.surface2,
+    C_INK = X.ink;
   /* 全片配色：教师橙（warn）、学生绿；HOMIE 与速度命令蓝、手臂紫、手指绿；罚分 / 失败红；门把黄 */
   var C_TEA = C_WARN, C_STU = C_GOOD, C_CMD = C_ACCENT, C_ARM = C_PURPLE, C_FIN = C_GOOD, C_PEN = C_BAD, C_DOOR = C_WARN;
   /* 图 5 / 图 6 的配色：DoorMan 与缓冲区 100 绿、专家与缓冲区 10 蓝、新手与不用缓冲区灰；三类门：推门蓝、拉门紫、推杠门绿 */
@@ -443,6 +457,38 @@
     var x = v * clamp(u, 0, 1);
     return digits ? x.toFixed(digits) : Math.round(x).toLocaleString('en-US');
   }
+  /* 论文 ↔ 代码 翻牌：每行一个名字和一张卡片，卡片在论文值（橙）和代码值（绿）之间来回翻；set(秒) 按 1.6 s 一翻 */
+  function flipList(parent, x, y0, items, nameW, boxW) {
+    var rows = items.map(function (f, i) {
+      var y = y0 + i * 40;
+      label(parent, x, y + 20, f[0], 'demo-x-ink2', 12);
+      var box = rectBox(parent, x + nameW, y, boxW, 30, C_BORDER, C_SURFACE);
+      var v = label(parent, x + nameW + boxW / 2, y + 20, '', 'demo-x-ink', 12.5, 'middle');
+      var who = label(parent, x + nameW + boxW + 10, y + 20, '', 'demo-x-mut', 11.5);
+      return { box: box, v: v, who: who, f: f };
+    });
+    return {
+      set: function (sec) {
+        var side = Math.floor(Math.max(0, sec) / 1.6) % 2, ph = (Math.max(0, sec) % 1.6) / 1.6;
+        /* 翻牌：每次换面时卡片横向压扁再展开 */
+        var sq = ph < 0.12 ? Math.abs(1 - ph / 0.06) : 1;
+        rows.forEach(function (r) {
+          r.v.textContent = side ? r.f[2] : r.f[1];
+          r.who.textContent = side ? '代码' : '论文';
+          r.box.style.stroke = side ? C_STU : C_TEA;
+          r.v.style.opacity = sq;
+        });
+      }
+    };
+  }
+  /* 五种把手的小图标（圆球、杠杆、推杠、拉手、平板），画在 (cx, cy) */
+  function handleIcon(g, cx, cy, i) {
+    if (i === 0) dotAt(g, cx, cy, 8, C_DOOR);
+    if (i === 1) { dotAt(g, cx - 10, cy, 5, C_DOOR); hline(g, cx - 10, cy, cx + 16, cy, C_DOOR, 5); }
+    if (i === 2) hline(g, cx - 22, cy, cx + 22, cy, C_DOOR, 6);
+    if (i === 3) g.appendChild(paint(svgEl('path', { d: 'M ' + (cx - 4) + ' ' + (cy - 14) + ' h 8 v 28 h -8', fill: 'none', 'stroke-width': 4 }), null, C_DOOR));
+    if (i === 4) g.appendChild(paint(svgEl('rect', { x: cx - 9, y: cy - 14, width: 18, height: 28, rx: 2 }), C_DOOR));
+  }
   /* 确定性随机：第 i 个、种子 s 的 [0, 1) 随机数（mulberry32） */
   function rnd(i, s) {
     var a = (i * 2654435761 + (s || 1) * 40503) >>> 0;
@@ -596,13 +642,48 @@
       chip(g, R, 82 + i * 48, W, f[0], f[1] ? C_GOOD : C_BAD, { size: 13, left: true, h: 36 });
       return f[1] ? tick(g, R + W - 34, 90 + i * 48, 18, C_GOOD) : cross(g, R + W - 32, 91 + i * 48, 17, C_BAD);
     });
-    label(p1, R, 244, 'kung fu and backflips are solved before', 'demo-x-mut', 10.5);
-    label(p1, R, 263, 'they can open doors using only RGB vision', 'demo-x-mut', 10.5);
+    label(p1, R, 242, 'kung fu and backflips are solved before', 'demo-x-mut', 10.5);
+    label(p1, R, 264, 'they can open doors using only RGB vision', 'demo-x-mut', 10.5);
     /* 第 2 段：开门要同时做到的四件事 */
     var p2 = group(s);
     label(p2, R, 64, '开门要同时做到四件事', 'demo-x-ink', 14);
-    var needs = ['① 在晃动的头部相机里找到门把', '② 顶着弹簧把门把压下去', '③ 跟着门轴的圆弧推门', '④ 门的反力下保持全身平衡'];
-    var needG = needs.map(function (n, i) { var g = group(p2); chip(g, R, 80 + i * 42, W, n, C_ACCENT, { size: 12.5, left: true, h: 32 }); return g; });
+    /* 四个小动画，2 × 2：每格 170 × 96，下面一行说明 */
+    var CW4 = 170, CH4 = 96, cellXY = [[R, 78], [R + 182, 78], [R, 214], [R + 182, 214]];
+    var needs = ['① 晃动的相机里找门把', '② 顶着弹簧压下门把', '③ 跟着门轴的圆弧推门', '④ 门的反力下保持平衡'];
+    var needG = needs.map(function (n, i) {
+      var g = group(p2), c = cellXY[i];
+      rectBox(g, c[0], c[1], CW4, CH4, C_BORDER, C_SURFACE);
+      label(g, c[0] + CW4 / 2, c[1] + CH4 + 18, n, 'demo-x-ink2', 11.5, 'middle');
+      return g;
+    });
+    /* ① 相机框不动，画面里的门和门把跟着头晃，十字准星追门把 */
+    var n1 = cellXY[0], camView = group(needG[0]);
+    rectBox(camView, n1[0] + 66, n1[1] + 14, 40, 70, C_DOOR, 'none');
+    var h1 = dotAt(camView, n1[0] + 98, n1[1] + 52, 3.6, C_DOOR);
+    var aim = group(needG[0]);
+    ringAt(aim, 0, 0, 9, C_GOOD, 2);
+    hline(aim, -14, 0, -6, 0, C_GOOD, 2); hline(aim, 6, 0, 14, 0, C_GOOD, 2);
+    hline(aim, 0, -14, 0, -6, C_GOOD, 2); hline(aim, 0, 6, 0, 14, C_GOOD, 2);
+    /* ② 侧视：门把绕转轴往下压，下面的弹簧被压短 */
+    var n2 = cellXY[1], PVX = n2[0] + 52, PVY = n2[1] + 34;
+    dotAt(needG[1], PVX, PVY, 5, C_MUTED);
+    var lev2 = hline(needG[1], PVX, PVY, PVX + 70, PVY, C_DOOR, 6);
+    var spr2 = pathLine(needG[1], [], C_MUTED, 1.8);
+    hline(needG[1], PVX + 40, n2[1] + 88, PVX + 84, n2[1] + 88, C_BORDER, 2);
+    var push2 = arrow(needG[1], C_CMD, 2.4);
+    /* ③ 俯视：门绕门轴转，手沿圆弧走 */
+    var n3 = cellXY[2], HGX = n3[0] + 44, HGY = n3[1] + 80, DL = 84;
+    hline(needG[2], n3[0] + 8, HGY, HGX, HGY, C_BORDER, 3);
+    hline(needG[2], HGX + DL + 4, HGY, n3[0] + CW4 - 8, HGY, C_BORDER, 3);
+    pathLine(needG[2], Array.from({ length: 25 }, function (_, k) { var a = k / 24 * 1.3; return [HGX + DL * Math.cos(a), HGY - DL * Math.sin(a)]; }), C_STU, 1.4, '3 4');
+    var door3 = hline(needG[2], HGX, HGY, HGX + DL, HGY, C_DOOR, 5);
+    dotAt(needG[2], HGX, HGY, 4, C_MUTED);
+    var hand3 = dotAt(needG[2], HGX + DL, HGY, 4.5, C_STU);
+    /* ④ 一台 G1（第 032 期 HOMIE 回放贴图的一帧），门的反力往后推，身体轻轻晃 */
+    var n4 = cellXY[3], body4 = group(needG[3]), g14 = g1Walk(body4);
+    hline(needG[3], n4[0] + 10, n4[1] + 88, n4[0] + CW4 - 10, n4[1] + 88, C_BORDER, 1.4);
+    var react4 = arrow(needG[3], C_BAD, 2.6);
+    label(needG[3], n4[0] + CW4 - 8, n4[1] + 20, '门的反力', 'demo-x-ink2', 11, 'end');
     /* 第 3 段：以前的开门系统 */
     var p3 = group(s);
     label(p3, R, 64, '以前的开门系统', 'demo-x-ink', 14);
@@ -633,15 +714,39 @@
     label(p5, R, 84, 'NVIDIA · UC Berkeley · CMU · 港中文', 'demo-x-mut', 11);
     var row5 = [['仿真里的海量门', 110, C_ACCENT], ['教师—学生—自举', 118, C_WARN], ['RGB 策略', 80, C_GOOD]], rx5 = [], x0 = R;
     row5.forEach(function (c) { chip(p5, x0, 112, c[1], c[0], c[2], { size: 12, h: 32 }); rx5.push([x0, x0 + c[1]]); x0 += c[1] + 22; });
-    var f5 = [0, 1].map(function () { return flowSeg(p5, C_STU, 2, 3, 30, true); });
+    var f5 = [0, 1].map(function () { return flowSeg(p5, C_STU, 2, 3, 30); });
     chip(p5, R + 236, 168, 116, 'G1 真机零样本', C_GOOD, { size: 12, h: 32 });
-    var f5b = flowSeg(p5, C_STU, 2, 3, 30, true);
+    var f5b = flowSeg(p5, C_STU, 2, 3, 30);
     rich(p5, R, 232, '全程只用**仿真数据**；比人遥操作快 23–32%', 12.5);
     function draw(t, clock) {
       var now = nowOf(t, clock);
       clip.at(K.clipSince(t, 0), true);
       marks.forEach(function (m, i) { m.style.opacity = seg(t, 0.8 + i * 0.9, 1.1 + i * 0.9); });
       needG.forEach(function (g, i) { setOpacity(g, 0.25 + 0.75 * seg(t, 3.9 + i * 0.7, 4.2 + i * 0.7)); });
+      if (t > 3.3 && t < 7.4) {
+        /* ① 画面跟着头晃，准星稍慢地追上门把 */
+        var jx = 7 * Math.sin(now * 2.3) + 3 * Math.sin(now * 5.1), jy = 4 * Math.sin(now * 3.1 + 1);
+        camView.setAttribute('transform', 'translate(' + jx.toFixed(1) + ' ' + jy.toFixed(1) + ')');
+        var lag = 0.35, ax = n1[0] + 98 + 7 * Math.sin((now - lag) * 2.3) + 3 * Math.sin((now - lag) * 5.1), ay = n1[1] + 52 + 4 * Math.sin((now - lag) * 3.1 + 1);
+        aim.setAttribute('transform', 'translate(' + ax.toFixed(1) + ' ' + ay.toFixed(1) + ')');
+        void h1;
+        /* ② 压下 0–0.6 rad，弹簧跟着变短 */
+        var ph2 = (now % 2.4) / 2.4, a2 = 0.6 * Math.sin(Math.PI * Math.min(1, ph2 / 0.8)) * (ph2 < 0.8 ? 1 : 0);
+        var tipX = PVX + 70 * Math.cos(a2), tipY = PVY + 70 * Math.sin(a2), sx = PVX + 62 * Math.cos(a2), sy = PVY + 62 * Math.sin(a2), base = n2[1] + 88, zz = [];
+        for (var q = 0; q <= 10; q++) zz.push([sx + (q % 2 ? 6 : -6) * (q > 0 && q < 10 ? 1 : 0), sy + (base - sy) * q / 10]);
+        setPath(spr2, zz);
+        setLine(lev2, PVX, PVY, tipX, tipY);
+        push2.set(tipX - 4, tipY - 30, tipX - 4, tipY - 6, 8);
+        /* ③ 门转到 75°，手跟着走圆弧 */
+        var ph3 = (now % 3.2) / 3.2, a3 = 1.3 * (ph3 < 0.7 ? 0.5 - 0.5 * Math.cos(Math.PI * ph3 / 0.7) : 1 - (ph3 - 0.7) / 0.3);
+        setLine(door3, HGX, HGY, HGX + DL * Math.cos(a3), HGY - DL * Math.sin(a3));
+        moveDot(hand3, [HGX + DL * Math.cos(a3), HGY - DL * Math.sin(a3)]);
+        /* ④ 贴图只取一帧（站着），反力一大身体就往后晃一点 */
+        var f4 = 0.5 + 0.5 * Math.sin(now * 2.0), tilt = -3 * f4;
+        g14.put(n4[0] + 70, n4[1] + 88, 58, 0);
+        body4.setAttribute('transform', 'rotate(' + tilt.toFixed(2) + ' ' + (n4[0] + 70) + ' ' + (n4[1] + 88) + ')');
+        react4.set(n4[0] + 150, n4[1] + 46, n4[0] + 150 - 16 - 26 * f4, n4[1] + 46, 9);
+      }
       priorX.forEach(function (m, i) { m.style.opacity = seg(t, 7.3 + i * 0.5, 7.6 + i * 0.5); });
       qm.style.opacity = 0.4 + 0.6 * Math.abs(Math.sin(now * 2.4));
       f5.forEach(function (f, i) { f.at(now + i * 0.3, [rx5[i][1] + 2, 128], [rx5[i + 1][0] - 2, 128], true); });
@@ -673,7 +778,7 @@
     var chain = [['① 教师：PPO + 特权观测', C_TEA], ['② 学生：DAgger 蒸馏', C_STU], ['③ 学生：GRPO 自举', C_STU]];
     chain.forEach(function (c, i) { chip(p1, R, 80 + i * 50, W, c[0], c[1], { size: 12, h: 32 }); });
     chip(p1, R, 238, W, 'Isaac Lab 环境（三步共用）', C_ACCENT, { size: 11.5, h: 28, dash: '5 4' });
-    var fl1 = [0, 1].map(function () { return flowSeg(p1, C_MUTED, 2, 3, 20, true); });
+    var fl1 = [0, 1].map(function () { return flowSeg(p1, C_MUTED, 2, 3, 20); });
     /* 第 2–4 段：每个阶段一块；GPU 小方格逐个点亮 */
     var PH = [
       ['① 教师强化学习', ['PPO · 特权观测', '专家奖励（分六个阶段）'], 1, 6, C_TEA],
@@ -777,12 +882,25 @@
     rich(p4, R, 230, '$u=\\operatorname{clip}(0.25\\,c,\\,-1,\\,1)$，在 $p_0$ 和 $p_1$ 之间线性插值', 12.5);
     /* 第 5 段：两个 HOMIE 模型 */
     var p5 = group(s);
-    label(p5, R, 64, '两个预训练的 HOMIE 模型', 'demo-x-ink', 14);
-    var mW = chip(p5, R, 84, 150, '走路模型', C_CMD, { size: 12.5, h: 34 }), mS = chip(p5, R + 180, 84, 150, '站立模型', C_CMD, { size: 12.5, h: 34 });
-    var cmdTxt = label(p5, R, 144, '', 'demo-x-ink2', 12);
-    label(p5, R, 170, '代码按速度命令的大小切换（阈值 0.5）', 'demo-x-ink2', 11.5);
-    label(p5, R, 194, '训练 DoorMan 时 HOMIE 不更新', 'demo-x-ink2', 11.5);
-    rich(p5, R, 222, '人遥操作的基线也接**同一个 HOMIE**：比较才公平', 12.5);
+    label(p5, R, 64, '两个预训练的 HOMIE 模型，按命令大小切换', 'demo-x-ink', 14);
+    /* 一条 0–1 的刻度：小点是速度命令的大小，过了 0.5 换走路模型 */
+    var GX0 = R + 10, GW = 320, GY5 = 104;
+    var gzS = svgEl('rect', { x: GX0, y: GY5 - 5, width: GW / 2, height: 10, rx: 5 }), gzW = svgEl('rect', { x: GX0 + GW / 2, y: GY5 - 5, width: GW / 2, height: 10, rx: 5 });
+    paint(gzS, C_MUTED); paint(gzW, C_CMD); gzS.style.opacity = 0.35; gzW.style.opacity = 0.35;
+    p5.appendChild(gzS); p5.appendChild(gzW);
+    hline(p5, GX0 + GW / 2, GY5 - 14, GX0 + GW / 2, GY5 + 14, C_INK, 2);
+    label(p5, GX0, GY5 + 26, '0', 'demo-x-mut', 11, 'middle');
+    label(p5, GX0 + GW / 2, GY5 + 26, '阈值 0.5', 'demo-x-ink2', 11.5, 'middle');
+    label(p5, GX0 + GW, GY5 + 26, '1', 'demo-x-mut', 11, 'middle');
+    var cmdDot = dotAt(p5, GX0, GY5, 8, C_CMD);
+    var mS = chip(p5, GX0, 148, 150, '站立模型', C_MUTED, { size: 12.5, h: 34 }), mW = chip(p5, GX0 + GW - 150, 148, 150, '走路模型', C_CMD, { size: 12.5, h: 34 });
+    var cmdTxt = label(p5, R, 212, '', 'demo-x-ink', 12.5);
+    /* 一把锁：HOMIE 的参数冻结 */
+    var lock = group(p5);
+    rectBox(lock, R + 2, 238, 18, 14, C_WARN, 'none');
+    lock.appendChild(paint(svgEl('path', { d: 'M ' + (R + 6) + ' 238 v -5 a 5 5 0 0 1 10 0 v 5', fill: 'none', 'stroke-width': 2 }), null, C_WARN));
+    label(p5, R + 30, 250, '训练 DoorMan 时 HOMIE 冻结、不更新', 'demo-x-ink2', 12);
+    rich(p5, R, 282, '遥操作的基线也接**同一个 HOMIE**：比较才公平', 12.5);
     function draw(t, clock) {
       var now = nowOf(t, clock);
       gw.put(GX, GY, 168, now);
@@ -804,9 +922,11 @@
       var u = 0.5 + 0.5 * Math.sin(now * 1.6);
       hand.set(u);
       moveDot(sDot, [SX + u * SW, 150]);
-      var cmd = 0.5 + 0.45 * Math.sin(now * 0.9), walk = cmd > 0.5;
+      var cmd = 0.5 + 0.42 * Math.sin(since(t, clock, 13.4) * 0.9), walk = cmd > 0.5;
+      moveDot(cmdDot, [GX0 + cmd * GW, GY5]);
       setOpacity(mW, walk ? 1 : 0.3); setOpacity(mS, walk ? 0.3 : 1);
-      cmdTxt.textContent = '速度命令的大小 ' + f2(cmd) + (walk ? ' > 0.5 → 走路' : ' ≤ 0.5 → 站立');
+      gzW.style.opacity = walk ? 0.8 : 0.25; gzS.style.opacity = walk ? 0.25 : 0.8;
+      cmdTxt.textContent = '命令大小 ' + f2(cmd) + (walk ? ' > 0.5 → 走路模型' : ' ≤ 0.5 → 站立模型');
       setOpacity(p1, win(t, 0.3, 3.6));
       setOpacity(p2, win(t, 3.6, 7.0));
       setOpacity(p3, win(t, 7.0, 10.4));
@@ -876,7 +996,7 @@
     label(p4, R, 64, '教师网络（代码）', 'demo-x-ink', 14);
     var net = [['特权观测 246 维', C_TEA], ['LSTM 256 × 2 层', C_TEA], ['MLP 512 / 256 / 128', C_TEA], ['动作 19 维', C_CMD]];
     net.forEach(function (n, i) { chip(p4, R + 60, 80 + i * 44, W - 120, n[0], n[1], { size: 12, h: 30 }); });
-    var fl4 = [0, 1, 2].map(function () { return flowSeg(p4, C_TEA, 2, 3, 18, true); });
+    var fl4 = [0, 1, 2].map(function () { return flowSeg(p4, C_TEA, 2, 3, 18); });
     rich(p4, R, 268, 'PPO：$\\gamma=0.9975$，$\\lambda=0.985$', 12);
     /* 第 5 段：部署时都没有 */
     var p5 = group(s);
@@ -900,7 +1020,7 @@
       setLine(hh, bx + 20, by - 12, hand[0], hand[1]); hh.style.opacity = u2;
       hhTxt.setX(272); hhTxt.setY(254); setOpacity(hhTxt, u2);
       forces.forEach(function (f, i) { var a = -0.5 + i * 0.5, L2 = 14 + 4 * Math.sin(now * 3 + i); f.set(hand[0], hand[1], hand[0] + L2 * Math.sin(a), hand[1] - L2 * Math.cos(a), 6); setOpacity(f.g, u3); });
-      fTxt.setAttribute('x', (hand[0] - 62).toFixed(1)); fTxt.setAttribute('y', (hand[1] + 4).toFixed(1)); fTxt.style.opacity = u3;
+      fTxt.setAttribute('x', (hand[0] - 62).toFixed(1)); fTxt.setAttribute('y', (hand[1] + 16).toFixed(1)); fTxt.style.opacity = u3;
       vR.set(bx - 30, by + 26, bx - 30, by - 6, 8); setOpacity(vR.g, u4);
       vTxt.setX(36); vTxt.setY(by + 16); setOpacity(vTxt, u4);
       setOpacity(dimG, seg(t, 3.0, 3.4));
@@ -952,9 +1072,27 @@
       return g;
     }
     var d1 = detail(['附录表 2：**30 项**奖励', '按阶段生效', '', '用门把、门轴的状态', '区分阶段（人为设计）']);
-    var d2 = detail(['', '**0 走到门前**', '朝门走 +5', '面朝门、手臂别乱动 −1', '**1 预抓**', '手到预抓点 +6', '站稳别走 **−15**']);
-    var d3 = detail(['', '', '', '**2 抓住**', '手指握拢 +3、手到抓取点 +3', '**3 开门**', '门把转动 +6、门轴转动 +6', '往前推的力 +0.3']);
-    var d4 = detail(['**全程**', '终止 −1000、完成 +4', '省下的时间 +0.5', '', '**4 推开、5 穿过去**', '往目标走 +12', '别再压门把 +3']);
+    /* 奖励权重画成条：绿正红负，条长按 √|权重|（−1000 太长，截断画成折线） */
+    function wdetail(items, y0) {
+      var g = group(s), bars = [], y = y0;
+      items.forEach(function (it) {
+        if (typeof it === 'string') { rich(g, DX, y + 12, '**' + it + '**', 11.5, 'demo-x-ink'); y += 21; return; }
+        var neg = it[1] < 0, len = Math.min(100, 11 * Math.sqrt(Math.abs(it[1]))), bx = DX + 98;
+        label(g, DX + 92, y + 12, it[0], 'demo-x-ink2', 11.5, 'end');
+        var r = paint(svgEl('rect', { x: bx, y: y + 3, width: 0, height: 11, rx: 2 }), neg ? C_PEN : C_GOOD);
+        g.appendChild(r);
+        var cut = Math.abs(it[1]) > 100 ? label(g, bx + 50, y + 13, '//', 'demo-x-ink', 11, 'middle') : null;
+        var v = label(g, bx + len + 6, y + 13, sgn((it[1] > 0 ? '+' : '') + it[1]), 'demo-x-ink', 11.5);
+        bars.push({ r: r, len: len, v: v, cut: cut });
+        y += 20;
+      });
+      return { g: g, bars: bars };
+    }
+    var d2 = wdetail(['0 走到门前', ['朝门走', 5], ['面朝门', -1], ['手臂别乱动', -1], '1 预抓', ['手到预抓点', 6], ['手对着门把', 3], ['站稳别走', -15]], 48);
+    var d3 = wdetail(['2 抓住', ['手指握拢', 3], ['手到抓取点', 3], '3 开门', ['门把转动', 6], ['门轴转动', 6], ['往前推的力', 0.3]], 70);
+    var d4 = wdetail(['全程', ['终止', -1000], ['完成', 4], ['省下的时间', 0.5], '4 推开、5 穿过去', ['往目标走', 12], ['别再压门把', 3]], 48);
+    var d4hint = group(s);
+    rich(d4hint, R, 268, '**读法**　绿正红负，条长按 $\\sqrt{|w|}$ 画', 11.5);
     var d5 = group(s);
     label(d5, R, 266, '右边是代码里每个阶段的时间预算（50 Hz）', 'demo-x-ink2', 11.5);
     label(d5, R, 288, '超时就重置；提前进阶，剩下的时间带到下一阶段', 'demo-x-mut', 11);
@@ -981,9 +1119,19 @@
         rw.bt.style.opacity = pn === 4 ? 1 : 0;
       });
       setOpacity(d1, win(t, 0.3, 3.6));
-      setOpacity(d2, win(t, 3.6, 7.0));
-      setOpacity(d3, win(t, 7.0, 10.4));
-      setOpacity(d4, win(t, 10.4, 13.4));
+      [[d2, 3.6], [d3, 7.0], [d4, 10.4]].forEach(function (dd) {
+        var u = since(t, clock, dd[1]);
+        dd[0].bars.forEach(function (b, j) {
+          var w = b.len * seg(u, 0.4 + j * 0.25, 0.9 + j * 0.25);
+          setW(b.r, w);
+          b.v.style.opacity = seg(u, 0.8 + j * 0.25, 1.0 + j * 0.25);
+          if (b.cut) b.cut.style.opacity = w > 50 ? 1 : 0;
+        });
+      });
+      setOpacity(d2.g, win(t, 3.6, 7.0));
+      setOpacity(d3.g, win(t, 7.0, 10.4));
+      setOpacity(d4.g, win(t, 10.4, 13.4));
+      setOpacity(d4hint, win(t, 3.6, 13.4));
       setOpacity(d5, win(t, 13.4));
     }
     return { el: s, draw: draw };
@@ -1074,7 +1222,7 @@
     var s = sceneSvg('左上是论文图 3：每个阶段下面一摞快照；左下是我们画的六摞缓冲区，环境一进到新阶段就往那一摞加一张快照，' +
       '一个小球每隔一会儿按比例抽一个阶段，表示这次重置从哪里起步；右边依次出现：存了什么、起步比例、式 2、玩具链上两种做法各阶段的样本（灰色不用重置、绿色分阶段重置）、代码里的数');
     s.appendChild(svgText(24, 26, '分阶段重置：进到新阶段就存档，重置时从存档接着练', 'demo-x-ink2', 13.5));
-    var fig = paperPart(s, 'fig3', 0, 0, 1, 1, 24, 44, 470, '论文图 3：分阶段重置');
+    var fig = paperPart(s, 'fig3', 0, 0, 1, 1, 24, 44, 456, '论文图 3：分阶段重置');
     var SX = function (k) { return 52 + k * 78; }, SY = 384, SH = 7;
     var stacks = STAGES.map(function (st, k) {
       var g = group(s), cards = [];
@@ -1094,8 +1242,13 @@
     var p1 = group(s);
     label(p1, R, 64, '一进到新阶段，就存档', 'demo-x-ink', 14);
     ['机器人：根部位姿、所有关节', '门：根部、门轴、门把', '增量累加器、用掉的时间'].forEach(function (l, i) { chip(p1, R, 80 + i * 40, W, l, C_TEA, { size: 11.5, left: true, h: 30 }); });
-    label(p1, R, 222, '受 Go-Explore「先回去，再探索」启发', 'demo-x-mut', 11);
-    label(p1, R, 242, '仿真器能完全恢复状态，才做得到', 'demo-x-mut', 11);
+    /* 三样东西一张张飞进一张快照卡片 */
+    var snapCard = group(p1);
+    rectBox(snapCard, R + W / 2 - 60, 206, 120, 34, C_TEA, C_SURFACE);
+    var snapN = label(snapCard, R + W / 2, 228, '', 'demo-x-ink', 12.5, 'middle');
+    var flyers = [0, 1, 2].map(function () { var r = paint(svgEl('rect', { x: 0, y: 0, width: 26, height: 10, rx: 2 }), C_TEA); p1.appendChild(r); return r; });
+    label(p1, R, 268, '受 Go-Explore「先回去，再探索」启发', 'demo-x-mut', 11);
+    label(p1, R, 288, '仿真器能完全恢复状态，才做得到', 'demo-x-mut', 11);
     var p2 = group(s);
     label(p2, R, 64, '重置时按比例抽起点', 'demo-x-ink', 14);
     var acc = 0;
@@ -1126,10 +1279,25 @@
     var bigTxt = label(p4, R, BY + 40, '', 'demo-x-ink', 12);
     var p5 = group(s);
     label(p5, R, 64, '只改起点，不改奖励', 'demo-x-ink', 14);
-    rich(p5, R, 92, '式 3：占用测度 $d_\\pi^\\alpha$ 往后面的阶段加权', 12, null, null, W);
-    label(p5, R, 124, '代码：每个环境、每个阶段存 200 张', 'demo-x-ink2', 12);
-    label(p5, R, 146, '（论文写最近 100 张），满了覆盖最旧的', 'demo-x-ink2', 12);
-    label(p5, R, 178, '学生蒸馏时关掉分阶段重置', 'demo-x-ink2', 12);
+    /* 两个框：起点分布换了（打勾），奖励不动（锁） */
+    rectBox(p5, R, 78, 124, 50, C_STU, C_SURFACE);
+    label(p5, R + 12, 97, '起点分布', 'demo-x-ink2', 11.5);
+    math(p5, R + 12, 123, '\\tilde\\rho_\\alpha', 14);
+    var okTick = tick(p5, R + 92, 92, 20, C_STU);
+    rectBox(p5, R + 140, 78, 124, 50, C_MUTED, C_SURFACE);
+    label(p5, R + 152, 99, '奖励', 'demo-x-ink2', 11.5);
+    label(p5, R + 152, 120, '不变', 'demo-x-mut', 11.5);
+    var lk = group(p5);
+    rectBox(lk, R + 232, 100, 16, 13, C_MUTED, 'none');
+    lk.appendChild(paint(svgEl('path', { d: 'M ' + (R + 236) + ' 100 v -5 a 4 4 0 0 1 8 0 v 5', fill: 'none', 'stroke-width': 2 }), null, C_MUTED));
+    rich(p5, R, 152, '式 3：占用测度 $d_\\pi^\\alpha$ 往后面的阶段加权', 12, null, null, W);
+    /* 环形缓冲：10 格（每格代表 20 张），写指针一格格往前走，满了从最旧的开始覆盖 */
+    var ringCells = [], RCW = 24;
+    for (var q5 = 0; q5 < 10; q5++) { var rc = paint(svgEl('rect', { x: R + q5 * (RCW + 2), y: 170, width: RCW, height: 18, rx: 3 }), C_TEA); p5.appendChild(rc); ringCells.push(rc); }
+    var wPtr = arrow(p5, C_INK, 2);
+    label(p5, R, 222, '代码：每个阶段存 200 张（论文写 100 张）', 'demo-x-ink2', 11.5);
+    label(p5, R, 242, '满了从最旧的开始覆盖', 'demo-x-mut', 11.5);
+    label(p5, R, 274, '学生蒸馏时关掉分阶段重置', 'demo-x-ink2', 12);
     function draw(t, clock) {
       var now = nowOf(t, clock), sec = since(t, clock, 0);
       var filled = filledAt(sec);
@@ -1142,11 +1310,28 @@
       var hop = (now / 0.9) % 1;
       moveDot(ball, [SX(pick), 300 - 10 * Math.sin(Math.PI * Math.min(1, hop * 2.5))]);
       ballTxt.textContent = '这次重置从阶段 ' + pick + ' 起步';
-      ballTxt.setAttribute('x', clamp(SX(pick) + 12, 24, 360).toFixed(1));
+      /* 小球右边放不下时，说明挪到小球左边 */
+      var leftSide = SX(pick) + 16 > 300;
+      ballTxt.setAttribute('x', (leftSide ? SX(pick) - 16 : SX(pick) + 16).toFixed(1));
+      ballTxt.setAttribute('text-anchor', leftSide ? 'end' : 'start');
       probTxt.forEach(function (p, q) { p.textContent = '阶段 ' + q + '：' + (probs[q] ? f2(probs[q]) : '0'); });
       var u4 = seg(since(t, clock, 10.4), 0.3, 1.8);
       pairs.forEach(function (pp, q) { pp[0].set(BY, v0[q] * 110 * u4); pp[1].set(BY, va[q] * 110 * u4); });
       bigTxt.textContent = u4 > 0.9 ? '阶段 5：' + f3(v0[5]) + ' → ' + f3(va[5]) + '，约 ' + Math.round(va[5] / v0[5]) + ' 倍' : '';
+      /* 存档：三样东西依次飞进快照卡片，每 3 s 一轮 */
+      var u1 = since(t, clock, 0.4) % 3, nIn = 0;
+      flyers.forEach(function (f, i) {
+        var a = clamp((u1 - 0.3 - i * 0.6) / 0.6, 0, 1), sx = R + W - 40, sy = 90 + i * 40, ex = R + W / 2 - 13, ey = 218;
+        f.setAttribute('x', (sx + (ex - sx) * a).toFixed(1)); f.setAttribute('y', (sy + (ey - sy) * a).toFixed(1));
+        f.style.opacity = a > 0 && a < 1 ? 1 : 0;
+        if (a >= 1) nIn++;
+      });
+      snapN.textContent = '快照：' + nIn + ' / 3';
+      /* 环形缓冲的写指针 */
+      var wp = Math.floor(since(t, clock, 13.4) / 0.5) % 10;
+      ringCells.forEach(function (c, q) { c.style.opacity = q === wp ? 1 : 0.4; });
+      wPtr.set(R + wp * (RCW + 2) + RCW / 2, 206, R + wp * (RCW + 2) + RCW / 2, 192, 7);
+      okTick.style.opacity = seg(since(t, clock, 13.4), 0.6, 0.9);
       setOpacity(p1, win(t, 0.3, 3.6));
       setOpacity(p2, win(t, 3.6, 7.0));
       setOpacity(p3, win(t, 7.0, 10.4));
@@ -1247,9 +1432,21 @@
     var R = 424, W = 352;
     var p1 = group(s);
     label(p1, R, 64, '学生能拿到的', 'demo-x-ink', 14);
-    [['头部 RGB 画面', C_STU], ['关节角、关节速度', C_STU], ['根部角速度、投影重力', C_STU]].forEach(function (c, i) { chip(p1, R, 80 + i * 40, W, c[0], c[1], { size: 12.5, left: true, h: 30 }); });
-    label(p1, R, 218, '看不到：门和门把的位姿、接触力、根部线速度、', 'demo-x-mut', 11.5);
-    label(p1, R, 238, '门的参数、当前在哪个阶段', 'demo-x-mut', 11.5);
+    [['头部 RGB 画面', C_STU], ['关节角、关节速度', C_STU], ['根部角速度、投影重力', C_STU]].forEach(function (c, i) { chip(p1, R, 80 + i * 40, 200, c[0], c[1], { size: 12, left: true, h: 30 }); });
+    chip(p1, R + 262, 110, 90, '学生', C_STU, { size: 13, h: 40 });
+    var fl1 = [0, 1, 2].map(function () { return flowSeg(p1, C_STU, 2, 3, 30); });
+    label(p1, R, 222, '看不到（只有教师有）：', 'demo-x-ink2', 12);
+    var HIDE = ['门的位姿', '门把的位姿', '接触力', '根部线速度', '门的参数', '当前阶段'], hx = R, hy = 234;
+    var hides = HIDE.map(function (h, i) {
+      var w = textW(h, 11.5) + 18;
+      if (i === 3) { hx = R; hy += 34; }
+      var g = group(p1);
+      chip(g, hx, hy, w, h, C_MUTED, { size: 11.5, h: 26 });
+      var strike = hline(g, hx + 4, hy + 13, hx + 4, hy + 13, C_BAD, 2.4);
+      var r = { g: g, strike: strike, x: hx, w: w, y: hy + 13 };
+      hx += w + 8;
+      return r;
+    });
     var p2 = group(s);
     label(p2, R, 64, '学生网络（代码）', 'demo-x-ink', 14);
     chip(p2, R, 78, 160, 'RGB 216 × 384', C_STU, { size: 11.5, h: 28 });
@@ -1258,7 +1455,7 @@
     chip(p2, R, 172, W, 'LSTM 两层', C_STU, { size: 11.5, h: 28 });
     chip(p2, R, 214, W, 'MLP 512 / 256 / 128', C_STU, { size: 11.5, h: 28 });
     chip(p2, R, 256, W, '动作 19 维', C_CMD, { size: 11.5, h: 28 });
-    var fl2 = [0, 1, 2, 3, 4].map(function () { return flowSeg(p2, C_STU, 2, 3, 18, true); });
+    var fl2 = [0, 1, 2, 3, 4].map(function () { return flowSeg(p2, C_STU, 2, 3, 18); });
     var p3 = group(s);
     label(p3, R, 64, 'DAgger：学生开车，教师批改', 'demo-x-ink', 14);
     var CX = R + W / 2, CY = 170, RR = 66;
@@ -1280,15 +1477,18 @@
     label(p4, R, 258, 'DAgger：在学生自己的状态上监督', 'demo-x-ink2', 12);
     var p5 = group(s);
     label(p5, R, 64, '论文和代码的出入', 'demo-x-ink', 14);
-    [['LSTM 每层', '论文 512', '代码 256'], ['视觉编码器', 'ResNet', 'ResNet18，预训练、可训练']].forEach(function (r, i) {
-      label(p5, R, 94 + i * 24, r[0], 'demo-x-ink2', 12); label(p5, R + 96, 94 + i * 24, r[1], 'demo-x-ink2', 12); label(p5, R + 176, 94 + i * 24, r[2], 'demo-x-ink', 12);
-    });
-    label(p5, R, 160, '代码还有论文没写的：', 'demo-x-ink2', 12);
-    label(p5, R, 182, '图像增强（亮度、对比度、色相、噪声、模糊）', 'demo-x-mut', 11.5);
-    label(p5, R, 202, '从视觉特征预测物体位置的辅助头', 'demo-x-mut', 11.5);
+    var flips9 = flipList(p5, R, 82, [['LSTM 每层', '512', '256'], ['视觉编码器', 'ResNet', 'ResNet18']], 100, 150);
+    label(p5, R, 190, '代码里有、论文没写的：', 'demo-x-ink2', 12);
+    chip(p5, R, 202, 160, '图像增强', C_STU, { size: 12, h: 28 });
+    chip(p5, R + 176, 202, 176, '预测物体位置的辅助头', C_STU, { size: 12, h: 28 });
     function draw(t, clock) {
       var now = nowOf(t, clock);
       clip.at(K.clipSince(t, 0), true);
+      fl1.forEach(function (f, i) { f.at(now + i * 0.2, [R + 204, 95 + i * 40], [R + 258, 130], true); });
+      hides.forEach(function (h, i) {
+        var u = seg(since(t, clock, 0.4), 1.2 + i * 0.35, 1.5 + i * 0.35);
+        setLine(h.strike, h.x + 4, h.y, h.x + 4 + (h.w - 8) * u, h.y);
+      });
       fl2[0].at(now, [R + 80, 108], [R + 80, 122], true);
       fl2[1].at(now, [R + 80, 154], [R + 80, 170], true);
       fl2[2].at(now, [R + 272, 108], [R + 272, 170], true);
@@ -1297,6 +1497,7 @@
       var a = -Math.PI / 2 + now * 0.9;
       moveDot(od, [CX + (RR - 18) * Math.cos(a), CY + (RR - 18) * Math.sin(a)]);
       eS.setAttribute('cx', (R + 200 + 10 * Math.sin(now)).toFixed(1));
+      flips9.set(since(t, clock, 13.4));
       setOpacity(p1, win(t, 0.3, 3.6));
       setOpacity(p2, win(t, 3.6, 7.0));
       setOpacity(p3, win(t, 7.0, 10.4));
@@ -1339,8 +1540,12 @@
     chip(p2, R, 82, W, 'PPO：价值网络估基线', C_MUTED, { size: 12, left: true, h: 32 });
     var xPPO = cross(p2, R + W - 30, 90, 16, C_BAD);
     chip(p2, R, 126, W, 'GRPO：同一组回合的平均当基线', C_STU, { size: 12, left: true, h: 32 });
-    label(p2, R, 186, '只有 0 / 1 的成功信号，价值网络很难从 RGB 学准', 'demo-x-ink2', 11.5);
-    label(p2, R, 206, '组内一比，就知道哪几次比平均好（我们的理解）', 'demo-x-mut', 11);
+    /* 8 条回合的回报画成小柱，组内平均画成一条虚线：它就是基线 */
+    var MB = 248, mcols = G.map(function (r, i) { return vbar(p2, R + 12 + i * 26, 16, r ? C_STU : C_PEN); });
+    hline(p2, R + 4, MB, R + 12 + 8 * 26, MB, C_BORDER, 1.2);
+    var meanLn = hline(p2, R + 4, MB, R + 12 + 8 * 26, MB, C_TEA, 2.2, '5 4');
+    var meanTx = label(p2, R + 12 + 8 * 26 + 8, MB, '', 'demo-x-ink', 12);
+    label(p2, R, 278, '只有 0 / 1 信号，价值网络难学准（我们的理解）', 'demo-x-mut', 11.5);
     var p3 = group(s);
     label(p3, R, 64, '组内相对优势（式 4）', 'demo-x-ink', 14);
     math(p3, R, 102, '\\hat A_i=\\dfrac{R_i-\\operatorname{mean}(R)}{\\operatorname{std}(R)}', 17);
@@ -1348,7 +1553,7 @@
     rich(p3, R, 174, '成功 **+0.775**，失败 **−1.291**（总体标准差）', 12);
     label(p3, R, 198, '同一条回合里每一步共用这个优势', 'demo-x-mut', 11);
     var p4 = group(s);
-    label(p4, R, 64, '奖励：几乎只看成没成', 'demo-x-ink', 14);
+    label(p4, R, 64, '奖励：基本只看成没成', 'demo-x-ink', 14);
     chip(p4, R, 82, W, '任务成功：1 / 0', C_STU, { size: 12.5, left: true, h: 32 });
     chip(p4, R, 124, W, '平滑惩罚：关节速度、加速度、动作变化率', C_MUTED, { size: 11.5, left: true, h: 32 });
     label(p4, R, 184, '更新用 PPO 的截断目标（式 5）', 'demo-x-ink2', 12);
@@ -1380,6 +1585,13 @@
       var u1 = seg(since(t, clock, 0.4), 0.3, 1.5);
       b1.set(0.85 * 230 * u1, '约 0.85'); b2.set(0.6 * 230 * u1, '约 0.6');
       xPPO.style.opacity = seg(t, 4.6, 5.0);
+      var u2 = since(t, clock, 3.6);
+      mcols.forEach(function (c, i) { c.set(MB, (G[i] ? 60 : 3) * seg(u2, 1.0 + i * 0.12, 1.3 + i * 0.12)); });
+      var um = seg(u2, 2.4, 3.2), my = MB - 60 * A.mean * um;
+      setLine(meanLn, R + 4, my, R + 12 + 8 * 26, my);
+      meanLn.style.opacity = um > 0 ? 1 : 0;
+      meanTx.setAttribute('y', (my + 4).toFixed(1));
+      meanTx.textContent = um > 0.95 ? '平均 ' + f3(A.mean) + ' = 基线' : '';
       var a = 0.5 * Math.sin(now * 0.7), ang = -Math.PI / 2 + a * 0.9;
       var tip1 = [VX + 120 * Math.cos(ang - 0.35), VY + 120 * Math.sin(ang - 0.35)], tip2 = [VX + 120 * Math.cos(ang + 0.35), VY + 120 * Math.sin(ang + 0.35)];
       cone.setAttribute('d', 'M ' + VX + ' ' + VY + ' L ' + tip1[0].toFixed(1) + ' ' + tip1[1].toFixed(1) + ' L ' + tip2[0].toFixed(1) + ' ' + tip2[1].toFixed(1) + ' Z');
@@ -1462,15 +1674,30 @@
     var R = 424, W = 352;
     var p1 = group(s);
     label(p1, R, 64, '每个并行环境一扇不一样的门', 'demo-x-ink', 14);
-    label(p1, R, 92, '刻意不复刻任何真实场景：', 'demo-x-ink2', 12);
-    label(p1, R, 114, '真机测试的地方，训练时都没见过', 'demo-x-ink2', 12);
-    label(p1, R, 146, '对比：小规模行为克隆只能在', 'demo-x-mut', 11.5);
-    label(p1, R, 166, '采数据的同一个场景、光照、时刻测试', 'demo-x-mut', 11.5);
+    /* 6 × 3 个并行环境，每格一扇门：颜色、宽窄、把手在哪一边隔一会儿就换 */
+    var envDoors = [];
+    for (var e = 0; e < 18; e++) {
+      var ex = R + (e % 6) * 58, ey = 80 + Math.floor(e / 6) * 54, eg = group(p1);
+      rectBox(eg, ex, ey, 52, 48, C_BORDER, C_SURFACE2);
+      var dr = svgEl('rect', { x: ex + 16, y: ey + 8, width: 20, height: 36, rx: 2 });
+      eg.appendChild(dr);
+      var dh = dotAt(eg, ex + 32, ey + 28, 2.4, C_INK);
+      envDoors.push({ dr: dr, dh: dh, x: ex, y: ey });
+    }
+    label(p1, R, 260, '刻意不复刻任何真实场景：', 'demo-x-ink2', 12);
+    label(p1, R, 282, '真机测试的地方，训练时都没见过', 'demo-x-ink2', 12);
     var p2 = group(s);
     label(p2, R, 64, '5 种门，3 大类', 'demo-x-ink', 14);
     var cats = ['推门：转把手，往前推开', '拉门：转把手，往回拉开', '推杠门：顶开弹簧门轴'].map(function (c, i) { var g = group(p2); chip(g, R, 80 + i * 40, W, c, C_DOOR, { size: 12, left: true, h: 30 }); return g; });
-    label(p2, R, 216, '把手：圆球 · 杠杆 · 推杠 · 拉手 · 平板', 'demo-x-ink2', 11.5);
-    label(p2, R, 238, '左开 / 右开 · 往里 / 往外', 'demo-x-ink2', 11.5);
+    /* 五种把手画成小图标 */
+    var HK = ['圆球', '杠杆', '推杠', '拉手', '平板'], hIcons = HK.map(function (n, i) {
+      var g = group(p2), cx = R + 34 + i * 70, cy = 222;
+      rectBox(g, cx - 28, cy - 22, 56, 44, C_BORDER, C_SURFACE2);
+      handleIcon(g, cx, cy, i);
+      label(g, cx, cy + 40, n, 'demo-x-ink2', 11.5, 'middle');
+      return g;
+    });
+    label(p2, R, 300, '左开 / 右开 · 往里 / 往外', 'demo-x-ink2', 11.5);
     var p3 = group(s);
     label(p3, R, 64, '尺寸、重量都随机（附录表 3）', 'demo-x-ink', 14);
     var rows3 = DOOR_RANGES.slice(0, 4).map(function (d, i) {
@@ -1487,28 +1714,36 @@
     p4.appendChild(bolt);
     label(p4, LX + 50, LY + 72, '门把一压，门闩缩回', 'demo-x-ink2', 11, 'middle');
     label(p4, R + 180, 104, '开门那一刻', 'demo-x-ink2', 12);
-    label(p4, R + 180, 126, '全身动力学突变', 'demo-x-ink2', 12);
+    label(p4, R + 180, 126, '全身受的力突然变化', 'demo-x-ink2', 12);
     var rows4 = DOOR_RANGES.slice(4).map(function (d, i) {
       return rangeRow(p4, R, 238 + i * 30, W, d[0], d[1], d[2], 0, d[2] * 1.15, function (v) { return f1(v) + ' ' + d[3]; }, C_PEN);
     });
     var p5 = group(s);
-    label(p5, R, 64, '公开代码里的门', 'demo-x-ink', 14);
-    label(p5, R, 92, '默认只开了一种：杠杆把手、右侧门轴', 'demo-x-ink2', 12);
-    label(p5, R, 114, '门轴最大力 2.5–4.5、阻尼固定 50', 'demo-x-ink2', 12);
-    label(p5, R, 136, '门把预紧 −15°（论文写 −5°）', 'demo-x-ink2', 12);
-    label(p5, R, 166, '和表 3 好几处对不上，原因不明', 'demo-x-mut', 11.5);
+    label(p5, R, 64, '公开代码里的门：和论文对不上', 'demo-x-ink', 14);
+    var flips12 = flipList(p5, R, 82, [['门的种类', '5 种', '默认 1 种'], ['门轴最大力', '20–30 N·m', '2.5–4.5'], ['门把预紧', '−5°', '−15°']], 100, 150);
+    label(p5, R, 222, '代码默认：杠杆把手、门轴在右边、阻尼固定 50', 'demo-x-ink2', 11.5);
+    label(p5, R, 244, '原因论文没说', 'demo-x-mut', 11.5);
     function draw(t, clock) {
       var now = nowOf(t, clock), cs = K.clipSince(t, 0), sd = K.clipSince(t, 3.6);
       var flyOn = t < 3.6 + 0.3;
       cFly.at(cs, flyOn); cDoors.at(sd, !flyOn);
       setOpacity(cFly.g, 1 - seg(t, 3.6, 3.75)); setOpacity(cDoors.g, seg(t, 3.75, 3.9));
-      cats.forEach(function (g, i) { setOpacity(g, 0.3 + 0.7 * (Math.floor(now / 1.2) % 3 === i ? 1 : 0.4)); });
+      var u12 = since(t, clock, 3.6);
+      cats.forEach(function (g, i) { setOpacity(g, 0.3 + 0.7 * (Math.floor(u12 / 1.2) % 3 === i ? 1 : 0.4)); });
+      hIcons.forEach(function (g, i) { setOpacity(g, 0.3 + 0.7 * (Math.floor(u12 / 0.8) % 5 === i ? 1 : 0.4)); });
+      envDoors.forEach(function (d, e) {
+        var k = Math.floor(now / 0.8 + rnd(e, 9) * 3), w = 14 + 12 * rnd(k, e + 3), left = rnd(k, e + 7) < 0.5;
+        d.dr.setAttribute('x', (d.x + 26 - w / 2).toFixed(1)); d.dr.setAttribute('width', w.toFixed(1));
+        d.dr.style.fill = 'hsl(' + Math.round(360 * rnd(k, e + 1)) + ', 45%, ' + Math.round(40 + 25 * rnd(k, e + 2)) + '%)';
+        moveDot(d.dh, [d.x + 26 + (left ? -1 : 1) * (w / 2 - 4), d.y + 28]);
+      });
       rows3.forEach(function (r, i) { r.at(now, 31 + i, 0.8); });
       rows4.forEach(function (r, i) { r.at(now, 41 + i, 0.8); });
       var ph = (now % 3) / 3, ang = ph < 0.4 ? ph / 0.4 : ph < 0.7 ? 1 : (1 - ph) / 0.3;
       var a = ang * 0.75;
       setLine(lever, LX + 70, LY, LX + 70 - 50 * Math.cos(a), LY + 50 * Math.sin(a));
       bolt.setAttribute('x', (LX + 110 - 16 * ang).toFixed(1));
+      flips12.set(since(t, clock, 13.4));
       setOpacity(p1, win(t, 0.3, 3.6));
       setOpacity(p2, win(t, 3.6, 7.0));
       setOpacity(p3, win(t, 7.0, 10.4));
@@ -1557,12 +1792,37 @@
     var p5 = group(s);
     label(p5, R, 64, '代码里还有图像增强（论文没提）', 'demo-x-ink', 14);
     var AUG = [['亮度', '0.7–2', 0.25], ['对比度', '0.5–1.5', 0.25], ['色相', '±0.1', 0.5], ['饱和度', '0.5–2', 0.25], ['高斯噪声', 'σ ≤ 0.15', 0.25], ['模糊', '核 3–5', 0.25]];
+    /* 一张仿真画面的缩略图，依次套上六种增强（SVG 滤镜，参数在范围里来回变） */
+    var defs = svgEl('defs', {});
+    s.appendChild(defs);
+    function fil(id, kids) {
+      var f = svgEl('filter', { id: id, x: 0, y: 0, width: 1, height: 1, 'color-interpolation-filters': 'sRGB' });
+      kids.forEach(function (k) { f.appendChild(k); });
+      defs.appendChild(f);
+      return f;
+    }
+    function ct(slope, icpt) {
+      var c = svgEl('feComponentTransfer', {}), fs = ['feFuncR', 'feFuncG', 'feFuncB'].map(function (n) { var e = svgEl(n, { type: 'linear', slope: slope, intercept: icpt || 0 }); c.appendChild(e); return e; });
+      return { node: c, set: function (sl, ic) { fs.forEach(function (e) { e.setAttribute('slope', sl.toFixed(3)); e.setAttribute('intercept', (ic || 0).toFixed(3)); }); } };
+    }
+    var fB = ct(1), fC = ct(1), fH = svgEl('feColorMatrix', { type: 'hueRotate', values: 0 }), fS = svgEl('feColorMatrix', { type: 'saturate', values: 1 });
+    var fNt = svgEl('feTurbulence', { type: 'fractalNoise', baseFrequency: 0.9, numOctaves: 1, seed: 3, result: 'n' });
+    var fNc = svgEl('feColorMatrix', { in: 'n', type: 'saturate', values: 0, result: 'g' });
+    var fNk = svgEl('feComposite', { in: 'SourceGraphic', in2: 'g', operator: 'arithmetic', k1: 0, k2: 1, k3: 0.3, k4: -0.15 });
+    var fG = svgEl('feGaussianBlur', { stdDeviation: 0 });
+    var FID = ['dm-aug-b', 'dm-aug-c', 'dm-aug-h', 'dm-aug-s', 'dm-aug-n', 'dm-aug-g'];
+    fil(FID[0], [fB.node]); fil(FID[1], [fC.node]); fil(FID[2], [fH]); fil(FID[3], [fS]); fil(FID[4], [fNt, fNc, fNk]); fil(FID[5], [fG]);
+    var thumb = svgEl('image', { href: PAPER_IMG_BASE + 'aug_input.webp', x: R, y: 80, width: 200, height: 112.5, preserveAspectRatio: 'xMidYMid slice' });
+    p5.appendChild(thumb);
+    rectBox(p5, R, 80, 200, 112, C_BORDER, 'none').style.fill = 'none';
     var augR = AUG.map(function (a, i) {
       var g = group(p5);
-      label(g, R + (i % 2) * 180, 96 + Math.floor(i / 2) * 44, a[0] + ' ' + a[1], 'demo-x-ink2', 12);
-      label(g, R + (i % 2) * 180, 117 + Math.floor(i / 2) * 44, '概率 ' + Math.round(a[2] * 100) + '%', 'demo-x-mut', 10.5);
+      label(g, R + 214, 94 + i * 20, a[0] + ' ' + a[1], 'demo-x-ink2', 11.5);
       return g;
     });
+    label(p5, R, 214, '学生的输入：384 × 216（项目页视频的一帧）', 'demo-x-mut', 11);
+    var augNow = label(p5, R, 240, '', 'demo-x-ink', 13);
+    label(p5, R, 266, '每种增强各按一个概率抽到（25% 或 50%）', 'demo-x-mut', 11.5);
     function draw(t, clock) {
       var now = nowOf(t, clock);
       clip.at(K.clipSince(t, 0), true);
@@ -1576,7 +1836,17 @@
       var bx = R + 60 + 220 * (0.5 + 0.5 * Math.sin(now * 1.4));
       ghosts.forEach(function (g, j) { g.setAttribute('x', (bx - (3 - j) * 14 * Math.cos(now * 1.4)).toFixed(1)); });
       camG.setAttribute('transform', 'rotate(' + (4 * Math.sin(now * 3.1)).toFixed(2) + ' ' + (R + 165) + ' 148) translate(' + (3 * Math.sin(now * 2.3)).toFixed(1) + ' ' + (2 * Math.cos(now * 2.9)).toFixed(1) + ')');
-      augR.forEach(function (g, j) { setOpacity(g, 0.35 + 0.65 * (Math.floor(now / 0.9) % 6 === j ? 1 : 0.5)); });
+      /* 每 1.5 s 换一种增强，参数在范围里来回变 */
+      var ua = since(t, clock, 13.4), kA = Math.floor(ua / 1.5) % 6, wv = 0.5 - 0.5 * Math.cos(Math.PI * 2 * ((ua % 1.5) / 1.5));
+      augR.forEach(function (g, j) { setOpacity(g, j === kA ? 1 : 0.35); });
+      thumb.setAttribute('filter', 'url(#' + FID[kA] + ')');
+      var val;
+      if (kA === 0) { val = 0.7 + 1.3 * wv; fB.set(val, 0); augNow.textContent = '亮度 × ' + f2(val); }
+      if (kA === 1) { val = 0.5 + 1.0 * wv; fC.set(val, 0.5 * (1 - val)); augNow.textContent = '对比度 × ' + f2(val); }
+      if (kA === 2) { val = -0.1 + 0.2 * wv; fH.setAttribute('values', (val * 360).toFixed(1)); augNow.textContent = '色相 ' + sgn((val >= 0 ? '+' : '') + f2(val)); }
+      if (kA === 3) { val = 0.5 + 1.5 * wv; fS.setAttribute('values', val.toFixed(3)); augNow.textContent = '饱和度 × ' + f2(val); }
+      if (kA === 4) { val = 0.15 * wv; fNk.setAttribute('k3', (val * 2).toFixed(3)); fNk.setAttribute('k4', (-val).toFixed(3)); fNt.setAttribute('seed', String(1 + Math.floor(ua * 8) % 20)); augNow.textContent = '高斯噪声 σ = ' + f2(val); }
+      if (kA === 5) { val = 3 + 2 * wv; fG.setAttribute('stdDeviation', ((val - 1) / 2).toFixed(2)); augNow.textContent = '模糊 核 ' + f1(val); }
       setOpacity(p1, win(t, 0.3, 3.6));
       setOpacity(p2, win(t, 3.6, 7.0));
       setOpacity(p3, win(t, 7.0, 10.4));
@@ -1591,7 +1861,7 @@
     var s = sceneSvg('照论文表 1 重画的分组条形图：六行是六种视觉随机化设置，每行三根条：蓝色推门、紫色拉门、绿色推杠门，条越长成功率越高；' +
       '条从左往右长出来；讲到哪两行的对比就亮哪两行，其余变淡');
     s.appendChild(svgText(24, 26, '论文表 1：视觉随机化拿掉哪一块，成功率掉多少', 'demo-x-ink2', 13.5));
-    var LX = 24, BX0 = 196, BW = 330, GY = 52, GH = 50, BH = 10, BP = 16;
+    var LX = 24, BX0 = 196, BW = 330, GY = 40, GH = 60, BH = 12, BP = 20;
     var groups = TABLE1.map(function (row, i) {
       var g = group(s), y = GY + i * GH;
       label(g, LX, y + 16, row.n + '  ' + row.zh, 'demo-x-ink', 12);
@@ -1599,7 +1869,7 @@
       var bars = row.v.map(function (v, j) {
         var b = paint(svgEl('rect', { x: BX0, y: y + 3 + j * BP, width: 0, height: BH, rx: 2 }), M_COLOR[['push', 'pull', 'bar'][j]]);
         g.appendChild(b);
-        var tl = label(g, BX0, y + 3 + j * BP + 9, '', 'demo-x-ink2', 9);
+        var tl = halo(label(g, BX0, y + 3 + j * BP + 11, '', 'demo-x-ink2', 11));
         return { b: b, t: tl, v: v };
       });
       return { g: g, bars: bars };
@@ -1609,9 +1879,11 @@
       hline(s, x, GY - 4, x, GY + 6 * GH - 4, C_BORDER, 0.8, '3 4');
       label(s, x, GY + 6 * GH + 10, v + '%', 'demo-x-ink2', 10, 'middle');
     });
-    legendRow(s, BX0, GY + 6 * GH + 32, DOORS.map(function (d, j) { return [d, M_COLOR[['push', 'pull', 'bar'][j]], textW(d, 10.5)]; }), 10.5);
-    readHint(s, LX, GY + 6 * GH + 54, '每行三根条，条越长成功率越高；仿真里每种设置 120 次没见过外观的门', 10.5, 520);
+    legendRow(s, 380, 26, DOORS.map(function (d, j) { return [d, M_COLOR[['push', 'pull', 'bar'][j]], textW(d, 11.5)]; }), 11.5);
     var R = 584, W = 192;
+    readHint(s, R, 300, '每组三根条，条越长越好', 11.5, W);
+    label(s, R, 322, '每种设置在仿真里测 120 次', 'demo-x-mut', 11.5);
+    label(s, R, 342, '门的外观都没见过', 'demo-x-mut', 11.5);
     function panel(lines) {
       var g = group(s);
       lines.forEach(function (l, i) { rich(g, R, 64 + i * 24, l, i ? 12 : 13.5, i ? 'demo-x-ink2' : 'demo-x-ink', 'start', W); });
@@ -1654,8 +1926,13 @@
     var R = 424, W = 352;
     var p1 = group(s);
     label(p1, R, 64, '遥操作基线（附录 C）', 'demo-x-ink', 14);
-    ['PICO 4 Ultra 头显 + 两个手柄', '头和两只手腕的位姿 → Pinocchio 逆向运动学', '腿：同一个 HOMIE，手柄给速度命令'].forEach(function (l, i) { chip(p1, R, 80 + i * 40, W, l, C_ACCENT, { size: 11.5, left: true, h: 30 }); });
-    label(p1, R, 222, '新手：不到 1 天；专家：全职 3 个月以上', 'demo-x-ink2', 12);
+    /* 两条链：头和手腕的位姿 → 逆向运动学 → 手臂；摇杆 → 同一个 HOMIE → 腿 */
+    var TB = [[R, 96, 'PICO 头显 + 手柄'], [R + 128, 96, 'Pinocchio 逆运动学'], [R + 268, 96, '手臂关节'], [R, 160, '手柄摇杆'], [R + 128, 160, '同一个 HOMIE'], [R + 268, 160, '腿']];
+    TB.forEach(function (b, i) { chip(p1, b[0], b[1], i % 3 === 2 ? 84 : 116, b[2], i === 4 ? C_CMD : C_ACCENT, { size: 11.5, h: 30 }); });
+    label(p1, R, 86, '头和两只手腕的位姿', 'demo-x-mut', 11);
+    label(p1, R, 150, '速度命令', 'demo-x-mut', 11);
+    var tf = [0, 1, 2, 3].map(function () { return flowSeg(p1, C_ACCENT, 2, 3, 26); });
+    label(p1, R, 230, '新手：不到 1 天；专家：全职 3 个月以上', 'demo-x-ink2', 12);
     function bars(g, key, unit, maxV, y0) {
       return FIG5.map(function (f, i) { return { r: barRowAt(g, R, y0 + i * 34, 86, f.zh, M_COLOR[f.key], 20, 11.5), v: f[key] }; });
     }
@@ -1670,21 +1947,52 @@
     readHint(p3, R, 86, '条越短越好（秒）', 10.5);
     var tb = bars(p3, 'time', 's', 25, 102);
     var p4 = group(s);
-    label(p4, R, 64, '快了多少', 'demo-x-ink', 14);
-    rich(p4, R, 98, '比专家快 **23.1%**（4.62 s）', 13);
-    rich(p4, R, 126, '比新手快 **31.7%**（7.15 s）', 13);
-    label(p4, R, 160, '正文另一处写「比专家快 23.8%」，', 'demo-x-mut', 11.5);
-    label(p4, R, 180, '按图上的数应是 23.1%', 'demo-x-mut', 11.5);
-    label(p4, R, 210, '论文没写真机每种门试了多少次', 'demo-x-mut', 11.5);
+    label(p4, R, 64, '快了多少：三个人同时开一扇门', 'demo-x-ink', 14);
+    /* 三条跑道：小点按各自的平均用时跑到终点（放快 5 倍），旁边的表按真实秒数走 */
+    var TX0 = R + 86, TX1 = R + 300, race = FIG5.map(function (f, i) {
+      var y = 92 + i * 30;
+      label(p4, TX0 - 8, y + 4, f.zh, 'demo-x-ink2', 11.5, 'end');
+      hline(p4, TX0, y, TX1, y, C_BORDER, 3);
+      var d = dotAt(p4, TX0, y, 7, M_COLOR[f.key]);
+      var tt = label(p4, TX1 + 10, y + 4, '', 'demo-x-ink', 11.5);
+      return { d: d, tt: tt, f: f, y: y };
+    });
+    hline(p4, TX1, 78, TX1, 166, C_INK, 1.6, '4 3');
+    var fast1 = rich(p4, R, 200, '比专家快 **23.1%**（4.62 s）', 13), fast2 = rich(p4, R, 226, '比新手快 **31.7%**（7.15 s）', 13);
+    label(p4, R, 258, '正文另一处写 23.8%，按图上的数应是 23.1%', 'demo-x-mut', 11.5);
+    label(p4, R, 280, '论文没写真机每种门试了多少次', 'demo-x-mut', 11.5);
     var p5 = group(s);
     label(p5, R, 64, '为什么人反而慢', 'demo-x-ink', 14);
-    ['看不出门把和门轴的弹簧有多大劲', '拿不准机器人该往前倾多少', '跟不上门板绕轴转的圆弧'].forEach(function (l, i) { chip(p5, R, 80 + i * 40, W, l, C_MUTED, { size: 11.5, left: true, h: 30 }); });
+    ['感觉不到门把和门轴的弹簧有多大劲', '拿不准机器人该往前倾多少', '跟不上门板绕轴转的圆弧'].forEach(function (l, i) { chip(p5, R + 48, 80 + i * 40, W - 48, l, C_MUTED, { size: 11.5, left: true, h: 30 }); rectBox(p5, R, 80 + i * 40, 40, 30, C_BORDER, C_SURFACE2); });
+    /* 三个小图标：弹簧一伸一缩、身体前后晃、小点沿圆弧走 */
+    var why1 = pathLine(p5, [], C_DOOR, 1.8), why2 = hline(p5, R + 20, 146, R + 20, 124, C_INK, 3), why3d = dotAt(p5, R + 20, 160, 3.5, C_STU);
+    pathLine(p5, Array.from({ length: 13 }, function (_, k) { var a = Math.PI * (0.15 + 0.7 * k / 12); return [R + 20 - 14 * Math.cos(a), 186 - 14 * Math.sin(a)]; }), C_BORDER, 1.2, '2 3');
     rich(p5, R, 222, 'VR 遥操作给不了这些反馈，**仿真里能学到**', 12.5);
     function draw(t, clock) {
       clip.at(K.clipSince(t, 0), true);
       var u2 = seg(since(t, clock, 3.6), 0.3, 1.8), u3 = seg(since(t, clock, 7.0), 0.3, 1.8);
       sb.forEach(function (b) { b.r.set(b.v / 100 * 230 * u2, Math.round(b.v * u2) + '%'); });
       tb.forEach(function (b) { b.r.set(b.v / 25 * 230 * u3, f2(b.v * u3) + ' s'); });
+      var now = nowOf(t, clock);
+      tf[0].at(now, [R + 118, 111], [R + 126, 111], true); tf[1].at(now, [R + 246, 111], [R + 266, 111], true);
+      tf[2].at(now, [R + 118, 175], [R + 126, 175], true); tf[3].at(now, [R + 246, 175], [R + 266, 175], true);
+      /* 赛跑：每 6 s 一轮，放快 5 倍 */
+      var ur = (since(t, clock, 10.4) % 6) * 5;
+      race.forEach(function (r) {
+        var u = clamp(ur / r.f.time, 0, 1);
+        moveDot(r.d, [TX0 + (TX1 - TX0) * u, r.y]);
+        r.tt.textContent = u >= 1 ? f2(r.f.time) + ' s' : f1(ur) + ' s';
+      });
+      var fin = since(t, clock, 10.4) > 22.55 / 5;
+      fast1.style.opacity = fin ? 1 : 0.15; fast2.style.opacity = fin ? 1 : 0.15;
+      /* 为什么慢的三个小图标 */
+      var ph = now % 2, sq = 0.5 + 0.5 * Math.cos(Math.PI * ph), zz = [];
+      for (var q = 0; q <= 8; q++) zz.push([R + 8 + q * 3 * (0.6 + 0.4 * sq), 95 + (q % 2 ? -6 : 6) * (q > 0 && q < 8 ? 1 : 0)]);
+      setPath(why1, zz);
+      var lean = 0.35 * Math.sin(now * 2.2);
+      setLine(why2, R + 20, 146, R + 20 + 22 * Math.sin(lean), 146 - 22 * Math.cos(lean));
+      var aa = Math.PI * (0.15 + 0.7 * (0.5 + 0.5 * Math.sin(now * 1.6)));
+      moveDot(why3d, [R + 20 - 14 * Math.cos(aa), 186 - 14 * Math.sin(aa)]);
       setOpacity(p1, win(t, 0.3, 3.6));
       setOpacity(p2, win(t, 3.6, 7.0));
       setOpacity(p3, win(t, 7.0, 10.4));
@@ -1696,11 +2004,13 @@
 
   /* ── scene 16: 泛化与失败 ── */
   var HANDLE_PARTS = [[5, '把手 1'], [5, '把手 2'], [5, '把手 3']];
-  var PANEL_PARTS = [[6, '墙面 1'], [6, '墙面 2'], [6, '墙面 3']];
-  var FAIL_PARTS = [[9.533, '失败：卡在门框上'], [8.367, '失败：距离估错'], [9.667, '失败：门本来就虚掩着']];
+  var PANEL_PARTS = [[6, '墙面 1：绿'], [6, '墙面 2：蓝 + 黄'], [6, '墙面 3：紫 + 青']];
+  var FAIL_PARTS = [[9.533, '失败 1：被门框挡住'], [8.367, '失败 2：抓了个空'], [9.667, '失败 3：门本来就虚掩着']];
+  /* 分镜按片段长度排：换把手 0.4–15.4（15 s），换墙面 15.4–33.4（18 s），失败 33.4–61.0（27.6 s），每段片段放完再换（HDMI 2026-10-26 看片反馈） */
+  var T16 = { h: 0.4, p: 15.4, f: 33.4, f2: 42.93, f3: 51.3, sum: 60.97 };
   function buildSceneGeneral() {
-    var s = sceneSvg('左边按讲到的内容换片段：先是换把手的第一视角（三段轮流），再是换墙面颜色（三段轮流），最后是项目页的三个失败案例；' +
-      '右边依次出现：论文图 1 的把手一行、墙面一行，以及三个失败各自的原因');
+    var s = sceneSvg('左边按讲到的内容换片段，每段放完再换：先是换把手的第一视角（三段），再是换墙面颜色（三段），最后是项目页的三个失败案例；' +
+      '右边依次出现：论文图 1 的把手一排；仿真里程序生成的五种把手和真机的把手；图 1 的墙面一排和三对颜色；三个失败各自的小动画：被门框挡住、抓空、门本来虚掩着');
     s.appendChild(svgText(24, 26, '真机泛化与失败（论文图 1、项目页）', 'demo-x-ink2', 13.5));
     var cH = seqClip(s, 'handles', 24, 44, 380, 214, '项目页视频：换把手（第一视角）', HANDLE_PARTS);
     var cP = seqClip(s, 'panels', 24, 44, 380, 214, '项目页视频：换墙面', PANEL_PARTS);
@@ -1710,41 +2020,97 @@
     label(p1, R, 64, '换把手：外观和形状都不一样', 'demo-x-ink', 14);
     paperPart(p1, 'fig1', 0, 0.035, 1, 0.305, R, 84, W, '论文图 1 上面一排：不同的把手');
     var p2 = group(s);
-    label(p2, R, 64, '左边就是策略看到的画面', 'demo-x-ink', 14);
-    label(p2, R, 92, '这些把手训练时一个都没见过', 'demo-x-ink2', 12);
-    label(p2, R, 114, '仿真里只有程序化生成的五种把手', 'demo-x-ink2', 12);
-    label(p2, R, 146, '论文没给每种把手的成功率', 'demo-x-mut', 11.5);
+    label(p2, R, 64, '训练时一个都没见过', 'demo-x-ink', 14);
+    label(p2, R, 88, '仿真里只有程序生成的 5 种：', 'demo-x-ink2', 12);
+    var hk2 = ['圆球', '杠杆', '推杠', '拉手', '平板'].map(function (n, i) {
+      var g = group(p2), cx = R + 34 + i * 70, cy = 122;
+      rectBox(g, cx - 28, cy - 20, 56, 40, C_BORDER, C_SURFACE2);
+      handleIcon(g, cx, cy, i);
+      label(g, cx, cy + 36, n, 'demo-x-ink2', 11.5, 'middle');
+      return g;
+    });
+    label(p2, R + W / 2, 196, '≠', 'demo-x-ink', 22, 'middle');
+    paperPart(p2, 'fig1', 0, 0.035, 1, 0.305, R, 214, W, '真机：论文图 1 里的把手');
     var p3 = group(s);
     label(p3, R, 64, '换墙面：门两边挂上不同颜色的布', 'demo-x-ink', 14);
     paperPart(p3, 'fig1', 0, 0.36, 1, 0.625, R, 84, W, '论文图 1 第二排：不同的墙面');
+    var PAIRS = [['#5bbf3a', '#5bbf3a', '绿'], ['#2f45c8', '#e3c935', '蓝 + 黄'], ['#a35bd8', '#4fd2d6', '紫 + 青']];
+    var pairs = PAIRS.map(function (pc, i) {
+      var g = group(p3), x = R + i * 120;
+      rectBox(g, x, 196, 108, 52, C_BORDER, C_SURFACE2);
+      g.appendChild(svgEl('rect', { x: x + 10, y: 204, width: 18, height: 36, rx: 2, fill: pc[0] }));
+      g.appendChild(svgEl('rect', { x: x + 36, y: 204, width: 36, height: 36, rx: 2, fill: '#d9d4c8' }));
+      g.appendChild(svgEl('rect', { x: x + 80, y: 204, width: 18, height: 36, rx: 2, fill: pc[1] }));
+      label(g, x + 54, 268, '第 ' + (i + 1) + ' 段：' + pc[2], 'demo-x-ink2', 11.5, 'middle');
+      return g;
+    });
     var p4 = group(s);
-    label(p4, R, 64, '项目页的失败案例（论文正文没提）', 'demo-x-ink', 14);
-    chip(p4, R, 82, W, '① 卡在门框上：没观测到的扰动', C_PEN, { size: 12, left: true, h: 32 });
-    chip(p4, R, 124, W, '② 手伸过去抓了个空：距离估错', C_PEN, { size: 12, left: true, h: 32 });
-    label(p4, R, 186, '单目 RGB 估距离本来就难（我们的推测）', 'demo-x-mut', 11.5);
-    var p5 = group(s);
-    label(p5, R, 64, '③ 门本来就虚掩着', 'demo-x-ink', 14);
-    label(p5, R, 92, '没建模的状态：代码里训练时', 'demo-x-ink2', 12);
-    label(p5, R, 114, '门总是从关着开始', 'demo-x-ink2', 12);
-    label(p5, R, 136, '（randomize_door_init_state: False）', 'demo-x-mut', 11);
-    label(p5, R, 168, '项目页的总结：没观测到的扰动、', 'demo-x-ink2', 12);
-    label(p5, R, 190, '距离估计误差、没建模的环境状态', 'demo-x-ink2', 12);
+    label(p4, R, 64, '项目页的三个失败案例（论文正文没提）', 'demo-x-ink', 14);
+    var FROW = [['① 走到一半，被门框挡住', '没观测到的扰动'], ['② 手伸过去，抓了个空', '距离估计误差'], ['③ 门本来就虚掩着', '没建模的环境状态']];
+    var frows = FROW.map(function (f, i) {
+      var g = group(p4), y = 80 + i * 76;
+      var box = rectBox(g, R, y, 110, 66, C_BORDER, C_SURFACE2);
+      label(g, R + 122, y + 26, f[0], 'demo-x-ink', 12.5);
+      var cat = label(g, R + 122, y + 50, '→ ' + f[1], 'demo-x-ink2', 11.5);
+      return { g: g, box: box, cat: cat, y: y };
+    });
+    /* ① 俯视：墙上一道门，机器人从下往上走，偏左，肩膀撞上左边门框 */
+    var a1 = frows[0].y, wallY = a1 + 22;
+    hline(p4, R + 6, wallY, R + 38, wallY, C_MUTED, 4); hline(p4, R + 72, wallY, R + 104, wallY, C_MUTED, 4);
+    var bot1 = ringAt(p4, R + 44, a1 + 56, 9, C_STU, 2.4);
+    /* ② 侧视：门把在上面，手伸到估计的位置（低了一截），中间一条虚线是估错的距离 */
+    var a2 = frows[1].y;
+    hline(p4, R + 84, a2 + 6, R + 84, a2 + 62, C_DOOR, 3);
+    var knob2 = dotAt(p4, R + 76, a2 + 24, 5, C_DOOR);
+    var hand2 = dotAt(p4, R + 16, a2 + 42, 6, C_STU);
+    var err2 = hline(p4, R + 76, a2 + 24, R + 76, a2 + 42, C_BAD, 1.6, '3 3');
+    void knob2;
+    /* ③ 俯视：训练时门总是关着（虚线），真机上门本来就开了一条缝（实线，轻轻晃） */
+    var a3 = frows[2].y, hx3 = R + 22, hy3 = a3 + 40;
+    hline(p4, R + 6, hy3, hx3, hy3, C_MUTED, 4);
+    hline(p4, hx3, hy3, hx3 + 70, hy3, C_MUTED, 1.6, '4 3');
+    label(p4, hx3 + 74, hy3 + 14, '训练时', 'demo-x-mut', 11, 'end');
+    var door3 = hline(p4, hx3, hy3, hx3 + 70, hy3, C_DOOR, 4);
+    dotAt(p4, hx3, hy3, 3.5, C_MUTED);
     function draw(t, clock) {
-      var hOn = t < 7.0 + 0.3, pOn = t >= 7.0 + 0.3 && t < 10.4 + 0.3, fOn = t >= 10.4 + 0.3;
-      cH.at(K.clipSince(t, 0), hOn);
-      cP.at(K.clipSince(t, 7.0), pOn);
-      /* 失败片段：第 4 段放前两个（0–17.9 s），第 5 段从第三个开头放（17.9 s 起） */
-      var fs = t < 13.4 ? K.clipSince(t, 10.4) % 17.9 : 17.9 + (K.clipSince(t, 13.4) % 9.667);
-      cF.at(fs, fOn);
+      var now = nowOf(t, clock);
+      var hOn = t < T16.p + 0.3, pOn = t >= T16.p + 0.3 && t < T16.f + 0.3, fOn = t >= T16.f + 0.3;
+      cH.at(K.clipSince(t, T16.h), hOn);
+      var sp = K.clipSince(t, T16.p);
+      cP.at(sp, pOn);
+      var sf = K.clipSince(t, T16.f);
+      cF.at(sf, fOn);
       /* 先淡出再淡入，两层字幕不叠在一起 */
-      setOpacity(cH.g, 1 - seg(t, 7.0, 7.15));
-      setOpacity(cP.g, seg(t, 7.15, 7.3) * (1 - seg(t, 10.4, 10.55)));
-      setOpacity(cF.g, seg(t, 10.55, 10.7));
-      setOpacity(p1, win(t, 0.3, 3.6));
-      setOpacity(p2, win(t, 3.6, 7.0));
-      setOpacity(p3, win(t, 7.0, 10.4));
-      setOpacity(p4, win(t, 10.4, 13.4));
-      setOpacity(p5, win(t, 13.4));
+      setOpacity(cH.g, 1 - seg(t, T16.p, T16.p + 0.15));
+      setOpacity(cP.g, seg(t, T16.p + 0.15, T16.p + 0.3) * (1 - seg(t, T16.f, T16.f + 0.15)));
+      setOpacity(cF.g, seg(t, T16.f + 0.15, T16.f + 0.3));
+      /* 换墙面：放到第几段就亮第几对颜色 */
+      var pk = Math.min(2, Math.floor(Math.max(0, sp % 18) / 6));
+      pairs.forEach(function (g, i) { setOpacity(g, i === pk ? 1 : 0.3); });
+      hk2.forEach(function (g, i) { setOpacity(g, 0.35 + 0.65 * (Math.floor(since(t, clock, 7.8) / 0.8) % 5 === i ? 1 : 0.5)); });
+      /* 失败：放到第几个案例就亮第几行，最后一段三行都亮、类别加粗 */
+      var fk = t >= T16.sum ? -1 : sf % 27.567 < 9.533 ? 0 : sf % 27.567 < 17.9 ? 1 : 2;
+      frows.forEach(function (r, i) {
+        var on = fk < 0 || fk === i;
+        setOpacity(r.g, on ? 1 : 0.35);
+        r.box.style.stroke = fk === i ? C_BAD : '';
+        r.cat.style.fontWeight = fk < 0 ? 700 : 400;
+      });
+      /* ① 每 3 s 一轮：走到门框高度时撞上、变红、停住 */
+      var u1 = (now % 3) / 3, yy = a1 + 56 - 40 * Math.min(1, u1 / 0.6), hit = u1 >= 0.6;
+      bot1.setAttribute('cy', yy.toFixed(1));
+      bot1.style.stroke = hit ? C_BAD : C_STU;
+      /* ② 手伸向估计的位置，比门把低了 18 px，合拢时抓空 */
+      var u2 = (now % 2.6) / 2.6, hxp = R + 16 + 60 * Math.min(1, u2 / 0.6);
+      moveDot(hand2, [hxp, a2 + 42]);
+      err2.style.opacity = u2 > 0.6 ? 1 : 0;
+      /* ③ 虚掩的门在 15°–25° 之间轻轻晃 */
+      var ang3 = (20 + 5 * Math.sin(now * 1.8)) * Math.PI / 180;
+      setLine(door3, hx3, hy3, hx3 + 70 * Math.cos(ang3), hy3 - 70 * Math.sin(ang3));
+      setOpacity(p1, win(t, 0.3, 7.8));
+      setOpacity(p2, win(t, 7.8, T16.p));
+      setOpacity(p3, win(t, T16.p, T16.f));
+      setOpacity(p4, win(t, T16.f));
     }
     return { el: s, draw: draw };
   }
@@ -1773,10 +2139,21 @@
     label(p1, R, 242, '换一个任务，要从头再写一套', 'demo-x-mut', 11.5);
     var p2 = group(s);
     label(p2, R, 64, '只验证了开门一个任务', 'demo-x-ink', 14);
-    label(p2, R, 92, '抽屉、冰箱门、闸门都没试', 'demo-x-ink2', 12);
-    label(p2, R, 124, '真机只有三个平均数', 'demo-x-ink', 14);
-    label(p2, R, 152, '没写试了多少次、每类门的成功率', 'demo-x-ink2', 12);
-    label(p2, R, 174, '表 1、图 6 都在仿真里', 'demo-x-ink2', 12);
+    /* 四个铰接物体的小图标：门打勾，抽屉、冰箱门、闸门是问号 */
+    var TASKS = ['门', '抽屉', '冰箱门', '闸门'], taskG = TASKS.map(function (n, i) {
+      var g = group(p2), x = R + i * 88, y = 78;
+      rectBox(g, x, y, 76, 64, i ? C_BORDER : C_STU, C_SURFACE2);
+      if (i === 0) { rectBox(g, x + 26, y + 10, 24, 44, C_DOOR, 'none'); dotAt(g, x + 45, y + 34, 2.5, C_DOOR); }
+      if (i === 1) { [0, 1, 2].forEach(function (k) { rectBox(g, x + 14, y + 10 + k * 15, 48, 12, C_MUTED, 'none'); hline(g, x + 32, y + 16 + k * 15, x + 44, y + 16 + k * 15, C_MUTED, 2); }); }
+      if (i === 2) { rectBox(g, x + 22, y + 8, 32, 48, C_MUTED, 'none'); hline(g, x + 22, y + 24, x + 54, y + 24, C_MUTED, 1.6); hline(g, x + 48, y + 12, x + 48, y + 20, C_MUTED, 2); hline(g, x + 48, y + 30, x + 48, y + 44, C_MUTED, 2); }
+      if (i === 3) { hline(g, x + 8, y + 14, x + 56, y + 14, C_MUTED, 2); hline(g, x + 8, y + 54, x + 56, y + 54, C_MUTED, 2); [0, 1, 2, 3, 4].forEach(function (k) { hline(g, x + 12 + k * 10, y + 14, x + 12 + k * 10, y + 54, C_MUTED, 2); }); }
+      label(g, x + 38, y + 82, n, 'demo-x-ink2', 11.5, 'middle');
+      if (i === 0) tick(g, x + 56, y + 4, 14, C_STU); else label(g, x + 67, y + 22, '?', 'demo-x-ink', 15, 'middle');
+      return g;
+    });
+    label(p2, R, 196, '真机只有三个平均数（图 5）', 'demo-x-ink', 14);
+    var avg5 = FIG5.map(function (f, i) { return barRowAt(p2, R, 208 + i * 24, 86, f.zh, M_COLOR[f.key], 16, 11.5); });
+    label(p2, R, 296, '没写试了多少次、每类门的成功率；表 1、图 6 都在仿真里', 'demo-x-mut', 11.5);
     var p3 = group(s);
     label(p3, R, 64, '公开代码里有什么', 'demo-x-ink', 14);
     var HAVE = [['教师 PPO（六个阶段、分阶段重置）', true], ['学生 DAgger（ResNet18 + LSTM）', true], ['门的程序化生成', true], ['GRPO 自举', false], ['训好的 DoorMan 模型', false]];
@@ -1787,15 +2164,7 @@
     });
     var p4 = group(s);
     label(p4, R, 64, '论文和代码对不上的地方', 'demo-x-ink', 14);
-    var FLIP = [['动作维数', '33（应为 43）', '19'], ['接触力', '18 × 6', '16 × 3'], ['LSTM 每层', '512', '256'], ['每阶段快照', '100', '200']];
-    var flips = FLIP.map(function (f, i) {
-      var y = 82 + i * 40;
-      label(p4, R, y + 20, f[0], 'demo-x-ink2', 12);
-      var box = rectBox(p4, R + 110, y, 150, 30, C_BORDER, C_SURFACE);
-      var v = label(p4, R + 185, y + 20, '', 'demo-x-ink', 12.5, 'middle');
-      var who = label(p4, R + 270, y + 20, '', 'demo-x-mut', 11);
-      return { box: box, v: v, who: who, f: f };
-    });
+    var flips = flipList(p4, R, 82, [['动作维数', '33（应为 43）', '19'], ['接触力', '18 × 6', '16 × 3'], ['LSTM 每层', '512', '256'], ['每阶段快照', '100', '200']], 110, 150);
     var p5 = group(s);
     label(p5, R, 64, '论文的展望', 'demo-x-ink', 14);
     chip(p5, R, 82, W, '用高容量的行为克隆教师，代替手写的奖励', C_STU, { size: 12, left: true, h: 32 });
@@ -1808,12 +2177,10 @@
       cells.fill(n);
       cTxt.textContent = n + ' 项奖励（附录表 2）';
       haveM.forEach(function (m, i) { m.style.opacity = seg(t, 7.4 + i * 0.4, 7.7 + i * 0.4); });
-      var side = Math.floor(now / 1.6) % 2;
-      flips.forEach(function (fl) {
-        fl.v.textContent = side ? fl.f[2] : fl.f[1];
-        fl.who.textContent = side ? '代码' : '论文';
-        fl.box.style.stroke = side ? C_STU : C_TEA;
-      });
+      flips.set(since(t, clock, 10.4));
+      var u2 = since(t, clock, 3.6);
+      taskG.forEach(function (g, i) { setOpacity(g, seg(u2, 0.3 + i * 0.4, 0.6 + i * 0.4)); });
+      avg5.forEach(function (b, i) { var w = FIG5[i].succ / 100 * 200 * seg(u2, 2.2 + i * 0.2, 3.2 + i * 0.2); b.set(w, w > 0 ? Math.round(FIG5[i].succ * w / (FIG5[i].succ / 100 * 200)) + '%' : ''); });
       setOpacity(p1, win(t, 0.3, 3.6));
       setOpacity(p2, win(t, 3.6, 7.0));
       setOpacity(p3, win(t, 7.0, 10.4));
@@ -2006,14 +2373,18 @@
     },
     {
       title: '泛化与失败',
-      dur: 16,
+      dur: 64,
       build: buildSceneGeneral,
       cues: [
         { at: 0.4, s: '换把手：外观和形状都不一样（论文图 1 上面一排）。' },
-        { at: 3.6, s: '策略看到的就是这样的画面，这些把手训练时都没见过。' },
-        { at: 7.0, s: '换墙面：门两边挂上不同颜色的布（图 1 第二行）。' },
-        { at: 10.4, s: '失败：卡在门框上；手伸过去抓了个空。' },
-        { at: 13.4, s: '失败：门本来就虚掩着，可训练时门总是从关着开始。' }
+        { at: 7.8, s: '这些把手训练时一个都没见过；仿真里只有程序生成的五种。' },
+        { at: 15.4, s: '换墙面：先是绿色的布。' },
+        { at: 21.4, s: '再换成蓝色和黄色。' },
+        { at: 27.4, s: '最后是紫色和青色，策略照样能开。' },
+        { at: 33.4, s: '失败一：走到一半，被门框挡住。' },
+        { at: 42.93, s: '失败二：手伸过去抓了个空，距离估错了。' },
+        { at: 51.3, s: '失败三：门本来就虚掩着，可训练时门一开始总是关着的。' },
+        { at: 60.97, s: '项目页的归类：没观测到的扰动、距离估计误差、没建模的状态。' }
       ]
     },
     {
@@ -2038,7 +2409,7 @@
   function buildExplainerDemo(host) {
     K.explainer(host, {
       title: '十七幕动画：DoorMan 全流程速览',
-      sub: '约 272 秒自动播放。空格播放/暂停，← → 换幕；真机与仿真画面剪自项目页的视频，曲线和柱子照论文的数重画，第 3 幕的 G1 借第 032 期 HOMIE 的复现贴图示意。',
+      sub: '约 320 秒自动播放。空格播放/暂停，← → 换幕；真机与仿真画面剪自项目页的视频，曲线和柱子照论文的数重画，第 3 幕的 G1 借第 032 期 HOMIE 的复现贴图示意。',
       ariaLabel: 'DoorMan 十七幕讲解动画',
       notes: [
         '取数依据：图 5、表 1 和附录表 2–3 的数字照抄 arXiv 2512.01061（只有 v1，读的是 LaTeX 源码）；图 6 的曲线是从论文的矢量图里按网格线标定抽出来的（读图近似值）；动作维数、观测维数、重置比例、阶段的进阶条件和时间预算取自官方仓库 NVlabs/GR00T-VisualSim2Real 的 `doorman` 分支。',
