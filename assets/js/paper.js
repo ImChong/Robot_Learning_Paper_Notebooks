@@ -212,7 +212,7 @@
       // The fold just opened, so the target only now has a position.
       window.requestAnimationFrame(function () {
         var top = target.getBoundingClientRect().top + window.scrollY - 90;
-        window.scrollTo({ top: top });
+        window.scrollTo({ top: top, behavior: 'instant' });
       });
     }
 
@@ -361,7 +361,7 @@
         var wasClosed = revealNode(target);
         var scrollToTarget = function () {
           var targetTop = target.getBoundingClientRect().top + window.scrollY - headerOffset;
-          window.scrollTo({ top: targetTop, behavior: wasClosed ? 'auto' : 'smooth' });
+          window.scrollTo({ top: targetTop, behavior: wasClosed ? 'instant' : 'smooth' });
         };
         if (wasClosed) {
           window.requestAnimationFrame(scrollToTarget);

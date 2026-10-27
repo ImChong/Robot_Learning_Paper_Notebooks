@@ -1780,7 +1780,9 @@
         "dir": "FALCON__Learning_Force-Adaptive_Humanoid_Loco-Manipulation",
         "arxiv": "2505.06776",
         "has_open_source": true,
-        "summary_zh": "FALCON 解决的是「手上有力」的移动操作：推车时手被往后拽、开门时手被往侧面带、搬箱子时手被往下压，这些力会顺着手臂传到躯干和腿。",
+        "summary_zh": "FALCON 把带力的移动操作写成一个双目标条件的问题：下身智能体 $\\pi^l$ 跟移动目标（线速度、角速度、站或走、根高度、腰），上身智能体 $\\pi^u$ 跟 14 个目标关节角；两个智能体各有一套奖励和价值函数、各用 PPO 更新…",
+        "explainer_scenes": 17,
+        "video_seconds": 1083,
         "published_date_zh": "2025年5月10日",
         "published_date_en": "May 10, 2025",
         "zhname": "FALCON：力自适应的人形移动操作",
@@ -2666,7 +2668,10 @@
         "url": "/papers/07_Teleoperation/TWIST2__Scalable_Portable_and_Holistic_Humanoid_Data_Collection_System/TWIST2__Scalable_Portable_and_Holistic_Humanoid_Data_Collection_System.html",
         "dir": "TWIST2__Scalable_Portable_and_Holistic_Humanoid_Data_Collection_System",
         "arxiv": "2511.02832",
-        "summary_zh": "TWIST2 提出一个便携、免动捕（mocap-free）的人形遥操作与数据采集系统，在推进可扩展性的同时保留完整全身控制。",
+        "has_open_source": true,
+        "summary_zh": "TWIST2 是一套便携、免动捕、保留完整全身控制的人形遥操作与数据采集系统。",
+        "explainer_scenes": 18,
+        "video_seconds": 1030,
         "published_date_zh": "2025年11月",
         "published_date_en": "Nov 2025",
         "zhname": "TWIST2：可扩展、便携、整体式的人形数据采集系统",
@@ -3745,6 +3750,19 @@
     "display_name": "Sim-to-Real",
     "papers": [
       {
+        "title": "Contact-UAN: Unsupervised Actuator Networks as a Residual World Model for Humanoid Control",
+        "path": "papers/10_Sim-to-Real/Contact-UAN__Unsupervised_Actuator_Networks_as_a_Residual_World_Model/Contact-UAN__Unsupervised_Actuator_Networks_as_a_Residual_World_Model.md",
+        "url": "/papers/10_Sim-to-Real/Contact-UAN__Unsupervised_Actuator_Networks_as_a_Residual_World_Model/Contact-UAN__Unsupervised_Actuator_Networks_as_a_Residual_World_Model.html",
+        "dir": "Contact-UAN__Unsupervised_Actuator_Networks_as_a_Residual_World_Model",
+        "arxiv": "2610.18991",
+        "has_open_source": true,
+        "summary_zh": "Contact-UAN 不重建整个世界模型，只在仿真器的关节位置目标上加一个学出来的残差，修正执行器误差，解决仿真策略上真机后「动作像，力不对」（跑步费扭矩、力控跟不准、跳跃落地失败）的问题。",
+        "published_date_zh": "2026年10月13日（arXiv v1）",
+        "published_date_en": "Oct 13, 2026 (arXiv v1)",
+        "zhname": "Contact-UAN：面向人形控制的无监督执行器网络残差世界模型",
+        "zh_title": "Contact-UAN：面向人形控制的无监督执行器网络残差世界模型"
+      },
+      {
         "title": "Informationally Decoupled Trajectory Design for Sim-to-Real System Identification",
         "path": "papers/10_Sim-to-Real/IDTD__Informationally_Decoupled_Trajectory_Design_for_Sim-to-Real_System_Identification/IDTD__Informationally_Decoupled_Trajectory_Design_for_Sim-to-Real_System_Identification.md",
         "url": "/papers/10_Sim-to-Real/IDTD__Informationally_Decoupled_Trajectory_Design_for_Sim-to-Real_System_Identification/IDTD__Informationally_Decoupled_Trajectory_Design_for_Sim-to-Real_System_Identification.html",
@@ -3965,6 +3983,17 @@
   "12_Hardware_Design": {
     "display_name": "Hardware Design",
     "papers": [
+      {
+        "title": "PHD-Hand: A Printable Humanoid Dexterous Hand with Linkage-Driven 3-DOA Digits",
+        "path": "papers/12_Hardware_Design/PHD-Hand__Printable_Humanoid_Dexterous_Hand_with_Linkage-Driven_3-DOA_Digits/PHD-Hand__Printable_Humanoid_Dexterous_Hand_with_Linkage-Driven_3-DOA_Digits.md",
+        "url": "/papers/12_Hardware_Design/PHD-Hand__Printable_Humanoid_Dexterous_Hand_with_Linkage-Driven_3-DOA_Digits/PHD-Hand__Printable_Humanoid_Dexterous_Hand_with_Linkage-Driven_3-DOA_Digits.html",
+        "dir": "PHD-Hand__Printable_Humanoid_Dexterous_Hand_with_Linkage-Driven_3-DOA_Digits",
+        "arxiv": "2610.29030",
+        "published_date_zh": "2026年10月21日（arXiv v1）",
+        "published_date_en": "Oct 21, 2026 (arXiv v1)",
+        "zhname": "PHD-Hand：每指三驱动、全连杆驱动的可打印人形灵巧手",
+        "zh_title": "PHD-Hand：每指三驱动、全连杆驱动的可打印人形灵巧手"
+      },
       {
         "title": "PhoneBot: A Low-Cost Open Humanoid Robot Platform Reusing Smartphones",
         "path": "papers/12_Hardware_Design/PhoneBot__A_Low-Cost_Open_Humanoid_Robot_Platform_Reusing_Smartphones/PhoneBot__A_Low-Cost_Open_Humanoid_Robot_Platform_Reusing_Smartphones.md",
@@ -4206,6 +4235,19 @@
   "11_Simulation_Benchmark": {
     "display_name": "Simulation Benchmark",
     "papers": [
+      {
+        "title": "RoboQuest: Generalist Physical Agents that Search, Inspect and Test",
+        "path": "papers/11_Simulation_Benchmark/RoboQuest__Generalist_Physical_Agents_that_Search_Inspect_and_Test/RoboQuest__Generalist_Physical_Agents_that_Search_Inspect_and_Test.md",
+        "url": "/papers/11_Simulation_Benchmark/RoboQuest__Generalist_Physical_Agents_that_Search_Inspect_and_Test/RoboQuest__Generalist_Physical_Agents_that_Search_Inspect_and_Test.html",
+        "dir": "RoboQuest__Generalist_Physical_Agents_that_Search_Inspect_and_Test",
+        "arxiv": "2610.10388",
+        "has_open_source": true,
+        "summary_zh": "RoboQuest 是一个把关键信息藏起来、逼机器人靠物理交互去找的移动操作基准。",
+        "published_date_zh": "2026年10月7日（arXiv v1）",
+        "published_date_en": "Oct 7, 2026 (arXiv v1)",
+        "zhname": "RoboQuest：会搜索、检查与试探的通用物理智能体基准",
+        "zh_title": "RoboQuest：会搜索、检查与试探的通用物理智能体基准"
+      },
       {
         "title": "Benchmarking Behavioral Steerability in Behavior Foundation Models",
         "path": "papers/11_Simulation_Benchmark/RoboSteer__Benchmarking_Behavioral_Steerability_in_Behavior_Foundation_Models/RoboSteer__Benchmarking_Behavioral_Steerability_in_Behavior_Foundation_Models.md",
@@ -4569,6 +4611,17 @@
   "13_Physics-Based_Animation": {
     "display_name": "Physics-Based Animation",
     "papers": [
+      {
+        "title": "PhysibleMDM: Enforcing Inference-Time Physical Feasibility Constraints on Motion Diffusion Models via Noise Optimization",
+        "path": "papers/13_Physics-Based_Animation/PhysibleMDM__Inference-Time_Physical_Feasibility_Constraints_on_Motion_Diffusion_Models/PhysibleMDM__Inference-Time_Physical_Feasibility_Constraints_on_Motion_Diffusion_Models.md",
+        "url": "/papers/13_Physics-Based_Animation/PhysibleMDM__Inference-Time_Physical_Feasibility_Constraints_on_Motion_Diffusion_Models/PhysibleMDM__Inference-Time_Physical_Feasibility_Constraints_on_Motion_Diffusion_Models.html",
+        "dir": "PhysibleMDM__Inference-Time_Physical_Feasibility_Constraints_on_Motion_Diffusion_Models",
+        "arxiv": "2610.30500",
+        "published_date_zh": "2026年10月21日（arXiv v1）",
+        "published_date_en": "Oct 21, 2026 (arXiv v1)",
+        "zhname": "PhysibleMDM：通过噪声优化在推理时为动作扩散模型施加物理可行性约束",
+        "zh_title": "PhysibleMDM：通过噪声优化在推理时为动作扩散模型施加物理可行性约束"
+      },
       {
         "title": "From Digital Human Interactions to Physics-Based Humanoid Skills: Physics-Grounded Post-Training of Interaction Generators",
         "path": "papers/13_Physics-Based_Animation/DIGHT__Physics-Grounded_Post-Training_of_Interaction_Generators/DIGHT__Physics-Grounded_Post-Training_of_Interaction_Generators.md",

@@ -31,8 +31,8 @@ def test_header_points_at_new_github_repo():
 
 def test_index_h1_binds_to_site_title():
     text = (ROOT / "index.html").read_text(encoding="utf-8")
-    assert 'data-en="📚 {{ site.title | escape }}"' in text
-    assert 'data-zh="📚 {{ site.description | escape }}"' in text
+    assert 'data-en="{{ site.title | escape }}"' in text
+    assert 'data-zh="{{ site.description | escape }}"' in text
     assert OLD_TITLE not in text
     assert OLD_ZH not in text
 

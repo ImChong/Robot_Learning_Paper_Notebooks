@@ -39,7 +39,8 @@ def test_head_carries_description_canonical_and_open_graph():
         '<meta property="og:title" content="{{ seo_title | escape }}">',
         '<meta property="og:description" content="{{ seo_description | escape }}">',
         '<meta property="og:url" content="{{ seo_url }}">',
-        '<meta name="twitter:card" content="summary">',
+        '<meta name="twitter:card" content="summary_large_image">',
+        '<meta property="og:image" content="{{ og_image }}">',
     ):
         assert needle in HEAD, needle
 
