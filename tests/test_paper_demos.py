@@ -5733,6 +5733,6 @@ def test_viral_project_page_clips_and_renders():
     figs = {p.name for p in (ROOT / "assets/img/papers/viral").glob("*.webp")}
     assert figs == set(re.findall(r"'(fig\w+\.webp)'", js))
     sheets = {p.name for p in (ROOT / "assets/img/papers/viral/g1_3d").iterdir()}
-    assert sheets == set(re.findall(r"file: '(\w+\.webp)'", js)) == {"demoA.webp", "rsi.webp", "egoA.webp", "dr.webp", "ext.webp", "aug.webp"}
+    assert sheets == set(re.findall(r"file: '(\w+\.webp)'", js)) == {"demoA.webp", "rsi.webp", "place.webp", "egoA.webp", "dr.webp", "ext.webp", "aug.webp"}
     note = VIRAL_NOTE.read_text(encoding="utf-8")
     assert "剪自[项目页](https://viral-humanoid.github.io/)的视频" in note

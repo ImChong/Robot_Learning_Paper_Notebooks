@@ -417,7 +417,9 @@
   function camAt(s, ox, oy) { return { s: s, ox: ox, oy: oy }; }
   var SHEETS = {
     demoA: { file: 'demoA.webp', R: 170, cw: 440, ch: 290, cols: 12, n: 199, ax: 215, ay: 233 },
-    rsi: { file: 'rsi.webp', R: 170, cw: 440, ch: 290, cols: 6, n: 6, ax: 215, ay: 233 }
+    rsi: { file: 'rsi.webp', R: 170, cw: 440, ch: 290, cols: 6, n: 6, ax: 215, ay: 233 },
+    /* 第 5 幕「放下」的近景：示范 A 第 43–73 帧（2.58–4.38 s），另一套相机 yaw 0.6、pitch 0.35，锚点是托盘原点（托盘底面中心） */
+    place: { file: 'place.webp', R: 480, cw: 704, ch: 380, cols: 8, n: 31, ax: 420, ay: 300 }
   };
   /* 一格 3D 贴图：put(cam, 帧号) 让锚点落在 (cam.ox, cam.oy)。贴图第一次用到才设 href */
   function g1Mesh(parent, key, opts) {
@@ -1011,7 +1013,7 @@
       });
       armBars.forEach(function (b, k) { var v = f.arm[k], h = Math.abs(v) * 22; b.node.setAttribute('y', (v >= 0 ? 182 - h : 182).toFixed(1)); b.node.setAttribute('height', h.toFixed(1)); });
       var closed = f.prim >= 0.5;
-      handTxt.textContent = closed ? '握住' : '张开';
+      handTxt.setText(closed ? '握住' : '张开');
       handChip.firstChild.style.stroke = closed ? C_GOOD : C_MUTED;
       var u4 = since(t, clock, 10.4), raw = -1 + 2 * rnd(Math.floor(u4 / 0.7), 17);
       moveDot(rawDot, [axX(raw), 134]); moveDot(clipDot, [axX(clamp(raw, -0.5, 0.5)), 134]);
@@ -1042,7 +1044,7 @@
   ];
   function buildSceneReward() {
     var s = sceneSvg('左边是附录表 3 里十项奖励在五个阶段的开关矩阵，实心点表示这一项在该阶段生效，高亮的一列跟着右边示范回放的阶段走；' +
-      '右边依次出现：走近奖励随距离变化的钟形曲线和示范里此刻的点；托盘附近还捏着瓶子就扣分；举高的刻度条；转身的朝向表盘；代码里的写法');
+      '右边依次出现：走近奖励随距离变化的钟形曲线和示范里此刻的点；示范放下前后的 G1 近景回放（托盘周围 0.3 m 的圈、瓶子离托盘与手掌离瓶子的距离、手还捏着时的扣分）；举高的刻度条；转身的朝向表盘；代码里的写法');
     s.appendChild(svgText(24, 26, '奖励按阶段开关（附录表 3）', 'demo-x-ink2', 13.5));
     var MX = 168, MY = 70, CW = 44, RH = 23;
     STAGES.forEach(function (st, i) {
@@ -1075,17 +1077,42 @@
     label(p1, R + 30 + (W - 40) * 0.45 / 1.6, 265, '0.45', 'demo-x-mut', 9.5, 'middle');
     label(p1, R + W - 10, 265, '1.6 m', 'demo-x-mut', 9.5, 'middle');
     readHint(p1, R, 310, '横轴：骨盆到瓶子的水平距离；纵轴：这一项的分', 10, W);
-    /* 第 2 段：放下 */
+    /* 第 2 段：放下 —— 示范放下前后的近景回放（我们按示范记下的刚体位姿用 G1 网格重渲），叠上代码里的两个阈值：
+       手里的瓶子离托盘原点 < 0.3 m 进「放下」，手掌离瓶子 > 0.2 m 进「抓起」；放下阶段手还捏着，就按手和瓶子的接触力扣分 */
     var p2 = group(s);
     label(p2, R, 64, '放下：到了托盘还捏着，扣分', 'demo-x-ink', 14);
-    rectBox(p2, R + 100, 170, 130, 50, C_ACCENT, C_SURFACE2);
-    label(p2, R + 242, 200, '托盘', 'demo-x-ink2', 11);
-    ringAt(p2, R + 165, 160, 70, C_ACCENT, 1.2).setAttribute('stroke-dasharray', '4 4');
-    label(p2, R + 250, 108, '0.3 m 以内', 'demo-x-mut', 10.5);
-    var bottle2 = paint(svgEl('rect', { x: R + 152, y: 120, width: 26, height: 56, rx: 6 }), C_GOOD);
-    p2.appendChild(bottle2);
-    var fingers = [hline(p2, 0, 0, 0, 0, C_BAD, 4), hline(p2, 0, 0, 0, 0, C_BAD, 4)];
-    var forceTxt = label(p2, R, 290, '', 'demo-x-ink', 12);
+    var PJ0 = 43, PN = 31, PX = R, PY = 78, PW = W, PH = W * 380 / 704, PS = 240;
+    var pOx = PX + 420 * PS / 480, pOy = PY + 300 * PS / 480;
+    function projPL(p) {
+      var c = Math.cos(0.6), sn = Math.sin(0.6), cp = Math.cos(0.35), sp = Math.sin(0.35);
+      var dx = p[0] - DEMO.tray[0], dy = p[1] - DEMO.tray[1], dz = p[2] - DEMO.tray[2];
+      return [pOx + PS * (dx * c + dy * sn), pOy - PS * (dz * cp + (-dx * sn + dy * c) * sp)];
+    }
+    rectBox(p2, PX - 2, PY - 2, PW + 4, PH + 4, C_BORDER, C_SURFACE2);
+    var placeM = g1Mesh(p2, 'place');
+    /* 托盘原点周围 0.3 m 的球，正交投影下是同样半径的圆；裁到画框里 */
+    var pClip = svgEl('svg', { x: PX, y: PY, width: PW, height: PH, overflow: 'hidden', viewBox: [PX, PY, PW, PH].join(' ') });
+    p2.appendChild(pClip);
+    var zone = ringAt(pClip, pOx, pOy, 0.3 * PS, C_WARN, 2);
+    zone.setAttribute('stroke-dasharray', '6 4');
+    var tLine = hline(pClip, pOx, pOy, pOx, pOy, C_WARN, 1.6, '3 3');
+    dotAt(pClip, pOx, pOy, 4, C_WARN);
+    var bRing = ringAt(pClip, 0, 0, 9, C_GOOD, 2.5);
+    var pTag = rectBox(p2, PX + 4, PY + 4, 146, 66, 'none', C_SURFACE); pTag.style.fillOpacity = 0.8; pTag.style.stroke = 'none';
+    label(p2, PX + 12, PY + 20, '示范回放（我们重渲）', 'demo-x-ink2', 11);
+    var pTime = label(p2, PX + 12, PY + 40, '', 'demo-x-mut', 11);
+    tone(p2, PX + 12, PY + 60, '黄圈：托盘周围 0.3 m', C_WARN, 11);
+    var stChips = [1, 2, 3].map(function (k, i) { return chip(p2, R + i * 66, PY + PH + 12, 60, k + ' ' + STAGES[k].zh, STAGE_C[k], { size: 11.5, h: 24 }); });
+    var handC = chip(p2, R + 214, PY + PH + 12, 138, '', C_BAD, { size: 11.5, h: 24 });
+    var handT = handC.lastChild;
+    var dTrayT = label(p2, R, PY + PH + 58, '', 'demo-x-ink', 11.5);
+    var dPalmT = label(p2, R, PY + PH + 78, '', 'demo-x-ink2', 11.5);
+    label(p2, R, PY + PH + 100, '扣分（示意）', 'demo-x-ink2', 11);
+    var penBar = paint(svgEl('rect', { x: R + 80, y: PY + PH + 90, width: 0, height: 12, rx: 2 }), C_BAD);
+    p2.appendChild(penBar);
+    var penT = label(p2, R + 86, PY + PH + 100, '', 'demo-x-ink', 11);
+    var penMax = 0;
+    for (var pj = PJ0; pj < PJ0 + PN; pj++) if (stageAt(pj / DEMO.fps) === 2 && demoFrames()[pj].prim >= 0.5) penMax += 1;
     /* 第 3 段：举高 */
     var p3 = group(s);
     label(p3, R, 64, '抓起：举高，封顶 0.15 m', 'demo-x-ink', 14);
@@ -1128,12 +1155,25 @@
       stLab.textContent = '示范第 ' + f1(f.t) + ' s：阶段 ' + st + '（' + STAGES[st].zh + '）';
       moveDot(pdot, [pb.px(clamp(f.dFront, 0, 1.6)), pb.py(rWalk(f.dFront))]);
       pval.textContent = '此刻 d = ' + f2(f.dFront) + ' m，r = ' + f3(rWalk(f.dFront));
-      var c2 = since(t, clock, 3.6) % 4, drop = clamp((c2 - 1.6) / 0.8, 0, 1), grip = c2 < 1.6;
-      bottle2.setAttribute('y', (120 + 44 * drop).toFixed(1));
-      setLine(fingers[0], R + 146, 132 + 44 * drop, R + 146 - (grip ? 0 : 14), 160 + 44 * drop);
-      setLine(fingers[1], R + 184, 132 + 44 * drop, R + 184 + (grip ? 0 : 14), 160 + 44 * drop);
-      fingers.forEach(function (l) { l.style.stroke = grip ? C_BAD : C_GOOD; });
-      forceTxt.textContent = grip ? '还捏着：扣分（−捏力）' : '松开了：不扣';
+      /* 回放：视频里放慢到 0.45 倍（网页 0.7 倍），放完停 2 s 再重放，重放时淡入 */
+      var spd = clock == null ? 0.7 : 0.45, playT = (PN - 3) / DEMO.fps / spd, uu = Math.max(0, since(t, clock, 3.6) - 0.3) % (playT + 2);
+      var pk = clamp(3 + Math.floor(uu * DEMO.fps * spd), 3, PN - 1), pf = F[PJ0 + pk], pst = stageAt(pf.t), closed = pf.prim >= 0.5;
+      placeM.put(camAt(PS, pOx, pOy), pk);
+      placeM.g.style.opacity = Math.min(1, uu / 0.25);
+      var bp = projPL(pf.hold);
+      moveDot(bRing, bp); setLine(tLine, pOx, pOy, bp[0], bp[1]);
+      bRing.style.stroke = pst === 2 && closed ? C_BAD : C_GOOD;  // 放下阶段还捏着：红
+      pTime.textContent = '示范第 ' + f2(pf.t) + ' s';
+      stChips.forEach(function (c, i) { setOpacity(c, i + 1 === pst ? 1 : 0.3); });
+      handT.setText(closed ? '手：还捏着瓶子' : '手：松开了');  // 改 textContent 会把 svgRich 里的字号一起抹掉
+      handC.firstChild.style.stroke = closed ? C_BAD : C_GOOD;
+      dTrayT.textContent = '瓶子离托盘原点 ' + f2(pf.dTray) + ' m' + (pf.dTray < 0.3 ? '（< 0.3：进入放下）' : '');
+      dPalmT.textContent = '手掌离瓶子 ' + f2(pf.dPalm) + ' m' + (pf.dPalm > 0.2 ? '（> 0.2：进入抓起）' : '');
+      var pc = 0;
+      for (var q = PJ0; q <= PJ0 + pk; q++) if (stageAt(q / DEMO.fps) === 2 && F[q].prim >= 0.5) pc += 1;
+      setW(penBar, pc / penMax * 150);
+      penT.setAttribute('x', (R + 86 + pc / penMax * 150).toFixed(1));
+      penT.textContent = pst === 2 ? (closed ? '还捏着：按接触力扣分' : '松开了：不扣') : '';
       var lift = clamp(f.lift - 0.075, 0, 0.4), gh = (GB - GT) * lift / 0.4;
       gauge.setAttribute('y', (GB - gh).toFixed(1)); gauge.setAttribute('height', gh.toFixed(1));
       liftTxt.textContent = '此刻离桌 ' + f2(lift) + ' m → 得 ' + f2(Math.min(lift + 0.075, 0.15));
@@ -1240,7 +1280,7 @@
       setLine(armLine, JX, JY, JX + 80 * Math.sin(ang), JY + 80 * Math.cos(ang));
       armTxt.textContent = steps + ' 步：' + f3(ang) + ' rad';
       var acc = Math.sin(now * 1.3) * 0.6;
-      handT.textContent = acc >= 0 ? '累加 ≥ 0：握住' : '累加 < 0：张开';
+      handT.setText(acc >= 0 ? '累加 ≥ 0：握住' : '累加 < 0：张开');
       var u4 = seg(since(t, clock, 10.4), 0.2, 2.6) * 30;
       var A_SEQ = [1, 1, 1, 0, 0, -1, -1, -1, -1, -1, 0, 0, 1, 1, 0, 0], k1 = Math.floor(since(t, clock, 0.4) / 0.7), cPrev = 0, cNow = 0, aNow = 0;
       for (var q = 0; q <= k1; q++) { aNow = A_SEQ[q % A_SEQ.length]; cPrev = cNow; cNow = clamp(cNow + 0.1 * aNow, -0.5, 0.5); }
