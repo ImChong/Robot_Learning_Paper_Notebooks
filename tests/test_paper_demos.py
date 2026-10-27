@@ -5529,6 +5529,18 @@ def test_hdmi_explainer_demos_and_worked_example_share_the_paper_numbers():
     assert len(F) == 149 and _fmt(F[0]["t"], 2) == "0.50" and _fmt(F[-1]["t"], 2) == "9.38"
     contact = [j for j, f in enumerate(F) if f["c"]]
     assert (contact[0], contact[-1], len(contact)) == (49, 104, 56) and contact == list(range(49, 105))
+    # 箱子坐标系的原点（官方 suitcase.usd：0.2 × 0.3 × 0.4 m 的盒子，原点在 +x 面的底边中点）：「箱子中心」= 原点 + 旋转 × (−0.1, 0, 0.2)，
+    # 所以两点之间每帧都隔 √(0.1² + 0.2²)；第 4.70 s 回放的原点就是第 10 幕物体观测用的那个点
+    raw = base64.b64decode(re.search(r"var SUIT_ORG = '([^']+)'", js).group(1))
+    org = struct.unpack(f"<{len(raw) // 2}h", raw)
+    assert len(org) == 149 * 6
+    for j, f in enumerate(F):
+        for k, who in enumerate(("ref", "rob")):
+            o = [v / 1000 for v in org[j * 6 + k * 3 : j * 6 + k * 3 + 3]]
+            assert abs(math.dist(o, f[who]["cen"]) - math.hypot(0.1, 0.2)) < 3e-3
+    assert list(org[70 * 6 + 3 : 70 * 6 + 6]) == json.loads(re.search(r"box: (\[[^\]]+\])", obs10).group(1))
+    assert "厚 0.2 米、宽 0.3 米、高 0.4 米" in narration and "比两个侧面各往外 3 厘米" in narration and round(0.18 - 0.3 / 2, 2) == 0.03
+    assert "f.rob.org" in js and "+x 面的底边中点" in js and "+x 面的底边中点" in note
 
     def hd(f, who):
         return [math.dist(f[who]["eef"][i], f[who]["tgt"][i]) * 100 for i in range(2)]
@@ -5553,9 +5565,9 @@ def test_hdmi_explainer_demos_and_worked_example_share_the_paper_numbers():
     assert all(joint[0][i] < min(joint[1][i], joint[2][i]) for i in range(8))
     assert "0.090、0.142 和 0.151 弧度" in narration and "| 关节位置误差（rad） | **0.090** | 0.142 | 0.151 |" in note
 
-    # 旁白：105 句；数字列举不只隔一个逗号；片尾只预告下一篇（VIRAL）；绕开多音字
+    # 旁白：107 句；数字列举不只隔一个逗号；片尾只预告下一篇（VIRAL）；绕开多音字
     spoken = re.findall(r'"([^"]*)"\),', narration[narration.index("SCRIPT = [") : narration.index("DISPLAY = [")])
-    assert len(spoken) == 105
+    assert len(spoken) == 107
     assert not any(re.search(r"\d\s*[，,]\s*\d", t) for t in spoken)
     assert "下一篇讲 VIRAL" in narration and "VIRAL" in intro and "VIRAL" not in js and "重定向" not in "".join(spoken)
     for bad in ("差不多", "几乎", "一行", "重点", "时长", "搬行李箱", "标的是", "当作", "卡住"):

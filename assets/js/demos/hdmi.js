@@ -132,6 +132,11 @@
      两段都从参考的第 25 帧对齐，每 3 帧取一帧，共 149 帧（约 16.7 帧/秒）。每帧 37 个 int16（mm）：
      参考的左手、右手末端点、左右两个目标接触点、骨盆、箱子中心（6 × 3），回放同样 18 个，最后是这一帧的接触信号 */
   var SUIT = { n: 149, per: 37, data: 'Uf25+8UCq/vo+84CMf2D+icByvt1+iwBf/w0/EUDffx9+vcAg/2r+7MCffvr+60CKP2M+voAwPt++voAifwv/BADdPyF+sgAAABR/bn7xQKr++j7zgIx/YP6JwHK+3X6LAF//DT8RQN9/H369wB6/bP7sAKE+/L7qAIo/Yz6+gDA+376+gCK/C/8DwN0/IX6yAAAAFH9ufvFAqv76PvOAjH9g/onAcr7dfosAX/8NPxFA338ffr3AHT9uPuvAo37+vukAij9jPr6AMD7fvr6AIv8MPwPA3T8hfrIAAAAUf25+8UCq/vo+84CMf2D+icByvt1+iwBf/w0/EUDffx9+vcAcv25+68Ck/sA/KECKP2M+voAwPt++voAi/wx/A8DdPyF+sgAAABR/bn7xQKr++j7zgIx/YP6JwHK+3X6LAF//DT8RQN9/H369wBz/bn7sAKW+wP8oAIo/Yz6+gDA+376+gCL/DP8DwN0/IX6yAAAAFH9ufvFAqv76PvOAjH9g/onAcr7dfosAX/8NPxFA338ffr3AHb9t/uyApb7BPyhAij9jPr6AMD7fvr6AIv8NfwPA3T8hfrIAAAAUf25+8UCq/vo+84CMf2D+icByvt1+iwBf/w0/EUDffx9+vcAef21+7QCkvsE/KICKP2M+voAwPt++voAjPw2/A8DdPyF+sgAAABR/bn7xQKr++j7zgIx/YP6JwHK+3X6LAF//DT8RQN9/H369wB7/bX7tQKO+wT8pAIo/Yz6+gDA+376+gCM/Dj8DwN0/IX6yAAAAFH9ufvFAqv76PvOAjH9g/onAcr7dfosAX/8NPxFA338ffr3AHz9tvu0Aoz7BPylAij9jPr6AMD7fvr6AIz8OfwPA3T8hfrIAAAAUf25+8UCq/vo+84CMf2D+icByvt1+iwBf/w0/EUDffx9+vcAfP25+7QCivsE/KYCKP2M+voAwPt++voAjPw6/A8DdPyF+sgAAABR/bn7xQKr++j7zgIx/YP6JwHK+3X6LAF//DT8RQN9/H369wB7/bv7swKK+wT8pwIo/Yz6+gDA+376+gCM/Dr8DwN0/IX6yAAAAFH9ufvFAqv76PvOAjH9g/onAcr7dfosAX/8NPxFA338ffr3AHr9vPuyAov7BvymAij9jPr6AMD7fvr6AIz8O/wPA3T8hfrIAAAAUf25+8UCq/vo+84CMf2D+icByvt1+iwBf/w0/EUDffx9+vcAef29+7ICjPsH/KYCKP2M+voAwPt++voAjPw7/A8DdPyF+sgAAABR/bn7xQKr++j7zgIx/YP6JwHK+3X6LAF//DT8RQN9/H369wB4/b37sgKN+wj8pQIo/Yz6+gDA+376+gCM/Dv8DwN0/IX6yAAAAFH9ufvFAqv76PvOAjH9g/onAcr7dfosAX/8NPxFA338ffr3AHn9vPuzAo77CPylAij9jPr6AMD7fvr6AIz8O/wPA3T8hfrIAAAAUf25+8UCq/vo+84CMf2D+icByvt1+iwBf/w0/EUDffx9+vcAef27+7MCj/sJ/KQCKP2M+voAwPt++voAjPw7/A8DdPyF+sgAAABR/bn7xQKr++j7zgIx/YP6JwHK+3X6LAF//DT8RQN9/H369wB6/bv7swKP+wj8pAIo/Yz6+gDA+376+gCM/Dv8DwN0/IX6yAAAAFH9ufvFAqv76PvOAjH9g/onAcr7dfosAX/8NPxFA338ffr3AHv9uvu0Ao/7CPykAij9jPr6AMD7fvr6AIz8PPwPA3T8hfrIAAAAUf25+8UCq/vo+84CMf2D+icByvt1+iwBf/w0/EUDffx9+vcAfP27+7QCjvsH/KQCKP2M+voAwPt++voAjPw8/A8DdPyF+sgAAABR/bn7xQKr++j7zgIx/YP6JwHK+3X6LAF//DT8RQN9/H369wB9/b37tgKO+wf8owIo/Yz6+gDA+376+gCM/Dz8DwN0/IX6yAAAAFH9ufvFAqv76PvOAjH9g/onAcr7dfosAX/8NPxFA338ffr3AH/9v/u3Ao/7BfyiAij9jPr6AMD7fvr6AIz8PPwPA3T8hfrIAAAAUf25+8UCq/vo+84CMf2D+icByvt1+iwBf/w0/EUDffx9+vcAf/2/+7gCj/sF/KACKP2M+voAwPt++voAjPw9/BADdPyF+sgAAABR/bn7xQKr++j7zgIx/YP6JwHK+3X6LAF//DT8RQN9/H369wB+/b/7uQKP+wX8nwIo/Yz6+gDA+376+gCK/D/8EAN0/IX6yAAAAFH9ufvFAqv76PvOAjH9g/onAcr7dfosAX/8NPxFA338ffr3AHz9v/u6Ao37B/ydAij9jPr6AMD7fvr6AIn8QPwQA3T8hfrIAAAAUf25+8UCq/vo+84CMf2D+icByvt1+iwBf/w0/EUDffx9+vcAev3A+7wCifsI/JsCKP2M+voAwPt++voAh/xB/BADdPyF+sgAAABR/bn7xQKr++j7zgIx/YP6JwHK+3X6LAF//DT8RQN9/H369wB5/cD7wAKG+wX8mQIo/Yz6+gDA+376+gCE/EH8EAN0/IX6yAAAAFD9ufvIAqj75fvQAjH9g/onAcr7dfosAXr8N/xJA338ffr3AHn9v/vFAoT7APyVAij9jPr6AMD7fvr6AID8Q/wQA3T8hfrIAAAATv21+8cCpPvd+84CMf2D+icByvt1+iwBdPw9/EoDffx9+vcAeP2++8oCgfv4+5ECKP2M+voAwPt++voAefxH/A8DdPyF+sgAAABO/az7xAKf+9H7xwIx/YP6JwHK+3X6LAFu/EP8SAN9/H369wB3/bv7zgJ7++77igIo/Yz6+gDA+376+gBw/E/8DgN0/IX6yAAAAE79nfvBApf7wfu+AjH9g/onAcr7dfosAWn8TPxBA338ffr3AHX9tPvQAnD76ft+Aij9jPr6AMD7fvr6AGj8WvwKA3T8hfrIAAAAS/2R+7MCifu4+68CMf2D+icByvt1+iwBZvxX/DQDffx9+vcAcv2g+88CXfvs+2oCKP2M+voAwPt++voAZPxm/AADdPyF+sgAAABI/YT7nAJ7+7X7mAIx/YP6JwHK+3X6LAFj/GT8IgN9/H369wBq/Yf7zAJO+/X7VAIo/Yz6+gDA+376+gBl/Gj88AJ0/IX6yAAAAEX9c/uAAm/7sPt9AjH9g/onAcr7dfosAWP8cfwLA338ffr3AGb9cvu9Akf7+Ps9Aij9jPr6AMD7fvr6AGb8afzbAnT8hfrIAAAAQ/1d+14CZ/uj+1oCMf2D+icByvt1+iwBY/x+/O4Cffx9+vcAav1j+6QCPfvs+yMCKP2M+voAwPt++voAafxu/L4CdPyF+sgAAABD/UH7OQJk+477MgIx/YP6JwHK+3X6LAFl/Iz8ygJ9/H369wB7/Vf7hQIp+9H7CgIo/Yz6+gDA+376+gBw/Hb8mAJ0/IX6yAAAAEP9JPsWAmb7cfsHAjH9g/onAcr7dfosAWf8mvygAn38ffr3AJj9SPtlAg37rPv4ASj9jPr6AMD7fvr6AHn8ffxoAnT8hfrIAAAAQ/0H+/cBbPtN++IBMf2D+icByvt1+iwBavyo/HMCffx9+vcAuP01+0wC7vqI+/QBKP2M+voAwPt++voAfvyB/DcCdPyF+sgAAABD/e364QF2+yT7yQEx/YP6JwHK+3X6LAFt/LT8RgJ9/H369wDP/Rn7OgLM+mb79gEo/Yz6+gDA+376+gB+/Ib8CwJ0/IX6yAAAAD/91/rVAYH7/frAATH9g/onAcr7dfosAXD8vvwcAn38ffr3ANr99volArT6Pvv3ASj9jPr6AMD7fvr6AHv8jvzYAXT8hfrIAAAAN/3H+s0Bjfvd+sIBMf2D+icByvt1+iwBc/zF/PgBffx9+vcA2v3d+v0BtvoS+/ABKP2M+voAwPt++voAevyT/JkBdPyF+sgAAAAs/bv6ywGX+8j6zAEx/YP6JwHK+3X6LAF2/Mj82wF9/H369wDU/dL6twHQ+ur60gEo/Yz6+gDA+376+gCA/Jr8WAF0/IX6yAAAACL9svrPAaH7uvrbATH9g/onAcr7dfosAXj8yvzGAX38ffr3ALj9w/psAf36w/qQASj9jPr6AMD7fvr6AIL8r/wwAXT8hfrIAAAAG/2q+tIBqvuy+uUBMf2D+icByvt1+iwBefzL/LcBffx9+vcAdf2u+j4BWfuV+j0BKP2M+voAwPt++voAdvyu/CQBdPyF+sgAAAAU/aX60gGx+6367wEx/YL6JwHK+3X6LAF6/Mv8rgF9/H369wA2/Zr6LwGz+4H6EgEo/YL6/QDA+3b6/QBt/Kb8KQF0/H76ywAAABL9o/rUAbX7qfr3ATD9gfonAcn7c/osAXr8yvyqAXz8fPr3ADj9ivoqAbP7dPoRASj9dPoCAcD7aPoCAWv8ofwqAXT8cvrQAAAAEv2i+tUBuPum+v0BMP2A+icByPtx+iwBefzK/KoBe/x6+vcANv2B+h4Btvtm+hABKf1q+gQBwftf+gQBZfyd/CcBdfxr+tMAAAAP/aP61AG9+6X6/wEw/YH6JwHI+3D6LgF6/Mr8rgF7/Hr6+AAx/YT6GAG8+2H6DAEo/Wj6BQHB+1z6BQFj/Jv8KQF0/Gn60wAAAA39pPrUAb/7pvr+AS/9gvoqAcj7c/ozAXv8yvy3AXr8ffr9ADD9h/oYAb77ZPoIASj9bPoEAcD7XvoEAWf8mvwtAXT8a/rTAAAAC/2o+tABv/uq+voBL/2H+i0ByPt6+j0BfPzL/MYBefyF+gMBL/2P+hcBv/tp+gYBKP1z+gQBwPti+gMBbfyZ/DMBdPxw+tIAAAAJ/bH6yAG++6769wEw/ZP6MgHJ+3/6SgF9/Mr83AF4/JD6DQEx/Z36FAHC+3L6BAEq/YH6AwHD+2v6AwFw/Jb8OQF2/Hv60QABAAf9vfrGAb37s/r9ATH9pPo8Acz7h/peAX38yvz5AXn8nvocATf9sPoTAcj7fvoEATH9lfoDAcr7dvoDAXL8k/w+AX38ivrRAAEACf3I+tEBv/u3+hECNP22+kwB0vuO+noBe/zI/B4Ce/yu+jMBQP3K+hYB1fuM+gcBPP2v+gUB1vuF+gUBdPyS/EUBiPyh+tMAAQAQ/dL64wHF+7b6LQI8/cj6ZAHc+5X6nAF5/MT8SAKC/L36UQFO/ez6HQHl+6H6CwFL/dL6CgHn+5r6CAF4/JL8UAGY/L/62AABABz93/r4AdD7tfpHAkj92/qHAez7mPrEAXX8vfx1Ao78yvp4AWD9FPsoAf37uvoPAV79/foSAf77s/oLAX38lPxhAaz85vrfAAEAKv3z+g8C3fuz+mECWP3z+rUBAfyZ+vMBcPyz/KICoPzX+qcBc/1F+zcBGvzQ+h0Bdf0u+xwBG/zJ+hgBfPyU/H0BxPwM++wAAQA9/Qv7MgLv+6/6gwJt/Q377wEd/Jj6JgJs/Kb8zQK3/OX63gGF/XX7VgFC/Nv6NwGK/WX7NQFA/NX6MAFx/JH8pQHd/DH7BQEBAFb9IvthAgj8qfqtAof9KvsvAkH8mPpcAmn8mPzyAtb88/oZApT9nPuGAWz83PpgAZr9l/teAWr81vpXAWT8kvzYAff8SvsuAQEAc/0++5ECKvyj+tQCpv1K+3ACbvyZ+pACaPyI/BED+/wD+1QCpv2x+9QBlPzb+pwBsP2v+6sBkvzW+pEBYPyU/BQCF/1W+3EBAQCV/V77vAJT/J/68QLI/Wr7sAKi/Jv6wwJq/Hj8JwMn/RL7jAK3/cH7MAKz/N/65AHF/b77CQKz/Nr62AFs/JT8VAI1/V77wgEBALn9gfviAof8nfoFA+r9ivvrAtv8nvryAm/8Z/w3A1b9IfvAAsf90fuHAs385vo1Atj9zPthAs784PopAoH8kvyMAlD9ZfsWAgEA3v2n+/4Cwvyd+g8DC/6r+yEDGP2i+iADefxW/EADhv0x+/EC2v3o+9QC7vzt+ocC7v3g+7EC8fzm+nwClfyK/LgCb/1u+2UCAQD//cz7DgMC/aD6EgMo/s37UANW/aj6TAOI/ET8RAO3/UH7HQPu/Qv8DwMi/fH60wID/gP87AIl/er6yQKr/Hv82QKU/X37qQIBACT+5fswA0b9nfo1A0T+7Pt2A5X9svp1A578MvxDA+f9UvtEAwb+MPw0A2L9+PoTAx3+KPwSA2f98foKA8n8Z/zwAsH9jvvcAgEAR/78+0sDjf2f+lUDX/4K/JQD0v2/+psDuvwi/EADFv5k+2YDJv5M/EgDpv0D+0IDPv5D/CYDq/37+joD7vxW/PgC9P2c+/4CAQBp/hL8YQPR/aX6dQN4/ib8qwML/s/6vwPd/BT8PAND/nf7gwNN/mL8TwPp/RD7YANn/ln8MAPv/Qj7WQMd/Ur88AIt/qr7EwMBAIn+J/x4Aw7+r/qXA5P+Pvy9A0L+4freAwX9Cfw6A2/+ivucA3b+efxRAyr+Ivt0A5L+cPw0AzH+GvttA0/9RvzmAmf+u/sgAwEAp/46/IsDRv68+rUDsf5U/M0Ddf70+vgDLv0B/DsDmv6d+7EDmf6W/FoDaf46+4MDtv6P/D0Dcf4z+30Dff1M/O4Cmf7X+ywDAQDG/kv8nAN6/sn6ywPP/mr82wOm/gj7DARY/fz7PgPE/rH7wwO3/rX8agOj/lf7mQPU/q/8TQOr/lD7kgOh/U/8/ALG/vX7PwMBAOj+X/yqA6/+2/rbA+z+f/zoA9X+G/sbBIL9+vtBA+z+xvvRA9b+y/x+A9X+bfuxA/T+x/xiA97+Z/urA8H9UPwJA/L+DPxWAwEACf90/LQD4/7w+uQDCP+T/PQDAv8u+yQEqv35+0QDEv/a+9wD+f7V/JAD/v54+8IDGf/S/HYDB/9x+7wD2/1P/AwDHP8Y/GoDAQAp/4r8vAMW/wT76AMk/6f8/QMw/0L7KATS/fj7RgM3/+/74wMa/9r8mAMi/337ywM7/9f8fwMs/3b7xQP9/Un8DwNC/x38cwMBAEr/oPzCA0j/GfvoA0P/uvwBBF7/VfsmBPr99/tFA17/BPzkAzv/3fySA0n/f/vHA13/2vx5A1P/efvBAyr+QPwQA2X/IPxuAwEAbP+0/MUDe/8u++UDYv/N/AAEjv9p+x4EJP71+0IDhv8Y/N8DYP/e/IQDd/+A+7MDgP/c/GkDgf97+60DWf44/A0DjP8i/FsDAQCM/8n8xQOu/0P73gOB/9/8+wO//337EwRQ/vX7PgOu/y381wOC/+L8cAOr/4X7kwOg/+P8VAO0/4D7jAOJ/jT8AwOz/yr8PwMBAKf/3/zEA+D/WvvXA5//8vzzA/T/lPsFBH3+9fs7A9b/RPzMA57/7/xaA+P/lftwA7r/8vw7A+3/kftpA8H+MvzzAtr/PPwhAwEAv//1/L8DEQB1+84DvP8G/ekDJwCv+/cDqv74+zkD/f9c/L8Dsf8E/VADHACz+1QDyv8M/TADJQCw+0wD8P42/PMC+/9b/AwDAQDU/wz9tgM+AJP7wQPY/xv94ANaAMv76gPU/vv7OgMiAHX8tAO7/x79UANIANr7TAPR/yj9LwNRANj7QwMV/zH8+gISAH78BwMBAOj/JP2vA2wAsvu2A/H/Mf3aA4kA6/vgA/z+APw+A0UAkfysA7z/NP1UA2oAAPxTA9H/QP0zA3MA//tLAy//Kvz/AiQAnfwNAwEAAAA6/agDmgDS+6wDCQBK/dIDtwAO/NYDIf8G/EADZgCv/KMDvP9E/V0DhQAg/FcD0f9T/TwDjQAh/E8DSf8q/AEDMgC4/BQDAQAWAFL9nQPGAPX7nwMfAGT9ygPeADP8zQND/xH8QgODAM78mgPD/1T9YgOfADz8UgPX/2X9QQOnAD/8SwNm/zj8AQNBANH8FAMBACwAbv2RA+8AGvyTAzcAgv3AAwQBWvzDA2X/IfxAA6AA8PyQA9v/aP1sA78AV/xSA+//e/1NA8YAWvxMA4X/UfwAA10A7fwaAwEARACP/YIDFgFE/IQDUQCk/bEDKgGE/LMDhv83/DoDwAAV/YAD+/+A/XED4wBy/FIDDwCU/VID6gB2/EwDpv9x/P0CfwAI/R0DAQBeALT9bwM6AXH8cQNwAMn9nANQAa/8nwOn/1L8MgPiAD39bAMjAJ79bwMJAZD8TwM3ALL9UAMRAZT8SQPG/5T89wKnACf9GwMBAHoA2f1bA1sBnPxeA5MA8/2DA3YB2/yIA8X/b/wpAwYBaP1UA04AxP1lAzIBtfxHA2MA2P1HAzoBuPxAA+j/vfzpAtIATf0SAwEAmAD8/UYDeQHD/EwDugAf/mcDnAEI/W8D4P+L/CEDLQGU/TkDdwDy/VMDWQHi/DsDjAAG/jYDYgHl/DMDCwDp/NUC/AB5/QMDAQC6AB3+KwOYAeb8NAPfAEz+SwPBATP9VgP3/6X8HANRAb/9HgORACD+RgN6ARX9MwOkADP+JwOCARj9KwMnABD91gIXAaj99wIBAN4AQP4pA7oBDf0zAwIBdP4uA+QBXf05AwoAvPwZA3QB5/0CA6cATP4/A5UBQ/0vA7kAXv4eA5wBR/0oAzcAK/3gAiwB0v3xAgEA/wBi/h4D2gE2/SkDIAGX/g4DBQKC/RoDGwDQ/BYDkwEK/uICzwBz/joDrgFd/SkD4gCD/hgDtQFg/SEDPwA7/eACTAHx/esCAQAcAYD+CgP3AVz9GAM6AbT+7AIkAqL9+AIqAN/8FAOuASj+wAL9AI3+MAPLAWz9IQMSAZ3+DwPTAW39GQNNAEj91gJ0AQT+4gIBADMBmP71AhACfP0FA1ABy/7HAj4Cvv3UAjgA6vwRA8YBQP6cAiABof4WA+0Bf/0RAzUBsP71AvUBgP0JA2QAUP3IApcBFv7NAgEASAGu/uUCJwKZ/fUCZAHg/p8CVgLW/a0CRQDw/AwD2gFW/nQCOAG3/u0CDQKa/fACTAHF/ssCFAKc/egCewBQ/bgCsQEs/qgCAQBcAcL+1gI9ArT95AJ1AfH+dQJtAuz9ggJRAPX8BAPtAWj+SgJLAc/+vAIoArn9vAJcAdz+mAIvArr9swKPAEj9pALEAUX+dAIBAG0B1P7BAlICzf3NAoUBAP9JAoEC//1UAl0A+Pz5Av4Bef4dAlYB5P6CAj8C2f19AmUB8v5eAkYC2f1zAp0AO/2TAtIBX/43AgEAfgHl/qoCZQLj/bECkwEO/x0CkQIQ/iMCaAD6/OwCDQKJ/u4BWwH1/kcCUgL1/TsCaAED/yICVwL2/TACpgAx/YYC2gF1/vgBAQCQAfT+lAJ3Avj9lQKgARv/8QGfAh3+8wFyAPr83wIaApf+wQFkAQT/GQJhAgz+AAJuARL/8wFmAg3+9AGtAC79dQLiAYf+wwEBAKABAv9+AoYCCf54AqoBJv/JAakCKP7GAXwA+/zSAiUCo/6WAXMBEv/7AW0CGv7TAXwBIP/VAXICGv7HAbEALf1gAu0Bl/6dAQEArwEP/2gClAIZ/lsCsgEv/6UBsAIw/p4BhQD7/MYCKwKr/nABhQEe/+MBeQIj/rIBjgEu/70BfgIj/qYBtQAt/UsC/AGk/oEBAQC7ARr/VAKfAib+QQK3ATX/hQG1Ajb+ewGOAPz8vAIwArH+TwGUASf/ygGFAij+mAGeATj/pQGKAir+jAG4AC39OgILAq7+aAEBAMUBIv9FAqcCMf4tArsBOf9rAbcCOP5eAZcA/fy1AjICtP4zAZ8BLf+vAZECLP5/AaoBPv+KAZYCL/51Ab0ALv0sAhgCtP5PAQEAzAEr/zwCrwI7/iACvAE7/1cBtgI3/kYBnwD9/LECMgK1/h0BpwEx/5MBmwIx/mgBsgFC/24BoAI0/l8BwgAv/SECIgK4/jUBAQDPATL/NQKzAkP+EwK8ATv/SAGyAjb+NQGmAP78rwIvArX+DQGsATX/dwGlAjj+UwG3AUX/UgGpAjv+SgHGADD9FQIqArz+HQEBANEBOv8vArYCSv4KArgBPv9BAawCNv42AawA//yvAi0Ct/4JAa0BOf9cAa4CQf5BAbkBSf83AbICRf44AckAL/0IAjACwf4GAQEA0AFA/ygCtwJP/gUCsQE+/zYBpwI3/jIBsQAA/bECKQK4/gIBrAE9/0MBswJL/jEBuAFM/x4BtwJP/igBygAu/f8BMwLG/vIAAQDOAUH/HAK2AlL+/wGnATf/KwGjAjb+LwG1AAH9swIlArX++wCqAUD/LwG2AlT+JQG1AU7/CQG6Alf+GwHKAC39+wE0Asv+4QABAMoBPv8RArYCUv77AaABMP8pAaQCNv4wAbgAAf23AiICsv76AK0BQv8pAbwCVv4fAboBTf8HAb8CVv4SAccAK/38ATcCyv7bAAEAxgE5/w0CtQJR/v0BnQEr/ykBpgI4/i8BuQAC/b0CIQKw/voArgFE/ysBxAJT/h4BvQFH/wcBwQJO/gcBwwAn/QICOQLF/tYAAADCATX/DwKzAk7+AwKaASv/KAGmAjr+LwG6AAL9xQIgArH++gCjAUf/MwHKAk3+LAG2AT//BQG6Akb+BQG9ACX9CwIzAr7+0wAAALYBMf8RArECRP4JApkBLP8oAaQCOv4vAbwAAv3QAh8Csv76AIsBRv9DAdACPv5OAaYBL//+AKsCN/7+ALgAJf0cAicCsv7MAAAAnQEl/w8CrQIs/g0CmQEs/ygBowI6/i8BvQAD/d4CHgKy/voAXwFF/2EB3AIZ/ngBmQEh//4AnQIp/v4AtAAp/TkCHAKm/swAAAB1ARD/EgKhAgT+FwKaASz/KAGkAjr+LwG/AAX97gIfArL++gArAT//igHmAuT9ogGVAR7//wCaAiX+/wC3AC79WQIaAqT+zQAAAEIB7/4fAo4C0f0pApoBLP8oAaQCOv4vAcIACP0BAx8Csv76AAEBNP+8AeYCsf3PAZsBI//9AJ8CK/79AL4AN/12Ah4CqP7LAAAADAHH/jcCcwKa/UUCmgEs/ygBpAI6/i8BxgAN/RMDHwKy/voA5gAo//UB3AKO/QACowEs//wApwIz/vwAxgBD/ZQCJAKv/soAAADaAJ7+WQJXAmb9ZwKaASz/KAGkAjr+LwHLABX9JAMfArL++gDTABz/LALJAnL9KQKiASv/+wCmAjL++wDQAFH9sQIjAq7+yQAAALEAef56AjwCOP2JApoBLP8oAaQCOv4vAdIAHf0xAx8Csv76AMEADf9cAqcCVv1GAp8BJ//6AKMCL/76ANsAYf3LAiECq/7IAAAAkABY/pUCIwIS/aQCmgEs/ygBpAI6/i8B2QAn/TwDHwKy/voAsAD5/oICfgI7/V4CnwEo//oApAIw/voA6QBx/eECIgKs/sgAAAB5AED+qgIOAvb8uAKaASz/KAGkAjr+LwHhADH9QwMfArL++gCfAOL+ngJWAiL9cwKfASj/+gCkAjD++gD5AIP98QIiAqz+yAAAAG4AMv64Av0B4/zGApoBLP8oAaQCOv4vAecAOv1IAx8Csv76AJMAy/6uAjYCDf2EAp8BKP/6AKQCMP76AAgBk/38AiICrP7IAAAAbAAr/sIC7wHZ/M8CmgEs/ygBpAI6/i8B7QBB/UoDHwKy/voAjwC3/rMCIgL+/JECnwEo//oApAIw/voAFQGf/QIDIgKs/sgAAAByACj+xwLiAdT80wKaASz/KAGkAjr+LwHyAEf9SwMfArL++gCTAKb+rwIXAvb8mQKfASj/+gCkAjD++gAdAaX9BQMiAqz+yAAAAHwAJv7IAtoB1fzVApoBLP8oAaQCOv4vAfcAS/1LAx8Csv76AJ0Alv6oAhAC9PyeAp8BKP/6AKQCMP76ACMBqP0GAyICrP7IAAAAjAAq/swC2AHf/NcCmgEs/ygBpAI6/i8B+gBP/UsDHwKy/voAqgCK/qECDAL6/KECnwEo//oApAIw/voAJgGo/QcDIgKs/sgAAACdAC7+0ALYAer82QKaASz/KAGkAjr+LwH9AFP9SwMfArL++gC3AIX+oAIKAgf9owKfASj/+gCkAjD++gApAar9CQMiAqz+yAAAAKwAMf7VAtkB9vzaApoBLP8oAaQCOv4vAf4AVf1LAx8Csv76AMEAhf6hAgkCF/2kAp8BKP/6AKQCMP76ACsBq/0KAyICrP7IAAAAuwA4/twC2wEC/d0CmgEs/ygBpAI6/i8BAAFZ/UsDHwKy/voAyQCJ/qUCCQIm/aUCnwEo//oApAIw/voAKwGt/QwDIgKs/sgAAADEAD7+4gLdAQv93gKaASz/KAGkAjr+LwEAAVr9SwMfArL++gDOAI7+qQIHAjH9pgKfASj/+gCkAjD++gAqAa/9DgMiAqz+yAAAAMUAQ/7lAt4BEP3gApoBLP8oAaQCOv4vAQABW/1LAx8Csv76ANIAlf6uAgYCOf2nAp8BKP/6AKQCMP76ACgBr/0OAyICrP7IAAAAwABG/uYC3AER/eACmgEs/ygBpAI6/i8BAQFc/UsDHwKy/voA1ACa/rACBAI+/acCnwEo//oApAIw/voAJQGv/Q4DIgKs/sgAAAC3AEb+5ALZAQ/94AKaASz/KAGkAjr+LwEBAVz9SgMfArL++gDSAJ3+sQIBAj79pwKfASj/+gCkAjD++gAjAa/9DgMiAqz+yAAAAKwAQ/7gAtQBCv3fApoBLP8oAaQCOv4vAQEBXP1KAx8Csv76AMoAnf6vAv0BO/2nAp8BKP/6AKQCMP76ACIBr/0OAyICrP7IAAAAoQA9/twCzwEF/d0CmgEs/ygBpAI6/i8BAQFb/UoDHwKy/voAvwCb/qwC9wE1/aYCnwEo//oApAIw/voAIQGv/Q4DIgKs/sgAAACXADX+2ALLAf783QKaASz/KAGkAjr+LwEBAVr9SgMfArL++gCyAJn+qQLwAS39pAKfASj/+gCkAjD++gAgAa/9DgMiAqz+yAAAAI8AK/7UAsgB9/zcApoBLP8oAaQCOv4vAQABWP1LAx8Csv76AKcAlf6nAuoBJf2jAp8BKP/6AKQCMP76ACABr/0NAyICrP7IAAAAigAf/s8CxwHx/NwCmgEs/ygBpAI6/i8BAAFV/UsDHwKy/voAngCR/qQC5AEg/aICnwEo//oApAIw/voAHwGu/Q0DIgKs/sgAAACKAB/+zwLHAfH83AKaASz/KAGkAjr+LwEAAVX9SwMfArL++gCYAIv+oQLiARz9ogKfASj/+gCkAjD++gAeAa39DQMiAqz+yAAAAIoAH/7PAscB8fzcApoBLP8oAaQCOv4vAQABVf1LAx8Csv76AJUAhf6fAuIBGv2iAp8BKP/6AKQCMP76AB4Brf0NAyICrP7IAAAAigAf/s8CxwHx/NwCmgEs/ygBpAI6/i8BAAFV/UsDHwKy/voAlgCD/p8C5AEb/aICnwEo//oApAIw/voAHQGt/QwDIgKs/sgAAACKAB/+zwLHAfH83AKaASz/KAGkAjr+LwEAAVX9SwMfArL++gCXAIP+nwLlARz9ogKfASj/+gCkAjD++gAcAa39DAMiAqz+yAAAAIoAH/7PAscB8fzcApoBLP8oAaQCOv4vAQABVf1LAx8Csv76AJkAhP6fAucBH/2iAp8BKP/6AKQCMP76ABwBrf0MAyICrP7IAAAAigAf/s8CxwHx/NwCmgEs/ygBpAI6/i8BAAFV/UsDHwKy/voAmgCF/qAC6AEh/aMCnwEo//oApAIw/voAHQGt/QwDIgKs/sgAAACKAB/+zwLHAfH83AKaASz/KAGkAjr+LwEAAVX9SwMfArL++gCbAIf+oALoASP9owKfASj/+gCkAjD++gAdAa79DAMiAqz+yAAAAIoAH/7PAscB8fzcApoBLP8oAaQCOv4vAQABVf1LAx8Csv76AJwAiP6gAugBI/2jAp8BKP/6AKQCMP76AB0Brv0MAyICrP7IAAAAigAf/s8CxwHx/NwCmgEs/ygBpAI6/i8BAAFV/UsDHwKy/voAnACJ/qAC6AEk/aMCnwEo//oApAIw/voAHgGu/QwDIgKs/sgAAACKAB/+zwLHAfH83AKaASz/KAGkAjr+LwEAAVX9SwMfArL++gCcAIn+oALnASP9owKfASj/+gCkAjD++gAeAa79DAMiAqz+yAAAAIoAH/7PAscB8fzcApoBLP8oAaQCOv4vAQABVf1LAx8Csv76AJwAif6gAucBJP2jAp8BKP/6AKQCMP76AB4Brv0MAyICrP7IAAAAigAf/s8CxwHx/NwCmgEs/ygBpAI6/i8BAAFV/UsDHwKy/voAnACJ/qEC5wEk/aMCnwEo//oApAIw/voAHgGu/QwDIgKs/sgAAACKAB/+zwLHAfH83AKaASz/KAGkAjr+LwEAAVX9SwMfArL++gCcAIn+oALoAST9owKfASj/+gCkAjD++gAeAa79DAMiAqz+yAAAAIoAH/7PAscB8fzcApoBLP8oAaQCOv4vAQABVf1LAx8Csv76AJwAif6gAugBJP2jAp8BKP/6AKQCMP76AB4Brv0MAyICrP7IAAAAigAf/s8CxwHx/NwCmgEs/ygBpAI6/i8BAAFV/UsDHwKy/voAnACJ/qAC6AEj/aMCnwEo//oApAIw/voAHgGu/QwDIgKs/sgAAACKAB/+zwLHAfH83AKaASz/KAGkAjr+LwEAAVX9SwMfArL++gCcAIn+oQLoASP9owKfASj/+gCkAjD++gAeAa79DAMiAqz+yAAAAA==' };
+  /* 同样 149 帧里箱子坐标系的原点（参考 3 个 + 回放 3 个 int16，mm）。官方的行李箱是 0.2 × 0.3 × 0.4 m 的盒子
+     （assets/objects/suitcase/suitcase.usd，由 suitcase-simplified.xml 生成），盒子占 x ∈ [−0.2, 0]、y ∈ [−0.15, 0.15]、z ∈ [0, 0.4]，
+     刚体原点在 +x 那一面的底边中点；物体观测（object_xy_b 用 root_link_pos_w）和接触点（body_link_pos_w 加偏移）都从这个原点算，
+     不是几何中心。上面 SUIT 里的「箱子中心」= 原点 + 旋转 × (−0.1, 0, 0.2)。回放里要接触的 170 帧有 96% 原点在中心的前面（离机器人远） */
+  var SUIT_ORG = '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';
   var SUIT_T0 = 25, SUIT_STEP = 3, SUIT_FPS = 50;
   function suitTime(j) { return (SUIT_T0 + SUIT_STEP * j) / SUIT_FPS; } // 参考里的秒
   function decode(b64) {
@@ -147,10 +152,11 @@
     if (CACHE.suit) return CACHE.suit;
     var a = decode(SUIT.data), out = [];
     function pt(o) { return [a[o] / 1000, a[o + 1] / 1000, a[o + 2] / 1000]; }
-    function side(o) { return { eef: [pt(o), pt(o + 3)], tgt: [pt(o + 6), pt(o + 9)], pel: pt(o + 12), cen: pt(o + 15) }; }
+    var g = decode(SUIT_ORG);
+    function side(o, k) { return { eef: [pt(o), pt(o + 3)], tgt: [pt(o + 6), pt(o + 9)], pel: pt(o + 12), cen: pt(o + 15), org: [g[k] / 1000, g[k + 1] / 1000, g[k + 2] / 1000] }; }
     for (var j = 0; j < SUIT.n; j++) {
       var o = j * SUIT.per;
-      out.push({ j: j, t: suitTime(j), ref: side(o), rob: side(o + 18), c: a[o + 36] });
+      out.push({ j: j, t: suitTime(j), ref: side(o, j * 6), rob: side(o + 18, j * 6 + 3), c: a[o + 36] });
     }
     CACHE.suit = out;
     return out;
@@ -982,8 +988,9 @@
 
   /* ── scene 4: 一帧参考：机器人、物体、接触 ── */
   function buildSceneRefFrame() {
-    var s = sceneSvg('左边是同一段搬行李箱的仿真回放，箱子两侧的黄点是期望接触点、紫点是手的末端，下面的时间条上黄色一段是要接触的帧；右边依次出现：' +
-      '参考的三部分、机器人的状态、物体的状态、接触信号与接触点、这段参考里有多少帧要接触');
+    var s = sceneSvg('左边是同一段搬行李箱的仿真回放，箱子两侧的黄点是期望接触点、紫点是手的末端、绿点是箱子坐标系的原点，下面的时间条上黄色一段是要接触的帧；右边依次出现：' +
+      '参考的三部分、机器人的状态、物体的状态、接触信号与接触点；再画出代码里的行李箱：0.2 × 0.3 × 0.4 m 的盒子，原点在离机器人远的那一面的底边中点，' +
+      '两个接触点从原点先沿 x 退 0.1 m、再往两侧 0.18 m、再往上 0.25 m；最后是这段参考里有多少帧要接触');
     s.appendChild(svgText(24, 26, '一帧参考：机器人、物体、接触', 'demo-x-ink2', 13.5));
     var cam = camAt(150, 24 + 208 * 150 / 170, 50 + 245 * 150 / 170);
     var bot = g1Mesh(s, 'rob');
@@ -1015,26 +1022,126 @@
     chip(p4, R, 164, W, '$c_t \\in \\{0, 1\\}$：这一帧该不该碰到物体', C_TGT, { size: 12, h: 30, left: true });
     chip(p4, R, 204, W, '期望接触点 $p_t^{\\mathrm{contact}}$：定义在物体坐标系里', C_TGT, { size: 12, h: 30, left: true });
     label(p4, R, 258, '物体怎么动，黄点就跟着怎么动', 'demo-x-mut', 10.5);
+    /* 代码里的行李箱（assets/objects/suitcase/suitcase.usd）：厚 0.2、宽 0.3、高 0.4 m 的盒子，占 x ∈ [−0.2, 0]、y ∈ [−0.15, 0.15]、z ∈ [0, 0.4]，
+       刚体原点在 +x 面的底边中点（观测用 root_link_pos_w，接触点 = 原点 + 旋转 × 偏移）。斜二测：x 朝右，y 朝观众（画成往左下），z 朝上；
+       机器人在 −x 那边（回放里要接触的帧 96% 是这样），所以观众看到的是箱子的左侧（+y），左手的接触点在前、右手的在背面 */
+    /* 第 4–6 段的时刻（幕内秒）：PA 是旁白念到「厚」「原点」「这一面朝外」「机器人」，PB / PC 是后两段的起点，
+       PL 是第 5 段念到 x、y、z 的时刻（WordBoundary 的时刻 × 1.06–1.07，实际合成比切词版慢一点） */
+    var PA = [15.5, 19.7, 24.6, 25.7], PB = 26.8, PC = 38.3, PL = [2.25, 5.05, 8.7];
+    /* 左边回放里箱子的原点（绿点），念到「原点」时出现 */
+    var orgL = dotAt(s, 200, 200, 5, C_GOOD);
+    orgL.style.stroke = '#ffffff'; orgL.style.strokeWidth = '1.4px';
     var p5 = group(s);
     label(p5, R, 152, '代码里的行李箱', 'demo-x-ink', 13);
-    rich(p5, R, 178, '接触点偏移（箱子坐标系）：$x=-0.1$、$y=\\pm 0.18$、$z=0.25$ m', 11.5, null, 'start', W);
-    var cnt = tone(p5, R, 226, '', C_TGT, 28, 'start');
-    label(p5, R + 74, 216, '帧要求双手接触', 'demo-x-ink2', 12);
-    label(p5, R + 74, 239, '（共 472 帧，约 36%）', 'demo-x-mut', 10.5);
+    var BX0 = 570, BY0 = 306, BK = 320;
+    function bp(x, y, z) { return [BX0 + BK * x - 131.0 * y, BY0 - BK * z + 91.8 * y]; }
+    function poly(g, pts, fill, stroke) {
+      var e = paint(svgEl('polygon', { points: pts.map(function (q) { return q[0].toFixed(1) + ',' + q[1].toFixed(1); }).join(' '), 'stroke-width': 1.2 }), fill, stroke);
+      g.appendChild(e); return e;
+    }
+    /* 盒子画成半透明，背面的接触点和箱子底下的偏移线也看得见 */
+    var box5 = group(p5);
+    box5.style.opacity = 0.82;
+    poly(box5, [bp(-0.2, -0.15, 0.4), bp(0, -0.15, 0.4), bp(0, 0.15, 0.4), bp(-0.2, 0.15, 0.4)], '#d9b282', '#8a6238');
+    poly(box5, [bp(0, 0.15, 0), bp(0, -0.15, 0), bp(0, -0.15, 0.4), bp(0, 0.15, 0.4)], '#b07f48', '#8a6238');
+    poly(box5, [bp(-0.2, 0.15, 0), bp(0, 0.15, 0), bp(0, 0.15, 0.4), bp(-0.2, 0.15, 0.4)], '#c4925a', '#8a6238');
+    var faceHi = poly(p5, [bp(0, 0.15, 0), bp(0, -0.15, 0), bp(0, -0.15, 0.4), bp(0, 0.15, 0.4)], 'none', C_GOOD);
+    faceHi.style.strokeWidth = '2.6px';
+    /* 三条尺寸：厚（x）、宽（y）、高（z），跟着旁白依次出现；字都在盒子外面 */
+    var dims5 = [
+      [bp(-0.2, 0.15, 0), bp(0, 0.15, 0), '0.2 m', [-52, 31], 'middle'],
+      [bp(0, 0.15, 0.4), bp(0, -0.15, 0.4), '0.3 m', [26, -130], 'start'],
+      [bp(-0.2, 0.15, 0), bp(-0.2, 0.15, 0.4), '0.4 m', [-92, -97], 'end']
+    ].map(function (d) {
+      var g = group(p5);
+      hline(g, d[0][0], d[0][1], d[1][0], d[1][1], 'var(--text)', 2.6);
+      label(g, BX0 + d[3][0], BY0 + d[3][1], d[2], 'demo-x-ink', 12, d[4]);
+      return g;
+    });
+    var robo5 = group(p5);
+    var roboA = arrow(robo5, C_MUTED, 2);
+    roboA.set(430, 300, 474, 300, 8);
+    label(robo5, 452, 324, '机器人', 'demo-x-ink2', 12, 'middle');
+    /* 坐标轴与原点 */
+    var axes5 = group(p5);
+    [[bp(0.13, 0, 0), C_BAD, '$x$', [9, 4]], [bp(0, 0.16, 0), C_PURPLE, '$y$', [4, 16]], [bp(0, 0, 0.13), C_ACCENT, '$z$', [9, 0]]].forEach(function (a) {
+      var ar = arrow(axes5, a[1], 2.2); ar.set(BX0, BY0, a[0][0], a[0][1], 8);
+      rich(axes5, a[0][0] + a[3][0], a[0][1] + a[3][1], a[2], 12.5, null, 'middle');
+    });
+    var org5 = group(p5);
+    var orgRing = ringAt(org5, BX0, BY0, 9, C_GOOD, 2);
+    var orgDot = dotAt(org5, BX0, BY0, 5, C_GOOD);
+    orgDot.style.stroke = '#ffffff'; orgDot.style.strokeWidth = '1.4px';
+    /* 偏移的三段：先沿 x 退 0.1、再沿 y 往两侧 0.18、再往上 0.25 */
+    var legs5 = [
+      [[0, 0, 0], [-0.1, 0, 0], C_BAD], [[-0.1, 0, 0], [-0.1, 0.18, 0], C_PURPLE], [[-0.1, 0, 0], [-0.1, -0.18, 0], C_PURPLE],
+      [[-0.1, 0.18, 0], [-0.1, 0.18, 0.25], C_ACCENT], [[-0.1, -0.18, 0], [-0.1, -0.18, 0.25], C_ACCENT]
+    ].map(function (l) { return { a: bp.apply(null, l[0]), b: bp.apply(null, l[1]), el: hline(p5, 0, 0, 0, 0, l[2], 2.8, '5 3') }; });
+    var cL = bp(-0.1, 0.18, 0.25), cR = bp(-0.1, -0.18, 0.25);
+    var con5 = group(p5);
+    var cDotL = dotAt(con5, cL[0], cL[1], 6, C_TGT); cDotL.style.stroke = '#ffffff'; cDotL.style.strokeWidth = '1.2px';
+    var cDotR = ringAt(con5, cR[0], cR[1], 5.5, C_TGT, 2.2); cDotR.setAttribute('stroke-dasharray', '3 2');
+    hline(con5, cL[0] - 8, cL[1], 482, cL[1], C_TGT, 1, '2 2');
+    label(con5, 478, cL[1] + 4, '左手', 'demo-x-ink2', 12, 'end');
+    hline(con5, cR[0] + 8, cR[1], BX0 + 26, cR[1], C_TGT, 1, '2 2');
+    label(con5, BX0 + 30, cR[1] + 4, '右手', 'demo-x-ink2', 12, 'start');
+    label(con5, BX0 + 30, cR[1] + 24, '（背面）', 'demo-x-mut', 11, 'start');
+    /* 右边的说明：A 段讲盒子和原点，B 段讲三段偏移，C 段数帧 */
+    var TX = 656;
+    var txtA = group(p5);
+    label(txtA, TX, 196, '厚 × 宽 × 高', 'demo-x-mut', 11.5);
+    label(txtA, TX, 218, '0.2 × 0.3 × 0.4 m', 'demo-x-ink', 13);
+    var txtA2 = group(txtA);
+    label(txtA2, TX, 252, '绿点是坐标原点：', 'demo-x-ink2', 12);
+    label(txtA2, TX, 272, '+x 面的底边中点', 'demo-x-ink2', 12);
+    label(txtA2, TX, 294, '不是几何中心', 'demo-x-mut', 11.5);
+    var txtB = group(p5);
+    var rowsB = [['$x = -0.1$', '厚度中间', C_BAD], ['$y = \\pm 0.18$', '侧面外 3 cm', C_PURPLE], ['$z = 0.25$', '离底 25 cm', C_ACCENT]].map(function (r, i) {
+      var g = group(txtB), y = 188 + i * 42;
+      hline(g, TX, y - 14, TX, y + 25, r[2], 3);
+      rich(g, TX + 10, y, r[0], 12.5, null, 'start');
+      label(g, TX + 10, y + 21, r[1], 'demo-x-ink2', 12);
+      return g;
+    });
+    var txtC = group(p5);
+    var cnt = tone(txtC, TX, 331, '', C_TGT, 24, 'start');
+    label(txtC, TX + 48, 320, '帧要接触', 'demo-x-ink2', 12);
+    label(txtC, TX + 48, 341, '472 帧的 36%', 'demo-x-mut', 11);
     function draw(t, clock) {
       var now = nowOf(t, clock), j = loopFrame(now), F = suitFrames(), f = F[j];
       bot.put(cam, j);
       ov.put(f, 'rob', cam, { err: false });
+      moveDot(orgL, project(f.rob.org, cam));
+      setOpacity(orgL, seg(t, PA[1], PA[1] + 0.4));
       bar.at(j);
       cueLab.setText(f.c ? '$c_t = 1$：要接触' : '$c_t = 0$：不用接触');
       tLab.textContent = '参考第 ' + f2(suitTime(j)) + ' s';
       door3.at(0.5 + 0.5 * Math.sin(now * 1.5));
       parts.forEach(function (c, i) { setOpacity(c, 0.35 + 0.65 * (i === 0 ? win(t, 3.6, 7.0) : i === 1 ? win(t, 7.0, 10.4) : win(t, 10.4)) + (t < 3.6 ? 0.65 : 0)); });
-      cnt.textContent = countTo(170, seg(since(t, clock, 13.4), 0.4, 2.0));
       setOpacity(p2, win(t, 3.6, 7.0));
       setOpacity(p3, win(t, 7.0, 10.4));
       setOpacity(p4, win(t, 10.4, 13.4));
       setOpacity(p5, win(t, 13.4));
+      /* 第 4 段：盒子与尺寸（旁白念到厚、宽、高）→ 原点（念到「原点」）→ 朝外的那一面与机器人（念到「这一面朝外」） */
+      dims5.forEach(function (g, i) { setOpacity(g, seg(t, PA[0] + i, PA[0] + i + 0.4) * (1 - 0.6 * seg(t, PB, PB + 0.4))); });
+      var uO = seg(t, PA[1], PA[1] + 0.4);
+      setOpacity(axes5, seg(t, PA[1] + 0.8, PA[1] + 1.2)); setOpacity(org5, uO); setOpacity(txtA2, uO);
+      orgRing.setAttribute('r', (8 + 4 * (0.5 + 0.5 * Math.sin(now * 4))).toFixed(1));
+      setOpacity(faceHi, seg(t, PA[2], PA[2] + 0.4) * (1 - seg(t, PB, PB + 0.3)));
+      setOpacity(robo5, seg(t, PA[3], PA[3] + 0.4));
+      setOpacity(txtA, 1 - seg(t, PB, PB + 0.3));
+      /* 第 5 段：三段偏移依次画出来（念到 x、y、z），右边那一行跟着亮 */
+      var uL = [seg(t, PB + PL[0], PB + PL[0] + 0.6), seg(t, PB + PL[1], PB + PL[1] + 0.6), seg(t, PB + PL[2], PB + PL[2] + 0.6)];
+      legs5.forEach(function (l, i) {
+        var u = uL[i === 0 ? 0 : i < 3 ? 1 : 2];
+        setLine(l.el, l.a[0], l.a[1], l.a[0] + (l.b[0] - l.a[0]) * u, l.a[1] + (l.b[1] - l.a[1]) * u);
+        l.el.style.opacity = u > 0 ? (t >= PC + 0.3 ? 0.4 : 1) : 0;
+      });
+      setOpacity(con5, seg(t, PB + PL[2] + 0.6, PB + PL[2] + 1.0));
+      setOpacity(txtB, seg(t, PB + 0.3, PB + 0.7));
+      rowsB.forEach(function (g, i) { setOpacity(g, t < PB + PL[i] ? 0.3 : t >= PC + 0.3 ? 0.55 : 1); });
+      setOpacity(txtC, seg(t, PC + 0.3, PC + 0.7));
+      cnt.textContent = countTo(170, seg(t, PC + 0.5, PC + 2.0));
     }
     return { el: s, draw: draw };
   }
@@ -1138,7 +1245,7 @@
 
   /* ── scene 6: 统一的物体表示（图 3） ── */
   function buildSceneObjRep() {
-    var s = sceneSvg('左上是论文图 3 的三张图，黄点是期望接触点；左下是官方仓库录下的仿真回放，从骨盆指向箱子和两个接触点的箭头就是换到根部坐标系里的量；' +
+    var s = sceneSvg('左上是论文图 3 的三张图，黄点是期望接触点；左下是官方仓库录下的仿真回放，从骨盆指向箱子原点（绿点）和两个接触点的箭头就是换到根部坐标系里的量；' +
       '右边依次出现：物体位姿换到根部坐标系、期望接触点、全部观测、代码里物体只占 10 维、以后换成相机');
     s.appendChild(svgText(24, 26, '统一的物体表示：都换到机器人的根部坐标系', 'demo-x-ink2', 13.5));
     var fig = paperPart(s, 'fig3', 0, 0, 1, 1, 24, 44, 380, '论文图 3：搬行李箱、用脚开门、打开折叠椅的期望接触点（黄）');
@@ -1146,11 +1253,14 @@
     var bot = g1Mesh(s, 'rob');
     var ov = contactOverlay(s, { r: 5 });
     var arrows = [arrow(s, C_ACCENT, 2), arrow(s, C_TGT, 1.8), arrow(s, C_TGT, 1.8)];
+    /* 蓝箭头指向箱子坐标系的原点（官方 object_xy_b 用 root_link_pos_w：+x 面的底边中点，不是几何中心），绿点同第 4 幕 */
+    var org6 = dotAt(s, 200, 200, 4.5, C_GOOD);
+    org6.style.stroke = '#ffffff'; org6.style.strokeWidth = '1.2px';
     var R = 424, W = 352;
     var p1 = group(s);
     label(p1, R, 64, '物体位姿 → 根部坐标系', 'demo-x-ink', 14);
     rich(p1, R, 96, '不管什么物体，策略只看它**相对机器人根部**的位姿', 12, null, 'start', W);
-    label(p1, R, 124, '左下蓝色箭头：从骨盆指向箱子', 'demo-x-mut', 11);
+    label(p1, R, 124, '左下蓝色箭头：从骨盆指向箱子的原点（绿点）', 'demo-x-mut', 11);
     /* 小动图：根部坐标系的箭头指向一个轮换的物体（箱子 / 门 / 椅子），表示都一样 */
     var OX = R + 50, OY = 238;
     var axX = arrow(p1, C_BAD, 2), axY = arrow(p1, C_GOOD, 2);
@@ -1206,9 +1316,10 @@
       bot.put(cam, j);
       ov.put(f, 'rob', cam, { err: false, eef: false });
       var pel = [f.rob.pel[0], f.rob.pel[1], f.rob.pel[2]], a = project(pel, cam);
-      var b = project(f.rob.cen, cam), c1 = project(f.rob.tgt[0], cam), c2 = project(f.rob.tgt[1], cam);
+      var b = project(f.rob.org, cam), c1 = project(f.rob.tgt[0], cam), c2 = project(f.rob.tgt[1], cam);
       arrows[0].set(a[0], a[1], b[0], b[1]); arrows[1].set(a[0], a[1], c1[0], c1[1], 7); arrows[2].set(a[0], a[1], c2[0], c2[1], 7);
-      setOpacity(arrows[0].g, seg(t, 0.7, 1.1));
+      moveDot(org6, b);
+      setOpacity(arrows[0].g, seg(t, 0.7, 1.1)); setOpacity(org6, seg(t, 0.7, 1.1));
       setOpacity(arrows[1].g, seg(t, 3.9, 4.3)); setOpacity(arrows[2].g, seg(t, 3.9, 4.3));
       var kObj = Math.floor(now / 1.6) % 3;
       objs1.forEach(function (g, k) { setOpacity(g, k === kObj ? 1 : 0); });
@@ -1830,7 +1941,7 @@
     label(pC, 24, 382, '俯视图：G1 和箱子的 3D 渲染，机器人自己的坐标系（仿真回放第 4.70 s）', 'demo-x-mut', 11.5);
     function vec(v) { return '(' + v.map(function (x) { return (x < 0 ? '−' : '') + f2(Math.abs(x)); }).join(', ') + ')'; }
     var rowsC = [
-      ['箱子的水平位置', 2, C_GOOD, vec(OBS10.xy) + ' m', 1.0],
+      ['箱子原点的水平位置', 2, C_GOOD, vec(OBS10.xy) + ' m', 1.0],
       ['朝向（余弦、正弦）', 2, C_GOOD, vec(OBS10.head) + '，夹角 ' + f2(Math.atan2(OBS10.head[1], OBS10.head[0])) + ' rad', 2.9],
       ['左手要接触的点', 3, C_TGT, vec(OBS10.cb[0]) + ' m', 4.8],
       ['右手要接触的点', 3, C_TGT, vec(OBS10.cb[1]) + ' m', 5.4]
@@ -1843,7 +1954,7 @@
     });
     var noteC1 = label(pC, RX, 244, '都在机器人自己的坐标系里：原点在骨盆，', 'demo-x-ink2', 12.5);
     var noteC2 = label(pC, RX, 266, '$x$ 朝前、$y$ 朝左，只跟着水平朝向', 'demo-x-ink2', 12.5);
-    var hintC = readHint(pC, RX, 296, '蓝：机器人的 $x$、$y$；绿：箱子的位置和朝向；黄：接触点', 11.5, 372);
+    var hintC = readHint(pC, RX, 296, '蓝：机器人的 $x$、$y$；绿：箱子原点和朝向；黄：接触点', 11.5, 372);
     label(pC, RX, 340, '数是我们按这一帧算的（训练时还加了噪声）', 'demo-x-mut', 11.5);
     var totC = label(pC, 776, 372, '$2 + 2 + 3 + 3 = 10$ 维', 'demo-x-ink', 14, 'end');
 
@@ -2510,14 +2621,16 @@
     },
     {
       title: '一帧参考：机器人、物体、接触',
-      dur: 16,
+      dur: 43.6,
       build: buildSceneRefFrame,
       cues: [
         { at: 0.4, s: '每一帧参考：$s_t^{\\mathrm{ref}} = (s_t^{\\mathrm{robot}}, s_t^{\\mathrm{obj}}, c_t)$。' },
         { at: 3.6, s: '机器人：根部位置、根部朝向、参考关节角 $\\theta_t^{\\mathrm{ref}}$。' },
         { at: 7.0, s: '物体：位置和朝向；门、折叠椅还多一个关节角。' },
         { at: 10.4, s: '接触：$c_t \\in \\{0, 1\\}$；黄点是期望接触点，在物体坐标系里。' },
-        { at: 13.4, s: '代码：行李箱两侧各一个点；472 帧里 170 帧要接触。' }
+        { at: 13.4, s: '代码里的行李箱：0.2 × 0.3 × 0.4 m 的盒子，坐标原点在一条底边的中点（绿点）。' },
+        { at: 26.8, s: '接触点从原点算：$(-0.1, \\pm 0.18, 0.25)$ m，厚度中间、侧面外 3 cm、离底 25 cm。' },
+        { at: 38.3, s: '472 帧里 170 帧要双手接触。' }
       ]
     },
     {
@@ -2705,7 +2818,7 @@
   function buildExplainerDemo(host) {
     K.explainer(host, {
       title: '十八幕动画：HDMI 全流程速览',
-      sub: '约 412 秒自动播放。空格播放/暂停，← → 换幕；G1 是官方开源的搬行李箱参考与仓库里录下的仿真回放，按真实模型做 3D 渲染，表格与图来自论文和官方代码。',
+      sub: '约 439 秒自动播放。空格播放/暂停，← → 换幕；G1 是官方开源的搬行李箱参考与仓库里录下的仿真回放，按真实模型做 3D 渲染，表格与图来自论文和官方代码。',
       ariaLabel: 'HDMI 十八幕讲解动画',
       notes: [
         '取数依据：表 I–II 照抄 arXiv 2509.16757 v3；图 6、图 7a、图 8、图 9a 的数是我们从论文的矢量图里抽出来的（柱高、误差棒中点、折线顶点），只保留到小数点后三位。',
