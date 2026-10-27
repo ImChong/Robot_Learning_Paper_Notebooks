@@ -59,17 +59,29 @@ def test_no_permanent_global_transition():
     assert not re.search(r"(?m)^\*,\s*\*::before,\s*\*::after\s*\{\s*transition", STYLE)
 
 
-def test_theme_switch_fades_as_one_view_transition():
+def test_theme_switch_is_one_circle_reveal():
     # Fading colours per node during the switch (html.theme-switching *) froze
     # phones for seconds: 4000+ transitions on the home page, and every forced
     # layout of a note's demo redraw had to recompute them. The switch is one
-    # View Transition now, and only where a mouse drives it.
-    assert "theme-switching" not in STYLE
+    # View Transition now, its new snapshot revealed through a circle from the
+    # toggle (as on ImChong/Robotics_Notebooks).
     assert "classList.add('theme-switching')" not in LAYOUT
-    assert "::view-transition-old(root)" in STYLE
     assert "document.startViewTransition(" in LAYOUT
-    assert "matches('(hover: hover) and (pointer: fine)')" in LAYOUT
+    assert "pseudoElement: '::view-transition-new(root)'" in LAYOUT
+    assert "'circle(0px at '" in LAYOUT
     assert "!matches('(prefers-reduced-motion: reduce)')" in LAYOUT
+    # While it runs, transitions are switched off, never on.
+    switching = re.findall(r"html\.is-theme-switching \*[^{]*\{([^}]*)\}", STYLE)
+    assert switching == ["\n  transition: none !important;\n"]
+    assert "html.is-theme-switching::view-transition-new(root)" in STYLE
+    # The default crossfade is off; the circle is the only animation.
+    reveal = STYLE.split("html.is-theme-switching::view-transition-new(root) {", 1)[1]
+    assert reveal.split("}", 1)[0].strip().startswith("animation: none;")
+    # Diagrams are redrawn after the circle, not during it.
+    assert "transition.finished.then(done, done);" in LAYOUT
+    # The callback applies the theme later; a quick second tap toggles from the
+    # theme being switched to, not from the data-theme still on the page.
+    assert "setTheme(targetTheme === 'dark' ? 'light' : 'dark', true, true);" in LAYOUT
 
 
 def test_root_smooth_scrolling_is_mouse_only():

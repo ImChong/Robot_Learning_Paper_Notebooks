@@ -138,14 +138,24 @@
 }
 
 /* ===== Theme switch =====
-   The toggle cross-fades the old and new frame as one View Transition
-   (default.html). Do not animate colours per node: a `*` transition, or one
-   switched on for the toggle, makes each of the ~4000 nodes on the home page
-   transition, and froze phones for seconds. */
-::view-transition-old(root),
-::view-transition-new(root) {
-  animation-duration: var(--dur-micro);
-  animation-timing-function: var(--ease);
+   The new theme opens as a circle growing out of the toggle: one View
+   Transition whose new snapshot default.html reveals through a clip-path,
+   borrowed from ImChong/Robotics_Notebooks. The browser's default crossfade
+   is off, and while it runs transitions are off too, so the new snapshot is
+   already in its final colours (a colour transition would start from the old
+   ones and show as grey edges). Do not animate colours per node instead: a
+   `*` transition, or one switched on for the toggle, makes each of the ~4000
+   nodes on the home page transition, and froze phones for seconds. */
+html.is-theme-switching::view-transition-old(root),
+html.is-theme-switching::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+html.is-theme-switching *,
+html.is-theme-switching *::before,
+html.is-theme-switching *::after {
+  transition: none !important;
 }
 
 /* ===== Reset & Base ===== */

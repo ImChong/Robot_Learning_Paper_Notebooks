@@ -92,9 +92,25 @@
     });
   }
 
+  // 流程图与演示内部没有登记对象，却一直在改自己的 SVG：Mermaid 重画（切主题后逐张重画）、
+  // 讲解动画每帧改 class / style。这些变动不触发重新登记，否则每帧都要对整个 main 跑一遍
+  // querySelectorAll（PPO 笔记切主题时，6 倍降速下多出约 0.7 s 主线程）。
+  function inertTarget(node) {
+    return !!(node.closest && node.closest('svg, .mermaid, .paper-demo'));
+  }
+
+  function onMutations(records) {
+    for (var i = 0; i < records.length; i++) {
+      if (!inertTarget(records[i].target)) {
+        schedule();
+        return;
+      }
+    }
+  }
+
   register();
   // class / style / hidden / open 的变化都可能让元素从不可见变为可见（折叠卡片、搜索、<details>）
-  new MutationObserver(schedule).observe(main, {
+  new MutationObserver(onMutations).observe(main, {
     childList: true,
     subtree: true,
     attributes: true,

@@ -1496,28 +1496,36 @@
         }
       }
 
-      /* The switch cross-fades as a View Transition: the browser snapshots the
-         old and the new frame and fades one into the other on the compositor.
+      /* The new theme opens as a circle growing out of the toggle, the same
+         switch as ImChong/Robotics_Notebooks (docs/main.js): a View Transition
+         snapshots the old and the new frame, and the new one is revealed
+         through a clip-path circle. Only that one pseudo-element animates.
+
          It used to put a colour transition on every node (html.theme-switching):
          4000+ of them on the home page, and on a note page every demo redraws
          when the theme changes, so each of its forced layouts recomputed all
          of those transitions. On the PPO note at 6x CPU throttling the click
-         itself blocked for 12.7 s with the fade and 0.7 s without. Touch screens,
-         reduced motion and browsers without the API switch at once. */
-      function canFadeTheme() {
+         itself blocked for 12.7 s with the fade and 0.7 s without. While the
+         circle runs, html.is-theme-switching turns transitions off instead
+         (style.css), so the new snapshot is already the final colours.
+
+         Reduced motion and browsers without the API switch at once. */
+      var THEME_REVEAL_MS = 560;
+      var THEME_REVEAL_EASING = 'cubic-bezier(0.22, 1, 0.36, 1)';
+      var themeSwitchSeq = 0;
+
+      function canAnimateTheme() {
         return typeof document.startViewTransition === 'function' &&
-          matches('(hover: hover) and (pointer: fine)') &&
           !matches('(prefers-reduced-motion: reduce)');
       }
 
-      /* `persist` is only true for a click on the toggle: the initial theme and
-         system changes must not be written back, or the page would stop
-         following the system setting after the first visit. */
-      function setTheme(theme, persist, animate) {
-        if (animate && canFadeTheme()) {
-          document.startViewTransition(function() { setTheme(theme, persist, false); });
-          return;
-        }
+      function themeRevealOrigin() {
+        var rect = toggle ? toggle.getBoundingClientRect() : null;
+        if (!rect || !rect.width) return { x: window.innerWidth / 2, y: 0 };
+        return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+      }
+
+      function applyTheme(theme, persist) {
         html.setAttribute('data-theme', theme);
         if (persist) {
           try { localStorage.setItem('theme', theme); } catch (e) { /* private mode */ }
@@ -1526,16 +1534,56 @@
           toggle.textContent = theme === 'dark' ? '☀️' : '🌙';
           toggle.setAttribute('aria-pressed', theme === 'dark' ? 'true' : 'false');
         }
+      }
 
-        initMermaid(theme);
+      /* The theme the page is switching to. A View Transition applies it in a
+         callback that runs later, so a second tap before then would still read
+         the old data-theme and switch the same way twice. */
+      var targetTheme = null;
+
+      /* `persist` is only true for a click on the toggle: the initial theme and
+         system changes must not be written back, or the page would stop
+         following the system setting after the first visit. */
+      function setTheme(theme, persist, animate) {
+        targetTheme = theme;
+        if (!animate || !canAnimateTheme()) {
+          applyTheme(theme, persist);
+          initMermaid(theme);
+          return;
+        }
+        var origin = themeRevealOrigin();
+        var radius = Math.hypot(
+          Math.max(origin.x, window.innerWidth - origin.x),
+          Math.max(origin.y, window.innerHeight - origin.y)
+        );
+        var seq = ++themeSwitchSeq;
+        html.classList.add('is-theme-switching');
+        var transition = document.startViewTransition(function() { applyTheme(theme, persist); });
+        transition.ready.then(function() {
+          html.animate(
+            { clipPath: [
+              'circle(0px at ' + origin.x + 'px ' + origin.y + 'px)',
+              'circle(' + radius + 'px at ' + origin.x + 'px ' + origin.y + 'px)'
+            ] },
+            { duration: THEME_REVEAL_MS, easing: THEME_REVEAL_EASING, pseudoElement: '::view-transition-new(root)' }
+          );
+        }).catch(function() { /* skipped: the callback has already switched the theme */ });
+        // Diagrams are redrawn once the circle has finished: a mermaid run
+        // during the reveal would take the main thread from the animation.
+        // A second click skips this transition; the newer one cleans up.
+        function done() {
+          if (seq !== themeSwitchSeq) return;
+          html.classList.remove('is-theme-switching');
+          initMermaid(theme);
+        }
+        transition.finished.then(done, done);
       }
 
       setTheme(getPreferred(), false, false);
 
       if (toggle) {
         toggle.addEventListener('click', function() {
-          var current = html.getAttribute('data-theme');
-          setTheme(current === 'dark' ? 'light' : 'dark', true, true);
+          setTheme(targetTheme === 'dark' ? 'light' : 'dark', true, true);
         });
       }
 
