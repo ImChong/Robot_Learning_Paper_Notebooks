@@ -79,7 +79,7 @@ demos: ["viral"]
 
 ## 📺 配音讲解视频（可下载） {#viral-video}
 
-<div class="paper-demo" data-demo="viral-video" data-src="media/viral_explainer_video.mp4" data-poster="media/viral_explainer_video_poster.jpg"><p class="demo-fallback">（本节含讲解视频播放器，需要启用 JavaScript；也可以直接<a href="media/viral_explainer_video.mp4" download="VIRAL_讲解视频.mp4">下载 mp4（23.9 MB）</a>）</p></div>
+<div class="paper-demo" data-demo="viral-video" data-src="media/viral_explainer_video.mp4" data-poster="media/viral_explainer_video_poster.jpg"><p class="demo-fallback">（本节含讲解视频播放器，需要启用 JavaScript；也可以直接<a href="media/viral_explainer_video.mp4" download="VIRAL_讲解视频.mp4">下载 mp4（26.1 MB）</a>）</p></div>
 
 > 📖 **动画之后的正文默认全部折叠**：动画覆盖到的那几节（要解决什么问题、方法详解、实验结果）按小节收起，再往后的具体实例、源码对照、在路线中的位置、面试和附录各整块收起。想细读哪一块就点开对应的折叠条，内容一字未删；流程图和三个交互演示留在外面，目录里的标题依旧可以直接点，会自动展开所在折叠块，左侧目录顶部还有「展开全部文字」一键铺开。
 >
@@ -570,7 +570,7 @@ $$\rho^o\triangleq\alpha\,\rho^o _ {\pi _ {\text{teacher}}}+(1-\alpha)\,\rho^o _
 - **停下**：第 2.0 s 命令是 $(0.35, -0.32)$ m/s，2.62–2.84 s 降到 0。增量动作下，策略输出 $a_x=-1$、$a_y=+1$ 约 3–4 步就停住。
 - **转身**：偏航命令 −1.0 rad/s，策略输出 −1 十步就到。
 - **手臂**：目标 = 默认 + 0.25 × 累加值，输出 1 一步只走 0.025 rad；按每步输出 1 算，肩俯仰从 0 转到 −1.0 rad 要 40 步（0.8 s）。
-- **探索噪声**（我们的理解）：教师的初始动作噪声标准差 0.5。绝对动作下，前进命令每步的变化标准差约 0.5 × √2 ≈ 0.7（再被 ±0.5 裁剪），命令在两头乱跳；增量动作下每步只变 0.1 × 0.5 = 0.05，相差约 14 倍。交互演示「示范回放」可以切换看两种动作下的命令曲线（玩具，种子固定）。
+- **探索噪声**（我们的理解）：教师的初始动作噪声标准差 0.5。绝对动作下，前进命令每步的变化标准差约 0.5 × √2 ≈ 0.7（再被 ±0.5 裁剪），命令在两头乱跳；增量动作下每步只变 0.1 × 0.5 = 0.05，相差约 14 倍。交互演示「示范回放」可以切换看两种动作下的命令曲线（玩具，种子固定；两种动作的策略都想走 0.25 m/s，增量动作输出 $2(0.25-c)$ 把命令往回拉，不拉的话命令会一路漂到上限）。
 
 <h3 id="实例-4-四个关键奖励">例 4：四个关键奖励</h3>
 
