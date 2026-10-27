@@ -1758,13 +1758,10 @@
         }
         histCols[k] = col;
       }
-      label(grpB3, x + 9, HY + 29 * CP + 16, k === 0 ? '现在' : '−' + k, 'demo-x-mut', 11, 'middle');
+      label(grpB3, x + 9, HY + 29 * CP + 19, k === 0 ? '现在' : '−' + k, 'demo-x-mut', 11, 'middle');
     });
-    var wristBr = group(pB);
-    var WB_Y0 = HY + 23 * CP - 1, WB_Y1 = HY + 29 * CP;
-    hline(wristBr, HX0 + 9 * HP - 2, WB_Y0, HX0 + 9 * HP - 2, WB_Y1, C_BAD, 2);
-    hline(wristBr, HX0 - 4, WB_Y0 - 0.5, HX0 + 9 * HP - 2, WB_Y0 - 0.5, C_BAD, 1.2, '3 2');
-    var cntB1 = label(pB, RX, 290, '$29 \\times 6 = 174$ 维（每步 0.02 s）', 'demo-x-ink', 13);
+    var WB_Y0 = HY + 23 * CP - 1.5, WB_Y1 = HY + 29 * CP + 0.5;
+    var cntB1 = label(pB, RX, 295, '$29 \\times 6 = 174$ 维（每步 0.02 s）', 'demo-x-ink', 13);
     var grpB4 = group(pB), actCols = [];
     label(grpB4, 660, 128, '前 3 步动作：23 个', 'demo-x-ink', 12.5);
     [3, 2, 1].forEach(function (k, c) {
@@ -1776,10 +1773,18 @@
         col.push(cell);
       }
       actCols.push({ k: k, col: col });
-      label(grpB4, x + 9, HY + 23 * CP + 16, '−' + k, 'demo-x-mut', 11, 'middle');
+      label(grpB4, x + 9, HY + 29 * CP + 19, '−' + k, 'demo-x-mut', 11, 'middle');
     });
-    var cntB2 = label(pB, 660, 290, '$23 \\times 3 = 69$ 维', 'demo-x-ink', 13);
-    var noteB = label(pB, RX, 318, '红线下面 6 格是手腕：在观测里，但不在动作里（$29 - 6 = 23$）', 'demo-x-ink2', 12);
+    var cntB2 = label(pB, 660, 295, '$23 \\times 3 = 69$ 维', 'demo-x-ink', 13);
+    /* 手腕的 6 行：观测里框红，动作里那 6 行是空的（虚线框加叉）。框画在格子之后，不被格子盖住（2026-10-27 看片反馈：原先是一条细虚线，夹在格子缝里看不见） */
+    var wristBr = group(pB);
+    var wf = paint(svgEl('rect', { x: HX0 - 2, y: WB_Y0.toFixed(1), width: 8 * HP + 20, height: (WB_Y1 - WB_Y0).toFixed(1), rx: 2, 'stroke-width': 2 }), C_BAD, C_BAD);
+    wf.style.fillOpacity = 0.14; wristBr.appendChild(wf);
+    var AX0 = 664, AX1 = 664 + 2 * HP + 20;
+    wristBr.appendChild(paint(svgEl('rect', { x: AX0, y: WB_Y0.toFixed(1), width: AX1 - AX0, height: (WB_Y1 - WB_Y0).toFixed(1), rx: 2, fill: 'none', 'stroke-width': 1.6, 'stroke-dasharray': '3 2' }), null, C_BAD));
+    hline(wristBr, AX0 + 4, WB_Y0 + 3, AX1 - 4, WB_Y1 - 3, C_BAD, 1.4);
+    hline(wristBr, AX0 + 4, WB_Y1 - 3, AX1 - 4, WB_Y0 + 3, C_BAD, 1.4);
+    var noteB = label(pB, RX, 322, '红框里的 6 行是手腕：在观测里，但不在动作里（$29 - 6 = 23$）', 'demo-x-ink2', 12);
     var totB = label(pB, 776, 372, '$3 + 3 + 174 + 69 = 249$ 维', 'demo-x-ink', 14, 'end');
 
     // ③ 物体：箱子的水平位置 2、朝向 2、两个接触点 6，都在机器人自己的坐标系里（原点在骨盆，只取水平朝向）
