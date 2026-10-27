@@ -763,7 +763,8 @@
       void tgt3;
       kneel.put(camK, loopFrame(now, 40, 51));
       xA.style.opacity = seg(t, 11.0, 11.4); xB.style.opacity = seg(t, 11.8, 12.2);
-      var u4 = since(t, clock, 10.4), hot = Math.floor(now / 1.2) % 3;
+      /* 轮流框黄：从开始框的那一刻起算，第一张（开门）也框满 1.6 s；原先按这一幕的时钟取余，第一次框常常只闪一下（2026-10-27 看片反馈） */
+      var u4 = since(t, clock, 10.4), hot = Math.floor(Math.max(0, u4 - 2.8) / 1.6) % 3;
       cards4.forEach(function (c, i) {
         c.parts.forEach(function (pg, q) { setOpacity(pg, seg(u4, 0.6 + i * 0.7 + q * 0.3, 0.9 + i * 0.7 + q * 0.3)); });
         c.frame.style.stroke = u4 > 2.8 && i === hot ? C_WARN : C_BORDER;
@@ -963,11 +964,11 @@
       var u5 = since(t, clock, 13.4);
       stN.forEach(function (n, i) { n.textContent = countTo(+st[i][0], seg(u5, 0.4 + i * 0.5, 1.6 + i * 0.5)); });
       /* 人工标注：播放头 4 s 扫一遍；扫过的关键帧亮起；光标去点两个接触点；代码一行一行长出来 */
-      var u2 = since(t, clock, 3.6), ph = (now % 4) / 4;
+      var u2 = since(t, clock, 3.6), ph = (Math.max(0, u2) % 4) / 4;
       head2.setAttribute('x1', (R + ph * 350).toFixed(1)); head2.setAttribute('x2', (R + ph * 350).toFixed(1));
       film.forEach(function (r, q) { var key = keyQ.indexOf(q); r.style.stroke = key >= 0 && ph * 10 > q ? (key ? C_GOOD : C_ACCENT) : C_BORDER; r.style.strokeWidth = key >= 0 && ph * 10 > q ? '2.4px' : ''; });
       keyTag.forEach(function (lb, k) { lb.style.opacity = ph * 10 > keyQ[k] ? 1 : 0.25; });
-      var cp = (now % 3) / 3, ci = cp < 0.5 ? 0 : 1, cx = [R + 34, R + 102][ci], back = [R + 150, R + 60][ci];
+      var cp = (Math.max(0, u2) % 3) / 3, ci = cp < 0.5 ? 0 : 1, cx = [R + 34, R + 102][ci], back = [R + 150, R + 60][ci];
       var ease = seg(cp % 0.5, 0, 0.3);
       cursor2.setAttribute('transform', 'translate(' + (back + (cx - back) * ease).toFixed(1) + ' ' + (262 - 40 * ease).toFixed(1) + ')');
       cpt2.forEach(function (c, k) { c.style.opacity = k === 0 ? (ci === 0 ? seg(cp, 0.3, 0.35) : 1) : (ci === 1 ? seg(cp, 0.8, 0.85) : 0); });
@@ -1216,7 +1217,7 @@
       door6.at(0.3 + 0.3 * Math.sin(now * 1.8));
       objArrow.set(OX, OY, R + 228, 214, 8);
       objName1.textContent = ['箱子', '门', '椅子'][kObj];
-      var k6 = Math.floor(now / 1.4) % 3;
+      var k6 = Math.floor(Math.max(0, since(t, clock, 3.6) - 0.3) / 1.4) % 3;
       fb6.forEach(function (b, k) { b.style.opacity = k === k6 ? 1 : 0; });
       mark6.setAttribute('transform', 'translate(' + (R - 16) + ' ' + (91 + k6 * 42) + ')');
       fl6.forEach(function (f, k) { f.at(now + k * 0.3, [R + 55 + k * 118, 118], [R + 136 + k * 40, 158], true); });
@@ -1851,7 +1852,7 @@
       setOpacity(bot10.g, 1 - seg(t, CC, CC + 0.3));
       setOpacity(pA, oA); setOpacity(pB, oB); setOpacity(pC, oC);
       if (oA > 0) {
-        var u = since(t, clock, CA) / SA, cyc = u > 6.6 ? Math.floor(now / 0.6) % 5 : -1;
+        var u = since(t, clock, CA) / SA, cyc = u > 6.6 ? Math.floor((u - 6.6) * SA / 0.6) % 5 : -1;
         kpDots.forEach(function (c, i) { c.style.opacity = seg(u, 2.4 + i * 0.06, 2.5 + i * 0.06).toFixed(3); });
         ghostA.forEach(function (row, r) {
           var a = seg(u, 3.7 + r * 0.16, 3.85 + r * 0.16) * (cyc === r ? 1 : 0.75 - r * 0.1);
@@ -2449,7 +2450,7 @@
       rays1.forEach(function (r, k) { r.style.opacity = 0.3 + 0.7 * (0.5 + 0.5 * Math.sin(now * 3 + k)); });
       var u4 = since(t, clock, 10.4);
       d14.forEach(function (d, k) { var on = k < 6 && u4 > 0.5 + k * 0.25; d.style.fill = on ? C_GOOD : C_MUTED; d.style.opacity = on ? 1 : 0.45; });
-      var cyc = (now % 6) / 6, ck = Math.floor(cyc * 6);
+      var cyc = (Math.max(0, u4) % 6) / 6, ck = Math.floor(cyc * 6);
       clips4.forEach(function (r, k) { r.style.stroke = k < ck ? C_TGT : C_BORDER; r.style.fill = k < ck ? C_SURFACE : C_SURFACE2; });
       pen4.setAttribute('transform', 'translate(' + (R + ck * 58 + 30 + 8 * Math.sin(now * 9)).toFixed(1) + ' ' + (196 + 3 * Math.cos(now * 9)).toFixed(1) + ')');
       void gen;
