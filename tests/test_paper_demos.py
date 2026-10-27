@@ -5553,9 +5553,9 @@ def test_hdmi_explainer_demos_and_worked_example_share_the_paper_numbers():
     assert all(joint[0][i] < min(joint[1][i], joint[2][i]) for i in range(8))
     assert "0.090、0.142 和 0.151 弧度" in narration and "| 关节位置误差（rad） | **0.090** | 0.142 | 0.151 |" in note
 
-    # 旁白：102 句；数字列举不只隔一个逗号；片尾只预告下一篇（VIRAL）；绕开多音字
+    # 旁白：105 句；数字列举不只隔一个逗号；片尾只预告下一篇（VIRAL）；绕开多音字
     spoken = re.findall(r'"([^"]*)"\),', narration[narration.index("SCRIPT = [") : narration.index("DISPLAY = [")])
-    assert len(spoken) == 102
+    assert len(spoken) == 105
     assert not any(re.search(r"\d\s*[，,]\s*\d", t) for t in spoken)
     assert "下一篇讲 VIRAL" in narration and "VIRAL" in intro and "VIRAL" not in js and "重定向" not in "".join(spoken)
     for bad in ("差不多", "几乎", "一行", "重点", "时长", "搬行李箱", "标的是", "当作", "卡住"):

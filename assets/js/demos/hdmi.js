@@ -1421,13 +1421,51 @@
     label(p4, R, 126, '对要接触的末端取平均，用接触信号门控', 'demo-x-ink2', 12);
     var bar4 = contactBar(p4, R + 6, 150, W - 12, 14);
     label(p4, R + 6, 186, '黄色一段：$c_t = 1$，这一项才起作用', 'demo-x-mut', 10.5);
+    /* 第 6–8 段：参数用在哪（2026-10-27 看片反馈：只报了 σ 的数，观众不知道它用在哪）。两个 σ 是两个指数的分母，管下降的快慢；
+       虚线是同一条式子换一个 σ（在 0.5 倍到 2 倍之间来回变），σ 越大曲线越平 */
     var p5 = group(s);
     label(p5, R, 64, '论文没给的参数（官方代码）', 'demo-x-ink', 14);
-    [['$\\sigma_{\\mathrm{pos}} = 0.3$ m', C_EEF], ['$\\sigma_{\\mathrm{frc}} = 40$ N', C_TGT], ['$F_{\\mathrm{thres}} = 10$ N', C_TGT]].forEach(function (c, i) { chip(p5, R + i * 118, 84, 110, c[0], c[1], { size: 12, h: 32 }); });
-    label(p5, R, 148, '每个末端的得分（再对两只手取平均）', 'demo-x-ink2', 12);
-    var b5 = [barRowAt(p5, R, 164, 96, '要接触', C_ACCENT, 16, 11), barRowAt(p5, R, 192, 96, '不用接触', C_MUTED, 16, 11)];
-    label(p5, R, 236, '要接触时 × 5，不用接触时直接给 1', 'demo-x-mut', 10.5);
-    label(p5, R, 258, '上面那条：距离取左边这一帧的左手，接触力假设 15 N', 'demo-x-mut', 10.5);
+    var chips5 = [['$\\sigma_{\\mathrm{pos}} = 0.3$ m', C_EEF], ['$\\sigma_{\\mathrm{frc}} = 40$ N', C_TGT], ['$F_{\\mathrm{thres}} = 10$ N', C_TGT]].map(function (c, i) { return chip(p5, R + i * 118, 78, 110, c[0], c[1], { size: 12, h: 30 }); });
+    var MW = 200, MH = 50;
+    function miniPlot(parent, y, xmax, color, ticks, unit) {
+      var g = group(parent);
+      rectBox(g, R, y, MW, MH, C_BORDER, C_SURFACE);
+      function px(v) { return R + 6 + v / xmax * (MW - 12); }
+      function py(v) { return y + MH - 5 - v * (MH - 10); }
+      ticks.forEach(function (v, k) { label(g, px(v), y + MH + 16, String(v) + (k === ticks.length - 1 ? unit : ''), 'demo-x-mut', 11, k === 0 ? 'start' : k === ticks.length - 1 ? 'end' : 'middle'); });
+      var ghost = pathLine(g, [], color, 1.6, '4 3'), main = pathLine(g, [], color, 2.4);
+      return {
+        g: g, px: px, py: py,
+        draw: function (fn, sig, sigGhost) {
+          var a = [], b = [];
+          for (var i = 0; i <= 60; i++) { var v = i / 60 * xmax; a.push([px(v), py(fn(v, sig))]); b.push([px(v), py(fn(v, sigGhost))]); }
+          setPath(main, a); setPath(ghost, b);
+        }
+      };
+    }
+    function posFn(d, sg) { return Math.exp(-d / sg); }
+    function frcFn(f, sg) { return Math.min(Math.exp((f - CONTACT.fThres) / sg), 1); }
+    var row5a = group(p5);
+    rich(row5a, R, 138, '位置项 $= \\exp(-d\\,/\\,\\sigma_{\\mathrm{pos}})$，$d$：手到接触点的距离', 12.5, null, 'start', W);
+    var mp1 = miniPlot(row5a, 146, 0.5, C_EEF, [0, 0.3, 0.5], ' m');
+    hline(row5a, mp1.px(0.3), mp1.py(posTerm(0.3)), mp1.px(0.3), 146 + MH, C_EEF, 1, '2 3');
+    hline(row5a, R, mp1.py(posTerm(0.3)), mp1.px(0.3), mp1.py(posTerm(0.3)), C_EEF, 1, '2 3');
+    dotAt(row5a, mp1.px(0.3), mp1.py(posTerm(0.3)), 4.5, C_EEF);
+    rich(row5a, R + MW + 14, 166, '$d = 0.3$ m：降到 ' + f2(posTerm(0.3)), 11.5, null, 'start', 138);
+    rich(row5a, R + MW + 14, 188, '虚线：$\\sigma$ 时大时小', 11.5, 'demo-x-mut', 'start', 138);
+    var row5b = group(p5);
+    rich(row5b, R, 238, '力项 $= \\min\\big(\\exp((F - F_{\\mathrm{thres}})/\\sigma_{\\mathrm{frc}}),\\,1\\big)$', 12.5, null, 'start', W);
+    var mp2 = miniPlot(row5b, 248, 40, C_TGT, [0, 10, 40], ' N');
+    hline(row5b, mp2.px(10), 248, mp2.px(10), 248 + MH, C_BAD, 1.2, '3 3');
+    dotAt(row5b, mp2.px(0), mp2.py(frcTerm(0)), 4.5, C_TGT);
+    rich(row5b, R + MW + 14, 268, '$F = 0$：' + f2(frcTerm(0)), 11.5, null, 'start', 138);
+    rich(row5b, R + MW + 14, 290, '$F \\ge 10$ N：封顶在 1', 11.5, null, 'start', 138);
+    mp1.draw(posFn, CONTACT.sigPos, CONTACT.sigPos); mp2.draw(frcFn, CONTACT.sigFrc, CONTACT.sigFrc);
+    var p5b = group(s);
+    label(p5b, R, 64, '每个末端的得分（再对两只手取平均）', 'demo-x-ink', 14);
+    var b5 = [barRowAt(p5b, R, 86, 96, '要接触', C_ACCENT, 16, 11), barRowAt(p5b, R, 114, 96, '不用接触', C_MUTED, 16, 11)];
+    label(p5b, R, 158, '要接触时 × 5，不用接触时直接给 1', 'demo-x-mut', 10.5);
+    label(p5b, R, 180, '上面那条：距离取左边这一帧的左手，接触力假设 15 N', 'demo-x-mut', 10.5);
     function draw(t, clock) {
       var now = nowOf(t, clock), j = loopFrame(now, 40, 112), f = suitFrames()[j];
       /* 第 1 段的小动图：左手在接触点外来回晃（红虚线是差多远），右手穿进箱子时箱子闪红 */
@@ -1458,7 +1496,17 @@
       setOpacity(p2, win(t, 7.0, 10.4));
       setOpacity(p3, win(t, 10.4, 13.8));
       setOpacity(p4, win(t, 13.8, 16.8));
-      setOpacity(p5, win(t, 16.8));
+      setOpacity(p5, win(t, 16.8, 25.4));
+      setOpacity(p5b, win(t, 25.4));
+      if (t >= 16.8) {
+        var gk = Math.pow(2, Math.sin(now * 1.1));
+        mp1.draw(posFn, CONTACT.sigPos, CONTACT.sigPos * gk);
+        mp2.draw(frcFn, CONTACT.sigFrc, CONTACT.sigFrc * gk);
+        setOpacity(row5a, seg(t, 19.7, 20.1));
+        setOpacity(row5b, seg(t, 22.7, 23.1));
+        var on5 = t < 19.4 ? [1, 1, 1] : t < 22.4 ? [1, 0.35, 0.35] : [0.35, 1, 1];
+        chips5.forEach(function (c, i) { setOpacity(c, on5[i]); });
+      }
     }
     return { el: s, draw: draw };
   }
@@ -2502,7 +2550,7 @@
     },
     {
       title: '交互奖励（式 1–2）',
-      dur: 19.4,
+      dur: 28.4,
       build: buildSceneReward,
       cues: [
         { at: 0.4, s: '视频重定向来的参考是纯运动学的：接触不准、还会穿模；左边的参考里，箱子相对手上下飘。' },
@@ -2510,7 +2558,10 @@
         { at: 7.0, s: '位置项 $\\exp(-\\lVert p_{\\mathrm{eef}} - p_{\\mathrm{target}}\\rVert_2/\\sigma_{\\mathrm{pos}})$：用的是距离，不是平方。' },
         { at: 10.4, s: '力项：力不够打折扣，超过 $F_{\\mathrm{thres}}$ 封顶为 1。' },
         { at: 13.8, s: '式 2：对要接触的末端取平均，用接触信号 $c_{t,i}$ 门控。' },
-        { at: 16.8, s: '代码：$\\sigma_{\\mathrm{pos}} = 0.3$ m、$\\sigma_{\\mathrm{frc}} = 40$ N、$F_{\\mathrm{thres}} = 10$ N；要接触 ×5，否则给 1。' }
+        { at: 16.8, s: '代码里的参数：$\\sigma_{\\mathrm{pos}} = 0.3$ m、$\\sigma_{\\mathrm{frc}} = 40$ N、$F_{\\mathrm{thres}} = 10$ N。' },
+        { at: 19.4, s: '两个 $\\sigma$ 是两个指数的分母：$\\sigma$ 越大，曲线越平；$d = 0.3$ m 时位置项降到 0.37。' },
+        { at: 22.4, s: '$F_{\\mathrm{thres}}$ 在力项的分子里：$F = 0$ 时 0.78，到 10 N 封顶在 1。' },
+        { at: 25.4, s: '要接触的末端得分 ×5，不用接触的给 1；拿着箱子时左手约 4 cm、假设 15 N，约 4.35。' }
       ]
     },
     {
@@ -2646,7 +2697,7 @@
   function buildExplainerDemo(host) {
     K.explainer(host, {
       title: '十八幕动画：HDMI 全流程速览',
-      sub: '约 403 秒自动播放。空格播放/暂停，← → 换幕；G1 是官方开源的搬行李箱参考与仓库里录下的仿真回放，按真实模型做 3D 渲染，表格与图来自论文和官方代码。',
+      sub: '约 412 秒自动播放。空格播放/暂停，← → 换幕；G1 是官方开源的搬行李箱参考与仓库里录下的仿真回放，按真实模型做 3D 渲染，表格与图来自论文和官方代码。',
       ariaLabel: 'HDMI 十八幕讲解动画',
       notes: [
         '取数依据：表 I–II 照抄 arXiv 2509.16757 v3；图 6、图 7a、图 8、图 9a 的数是我们从论文的矢量图里抽出来的（柱高、误差棒中点、折线顶点），只保留到小数点后三位。',
