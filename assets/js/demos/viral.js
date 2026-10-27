@@ -740,6 +740,7 @@
     /* 第 1 段：教师 —— 四种特权信息流进教师，教师输出命令增量 */
     var p1 = group(s);
     label(p1, R, 64, '① 特权教师', 'demo-x-ink', 14);
+    rectBox(p1, R - 5, 73, W + 10, 69, C_TEA, 'none', '4 3').style.fill = 'none';  // 四种特权信息框成一组，两路流向都从组框出发
     ['物体位姿', '桌子', '指尖力', '所处阶段'].forEach(function (k, j) { chip(p1, R + (j % 2) * 122, 78 + Math.floor(j / 2) * 32, 110, k, C_TEA, { size: 11.5, h: 26 }); });
     var fl1 = [flowSeg(p1, C_TEA, 2, 3, 30), flowSeg(p1, C_TEA, 2, 3, 30), flowSeg(p1, C_TEA, 2, 3, 30)];
     rectBox(p1, R + 46, 160, 140, 40, C_TEA, C_SURFACE);
@@ -790,8 +791,8 @@
       g16.forEach(function (c, j) { c.style.opacity = seg(t, 0.6 + j * 0.05, 0.8 + j * 0.05) * (t < 3.6 ? 1 : 0.4) + 0.08; });
       g64.forEach(function (c, j) { c.style.opacity = seg(t, 3.9 + j * 0.02, 4.1 + j * 0.02) * (t >= 3.6 && t < 7.0 ? 1 : 0.4) + 0.08; });
       fl3.forEach(function (f, j) { f.at(now, [R + W / 2, 78 + j * 46 + 32], [R + W / 2, 78 + (j + 1) * 46 - 2], true); });
-      fl1[0].at(now, [R + 55, 138], [R + 96, 158], true);
-      fl1[1].at(now, [R + 177, 138], [R + 136, 158], true);
+      fl1[0].at(now, [R + 55, 144], [R + 96, 158], true);
+      fl1[1].at(now, [R + 177, 144], [R + 136, 158], true);
       fl1[2].at(now, [R + 116, 202], [R + 116, 222], true);
       ego2.put(loopFrame(now));
       fl2[0].at(now, [R + 55, 146], [R + 96, 160], true);
@@ -1269,7 +1270,7 @@
     var snapG = snaps.map(function (sn, i) {
       var g = group(s), cx = 24 + (i % 3) * 128, cy = 136 + Math.floor(i / 3) * 96;
       rectBox(g, cx, cy, 122, 88, C_BORDER, C_SURFACE);
-      var m = g1Mesh(g, 'rsi'), k = 118 / 440; m.put(camAt(170 * k, cx + 2 + 215 * k, cy - 4 + 233 * k), i);
+      var m = g1Mesh(g, 'rsi'), k = 118 / 440; m.put(camAt(170 * k, cx + 2 + 215 * k, cy - 7 + 233 * k), i);  // 往上挪 3，脚不贴着下面的标签
       label(g, cx + 6, cy + 83, sn[0] + ' · ' + sn[1] + ' m', 'demo-x-ink2', 9.5);
       return g;
     });
@@ -1364,7 +1365,7 @@
     chip(p1, R, 170, 150, '128 维特征', C_STU, { size: 12, h: 30 });
     chip(p1, R + 190, 170, 150, '本体感受 113 维', C_ACCENT, { size: 12, h: 30 });
     chip(p1, R + 95, 222, 150, '策略头 → 11 维', C_GOOD, { size: 12, h: 30 });
-    var fl1 = [0, 1, 2, 3].map(function () { return flowSeg(p1, C_STU, 2, 3, 20, true); });
+    var fl1 = [0, 1, 2, 3].map(function (j) { return flowSeg(p1, j === 3 ? C_ACCENT : C_STU, 2, 3, 20); });
     label(p1, R, 284, '113 + 128 = 241 维进策略头', 'demo-x-ink2', 11.5);
     /* 第 2 段：少了什么 */
     var p2 = group(s);
@@ -1372,10 +1373,28 @@
     var lost = ['物体和桌子的位姿', '指尖力', '当前阶段', '基座线速度', '手指关节'];
     var lostG = lost.map(function (k, i) {
       var g = group(p2);
-      chip(g, R, 80 + i * 40, W - 40, k, C_MUTED, { size: 12, left: true, h: 30 });
-      return { g: g, x: cross(p2, R + W - 28, 80 + i * 40 + 7, 16, C_BAD) };
+      chip(g, R, 76 + i * 32, W - 40, k, C_MUTED, { size: 11.5, left: true, h: 26 });
+      return { g: g, x: cross(p2, R + W - 27, 76 + i * 32 + 6, 14, C_BAD) };
     });
-    label(p2, R, 296, '226 维 → 113 维 + 一张图', 'demo-x-ink2', 11.5);
+    /* 剩下的 113 维按维数分段（笔记表 2）：一段一段从左往右长出来 */
+    label(p2, R, 252, '226 维 → 剩下 113 维（不含手指）+ 一张图', 'demo-x-ink2', 11.5);
+    var KEEP = [['角速度', 3, C_ACCENT, 1], ['重力方向', 3, C_ACCENT, 0.55], ['上一步动作', 31, C_WARN, 1], ['关节位置', 29, C_GOOD, 1],
+      ['关节速度', 29, C_GOOD, 0.55], ['增量', 11, C_PURPLE, 1], ['HOMIE 命令', 7, C_BAD, 0.8]];
+    var keepX = R, keepSeg = KEEP.map(function (k) {
+      var w = k[1] / 113 * W, r = paint(svgEl('rect', { x: keepX, y: 260, width: 0, height: 14, rx: 2 }), k[2]);
+      r.style.fillOpacity = k[3]; p2.appendChild(r);
+      var o = { r: r, x: keepX, w: w }; keepX += w; return o;
+    });
+    [[0, 1, 2], [3, 4, 5, 6]].forEach(function (row, ri) {
+      var cx = R;
+      row.forEach(function (j) {
+        var k = KEEP[j], sq = paint(svgEl('rect', { x: cx, y: 284 + ri * 20, width: 10, height: 10, rx: 2 }), k[2]);
+        sq.style.fillOpacity = k[3]; p2.appendChild(sq);
+        var lb = label(p2, cx + 14, 293 + ri * 20, k[0] + ' ' + k[1], 'demo-x-ink2', 11);
+        cx += 14 + (k[0].length + String(k[1]).length * 0.6 + 1) * 11.2 + 10;
+        void lb;
+      });
+    });
     /* 第 3 段：视场 */
     var p3 = group(s);
     label(p3, R, 64, '头上的 RealSense D435i', 'demo-x-ink', 14);
@@ -1419,9 +1438,11 @@
       fl1[2].at(now, [R + 75, 202], [R + 150, 220], true);
       fl1[3].at(now, [R + 265, 202], [R + 190, 220], true);
       lostG.forEach(function (k, i) { k.x.style.opacity = seg(t, 4.2 + i * 0.4, 4.5 + i * 0.4); });
+      var u2k = seg(since(t, clock, 3.6), 2.6, 4.4) * W;
+      keepSeg.forEach(function (o) { setW(o.r, clamp(u2k - (o.x - R), 0, o.w)); });
       real.at(K.clipSince(t, 10.4), t >= 10.4 && t < 13.7);
       egoNow.put(loopFrame(now)); egoOld.put(loopFrame(now - 0.06));
-      var hop = Math.floor(now * 2) % 4;  // 放慢了画：真实一格 20 ms
+      var hop = Math.floor(Math.max(0, since(t, clock, 13.4)) * 2) % 4;  // 放慢了画：真实一格 20 ms；从面板出现时起算
       ticks.forEach(function (d, i) { d.setAttribute('r', i === hop ? 6.5 : 4.5); });
       setOpacity(p1, win(t, 0.3, 3.6));
       setOpacity(p2, win(t, 3.6, 7.0));
@@ -1863,7 +1884,8 @@
     });
     var tp = plotBox(p3, R, 182, W, 100, 0, 4, -0.1, 1.15);
     var tgt = pathLine(p3, [], C_BAD, 1.6, '4 3'), realL = pathLine(p3, [], C_REAL, 2), simL = pathLine(p3, [], C_SIM, 2.2);
-    label(p3, R + W, 298, '示意：按图 5 的形状画，不是辨识出的数', 'demo-x-mut', 9.5, 'end');
+    legendRow(p3, R, 302, [['目标', C_BAD, 26], ['真机', C_REAL, 26], ['仿真', C_SIM, 26]], 11.5);
+    label(p3, R + W, 326, '示意：按图 5 的形状画，不是辨识出的数', 'demo-x-mut', 9.5, 'end');
     /* 第 4 段：图 5 结论 —— 两张小图：辨识前仿真（蓝）跟得慢、像三角波；辨识后和真机（绿）几乎重合（示意） */
     var p4 = group(s);
     label(p4, R, 64, '图 5：辨识前后', 'demo-x-ink', 14);
@@ -2563,8 +2585,8 @@
   function buildVideoDemo(host) {
     K.video(host, {
       title: '配音讲解视频：VIRAL 十八幕全流程',
-      sub: '21 分 35 秒竖屏视频（1080×1920），中文配音 + 字幕。画面就是上面的十八幕动画，旁白把每一幕讲细；适合手机上看或转发。',
-      size: '26.1 MB',
+      sub: '21 分 57 秒竖屏视频（1080×1920），中文配音 + 字幕。画面就是上面的十八幕动画，旁白把每一幕讲细；适合手机上看或转发。',
+      size: '26.5 MB',
       fileName: 'VIRAL_讲解视频.mp4'
     });
   }
