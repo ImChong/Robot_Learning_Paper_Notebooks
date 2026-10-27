@@ -2438,7 +2438,8 @@
     });
     label(P1, 24, 270, '评测时去掉身体误差终止', 'demo-x-mut', 11);
     var P2 = group(s);
-    legendRow(P2, 220, 56, [['残差 + 终止', V_COLOR[0], 72], ['去掉残差', V_COLOR[1], 56], ['两个都去掉', V_COLOR[2], 66]], 11);
+    var LEG17 = [['残差 + 终止', V_COLOR[0], 78], ['去掉残差', V_COLOR[1], 60], ['两个都去掉', V_COLOR[2], 72]];
+    legendRow(P2, 220, 56, LEG17, 12);
     var CX = 60, CY = 78, CW = 700, CH = 180;
     [0, 0.1, 0.2].forEach(function (v) {
       hline(P2, CX, CY + CH - v / 0.25 * CH, CX + CW, CY + CH - v / 0.25 * CH, C_BORDER, 0.8, '2 3');
@@ -2450,6 +2451,7 @@
     readHint(P2, 24, 312, '横轴是 8 个任务，纵轴是关节位置误差，越低越好；身体位置、朝向两张图一样，蓝色 24 个数全是最低', 11.5, 752);
     var P3 = group(s);
     label(P3, 24, 60, '8 个任务的平均（我们按图 8 的读数算的）', 'demo-x-ink', 13.5);
+    legendRow(P3, 440, 60, LEG17, 12);
     var keys = ['joint', 'bpos', 'bori'];
     var avgRows = [];
     keys.forEach(function (k, i) {
@@ -2458,13 +2460,23 @@
     });
     var P4 = group(s);
     label(P4, 24, 60, '图 9a：训练过程', 'demo-x-ink', 13.5);
-    var sp1 = stepPlot(P4, 60, 76, 310, 170, 0.1, 0.35, [0.1, 0.2, 0.3]), sp2 = stepPlot(P4, 444, 76, 310, 170, 0, 1, [0, 0.5, 1]);
-    label(P4, 215, 69, '关节位置误差（越低越好）', 'demo-x-ink2', 11, 'middle');
-    label(P4, 599, 69, '成功率（越高越好）', 'demo-x-ink2', 11, 'middle');
+    legendRow(P4, 220, 60, LEG17, 12);
+    var sp1 = stepPlot(P4, 60, 92, 310, 154, 0.1, 0.35, [0.1, 0.2, 0.3]), sp2 = stepPlot(P4, 444, 92, 310, 154, 0, 1, [0, 0.5, 1]);
+    label(P4, 215, 85, '关节位置误差（越低越好）', 'demo-x-ink2', 11, 'middle');
+    label(P4, 599, 85, '成功率（越高越好）', 'demo-x-ink2', 11, 'middle');
     var l1 = [0, 1, 2].map(function (i) { return pathLine(P4, [], V_COLOR[i], 2.4); }), l2 = [0, 1, 2].map(function (i) { return pathLine(P4, [], V_COLOR[i], 2.4); });
     readHint(P4, 24, 290, '横轴是训练步数；论文没写是哪个任务', 11, 752);
     var P5 = group(s);
     paperPart(P5, 'fig9b', 0, 0, 1, 1, 24, 48, 380, '论文图 9b：上排有残差动作，下排没有（框出腿）');
+    /* 图例：图右边两根色条标出上下两排（图高 380 × 700 / 1100 ≈ 242），颜色和图 8、图 9a 一样 */
+    var H9 = 380 * 700 / 1100;
+    [[48, V_COLOR[0]], [48 + H9 / 2, V_COLOR[2]]].forEach(function (r) {
+      P5.appendChild(paint(svgEl('rect', { x: 409, y: r[0] + 2, width: 4, height: H9 / 2 - 4, rx: 2 }), r[1]));
+    });
+    [['上排：残差 + 终止（完整方法）', V_COLOR[0]], ['下排：两个都去掉', V_COLOR[2]]].forEach(function (r, i) {
+      P5.appendChild(paint(svgEl('rect', { x: 424, y: 244 + i * 26, width: 12, height: 10, rx: 2 }), r[1]));
+      label(P5, 442, 253 + i * 26, r[0], 'demo-x-ink2', 12);
+    });
     label(P5, 424, 70, '搬行李箱：两个都去掉的策略', 'demo-x-ink', 13.5);
     chip(P5, 424, 88, 352, '学不会跪下', C_GOOD, { size: 12.5, h: 32 });
     chip(P5, 424, 130, 352, '双脚平放，靠弯腰去够箱子', C_GOOD, { size: 12.5, h: 32 });
