@@ -41,15 +41,15 @@
         "13_Physics-Based_Animation",
         "14_Human_Motion"
       ],
-      "last_module": "12_Hardware_Design",
-      "last_index": 1165,
-      "last_title": "PHD-Hand: A Printable Humanoid Dexterous Hand with Linkage-Driven 3-DOA Digits (arXiv:2610.29030)",
-      "next_module": "13_Physics-Based_Animation",
-      "last_completed_date": "2026-10-26",
-      "note": "本日轮转到 12_Hardware_Design。PROGRESS Hardware Design 章节中尚无笔记的最新论文是 PHD-Hand (arXiv:2610.29030, 2026-10-21, NJIT, Humanoids 2026)，即 PROGRESS #1165，已确认在上游 README。TPU 二自由度柔性铰链做指根关节、0.6 mm 弹簧钢丝穿过铰链中心推动交叉四杆耦合的上两节（耦合比 0.77），根关节与上两节运动学完全解耦；每指 13 个主要零件、手长约 200 mm；根关节正解用仿射映射近似（R = 0.981，最大误差 < 2.7°）；用 Claude 生成 GUI 与转方块轨迹；Feix 33 种抓取、拇指对指与工具操作演示，约 200 小时测试。未开源，含整体流程 mermaid 与仿射映射算例，无源码运行时序图。下一篇轮转到 13_Physics-Based_Animation。",
-      "last_date": "2026-10-26",
+      "last_module": "13_Physics-Based_Animation",
+      "last_index": 1166,
+      "last_title": "PhysibleMDM: Enforcing Inference-Time Physical Feasibility Constraints on Motion Diffusion Models via Noise Optimization (arXiv:2610.30500)",
+      "next_module": "14_Human_Motion",
+      "last_completed_date": "2026-10-27",
+      "note": "本日轮转到 13_Physics-Based_Animation。PROGRESS Physics-Based Character Animation 章节中尚无笔记的最新论文是 PhysibleMDM (arXiv:2610.30500, 2026-10-21, Disney Research × MIT CSAIL)，即 PROGRESS #1166，已确认在上游 README。冻结 CAMDM，推理时联合优化初始噪声与 8 步后验噪声（按两组标准化保风格），用接触模式 / 滑脚 / 自碰撞罚项与约束逆动力学 SOCP 的加速度残差打分，Sep-CMA-ES（64 候选，运动学 100 轮、动力学 2500 轮）搜索并自回归拼接；SMPL 穿地 −75%、自碰撞 −92%、滑脚 −74%，双足加速度残差中位数 −89.5%。未开源，含整体流程 mermaid 与算例，无源码运行时序图。下一篇轮转到 14_Human_Motion。",
+      "last_date": "2026-10-27",
       "next_candidate": null,
-      "last_completed": "PHD-Hand: A Printable Humanoid Dexterous Hand with Linkage-Driven 3-DOA Digits (arXiv:2610.29030)"
+      "last_completed": "PhysibleMDM: Enforcing Inference-Time Physical Feasibility Constraints on Motion Diffusion Models via Noise Optimization (arXiv:2610.30500)"
     },
     "last_summary_index": 532,
     "last_summary_date": "2026-09-18",
@@ -1827,6 +1827,17 @@
         "project_page": "",
         "code": "",
         "source": "⏳ 未开源(论文称整指一体打印参数调好后再开源) · 无源码运行时序图 · 补充视频 lnkd.in/p/er-NRfMn · Humanoids 2026 · NJIT"
+      },
+      {
+        "date": "2026-10-27",
+        "index": 1166,
+        "title": "PhysibleMDM: Enforcing Inference-Time Physical Feasibility Constraints on Motion Diffusion Models via Noise Optimization",
+        "folder": "papers/13_Physics-Based_Animation/PhysibleMDM__Inference-Time_Physical_Feasibility_Constraints_on_Motion_Diffusion_Models",
+        "module": "13_Physics-Based_Animation",
+        "arxiv": "2610.30500",
+        "project_page": "",
+        "code": "",
+        "source": "⏳ 未开源(论文正文与附录无代码、项目页链接) · 无源码运行时序图 · CAMDM + 100STYLE · SMPL 人形与迪士尼自研双足机器人 · Disney Research × MIT CSAIL"
       }
     ],
     "last_completed_index": 588,

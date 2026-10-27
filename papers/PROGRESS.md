@@ -1158,7 +1158,7 @@
 
 | #   | 论文                                                                                                                                               | 日期      | 🌟  | 状态   |
 | --- | ------------------------------------------------------------------------------------------------------------------------------------------------ | ------- | --- | ---- |
-| 1166  | [PhysibleMDM: Enforcing Inference-Time Physical Feasibility Constraints on Motion Diffusion Models via Noise Optimization](https://arxiv.org/abs/2610.30500) | 2026.10 |  | ⏳ 待读 |
+| 1166  | [PhysibleMDM: Enforcing Inference-Time Physical Feasibility Constraints on Motion Diffusion Models via Noise Optimization](https://arxiv.org/abs/2610.30500) ✅ [笔记](13_Physics-Based_Animation/PhysibleMDM__Inference-Time_Physical_Feasibility_Constraints_on_Motion_Diffusion_Models/PhysibleMDM__Inference-Time_Physical_Feasibility_Constraints_on_Motion_Diffusion_Models.md) | 2026.10 |  | ✅ 已总结 |
 | 1130  | [Walk Like This: Stylized Locomotion for Physics-Based Characters through Example-Driven Diffusion](https://arxiv.org/abs/2610.18147) | 2026.10 |  | ⏳ 待读 |
 | 1131  | [Scalable Multi-Human Cooperative Manipulation via Commander-Executor Coordination](https://arxiv.org/abs/2610.14911) | 2026.10 | 🌟 | ⏳ 待读 |
 | 617  | [From Digital Human Interactions to Physics-Based Humanoid Skills: Physics-Grounded Post-Training of Interaction Generators](https://arxiv.org/abs/2610.10322) ✅ [笔记](13_Physics-Based_Animation/DIGHT__Physics-Grounded_Post-Training_of_Interaction_Generators/DIGHT__Physics-Grounded_Post-Training_of_Interaction_Generators.md) | 2026.10 |  | ✅ 已总结 |
