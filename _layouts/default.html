@@ -428,44 +428,83 @@
       }
     }
 
+    var mermaidRunGeneration = 0;
+
     function runMermaid() {
+      var readSource =
+        typeof window.readMermaidBlockSource === 'function'
+          ? window.readMermaidBlockSource
+          : function(node) {
+              return (node.getAttribute('data-original-code') || node.textContent || '').trim();
+            };
+      var nodes = Array.prototype.slice.call(document.querySelectorAll('.mermaid:not(#roadmap-mermaid)'));
       // 1. Snapshot source once (restore <br> as literal <br/>); re-render from snapshot on theme changes.
-      document.querySelectorAll('.mermaid:not(#roadmap-mermaid)').forEach(function(el) {
-        var readSource =
-          typeof window.readMermaidBlockSource === 'function'
-            ? window.readMermaidBlockSource
-            : function(node) {
-                return (node.getAttribute('data-original-code') || node.textContent || '').trim();
-              };
-        var writeSource =
-          typeof window.writeMermaidBlockSource === 'function'
-            ? window.writeMermaidBlockSource
-            : function(node, source) {
-                node.textContent = source;
-              };
+      nodes.forEach(function(el) {
         if (!el.getAttribute('data-original-code')) {
           var source = readSource(el);
           if (source) el.setAttribute('data-original-code', source);
         }
-        el.removeAttribute('data-processed');
-        el.classList.remove('mermaid-unrendered');
-        var canonical = el.getAttribute('data-original-code');
-        var renderSource =
-          typeof window.prepareMermaidRenderSource === 'function'
-            ? window.prepareMermaidRenderSource(canonical)
-            : canonical;
-        writeSource(el, renderSource);
       });
 
-      var nodes = Array.prototype.slice.call(document.querySelectorAll('.mermaid:not(#roadmap-mermaid)'));
-      var paperRun =
-        nodes.length > 0 ? Promise.resolve(mermaid.run({ nodes: nodes })) : Promise.resolve();
+      var paperRun = renderMermaidBlocks(nodes);
       var roadmapRun =
         window.renderRoadmapMermaid
           ? window.renderRoadmapMermaid(document.documentElement.getAttribute('data-lang-mode') || 'en')
           : Promise.resolve();
 
       Promise.all([paperRun, roadmapRun]).then(finishMermaidRun, finishMermaidRun);
+    }
+
+    /* 2. One diagram per task, the ones nearest the viewport first.
+
+       A single mermaid.run() over every block was one long task: the 14
+       diagrams of the PPO note took ~6 s of main thread at 6x CPU throttling,
+       and a theme switch froze scrolling and taps until the last one was laid
+       out. Now the page gets the main thread back between diagrams. Each
+       block goes back to its source and is drawn again within the same task,
+       so no frame shows it empty (an empty block collapses and the text
+       below it jumps). A newer run (a second theme switch) stops this one. */
+    function renderMermaidBlocks(nodes) {
+      if (!nodes.length) return Promise.resolve();
+      var generation = ++mermaidRunGeneration;
+      var viewportHeight = window.innerHeight || document.documentElement.clientHeight || 0;
+      var queue = nodes.map(function(el) {
+        var rect = el.getBoundingClientRect();
+        var distance = rect.bottom < 0 ? -rect.bottom : rect.top > viewportHeight ? rect.top - viewportHeight : 0;
+        return { el: el, distance: distance };
+      }).sort(function(a, b) { return a.distance - b.distance; });
+
+      return new Promise(function(resolve) {
+        (function next() {
+          var item = queue.shift();
+          if (!item || generation !== mermaidRunGeneration) {
+            resolve();
+            return;
+          }
+          resetMermaidBlock(item.el);
+          Promise.resolve()
+            .then(function() { return mermaid.run({ nodes: [item.el] }); })
+            .catch(function() { /* finishMermaidRun shows the source of a block that failed */ })
+            .then(function() { setTimeout(next, 0); });
+        })();
+      });
+    }
+
+    function resetMermaidBlock(el) {
+      var writeSource =
+        typeof window.writeMermaidBlockSource === 'function'
+          ? window.writeMermaidBlockSource
+          : function(node, source) {
+              node.textContent = source;
+            };
+      el.removeAttribute('data-processed');
+      el.classList.remove('mermaid-unrendered');
+      var canonical = el.getAttribute('data-original-code');
+      var renderSource =
+        typeof window.prepareMermaidRenderSource === 'function'
+          ? window.prepareMermaidRenderSource(canonical)
+          : canonical;
+      writeSource(el, renderSource);
     }
 
     function finishMermaidRun() {
@@ -1139,21 +1178,38 @@
         }
       }
 
+      /* The roadmap sits in a folded <details>. Drawing it is seconds of main
+         thread on a phone (mermaid layout plus the DOM patches above), and it
+         used to run on load and again on every theme and language switch, for
+         a picture nobody could see: that was most of why both toggles froze
+         the home page. While folded nothing is drawn; opening the fold draws
+         the current theme and language, and a toggle redraws only when open. */
+      function roadmapIsFolded(mermaidRoadmap) {
+        var fold = mermaidRoadmap.closest('details');
+        return !!(fold && !fold.open);
+      }
+
       window.renderRoadmapMermaid = function(mode) {
         var mermaidRoadmap = document.getElementById('roadmap-mermaid');
         if (!mermaidRoadmap) return Promise.resolve();
+        if (roadmapIsFolded(mermaidRoadmap)) return Promise.resolve();
 
         var normalizedMode = mode === 'zh' ? 'zh' : 'en';
+        var cacheKey = getRoadmapCacheKey(normalizedMode);
+        // Folded and reopened with nothing changed: the drawing is still right.
+        if (mermaidRoadmap.getAttribute('data-roadmap-key') === cacheKey && mermaidRoadmap.querySelector('svg')) {
+          return Promise.resolve();
+        }
         var graphText =
           typeof window.buildRoadmapGraph === 'function'
             ? window.buildRoadmapGraph(roadmapGraphs[normalizedMode])
             : roadmapGraphs[normalizedMode].trim();
-        var cacheKey = getRoadmapCacheKey(normalizedMode);
         var cachedSvg = roadmapSvgCache[cacheKey];
         var renderSeq = ++roadmapRenderSeq;
 
         if (cachedSvg) {
           mermaidRoadmap.innerHTML = cachedSvg;
+          mermaidRoadmap.setAttribute('data-roadmap-key', cacheKey);
           finishRoadmapInsert(mermaidRoadmap);
           return Promise.resolve();
         }
@@ -1173,11 +1229,21 @@
                 : '';
           roadmapSvgCache[cacheKey] = safeSvg;
           mermaidRoadmap.innerHTML = safeSvg;
+          mermaidRoadmap.setAttribute('data-roadmap-key', cacheKey);
           finishRoadmapInsert(mermaidRoadmap);
         }).catch(function() {
           // Keep the previous SVG visible if rendering fails.
         });
       };
+
+      (function() {
+        var mermaidRoadmap = document.getElementById('roadmap-mermaid');
+        var fold = mermaidRoadmap && mermaidRoadmap.closest('details');
+        if (!fold) return;
+        fold.addEventListener('toggle', function() {
+          if (fold.open) window.renderRoadmapMermaid(root.getAttribute('data-lang-mode') || 'en');
+        });
+      })();
 
       function applyLang(mode) {
         root.setAttribute('data-lang-mode', mode);
@@ -1408,7 +1474,6 @@
     (function() {
       var toggle = document.getElementById('theme-toggle');
       var html = document.documentElement;
-      var switchTimer = null;
 
       function getPreferred() {
         return typeof window.getSiteTheme === 'function' ? window.getSiteTheme() : 'dark';
@@ -1423,15 +1488,35 @@
         }
       }
 
+      function matches(query) {
+        try {
+          return window.matchMedia(query).matches;
+        } catch (e) {
+          return false;
+        }
+      }
+
+      /* The switch cross-fades as a View Transition: the browser snapshots the
+         old and the new frame and fades one into the other on the compositor.
+         It used to put a colour transition on every node (html.theme-switching):
+         4000+ of them on the home page, and on a note page every demo redraws
+         when the theme changes, so each of its forced layouts recomputed all
+         of those transitions. On the PPO note at 6x CPU throttling the click
+         itself blocked for 12.7 s with the fade and 0.7 s without. Touch screens,
+         reduced motion and browsers without the API switch at once. */
+      function canFadeTheme() {
+        return typeof document.startViewTransition === 'function' &&
+          matches('(hover: hover) and (pointer: fine)') &&
+          !matches('(prefers-reduced-motion: reduce)');
+      }
+
       /* `persist` is only true for a click on the toggle: the initial theme and
          system changes must not be written back, or the page would stop
          following the system setting after the first visit. */
       function setTheme(theme, persist, animate) {
-        if (animate) {
-          // Colours fade for one transition only (see html.theme-switching in style.css).
-          html.classList.add('theme-switching');
-          clearTimeout(switchTimer);
-          switchTimer = setTimeout(function() { html.classList.remove('theme-switching'); }, 400);
+        if (animate && canFadeTheme()) {
+          document.startViewTransition(function() { setTheme(theme, persist, false); });
+          return;
         }
         html.setAttribute('data-theme', theme);
         if (persist) {
