@@ -4,7 +4,7 @@
 每个接缝会丢掉或多出几十毫秒；切点落在句子中间就听得出跳音（HOMIE 2026-10-22：320.87 s、641.73 s
 两处正好在说话，接回去少了 56 ms 和 27 ms，第一段开头还多出 42.7 ms 没去掉的编码填充）。
 
-这里的做法：在旁白里找至少 0.5 s 的静音、里面又刚好有一个关键帧的位置当切点（离目标位置最近的那个），
+这里的做法：在旁白里找至少 0.5 s 的静音、里面又刚好有一个关键帧、离前后两句都至少 0.4 s 的位置当切点（离目标位置最近的那个），
 画面 `-c copy` 在这个关键帧切开，音频从 narration.wav 按采样点切、各段重新编码 AAC，每段音画一样长。
 个别播放器不去掉 AAC 末尾的填充，接缝处会多出十几毫秒，落在静音里听不出来。
 
@@ -21,6 +21,7 @@ import numpy as np
 HERE = Path(__file__).resolve().parent
 FFMPEG = "ffmpeg"
 LIMIT = 30 * 1024 * 1024
+MARGIN = 0.4  # 切点离前后两句旁白至少这么远（秒）
 
 
 def keyframes(mp4):
@@ -56,14 +57,20 @@ def main():
         pcm = np.frombuffer(w.readframes(w.getnframes()), dtype=np.int16).astype(np.float32)
     total = json.load(open(out / "timeline.json"))["total"]
     keys, quiet = keyframes(src), silences(pcm, sr)
-    # 静音里的关键帧，前后各留 0.08 s
-    ok = [k for k in keys if any(a + 0.08 <= k <= b - 0.08 for a, b in quiet)]
+    # 静音里的关键帧，前后至少各留 MARGIN 秒：手机上连着放几段、或把几段接回去时，播放器常把一段末尾几十毫秒的音频丢掉，
+    # 切点贴着句尾就会吞掉最后一个字（HDMI 2026-10-27：切点离「第 68 次摔倒了」的句尾只有 0.1 s）
+    def margin(k):
+        return max((min(k - a, b - k) for a, b in quiet if a <= k <= b), default=-1.0)
     cuts = []
     for j in range(1, parts):
         target = total * j / parts
-        k = min((k for k in ok if not cuts or k > cuts[-1] + 1), key=lambda k: abs(k - target))
+        for m in (MARGIN, 0.25, 0.08):
+            ok = [k for k in keys if margin(k) >= m and (not cuts or k > cuts[-1] + 1) and abs(k - target) <= total / parts / 3]
+            if ok:
+                break
+        k = min(ok, key=lambda k: abs(k - target))
         cuts.append(k)
-    print("cuts", cuts, file=sys.stderr)
+    print("cuts", cuts, "margins", [round(margin(k), 2) for k in cuts], file=sys.stderr)
     dst = out / "parts"
     dst.mkdir(exist_ok=True)
     tmp = dst / "tmp"
