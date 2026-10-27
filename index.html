@@ -3,8 +3,9 @@ layout: default
 title: "Home"
 description: "人形机器人学习方向的每日论文精读笔记：强化学习、动作重定向、全身控制、Sim-to-Real 等方向的中文笔记，附学习路线图、交互演示与讲解视频。"
 ---
-<div class="index-header">
-  <h1 data-en="📚 {{ site.title | escape }}" data-zh="📚 {{ site.description | escape }}">📚 {{ site.title | escape }}</h1>
+<header class="index-header">
+  <h1 data-en="{{ site.title | escape }}" data-zh="{{ site.description | escape }}">{{ site.title | escape }}</h1>
+  <p class="index-lede" data-en="Close readings of humanoid robot learning papers, written in Chinese: reinforcement learning, motion retargeting, whole body control and sim to real transfer, with a learning roadmap, interactive demos and narrated videos." data-zh="人形机器人学习方向的论文精读笔记：强化学习、动作重定向、全身控制、仿真到现实迁移，附学习路线图、交互演示与配音讲解视频。">Close readings of humanoid robot learning papers, written in Chinese: reinforcement learning, motion retargeting, whole body control and sim to real transfer, with a learning roadmap, interactive demos and narrated videos.</p>
   {% assign paper_count = 0 %}
   {% for cat in site.data.papers %}
     {% assign cat_papers_size = cat[1].papers | size %}
@@ -18,26 +19,26 @@ description: "人形机器人学习方向的每日论文精读笔记：强化学
   {% endfor %}
   <p class="index-meta-chips">
     <span class="index-chip" id="paper-count-label">
-      <span aria-hidden="true">📄</span>
-      <span data-en="{{ paper_count | escape }} papers" data-zh="共 {{ paper_count | escape }} 篇笔记">{{ paper_count | escape }} papers</span>
+      <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-file-text"></use></svg>
+      <span data-en="{{ paper_count | escape }} notes" data-zh="共 {{ paper_count | escape }} 篇笔记">{{ paper_count | escape }} notes</span>
     </span>
     <a href="{{ '/updates.html' | relative_url }}" class="index-chip index-chip-link">
-      <span aria-hidden="true">📅</span>
-      <span data-en="Update Log" data-zh="更新记录">Update Log</span>
-      <span class="index-chip-arrow" aria-hidden="true">→</span>
+      <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-clock-counter-clockwise"></use></svg>
+      <span data-en="Update log" data-zh="更新记录">Update log</span>
+      <span class="index-chip-arrow" aria-hidden="true"><svg class="icon" focusable="false"><use href="#i-arrow-right"></use></svg></span>
     </a>
   </p>
-</div>
+</header>
 
 <div class="index-layout">
   <aside class="toc-sidebar" id="toc-sidebar">
     <div class="toc-wrapper">
-      <h3 class="toc-title" data-en="📑 Categories" data-zh="📑 分类导航">📑 分类导航</h3>
+      <h3 class="toc-title" data-en="Categories" data-zh="分类导航">分类导航</h3>
       <nav class="toc-nav">
         <ul class="toc-list">
           <li class="toc-item toc-h2" data-toc-for="roadmap-title">
-            <a href="#roadmap-title" class="toc-link">
-              <span data-en="📍 Learning Roadmap" data-zh="📍 学习路线图">📍 Learning Roadmap</span>
+            <a href="#roadmap-title" class="toc-link toc-link-roadmap">
+              <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-map-pin"></use></svg><span data-en="Learning roadmap" data-zh="学习路线图">Learning roadmap</span>
             </a>
           </li>
           {% for cat in site.data.papers %}
@@ -70,21 +71,22 @@ description: "人形机器人学习方向的每日论文精读笔记：强化学
 
   <div class="index-main" id="index-main">
 
-    <p class="index-legend" data-en="⭐️ open-source code link in note" data-zh="⭐️ 笔记含开源源码链接">⭐️ open-source code link in note</p>
-    <div class="search-container">
+    <p class="index-legend"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-star"></use></svg><span data-en="Note links to open source code" data-zh="笔记含开源源码链接">Note links to open source code</span></p>
+    <div class="search-container" role="search">
+      <svg class="icon search-icon" aria-hidden="true" focusable="false"><use href="#i-magnifying-glass"></use></svg>
       <input type="text" id="paper-search" placeholder="Search by title or arXiv ID..." data-en-placeholder="Search by title or arXiv ID..." data-zh-placeholder="通过论文标题或 arXiv 编号搜索..." aria-label="Search papers" data-en-aria-label="Search papers" data-zh-aria-label="搜索论文">
     </div>
     <div class="mermaid-container" id="roadmap-title">
       <details>
         <summary class="mermaid-title roadmap-entry">
           <span class="roadmap-entry-copy">
-            <span class="roadmap-entry-label" data-en="📍 Recommended Learning Roadmap" data-zh="📍 推荐学习路线图">📍 推荐学习路线图</span>
+            <span class="roadmap-entry-label"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-map-pin"></use></svg><span data-en="Recommended learning roadmap" data-zh="推荐学习路线图">推荐学习路线图</span></span>
             <span class="roadmap-entry-hint" data-en="Not sure where to start? Follow the path, one paper at a time." data-zh="不知道先读哪篇？沿着路线，一步步读懂机器人学习。">不知道先读哪篇？沿着路线，一步步读懂机器人学习。</span>
           </span>
           <span class="roadmap-entry-cta">
             <span class="roadmap-entry-start" data-en="Start here" data-zh="从这里开始">从这里开始</span>
             <span class="roadmap-entry-close" data-en="Collapse" data-zh="收起路线图">收起路线图</span>
-            <span class="roadmap-entry-arrow" aria-hidden="true">→</span>
+            <span class="roadmap-entry-arrow" aria-hidden="true"><svg class="icon" focusable="false"><use href="#i-arrow-right"></use></svg></span>
           </span>
         </summary>
         <p class="roadmap-link-hint" data-en="Hover over a node for its details; click it to open the note. Nodes marked “paper” open the original paper. 🎬 marks notes with a narrated video. Click elsewhere on the diagram to zoom in." data-zh="鼠标悬停节点查看详情，点击阅读笔记；标注“原文”的节点打开论文。🎬 表示笔记含配音讲解视频。点击图中其他区域可放大查看。">Hover over a node for its details; click it to open the note. Nodes marked “paper” open the original paper. 🎬 marks notes with a narrated video. Click elsewhere on the diagram to zoom in.</p>
@@ -148,25 +150,16 @@ description: "人形机器人学习方向的每日论文精读笔记：强化学
 {%- endfor -%}
     }</script>
 
-    <div id="search-no-results" class="search-no-results" data-en="No matching papers found." data-zh="未找到匹配的论文。">No matching papers found.</div>
+    <div id="search-no-results" class="search-no-results" role="status" data-en="No notes match that search. Try an abbreviation such as PPO, or an arXiv ID such as 1707.06347." data-zh="没有找到匹配的笔记。试试英文缩写（如 PPO）或 arXiv 编号（如 1707.06347）。">No notes match that search. Try an abbreviation such as PPO, or an arXiv ID such as 1707.06347.</div>
 
 {% comment %} First try _data/papers.json (generated by prepare script) {% endcomment %}
 {% if site.data.papers %}
-  {% assign category_icons = "基础路线图:🗺️,Motion_Retargeting:🎯,高影响力精选:⭐,Loco-Manipulation:🤖,Locomotion:🦿,Manipulation:🦾,Teleoperation:🎮,Navigation:🧭,State_Estimation:📡,Sim-to-Real:🔄,Simulation:🖥️,Hardware:🔧,Physics-Based:🎬,Human_Motion:🏃" | split: "," %}
   {% assign fold_limit = 5 %}
   {% assign fold_exempt_keys = "01_Foundational_RL,02_Motion_Retargeting,03_High_Impact_Selection" | split: "," %}
 
   {% for cat in site.data.papers %}
     {% assign cat_key = cat[0] %}
     {% assign cat_data = cat[1] %}
-
-    {% assign icon = "📄" %}
-    {% for ci in category_icons %}
-      {% assign ci_parts = ci | split: ":" %}
-      {% if cat_key contains ci_parts[0] %}
-        {% assign icon = ci_parts[1] %}
-      {% endif %}
-    {% endfor %}
 
     <div class="category-section" data-category="{{ cat_data.display_name | escape }}">
       {% assign cat_papers_size = cat_data.papers | size %}
@@ -177,7 +170,7 @@ description: "人形机器人学习方向的每日论文精读笔记：强化学
           {% assign main_total = main_total | plus: subcat_papers_size %}
         {% endfor %}
       {% endif %}
-        <h2 class="category-title" id="cat-{{ forloop.index }}"><span class="cat-icon">{{ icon }}</span> <span class="cat-name" data-en="{{ cat_data.display_name | escape }}" data-zh="{{ cat_data.zhname | escape }}">{{ cat_data.display_name | escape }}</span> <span class="paper-count">({{ main_total }})</span></h2>
+        <h2 class="category-title" id="cat-{{ forloop.index }}"><span class="cat-index" aria-hidden="true">{{ cat_key | slice: 0, 2 }}</span> <span class="cat-name" data-en="{{ cat_data.display_name | escape }}" data-zh="{{ cat_data.zhname | escape }}">{{ cat_data.display_name | escape }}</span> <span class="paper-count">({{ main_total }})</span></h2>
       {% if cat_data.subtitle %}<p class="category-subtitle" data-en="{{ cat_data.subtitle | escape }}" data-zh="{{ cat_data.subtitle_zh | escape }}">{{ cat_data.subtitle | escape }}</p>{% endif %}
       {% if cat_data.sort_order_hint %}<p class="category-sort-hint" data-en="{{ cat_data.sort_order_hint | escape }}" data-zh="{{ cat_data.sort_order_hint_zh | escape }}">{{ cat_data.sort_order_hint | escape }}</p>{% endif %}
 
@@ -208,7 +201,7 @@ description: "人形机器人学习方向的每日论文精读笔记：强化学
             {% endfor %}
           </ul>
           {% else %}
-          <p class="empty-hint" data-en="No notes yet, stay tuned..." data-zh="暂无笔记，敬请期待...">No notes yet, stay tuned...</p>
+          <p class="empty-hint" data-en="No notes in this section yet." data-zh="这个分类还没有笔记。">No notes in this section yet.</p>
           {% endif %}
         </div>
         {% endfor %}
@@ -248,7 +241,7 @@ description: "人形机器人学习方向的每日论文精读笔记：强化学
       </div>
       {% endif %}
       {% else %}
-      <p class="empty-hint" data-en="No notes yet, stay tuned..." data-zh="暂无笔记，敬请期待...">No notes yet, stay tuned...</p>
+      <p class="empty-hint" data-en="No notes in this section yet." data-zh="这个分类还没有笔记。">No notes in this section yet.</p>
       {% endif %}
     </div>
   {% endfor %}
@@ -265,7 +258,7 @@ description: "人形机器人学习方向的每日论文精读笔记：强化学
       {% if cat != current_cat %}
         {% unless current_cat == "" %}</ul></div>{% endunless %}
         <div class="category-section">
-          <h2 class="category-title">📄 {{ cat | escape }}</h2>
+          <h2 class="category-title">{{ cat | escape }}</h2>
           <ul class="paper-list">
         {% assign current_cat = cat %}
       {% endif %}

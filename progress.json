@@ -41,15 +41,15 @@
         "13_Physics-Based_Animation",
         "14_Human_Motion"
       ],
-      "last_module": "09_State_Estimation",
-      "last_index": 700,
-      "last_title": "A Multimodal Label Forecasting Method for Aperiodic Visuo-Motor Time Series (arXiv:2609.07930)",
-      "next_module": "10_Sim-to-Real",
-      "last_completed_date": "2026-10-23",
-      "note": "本日轮转到 09_State_Estimation。PROGRESS State Estimation 章节中尚无笔记的最新论文是 A Multimodal Label Forecasting Method for Aperiodic Visuo-Motor Time Series (arXiv:2609.07930, 2026-09-07, 雪城大学, ICMLA 2026)，即 PROGRESS #700，已确认在上游 README。EMP 用头部相机画面、计划关节轨迹（含未来段）和实测关节角预测 Poppy 人形 P 步后是否摔倒，RP / SimP 两个数据集上准确率 95.45% / 95.90%。代码与数据集录用后公开，运行时序图按论文描述画。下一篇轮转到 10_Sim-to-Real。",
-      "last_date": "2026-10-23",
+      "last_module": "13_Physics-Based_Animation",
+      "last_index": 1166,
+      "last_title": "PhysibleMDM: Enforcing Inference-Time Physical Feasibility Constraints on Motion Diffusion Models via Noise Optimization (arXiv:2610.30500)",
+      "next_module": "14_Human_Motion",
+      "last_completed_date": "2026-10-27",
+      "note": "本日轮转到 13_Physics-Based_Animation。PROGRESS Physics-Based Character Animation 章节中尚无笔记的最新论文是 PhysibleMDM (arXiv:2610.30500, 2026-10-21, Disney Research × MIT CSAIL)，即 PROGRESS #1166，已确认在上游 README。冻结 CAMDM，推理时联合优化初始噪声与 8 步后验噪声（按两组标准化保风格），用接触模式 / 滑脚 / 自碰撞罚项与约束逆动力学 SOCP 的加速度残差打分，Sep-CMA-ES（64 候选，运动学 100 轮、动力学 2500 轮）搜索并自回归拼接；SMPL 穿地 −75%、自碰撞 −92%、滑脚 −74%，双足加速度残差中位数 −89.5%。未开源，含整体流程 mermaid 与算例，无源码运行时序图。下一篇轮转到 14_Human_Motion。",
+      "last_date": "2026-10-27",
       "next_candidate": null,
-      "last_completed": "A Multimodal Label Forecasting Method for Aperiodic Visuo-Motor Time Series (arXiv:2609.07930)"
+      "last_completed": "PhysibleMDM: Enforcing Inference-Time Physical Feasibility Constraints on Motion Diffusion Models via Noise Optimization (arXiv:2610.30500)"
     },
     "last_summary_index": 532,
     "last_summary_date": "2026-09-18",
@@ -1794,6 +1794,50 @@
         "project_page": "",
         "code": "论文未给出代码 / 项目页（仅 YouTube 视频 https://youtu.be/YWf62XkiApc）；截至 2026-10-19 未检索到公开实现",
         "source": "⏳ 无公开源码(故无源码时序图)，含整体流程 mermaid 与偏航振荡扣分算例"
+      },
+      {
+        "date": "2026-10-24",
+        "index": 1127,
+        "title": "Contact-UAN: Unsupervised Actuator Networks as a Residual World Model for Humanoid Control",
+        "folder": "papers/10_Sim-to-Real/Contact-UAN__Unsupervised_Actuator_Networks_as_a_Residual_World_Model",
+        "module": "10_Sim-to-Real",
+        "arxiv": "2610.18991",
+        "project_page": "https://contact-uan.csail.mit.edu/",
+        "code": "https://github.com/nolie-rolie/contact-uan",
+        "source": "✅ 已开源(基于 mjlab；含 WTW 采数据、六个估计器、重标注、UAN 训练、下游任务与部署脚本，不含权重与真机数据) · 源码运行时序图按 docs/SIM2REAL.md 七阶段整理 · Unitree G1 · MIT Improbable AI Lab"
+      },
+      {
+        "date": "2026-10-25",
+        "index": 1128,
+        "title": "RoboQuest: Generalist Physical Agents that Search, Inspect and Test",
+        "folder": "papers/11_Simulation_Benchmark/RoboQuest__Generalist_Physical_Agents_that_Search_Inspect_and_Test",
+        "module": "11_Simulation_Benchmark",
+        "arxiv": "2610.10388",
+        "project_page": "https://declare-lab.github.io/RoboQuest/",
+        "code": "https://github.com/declare-lab/RoboQuest",
+        "source": "✅ 已开源(任务、评测 harness、打分、500 个评测实例与五个模型结果；数据集在 Hugging Face declare-lab/RoboQuest) · 源码运行时序图按 run_benchmark.py / episode_runner.py / run_policy_trial 整理 · RoboCasa365 + MuJoCo · NTU DeCLaRe Lab"
+      },
+      {
+        "date": "2026-10-26",
+        "index": 1165,
+        "title": "PHD-Hand: A Printable Humanoid Dexterous Hand with Linkage-Driven 3-DOA Digits",
+        "folder": "papers/12_Hardware_Design/PHD-Hand__Printable_Humanoid_Dexterous_Hand_with_Linkage-Driven_3-DOA_Digits",
+        "module": "12_Hardware_Design",
+        "arxiv": "2610.29030",
+        "project_page": "",
+        "code": "",
+        "source": "⏳ 未开源(论文称整指一体打印参数调好后再开源) · 无源码运行时序图 · 补充视频 lnkd.in/p/er-NRfMn · Humanoids 2026 · NJIT"
+      },
+      {
+        "date": "2026-10-27",
+        "index": 1166,
+        "title": "PhysibleMDM: Enforcing Inference-Time Physical Feasibility Constraints on Motion Diffusion Models via Noise Optimization",
+        "folder": "papers/13_Physics-Based_Animation/PhysibleMDM__Inference-Time_Physical_Feasibility_Constraints_on_Motion_Diffusion_Models",
+        "module": "13_Physics-Based_Animation",
+        "arxiv": "2610.30500",
+        "project_page": "",
+        "code": "",
+        "source": "⏳ 未开源(论文正文与附录无代码、项目页链接) · 无源码运行时序图 · CAMDM + 100STYLE · SMPL 人形与迪士尼自研双足机器人 · Disney Research × MIT CSAIL"
       }
     ],
     "last_completed_index": 588,

@@ -1,11 +1,11 @@
 ---
 layout: default
-title: "Update Log"
+title: "Update log"
 description: "论文笔记站点的更新记录：按日列出新增与修订的笔记。"
 ---
 <div class="updates-page">
   <div class="updates-header">
-    <h1 data-en="📅 Update Log" data-zh="📅 更新记录">📅 Update Log</h1>
+    <h1 data-en="Update log" data-zh="更新记录">Update log</h1>
     <p class="updates-subtitle"
        data-en="Note update activity from commit history. Click a day to filter."
        data-zh="基于提交历史的笔记更新记录，点击方格筛选当日。">Note update activity from commit history. Click a day to filter.</p>
@@ -310,7 +310,7 @@ description: "论文笔记站点的更新记录：按日列出新增与修订的
       ? '<a class="updates-item-link" href="' + escapeHtml(href) + '">' + escapeHtml(title) + '</a>'
       : '<span class="updates-item-link">' + escapeHtml(title) + '</span>';
     var openSourceHtml = note && note.o
-      ? '<span class="updates-item-opensource" aria-label="笔记含开源源码链接" title="⭐️ 笔记含开源源码链接">⭐️</span>'
+      ? '<span class="updates-item-opensource" role="img" aria-label="笔记含开源源码链接" title="笔记含开源源码链接"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-star"></use></svg></span>'
       : '';
     return '<li class="updates-item' + (folded ? ' updates-item-folded' : '') + '">' +
       '<span class="updates-badge ' + badgeClass + '">' + escapeHtml(badgeText) + '</span>' +
@@ -410,7 +410,7 @@ description: "论文笔记站点的更新记录：按日列出新增与修订的
     }
     var actionsHtml = timelineActionsHtml(lang, shown, windowDays, showAll, activeDate);
     return '<div class="updates-timeline">' +
-      '<h2 class="updates-timeline-title">📜 ' + escapeHtml(t.timelineTitle) + '</h2>' +
+      '<h2 class="updates-timeline-title">' + escapeHtml(t.timelineTitle) + '</h2>' +
       filterBar +
       '<div class="updates-timeline-days">' + daysHtml + '</div>' +
       actionsHtml +

@@ -133,6 +133,20 @@ TWIST_NOTE = (
     / "TWIST__Teleoperated_Whole-Body_Imitation_System"
     / "TWIST__Teleoperated_Whole-Body_Imitation_System.md"
 )
+TWIST2_NOTE = (
+    ROOT
+    / "papers"
+    / "07_Teleoperation"
+    / "TWIST2__Scalable_Portable_and_Holistic_Humanoid_Data_Collection_System"
+    / "TWIST2__Scalable_Portable_and_Holistic_Humanoid_Data_Collection_System.md"
+)
+FALCON_NOTE = (
+    ROOT
+    / "papers"
+    / "04_Loco-Manipulation_and_WBC"
+    / "FALCON__Learning_Force-Adaptive_Humanoid_Loco-Manipulation"
+    / "FALCON__Learning_Force-Adaptive_Humanoid_Loco-Manipulation.md"
+)
 VIRAL_NOTE = (
     ROOT
     / "papers"
@@ -358,7 +372,8 @@ EXPLAINER_BUNDLES = (
     "gmr", "omniretarget", "diffusion_policy", "beyondmimic", "cosmos", "umr", "php", "pbfm",
     "gentle", "lcp", "transformer", "pi0", "pi05", "op3soccer", "smp", "humanml3d",
     "domain_randomization", "quadterrain", "realhumanoid", "asap", "inekf", "berkeley_humanoid",
-    "toddlerbot", "exbody", "h2o", "omnih2o", "hover", "maskedmimic", "exbody2", "hugwbc", "homie", "twist", "viral",
+    "toddlerbot", "exbody", "h2o", "omnih2o", "hover", "maskedmimic", "exbody2", "hugwbc", "homie", "twist", "twist2",
+    "falcon", "viral",
 )
 
 # 幕数由论文决定，不是统一模板：PPO / DeepMimic / AMP / ADD 的核心概念正好各 5 个，
@@ -580,6 +595,15 @@ EXPLAINER_SCENES = {
     # 各一幕；结果按关键发现 1–3 各一幕（发现 4 并进重定向那一幕），上真机的链路与延迟、四类技能、部位误差、局限与代码各一幕。
     # 压成 14 幕会让教师的 20 帧和学生的 1155 维、或图 6 的柱和图 7 的曲线抢同一帧。
     "twist": (TWIST_NOTE, 16),
+    # TWIST2 十八幕：问题两幕（缺一套采集系统 / 两层控制）；命令接口一幕（35 维、相对根部）；硬件按脖子、PICO 各一幕；映射按身体（式 8）、
+    # 手（式 7）、脖子（式 10）各一幕；底层控制器按数据与奖励、网络与跟踪各一幕；遥操作按链路、单人、长时程各一幕；结果按表 II、表 III 各一幕；
+    # 扩散策略与两个自主任务各一幕；局限与代码一幕。手和脖子各有自己的式子与键位，表 II 的速度和表 III 的消融是两组数，压成 14 幕会抢同一帧。
+    "twist2": (TWIST2_NOTE, 18),
+    # FALCON 十七幕：问题两幕（手上有力 / 两条老路）；第 3 节的目标空间、两个智能体（3.1 节）、上身残差（隐式补偿，代码）各一幕；
+    # 3.2 节的力课程按式 3–4（力的上限）、式 5（狄利克雷比例与代码的三角波）、课程系数与阻力 / 滤波、施力点与附录 A.3 的力估计各一幕，
+    # 奖励与随机化（表 5–6）一幕；结果按表 1、图 3 + 表 2–3、图 4–5、表 4、图 1 + 图 8、图 6 各一幕，局限与代码一幕。
+    # 压成 14 幕会让式 4 的七根候选条和狄利克雷三角形、或表 1 的柱和图 3 的曲线抢同一帧。
+    "falcon": (FALCON_NOTE, 17),
     # VIRAL 十八幕：问题与两阶段流程各一幕；任务（五个阶段的切换条件与时限）一幕；教师的四个元素按论文的顺序拆开：观测与「HOMIE 命令当 API」、
     # 分阶段奖励（表 3）、增量动作（图 9）、参考状态初始化（图 4、图 9）各一幕；学生的三个元素：只看一张图（观测与相机）、视觉骨干与历史
     # （图 10、12）、DAgger 与 BC 的比例（图 11）各一幕，算力规模按教师（图 14）、学生与平铺渲染（图 15）各一幕；上真机的三个元素：手指辨识
@@ -5186,6 +5210,250 @@ def test_twist_project_page_clips():
     assert sum(p.stat().st_size for p in clip_dir.iterdir()) < 2.5e6
     note = TWIST_NOTE.read_text(encoding="utf-8")
     assert "剪自[项目页](https://yanjieze.com/projects/TWIST/)的视频" in note
+def _twist2_seq(js: str, name: str):
+    """twist2.js 的 SEQ[name]：每帧 138 个 int16（× 1000）= 命令 35、参考根部 3、机器人根部 3、参考关节 29、机器人关节 29、参考关键点 13 × 3。"""
+    m = re.search(name + r": \{ clip: '([^']+)', t0: ([\d.]+), fps: (\d+), n: (\d+), per: 138, data: '([^']+)' \}", js)
+    raw = base64.b64decode(m.group(5))
+    vals = [int.from_bytes(raw[i : i + 2], "little", signed=True) / 1000 for i in range(0, len(raw), 2)]
+    n = int(m.group(4))
+    assert len(vals) == 138 * n
+    frames = []
+    for k in range(n):
+        f = vals[138 * k : 138 * (k + 1)]
+        frames.append({"cmd": f[:35], "ref_root": f[35:38], "sim_root": f[38:41], "ref_dof": f[41:70], "sim_dof": f[70:99],
+                       "kp": [f[99 + 3 * j : 102 + 3 * j] for j in range(13)]})
+    return m.group(1), float(m.group(2)), int(m.group(3)), frames
+
+
+def test_twist2_explainer_demos_and_worked_example_share_the_paper_numbers():
+    """TWIST2：十八幕动画、三个演示、配音旁白与笔记「🚶 具体实例」用同一组数。
+
+    表 II、表 III、图 14 照抄 arXiv 2511.02832；观测维数、数据集权重、手的姿态照抄 amazon-far/TWIST2；
+    走路与蹲下是我们用官方 ONNX 权重在 MuJoCo 里跟官方 PICO 样例的复现，嵌在 twist2.js 里，这里解码后把例 1–3 再算一遍。
+    """
+    js = (DEMO_JS_DIR / "twist2.js").read_text(encoding="utf-8")
+    note = TWIST2_NOTE.read_text(encoding="utf-8")
+    narration = (ROOT / "scripts" / "paper_video" / "papers" / "twist2.py").read_text(encoding="utf-8")
+    intro = (ROOT / "scripts" / "paper_video" / "papers" / "twist2.js").read_text(encoding="utf-8")
+
+    for line in (
+        "{ zh: '双臂取放', min: 18.5, n: 98, sr: 100, per: 11 },",
+        "{ zh: '移动取放', min: 19.5, n: 46, sr: 100, per: 25 }",
+        "{ zh: '完整 TWIST2', nov: [10, 12], exp: [10, 11], tn: 75.6, te: 59.9, mean: 67.8 },",
+        "{ zh: '去掉立体视觉', nov: [10, 12], exp: [10, 15], tn: 90.6, te: 105.9, mean: 98.3 },",
+        "{ zh: '去掉脖子', nov: [7, 17], exp: [9, 12], tn: 144.0, te: 80.5, mean: 112.3 },",
+        "{ zh: '去掉第一视角', nov: [10, 13], exp: [10, 10], tn: 94.3, te: 43.0, mean: 68.7 }",
+        "var WBDEX = { total: 54, reach: 49, success: 33, graspFail: 16, reachFail: 5, demos: 170 };",
+        "var KICKT = { ok: 6, n: 7, demos: 50 };",
+        "var OBS = { cmd: 35, prop: 92, hist: 10, fut: 35 };",
+        "var CRITIC_DIM = 1734;",
+        "{ zh: 'PICO 采的', n: 73, w: 10 }",
+        "close: [0, 1.0, 1.74, -1.57, -1.74, -1.57, -1.74],",
+        "var NECK_SCALE = 1.5;",
+        "var EX_WALK = 15, EX_SQUAT = 31;",
+    ):
+        assert line in js, line
+    for k in ("'twist2-explainer'", "'twist2-video'", "'twist2-cmd'", "'twist2-retarget'", "'twist2-tables'", "K.video(host"):
+        assert k in js, k
+
+    # 例 4：观测维数（脚本注释写 1402 是算错了）
+    assert (35 + 92) * (10 + 1) + 35 == 1432 and 127 * 11 + 35 == 1432
+    assert "$127\\times 11+35=1432$" in note and "1432 维" in narration and "1402" in narration
+    # 例 5：PICO 段的初始抽样概率
+    n = [12788, 5841, 724, 73]
+    assert sum(n) == 19426 and sum(n[:3]) == 19353 and _fmt(100 * 730 / (19353 + 730), 1) == "3.6" and _fmt(100 * 73 / 19426, 2) == "0.38"
+    assert "730/20{,}083\\approx3.6\\%" in note and "3.6%" in narration
+    # 例 6：手的插值，alpha = 0.5 就是闭合的一半
+    close = [0, 1.0, 1.74, -1.57, -1.74, -1.57, -1.74]
+    assert [round(0.5 * c, 3) for c in close] == [0, 0.5, 0.87, -0.785, -0.87, -0.785, -0.87]
+    assert "（0、0.5、0.87，−0.785、−0.87，−0.785、−0.87）" in note and 1 / 0.05 / 100 == 0.2
+    # 例 7：脖子，先偏航 30° 再俯仰 20°
+    c30, s30, c20, s20 = (math.cos(math.radians(30)), math.sin(math.radians(30)), math.cos(math.radians(20)), math.sin(math.radians(20)))
+    r11, r21, r31 = c30 * c20, s30 * c20, -s20
+    assert (_fmt(r11, 3), _fmt(r21, 3), _fmt(r31, 3)) == ("0.814", "0.470", "-0.342")
+    assert round(math.degrees(math.atan2(r21, r11))) == 30 and round(math.degrees(math.asin(-r31))) == 20
+    assert "偏航 45°、俯仰 30°" in note and "人头偏 30 度，机器人的头偏 45 度" in narration
+    # 例 8、例 9、例 11：表 II、表 III、图 14
+    assert (_fmt(98 / 18.5, 1), _fmt(46 / 19.5, 1), _fmt(18.5 * 60 / 98, 1), _fmt(19.5 * 60 / 46, 1)) == ("5.3", "2.4", "11.3", "25.4")
+    assert (75.6 + 59.9) / 2 == 67.75 and _fmt(100 * 20 / 23, 1) == "87.0" and _fmt(100 * 16 / 29, 1) == "55.2"
+    assert round(100 * (98.3 / 67.8 - 1)) == 45 and round(100 * (112.3 / 67.8 - 1)) == 66
+    assert 49 + 5 == 54 and 33 + 16 == 49 and _fmt(100 * 33 / 54, 1) == "61.1" and _fmt(100 * 6 / 7, 1) == "85.7"
+    for s in ("每分钟 5.3 条", "$20/23=87.0\\%$", "用时多 66%", "$33/54=61.1\\%$", "$6/7=85.7\\%$"):
+        assert s in note, s
+    for s in ("18.5 分钟采满 98 格", "112.3 秒", "61.1%", "7 次里 6 次"):
+        assert s in narration, s
+    # 例 10：64 步动作块
+    assert _fmt(64 / 30, 2) == "2.13" and 48 / 30 == 1.6
+
+    # 复现：从嵌入的两段动作再算例 1、例 2
+    clip, t0, fps, walk = _twist2_seq(js, "walk")
+    assert (clip, t0, fps, len(walk)) == ("0807_yanjie_walk_001", 1.0, 15, 60)
+    clip, t0, fps, squat = _twist2_seq(js, "squat")
+    assert (clip, t0, fps, len(squat)) == ("0807_yanjie_walk_006", 2.2, 15, 60)
+    for f in walk + squat:
+        assert f["cmd"][6:] == f["ref_dof"]  # 命令的后 29 维就是参考关节角
+        assert abs(f["cmd"][2] - f["ref_root"][2]) < 2e-3  # 高度就是参考骨盆的高度
+    w = walk[15]
+    assert 1.0 + 15 / 15 == 2.0
+    assert [_fmt(x, 3) for x in w["cmd"][:6]] == ["0.967", "-0.138", "0.815", "0.056", "-0.084", "-0.166"]
+    assert [_fmt(w["ref_dof"][j], 2) for j in (3, 9, 18, 25, 14)] == ["0.85", "0.04", "1.24", "1.32", "0.13"]
+    s = squat[31]
+    assert _fmt(2.2 + 31 / 15, 2) == "4.27"
+    assert [_fmt(x, 3) for x in s["cmd"][:6]] == ["0.052", "0.064", "0.419", "0.007", "0.136", "0.013"]
+    assert [_fmt(s["ref_dof"][j], 2) for j in (0, 6, 3, 9, 4, 10, 14)] == ["-1.57", "-1.57", "2.28", "2.21", "-0.69", "-0.61", "0.52"]
+    assert [_fmt(s["sim_dof"][j], 2) for j in (3, 9)] == ["2.24", "2.18"]
+    assert _fmt(min(f["ref_root"][2] for f in squat), 3) == "0.419" and _fmt(min(f["sim_root"][2] for f in squat), 3) == "0.404"
+
+    def err(frames, js_):
+        return sum(abs(f["ref_dof"][j] - f["sim_dof"][j]) for f in frames for j in js_) / (len(frames) * len(js_))
+
+    assert [_fmt(err(squat, r), 3) for r in (range(29), range(12), range(12, 15), range(15, 29))] == ["0.081", "0.089", "0.054", "0.079"]
+    assert _fmt(err(walk, range(29)), 3) == "0.053"
+    for t in ("$\\dot x=0.967$ m/s", "高度 $z=0.419$ m", "左膝 2.28、右膝 2.21 rad", "左右膝 2.24 / 2.18 rad",
+              "平均绝对误差 0.081 rad（腿 0.089、腰 0.054、手臂 0.079）", "0.053 rad"):
+        assert t in note, t
+    assert "0.419 米" in narration and "0.404 米" in narration and "0.081 弧度" in narration and "2.28 弧度" in narration
+    # 头的关键点：在躯干上方约 0.36 m（站着时约 1.21 m 高）
+    assert all(0.3 < f["kp"][8][2] - f["kp"][5][2] < 0.42 for f in walk)
+
+    # 例 3：相对命令会漂多远（每 0.2 s 一点，参考与机器人的骨盆 xy）
+    m = re.search(r"var DRIFT = \{ clip: '0807_yanjie_walk_001', dt: 0\.2, n: (\d+), data: '([^']+)' \}", js)
+    raw = base64.b64decode(m.group(2))
+    v = [int.from_bytes(raw[i : i + 2], "little", signed=True) / 1000 for i in range(0, len(raw), 2)]
+    npt = int(m.group(1))
+    assert npt == 70 and len(v) == 4 * npt
+    ref = [(v[4 * i], v[4 * i + 1]) for i in range(npt)]
+    rob = [(v[4 * i + 2], v[4 * i + 3]) for i in range(npt)]
+    d = [math.dist(a, b) for a, b in zip(ref, rob, strict=True)]
+    assert (_fmt(d[25], 2), _fmt(d[50], 2), _fmt(max(d), 2), _fmt(d[-1], 2)) == ("1.17", "1.62", "2.01", "0.99")
+    path = [sum(math.dist(p[i], p[i + 1]) for i in range(npt - 1)) for p in (ref, rob)]
+    assert (_fmt(path[0], 1), _fmt(path[1], 1)) == ("10.7", "9.3")
+    assert "第 5 s 相距 1.17 m，第 10 s 1.62 m，中途最大 2.01 m，终点 0.99 m" in note
+    assert "终点相距 0.99 米，中途最大 2.01 米" in narration and "这是我们的复现" in narration
+    # 片头 / 片尾与旁白一致
+    assert "18.5 分钟 98 条" in intro and "FALCON" in intro and "下一篇讲 FALCON" in narration
+
+
+def test_twist2_assets_and_project_page_clips():
+    """TWIST2 的论文图、G1 贴图与项目页片段都在 bundle 引用的位置。"""
+    js = (DEMO_JS_DIR / "twist2.js").read_text(encoding="utf-8")
+    base = ROOT / "assets" / "img" / "papers" / "twist2"
+    for f in re.findall(r"\['(fig\d+_[a-z_]+\.webp)'", js):
+        assert (base / f).is_file(), f
+    for f in set(re.findall(r"file: '(g1_[a-z_]+\.webp)'", js)):
+        assert (base / "g1_3d" / f).is_file(), f
+    clips = set(re.findall(r"projClip\(\w+, '([a-z_]+)'", js))
+    assert len(clips) >= 12
+    for c in clips:
+        assert (base / "clips" / f"{c}.mp4").is_file() and (base / "clips" / f"{c}.webp").is_file(), c
+    assert "项目页视频" in js
+
+
+def test_falcon_explainer_demos_and_worked_example_share_the_paper_numbers():
+    """FALCON：十七幕动画、三个演示、配音旁白与笔记「🚶 具体实例」用同一组数。
+
+    表 1–6 照抄 arXiv 2505.06776 v2；力的上限（式 4 的代码写法：τ^g 乘 0、ε = 0.01、上限 × 0.9）、课程、裁剪照抄 LeCAR-Lab/FALCON；
+    G1 左臂在各姿态的雅可比与重力项（BOUND_GRID）、站着 / 走路 / 图 11 的复现是我们用官方 onnx 在 MuJoCo 里算的，嵌在 falcon.js 里，
+    这里解码后把例 1–4、例 7 再算一遍。
+    """
+    js = (DEMO_JS_DIR / "falcon.js").read_text(encoding="utf-8")
+    note = FALCON_NOTE.read_text(encoding="utf-8")
+    narration = (ROOT / "scripts" / "paper_video" / "papers" / "falcon.py").read_text(encoding="utf-8")
+    intro = (ROOT / "scripts" / "paper_video" / "papers" / "falcon.js").read_text(encoding="utf-8")
+
+    for line in (
+        "{ key: 'falcon', fam: 'falcon', zh: 'FALCON + 力课程', v: [0.21, 0.24, 0.37, 0.27, 0.30, 0.45] }",
+        "{ key: 'mwb', fam: 'mwb', zh: '单策略 + 力课程', v: [0.43, 0.50, 0.73, 0.28, 0.32, 0.44] },",
+        "{ key: 'pid', fam: 'ik', zh: 'PID + 力课程', v: [0.24, 0.31, 0.60, 0.32, 0.35, 0.46] },",
+        "{ key: 'wo', zh: '不看力矩上限', v: [0.42, 0.45, 0.61, 0.45, 0.46, 0.54] },",
+        "{ key: 'falcon', zh: 'FALCON', v: [0.39, 0.42] }",
+        "var GAUGE = { cart: 107.9, door: 47.3, g1: 57.4, t1: 66.3 };",
+        "var CURR = { init: 0.1, up: 210, down: 200, step: 0.02 };",
+        "var CLIP = { lo: [-40, -40, -50], hi: [40, 40, 5] }, ZERO_P = 0.25;",
+        "var TLIM = [25, 25, 25, 25, 25, 5, 5];",
+        "var ACCAD_STATS = { frames: 4934, zLimit: [['腕俯仰', 2992], ['肩俯仰', 1472], ['肩横滚', 441], ['其他', 29]], median: [75.9, 77.3, 120.1] };",
+        "hold: { force: 20, falcon: { eup: 0.184, wp: -0.010, wpTarget: -0.790, drop: 1.2, tau: 3.12 }, pd: { eup: 1.751, wp: 0.593, drop: 92.0, tau: 2.38 } },",
+        "walk: { mass: 1.2, falcon: { eup: 0.178, root: 0.273, wp: 0.018 }, pd: { eup: 1.369, root: 0.451, wp: 0.449 } },",
+        "lever: [{ r: 0, arm: 0.046, tau: 0.92 }, { r: 0.5, arm: 0.136, tau: 2.72 }, { r: 1, arm: 0.226, tau: 4.52 }]",
+    ):
+        assert line in js, line
+    for k in ("'falcon-explainer'", "'falcon-video'", "'falcon-bounds'", "'falcon-sampler'", "'falcon-tables'", "K.video(host"):
+        assert k in js, k
+    for k in ('data-demo="falcon-bounds"', 'data-demo="falcon-sampler"', 'data-demo="falcon-tables"', 'data-demo="falcon-explainer"'):
+        assert k in note, k
+
+    # 例 1：默认姿态（肩俯仰 0、肘 0）左手的上限，照代码（τ^g 乘 0）与照论文（带 τ^g）
+    grid = json.loads(re.search(r"var BOUND_GRID = (\{.*?\});\n", js).group(1))
+    cell = grid["cells"][grid["sp"].index(0.0) * len(grid["el"]) + grid["el"].index(0.0)]
+    lim = [t * 0.9 for t in (25, 25, 25, 25, 25, 5, 5)]
+
+    def bounds(use_g):
+        hi, lo, arg = [], [], []
+        for i in range(3):
+            c = [((lim[j] - (cell["tg"][j] if use_g else 0)) / (abs(cell["J"][i][j]) + 0.01), j) for j in range(7)]
+            d = [(-lim[j] - (cell["tg"][j] if use_g else 0)) / (abs(cell["J"][i][j]) + 0.01) for j in range(7)]
+            hi.append(min(c)[0])
+            arg.append(min(c)[1])
+            lo.append(max(d))
+        return hi, lo, arg
+
+    hi, lo, arg = bounds(False)
+    assert [_fmt(x, 1) for x in hi] == ["106.0", "107.2", "80.4"] and arg == [0, 2, 5]
+    hig, log, _ = bounds(True)
+    assert (_fmt(hig[2], 1), _fmt(log[2], 1), _fmt(hig[0], 1), _fmt(log[0], 1)) == ("87.5", "-73.2", "115.8", "-96.1")
+    for s in ("**106.0 N**", "**107.2 N**", "**80.4 N**", "= 87.5$ N", "= -73.2$ N", "往下只剩 73.2 N、往上变成 87.5 N"):
+        assert s in note, s
+    assert "向前 106 牛" in narration and "向左 107 牛" in narration and "向上 80 牛" in narration
+    assert "只剩 73 牛，往上变成 88 牛" in narration and "左 107.2 N（肩偏航）" in js and "107.3" not in js + note
+
+    # 例 2：252 段 4,934 帧里竖直方向由谁决定
+    assert 2992 + 1472 + 441 + 29 == 4934 and _fmt(100 * 2992 / 4934, 1) == "60.6"
+    assert "| 腕俯仰 | 2,992 | 60.6% |" in note and "六成的帧都是腕俯仰先顶到上限" in narration
+
+    # 例 3：一组 γ（复现里那一回合）怎么变成一步的力
+    gamma = json.loads(re.search(r'"gamma":(\[[^\]]*\])', js).group(1))
+    assert gamma == [0.307, 0.445, 0.247]
+    box = [h * g for h, g in zip(hi, gamma, strict=True)]
+    assert [_fmt(x, 1) for x in box] == ["32.5", "47.7", "19.8"]
+    top = [min(max(b + 0.5, lo_), hi_) for b, lo_, hi_ in zip(box, (-40, -40, -50), (40, 40, 5), strict=True)]
+    assert [_fmt(x, 1) for x in top] == ["33.0", "40.0", "5.0"]
+    assert "$(33.0, 40.0, 5.0)$ N" in note and "$\\gamma = (0.307, 0.445, 0.247)$" in note
+
+    # 例 4：课程从 0.1 到 1
+    assert round((1 - 0.1) / 0.02) == 45 and "**至少 45 个撑满的回合**" in note and "至少要 45 个撑满的回合" in js
+
+    # 例 5–8：复现的数字在笔记、旁白、动画里一致
+    for s in ("| 0.184 | 1.751 |", "| 1.2 | 92.0 |", "| 0.178 | 1.369 |", "| 0.273 | 0.451 |", "| 0.38 | 1.75 | 3.12 | 4.48 | 5.00 |"):
+        assert s in note, s
+    assert _fmt(1.369 / 0.178, 1) == "7.7" and "误差差了约 7.7 倍" in js and "相差大约 7.7 倍" in narration
+    assert [_fmt(20 * a, 2) for a in (0.046, 0.136, 0.226)] == ["0.92", "2.72", "4.52"]
+    assert "从 0.92 涨到 4.52 牛米" in narration and _fmt(1.2 * 9.81, 1) == "11.8"
+    for s in ("Falcon 把目标挪到了负 0.79 弧度", "0.18 对 1.75 弧度", "1 毫米对 92 毫米", "0.27 对 0.45 米每秒", "手腕垂了 0.46 弧度"):
+        assert s in narration, s
+
+    # 旁白：93 句；数字之间不只隔一个逗号；片尾只预告下一篇（HDMI）；绕开多音字与切错的词
+    spoken = re.findall(r'"([^"]*)"\),', narration[narration.index("SCRIPT = [") : narration.index("DISPLAY = [")])
+    assert len(spoken) == 93
+    assert not any(re.search(r"\d\s*[，,]\s*\d", t) for t in spoken)
+    assert "下一篇讲 HDMI" in narration and "HDMI" in intro and "HDMI" not in js
+    for bad in ("差不多", "几乎", "一行", "重点", "时长", "卡住", "多重", "条越长", "均匀地", "不用力", "加上身", "看论文图", "竖直"):
+        assert not any(bad in t for t in spoken), bad
+    assert "## 🎬 十七幕动画" in note and 'demos: ["falcon"]' in note
+    assert "VIDEO_MB" not in note and "@@" not in js
+
+
+def test_falcon_project_page_clips():
+    """FALCON：第 1、15、16 幕的真机画面剪自项目页的视频（10 段，按幕懒加载）；seqClip 的分段时长加起来要等于片段时长。"""
+    js = (DEMO_JS_DIR / "falcon.js").read_text(encoding="utf-8")
+    clip_dir = ROOT / "assets/img/papers/falcon/clips"
+    used = set(re.findall(r"(?:projClip|seqClip)\(\w+, '(\w+)'", js))
+    assert used == {"teaser", "vr_lift", "cart_base", "cart_falcon", "door_base", "door_falcon", "lift_base", "lift_falcon", "stance_pull", "autonomy"}
+    assert {p.name for p in clip_dir.iterdir()} == {f"{u}.{ext}" for u in used for ext in ("mp4", "webp")}
+    total = sum(float(x) for x in re.findall(r"\[([0-9.]+), '", js[js.index("var TEASER_PARTS") : js.index("var TEASER_PARTS") + 200]))
+    assert abs(total - _mp4_seconds(clip_dir / "teaser.mp4")) < 0.05, total
+    assert sum(p.stat().st_size for p in clip_dir.iterdir()) < 2.5e6
+    note = FALCON_NOTE.read_text(encoding="utf-8")
+    assert "剪自[项目页](https://lecar-lab.github.io/falcon-humanoid/)的视频" in note
 
 
 def _viral_demo(js: str):
