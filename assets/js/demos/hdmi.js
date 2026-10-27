@@ -108,9 +108,7 @@
     joints: [[-515,-951,783],[-523,-945,826],[-523,-945,826],[-492,-904,674],[-478,-858,638],[-435,-907,529],[-469,-931,340],[-552,-950,52],[-554,-953,35],[-517,-855,1078],[-513,-815,1077],[-490,-833,978],[-458,-849,904],[-360,-826,903],[-324,-817,907],[-279,-806,912],[-523,-1028,689],[-519,-1085,671],[-418,-1113,600],[-354,-1145,420],[-493,-1144,154],[-493,-1146,137],[-520,-1055,1069],[-516,-1095,1066],[-481,-1107,969],[-440,-1114,898],[-347,-1138,927],[-313,-1146,942],[-270,-1156,956]],
     wrist: [0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,0,0,0,0,0,0,0,0,0,0,1,1,1],
     pel: [-515,-951,783], yaw: -0.2336, box: [-39,-1034,724], boxYaw: 0.0143,
-    xy: [0.483,0.03], head: [0.969,0.245], cb: [[0.277,0.212,0.112],[0.343,-0.134,0.182]],
-    /* 箱子碰撞盒八个角投到机器人坐标系水平面上的凸包（这一帧箱子往机器人那边倾了约 20°，接触点在侧面的高处，所以不画成平放的矩形） */
-    hull: [[0.142,0.179],[0.197,-0.11],[0.325,-0.161],[0.511,-0.114],[0.455,0.175],[0.328,0.226]]
+    xy: [0.483,0.03], head: [0.969,0.245], cb: [[0.277,0.212,0.112],[0.343,-0.134,0.182]]
   };
   /* 默认站姿与动作缩放（hdmi-base.yaml 的 action_scaling；关节目标 = 默认 + 缩放 × 动作，手腕不在动作里，共 23 个动作） */
   var DEFAULT_KNEE = 0.669, KNEE_SCALE = 0.35;
@@ -1789,24 +1787,24 @@
 
     // ③ 物体：箱子的水平位置 2、朝向 2、两个接触点 6，都在机器人自己的坐标系里（原点在骨盆，只取水平朝向）
     var pC = group(s);
-    /* 俯视图（这个相机几乎是平视，地面被压扁，画在 3D 贴图上看不出方向）：原点在骨盆，x 朝右（前）、y 朝上（左），每米 380 px；
-       箱子画的是官方 suitcase-simplified.xml 碰撞盒（箱子坐标系里 x ∈ [−0.2, 0]、y ∈ [−0.15, 0.15]、z ∈ [0, 0.4]）从上往下看的轮廓；原点在离机器人远的那条底边中点 */
+    /* 俯视图（这个相机几乎是平视，地面被压扁，画在 3D 贴图上看不出方向）：原点在骨盆，x 朝右（前）、y 朝上（左），每米 380 px。
+       底图是同一台 G1 和行李箱的 3D 俯视渲染（仿真回放第 210 帧 = 第 4.70 s，正交相机朝下、按机器人的航向转正，和箭头同一套坐标，
+       2026-10-27 看片反馈：原先是椭圆和箱子的轮廓示意）；箱子原点在离机器人远的那条底边中点，所以绿点落在箱子顶面的远端底下 */
     var TO = [110, 250], TK = 380;
     function tv(x, y) { return [TO[0] + x * TK, TO[1] - y * TK]; }
     var hb = Math.atan2(OBS10.head[1], OBS10.head[0]), cb = Math.cos(hb), sb = Math.sin(hb);
+    var topImg = svgEl('image', { x: 69, y: 156, width: 238, height: 182, preserveAspectRatio: 'none' });
+    pC.appendChild(topImg);
+    var topOn = false;
     var frameC = group(pC);
-    var axX = arrow(frameC, C_MUTED, 2.2), axY = arrow(frameC, C_MUTED, 2.2);
-    axX.set(TO[0], TO[1], tv(0.66, 0)[0], TO[1], 9); axY.set(TO[0], TO[1], TO[0], tv(0, 0.4)[1], 9);
-    label(frameC, tv(0.66, 0)[0], TO[1] + 20, '$x$ 朝前', 'demo-x-ink2', 12, 'end');
+    var axX = arrow(frameC, C_ACCENT, 2.4), axY = arrow(frameC, C_ACCENT, 2.4);
+    axX.set(TO[0], TO[1], tv(0.75, 0)[0], TO[1], 9); axY.set(TO[0], TO[1], TO[0], tv(0, 0.4)[1], 9);
+    label(frameC, tv(0.75, 0)[0], TO[1] + 20, '$x$ 朝前', 'demo-x-ink2', 12, 'end');
     label(frameC, TO[0] + 10, tv(0, 0.4)[1] + 6, '$y$ 朝左', 'demo-x-ink2', 12, 'start');
-    var body = paint(svgEl('ellipse', { cx: TO[0], cy: TO[1], rx: 20, ry: 58, 'stroke-width': 1.4 }), C_SURFACE2, C_BORDER);
-    frameC.appendChild(body);
-    dotAt(frameC, TO[0], TO[1], 4.5, C_MUTED);
-    label(frameC, TO[0] - 26, TO[1] + 4, '骨盆', 'demo-x-mut', 11.5, 'end');
+    var pelC = dotAt(frameC, TO[0], TO[1], 4.5, C_ACCENT);
+    pelC.style.stroke = '#fff'; pelC.style.strokeWidth = '1.2px';
+    label(frameC, 64, TO[1] + 4, '骨盆', 'demo-x-mut', 11.5, 'end');
     var xyC = group(pC);
-    var boxPoly = paint(svgEl('path', { d: fmtPath(OBS10.hull.concat([OBS10.hull[0]]).map(function (q) { return tv(q[0], q[1]); })),
-      'stroke-width': 1.6, opacity: 0.85 }), C_SURFACE2, C_GOOD);
-    xyC.appendChild(boxPoly);
     var bO = tv(OBS10.xy[0], OBS10.xy[1]);
     hline(xyC, bO[0], bO[1], bO[0], TO[1], C_GOOD, 1.1, '3 3');
     var xyA = arrow(xyC, C_GOOD, 2.8);
@@ -1814,7 +1812,7 @@
     var xyFlow = flowSeg(xyC, C_GOOD, 2, 2.6, 30, true);
     xyFlow.at(0, [TO[0] + 6, TO[1]], bO, false); // 没画到这一块之前也别停在原点
     dotAt(xyC, bO[0], bO[1], 4.5, C_GOOD);
-    var headC = group(pC), hRef = arrow(headC, C_MUTED, 1.6, '3 3'), hBox = arrow(headC, C_GOOD, 2.6);
+    var headC = group(pC), hRef = arrow(headC, C_ACCENT, 1.6, '3 3'), hBox = arrow(headC, C_GOOD, 2.6);
     var hEnd = tv(OBS10.xy[0] + 0.2 * cb, OBS10.xy[1] + 0.2 * sb);
     hRef.set(bO[0], bO[1], bO[0] + 0.2 * TK, bO[1], 7); hBox.set(bO[0], bO[1], hEnd[0], hEnd[1], 9);
     var arcR = 0.13 * TK;
@@ -1824,9 +1822,12 @@
     var tgtP = OBS10.cb.map(function (c) { return tv(c[0], c[1]); });
     tgtP.forEach(function (q) { hline(conC, TO[0], TO[1], q[0], q[1], C_TGT, 1.4, '3 3'); });
     var tgtDots = tgtP.map(function (q) { var c = dotAt(conC, q[0], q[1], 5.5, C_TGT); c.style.stroke = '#fff'; c.style.strokeWidth = '1.2px'; return c; });
-    label(conC, tgtP[0][0] - 10, tgtP[0][1] - 4, '左', 'demo-x-ink2', 12, 'end');
-    label(conC, tgtP[1][0] + 8, tgtP[1][1] + 22, '右', 'demo-x-ink2', 12, 'start');
-    label(pC, 24, 366, '俯视图：机器人自己的坐标系（仿真回放第 4.70 s）', 'demo-x-mut', 11.5);
+    /* 「左」「右」放在底图外面，用短虚线引过去（字不压在图上） */
+    hline(conC, tgtP[0][0], tgtP[0][1] - 6, tgtP[0][0], 150, C_TGT, 1, '2 2');
+    label(conC, tgtP[0][0], 146, '左手', 'demo-x-ink2', 12, 'middle');
+    hline(conC, tgtP[1][0], tgtP[1][1] + 6, tgtP[1][0], 344, C_TGT, 1, '2 2');
+    label(conC, tgtP[1][0], 358, '右手', 'demo-x-ink2', 12, 'middle');
+    label(pC, 24, 382, '俯视图：G1 和箱子的 3D 渲染，机器人自己的坐标系（仿真回放第 4.70 s）', 'demo-x-mut', 11.5);
     function vec(v) { return '(' + v.map(function (x) { return (x < 0 ? '−' : '') + f2(Math.abs(x)); }).join(', ') + ')'; }
     var rowsC = [
       ['箱子的水平位置', 2, C_GOOD, vec(OBS10.xy) + ' m', 1.0],
@@ -1842,7 +1843,7 @@
     });
     var noteC1 = label(pC, RX, 244, '都在机器人自己的坐标系里：原点在骨盆，', 'demo-x-ink2', 12.5);
     var noteC2 = label(pC, RX, 266, '$x$ 朝前、$y$ 朝左，只跟着水平朝向', 'demo-x-ink2', 12.5);
-    var hintC = readHint(pC, RX, 296, '俯视图：绿箭头指到箱子原点，绿弧是夹角，黄点是接触点', 11.5, 372);
+    var hintC = readHint(pC, RX, 296, '蓝：机器人的 $x$、$y$；绿：箱子的位置和朝向；黄：接触点', 11.5, 372);
     label(pC, RX, 340, '数是我们按这一帧算的（训练时还加了噪声）', 'demo-x-mut', 11.5);
     var totC = label(pC, 776, 372, '$2 + 2 + 3 + 3 = 10$ 维', 'demo-x-ink', 14, 'end');
 
@@ -1851,6 +1852,7 @@
       setOpacity(hdr, on);
       if (on <= 0) { setOpacity(pA, 0); setOpacity(pB, 0); setOpacity(pC, 0); return; }
       if (!botOn) { bot10.put(cam10, EX_J); botOn = true; }
+      if (!topOn && t >= CC - 0.2 && G1_3D_BASE) { topImg.setAttribute('href', G1_3D_BASE + 'top_210.webp'); topOn = true; }
       var act = t < CB ? 0 : t < CC ? 1 : 2;
       hSegs.forEach(function (g, i) { setOpacity(g, i === act ? 1 : 0.3); });
       var oA = win(t, CA, CB), oB = win(t, CB, CC), oC = win(t, CC);
