@@ -119,7 +119,9 @@ def test_global_overview_window_shows_every_node_and_route():
     assert "drawEdges(map.svg, map.canvas, edges," in js
     assert "el.setAttribute('aria-modal', 'true');" in js
     assert "if (map && !map.el.hidden) closeMap();" in js
-    # 按窗口大小挑排法、缩放到放得下，也可以放大到 100% 滚动看。
+    # 按窗口大小挑排法、缩放到放得下；放大阅读时只上下滚，不横向拖动。
     assert "function fitMap()" in js and "map.zoomed = !map.zoomed;" in js
+    assert "if (width <= availW && (!read || width > read.width))" in js
+    assert "scale: availW / narrowest.width" in js
     # 触屏上第一次点只点亮路线，第二次才打开笔记。
     assert "map.pointerType !== 'touch' || map.armed === node.id" in js

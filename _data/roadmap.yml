@@ -17,7 +17,7 @@
 # label 是节点上的短名（英文界面）；label_zh 只在中文名不同时写。全称、简介、视频时长都在悬浮卡片里，
 # 按 url 从 _data/papers.json 查；节点上的 ▶（含配音讲解视频）也按 papers.json 的 video_seconds 自动加，不用手写。
 # url 是站内笔记地址（不带 baseurl），也可以写 https://arxiv.org/abs/… 直接打开原文。
-# 很长又没有空格的名字可以在中间放一个零宽空格（\u200B），窄屏上从那里折行。
+# 很长又没有空格的名字在中间放一个零宽空格（\u200B），窄屏和手机上的全局总览里从那里折行。
 
 - id: rl
   mark: "1"
@@ -33,7 +33,7 @@
       col: 1
       url: /papers/01_Foundational_RL/PPO_Proximal_Policy_Optimization/PPO_Proximal_Policy_Optimization.html
     - id: Transformer
-      label: Transformer
+      label: "Trans\u200Bformer"
       year: "2017"
       row: 1
       col: 2
@@ -46,7 +46,7 @@
       after: [PPO]
       url: /papers/01_Foundational_RL/AWR_Advantage_Weighted_Regression/AWR_Advantage_Weighted_Regression.html
     - id: DM
-      label: DeepMimic
+      label: "Deep\u200BMimic"
       year: "2018"
       row: 3
       col: 1

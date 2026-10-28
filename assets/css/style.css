@@ -1922,11 +1922,13 @@ details[open] > .roadmap-entry:hover .roadmap-entry-arrow { transform: rotate(-9
   outline-offset: 2px;
 }
 
+/* 中文名不在词中间断开（「1X 世界模 / 型」）；放不下的长词仍可从任意处折行。 */
 .tt-node-name {
   max-width: 100%;
   font-size: 14px;
   font-weight: 600;
   line-height: 20px;
+  word-break: keep-all;
   overflow-wrap: anywhere;
   hyphens: auto;
 }
@@ -2357,6 +2359,24 @@ body.tt-map-is-open {
 
   .tt-map-viewport {
     padding: 8px;
+  }
+
+  /* 手机上节点收窄，最宽的「全身控制」一系（5 列）放大阅读时正好约占满一屏宽。 */
+  .tt-map-canvas {
+    gap: 24px 16px;
+  }
+
+  .tt-cluster {
+    padding: 8px 8px 4px;
+  }
+
+  .tt-tree.tt-tree--map {
+    --tt-half: 36px;
+    row-gap: 24px;
+  }
+
+  .tt-tree--map .tt-node {
+    margin: 0 3px;
   }
 }
 

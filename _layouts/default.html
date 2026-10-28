@@ -270,6 +270,15 @@
   {%- else %}
   <script>window.katexEnabled = false;</script>
   {%- endif %}
+  {%- comment -%}
+    Mermaid 只有论文页用得上（paper.js 把笔记里的流程图代码块换成图）。首页、更新记录、
+    404 没有一张图，以前照样下载 mermaid（约 710 KB）和 DOMPurify：手机 4 倍降速下
+    首页因此多传约 717 KB、多跑约 0.95 s 脚本。这些页不再加载，下面的引导脚本见
+    mermaidScriptState === 'absent' 直接返回。
+  {%- endcomment -%}
+  {%- assign needs_mermaid = false -%}
+  {%- if page.layout == "paper" -%}{%- assign needs_mermaid = true -%}{%- endif -%}
+  {%- if needs_mermaid %}
   <!-- DOMPurify (pinned + SRI). Only mermaid's SVG goes through it, so it
        can wait for the parser like everything else below. -->
   <script defer
@@ -299,6 +308,7 @@
   <script src="{{ '/assets/js/mermaid-config.js' | relative_url }}{% if mermaid_config_js %}?v={{ mermaid_config_js.modified_time | date: '%s' }}{% endif %}" defer></script>
   {% assign mermaid_zoom_js = site.static_files | where: "path", "/assets/js/mermaid-zoom.js" | first %}
   <script src="{{ '/assets/js/mermaid-zoom.js' | relative_url }}{% if mermaid_zoom_js %}?v={{ mermaid_zoom_js.modified_time | date: '%s' }}{% endif %}" defer></script>
+  {%- endif %}
   <script>
     var mermaidRunPending = false;
 
@@ -307,14 +317,15 @@
        `error` fire on the element, and a watchdog covers a request that just
        hangs. Registered right here, in the very next script after the tag,
        so neither event can slip past. */
-    var mermaidScriptState = 'loading'; // 'loading' | 'ready' | 'failed'
+    var mermaidScriptState = 'loading'; // 'loading' | 'ready' | 'failed' | 'absent'
     var mermaidWaitTimer = null;
     var MERMAID_WAIT_TIMEOUT_MS = 20000;
 
     (function () {
       var tag = document.getElementById('mermaid-script');
       if (!tag) {
-        mermaidScriptState = 'failed';
+        // A page without diagrams (home, update log, 404) does not load mermaid.
+        mermaidScriptState = 'absent';
         return;
       }
       tag.addEventListener('load', function () {
@@ -345,6 +356,7 @@
     var mermaidInitQueued = false;
 
     function initMermaid(theme) {
+      if (mermaidScriptState === 'absent') return;
       var root = document.documentElement;
       if (document.readyState === 'loading') {
         // Called while the document is still parsing (the theme script at the

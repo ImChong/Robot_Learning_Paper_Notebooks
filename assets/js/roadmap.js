@@ -8,7 +8,7 @@
      #roadmap-node-details，由 _data/papers.json 生成）。触屏点按直接打开笔记，不弹卡片；
      卡片 pointer-events: none，不挡点击；
    - 全局总览：一个窗口里把 11 系按 map_order 排开，所有节点和所有箭头（含跨系的）一起画，
-     按窗口大小挑排法、缩放到放得下；悬停节点点亮它的整条前置路线（深色）和后续（浅色）。
+     按窗口大小挑排法、缩放到放得下，也可以放大阅读（只上下滚）；悬停节点点亮它的整条前置路线（深色）和后续（浅色）。
    路线图收在 <details> 里，收起时什么都不画，展开或换系时只画当前这一棵。 */
 (function () {
   'use strict';
@@ -744,11 +744,14 @@
 
     document.body.appendChild(el);
     map = { el: el, viewport: viewport, sizer: sizer, canvas: canvas, svg: svg, zoom: zoom, close: close,
-      fitScale: 1, scale: 1, zoomed: false, opener: null, pointerType: '', armed: null };
+      layouts: null, scale: 1, zoomed: false, opener: null, pointerType: '', armed: null };
   }
 
-  /* 按窗口大小挑一种排法：各系从左到右排、放不下就换行，试一遍不同的总宽度，
-     取缩放比例最大（同样大时取长宽比最接近窗口）的那一种。 */
+  /* 按窗口大小挑排法。各系从左到右排、放不下就换行，试一遍不同的总宽度，备好两种看法：
+     - 全貌：整张缩放到放得下，取缩放比例最大（同样大时长宽比最接近窗口）的排法；
+     - 放大阅读：不横向拖动。取宽度放得下的最宽排法、按原大显示，只上下滚；连最窄的
+       排法（一列）都放不下时（手机），缩到正好占满宽度。
+     手机上两种都比原大小：全貌的字只有 4–5px，只用来看结构；放大阅读时约 9–11px。 */
   function fitMap() {
     var canvas = map.canvas;
     var style = getComputedStyle(map.viewport);
@@ -767,36 +770,44 @@
     var canvasStyle = getComputedStyle(canvas);
     var pad = parseFloat(canvasStyle.paddingLeft) + parseFloat(canvasStyle.paddingRight);
     var gap = parseFloat(canvasStyle.columnGap) || 0;
-    var best = null;
-    for (var width = widest + pad; width <= total + pad + gap * clusters.length; width += 24) {
+    var whole = null;
+    var read = null;
+    var narrowest = null;
+    for (var width = Math.ceil(widest + pad); width <= total + pad + gap * clusters.length; width += 24) {
       canvas.style.width = width + 'px';
       var height = canvas.offsetHeight;
+      var layout = { width: width, height: height };
+      if (!narrowest) narrowest = layout;
       var scale = Math.min(1, availW / width, availH / height);
       var shape = Math.abs(Math.log((width / height) / (availW / availH)));
-      if (!best || scale > best.scale + 0.01 || (scale > best.scale - 0.01 && shape < best.shape)) {
-        best = { width: width, height: height, scale: scale, shape: shape };
+      if (!whole || scale > whole.scale + 0.01 || (scale > whole.scale - 0.01 && shape < whole.shape)) {
+        whole = { width: width, height: height, scale: scale, shape: shape };
       }
+      if (width <= availW && (!read || width > read.width)) read = { width: width, height: height, scale: 1 };
     }
-    canvas.style.width = best.width + 'px';
-    map.width = best.width;
-    map.height = canvas.offsetHeight;
-    map.fitScale = best.scale;
+    if (!read) read = { width: narrowest.width, height: narrowest.height, scale: availW / narrowest.width };
+    map.layouts = { whole: whole, read: read };
     applyScale();
   }
 
   function applyScale() {
-    var scale = map.zoomed ? 1 : map.fitScale;
+    var layout = map.zoomed ? map.layouts.read : map.layouts.whole;
+    var scale = layout.scale;
     map.scale = scale;
+    map.canvas.style.width = layout.width + 'px';
     map.canvas.style.transform = scale === 1 ? 'none' : 'scale(' + scale + ')';
-    map.sizer.style.width = Math.ceil(map.width * scale) + 'px';
-    map.sizer.style.height = Math.ceil(map.height * scale) + 'px';
-    var canZoom = map.fitScale < 0.98;
-    map.zoom.hidden = !canZoom;
-    var label = map.zoomed ? ['Fit to window', '适应窗口'] : ['Actual size', '放大到 100%'];
+    var height = map.canvas.offsetHeight;
+    map.sizer.style.width = Math.ceil(layout.width * scale) + 'px';
+    map.sizer.style.height = Math.ceil(height * scale) + 'px';
+    // 全貌已经是原大小时不需要放大。
+    map.zoom.hidden = map.layouts.whole.scale >= 0.98;
+    var label = map.zoomed ? ['Show everything', '缩小看全貌'] : ['Zoom in to read', '放大阅读'];
     map.zoom.setAttribute('data-en', label[0]);
     map.zoom.setAttribute('data-zh', label[1]);
     map.zoom.textContent = isZh() ? label[1] : label[0];
     map.el.classList.toggle('is-zoomed', map.zoomed);
+    map.viewport.scrollTop = 0;
+    map.viewport.scrollLeft = 0;
     hideCard();
     clearMapTrace();
     drawEdges(map.svg, map.canvas, edges, function (node) { return node.mapEl; }, scale);

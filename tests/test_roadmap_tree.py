@@ -138,13 +138,10 @@ def test_the_roadmap_has_no_cycles():
 
 
 def test_long_unbroken_labels_can_wrap_on_phones():
-    # 4 列以上的树在手机上节点只有约 58px 宽；没有空格的长名要在中间放零宽空格，
-    # 否则会被硬拆成「HugWB / C」。窄树的节点在手机上照样有 100px 宽，不受限。
-    for branch in BRANCHES:
-        if max(float(node["col"]) for node in branch["nodes"]) < 4:
-            continue
-        for node in branch["nodes"]:
-            _check_words(node)
+    # 手机上全局总览里每个节点只有约 64px 宽（4 列以上的树在分系视图里约 58px）；
+    # 没有空格的长名要在中间放零宽空格，否则会被硬拆成「Transfor / mer」「HugWB / C」。
+    for node in NODES.values():
+        _check_words(node)
 
 
 def _check_words(node: dict) -> None:
