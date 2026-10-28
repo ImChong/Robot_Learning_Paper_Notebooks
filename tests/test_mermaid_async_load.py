@@ -71,4 +71,4 @@ def test_dom_content_loaded_hook_does_not_render_twice():
     # paper.js (defer) may already have configured mermaid before the queued
     # DOMContentLoaded call fires; a second initialize() + run would re-render
     # every diagram and flash them.
-    assert "if (!window.roadmapMermaidConfigured) initMermaid(currentSiteTheme());" in INIT_BODY
+    assert "if (!window.mermaidConfigured) initMermaid(currentSiteTheme());" in INIT_BODY

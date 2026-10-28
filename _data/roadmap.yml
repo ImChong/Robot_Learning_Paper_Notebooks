@@ -1,0 +1,548 @@
+# 首页「推荐学习路线图」的天赋树（_includes/roadmap-tree.html 渲染，assets/js/roadmap.js 画连线）。
+#
+# 每一系（branch）是一棵小树，一次只显示一棵：
+#   mark   左侧 / 顶部标签上的编号；主线 1–9 按阅读顺序，支线用字母。
+#   track  main（主线）或 side（支线）。
+# 树里的节点摆在网格上：
+#   row    第几层，从 1 开始，越往下越进阶；
+#   col    第几列，从 1 开始，可以写 x.5 落在两列中间；同一层两个节点的 col 至少差 1，
+#          最多 5 列（手机上 5 列正好占满一行）。
+#   after    实线箭头：读这篇之前先读（前置）；
+#   related  虚线箭头：相关拓展 / 弱依赖。
+#   notes    给某条箭头加一句说明（悬浮卡片里显示），键是箭头起点的节点 id。
+# 箭头只能往下一层或同一层左右指；跨两层的箭头要保证中间那层让出路（tests/test_roadmap_tree.py 会查）。
+# 起点在别的系的箭头不画在树里：前置放在树上方的「前置」，指向别的系的放在树下方的「通往」。
+#
+# label 是节点上的短名（英文界面）；label_zh 只在中文名不同时写。全称、简介、视频时长都在悬浮卡片里，
+# 按 url 从 _data/papers.json 查；节点上的 ▶（含配音讲解视频）也按 papers.json 的 video_seconds 自动加，不用手写。
+# url 是站内笔记地址（不带 baseurl），也可以写 https://arxiv.org/abs/… 直接打开原文。
+# 很长又没有空格的名字可以在中间放一个零宽空格（\u200B），窄屏上从那里折行。
+
+- id: rl
+  mark: "1"
+  track: main
+  name: RL & Transformer
+  name_zh: RL 与 Transformer
+  nodes:
+    - id: PPO
+      label: PPO
+      year: "2017"
+      row: 1
+      col: 1
+      url: /papers/01_Foundational_RL/PPO_Proximal_Policy_Optimization/PPO_Proximal_Policy_Optimization.html
+    - id: Transformer
+      label: Transformer
+      year: "2017"
+      row: 1
+      col: 2
+      url: /papers/01_Foundational_RL/Transformer_Attention_Is_All_You_Need/Transformer_Attention_Is_All_You_Need.html
+    - id: AWR
+      label: AWR
+      year: "2019"
+      row: 2
+      col: 1
+      after: [PPO]
+      url: /papers/01_Foundational_RL/AWR_Advantage_Weighted_Regression/AWR_Advantage_Weighted_Regression.html
+    - id: DM
+      label: DeepMimic
+      year: "2018"
+      row: 3
+      col: 1
+      after: [AWR]
+      related: [GMR, ReActor]
+      url: /papers/01_Foundational_RL/DeepMimic_Example-Guided_Deep_RL_of_Physics-Based_Character_Skills/DeepMimic_Example-Guided_Deep_RL_of_Physics-Based_Character_Skills.html
+
+- id: style
+  mark: "2"
+  track: main
+  name: Imitation & Style
+  name_zh: 模仿与风格
+  nodes:
+    - id: AMP
+      label: AMP
+      year: "2021"
+      row: 1
+      col: 1.5
+      after: [DM]
+      related: [GMR]
+      url: /papers/01_Foundational_RL/AMP_Adversarial_Motion_Priors_for_Stylized_Physics-Based_Character_Control/AMP_Adversarial_Motion_Priors_for_Stylized_Physics-Based_Character_Control.html
+    - id: PHC
+      label: PHC
+      year: "2023"
+      row: 1
+      col: 3
+      after: [DM]
+      url: /papers/01_Foundational_RL/PHC_Perpetual_Humanoid_Control/PHC_Perpetual_Humanoid_Control.html
+    - id: ADD
+      label: ADD
+      year: "2025"
+      row: 2
+      col: 1
+      after: [AMP]
+      url: /papers/01_Foundational_RL/ADD_Adversarial_Differential_Discriminators/ADD_Adversarial_Differential_Discriminators.html
+    - id: SMP
+      label: SMP
+      year: "2025"
+      row: 2
+      col: 2
+      after: [AMP]
+      related: [DP]
+      url: /papers/01_Foundational_RL/SMP_Reusable_Score-Matching_Motion_Priors/SMP_Reusable_Score-Matching_Motion_Priors.html
+
+- id: skills
+  mark: "3"
+  track: main
+  name: Skills & Diffusion
+  name_zh: 技能与扩散
+  nodes:
+    - id: ASE
+      label: ASE
+      year: "2022"
+      row: 1
+      col: 1
+      after: [PHC]
+      url: /papers/01_Foundational_RL/ASE_Adversarial_Skill_Embeddings_for_Large-Scale_Motion_Control/ASE_Adversarial_Skill_Embeddings_for_Large-Scale_Motion_Control.html
+    - id: CALM
+      label: CALM
+      year: "2023"
+      row: 2
+      col: 1
+      after: [ASE]
+      url: /papers/01_Foundational_RL/CALM_Conditional_Adversarial_Latent_Models_for_Directable_Virtual_Characters/CALM_Conditional_Adversarial_Latent_Models_for_Directable_Virtual_Characters.html
+    - id: PULSE
+      label: PULSE
+      year: "2023"
+      row: 3
+      col: 1
+      after: [CALM]
+      url: /papers/01_Foundational_RL/PULSE_Physics-based_Universal_Latent_Space/PULSE_Physics-based_Universal_Latent_Space.html
+    - id: DP
+      label: Diffusion Policy
+      label_zh: 扩散策略
+      year: "2023"
+      row: 3
+      col: 2
+      after: [PULSE]
+      related: [Transformer]
+      url: /papers/01_Foundational_RL/Diffusion_Policy/Diffusion_Policy.html
+    - id: BM
+      label: "Beyond\u200BMimic"
+      year: "2025"
+      row: 4
+      col: 2
+      after: [DP]
+      related: [NMR, ASAP]
+      url: /papers/01_Foundational_RL/BeyondMimic/BeyondMimic.html
+
+- id: wbc
+  mark: "4"
+  track: main
+  name: Whole-Body Control
+  name_zh: 全身控制
+  nodes:
+    - id: H2O
+      label: H2O
+      year: "2024"
+      row: 1
+      col: 1
+      url: /papers/03_High_Impact_Selection/H2O_Learning_Human-to-Humanoid_Real-Time_Whole-Body_Teleoperation/H2O_Learning_Human-to-Humanoid_Real-Time_Whole-Body_Teleoperation.html
+    - id: OmniH2O
+      label: "Omni\u200BH2O"
+      year: "2024"
+      row: 1
+      col: 2
+      after: [H2O]
+      url: /papers/03_High_Impact_Selection/OmniH2O_Universal_Whole-Body_Teleoperation/OmniH2O_Universal_Whole-Body_Teleoperation.html
+    - id: MaskedMimic
+      label: "Masked\u200BMimic"
+      year: "2024"
+      row: 1
+      col: 3
+      url: /papers/03_High_Impact_Selection/MaskedMimic_Unified_Physics-Based_Character_Control_Through_Masked_Motion_Inpainting/MaskedMimic_Unified_Physics-Based_Character_Control_Through_Masked_Motion_Inpainting.html
+    - id: EWBC
+      label: ExBody
+      year: "2024"
+      row: 1
+      col: 4
+      after: [PULSE, BM]
+      url: /papers/03_High_Impact_Selection/Expressive_Whole-Body_Control_for_Humanoid_Robots/Expressive_Whole-Body_Control_for_Humanoid_Robots.html
+    - id: SONIC
+      label: SONIC
+      year: "2025"
+      row: 1
+      col: 5
+      after: [EWBC]
+      url: /papers/03_High_Impact_Selection/SONIC_Supersizing_Motion_Tracking_for_Natural_Humanoid_Control/SONIC_Supersizing_Motion_Tracking_for_Natural_Humanoid_Control.html
+    - id: TWIST
+      label: TWIST
+      year: "2025"
+      row: 2
+      col: 1
+      after: [H2O]
+      url: /papers/07_Teleoperation/TWIST__Teleoperated_Whole-Body_Imitation_System/TWIST__Teleoperated_Whole-Body_Imitation_System.html
+    - id: HOVER
+      label: HOVER
+      year: "2024"
+      row: 2
+      col: 3
+      after: [OmniH2O, MaskedMimic, EWBC]
+      related: [QuadTerrain]
+      url: /papers/03_High_Impact_Selection/HOVER_Versatile_Neural_Whole-Body_Controller/HOVER_Versatile_Neural_Whole-Body_Controller.html
+    - id: ExBody2
+      label: ExBody2
+      year: "2024"
+      row: 2
+      col: 4
+      after: [EWBC]
+      url: /papers/03_High_Impact_Selection/ExBody2_Advanced_Expressive_Whole-Body_Control/ExBody2_Advanced_Expressive_Whole-Body_Control.html
+    - id: HugWBC
+      label: "Hug\u200BWBC"
+      year: "2025"
+      row: 2
+      col: 5
+      after: [EWBC]
+      url: /papers/03_High_Impact_Selection/HugWBC_A_Unified_and_General_Humanoid_Whole-Body_Controller/HugWBC_A_Unified_and_General_Humanoid_Whole-Body_Controller.html
+    - id: TWIST2
+      label: TWIST2
+      year: "2025"
+      row: 3
+      col: 1
+      after: [TWIST]
+      url: /papers/07_Teleoperation/TWIST2__Scalable_Portable_and_Holistic_Humanoid_Data_Collection_System/TWIST2__Scalable_Portable_and_Holistic_Humanoid_Data_Collection_System.html
+
+- id: manip
+  mark: "5"
+  track: main
+  name: Manipulation
+  name_zh: 操作
+  nodes:
+    - id: ACT
+      label: ACT / ALOHA
+      year: "2023"
+      row: 1
+      col: 1
+      related: [Transformer]
+      url: /papers/03_High_Impact_Selection/ACT_Learning_Fine-Grained_Bimanual_Manipulation_with_Low-Cost_Hardware/ACT_Learning_Fine-Grained_Bimanual_Manipulation_with_Low-Cost_Hardware.html
+    - id: iDP3
+      label: iDP3
+      year: "2024"
+      row: 1
+      col: 2
+      after: [BM]
+      url: /papers/03_High_Impact_Selection/iDP3_Generalizable_Humanoid_Manipulation_with_3D_Diffusion_Policies/iDP3_Generalizable_Humanoid_Manipulation_with_3D_Diffusion_Policies.html
+    - id: EgoMimic
+      label: "Ego\u200BMimic"
+      year: "2024"
+      row: 2
+      col: 1.5
+      after: [ACT, iDP3]
+      url: /papers/06_Manipulation/EgoMimic_Scaling_Imitation_Learning_via_Egocentric_Video/EgoMimic_Scaling_Imitation_Learning_via_Egocentric_Video.html
+    - id: HumDex
+      label: HumDex
+      year: "2026"
+      row: 3
+      col: 1.5
+      after: [EgoMimic]
+      url: /papers/06_Manipulation/HumDex_Humanoid_Dexterous_Manipulation_Made_Easy/HumDex_Humanoid_Dexterous_Manipulation_Made_Easy.html
+
+- id: loco
+  mark: "6"
+  track: main
+  name: Loco-Manipulation
+  name_zh: 移动操作
+  nodes:
+    - id: HOMIE
+      label: HOMIE
+      year: "2025"
+      row: 1
+      col: 2.5
+      after: [HOVER, HugWBC, SONIC]
+      related: [OmniRetarget]
+      url: /papers/03_High_Impact_Selection/HOMIE_Humanoid_Loco-Manipulation_with_Isomorphic_Exoskeleton_Cockpit/HOMIE_Humanoid_Loco-Manipulation_with_Isomorphic_Exoskeleton_Cockpit.html
+    - id: HDMI
+      label: HDMI
+      year: "2025"
+      row: 1
+      col: 4
+      related: [DM]
+      url: /papers/04_Loco-Manipulation_and_WBC/HDMI__Learning_Interactive_Humanoid_Whole-Body_Control_from_Human_Videos/HDMI__Learning_Interactive_Humanoid_Whole-Body_Control_from_Human_Videos.html
+    - id: ULTRA
+      label: ULTRA
+      year: "2026"
+      row: 2
+      col: 1
+      after: [HOMIE]
+      url: /papers/04_Loco-Manipulation_and_WBC/ULTRA_Unified_Multimodal_Control_for_Autonomous_Humanoid_Whole-Body_Loco-Manipulation/ULTRA_Unified_Multimodal_Control_for_Autonomous_Humanoid_Whole-Body_Loco-Manipulation.html
+    - id: FALCON
+      label: FALCON
+      year: "2025"
+      row: 2
+      col: 2
+      related: [HOMIE]
+      url: /papers/04_Loco-Manipulation_and_WBC/FALCON__Learning_Force-Adaptive_Humanoid_Loco-Manipulation/FALCON__Learning_Force-Adaptive_Humanoid_Loco-Manipulation.html
+    - id: VIRAL
+      label: VIRAL
+      year: "2025"
+      row: 2
+      col: 3
+      after: [HOMIE]
+      url: /papers/04_Loco-Manipulation_and_WBC/VIRAL__Visual_Sim-to-Real_at_Scale_for_Humanoid_Loco-Manipulation/VIRAL__Visual_Sim-to-Real_at_Scale_for_Humanoid_Loco-Manipulation.html
+    - id: DoorMan
+      label: DoorMan
+      year: "2025"
+      row: 2
+      col: 4
+      after: [HOMIE]
+      url: /papers/04_Loco-Manipulation_and_WBC/Opening_the_Sim-to-Real_Door_for_Humanoid_Pixel-to-Action_Policy_Transfer/Opening_the_Sim-to-Real_Door_for_Humanoid_Pixel-to-Action_Policy_Transfer.html
+    - id: Psi
+      label: Ψ₀
+      year: "2026"
+      row: 3
+      col: 1
+      after: [ULTRA]
+      url: /papers/04_Loco-Manipulation_and_WBC/Ψ₀__An_Open_Foundation_Model_Towards_Universal_Humanoid_Loco-Manipulation/Ψ₀__An_Open_Foundation_Model_Towards_Universal_Humanoid_Loco-Manipulation.html
+    - id: CHIP
+      label: CHIP
+      year: "2025"
+      row: 3
+      col: 2
+      related: [FALCON]
+      url: /papers/04_Loco-Manipulation_and_WBC/CHIP__Adaptive_Compliance_for_Humanoid_Control_through_Hindsight_Perturbation/CHIP__Adaptive_Compliance_for_Humanoid_Control_through_Hindsight_Perturbation.html
+
+- id: wm
+  mark: "7"
+  track: main
+  name: World Models
+  name_zh: 世界模型
+  nodes:
+    - id: Dreamer
+      label: Dreamer / PlaNet
+      year: "2019"
+      row: 1
+      col: 1
+      url: /papers/03_High_Impact_Selection/Dreamer_Learning_Behaviors_by_Latent_Imagination/Dreamer_Learning_Behaviors_by_Latent_Imagination.html
+    - id: Cosmos
+      label: Cosmos
+      year: "2025"
+      row: 1
+      col: 2
+      after: [BM]
+      url: /papers/03_High_Impact_Selection/Cosmos_World_Foundation_Model_Platform_for_Physical_AI/Cosmos_World_Foundation_Model_Platform_for_Physical_AI.html
+    - id: HAIC
+      label: HAIC
+      year: "2026"
+      row: 1
+      col: 3
+      after: [ULTRA]
+      url: /papers/04_Loco-Manipulation_and_WBC/HAIC__Humanoid_Agile_Object_Interaction_Control_via_Dynamics-Aware_World_Model/HAIC__Humanoid_Agile_Object_Interaction_Control_via_Dynamics-Aware_World_Model.html
+    - id: UniPi
+      label: UniPi
+      year: "2023"
+      row: 2
+      col: 1
+      related: [Dreamer]
+      url: /papers/03_High_Impact_Selection/UniPi_Learning_Universal_Policies_via_Text-Guided_Video_Generation/UniPi_Learning_Universal_Policies_via_Text-Guided_Video_Generation.html
+    - id: DreamDojo
+      label: "Dream\u200BDojo"
+      year: "2026"
+      row: 2
+      col: 2
+      after: [Cosmos, HumDex]
+      url: /papers/06_Manipulation/DreamDojo_A_Generalist_Robot_World_Model_from_Large-Scale_Human_Videos/DreamDojo_A_Generalist_Robot_World_Model_from_Large-Scale_Human_Videos.html
+    - id: WM1X
+      label: 1X World Model
+      label_zh: 1X 世界模型
+      year: "2025"
+      row: 3
+      col: 2
+      after: [DreamDojo]
+      url: /papers/11_Simulation_Benchmark/Generative_World_Modelling_for_Humanoids__1X_World_Model_Challenge_Technical_Report/Generative_World_Modelling_for_Humanoids__1X_World_Model_Challenge_Technical_Report.html
+
+- id: wam
+  mark: "8"
+  track: main
+  name: World-Action Models
+  name_zh: 世界-动作模型
+  nodes:
+    - id: CosmosPolicy
+      label: Cosmos Policy
+      year: "2026"
+      row: 1
+      col: 1
+      after: [Cosmos]
+      related: [Dreamer]
+      url: /papers/03_High_Impact_Selection/Cosmos_Policy_Fine-Tuning_Video_Models_for_Visuomotor_Control_and_Planning/Cosmos_Policy_Fine-Tuning_Video_Models_for_Visuomotor_Control_and_Planning.html
+    - id: DreamZero
+      label: "Dream\u200BZero"
+      year: "2026"
+      row: 1
+      col: 2
+      after: [DreamDojo, WM1X]
+      url: /papers/06_Manipulation/DreamZero_World_Action_Models_are_Zero-shot_Policies/DreamZero_World_Action_Models_are_Zero-shot_Policies.html
+
+- id: fm
+  mark: "9"
+  track: main
+  name: Foundation Models
+  name_zh: 基础模型
+  nodes:
+    - id: OpenVLA
+      label: OpenVLA
+      year: "2024"
+      row: 1
+      col: 1.5
+      related: [Transformer]
+      url: /papers/03_High_Impact_Selection/OpenVLA_An_Open-Source_Vision-Language-Action_Model/OpenVLA_An_Open-Source_Vision-Language-Action_Model.html
+    - id: BFM
+      label: BFM
+      year: "2025"
+      row: 1
+      col: 3.5
+      after: [Psi, ULTRA, DreamZero]
+      url: /papers/03_High_Impact_Selection/Behavior_Foundation_Model_for_Humanoid_Robots/Behavior_Foundation_Model_for_Humanoid_Robots.html
+    - id: Pi0
+      label: π₀
+      year: "2024"
+      row: 2
+      col: 1.5
+      after: [OpenVLA, ACT, DP]
+      related: [Transformer]
+      url: /papers/03_High_Impact_Selection/Pi0_A_Vision-Language-Action_Flow_Model_for_General_Robot_Control/Pi0_A_Vision-Language-Action_Flow_Model_for_General_Robot_Control.html
+    - id: BFMZero
+      label: BFM-Zero
+      year: "2025"
+      row: 2
+      col: 3.5
+      related: [BFM, ASE]
+      url: /papers/04_Loco-Manipulation_and_WBC/BFM-Zero__A_Promptable_Behavioral_Foundation_Model_for_Humanoid_Control/BFM-Zero__A_Promptable_Behavioral_Foundation_Model_for_Humanoid_Control.html
+    - id: Pi05
+      label: π₀.₅
+      year: "2025"
+      row: 3
+      col: 1
+      after: [Pi0]
+      url: /papers/03_High_Impact_Selection/Pi05_A_Vision-Language-Action_Model_with_Open-World_Generalization/Pi05_A_Vision-Language-Action_Model_with_Open-World_Generalization.html
+    - id: VLA
+      label: GR00T N1
+      year: "2025"
+      row: 3
+      col: 2
+      after: [Pi0, HumDex, ULTRA, DreamZero]
+      url: /papers/03_High_Impact_Selection/GR00T_N1_Humanoid_Foundation_Model/GR00T_N1_Humanoid_Foundation_Model.html
+
+- id: data
+  mark: A
+  track: side
+  name: Data & Retargeting
+  name_zh: 数据与重定向
+  nodes:
+    - id: DataNode
+      label: AMASS / HumanML3D
+      year: 2019 / 2022
+      row: 1
+      col: 2
+      url: /papers/14_Human_Motion/HumanML3D/HumanML3D.html
+    - id: GMR
+      label: GMR
+      year: "2025"
+      row: 2
+      col: 2
+      after: [DataNode]
+      url: /papers/02_Motion_Retargeting/Retargeting_Matters__General_Motion_Retargeting_for_Humanoid_Motion_Tracking/Retargeting_Matters__General_Motion_Retargeting_for_Humanoid_Motion_Tracking.html
+    - id: OmniRetarget
+      label: "Omni\u200BRetarget"
+      year: "2025"
+      row: 3
+      col: 1
+      after: [GMR]
+      url: /papers/02_Motion_Retargeting/OmniRetarget__Interaction-Preserving_Data_Generation_for_Humanoid_Whole-Body_Loc/OmniRetarget__Interaction-Preserving_Data_Generation_for_Humanoid_Whole-Body_Loc.html
+    - id: NMR
+      label: NMR
+      year: "2026"
+      row: 3
+      col: 2
+      after: [GMR]
+      url: /papers/02_Motion_Retargeting/Make_Tracking_Easy__Neural_Motion_Retargeting_for_Humanoid_Whole-body_Control/Make_Tracking_Easy__Neural_Motion_Retargeting_for_Humanoid_Whole-body_Control.html
+    - id: ReActor
+      label: ReActor
+      year: "2026"
+      row: 3
+      col: 3
+      after: [GMR]
+      url: /papers/02_Motion_Retargeting/ReActor__Reinforcement_Learning_for_Physics-Aware_Motion_Retargeting/ReActor__Reinforcement_Learning_for_Physics-Aware_Motion_Retargeting.html
+
+- id: eng
+  mark: B
+  track: side
+  name: Engineering
+  name_zh: 工程实践
+  nodes:
+    - id: DR
+      label: Domain Rand.
+      label_zh: 域随机化
+      year: "2017"
+      row: 1
+      col: 2
+      url: /papers/01_Foundational_RL/Domain_Randomization_for_Transferring_Deep_Neural_Networks_from_Simulation_to_the_Real_World/Domain_Randomization_for_Transferring_Deep_Neural_Networks_from_Simulation_to_the_Real_World.html
+    - id: InEKF
+      label: InEKF
+      year: 2018 / 2019
+      row: 1
+      col: 4
+      url: /papers/09_State_Estimation/Contact-Aided_Invariant_EKF_for_Legged_Robots/Contact-Aided_Invariant_EKF_for_Legged_Robots.html
+    - id: QuadTerrain
+      label: Quadruped Terrain
+      label_zh: 四足地形
+      year: "2020"
+      row: 2
+      col: 1.5
+      after: [DR]
+      url: /papers/03_High_Impact_Selection/Learning_Quadrupedal_Locomotion_over_Challenging_Terrain/Learning_Quadrupedal_Locomotion_over_Challenging_Terrain.html
+    - id: LCP
+      label: LCP
+      year: "2024"
+      row: 2
+      col: 2.5
+      after: [DR]
+      url: /papers/01_Foundational_RL/LCP_Sim-to-Real_Action_Smoothing/LCP_Sim-to-Real_Action_Smoothing.html
+    - id: OP3Soccer
+      label: OP3 Soccer
+      label_zh: OP3 足球
+      year: "2023"
+      row: 3
+      col: 1
+      after: [QuadTerrain]
+      url: /papers/03_High_Impact_Selection/Learning_Agile_Soccer_Skills_for_a_Bipedal_Robot_with_Deep_RL/Learning_Agile_Soccer_Skills_for_a_Bipedal_Robot_with_Deep_RL.html
+    - id: HumanoidLoco
+      label: Humanoid Walking
+      label_zh: 人形行走
+      year: "2023"
+      row: 3
+      col: 2
+      after: [QuadTerrain]
+      url: /papers/03_High_Impact_Selection/Real-World_Humanoid_Locomotion_with_RL/Real-World_Humanoid_Locomotion_with_RL.html
+    - id: ASAP
+      label: ASAP
+      year: "2025"
+      row: 3
+      col: 3
+      after: [LCP]
+      url: /papers/03_High_Impact_Selection/ASAP_Aligning_Simulation_and_Real-World_Physics_for_Agile_Humanoid_Skills/ASAP_Aligning_Simulation_and_Real-World_Physics_for_Agile_Humanoid_Skills.html
+    - id: BerkeleyHumanoid
+      label: Berkeley Humanoid
+      year: "2024"
+      row: 3
+      col: 4
+      related: [LCP, InEKF]
+      notes:
+        LCP:
+          en: deployment platform
+          zh: 部署平台
+      url: /papers/12_Hardware_Design/Berkeley_Humanoid_A_Research_Platform_for_Learning-based_Control/Berkeley_Humanoid_A_Research_Platform_for_Learning-based_Control.html
+    - id: ToddlerBot
+      label: "Toddler\u200BBot"
+      year: "2025"
+      row: 4
+      col: 4
+      related: [BerkeleyHumanoid]
+      url: /papers/12_Hardware_Design/ToddlerBot_Open-Source_ML-Compatible_Humanoid_Platform_for_Loco-Manipulation/ToddlerBot_Open-Source_ML-Compatible_Humanoid_Platform_for_Loco-Manipulation.html

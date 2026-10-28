@@ -12,23 +12,26 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 LAYOUT = (ROOT / "_layouts" / "default.html").read_text(encoding="utf-8")
-ROADMAP_RENDER = LAYOUT.split("window.renderRoadmapMermaid = function(mode) {", 1)[1].split(
-    "function applyLang(mode) {", 1
-)[0]
+ROADMAP_JS = (ROOT / "assets" / "js" / "roadmap.js").read_text(encoding="utf-8")
+APPLY_LANG = LAYOUT.split("function applyLang(mode) {", 1)[1].split("function toggleLang()", 1)[0]
 RUN_MERMAID = LAYOUT.split("function runMermaid() {", 1)[1].split("function finishMermaidRun()", 1)[0]
 
 
-def test_folded_roadmap_is_not_drawn():
-    # Nobody can see the roadmap while its fold is closed: load, theme and
-    # language switches skip it, and opening the fold draws it.
-    assert "if (roadmapIsFolded(mermaidRoadmap)) return Promise.resolve();" in ROADMAP_RENDER
-    assert "fold.addEventListener('toggle', function() {" in ROADMAP_RENDER
-    assert "if (fold.open) window.renderRoadmapMermaid(" in ROADMAP_RENDER
+def test_roadmap_is_not_a_mermaid_diagram_any_more():
+    # The roadmap used to be one mermaid graph redrawn on every theme and
+    # language switch. It is plain HTML now (_includes/roadmap-tree.html), and
+    # a language switch only swaps text.
+    assert "renderRoadmapMermaid" not in LAYOUT
+    assert "roadmapGraphs" not in LAYOUT
+    assert "Roadmap" not in APPLY_LANG and "roadmap" not in APPLY_LANG
 
 
-def test_reopening_an_unchanged_roadmap_does_not_redraw_it():
-    assert "mermaidRoadmap.getAttribute('data-roadmap-key') === cacheKey" in ROADMAP_RENDER
-    assert ROADMAP_RENDER.count("mermaidRoadmap.setAttribute('data-roadmap-key', cacheKey);") == 2
+def test_folded_roadmap_draws_nothing():
+    # Nobody can see the roadmap while its fold is closed: its connectors are
+    # drawn when the fold opens, and only for the branch on screen.
+    draw = ROADMAP_JS.split("function draw(branch) {", 1)[1].split("\n  }\n", 1)[0]
+    assert "if (!branch || branch.panel.hidden || (fold && !fold.open)) return;" in draw
+    assert "if (fold.open) redraw();" in ROADMAP_JS
 
 
 def test_paper_diagrams_render_one_per_task_nearest_first():
