@@ -9,6 +9,8 @@
      卡片 pointer-events: none，不挡点击；
    - 全局总览：一个窗口里把 11 系按 map_order 排开，所有节点和所有箭头（含跨系的）一起画，
      按窗口大小挑排法、缩放到放得下，也可以放大阅读（只上下滚）；悬停节点点亮它的整条前置路线（深色）和后续（浅色）。
+     可以缩放、平移：平移走原生滚动（触屏有惯性，方向键、滚动条照常用），缩放用双指捏合、
+     Ctrl / ⌘ + 滚轮（触控板捏合）、+ / − 键或按钮，0 键复位；鼠标可以按住拖动。
    路线图收在 <details> 里，收起时什么都不画，展开或换系时只画当前这一棵。 */
 (function () {
   'use strict';
@@ -24,6 +26,9 @@
   var STORE_KEY = 'cl-roadmap-branch';
   var SVG_NS = 'http://www.w3.org/2000/svg';
   var ARROW = 7; // 箭头长度（px）
+  var MAX_ZOOM = 2; // 全局总览最多放大到 200%
+  var ZOOM_STEP = 1.25; // + / − 一次缩放的倍数
+  var PAN_KEYS = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] };
   var CIRCLED = { 1: '①', 2: '②', 3: '③', 4: '④', 5: '⑤', 6: '⑥', 7: '⑦', 8: '⑧', 9: '⑨', A: 'Ⓐ', B: 'Ⓑ' };
 
   function isZh() {
@@ -614,13 +619,45 @@
     heading.appendChild(bilingual('span', 'tt-map-count',
       total + ' papers · ' + branches.length + ' branches', total + ' 篇 · ' + branches.length + ' 系'));
     bar.appendChild(heading);
-    bar.appendChild(bilingual('p', 'tt-map-legend',
+    var legend = document.createElement('div');
+    legend.className = 'tt-map-legend';
+    legend.appendChild(bilingual('p', '',
       'Solid: prerequisite · dashed: related. Hover over a node (tap once on touch screens) to light up its route (dark) and what it leads to (light); click a branch name to open it.',
       '实线是前置，虚线是相关拓展。悬停节点（触屏上先点一下）：深色是它的前置路线，浅色是它通往的后续；点系名进入那一系。'));
-    var zoom = document.createElement('button');
-    zoom.type = 'button';
-    zoom.className = 'tt-map-zoom';
-    bar.appendChild(zoom);
+    legend.appendChild(bilingual('p', 'tt-map-hint tt-map-hint--mouse',
+      'Drag or scroll to pan; Ctrl / ⌘ + scroll, a trackpad pinch or + / − to zoom; 0 resets.',
+      '拖动或滚轮平移；Ctrl / ⌘ + 滚轮、触控板捏合或 + / − 键缩放，0 键复位。'));
+    legend.appendChild(bilingual('p', 'tt-map-hint tt-map-hint--touch',
+      'Swipe to pan, pinch with two fingers to zoom.',
+      '单指拖动平移，双指捏合缩放。'));
+    bar.appendChild(legend);
+
+    var controls = document.createElement('div');
+    controls.className = 'tt-map-controls';
+    controls.setAttribute('role', 'group');
+    setBilingualAria(controls, 'Zoom', '缩放');
+    function controlButton(className, icon, en, zh) {
+      var button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'tt-map-btn ' + className;
+      setBilingualAria(button, en, zh);
+      button.innerHTML = '<svg class="icon" aria-hidden="true" focusable="false"><use href="#i-' + icon + '"></use></svg>';
+      controls.appendChild(button);
+      return button;
+    }
+    var zoomOut = controlButton('tt-map-zoom-out', 'minus', 'Zoom out', '缩小');
+    var level = document.createElement('output');
+    level.className = 'tt-map-level';
+    level.setAttribute('aria-live', 'polite');
+    controls.appendChild(level);
+    var zoomIn = controlButton('tt-map-zoom-in', 'plus', 'Zoom in', '放大');
+    var reset = controlButton('tt-map-reset', 'frame-corners', 'Reset view (0)', '复位（0 键）');
+    var layoutButton = document.createElement('button');
+    layoutButton.type = 'button';
+    layoutButton.className = 'tt-map-btn tt-map-layout';
+    controls.appendChild(layoutButton);
+    bar.appendChild(controls);
+
     var close = document.createElement('button');
     close.type = 'button';
     close.className = 'tt-map-close';
@@ -631,6 +668,11 @@
 
     var viewport = document.createElement('div');
     viewport.className = 'tt-map-viewport';
+    viewport.tabIndex = 0;
+    viewport.setAttribute('role', 'group');
+    setBilingualAria(viewport,
+      'Overview map: arrow keys pan, + / − zoom, 0 resets',
+      '全局总览图：方向键平移，+ / − 缩放，0 键复位');
     panel.appendChild(viewport);
     var sizer = document.createElement('div');
     sizer.className = 'tt-map-sizer';
@@ -670,6 +712,7 @@
       if (inner) tree.removeChild(inner);
       Array.prototype.forEach.call(tree.querySelectorAll('.tt-node'), function (copy) {
         copy.removeAttribute('id');
+        copy.setAttribute('draggable', 'false');
         copy.classList.remove('is-path', 'is-flash');
         var node = nodes[copy.getAttribute('data-node')];
         node.mapEl = copy;
@@ -710,6 +753,13 @@
     el.addEventListener('pointerdown', function (e) {
       map.pointerType = e.pointerType;
     }, true);
+    // 拖动平移之后松手，不当成一次点击（不打开笔记、不切系）。
+    el.addEventListener('click', function (e) {
+      if (!map.suppressClick) return;
+      map.suppressClick = false;
+      e.preventDefault();
+      e.stopPropagation();
+    }, true);
     el.addEventListener('click', function (e) {
       if (e.target.closest('[data-map-close]')) closeMap();
       else if (!e.target.closest('.tt-node')) {
@@ -718,15 +768,21 @@
         hideCard();
       }
     });
-    zoom.addEventListener('click', function () {
-      map.zoomed = !map.zoomed;
-      applyScale();
+    zoomIn.addEventListener('click', function () { zoomTo(map.scale * ZOOM_STEP); });
+    zoomOut.addEventListener('click', function () { zoomTo(map.scale / ZOOM_STEP); });
+    reset.addEventListener('click', resetView);
+    layoutButton.addEventListener('click', function () {
+      map.reading = !map.reading;
+      setLayout();
     });
     // 窗口里 Tab 只在窗口内循环。
     panel.addEventListener('keydown', function (e) {
-      if (e.key !== 'Tab') return;
+      if (e.key !== 'Tab') {
+        onMapKey(e);
+        return;
+      }
       var focusables = Array.prototype.filter.call(
-        panel.querySelectorAll('a[href], button:not([hidden])'),
+        panel.querySelectorAll('a[href], button:not([hidden]):not([disabled]), [tabindex="0"]'),
         function (item) { return item.offsetParent !== null; }
       );
       if (!focusables.length) return;
@@ -743,8 +799,11 @@
     viewport.addEventListener('scroll', hideCard);
 
     document.body.appendChild(el);
-    map = { el: el, viewport: viewport, sizer: sizer, canvas: canvas, svg: svg, zoom: zoom, close: close,
-      layouts: null, scale: 1, zoomed: false, opener: null, pointerType: '', armed: null };
+    map = { el: el, viewport: viewport, sizer: sizer, canvas: canvas, svg: svg, close: close,
+      zoomIn: zoomIn, zoomOut: zoomOut, level: level, layoutButton: layoutButton,
+      layouts: null, reading: false, width: 0, height: 0, base: 1, minScale: 1, scale: 1,
+      opener: null, pointerType: '', armed: null, suppressClick: false };
+    bindPanZoom();
   }
 
   /* 按窗口大小挑排法。各系从左到右排、放不下就换行，试一遍不同的总宽度，备好两种看法：
@@ -787,30 +846,203 @@
     }
     if (!read) read = { width: narrowest.width, height: narrowest.height, scale: availW / narrowest.width };
     map.layouts = { whole: whole, read: read };
-    applyScale();
+    map.fittedWidth = window.innerWidth;
+    setLayout();
   }
 
-  function applyScale() {
-    var layout = map.zoomed ? map.layouts.read : map.layouts.whole;
-    var scale = layout.scale;
-    map.scale = scale;
+  function availableSize() {
+    var style = getComputedStyle(map.viewport);
+    return {
+      w: map.viewport.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight),
+      h: map.viewport.clientHeight - parseFloat(style.paddingTop) - parseFloat(style.paddingBottom)
+    };
+  }
+
+  /* 换排法（打开窗口、改窗口大小、全貌 ↔ 放大阅读）：重排、重画箭头，缩放回到这种排法的起点。
+     箭头画在画布自己的坐标里，之后缩放、平移都不用重画。 */
+  function setLayout() {
+    var layout = map.reading ? map.layouts.read : map.layouts.whole;
+    var avail = availableSize();
+    map.canvas.style.transform = 'none';
     map.canvas.style.width = layout.width + 'px';
-    map.canvas.style.transform = scale === 1 ? 'none' : 'scale(' + scale + ')';
-    var height = map.canvas.offsetHeight;
-    map.sizer.style.width = Math.ceil(layout.width * scale) + 'px';
-    map.sizer.style.height = Math.ceil(height * scale) + 'px';
-    // 全貌已经是原大小时不需要放大。
-    map.zoom.hidden = map.layouts.whole.scale >= 0.98;
-    var label = map.zoomed ? ['Show everything', '缩小看全貌'] : ['Zoom in to read', '放大阅读'];
-    map.zoom.setAttribute('data-en', label[0]);
-    map.zoom.setAttribute('data-zh', label[1]);
-    map.zoom.textContent = isZh() ? label[1] : label[0];
-    map.el.classList.toggle('is-zoomed', map.zoomed);
-    map.viewport.scrollTop = 0;
-    map.viewport.scrollLeft = 0;
+    map.width = layout.width;
+    map.height = map.canvas.offsetHeight;
+    map.base = layout.scale;
+    // 最多缩到整张放得下，最多放大到 MAX_ZOOM。
+    map.minScale = Math.min(map.base, avail.w / map.width, avail.h / map.height);
+    map.layoutButton.hidden = map.layouts.whole.scale >= 0.98;
+    var label = map.reading ? ['Show everything', '缩小看全貌'] : ['Zoom in to read', '放大阅读'];
+    map.layoutButton.setAttribute('data-en', label[0]);
+    map.layoutButton.setAttribute('data-zh', label[1]);
+    map.layoutButton.textContent = isZh() ? label[1] : label[0];
+    map.el.classList.toggle('is-reading', map.reading);
     hideCard();
     clearMapTrace();
-    drawEdges(map.svg, map.canvas, edges, function (node) { return node.mapEl; }, scale);
+    setScale(map.base);
+    map.viewport.scrollTop = 0;
+    map.viewport.scrollLeft = 0;
+    drawEdges(map.svg, map.canvas, edges, function (node) { return node.mapEl; }, map.scale);
+  }
+
+  /* 只改缩放：画布按左上角缩放，外面的 sizer 跟着改大小，滚动范围就是缩放后的画布。 */
+  function setScale(scale) {
+    map.scale = scale;
+    map.canvas.style.transform = scale === 1 ? 'none' : 'scale(' + scale + ')';
+    map.sizer.style.width = Math.ceil(map.width * scale) + 'px';
+    map.sizer.style.height = Math.ceil(map.height * scale) + 'px';
+    map.level.textContent = Math.round(scale * 100) + '%';
+    map.zoomOut.disabled = scale <= map.minScale + 0.001;
+    map.zoomIn.disabled = scale >= MAX_ZOOM - 0.001;
+  }
+
+  function clampScale(scale) {
+    return Math.max(map.minScale, Math.min(MAX_ZOOM, scale));
+  }
+
+  /* 缩放后把画布上的 (x, y) 挪回屏幕上的 (clientX, clientY)，捏合、滚轮缩放时手指 / 光标下的那一点不动。 */
+  function keepPoint(x, y, clientX, clientY) {
+    var frame = map.canvas.getBoundingClientRect();
+    map.viewport.scrollLeft += frame.left + x * map.scale - clientX;
+    map.viewport.scrollTop += frame.top + y * map.scale - clientY;
+  }
+
+  function zoomTo(scale, clientX, clientY) {
+    scale = clampScale(scale);
+    if (Math.abs(scale - map.scale) < 0.0005) return;
+    if (clientX == null) {
+      var box = map.viewport.getBoundingClientRect();
+      clientX = box.left + box.width / 2;
+      clientY = box.top + box.height / 2;
+    }
+    var frame = map.canvas.getBoundingClientRect();
+    var x = (clientX - frame.left) / map.scale;
+    var y = (clientY - frame.top) / map.scale;
+    hideCard();
+    setScale(scale);
+    keepPoint(x, y, clientX, clientY);
+  }
+
+  function resetView() {
+    hideCard();
+    setScale(map.base);
+    map.viewport.scrollTop = 0;
+    map.viewport.scrollLeft = 0;
+  }
+
+  /* 键盘：+ / − 以视窗中心缩放，0 复位；方向键在视窗或图里的节点上时平移（Shift 一次多走）。
+     带 Ctrl / ⌘ / Alt 的组合键留给浏览器（Ctrl + = 是页面缩放）。 */
+  function onMapKey(e) {
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    var key = e.key;
+    if (key === '+' || key === '=') {
+      zoomTo(map.scale * ZOOM_STEP);
+    } else if (key === '-' || key === '_') {
+      zoomTo(map.scale / ZOOM_STEP);
+    } else if (key === '0') {
+      resetView();
+    } else if (PAN_KEYS[key] && map.viewport.contains(e.target)) {
+      var step = e.shiftKey ? 240 : 60;
+      map.viewport.scrollLeft += PAN_KEYS[key][0] * step;
+      map.viewport.scrollTop += PAN_KEYS[key][1] * step;
+    } else {
+      return;
+    }
+    e.preventDefault();
+  }
+
+  /* 鼠标 / 触控笔按住拖动平移；触屏单指交给原生滚动（有惯性），双指捏合在这里算缩放。 */
+  function bindPanZoom() {
+    var viewport = map.viewport;
+    var drag = null;
+    var pinch = null;
+    var gesture = null;
+
+    viewport.addEventListener('pointerdown', function (e) {
+      if (e.pointerType === 'touch' || e.button !== 0) return;
+      drag = { id: e.pointerId, x: e.clientX, y: e.clientY, left: viewport.scrollLeft, top: viewport.scrollTop, moved: false };
+    });
+    viewport.addEventListener('pointermove', function (e) {
+      if (!drag || e.pointerId !== drag.id) return;
+      var dx = e.clientX - drag.x;
+      var dy = e.clientY - drag.y;
+      if (!drag.moved) {
+        if (Math.abs(dx) + Math.abs(dy) < 5) return;
+        drag.moved = true;
+        viewport.setPointerCapture(e.pointerId);
+        viewport.classList.add('is-dragging');
+        hideCard();
+        clearMapTrace();
+      }
+      viewport.scrollLeft = drag.left - dx;
+      viewport.scrollTop = drag.top - dy;
+    });
+    function endDrag(e) {
+      if (!drag || e.pointerId !== drag.id) return;
+      if (drag.moved) {
+        map.suppressClick = true;
+        setTimeout(function () { map.suppressClick = false; }, 0);
+        viewport.classList.remove('is-dragging');
+      }
+      drag = null;
+    }
+    viewport.addEventListener('pointerup', endDrag);
+    viewport.addEventListener('pointercancel', endDrag);
+
+    function touchCenter(touches) {
+      var a = touches[0];
+      var b = touches[1];
+      return {
+        x: (a.clientX + b.clientX) / 2,
+        y: (a.clientY + b.clientY) / 2,
+        d: Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY)
+      };
+    }
+    viewport.addEventListener('touchstart', function (e) {
+      if (e.touches.length !== 2) return;
+      var c = touchCenter(e.touches);
+      var frame = map.canvas.getBoundingClientRect();
+      pinch = { d: c.d, scale: map.scale, x: (c.x - frame.left) / map.scale, y: (c.y - frame.top) / map.scale };
+      hideCard();
+      clearMapTrace();
+    }, { passive: true });
+    viewport.addEventListener('touchmove', function (e) {
+      if (!pinch || e.touches.length !== 2 || pinch.d < 1) return;
+      e.preventDefault();
+      var c = touchCenter(e.touches);
+      setScale(clampScale(pinch.scale * c.d / pinch.d));
+      // 两指一起挪也跟着平移：始终让捏合开始时两指中间的那一点留在两指中间。
+      keepPoint(pinch.x, pinch.y, c.x, c.y);
+    }, { passive: false });
+    function endPinch(e) {
+      if (e.touches.length < 2) pinch = null;
+    }
+    viewport.addEventListener('touchend', endPinch);
+    viewport.addEventListener('touchcancel', endPinch);
+
+    // Ctrl / ⌘ + 滚轮缩放（Chrome、Firefox 的触控板捏合也是这样报的）；不按修饰键就是原生滚动平移。
+    viewport.addEventListener('wheel', function (e) {
+      if (!e.ctrlKey && !e.metaKey) return;
+      e.preventDefault();
+      var delta = e.deltaY;
+      if (e.deltaMode === 1) delta *= 16;
+      else if (e.deltaMode === 2) delta *= viewport.clientHeight;
+      zoomTo(map.scale * Math.exp(-delta * 0.002), e.clientX, e.clientY);
+    }, { passive: false });
+
+    // Safari 的触控板捏合发的是 gesture 事件；iOS 上同时还有 touch 事件，交给上面的捏合处理，
+    // 这里只拦住整页缩放。
+    map.el.addEventListener('gesturestart', function (e) {
+      e.preventDefault();
+      gesture = pinch ? null : { scale: map.scale };
+    });
+    map.el.addEventListener('gesturechange', function (e) {
+      e.preventDefault();
+      if (gesture && !pinch) zoomTo(gesture.scale * e.scale, e.clientX, e.clientY);
+    });
+    map.el.addEventListener('gestureend', function (e) {
+      e.preventDefault();
+      gesture = null;
+    });
   }
 
   function traceMap(start) {
@@ -861,7 +1093,7 @@
   function openMap() {
     if (!map) buildMap();
     map.opener = document.activeElement;
-    map.zoomed = false;
+    map.reading = false;
     map.el.hidden = false;
     document.body.classList.add('tt-map-is-open');
     hideCard();
@@ -935,12 +1167,15 @@
 
   if (mapButton) mapButton.addEventListener('click', openMap);
   var refitQueued = false;
+  // 手机浏览器的地址栏收起 / 展开也会触发 resize（只变高度）：用户已经缩放或拖动过就别把视图复位。
   window.addEventListener('resize', function () {
     if (refitQueued || !map || map.el.hidden) return;
     refitQueued = true;
     requestAnimationFrame(function () {
       refitQueued = false;
-      refitMap();
+      var widthChanged = window.innerWidth !== map.fittedWidth;
+      var untouched = map.scale === map.base && !map.viewport.scrollLeft && !map.viewport.scrollTop;
+      if (widthChanged || untouched) refitMap();
     });
   });
 
