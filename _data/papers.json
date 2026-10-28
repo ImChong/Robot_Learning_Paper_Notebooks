@@ -1618,7 +1618,7 @@
         "has_open_source": true,
         "summary_zh": "VIRAL 是一份视觉 sim-to-real 的完整配方，不是新算法。任务是人形的移动操作：走到桌前、把手里的瓶子放进托盘、抓起桌上另一只瓶子、转身，循环往复。",
         "explainer_scenes": 18,
-        "video_seconds": 1353,
+        "video_seconds": 1362,
         "published_date_zh": "2025年11月",
         "published_date_en": "Nov 2025",
         "zhname": "VIRAL：大规模视觉 Sim-to-Real 的人形移动操作",
