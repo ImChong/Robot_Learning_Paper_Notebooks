@@ -6,7 +6,9 @@
      标签，点一下切到那一系并闪一下那个节点；
    - 悬停 / 聚焦节点：点亮它在这一系里的整条前置链，弹出论文详情卡片（数据来自
      #roadmap-node-details，由 _data/papers.json 生成）。触屏点按直接打开笔记，不弹卡片；
-     卡片 pointer-events: none，不挡点击。
+     卡片 pointer-events: none，不挡点击；
+   - 全局总览：一个窗口里把 11 系按 map_order 排开，所有节点和所有箭头（含跨系的）一起画，
+     按窗口大小挑排法、缩放到放得下；悬停节点点亮它的整条前置路线（深色）和后续（浅色）。
    路线图收在 <details> 里，收起时什么都不画，展开或换系时只画当前这一棵。 */
 (function () {
   'use strict';
@@ -16,7 +18,9 @@
   if (!container) return;
 
   var fold = container.closest('details');
+  var side = container.querySelector('.tt-side');
   var rail = container.querySelector('.tt-rail');
+  var mapButton = container.querySelector('.tt-map-open');
   var STORE_KEY = 'cl-roadmap-branch';
   var SVG_NS = 'http://www.w3.org/2000/svg';
   var ARROW = 7; // 箭头长度（px）
@@ -39,6 +43,7 @@
     var branch = {
       id: panel.getAttribute('data-branch'),
       mark: panel.getAttribute('data-mark'),
+      mapOrder: Number(panel.getAttribute('data-map-order')) || 0,
       panel: panel,
       tab: document.getElementById('tt-tab-' + panel.getAttribute('data-branch')),
       tree: panel.querySelector('.tt-tree'),
@@ -78,7 +83,7 @@
     var node = nodes[id];
     [['after', node.after], ['related', node.related]].forEach(function (pair) {
       pair[1].forEach(function (from) {
-        if (nodes[from]) edges.push({ from: nodes[from], to: node, kind: pair[0] });
+        if (nodes[from]) edges.push({ from: nodes[from], to: node, kind: pair[0], cross: nodes[from].branch !== node.branch });
       });
     });
   });
@@ -192,12 +197,17 @@
     host.hidden = false;
   }
 
-  /* ─── 画连线 ─── */
-  function boxOf(el, origin) {
+  /* ─── 画连线 ───
+     树里和总览共用一套：箭头从起点那一侧的中点出发，按终点相对起点的位置落在终点的
+     顶边（在下方）、左边 / 右边（在同一高度的两侧）或底边（在上方）；落在同一边的几条
+     箭头按起点先后错开落点。曲线两端的切线垂直于所在的边，箭头沿切线方向。 */
+  function boxOf(el, origin, scale) {
     var r = el.getBoundingClientRect();
-    var left = r.left - origin.left;
-    var top = r.top - origin.top;
-    return { l: left, t: top, r: left + r.width, b: top + r.height, cx: left + r.width / 2, cy: top + r.height / 2 };
+    var left = (r.left - origin.left) / scale;
+    var top = (r.top - origin.top) / scale;
+    var width = r.width / scale;
+    var height = r.height / scale;
+    return { l: left, t: top, r: left + width, b: top + height, cx: left + width / 2, cy: top + height / 2 };
   }
 
   function svgEl(tag, attrs) {
@@ -206,79 +216,106 @@
     return el;
   }
 
-  function arrowHead(x, y, dir) {
-    var a = ARROW;
-    var w = 4.5;
-    if (dir === 'down') return 'M' + (x - w) + ' ' + (y - a) + 'L' + x + ' ' + y + 'L' + (x + w) + ' ' + (y - a) + 'Z';
-    if (dir === 'right') return 'M' + (x - a) + ' ' + (y - w) + 'L' + x + ' ' + y + 'L' + (x - a) + ' ' + (y + w) + 'Z';
-    return 'M' + (x + a) + ' ' + (y - w) + 'L' + x + ' ' + y + 'L' + (x + a) + ' ' + (y + w) + 'Z';
-  }
-
   function round(n) {
     return Math.round(n * 10) / 10;
   }
 
-  function draw(branch) {
-    if (!branch || branch.panel.hidden || (fold && !fold.open)) return;
-    var origin = branch.tree.getBoundingClientRect();
-    if (!origin.width) return;
+  function pt(x, y) {
+    return round(x) + ' ' + round(y);
+  }
+
+  function arrivalSide(s, t) {
+    if (t.t >= s.b + 2) return 'top';
+    if (t.l >= s.r + 2) return 'left';
+    if (t.r <= s.l - 2) return 'right';
+    return 'bottom';
+  }
+
+  function placeLandings(list, boxes) {
+    var groups = {};
+    list.forEach(function (edge) {
+      edge.side = arrivalSide(boxes[edge.from.id], boxes[edge.to.id]);
+      var key = edge.to.id + ':' + edge.side;
+      (groups[key] = groups[key] || []).push(edge);
+    });
+    Object.keys(groups).forEach(function (key) {
+      var group = groups[key];
+      var target = boxes[group[0].to.id];
+      var across = group[0].side === 'top' || group[0].side === 'bottom';
+      group.sort(function (a, b) {
+        var sa = boxes[a.from.id];
+        var sb = boxes[b.from.id];
+        return across ? sa.cx - sb.cx : sa.cy - sb.cy;
+      });
+      var length = across ? target.r - target.l : target.b - target.t;
+      var step = Math.min(14, length / (group.length + 1));
+      group.forEach(function (edge, i) { edge.offset = (i - (group.length - 1) / 2) * step; });
+    });
+  }
+
+  function edgeShape(edge, boxes) {
+    var s = boxes[edge.from.id];
+    var t = boxes[edge.to.id];
+    var o = edge.offset || 0;
+    var x0, y0, x1, y1, dx, dy;
+    if (edge.side === 'top') {
+      x0 = s.cx; y0 = s.b; x1 = t.cx + o; y1 = t.t; dx = 0; dy = 1;
+    } else if (edge.side === 'bottom') {
+      x0 = s.cx; y0 = s.t; x1 = t.cx + o; y1 = t.b; dx = 0; dy = -1;
+    } else if (edge.side === 'left') {
+      x0 = s.r; y0 = s.cy; x1 = t.l; y1 = t.cy + o; dx = 1; dy = 0;
+    } else {
+      x0 = s.l; y0 = s.cy; x1 = t.r; y1 = t.cy + o; dx = -1; dy = 0;
+    }
+    var ex = x1 - dx * ARROW;
+    var ey = y1 - dy * ARROW;
+    var line;
+    if ((dx === 0 && Math.abs(ex - x0) < 1) || (dy === 0 && Math.abs(ey - y0) < 1)) {
+      line = 'M' + pt(x0, y0) + 'L' + pt(ex, ey);
+    } else {
+      var k = Math.max(12, Math.abs(dx ? ex - x0 : ey - y0) / 2);
+      line = 'M' + pt(x0, y0) + 'C' + pt(x0 + dx * k, y0 + dy * k) + ' ' + pt(ex - dx * k, ey - dy * k) + ' ' + pt(ex, ey);
+    }
+    var w = 4.5;
+    var head = 'M' + pt(ex - dy * w, ey + dx * w) + 'L' + pt(x1, y1) + 'L' + pt(ex + dy * w, ey - dx * w) + 'Z';
+    return { line: line, head: head };
+  }
+
+  /* 把 list 里的箭头画进 svg；origin 是 svg 铺满的那个元素，scale 是它的 CSS 缩放。 */
+  function drawEdges(svg, origin, list, elementOf, scale) {
+    var frame = origin.getBoundingClientRect();
+    if (!frame.width) return false;
     var boxes = {};
-    branch.nodes.forEach(function (node) { boxes[node.id] = boxOf(node.el, origin); });
-
-    // 多条箭头指向同一个节点时，按起点从左到右在节点顶边上错开落点。
-    var landing = {};
-    branch.edges.forEach(function (edge) {
-      if (edge.from.row === edge.to.row) return;
-      (landing[edge.to.id] = landing[edge.to.id] || []).push(edge);
+    list.forEach(function (edge) {
+      [edge.from, edge.to].forEach(function (node) {
+        if (!boxes[node.id]) boxes[node.id] = boxOf(elementOf(node), frame, scale);
+      });
     });
-    Object.keys(landing).forEach(function (id) {
-      var list = landing[id].sort(function (a, b) { return boxes[a.from.id].cx - boxes[b.from.id].cx; });
-      var box = boxes[id];
-      var step = Math.min(14, (box.r - box.l) / (list.length + 1));
-      list.forEach(function (edge, i) { edge.tx = box.cx + (i - (list.length - 1) / 2) * step; });
-    });
-
-    var svg = branch.svg;
-    svg.setAttribute('width', round(origin.width));
-    svg.setAttribute('height', round(origin.height));
-    svg.setAttribute('viewBox', '0 0 ' + round(origin.width) + ' ' + round(origin.height));
+    placeLandings(list, boxes);
+    var width = round(frame.width / scale);
+    var height = round(frame.height / scale);
+    svg.setAttribute('width', width);
+    svg.setAttribute('height', height);
+    svg.setAttribute('viewBox', '0 0 ' + width + ' ' + height);
     svg.textContent = '';
-    branch.edges.forEach(function (edge) {
-      var s = boxes[edge.from.id];
-      var t = boxes[edge.to.id];
-      var line;
-      var head;
-      if (edge.from.row === edge.to.row) {
-        var dir = t.cx > s.cx ? 1 : -1;
-        var y = (s.cy + t.cy) / 2;
-        var x0 = dir > 0 ? s.r : s.l;
-        var x1 = dir > 0 ? t.l : t.r;
-        line = 'M' + round(x0) + ' ' + round(y) + 'H' + round(x1 - dir * ARROW);
-        head = arrowHead(round(x1), round(y), dir > 0 ? 'right' : 'left');
-      } else {
-        var sx = round(s.cx);
-        var sy = round(s.b);
-        var tx = round(edge.tx);
-        var ty = round(t.t);
-        var end = ty - ARROW;
-        if (Math.abs(tx - sx) < 1) {
-          line = 'M' + sx + ' ' + sy + 'V' + end;
-        } else {
-          var mid = round((sy + end) / 2);
-          line = 'M' + sx + ' ' + sy + 'C' + sx + ' ' + mid + ' ' + tx + ' ' + mid + ' ' + tx + ' ' + end;
-        }
-        head = arrowHead(tx, ty, 'down');
-      }
+    // 跨系的箭头先画，压在系内箭头下面。
+    list.slice().sort(function (a, b) { return (b.cross ? 1 : 0) - (a.cross ? 1 : 0); }).forEach(function (edge) {
+      var shape = edgeShape(edge, boxes);
       var group = svgEl('g', {
-        class: 'tt-edge' + (edge.kind === 'related' ? ' is-related' : ''),
+        class: 'tt-edge' + (edge.kind === 'related' ? ' is-related' : '') + (edge.cross ? ' is-cross' : ''),
         'data-from': edge.from.id,
         'data-to': edge.to.id
       });
-      group.appendChild(svgEl('path', { class: 'tt-edge-line', d: line }));
-      group.appendChild(svgEl('path', { class: 'tt-edge-head', d: head }));
+      group.appendChild(svgEl('path', { class: 'tt-edge-line', d: shape.line }));
+      group.appendChild(svgEl('path', { class: 'tt-edge-head', d: shape.head }));
       svg.appendChild(group);
     });
-    branch.drawn = true;
+    return true;
+  }
+
+  function draw(branch) {
+    if (!branch || branch.panel.hidden || (fold && !fold.open)) return;
+    drawEdges(branch.svg, branch.tree, branch.edges, function (node) { return node.el; }, 1);
   }
 
   /* ─── 高亮前置链 ─── */
@@ -366,8 +403,8 @@
         select(next.getAttribute('data-branch'), { focus: true });
       });
     });
-    rail.hidden = false;
   }
+  if (side) side.hidden = false;
 
   /* ─── 节点悬浮卡片 ─── */
   var card;
@@ -474,10 +511,10 @@
       : (zh ? '点击阅读笔记 →' : 'Click to read the note →'));
   }
 
-  function placeCard(node) {
+  function placeCard(el) {
     var gap = 10;
     var margin = 8;
-    var rect = node.el.getBoundingClientRect();
+    var rect = el.getBoundingClientRect();
     var width = card.offsetWidth;
     var height = card.offsetHeight;
     var left = Math.max(margin, Math.min(rect.left + rect.width / 2 - width / 2, window.innerWidth - width - margin));
@@ -490,7 +527,7 @@
     card.style.top = top + 'px';
   }
 
-  function showCard(node) {
+  function showCard(node, el) {
     if (!card) {
       card = document.createElement('div');
       card.id = 'roadmap-node-card';
@@ -501,7 +538,7 @@
     }
     fillCard(node);
     card.hidden = false;
-    placeCard(node);
+    placeCard(el || node.el);
   }
 
   function labelNode(node) {
@@ -520,11 +557,11 @@
     el.addEventListener('pointerenter', function (e) {
       if (e.pointerType === 'touch') return;
       traceIds(node.branch.panel, [node]);
-      showCard(node);
+      showCard(node, el);
     });
     el.addEventListener('focus', function () {
       traceIds(node.branch.panel, [node]);
-      showCard(node);
+      showCard(node, el);
     });
     el.addEventListener('pointerleave', function () {
       clearTrace();
@@ -540,8 +577,299 @@
   window.addEventListener('scroll', hideCard, true);
   window.addEventListener('resize', hideCard);
   document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape') hideCard();
+    if (e.key !== 'Escape') return;
+    hideCard();
+    if (map && !map.el.hidden) closeMap();
   });
+
+  /* ─── 全局总览 ─── */
+  var map = null;
+
+  function buildMap() {
+    var el = document.createElement('div');
+    el.id = 'roadmap-map';
+    el.className = 'tt-map';
+    el.setAttribute('role', 'dialog');
+    el.setAttribute('aria-modal', 'true');
+    el.setAttribute('aria-labelledby', 'tt-map-title');
+    el.hidden = true;
+
+    var backdrop = document.createElement('div');
+    backdrop.className = 'tt-map-backdrop';
+    backdrop.setAttribute('data-map-close', '');
+    el.appendChild(backdrop);
+
+    var panel = document.createElement('div');
+    panel.className = 'tt-map-panel';
+    el.appendChild(panel);
+
+    var bar = document.createElement('div');
+    bar.className = 'tt-map-bar';
+    panel.appendChild(bar);
+    var heading = document.createElement('h2');
+    heading.id = 'tt-map-title';
+    heading.className = 'tt-map-title';
+    heading.appendChild(bilingual('span', '', 'Global overview', '全局总览'));
+    var total = Object.keys(nodes).length;
+    heading.appendChild(bilingual('span', 'tt-map-count',
+      total + ' papers · ' + branches.length + ' branches', total + ' 篇 · ' + branches.length + ' 系'));
+    bar.appendChild(heading);
+    bar.appendChild(bilingual('p', 'tt-map-legend',
+      'Solid: prerequisite · dashed: related. Hover over a node (tap once on touch screens) to light up its route (dark) and what it leads to (light); click a branch name to open it.',
+      '实线是前置，虚线是相关拓展。悬停节点（触屏上先点一下）：深色是它的前置路线，浅色是它通往的后续；点系名进入那一系。'));
+    var zoom = document.createElement('button');
+    zoom.type = 'button';
+    zoom.className = 'tt-map-zoom';
+    bar.appendChild(zoom);
+    var close = document.createElement('button');
+    close.type = 'button';
+    close.className = 'tt-map-close';
+    close.setAttribute('data-map-close', '');
+    setBilingualAria(close, 'Close', '关闭');
+    close.innerHTML = '<svg class="icon" aria-hidden="true" focusable="false"><use href="#i-x"></use></svg>';
+    bar.appendChild(close);
+
+    var viewport = document.createElement('div');
+    viewport.className = 'tt-map-viewport';
+    panel.appendChild(viewport);
+    var sizer = document.createElement('div');
+    sizer.className = 'tt-map-sizer';
+    viewport.appendChild(sizer);
+    var canvas = document.createElement('div');
+    canvas.className = 'tt-map-canvas';
+    sizer.appendChild(canvas);
+    var svg = svgEl('svg', { class: 'tt-edges tt-map-edges', 'aria-hidden': 'true', focusable: 'false' });
+    canvas.appendChild(svg);
+
+    branches.slice().sort(function (a, b) { return a.mapOrder - b.mapOrder; }).forEach(function (branch) {
+      var cluster = document.createElement('section');
+      cluster.className = 'tt-cluster';
+      cluster.setAttribute('data-branch', branch.id);
+      cluster.setAttribute('data-track', branch.panel.getAttribute('data-track'));
+      var head = document.createElement('button');
+      head.type = 'button';
+      head.className = 'tt-cluster-head';
+      var mark = document.createElement('span');
+      mark.className = 'tt-mark';
+      mark.setAttribute('aria-hidden', 'true');
+      mark.textContent = branch.mark;
+      head.appendChild(mark);
+      head.appendChild(bilingual('span', 'tt-cluster-name', branchName(branch, false), branchName(branch, true)));
+      setBilingualAria(head,
+        'Open branch ' + branch.mark + ': ' + branchName(branch, false),
+        '进入第 ' + branch.mark + ' 系：' + branchName(branch, true));
+      head.addEventListener('click', function () {
+        closeMap(true);
+        select(branch.id, { focus: true });
+      });
+      cluster.appendChild(head);
+
+      var tree = branch.tree.cloneNode(true);
+      tree.classList.add('tt-tree--map');
+      var inner = tree.querySelector('.tt-edges');
+      if (inner) tree.removeChild(inner);
+      Array.prototype.forEach.call(tree.querySelectorAll('.tt-node'), function (copy) {
+        copy.removeAttribute('id');
+        copy.classList.remove('is-path', 'is-flash');
+        var node = nodes[copy.getAttribute('data-node')];
+        node.mapEl = copy;
+        copy.setAttribute('aria-label', node.el.getAttribute('aria-label') || '');
+        copy.setAttribute('aria-describedby', 'roadmap-node-card');
+        copy.addEventListener('pointerenter', function (e) {
+          if (e.pointerType === 'touch') return;
+          traceMap(node);
+          showCard(node, copy);
+        });
+        copy.addEventListener('focus', function () {
+          traceMap(node);
+          showCard(node, copy);
+        });
+        copy.addEventListener('pointerleave', function (e) {
+          if (e.pointerType === 'touch') return;
+          clearMapTrace();
+          hideCard();
+        });
+        // 触屏没有悬停：第一次点只点亮路线、弹卡片，再点一次才打开笔记。
+        copy.addEventListener('click', function (e) {
+          if (map.pointerType !== 'touch' || map.armed === node.id) return;
+          e.preventDefault();
+          map.armed = node.id;
+          traceMap(node);
+          showCard(node, copy);
+        });
+        copy.addEventListener('blur', function () {
+          clearMapTrace();
+          hideCard();
+        });
+        copy.addEventListener('pointerdown', hideCard);
+      });
+      cluster.appendChild(tree);
+      canvas.appendChild(cluster);
+    });
+
+    el.addEventListener('pointerdown', function (e) {
+      map.pointerType = e.pointerType;
+    }, true);
+    el.addEventListener('click', function (e) {
+      if (e.target.closest('[data-map-close]')) closeMap();
+      else if (!e.target.closest('.tt-node')) {
+        map.armed = null;
+        clearMapTrace();
+        hideCard();
+      }
+    });
+    zoom.addEventListener('click', function () {
+      map.zoomed = !map.zoomed;
+      applyScale();
+    });
+    // 窗口里 Tab 只在窗口内循环。
+    panel.addEventListener('keydown', function (e) {
+      if (e.key !== 'Tab') return;
+      var focusables = Array.prototype.filter.call(
+        panel.querySelectorAll('a[href], button:not([hidden])'),
+        function (item) { return item.offsetParent !== null; }
+      );
+      if (!focusables.length) return;
+      var first = focusables[0];
+      var last = focusables[focusables.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    });
+    viewport.addEventListener('scroll', hideCard);
+
+    document.body.appendChild(el);
+    map = { el: el, viewport: viewport, sizer: sizer, canvas: canvas, svg: svg, zoom: zoom, close: close,
+      fitScale: 1, scale: 1, zoomed: false, opener: null, pointerType: '', armed: null };
+  }
+
+  /* 按窗口大小挑一种排法：各系从左到右排、放不下就换行，试一遍不同的总宽度，
+     取缩放比例最大（同样大时取长宽比最接近窗口）的那一种。 */
+  function fitMap() {
+    var canvas = map.canvas;
+    var style = getComputedStyle(map.viewport);
+    var availW = map.viewport.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
+    var availH = map.viewport.clientHeight - parseFloat(style.paddingTop) - parseFloat(style.paddingBottom);
+    if (availW <= 0 || availH <= 0) return;
+    canvas.style.transform = 'none';
+    var clusters = Array.prototype.slice.call(canvas.querySelectorAll('.tt-cluster'));
+    canvas.style.width = '100000px';
+    var widest = 0;
+    var total = 0;
+    clusters.forEach(function (cluster) {
+      widest = Math.max(widest, cluster.offsetWidth);
+      total += cluster.offsetWidth;
+    });
+    var canvasStyle = getComputedStyle(canvas);
+    var pad = parseFloat(canvasStyle.paddingLeft) + parseFloat(canvasStyle.paddingRight);
+    var gap = parseFloat(canvasStyle.columnGap) || 0;
+    var best = null;
+    for (var width = widest + pad; width <= total + pad + gap * clusters.length; width += 24) {
+      canvas.style.width = width + 'px';
+      var height = canvas.offsetHeight;
+      var scale = Math.min(1, availW / width, availH / height);
+      var shape = Math.abs(Math.log((width / height) / (availW / availH)));
+      if (!best || scale > best.scale + 0.01 || (scale > best.scale - 0.01 && shape < best.shape)) {
+        best = { width: width, height: height, scale: scale, shape: shape };
+      }
+    }
+    canvas.style.width = best.width + 'px';
+    map.width = best.width;
+    map.height = canvas.offsetHeight;
+    map.fitScale = best.scale;
+    applyScale();
+  }
+
+  function applyScale() {
+    var scale = map.zoomed ? 1 : map.fitScale;
+    map.scale = scale;
+    map.canvas.style.transform = scale === 1 ? 'none' : 'scale(' + scale + ')';
+    map.sizer.style.width = Math.ceil(map.width * scale) + 'px';
+    map.sizer.style.height = Math.ceil(map.height * scale) + 'px';
+    var canZoom = map.fitScale < 0.98;
+    map.zoom.hidden = !canZoom;
+    var label = map.zoomed ? ['Fit to window', '适应窗口'] : ['Actual size', '放大到 100%'];
+    map.zoom.setAttribute('data-en', label[0]);
+    map.zoom.setAttribute('data-zh', label[1]);
+    map.zoom.textContent = isZh() ? label[1] : label[0];
+    map.el.classList.toggle('is-zoomed', map.zoomed);
+    hideCard();
+    clearMapTrace();
+    drawEdges(map.svg, map.canvas, edges, function (node) { return node.mapEl; }, scale);
+  }
+
+  function traceMap(start) {
+    var before = {};
+    var after = {};
+    var stack = [start.id];
+    while (stack.length) {
+      var node = nodes[stack.pop()];
+      node.after.concat(node.related).forEach(function (from) {
+        if (nodes[from] && !before[from]) {
+          before[from] = true;
+          stack.push(from);
+        }
+      });
+    }
+    stack = [start.id];
+    while (stack.length) {
+      var id = stack.pop();
+      edges.forEach(function (edge) {
+        if (edge.from.id === id && !after[edge.to.id]) {
+          after[edge.to.id] = true;
+          stack.push(edge.to.id);
+        }
+      });
+    }
+    map.canvas.classList.add('is-tracing');
+    Object.keys(nodes).forEach(function (id) {
+      var el = nodes[id].mapEl;
+      el.classList.toggle('is-path', id === start.id || !!before[id]);
+      el.classList.toggle('is-next', !!after[id]);
+    });
+    Array.prototype.forEach.call(map.svg.querySelectorAll('.tt-edge'), function (el) {
+      var from = el.getAttribute('data-from');
+      var to = el.getAttribute('data-to');
+      el.classList.toggle('is-path', to === start.id || !!before[to]);
+      el.classList.toggle('is-next', (from === start.id || !!after[from]) && !!after[to]);
+    });
+  }
+
+  function clearMapTrace() {
+    if (!map) return;
+    map.armed = null;
+    Array.prototype.forEach.call(map.el.querySelectorAll('.is-tracing, .is-path, .is-next'), function (el) {
+      el.classList.remove('is-tracing', 'is-path', 'is-next');
+    });
+  }
+
+  function openMap() {
+    if (!map) buildMap();
+    map.opener = document.activeElement;
+    map.zoomed = false;
+    map.el.hidden = false;
+    document.body.classList.add('tt-map-is-open');
+    hideCard();
+    fitMap();
+    map.close.focus();
+  }
+
+  function closeMap(keepFocus) {
+    if (!map || map.el.hidden) return;
+    map.el.hidden = true;
+    document.body.classList.remove('tt-map-is-open');
+    hideCard();
+    clearMapTrace();
+    if (!keepFocus && map.opener && typeof map.opener.focus === 'function') map.opener.focus();
+  }
+
+  function refitMap() {
+    if (map && !map.el.hidden) fitMap();
+  }
 
   /* ─── 启动 ─── */
   branches.forEach(buildGates);
@@ -584,8 +912,25 @@
 
   document.addEventListener('cl-lang-changed', function () {
     hideCard();
-    Object.keys(nodes).forEach(function (id) { labelNode(nodes[id]); });
-    requestAnimationFrame(redraw);
+    Object.keys(nodes).forEach(function (id) {
+      labelNode(nodes[id]);
+      if (nodes[id].mapEl) nodes[id].mapEl.setAttribute('aria-label', nodes[id].el.getAttribute('aria-label'));
+    });
+    requestAnimationFrame(function () {
+      redraw();
+      refitMap();
+    });
+  });
+
+  if (mapButton) mapButton.addEventListener('click', openMap);
+  var refitQueued = false;
+  window.addEventListener('resize', function () {
+    if (refitQueued || !map || map.el.hidden) return;
+    refitQueued = true;
+    requestAnimationFrame(function () {
+      refitQueued = false;
+      refitMap();
+    });
   });
 
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(redraw);

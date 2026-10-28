@@ -1,8 +1,9 @@
 # 首页「推荐学习路线图」的天赋树（_includes/roadmap-tree.html 渲染，assets/js/roadmap.js 画连线）。
 #
 # 每一系（branch）是一棵小树，一次只显示一棵：
-#   mark   左侧 / 顶部标签上的编号；主线 1–9 按阅读顺序，支线用字母。
-#   track  main（主线）或 side（支线）。
+#   mark       左侧 / 顶部标签上的编号；主线 1–9 按阅读顺序，支线用字母。
+#   track      main（主线）或 side（支线）。
+#   map_order  「全局总览」窗口里各系的先后（从左到右、从上到下排开），支线插在用得上它的那几系前面。
 # 树里的节点摆在网格上：
 #   row    第几层，从 1 开始，越往下越进阶；
 #   col    第几列，从 1 开始，可以写 x.5 落在两列中间；同一层两个节点的 col 至少差 1，
@@ -23,6 +24,7 @@
   track: main
   name: RL & Transformer
   name_zh: RL 与 Transformer
+  map_order: 1
   nodes:
     - id: PPO
       label: PPO
@@ -57,6 +59,7 @@
   track: main
   name: Imitation & Style
   name_zh: 模仿与风格
+  map_order: 3
   nodes:
     - id: AMP
       label: AMP
@@ -94,6 +97,7 @@
   track: main
   name: Skills & Diffusion
   name_zh: 技能与扩散
+  map_order: 4
   nodes:
     - id: ASE
       label: ASE
@@ -139,6 +143,7 @@
   track: main
   name: Whole-Body Control
   name_zh: 全身控制
+  map_order: 6
   nodes:
     - id: H2O
       label: H2O
@@ -215,6 +220,7 @@
   track: main
   name: Manipulation
   name_zh: 操作
+  map_order: 7
   nodes:
     - id: ACT
       label: ACT / ALOHA
@@ -250,6 +256,7 @@
   track: main
   name: Loco-Manipulation
   name_zh: 移动操作
+  map_order: 8
   nodes:
     - id: HOMIE
       label: HOMIE
@@ -314,6 +321,7 @@
   track: main
   name: World Models
   name_zh: 世界模型
+  map_order: 9
   nodes:
     - id: Dreamer
       label: Dreamer / PlaNet
@@ -363,6 +371,7 @@
   track: main
   name: World-Action Models
   name_zh: 世界-动作模型
+  map_order: 10
   nodes:
     - id: CosmosPolicy
       label: Cosmos Policy
@@ -385,6 +394,7 @@
   track: main
   name: Foundation Models
   name_zh: 基础模型
+  map_order: 11
   nodes:
     - id: OpenVLA
       label: OpenVLA
@@ -435,9 +445,10 @@
   track: side
   name: Data & Retargeting
   name_zh: 数据与重定向
+  map_order: 2
   nodes:
     - id: DataNode
-      label: AMASS / HumanML3D
+      label: "AMASS / Human\u200BML3D"
       year: 2019 / 2022
       row: 1
       col: 2
@@ -476,6 +487,7 @@
   track: side
   name: Engineering
   name_zh: 工程实践
+  map_order: 5
   nodes:
     - id: DR
       label: Domain Rand.

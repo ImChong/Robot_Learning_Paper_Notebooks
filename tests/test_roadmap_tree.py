@@ -41,6 +41,15 @@ def test_branches_are_numbered_main_path_first_then_side_paths():
         assert branch["nodes"], branch["id"]
 
 
+def test_global_overview_order_covers_every_branch_once():
+    # 「全局总览」窗口按 map_order 从左到右、从上到下排开各系。
+    order = sorted(branch["map_order"] for branch in BRANCHES)
+    assert order == list(range(1, len(BRANCHES) + 1))
+    by_order = [branch["mark"] for branch in sorted(BRANCHES, key=lambda branch: branch["map_order"])]
+    main = [mark for mark in by_order if mark.isdigit()]
+    assert main == sorted(main, key=int), "主线在总览里也要按 1–9 的顺序"
+
+
 def test_every_node_has_a_short_label_a_year_and_a_place():
     ids = [node["id"] for branch in BRANCHES for node in branch["nodes"]]
     assert len(ids) == len(set(ids)), "节点 id 重复"

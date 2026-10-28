@@ -9,8 +9,20 @@
   也按 video_seconds 加。
 {%- endcomment -%}
 {%- assign tt_details = "" -%}
+{%- assign tt_total = 0 -%}
+{%- for branch in site.data.roadmap -%}
+{%- assign tt_total = tt_total | plus: branch.nodes.size -%}
+{%- endfor %}
 <div class="tt" id="roadmap-tree">
-  <div class="tt-rail" role="tablist" aria-orientation="vertical" aria-label="Learning roadmap branches" data-en-aria-label="Learning roadmap branches" data-zh-aria-label="学习路线图分系" hidden>
+  <div class="tt-side" hidden>
+  <button type="button" class="tt-map-open" aria-haspopup="dialog" aria-controls="roadmap-map">
+    <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-tree-structure"></use></svg>
+    <span class="tt-map-open-text">
+      <span class="tt-map-open-title" data-en="Global overview" data-zh="全局总览">Global overview</span>
+      <span class="tt-map-open-sub" data-en="All {{ tt_total }} papers and routes" data-zh="全部 {{ tt_total }} 篇与路线">All {{ tt_total }} papers and routes</span>
+    </span>
+  </button>
+  <div class="tt-rail" role="tablist" aria-orientation="vertical" aria-label="Learning roadmap branches" data-en-aria-label="Learning roadmap branches" data-zh-aria-label="学习路线图分系">
     {%- assign tt_tracks = "main,side" | split: "," -%}
     {%- for track in tt_tracks %}
     <div class="tt-rail-track tt-rail-track--{{ track }}">
@@ -31,6 +43,7 @@
     </div>
     {%- endfor %}
   </div>
+  </div>
 
   <div class="tt-panels">
     {%- for branch in site.data.roadmap %}
@@ -39,7 +52,7 @@
     {%- assign tt_h = node.col | times: 2 | round -%}
     {%- if tt_h > tt_halves -%}{%- assign tt_halves = tt_h -%}{%- endif -%}
     {%- endfor %}
-    <section class="tt-panel" id="tt-panel-{{ branch.id }}" role="tabpanel" aria-labelledby="tt-tab-{{ branch.id }}" data-branch="{{ branch.id }}" data-mark="{{ branch.mark }}" data-track="{{ branch.track }}">
+    <section class="tt-panel" id="tt-panel-{{ branch.id }}" role="tabpanel" aria-labelledby="tt-tab-{{ branch.id }}" data-branch="{{ branch.id }}" data-mark="{{ branch.mark }}" data-track="{{ branch.track }}" data-map-order="{{ branch.map_order }}">
       <h3 class="tt-panel-head">
         <span class="tt-mark" aria-hidden="true">{{ branch.mark }}</span>
         <span class="tt-panel-title" data-en="{{ branch.name | escape }}" data-zh="{{ branch.name_zh | escape }}">{{ branch.name | escape }}</span>

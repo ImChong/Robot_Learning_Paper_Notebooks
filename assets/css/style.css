@@ -1571,14 +1571,66 @@ details[open] > .roadmap-entry:hover .roadmap-entry-arrow { transform: rotate(-9
   align-items: start;
 }
 
-.tt-rail {
+.tt-side {
   display: flex;
   flex-direction: column;
   gap: 16px;
 }
 
-.tt-rail[hidden] {
+.tt-side[hidden] {
   display: none;
+}
+
+/* 「全局总览」：打开一个窗口，所有系、所有节点和箭头一起看。 */
+.tt-map-open {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color var(--dur-micro) var(--ease), background-color var(--dur-micro) var(--ease);
+}
+
+.tt-map-open:hover {
+  border-color: var(--link);
+  background: var(--accent-soft);
+}
+
+.tt-map-open > .icon {
+  width: 20px;
+  height: 20px;
+  color: var(--link);
+}
+
+.tt-map-open-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.tt-map-open-title {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 20px;
+}
+
+.tt-map-open-sub {
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.tt-rail {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
 .tt-rail-track {
@@ -1821,11 +1873,13 @@ details[open] > .roadmap-entry:hover .roadmap-entry-arrow { transform: rotate(-9
   stroke-dasharray: 4 5;
 }
 
-.tt-edge.is-path .tt-edge-line {
+.tt-edge.is-path .tt-edge-line,
+.tt-edge.is-next .tt-edge-line {
   stroke: var(--link);
 }
 
-.tt-edge.is-path .tt-edge-head {
+.tt-edge.is-path .tt-edge-head,
+.tt-edge.is-next .tt-edge-head {
   fill: var(--link);
 }
 
@@ -1884,10 +1938,11 @@ details[open] > .roadmap-entry:hover .roadmap-entry-arrow { transform: rotate(-9
   font-variant-numeric: tabular-nums;
 }
 
-/* 含配音讲解视频：右上角的播放徽标，像天赋图标角上的等级数字。 */
+/* 含配音讲解视频：右上角的播放徽标，像天赋图标角上的等级数字。
+   徽标大半露在节点上沿外面，只压住边框和内边距，不会盖到节点名。 */
 .tt-node-badge {
   position: absolute;
-  top: -8px;
+  top: -14px;
   right: -8px;
   display: flex;
   align-items: center;
@@ -1937,6 +1992,14 @@ details[open] > .roadmap-entry:hover .roadmap-entry-arrow { transform: rotate(-9
   .tt.tt--ready {
     grid-template-columns: minmax(0, 1fr);
     gap: 16px;
+  }
+
+  .tt-side {
+    gap: 12px;
+  }
+
+  .tt-map-open {
+    padding: 8px 12px;
   }
 
   .tt-rail {
@@ -2006,10 +2069,15 @@ details[open] > .roadmap-entry:hover .roadmap-entry-arrow { transform: rotate(-9
   }
 
   .tt-node-badge {
-    top: -6px;
+    top: -12px;
     right: -6px;
-    width: 18px;
-    height: 18px;
+    width: 16px;
+    height: 16px;
+  }
+
+  .tt-node-badge .icon {
+    width: 6px;
+    height: 6px;
   }
 
   .tt-node-name {
@@ -2018,12 +2086,291 @@ details[open] > .roadmap-entry:hover .roadmap-entry-arrow { transform: rotate(-9
   }
 }
 
+/* ===== 学习路线图：全局总览窗口（assets/js/roadmap.js 的 buildMap）=====
+   各系排成一块块，系内与跨系的箭头画在同一张 SVG 上；跨系箭头默认调淡，悬停节点时
+   它的前置路线（深）与后续（浅）点亮。画布按窗口缩放，「放大到 100%」后可滚动。 */
+body.tt-map-is-open {
+  overflow: hidden;
+}
+
+.tt-map {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-dialog);
+  display: flex;
+  padding: 16px;
+}
+
+.tt-map[hidden] {
+  display: none;
+}
+
+.tt-map-backdrop {
+  position: absolute;
+  inset: 0;
+  background: var(--scrim);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+.tt-map-panel {
+  position: relative;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-2xl);
+  background: var(--card-bg);
+  box-shadow: 0 16px 48px var(--card-shadow);
+  overflow: hidden;
+  animation: tt-map-in var(--dur) var(--ease);
+}
+
+@keyframes tt-map-in {
+  from { opacity: 0; transform: translateY(16px) scale(0.98); }
+  to { opacity: 1; transform: none; }
+}
+
+.tt-map-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 16px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.tt-map-title {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin: 0;
+  color: var(--text);
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 28px;
+}
+
+.tt-map-count {
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 16px;
+}
+
+.tt-map-legend {
+  flex: 1 1 320px;
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.tt-map-zoom,
+.tt-map-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-height: 32px;
+  padding: 4px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+  font-size: 14px;
+  line-height: 20px;
+  cursor: pointer;
+  transition: border-color var(--dur-micro) var(--ease);
+}
+
+.tt-map-zoom[hidden] {
+  display: none;
+}
+
+.tt-map-close {
+  width: 32px;
+  padding: 0;
+}
+
+.tt-map-close .icon {
+  width: 16px;
+  height: 16px;
+}
+
+.tt-map-zoom:hover,
+.tt-map-close:hover {
+  border-color: var(--link);
+}
+
+.tt-map-viewport {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  padding: 16px;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+
+/* margin: auto 让放得下时居中、放不下时从左上角开始滚，不会被裁掉。 */
+.tt-map-sizer {
+  flex: none;
+  margin: auto;
+}
+
+.tt-map-canvas {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 32px 24px;
+  padding: 8px;
+  transform-origin: 0 0;
+}
+
+.tt-map-edges {
+  z-index: 0;
+}
+
+.tt-cluster {
+  position: relative;
+  padding: 8px 12px 4px;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-xl);
+}
+
+.tt-cluster[data-track="main"] {
+  border-style: solid;
+}
+
+.tt-cluster-head {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 2px 8px 2px 2px;
+  border: 0;
+  border-radius: var(--radius-lg);
+  background: var(--card-bg);
+  color: var(--text);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 20px;
+  cursor: pointer;
+}
+
+.tt-cluster-head:hover {
+  color: var(--link);
+}
+
+.tt-cluster-head > .tt-mark {
+  border-color: var(--link);
+  color: var(--link);
+}
+
+.tt-cluster[data-track="side"] .tt-cluster-head > .tt-mark {
+  border-style: dashed;
+}
+
+.tt-tree.tt-tree--map {
+  --tt-half: 46px;
+  row-gap: 28px;
+  padding: 16px 0 8px;
+}
+
+.tt-tree--map .tt-node {
+  min-height: 44px;
+  margin: 0 5px;
+  padding: 4px 0;
+  border-radius: var(--radius-md);
+}
+
+.tt-tree--map .tt-node-name {
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.tt-tree--map .tt-node-badge {
+  top: -12px;
+  right: -6px;
+  width: 16px;
+  height: 16px;
+}
+
+.tt-tree--map .tt-node-badge .icon {
+  width: 6px;
+  height: 6px;
+}
+
+.tt-map-edges .tt-edge.is-cross {
+  opacity: 0.35;
+}
+
+.tt-map-edges .tt-edge.is-cross .tt-edge-line {
+  stroke-width: 1.5;
+}
+
+.tt-map-canvas.is-tracing .tt-node:not(.is-path):not(.is-next) {
+  opacity: 0.3;
+}
+
+.tt-map-canvas.is-tracing .tt-node.is-path {
+  border-color: var(--link);
+}
+
+.tt-map-canvas.is-tracing .tt-node.is-next {
+  border-color: var(--link);
+  border-style: dashed;
+}
+
+.tt-map-canvas.is-tracing .tt-edge:not(.is-path):not(.is-next) {
+  opacity: 0.06;
+}
+
+.tt-map-canvas.is-tracing .tt-edge.is-path {
+  opacity: 1;
+}
+
+.tt-map-canvas.is-tracing .tt-edge.is-next {
+  opacity: 0.55;
+}
+
+@media (max-width: 600px) {
+  .tt-map {
+    padding: 0;
+  }
+
+  .tt-map-panel {
+    border-radius: 0;
+  }
+
+  .tt-map-legend {
+    flex-basis: 100%;
+    order: 3;
+  }
+
+  .tt-map-viewport {
+    padding: 8px;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .tt-node,
   .tt-edge,
   .tt-tab,
-  .tt-gate {
+  .tt-gate,
+  .tt-map-open {
     transition: none;
+  }
+
+  .tt-map-panel {
+    animation: none;
   }
 
   .tt-node:hover,

@@ -108,3 +108,18 @@ def test_tabs_are_an_accessible_tablist():
     # 记住上次看的系；隐私模式下读写失败也不能报错。
     assert js.count("localStorage.") == 2
     assert js.count("try {") >= 3
+
+
+def test_global_overview_window_shows_every_node_and_route():
+    tree = TREE_HTML.read_text(encoding="utf-8")
+    js = ROADMAP_JS.read_text(encoding="utf-8")
+    assert 'class="tt-map-open"' in tree and 'aria-haspopup="dialog"' in tree
+    # 窗口里的节点是各系树的副本，所有箭头（系内 + 跨系）画在同一张 SVG 上。
+    assert "branch.tree.cloneNode(true)" in js
+    assert "drawEdges(map.svg, map.canvas, edges," in js
+    assert "el.setAttribute('aria-modal', 'true');" in js
+    assert "if (map && !map.el.hidden) closeMap();" in js
+    # 按窗口大小挑排法、缩放到放得下，也可以放大到 100% 滚动看。
+    assert "function fitMap()" in js and "map.zoomed = !map.zoomed;" in js
+    # 触屏上第一次点只点亮路线，第二次才打开笔记。
+    assert "map.pointerType !== 'touch' || map.armed === node.id" in js
