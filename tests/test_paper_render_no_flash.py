@@ -44,7 +44,7 @@ def test_unrendered_diagram_sources_are_hidden_too():
 def test_a_diagram_that_never_renders_shows_its_source_again():
     # mermaid.run() can reject (bad syntax); the block must not be left blank
     # behind its placeholder.
-    assert "Promise.all([paperRun, roadmapRun]).then(finishMermaidRun, finishMermaidRun);" in LAYOUT
+    assert "renderMermaidBlocks(nodes).then(finishMermaidRun, finishMermaidRun);" in LAYOUT
     assert "if (!el.querySelector('svg')) el.classList.add('mermaid-unrendered');" in LAYOUT
     # ... and the marker is cleared when the block is re-rendered (theme swap).
     assert "el.classList.remove('mermaid-unrendered');" in LAYOUT
@@ -78,11 +78,11 @@ def test_diagram_rendering_is_scheduled_off_the_parse_path():
     assert "if (mermaidRunPending) return;" in LAYOUT
     assert "whenParsed(function () {" in LAYOUT
     assert "requestAnimationFrame(function () {" in LAYOUT
-    # mermaid.initialize() stays synchronous: renderRoadmapMermaid() checks
-    # window.roadmapMermaidConfigured before it renders.
+    # mermaid.initialize() stays synchronous: the DOMContentLoaded hook checks
+    # window.mermaidConfigured before it initialises a second time.
     init_body = LAYOUT.split("function initMermaid(theme) {", 1)[1].split(
         "function scheduleMermaidRun", 1
     )[0]
     assert "mermaid.initialize(config);" in init_body
-    assert "window.roadmapMermaidConfigured = true;" in init_body
+    assert "window.mermaidConfigured = true;" in init_body
     assert "mermaid.run(" not in init_body

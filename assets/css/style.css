@@ -99,7 +99,6 @@
   --blockquote-bg: #1F1F1F;
   --table-stripe: #272727;
   --kbd-bg: #272727;
-  --roadmap-flow: #7ec8ff;
   --accent-soft: rgba(86, 156, 214, 0.14);
   --icon-star: #f5c542;
   --icon-pin: #f0605a;
@@ -128,7 +127,6 @@
   --blockquote-bg: #fdf6f6;
   --table-stripe: #f9f9f9;
   --kbd-bg: #eee;
-  --roadmap-flow: #e0564f;
   --accent-soft: rgba(179, 27, 27, 0.08);
   --icon-star: #e3a008;
   --icon-pin: #d93a35;
@@ -1381,33 +1379,6 @@ body.index-search-active .paper-list-toggle-group {
 }
 
 /* ===== Mermaid ===== */
-.mermaid-container {
-  background: var(--card-bg);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-xl);
-  padding: 12px 16px;
-  margin-bottom: 48px;
-  overflow: hidden;
-  text-align: left;
-  scroll-margin-top: 110px;
-}
-
-.mermaid-title {
-  font-size: 14px;
-  font-weight: 600;
-  line-height: 20px;
-  color: var(--text-secondary);
-  cursor: pointer;
-  display: list-item;
-  list-style: none; /* Remove bullet/triangle to match paper cards */
-  outline: none;
-  scroll-margin-top: 110px;
-}
-
-.mermaid-title::-webkit-details-marker {
-  display: none; /* Hide arrow in Safari */
-}
-
 .mermaid {
   text-align: center;
   margin-top: 8px;
@@ -1438,24 +1409,28 @@ body.index-search-active .paper-list-toggle-group {
   cursor: zoom-in;
 }
 
+/* ===== 推荐学习路线图（首页）===== */
+.roadmap-container {
+  container: roadmap / inline-size;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  padding: 0;
+  margin-bottom: 48px;
+  overflow: hidden;
+  text-align: left;
+  scroll-margin-top: 110px;
+}
+
 .roadmap-link-hint {
-  margin: 4px 0 0;
+  margin: 4px 16px 0;
   font-size: 12px;
-  line-height: 18px;
+  line-height: 16px;
   color: var(--text-secondary);
 }
 
 /* A brief invitation on each visit; the native details control stays usable.
    Minimal motion: one hairline traces the path once, the arrow nudges once. */
-#roadmap-title {
-  padding: 0;
-}
-
-#roadmap-title .roadmap-link-hint,
-#roadmap-title #roadmap-mermaid {
-  margin-left: 16px;
-  margin-right: 16px;
-}
 
 /* Card radius 12 − 4px inset = 8px for the hover surface inside it. */
 .roadmap-entry {
@@ -1466,7 +1441,19 @@ body.index-search-active .paper-list-toggle-group {
   gap: 16px;
   padding: 24px 24px;
   overflow: hidden;
+  color: var(--text-secondary);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 20px;
+  cursor: pointer;
+  list-style: none; /* no disclosure triangle */
+  outline: none;
+  scroll-margin-top: 110px;
   transition: background-color var(--dur-micro) var(--ease);
+}
+
+.roadmap-entry::-webkit-details-marker {
+  display: none; /* Hide arrow in Safari */
 }
 
 .roadmap-entry:hover {
@@ -1568,124 +1555,931 @@ details[open] > .roadmap-entry:hover .roadmap-entry-arrow { transform: rotate(-9
   .roadmap-entry.is-inviting::after { animation: none; }
 }
 
-#roadmap-mermaid svg g.roadmap-node-link {
+/* ===== 学习路线图：天赋树 =====
+   _includes/roadmap-tree.html + assets/js/roadmap.js。左边选一系（窄屏上是顶部一排编号），
+   右边只画这一系的小树。网格按半列排：每个节点占两个半列，col 写 x.5 就落在两列中间；
+   --tt-halves 是这棵树一共几个半列。半列宽最多 56px，窄屏上按树的宽度缩，整棵树正好放得下、
+   不用横向拖。没有 JS 时（没有 .tt--ready）各系依次排开。 */
+.tt {
+  margin: 16px;
+}
+
+.tt.tt--ready {
+  display: grid;
+  grid-template-columns: 200px minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+
+.tt-side {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.tt-side[hidden] {
+  display: none;
+}
+
+/* 「全局总览」：打开一个窗口，所有系、所有节点和箭头一起看。 */
+.tt-map-open {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color var(--dur-micro) var(--ease), background-color var(--dur-micro) var(--ease);
+}
+
+.tt-map-open:hover {
+  border-color: var(--link);
+  background: var(--accent-soft);
+}
+
+.tt-map-open > .icon {
+  width: 20px;
+  height: 20px;
+  color: var(--link);
+}
+
+.tt-map-open-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.tt-map-open-title {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 20px;
+}
+
+.tt-map-open-sub {
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.tt-rail {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.tt-rail-track {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* 主线 1–9 串成一条路：竖线穿过各系的编号圆圈（圆心 = 标签左内边距 8 + 半径 12）。 */
+.tt-rail-track--main::before {
+  content: "";
+  position: absolute;
+  top: 36px;
+  bottom: 16px;
+  left: 19px;
+  border-left: 2px solid var(--border);
+}
+
+.tt-rail-group {
+  margin: 0 0 4px 8px;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 16px;
+}
+
+.tt-tab {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 4px 8px;
+  border: 0;
+  border-radius: var(--radius-lg);
+  background: transparent;
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: 14px;
+  line-height: 20px;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color var(--dur-micro) var(--ease), color var(--dur-micro) var(--ease);
+}
+
+.tt-tab:hover {
+  background: var(--bg-hover);
+  color: var(--text);
+}
+
+.tt-tab[aria-selected="true"] {
+  background: var(--accent-soft);
+  color: var(--text);
+  font-weight: 600;
+}
+
+.tt-tab-name {
+  min-width: 0;
+}
+
+.tt-tab-count {
+  margin-left: auto;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+}
+
+.tt-mark {
+  position: relative;
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: 2px solid var(--border);
+  border-radius: 50%;
+  background: var(--card-bg);
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+[data-track="side"] > .tt-mark,
+[data-track="side"] .tt-panel-head > .tt-mark {
+  border-style: dashed;
+}
+
+.tt-tab[aria-selected="true"] > .tt-mark {
+  border-color: var(--link);
+  border-style: solid;
+  background: var(--link);
+  color: var(--bg);
+}
+
+.tt-panels {
+  min-width: 0;
+}
+
+.tt-panel + .tt-panel {
+  margin-top: 32px;
+}
+
+.tt--ready .tt-panel + .tt-panel {
+  margin-top: 0;
+}
+
+.tt-panel-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  color: var(--text);
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 28px;
+}
+
+.tt-panel-head > .tt-mark {
+  border-color: var(--link);
+  color: var(--link);
+}
+
+.tt-panel-count {
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 16px;
+}
+
+/* 跨系的「前置」（树上方）与「通往」（树下方）。 */
+.tt-gates {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  margin-top: 12px;
+}
+
+.tt-gates[hidden] {
+  display: none;
+}
+
+/* 一组（标签 + 它的几个节点）整体换行，标签不会孤零零留在上一行末尾。 */
+.tt-gates-group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.tt-gates-label {
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 16px;
+}
+
+.tt-gate {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px 2px 2px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-2xl);
+  background: var(--bg);
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: 12px;
+  line-height: 16px;
+  cursor: pointer;
+  transition: border-color var(--dur-micro) var(--ease), color var(--dur-micro) var(--ease);
+}
+
+.tt-gate.is-related {
+  border-style: dashed;
+}
+
+.tt-gate > .tt-mark {
+  width: 20px;
+  height: 20px;
+  border-width: 1px;
+}
+
+.tt-gate:hover,
+.tt-gate.is-path {
+  border-color: var(--link);
+  color: var(--text);
+}
+
+.tt-stage {
+  container-type: inline-size;
+}
+
+.tt-tree {
+  --tt-half: 56px;
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(var(--tt-halves), var(--tt-half));
+  justify-content: center;
+  row-gap: 40px;
+  padding: 24px 0 16px;
+}
+
+@supports (width: 1cqw) {
+  .tt-tree {
+    --tt-half: min(56px, calc(100cqw / var(--tt-halves)));
+  }
+}
+
+.tt-edges {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.tt-edge {
+  transition: opacity var(--dur-micro) var(--ease);
+}
+
+.tt-edge-line {
+  fill: none;
+  stroke: var(--text-muted);
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+.tt-edge-head {
+  fill: var(--text-muted);
+}
+
+.tt-edge.is-related .tt-edge-line {
+  stroke-dasharray: 4 5;
+}
+
+.tt-edge.is-path .tt-edge-line,
+.tt-edge.is-next .tt-edge-line {
+  stroke: var(--link);
+}
+
+.tt-edge.is-path .tt-edge-head,
+.tt-edge.is-next .tt-edge-head {
+  fill: var(--link);
+}
+
+.tt-node {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  min-height: 56px;
+  margin: 0 calc(var(--tt-half) * 0.12);
+  padding: 8px 4px;
+  border: 2px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--bg);
+  color: var(--text);
+  text-align: center;
+  text-decoration: none;
+  transition: border-color var(--dur-micro) var(--ease), opacity var(--dur-micro) var(--ease),
+    transform var(--dur-micro) var(--ease), box-shadow var(--dur-micro) var(--ease);
+}
+
+.tt-node--external {
+  border-style: dashed;
+}
+
+.tt-node:hover,
+.tt-node:focus-visible {
+  border-color: var(--link);
+  color: var(--text);
+  text-decoration: none;
+  box-shadow: 0 8px 24px var(--card-shadow);
+  transform: translateY(-2px);
+}
+
+.tt-node:focus-visible {
+  outline: 2px solid var(--link);
+  outline-offset: 2px;
+}
+
+/* 中文名不在词中间断开（「1X 世界模 / 型」）；放不下的长词仍可从任意处折行。 */
+.tt-node-name {
+  max-width: 100%;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 20px;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+  hyphens: auto;
+}
+
+.tt-node-year {
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 16px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* 含配音讲解视频：右上角的播放徽标，像天赋图标角上的等级数字。
+   徽标大半露在节点上沿外面，只压住边框和内边距，不会盖到节点名。 */
+.tt-node-badge {
+  position: absolute;
+  top: -14px;
+  right: -8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--card-bg);
+  border-radius: 50%;
+  background: var(--link);
+  color: var(--bg);
+}
+
+.tt-node-badge .icon {
+  width: 8px;
+  height: 8px;
+  margin-left: 1px;
+}
+
+/* 悬停 / 聚焦一个节点：点亮它在这一系里的前置链，其余淡下去。 */
+.tt-tree.is-tracing .tt-node:not(.is-path) {
+  opacity: 0.4;
+}
+
+.tt-tree.is-tracing .tt-node.is-path {
+  border-color: var(--link);
+}
+
+.tt-tree.is-tracing .tt-edge:not(.is-path) {
+  opacity: 0.2;
+}
+
+.tt-node.is-flash {
+  animation: tt-node-flash 1.6s var(--ease);
+}
+
+@keyframes tt-node-flash {
+  0%, 100% { box-shadow: 0 0 0 0 transparent; }
+  25%, 60% { border-color: var(--link); box-shadow: 0 0 0 6px var(--accent-soft); }
+}
+
+/* 窄屏：选系的标签收成顶部一排编号，名字留给读屏；当前系的名字在树的标题上。 */
+@container roadmap (max-width: 639px) {
+  .tt {
+    margin: 16px 8px;
+  }
+
+  .tt.tt--ready {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+  }
+
+  .tt-side {
+    gap: 12px;
+  }
+
+  .tt-map-open {
+    padding: 8px 12px;
+  }
+
+  .tt-rail {
+    flex-direction: row;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .tt-rail-track {
+    flex-direction: row;
+    align-items: center;
+    gap: 2px;
+  }
+
+  .tt-rail-track--main {
+    flex: 1;
+    justify-content: space-between;
+  }
+
+  .tt-rail-track--main::before {
+    top: 50%;
+    right: 14px;
+    bottom: auto;
+    left: 14px;
+    border-top: 2px solid var(--border);
+    border-left: 0;
+    transform: translateY(-1px);
+  }
+
+  .tt-rail-group {
+    display: none;
+  }
+
+  .tt-tab {
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border-radius: 50%;
+  }
+
+  .tt-tab:hover,
+  .tt-tab[aria-selected="true"] {
+    background: transparent;
+  }
+
+  .tt-tab-name,
+  .tt-tab-count {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .tt-tree {
+    row-gap: 32px;
+    padding-top: 20px;
+  }
+
+  .tt-node {
+    min-height: 48px;
+    margin: 0 calc(var(--tt-half) * 0.08);
+    padding: 4px 0;
+    border-radius: var(--radius-md);
+  }
+
+  .tt-node-badge {
+    top: -12px;
+    right: -6px;
+    width: 16px;
+    height: 16px;
+  }
+
+  .tt-node-badge .icon {
+    width: 6px;
+    height: 6px;
+  }
+
+  .tt-node-name {
+    font-size: 12px;
+    line-height: 16px;
+  }
+}
+
+/* ===== 学习路线图：全局总览窗口（assets/js/roadmap.js 的 buildMap）=====
+   各系排成一块块，系内与跨系的箭头画在同一张 SVG 上；跨系箭头默认调淡，悬停节点时
+   它的前置路线（深）与后续（浅）点亮。画布按窗口缩放，「放大到 100%」后可滚动。 */
+body.tt-map-is-open {
+  overflow: hidden;
+}
+
+.tt-map {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-dialog);
+  display: flex;
+  padding: 16px;
+}
+
+.tt-map[hidden] {
+  display: none;
+}
+
+.tt-map-backdrop {
+  position: absolute;
+  inset: 0;
+  background: var(--scrim);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+.tt-map-panel {
+  position: relative;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-2xl);
+  background: var(--card-bg);
+  box-shadow: 0 16px 48px var(--card-shadow);
+  overflow: hidden;
+  animation: tt-map-in var(--dur) var(--ease);
+}
+
+@keyframes tt-map-in {
+  from { opacity: 0; transform: translateY(16px) scale(0.98); }
+  to { opacity: 1; transform: none; }
+}
+
+.tt-map-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 16px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.tt-map-title {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin: 0;
+  color: var(--text);
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 28px;
+}
+
+.tt-map-count {
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 16px;
+}
+
+.tt-map-legend {
+  flex: 1 1 320px;
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.tt-map-legend p {
+  margin: 0;
+}
+
+/* 平移 / 缩放的提示按输入方式只显示一种。 */
+.tt-map-hint {
+  color: var(--text-muted);
+}
+
+.tt-map-hint--touch {
+  display: none;
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .tt-map-hint--mouse {
+    display: none;
+  }
+
+  .tt-map-hint--touch {
+    display: block;
+  }
+}
+
+.tt-map-controls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.tt-map-btn,
+.tt-map-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-width: 32px;
+  min-height: 32px;
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+  font-size: 14px;
+  line-height: 20px;
+  cursor: pointer;
+  transition: border-color var(--dur-micro) var(--ease), opacity var(--dur-micro) var(--ease);
+}
+
+.tt-map-btn[hidden] {
+  display: none;
+}
+
+.tt-map-btn:disabled {
+  cursor: default;
+  opacity: 0.4;
+}
+
+.tt-map-layout {
+  margin-left: 4px;
+  padding: 4px 12px;
+}
+
+.tt-map-close {
+  width: 32px;
+  padding: 0;
+}
+
+.tt-map-btn .icon,
+.tt-map-close .icon {
+  width: 16px;
+  height: 16px;
+}
+
+.tt-map-btn:not(:disabled):hover,
+.tt-map-close:hover {
+  border-color: var(--link);
+}
+
+.tt-map-level {
+  min-width: 48px;
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 16px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+/* 单指平移交给浏览器（有惯性），双指捏合由 roadmap.js 接管，所以只放行 pan-x / pan-y。 */
+.tt-map-viewport {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  padding: 16px;
+  overflow: auto;
+  overscroll-behavior: contain;
+  touch-action: pan-x pan-y;
+  cursor: grab;
+}
+
+.tt-map-viewport.is-dragging {
+  cursor: grabbing;
+}
+
+.tt-map-viewport:focus {
+  outline: none;
+}
+
+.tt-map-viewport:focus-visible {
+  outline: 2px solid var(--link);
+  outline-offset: -2px;
+}
+
+/* margin: auto 让放得下时居中、放不下时从左上角开始滚，不会被裁掉。 */
+.tt-map-sizer {
+  flex: none;
+  margin: auto;
+}
+
+.tt-map-canvas {
+  position: relative;
+  display: flex;
+  -webkit-user-select: none;
+  user-select: none;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 32px 24px;
+  padding: 8px;
+  transform-origin: 0 0;
+}
+
+.tt-map-edges {
+  z-index: 0;
+}
+
+.tt-cluster {
+  position: relative;
+  padding: 8px 12px 4px;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-xl);
+}
+
+.tt-cluster[data-track="main"] {
+  border-style: solid;
+}
+
+.tt-cluster-head {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 2px 8px 2px 2px;
+  border: 0;
+  border-radius: var(--radius-lg);
+  background: var(--card-bg);
+  color: var(--text);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 20px;
   cursor: pointer;
 }
 
-/* 年份淡化只能用不透明文字色实现，不能用 opacity / filter / transform /
-   color-mix(..., transparent) 等会引入 alpha 的属性：WebKit（iOS Safari）
-   会为 foreignObject 内元素单独建合成层，绘制时丢失祖先 SVG 的 transform，
-   年份会堆叠到图表左上角或在中英文切换后 innerHTML 重插时消失。 */
-#roadmap-mermaid .roadmap-node-year,
-.mermaid-lightbox__stage .roadmap-node-year {
-  font-size: 0.72em;
-  font-weight: 400;
-  color: var(--text-secondary);
-  line-height: 1.2;
+.tt-cluster-head:hover {
+  color: var(--link);
 }
 
-/* ===== Roadmap 连线流动特效 =====
-   attachRoadmapEdgeFlow() 在每条连线上方插入一条同路径的虚线副本；这里让虚线
-   沿路径向箭头方向推进（stroke-dashoffset 由正值走到 0 = 由起点流向终点）。
-   dasharray 之和必须等于 keyframes 的起始 offset，否则每轮循环会跳一下。
-   连线自带的 stroke / dasharray 来自 Mermaid 注入的 <style>（选择器更具体），
-   所以这里用 !important 覆盖。 */
-#roadmap-mermaid .roadmap-edge-flow,
-.mermaid-lightbox__stage .roadmap-edge-flow {
-  fill: none !important;
-  stroke: var(--roadmap-flow, #7ec8ff) !important;
-  stroke-width: 2.2px !important;
-  stroke-linecap: round !important;
-  stroke-dasharray: 10 26 !important;
-  stroke-dashoffset: 36;
-  opacity: 0.9;
-  pointer-events: none;
-  animation: roadmap-edge-flow 2.4s linear infinite;
+.tt-cluster-head > .tt-mark {
+  border-color: var(--link);
+  color: var(--link);
 }
 
-/* 虚线（-.->）连线是「暂未精读 / 弱依赖」，流动也放慢、调淡以作区分。 */
-#roadmap-mermaid .roadmap-edge-flow.edge-pattern-dotted,
-.mermaid-lightbox__stage .roadmap-edge-flow.edge-pattern-dotted {
-  stroke-dasharray: 4 22 !important;
-  stroke-dashoffset: 26;
-  opacity: 0.65;
-  animation-duration: 3.2s;
-  animation-name: roadmap-edge-flow-dotted;
+.tt-cluster[data-track="side"] .tt-cluster-head > .tt-mark {
+  border-style: dashed;
 }
 
-@keyframes roadmap-edge-flow {
-  from { stroke-dashoffset: 36; }
-  to { stroke-dashoffset: 0; }
+.tt-tree.tt-tree--map {
+  --tt-half: 46px;
+  row-gap: 28px;
+  padding: 16px 0 8px;
 }
 
-@keyframes roadmap-edge-flow-dotted {
-  from { stroke-dashoffset: 26; }
-  to { stroke-dashoffset: 0; }
+.tt-tree--map .tt-node {
+  -webkit-user-drag: none;
+  min-height: 44px;
+  margin: 0 5px;
+  padding: 4px 0;
+  border-radius: var(--radius-md);
 }
 
-/* stroke-dashoffset 动画不走合成器：每一帧都要重绘整张路线图 SVG（几十个
-   foreignObject 标签），图滚出屏幕、被灯箱盖住也照样每帧重绘，手机上滚动和
-   拖动都会卡。下面几处在看不见或用不着的时候暂停它：
-   - 路线图滚出视口：attachRoadmapEdgeFlow() 用 IntersectionObserver 切换
-     .roadmap-flow-offscreen；
-   - 灯箱打开时，底下的内联路线图；
-   - 灯箱里拖动 / 双指缩放时（停下后接着流，平移只剩合成器上的 transform）。
-   选择器要以 #roadmap-mermaid / 视口类开头，权重才压得过上面的 animation 简写。 */
-#roadmap-mermaid.roadmap-flow-offscreen .roadmap-edge-flow,
-body.mermaid-lightbox-open #roadmap-mermaid .roadmap-edge-flow,
-.mermaid-lightbox__viewport.is-dragging .roadmap-edge-flow,
-.mermaid-lightbox__viewport.is-pinching .roadmap-edge-flow {
-  animation-play-state: paused;
+.tt-tree--map .tt-node-name {
+  font-size: 12px;
+  line-height: 16px;
 }
 
-/* 触屏 / 窄屏：虚线每秒只挪几个像素，按 60 帧算每帧位移通常不到 0.2px，却每帧
-   都要重绘整张图。steps() 把它量化成约 12.5 帧/秒（2.4s ÷ 30、3.2s ÷ 40，每步
-   80ms），看上去照样匀速流动，手机模拟实测重绘耗时降到约 1/3～1/4。每轮停在离 0
-   一步远处，下一轮从 36 / 26 重新开始，与 0 正好差一个 dash 周期，循环依旧无缝。 */
-@media (max-width: 600px), (hover: none) and (pointer: coarse) {
-  #roadmap-mermaid .roadmap-edge-flow,
-  .mermaid-lightbox__stage .roadmap-edge-flow {
-    animation-timing-function: steps(30);
+.tt-tree--map .tt-node-badge {
+  top: -12px;
+  right: -6px;
+  width: 16px;
+  height: 16px;
+}
+
+.tt-tree--map .tt-node-badge .icon {
+  width: 6px;
+  height: 6px;
+}
+
+.tt-map-edges .tt-edge.is-cross {
+  opacity: 0.35;
+}
+
+.tt-map-edges .tt-edge.is-cross .tt-edge-line {
+  stroke-width: 1.5;
+}
+
+.tt-map-canvas.is-tracing .tt-node:not(.is-path):not(.is-next) {
+  opacity: 0.3;
+}
+
+.tt-map-canvas.is-tracing .tt-node.is-path {
+  border-color: var(--link);
+}
+
+.tt-map-canvas.is-tracing .tt-node.is-next {
+  border-color: var(--link);
+  border-style: dashed;
+}
+
+.tt-map-canvas.is-tracing .tt-edge:not(.is-path):not(.is-next) {
+  opacity: 0.06;
+}
+
+.tt-map-canvas.is-tracing .tt-edge.is-path {
+  opacity: 1;
+}
+
+.tt-map-canvas.is-tracing .tt-edge.is-next {
+  opacity: 0.55;
+}
+
+@media (max-width: 600px) {
+  .tt-map {
+    padding: 0;
   }
 
-  #roadmap-mermaid .roadmap-edge-flow.edge-pattern-dotted,
-  .mermaid-lightbox__stage .roadmap-edge-flow.edge-pattern-dotted {
-    animation-timing-function: steps(40);
+  .tt-map-panel {
+    border-radius: 0;
+  }
+
+  .tt-map-title {
+    flex: 1;
+  }
+
+  .tt-map-controls {
+    flex-basis: 100%;
+    order: 3;
+  }
+
+  .tt-map-legend {
+    flex-basis: 100%;
+    order: 4;
+  }
+
+  .tt-map-viewport {
+    padding: 8px;
+  }
+
+  /* 手机上节点收窄，最宽的「全身控制」一系（5 列）放大阅读时正好约占满一屏宽。 */
+  .tt-map-canvas {
+    gap: 24px 16px;
+  }
+
+  .tt-cluster {
+    padding: 8px 8px 4px;
+  }
+
+  .tt-tree.tt-tree--map {
+    --tt-half: 36px;
+    row-gap: 24px;
+  }
+
+  .tt-tree--map .tt-node {
+    margin: 0 3px;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  #roadmap-mermaid .roadmap-edge-flow,
-  .mermaid-lightbox__stage .roadmap-edge-flow {
-    animation: none;
-    /* 静止时不留一段悬空虚线，直接隐藏，保留底下的实线连线。 */
-    display: none;
+  .tt-node,
+  .tt-edge,
+  .tt-tab,
+  .tt-gate,
+  .tt-map-open {
+    transition: none;
   }
-}
 
-#roadmap-mermaid svg g.roadmap-node-link:focus {
-  outline: none;
-}
+  .tt-map-panel {
+    animation: none;
+  }
 
-#roadmap-mermaid svg g.roadmap-node-link:focus-visible > rect,
-#roadmap-mermaid svg g.roadmap-node-link:focus-visible > polygon,
-#roadmap-mermaid svg g.roadmap-node-link:focus-visible > path {
-  stroke: var(--link);
-  stroke-width: 2.5px;
-}
+  .tt-node:hover,
+  .tt-node:focus-visible {
+    transform: none;
+  }
 
-#roadmap-mermaid svg g.roadmap-node-link:hover > rect,
-#roadmap-mermaid svg g.roadmap-node-link:hover > polygon,
-#roadmap-mermaid svg g.roadmap-node-link:hover > path,
-.mermaid-lightbox__stage svg g.roadmap-node-link:hover > rect,
-.mermaid-lightbox__stage svg g.roadmap-node-link:hover > polygon,
-.mermaid-lightbox__stage svg g.roadmap-node-link:hover > path {
-  filter: brightness(1.12);
-  stroke-width: 2.5px;
-}
-
-.mermaid-lightbox__stage svg g.roadmap-node-link {
-  cursor: pointer;
+  .tt-node.is-flash {
+    animation: none;
+    border-color: var(--link);
+  }
 }
 
 /* ===== Mermaid lightbox (click to enlarge, drag to pan) ===== */
@@ -2410,11 +3204,8 @@ body.sponsor-dialog-open {
   }
   .category-title,
   .subcategory-title,
-  .mermaid-title {
+  .roadmap-entry {
     scroll-margin-top: 130px;
-  }
-  .mermaid-container {
-    margin-bottom: 48px;
   }
   .paper-body th, .paper-body td {
     padding: 8px 8px;
@@ -3349,8 +4140,8 @@ a.updates-item-link:hover {
   margin-bottom: 16px;
 }
 
-/* 首页路线图节点悬浮卡片（_layouts/default.html 的 attachRoadmapNodeCard）。
-   fixed 定位、不吃指针事件，节点点击与灯箱拖拽不受影响；z-index 高于灯箱（10050）。 */
+/* 首页路线图节点悬浮卡片（assets/js/roadmap.js 的 showCard）。
+   fixed 定位；鼠标悬停弹出时不吃指针事件、不挡节点点击，触屏弹出时（.is-touch）可以点。 */
 .roadmap-node-card {
   position: fixed;
   z-index: var(--z-popover);
@@ -3410,6 +4201,13 @@ a.updates-item-link:hover {
   border-top: 1px solid var(--border);
 }
 
+.roadmap-node-card__path {
+  margin-top: 8px;
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 16px;
+}
+
 /* card radius 12 − 16px padding: gap ≥ 8 so the inset keeps its own 6px */
 .roadmap-node-card__video {
   margin-top: 8px;
@@ -3438,11 +4236,42 @@ a.updates-item-link:hover {
 }
 
 .roadmap-node-card__action {
+  display: inline-block;
   margin-top: 8px;
   color: var(--link);
   font-size: 12px;
   line-height: 16px;
   font-weight: 600;
+  text-decoration: none;
+}
+
+/* 触屏上点节点弹出的卡片能点：底部的「点击阅读笔记」是一个整行的按钮。
+   上下都放不下时脚本压低卡片的 max-height，只有 body 在里面滚动，按钮一直露着。 */
+.roadmap-node-card.is-touch {
+  pointer-events: auto;
+}
+
+.roadmap-node-card.is-touch:not([hidden]) {
+  display: flex;
+  flex-direction: column;
+}
+
+.roadmap-node-card.is-touch .roadmap-node-card__body {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.roadmap-node-card.is-touch .roadmap-node-card__action {
+  flex-shrink: 0;
+  display: block;
+  margin-top: 12px;
+  padding: 12px 16px;
+  border-radius: var(--radius-md);
+  background: var(--accent-soft);
+  font-size: 14px;
+  line-height: 20px;
+  text-align: center;
 }
 
 /* ── 滚动入场（全站）───────────────────────────────────────────────

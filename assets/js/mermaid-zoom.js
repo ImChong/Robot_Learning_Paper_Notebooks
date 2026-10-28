@@ -344,8 +344,6 @@
       return;
     }
 
-    attachRoadmapLinksInLightbox(sourceEl);
-
     var sourceCode = sourceEl.getAttribute('data-original-code');
     var canHiResRender =
       sourceCode &&
@@ -371,7 +369,6 @@
           if (typeof window.patchMermaidForeignObjects === 'function') {
             window.patchMermaidForeignObjects(stage);
           }
-          attachRoadmapLinksInLightbox(sourceEl);
         }
       })
       .catch(function () {
@@ -465,26 +462,11 @@
     }
   }
 
-  function isRoadmapNodeClick(target) {
-    return !!(target && target.closest && target.closest('g.roadmap-node-link'));
-  }
-
   function findMermaidTarget(target) {
     if (!target || !target.closest) return null;
     var el = target.closest('.mermaid');
     if (!el || !el.querySelector('svg')) return null;
-    if (el.id === 'roadmap-mermaid' && isRoadmapNodeClick(target)) return null;
     return el;
-  }
-
-  function attachRoadmapLinksInLightbox(sourceEl) {
-    if (sourceEl.id !== 'roadmap-mermaid' || !stage) return;
-    if (typeof window.attachRoadmapNodeLinks === 'function') {
-      window.attachRoadmapNodeLinks(stage);
-    }
-    if (typeof window.attachRoadmapEdgeFlow === 'function') {
-      window.attachRoadmapEdgeFlow(stage);
-    }
   }
 
   document.addEventListener(

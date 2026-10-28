@@ -76,9 +76,9 @@ description: "人形机器人学习方向的每日论文精读笔记：强化学
       <svg class="icon search-icon" aria-hidden="true" focusable="false"><use href="#i-magnifying-glass"></use></svg>
       <input type="text" id="paper-search" placeholder="Search by title or arXiv ID..." data-en-placeholder="Search by title or arXiv ID..." data-zh-placeholder="通过论文标题或 arXiv 编号搜索..." aria-label="Search papers" data-en-aria-label="Search papers" data-zh-aria-label="搜索论文">
     </div>
-    <div class="mermaid-container" id="roadmap-title">
+    <div class="roadmap-container" id="roadmap-title">
       <details>
-        <summary class="mermaid-title roadmap-entry">
+        <summary class="roadmap-entry">
           <span class="roadmap-entry-copy">
             <span class="roadmap-entry-label"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-map-pin"></use></svg><span data-en="Recommended learning roadmap" data-zh="推荐学习路线图">推荐学习路线图</span></span>
             <span class="roadmap-entry-hint" data-en="Not sure where to start? Follow the path, one paper at a time." data-zh="不知道先读哪篇？沿着路线，一步步读懂机器人学习。">不知道先读哪篇？沿着路线，一步步读懂机器人学习。</span>
@@ -89,66 +89,13 @@ description: "人形机器人学习方向的每日论文精读笔记：强化学
             <span class="roadmap-entry-arrow" aria-hidden="true"><svg class="icon" focusable="false"><use href="#i-arrow-right"></use></svg></span>
           </span>
         </summary>
-        <p class="roadmap-link-hint" data-en="Hover over a node for its details; click it to open the note. Nodes marked “paper” open the original paper. 🎬 marks notes with a narrated video. Click elsewhere on the diagram to zoom in." data-zh="鼠标悬停节点查看详情，点击阅读笔记；标注“原文”的节点打开论文。🎬 表示笔记含配音讲解视频。点击图中其他区域可放大查看。">Hover over a node for its details; click it to open the note. Nodes marked “paper” open the original paper. 🎬 marks notes with a narrated video. Click elsewhere on the diagram to zoom in.</p>
-        <div class="mermaid" id="roadmap-mermaid"></div>
+        <p class="roadmap-link-hint" data-en="Each branch is a small tree, read from top to bottom; “Global overview” shows every paper and route in one window. Solid arrows are prerequisites, dashed ones related reading; the tags above and below a tree jump to other branches. Hover over a node for details and click it to read the note (on touch screens, tap the node, then “Click to read the note” on its card); ▶ marks a narrated video." data-zh="每一系是一棵小树，从上往下读；点「全局总览」在一个窗口里看全部节点和路线。实线箭头是前置，虚线是相关拓展；树上下方的标签可以跳到其他系。悬停节点看详情，点击阅读笔记（触屏上先点节点，再点卡片上的「点击阅读笔记」）；▶ 表示含配音讲解视频。">Each branch is a small tree, read from top to bottom; “Global overview” shows every paper and route in one window. Solid arrows are prerequisites, dashed ones related reading; the tags above and below a tree jump to other branches. Hover over a node for details and click it to read the note (on touch screens, tap the node, then “Click to read the note” on its card); ▶ marks a narrated video.</p>
+        {% include roadmap-tree.html %}
       </details>
     </div>
     <script src="{{ '/assets/js/roadmap-entry.js' | relative_url }}" defer></script>
-    <script type="application/json" id="roadmap-node-links">{
-{%- assign link_first = true -%}
-{%- for pair in site.data.roadmap_links -%}
-{%- unless link_first -%},{%- endunless -%}
-{%- assign link_first = false -%}
-{%- assign link_url = pair[1] -%}
-{%- assign link_prefix = link_url | slice: 0, 8 -%}
-{%- unless link_prefix == 'https://' -%}
-{%- assign link_url = link_url | relative_url -%}
-{%- endunless -%}
-      {{ pair[0] | jsonify | replace: '<', '\u003c' | replace: '>', '\u003e' | replace: '&', '\u0026' }}: {{ link_url | jsonify | replace: '<', '\u003c' | replace: '>', '\u003e' | replace: '&', '\u0026' }}
-{%- endfor -%}
-    }</script>
-    {%- comment -%}
-      路线图节点悬浮卡片的数据：按 roadmap_links 的笔记地址在 _data/papers.json 里找到那篇论文，
-      只输出卡片要用的字段（标题、板块、发表时间、arXiv、开源、简介、讲解动画幕数、配音视频时长）。
-    {%- endcomment %}
-    <script type="application/json" id="roadmap-node-details">{
-{%- assign detail_first = true -%}
-{%- for pair in site.data.roadmap_links -%}
-{%- assign detail_paper = nil -%}
-{%- assign detail_cat = nil -%}
-{%- for cat in site.data.papers -%}
-{%- assign detail_hit = cat[1].papers | where: "url", pair[1] | first -%}
-{%- unless detail_hit -%}
-{%- for sc in cat[1].subcategories -%}
-{%- assign detail_hit = sc.papers | where: "url", pair[1] | first -%}
-{%- if detail_hit -%}{%- break -%}{%- endif -%}
-{%- endfor -%}
-{%- endunless -%}
-{%- if detail_hit -%}
-{%- assign detail_paper = detail_hit -%}
-{%- assign detail_cat = cat[1] -%}
-{%- break -%}
-{%- endif -%}
-{%- endfor -%}
-{%- if detail_paper -%}
-{%- unless detail_first -%},{%- endunless -%}
-{%- assign detail_first = false -%}
-      {{ pair[0] | jsonify | replace: '<', '\u003c' | replace: '>', '\u003e' | replace: '&', '\u0026' }}: {
-        "title": {{ detail_paper.title | jsonify | replace: '<', '\u003c' | replace: '>', '\u003e' | replace: '&', '\u0026' }},
-        "zh_title": {{ detail_paper.zh_title | default: detail_paper.zhname | jsonify | replace: '<', '\u003c' | replace: '>', '\u003e' | replace: '&', '\u0026' }},
-        "category": {{ detail_cat.display_name | jsonify | replace: '<', '\u003c' | replace: '>', '\u003e' | replace: '&', '\u0026' }},
-        "category_zh": {{ detail_cat.zhname | default: detail_cat.display_name | jsonify | replace: '<', '\u003c' | replace: '>', '\u003e' | replace: '&', '\u0026' }},
-        "date": {{ detail_paper.published_date_en | jsonify | replace: '<', '\u003c' | replace: '>', '\u003e' | replace: '&', '\u0026' }},
-        "date_zh": {{ detail_paper.published_date_zh | jsonify | replace: '<', '\u003c' | replace: '>', '\u003e' | replace: '&', '\u0026' }},
-        "arxiv": {{ detail_paper.arxiv | jsonify | replace: '<', '\u003c' | replace: '>', '\u003e' | replace: '&', '\u0026' }},
-        "open_source": {{ detail_paper.has_open_source | default: false | jsonify | replace: '<', '\u003c' | replace: '>', '\u003e' | replace: '&', '\u0026' }},
-        "summary_zh": {{ detail_paper.summary_zh | jsonify | replace: '<', '\u003c' | replace: '>', '\u003e' | replace: '&', '\u0026' }},
-        "scenes": {{ detail_paper.explainer_scenes | jsonify | replace: '<', '\u003c' | replace: '>', '\u003e' | replace: '&', '\u0026' }},
-        "video_seconds": {{ detail_paper.video_seconds | jsonify | replace: '<', '\u003c' | replace: '>', '\u003e' | replace: '&', '\u0026' }}
-      }
-{%- endif -%}
-{%- endfor -%}
-    }</script>
+    {% assign roadmap_js = site.static_files | where: "path", "/assets/js/roadmap.js" | first %}
+    <script src="{{ '/assets/js/roadmap.js' | relative_url }}{% if roadmap_js %}?v={{ roadmap_js.modified_time | date: '%s' }}{% endif %}" defer></script>
 
     <div id="search-no-results" class="search-no-results" role="status" data-en="No notes match that search. Try an abbreviation such as PPO, or an arXiv ID such as 1707.06347." data-zh="没有找到匹配的笔记。试试英文缩写（如 PPO）或 arXiv 编号（如 1707.06347）。">No notes match that search. Try an abbreviation such as PPO, or an arXiv ID such as 1707.06347.</div>
 

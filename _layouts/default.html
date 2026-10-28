@@ -270,6 +270,15 @@
   {%- else %}
   <script>window.katexEnabled = false;</script>
   {%- endif %}
+  {%- comment -%}
+    Mermaid 只有论文页用得上（paper.js 把笔记里的流程图代码块换成图）。首页、更新记录、
+    404 没有一张图，以前照样下载 mermaid（约 710 KB）和 DOMPurify：手机 4 倍降速下
+    首页因此多传约 717 KB、多跑约 0.95 s 脚本。这些页不再加载，下面的引导脚本见
+    mermaidScriptState === 'absent' 直接返回。
+  {%- endcomment -%}
+  {%- assign needs_mermaid = false -%}
+  {%- if page.layout == "paper" -%}{%- assign needs_mermaid = true -%}{%- endif -%}
+  {%- if needs_mermaid %}
   <!-- DOMPurify (pinned + SRI). Only mermaid's SVG goes through it, so it
        can wait for the parser like everything else below. -->
   <script defer
@@ -299,6 +308,7 @@
   <script src="{{ '/assets/js/mermaid-config.js' | relative_url }}{% if mermaid_config_js %}?v={{ mermaid_config_js.modified_time | date: '%s' }}{% endif %}" defer></script>
   {% assign mermaid_zoom_js = site.static_files | where: "path", "/assets/js/mermaid-zoom.js" | first %}
   <script src="{{ '/assets/js/mermaid-zoom.js' | relative_url }}{% if mermaid_zoom_js %}?v={{ mermaid_zoom_js.modified_time | date: '%s' }}{% endif %}" defer></script>
+  {%- endif %}
   <script>
     var mermaidRunPending = false;
 
@@ -307,14 +317,15 @@
        `error` fire on the element, and a watchdog covers a request that just
        hangs. Registered right here, in the very next script after the tag,
        so neither event can slip past. */
-    var mermaidScriptState = 'loading'; // 'loading' | 'ready' | 'failed'
+    var mermaidScriptState = 'loading'; // 'loading' | 'ready' | 'failed' | 'absent'
     var mermaidWaitTimer = null;
     var MERMAID_WAIT_TIMEOUT_MS = 20000;
 
     (function () {
       var tag = document.getElementById('mermaid-script');
       if (!tag) {
-        mermaidScriptState = 'failed';
+        // A page without diagrams (home, update log, 404) does not load mermaid.
+        mermaidScriptState = 'absent';
         return;
       }
       tag.addEventListener('load', function () {
@@ -345,6 +356,7 @@
     var mermaidInitQueued = false;
 
     function initMermaid(theme) {
+      if (mermaidScriptState === 'absent') return;
       var root = document.documentElement;
       if (document.readyState === 'loading') {
         // Called while the document is still parsing (the theme script at the
@@ -355,7 +367,7 @@
           mermaidInitQueued = true;
           document.addEventListener('DOMContentLoaded', function () {
             mermaidInitQueued = false;
-            if (!window.roadmapMermaidConfigured) initMermaid(currentSiteTheme());
+            if (!window.mermaidConfigured) initMermaid(currentSiteTheme());
           }, { once: true });
         }
         return;
@@ -391,7 +403,7 @@
               securityLevel: 'strict',
             };
       mermaid.initialize(config);
-      window.roadmapMermaidConfigured = true;
+      window.mermaidConfigured = true;
 
       scheduleMermaidRun();
     }
@@ -437,7 +449,7 @@
           : function(node) {
               return (node.getAttribute('data-original-code') || node.textContent || '').trim();
             };
-      var nodes = Array.prototype.slice.call(document.querySelectorAll('.mermaid:not(#roadmap-mermaid)'));
+      var nodes = Array.prototype.slice.call(document.querySelectorAll('.mermaid'));
       // 1. Snapshot source once (restore <br> as literal <br/>); re-render from snapshot on theme changes.
       nodes.forEach(function(el) {
         if (!el.getAttribute('data-original-code')) {
@@ -446,13 +458,7 @@
         }
       });
 
-      var paperRun = renderMermaidBlocks(nodes);
-      var roadmapRun =
-        window.renderRoadmapMermaid
-          ? window.renderRoadmapMermaid(document.documentElement.getAttribute('data-lang-mode') || 'en')
-          : Promise.resolve();
-
-      Promise.all([paperRun, roadmapRun]).then(finishMermaidRun, finishMermaidRun);
+      renderMermaidBlocks(nodes).then(finishMermaidRun, finishMermaidRun);
     }
 
     /* 2. One diagram per task, the ones nearest the viewport first.
@@ -508,7 +514,7 @@
     }
 
     function finishMermaidRun() {
-      document.querySelectorAll('.mermaid:not(#roadmap-mermaid)').forEach(function(el) {
+      document.querySelectorAll('.mermaid').forEach(function(el) {
         if (typeof window.patchMermaidForeignObjects === 'function') {
           window.patchMermaidForeignObjects(el);
         }
@@ -723,527 +729,6 @@
       var root = document.documentElement;
       var langToggle = document.getElementById('lang-toggle');
       var langLabel = langToggle ? langToggle.querySelector('.lang-label') : null;
-      var roadmapSvgCache = {};
-      var roadmapRenderSeq = 0;
-
-      var roadmapGraphs = {
-        en: `graph TD
-    subgraph SG_Basic ["1 · RL and Transformer"]
-        PPO(["PPO 🎬<br/><span class='roadmap-node-year'>2017</span>"]) --> AWR(["AWR 🎬<br/><span class='roadmap-node-year'>2019</span>"])
-        AWR --> DM(["DeepMimic 🎬<br/><span class='roadmap-node-year'>2018</span>"])
-        Transformer(["Transformer 🎬<br/><span class='roadmap-node-year'>2017</span>"])
-    end
-    subgraph SG_Data ["Data and Retargeting"]
-        DataNode(["AMASS / HumanML3D 🎬<br/><span class='roadmap-node-year'>2019 / 2022</span>"]) --> GMR(["GMR 🎬<br/><span class='roadmap-node-year'>2025</span>"])
-        GMR --> OmniRetarget(["OmniRetarget 🎬<br/><span class='roadmap-node-year'>2025</span>"])
-        GMR --> NMR(["NMR<br/><span class='roadmap-node-year'>2026</span>"])
-        GMR --> ReActor(["ReActor<br/><span class='roadmap-node-year'>2026</span>"])
-    end
-    subgraph SG_Style ["2 · Imitation and Style"]
-        DM --> AMP(["AMP 🎬<br/><span class='roadmap-node-year'>2021</span>"])
-        DM --> PHC(["PHC 🎬<br/><span class='roadmap-node-year'>2023</span>"])
-        AMP --> ADD(["ADD 🎬<br/><span class='roadmap-node-year'>2025</span>"])
-        AMP --> SMP(["SMP 🎬<br/><span class='roadmap-node-year'>2025</span>"])
-    end
-    subgraph SG_Skills ["3 · Skills and Diffusion"]
-        ASE(["ASE 🎬<br/><span class='roadmap-node-year'>2022</span>"]) --> CALM(["CALM 🎬<br/><span class='roadmap-node-year'>2023</span>"]) --> PULSE(["PULSE 🎬<br/><span class='roadmap-node-year'>2023</span>"])
-        DP(["Diffusion Policy 🎬<br/><span class='roadmap-node-year'>2023</span>"]) --> BM(["BeyondMimic 🎬<br/><span class='roadmap-node-year'>2025</span>"])
-        DP -.-> SMP(["SMP 🎬<br/><span class='roadmap-node-year'>2025</span>"])
-    end
-    subgraph SG_WBC ["4 · Whole-Body Control"]
-        EWBC(["Expressive WBC 🎬<br/><span class='roadmap-node-year'>2024</span>"]) --> HOVER(["HOVER 🎬<br/><span class='roadmap-node-year'>2024</span>"])
-        H2O(["H2O 🎬<br/><span class='roadmap-node-year'>2024</span>"]) --> OmniH2O
-        OmniH2O(["OmniH2O 🎬<br/><span class='roadmap-node-year'>2024</span>"]) --> HOVER
-        MaskedMimic(["MaskedMimic 🎬<br/><span class='roadmap-node-year'>2024</span>"]) --> HOVER
-        H2O --> TWIST(["TWIST 🎬<br/><span class='roadmap-node-year'>2025</span>"]) --> TWIST2(["TWIST2 🎬<br/><span class='roadmap-node-year'>2025</span>"])
-        EWBC --> HugWBC(["HugWBC 🎬<br/><span class='roadmap-node-year'>2025</span>"])
-        EWBC --> ExBody2(["ExBody2 🎬<br/><span class='roadmap-node-year'>2024</span>"])
-        EWBC --> SONIC(["SONIC 🎬<br/><span class='roadmap-node-year'>2025</span>"])
-    end
-    subgraph SG_Manip ["5 · Manipulation"]
-        ACT(["ACT / ALOHA<br/><span class='roadmap-node-year'>2023</span>"]) --> EgoMimic
-        iDP3(["iDP3<br/><span class='roadmap-node-year'>2024</span>"]) --> EgoMimic(["EgoMimic<br/><span class='roadmap-node-year'>2024</span>"])
-        EgoMimic --> HumDex(["HumDex<br/><span class='roadmap-node-year'>2026</span>"])
-    end
-    subgraph SG_Loco ["6 · Loco-Manipulation"]
-        HOMIE(["HOMIE 🎬<br/><span class='roadmap-node-year'>2025</span>"]) --> ULTRA(["ULTRA<br/><span class='roadmap-node-year'>2026</span>"])
-        ULTRA --> Psi(["Ψ₀<br/><span class='roadmap-node-year'>2026</span>"])
-        HOMIE -.-> FALCON(["FALCON 🎬<br/><span class='roadmap-node-year'>2025</span>"]) -.-> CHIP(["CHIP<br/><span class='roadmap-node-year'>2025</span>"])
-        HOMIE --> VIRAL(["VIRAL 🎬<br/><span class='roadmap-node-year'>2025</span>"])
-        HOMIE --> DoorMan(["DoorMan<br/><span class='roadmap-node-year'>2025</span>"])
-        HDMI(["HDMI 🎬<br/><span class='roadmap-node-year'>2025</span>"])
-    end
-    subgraph SG_WM ["7 · World Model"]
-        Dreamer(["Dreamer / PlaNet<br/><span class='roadmap-node-year'>2019</span>"]) -.-> UniPi(["UniPi<br/><span class='roadmap-node-year'>2023</span>"])
-        Cosmos(["Cosmos 🎬<br/><span class='roadmap-node-year'>2025</span>"]) --> DreamDojo(["DreamDojo<br/><span class='roadmap-node-year'>2026</span>"]) --> WM1X(["1X World Model<br/><span class='roadmap-node-year'>2025</span>"])
-        HAIC(["HAIC — Dynamics-Aware WM<br/><span class='roadmap-node-year'>2026</span>"])
-    end
-    subgraph SG_WAM ["8 · World Action Model"]
-        CosmosPolicy(["Cosmos Policy<br/><span class='roadmap-node-year'>2026</span>"])
-        DreamZero(["DreamZero<br/><span class='roadmap-node-year'>2026</span>"])
-    end
-    subgraph SG_FM ["9 · Foundation Models"]
-        OpenVLA(["OpenVLA<br/><span class='roadmap-node-year'>2024</span>"]) --> Pi0
-        Pi0(["VLA — π₀ 🎬<br/><span class='roadmap-node-year'>2024</span>"]) --> Pi05(["π₀.₅ — Open-World VLA 🎬<br/><span class='roadmap-node-year'>2025</span>"])
-        Pi0 --> VLA
-        VLA(["VLA — GR00T N1 🎬<br/><span class='roadmap-node-year'>2025</span>"])
-        BFM(["BFM — Behavior FM<br/><span class='roadmap-node-year'>2025</span>"])
-        BFM -.-> BFMZero(["BFM-Zero<br/><span class='roadmap-node-year'>2025</span>"])
-    end
-    subgraph SG_Eng ["Engineering"]
-        DR(["Domain Randomization 🎬<br/><span class='roadmap-node-year'>2017</span>"]) --> LCP(["LCP 🎬<br/><span class='roadmap-node-year'>2024</span>"])
-        DR --> QuadTerrain(["Quadruped Terrain · Teacher-Student 🎬<br/><span class='roadmap-node-year'>2020</span>"])
-        QuadTerrain --> OP3Soccer(["OP3 Soccer 🎬<br/><span class='roadmap-node-year'>2023</span>"])
-        QuadTerrain --> HumanoidLoco(["Real-World Humanoid Locomotion 🎬<br/><span class='roadmap-node-year'>2023</span>"])
-        LCP --> ASAP(["ASAP 🎬<br/><span class='roadmap-node-year'>2025</span>"])
-        InEKF(["Contact-Aided InEKF 🎬<br/><span class='roadmap-node-year'>2018 / 2019</span>"])
-        LCP -.->|Deployment platform| BerkeleyHumanoid(["Berkeley Humanoid 🎬<br/><span class='roadmap-node-year'>2024</span>"])
-        ToddlerBot(["ToddlerBot 🎬<br/><span class='roadmap-node-year'>2025</span>"])
-    end
-    GMR -.-> DM
-    GMR -.-> AMP
-    OmniRetarget -.-> HOMIE
-    NMR -.-> BM
-    ReActor -.-> DM
-    PHC --> ASE
-    DM -.-> HDMI
-    ASE -.-> BFMZero
-    PULSE --> DP
-    PULSE --> EWBC
-    BM --> EWBC
-    BM --> iDP3
-    HOVER --> HOMIE
-    HugWBC --> HOMIE
-    SONIC --> HOMIE
-    HumDex --> VLA
-    ULTRA --> VLA
-    Psi --> BFM
-    ULTRA --> BFM
-    BM --> Cosmos
-    Cosmos --> CosmosPolicy
-    Dreamer -.-> CosmosPolicy
-    HumDex --> DreamDojo
-    ULTRA --> HAIC
-    DreamDojo --> DreamZero
-    WM1X --> DreamZero
-    DreamZero --> VLA
-    DreamZero --> BFM
-    Transformer -.-> DP
-    Transformer -.-> Pi0
-    Transformer -.-> ACT
-    Transformer -.-> OpenVLA
-    ACT --> Pi0
-    QuadTerrain -.-> HOVER
-    ASAP -.-> BM
-    InEKF -.-> BerkeleyHumanoid
-    BerkeleyHumanoid -.-> ToddlerBot
-    DP --> Pi0`,
-        zh: `graph TD
-    subgraph SG_Basic ["1 · RL 与 Transformer"]
-        PPO(["PPO 🎬<br/><span class='roadmap-node-year'>2017</span>"]) --> AWR(["AWR 🎬<br/><span class='roadmap-node-year'>2019</span>"])
-        AWR --> DM(["DeepMimic 🎬<br/><span class='roadmap-node-year'>2018</span>"])
-        Transformer(["Transformer 🎬<br/><span class='roadmap-node-year'>2017</span>"])
-    end
-    subgraph SG_Data ["数据与重定向"]
-        DataNode(["AMASS / HumanML3D 🎬<br/><span class='roadmap-node-year'>2019 / 2022</span>"]) --> GMR(["GMR 🎬<br/><span class='roadmap-node-year'>2025</span>"])
-        GMR --> OmniRetarget(["OmniRetarget 🎬<br/><span class='roadmap-node-year'>2025</span>"])
-        GMR --> NMR(["NMR<br/><span class='roadmap-node-year'>2026</span>"])
-        GMR --> ReActor(["ReActor<br/><span class='roadmap-node-year'>2026</span>"])
-    end
-    subgraph SG_Style ["2 · 模仿与风格"]
-        DM --> AMP(["AMP 🎬<br/><span class='roadmap-node-year'>2021</span>"])
-        DM --> PHC(["PHC 🎬<br/><span class='roadmap-node-year'>2023</span>"])
-        AMP --> ADD(["ADD 🎬<br/><span class='roadmap-node-year'>2025</span>"])
-        AMP --> SMP(["SMP 🎬<br/><span class='roadmap-node-year'>2025</span>"])
-    end
-    subgraph SG_Skills ["3 · 技能与扩散"]
-        ASE(["ASE 🎬<br/><span class='roadmap-node-year'>2022</span>"]) --> CALM(["CALM 🎬<br/><span class='roadmap-node-year'>2023</span>"]) --> PULSE(["PULSE 🎬<br/><span class='roadmap-node-year'>2023</span>"])
-        DP(["扩散策略 🎬<br/><span class='roadmap-node-year'>2023</span>"]) --> BM(["BeyondMimic 🎬<br/><span class='roadmap-node-year'>2025</span>"])
-        DP -.-> SMP(["SMP 🎬<br/><span class='roadmap-node-year'>2025</span>"])
-    end
-    subgraph SG_WBC ["4 · 全身控制 WBC"]
-        EWBC(["表达性 WBC 🎬<br/><span class='roadmap-node-year'>2024</span>"]) --> HOVER(["HOVER 🎬<br/><span class='roadmap-node-year'>2024</span>"])
-        H2O(["H2O 🎬<br/><span class='roadmap-node-year'>2024</span>"]) --> OmniH2O
-        OmniH2O(["OmniH2O 🎬<br/><span class='roadmap-node-year'>2024</span>"]) --> HOVER
-        MaskedMimic(["MaskedMimic 🎬<br/><span class='roadmap-node-year'>2024</span>"]) --> HOVER
-        H2O --> TWIST(["TWIST 🎬<br/><span class='roadmap-node-year'>2025</span>"]) --> TWIST2(["TWIST2 🎬<br/><span class='roadmap-node-year'>2025</span>"])
-        EWBC --> HugWBC(["HugWBC 🎬<br/><span class='roadmap-node-year'>2025</span>"])
-        EWBC --> ExBody2(["ExBody2 🎬<br/><span class='roadmap-node-year'>2024</span>"])
-        EWBC --> SONIC(["SONIC 🎬<br/><span class='roadmap-node-year'>2025</span>"])
-    end
-    subgraph SG_Manip ["5 · 操作 Manipulation"]
-        ACT(["ACT / ALOHA<br/><span class='roadmap-node-year'>2023</span>"]) --> EgoMimic
-        iDP3(["iDP3<br/><span class='roadmap-node-year'>2024</span>"]) --> EgoMimic(["EgoMimic<br/><span class='roadmap-node-year'>2024</span>"])
-        EgoMimic --> HumDex(["HumDex<br/><span class='roadmap-node-year'>2026</span>"])
-    end
-    subgraph SG_Loco ["6 · 移动操作 Loco-Manip"]
-        HOMIE(["HOMIE 🎬<br/><span class='roadmap-node-year'>2025</span>"]) --> ULTRA(["ULTRA<br/><span class='roadmap-node-year'>2026</span>"])
-        ULTRA --> Psi(["Ψ₀<br/><span class='roadmap-node-year'>2026</span>"])
-        HOMIE -.-> FALCON(["FALCON 🎬<br/><span class='roadmap-node-year'>2025</span>"]) -.-> CHIP(["CHIP<br/><span class='roadmap-node-year'>2025</span>"])
-        HOMIE --> VIRAL(["VIRAL 🎬<br/><span class='roadmap-node-year'>2025</span>"])
-        HOMIE --> DoorMan(["DoorMan<br/><span class='roadmap-node-year'>2025</span>"])
-        HDMI(["HDMI 🎬<br/><span class='roadmap-node-year'>2025</span>"])
-    end
-    subgraph SG_WM ["7 · 世界模型 WM"]
-        Dreamer(["Dreamer / PlaNet<br/><span class='roadmap-node-year'>2019</span>"]) -.-> UniPi(["UniPi<br/><span class='roadmap-node-year'>2023</span>"])
-        Cosmos(["Cosmos 🎬<br/><span class='roadmap-node-year'>2025</span>"]) --> DreamDojo(["DreamDojo<br/><span class='roadmap-node-year'>2026</span>"]) --> WM1X(["1X 世界模型<br/><span class='roadmap-node-year'>2025</span>"])
-        HAIC(["HAIC — 动力学感知 WM<br/><span class='roadmap-node-year'>2026</span>"])
-    end
-    subgraph SG_WAM ["8 · 世界-动作模型 WAM"]
-        CosmosPolicy(["Cosmos Policy<br/><span class='roadmap-node-year'>2026</span>"])
-        DreamZero(["DreamZero<br/><span class='roadmap-node-year'>2026</span>"])
-    end
-    subgraph SG_FM ["9 · 基础模型 VLA / BFM"]
-        OpenVLA(["OpenVLA<br/><span class='roadmap-node-year'>2024</span>"]) --> Pi0
-        Pi0(["VLA — π₀ 🎬<br/><span class='roadmap-node-year'>2024</span>"]) --> Pi05(["π₀.₅ — 开放世界 VLA 🎬<br/><span class='roadmap-node-year'>2025</span>"])
-        Pi0 --> VLA
-        VLA(["VLA — GR00T N1 🎬<br/><span class='roadmap-node-year'>2025</span>"])
-        BFM(["BFM — 行为基础模型<br/><span class='roadmap-node-year'>2025</span>"])
-        BFM -.-> BFMZero(["BFM-Zero<br/><span class='roadmap-node-year'>2025</span>"])
-    end
-    subgraph SG_Eng ["工程实践"]
-        DR(["域随机化 🎬<br/><span class='roadmap-node-year'>2017</span>"]) --> LCP(["LCP 🎬<br/><span class='roadmap-node-year'>2024</span>"])
-        DR --> QuadTerrain(["四足地形 · 教师-学生 🎬<br/><span class='roadmap-node-year'>2020</span>"])
-        QuadTerrain --> OP3Soccer(["OP3 足球 🎬<br/><span class='roadmap-node-year'>2023</span>"])
-        QuadTerrain --> HumanoidLoco(["真实世界人形行走 🎬<br/><span class='roadmap-node-year'>2023</span>"])
-        LCP --> ASAP(["ASAP 🎬<br/><span class='roadmap-node-year'>2025</span>"])
-        InEKF(["Contact-Aided InEKF 🎬<br/><span class='roadmap-node-year'>2018 / 2019</span>"])
-        LCP -.->|部署平台| BerkeleyHumanoid(["Berkeley Humanoid 🎬<br/><span class='roadmap-node-year'>2024</span>"])
-        ToddlerBot(["ToddlerBot 🎬<br/><span class='roadmap-node-year'>2025</span>"])
-    end
-    GMR -.-> DM
-    GMR -.-> AMP
-    OmniRetarget -.-> HOMIE
-    NMR -.-> BM
-    ReActor -.-> DM
-    PHC --> ASE
-    DM -.-> HDMI
-    ASE -.-> BFMZero
-    PULSE --> DP
-    PULSE --> EWBC
-    BM --> EWBC
-    BM --> iDP3
-    HOVER --> HOMIE
-    HugWBC --> HOMIE
-    SONIC --> HOMIE
-    HumDex --> VLA
-    ULTRA --> VLA
-    Psi --> BFM
-    ULTRA --> BFM
-    BM --> Cosmos
-    Cosmos --> CosmosPolicy
-    Dreamer -.-> CosmosPolicy
-    HumDex --> DreamDojo
-    ULTRA --> HAIC
-    DreamDojo --> DreamZero
-    WM1X --> DreamZero
-    DreamZero --> VLA
-    DreamZero --> BFM
-    Transformer -.-> DP
-    Transformer -.-> Pi0
-    Transformer -.-> ACT
-    Transformer -.-> OpenVLA
-    ACT --> Pi0
-    QuadTerrain -.-> HOVER
-    ASAP -.-> BM
-    InEKF -.-> BerkeleyHumanoid
-    BerkeleyHumanoid -.-> ToddlerBot
-    DP --> Pi0`
-      };
-
-      function getRoadmapCacheKey(mode) {
-        var theme = root.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
-        return theme + ':' + mode;
-      }
-
-      /* ─── 路线图节点悬浮卡片 ───
-         鼠标悬停（或键盘聚焦）节点时显示论文详情：板块、发表时间、中英文标题、
-         一句话简介、arXiv / 开源，以及配音讲解视频的时长与讲解动画幕数。
-         数据来自 index.html 的 #roadmap-node-details（由 _data/papers.json 生成）。
-         触屏点按直接跳转笔记，不弹卡片。卡片 pointer-events: none，不挡点击。 */
-      var roadmapNodeCard;
-      var roadmapNodeDetails;
-
-      function getRoadmapNodeDetails() {
-        if (roadmapNodeDetails) return roadmapNodeDetails;
-        roadmapNodeDetails = {};
-        var dataEl = document.querySelector('script#roadmap-node-details');
-        if (dataEl) {
-          try {
-            roadmapNodeDetails = JSON.parse(dataEl.textContent) || {};
-          } catch (e) {
-            roadmapNodeDetails = {};
-          }
-        }
-        return roadmapNodeDetails;
-      }
-
-      function hideRoadmapNodeCard() {
-        if (roadmapNodeCard) roadmapNodeCard.hidden = true;
-      }
-
-      function formatRoadmapVideoDuration(seconds, zh) {
-        var m = Math.floor(seconds / 60);
-        var s = seconds % 60;
-        if (zh) return (m ? m + ' 分 ' : '') + s + ' 秒';
-        return m + ':' + (s < 10 ? '0' : '') + s;
-      }
-
-      /* 节点上写的短名与年份（Mermaid 的 .nodeLabel 里：名称 🎬<br/><span class=year>）。 */
-      function readRoadmapNodeLabel(nodeGroup) {
-        var label = nodeGroup.querySelector('.nodeLabel') || nodeGroup;
-        var yearEl = label.querySelector('.roadmap-node-year');
-        var year = yearEl ? yearEl.textContent.trim() : '';
-        var name = label.textContent.replace('🎬', '');
-        if (year) name = name.replace(year, '');
-        return { name: name.replace(/\s+/g, ' ').trim(), year: year };
-      }
-
-      function roadmapNodeHasVideo(nodeGroup, info) {
-        return !!(info && info.video_seconds) || nodeGroup.textContent.indexOf('🎬') !== -1;
-      }
-
-      function roadmapCardPart(parent, tag, className, text) {
-        var el = document.createElement(tag);
-        el.className = className;
-        if (text != null) el.textContent = text;
-        parent.appendChild(el);
-        return el;
-      }
-
-      function fillRoadmapNodeCard(nodeGroup, nodeId, url) {
-        var zh = root.getAttribute('data-lang-mode') === 'zh';
-        var info = getRoadmapNodeDetails()[nodeId] || {};
-        var label = readRoadmapNodeLabel(nodeGroup);
-        var card = roadmapNodeCard;
-        card.textContent = '';
-
-        var eyebrow = [zh ? info.category_zh : info.category, (zh ? info.date_zh : info.date) || label.year]
-          .filter(Boolean)
-          .join(' · ');
-        if (eyebrow) roadmapCardPart(card, 'div', 'roadmap-node-card__eyebrow', eyebrow);
-
-        var title = (zh ? info.zh_title || info.title : info.title) || label.name;
-        var subtitle = zh ? info.title : info.zh_title;
-        roadmapCardPart(card, 'div', 'roadmap-node-card__title', title);
-        if (subtitle && subtitle !== title) {
-          roadmapCardPart(card, 'div', 'roadmap-node-card__subtitle', subtitle);
-        }
-
-        if (info.summary_zh) {
-          // 简介摘自中文笔记的「🎯 一句话总结」；公式交给页面已加载的 KaTeX。
-          var summary = roadmapCardPart(card, 'p', 'roadmap-node-card__summary', info.summary_zh);
-          summary.setAttribute('lang', 'zh-CN');
-          if (typeof window.renderKaTeXIn === 'function') window.renderKaTeXIn(summary);
-        }
-
-        if (roadmapNodeHasVideo(nodeGroup, info)) {
-          var video = roadmapCardPart(card, 'div', 'roadmap-node-card__video');
-          roadmapCardPart(video, 'div', 'roadmap-node-card__video-title',
-            zh ? '🎬 含配音讲解视频' : '🎬 Narrated explainer video');
-          var videoMeta = [];
-          if (info.video_seconds) videoMeta.push(formatRoadmapVideoDuration(info.video_seconds, zh));
-          if (info.scenes) videoMeta.push(zh ? info.scenes + ' 幕讲解动画' : info.scenes + '-scene animation');
-          videoMeta.push(zh ? '中文配音与字幕，可下载' : 'Chinese voice-over & subtitles, downloadable');
-          roadmapCardPart(video, 'div', 'roadmap-node-card__video-meta', videoMeta.join(' · '));
-        } else if (info.scenes) {
-          roadmapCardPart(card, 'div', 'roadmap-node-card__video',
-            zh ? '🎞️ 含 ' + info.scenes + ' 幕讲解动画' : '🎞️ ' + info.scenes + '-scene explainer animation');
-        }
-
-        var meta = [];
-        if (info.arxiv) meta.push('arXiv ' + info.arxiv);
-        if (info.open_source) meta.push(zh ? '⭐️ 含开源代码' : '⭐️ Open source code');
-        if (meta.length) roadmapCardPart(card, 'div', 'roadmap-node-card__meta', meta.join(' · '));
-
-        var external = /^https:\/\//.test(url);
-        roadmapCardPart(card, 'div', 'roadmap-node-card__action', external
-          ? (zh ? '点击打开论文原文 ↗' : 'Click to open the paper ↗')
-          : (zh ? '点击阅读笔记 →' : 'Click to read the note →'));
-      }
-
-      function positionRoadmapNodeCard(nodeGroup) {
-        var card = roadmapNodeCard;
-        var gap = 10;
-        var margin = 8;
-        var rect = nodeGroup.getBoundingClientRect();
-        var width = card.offsetWidth;
-        var height = card.offsetHeight;
-        var left = Math.max(margin, Math.min(rect.left + rect.width / 2 - width / 2, window.innerWidth - width - margin));
-        var top = rect.bottom + gap;
-        if (top + height > window.innerHeight - margin && rect.top - gap - height >= margin) {
-          top = rect.top - gap - height;
-        }
-        top = Math.max(margin, Math.min(top, window.innerHeight - height - margin));
-        card.style.left = left + 'px';
-        card.style.top = top + 'px';
-      }
-
-      function attachRoadmapNodeCard(nodeGroup, nodeId, url) {
-        if (!roadmapNodeCard) {
-          roadmapNodeCard = document.createElement('div');
-          roadmapNodeCard.id = 'roadmap-node-card';
-          roadmapNodeCard.className = 'roadmap-node-card';
-          roadmapNodeCard.setAttribute('role', 'tooltip');
-          roadmapNodeCard.hidden = true;
-          document.body.appendChild(roadmapNodeCard);
-        }
-        var zh = root.getAttribute('data-lang-mode') === 'zh';
-        var info = getRoadmapNodeDetails()[nodeId] || {};
-        var name = (zh ? info.zh_title || info.title : info.title) || readRoadmapNodeLabel(nodeGroup).name || nodeId;
-        if (roadmapNodeHasVideo(nodeGroup, info)) {
-          name += zh ? '（含配音讲解视频）' : ' (narrated video included)';
-        }
-        nodeGroup.setAttribute('aria-label', name);
-        nodeGroup.setAttribute('aria-describedby', roadmapNodeCard.id);
-
-        function showCard() {
-          fillRoadmapNodeCard(nodeGroup, nodeId, url);
-          roadmapNodeCard.hidden = false;
-          positionRoadmapNodeCard(nodeGroup);
-        }
-
-        nodeGroup.addEventListener('pointerenter', function(e) {
-          if (e.pointerType !== 'touch') showCard();
-        });
-        nodeGroup.addEventListener('focus', showCard);
-        nodeGroup.addEventListener('pointerleave', hideRoadmapNodeCard);
-        nodeGroup.addEventListener('blur', hideRoadmapNodeCard);
-        nodeGroup.addEventListener('pointerdown', hideRoadmapNodeCard);
-      }
-
-      window.addEventListener('scroll', hideRoadmapNodeCard, true);
-      window.addEventListener('resize', hideRoadmapNodeCard);
-      document.addEventListener('cl-lang-changed', hideRoadmapNodeCard);
-      document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape') hideRoadmapNodeCard();
-      });
-
-      window.attachRoadmapNodeLinks = function(container) {
-        if (!container) return;
-        var dataEl = document.querySelector('script#roadmap-node-links');
-        if (!dataEl) return;
-        var links;
-        try {
-          links = JSON.parse(dataEl.textContent);
-        } catch (e) {
-          return;
-        }
-        var svg = container.querySelector('svg');
-        if (!svg) return;
-
-        Object.keys(links).forEach(function(nodeId) {
-          var url = links[nodeId];
-          if (!url || typeof url !== 'string') return;
-          var nodeGroup = svg.querySelector('[id^="flowchart-' + nodeId + '-"]');
-          if (!nodeGroup) return;
-          nodeGroup.classList.add('roadmap-node-link');
-          nodeGroup.setAttribute('role', 'link');
-          nodeGroup.setAttribute('tabindex', '0');
-          nodeGroup.setAttribute('data-roadmap-url', url);
-          attachRoadmapNodeCard(nodeGroup, nodeId, url);
-
-          function goToNote(e) {
-            if (e) {
-              e.preventDefault();
-              e.stopPropagation();
-            }
-            window.location.assign(url);
-          }
-
-          nodeGroup.addEventListener('pointerdown', function(e) {
-            e.stopPropagation();
-          });
-          nodeGroup.addEventListener('click', goToNote);
-          nodeGroup.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter' || e.key === ' ') {
-              goToNote(e);
-            }
-          });
-        });
-      };
-
-      function finishRoadmapInsert(mermaidRoadmap) {
-        hideRoadmapNodeCard();
-        mermaidRoadmap.removeAttribute('data-processed');
-        window.attachRoadmapNodeLinks(mermaidRoadmap);
-        if (typeof window.attachRoadmapEdgeFlow === 'function') {
-          window.attachRoadmapEdgeFlow(mermaidRoadmap);
-        }
-        if (typeof window.patchRoadmapMermaidDom === 'function') {
-          window.patchRoadmapMermaidDom(mermaidRoadmap);
-          requestAnimationFrame(function() {
-            window.patchRoadmapMermaidDom(mermaidRoadmap);
-          });
-        }
-      }
-
-      /* The roadmap sits in a folded <details>. Drawing it is seconds of main
-         thread on a phone (mermaid layout plus the DOM patches above), and it
-         used to run on load and again on every theme and language switch, for
-         a picture nobody could see: that was most of why both toggles froze
-         the home page. While folded nothing is drawn; opening the fold draws
-         the current theme and language, and a toggle redraws only when open. */
-      function roadmapIsFolded(mermaidRoadmap) {
-        var fold = mermaidRoadmap.closest('details');
-        return !!(fold && !fold.open);
-      }
-
-      window.renderRoadmapMermaid = function(mode) {
-        var mermaidRoadmap = document.getElementById('roadmap-mermaid');
-        if (!mermaidRoadmap) return Promise.resolve();
-        if (roadmapIsFolded(mermaidRoadmap)) return Promise.resolve();
-
-        var normalizedMode = mode === 'zh' ? 'zh' : 'en';
-        var cacheKey = getRoadmapCacheKey(normalizedMode);
-        // Folded and reopened with nothing changed: the drawing is still right.
-        if (mermaidRoadmap.getAttribute('data-roadmap-key') === cacheKey && mermaidRoadmap.querySelector('svg')) {
-          return Promise.resolve();
-        }
-        var graphText =
-          typeof window.buildRoadmapGraph === 'function'
-            ? window.buildRoadmapGraph(roadmapGraphs[normalizedMode])
-            : roadmapGraphs[normalizedMode].trim();
-        var cachedSvg = roadmapSvgCache[cacheKey];
-        var renderSeq = ++roadmapRenderSeq;
-
-        if (cachedSvg) {
-          mermaidRoadmap.innerHTML = cachedSvg;
-          mermaidRoadmap.setAttribute('data-roadmap-key', cacheKey);
-          finishRoadmapInsert(mermaidRoadmap);
-          return Promise.resolve();
-        }
-
-        if (!window.roadmapMermaidConfigured || typeof mermaid === 'undefined' || !mermaid.render) {
-          return Promise.resolve();
-        }
-
-        var renderId = 'roadmap-mermaid-' + cacheKey.replace(':', '-') + '-' + renderSeq;
-        return Promise.resolve(mermaid.render(renderId, graphText)).then(function(result) {
-          if (renderSeq !== roadmapRenderSeq || getRoadmapCacheKey(normalizedMode) !== cacheKey) return;
-          var safeSvg =
-            typeof window.sanitizeMermaidSvg === 'function'
-              ? window.sanitizeMermaidSvg(result.svg)
-              : typeof DOMPurify !== 'undefined'
-                ? DOMPurify.sanitize(result.svg)
-                : '';
-          roadmapSvgCache[cacheKey] = safeSvg;
-          mermaidRoadmap.innerHTML = safeSvg;
-          mermaidRoadmap.setAttribute('data-roadmap-key', cacheKey);
-          finishRoadmapInsert(mermaidRoadmap);
-        }).catch(function() {
-          // Keep the previous SVG visible if rendering fails.
-        });
-      };
-
-      (function() {
-        var mermaidRoadmap = document.getElementById('roadmap-mermaid');
-        var fold = mermaidRoadmap && mermaidRoadmap.closest('details');
-        if (!fold) return;
-        fold.addEventListener('toggle', function() {
-          if (fold.open) window.renderRoadmapMermaid(root.getAttribute('data-lang-mode') || 'en');
-        });
-      })();
 
       function applyLang(mode) {
         root.setAttribute('data-lang-mode', mode);
@@ -1283,7 +768,6 @@
             el.setAttribute('aria-label', text);
           }
         }
-        window.renderRoadmapMermaid(mode);
         document.dispatchEvent(new CustomEvent('cl-lang-changed', { detail: { mode: mode } }));
       }
 
@@ -1295,7 +779,7 @@
       // Initialize on load. The head script already set data-lang-mode and
       // pre-translated the parsed markup; this is the full sweep that catches
       // anything the observer skipped (e.g. text the parser delivered in
-      // pieces) and wires up the roadmap re-render.
+      // pieces).
       applyLang(
         typeof window.getSiteLang === 'function'
           ? window.getSiteLang()
@@ -1315,7 +799,7 @@
       {left: "\\(", right: "\\)", display: false}
     ];
     var KATEX_IGNORED_TAGS = ['script', 'style', 'pre', 'code', 'textarea', 'annotation'];
-    var KATEX_IGNORED_CLASSES = ['mermaid', 'mermaid-container'];
+    var KATEX_IGNORED_CLASSES = ['mermaid'];
     var KATEX_ENTITY_REGEX = /(\$\$[\s\S]*?\$\$|\\\[[\s\S]*?\\\]|\$[\s\S]*?\$|\\\([\s\S]*?\\\))/g;
 
     function fixMathEntitiesIn(container) {
@@ -1338,7 +822,7 @@
               if (tag === 'SCRIPT' || tag === 'STYLE' || tag === 'PRE' || tag === 'CODE' || tag === 'ANNOTATION' || tag === 'TEXTAREA') {
                 return NodeFilter.FILTER_REJECT;
               }
-              if ((node.classList && (node.classList.contains('mermaid') || node.classList.contains('mermaid-container'))) || node.id === 'roadmap-mermaid') {
+              if (node.classList && node.classList.contains('mermaid')) {
                 return NodeFilter.FILTER_REJECT;
               }
               return NodeFilter.FILTER_SKIP;
