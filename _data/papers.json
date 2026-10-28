@@ -4837,6 +4837,19 @@
     "display_name": "Human Motion",
     "papers": [
       {
+        "title": "TRACE: Typed Reference-Aware Conversational Editing for Humanoid Motion Diffusion",
+        "path": "papers/14_Human_Motion/TRACE__Typed_Reference-Aware_Conversational_Editing_for_Humanoid_Motion_Diffusion/TRACE__Typed_Reference-Aware_Conversational_Editing_for_Humanoid_Motion_Diffusion.md",
+        "url": "/papers/14_Human_Motion/TRACE__Typed_Reference-Aware_Conversational_Editing_for_Humanoid_Motion_Diffusion/TRACE__Typed_Reference-Aware_Conversational_Editing_for_Humanoid_Motion_Diffusion.html",
+        "dir": "TRACE__Typed_Reference-Aware_Conversational_Editing_for_Humanoid_Motion_Diffusion",
+        "arxiv": "2610.21515",
+        "has_open_source": true,
+        "summary_zh": "TRACE 的做法是从训练动作本身用正运动学测出事件（左右脚支撑、根部竖直速度三档、根部高度三档、左右手相对骨盆高度四档，每 4 帧一格共 16 个通道），拿它监督一个 Qwen3-4B 规划器；扩散 Transformer 同时看原始文…",
+        "published_date_zh": "2026年10月15日（arXiv v1）",
+        "published_date_en": "Oct 15, 2026 (arXiv v1)",
+        "zhname": "TRACE：面向人形动作扩散的类型化、参考感知对话式编辑",
+        "zh_title": "TRACE：面向人形动作扩散的类型化、参考感知对话式编辑"
+      },
+      {
         "title": "Streaming Multi-Track Timeline Control for 3D Human Motion Generation",
         "path": "papers/14_Human_Motion/TimelineControl__Streaming_Multi-Track_Timeline_Control_for_3D_Human_Motion/TimelineControl__Streaming_Multi-Track_Timeline_Control_for_3D_Human_Motion.md",
         "url": "/papers/14_Human_Motion/TimelineControl__Streaming_Multi-Track_Timeline_Control_for_3D_Human_Motion/TimelineControl__Streaming_Multi-Track_Timeline_Control_for_3D_Human_Motion.html",
