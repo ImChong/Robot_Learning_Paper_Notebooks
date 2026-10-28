@@ -73,7 +73,7 @@
   var FIG10 = [['小 CNN', 0.77], ['ResNet-18', 0.87], ['DINOv3-ViT-S', 0.87], ['DINOv3-ViT-S+', 0.87]];
   var FIG12 = [['MLP 看 32 步', 0.83], ['MLP 看 8 步', 0.80], ['LSTM 看 32 步', 0.79], ['不看历史', 0.74], ['LSTM 看 8 步', 0.72]];
   /* 表 1、表 2：观测维数 */
-  var OBS_T = [['本体', 137, '线速度 3、角速度 3、重力 3、动作 31、增量 11、关节 43 + 43'], ['阶段', 5, '独热'],
+  var OBS_T = [['本体', 137, '线速度 3、角速度 3、重力 3、动作 31、增量 11、关节 43 + 43'], ['阶段', 5, '在哪个阶段，那一格就是 1，其余是 0'],
     ['物体与桌子', 77, '两只瓶子的指尖力、位姿、相对手的位姿，桌子、放置与举起目标'], ['HOMIE 命令', 7, '']];
   var OBS_S = [['本体', 106, '角速度 3、重力 3、动作 31、增量 11、关节 29 + 29'], ['HOMIE 命令', 7, '']];
   var DIM = { teacher: 226, student: 113, vision: 128, act: 11, wbc: 31, imgH: 108, imgW: 192 };
@@ -978,10 +978,19 @@
       x0 += w;
     });
     OBS_T.forEach(function (o, i) {
-      var g = group(p1), y = 134 + i * 42;
+      var g = group(p1), y = [134, 197, 258, 304][i];
       g.appendChild(paint(svgEl('rect', { x: R, y: y - 11, width: 12, height: 12, rx: 2 }), cols1[i]));
       label(g, R + 18, y, o[0] + ' ' + o[1], 'demo-x-ink', 12);
-      if (o[2]) label(g, R + 18, y + 20, o[2], 'demo-x-mut', 9.5);
+      if (o[2]) label(g, R + 18, y + (i === 1 ? 28 : 20), o[2], 'demo-x-mut', 9.5);
+    });
+    /* 阶段这 5 维：五个阶段各占一格，左边回放此刻在哪个阶段，那一格是 1、其余是 0（代码 F.one_hot(stage_buf, 5)）。
+       2026-10-28 看片反馈：只写「独热」观众听不懂 */
+    var stCells = STAGES.map(function (st, k) {
+      var x = R + 84 + k * 54, g = group(p1);
+      label(g, x + 24, 174, st.zh, 'demo-x-ink2', 11, 'middle');
+      var box = paint(svgEl('rect', { x: x, y: 182, width: 48, height: 22, rx: 4, 'stroke-width': 1.5 }), C_SURFACE2, C_BORDER);
+      g.appendChild(box);
+      return { box: box, d: label(g, x + 24, 198, '0', 'demo-x-mut', 12.5, 'middle') };
     });
     /* 第 2 段：11 维输出 —— 跟着回放动：3 个速度、右臂 7 个关节、右手开合（示范此刻累加出的命令） */
     var p2 = group(s);
@@ -1059,6 +1068,12 @@
       var f = F[j];
       bot.put(cam, j); bot.g.style.opacity = clamp(fade, 0, 1);
       setLine(wsCur, wsX(j), 168, wsX(j), 188);
+      var stNow = stageAt(f.t);
+      stCells.forEach(function (c, k) {
+        var on = k === stNow;
+        c.box.style.fill = on ? C_PURPLE : C_SURFACE2; c.box.style.stroke = on ? C_PURPLE : C_BORDER;
+        c.d.textContent = on ? '1' : '0'; c.d.style.fill = on ? '#ffffff' : '';
+      });
       var pts = [f.hold, f.front, DEMO.tray];
       tags.forEach(function (k, i) {
         var q = project(pts[i], cam);
