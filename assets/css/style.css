@@ -2170,14 +2170,44 @@ body.tt-map-is-open {
   line-height: 16px;
 }
 
-.tt-map-zoom,
+.tt-map-legend p {
+  margin: 0;
+}
+
+/* 平移 / 缩放的提示按输入方式只显示一种。 */
+.tt-map-hint {
+  color: var(--text-muted);
+}
+
+.tt-map-hint--touch {
+  display: none;
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .tt-map-hint--mouse {
+    display: none;
+  }
+
+  .tt-map-hint--touch {
+    display: block;
+  }
+}
+
+.tt-map-controls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.tt-map-btn,
 .tt-map-close {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 4px;
+  min-width: 32px;
   min-height: 32px;
-  padding: 4px 12px;
+  padding: 4px 8px;
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   background: var(--bg);
@@ -2186,11 +2216,21 @@ body.tt-map-is-open {
   font-size: 14px;
   line-height: 20px;
   cursor: pointer;
-  transition: border-color var(--dur-micro) var(--ease);
+  transition: border-color var(--dur-micro) var(--ease), opacity var(--dur-micro) var(--ease);
 }
 
-.tt-map-zoom[hidden] {
+.tt-map-btn[hidden] {
   display: none;
+}
+
+.tt-map-btn:disabled {
+  cursor: default;
+  opacity: 0.4;
+}
+
+.tt-map-layout {
+  margin-left: 4px;
+  padding: 4px 12px;
 }
 
 .tt-map-close {
@@ -2198,16 +2238,27 @@ body.tt-map-is-open {
   padding: 0;
 }
 
+.tt-map-btn .icon,
 .tt-map-close .icon {
   width: 16px;
   height: 16px;
 }
 
-.tt-map-zoom:hover,
+.tt-map-btn:not(:disabled):hover,
 .tt-map-close:hover {
   border-color: var(--link);
 }
 
+.tt-map-level {
+  min-width: 48px;
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 16px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+/* 单指平移交给浏览器（有惯性），双指捏合由 roadmap.js 接管，所以只放行 pan-x / pan-y。 */
 .tt-map-viewport {
   display: flex;
   flex: 1;
@@ -2215,6 +2266,21 @@ body.tt-map-is-open {
   padding: 16px;
   overflow: auto;
   overscroll-behavior: contain;
+  touch-action: pan-x pan-y;
+  cursor: grab;
+}
+
+.tt-map-viewport.is-dragging {
+  cursor: grabbing;
+}
+
+.tt-map-viewport:focus {
+  outline: none;
+}
+
+.tt-map-viewport:focus-visible {
+  outline: 2px solid var(--link);
+  outline-offset: -2px;
 }
 
 /* margin: auto 让放得下时居中、放不下时从左上角开始滚，不会被裁掉。 */
@@ -2226,6 +2292,8 @@ body.tt-map-is-open {
 .tt-map-canvas {
   position: relative;
   display: flex;
+  -webkit-user-select: none;
+  user-select: none;
   flex-wrap: wrap;
   align-items: flex-start;
   justify-content: center;
@@ -2287,6 +2355,7 @@ body.tt-map-is-open {
 }
 
 .tt-tree--map .tt-node {
+  -webkit-user-drag: none;
   min-height: 44px;
   margin: 0 5px;
   padding: 4px 0;
@@ -2352,9 +2421,18 @@ body.tt-map-is-open {
     border-radius: 0;
   }
 
-  .tt-map-legend {
+  .tt-map-title {
+    flex: 1;
+  }
+
+  .tt-map-controls {
     flex-basis: 100%;
     order: 3;
+  }
+
+  .tt-map-legend {
+    flex-basis: 100%;
+    order: 4;
   }
 
   .tt-map-viewport {
@@ -4063,7 +4141,7 @@ a.updates-item-link:hover {
 }
 
 /* 首页路线图节点悬浮卡片（assets/js/roadmap.js 的 showCard）。
-   fixed 定位、不吃指针事件，不挡节点点击。 */
+   fixed 定位；鼠标悬停弹出时不吃指针事件、不挡节点点击，触屏弹出时（.is-touch）可以点。 */
 .roadmap-node-card {
   position: fixed;
   z-index: var(--z-popover);
@@ -4158,11 +4236,42 @@ a.updates-item-link:hover {
 }
 
 .roadmap-node-card__action {
+  display: inline-block;
   margin-top: 8px;
   color: var(--link);
   font-size: 12px;
   line-height: 16px;
   font-weight: 600;
+  text-decoration: none;
+}
+
+/* 触屏上点节点弹出的卡片能点：底部的「点击阅读笔记」是一个整行的按钮。
+   上下都放不下时脚本压低卡片的 max-height，只有 body 在里面滚动，按钮一直露着。 */
+.roadmap-node-card.is-touch {
+  pointer-events: auto;
+}
+
+.roadmap-node-card.is-touch:not([hidden]) {
+  display: flex;
+  flex-direction: column;
+}
+
+.roadmap-node-card.is-touch .roadmap-node-card__body {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.roadmap-node-card.is-touch .roadmap-node-card__action {
+  flex-shrink: 0;
+  display: block;
+  margin-top: 12px;
+  padding: 12px 16px;
+  border-radius: var(--radius-md);
+  background: var(--accent-soft);
+  font-size: 14px;
+  line-height: 20px;
+  text-align: center;
 }
 
 /* ── 滚动入场（全站）───────────────────────────────────────────────

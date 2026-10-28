@@ -88,14 +88,29 @@ def test_video_badges_come_from_papers_json():
     assert "🎬" not in (ROOT / "_data" / "roadmap.yml").read_text(encoding="utf-8")
 
 
-def test_node_card_does_not_block_clicks_and_skips_touch():
+def test_node_card_does_not_block_clicks_but_opens_notes_on_touch():
     js = ROADMAP_JS.read_text(encoding="utf-8")
     css = STYLE_CSS.read_text(encoding="utf-8")
-    assert "if (e.pointerType === 'touch') return;" in js
     assert "script#roadmap-node-details" in js
+    # 鼠标悬停弹出的卡片不吃指针事件，不挡节点点击。
     card_css = css.split(".roadmap-node-card {", 1)[1].split("}", 1)[0]
     assert "pointer-events: none" in card_css
     assert "position: fixed" in card_css
+    # 触屏没有悬停：第一次点节点只弹卡片（分系视图和全局总览都是），卡片能点，
+    # 卡片上的「点击阅读笔记」是指向同一篇笔记的链接。
+    assert "if (e.pointerType === 'touch') return;" in js
+    assert "if (!touchActivation(e) || cardFor === el) return;" in js
+    assert "return lastPointer === 'touch' && e.detail !== 0;" in js
+    assert js.count("bindNodeCard(node, ") == 3  # 定义一次，分系视图和总览各调用一次
+    assert "action.href = node.el.getAttribute('href');" in js
+    touch_css = css.split(".roadmap-node-card.is-touch {", 1)[1].split("}", 1)[0]
+    assert "pointer-events: auto" in touch_css
+    # 能点的卡片不能盖住刚点的节点：上下都放不下时压低高度，只有 body 在里面滚动，
+    # 在卡片里滚动不算「页面滚动了、收起卡片」。
+    assert "placeCard(cardFor, touch);" in js
+    assert "card.style.maxHeight = room + 'px';" in js
+    assert "if (card && card.contains(e.target)) return;" in js
+    assert "overflow-y: auto" in css.split(".roadmap-node-card.is-touch .roadmap-node-card__body {", 1)[1].split("}", 1)[0]
 
 
 def test_tabs_are_an_accessible_tablist():
@@ -120,8 +135,36 @@ def test_global_overview_window_shows_every_node_and_route():
     assert "el.setAttribute('aria-modal', 'true');" in js
     assert "if (map && !map.el.hidden) closeMap();" in js
     # 按窗口大小挑排法、缩放到放得下；放大阅读时只上下滚，不横向拖动。
-    assert "function fitMap()" in js and "map.zoomed = !map.zoomed;" in js
+    assert "function fitMap()" in js and "map.reading = !map.reading;" in js
     assert "if (width <= availW && (!read || width > read.width))" in js
     assert "scale: availW / narrowest.width" in js
-    # 触屏上第一次点只点亮路线，第二次才打开笔记。
-    assert "map.pointerType !== 'touch' || map.armed === node.id" in js
+    # 窗口里的节点副本和分系视图用同一套悬停 / 触屏卡片。
+    assert "bindNodeCard(node, copy, function () { traceMap(node); }, clearMapTrace);" in js
+
+
+def test_global_overview_zooms_and_pans_with_mouse_keyboard_and_touch():
+    js = ROADMAP_JS.read_text(encoding="utf-8")
+    css = STYLE_CSS.read_text(encoding="utf-8")
+    # 平移走原生滚动（触屏有惯性、方向键和滚动条照常用），双指捏合由脚本接管。
+    viewport_css = css.split("\n.tt-map-viewport {", 1)[1].split("}", 1)[0]
+    assert "overflow: auto" in viewport_css and "touch-action: pan-x pan-y" in viewport_css
+    assert "viewport.addEventListener('touchmove', function (e) {" in js
+    assert "}, { passive: false });" in js
+    # 缩放时手指 / 光标下的那一点不动。
+    assert "function keepPoint(x, y, clientX, clientY)" in js
+    assert "keepPoint(pinch.x, pinch.y, c.x, c.y);" in js
+    # 鼠标：Ctrl / ⌘ + 滚轮缩放，不按修饰键就是原生滚动；按住拖动平移，拖完不算点击。
+    assert "if (!e.ctrlKey && !e.metaKey) return;" in js
+    assert "viewport.setPointerCapture(e.pointerId);" in js
+    assert "map.suppressClick = true;" in js
+    assert "copy.setAttribute('draggable', 'false');" in js
+    # Safari 的触控板捏合（gesture 事件）也能缩放，并且不让整页跟着缩放。
+    assert "map.el.addEventListener('gesturechange', function (e) {" in js
+    # 键盘：视窗能聚焦；+ / − 缩放、0 复位、方向键平移；带 Ctrl / ⌘ 的组合键留给浏览器。
+    assert "viewport.tabIndex = 0;" in js
+    for key in ("'+'", "'='", "'-'", "'0'", "ArrowLeft", "ArrowDown"):
+        assert key in js, key
+    assert "if (e.ctrlKey || e.metaKey || e.altKey) return;" in js
+    # 按钮和读数：缩小 / 当前比例 / 放大 / 复位。
+    for name in ("tt-map-zoom-out", "tt-map-zoom-in", "tt-map-reset", "tt-map-level"):
+        assert name in js, name
