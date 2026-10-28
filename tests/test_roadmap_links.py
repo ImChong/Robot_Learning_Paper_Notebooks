@@ -88,14 +88,29 @@ def test_video_badges_come_from_papers_json():
     assert "🎬" not in (ROOT / "_data" / "roadmap.yml").read_text(encoding="utf-8")
 
 
-def test_node_card_does_not_block_clicks_and_skips_touch():
+def test_node_card_does_not_block_clicks_but_opens_notes_on_touch():
     js = ROADMAP_JS.read_text(encoding="utf-8")
     css = STYLE_CSS.read_text(encoding="utf-8")
-    assert "if (e.pointerType === 'touch') return;" in js
     assert "script#roadmap-node-details" in js
+    # 鼠标悬停弹出的卡片不吃指针事件，不挡节点点击。
     card_css = css.split(".roadmap-node-card {", 1)[1].split("}", 1)[0]
     assert "pointer-events: none" in card_css
     assert "position: fixed" in card_css
+    # 触屏没有悬停：第一次点节点只弹卡片（分系视图和全局总览都是），卡片能点，
+    # 卡片上的「点击阅读笔记」是指向同一篇笔记的链接。
+    assert "if (e.pointerType === 'touch') return;" in js
+    assert "if (!touchActivation(e) || cardFor === el) return;" in js
+    assert "return lastPointer === 'touch' && e.detail !== 0;" in js
+    assert js.count("bindNodeCard(node, ") == 3  # 定义一次，分系视图和总览各调用一次
+    assert "action.href = node.el.getAttribute('href');" in js
+    touch_css = css.split(".roadmap-node-card.is-touch {", 1)[1].split("}", 1)[0]
+    assert "pointer-events: auto" in touch_css
+    # 能点的卡片不能盖住刚点的节点：上下都放不下时压低高度，只有 body 在里面滚动，
+    # 在卡片里滚动不算「页面滚动了、收起卡片」。
+    assert "placeCard(cardFor, touch);" in js
+    assert "card.style.maxHeight = room + 'px';" in js
+    assert "if (card && card.contains(e.target)) return;" in js
+    assert "overflow-y: auto" in css.split(".roadmap-node-card.is-touch .roadmap-node-card__body {", 1)[1].split("}", 1)[0]
 
 
 def test_tabs_are_an_accessible_tablist():
@@ -123,8 +138,8 @@ def test_global_overview_window_shows_every_node_and_route():
     assert "function fitMap()" in js and "map.reading = !map.reading;" in js
     assert "if (width <= availW && (!read || width > read.width))" in js
     assert "scale: availW / narrowest.width" in js
-    # 触屏上第一次点只点亮路线，第二次才打开笔记。
-    assert "map.pointerType !== 'touch' || map.armed === node.id" in js
+    # 窗口里的节点副本和分系视图用同一套悬停 / 触屏卡片。
+    assert "bindNodeCard(node, copy, function () { traceMap(node); }, clearMapTrace);" in js
 
 
 def test_global_overview_zooms_and_pans_with_mouse_keyboard_and_touch():

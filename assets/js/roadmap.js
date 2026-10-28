@@ -5,8 +5,8 @@
    - 跨系：起点或终点在别的系的箭头不画在树里，换成树上方「前置」、下方「通往」两排
      标签，点一下切到那一系并闪一下那个节点；
    - 悬停 / 聚焦节点：点亮它在这一系里的整条前置链，弹出论文详情卡片（数据来自
-     #roadmap-node-details，由 _data/papers.json 生成）。触屏点按直接打开笔记，不弹卡片；
-     卡片 pointer-events: none，不挡点击；
+     #roadmap-node-details，由 _data/papers.json 生成）；这时卡片 pointer-events: none，不挡点击。
+     触屏没有悬停：第一次点节点弹卡片，卡片能点，点卡片上的「点击阅读笔记」进入笔记；
    - 全局总览：一个窗口里把 11 系按 map_order 排开，所有节点和所有箭头（含跨系的）一起画，
      按窗口大小挑排法、缩放到放得下，也可以放大阅读（只上下滚）；悬停节点点亮它的整条前置路线（深色）和后续（浅色）。
      可以缩放、平移：平移走原生滚动（触屏有惯性，方向键、滚动条照常用），缩放用双指捏合、
@@ -429,8 +429,28 @@
     return details;
   }
 
+  var cardFor = null; // 卡片当前是给哪个节点元素弹的
+  var lastPointer = '';
+
   function hideCard() {
-    if (card) card.hidden = true;
+    if (card) {
+      card.hidden = true;
+      card.classList.remove('is-touch');
+    }
+    cardFor = null;
+  }
+
+  // 这次点击是不是手指点的（键盘回车触发的 click 的 detail 是 0）。
+  function touchActivation(e) {
+    return lastPointer === 'touch' && e.detail !== 0;
+  }
+
+  function focusVisible(el) {
+    try {
+      return el.matches(':focus-visible');
+    } catch (e) {
+      return true;
+    }
   }
 
   function formatDuration(seconds, zh) {
@@ -469,20 +489,22 @@
     var info = getDetails()[node.id] || {};
     var year = node.el.querySelector('.tt-node-year');
     card.textContent = '';
+    // 卡片太高、触屏上放不下时只有 body 在卡片里滚动，底部的「点击阅读笔记」一直露着。
+    var body = cardPart(card, 'div', 'roadmap-node-card__body');
 
     var eyebrow = [zh ? info.category_zh : info.category, (zh ? info.date_zh : info.date) || (year && year.textContent)]
       .filter(Boolean)
       .join(' · ');
-    if (eyebrow) cardPart(card, 'div', 'roadmap-node-card__eyebrow', eyebrow);
+    if (eyebrow) cardPart(body, 'div', 'roadmap-node-card__eyebrow', eyebrow);
 
     var title = (zh ? info.zh_title || info.title : info.title) || nodeLabel(node, zh);
     var subtitle = zh ? info.title : info.zh_title;
-    cardPart(card, 'div', 'roadmap-node-card__title', title);
-    if (subtitle && subtitle !== title) cardPart(card, 'div', 'roadmap-node-card__subtitle', subtitle);
+    cardPart(body, 'div', 'roadmap-node-card__title', title);
+    if (subtitle && subtitle !== title) cardPart(body, 'div', 'roadmap-node-card__subtitle', subtitle);
 
     if (info.summary_zh) {
       // 简介摘自中文笔记的「🎯 一句话总结」；公式交给页面已加载的 KaTeX。
-      var summary = cardPart(card, 'p', 'roadmap-node-card__summary', info.summary_zh);
+      var summary = cardPart(body, 'p', 'roadmap-node-card__summary', info.summary_zh);
       summary.setAttribute('lang', 'zh-CN');
       if (typeof window.renderKaTeXIn === 'function') window.renderKaTeXIn(summary);
     }
@@ -490,10 +512,10 @@
     var path = [];
     if (node.after.length) path.push((zh ? '前置：' : 'Prerequisites: ') + linkList(node, node.after, zh));
     if (node.related.length) path.push((zh ? '相关：' : 'Related: ') + linkList(node, node.related, zh));
-    if (path.length) cardPart(card, 'div', 'roadmap-node-card__path', path.join(zh ? '；' : '; '));
+    if (path.length) cardPart(body, 'div', 'roadmap-node-card__path', path.join(zh ? '；' : '; '));
 
     if (hasVideo(node, info)) {
-      var video = cardPart(card, 'div', 'roadmap-node-card__video');
+      var video = cardPart(body, 'div', 'roadmap-node-card__video');
       cardPart(video, 'div', 'roadmap-node-card__video-title', zh ? '▶ 含配音讲解视频' : '▶ Narrated explainer video');
       var videoMeta = [];
       if (info.video_seconds) videoMeta.push(formatDuration(info.video_seconds, zh));
@@ -501,38 +523,49 @@
       videoMeta.push(zh ? '中文配音与字幕，可下载' : 'Chinese voice-over & subtitles, downloadable');
       cardPart(video, 'div', 'roadmap-node-card__video-meta', videoMeta.join(' · '));
     } else if (info.scenes) {
-      cardPart(card, 'div', 'roadmap-node-card__video',
+      cardPart(body, 'div', 'roadmap-node-card__video',
         zh ? '含 ' + info.scenes + ' 幕讲解动画' : info.scenes + '-scene explainer animation');
     }
 
     var meta = [];
     if (info.arxiv) meta.push('arXiv ' + info.arxiv);
     if (info.open_source) meta.push(zh ? '含开源代码' : 'Open source code');
-    if (meta.length) cardPart(card, 'div', 'roadmap-node-card__meta', meta.join(' · '));
+    if (meta.length) cardPart(body, 'div', 'roadmap-node-card__meta', meta.join(' · '));
 
+    // 鼠标悬停时卡片不接点击，这一行只是提示；触屏弹出的卡片能点，它就是进入笔记的按钮。
     var external = node.el.classList.contains('tt-node--external');
-    cardPart(card, 'div', 'roadmap-node-card__action', external
+    var action = cardPart(card, 'a', 'roadmap-node-card__action', external
       ? (zh ? '点击打开论文原文 ↗' : 'Click to open the paper ↗')
       : (zh ? '点击阅读笔记 →' : 'Click to read the note →'));
+    action.href = node.el.getAttribute('href');
   }
 
-  function placeCard(el) {
+  function placeCard(el, touch) {
     var gap = 10;
     var margin = 8;
     var rect = el.getBoundingClientRect();
+    card.style.maxHeight = '';
     var width = card.offsetWidth;
     var height = card.offsetHeight;
     var left = Math.max(margin, Math.min(rect.left + rect.width / 2 - width / 2, window.innerWidth - width - margin));
+    var below = window.innerHeight - margin - rect.bottom - gap;
+    var above = rect.top - gap - margin;
     var top = rect.bottom + gap;
-    if (top + height > window.innerHeight - margin && rect.top - gap - height >= margin) {
-      top = rect.top - gap - height;
+    if (height > below && height <= above) top = rect.top - gap - height;
+    else if (touch && height > below) {
+      // 触屏上卡片能点，不能盖住刚点的节点（再点一次它就打开笔记）：上下都放不下时，
+      // 放在空间大的一边、压低高度，卡片里面滚动。
+      var room = Math.max(above, below);
+      card.style.maxHeight = room + 'px';
+      height = card.offsetHeight;
+      top = below >= above ? rect.bottom + gap : rect.top - gap - height;
     }
     top = Math.max(margin, Math.min(top, window.innerHeight - height - margin));
     card.style.left = left + 'px';
     card.style.top = top + 'px';
   }
 
-  function showCard(node, el) {
+  function showCard(node, el, touch) {
     if (!card) {
       card = document.createElement('div');
       card.id = 'roadmap-node-card';
@@ -542,8 +575,50 @@
       document.body.appendChild(card);
     }
     fillCard(node);
+    card.classList.toggle('is-touch', !!touch);
+    // 键盘聚焦节点时节点本身就是这条链接，卡片里的那条不进 Tab 顺序。
+    card.querySelector('.roadmap-node-card__action').tabIndex = touch ? 0 : -1;
     card.hidden = false;
-    placeCard(el || node.el);
+    cardFor = el || node.el;
+    placeCard(cardFor, touch);
+  }
+
+  /* 节点与卡片，分系视图和全局总览共用：
+     - 鼠标悬停、键盘聚焦：弹卡片（只看，不接点击），点节点打开笔记；
+     - 触屏：第一次点节点只弹卡片、点亮路线，卡片可以点，点上面的「点击阅读笔记」进入笔记；
+       再点同一个节点也直接打开，点别处收起卡片。 */
+  function bindNodeCard(node, el, trace, untrace) {
+    el.setAttribute('aria-describedby', 'roadmap-node-card');
+    el.addEventListener('pointerenter', function (e) {
+      if (e.pointerType === 'touch') return;
+      trace();
+      showCard(node, el, false);
+    });
+    el.addEventListener('pointerleave', function (e) {
+      if (e.pointerType === 'touch') return;
+      untrace();
+      hideCard();
+    });
+    // 只在键盘聚焦时弹：有的浏览器点按链接也会让它获得焦点，那时由下面的 click 决定弹不弹。
+    el.addEventListener('focus', function () {
+      if (!focusVisible(el)) return;
+      trace();
+      showCard(node, el, false);
+    });
+    el.addEventListener('blur', function (e) {
+      if (card && e.relatedTarget && card.contains(e.relatedTarget)) return;
+      untrace();
+      hideCard();
+    });
+    el.addEventListener('pointerdown', function (e) {
+      if (e.pointerType !== 'touch') hideCard();
+    });
+    el.addEventListener('click', function (e) {
+      if (!touchActivation(e) || cardFor === el) return;
+      e.preventDefault();
+      trace();
+      showCard(node, el, true);
+    });
   }
 
   function labelNode(node) {
@@ -558,28 +633,23 @@
     var node = nodes[id];
     var el = node.el;
     labelNode(node);
-    el.setAttribute('aria-describedby', 'roadmap-node-card');
-    el.addEventListener('pointerenter', function (e) {
-      if (e.pointerType === 'touch') return;
-      traceIds(node.branch.panel, [node]);
-      showCard(node, el);
-    });
-    el.addEventListener('focus', function () {
-      traceIds(node.branch.panel, [node]);
-      showCard(node, el);
-    });
-    el.addEventListener('pointerleave', function () {
-      clearTrace();
-      hideCard();
-    });
-    el.addEventListener('blur', function () {
-      clearTrace();
-      hideCard();
-    });
-    el.addEventListener('pointerdown', hideCard);
+    bindNodeCard(node, el, function () { traceIds(node.branch.panel, [node]); }, clearTrace);
   });
 
-  window.addEventListener('scroll', hideCard, true);
+  document.addEventListener('pointerdown', function (e) {
+    lastPointer = e.pointerType;
+    // 触屏：点卡片和节点以外的地方，收起卡片和点亮的路线。
+    if (e.pointerType !== 'touch') return;
+    if ((card && card.contains(e.target)) || (e.target.closest && e.target.closest('.tt-node'))) return;
+    hideCard();
+    clearTrace();
+    clearMapTrace();
+  }, true);
+
+  window.addEventListener('scroll', function (e) {
+    if (card && card.contains(e.target)) return; // 卡片自己在里面滚动
+    hideCard();
+  }, true);
   window.addEventListener('resize', hideCard);
   document.addEventListener('keydown', function (e) {
     if (e.key !== 'Escape') return;
@@ -622,14 +692,14 @@
     var legend = document.createElement('div');
     legend.className = 'tt-map-legend';
     legend.appendChild(bilingual('p', '',
-      'Solid: prerequisite · dashed: related. Hover over a node (tap once on touch screens) to light up its route (dark) and what it leads to (light); click a branch name to open it.',
-      '实线是前置，虚线是相关拓展。悬停节点（触屏上先点一下）：深色是它的前置路线，浅色是它通往的后续；点系名进入那一系。'));
+      'Solid: prerequisite · dashed: related. Hover over a node (tap it on touch screens) to light up its route (dark) and what it leads to (light); click a branch name to open it.',
+      '实线是前置，虚线是相关拓展。悬停节点（触屏上点一下）：深色是它的前置路线，浅色是它通往的后续；点系名进入那一系。'));
     legend.appendChild(bilingual('p', 'tt-map-hint tt-map-hint--mouse',
       'Drag or scroll to pan; Ctrl / ⌘ + scroll, a trackpad pinch or + / − to zoom; 0 resets.',
       '拖动或滚轮平移；Ctrl / ⌘ + 滚轮、触控板捏合或 + / − 键缩放，0 键复位。'));
     legend.appendChild(bilingual('p', 'tt-map-hint tt-map-hint--touch',
-      'Swipe to pan, pinch with two fingers to zoom.',
-      '单指拖动平移，双指捏合缩放。'));
+      'Swipe to pan, pinch with two fingers to zoom; tap a node for its card, then tap “Click to read the note” on the card.',
+      '单指拖动平移，双指捏合缩放；点节点弹出卡片，再点卡片上的「点击阅读笔记」进入。'));
     bar.appendChild(legend);
 
     var controls = document.createElement('div');
@@ -717,42 +787,12 @@
         var node = nodes[copy.getAttribute('data-node')];
         node.mapEl = copy;
         copy.setAttribute('aria-label', node.el.getAttribute('aria-label') || '');
-        copy.setAttribute('aria-describedby', 'roadmap-node-card');
-        copy.addEventListener('pointerenter', function (e) {
-          if (e.pointerType === 'touch') return;
-          traceMap(node);
-          showCard(node, copy);
-        });
-        copy.addEventListener('focus', function () {
-          traceMap(node);
-          showCard(node, copy);
-        });
-        copy.addEventListener('pointerleave', function (e) {
-          if (e.pointerType === 'touch') return;
-          clearMapTrace();
-          hideCard();
-        });
-        // 触屏没有悬停：第一次点只点亮路线、弹卡片，再点一次才打开笔记。
-        copy.addEventListener('click', function (e) {
-          if (map.pointerType !== 'touch' || map.armed === node.id) return;
-          e.preventDefault();
-          map.armed = node.id;
-          traceMap(node);
-          showCard(node, copy);
-        });
-        copy.addEventListener('blur', function () {
-          clearMapTrace();
-          hideCard();
-        });
-        copy.addEventListener('pointerdown', hideCard);
+        bindNodeCard(node, copy, function () { traceMap(node); }, clearMapTrace);
       });
       cluster.appendChild(tree);
       canvas.appendChild(cluster);
     });
 
-    el.addEventListener('pointerdown', function (e) {
-      map.pointerType = e.pointerType;
-    }, true);
     // 拖动平移之后松手，不当成一次点击（不打开笔记、不切系）。
     el.addEventListener('click', function (e) {
       if (!map.suppressClick) return;
@@ -763,7 +803,6 @@
     el.addEventListener('click', function (e) {
       if (e.target.closest('[data-map-close]')) closeMap();
       else if (!e.target.closest('.tt-node')) {
-        map.armed = null;
         clearMapTrace();
         hideCard();
       }
@@ -802,7 +841,7 @@
     map = { el: el, viewport: viewport, sizer: sizer, canvas: canvas, svg: svg, close: close,
       zoomIn: zoomIn, zoomOut: zoomOut, level: level, layoutButton: layoutButton,
       layouts: null, reading: false, width: 0, height: 0, base: 1, minScale: 1, scale: 1,
-      opener: null, pointerType: '', armed: null, suppressClick: false };
+      opener: null, suppressClick: false };
     bindPanZoom();
   }
 
@@ -1084,7 +1123,6 @@
 
   function clearMapTrace() {
     if (!map) return;
-    map.armed = null;
     Array.prototype.forEach.call(map.el.querySelectorAll('.is-tracing, .is-path, .is-next'), function (el) {
       el.classList.remove('is-tracing', 'is-path', 'is-next');
     });

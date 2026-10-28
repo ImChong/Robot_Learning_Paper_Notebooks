@@ -4141,7 +4141,7 @@ a.updates-item-link:hover {
 }
 
 /* 首页路线图节点悬浮卡片（assets/js/roadmap.js 的 showCard）。
-   fixed 定位、不吃指针事件，不挡节点点击。 */
+   fixed 定位；鼠标悬停弹出时不吃指针事件、不挡节点点击，触屏弹出时（.is-touch）可以点。 */
 .roadmap-node-card {
   position: fixed;
   z-index: var(--z-popover);
@@ -4236,11 +4236,42 @@ a.updates-item-link:hover {
 }
 
 .roadmap-node-card__action {
+  display: inline-block;
   margin-top: 8px;
   color: var(--link);
   font-size: 12px;
   line-height: 16px;
   font-weight: 600;
+  text-decoration: none;
+}
+
+/* 触屏上点节点弹出的卡片能点：底部的「点击阅读笔记」是一个整行的按钮。
+   上下都放不下时脚本压低卡片的 max-height，只有 body 在里面滚动，按钮一直露着。 */
+.roadmap-node-card.is-touch {
+  pointer-events: auto;
+}
+
+.roadmap-node-card.is-touch:not([hidden]) {
+  display: flex;
+  flex-direction: column;
+}
+
+.roadmap-node-card.is-touch .roadmap-node-card__body {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.roadmap-node-card.is-touch .roadmap-node-card__action {
+  flex-shrink: 0;
+  display: block;
+  margin-top: 12px;
+  padding: 12px 16px;
+  border-radius: var(--radius-md);
+  background: var(--accent-soft);
+  font-size: 14px;
+  line-height: 20px;
+  text-align: center;
 }
 
 /* ── 滚动入场（全站）───────────────────────────────────────────────
