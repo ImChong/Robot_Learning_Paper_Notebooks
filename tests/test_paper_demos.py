@@ -5674,7 +5674,7 @@ def test_viral_explainer_demos_and_worked_example_share_the_paper_numbers():
 
     # 例 3：起步 5 步到 0.5 m/s；手臂每步 0.025 rad，1 rad 要 40 步
     assert F[8]["cmd"][0] == 0.5 and round(5 * 0.1, 2) == 0.5 and 0.1 * 0.25 == 0.025 and round(1 / 0.025) == 40
-    assert "5 步、也就是 0.1 秒，就到了每秒 0.5 米" in narration and "需要 40 步，也就是 0.8 秒" in narration
+    assert "5 步、也就是 0.1 秒，就到了每秒 0.5 米" in narration and "动够 1 弧度要 40 步，也就是 0.8 秒" in narration
 
     # 例 4：走近奖励
     r0 = math.exp(-4 * (F[0]["dFront"] - 0.45) ** 2)
@@ -5733,6 +5733,7 @@ def test_viral_project_page_clips_and_renders():
     figs = {p.name for p in (ROOT / "assets/img/papers/viral").glob("*.webp")}
     assert figs == set(re.findall(r"'(fig\w+\.webp)'", js))
     sheets = {p.name for p in (ROOT / "assets/img/papers/viral/g1_3d").iterdir()}
-    assert sheets == set(re.findall(r"file: '(\w+\.webp)'", js)) == {"demoA.webp", "rsi.webp", "place.webp", "egoA.webp", "dr.webp", "ext.webp", "aug.webp"}
+    assert sheets == set(re.findall(r"file: '(\w+\.webp)'", js)) == {"demoA.webp", "rsi.webp", "place.webp", "lift.webp", "turn.webp", "tables.webp", "arm.webp", "hand.webp", "head.webp", "body.webp",
+                                                                                 "egoA.webp", "dr.webp", "ext.webp", "aug.webp"}
     note = VIRAL_NOTE.read_text(encoding="utf-8")
     assert "剪自[项目页](https://viral-humanoid.github.io/)的视频" in note

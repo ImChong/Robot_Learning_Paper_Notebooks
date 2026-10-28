@@ -419,8 +419,39 @@
     demoA: { file: 'demoA.webp', R: 170, cw: 440, ch: 290, cols: 12, n: 199, ax: 215, ay: 233 },
     rsi: { file: 'rsi.webp', R: 170, cw: 440, ch: 290, cols: 6, n: 6, ax: 215, ay: 233 },
     /* 第 5 幕「放下」的近景：示范 A 第 43–73 帧（2.58–4.38 s），另一套相机 yaw 0.6、pitch 0.35，锚点是托盘原点（托盘底面中心） */
-    place: { file: 'place.webp', R: 480, cw: 704, ch: 380, cols: 8, n: 31, ax: 420, ay: 300 }
+    place: { file: 'place.webp', R: 480, cw: 704, ch: 380, cols: 8, n: 31, ax: 420, ay: 300 },
+    /* 2026-10-28 看片反馈「能用 URDF 的画面都用 URDF」新加的几张，同一套材质与灯光（arm、hand、head、body 只渲机器人）：
+       第 5 幕「抓起」示范第 98–133 帧，锚点是桌上瓶子的底面；第 5 幕「转身」俯视示范第 120–186 帧，锚点 (2.11, 0.4)；
+       第 3 幕两张桌子的远景（yaw 0、pitch 0.45），示范每 3 帧一张，锚点是世界原点；
+       第 6 幕右臂：示范第 84 帧，右肩俯仰每步多转 −0.025 rad（0–40 步，肩以下的刚体绕关节轴转），锚点是右肩俯仰关节；
+       右手：第 84 帧的张开、第 120 帧的握住（握住的手按相对手腕的位姿接到第 84 帧上），锚点是手掌；
+       头部：侧面（机器人朝右）、背面、正面 3/4，锚点是 d435_link；整机：第 84 帧，锚点是骨盆正下方的地面 */
+    lift: { file: 'lift.webp', R: 480, cw: 704, ch: 380, cols: 8, n: 36, ax: 420, ay: 300 },
+    turn: { file: 'turn.webp', R: 220, cw: 352, ch: 230, cols: 8, n: 67, ax: 150, ay: 120 },
+    tables: { file: 'tables.webp', R: 52, cw: 352, ch: 180, cols: 8, n: 67, ax: 176, ay: 128 },
+    arm: { file: 'arm.webp', R: 400, cw: 320, ch: 330, cols: 8, n: 41, ax: 120, ay: 150 },
+    hand: { file: 'hand.webp', R: 1000, cw: 250, ch: 160, cols: 2, n: 2, ax: 165, ay: 80 },
+    head: { file: 'head.webp', R: 650, cw: 260, ch: 220, cols: 3, n: 3, ax: 130, ay: 90 },
+    body: { file: 'body.webp', R: 170, cw: 220, ch: 260, cols: 1, n: 1, ax: 110, ay: 240 }
   };
+  /* 任意一套正交相机下的投影（和离线渲染同一套公式）：V = { yaw, pitch, a: 锚点, s: px/m, ox, oy } */
+  function projV(p, V) {
+    var c = Math.cos(V.yaw), sn = Math.sin(V.yaw), cp = Math.cos(V.pitch), sp = Math.sin(V.pitch);
+    var dx = p[0] - V.a[0], dy = p[1] - V.a[1], dz = (p[2] || 0) - V.a[2];
+    return [V.ox + V.s * (dx * c + dy * sn), V.oy - V.s * (dz * cp + (-dx * sn + dy * c) * sp)];
+  }
+  /* 头部近景：(x, y) 是 d435_link 落在画布上的位置，k 是缩放；cx、cy 是光心（代码里 d435_link 往左 3.5 cm、再低头 3.4°）。
+     侧面视图里光轴朝右下 53.8°（d435_link 本身的安装角加 3.4°，我们按示范里的位姿算的），竖直视场 42.5° */
+  var HEAD_CAM = [[131.1, 88.2], [107.0, 90.4], [144.7, 93.2]], HEAD_AXIS = 53.8, HEAD_TILT = 3.44;
+  function headView(parent, view, x, y, k) {
+    var m = g1Mesh(parent, 'head'), c = HEAD_CAM[view];
+    m.put(camAt(650 * k, x, y), view);
+    return { m: m, x: x, y: y, cx: x + (c[0] - 130) * k, cy: y + (c[1] - 90) * k, k: k };
+  }
+  function frustumPts(cx, cy, axisDeg, halfDeg, L) {
+    var a = axisDeg * Math.PI / 180, h = halfDeg * Math.PI / 180;
+    return [[cx + L * Math.cos(a - h), cy + L * Math.sin(a - h)], [cx, cy], [cx + L * Math.cos(a + h), cy + L * Math.sin(a + h)]];
+  }
   /* 一格 3D 贴图：put(cam, 帧号) 让锚点落在 (cam.ox, cam.oy)。贴图第一次用到才设 href */
   function g1Mesh(parent, key, opts) {
     var o = opts || {}, M = SHEETS[key], g = group(parent), rows = Math.ceil(M.n / M.cols);
@@ -721,7 +752,7 @@
   /* ── scene 2: 两阶段：特权教师 → 视觉学生（图 2） ── */
   function buildScenePipeline() {
     var s = sceneSvg('左上是论文图 2，讲到哪一段就框出哪一段：第一阶段的特权教师、第二阶段的视觉学生、右边冻结的全身控制器；左下两排方块是两个阶段用的 GPU 数；' +
-      '右边依次出现：教师的四个特点、学生的四个特点、50 Hz 到 200 Hz 的控制链路（小点沿链路走）、上真机两头对齐、零样本');
+      '右边依次出现：教师的四个特点、学生的四个特点、50 Hz 到 200 Hz 的控制链路（小点沿链路走）、上真机：仿真和真机两块随七项对齐往中间靠、最后碰上（示意）、零样本');
     s.appendChild(svgText(24, 26, '两阶段：特权教师 → 视觉学生（图 2）', 'demo-x-ink2', 13.5));
     var FW = 500, fig = paperPart(s, 'fig2', 0, 0, 1, 1, 24, 44, FW, '论文图 2：VIRAL 的教师—学生流程');
     var FH = fig.h;
@@ -767,17 +798,24 @@
     var chain = [['教师 / 学生', '50 Hz', C_STU], ['HOMIE 全身控制器', '50 Hz', C_REAL], ['PD 控制器', '200 Hz', C_MUTED], ['Unitree G1', '', C_ACCENT]];
     chain.forEach(function (c, j) { chip(p3, R, 78 + j * 46, W, c[0] + (c[1] ? '　**' + c[1] + '**' : ''), c[2], { size: 12, h: 30 }); });
     var fl3 = [0, 1, 2].map(function () { return flowSeg(p3, C_REAL, 2, 3, 22, true); });
-    /* 第 4 段：两头对齐 —— 仿真和真机之间的红条（差距，示意），每补上一项就短一截 */
+    /* 第 4 段：两头对齐 —— 仿真、真机两块往中间靠，每补上一项就靠近一截，七项补齐时碰上（示意）。
+       2026-10-28 看片反馈：原先两块不动、中间的红条一项项缩短，最后剩一个看不懂的红点 */
     var p4 = group(s);
     label(p4, R, 64, '③ 上真机：两头对齐', 'demo-x-ink', 14);
-    chip(p4, R, 80, 96, '**仿真**', C_SIM, { size: 12.5, h: 30 });
-    chip(p4, R + 136, 80, 96, '**真机**', C_REAL, { size: 12.5, h: 30 });
-    var gapBar = paint(svgEl('rect', { x: R + 98, y: 92, width: 36, height: 6, rx: 3 }), C_ERR);
+    var simG = group(p4), realG = group(p4);
+    chip(simG, R, 80, 84, '**仿真**', C_SIM, { size: 12.5, h: 30 });
+    chip(realG, R + W - 84, 80, 84, '**真机**', C_REAL, { size: 12.5, h: 30 });
+    var GAP0 = W - 168;
+    var gapBar = paint(svgEl('rect', { x: R + 84, y: 92, width: GAP0, height: 6, rx: 3 }), C_ERR);
     p4.appendChild(gapBar);
-    var fixes = ['光照', '材质', '外参', '画质', '延迟'].map(function (k, j) { return chip(p4, R, 120 + j * 26, 96, k, C_SIM, { size: 11.5, h: 22 }); })
-      .concat(['手指辨识', '相机标定'].map(function (k, j) { return chip(p4, R + 136, 120 + j * 26, 96, k, C_REAL, { size: 11.5, h: 22 }); }));
+    var gapTxt = tone(p4, R + W / 2, 130, '红条：差距', C_ERR, 11, 'middle');
+    var metG = group(p4);  // 两列补丁中间的空当里
+    tick(metG, R + W / 2 - 26, 124, 9, C_GOOD);
+    tone(metG, R + W / 2 - 14, 130, '对上了', C_GOOD, 11.5);
+    var fixes = ['光照', '材质', '外参', '画质', '延迟'].map(function (k, j) { return chip(p4, R, 120 + j * 26, 84, k, C_SIM, { size: 11.5, h: 22 }); })
+      .concat(['手指辨识', '相机标定'].map(function (k, j) { return chip(p4, R + W - 84, 120 + j * 26, 84, k, C_REAL, { size: 11.5, h: 22 }); }));
     label(p4, R, 262, '左：仿真随机化　右：硬件对齐', 'demo-x-ink2', 11.5);
-    label(p4, R, 282, '红条是差距，一项项变短（示意）', 'demo-x-mut', 11);
+    label(p4, R, 282, '每补上一项，两头往中间靠一截（示意）', 'demo-x-mut', 11);
     /* 第 5 段：零样本 —— 十个关键元素逐个亮起 */
     var p5 = group(s);
     label(p5, R, 64, '零样本：真机上不再训练', 'demo-x-ink', 14);
@@ -801,10 +839,12 @@
       fl2[1].at(now, [R + 177, 126], [R + 136, 160], true);
       fl2[2].at(now, [R + 82, 206], [R + 55, 224], true);
       fl2[3].at(now, [R + 177, 224], [R + 150, 206], true);
-      var u4 = since(t, clock, 10.4), lit = 0;
-      fixes.forEach(function (g, j) { var v = seg(u4, 0.4 + j * 0.45, 0.7 + j * 0.45); setOpacity(g, 0.25 + 0.75 * v); lit += v; });
-      var gw = 36 * (1 - 0.85 * lit / fixes.length);
-      gapBar.setAttribute('x', (R + 116 - gw / 2).toFixed(1)); setW(gapBar, gw);
+      var u4 = since(t, clock, 10.4), litS = 0, litR = 0;
+      fixes.forEach(function (g, j) { var v = seg(u4, 0.4 + j * 0.45, 0.7 + j * 0.45); setOpacity(g, 0.25 + 0.75 * v); if (j < 5) litS += v; else litR += v; });
+      var dS = GAP0 / 7 * litS, dR = GAP0 / 7 * litR, gw = Math.max(0, GAP0 - dS - dR);
+      simG.setAttribute('transform', 'translate(' + dS.toFixed(1) + ',0)'); realG.setAttribute('transform', 'translate(' + (-dR).toFixed(1) + ',0)');
+      gapBar.setAttribute('x', (R + 84 + dS).toFixed(1)); setW(gapBar, gw); gapBar.style.opacity = gw > 1 ? 1 : 0;
+      gapTxt.style.opacity = clamp(gw / 40, 0, 1); metG.style.opacity = seg(u4, 3.5, 3.9);
       keyDots.forEach(function (d, j) { d.style.opacity = 0.15 + 0.85 * seg(since(t, clock, 13.4), 0.4 + j * 0.25, 0.6 + j * 0.25); });
       setOpacity(boxes[0], win(t, 0.3, 3.6));
       setOpacity(boxes[1], win(t, 3.6, 7.0));
@@ -821,7 +861,7 @@
   /* ── scene 3: 一轮任务：走、放、抓、转 ── */
   function buildSceneTask() {
     var s = sceneSvg('左边是我们按官方示范数据重渲的 G1：走到桌前、把手里的绿瓶放进托盘、抓起橙色瓶子、转身，下面一条时间轴标出五个阶段；' +
-      '右边依次出现：五个阶段的名字随回放高亮；代码里的切换条件和此刻的数值；每个阶段的时限；两张桌子之间来回走的俯视图；示范数据的出处');
+      '右边依次出现：五个阶段的名字随回放高亮；代码里的切换条件和此刻的数值；每个阶段的时限；两张桌子的远景回放（转身时一条虚线箭头指向另一张桌子）；示范数据的出处');
     s.appendChild(svgText(24, 26, '一轮任务：走、放、抓、转', 'demo-x-ink2', 13.5));
     var bot = g1Mesh(s, 'demoA'), cam = camAt(150, 24 + 215 * 150 / 170, 40 + 233 * 150 / 170);
     var bar = stageBar(s, 24, 300, 380);
@@ -859,18 +899,20 @@
     });
     label(p3, R, 248, '超时 → 重置，扣终止分', 'demo-x-ink2', 12);
     label(p3, R, 270, '一回合：教师 12 s，学生 8 s', 'demo-x-mut', 11);
-    /* 第 4 段：俯视图——两张桌子来回 */
+    /* 第 4 段：两张桌子 —— 示范按同一套材质重渲的远景（2026-10-28 看片反馈：原先是两个方框和一个蓝点） */
     var p4 = group(s);
     label(p4, R, 64, '两张桌子相距 5.4 m', 'demo-x-ink', 14);
-    var TX0 = R + 30, TX1 = R + W - 30, TY = 150;
-    rectBox(p4, TX0 - 14, TY - 52, 28, 104, C_WARN, C_SURFACE2);
-    rectBox(p4, TX1 - 14, TY - 52, 28, 104, C_WARN, C_SURFACE2);
-    label(p4, TX0, TY + 72, '桌子 A', 'demo-x-ink2', 10.5, 'middle');
-    label(p4, TX1, TY + 72, '桌子 B', 'demo-x-ink2', 10.5, 'middle');
-    hline(p4, TX0 + 20, TY + 64, TX1 - 20, TY + 64, C_BORDER, 1.2, '4 4');
-    label(p4, (TX0 + TX1) / 2, TY + 60, '5.4 m', 'demo-x-mut', 10, 'middle');
-    var walker = dotAt(p4, TX0 + 30, TY, 7, C_ACCENT), heading = hline(p4, 0, 0, 0, 0, C_ACCENT, 2.5);
-    label(p4, R, 258, '放、抓、转身，再走向另一张：循环下去', 'demo-x-ink2', 11.5);
+    var TV = { yaw: 0, pitch: 0.45, a: [0, 0, 0], s: 52, ox: R + 176, oy: 210 };
+    var wideM = g1Mesh(p4, 'tables');
+    wideM.put(camAt(52, TV.ox, TV.oy), 0);
+    var tA = projV([-2.70, -0.085, 0], TV), tB = projV([2.70, 0.039, 0], TV);
+    label(p4, tA[0], 250, '桌子 A', 'demo-x-ink2', 11, 'middle');
+    label(p4, tB[0], 250, '桌子 B', 'demo-x-ink2', 11, 'middle');
+    hline(p4, tA[0] + 26, 246, tB[0] - 26, 246, C_BORDER, 1.2, '4 4');
+    label(p4, (tA[0] + tB[0]) / 2, 240, '5.4 m', 'demo-x-mut', 11, 'middle');
+    var nextA = arrow(p4, C_ACCENT, 2, '5 4'), nextT = tone(p4, (tA[0] + tB[0]) / 2, 196, '转身后走向另一张', C_ACCENT, 11, 'middle');
+    label(p4, R, 282, '放、抓、转身，再走向另一张：循环下去', 'demo-x-ink2', 11.5);
+    label(p4, R, 302, '示范 A 的回放（我们重渲）；它只录了一张桌子前的一轮', 'demo-x-mut', 11);
     /* 第 5 段：出处 —— 295 段示范一格一段，按录制的日子上色，示范 A 是最后一格 */
     var p5 = group(s);
     label(p5, R, 64, '这一段从哪来', 'demo-x-ink', 14);
@@ -896,14 +938,12 @@
       rows2.forEach(function (r, i) { r.v.textContent = vals[i]; setOpacity(r.g, i === st ? 1 : 0.45); });
       var u3 = K.ease(seg(since(t, clock, 7.0), 0.2, 1.4));
       limitBars.forEach(function (b, i) { b.set(STAGE_MAX[i] / 300 * 190 * u3, STAGE_MAX[i] / 50 + ' s'); });
-      var cyc = (since(t, clock, 10.4) % 8) / 8, side = cyc < 0.5 ? 0 : 1, u = (cyc % 0.5) / 0.5;
-      var xA = TX0 + 30, xB = TX1 - 30, px = side === 0 ? xA + (xB - xA) * K.ease(clamp((u - 0.25) / 0.75, 0, 1)) : xB - (xB - xA) * K.ease(clamp((u - 0.25) / 0.75, 0, 1));
-      var turning = u < 0.25, ang = side === 0 ? (turning ? Math.PI * (1 - u / 0.25) : 0) : (turning ? Math.PI * u / 0.25 : Math.PI);
-      moveDot(walker, [px, TY]);
+      wideM.put(camAt(52, TV.ox, TV.oy), Math.floor(j / 3));
+      var pp = projV([f.pel[0], f.pel[1], 0], TV), goA = st === 4 ? 1 : 0;
+      nextA.set(pp[0] - 14, 214, tA[0] + 34, 214, 8); nextA.g.style.opacity = goA; nextT.style.opacity = goA;
       var u5 = seg(since(t, clock, 13.4), 0.3, 2.2);
       cells5.forEach(function (c, i) { c.style.opacity = i / cells5.length < u5 ? 0.85 : 0.08; });
       hiA.style.opacity = u5 >= 1 ? 0.55 + 0.45 * Math.abs(Math.sin(now * 3)) : 0;
-      setLine(heading, px, TY, px + 16 * Math.cos(ang), TY - 16 * Math.sin(ang) * 0);
       setOpacity(p1, win(t, 0.3, 3.6));
       setOpacity(p2, win(t, 3.6, 7.0));
       setOpacity(p3, win(t, 7.0, 10.4));
@@ -916,7 +956,7 @@
   /* ── scene 4: 教师：全状态进，HOMIE 命令出 ── */
   function buildSceneTeacher() {
     var s = sceneSvg('左边是重渲的 G1 回放，前两段圈出要放下的瓶子、要抓起的瓶子和托盘（标签在右上方，虚线引过去），都是教师能直接读到的位置；右边依次出现：226 维观测分成四组的横条；' +
-      '11 维输出的三组；从累加到 HOMIE 再到关节的链路（小点沿链路走）；把 HOMIE 当 API 的三个理由；代码里两个 HOMIE 模型');
+      '11 维输出的三组；从累加到 HOMIE 再到关节的链路（小点沿链路走）；把 HOMIE 当 API 的三个理由；代码里两个 HOMIE 模型（左边这时从示范开头放：先走、再站，下面一条标出每一帧用哪个模型）');
     s.appendChild(svgText(24, 26, '教师：全状态进，HOMIE 命令出', 'demo-x-ink2', 13.5));
     var bot = g1Mesh(s, 'demoA'), cam = camAt(150, 24 + 215 * 150 / 170, 40 + 233 * 150 / 170);
     var F = demoFrames();
@@ -988,17 +1028,37 @@
     chip(p4, R + 280, 206, 72, 'G1', C_ACCENT, { size: 12, h: 28 });
     var fl4 = [flowSeg(p4, C_TEA, 2, 3, 30), flowSeg(p4, C_REAL, 2, 3, 30)];
     label(p4, R, 268, '灰点：原始输出　绿点：真正发出去的命令', 'demo-x-mut', 11);
-    /* 第 5 段：代码里的两个 HOMIE */
+    /* 第 5 段：代码里的两个 HOMIE —— 这一段左边从示范开头放到 7.2 s：先走（蓝）、再站着放和抓（紫），下面一条按代码的式子逐帧标出用哪个模型。
+       2026-10-28 看片反馈：原先这一段左边正好放到站着的那一截，只看得到「站」 */
     var p5 = group(s);
     label(p5, R, 64, '代码里：两个冻结的 HOMIE', 'demo-x-ink', 14);
-    var walkC = chip(p5, R, 84, 160, '**走**', C_REAL, { size: 13, h: 34 }), standC = chip(p5, R + 180, 84, 160, '**站**', C_REAL, { size: 13, h: 34 });
-    label(p5, R, 150, '速度命令够大用「走」，否则用「站」', 'demo-x-ink2', 11.5);
-    var cmdTxt = label(p5, R, 178, '', 'demo-x-ink', 12);
-    label(p5, R, 210, '手不是 7 个关节各给目标：', 'demo-x-ink2', 11.5);
-    label(p5, R, 230, '累加值 ≥ 0 握住，< 0 张开', 'demo-x-ink2', 11.5);
+    var walkC = chip(p5, R, 80, 160, '**走**的模型', C_ACCENT, { size: 13, h: 32 }), standC = chip(p5, R + 180, 80, 160, '**站**的模型', C_PURPLE, { size: 13, h: 32 });
+    label(p5, R, 136, '速度命令够大用「走」，否则用「站」：', 'demo-x-ink2', 11.5);
+    rich(p5, R, 158, '$\\lVert(2v_x,\\,2v_y,\\,0.5\\,\\omega_z)\\rVert > 0.5$ 用「走」', 11.5);
+    var WS_N = 121, wsX = function (k) { return R + k / WS_N * W; };
+    for (var q0 = 0, q = 1; q <= WS_N; q++) {
+      var isW = function (k) { var c = F[k].cmd; return Math.hypot(2 * c[0], 2 * c[1], 0.5 * c[2]) > 0.5; };
+      if (q === WS_N || isW(q) !== isW(q0)) {
+        p5.appendChild(paint(svgEl('rect', { x: wsX(q0), y: 172, width: wsX(q) - wsX(q0) - 0.6, height: 12, rx: 2 }), isW(q0) ? C_ACCENT : C_PURPLE));
+        q0 = q;
+      }
+    }
+    var wsCur = hline(p5, R, 168, R, 188, 'var(--text)', 2);
+    label(p5, R, 200, '0', 'demo-x-mut', 11); label(p5, R + W, 200, '7.2 s', 'demo-x-mut', 11, 'end');
+    label(p5, R + W / 2, 200, '示范开头 7.2 s', 'demo-x-mut', 11, 'middle');
+    readHint(p5, R, 222, '条上每一帧用哪个模型：蓝 = 走，紫 = 站', 10, W);
+    var cmdTxt = label(p5, R, 248, '', 'demo-x-ink', 12);
+    label(p5, R, 276, '手不是 7 个关节各给目标：', 'demo-x-ink2', 11.5);
+    label(p5, R, 296, '累加值 ≥ 0 握住，< 0 张开', 'demo-x-ink2', 11.5);
     function draw(t, clock) {
-      var now = nowOf(t, clock), j = loopFrame(now), f = F[j];
-      bot.put(cam, j);
+      var now = nowOf(t, clock), j = loopFrame(now);
+      /* 第 5 段：从示范开头放到第 120 帧（7.2 s），停 0.6 s 再重放；换段和重放时淡出淡入 */
+      var P5 = (WS_N - 1) / DEMO.fps + 0.6, u5 = since(t, clock, 13.4), fade = 1;
+      if (t >= 13.4) { var w5 = u5 % P5; j = Math.min(WS_N - 1, Math.floor(w5 * DEMO.fps)); fade = Math.min(1, w5 / 0.25, (P5 - w5) / 0.2); }
+      else if (t > 13.1) fade = (13.4 - t) / 0.3;
+      var f = F[j];
+      bot.put(cam, j); bot.g.style.opacity = clamp(fade, 0, 1);
+      setLine(wsCur, wsX(j), 168, wsX(j), 188);
       var pts = [f.hold, f.front, DEMO.tray];
       tags.forEach(function (k, i) {
         var q = project(pts[i], cam);
@@ -1044,7 +1104,7 @@
   ];
   function buildSceneReward() {
     var s = sceneSvg('左边是附录表 3 里十项奖励在五个阶段的开关矩阵，实心点表示这一项在该阶段生效，高亮的一列跟着右边示范回放的阶段走；' +
-      '右边依次出现：走近奖励随距离变化的钟形曲线和示范里此刻的点；示范放下前后的 G1 近景回放（托盘周围 0.3 m 的圈、瓶子离托盘与手掌离瓶子的距离、手还捏着时的扣分）；举高的刻度条；转身的朝向表盘；代码里的写法');
+      '右边依次出现：走近奖励随距离变化的钟形曲线和示范里此刻的点；示范放下前后的 G1 近景回放（托盘周围 0.3 m 的圈、瓶子离托盘与手掌离瓶子的距离、手还捏着时的扣分）；抓起前后的 G1 近景回放（红虚线是瓶子中心离桌面 0.15 m）；转身的俯视回放（蓝箭头是骨盆朝向、绿虚线是目标朝向、绿扇形是算转完的范围）；代码里的写法');
     s.appendChild(svgText(24, 26, '奖励按阶段开关（附录表 3）', 'demo-x-ink2', 13.5));
     var MX = 168, MY = 70, CW = 44, RH = 23;
     STAGES.forEach(function (st, i) {
@@ -1113,30 +1173,40 @@
     var penT = label(p2, R + 86, PY + PH + 100, '', 'demo-x-ink', 11);
     var penMax = 0;
     for (var pj = PJ0; pj < PJ0 + PN; pj++) if (stageAt(pj / DEMO.fps) === 2 && demoFrames()[pj].prim >= 0.5) penMax += 1;
-    /* 第 3 段：举高 */
+    /* 第 3 段：举高 —— 示范抓起前后的近景回放（我们重渲，示范第 98–133 帧）；h 是桌上那只瓶子的中心离桌面多高，
+       论文 r = min(h, 0.15)，红虚线是 h = 0.15；只放到第 128 帧（7.68 s，还在抓起阶段）（2026-10-28 看片反馈后从刻度条换成 G1 回放） */
     var p3 = group(s);
     label(p3, R, 64, '抓起：举高，封顶 0.15 m', 'demo-x-ink', 14);
-    var GX = R + 60, GB = 268, GT = 98;
-    rectBox(p3, GX - 14, GT, 28, GB - GT, C_BORDER, C_SURFACE2);
-    var gauge = paint(svgEl('rect', { x: GX - 12, y: GB, width: 24, height: 0, rx: 3 }), C_GOOD);
-    p3.appendChild(gauge);
-    var capY = GB - (GB - GT) * 0.15 / 0.4;
-    hline(p3, GX - 22, capY, GX + 60, capY, C_BAD, 1.5, '4 3');
-    label(p3, GX + 66, capY + 4, '0.15 m 封顶', 'demo-x-ink2', 11);
-    var liftTxt = label(p3, GX + 66, 150, '', 'demo-x-ink', 12);
-    label(p3, GX + 66, 238, '另有一项：离举起目标越近越好', 'demo-x-mut', 10.5);
-    label(p3, GX + 66, 258, '代码：放在桌上是 0，举高 10 cm 封顶', 'demo-x-mut', 10.5);
-    /* 第 4 段：转身 */
+    var LJ0 = 98, LN = 31, LV = { yaw: 0.6, pitch: 0.35, a: [2.484, 0.252, 0.717], s: 240, ox: R + 210, oy: PY + 150 };
+    rectBox(p3, PX - 2, PY - 2, PW + 4, PH + 4, C_BORDER, C_SURFACE2);
+    var liftM = g1Mesh(p3, 'lift');
+    var capL = projV([2.484, 0.252, 0.717 + 0.15], LV);
+    hline(p3, capL[0] - 70, capL[1], capL[0] + 70, capL[1], C_BAD, 1.6, '5 4');
+    var lRing = ringAt(p3, 0, 0, 10, C_WARN, 2.5);
+    var lTag = rectBox(p3, PX + 4, PY + 4, 146, 46, 'none', C_SURFACE); lTag.style.fillOpacity = 0.8; lTag.style.stroke = 'none';
+    label(p3, PX + 12, PY + 20, '示范回放（我们重渲）', 'demo-x-ink2', 11);
+    var lTime = label(p3, PX + 12, PY + 40, '', 'demo-x-mut', 11);
+    var liftTxt = rich(p3, R, PY + PH + 22, '', 12);
+    label(p3, R, PY + PH + 44, '另有一项：离举起目标越近越好', 'demo-x-ink2', 11);
+    label(p3, R, PY + PH + 64, '代码：放在桌上是 0，举高 10 cm 封顶', 'demo-x-mut', 11);
+    /* 第 4 段：转身 —— 示范转身的俯视回放（我们重渲，示范第 120–186 帧）。蓝箭头是骨盆的朝向，绿虚线是目标朝向（−x：背对这张桌子、
+       朝着另一张），红弧是还差的角度；绿扇形是代码里「算完成」的范围：朝向和 −x 的点积 > 0.7，即差 45.6° 以内。
+       2026-10-28 看片反馈：原先只有一个表盘，看不懂「朝向」「目标朝向」是什么 */
     var p4 = group(s);
     label(p4, R, 64, '转身：朝向差多少扣多少', 'demo-x-ink', 14);
-    var DX = R + 110, DY = 180;
-    ringAt(p4, DX, DY, 70, C_BORDER, 1.5);
-    var want = arrow(p4, C_GOOD, 2.5, '5 4'); want.set(DX, DY, DX - 64, DY, 10);
-    label(p4, DX - 70, DY - 12, '目标朝向', 'demo-x-ink2', 10.5, 'end');
-    var cur = arrow(p4, C_ACCENT, 3);
-    var arc = pathLine(p4, [], C_BAD, 3);
-    var yawTxt = label(p4, DX + 86, 170, '', 'demo-x-ink', 12);
-    label(p4, DX + 86, 194, '转过约 134° 算完成', 'demo-x-mut', 10.5);
+    var TJ0 = 120, TN = 67, TV = { yaw: 0, pitch: 1.5707, a: [2.11, 0.4, 0], s: 220, ox: R + 150, oy: PY + 120 };
+    rectBox(p4, PX - 2, PY - 2, PW + 4, 234, C_BORDER, C_SURFACE2);
+    var turnM = g1Mesh(p4, 'turn');
+    var tClip = svgEl('svg', { x: PX, y: PY, width: PW, height: 230, overflow: 'hidden', viewBox: [PX, PY, PW, 230].join(' ') });
+    p4.appendChild(tClip);
+    var wedge = paint(svgEl('path', { d: 'M0 0', 'stroke-width': 0 }), C_GOOD); wedge.style.fillOpacity = 0.16; tClip.appendChild(wedge);
+    var want = arrow(tClip, C_GOOD, 2.5, '5 4');
+    var cur = arrow(tClip, C_ACCENT, 3);
+    var arc = pathLine(tClip, [], C_BAD, 3);
+    var tTime = label(p4, R + W, 64, '', 'demo-x-mut', 11, 'end');
+    rich(p4, R, PY + 249, '俯视：蓝箭头 = 骨盆朝向，绿虚线 = 目标朝向（背对桌子）', 11);
+    var yawTxt = label(p4, R, PY + 270, '', 'demo-x-ink', 12);
+    label(p4, R, PY + 291, '绿色扇形：差 45° 以内，代码就算转完（转过约 134°）', 'demo-x-mut', 11);
     /* 第 5 段：代码 —— 每项都乘步长 0.02：两根条从表里的权重缩到每一步真正给的分；「按阶段」就是左边矩阵里的开关 */
     var p5 = group(s);
     label(p5, R, 64, '代码里的写法：每项 × 步长 0.02', 'demo-x-ink', 14);
@@ -1149,15 +1219,23 @@
     label(p5, R, 236, '「按阶段」：每项只在某几个阶段打开，', 'demo-x-ink2', 12);
     rich(p5, R, 258, '就是左边矩阵里的实心点；没有 $w_i$', 12);
     function draw(t, clock) {
-      var now = nowOf(t, clock), j = loopFrame(now), f = F[j], st = stageAt(f.t);
+      var now = nowOf(t, clock), j = loopFrame(now);
+      /* 三段回放：放下（第 2 段）、抓起（第 3 段）、转身（第 4 段）；视频里放慢，放完停一下再重放，重放时淡入 */
+      var spd = clock == null ? 0.7 : 0.45, playT = (PN - 3) / DEMO.fps / spd, uu = Math.max(0, since(t, clock, 3.6) - 0.3) % (playT + 2);
+      var pk = clamp(3 + Math.floor(uu * DEMO.fps * spd), 3, PN - 1);
+      var lspd = clock == null ? 0.8 : 0.6, lT = (LN - 1) / DEMO.fps / lspd, lu = Math.max(0, since(t, clock, 7.0) - 0.3) % (lT + 1.5);
+      var lk = clamp(Math.floor(lu * DEMO.fps * lspd), 0, LN - 1);
+      var tspd = clock == null ? 1.0 : 0.8, tT = (TN - 1) / DEMO.fps / tspd, tu = Math.max(0, since(t, clock, 10.4) - 0.3) % (tT + 1.0);
+      var tk = clamp(Math.floor(tu * DEMO.fps * tspd), 0, TN - 1);
+      if (t >= 3.6 && t < 7.0) j = PJ0 + pk; else if (t >= 7.0 && t < 10.4) j = LJ0 + lk; else if (t >= 10.4 && t < 13.4) j = TJ0 + tk;
+      var f = F[j], st = stageAt(f.t);
       colHi.setAttribute('x', MX + st * CW);
       dots.forEach(function (row, i) { row.forEach(function (c, k) { c.style.opacity = REWARD_ROWS[i][2][k] ? (k === st ? 1 : 0.35) : 0.6; }); });
       stLab.textContent = '示范第 ' + f1(f.t) + ' s：阶段 ' + st + '（' + STAGES[st].zh + '）';
       moveDot(pdot, [pb.px(clamp(f.dFront, 0, 1.6)), pb.py(rWalk(f.dFront))]);
       pval.textContent = '此刻 d = ' + f2(f.dFront) + ' m，r = ' + f3(rWalk(f.dFront));
-      /* 回放：视频里放慢到 0.45 倍（网页 0.7 倍），放完停 2 s 再重放，重放时淡入 */
-      var spd = clock == null ? 0.7 : 0.45, playT = (PN - 3) / DEMO.fps / spd, uu = Math.max(0, since(t, clock, 3.6) - 0.3) % (playT + 2);
-      var pk = clamp(3 + Math.floor(uu * DEMO.fps * spd), 3, PN - 1), pf = F[PJ0 + pk], pst = stageAt(pf.t), closed = pf.prim >= 0.5;
+      /* 放下的回放：视频里放慢到 0.45 倍（网页 0.7 倍），放完停 2 s 再重放 */
+      var pf = F[PJ0 + pk], pst = stageAt(pf.t), closed = pf.prim >= 0.5;
       placeM.put(camAt(PS, pOx, pOy), pk);
       placeM.g.style.opacity = Math.min(1, uu / 0.25);
       var bp = projPL(pf.hold);
@@ -1174,16 +1252,27 @@
       setW(penBar, pc / penMax * 150);
       penT.setAttribute('x', (R + 86 + pc / penMax * 150).toFixed(1));
       penT.textContent = pst === 2 ? (closed ? '还捏着：按接触力扣分' : '松开了：不扣') : '';
-      var lift = clamp(f.lift - 0.075, 0, 0.4), gh = (GB - GT) * lift / 0.4;
-      gauge.setAttribute('y', (GB - gh).toFixed(1)); gauge.setAttribute('height', gh.toFixed(1));
-      liftTxt.textContent = '此刻离桌 ' + f2(lift) + ' m → 得 ' + f2(Math.min(lift + 0.075, 0.15));
-      /* 朝向按示范里骨盆的偏航画（俯视，x 朝右）；目标朝向是 −x，红弧是还差的角度 */
-      var h = f.yaw, rem = Math.abs(((h - Math.PI) % (2 * Math.PI) + 3 * Math.PI) % (2 * Math.PI) - Math.PI);
-      cur.set(DX, DY, DX + 64 * Math.cos(h), DY - 64 * Math.sin(h), 10);
-      var arcPts = [], tgt = h <= 0 ? -Math.PI : Math.PI;
-      for (var q = 0; q <= 20; q++) { var a = h + (tgt - h) * q / 20; arcPts.push([DX + 40 * Math.cos(a), DY - 40 * Math.sin(a)]); }
+      /* 抓起：h 是瓶子中心离桌面多高 */
+      var lf = F[LJ0 + lk], h = lf.lift;
+      liftM.put(camAt(240, LV.ox, LV.oy), lk); liftM.g.style.opacity = Math.min(1, lu / 0.25);
+      moveDot(lRing, projV(lf.front, LV));
+      lRing.style.stroke = h >= 0.15 ? C_GOOD : C_WARN;
+      lTime.textContent = '示范第 ' + f2(lf.t) + ' s';
+      liftTxt.setText('红虚线 $h$ = 0.15 m；此刻 $h$ = ' + f2(h) + ' m → 得 ' + f2(Math.min(h, 0.15)) + (h >= 0.15 ? '（封顶）' : ''));
+      /* 转身：俯视；屏幕上 y 朝下，所以偏航角 ψ 的方向是 (cos ψ, −sin ψ) */
+      var tf = F[TJ0 + tk], hd = tf.yaw, pp = projV([tf.pel[0], tf.pel[1], 0], TV);
+      turnM.put(camAt(220, TV.ox, TV.oy), tk); turnM.g.style.opacity = Math.min(1, tu / 0.25);
+      var wp = [pp], LW = 92;
+      for (var q = 0; q <= 16; q++) { var aw = Math.PI - 0.7954 + 2 * 0.7954 * q / 16; wp.push([pp[0] + LW * Math.cos(aw), pp[1] - LW * Math.sin(aw)]); }
+      wedge.setAttribute('d', fmtPath(wp) + ' Z');
+      want.set(pp[0], pp[1], pp[0] - 84, pp[1], 10);
+      cur.set(pp[0], pp[1], pp[0] + 72 * Math.cos(hd), pp[1] - 72 * Math.sin(hd), 10);
+      var rem = Math.abs(((hd - Math.PI) % (2 * Math.PI) + 3 * Math.PI) % (2 * Math.PI) - Math.PI);
+      var arcPts = [], tgt = Math.sin(hd) <= 0 ? -Math.PI : Math.PI, h0 = ((hd + Math.PI) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI) - Math.PI;
+      for (var q2 = 0; q2 <= 20; q2++) { var a2 = h0 + (tgt - h0) * q2 / 20; arcPts.push([pp[0] + 40 * Math.cos(a2), pp[1] - 40 * Math.sin(a2)]); }
       setPath(arc, arcPts);
-      yawTxt.textContent = '还差 ' + Math.round(rem * 180 / Math.PI) + '°';
+      tTime.textContent = '示范第 ' + f2(tf.t) + ' s（我们重渲）';
+      yawTxt.textContent = '还差 ' + Math.round(rem * 180 / Math.PI) + '°（' + f2(rem) + ' rad）' + (rem < 0.7954 ? '：算转完了' : '');
       var u5 = K.ease(seg(since(t, clock, 13.4), 0.6, 2.4));
       scaleRows.forEach(function (r) {
         var v = r.w0 * (1 - 0.98 * u5), lw = 40 * (Math.log10(Math.abs(v)) + 2);
@@ -1201,7 +1290,7 @@
   /* ── scene 6: 增量动作 ── */
   function buildSceneDelta() {
     var s = sceneSvg('左边两张小图是同一串探索噪声下的前进命令：上面是绝对动作，命令每一步都在两头乱跳；下面是增量动作，命令围着 0.25 m/s 慢慢变（玩具，种子固定）；' +
-      '右边依次出现：累加公式；示范里 0.1 s 起步到 0.5 m/s 的台阶；手臂每步 0.025 rad 和手的开合；图 9 里去掉增量动作的曲线；我们的理解');
+      '右边依次出现：累加公式；示范里 0.1 s 起步到 0.5 m/s 的台阶；G1 右臂每步多转 0.025 rad（重渲的近景，黄弧是转过的角度）和右手按累加值的正负张开、握住；图 9 里去掉增量动作的曲线；我们的理解');
     s.appendChild(svgText(24, 26, '增量动作：输出变化量，累加到命令上', 'demo-x-ink2', 13.5));
     var toy = toyCommand(6200, 3);  // 两分钟长：左边两张小图一直往前滚，不绕回开头
     var pa = plotBox(s, 24, 58, 380, 100, 0, 2, -0.55, 0.55), pd = plotBox(s, 24, 204, 380, 100, 0, 2, -0.55, 0.55);
@@ -1236,17 +1325,24 @@
     hline(p2, R + 10, 248 - 150, R + W - 10, 248 - 150, C_BAD, 1, '4 3');
     label(p2, R + W - 10, 248 - 156, '0.5 m/s（命令上限）', 'demo-x-ink2', 10.5, 'end');
     label(p2, R, 290, '每步输出 a = 1：前 5 步往上加，之后输出 0 保持', 'demo-x-mut', 10.5);
-    /* 第 3 段：手臂与手 */
+    /* 第 3 段：手臂与手 —— 右臂近景（示范第 84 帧，右肩俯仰每步多转 0.025 rad），右手张开 / 握住；都是 G1 网格重渲。
+       2026-10-28 看片反馈：原先手臂是一根线、手只有一个标签，不直观 */
     var p3 = group(s);
     label(p3, R, 64, '手臂再乘 0.25，手看正负', 'demo-x-ink', 14);
-    var JX = R + 70, JY = 190;
-    ringAt(p3, JX, JY, 8, C_WARN, 3);
-    var armLine = hline(p3, JX, JY, JX, JY + 80, C_WARN, 6);
-    var armTxt = label(p3, JX + 80, 150, '', 'demo-x-ink', 12);
-    label(p3, JX + 80, 174, '输出 1：每步 0.025 rad', 'demo-x-ink2', 11);
-    label(p3, JX + 80, 196, '转 1 rad 要 40 步（0.8 s）', 'demo-x-mut', 10.5);
-    var handC = chip(p3, JX + 80, 220, 150, '', C_GOOD, { size: 12, h: 30 });
+    var AK = 0.55, AX = R + 66, AY = 172, A0 = 29.9;  // 肩关节落在 (AX, AY)；手臂起始方向在水平线下 29.9°（侧面看，肩—手掌连线）
+    var armM = g1Mesh(p3, 'arm');
+    armM.put(camAt(400 * AK, AX, AY), 0);
+    var arm0 = hline(p3, AX, AY, AX + 70 * Math.cos(A0 * Math.PI / 180), AY + 70 * Math.sin(A0 * Math.PI / 180), C_MUTED, 1.5, '4 3');
+    var armNow = hline(p3, AX, AY, AX, AY, C_WARN, 2);
+    var armArc = pathLine(p3, [], C_WARN, 2.5);
+    var armTxt = label(p3, R + 200, 100, '', 'demo-x-ink', 12.5);
+    label(p3, R + 200, 122, '输出 1：每步 0.025 rad', 'demo-x-ink2', 11);
+    label(p3, R + 200, 142, '1 rad 要 40 步（0.8 s）', 'demo-x-mut', 10.5);
+    var handM = g1Mesh(p3, 'hand');
+    handM.put(camAt(500, R + 200 + 84, 196), 0);
+    var handC = chip(p3, R + 196, 250, 156, '', C_GOOD, { size: 12, h: 28 });
     var handT = handC.lastChild;
+    label(p3, R, 296, '右臂、右手：示范第 5.0 s 的姿态（我们重渲）', 'demo-x-mut', 11);
     /* 第 4 段：图 9 去掉增量动作 */
     var p4 = group(s);
     label(p4, R, 64, '图 9：去掉增量动作', 'demo-x-ink', 14);
@@ -1276,11 +1372,18 @@
       setPath(ld.node, wd.map(function (v, i) { return [pd.px(i * 0.02), pd.py(v)]; }));
       var u2 = since(t, clock, 3.6) % 4;
       stepBars.forEach(function (b, i) { var v = Math.min(i + 1, 5) * 0.1; b.set(248, i < u2 * 3 ? v / 0.5 * 150 : 0); });
-      var u3 = since(t, clock, 7.0), steps = Math.floor((u3 % 3) * 15), ang = 0.025 * steps;
-      setLine(armLine, JX, JY, JX + 80 * Math.sin(ang), JY + 80 * Math.cos(ang));
-      armTxt.textContent = steps + ' 步：' + f3(ang) + ' rad';
+      var u3 = since(t, clock, 7.0), steps = Math.min(40, Math.floor((u3 % (40 / 15 + 1)) * 15)), ang = 0.025 * steps;
+      armM.put(camAt(400 * AK, AX, AY), steps);
+      var arcA = [];
+      for (var q = 0; q <= 16; q++) { var aa = (A0 - ang * 180 / Math.PI * q / 16) * Math.PI / 180; arcA.push([AX + 46 * Math.cos(aa), AY + 46 * Math.sin(aa)]); }
+      setPath(armArc, arcA); armArc.style.opacity = steps > 0 ? 1 : 0;
+      var an = (A0 - ang * 180 / Math.PI) * Math.PI / 180;
+      setLine(armNow, AX, AY, AX + 70 * Math.cos(an), AY + 70 * Math.sin(an)); void arm0;
+      armTxt.textContent = '第 ' + steps + ' 步：转了 ' + f3(ang) + ' rad';
       var acc = Math.sin(now * 1.3) * 0.6;
-      handT.setText(acc >= 0 ? '累加 ≥ 0：握住' : '累加 < 0：张开');
+      handM.put(camAt(500, R + 284, 196), acc >= 0 ? 1 : 0);
+      handT.setText('累加 ' + sgn(f2(acc)) + (acc >= 0 ? ' ≥ 0：握住' : ' < 0：张开'));
+      handC.firstChild.style.stroke = acc >= 0 ? C_GOOD : C_MUTED;
       var u4 = seg(since(t, clock, 10.4), 0.2, 2.6) * 30;
       var A_SEQ = [1, 1, 1, 0, 0, -1, -1, -1, -1, -1, 0, 0, 1, 1, 0, 0], k1 = Math.floor(since(t, clock, 0.4) / 0.7), cPrev = 0, cNow = 0, aNow = 0;
       for (var q = 0; q <= k1; q++) { aNow = A_SEQ[q % A_SEQ.length]; cPrev = cNow; cNow = clamp(cNow + 0.1 * aNow, -0.5, 0.5); }
@@ -1388,7 +1491,7 @@
   /* ── scene 8: 学生只看一张图 ── */
   function buildSceneStudent() {
     var s = sceneSvg('左边是学生相机的画面：108 × 192 的小图按像素放大，跟着示范回放走（我们按代码的相机安装位置与内参重渲）；' +
-      '右边依次出现：学生的输入怎么拼；比教师少了哪些（逐个打叉）；相机的视场和瓶子只占十几个像素；项目页里真机上学生看到的画面；代码里的归一化和延迟');
+      '右边依次出现：学生的输入怎么拼；比教师少了哪些（逐个打叉）；G1 头部侧面（重渲）和相机的竖直视场、瓶子只占十几个像素；项目页里真机上学生看到的画面；代码里的归一化和延迟');
     s.appendChild(svgText(24, 26, '学生只看一张图：108 × 192', 'demo-x-ink2', 13.5));
     var ego = egoView(s, 'egoA', 24, 48, 380);
     label(s, 24, 48 + ego.h + 18, '学生相机（我们按代码的安装位置与内参重渲）', 'demo-x-mut', 9.5);
@@ -1438,13 +1541,15 @@
     /* 第 3 段：视场 */
     var p3 = group(s);
     label(p3, R, 64, '头上的 RealSense D435i', 'demo-x-ink', 14);
-    var CX = R + 40, CY = 170;
-    var fov = paint(svgEl('path', { d: 'M' + CX + ' ' + CY + ' L' + (CX + 150) + ' ' + (CY - 104) + ' L' + (CX + 150) + ' ' + (CY + 104) + ' Z', 'stroke-width': 1.5 }), C_SURFACE2, C_STU);
-    p3.appendChild(fov);
-    dotAt(p3, CX, CY, 6, C_STU);
-    label(p3, CX + 160, CY - 20, '水平 69.4°', 'demo-x-ink', 12.5);
-    label(p3, CX + 160, CY + 2, '竖直 42.5°', 'demo-x-ink', 12.5);
-    label(p3, CX + 160, CY + 30, '焦距 1.88 mm', 'demo-x-mut', 10.5);
+    /* G1 头部侧面（我们重渲，机器人朝右），粉色是相机的竖直视场（2026-10-28 看片反馈后从一个圆点换成头部） */
+    var hv3 = headView(p3, 0, R + 86, 134, 0.62);
+    var fov = paint(svgEl('path', { d: fmtPath(frustumPts(hv3.cx, hv3.cy, HEAD_AXIS, 21.25, 140)) + ' Z', 'stroke-width': 1.5 }), C_STU, C_STU);
+    fov.style.fillOpacity = 0.2; p3.appendChild(fov);
+    dotAt(p3, hv3.cx, hv3.cy, 4, C_STU);
+    label(p3, R + 200, 100, '水平 69.4°', 'demo-x-ink', 12.5);
+    label(p3, R + 200, 122, '竖直 42.5°（粉色）', 'demo-x-ink', 12.5);
+    label(p3, R + 200, 146, '焦距 1.88 mm', 'demo-x-mut', 10.5);
+    label(p3, R + 200, 166, '侧面看：往前下方看', 'demo-x-mut', 10.5);
     label(p3, R, 296, '0.53 m 外的瓶子：约 16 像素宽（红框）', 'demo-x-ink2', 11.5);
     /* 第 4 段：真机上看到的 */
     var p4 = group(s);
@@ -1880,30 +1985,36 @@
   }
   function buildSceneSysID() {
     var s = sceneSvg('左上是项目页的视频：辨识前（左）和辨识后（右），仿真里的手指叠在真机画面上，下面是关节角曲线；左下是论文图 5；' +
-      '右边依次出现：高减速比的齿轮；真机做抓—放、仿真回放同一串动作；三个参数的旋钮往真机拧、仿真曲线（蓝）贴向真机（绿）的示意；图 5 的结论；论文给的增益');
+      '右边依次出现：G1 整机（重渲），手和腿各引一条线到一对齿轮（手的大小悬殊、腿的差不多）；方波旁边的右手跟着张开、握住；真机做抓—放、仿真回放同一串动作；三个参数的旋钮往真机拧、仿真曲线（蓝）贴向真机（绿）的示意；图 5 的结论；论文给的增益');
     s.appendChild(svgText(24, 26, '手指的系统辨识（图 5）', 'demo-x-ink2', 13.5));
     var clip = projClip(s, 'sysid', 24, 48, 380, 179, '项目页视频：辨识前（左）、辨识后（右），仿真叠在真机上');
     var fig = paperPart(s, 'fig5', 0, 0, 1, 1, 24, 252, 380, '');
     label(s, 24, 252 + fig.h + 16, '论文图 5：红虚线目标、绿线真机、蓝线仿真', 'demo-x-mut', 9.5);
     var R = 424, W = 352;
-    /* 第 1 段：齿轮 */
+    /* 第 1 段：G1 整机（我们重渲）—— 手和腿各引一条线：手配一对大小悬殊的齿轮（减速比大），腿配一对差不多大的（减速比小）。
+       2026-10-28 看片反馈后把单独的两只齿轮换成整机加引线 */
     var p1 = group(s);
     label(p1, R, 64, 'G1 的三指手：减速比很大', 'demo-x-ink', 14);
     function gear(g, cx, cy, r, teeth, color) {
       var pts = [];
-      for (var k = 0; k < teeth * 2; k++) { var a = k / (teeth * 2) * Math.PI * 2, rr = k % 2 ? r : r + 6; pts.push([cx + rr * Math.cos(a), cy + rr * Math.sin(a)]); }
+      for (var k = 0; k < teeth * 2; k++) { var a = k / (teeth * 2) * Math.PI * 2, rr = k % 2 ? r : r + 4; pts.push([cx + rr * Math.cos(a), cy + rr * Math.sin(a)]); }
       var p = paint(svgEl('path', { d: fmtPath(pts) + ' Z', 'stroke-width': 2 }), C_SURFACE2, color);
       g.appendChild(p);
       return p;
     }
-    var gA = group(p1), gB = group(p1);
-    gear(gA, 0, 0, 16, 8, C_WARN); gear(gB, 0, 0, 52, 26, C_WARN);
-    label(p1, R + 50, 250, '电机', 'demo-x-ink2', 11, 'middle');
-    label(p1, R + 160, 250, '手指', 'demo-x-ink2', 11, 'middle');
-    label(p1, R + 236, 120, '腿：低减速比', 'demo-x-ink2', 11.5);
-    label(p1, R + 236, 140, '仿真建模得准', 'demo-x-mut', 10.5);
-    label(p1, R + 236, 180, '手：高减速比', 'demo-x-ink', 11.5);
-    label(p1, R + 236, 200, '仿真和真机差得多', 'demo-x-mut', 10.5);
+    var BK = 0.85, BX = R + 96, BY = 300;  // 骨盆正下方的地面落在 (BX, BY)
+    g1Mesh(p1, 'body').put(camAt(170 * BK, BX, BY), 0);
+    var hP = [BX + (173.2 - 110) * BK, BY + (92.5 - 240) * BK], kP = [BX + (138.9 - 110) * BK, BY + (184.9 - 240) * BK];
+    ringAt(p1, hP[0], hP[1], 12, C_WARN, 2.5); ringAt(p1, kP[0], kP[1], 12, C_MUTED, 2);
+    hline(p1, hP[0] + 12, hP[1], R + 214, 122, C_WARN, 1.2, '3 3');
+    hline(p1, kP[0] + 12, kP[1], R + 214, 238, C_MUTED, 1.2, '3 3');
+    var gA = group(p1), gB = group(p1), gC = group(p1), gD = group(p1);
+    gear(gA, 0, 0, 8, 6, C_WARN); gear(gB, 0, 0, 26, 20, C_WARN);
+    gear(gC, 0, 0, 13, 10, C_MUTED); gear(gD, 0, 0, 15, 12, C_MUTED);
+    label(p1, R + 286, 166, '手：高减速比', 'demo-x-ink', 11.5, 'middle');
+    label(p1, R + 286, 186, '仿真和真机差得多', 'demo-x-mut', 10.5, 'middle');
+    label(p1, R + 286, 282, '腿：低减速比', 'demo-x-ink2', 11.5, 'middle');
+    label(p1, R + 286, 302, '仿真建模得准', 'demo-x-mut', 10.5, 'middle');
     /* 第 2 段：原语回放 */
     var p2 = group(s);
     label(p2, R, 64, '同一串动作，两边各跑一次', 'demo-x-ink', 14);
@@ -1911,8 +2022,12 @@
     chip(p2, R + 192, 82, 160, '仿真：回放同一串', C_SIM, { size: 12, h: 32 });
     var fl2 = flowSeg(p2, C_MUTED, 3, 3, 30, false);
     var sq2 = pathLine(p2, [], C_BAD, 2, '5 4');
-    label(p2, R, 252, '目标关节角：张开 ↔ 握住的方波', 'demo-x-ink2', 11.5);
-    label(p2, R, 274, '比两边的关节轨迹', 'demo-x-ink2', 11.5);
+    label(p2, R, 134, '握住', 'demo-x-ink2', 11); label(p2, R, 224, '张开', 'demo-x-ink2', 11);
+    var sqDot = dotAt(p2, 0, 0, 5.5, C_BAD);
+    /* 右边是 G1 的右手（我们重渲），跟着方波上的小点张开、握住 */
+    var sqHand = g1Mesh(p2, 'hand'), sqHT = label(p2, R + 290, 238, '', 'demo-x-ink', 11.5, 'middle');
+    label(p2, R, 262, '目标关节角：张开 ↔ 握住的方波', 'demo-x-ink2', 11.5);
+    label(p2, R, 284, '比两边的关节轨迹', 'demo-x-ink2', 11.5);
     /* 第 3 段：三个旋钮 */
     var p3 = group(s);
     label(p3, R, 64, '辨识三个参数（示意）', 'demo-x-ink', 14);
@@ -1954,12 +2069,17 @@
     function draw(t, clock) {
       var now = nowOf(t, clock);
       clip.at(K.clipSince(t, 0), true);
-      gA.setAttribute('transform', 'translate(' + (R + 50) + ',170) rotate(' + (now * 180).toFixed(1) + ')');
-      gB.setAttribute('transform', 'translate(' + (R + 160) + ',170) rotate(' + (-now * 180 * 8 / 26).toFixed(1) + ')');
+      gA.setAttribute('transform', 'translate(' + (R + 248) + ',122) rotate(' + (now * 240).toFixed(1) + ')');
+      gB.setAttribute('transform', 'translate(' + (R + 286) + ',122) rotate(' + (-now * 240 * 6 / 20).toFixed(1) + ')');
+      gC.setAttribute('transform', 'translate(' + (R + 254) + ',238) rotate(' + (now * 120).toFixed(1) + ')');
+      gD.setAttribute('transform', 'translate(' + (R + 286) + ',238) rotate(' + (-now * 120 * 10 / 12).toFixed(1) + ')');
       fl2.at(now, [R + 162, 98], [R + 190, 98], true);
       var sw = [];
-      for (var q = 0; q <= 80; q++) { var x = q / 80 * 4, v = Math.floor(x) % 2 ? 0 : 1; sw.push([R + 20 + x * 80, 220 - v * 90]); }
+      for (var q = 0; q <= 80; q++) { var x = q / 80 * 4, v = Math.floor(x) % 2 ? 0 : 1; sw.push([R + 40 + x * 40, 220 - v * 90]); }
       setPath(sq2, sw);
+      var xc = (now * 0.8) % 4, vc = Math.floor(xc) % 2 ? 0 : 1;
+      moveDot(sqDot, [R + 40 + xc * 40, 220 - vc * 90]);
+      sqHand.put(camAt(500, R + 290, 178), vc); sqHT.textContent = vc ? '目标：握住' : '目标：张开';
       var u3 = K.ease(seg(since(t, clock, 7.0), 0.3, 2.6));
       knobs.forEach(function (k, j) { moveDot(k, [R + 70 + (j === 1 ? 110 : 40) * u3 + 10, 92 + j * 30]); });
       var tau = 0.6 + (0.09 - 0.6) * u3, SIM = toyFinger(tau, 200, 0.02);
@@ -1989,52 +2109,52 @@
   var EXT_NAMES = ['x', 'y', 'z', '横滚', '俯仰', '偏航'];
   function buildSceneCamera() {
     var s = sceneSvg('左上是论文图 6：真机视场、对齐前、对齐后；下面是我们按代码重渲的学生画面：先在对齐前后之间切换，再每秒换一组随机外参；' +
-      '右边依次出现：内参算出的视场；三台相机朝向略有不同的示意；轻量标定；六个外参的随机区间（小点跳到当前那一组的值）；图 13 里外参随机化的作用');
+      '右边依次出现：G1 头部侧面（重渲）和内参算出的竖直视场；三台 G1 的视场朝向略有不同的示意；轻量标定：背面看光心往左挪 3.5 cm、侧面看光轴再低头 3.4°；六个外参的随机区间（小点跳到当前那一组的值）；图 13 里外参随机化的作用');
     s.appendChild(svgText(24, 26, '相机：对齐与外参随机化（图 6）', 'demo-x-ink2', 13.5));
     var fig = paperPart(s, 'fig6', 0, 0, 1, 1, 24, 44, 380, '');
     label(s, 24, 44 + fig.h + 18, '论文图 6：真机视场 / 仿真对齐前 / 仿真对齐后', 'demo-x-mut', 9.5);
     var ego = egoView(s, 'ext', 24, 148, 300);
     var egoLab = label(s, 24, 148 + ego.h + 18, '', 'demo-x-ink2', 11);
     var R = 424, W = 352;
+    /* 第 1–3 段的头部都是 G1 网格重渲（2026-10-28 看片反馈后从圆点和方框换成头部）：侧面看机器人朝右，粉色是相机的竖直视场 */
     /* 第 1 段：内参 */
     var p1 = group(s);
     label(p1, R, 64, '内参：照厂家规格', 'demo-x-ink', 14);
-    var CX = R + 30, CY = 170;
-    p1.appendChild(paint(svgEl('path', { d: 'M' + CX + ' ' + CY + ' L' + (CX + 140) + ' ' + (CY - 97) + ' L' + (CX + 140) + ' ' + (CY + 97) + ' Z', 'stroke-width': 1.5 }), C_SURFACE2, C_STU));
-    dotAt(p1, CX, CY, 6, C_STU);
-    label(p1, CX + 150, 130, '焦距 1.88 mm', 'demo-x-ink2', 11.5);
-    label(p1, CX + 150, 152, '光圈 2.60 × 1.46 mm', 'demo-x-ink2', 11.5);
-    label(p1, CX + 150, 182, '→ 69.4° × 42.5°', 'demo-x-ink', 13);
-    label(p1, CX + 150, 206, 'D435i 彩色相机的规格', 'demo-x-mut', 10.5);
-    /* 第 2 段：每台不一样 */
+    var hv1 = headView(p1, 0, R + 86, 134, 0.62);
+    var fov1 = paint(svgEl('path', { d: fmtPath(frustumPts(hv1.cx, hv1.cy, HEAD_AXIS, 21.25, 140)) + ' Z', 'stroke-width': 1.5 }), C_STU, C_STU);
+    fov1.style.fillOpacity = 0.2; p1.appendChild(fov1);
+    dotAt(p1, hv1.cx, hv1.cy, 4, C_STU);
+    label(p1, R + 200, 100, '焦距 1.88 mm', 'demo-x-ink2', 11.5);
+    label(p1, R + 200, 122, '光圈 2.60 × 1.46 mm', 'demo-x-ink2', 11.5);
+    label(p1, R + 200, 152, '→ 69.4° × 42.5°', 'demo-x-ink', 13);
+    label(p1, R + 200, 176, 'D435i 彩色相机的规格', 'demo-x-mut', 10.5);
+    label(p1, R, 296, '粉色：侧面看到的竖直视场 42.5°', 'demo-x-mut', 11);
+    /* 第 2 段：每台不一样 —— 三台的视场朝向略有不同（示意，角度夸大） */
     var p2 = group(s);
     label(p2, R, 64, '外参：每台 G1 都不一样', 'demo-x-ink', 14);
     var cams = [-0.08, 0.0, 0.1].map(function (d, j) {
-      var g = group(p2), x = R + 50 + j * 110, y = 150;
-      rectBox(g, x - 26, y - 34, 52, 60, C_BORDER, C_SURFACE2);
-      var l1 = hline(g, x, y - 10, x, y - 10, C_STU, 2), l2 = hline(g, x, y - 10, x, y - 10, C_STU, 2);
-      dotAt(g, x, y - 10, 5, C_STU);
-      label(g, x, y + 46, '第 ' + (j + 1) + ' 台', 'demo-x-ink2', 10.5, 'middle');
-      return { x: x, y: y - 10, l1: l1, l2: l2, d: d };
+      var g = group(p2), hv = headView(g, 0, R + 48 + j * 122, 128, 0.42);
+      var fr = paint(svgEl('path', { d: 'M0 0', 'stroke-width': 1.5 }), C_STU, C_STU);
+      fr.style.fillOpacity = 0.22; g.appendChild(fr);
+      label(g, R + 48 + j * 122, 226, '第 ' + (j + 1) + ' 台', 'demo-x-ink2', 11, 'middle');
+      return { hv: hv, fr: fr, d: d };
     });
-    label(p2, R, 236, '机械公差不同，同一台还会随时间漂', 'demo-x-ink2', 11.5);
-    label(p2, R + W, 258, '示意', 'demo-x-mut', 9.5, 'end');
-    /* 第 3 段：标定 —— 两个小视图跟着左图在对齐前 / 后之间切：从背后看往左挪 3.5 cm，从侧面看低头 3.4°（都放大 4 倍画） */
+    label(p2, R, 256, '机械公差不同，同一台还会随时间漂', 'demo-x-ink2', 11.5);
+    label(p2, R + W, 278, '示意：角度夸大了', 'demo-x-mut', 10.5, 'end');
+    /* 第 3 段：标定 —— 两个头部跟着左图在对齐前 / 后之间切：从背后看往左挪 3.5 cm（按真实比例），从侧面看低头 3.4°（放大 4 倍画） */
     var p3 = group(s);
     label(p3, R, 64, '轻量标定：对着图目测对齐', 'demo-x-ink', 14);
-    rectBox(p3, R + 20, 96, 120, 92, C_BORDER, C_SURFACE2);
-    var ghostF = ringAt(p3, R + 80, 132, 7, C_MUTED, 1.5); ghostF.setAttribute('stroke-dasharray', '3 2');
-    var camF = dotAt(p3, R + 80, 132, 7, C_STU);
+    var hvB = headView(p3, 1, R + 84, 136, 0.62), hvS = headView(p3, 0, R + 236, 136, 0.62);
+    var ghostF = ringAt(p3, hvB.x, hvB.y, 6, C_MUTED, 1.5); ghostF.setAttribute('stroke-dasharray', '3 2');
+    var camF = dotAt(p3, hvB.x, hvB.y, 6, C_STU);
     var shiftA = arrow(p3, C_STU, 2);
-    label(p3, R + 80, 214, '从背后看：往左挪 3.5 cm', 'demo-x-ink2', 11.5, 'middle');
-    rectBox(p3, R + 192, 96, 80, 92, C_BORDER, C_SURFACE2);
-    var SX = R + 272, SY = 132;
-    var ghostS = hline(p3, SX, SY, SX + 70, SY, C_MUTED, 1.5, '4 3');
-    var camS = pathLine(p3, [], C_STU, 2), camSD = dotAt(p3, SX, SY, 6, C_STU);
-    label(p3, R + 264, 214, '从侧面看：低头 3.4°', 'demo-x-ink2', 11.5, 'middle');
-    var calTxt = label(p3, R, 244, '', 'demo-x-ink', 12.5);
-    label(p3, R, 270, '渲染图对着真实图看，调到对上为止', 'demo-x-ink2', 11.5);
-    label(p3, R + W, 294, '示意：位移和角度放大 4 倍画', 'demo-x-mut', 11, 'end');
+    label(p3, R + 84, 238, '从背后看：往左挪 3.5 cm', 'demo-x-ink2', 11.5, 'middle');
+    var ghostS = hline(p3, hvS.x, hvS.y, hvS.x, hvS.y, C_MUTED, 1.5, '4 3');
+    var camS = pathLine(p3, [], C_STU, 2), camSD = dotAt(p3, hvS.x, hvS.y, 4, C_STU);
+    label(p3, R + 260, 238, '从侧面看：低头 3.4°', 'demo-x-ink2', 11.5, 'middle');
+    var calTxt = label(p3, R, 264, '', 'demo-x-ink', 12.5);
+    label(p3, R, 286, '渲染图对着真实图看，调到对上为止', 'demo-x-ink2', 11.5);
+    label(p3, R + W, 306, '示意：位移按真实比例，角度放大 4 倍画', 'demo-x-mut', 11, 'end');
     /* 第 4 段：外参随机化 */
     var p4 = group(s);
     label(p4, R, 64, '训练时随机化外参（代码的范围）', 'demo-x-ink', 14);
@@ -2057,16 +2177,19 @@
       ego.put(fr);
       var al = t < 10.4 ? fr : 1, eu = K.ease(al ? seg((now / 1.2) % 1, 0, 0.35) : 1 - seg((now / 1.2) % 1, 0, 0.35));
       if (t >= 10.4) eu = 1;
-      moveDot(camF, [R + 80 - 14 * eu, 132]);
-      shiftA.set(R + 80, 160, R + 80 - 14 * eu - 0.01, 160, eu > 0.2 ? 6 : 0.1); shiftA.g.style.opacity = eu > 0.2 ? 1 : 0;
-      var ang = -0.0593 * 4 * eu, half = 0.37;
-      setPath(camS, [[SX + 70 * Math.cos(ang + half), SY - 70 * Math.sin(ang + half)], [SX, SY], [SX + 70 * Math.cos(ang - half), SY - 70 * Math.sin(ang - half)]]);
-      ghostS.setAttribute('x2', (SX + 70).toFixed(1));
+      /* 背面：光心从 d435_link 原点往机器人左边挪 3.5 cm（背面看就是往画面左边，650 px/m × 0.62 ≈ 14 px） */
+      var shx = (HEAD_CAM[1][0] - 130) * hvB.k * eu;
+      moveDot(camF, [hvB.x + shx, hvB.y]);
+      shiftA.set(hvB.x, hvB.y + 22, hvB.x + shx - 0.01, hvB.y + 22, eu > 0.2 ? 6 : 0.1); shiftA.g.style.opacity = eu > 0.2 ? 1 : 0;
+      /* 侧面：对齐前光轴沿 d435_link 本身（50.4° 朝下），对齐后再低头 3.4°（画成 4 倍） */
+      var axB = HEAD_AXIS - HEAD_TILT, axN = axB + HEAD_TILT * 4 * eu;
+      setPath(camS, frustumPts(hvS.x, hvS.y, axN, 21.25, 86));
+      var ga = axB * Math.PI / 180;
+      setLine(ghostS, hvS.x, hvS.y, hvS.x + 86 * Math.cos(ga), hvS.y + 86 * Math.sin(ga));
       calTxt.textContent = eu > 0.5 ? '对齐后：和真机的画面对上了' : '对齐前：直接挂在 d435_link 上';
-      cams.forEach(function (c) {
-        var a = Math.PI / 2 + c.d + 0.02 * Math.sin(now * 1.5 + c.x);
-        setLine(c.l1, c.x, c.y, c.x + 40 * Math.cos(a - 0.35), c.y - 40 * Math.sin(a - 0.35));
-        setLine(c.l2, c.x, c.y, c.x + 40 * Math.cos(a + 0.35), c.y - 40 * Math.sin(a + 0.35));
+      cams.forEach(function (c, j) {
+        var a = HEAD_AXIS + (c.d + 0.02 * Math.sin(now * 1.5 + j)) * 180 / Math.PI;
+        c.fr.setAttribute('d', fmtPath(frustumPts(c.hv.cx, c.hv.cy, a, 21.25, 62)) + ' Z');
       });
       var e = EXT_DRAWS[extIdx];
       rows4.forEach(function (r, j) {
