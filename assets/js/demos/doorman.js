@@ -661,8 +661,8 @@
       chip(g, R, 82 + i * 48, W, f[0], f[1] ? C_GOOD : C_BAD, { size: 13, left: true, h: 36 });
       return f[1] ? tick(g, R + W - 34, 90 + i * 48, 18, C_GOOD) : cross(g, R + W - 32, 91 + i * 48, 17, C_BAD);
     });
-    label(p1, R, 242, 'kung fu and backflips are solved before', 'demo-x-mut', 10.5);
-    label(p1, R, 264, 'they can open doors using only RGB vision', 'demo-x-mut', 10.5);
+    /* 画面上不写英文句子（2026-10-29 看片反馈），引言第一句写成中文 */
+    label(p1, R, 246, '人形先学会了功夫和后空翻，却还不能只靠 RGB 开门', 'demo-x-mut', 11);
     /* 第 2 段：开门要同时做到的四件事 */
     var p2 = group(s);
     label(p2, R, 64, '开门要同时做到四件事', 'demo-x-ink', 14);
