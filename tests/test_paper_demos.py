@@ -154,6 +154,13 @@ HDMI_NOTE = (
     / "HDMI__Learning_Interactive_Humanoid_Whole-Body_Control_from_Human_Videos"
     / "HDMI__Learning_Interactive_Humanoid_Whole-Body_Control_from_Human_Videos.md"
 )
+VIRAL_NOTE = (
+    ROOT
+    / "papers"
+    / "04_Loco-Manipulation_and_WBC"
+    / "VIRAL__Visual_Sim-to-Real_at_Scale_for_Humanoid_Loco-Manipulation"
+    / "VIRAL__Visual_Sim-to-Real_at_Scale_for_Humanoid_Loco-Manipulation.md"
+)
 PHP_NOTE = (
     ROOT
     / "papers"
@@ -373,7 +380,7 @@ EXPLAINER_BUNDLES = (
     "gentle", "lcp", "transformer", "pi0", "pi05", "op3soccer", "smp", "humanml3d",
     "domain_randomization", "quadterrain", "realhumanoid", "asap", "inekf", "berkeley_humanoid",
     "toddlerbot", "exbody", "h2o", "omnih2o", "hover", "maskedmimic", "exbody2", "hugwbc", "homie", "twist", "twist2",
-    "falcon", "hdmi",
+    "falcon", "hdmi", "viral",
 )
 
 # 幕数由论文决定，不是统一模板：PPO / DeepMimic / AMP / ADD 的核心概念正好各 5 个，
@@ -609,6 +616,12 @@ EXPLAINER_SCENES = {
     # 残差动作（图 9c）、交互奖励（式 1–2）、表 I–II 各一幕，代码里的教师—学生（论文没写）一幕；第 IV 节的上真机设置、开门穿门、搬箱子与楚门式鞠躬
     # 各一幕；第 V 节的 14 个任务、图 6、图 7、图 8–9 各一幕，局限一幕。压成 15 幕会让式 1 的两条曲线和表 I 的柱、或图 7 的回放和图 6 的柱抢同一帧。
     "hdmi": (HDMI_NOTE, 18),
+    # VIRAL 十八幕：问题与两阶段流程各一幕；任务（五个阶段的切换条件与时限）一幕；教师的四个元素按论文的顺序拆开：观测与「HOMIE 命令当 API」、
+    # 分阶段奖励（表 3）、增量动作（图 9）、参考状态初始化（图 4、图 9）各一幕；学生的三个元素：只看一张图（观测与相机）、视觉骨干与历史
+    # （图 10、12）、DAgger 与 BC 的比例（图 11）各一幕，算力规模按教师（图 14）、学生与平铺渲染（图 15）各一幕；上真机的三个元素：手指辨识
+    # （图 5）、相机对齐与外参随机化（图 6）、视觉随机化（图 3、表 7、图 13）各一幕；结果按真机（图 7）、泛化（图 8、16）各一幕，局限一幕。
+    # 压成 15 幕会让增量动作的两条命令曲线和 RSI 的起点格子、或图 14 的教师曲线和图 15 的平铺渲染抢同一帧。
+    "viral": (VIRAL_NOTE, 18),
 
     "humanml3d": (HUMANML3D_NOTE, 12),
 }
@@ -5591,3 +5604,136 @@ def test_hdmi_project_page_clips():
     assert sum(p.stat().st_size for p in clip_dir.iterdir()) < 2.8e6
     note = HDMI_NOTE.read_text(encoding="utf-8")
     assert "剪自[项目页](https://hdmi-humanoid.github.io/)的视频" in note
+
+
+def _viral_demo(js: str):
+    """viral.js 的 DEMO：官方示范 A 每 3 帧取一帧（16.7 帧/秒），每帧 24 个 int16（命令 3、开合 1、四个阶段量、偏航、骨盆 2、右臂 7、两只瓶子 3 + 3）。"""
+    m = re.search(r"var DEMO = \{ n: (\d+), fps: 50 / 3, per: (\d+), table: ([\d.]+), tray: \[([^\]]+)\], data: '([^']+)' \}", js)
+    n, per = int(m.group(1)), int(m.group(2))
+    raw = base64.b64decode(m.group(5))
+    a = struct.unpack(f"<{len(raw) // 2}h", raw)
+    assert per == 3 + 1 + 4 + 1 + 2 + 7 + 3 + 3 and len(a) == n * per
+    out = []
+    for j in range(n):
+        o = j * per
+        out.append({
+            "t": j * 3 / 50, "cmd": [a[o + q] / 1000 for q in range(3)], "prim": a[o + 3] / 1000,
+            "dFront": a[o + 4] / 1000, "dTray": a[o + 5] / 1000, "dPalm": a[o + 6] / 1000, "lift": a[o + 7] / 1000, "yaw": a[o + 8] / 1000,
+        })
+    return float(m.group(3)), out
+
+
+def test_viral_explainer_demos_and_worked_example_share_the_paper_numbers():
+    """VIRAL：十八幕动画、三个演示、配音旁白与笔记「🚶 具体实例」用同一组数。
+
+    图 7、11、13 与表 1–2、5–7 照抄 arXiv 2511.15200；阶段条件与时限、增量动作的系数、相机内参照抄 NVlabs/GR00T-VisualSim2Real；
+    示范 A 是官方仓库里的一段遥操作示范（record_2025-10-31_04-50-31_0.717m），嵌在 viral.js 里，这里解码后把各阶段的时刻、
+    走近奖励、瓶子在学生相机里的像素宽度、一次 PPO 迭代的仿真时间和图 13 的降幅再算一遍。
+    """
+    js = (DEMO_JS_DIR / "viral.js").read_text(encoding="utf-8")
+    note = VIRAL_NOTE.read_text(encoding="utf-8")
+    narration = (ROOT / "scripts" / "paper_video" / "papers" / "viral.py").read_text(encoding="utf-8")
+    intro = (ROOT / "scripts" / "paper_video" / "papers" / "viral.js").read_text(encoding="utf-8")
+
+    for line in (
+        "{ key: 'viral', zh: 'VIRAL', succ: 92, cycle: 20.2 },",
+        "{ key: 'expert', zh: '专家遥操作', succ: 100, cycle: 21.4 },",
+        "{ key: 'novice', zh: '新手遥操作', succ: 73, cycle: 47.0 }",
+        "var REAL = { trials: 59, ok: 54, loops: 54, lapse: '19:25' };",
+        "var FIG11 = [[0, 0.80], [0.25, 1.00], [0.5, 1.00], [0.75, 0.30], [1, 0.00]];",
+        "var FIG13 = [['全部随机化', 1.000], ['去掉材质', 0.947], ['去掉穹顶光', 0.947], ['去掉外参', 0.893], ['不随机', 0.649]];",
+        "var DIM = { teacher: 226, student: 113, vision: 128, act: 11, wbc: 31, imgH: 108, imgW: 192 };",
+        "var COMPUTE = { tEnv: 32768, tSteps: 24, sEnv: 65536, tGpu: 16, sGpu: 64 };",
+        "var CAMERA = { f: 1.88, ax: 2.6035, ay: 1.4621 };",
+        "var DELTA = { scale: 0.1, arm: 0.25, noise: 0.5 };",
+        "var STAGE_MAX = [300, 50, 50, 100, 100];",
+        "var STAGE_T = [0, 2.74, 3.08, 3.88, 7.72, 10.52];",
+        "var DEMO_EVENTS = { open: 3.72, close: 6.30, lift: 6.96, turnStart: 7.72, turnEnd: 11.24, len: 11.94 };",
+    ):
+        assert line in js, line
+    for k in ("'viral-explainer'", "'viral-video'", "'viral-replay'", "'viral-randomize'", "'viral-results'", "K.video(host"):
+        assert k in js, k
+
+    # 例 1–2：示范 A 的五个阶段（每 3 帧取一帧，所以和笔记按 50 Hz 算的时刻最多差一帧 0.06 s）
+    table, F = _viral_demo(js)
+    assert table == 0.717 and len(F) == 199 and _fmt(F[-1]["t"], 2) == "11.88"
+
+    def first(cond):
+        return next(f["t"] for f in F if cond(f))
+
+    for got, want in ((first(lambda f: f["dFront"] < 0.45), 2.74), (first(lambda f: f["dTray"] < 0.3), 3.08),
+                      (first(lambda f: f["t"] > 3 and f["dPalm"] > 0.2), 3.88), (first(lambda f: f["prim"] < 0.5), 3.72),
+                      (first(lambda f: f["t"] > 4 and f["prim"] > 0.5), 6.30), (first(lambda f: f["lift"] - 0.075 > 0.05), 6.96),
+                      (first(lambda f: f["cmd"][2] < -0.5), 7.72), (first(lambda f: -math.cos(f["yaw"]) > 0.7), 10.52)):
+        assert abs(got - want) <= 0.061, (got, want)
+    for s in ("**2.74 s**", "**3.08 s**", "**3.88 s**", "**10.52 s**", "**11.94 s**", "**59.7 分钟**"):
+        assert s in note, s
+    assert _fmt(F[125]["lift"], 2) == "0.32" and "7.5 s 时中心比桌面高 0.32 m" in note
+    turned = abs(F[-1]["yaw"] - F[0]["yaw"]) * 180 / math.pi
+    assert 170 < turned < 172 and "骨盆最后转过约 171°" in note
+
+    # 例 3：起步 5 步到 0.5 m/s；手臂每步 0.025 rad，1 rad 要 40 步
+    assert F[8]["cmd"][0] == 0.5 and round(5 * 0.1, 2) == 0.5 and 0.1 * 0.25 == 0.025 and round(1 / 0.025) == 40
+    assert "5 步、也就是 0.1 秒，就到了每秒 0.5 米" in narration and "动够 1 弧度要 40 步，也就是 0.8 秒" in narration
+
+    # 例 4：走近奖励
+    r0 = math.exp(-4 * (F[0]["dFront"] - 0.45) ** 2)
+    assert F[0]["dFront"] == 1.376 and _fmt(r0, 3) == "0.032" and "**0.032**" in note
+    assert 2.0 * 0.02 == 0.04 and -2000 * 0.02 == -40
+
+    # 例 5：观测维数
+    assert 137 + 5 + 77 + 7 == 226 and 106 + 7 == 113 and 113 + 128 == 241
+    assert "一共 226 维：本体感受 137 维，当前阶段 5 维，物体和桌子 77 维" in narration and "一共 241 维" in narration
+
+    # 例 6：学生相机里的一只瓶子
+    hfov = 2 * math.degrees(math.atan(2.6035 / 2 / 1.88))
+    vfov = 2 * math.degrees(math.atan(1.4621 / 2 / 1.88))
+    fpx = 96 / math.tan(math.radians(hfov / 2))
+    assert (_fmt(hfov, 1), _fmt(vfov, 1), _fmt(fpx, 1)) == ("69.4", "42.5", "138.6")
+    assert round(fpx * 0.06 / 0.526) == 16 and "**16 像素**" in note and "大约只有 16 个像素" in narration
+
+    # 例 7：一次 PPO 迭代
+    steps = 32768 * 24
+    assert steps == 786432 and _fmt(steps * 0.02 / 3600, 1) == "4.4" and round(30000 * steps * 0.02 / 3600 / 24 / 365) == 15
+    assert "**786,432**" in note and "一共 786432 步" in narration and "大约是 15 年" in narration
+
+    # 例 8–9：图 11、图 13
+    assert "阿尔法等于 0 时，成功率是 0.8；等于 0.25 和 0.5 时都是 1；等于 0.75 时掉到 0.3；等于 1 时是 0" in narration
+    assert (_fmt(100 * (1 - 0.649), 1), _fmt(100 * (1 - 0.893), 1), _fmt(100 * (1 - 0.947), 1)) == ("35.1", "10.7", "5.3")
+    assert "降 **35.1%**" in note and "下降了 35.1%" in narration and "降到 0.893，掉了 10.7%" in narration
+    # 例 10：图 15 里 1 张 GPU 的线 35 h 后被图例挡住，只知道下限
+    assert "1 张要 35 h 以上" in note and "1 张要 35 h 以上（读图）" in js and "4.4 倍" not in js + note
+
+    # 旁白：98 句；数字列举不只隔一个逗号；片尾只预告下一篇（DoorMan）；绕开多音字
+    spoken = re.findall(r'"([^"]*)"\),', narration[narration.index("SCRIPT = [") : narration.index("DISPLAY = [")])
+    assert len(spoken) == 98
+    assert not any(re.search(r"\d\s*[，,]\s*\d", t) for t in spoken)
+    assert "下一篇讲 Door Man" in narration and "DoorMan" in intro and spoken[-1].endswith("都在 Robot Learning Paper Notebooks。我们下期见。")
+    for bad in ("差不多", "几乎", "一行", "重点", "时长", "重置", "累加", "重画", "所处", "论文图", "背隙", "卡住"):
+        assert not any(bad in t for t in spoken), bad
+    assert "## 🎬 十八幕动画" in note and 'demos: ["viral"]' in note
+    assert "return seg(t, a + 0.3, a + 0.7) * (b == null ? 1 : 1 - seg(t, b, b + 0.3));" in js and "1 - seg(t, b - 0.3, b)" not in js
+    for ph in ("VIDEO_LEN", "VIDEO_SIZE"):
+        assert ph not in js and ph not in note, ph
+
+
+def test_viral_project_page_clips_and_renders():
+    """VIRAL：第 1、8、13、15–18 幕的真机 / 仿真画面剪自项目页的视频（7 段，按幕懒加载）；seqClip 的分段时长加起来要等于片段时长；
+    重渲的贴图与论文图都用得上。"""
+    js = (DEMO_JS_DIR / "viral.js").read_text(encoding="utf-8")
+    clip_dir = ROOT / "assets/img/papers/viral/clips"
+    used = set(re.findall(r"(?:projClip|seqClip)\(\w+, '(\w+)'", js))
+    assert used == {"loops48", "real4x", "rgbinput", "allrand", "sysid", "general", "failures"}
+    assert {p.name for p in clip_dir.iterdir()} == {f"{u}.{ext}" for u in used for ext in ("mp4", "webp")}
+    for name, cid in (("GEN_PARTS", "general"), ("FAIL_PARTS", "failures")):
+        block = js[js.index(f"var {name} = ") : js.index("];", js.index(f"var {name} = "))]
+        total = sum(float(x) for x in re.findall(r"\[(\d+(?:\.\d+)?), '", block))
+        assert abs(total - _mp4_seconds(clip_dir / f"{cid}.mp4")) < 0.02, (cid, total)
+    assert sum(p.stat().st_size for p in clip_dir.iterdir()) < 2e6
+    figs = {p.name for p in (ROOT / "assets/img/papers/viral").glob("*.webp")}
+    assert figs == set(re.findall(r"'(fig\w+\.webp)'", js))
+    sheets = {p.name for p in (ROOT / "assets/img/papers/viral/g1_3d").iterdir()}
+    assert sheets == set(re.findall(r"file: '(\w+\.webp)'", js)) == {"demoA.webp", "rsi.webp", "place.webp", "lift.webp", "turn.webp", "tables.webp", "arm.webp", "hand.webp", "head.webp", "body.webp",
+                                                                                 "egoA.webp", "dr.webp", "ext.webp", "aug.webp"}
+    note = VIRAL_NOTE.read_text(encoding="utf-8")
+    assert "剪自[项目页](https://viral-humanoid.github.io/)的视频" in note
