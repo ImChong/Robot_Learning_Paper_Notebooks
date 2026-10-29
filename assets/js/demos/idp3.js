@@ -2240,8 +2240,8 @@ var SIDE_RHAND = 'ygQfBqMEQAaGBFEGcwRPBmkETwZmBGMGaQSOBpoEnQbiBMIGIwUAB1gFSAeABY
   function buildVideoDemo(host) {
     K.video(host, {
       title: '配音讲解视频：iDP3 十八幕全流程',
-      sub: '__VIDEO_LEN__竖屏视频（1080×1920），中文配音 + 字幕。画面就是上面的十八幕动画，旁白把每一幕讲细；适合手机上看或转发。',
-      size: '__VIDEO_MB__ MB',
+      sub: '24 分 16 秒竖屏视频（1080×1920），中文配音 + 字幕。画面就是上面的十八幕动画，旁白把每一幕讲细；适合手机上看或转发。',
+      size: '31.0 MB',
       fileName: 'iDP3_讲解视频.mp4'
     });
   }
