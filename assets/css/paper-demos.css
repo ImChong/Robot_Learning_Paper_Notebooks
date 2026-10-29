@@ -19,6 +19,10 @@
   --demo-muted: #8a8a8a;
   --demo-grid: #37373a;
   --demo-purple: #c586c0;
+  /* 空间里的坐标系：x 红、y 绿、z 蓝（AGENTS.md「讲解动画与视频」），和上面的 bad / good / accent 分开 */
+  --demo-axis-x: #ff5a52;
+  --demo-axis-y: #3fcf5e;
+  --demo-axis-z: #4a8dff;
 }
 
 [data-theme="light"] {
@@ -32,6 +36,9 @@
   --demo-muted: #6b6b6b;
   --demo-grid: #e6e6e4;
   --demo-purple: #8e44ad;
+  --demo-axis-x: #d42a20;
+  --demo-axis-y: #1f9a3a;
+  --demo-axis-z: #1f5fe0;
 }
 
 .paper-demo {
