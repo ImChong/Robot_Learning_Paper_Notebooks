@@ -41,15 +41,15 @@
         "13_Physics-Based_Animation",
         "14_Human_Motion"
       ],
-      "last_module": "13_Physics-Based_Animation",
-      "last_index": 1166,
-      "last_title": "PhysibleMDM: Enforcing Inference-Time Physical Feasibility Constraints on Motion Diffusion Models via Noise Optimization (arXiv:2610.30500)",
-      "next_module": "14_Human_Motion",
-      "last_completed_date": "2026-10-27",
-      "note": "本日轮转到 13_Physics-Based_Animation。PROGRESS Physics-Based Character Animation 章节中尚无笔记的最新论文是 PhysibleMDM (arXiv:2610.30500, 2026-10-21, Disney Research × MIT CSAIL)，即 PROGRESS #1166，已确认在上游 README。冻结 CAMDM，推理时联合优化初始噪声与 8 步后验噪声（按两组标准化保风格），用接触模式 / 滑脚 / 自碰撞罚项与约束逆动力学 SOCP 的加速度残差打分，Sep-CMA-ES（64 候选，运动学 100 轮、动力学 2500 轮）搜索并自回归拼接；SMPL 穿地 −75%、自碰撞 −92%、滑脚 −74%，双足加速度残差中位数 −89.5%。未开源，含整体流程 mermaid 与算例，无源码运行时序图。下一篇轮转到 14_Human_Motion。",
-      "last_date": "2026-10-27",
+      "last_module": "14_Human_Motion",
+      "last_index": 1132,
+      "last_title": "TRACE: Typed Reference-Aware Conversational Editing for Humanoid Motion Diffusion (arXiv:2610.21515)",
+      "next_module": "04_Loco-Manipulation_and_WBC",
+      "last_completed_date": "2026-10-28",
+      "note": "本日轮转到 14_Human_Motion。PROGRESS Human Motion 章节中尚无笔记的最新论文是 TRACE (arXiv:2610.21515, 2026-10-15, 浙大 × 西湖大学等)，即 PROGRESS #1132，已确认在上游 README。从配对训练动作用 FK 测出 16 通道支撑 / 根部 / 手高事件监督 Qwen3-4B 规划器，扩散 Transformer 同时看原文本与按 4 帧一格对齐的计划，40 维重力参照状态加积分轨迹与支撑脚接触损失；编辑时编译身体—时间掩码与 sin² 腕高偏移，独立编辑器逐步参考投影。BONES-SEED R@1 73.84%、FID 0.0434；四轮抬手编辑全成功 30.82%。已开源，含整体流程 mermaid、算例与源码运行时序图。下一篇轮转到 04_Loco-Manipulation_and_WBC。",
+      "last_date": "2026-10-28",
       "next_candidate": null,
-      "last_completed": "PhysibleMDM: Enforcing Inference-Time Physical Feasibility Constraints on Motion Diffusion Models via Noise Optimization (arXiv:2610.30500)"
+      "last_completed": "TRACE: Typed Reference-Aware Conversational Editing for Humanoid Motion Diffusion (arXiv:2610.21515)"
     },
     "last_summary_index": 532,
     "last_summary_date": "2026-09-18",
@@ -1838,6 +1838,17 @@
         "project_page": "",
         "code": "",
         "source": "⏳ 未开源(论文正文与附录无代码、项目页链接) · 无源码运行时序图 · CAMDM + 100STYLE · SMPL 人形与迪士尼自研双足机器人 · Disney Research × MIT CSAIL"
+      },
+      {
+        "date": "2026-10-28",
+        "index": 1132,
+        "title": "TRACE: Typed Reference-Aware Conversational Editing for Humanoid Motion Diffusion",
+        "folder": "papers/14_Human_Motion/TRACE__Typed_Reference-Aware_Conversational_Editing_for_Humanoid_Motion_Diffusion",
+        "module": "14_Human_Motion",
+        "arxiv": "2610.21515",
+        "project_page": "",
+        "code": "https://github.com/Multimodal-Perception-Action/TRACE",
+        "source": "🌟 已开源(Apache-2.0，推理 + 对话编辑，权重在 ModelScope kangzejian/TRACE，训练入口未放出) · 含源码运行时序图 · BONES-SEED · Unitree G1 · 浙大 × 西湖大学等"
       }
     ],
     "last_completed_index": 588,

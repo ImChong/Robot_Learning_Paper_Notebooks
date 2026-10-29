@@ -1,0 +1,134 @@
+{%- comment -%}
+  首页「推荐学习路线图」：游戏天赋树式的分系视图，数据在 _data/roadmap.yml。
+  左边（手机上是顶部一排编号）选一系，右边只画这一系的小树：节点是真链接，按 row / col
+  摆在网格上；连线、跨系的「前置 / 通往」标签、悬浮卡片与高亮由 assets/js/roadmap.js 完成。
+  没有 JS 时所有系依次排开，节点照样能点。
+
+  节点悬浮卡片的数据：按节点的笔记地址在 _data/papers.json 里找到那篇论文，只输出卡片要用的
+  字段（标题、板块、发表时间、arXiv、开源、简介、讲解动画幕数、配音视频时长）；节点上的 ▶
+  也按 video_seconds 加。
+{%- endcomment -%}
+{%- assign tt_details = "" -%}
+{%- assign tt_total = 0 -%}
+{%- for branch in site.data.roadmap -%}
+{%- assign tt_total = tt_total | plus: branch.nodes.size -%}
+{%- endfor %}
+<div class="tt" id="roadmap-tree">
+  <div class="tt-side" hidden>
+  <button type="button" class="tt-map-open" aria-haspopup="dialog" aria-controls="roadmap-map">
+    <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-tree-structure"></use></svg>
+    <span class="tt-map-open-text">
+      <span class="tt-map-open-title" data-en="Global overview" data-zh="全局总览">Global overview</span>
+      <span class="tt-map-open-sub" data-en="All {{ tt_total }} papers and routes" data-zh="全部 {{ tt_total }} 篇与路线">All {{ tt_total }} papers and routes</span>
+    </span>
+  </button>
+  <div class="tt-rail" role="tablist" aria-orientation="vertical" aria-label="Learning roadmap branches" data-en-aria-label="Learning roadmap branches" data-zh-aria-label="学习路线图分系">
+    {%- assign tt_tracks = "main,side" | split: "," -%}
+    {%- for track in tt_tracks %}
+    <div class="tt-rail-track tt-rail-track--{{ track }}">
+      {%- if track == "main" %}
+      <p class="tt-rail-group" data-en="Main path" data-zh="主线">Main path</p>
+      {%- else %}
+      <p class="tt-rail-group" data-en="Side paths" data-zh="支线">Side paths</p>
+      {%- endif %}
+      {%- for branch in site.data.roadmap %}
+      {%- if branch.track == track %}
+      <button type="button" class="tt-tab" role="tab" id="tt-tab-{{ branch.id }}" aria-controls="tt-panel-{{ branch.id }}" aria-selected="false" tabindex="-1" data-branch="{{ branch.id }}" data-track="{{ branch.track }}">
+        <span class="tt-mark" aria-hidden="true">{{ branch.mark }}</span>
+        <span class="tt-tab-name" data-en="{{ branch.name | escape }}" data-zh="{{ branch.name_zh | escape }}">{{ branch.name | escape }}</span>
+        <span class="tt-tab-count" aria-hidden="true">{{ branch.nodes | size }}</span>
+      </button>
+      {%- endif %}
+      {%- endfor %}
+    </div>
+    {%- endfor %}
+  </div>
+  </div>
+
+  <div class="tt-panels">
+    {%- for branch in site.data.roadmap %}
+    {%- assign tt_halves = 2 -%}
+    {%- for node in branch.nodes -%}
+    {%- assign tt_h = node.col | times: 2 | round -%}
+    {%- if tt_h > tt_halves -%}{%- assign tt_halves = tt_h -%}{%- endif -%}
+    {%- endfor %}
+    <section class="tt-panel" id="tt-panel-{{ branch.id }}" role="tabpanel" aria-labelledby="tt-tab-{{ branch.id }}" data-branch="{{ branch.id }}" data-mark="{{ branch.mark }}" data-track="{{ branch.track }}" data-map-order="{{ branch.map_order }}">
+      <h3 class="tt-panel-head">
+        <span class="tt-mark" aria-hidden="true">{{ branch.mark }}</span>
+        <span class="tt-panel-title" data-en="{{ branch.name | escape }}" data-zh="{{ branch.name_zh | escape }}">{{ branch.name | escape }}</span>
+        <span class="tt-panel-count" data-en="{{ branch.nodes | size }} papers" data-zh="{{ branch.nodes | size }} 篇">{{ branch.nodes | size }} papers</span>
+      </h3>
+      <div class="tt-gates tt-gates--in" hidden></div>
+      <div class="tt-stage">
+        <div class="tt-tree" style="--tt-halves: {{ tt_halves }}">
+          <svg class="tt-edges" aria-hidden="true" focusable="false"></svg>
+          {%- for node in branch.nodes %}
+          {%- assign tt_paper = nil -%}
+          {%- assign tt_cat = nil -%}
+          {%- for cat in site.data.papers -%}
+          {%- assign tt_hit = cat[1].papers | where: "url", node.url | first -%}
+          {%- unless tt_hit -%}
+          {%- for sc in cat[1].subcategories -%}
+          {%- assign tt_hit = sc.papers | where: "url", node.url | first -%}
+          {%- if tt_hit -%}{%- break -%}{%- endif -%}
+          {%- endfor -%}
+          {%- endunless -%}
+          {%- if tt_hit -%}
+          {%- assign tt_paper = tt_hit -%}
+          {%- assign tt_cat = cat[1] -%}
+          {%- break -%}
+          {%- endif -%}
+          {%- endfor -%}
+          {%- assign tt_url_prefix = node.url | slice: 0, 8 -%}
+          {%- if tt_url_prefix == "https://" -%}
+          {%- assign tt_href = node.url -%}
+          {%- else -%}
+          {%- assign tt_href = node.url | relative_url -%}
+          {%- endif -%}
+          {%- assign tt_after = node.after | join: " " -%}
+          {%- assign tt_related = node.related | join: " " -%}
+          {%- assign tt_col = node.col | times: 2 | minus: 1 | round %}
+          <a class="tt-node{% if tt_url_prefix == 'https://' %} tt-node--external{% endif %}{% if tt_paper.video_seconds %} tt-node--video{% endif %}" href="{{ tt_href }}" id="tt-node-{{ node.id }}" data-node="{{ node.id }}" data-row="{{ node.row }}" data-col="{{ node.col }}"{% if tt_after != "" %} data-after="{{ tt_after }}"{% endif %}{% if tt_related != "" %} data-related="{{ tt_related }}"{% endif %}{% if node.notes %} data-notes="{{ node.notes | jsonify | escape }}"{% endif %} style="grid-row: {{ node.row }}; grid-column: {{ tt_col }} / span 2">
+            {%- if node.label_zh %}
+            <span class="tt-node-name" data-en="{{ node.label | escape }}" data-zh="{{ node.label_zh | escape }}">{{ node.label | escape }}</span>
+            {%- else %}
+            <span class="tt-node-name">{{ node.label | escape }}</span>
+            {%- endif %}
+            <span class="tt-node-year">{{ node.year }}</span>
+            {%- if tt_paper.video_seconds %}
+            <span class="tt-node-badge" aria-hidden="true"><svg class="icon" focusable="false"><use href="#i-play"></use></svg></span>
+            {%- endif %}
+          </a>
+          {%- if tt_paper -%}
+          {%- capture tt_detail -%}
+      {{ node.id | jsonify | replace: '<', '\u003c' | replace: '>', '\u003e' | replace: '&', '\u0026' }}: {
+        "title": {{ tt_paper.title | jsonify | replace: '<', '\u003c' | replace: '>', '\u003e' | replace: '&', '\u0026' }},
+        "zh_title": {{ tt_paper.zh_title | default: tt_paper.zhname | jsonify | replace: '<', '\u003c' | replace: '>', '\u003e' | replace: '&', '\u0026' }},
+        "category": {{ tt_cat.display_name | jsonify | replace: '<', '\u003c' | replace: '>', '\u003e' | replace: '&', '\u0026' }},
+        "category_zh": {{ tt_cat.zhname | default: tt_cat.display_name | jsonify | replace: '<', '\u003c' | replace: '>', '\u003e' | replace: '&', '\u0026' }},
+        "date": {{ tt_paper.published_date_en | jsonify | replace: '<', '\u003c' | replace: '>', '\u003e' | replace: '&', '\u0026' }},
+        "date_zh": {{ tt_paper.published_date_zh | jsonify | replace: '<', '\u003c' | replace: '>', '\u003e' | replace: '&', '\u0026' }},
+        "arxiv": {{ tt_paper.arxiv | jsonify | replace: '<', '\u003c' | replace: '>', '\u003e' | replace: '&', '\u0026' }},
+        "open_source": {{ tt_paper.has_open_source | default: false | jsonify | replace: '<', '\u003c' | replace: '>', '\u003e' | replace: '&', '\u0026' }},
+        "summary_zh": {{ tt_paper.summary_zh | jsonify | replace: '<', '\u003c' | replace: '>', '\u003e' | replace: '&', '\u0026' }},
+        "scenes": {{ tt_paper.explainer_scenes | jsonify | replace: '<', '\u003c' | replace: '>', '\u003e' | replace: '&', '\u0026' }},
+        "video_seconds": {{ tt_paper.video_seconds | jsonify | replace: '<', '\u003c' | replace: '>', '\u003e' | replace: '&', '\u0026' }}
+      }
+          {%- endcapture -%}
+          {%- if tt_details == "" -%}
+          {%- assign tt_details = tt_detail -%}
+          {%- else -%}
+          {%- assign tt_details = tt_details | append: "," | append: tt_detail -%}
+          {%- endif -%}
+          {%- endif -%}
+          {%- endfor %}
+        </div>
+      </div>
+      <div class="tt-gates tt-gates--out" hidden></div>
+    </section>
+    {%- endfor %}
+  </div>
+</div>
+<script type="application/json" id="roadmap-node-details">{
+{{ tt_details }}
+    }</script>

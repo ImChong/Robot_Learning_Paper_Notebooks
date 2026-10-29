@@ -71,4 +71,19 @@ def test_dom_content_loaded_hook_does_not_render_twice():
     # paper.js (defer) may already have configured mermaid before the queued
     # DOMContentLoaded call fires; a second initialize() + run would re-render
     # every diagram and flash them.
-    assert "if (!window.roadmapMermaidConfigured) initMermaid(currentSiteTheme());" in INIT_BODY
+    assert "if (!window.mermaidConfigured) initMermaid(currentSiteTheme());" in INIT_BODY
+
+
+def test_pages_without_diagrams_do_not_load_mermaid():
+    # Only paper notes have diagrams. The home page used to download mermaid
+    # (~717 KB) and DOMPurify and run ~0.95 s of script on a 4x-throttled phone
+    # for nothing; it no longer loads them, and the bootstrap stands down.
+    gate = HEAD.split("{%- if needs_mermaid %}", 1)
+    assert len(gate) == 2, "mermaid tags must sit inside {%- if needs_mermaid %}"
+    gated = gate[1].split("{%- endif %}", 1)[0]
+    for name in ("purify.min.js", "mermaid.min.js", "mermaid-config.js", "mermaid-zoom.js"):
+        assert name in gated, name
+        assert name not in gate[0], name
+    assert '{%- if page.layout == "paper" -%}{%- assign needs_mermaid = true -%}{%- endif -%}' in HEAD
+    assert "mermaidScriptState = 'absent';" in HEAD
+    assert INIT_BODY.lstrip().startswith("if (mermaidScriptState === 'absent') return;")

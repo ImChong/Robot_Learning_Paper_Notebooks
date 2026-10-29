@@ -1618,7 +1618,10 @@
         "url": "/papers/04_Loco-Manipulation_and_WBC/VIRAL__Visual_Sim-to-Real_at_Scale_for_Humanoid_Loco-Manipulation/VIRAL__Visual_Sim-to-Real_at_Scale_for_Humanoid_Loco-Manipulation.html",
         "dir": "VIRAL__Visual_Sim-to-Real_at_Scale_for_Humanoid_Loco-Manipulation",
         "arxiv": "2511.15200",
-        "summary_zh": "VIRAL 是一个视觉 sim-to-real 框架，完全在仿真里学 loco-manip，并零样本上真机。",
+        "has_open_source": true,
+        "summary_zh": "VIRAL 是一份视觉 sim-to-real 的完整配方，不是新算法。任务是人形的移动操作：走到桌前、把手里的瓶子放进托盘、抓起桌上另一只瓶子、转身，循环往复。",
+        "explainer_scenes": 18,
+        "video_seconds": 1362,
         "published_date_zh": "2025年11月",
         "published_date_en": "Nov 2025",
         "zhname": "VIRAL：大规模视觉 Sim-to-Real 的人形移动操作",
@@ -1754,7 +1757,9 @@
         "dir": "HDMI__Learning_Interactive_Humanoid_Whole-Body_Control_from_Human_Videos",
         "arxiv": "2509.16757",
         "has_open_source": true,
-        "summary_zh": "HDMI（HumanoiD iMitation for Interaction）把物体轨迹和接触阶段也写进参考：从单目视频里用 GVHMR 恢复人体、配上物体轨迹和接触标注，然后训练一个 DeepMimic 式的 RL 策略同时跟踪机器人…",
+        "summary_zh": "HDMI（HumanoiD iMitation for Interaction）把人形—物体交互写成机器人—物体共同跟踪：参考里除了机器人的动作，还写进物体的轨迹、接触信号和物体坐标系里的期望接触点…",
+        "explainer_scenes": 18,
+        "video_seconds": 1214,
         "published_date_zh": "2025年9月20日",
         "published_date_en": "Sep 20, 2025",
         "zhname": "HDMI：从人类视频学习人形全身交互控制",
@@ -4837,6 +4842,19 @@
   "14_Human_Motion": {
     "display_name": "Human Motion",
     "papers": [
+      {
+        "title": "TRACE: Typed Reference-Aware Conversational Editing for Humanoid Motion Diffusion",
+        "path": "papers/14_Human_Motion/TRACE__Typed_Reference-Aware_Conversational_Editing_for_Humanoid_Motion_Diffusion/TRACE__Typed_Reference-Aware_Conversational_Editing_for_Humanoid_Motion_Diffusion.md",
+        "url": "/papers/14_Human_Motion/TRACE__Typed_Reference-Aware_Conversational_Editing_for_Humanoid_Motion_Diffusion/TRACE__Typed_Reference-Aware_Conversational_Editing_for_Humanoid_Motion_Diffusion.html",
+        "dir": "TRACE__Typed_Reference-Aware_Conversational_Editing_for_Humanoid_Motion_Diffusion",
+        "arxiv": "2610.21515",
+        "has_open_source": true,
+        "summary_zh": "TRACE 的做法是从训练动作本身用正运动学测出事件（左右脚支撑、根部竖直速度三档、根部高度三档、左右手相对骨盆高度四档，每 4 帧一格共 16 个通道），拿它监督一个 Qwen3-4B 规划器；扩散 Transformer 同时看原始文…",
+        "published_date_zh": "2026年10月15日（arXiv v1）",
+        "published_date_en": "Oct 15, 2026 (arXiv v1)",
+        "zhname": "TRACE：面向人形动作扩散的类型化、参考感知对话式编辑",
+        "zh_title": "TRACE：面向人形动作扩散的类型化、参考感知对话式编辑"
+      },
       {
         "title": "Streaming Multi-Track Timeline Control for 3D Human Motion Generation",
         "path": "papers/14_Human_Motion/TimelineControl__Streaming_Multi-Track_Timeline_Control_for_3D_Human_Motion/TimelineControl__Streaming_Multi-Track_Timeline_Control_for_3D_Human_Motion.md",

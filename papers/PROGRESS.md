@@ -1243,7 +1243,7 @@
 
 | #   | 论文                                                                                                                                   | 日期      | 🌟  | 状态   |
 | --- | ------------------------------------------------------------------------------------------------------------------------------------ | ------- | --- | ---- |
-| 1132  | [TRACE: Typed Reference-Aware Conversational Editing for Humanoid Motion Diffusion](https://arxiv.org/abs/2610.21515) | 2026.10 |  | ⏳ 待读 |
+| 1132  | [TRACE: Typed Reference-Aware Conversational Editing for Humanoid Motion Diffusion](https://arxiv.org/abs/2610.21515) ✅ [笔记](14_Human_Motion/TRACE__Typed_Reference-Aware_Conversational_Editing_for_Humanoid_Motion_Diffusion/TRACE__Typed_Reference-Aware_Conversational_Editing_for_Humanoid_Motion_Diffusion.md) | 2026.10 |  | ✅ 已总结 |
 | 1133  | [PartiGen: Part-Aware Representations for Language-Conditioned Humanoid Motion Generation](https://arxiv.org/abs/2610.13373) | 2026.10 |  | ⏳ 待读 |
 | 596  | [Streaming Multi-Track Timeline Control for 3D Human Motion Generation](https://arxiv.org/abs/2610.03873) ✅ [笔记](14_Human_Motion/TimelineControl__Streaming_Multi-Track_Timeline_Control_for_3D_Human_Motion/TimelineControl__Streaming_Multi-Track_Timeline_Control_for_3D_Human_Motion.md) | 2026.10 |  | ✅ 已总结 |
 | 597  | [ReCHOIR: Contact-guided Human Object Interaction Retargeting to Diverse Characters](https://arxiv.org/abs/2609.10982) | 2026.09 |  | ⏳ 待读 |
