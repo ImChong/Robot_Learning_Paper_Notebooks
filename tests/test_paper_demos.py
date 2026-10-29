@@ -2229,7 +2229,9 @@ def test_transformer_explainer_demos_and_worked_example_share_the_paper_numbers(
         "1.40\\times10^{-4}",
     ):
         assert needle in note, needle
-    for needle in ("0.274", "0.452", "0.548", "89 倍", "136", "6300 万", "2.14 亿", "12 倍", "2.4 倍", "867"):
+    # 旁白是写给第一次接触的人的比喻版（2026-10-29 第二版），念的是百分比和整数，π₀ 那几个数只留在笔记里
+    for needle in ("27%、45%、27%", "0.548 和 0.726", "99.7%", "0.0028", "0.25", "89 倍", "51%", "6.9", "21 对", "136",
+                   "6500 万", "140 万", "12 倍"):
         assert needle in narration, needle
 
 

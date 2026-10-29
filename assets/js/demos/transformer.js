@@ -384,29 +384,11 @@
     return { g: g, h: h, x: x, y: y, w: w };
   }
   var FIGS = {
-    fig1: ['fig1_arch.webp', 760, 1120],
-    mha: ['fig2_mha.webp', 420, 548],
-    making: ['fig3_making.webp', 1063, 640],
     its: ['fig4_its.webp', 877, 643]
   };
   function paperPart(parent, key, u0, v0, u1, v1, x, y, w, caption) {
     var F = FIGS[key];
     return figPart(parent, F[0], F[1], F[2], u0, v0, u1, v1, x, y, w, caption);
-  }
-  /* 论文图 1 里几块的位置（按整张图的比例），讲到哪块就框出哪块 */
-  var FIG1_PARTS = {
-    enc: [0.108, 0.37, 0.472, 0.727], dec: [0.525, 0.206, 0.882, 0.727],
-    encIn: [0.0, 0.737, 0.445, 0.885], decIn: [0.552, 0.737, 1.0, 0.885],
-    encAtt: [0.198, 0.59, 0.446, 0.665], encFfn: [0.198, 0.425, 0.446, 0.5],
-    maskAtt: [0.552, 0.564, 0.802, 0.665], crossAtt: [0.552, 0.4, 0.802, 0.476],
-    out: [0.552, 0.088, 0.802, 0.192]
-  };
-  /* 在一块论文图上框出 FIG1_PARTS 里的某一块 */
-  function figFrame(parent, fig, key, color) {
-    var b = FIG1_PARTS[key];
-    var r = rectBox(parent, fig.x + b[0] * fig.w, fig.y + b[1] * fig.h, (b[2] - b[0]) * fig.w, (b[3] - b[1]) * fig.h, color || C_BAD, 'none');
-    r.style.fill = 'none'; r.setAttribute('stroke-width', 2.6);
-    return r;
   }
   /* 项目页的一段视频：深色底框，下面一行小字写出处；draw 里调 .at(秒, 是否可见) */
   function projClip(parent, id, x, y, w, h, caption, opts) {
@@ -565,7 +547,7 @@
     };
   }
   /* 真机图（Robot_Description_Gallery 按开源 URDF / MJCF 渲染，透明底）：按高度 h 摆到 (x, y) 左上角 */
-  var ROBOTS = { digit: [183, 400], ur5: [325, 260], ur5e: [197, 300], gr1: [77, 323], g1: [253, 640] };
+  var ROBOTS = { digit: [183, 400], ur5: [325, 260], g1: [253, 640] };
   function robotImg(parent, key, x, y, h) {
     var R = ROBOTS[key], w = h * R[0] / R[1];
     var im = svgEl('image', { href: ROBOT_BASE + key + '.webp', x: x.toFixed(1), y: y.toFixed(1), width: w.toFixed(1), height: h.toFixed(1), preserveAspectRatio: 'none' });
@@ -642,164 +624,276 @@
       }
     };
   }
-
-  // ─── 十七幕分镜 ─────────────────────────────────────────────────────────
-  /* ── scene 1: 为什么机器人要读一篇翻译论文 ── */
-  function buildSceneWhy() {
-    var s = sceneSvg('左边是论文图 1 的 Transformer 结构，讲到哪一块就框出哪一块；右边依次出现：英文句子经 Transformer 翻成德文；' +
-      '第 014 期真实世界人形行走项目页的视频，Digit 在户外走，旁边是 16 个 token 进因果 Transformer 出下一步动作；π₀ 与 GR00T N1 的卡片；' +
-      'Diffusion Policy 与 MaskedMimic 的卡片；最后五篇机器人论文围着中间的「注意力块」，小点从中间流向每一篇');
-    s.appendChild(svgText(24, 26, '一篇翻译论文，成了机器人大模型的骨架', 'demo-x-ink2', 13.5));
-    var fig = paperPart(s, 'fig1', 0, 0, 1, 1, 24, 44, 176, '论文图 1：Transformer 的结构');
-    var fr = {};
-    ['enc', 'dec', 'maskAtt', 'encAtt', 'crossAtt'].forEach(function (k) { fr[k] = figFrame(s, fig, k, C_BAD); });
-    var R = 224, W = 552;
-    /* 第 1 段：英译德 */
-    var p1 = group(s);
-    label(p1, R, 64, '论文的任务：机器翻译（WMT 2014）', 'demo-x-ink', 14);
-    var EN = ['The', 'cat', 'sat', 'on', 'the', 'mat'], DE = ['Die', 'Katze', 'saß', 'auf', 'der', 'Matte'];
-    var enC = EN.map(function (w, i) { return chip(p1, R + i * 76, 84, 68, w, C_Q, { size: 12 }); });
-    chip(p1, R + 120, 142, 210, 'Transformer', C_ACCENT, { size: 13, h: 32 });
-    var deC = DE.map(function (w, i) { return chip(p1, R + i * 76, 206, 68, w, C_V, { size: 12 }); });
-    var fl1 = [0, 1].map(function () { return flowSeg(p1, C_MUTED, 2, 3, 30); });
-    label(p1, R, 266, '英→德 约 450 万句对，英→法 约 3600 万句（§5.1）', 'demo-x-ink2', 12);
-    rich(p1, R, 290, '全文**没有一个机器人**，也没有强化学习', 12.5);
-    /* 第 2 段：Digit（第 014 期） */
-    var p2 = group(s);
-    label(p2, R, 64, '第 014 期：Digit 的控制器就是一个因果 Transformer', 'demo-x-ink', 13.5);
-    var clip = projClip(p2, 'rh_walk', R, 80, 272, 153, '项目页视频（未标倍速）：Digit 在伯克利校园里走');
-    var TX = R + 292, toks = cellGrid(p2, TX, 96, 16, 16, 12, 3, C_ROBOT);
-    label(p2, TX, 88, '最近 16 步（观测，动作）', 'demo-x-mut', 11);
-    chip(p2, TX, 134, 236, '因果 Transformer', C_ACCENT, { size: 12.5, h: 30 });
-    chip(p2, TX + 70, 196, 96, '下一步动作', C_V, { size: 12, h: 28 });
-    var fl2 = [flowSeg(p2, C_ROBOT, 2, 3, 26), flowSeg(p2, C_V, 2, 3, 26)];
-    label(p2, R, 268, '4 层、192 维、4 个头，约 140 万参数；每秒 50 次出关节目标', 'demo-x-ink2', 12);
-    label(p2, R, 290, '（数字取自本站第 014 期笔记，不是这篇论文的内容）', 'demo-x-mut', 11);
-    /* 第 3 段：π₀ 与 GR00T N1 */
-    var p3 = group(s);
-    label(p3, R, 64, '后面要讲的视觉—语言—动作模型', 'demo-x-ink', 14);
-    function robotCard(g, x, y, w, h, key, imgH, name, lines, tokens) {
-      rectBox(g, x, y, w, h, C_BORDER, C_SURFACE);
-      var im = robotImg(g, key, x + 10, y + h - imgH - 10, imgH);
-      label(g, x + 14 + im.w, y + 26, name, 'demo-x-ink', 13.5);
-      lines.forEach(function (l, i) { rich(g, x + 14 + im.w, y + 52 + i * 22, l, 11.5, 'demo-x-ink2', 'start', w - im.w - 24); });
-      var cells = [];
-      (tokens || []).forEach(function (tk, i) {
-        cells.push(paint(svgEl('rect', { x: x + 14 + im.w + i * 13, y: y + h - 30, width: 10, height: 14, rx: 2 }), tk));
-        g.appendChild(cells[i]);
-      });
-      return cells;
+  // ─── 比喻用的小图标（2026-10-29 看片反馈：专业名词太多，多用比喻、简单例子和动效） ────────────
+  /* 一个人：圆头 + 半圆肩，cx / cy 是头的中心，r 是头的半径；返回 { g, head, body, set(color, opacity) } */
+  function person(parent, cx, cy, r, color) {
+    var g = group(parent);
+    var body = paint(svgEl('path', {
+      d: 'M ' + (cx - 1.7 * r) + ' ' + (cy + 3.1 * r) + ' Q ' + (cx - 1.7 * r) + ' ' + (cy + 1.2 * r) + ' ' + cx + ' ' + (cy + 1.2 * r) +
+        ' Q ' + (cx + 1.7 * r) + ' ' + (cy + 1.2 * r) + ' ' + (cx + 1.7 * r) + ' ' + (cy + 3.1 * r) + ' Z'
+    }), color);
+    var head = paint(svgEl('circle', { cx: cx, cy: cy, r: r }), color);
+    g.appendChild(body); g.appendChild(head);
+    return {
+      g: g, head: head, body: body, cx: cx, cy: cy, r: r,
+      set: function (c, a) { head.style.fill = c; body.style.fill = c; if (a != null) { head.style.opacity = a; body.style.opacity = a; } }
+    };
+  }
+  /* 一张饼图：set(比例数组, 颜色数组)；比例按顺时针从 12 点钟方向排 */
+  function pie(parent, cx, cy, r) {
+    var g = group(parent), paths = [];
+    ringAt(g, cx, cy, r, C_BORDER, 1.2);
+    return {
+      g: g,
+      set: function (fr, colors) {
+        while (paths.length < fr.length) { var p = svgEl('path', { 'stroke-width': 1.5 }); p.style.stroke = C_SURFACE; g.appendChild(p); paths.push(p); }
+        var a0 = -Math.PI / 2;
+        fr.forEach(function (f, i) {
+          var a1 = a0 + 2 * Math.PI * Math.max(0, Math.min(0.99999, f));
+          var big = a1 - a0 > Math.PI ? 1 : 0;
+          var d = f <= 0.0005 ? 'M 0 0' : 'M ' + cx + ' ' + cy + ' L ' + (cx + r * Math.cos(a0)).toFixed(2) + ' ' + (cy + r * Math.sin(a0)).toFixed(2) +
+            ' A ' + r + ' ' + r + ' 0 ' + big + ' 1 ' + (cx + r * Math.cos(a1)).toFixed(2) + ' ' + (cy + r * Math.sin(a1)).toFixed(2) + ' Z';
+          paths[i].setAttribute('d', d);
+          paths[i].style.fill = colors[i];
+          a0 = a1;
+        });
+      }
+    };
+  }
+  /* 一只钟：表盘 + 12 个刻度；hands 是 [长度比例, 粗细, 颜色]；set([角度…]) 角度按圈数（1 = 一整圈） */
+  function clockFace(parent, cx, cy, r, hands) {
+    var g = group(parent);
+    g.appendChild(paint(svgEl('circle', { cx: cx, cy: cy, r: r, 'stroke-width': 2 }), C_SURFACE2, C_BORDER));
+    for (var i = 0; i < 12; i++) {
+      var a = i / 12 * 2 * Math.PI;
+      hline(g, cx + 0.84 * r * Math.sin(a), cy - 0.84 * r * Math.cos(a), cx + 0.95 * r * Math.sin(a), cy - 0.95 * r * Math.cos(a), C_MUTED, i % 3 ? 1.2 : 2.2);
     }
-    var tkA = robotCard(p3, R, 82, 268, 200, 'ur5e', 130, 'π₀', ['图像 + 文字 + 状态 + 50 步动作', '放进**同一个** Transformer', '两套权重，在自注意力里交互'],
-      [C_Q, C_Q, C_Q, C_Q, C_ACCENT, C_ACCENT, C_ROBOT, C_V, C_V, C_V]);
-    var tkB = robotCard(p3, R + 284, 82, 268, 200, 'gr1', 180, 'GR00T N1', ['Eagle-2 读图像和语言', '动作头是 DiT', '用**交叉注意力**读视觉语言特征'],
-      [C_Q, C_Q, C_Q, C_ACCENT, C_ACCENT, C_V, C_V, C_V]);
-    label(p3, R, 304, 'π₀ 是第 045 期、GR00T N1 是第 050 期的内容（本站笔记）', 'demo-x-mut', 11);
-    /* 第 4 段：Diffusion Policy 与 MaskedMimic */
+    var hs = hands.map(function (h) { return arrow(g, h[2], h[1]); });
+    dotAt(g, cx, cy, 4, C_INK);
+    return {
+      g: g,
+      set: function (turns) {
+        turns.forEach(function (tu, j) {
+          var a = tu * 2 * Math.PI, L = hands[j][0] * r;
+          hs[j].set(cx, cy, cx + L * Math.sin(a), cy - L * Math.cos(a), 7 + hands[j][1]);
+        });
+      }
+    };
+  }
+  /* 一个对话气泡：圆角框 + 朝下的小尾巴，尾巴尖在 (tx, ty) */
+  function bubble(parent, x, y, w, h, tx, ty, color) {
+    var g = group(parent);
+    var b = paint(svgEl('path', {
+      d: 'M ' + (x + 8) + ' ' + y + ' H ' + (x + w - 8) + ' Q ' + (x + w) + ' ' + y + ' ' + (x + w) + ' ' + (y + 8) + ' V ' + (y + h - 8) + ' Q ' + (x + w) + ' ' + (y + h) + ' ' + (x + w - 8) + ' ' + (y + h) +
+        ' H ' + (tx + 7) + ' L ' + tx + ' ' + ty + ' L ' + (tx - 3) + ' ' + (y + h) + ' H ' + (x + 8) + ' Q ' + x + ' ' + (y + h) + ' ' + x + ' ' + (y + h - 8) + ' V ' + (y + 8) + ' Q ' + x + ' ' + y + ' ' + (x + 8) + ' ' + y + ' Z',
+      'stroke-width': 1.4
+    }), C_SURFACE, color || C_BORDER);
+    g.appendChild(b);
+    return g;
+  }
+  /* 一个齿轮：set(角度) 让它转；返回 { g, set } */
+  function gear(parent, cx, cy, r, color) {
+    var g = group(parent), inner = group(g), d = '';
+    for (var i = 0; i < 8; i++) {
+      var a0 = i / 8 * 2 * Math.PI - 0.18, a1 = i / 8 * 2 * Math.PI + 0.18;
+      d += 'M ' + (cx + 0.75 * r * Math.cos(a0)).toFixed(1) + ' ' + (cy + 0.75 * r * Math.sin(a0)).toFixed(1) +
+        ' L ' + (cx + r * Math.cos(a0 + 0.05)).toFixed(1) + ' ' + (cy + r * Math.sin(a0 + 0.05)).toFixed(1) +
+        ' L ' + (cx + r * Math.cos(a1 - 0.05)).toFixed(1) + ' ' + (cy + r * Math.sin(a1 - 0.05)).toFixed(1) +
+        ' L ' + (cx + 0.75 * r * Math.cos(a1)).toFixed(1) + ' ' + (cy + 0.75 * r * Math.sin(a1)).toFixed(1) + ' Z ';
+    }
+    inner.appendChild(paint(svgEl('path', { d: d }), color));
+    inner.appendChild(paint(svgEl('circle', { cx: cx, cy: cy, r: 0.78 * r }), color));
+    inner.appendChild(paint(svgEl('circle', { cx: cx, cy: cy, r: 0.3 * r }), C_SURFACE2));
+    return { g: g, set: function (deg) { inner.setAttribute('transform', 'rotate(' + deg.toFixed(1) + ' ' + cx + ' ' + cy + ')'); } };
+  }
+  /* 一张「档案卡」：n 个小格，颜色深浅由 seed 决定（示意，不是真的嵌入） */
+  function profileStrip(parent, x, y, n, cw, ch, color, seed) {
+    var g = group(parent), cells = [];
+    for (var i = 0; i < n; i++) {
+      var r = paint(svgEl('rect', { x: x + i * (cw + 2), y: y, width: cw, height: ch, rx: 1.5 }), color);
+      r.style.opacity = (0.2 + 0.8 * rnd(i, seed)).toFixed(2);
+      g.appendChild(r); cells.push(r);
+    }
+    return { g: g, cells: cells };
+  }
+  /* 平移一个 group */
+  function moveG(g, dx, dy) {
+    g.setAttribute('transform', 'translate(' + dx.toFixed(1) + ' ' + dy.toFixed(1) + ')');
+  }
+  // ─── 十七幕分镜（2026-10-29 第二版：观众只看过前面的视频，第一次接触这篇，少用专业名词，多用比喻、小例子和动效） ──
+  var R = 424, W = 352;
+  /* ── scene 1: 一篇研究「翻译」的论文 ── */
+  function buildSceneWhy() {
+    var s = sceneSvg('左边是一台「翻译机」：英文单词卡片一张张飞进中间写着 Transformer 的方框，齿轮转动，下面一张张冒出德文；右边依次出现：' +
+      '「研究翻译的论文」打勾、「翻译过来的论文」打叉；同一个零件在「翻译机」和「机器人的大脑」两个槽之间来回搬；第 014 期 Digit 在户外走的视频和 16 张卡片；' +
+      '前面讲过的扩散策略、MaskedMimic 两张卡片；这一期的三站路线，一个小点沿路线走');
+    s.appendChild(svgText(24, 26, '机器翻译：让电脑把英文自动翻成德文', 'demo-x-ink2', 13.5));
+    var EN = ['The', 'cat', 'sat', 'on', 'the', 'mat'], DE = ['Die', 'Katze', 'saß', 'auf', 'der', 'Matte'];
+    var X0 = 30, GX = 60, CW = 54;
+    var enC = EN.map(function (w, i) { return chip(s, X0 + i * GX, 46, CW, w, C_Q, { size: 12 }); });
+    label(s, 24, 96, '英文：猫坐在垫子上', 'demo-x-mut', 11.5);
+    rectBox(s, 60, 124, 290, 96, C_ACCENT, C_SURFACE2);
+    var gA = gear(s, 102, 172, 24, C_ACCENT), gB = gear(s, 308, 172, 24, C_ACCENT);
+    setOpacity(gA.g, 0.45); setOpacity(gB.g, 0.45);
+    label(s, 205, 168, 'Transformer', 'demo-x-ink', 17, 'middle');
+    label(s, 205, 194, '这篇论文造的「翻译机」', 'demo-x-mut', 11.5, 'middle');
+    var deC = DE.map(function (w, i) { return chip(s, X0 + i * GX, 250, CW, w, C_V, { size: 12 }); });
+    label(s, 24, 300, '德文：猫坐在垫子上', 'demo-x-mut', 11.5);
+    var dIn = dotAt(s, 0, 0, 6, C_Q), dOut = dotAt(s, 0, 0, 6, C_V);
+    rich(s, 24, 340, '论文题目：《注意力就是你所需要的一切》', 12.5);
+    label(s, 24, 364, '2017 年，谷歌的 8 位作者', 'demo-x-ink2', 12);
+    /* 第 1 段：是哪一种「翻译论文」 */
+    var p1 = group(s);
+    label(p1, R, 64, '「翻译论文」是哪一种意思？', 'demo-x-ink', 14);
+    var okBox = rectBox(p1, R, 84, W, 66, C_GOOD, C_SURFACE);
+    var okMark = tick(p1, R + 12, 102, 24, C_GOOD);
+    rich(p1, R + 50, 110, '**研究翻译的论文**（就是这篇）', 13);
+    label(p1, R + 50, 134, '教电脑把一种语言自动翻成另一种', 'demo-x-ink2', 12);
+    rectBox(p1, R, 164, W, 66, C_BAD, C_SURFACE);
+    var noMark = cross(p1, R + 15, 184, 18, C_BAD);
+    rich(p1, R + 50, 190, '不是「从外语翻译过来的论文」', 13);
+    label(p1, R + 50, 214, '它本来就是用英文写的', 'demo-x-ink2', 12);
+    label(p1, R, 262, '全文只做翻译：没有机器人，也没有强化学习', 'demo-x-ink2', 12);
+    /* 第 2 段：零件被搬进了机器人 */
+    var p2 = group(s);
+    label(p2, R, 64, '它造的零件，后来被搬进了机器人', 'demo-x-ink', 14);
+    rectBox(p2, R, 86, 150, 112, C_Q, C_SURFACE);
+    rectBox(p2, R + 202, 86, 150, 112, C_ROBOT, C_SURFACE);
+    label(p2, R + 75, 108, '翻译机', 'demo-x-ink', 13, 'middle');
+    label(p2, R + 277, 108, '机器人的大脑', 'demo-x-ink', 13, 'middle');
+    rectBox(p2, R + 15, 132, 120, 40, C_BORDER, 'none', '4 3').style.fill = 'none';
+    rectBox(p2, R + 217, 132, 120, 40, C_BORDER, 'none', '4 3').style.fill = 'none';
+    var partA = chip(p2, R + 19, 136, 112, 'Transformer', C_ACCENT, { size: 12.5, h: 32 });
+    var partB = chip(p2, R + 221, 136, 112, 'Transformer', C_ACCENT, { size: 12.5, h: 32 });
+    var hop = dotAt(p2, 0, 0, 7, C_ACCENT);
+    label(p2, R, 222, '进：英文词', 'demo-x-ink2', 11.5);
+    label(p2, R, 242, '出：德文词', 'demo-x-ink2', 11.5);
+    label(p2, R + 202, 222, '进：机器人看到的', 'demo-x-ink2', 11.5);
+    label(p2, R + 202, 242, '出：下一步动作', 'demo-x-ink2', 11.5);
+    rich(p2, R, 280, '零件本身不变，换的是**进去的**和**出来的**', 12.5);
+    /* 第 3 段：Digit（第 014 期） */
+    var p3 = group(s);
+    label(p3, R, 64, '第 14 期的 Digit：大脑就是一个 Transformer', 'demo-x-ink', 13.5);
+    var clip = projClip(p3, 'rh_walk', R, 80, 224, 126, '第 14 期论文项目页的视频（未标倍速）');
+    label(p3, R + 240, 92, '最近 16 步', 'demo-x-mut', 11);
+    var toks = cellGrid(p3, R + 240, 100, 16, 4, 16, 4, C_ROBOT);
+    var nextC = chip(p3, R + 232, 184, 112, '下一步动作', C_V, { size: 12 });
+    label(p3, R, 250, '每秒 50 次：看最近 16 步，决定下一步怎么动', 'demo-x-ink2', 12);
+    label(p3, R, 274, '（数字取自本站第 14 期笔记）', 'demo-x-mut', 11);
+    /* 第 4 段：前面讲过的两篇 */
     var p4 = group(s);
     label(p4, R, 64, '前面讲过的两篇，也用了它', 'demo-x-ink', 14);
-    var tkC = robotCard(p4, R, 82, 268, 200, 'ur5', 70, 'Diffusion Policy', ['第 010 期：去噪网络的', 'Transformer 版', '带噪动作当 token', '交叉注意力读观测'],
-      [C_V, C_V, C_V, C_V, C_Q, C_Q]);
-    rectBox(p4, R + 284, 82, 268, 200, C_BORDER, C_SURFACE);
-    label(p4, R + 298, 108, 'MaskedMimic', 'demo-x-ink', 13.5);
-    label(p4, R + 298, 134, '第 028 期：策略是 Transformer', 'demo-x-ink2', 11.5);
-    label(p4, R + 298, 156, '没给的目标，用注意力掩码排除', 'demo-x-ink2', 11.5);
-    var mmCells = [];
-    for (var i = 0; i < 10; i++) {
-      var r = paint(svgEl('rect', { x: R + 300 + i * 22, y: 200, width: 18, height: 26, rx: 3 }), C_ROBOT);
+    rectBox(p4, R, 84, 170, 170, C_BORDER, C_SURFACE);
+    robotImg(p4, 'ur5', R + 12, 96, 66);
+    label(p4, R + 12, 186, '第 10 期 扩散策略', 'demo-x-ink', 12.5);
+    label(p4, R + 12, 210, '去噪网络有一个', 'demo-x-ink2', 11.5);
+    label(p4, R + 12, 230, 'Transformer 版本', 'demo-x-ink2', 11.5);
+    rectBox(p4, R + 182, 84, 170, 170, C_BORDER, C_SURFACE);
+    label(p4, R + 194, 110, '第 28 期 MaskedMimic', 'demo-x-ink', 12.5);
+    var mmCells = [], mmX = [];
+    for (var i = 0; i < 6; i++) {
+      var r = paint(svgEl('rect', { x: R + 196 + i * 24, y: 128, width: 20, height: 28, rx: 3 }), C_ROBOT);
       p4.appendChild(r); mmCells.push(r);
+      mmX.push(cross(p4, R + 199 + i * 24, 135, 14, C_BAD));
     }
-    var mmX = [];
-    for (i = 0; i < 10; i++) mmX.push(cross(p4, R + 302 + i * 22, 206, 14, C_BAD));
-    label(p4, R + 298, 254, '叉掉的格子：这一刻没给的部位或时刻', 'demo-x-mut', 11);
-    label(p4, R, 304, '（结构细节取自本站第 010、028 期笔记）', 'demo-x-mut', 11);
-    /* 第 5 段：一张地图 */
+    label(p4, R + 194, 186, '用「遮挡」盖住', 'demo-x-ink2', 11.5);
+    label(p4, R + 194, 206, '没给的目标', 'demo-x-ink2', 11.5);
+    label(p4, R + 194, 230, '（叉掉的格子）', 'demo-x-mut', 11);
+    /* 第 5 段：三站路线 */
     var p5 = group(s);
-    var HX = R + W / 2, HY = 176;
-    var spokes = [['Digit 行走', R + 4, 84], ['π₀', R + W - 124, 84], ['GR00T N1', R + W - 124, 240], ['Diffusion Policy', R + 4, 240], ['MaskedMimic', HX - 60, 290]];
-    var fl5 = spokes.map(function () { return flowSeg(p5, C_ACCENT, 2, 3, 30); });
-    spokes.forEach(function (sp) { chip(p5, sp[1], sp[2], 120, sp[0], C_ROBOT, { size: 12, h: 30 }); });
-    chip(p5, HX - 90, HY - 18, 180, '注意力块（这篇论文）', C_ACCENT, { size: 13, h: 36 });
-    label(p5, R, 64, '换掉的是 token 和输出头，中间那块来自这篇论文', 'demo-x-ink', 13.5);
+    label(p5, R, 64, '这一期分三站', 'demo-x-ink', 14);
+    var STOPS = [['① 老办法为什么慢', '第 2–3 幕'], ['② 核心：注意力怎么算', '第 4–13 幕'], ['③ 成绩，和机器人怎么用', '第 14–17 幕']];
+    pathLine(p5, [[R + 24, 106], [R + 24, 246]], C_BORDER, 3);
+    var stopDots = STOPS.map(function (st, j) {
+      var y = 106 + j * 70;
+      label(p5, R + 50, y + 4, st[0], 'demo-x-ink', 13);
+      label(p5, R + 50, y + 26, st[1], 'demo-x-mut', 11);
+      return dotAt(p5, R + 24, y, 9, C_SURFACE2);
+    });
+    var walker = dotAt(p5, R + 24, 106, 6, C_ACCENT);
+    label(p5, R, 296, '每一块都配一个比喻和一个小例子', 'demo-x-ink2', 12);
     function draw(t, clock) {
       var now = nowOf(t, clock);
-      /* 第 1 段：词一个个流过 Transformer */
-      fl1[0].at(now, [R + 225, 114], [R + 225, 140], true);
-      fl1[1].at(now, [R + 225, 176], [R + 225, 204], true);
-      var k = Math.floor(now * 1.2) % 6;
-      enC.forEach(function (c, i) { c.box.style.stroke = i === k ? C_INK : C_Q; });
-      deC.forEach(function (c, i) { setOpacity(c, i <= Math.floor(since(t, clock, 0.4) * 1.2) % 7 ? 1 : 0.25); });
-      /* 第 2 段 */
-      clip.at(K.clipSince(t, 3.6), winK(t, 1) > 0.05);
+      gA.set(now * 60); gB.set(-now * 60);
+      /* 左边：词一个个飞进翻译机，德文一个个出来；每词 1.1 s，6 个词后停 1.4 s */
+      var per = 1.1, cyc = 6 * per + 1.4, ph = now % cyc, k = Math.floor(ph / per), u = (ph % per) / per;
+      if (k > 5) { k = 6; u = 1; }
+      enC.forEach(function (c, j) { c.box.style.strokeWidth = j === k ? 2.6 : 1.3; });
+      deC.forEach(function (c, j) { setOpacity(c, j < k || (j === k && u > 0.62) ? 1 : 0.12); });
+      /* 一颗蓝点把这个词送进翻译机，一颗绿点从机器下面送到对应的德文卡片 */
+      if (k < 6) {
+        var cxk = X0 + k * GX + CW / 2, a = ease(clamp(u / 0.45, 0, 1)), b2 = ease(clamp((u - 0.5) / 0.4, 0, 1));
+        moveDot(dIn, [cxk + (205 - cxk) * a, 78 + 44 * a]);
+        moveDot(dOut, [205 + (cxk - 205) * b2, 222 + 26 * b2]);
+        setOpacity(dIn, u < 0.47 ? 1 : 0); setOpacity(dOut, u > 0.5 && u < 0.92 ? 1 : 0);
+      } else { setOpacity(dIn, 0); setOpacity(dOut, 0); }
+      /* 第 1 段：先打勾，再打叉 */
+      var s1 = since(t, clock, 0.4);
+      setOpacity(okMark, seg(s1, 0.6, 1.0));
+      setOpacity(noMark, seg(s1, 1.6, 2.0));
+      okBox.style.strokeWidth = (1.3 + 1.4 * seg(s1, 0.6, 1.0)).toFixed(2);
+      /* 第 2 段：零件在两个槽之间来回搬（4 s 一趟） */
+      /* 零件在左槽淡出、一颗点从上面绕过去、在右槽淡入；8 s 一来回 */
+      var pp = (now % 8) / 8, hx = pp < 0.3 ? 0 : pp < 0.5 ? (pp - 0.3) / 0.2 : pp < 0.8 ? 1 : 1 - (pp - 0.8) / 0.2;
+      setOpacity(partA, 1 - ease(clamp(hx * 2, 0, 1)));
+      setOpacity(partB, ease(clamp(hx * 2 - 1, 0, 1)));
+      var moving = (pp > 0.3 && pp < 0.5) || pp > 0.8, he = ease(hx);
+      moveDot(hop, [R + 75 + 202 * he, 152 - 60 * Math.sin(Math.PI * he)]);
+      setOpacity(hop, moving ? 1 : 0);
+      /* 第 3 段 */
+      clip.at(K.clipSince(t, 3.6), winK(t, 2) > 0.05);
       toks.fill(1 + Math.floor(now * 8) % 16);
-      fl2[0].at(now, [TX + 118, 112], [TX + 118, 132], true);
-      fl2[1].at(now, [TX + 118, 166], [TX + 118, 194], true);
-      /* 第 3、4 段：token 一个个亮 */
-      [tkA, tkB, tkC].forEach(function (cells, q) {
-        var m = Math.floor(now * 5 + q * 2) % (cells.length + 4);
-        cells.forEach(function (c, j) { c.style.opacity = j < m ? 1 : 0.25; });
-      });
+      nextC.box.style.strokeWidth = (1.3 + 1.2 * Math.abs(Math.sin(now * 3))).toFixed(2);
+      /* 第 4 段：每 1.5 s 换一批叉掉的格子 */
       var mm = Math.floor(now / 1.5);
-      mmX.forEach(function (x, j) { setOpacity(x, rnd(j + 10 * mm, 5) < 0.35 ? 1 : 0); });
-      mmCells.forEach(function (c, j) { c.style.opacity = rnd(j + 10 * mm, 5) < 0.35 ? 0.3 : 1; });
-      /* 第 5 段 */
-      spokes.forEach(function (sp, j) { fl5[j].at(now + j * 0.3, [HX, HY], [sp[1] + 60, sp[2] + 15], true); });
+      mmX.forEach(function (x, j) { setOpacity(x, rnd(j + 10 * mm, 5) < 0.4 ? 1 : 0); });
+      mmCells.forEach(function (c, j) { c.style.opacity = rnd(j + 10 * mm, 5) < 0.4 ? 0.3 : 1; });
+      /* 第 5 段：小点沿路线走 */
+      var wp = (since(t, clock, 13.4) % 6) / 6, wy = 106 + 140 * clamp(wp * 1.25, 0, 1);
+      moveDot(walker, [R + 24, wy]);
+      stopDots.forEach(function (d, j) { d.style.fill = wy >= 106 + j * 70 - 2 ? C_ACCENT : C_SURFACE2; });
       panels(t, [p1, p2, p3, p4, p5]);
-      setOpacity(fr.maskAtt, winK(t, 1) + winK(t, 3));
-      setOpacity(fr.encAtt, winK(t, 2));
-      setOpacity(fr.crossAtt, winK(t, 2) + winK(t, 3));
-      setOpacity(fr.enc, winK(t, 4));
-      setOpacity(fr.dec, winK(t, 4));
     }
     return { el: s, draw: draw };
   }
 
-  /* ── scene 2: 一步等一步：RNN 的串行瓶颈 ── */
+  /* ── scene 2: 传话游戏：老办法为什么慢 ── */
   function buildSceneSerial() {
-    var s = sceneSvg('左上是一台走路的 G1 的最近 6 步，每一步一个格子；下面一排是 RNN 的 6 个隐状态，亮点一格一格往右走；最下面一排是自注意力，' +
-      '6 个位置两两用弧线连起来，一起亮；右边依次出现：RNN 的公式；6、16、50 步要串行走多少次；远距离依赖的路径；卷积要堆的层；Transformer 只靠注意力');
-    s.appendChild(svgText(24, 26, '把机器人最近 6 步当成一串 token', 'demo-x-ink2', 13.5));
+    var s = sceneSvg('左上是一台走路的 G1 的最近 6 步，每一步一个格子；中间一排 6 个小人玩传话游戏，一个亮点一个人一个人往后传，越传越淡；' +
+      '下面一排 6 个小人开圆桌会议，两两之间都连着弧线，一起亮；右边依次出现：两个人耳语；6、16、50 个人要传多少次；话越传越走样；' +
+      '另一种老办法卷积，只能和邻座说话，要叠好几层；最后对比传话和开会');
+    s.appendChild(svgText(24, 26, '把机器人最近 6 步，排成一排', 'demo-x-ink2', 13.5));
     var N = 6, CW = 56, GAP = 6;
     var hist = historyStrip(s, 24, 40, N, CW, 84, { gap: GAP });
-    label(s, 24, 166, 'RNN：一格一格算', 'demo-x-ink2', 12);
-    var arr = K.arrowMarker(s, 'tf-x-arrow-rnn', C_MUTED);
-    var hBoxes = [];
-    for (var i = 0; i < N; i++) {
-      var cx = hist.cx(i);
-      hBoxes.push(rectBox(s, cx - 26, 176, 52, 30, C_RNN, C_SURFACE2));
-      rich(s, cx, 195, '$h_{' + (i === N - 1 ? 't' : 't-' + (N - 1 - i)) + '}$', 13.5, 'demo-x-ink2', 'middle', 50);
-      if (i) {
-        var l = hline(s, hist.cx(i - 1) + 27, 191, cx - 29, 191, C_MUTED, 1.3);
-        l.setAttribute('marker-end', arr);
-      }
-    }
-    var rnnTag = tone(s, 390, 228, '', C_RNN, 12, 'end');
-    label(s, 24, 262, '自注意力：一层之内同时算完', 'demo-x-ink2', 12);
-    var arcs = group(s), arcList = [];
+    label(s, 24, 168, '老办法（循环网络）：像传话游戏，一个传一个', 'demo-x-ink2', 12);
+    var row1 = [], row2 = [];
+    for (var i = 0; i < N; i++) row1.push(person(s, hist.cx(i), 190, 7, C_MUTED));
+    var msg = dotAt(s, hist.cx(0), 176, 5, C_RNN);
+    var rnnTag = tone(s, 390, 236, '', C_RNN, 12, 'end');
+    label(s, 24, 262, 'Transformer：像圆桌会议，人人直接对话', 'demo-x-ink2', 12);
+    var arcList = [];
     for (var a = 0; a < N; a++) for (var b = a + 1; b < N; b++) {
-      var m = (hist.cx(a) + hist.cx(b)) / 2, lift = 10 + (b - a) * 11;
-      arcList.push(paint(svgEl('path', { d: 'M ' + hist.cx(a) + ' 336 Q ' + m + ' ' + (336 - 2 * lift) + ' ' + hist.cx(b) + ' 336', fill: 'none', 'stroke-width': 1.2 }), null, C_GOOD));
-      arcs.appendChild(arcList[arcList.length - 1]);
+      var m = (hist.cx(a) + hist.cx(b)) / 2, lift = 8 + (b - a) * 10;
+      var arc = paint(svgEl('path', { d: 'M ' + hist.cx(a) + ' 330 Q ' + m + ' ' + (330 - 2 * lift) + ' ' + hist.cx(b) + ' 330', fill: 'none', 'stroke-width': 1.2 }), null, C_GOOD);
+      s.appendChild(arc); arcList.push(arc);
     }
-    var aBoxes = [];
-    for (i = 0; i < N; i++) {
-      aBoxes.push(rectBox(s, hist.cx(i) - 26, 336, 52, 30, C_GOOD, C_SURFACE2));
-      rich(s, hist.cx(i), 355, '$z_{' + (i === N - 1 ? 't' : 't-' + (N - 1 - i)) + '}$', 13.5, 'demo-x-ink2', 'middle', 50);
-    }
-    var attTag = tone(s, 390, 388, '', C_GOOD, 12, 'end');
+    for (i = 0; i < N; i++) row2.push(person(s, hist.cx(i), 338, 7, C_GOOD));
+    var attTag = tone(s, 390, 388, '一轮就完', C_GOOD, 12, 'end');
     label(s, 24, 404, '格子里的 G1 借第 032 期 HOMIE 的回放贴图，只作示意', 'demo-x-mut', 10.5);
-    var R = 412, W = 364;
-    /* 第 1 段：公式 */
+    /* 第 1 段：两个人耳语 */
     var p1 = group(s);
-    label(p1, R, 64, 'RNN：第 t 步要等第 t−1 步', 'demo-x-ink', 14);
-    math(p1, R + 10, 108, 'h_t = f(h_{t-1},\\, x_t)', 20);
-    label(p1, R, 152, '隐状态一个接一个地往后传', 'demo-x-ink2', 12);
-    label(p1, R, 176, '同一条序列内部没法并行（§1）', 'demo-x-ink2', 12);
-    rich(p1, R, 212, '机器人这边：策略读的**最近一段观测**，也是一串 token', 12.5);
-    /* 第 2 段：越长越久 */
+    label(p1, R, 64, '传话游戏：一个等一个', 'demo-x-ink', 14);
+    var pa = person(p1, R + 50, 118, 15, C_MUTED), pb = person(p1, R + 190, 118, 15, C_MUTED), pc = person(p1, R + 330, 118, 15, C_MUTED);
+    bubble(p1, R + 76, 76, 84, 30, R + 82, 112, C_RNN);
+    label(p1, R + 118, 96, '悄悄话…', 'demo-x-ink2', 12, 'middle');
+    var wait = tone(p1, R + 330, 190, '', C_RNN, 11.5, 'middle');
+    label(p1, R, 218, '第 t 步，要等第 t−1 步传完才能开始', 'demo-x-ink2', 12);
+    label(p1, R, 242, '第 14 期比过的 LSTM，就是这种循环网络', 'demo-x-ink2', 12);
+    rich(p1, R, 268, '同一串里，没法几个人**同时**传', 12.5);
+    /* 第 2 段：人越多越慢 */
     var p2 = group(s);
-    label(p2, R, 64, '序列越长，串行越久', 'demo-x-ink', 14);
-    var LEN = [[6, '这里的 6 步'], [16, 'Digit 的窗口 16 步'], [50, 'π₀ 一块动作 50 步']];
+    label(p2, R, 64, '人越多，越慢', 'demo-x-ink', 14);
+    var LEN = [[6, '6 个人：传 6 次'], [16, '16 个人（Digit 看的 16 步）：传 16 次'], [50, '50 个人：传 50 次']];
     var rows2 = LEN.map(function (L, j) {
       var y = 96 + j * 56;
       label(p2, R, y, L[1], 'demo-x-ink2', 11.5);
@@ -808,24 +902,23 @@
       var bar = hbar(p2, R, y + 26, 6, C_GOOD);
       return { dots: dots, bar: bar, n: L[0] };
     });
-    legendRow(p2, R, 278, [['RNN：一步一个点', C_RNN], ['自注意力：一次', C_GOOD]], 11);
-    label(p2, R, 304, '显存又限制了跨样本的批量（§1）', 'demo-x-mut', 11.5);
-    /* 第 3 段：远距离依赖 */
+    legendRow(p2, R, 278, [['传话：一次一个点', C_RNN], ['开会：一次全到', C_GOOD]], 11);
+    /* 第 3 段：越传越走样 */
     var p3 = group(s);
-    label(p3, R, 64, '远距离依赖：路径越短，越好学', 'demo-x-ink', 14);
+    label(p3, R, 64, '传得越远，越走样', 'demo-x-ink', 14);
     var CH = 8, cxs = [];
     for (i = 0; i < CH; i++) { cxs.push(R + 20 + i * 44); dotAt(p3, cxs[i], 140, 7, C_SURFACE2); ringAt(p3, cxs[i], 140, 7, C_RNN, 1.6); }
     for (i = 1; i < CH; i++) hline(p3, cxs[i - 1] + 8, 140, cxs[i] - 8, 140, C_RNN, 1.4);
-    var hop = dotAt(p3, cxs[0], 140, 4.5, C_INK);
+    var hop = dotAt(p3, cxs[0], 140, 5, C_RNN);
     var hopTxt = tone(p3, R, 176, '', C_RNN, 12);
     p3.appendChild(paint(svgEl('path', { d: 'M ' + cxs[0] + ' 226 Q ' + (cxs[0] + cxs[CH - 1]) / 2 + ' 186 ' + cxs[CH - 1] + ' 226', fill: 'none', 'stroke-width': 2 }), null, C_GOOD));
     for (i = 0; i < CH; i++) { dotAt(p3, cxs[i], 226, 7, C_SURFACE2); ringAt(p3, cxs[i], 226, 7, C_GOOD, 1.6); }
-    var jump = dotAt(p3, cxs[0], 226, 4.5, C_INK);
-    tone(p3, R, 258, '自注意力：1 步就到', C_GOOD, 12);
-    label(p3, R, 290, '第 1 步的信息要经过 n−1 次更新才到最后（§4）', 'demo-x-ink2', 11.5);
+    var jump = dotAt(p3, cxs[0], 226, 5, C_GOOD);
+    tone(p3, R, 258, '开会：一步就到，原话不走样', C_GOOD, 12);
+    label(p3, R, 290, '论文说：路越长，越难学到前后的联系', 'demo-x-ink2', 11.5);
     /* 第 4 段：卷积 */
     var p4 = group(s);
-    label(p4, R, 64, '卷积能并行，但要堆层才连得通', 'demo-x-ink', 14);
+    label(p4, R, 64, '另一种老办法：卷积，只和邻座说话', 'demo-x-ink', 14);
     var LV = 4, base = 8, nodes = [];
     for (var lv = 0; lv < LV; lv++) {
       nodes.push([]);
@@ -835,51 +928,56 @@
         if (lv) for (var dd = -1; dd <= 1; dd++) if (i + dd >= 0 && i + dd < base) hline(p4, x, y + 5, R + 24 + (i + dd) * 40, y + 41, C_BORDER, 1);
       }
     }
-    label(p4, R, 284, '核宽 3：每往上一层，看到的范围多 2 格', 'demo-x-ink2', 11.5);
-    rich(p4, R, 308, 'ConvS2S 要 $O(n/k)$ 层，ByteNet（空洞卷积）要 $O(\\log_k n)$ 层', 11.5);
-    /* 第 5 段：只靠注意力 */
+    label(p4, R, 284, '每往上叠一层，能听到的人多 2 个', 'demo-x-ink2', 11.5);
+    label(p4, R, 306, '要叠好几层，两头的人才连得上', 'demo-x-ink2', 11.5);
+    /* 第 5 段：不传话，直接开会 */
     var p5 = group(s);
-    label(p5, R, 64, '这篇论文：不用循环，也不用卷积', 'demo-x-ink', 14);
-    label(p5, R, 100, '只靠注意力，建模输入和输出之间的全局依赖（§1）', 'demo-x-ink2', 12);
-    label(p5, R, 126, '据作者所知，是第一个完全靠自注意力的转导模型（§2）', 'demo-x-ink2', 12);
-    var cmp = [['串行步数', '$n$', '$1$'], ['最远两步的路径', '$n$', '$1$']];
+    label(p5, R, 64, 'Transformer：不传话，直接开会', 'demo-x-ink', 14);
+    label(p5, R, 100, '不用循环，也不用卷积，只靠「注意力」', 'demo-x-ink2', 12);
+    label(p5, R, 124, '论文说，这是第一个这样做的模型', 'demo-x-ink2', 12);
+    var cmp = [['要等几轮', '传话：n 轮', '开会：1 轮'], ['话转几手', '传话：n 手', '开会：1 手']];
     cmp.forEach(function (c, j) {
-      var y = 160 + j * 44;
+      var y = 156 + j * 46;
       label(p5, R, y + 20, c[0], 'demo-x-ink2', 12);
-      chip(p5, R + 130, y, 100, 'RNN ' + c[1], C_RNN, { size: 12 });
-      chip(p5, R + 244, y, 116, '自注意力 ' + c[2], C_GOOD, { size: 12 });
+      chip(p5, R + 90, y, 118, c[1], C_RNN, { size: 12 });
+      chip(p5, R + 222, y, 118, c[2], C_GOOD, { size: 12 });
     });
-    rich(p5, R, 278, '下一幕看论文**表一**怎么把这三件事摆在一起', 12);
+    label(p5, R, 278, 'n 是人数，也就是有几步', 'demo-x-mut', 11.5);
     function draw(t, clock) {
       var now = nowOf(t, clock);
       hist.set(now);
-      /* RNN 的亮点一格一格走；每轮 6 步、每步 0.45 s，再停 0.6 s */
-      var cyc = (now % (N * 0.45 + 0.6)) / 0.45, k = Math.min(N - 1, Math.floor(cyc));
-      hBoxes.forEach(function (b, j) { b.style.fill = j === k ? C_RNN : C_SURFACE2; b.style.fillOpacity = j === k ? 0.35 : 1; });
-      rnnTag.textContent = '串行：第 ' + (k + 1) + ' / ' + N + ' 步';
+      /* 传话：每 0.5 s 传给下一个人，越传越淡 */
+      var cyc = (now % (N * 0.5 + 0.8)) / 0.5, k = Math.min(N - 1, Math.floor(cyc)), fr = clamp(cyc - k, 0, 1);
+      row1.forEach(function (p, j) { p.set(j === k ? C_RNN : j < k ? C_INK : C_MUTED, j <= k ? 1 : 0.45); });
+      var mx = hist.cx(k) + (k < N - 1 && cyc < N ? (hist.cx(k + 1) - hist.cx(k)) * ease(clamp((fr - 0.5) / 0.5, 0, 1)) : 0);
+      moveDot(msg, [mx, 176]);
+      msg.style.opacity = (1 - 0.13 * (k + fr)).toFixed(2);
+      rnnTag.textContent = '传到第 ' + (k + 1) + ' / ' + N + ' 个人，越传越淡';
       var pulse = 0.35 + 0.65 * Math.abs(Math.sin(now * 2.2));
       arcList.forEach(function (p) { p.style.opacity = pulse.toFixed(2); });
-      aBoxes.forEach(function (b) { b.style.fill = C_GOOD; b.style.fillOpacity = (0.1 + 0.25 * pulse).toFixed(2); });
-      attTag.textContent = '并行：1 步';
-      /* 第 2 段：每个点 0.12 s；自注意力的条一次画满 */
+      row2.forEach(function (p) { p.set(C_GOOD, 0.55 + 0.45 * pulse); });
+      /* 第 1 段：两人耳语，第三个人在等 */
+      var s1 = since(t, clock, 0.4) % 3;
+      pa.set(s1 < 1.5 ? C_RNN : C_MUTED); pb.set(s1 >= 1.5 ? C_RNN : C_MUTED); pc.set(C_MUTED, 0.5 + 0.2 * Math.sin(now * 5));
+      wait.textContent = '我在等…' + (s1 < 1.5 ? '' : '快了');
+      /* 第 2 段：每个点 0.12 s；开会的条一次画满 */
       var u2 = since(t, clock, 3.6);
       rows2.forEach(function (r) {
-        var m = Math.floor((u2 % 7.5) / 0.12);
-        r.dots.forEach(function (d, q) { d.style.opacity = q < m ? 1 : 0.18; });
+        var m2 = Math.floor((u2 % 7.5) / 0.12);
+        r.dots.forEach(function (d, q) { d.style.opacity = q < m2 ? 1 : 0.18; });
         setW(r.bar, (u2 % 7.5) > 0.12 ? r.n * 6.6 : 0);
       });
-      /* 第 3 段：信息一跳一跳 */
+      /* 第 3 段：话一手一手传，越传越淡 */
       var hp = (since(t, clock, 7.0) % 4.2) / 0.5, hk = Math.min(CH - 1, Math.floor(hp));
       moveDot(hop, [cxs[0] + (cxs[CH - 1] - cxs[0]) * Math.min(1, hp / (CH - 1)), 140]);
-      hopTxt.textContent = 'RNN：已经走了 ' + hk + ' / ' + (CH - 1) + ' 步';
+      hop.style.opacity = (1 - 0.11 * Math.min(hp, CH - 1)).toFixed(2);
+      hopTxt.textContent = '传话：已经转述 ' + hk + ' / ' + (CH - 1) + ' 次，越来越模糊';
       var ju = clamp((since(t, clock, 7.0) % 4.2) / 0.6, 0, 1);
-      var jx = cxs[0] + (cxs[CH - 1] - cxs[0]) * ju, jy = 226 - 4 * 20 * ju * (1 - ju) * 2;
-      moveDot(jump, [jx, jy]);
-      /* 第 4 段：感受野一层层扩大 */
+      moveDot(jump, [cxs[0] + (cxs[CH - 1] - cxs[0]) * ju, 226 - 160 * ju * (1 - ju)]);
+      /* 第 4 段：能听到的范围一层层扩大 */
       var lvOn = Math.floor((since(t, clock, 10.4) % 4) / 0.9);
       nodes.forEach(function (row, lv2) {
         row.forEach(function (d, j) {
-          /* 从最上面一个点往下看：它的感受野每往下一层宽 2 格 */
           var shown = lv2 >= LV - 1 - lvOn, inCone = Math.abs(j - 3) <= LV - 1 - lv2;
           d.style.fill = shown ? (inCone ? C_WARN : C_MUTED) : C_BORDER;
         });
@@ -889,368 +987,388 @@
     return { el: s, draw: draw };
   }
 
-  /* ── scene 3: 表一：三种层比三件事 ── */
+  /* ── scene 3: 开会的代价：人越多，要聊的对数越多（表一） ── */
   function buildSceneTable1() {
-    var s = sceneSvg('左边是论文表 1 重画的四行三列：自注意力、循环、卷积、受限自注意力的每层计算量、串行操作数和最长路径，讲到哪一列就框出哪一列；' +
-      '右边依次出现：读法；n 从 4 涨到 2048 时两条量级曲线在 n = d 处交叉；Digit 和 π₀ 两种序列长度下便宜多少倍的条；受限自注意力的带状矩阵；π₀ 的 867 个 token 一格一格数出来');
-    s.appendChild(svgText(24, 26, '论文表一：每层计算量、串行操作、最长路径', 'demo-x-ink2', 13.5));
-    var COLS = [24, 140, 260, 330], TW = 380;
-    var head = ['层的类型', '每层计算量', '串行', '最长路径'];
-    head.forEach(function (h, j) { label(s, COLS[j] + (j ? 8 : 6), 60, h, 'demo-x-mut', 11.5); });
-    var ROWS = [
-      ['自注意力', 'O(n^2\\cdot d)', 'O(1)', 'O(1)', C_GOOD],
-      ['循环', 'O(n\\cdot d^2)', 'O(n)', 'O(n)', C_RNN],
-      ['卷积', 'O(k\\cdot n\\cdot d^2)', 'O(1)', 'O(\\log_k n)', C_WARN],
-      ['受限自注意力', 'O(r\\cdot n\\cdot d)', 'O(1)', 'O(n/r)', C_ACCENT]
-    ];
-    var rowBoxes = ROWS.map(function (r, i) {
-      var y = 74 + i * 46;
-      var box = rectBox(s, 24, y, TW, 40, r[4], C_SURFACE);
-      label(s, 32, y + 25, r[0], 'demo-x-ink', 12.5);
-      math(s, COLS[1] + 8, y + 26, r[1], 13.5);
-      math(s, COLS[2] + 8, y + 26, r[2], 13.5);
-      math(s, COLS[3] + 8, y + 26, r[3], 13.5);
-      return box;
-    });
-    var colFrames = [1, 2, 3].map(function (j) {
-      var x0 = COLS[j], x1 = j < 3 ? COLS[j + 1] : 24 + TW;
-      var r = rectBox(s, x0 + 2, 68, x1 - x0 - 4, 4 * 46 + 4, C_INK, 'none');
-      r.style.fill = 'none'; r.setAttribute('stroke-width', 2.4);
-      return r;
-    });
-    rich(s, 24, 290, '$n$：序列长度　$d$：表示维度　$k$：卷积核宽　$r$：邻域大小', 11.5, 'demo-x-mut', 'start', 380);
-    readHint(s, 24, 314, '三列都是**越小越好**', 11.5, 380);
-    var R = 424, W = 352;
-    /* 第 1 段：读法 */
+    var s = sceneSvg('左边一圈小人，人数在 2、4、8、16 之间变，每两个人之间连一条线，旁边一张 n × n 的记分表跟着变大，读出 n × n 对；' +
+      '右边依次出现：论文表一比的三件事（要等几轮、话转几手、一共聊多少）；人不多时开会更省（Digit 16 步）；人数翻倍对数翻四倍的三个方块；' +
+      '只和左右邻座聊的带状表；总结');
+    s.appendChild(svgText(24, 26, '开会也有代价：每两个人都要聊一次', 'demo-x-ink2', 13.5));
+    var CX = 146, CY = 206, RR = 118, NS = [2, 4, 8, 16], MAXN = 16;
+    var lines = [];
+    for (var q = 0; q < MAXN * (MAXN - 1) / 2; q++) lines.push(hline(s, CX, CY, CX, CY, C_GOOD, 1));
+    var folks = [];
+    for (q = 0; q < MAXN; q++) folks.push(dotAt(s, CX, CY, 7, C_GOOD));
+    var GX = 296, GY = 92, GS = 92;
+    rectBox(s, GX - 4, GY - 4, GS + 8, GS + 8, C_BORDER, C_SURFACE);
+    var cells = [];
+    for (q = 0; q < MAXN * MAXN; q++) { var c = paint(svgEl('rect', { x: GX, y: GY, width: 1, height: 1, rx: 1 }), C_GOOD); s.appendChild(c); cells.push(c); }
+    label(s, GX + GS / 2, GY - 12, '记分表', 'demo-x-mut', 11, 'middle');
+    var nTxt = tone(s, GX + GS / 2, 230, '', C_INK, 16, 'middle');
+    var pTxt = tone(s, GX + GS / 2, 256, '', C_GOOD, 13, 'middle');
+    label(s, GX + GS / 2, 280, '（每人和每人，', 'demo-x-mut', 11, 'middle');
+    label(s, GX + GS / 2, 300, '包括自己）', 'demo-x-mut', 11, 'middle');
+    /* 第 1 段：表一比三件事 */
     var p1 = group(s);
-    label(p1, R, 64, '自注意力赢两列，输一列', 'demo-x-ink', 14);
-    var verdicts = [['串行操作', true], ['最长路径', true], ['每层计算量', false]];
-    verdicts.forEach(function (v, j) {
-      var y = 94 + j * 46;
-      label(p1, R + 40, y + 20, v[0], 'demo-x-ink2', 12.5);
-      if (v[1]) tick(p1, R + 8, y + 4, 18, C_GOOD); else cross(p1, R + 10, y + 6, 14, C_RNN);
+    label(p1, R, 64, '论文表一：比了三件事', 'demo-x-ink', 14);
+    var T1 = [['要等几轮', '传话：n 轮', '开会：1 轮', true], ['话最远转几手', '传话：n 手', '开会：1 手', true], ['一共要聊多少', '传话：n 次', '开会：n × n 次', false]];
+    var t1rows = T1.map(function (r, j) {
+      var y = 90 + j * 50;
+      label(p1, R, y + 20, r[0], 'demo-x-ink2', 12);
+      chip(p1, R + 108, y, 112, r[1], r[3] ? C_RNN : C_GOOD, { size: 11.5 });
+      return chip(p1, R + 232, y, 120, r[2], r[3] ? C_GOOD : C_RNN, { size: 11.5 });
     });
-    rich(p1, R, 252, '代价是 $n^2$：每两个位置都要算一次分数', 12);
-    var mini = attnGrid(p1, R + 250, 230, 6, 14, C_GOOD);
-    /* 第 2 段：交叉 */
+    label(p1, R, 256, '绿色是赢的一方：前两件开会赢，第三件开会输', 'demo-x-ink2', 12);
+    /* 第 2 段：人不多时开会更省 */
     var p2 = group(s);
-    label(p2, R, 64, '谁更便宜：看 n 和 d 谁大', 'demo-x-ink', 14);
-    var PX = R + 26, PY = 84, PW = 300, PH = 136;
-    rectBox(p2, PX, PY, PW, PH, C_BORDER, C_SURFACE);
-    var lx = function (n) { return PX + (Math.log2(n) - 2) / 9 * PW; };
-    var ly = function (f) { return PY + PH - (Math.log2(f) - 13) / 21 * PH; };
-    var ptsA = [], ptsR = [];
-    for (var q = 2; q <= 11.001; q += 0.25) { var nn = Math.pow(2, q); ptsA.push([lx(nn), ly(nn * nn * 512)]); ptsR.push([lx(nn), ly(nn * 512 * 512)]); }
-    pathLine(p2, ptsA, C_GOOD, 2.2);
-    pathLine(p2, ptsR, C_RNN, 2.2);
-    hline(p2, lx(512), PY, lx(512), PY + PH, C_MUTED, 1, '4 4');
-    label(p2, lx(512), PY + PH + 16, 'n = d = 512', 'demo-x-ink2', 11, 'middle');
-    label(p2, PX, PY + PH + 16, '4', 'demo-x-mut', 11, 'middle');
-    label(p2, PX + PW, PY + PH + 16, '2048', 'demo-x-mut', 11, 'middle');
-    var mk = dotAt(p2, 0, 0, 5, C_GOOD), mkR = dotAt(p2, 0, 0, 5, C_RNN);
-    readHint(p2, R, 262, '横轴序列长度 $n$、纵轴每层运算量（都是对数），**越低越省**', 11, 352);
-    legendRow(p2, R, 286, [['自注意力 $n^2 d$', C_GOOD, 92], ['循环 $n d^2$', C_RNN, 70]], 11);
-    var nTxt = label(p2, R, 310, '', 'demo-x-ink', 12);
-    /* 第 3 段：两个机器人 */
+    label(p2, R, 64, '人不多时，开会反而更省', 'demo-x-ink', 14);
+    robotImg(p2, 'digit', R, 84, 120);
+    label(p2, R + 70, 100, 'Digit：最近 16 步，16 个人', 'demo-x-ink2', 12);
+    label(p2, R + 70, 124, '记分表才 16 × 16 = 256 格', 'demo-x-ink2', 12);
+    var cmpBars = [barRowAt(p2, R + 70, 140, 50, '传话', C_RNN, 18, 11.5), barRowAt(p2, R + 70, 166, 50, '开会', C_GOOD, 18, 11.5)];
+    label(p2, R + 70, 210, '按论文的算法粗算，开会省约 12 倍', 'demo-x-ink2', 11.5);
+    label(p2, R + 70, 230, '（我们的估算，只看大概的量级）', 'demo-x-mut', 11);
+    label(p2, R, 262, '人数比每张卡片上的数字少，开会就更省（论文第 4 节）', 'demo-x-ink2', 11.5);
+    /* 第 3 段：人数翻倍，对数翻四倍 */
     var p3 = group(s);
-    label(p3, R, 64, '两者之比是 d / n（我们按表一粗算）', 'demo-x-ink', 13.5);
-    var cards3 = COST_CASES.map(function (c, j) {
-      var y = 86 + j * 96;
-      rectBox(p3, R, y, W, 84, C_BORDER, C_SURFACE);
-      robotImg(p3, j ? 'ur5e' : 'digit', R + 8, y + 6, 72);
-      label(p3, R + 60, y + 22, c.zh, 'demo-x-ink', 12.5);
-      rich(p3, R + 60, y + 44, '$n=' + c.n + '$，$d=' + c.d + '$', 12);
-      var bar = hbar(p3, R + 60, y + 56, 12, C_GOOD);
-      var v = label(p3, R + W - 10, y + 44, '', 'demo-x-ink', 12.5, 'end');
-      return { bar: bar, v: v, r: c.d / c.n };
+    label(p3, R, 64, '人一多就贵：翻一倍，变四倍', 'demo-x-ink', 14);
+    var SQ = [[16, '16 人', '256 对'], [32, '32 人', '1024 对'], [64, '64 人', '4096 对']];
+    var sqs = SQ.map(function (sq, j) {
+      var side = 18 + j * 34, x = R + 10 + j * 112, y = 230 - side;
+      var r2 = paint(svgEl('rect', { x: x, y: y, width: side, height: side, rx: 3 }), C_RNN);
+      p3.appendChild(r2);
+      label(p3, x, 252, sq[1], 'demo-x-ink2', 11.5);
+      label(p3, x, 272, sq[2], 'demo-x-ink', 12);
+      return r2;
     });
-    label(p3, R, 296, '忽略常数，只看量级；n、d 取本站第 014、045 期笔记', 'demo-x-mut', 11);
-    /* 第 4 段：受限自注意力 */
+    label(p3, R, 304, '一张图切成几百块时，就要聊几十万对', 'demo-x-ink2', 12);
+    /* 第 4 段：只和邻座聊 */
     var p4 = group(s);
-    label(p4, R, 64, '序列太长：只看邻域 r', 'demo-x-ink', 14);
-    var band = attnGrid(p4, R + 8, 84, 10, 15, C_ACCENT);
-    rich(p4, R + 172, 110, '每层 $O(r\\cdot n\\cdot d)$', 12.5);
-    rich(p4, R + 172, 140, '最长路径变成 $O(n/r)$', 12.5);
-    label(p4, R + 172, 170, '论文留作后续工作（§4）', 'demo-x-ink2', 12);
-    label(p4, R, 262, '格子：第 i 行是第 i 个 query 能看的位置（r = 3）', 'demo-x-mut', 11);
-    /* 第 5 段：图像 token */
+    label(p4, R, 64, '论文的办法：人太多时，只和邻座聊', 'demo-x-ink', 14);
+    var band = attnGrid(p4, R, 86, 9, 15, C_ACCENT);
+    label(p4, R + 150, 106, '每个人只和左右', 'demo-x-ink2', 12);
+    label(p4, R + 150, 128, '几个邻座聊', 'demo-x-ink2', 12);
+    label(p4, R + 150, 160, '要聊的对数大大减少', 'demo-x-ink2', 12);
+    label(p4, R + 150, 182, '代价：话要多转几手', 'demo-x-ink2', 12);
+    label(p4, R, 248, '论文把它留到了以后再研究', 'demo-x-mut', 11.5);
+    /* 第 5 段：总结 */
     var p5 = group(s);
-    label(p5, R, 64, '机器人里 n 涨得最快的是图像', 'demo-x-ink', 14);
-    var gridImg = cellGrid(p5, R, 82, 768, 48, 5, 1, C_Q);
-    var gridTxt = cellGrid(p5, R, 182, 48, 48, 5, 1, C_ACCENT);
-    var gridSuf = cellGrid(p5, R, 192, 51, 48, 5, 1, C_V);
-    var cnt = label(p5, R, 226, '', 'demo-x-ink', 12.5);
-    legendRow(p5, R, 250, [['三路图像', C_Q], ['文字', C_ACCENT], ['状态 + 动作', C_V]], 11);
-    label(p5, R, 278, 'Digit 只取 16 步：16 × 16 = 256 对', 'demo-x-ink2', 12);
-    label(p5, R, 302, 'π₀ 一次推理 867 个 token：约 75 万对', 'demo-x-ink2', 12);
+    label(p5, R, 64, '一句话总结表一', 'demo-x-ink', 14);
+    tick(p5, R, 92, 18, C_GOOD); label(p5, R + 28, 106, '开会：一轮就完，话一手就到', 'demo-x-ink2', 12.5);
+    tick(p5, R, 128, 18, C_GOOD); label(p5, R + 28, 142, '人不多时，算起来还更省', 'demo-x-ink2', 12.5);
+    cross(p5, R + 2, 168, 14, C_BAD); label(p5, R + 28, 180, '代价：人数一多，对数按平方涨', 'demo-x-ink2', 12.5);
+    label(p5, R, 222, '机器人的卡片往往不多，所以很划算', 'demo-x-ink2', 12);
     function draw(t, clock) {
       var now = nowOf(t, clock);
-      rowBoxes.forEach(function (b, i) { b.style.strokeWidth = (i === 0 && winK(t, 0) > 0.5) || (i === 3 && winK(t, 3) > 0.5) ? 2.6 : 1.3; });
-      setOpacity(colFrames[0], winK(t, 1) + winK(t, 2));
-      setOpacity(colFrames[1], winK(t, 0) * (0.5 + 0.5 * Math.sin(now * 3)));
-      setOpacity(colFrames[2], winK(t, 3));
-      mini.set(function () { return { a: 0.25 + 0.6 * Math.abs(Math.sin(now * 1.7)) }; });
-      /* 第 2 段：n 来回扫 */
-      var u = 0.5 - 0.5 * Math.cos(since(t, clock, 3.6) * 0.9), nn = Math.pow(2, 2 + 9 * u);
-      moveDot(mk, [lx(nn), ly(nn * nn * 512)]); moveDot(mkR, [lx(nn), ly(nn * 512 * 512)]);
-      nTxt.textContent = 'n = ' + Math.round(nn) + '：' + (nn < 512 ? '自注意力便宜 ' + f1(512 / nn) + ' 倍' : '循环便宜 ' + f1(nn / 512) + ' 倍');
-      /* 第 3 段：条一点点长出来 */
-      var u3 = seg(since(t, clock, 7.0), 0.3, 2.0);
-      cards3.forEach(function (c) { setW(c.bar, c.r / 12 * 210 * u3); c.v.textContent = '约 ' + f1(c.r * u3) + ' 倍'; });
-      /* 第 4 段：窗口往下滑 */
-      var row4 = Math.floor(since(t, clock, 10.4) * 2.2) % 10;
-      band.set(function (i, j) { var inBand = Math.abs(i - j) <= 1; return { a: inBand ? (i === row4 ? 1 : 0.45) : 0.07 }; });
-      /* 第 5 段：数到 867 */
-      var u5 = seg(since(t, clock, 13.4), 0.3, 3.0), m = Math.round(PI0_N * u5);
-      gridImg.fill(Math.min(768, m)); gridTxt.fill(Math.max(0, Math.min(48, m - 768))); gridSuf.fill(Math.max(0, m - 816));
-      cnt.textContent = 'π₀：' + m + ' 个 token';
-      panels(t, [p1, p2, p3, p4, p5]);
-    }
-    return { el: s, draw: draw };
-  }
-
-  /* ── scene 4: 机器人的 token 是什么 ── */
-  function buildSceneToken() {
-    var s = sceneSvg('左边是论文的做法：6 个词各自去一张大词表里查一行，变成 512 维向量，乘以根号 512，再加上位置编码，词表里被查到的那一行会亮；' +
-      '右边依次出现：嵌入乘根号 d_model、三处共享权重；BPE 词表与 batch 的大小；Digit 每一步的观测—动作变成一个 token；π₀ 一张图切成 16 × 16 块，三路相机加文字、状态、动作数到 867；GR00T N1 每帧 64 个图像 token');
-    s.appendChild(svgText(24, 26, '论文：每个词查表，变成一个 512 维向量', 'demo-x-ink2', 13.5));
-    var EN = ['The', 'cat', 'sat', 'on', 'the', 'mat'], ROWS = [4, 11, 17, 7, 4, 20];
-    var words = EN.map(function (w, i) { return chip(s, 24 + i * 62, 44, 56, w, C_Q, { size: 12 }); });
-    var TX = 40, TY = 104, TWd = 74, THt = 220;
-    rectBox(s, TX, TY, TWd, THt, C_BORDER, C_SURFACE2);
-    for (var i = 1; i < 24; i++) hline(s, TX, TY + i * THt / 24, TX + TWd, TY + i * THt / 24, C_BORDER, 0.6);
-    var hiRow = paint(svgEl('rect', { x: TX, y: TY, width: TWd, height: THt / 24, fill: 'none' }), C_Q);
-    s.appendChild(hiRow);
-    label(s, TX + TWd / 2, TY + THt + 18, '词表 约 37000 行', 'demo-x-ink2', 11.5, 'middle');
-    var look = arrow(s, C_Q, 1.6);
-    var vec = vecRow(s, 150, 132, 12, 15, C_Q, { h: 22, noText: true });
-    label(s, 150, 124, '这一行：512 维（画了 12 格）', 'demo-x-mut', 11);
-    rich(s, 150, 196, '× √$d_{model}$ = √512 ≈ 22.6', 14, 'demo-x-ink');
-    var vec2 = vecRow(s, 150, 214, 12, 15, C_Q, { h: 22, noText: true });
-    rich(s, 150, 268, '$+$ 位置编码（第 9 幕）', 12.5);
-    var wave = pathLine(s, [], C_WARN, 2);
-    label(s, 24, 368, '§3.4：两个嵌入层和 softmax 前的线性层共享同一个权重矩阵', 'demo-x-ink2', 11.5);
-    var R = 424, W = 352;
-    var p1 = group(s);
-    label(p1, R, 64, '词 → 查表 → 向量', 'demo-x-ink', 14);
-    label(p1, R, 96, '嵌入是学出来的，维度和模型一样宽：512', 'demo-x-ink2', 12);
-    rich(p1, R, 122, '查出来的向量再乘 √512 ≈ 22.6', 12);
-    var shared = ['输入嵌入', '输出嵌入', 'softmax 前的线性层'];
-    var shX = [0, 102, 204], shW = [94, 94, 148];
-    shared.forEach(function (nm, j) { chip(p1, R + shX[j], 150, shW[j], nm, C_ACCENT, { size: 11.5 }); });
-    label(p1, R, 210, '三处用同一个矩阵（§3.4，沿用 Press 与 Wolf）', 'demo-x-ink2', 12);
-    var p2 = group(s);
-    label(p2, R, 64, '词表是 BPE 子词', 'demo-x-ink', 14);
-    label(p2, R, 96, '英德共享约 37000 个；英法用 32000 个 word-piece', 'demo-x-ink2', 12);
-    label(p2, R, 122, '按长度分桶，每个 batch 约：', 'demo-x-ink2', 12);
-    var bt1 = cellGrid(p2, R, 138, 100, 10, 9, 2, C_Q), bt2 = cellGrid(p2, R + 180, 138, 100, 10, 9, 2, C_V);
-    label(p2, R, 268, '源句 25000 个 token', 'demo-x-ink2', 11.5);
-    label(p2, R + 180, 268, '目标句 25000 个', 'demo-x-ink2', 11.5);
-    label(p2, R, 290, '（一格代表 250 个 token）', 'demo-x-mut', 11);
-    var p3 = group(s);
-    label(p3, R, 64, 'Digit（第 014 期）：一步一个 token', 'demo-x-ink', 14);
-    robotImg(p3, 'digit', R, 80, 150);
-    var dTok = cellGrid(p3, R + 90, 140, 16, 16, 14, 2, C_ROBOT);
-    var fl3 = flowSeg(p3, C_ROBOT, 3, 3, 40);
-    label(p3, R + 90, 128, '每 0.02 s 一个，窗口留 16 个', 'demo-x-mut', 11);
-    rich(p3, R + 90, 186, '（观测 $o_t$，上一步动作 $a_{t-1}$）', 12);
-    label(p3, R + 90, 210, '→ MLP [512, 512] → 192 维', 'demo-x-ink2', 12);
-    label(p3, R + 90, 234, '→ 加正弦位置编码', 'demo-x-ink2', 12);
-    var p4 = group(s);
-    label(p4, R, 64, 'π₀：一张图切成 256 块', 'demo-x-ink', 14);
-    var GX = R, GY = 82, GS = 150;
-    rectBox(p4, GX, GY, GS, GS, C_BORDER, C_SURFACE2);
-    robotImg(p4, 'ur5e', GX + 28, GY + 8, GS - 16);
-    var patches = cellGrid(p4, GX, GY, 256, 16, GS / 16 - 1, 1, C_Q);
-    patches.cells.forEach(function (c) { c.style.fillOpacity = 0.35; });
-    var c4 = [label(p4, R + 166, 100, '', 'demo-x-ink', 12.5), label(p4, R + 166, 128, '', 'demo-x-ink2', 12), label(p4, R + 166, 156, '', 'demo-x-ink2', 12), label(p4, R + 166, 184, '', 'demo-x-ink', 13)];
-    label(p4, R, 256, '224 × 224 的图，SigLIP 切成 16 × 16 块（本站第 045 期笔记）', 'demo-x-mut', 11);
-    label(p4, R, 278, '画面里的机械臂只是示意', 'demo-x-mut', 11);
-    var p5 = group(s);
-    label(p5, R, 64, 'GR00T N1：每帧 64 个图像 token', 'demo-x-ink', 14);
-    robotImg(p5, 'gr1', R, 80, 170);
-    var gTok = cellGrid(p5, R + 60, 100, 64, 16, 14, 2, C_Q);
-    label(p5, R + 60, 186, 'pixel shuffle 之后，再和文字一起进语言模型', 'demo-x-ink2', 11.5);
-    rich(p5, R + 60, 216, '词、关节角、图像都行：先变成**一串等宽的向量**', 12);
-    label(p5, R + 60, 240, '后面的块不用改（我们的概括）', 'demo-x-mut', 11.5);
-    function draw(t, clock) {
-      var now = nowOf(t, clock);
-      var k = Math.floor(now / 1.1) % 6, ph = (now / 1.1) % 1;
-      words.forEach(function (w, j) { w.box.style.strokeWidth = j === k ? 2.6 : 1.3; });
-      var ry = TY + ROWS[k] * THt / 24;
-      hiRow.setAttribute('y', ry.toFixed(1)); hiRow.setAttribute('height', (THt / 24).toFixed(1));
-      hiRow.style.fill = C_Q; hiRow.style.fillOpacity = 0.7;
-      look.set(TX + TWd + 2, ry + THt / 48, 146, 143, 7);
-      var v = [];
-      for (var j = 0; j < 12; j++) v.push(Math.sin(1.7 * j + 2.3 * k) * 0.06);
-      vec.set(v.map(function (x) { return x * 10; }), 2);
-      var sc = seg(ph, 0.3, 0.7);
-      vec2.set(v.map(function (x) { return sc > 0 ? x * 22.6 : 0; }), 1);
-      var wp = [];
-      for (j = 0; j <= 40; j++) wp.push([300 + j * 2.4, 290 + 10 * Math.sin(j * 0.45 + now * 2)]);
-      setPath(wave, wp);
-      bt1.fill(Math.floor(seg(since(t, clock, 3.6), 0.3, 2.3) * 100));
-      bt2.fill(Math.floor(seg(since(t, clock, 3.6), 0.8, 2.8) * 100));
-      dTok.fill(1 + Math.floor(now * 6) % 16);
-      fl3.at(now, [R + 66, 152], [R + 88, 147], true);
-      var u4 = since(t, clock, 10.4);
-      var m4 = Math.round(256 * seg(u4, 0.3, 2.3));
-      patches.cells.forEach(function (c, j2) { c.style.opacity = j2 < m4 ? 0.9 : 0.08; });
-      var cams = 1 + Math.floor(seg(u4, 2.3, 3.8) * 2.999);
-      c4[0].textContent = '一张图：' + m4 + ' 个';
-      c4[1].textContent = u4 > 2.3 ? cams + ' 路相机：' + 256 * cams + ' 个' : '';
-      c4[2].textContent = u4 > 4.0 ? '+ 文字 48 = 816（前缀）' : '';
-      c4[3].textContent = u4 > 5.2 ? '+ 状态 1 + 动作 50 = ' + PI0_N : '';
-      gTok.fill(Math.round(64 * seg(since(t, clock, 13.4), 0.3, 2.0)));
-      panels(t, [p1, p2, p3, p4, p5]);
-    }
-    return { el: s, draw: draw };
-  }
-
-  /* ── scene 5: Q、K、V：一份输入，三种角色 ── */
-  function buildSceneQKV() {
-    var s = sceneSvg('左边是机器人的三步 t−2、t−1、t，每一步的 token 分别乘 W_Q、W_K、W_V 三个矩阵，变成蓝色的 query、橙色的 key、绿色的 value，小点沿着箭头流下去；' +
-      '右边依次出现：注意力的定义；Q、K、V 的类比；三个矩阵的形状；点积和加性注意力；一次矩阵乘法得到整张 n × n 的分数表');
-    s.appendChild(svgText(24, 26, '同一个 token，乘三个矩阵，变成 Q、K、V', 'demo-x-ink2', 13.5));
-    var XS = [74, 204, 334], cells = [], toks = [], qs = [], ks = [], vs = [];
-    XS.forEach(function (cx, i) {
-      rectBox(s, cx - 40, 40, 80, 96, C_BORDER, C_SURFACE2);
-      cells.push(g1Cell(s));
-      label(s, cx, 153.5, STEPS[i], 'demo-x-mono', 12, 'middle');
-      toks.push(vecRow(s, cx - 40, 162, 5, 13, C_ROBOT, { h: 16, noText: true }));
-      qs.push(vecRow(s, cx - 40, 268, 4, 16, C_Q, { h: 18, size: 10 }));
-      ks.push(vecRow(s, cx - 40, 296, 4, 16, C_K, { h: 18, size: 10 }));
-      vs.push(vecRow(s, cx - 40, 324, 2, 16, C_V, { h: 18, size: 10 }));
-    });
-    rectBox(s, 34, 204, 340, 36, C_ACCENT, C_SURFACE2);
-    rich(s, 204, 226, '每一步都乘同样的 $W^Q$、$W^K$、$W^V$', 13, 'demo-x-ink', 'middle', 330);
-    label(s, 24, 286, 'q', 'demo-x-mono', 12); label(s, 24, 314, 'k', 'demo-x-mono', 12); label(s, 24, 342, 'v', 'demo-x-mono', 12);
-    var flows = XS.map(function () { return [flowSeg(s, C_ROBOT, 1, 3, 20), flowSeg(s, C_ACCENT, 1, 3, 20)]; });
-    label(s, 24, 380, '向量是第 6 幕的玩具数；格子里的 G1 借第 032 期 HOMIE 的贴图', 'demo-x-mut', 10.5);
-    var R = 424, W = 352;
-    var p1 = group(s);
-    label(p1, R, 64, '注意力的定义（§3.2）', 'demo-x-ink', 14);
-    label(p1, R, 96, '一个 query，加一组 key–value 对', 'demo-x-ink2', 12);
-    label(p1, R, 120, 'query 和每个 key 比「相容度」→ 权重', 'demo-x-ink2', 12);
-    label(p1, R, 144, '输出 = 这些 value 的加权和', 'demo-x-ink2', 12);
-    chip(p1, R, 170, 80, 'query', C_Q, { size: 12 });
-    chip(p1, R + 96, 170, 100, 'key → 权重', C_K, { size: 12 });
-    chip(p1, R + 212, 170, 130, 'value 加权求和', C_V, { size: 12 });
-    var p2 = group(s);
-    label(p2, R, 64, '一个类比（我们的说法）', 'demo-x-ink', 14);
-    [['Q', '第 t 步要找什么', C_Q], ['K', '每一步贴的标签', C_K], ['V', '每一步交出来的内容', C_V]].forEach(function (r, j) {
-      var y = 86 + j * 46;
-      chip(p2, R, y, 44, r[0], r[2], { size: 14, h: 34 });
-      label(p2, R + 58, y + 22, r[1], 'demo-x-ink2', 12.5);
-    });
-    label(p2, R, 248, '标签和内容可以不一样：按标签找，按内容拿', 'demo-x-ink2', 12);
-    var p3 = group(s);
-    label(p3, R, 64, '自注意力：Q、K、V 来自同一串输入', 'demo-x-ink', 14);
-    label(p3, R, 96, '都是上一层的输出，各乘一个可学习矩阵（§3.2.3）', 'demo-x-ink2', 12);
-    math(p3, R, 132, 'W_i^Q,\\ W_i^K \\in \\mathbb{R}^{512\\times 64},\\quad W_i^V\\in\\mathbb{R}^{512\\times 64}', 14, 'start', 352);
-    var big = rectBox(p3, R, 156, 128, 64, C_BORDER, C_SURFACE2), small = rectBox(p3, R + 150, 156, 16, 64, C_Q, C_Q);
-    label(p3, R + 64, 236, '512 维的 token', 'demo-x-ink2', 11.5, 'middle');
-    label(p3, R + 158, 236, '64 维', 'demo-x-ink2', 11.5, 'middle');
-    label(p3, R, 262, '为什么是 64：第 8 幕讲多头', 'demo-x-mut', 11.5);
-    void big; void small;
-    var p4 = group(s);
-    label(p4, R, 64, '相容度：点积，不是加性注意力', 'demo-x-ink', 14);
-    rectBox(p4, R, 84, W, 70, C_BORDER, C_SURFACE);
-    label(p4, R + 12, 108, '加性注意力（Bahdanau）', 'demo-x-ink', 12.5);
-    label(p4, R + 12, 132, '用一个单隐层网络算 q 和 k 的分数', 'demo-x-ink2', 11.5);
-    rectBox(p4, R, 166, W, 70, C_GOOD, C_SURFACE);
-    label(p4, R + 12, 190, '点积（这篇论文）', 'demo-x-ink', 12.5);
-    label(p4, R + 12, 214, '就是矩阵乘法：更快，也更省显存（§3.2.1）', 'demo-x-ink2', 11.5);
-    label(p4, R, 262, '两者理论复杂度差不多，快在有高度优化的矩阵乘法', 'demo-x-mut', 11.5);
-    var p5 = group(s);
-    label(p5, R, 64, '所有 query 一次算完', 'demo-x-ink', 14);
-    math(p5, R, 100, 'QK^\\top \\in \\mathbb{R}^{n\\times n}', 16);
-    var gr = attnGrid(p5, R + 10, 120, 6, 22, C_Q);
-    label(p5, R + 160, 150, '一行一个 query', 'demo-x-ink2', 12);
-    label(p5, R + 160, 174, '一列一个 key', 'demo-x-ink2', 12);
-    label(p5, R + 160, 198, '整张表一次矩阵乘法', 'demo-x-ink2', 12);
-    label(p5, R, 282, '对比 RNN：这一层里没有「等上一步」', 'demo-x-mut', 11.5);
-    function draw(t, clock) {
-      var now = nowOf(t, clock);
-      var base = Math.floor(now * 7.5) * 2;
-      XS.forEach(function (cx, i) {
-        cells[i].put(cx - 23, 44, 88, base + 4 * i);
-        toks[i].set([0.7, 0.3, 0.9, 0.2, 0.6].map(function (x, j) { return ((x + 0.17 * i + 0.11 * j) % 1); }), 1);
-        qs[i].set(QUERIES[i]);
-        ks[i].set(ATT.keys[i]);
-        vs[i].set(ATT.vals[i]);
-        flows[i][0].at(now + i * 0.4, [cx, 180], [cx, 202], true);
-        flows[i][1].at(now + i * 0.4, [cx, 242], [cx, 264], true);
+      /* 人数每 2.5 s 换一档 */
+      var n = NS[Math.floor(now / 2.5) % NS.length], q2 = 0;
+      for (var i = 0; i < MAXN; i++) {
+        var a = -Math.PI / 2 + 2 * Math.PI * i / n;
+        moveDot(folks[i], [CX + RR * Math.cos(a), CY + RR * Math.sin(a)]);
+        setOpacity(folks[i], i < n ? 1 : 0);
+        folks[i].setAttribute('r', n > 8 ? 5 : 7);
+      }
+      for (i = 0; i < MAXN; i++) for (var j = i + 1; j < MAXN; j++) {
+        var ln = lines[q2++];
+        if (i < n && j < n) {
+          var a1 = -Math.PI / 2 + 2 * Math.PI * i / n, a2 = -Math.PI / 2 + 2 * Math.PI * j / n;
+          setLine(ln, CX + RR * Math.cos(a1), CY + RR * Math.sin(a1), CX + RR * Math.cos(a2), CY + RR * Math.sin(a2));
+          ln.style.opacity = (0.25 + 0.5 * Math.abs(Math.sin(now * 2 + i * 0.7 + j))).toFixed(2);
+        } else ln.style.opacity = 0;
+      }
+      var cs = GS / n;
+      cells.forEach(function (c, k) {
+        var r = Math.floor(k / MAXN), col = k % MAXN;
+        if (r < n && col < n) {
+          c.setAttribute('x', (GX + col * cs + 0.6).toFixed(1)); c.setAttribute('y', (GY + r * cs + 0.6).toFixed(1));
+          c.setAttribute('width', Math.max(0.5, cs - 1.2).toFixed(1)); c.setAttribute('height', Math.max(0.5, cs - 1.2).toFixed(1));
+          c.style.opacity = (0.3 + 0.5 * rnd(k + n, 3)).toFixed(2);
+        } else c.style.opacity = 0;
       });
-      var u5 = seg(since(t, clock, 13.4), 0.4, 0.8);
-      gr.set(function (i, j) { return { a: u5 * (0.25 + 0.65 * Math.abs(Math.sin(0.9 * i + 1.3 * j + now))) }; });
+      nTxt.textContent = n + ' 个人';
+      pTxt.textContent = n + ' × ' + n + ' = ' + n * n + ' 对';
+      /* 第 1 段：三行依次亮 */
+      var s1 = since(t, clock, 0.4);
+      t1rows.forEach(function (c, j) { c.box.style.strokeWidth = (1.3 + 1.4 * seg(s1, 0.5 + j * 0.9, 0.9 + j * 0.9)).toFixed(2); });
+      /* 第 2 段：两根条按 12 : 1 长出来 */
+      var u2 = ease(seg(since(t, clock, 3.6), 0.4, 1.6));
+      cmpBars[0].set(160 * u2, u2 > 0.95 ? '12 份' : '');
+      cmpBars[1].set(160 / 12 * u2, u2 > 0.95 ? '1 份' : '');
+      /* 第 3 段：三个方块依次长出 */
+      var s3 = since(t, clock, 7.0);
+      sqs.forEach(function (r2, j) { setOpacity(r2, seg(s3, 0.4 + j * 0.8, 0.8 + j * 0.8)); });
+      /* 第 4 段：带状记分表 */
+      band.set(function (i2, j2) { var inBand = Math.abs(i2 - j2) <= 1; return { a: inBand ? 0.4 + 0.5 * Math.abs(Math.sin(now * 2 + i2)) : 0.08 }; });
       panels(t, [p1, p2, p3, p4, p5]);
     }
     return { el: s, draw: draw };
   }
 
-  /* ── scene 6: 手算一次注意力 ── */
+  /* ── scene 4: 先把输入切成一张张卡片（token） ── */
+  function buildSceneToken() {
+    var s = sceneSvg('左边三排：一句英文先是一整条，再切成 6 张卡片，每张下面长出一串深浅不一的小格（档案）；机器人最近 6 步，每一步一张卡片；' +
+      '一张相机画面切成 4 × 3 块，块与块慢慢分开；右边依次出现：卡片的说法和「半个词」的例子；三个词的档案，意思相近的档案也相近；' +
+      'Digit 每 0.02 秒一张卡片、16 格依次亮；一张图切成小方块逐个亮；三种卡片流进同一个零件');
+    s.appendChild(svgText(24, 26, '第一步：把输入切成一张张卡片', 'demo-x-ink2', 13.5));
+    label(s, 24, 52, '翻译：一个词一张卡片', 'demo-x-ink2', 12);
+    var WORDS = ['The', 'cat', 'sat', 'on', 'the', 'mat'];
+    var whole = rectBox(s, 30, 62, 6 * 52, 28, C_Q, C_SURFACE);
+    var wc = WORDS.map(function (w) { return chip(s, 0, 62, 52, w, C_Q, { size: 12 }); });
+    var strips = WORDS.map(function (w, i) { return profileStrip(s, 0, 98, 8, 4, 10, C_Q, 11 + i); });
+    label(s, 24, 150, '机器人：每一步一张卡片', 'demo-x-ink2', 12);
+    var hist = historyStrip(s, 24, 160, 6, 50, 70, { gap: 8 });
+    label(s, 24, 276, '图片：切成小方块，一块一张卡片', 'demo-x-ink2', 12);
+    var TC = 4, TR = 3, TW = 50, TH = 30, tiles = [];
+    for (var r = 0; r < TR; r++) for (var c = 0; c < TC; c++) {
+      var box = svgEl('svg', { overflow: 'hidden', preserveAspectRatio: 'none', width: TW, height: TH, viewBox: [c * 120, r * 90, 120, 90].join(' ') });
+      box.appendChild(svgEl('image', { href: CLIP_BASE + 'rh_walk.webp', x: 0, y: 0, width: 480, height: 270, preserveAspectRatio: 'none' }));
+      s.appendChild(box); tiles.push({ el: box, r: r, c: c });
+    }
+    label(s, 260, 312, '第 14 期项目页', 'demo-x-mut', 11);
+    label(s, 260, 332, '视频的一帧', 'demo-x-mut', 11);
+    /* 第 1 段：卡片 */
+    var p1 = group(s);
+    label(p1, R, 64, 'Transformer 只吃一种东西：一串卡片', 'demo-x-ink', 14);
+    label(p1, R, 96, '论文叫它 token，这一期就叫「卡片」', 'demo-x-ink2', 12);
+    label(p1, R, 120, '翻译里，一个词一张；长的词切成几块', 'demo-x-ink2', 12);
+    chip(p1, R, 140, 140, 'unhappiness', C_Q, { size: 12 });
+    var halves = ['un', 'happi', 'ness'].map(function (w, i) { return chip(p1, R + 170 + [0, 44, 108][i], 140, [40, 60, 52][i], w, C_Q, { size: 12 }); });
+    label(p1, R, 196, '（英文的「不开心」切成三块，示意）', 'demo-x-mut', 11);
+    /* 第 2 段：档案 */
+    var p2 = group(s);
+    label(p2, R, 64, '每张卡片换成一串数字，像一张档案', 'demo-x-ink', 14);
+    var PROF = [['cat（猫）', 21], ['dog（狗）', 21], ['mat（垫子）', 47]];
+    PROF.forEach(function (pf, j) {
+      var y = 92 + j * 38;
+      label(p2, R, y + 15, pf[0], 'demo-x-ink2', 12);
+      var st = profileStrip(p2, R + 100, y + 2, 16, 12, 18, C_Q, pf[1]);
+      if (j === 1) st.cells.forEach(function (cel, i) { cel.style.opacity = clamp(0.2 + 0.8 * rnd(i, 21) + 0.18 * (rnd(i, 77) - 0.5), 0.15, 1).toFixed(2); });
+    });
+    label(p2, R, 222, '意思相近的词，档案也相近（示意）', 'demo-x-ink2', 12);
+    label(p2, R, 246, '论文里，每张档案有 512 个数字', 'demo-x-ink2', 12);
+    /* 第 3 段：机器人 */
+    var p3 = group(s);
+    label(p3, R, 64, '机器人：每 0.02 秒一张卡片', 'demo-x-ink', 14);
+    robotImg(p3, 'digit', R, 82, 150);
+    label(p3, R + 84, 100, '这一步看到的：关节角度、', 'demo-x-ink2', 12);
+    label(p3, R + 84, 120, '身体的姿态……', 'demo-x-ink2', 12);
+    label(p3, R + 84, 144, '再加上上一步做的动作', 'demo-x-ink2', 12);
+    label(p3, R + 84, 168, '压成一张卡片', 'demo-x-ink2', 12);
+    var toks = cellGrid(p3, R + 84, 186, 16, 8, 16, 4, C_ROBOT);
+    label(p3, R + 84, 254, 'Digit 留着最近 16 张', 'demo-x-ink2', 12);
+    /* 第 4 段：图片 */
+    var p4 = group(s);
+    label(p4, R, 64, '图片也能切：一块一张卡片', 'demo-x-ink', 14);
+    var pix = cellGrid(p4, R, 86, 16, 4, 30, 4, C_ACCENT);
+    label(p4, R + 150, 106, '一张图切成 4 × 4 块', 'demo-x-ink2', 12);
+    label(p4, R + 150, 128, '每块变成一张卡片', 'demo-x-ink2', 12);
+    label(p4, R + 150, 160, '后面要讲的大模型，', 'demo-x-ink2', 12);
+    label(p4, R + 150, 182, '一张图切成好几百块', 'demo-x-ink2', 12);
+    /* 第 5 段：零件不用改 */
+    var p5 = group(s);
+    label(p5, R, 64, '卡片一样长，零件就不用改', 'demo-x-ink', 14);
+    var SRC = [['词', C_Q], ['机器人的一步', C_ROBOT], ['图片的一块', C_ACCENT]];
+    SRC.forEach(function (sr, j) { chip(p5, R, 92 + j * 54, 112, sr[0], sr[1], { size: 12 }); });
+    chip(p5, R + 222, 140, 130, 'Transformer', C_ACCENT, { size: 13, h: 36 });
+    var fl5 = SRC.map(function (sr) { return flowSeg(p5, sr[1], 3, 3, 40); });
+    label(p5, R, 270, '只要能变成一串一样长的档案，后面都一样', 'demo-x-ink2', 12);
+    function draw(t, clock) {
+      var now = nowOf(t, clock);
+      /* 一整条 → 切成 6 张：6 s 一轮 */
+      var cyc = now % 6, gap = 8 * ease(seg(cyc, 0.6, 1.4)) * (1 - ease(seg(cyc, 5.4, 5.9)));
+      setOpacity(whole, 1 - seg(cyc, 0.6, 0.9) + seg(cyc, 5.6, 5.9));
+      wc.forEach(function (c, i) {
+        moveG(c, 30 + i * (52 + gap) - 0, 0);
+        c.box.style.opacity = (seg(cyc, 0.6, 0.9) * (1 - seg(cyc, 5.6, 5.9))).toFixed(2);
+      });
+      strips.forEach(function (st, i) { moveG(st.g, 30 + i * (52 + gap) + 7, 0); setOpacity(st.g, seg(cyc, 1.6 + i * 0.25, 1.9 + i * 0.25) * (1 - seg(cyc, 5.4, 5.8))); });
+      hist.set(now);
+      var tg = 6 * (0.5 - 0.5 * Math.cos(now * 1.2));
+      tiles.forEach(function (tl) {
+        tl.el.setAttribute('x', (30 + tl.c * (TW + tg)).toFixed(1));
+        tl.el.setAttribute('y', (286 + tl.r * (TH + tg)).toFixed(1));
+      });
+      /* 第 1 段：长词切成三块 */
+      var s1 = since(t, clock, 0.4) % 4;
+      halves.forEach(function (h, i) { setOpacity(h, seg(s1, 0.8 + i * 0.5, 1.2 + i * 0.5)); });
+      toks.fill(1 + Math.floor(now * 8) % 16);
+      pix.fill(1 + Math.floor(now * 6) % 16);
+      SRC.forEach(function (sr, j) { fl5[j].at(now + j * 0.4, [R + 116, 106 + j * 54], [R + 218, 158], true); });
+      panels(t, [p1, p2, p3, p4, p5]);
+    }
+    return { el: s, draw: draw };
+  }
+
+  /* ── scene 5: Q、K、V：像去图书馆查资料 ── */
+  function buildSceneQKV() {
+    var s = sceneSvg('左边是一间小图书馆：一个人举着蓝色的问题卡（Q），手电筒的光照向三本书，每本书上方贴着橙色的标签（K），里面是绿色的内容（V）；' +
+      '光越亮的书，飞回笔记本的绿色纸片越大；右边依次出现：Q、K、V 三张卡片的意思；换到机器人；同一张卡片抄成三张；越像越多抄；三个人同时查');
+    s.appendChild(svgText(24, 26, '注意力：像去图书馆查资料', 'demo-x-ink2', 13.5));
+    var reader = person(s, 66, 138, 14, C_Q);
+    chip(s, 20, 196, 96, 'Q：我要找什么', C_Q, { size: 11.5, h: 30 });
+    var BX = [196, 268, 340], BW = 50, BY = 74, BH = 150, WT = ATT.w;
+    var beams = BX.map(function (bx) {
+      var p = paint(svgEl('path', { d: 'M 86 138 L ' + bx + ' ' + (BY + 22) + ' L ' + (bx + BW) + ' ' + (BY + 22) + ' Z' }), C_Q);
+      s.appendChild(p); return p;
+    });
+    var books = BX.map(function (bx, i) {
+      rectBox(s, bx, BY, BW, BH, C_MUTED, C_SURFACE2);
+      chip(s, bx + 5, BY + 8, BW - 10, 'K', C_K, { size: 12, h: 26 });
+      chip(s, bx + 5, BY + 100, BW - 10, 'V', C_V, { size: 12, h: 26 });
+      label(s, bx + BW / 2, BY + 74, STEPS[i], 'demo-x-mono', 11.5, 'middle');
+      return tone(s, bx + BW / 2, BY - 10, '', C_INK, 12.5, 'middle');
+    });
+    /* 笔记本放在书的正下方：纸片竖着往下落，不从百分比和说明文字上划过 */
+    label(s, 186, 300, '抄进笔记本', 'demo-x-ink2', 11.5, 'end');
+    rectBox(s, 196, 262, 194, 72, C_V, C_SURFACE);
+    label(s, 196, 358, '书上方是标签（K），书里是内容（V）', 'demo-x-ink2', 11.5);
+    var pages = BX.map(function () { var r = paint(svgEl('rect', { x: 0, y: 0, width: 10, height: 10, rx: 2 }), C_V); s.appendChild(r); return r; });
+    var piles = [0, 1, 2].map(function (i) { return hbar(s, 206, 272 + i * 18, 13, C_V); });
+    /* 第 1 段：三样东西 */
+    var p1 = group(s);
+    label(p1, R, 64, '查资料要三样东西', 'demo-x-ink', 14);
+    [['Q', C_Q, '问题：我要找什么'], ['K', C_K, '标签：每本书上写着讲什么'], ['V', C_V, '内容：书里真正的东西']].forEach(function (r, j) {
+      chip(p1, R, 88 + j * 46, 44, r[0], r[1], { size: 14, h: 32 });
+      label(p1, R + 58, 109 + j * 46, r[2], 'demo-x-ink2', 12.5);
+    });
+    rich(p1, R, 252, '按**标签**找，按**内容**拿', 13);
+    /* 第 2 段：换到机器人 */
+    var p2 = group(s);
+    label(p2, R, 64, '换到机器人身上', 'demo-x-ink', 14);
+    [['Q', C_Q, '现在这一步想知道什么', '比如：刚才脚落地了吗？'], ['K', C_K, '过去每一步的标签', '那一步大概发生了什么'], ['V', C_V, '过去每一步的内容', '那一步的具体数据']].forEach(function (r, j) {
+      chip(p2, R, 88 + j * 62, 44, r[0], r[1], { size: 14, h: 32 });
+      label(p2, R + 58, 102 + j * 62, r[2], 'demo-x-ink2', 12.5);
+      label(p2, R + 58, 122 + j * 62, r[3], 'demo-x-mut', 11.5);
+    });
+    /* 第 3 段：同一张卡片抄成三张 */
+    var p3 = group(s);
+    label(p3, R, 64, '三样都从同一张卡片抄出来', 'demo-x-ink', 14);
+    chip(p3, R, 132, 92, '一步的卡片', C_ROBOT, { size: 12, h: 32 });
+    var outs = [['Q', C_Q], ['K', C_K], ['V', C_V]].map(function (q, j) { return chip(p3, R + 250, 88 + j * 46, 60, q[0], q[1], { size: 14, h: 32 }); });
+    /* 每一路先进对应的规则、再出来：线不从「规则」两个字上穿过 */
+    var fl3 = [0, 1, 2].map(function (j) { return [flowSeg(p3, [C_Q, C_K, C_V][j], 2, 3, 40), flowSeg(p3, [C_Q, C_K, C_V][j], 1, 3, 30)]; });
+    [0, 1, 2].forEach(function (j) { chip(p3, R + 140, 92 + j * 46, 70, '规则 ' + (j + 1), C_MUTED, { size: 11, h: 24 }); });
+    label(p3, R, 250, '三套不同的「抄写规则」，是训练时学出来的', 'demo-x-ink2', 12);
+    label(p3, R, 274, '（论文里叫三个矩阵）', 'demo-x-mut', 11);
+    /* 第 4 段：越像越多抄 */
+    var p4 = group(s);
+    label(p4, R, 64, '标签越像问题，抄得越多', 'demo-x-ink', 14);
+    var sim = [['很像', 0.9], ['有点像', 0.45], ['不像', 0.06]].map(function (r, j) {
+      var y = 96 + j * 50;
+      label(p4, R, y + 14, r[0], 'demo-x-ink2', 12);
+      var b = hbar(p4, R + 70, y, 18, C_V);
+      return { b: b, v: r[1] };
+    });
+    label(p4, R, 262, '完全不像的，几乎一个字都不抄', 'demo-x-ink2', 12);
+    /* 第 5 段：大家同时查 */
+    var p5 = group(s);
+    label(p5, R, 64, '每一步都可以同时去查', 'demo-x-ink', 14);
+    var readers = [0, 1, 2].map(function (j) { return person(p5, R + 40, 110 + j * 52, 10, C_Q); });
+    var shelf5 = [0, 1, 2].map(function (j) { rectBox(p5, R + 250, 90 + j * 52, 40, 40, C_K, C_SURFACE2); return j; });
+    var rays = [];
+    for (var a = 0; a < 3; a++) for (var b = 0; b < 3; b++) rays.push(hline(p5, R + 56, 112 + a * 52, R + 248, 110 + b * 52, C_Q, 1.4));
+    void shelf5;
+    label(p5, R, 268, '每个人拿着自己的问题，一起查、一次算完', 'demo-x-ink2', 12);
+    label(p5, R, 292, '不用排队：这就是它比传话快的原因', 'demo-x-ink2', 12);
+    function draw(t, clock) {
+      var now = nowOf(t, clock);
+      var pulse = 0.75 + 0.25 * Math.sin(now * 3);
+      beams.forEach(function (b, i) { b.style.opacity = (WT[i] * 0.55 * pulse).toFixed(3); });
+      books.forEach(function (bt, i) { bt.textContent = Math.round(WT[i] * 100) + '%'; });
+      reader.set(C_Q, 1);
+      /* 纸片从书里飞回笔记本：2.4 s 一趟 */
+      pages.forEach(function (pg, i) {
+        var u = ((now + i * 0.3) % 2.4) / 2.4, e2 = ease(clamp(u / 0.7, 0, 1));
+        var sz = 6 + 22 * WT[i];
+        var x0 = BX[i] + BW / 2, y0 = BY + 132, x1 = 222, y1 = 278 + i * 18;  /* 从 V 框下沿出发，不压住「V」 */
+        pg.setAttribute('x', (x0 + (x1 - x0) * e2 - sz / 2).toFixed(1)); pg.setAttribute('y', (y0 + (y1 - y0) * e2 - sz / 2).toFixed(1));
+        pg.setAttribute('width', sz.toFixed(1)); pg.setAttribute('height', sz.toFixed(1));
+        pg.style.opacity = u < 0.75 ? 0.85 : 0;
+      });
+      var fillU = clamp((now % 9.6) / 9.6 * 1.2, 0, 1);
+      piles.forEach(function (pl, i) { setW(pl, 170 * WT[i] / 0.452 * 0.9 * fillU); });
+      [0, 1, 2].forEach(function (j) {
+        fl3[j][0].at(now + j * 0.3, [R + 94, 148], [R + 138, 104 + j * 46], true);
+        fl3[j][1].at(now + j * 0.3, [R + 212, 104 + j * 46], [R + 248, 104 + j * 46], true);
+      });
+      outs.forEach(function (o, j) { o.box.style.strokeWidth = (1.3 + 1.2 * Math.abs(Math.sin(now * 2 + j))).toFixed(2); });
+      var u4 = ease(seg(since(t, clock, 10.4), 0.3, 1.5));
+      sim.forEach(function (sm) { setW(sm.b, 250 * sm.v * u4); });
+      rays.forEach(function (ry, q) { ry.style.opacity = (0.15 + 0.6 * Math.abs(Math.sin(now * 2.4 + q * 0.9))).toFixed(2); });
+      readers.forEach(function (rd, j) { rd.set(C_Q, 0.6 + 0.4 * Math.abs(Math.sin(now * 2 + j))); });
+      panels(t, [p1, p2, p3, p4, p5]);
+    }
+    return { el: s, draw: draw };
+  }
+
+  /* ── scene 6: 手算一次：打分 → 分比例 → 按比例混合 ── */
   function buildSceneAttention() {
-    var s = sceneSvg('左上是第 t 步的 query 和三步的 key 各 4 格，右边依次出现点积 1、2、1，除以 2 后的 0.5、1、0.5，和 softmax 后的三根权重条；' +
-      '左下是一个平面，三条 value 箭头按权重缩短、首尾相接，加出输出点 [0.548, 0.726]；右边逐步写出算式');
-    rich(s, 24, 26, '玩具：机器人最近 3 步，$d_k=4$', 13.5);
-    label(s, 24, 62, 'query（第 t 步）', 'demo-x-ink2', 12);
-    var qRow = vecRow(s, 126, 46, 4, 24, C_Q, { h: 24 });
+    var s = sceneSvg('左上是第 t 步的问题卡（4 格）和三步的标签卡各 4 格，右边依次出现打分 1、2、1，缩小一半后的 0.5、1、0.5，和换成比例后的三根条；' +
+      '左下是一个平面，三条内容箭头按比例缩短、首尾相接，加出结果点 [0.548, 0.726]；右边依次是三步走、打分、像分披萨一样的饼图、混合、一句话');
+    s.appendChild(svgText(24, 26, '小例子：机器人最近 3 步，每张卡片 4 个数字', 'demo-x-ink2', 13.5));
+    label(s, 24, 62, '问题 Q（第 t 步）', 'demo-x-ink2', 12);
+    var qRow = vecRow(s, 136, 46, 4, 24, C_Q, { h: 24 });
     var kRows = [], c1 = [], c2 = [], bars = [], wTxt = [];
-    rich(s, 250, 92, '$q\\cdot k$', 11.5, 'demo-x-mut', 'middle', 60);
-    label(s, 296, 92, '÷ 2', 'demo-x-mut', 11.5, 'middle');
-    label(s, 352, 92, '权重', 'demo-x-mut', 11.5, 'middle');
+    label(s, 258, 92, '打分', 'demo-x-mut', 11.5, 'middle');
+    label(s, 300, 92, '÷ 2', 'demo-x-mut', 11.5, 'middle');
+    label(s, 352, 92, '比例', 'demo-x-mut', 11.5, 'middle');
     STEPS.forEach(function (st, i) {
       var y = 100 + i * 34;
-      label(s, 24, y + 17, 'key（' + st + '）', 'demo-x-ink2', 12);
-      kRows.push(vecRow(s, 126, y, 4, 24, C_K, { h: 24 }));
-      c1.push(tone(s, 250, y + 17, '', C_INK, 13, 'middle'));
-      c2.push(tone(s, 296, y + 17, '', C_INK, 13, 'middle'));
+      label(s, 24, y + 17, '标签 K（' + st + '）', 'demo-x-ink2', 12);
+      kRows.push(vecRow(s, 136, y, 4, 24, C_K, { h: 24 }));
+      c1.push(tone(s, 258, y + 17, '', C_INK, 13, 'middle'));
+      c2.push(tone(s, 300, y + 17, '', C_INK, 13, 'middle'));
       bars.push(hbar(s, 322, y + 4, 16, C_V));
       wTxt.push(label(s, 330, y + 17, '', 'demo-x-ink', 11.5));
     });
-    /* 平面：value 是 2 维的 */
     var OX = 60, OY = 370, S = 118;
     hline(s, OX - 10, OY, OX + 1.25 * S, OY, C_BORDER, 1.2);
     hline(s, OX, OY + 10, OX, OY - 1.2 * S, C_BORDER, 1.2);
-    label(s, OX + 1.25 * S + 4, OY + 4, 'x', 'demo-x-mut', 11);
-    label(s, OX - 4, OY - 1.2 * S - 4, 'y', 'demo-x-mut', 11, 'end');
     var vArr = [0, 1, 2].map(function () { return arrow(s, C_V, 1.6, '4 3'); });
     var wArr = [0, 1, 2].map(function () { return arrow(s, C_V, 3); });
     var outDot = dotAt(s, OX, OY, 6, C_Q);
     var outTxt = tone(s, OX + 12, OY - 1.2 * S + 6, '', C_Q, 12.5);
-    label(s, 286, 270, 'value', 'demo-x-mut', 11.5);
-    STEPS.forEach(function (st, i) { rich(s, 286, 294 + i * 24, 'v（' + st + '）$=[' + ATT.vals[i].join(', ') + ']$', 12); });
-    var R = 424, W = 352;
+    label(s, 270, 270, '内容 V', 'demo-x-mut', 11.5);
+    STEPS.forEach(function (st, i) { label(s, 270, 294 + i * 24, st + '：[' + ATT.vals[i].join(', ') + ']', 'demo-x-ink2', 12); });
+    /* 第 1 段 */
     var p1 = group(s);
-    label(p1, R, 64, '一行公式（式 1）', 'demo-x-ink', 14);
-    math(p1, R, 112, '\\mathrm{Attention}(Q,K,V)=\\mathrm{softmax}\\!\\left(\\frac{QK^\\top}{\\sqrt{d_k}}\\right)V', 15, 'start', 352);
-    label(p1, R, 160, '向量是笔记构造的玩具数，只演示机制', 'demo-x-mut', 11.5);
-    label(p1, R, 184, 'value 取 2 维，好画在左下的平面上', 'demo-x-mut', 11.5);
+    label(p1, R, 64, '手算一次，只有三步', 'demo-x-ink', 14);
+    var steps1 = ['① 打分', '② 分比例', '③ 按比例混合'].map(function (n, j) { return chip(p1, R + j * 118, 90, 108, n, C_ACCENT, { size: 13, h: 34 }); });
+    label(p1, R, 160, '数字是我们编的，只为看清每一步', 'demo-x-mut', 11.5);
+    label(p1, R, 184, '内容只给 2 个数字，好画在左下的平面上', 'demo-x-mut', 11.5);
+    /* 第 2 段：打分 */
     var p2 = group(s);
-    label(p2, R, 64, '① 点积', 'demo-x-ink', 14);
-    ['q·k(t−2) = 1+0+0+0 = 1', 'q·k(t−1) = 1+0+1+0 = 2', 'q·k(t) = 0+0+1+0 = 1'].forEach(function (str, j) { label(p2, R, 100 + j * 28, str, 'demo-x-mono', 12.5); });
-    label(p2, R, 200, 't−1 的 key 和 query 最像', 'demo-x-ink2', 12);
+    label(p2, R, 64, '① 打分：对应位置相乘，再相加', 'demo-x-ink', 14);
+    ['t−2：1×1 + 0 + 1×0 + 0 = 1', 't−1：1×1 + 0 + 1×1 + 0 = 2', 't：1×0 + 0 + 1×1 + 0 = 1'].forEach(function (str, j) { label(p2, R, 100 + j * 28, str, 'demo-x-mono', 12.5); });
+    label(p2, R, 200, '第 t−1 步的标签和问题最像：2 分', 'demo-x-ink2', 12);
+    /* 第 3 段：分比例，像分披萨 */
     var p3 = group(s);
-    label(p3, R, 64, '② 缩放　③ softmax', 'demo-x-ink', 14);
-    rich(p3, R, 98, '除以 √4 = 2：0.5 / 1 / 0.5', 12.5);
-    rich(p3, R, 128, '$e^{0.5}=1.6487$，$e^{1}=2.7183$', 12.5);
-    rich(p3, R, 156, '和 $=1.6487\\times 2+2.7183=6.0157$', 12.5);
-    rich(p3, R, 192, '权重 $=$ **' + ATT.w.map(f3).join(' / ') + '**，加起来是 1', 12.5);
+    label(p3, R, 64, '② 分比例：像按票数分披萨', 'demo-x-ink', 14);
+    var pz = pie(p3, R + 64, 160, 58);
+    /* 每一块写上是哪一步，跟左边的表对得上 */
+    var pzTxt = STEPS.map(function (st) { var tx = label(p3, R + 64, 160, st, 'demo-x-ink', 12, 'middle'); tx.style.fill = '#15171c'; tx.style.fontWeight = '700'; return tx; });
+    label(p3, R + 150, 108, '先把分数缩小一半：', 'demo-x-ink2', 12);
+    label(p3, R + 150, 130, '0.5 / 1 / 0.5', 'demo-x-ink', 12.5);
+    label(p3, R + 150, 156, '再换成加起来 100% 的比例：', 'demo-x-ink2', 12);
+    var pctTxt = tone(p3, R + 150, 178, '', C_INK, 12.5);
+    label(p3, R + 150, 206, '分数高的，分得多，', 'demo-x-ink2', 12);
+    label(p3, R + 150, 226, '但别人也有一份', 'demo-x-ink2', 12);
+    label(p3, R, 258, '论文把这一步叫 softmax', 'demo-x-mut', 11.5);
+    /* 第 4 段：混合 */
     var p4 = group(s);
-    label(p4, R, 64, '④ value 按权重相加', 'demo-x-ink', 14);
+    label(p4, R, 64, '③ 按比例，把三份内容加起来', 'demo-x-ink', 14);
     math(p4, R, 104, '0.274\\,[1,0]+0.452\\,[0,1]+0.274\\,[1,1]', 14, 'start', 352);
     math(p4, R, 140, '=[' + f3(ATT.out[0]) + ',\\ ' + f3(ATT.out[1]) + ']', 15);
-    label(p4, R, 180, '左下：三条绿箭头首尾相接，终点就是输出', 'demo-x-ink2', 12);
-    label(p4, R, 204, 't−1 那条最长：它拿得最多', 'demo-x-ink2', 12);
+    label(p4, R, 180, '左下：三条绿箭头接起来，终点就是结果', 'demo-x-ink2', 12);
+    label(p4, R, 204, 't−1 那条最长：它分得最多', 'demo-x-ink2', 12);
+    /* 第 5 段 */
     var p5 = group(s);
-    label(p5, R, 64, '一句话：谁和我像，就多拿谁的 value', 'demo-x-ink', 14);
-    label(p5, R, 96, '真实模型里 q、k、v 都是 token 乘可学习矩阵得到的', 'demo-x-ink2', 12);
-    label(p5, R, 120, '这里直接给出向量，跳过了投影', 'demo-x-ink2', 12);
-    rectBox(p5, R, 140, W, 80, C_ROBOT, C_SURFACE);
-    label(p5, R + 12, 164, '第 014 期论文的说法', 'demo-x-ink', 12.5);
-    label(p5, R + 12, 188, '模型可以拿历史里「想到达」和「实际到达」', 'demo-x-ink2', 11.5);
-    label(p5, R + 12, 208, '的状态作比较，决定下一步怎么改', 'demo-x-ink2', 11.5);
+    label(p5, R, 64, '一句话：谁和我像，就多听谁的', 'demo-x-ink', 14);
+    label(p5, R, 96, '真实模型里，问题、标签、内容都是学出来的', 'demo-x-ink2', 12);
+    rectBox(p5, R, 120, W, 80, C_ROBOT, C_SURFACE);
+    label(p5, R + 12, 144, '第 14 期论文里的说法', 'demo-x-ink', 12.5);
+    label(p5, R + 12, 168, '模型可以拿「想走到哪」和「实际走到哪」', 'demo-x-ink2', 11.5);
+    label(p5, R + 12, 188, '作比较，决定下一步怎么改', 'demo-x-ink2', 11.5);
+    var PC = [C_Q, C_V, C_K];
     function draw(t, clock) {
       var now = nowOf(t, clock);
       qRow.set(ATT.q);
@@ -1258,15 +1376,23 @@
       var a1 = seg(t, 3.9, 4.5), a2 = seg(t, 7.2, 7.8), a3 = seg(t, 7.9, 9.0);
       c1.forEach(function (c, i) { c.textContent = a1 > 0 ? String(ATT.raw[i]) : ''; setOpacity(c, a1); });
       c2.forEach(function (c, i) { c.textContent = a2 > 0 ? f1(ATT.scaled[i]) : ''; setOpacity(c, a2); });
-      bars.forEach(function (b, i) { setW(b, ATT.w[i] * 90 * ease(a3)); wTxt[i].setAttribute('x', (326 + ATT.w[i] * 90 * ease(a3)).toFixed(1)); wTxt[i].textContent = a3 > 0.95 ? f3(ATT.w[i]) : ''; });
-      /* 第 2 段起：第 t 步的 query 一闪一闪，表示「拿它去比」 */
+      bars.forEach(function (b, i) { setW(b, ATT.w[i] * 90 * ease(a3)); wTxt[i].setAttribute('x', (326 + ATT.w[i] * 90 * ease(a3)).toFixed(1)); wTxt[i].textContent = a3 > 0.95 ? Math.round(ATT.w[i] * 100) + '%' : ''; });
       qRow.cells.forEach(function (c) { c.style.strokeWidth = t > 3.6 && t < 7.0 ? (1.2 + Math.abs(Math.sin(now * 4))).toFixed(1) : 1.2; });
-      /* 平面：先画三条 value，第 4 段把它们按权重缩短、首尾相接 */
+      steps1.forEach(function (c, j) { c.box.style.strokeWidth = Math.floor(now / 1.2) % 3 === j ? 2.8 : 1.3; });
+      /* 第 3 段：饼图从三等份长成 27 / 45 / 27 */
+      var u3 = ease(seg(since(t, clock, 7.0), 0.4, 1.8));
+      var fr3 = ATT.w.map(function (w) { return 1 / 3 + (w - 1 / 3) * u3; }), ang = -Math.PI / 2;
+      pz.set(fr3, PC);
+      fr3.forEach(function (f, i) {
+        var mid = ang + Math.PI * f; ang += 2 * Math.PI * f;
+        pzTxt[i].setAttribute('x', (R + 64 + 34 * Math.cos(mid)).toFixed(1));
+        pzTxt[i].setAttribute('y', (160 + 34 * Math.sin(mid) + 4).toFixed(1));
+      });
+      pctTxt.textContent = u3 > 0.98 ? ATT.w.map(function (w) { return Math.round(w * 100) + '%'; }).join(' / ') : '';
       var u = ease(seg(since(t, clock, 10.4), 0.3, 2.4)), px = OX, py = OY;
       ATT.vals.forEach(function (v, i) {
         vArr[i].set(OX, OY, OX + v[0] * S, OY - v[1] * S, 8);
-        var sx = (u > 0 ? px : OX), sy = (u > 0 ? py : OY);
-        var w = u > 0 ? ATT.w[i] : 1;
+        var sx = (u > 0 ? px : OX), sy = (u > 0 ? py : OY), w = u > 0 ? ATT.w[i] : 1;
         var ex = sx + v[0] * S * w, ey = sy - v[1] * S * w;
         wArr[i].set(sx, sy, ex, ey, 9);
         setOpacity(wArr[i].g, u > 0 ? 1 : 0);
@@ -1275,16 +1401,14 @@
       });
       moveDot(outDot, [OX + ATT.out[0] * S * u, OY - ATT.out[1] * S * u]);
       setOpacity(outDot, u);
-      outTxt.textContent = u > 0.98 ? '输出 [' + f3(ATT.out[0]) + ', ' + f3(ATT.out[1]) + ']' : '';
+      outTxt.textContent = u > 0.98 ? '结果 [' + f3(ATT.out[0]) + ', ' + f3(ATT.out[1]) + ']' : '';
       outTxt.setAttribute('x', (OX + ATT.out[0] * S + 10).toFixed(1));
       outTxt.setAttribute('y', (OY - ATT.out[1] * S - 8).toFixed(1));
       panels(t, [p1, p2, p3, p4, p5]);
     }
     return { el: s, draw: draw };
   }
-
-  /* ── scene 7: 为什么要除以 √d_k ── */
-  /* 600 对 64 维标准正态向量的点积（确定性随机），第 7 幕的直方图和演示 tf-scale 用 */
+  /* 随机向量的点积（确定性随机）：第 7 幕的数轴和演示 tf-scale 用 */
   function dotSamples(dk, n, seed) {
     var out = [];
     for (var i = 0; i < n; i++) {
@@ -1294,628 +1418,724 @@
     }
     return out;
   }
-  var DOT64 = dotSamples(64, 600, 7);
   function stdOf(xs) {
     var m = 0, v = 0;
     xs.forEach(function (x) { m += x / xs.length; });
     xs.forEach(function (x) { v += (x - m) * (x - m) / xs.length; });
     return Math.sqrt(v);
   }
+  function f4(x) { return fmt(x, 4); }
+  var DOT4 = dotSamples(4, 40, 7), DOT64 = dotSamples(64, 40, 7);
+
+  /* ── scene 7: 为什么要缩小：别让一个人的嗓门盖过全场 ── */
   function buildSceneScale() {
-    var s = sceneSvg('左边上下两个直方图：上面是 64 维随机向量的点积，一个个落进格子，散得很开，标准差约 8；下面是同一批点积除以 8，挤在中间，标准差约 1；' +
-      '右边依次出现：脚注 4 的算式；标准差的读数；同一组分数缩放前后的 softmax 柱；最大项梯度的两根条；以及三种模型每头的维数');
-    rich(s, 24, 26, '随机向量的点积：$d_k$ 越大，散得越开', 13.5);
-    var HX = 40, HW = 352, B = 64, LO = -32;
-    function hist(y0, h, color, scale) {
-      var g = group(s), bars = [];
-      hline(g, HX, y0, HX + HW, y0, C_BORDER, 1.2);
-      for (var i = 0; i < B; i++) bars.push(vbar(g, HX + i * HW / B, HW / B - 1, color));
-      [-24, -16, -8, 0, 8, 16, 24].forEach(function (v) { label(g, HX + (v - LO) / 64 * HW, y0 + 15, sgn(String(v)), 'demo-x-mut', 10.5, 'middle'); });
-      return { g: g, set: function (xs, m) {
-        var cnt = [];
-        for (var i = 0; i < B; i++) cnt.push(0);
-        for (var k = 0; k < m; k++) { var b = Math.floor((xs[k] / scale - LO) / 64 * B); if (b >= 0 && b < B) cnt[b]++; }
-        var mx = Math.max.apply(null, cnt) || 1;
-        bars.forEach(function (bb, i) { bb.set(y0, cnt[i] / Math.max(mx, 6) * h); });
-      } };
+    var s = sceneSvg('左上两条数轴：每张卡片 4 个数字时，40 个随机打分挤在中间；64 个数字时散得很开；左下两张饼图：同一组分数 12、4、−4、6，' +
+      '不缩小时一块几乎占满整个饼，除以 8 以后四块都看得见；右边依次出现：数字越多分数越大；一个人的嗓门盖过全场；学不动的两根条；音量旋钮拧小；Digit 也要除');
+    s.appendChild(svgText(24, 26, '卡片上的数字越多，打出来的分差得越大', 'demo-x-ink2', 13.5));
+    var LX = 40, LW = 340, LO = -24;
+    function numLine(y, xs, color, cap) {
+      hline(s, LX, y, LX + LW, y, C_BORDER, 1.2);
+      [-20, -10, 0, 10, 20].forEach(function (v) { hline(s, LX + (v - LO) / 48 * LW, y - 4, LX + (v - LO) / 48 * LW, y + 4, C_BORDER, 1); label(s, LX + (v - LO) / 48 * LW, y + 18, sgn(String(v)), 'demo-x-mut', 10.5, 'middle'); });
+      label(s, 24, y - 26, cap, 'demo-x-ink2', 12);
+      return xs.map(function (v, i) { return { d: dotAt(s, LX + clamp((v - LO) / 48, 0, 1) * LW, y - 8 - (i % 3) * 5, 3.4, color), i: i }; });
     }
-    rich(s, 24, 52, '不缩放：$q\\cdot k$（$d_k=64$）', 12);
-    var hTop = hist(164, 96, C_RNN, 1);
-    var sdTop = tone(s, 392, 52, '', C_RNN, 12, 'end');
-    label(s, 24, 212, '除以 √64 = 8', 'demo-x-ink2', 12);
-    var hBot = hist(330, 96, C_GOOD, 8);
-    var sdBot = tone(s, 392, 212, '', C_GOOD, 12, 'end');
-    label(s, 24, 368, '横轴：点积的值；柱高：各自按最高的一格归一化', 'demo-x-mut', 11);
-    label(s, 24, 388, '600 对随机向量，分量独立、均值 0、方差 1（玩具）', 'demo-x-mut', 11);
-    var R = 424, W = 352;
-    var p1 = group(s);
-    label(p1, R, 64, '论文脚注 4', 'demo-x-ink', 14);
-    math(p1, R, 104, 'q\\cdot k=\\sum_{i=1}^{d_k} q_i k_i', 16);
-    math(p1, R, 150, '\\mathbb{E}[q\\cdot k]=0,\\qquad \\mathrm{Var}[q\\cdot k]=d_k', 15, 'start', 352);
-    label(p1, R, 190, '前提：q、k 的分量独立、均值 0、方差 1', 'demo-x-ink2', 12);
-    rich(p1, R, 214, '$d_k$ 个乘积加起来，方差就加到 $d_k$', 12);
-    var p2 = group(s);
-    rich(p2, R, 64, '$d_k=64$：标准差 8', 14, 'demo-x-ink');
-    var r2 = [tone(p2, R, 100, '', C_RNN, 13), tone(p2, R, 128, '', C_GOOD, 13)];
-    label(p2, R, 164, '分数动不动就上十，softmax 会被推向一边', 'demo-x-ink2', 12);
-    rich(p2, R, 190, '除以 √$d_k$：方差拉回 1', 12.5);
-    var p3 = group(s);
-    label(p3, R, 64, '同一组分数：12 / 4 / −4 / 6', 'demo-x-ink', 14);
-    var BX = [R + 20, R + 196], BY = 210, BH = 110;
-    var sm = [SCALE.pRaw, SCALE.pScaled].map(function (p, g2) {
-      label(p3, BX[g2] + 66, 92, g2 ? '除以 8' : '不缩放', g2 ? 'demo-x-good' : 'demo-x-bad', 12, 'middle');
-      hline(p3, BX[g2] - 4, BY, BX[g2] + 136, BY, C_BORDER, 1.2);
-      return p.map(function (v, i) {
-        var b = vbar(p3, BX[g2] + i * 34, 26, g2 ? C_GOOD : C_RNN);
-        var tx = label(p3, BX[g2] + i * 34 + 13, BY - 6, '', 'demo-x-ink', 11, 'middle');
-        return { b: b, tx: tx, v: v };
+    var dA = numLine(96, DOT4, C_GOOD, '每张卡 4 个数字：分数挤在一起');
+    var dB = numLine(168, DOT64, C_RNN, '每张卡 64 个数字：分数散得很开');
+    label(s, 24, 206, '（40 对随机卡片的打分，示意）', 'demo-x-mut', 11);
+    var PIE_C = [C_RNN, C_K, C_MUTED, C_Q];
+    label(s, 112, 238, '不缩小：12 / 4 / −4 / 6', 'demo-x-ink2', 12, 'middle');
+    label(s, 296, 238, '除以 8 以后', 'demo-x-ink2', 12, 'middle');
+    var pieA = pie(s, 112, 308, 54), pieB = pie(s, 296, 308, 54);
+    /* 饼上写出每一块是哪个分数（−4 那块太窄，不写） */
+    function pieMarks(cx, fr, show) {
+      var ang = -Math.PI / 2;
+      fr.forEach(function (f, i) {
+        var mid = ang + Math.PI * f; ang += 2 * Math.PI * f;
+        if (!show[i]) return;
+        var rr = f > 0.9 ? 22 : 34;
+        var tx = label(s, cx + rr * Math.cos(mid), 308 + rr * Math.sin(mid) + 4, show[i], 'demo-x-ink', 12, 'middle');
+        tx.style.fill = '#15171c'; tx.style.fontWeight = '700';
       });
-    });
-    label(p3, R, 236, 'softmax 后的权重：柱越高拿得越多', 'demo-x-mut', 11.5);
+    }
+    pieMarks(112, SCALE.pRaw, ['12', '', '', '']);
+    pieMarks(296, SCALE.pScaled, ['12', '4', '', '6']);
+    var knobArrow = arrow(s, C_ACCENT, 2.4);
+    label(s, 204, 296, '÷ 8', 'demo-x-ink', 14, 'middle');
+    tone(s, 112, 384, '最大的一块 99.7%', C_RNN, 12, 'middle');
+    tone(s, 296, 384, '最大的一块 51%', C_GOOD, 12, 'middle');
+    /* 第 1 段 */
+    var p1 = group(s);
+    label(p1, R, 64, '数字越多，分数越大', 'demo-x-ink', 14);
+    label(p1, R, 96, '打分是把对应位置相乘、再加起来', 'demo-x-ink2', 12);
+    label(p1, R, 120, '加的东西越多，总分就越容易很大或很小', 'demo-x-ink2', 12);
+    var sp = [barRowAt(p1, R, 140, 110, '4 个数字', C_GOOD, 20, 12), barRowAt(p1, R, 172, 110, '64 个数字', C_RNN, 20, 12)];
+    label(p1, R, 222, '条：分数一般会差多大（随机卡片）', 'demo-x-mut', 11);
+    label(p1, R, 246, '论文用的是 64 个数字，分数常差到十几', 'demo-x-ink2', 12);
+    /* 第 2 段：一个人的嗓门盖过全场 */
+    var p2 = group(s);
+    label(p2, R, 64, '分差太大：一个人的嗓门盖过全场', 'demo-x-ink', 14);
+    var VOL = SCALE.pRaw, loud = [];
+    for (var i = 0; i < 4; i++) {
+      person(p2, R + 30 + i * 84, 104, 12, i === 0 ? C_RNN : C_MUTED);
+      loud.push(vbar(p2, R + 18 + i * 84, 24, i === 0 ? C_RNN : C_MUTED));
+      label(p2, R + 30 + i * 84, 256, ['12 分', '4 分', '−4 分', '6 分'][i], 'demo-x-ink2', 11.5, 'middle');
+    }
+    label(p2, R, 284, '最高分的那一个拿走 99.7%', 'demo-x-ink2', 12);
+    label(p2, R, 308, '其他人说什么，几乎都听不见了', 'demo-x-ink2', 12);
+    /* 第 3 段：学不动 */
+    var p3 = group(s);
+    label(p3, R, 64, '更麻烦的是：学不动', 'demo-x-ink', 14);
+    label(p3, R, 96, '训练时，网络要靠一个「往哪改」的信号', 'demo-x-ink2', 12);
+    var gb = [barRowAt(p3, R, 114, 80, '不缩小', C_RNN, 22, 12), barRowAt(p3, R, 148, 80, '缩小后', C_GOOD, 22, 12)];
+    var ratio = label(p3, R, 206, '', 'demo-x-ink', 13);
+    label(p3, R, 232, '信号几乎是 0，网络就几乎不改', 'demo-x-ink2', 12);
+    label(p3, R, 256, '条：信号有多强（越长越好学）', 'demo-x-mut', 11);
+    /* 第 4 段：音量旋钮 */
     var p4 = group(s);
-    label(p4, R, 64, '最大项处的梯度 p(1−p)', 'demo-x-ink', 14);
-    var gb = [barRowAt(p4, R, 96, 70, '不缩放', C_RNN, 22, 12), barRowAt(p4, R, 136, 70, '除以 8', C_GOOD, 22, 12)];
-    var ratio = label(p4, R, 196, '', 'demo-x-ink', 13);
-    label(p4, R, 222, '梯度几乎为 0，这一层的注意力就学不动', 'demo-x-ink2', 12);
+    label(p4, R, 64, '办法：打分先除以 8，把音量调小', 'demo-x-ink', 14);
+    var knob = clockFace(p4, R + 60, 150, 50, [[0.8, 3.4, C_ACCENT]]);
+    label(p4, R + 60, 222, '音量旋钮', 'demo-x-mut', 11, 'middle');
+    label(p4, R + 130, 112, '8 是 64 开平方', 'demo-x-ink2', 12);
+    rich(p4, R + 130, 136, '（论文写作 $\\sqrt{d_k}$）', 12);
+    label(p4, R + 130, 168, '比例回到 51% / 19% / 7% / 24%', 'demo-x-ink2', 12);
+    label(p4, R + 130, 192, '每个人都有声音', 'demo-x-ink2', 12);
+    label(p4, R, 258, '信号也回到 0.25，比原来大约 89 倍', 'demo-x-ink2', 12);
+    /* 第 5 段 */
     var p5 = group(s);
     label(p5, R, 64, '论文自己说：这是一个猜测', 'demo-x-ink', 14);
-    rich(p5, R, 94, '原文 “We suspect”：依据是大 $d_k$ 时，', 12);
-    label(p5, R, 116, '不缩放的点积注意力不如加性注意力', 'demo-x-ink2', 12);
-    var hd = HEAD_DIMS.map(function (h, i) { return barRowAt(p5, R, 140 + i * 30, 150, h[0], i === 1 ? C_ACCENT : C_ROBOT, 18, 11.5); });
-    rich(p5, R, 248, '条：不缩放时点积的标准差 √$d_k$', 11.5, 'demo-x-mut');
-    label(p5, R, 272, 'LaTeX 源码里还留着一段被注释掉的附录：', 'demo-x-mut', 11);
-    label(p5, R, 292, '缩放因子的粗略论证', 'demo-x-mut', 11);
+    label(p5, R, 96, '原文用的是「我们猜测」，没有专门做实验', 'demo-x-ink2', 12);
+    var hd = [['论文：每次比 64 个数字', 64, C_ACCENT], ['Digit：每次比 48 个数字', 48, C_ROBOT]].map(function (h, j) {
+      return barRowAt(p5, R, 120 + j * 32, 170, h[0], h[2], 20, 11.5);
+    });
+    label(p5, R, 214, '条：要除以多少（数字个数开平方）', 'demo-x-mut', 11);
+    label(p5, R, 240, '机器人用的也是同一个办法', 'demo-x-ink2', 12);
     function draw(t, clock) {
       var now = nowOf(t, clock);
-      var m = Math.min(DOT64.length, 20 + Math.floor(now * 40) % 700);
-      hTop.set(DOT64, m); hBot.set(DOT64, m);
-      var sd = stdOf(DOT64.slice(0, Math.max(2, m)));
-      sdTop.textContent = '标准差 ' + f1(sd); sdBot.textContent = '标准差 ' + f2(sd / 8);
-      r2[0].textContent = '不缩放：' + m + ' 个样本，标准差 ' + f1(sd);
-      r2[1].textContent = '除以 8：标准差 ' + f2(sd / 8);
-      var u3 = seg(since(t, clock, 7.0), 0.3, 1.8);
-      sm.forEach(function (gp) { gp.forEach(function (c) { c.b.set(BY, Math.max(1, c.v * BH * u3)); c.tx.setAttribute('y', (BY - Math.max(1, c.v * BH * u3) - 6).toFixed(1)); c.tx.textContent = u3 > 0.95 ? (c.v < 0.01 ? '≈0' : f3(c.v)) : ''; }); });
-      var u4 = seg(since(t, clock, 10.4), 0.3, 1.8);
-      gb[0].set(SCALE.gRaw / 0.25 * 240 * u4, f4(SCALE.gRaw * u4));
-      gb[1].set(SCALE.gScaled / 0.25 * 240 * u4, f3(SCALE.gScaled * u4));
-      ratio.textContent = u4 > 0.95 ? '差约 ' + Math.round(SCALE.gScaled / SCALE.gRaw) + ' 倍' : '';
-      var u5 = seg(since(t, clock, 13.4), 0.3, 1.6);
-      hd.forEach(function (b, i) { b.set(Math.sqrt(HEAD_DIMS[i][1]) * 6 * u5, '每头 ' + HEAD_DIMS[i][1] + ' 维 → ' + f1(Math.sqrt(HEAD_DIMS[i][1]))); });
+      /* 点一个个落到数轴上：4 s 一轮 */
+      var m = Math.floor((now % 5) / 4 * 44);
+      [dA, dB].forEach(function (arr) { arr.forEach(function (o) { setOpacity(o.d, o.i < m ? 1 : 0.08); }); });
+      pieA.set(SCALE.pRaw, PIE_C); pieB.set(SCALE.pScaled, PIE_C);
+      var wob = 4 * Math.sin(now * 3);
+      knobArrow.set(176 + wob, 308, 232 + wob, 308, 9);
+      var u1 = ease(seg(since(t, clock, 0.4), 0.4, 1.6));
+      sp[0].set(2 * 12 * u1, u1 > 0.95 ? '差 2 左右' : ''); sp[1].set(8 * 12 * u1, u1 > 0.95 ? '差 8 左右' : '');
+      var u2 = ease(seg(since(t, clock, 3.6), 0.3, 1.4)), sh = 1 + 0.04 * Math.sin(now * 9);
+      loud.forEach(function (b, j) { b.set(236, Math.max(2, VOL[j] * 86 * u2 * (j ? 1 : sh))); });
+      var u3 = ease(seg(since(t, clock, 7.0), 0.3, 1.8));
+      gb[0].set(SCALE.gRaw / 0.25 * 230 * u3, u3 > 0.9 ? f4(SCALE.gRaw) : '');
+      gb[1].set(SCALE.gScaled / 0.25 * 230 * u3, u3 > 0.9 ? f2(SCALE.gScaled) : '');
+      ratio.textContent = u3 > 0.95 ? '差约 ' + Math.round(SCALE.gScaled / SCALE.gRaw) + ' 倍' : '';
+      /* 旋钮从 10 点钟拧到 1 点钟，再慢慢回去 */
+      var kp = (since(t, clock, 10.4) % 5) / 5, ka = kp < 0.6 ? -0.3 + 0.36 * ease(kp / 0.6) : 0.06 - 0.36 * ease((kp - 0.6) / 0.4);
+      knob.set([ka]);
+      var u5 = ease(seg(since(t, clock, 13.4), 0.3, 1.4));
+      hd[0].set(8 * 15 * u5, u5 > 0.9 ? '除以 8' : ''); hd[1].set(Math.sqrt(48) * 15 * u5, u5 > 0.9 ? '除以约 6.9' : '');
       panels(t, [p1, p2, p3, p4, p5]);
     }
     return { el: s, draw: draw };
   }
-  function f4(x) { return fmt(x, 4); }
 
-  /* ── scene 8: 多头：8 个 64 维的头 ── */
+  /* ── scene 8: 多头：请 8 个评委，各看各的 ── */
   function buildSceneHeads() {
-    var s = sceneSvg('左上一条 512 维的长条切成 8 段，每段落进自己的小注意力矩阵，8 个图案各不相同，再拼回一条、乘 W^O；左下是论文附录图 3，第 5 层里很多头都盯着远处的 more difficult；' +
-      '右边依次出现：一个头会把两种关系平均掉；多头的公式、论文图 2 右与「总计算量不变」；表 3 A 组的头数柱；B 组的 d_k 柱；附录图 4 的指代消解与机器人模型的头数');
-    s.appendChild(svgText(24, 26, '8 个头，每个 64 维，各看各的', 'demo-x-ink2', 13.5));
+    var s = sceneSvg('左上是 G1 最近 6 步；从最后一步 t 往回拉出四条彩色弧线，各连到不同的一步（四个评委各看各的）；下面一条 512 格的长条切成 8 段，' +
+      '每段落到一个同色的小人头上，再拼回一条；右边依次出现：一个评委只能平均成一团；8 个评委各管一件事；工作量不变；表三的评委人数和得分；论文附录里找「它」指谁的评委');
+    s.appendChild(svgText(24, 26, '请 8 个评委，各看各的', 'demo-x-ink2', 13.5));
+    var hist = historyStrip(s, 24, 40, 6, 56, 84, { gap: 6 });
+    var JUDGE = [[4, '看上一步'], [0, '看最开头'], [2, '看脚落地那步'], [5, '看自己']];
+    var arcs = JUDGE.map(function (jd, j) {
+      var p = paint(svgEl('path', { d: 'M 0 0', fill: 'none', 'stroke-width': 2.4 }), null, HEAD_COLORS[j]);
+      s.appendChild(p); return p;
+    });
     var BX = 24, hw = 46;
-    var strips = [], minis = [], cat = [];
+    label(s, BX, 214, '一份 512 个数字的档案，拆成 8 份', 'demo-x-mut', 11);
+    var strips = [], judges = [], cat = [];
     for (var j = 0; j < 8; j++) {
-      strips.push(paint(svgEl('rect', { x: BX + j * hw, y: 50, width: hw - 3, height: 18, rx: 2 }), HEAD_COLORS[j]));
+      strips.push(paint(svgEl('rect', { x: BX + j * hw, y: 222, width: hw - 3, height: 16, rx: 2 }), HEAD_COLORS[j]));
       s.appendChild(strips[j]);
-      minis.push(attnGrid(s, BX + j * hw + 2, 98, 4, 10, HEAD_COLORS[j]));
-      cat.push(paint(svgEl('rect', { x: BX + j * hw, y: 166, width: hw - 3, height: 18, rx: 2 }), HEAD_COLORS[j]));
+      judges.push(person(s, BX + j * hw + hw / 2 - 1.5, 274, 8, HEAD_COLORS[j]));
+      cat.push(paint(svgEl('rect', { x: BX + j * hw, y: 334, width: hw - 3, height: 16, rx: 2 }), HEAD_COLORS[j]));
       s.appendChild(cat[j]);
     }
-    label(s, BX + 8 * hw, 44, '一个 token：512 维，切成 8 段', 'demo-x-mut', 11, 'end');
-    label(s, BX + 8 * hw, 92, '8 个头各算一次注意力', 'demo-x-mut', 11, 'end');
-    rich(s, BX, 204, '拼接（Concat）回 512 维，再乘 $W^O$；小格的图案只是示意', 11, 'demo-x-mut', 'start', 370);
+    label(s, BX, 370, '8 个评委各打各的分，再把意见拼回来', 'demo-x-mut', 11);
     var drops = [];
     for (j = 0; j < 8; j++) drops.push(flowSeg(s, HEAD_COLORS[j], 1, 2.6, 18, true));
-    var viz = paperPart(s, 'making', 0, 0.12, 1, 0.78, BX, 222, 360, '');
-    label(s, BX, 222 + viz.h + 18, '论文图 3（附录）：第 5 层，多个头都盯着远处的 “more difficult”', 'demo-x-mut', 10.5);
-    var R = 424, W = 352;
+    /* 第 1 段：一个评委 */
     var p1 = group(s);
-    label(p1, R, 64, '一个头只给一组权重', 'demo-x-ink', 14);
-    label(p1, R, 96, '假如两种关系都重要：一个看近处，一个看最开头', 'demo-x-ink2', 12);
-    var near = attnGrid(p1, R, 116, 6, 14, C_Q), far = attnGrid(p1, R + 110, 116, 6, 14, C_K), avg = attnGrid(p1, R + 236, 116, 6, 14, C_MUTED);
-    label(p1, R + 42, 216, '看近处', 'demo-x-ink2', 11.5, 'middle'); label(p1, R + 152, 216, '看最开头', 'demo-x-ink2', 11.5, 'middle'); label(p1, R + 278, 216, '平均成一个', 'demo-x-ink2', 11.5, 'middle');
-    label(p1, R, 250, '§3.2.2：只有一个头时，平均会抑制这种能力', 'demo-x-ink2', 12);
-    label(p1, R, 272, '（两种关系的例子是我们编的示意）', 'demo-x-mut', 11);
+    label(p1, R, 64, '只请一个评委：只能平均成一团', 'demo-x-ink', 14);
+    var solo = person(p1, R + 30, 110, 12, C_MUTED);
+    var soloBars = [0, 1, 2, 3, 4, 5].map(function (q) { return vbar(p1, R + 100 + q * 34, 24, C_MUTED); });
+    label(p1, R + 112, 182, 't−5', 'demo-x-mono', 11, 'middle');
+    label(p1, R + 282, 182, 't', 'demo-x-mono', 11, 'middle');
+    label(p1, R, 214, '既要看近处，又要看最开头', 'demo-x-ink2', 12);
+    label(p1, R, 238, '只好每一步都看一点，两件事都看不清', 'demo-x-ink2', 12);
+    label(p1, R, 262, '论文说：平均会盖住这种能力', 'demo-x-ink2', 12);
+    void solo;
+    /* 第 2 段：8 个评委 */
     var p2 = group(s);
-    label(p2, R, 64, '多头：切成 8 份并行算', 'demo-x-ink', 14);
-    math(p2, R, 100, '\\mathrm{MultiHead}=\\mathrm{Concat}(\\mathrm{head}_1,\\dots,\\mathrm{head}_8)\\,W^O', 13.5, 'start', 352);
-    math(p2, R, 134, '\\mathrm{head}_i=\\mathrm{Attention}(QW_i^Q,KW_i^K,VW_i^V)', 13.5, 'start', 352);
-    rectBox(p2, R, 160, 72, 72, C_MUTED, C_SURFACE2);
-    for (j = 0; j < 8; j++) { var rr = paint(svgEl('rect', { x: R + 96 + j * 13, y: 160, width: 9, height: 72, rx: 2 }), HEAD_COLORS[j]); p2.appendChild(rr); }
-    label(p2, R + 36, 250, '1 个 512 维', 'demo-x-ink2', 11, 'middle');
-    label(p2, R + 146, 250, '8 个 64 维', 'demo-x-ink2', 11, 'middle');
-    label(p2, R, 274, '每头维度缩成八分之一：总计算量差不多', 'demo-x-ink2', 12);
-    var mha = paperPart(p2, 'mha', 0, 0, 1, 0.82, R + 262, 150, 84, '');
-    label(p2, R + 304, 150 + mha.h + 16, '论文图 2 右', 'demo-x-mut', 10.5, 'middle');
+    label(p2, R, 64, '请 8 个评委：每人只管一件事', 'demo-x-ink', 14);
+    var j2 = JUDGE.map(function (jd, q) {
+      var y = 92 + q * 44;
+      var pp = person(p2, R + 14, y + 6, 8, HEAD_COLORS[q]);
+      label(p2, R + 36, y + 16, '评委 ' + (q + 1) + '：' + jd[1], 'demo-x-ink2', 12.5);
+      return pp;
+    });
+    label(p2, R, 280, '（各看哪一步是示意，评委自己学出来）', 'demo-x-mut', 11);
+    /* 第 3 段：工作量不变 */
     var p3 = group(s);
-    label(p3, R, 64, '表三 A 组：计算量不变，只改头数', 'demo-x-ink', 14);
-    readHint(p3, R, 88, 'dev BLEU，**越高越好**', 11.5);
-    var hb = HEADS.map(function (h, i) { return barRowAt(p3, R, 104 + i * 30, 96, h.h + ' 头 · ' + h.dk + ' 维', h.h === 8 ? C_ACCENT : C_MUTED, 18, 11.5); });
-    label(p3, R, 270, '条从 24 分画起；1 头比最好低 0.9 分', 'demo-x-mut', 11);
+    label(p3, R, 64, '工作量没有变多', 'demo-x-ink', 14);
+    var one = paint(svgEl('rect', { x: R, y: 96, width: 320, height: 22, rx: 3 }), C_MUTED); p3.appendChild(one);
+    label(p3, R + 330, 112, '512', 'demo-x-mono', 11.5);
+    var eight = [];
+    for (j = 0; j < 8; j++) { eight.push(paint(svgEl('rect', { x: R + j * 40, y: 150, width: 37, height: 22, rx: 3 }), HEAD_COLORS[j])); p3.appendChild(eight[j]); }
+    label(p3, R + 330, 166, '8 × 64', 'demo-x-mono', 11.5);
+    label(p3, R, 214, '一个评委看全部 512 个数字，', 'demo-x-ink2', 12);
+    label(p3, R, 238, '和 8 个评委每人看 64 个，加起来一样多', 'demo-x-ink2', 12);
+    /* 第 4 段：表三，评委多少才合适 */
     var p4 = group(s);
-    rich(p4, R, 64, '表三 B 组：只缩小 $d_k$', 14, 'demo-x-ink');
-    readHint(p4, R, 88, 'dev BLEU，**越高越好**', 11.5);
-    var kb = KEYDIM.map(function (k, i) { return barRowAt(p4, R, 104 + i * 32, 96, '$d_k=' + k.dk + '$', k.dk === 64 ? C_ACCENT : C_MUTED, 20, 11.5); });
-    label(p4, R, 220, '判断相容性并不容易，', 'demo-x-ink2', 12);
-    label(p4, R, 244, '也许需要比点积更复杂的函数（§6.2）', 'demo-x-ink2', 12);
+    label(p4, R, 64, '论文表三：请几个评委最好？', 'demo-x-ink', 14);
+    readHint(p4, R, 88, '翻译得分，**越高越好**（第 15 幕再讲这个分数）', 11.5);
+    var hb = HEADS.map(function (h, q) { return barRowAt(p4, R, 100 + q * 26, 80, h.h + ' 个评委', q === 2 ? C_ACCENT : C_MUTED, 18, 11.5); });
+    label(p4, R, 248, '1 个太少；32 个太多，每人只看 16 个数字', 'demo-x-ink2', 12);
+    /* 第 5 段：附录图 */
     var p5 = group(s);
-    var its = paperPart(p5, 'its', 0, 0.12, 1, 0.92, R, 62, 250, '');
-    label(p5, R, 62 + its.h + 18, '论文图 4（附录）：“its” 指向 “Law”，像在做指代消解', 'demo-x-mut', 10.5);
-    label(p5, R, 62 + its.h + 42, '定性观察，论文没有量化每个头的功能', 'demo-x-ink2', 11.5);
-    rich(p5, R, 62 + its.h + 66, 'Digit：4 头 × 48 维；π₀ 的 Gemma：8 个头共用 1 组 K、V', 11.5);
-    var hiF = rectBox(s, BX, 222, 360, viz.h, C_BAD, 'none'); hiF.style.fill = 'none';
+    var its = paperPart(p5, 'its', 0, 0.12, 1, 0.92, R, 62, 220, '');
+    label(p5, R + 232, 84, '论文附录：', 'demo-x-ink2', 12);
+    label(p5, R + 232, 106, '有个评委把', 'demo-x-ink2', 12);
+    label(p5, R + 232, 128, '「its（它的）」', 'demo-x-ink2', 12);
+    label(p5, R + 232, 150, '连到「Law（法律）」', 'demo-x-ink2', 12);
+    label(p5, R + 232, 182, '像在找「它」', 'demo-x-ink2', 12);
+    label(p5, R + 232, 204, '指的是谁', 'demo-x-ink2', 12);
+    label(p5, R, its.y + its.h + 26, '论文附录图 4（裁剪）；Digit 用了 4 个评委', 'demo-x-mut', 11);
     function draw(t, clock) {
       var now = nowOf(t, clock);
-      /* 8 个头：第 j 个头看往前 j mod 4 格（只是示意的图案） */
-      minis.forEach(function (mg, hj) {
-        mg.set(function (i, k) { var off = (hj % 4), want = Math.max(0, i - off); var a = k === want ? 1 : k <= i ? 0.18 : 0.05; return { a: a * (0.6 + 0.4 * Math.abs(Math.sin(now * 1.3 + hj))) }; });
-        drops[hj].at(now + hj * 0.2, [BX + hj * hw + 21, 72], [BX + hj * hw + 21, 94], true);
+      hist.set(now);
+      var x0 = hist.cx(5);
+      JUDGE.forEach(function (jd, q) {
+        var x1 = hist.cx(jd[0]), dep = 12 + 9 * q;
+        if (jd[0] === 5) arcs[q].setAttribute('d', 'M ' + (x0 - 10) + ' 150 C ' + (x0 - 30) + ' ' + (150 + dep) + ' ' + (x0 + 30) + ' ' + (150 + dep) + ' ' + (x0 + 10) + ' 150');
+        else arcs[q].setAttribute('d', 'M ' + x0 + ' 150 Q ' + ((x0 + x1) / 2) + ' ' + (150 + dep * 1.6) + ' ' + x1 + ' 150');
+        arcs[q].style.opacity = (0.45 + 0.55 * Math.abs(Math.sin(now * 1.6 + q))).toFixed(2);
       });
-      var pulse = 0.5 + 0.5 * Math.sin(now * 2);
-      near.set(function (i, k) { return { a: Math.abs(i - k) <= 1 && k <= i ? 0.9 : 0.06 }; });
-      far.set(function (i, k) { return { a: k === 0 ? 0.9 : 0.06 }; });
-      avg.set(function (i, k) { var a = ((Math.abs(i - k) <= 1 && k <= i) ? 0.45 : 0) + (k === 0 ? 0.45 : 0); return { a: Math.max(0.06, a * (0.7 + 0.3 * pulse)) }; });
-      var u3 = seg(since(t, clock, 7.0), 0.3, 2.0);
-      hb.forEach(function (b, i) { b.set((HEADS[i].bleu - 24) / 2.2 * 200 * u3, f1(24 + (HEADS[i].bleu - 24) * u3)); });
-      var u4 = seg(since(t, clock, 10.4), 0.3, 2.0);
-      kb.forEach(function (b, i) { b.set((KEYDIM[i].bleu - 24) / 2.2 * 200 * u4, f1(24 + (KEYDIM[i].bleu - 24) * u4)); });
-      hiF.style.opacity = (winK(t, 4) * (0.4 + 0.4 * Math.sin(now * 2))).toFixed(2);
+      for (var q = 0; q < 8; q++) {
+        var cx = BX + q * hw + hw / 2 - 1.5;
+        drops[q].at(now + q * 0.2, [cx, 240], [cx, 262], true);
+        judges[q].set(HEAD_COLORS[q], 0.6 + 0.4 * Math.abs(Math.sin(now * 2 + q)));
+      }
+      /* 第 1 段：一个评委，每一步都只分到一点 */
+      var u1 = ease(seg(since(t, clock, 0.4), 0.3, 1.2));
+      soloBars.forEach(function (b, q2) { b.set(166, (24 + 4 * Math.sin(now * 2 + q2)) * u1); });
+      j2.forEach(function (pp, q2) { pp.set(HEAD_COLORS[q2], Math.floor(now / 1.2) % 4 === q2 ? 1 : 0.45); });
+      /* 第 3 段：一整条 → 8 段 */
+      var u3 = ease(seg((since(t, clock, 7.0) % 4), 0.4, 1.4));
+      eight.forEach(function (r) { r.setAttribute('width', (40 - 4 * u3).toFixed(1)); });
+      var u4 = ease(seg(since(t, clock, 10.4), 0.3, 1.6));
+      hb.forEach(function (b, q2) { var v = HEADS[q2].bleu; b.set((v - 24) / 2 * 200 * u4, u4 > 0.9 ? f1(v) + ' 分' : ''); });
       panels(t, [p1, p2, p3, p4, p5]);
     }
     return { el: s, draw: draw };
   }
 
-  /* ── scene 9: 位置编码：把顺序加回来 ── */
+  /* ── scene 9: 位置编码：给每张卡片装一只钟 ── */
   function buildScenePE() {
-    var s = sceneSvg('左上四条正弦，频率一条比一条低，一根竖线沿位置往右扫，四个小点读出这一位置的编码；左下两个表盘，一个每步转 1 弧度，一个每步只转 0.01 弧度；' +
-      '右边依次出现：打乱顺序输出只跟着换位；位置编码的公式；d_model = 4 的两个位置的编码值；相对位置是线性函数的假设和表 3 E 组；机器人模型里三种用法');
-    s.appendChild(svgText(24, 26, '每一维一条正弦，频率越来越低', 'demo-x-ink2', 13.5));
-    var PX = 60, PW = 330, POS = 40, RH = 44, Y0 = 86;
-    var FREQ = [0, 1, 2, 3].map(function (i) { return 1 / Math.pow(10000, (2 * i) / 16); });
-    var waves = FREQ.map(function (fq, i) {
+    var s = sceneSvg('左上是一只钟，三根指针转得一快一中一慢，旁边读出现在是第几步；左下三条快慢不同的波，一根竖线往右扫，三个小点读出这一步的「时间」；' +
+      '右边依次出现：打乱座位，结果只是跟着换位；三张卡片各带一只钟；只看快针分不清、几根针一起看就分得清；论文的正弦波和表三 E 组；机器人里的两种用法');
+    s.appendChild(svgText(24, 26, '给每张卡片装一只钟', 'demo-x-ink2', 13.5));
+    var HANDS = [[0.88, 2, C_WARN], [0.68, 3.2, C_ACCENT], [0.48, 4.4, C_ROBOT]], SPD = [1 / 8, 1 / 64, 1 / 512];
+    var clk = clockFace(s, 130, 150, 92, HANDS);
+    var stepTxt = tone(s, 250, 100, '', C_INK, 18);
+    [['快针', C_WARN], ['中针', C_ACCENT], ['慢针', C_ROBOT]].forEach(function (h, j) {
+      s.appendChild(paint(svgEl('rect', { x: 250, y: 128 + j * 26, width: 14, height: 6, rx: 2 }), h[1]));
+      label(s, 270, 136 + j * 26, h[0], 'demo-x-ink2', 12);
+    });
+    var PX = 60, PW = 320, Y0 = 282, RH = 40;
+    var waves = SPD.map(function (fq, i) {
       var y = Y0 + i * RH, pts = [];
-      for (var p = 0; p <= POS * 4; p++) pts.push([PX + p / 4 / POS * PW, y - 16 * Math.sin(p / 4 * fq)]);
+      for (var p = 0; p <= 160; p++) pts.push([PX + p / 160 * PW, y - 13 * Math.sin(2 * Math.PI * (p / 4) * fq * 8 / 8)]);
       hline(s, PX, y, PX + PW, y, C_BORDER, 0.8);
-      pathLine(s, pts, C_WARN, 1.8);
-      rich(s, 24, y + 4, '$i=' + i + '$', 11.5, 'demo-x-mut');
+      pathLine(s, pts, HANDS[i][2], 1.8);
+      label(s, 24, y + 4, ['快', '中', '慢'][i], 'demo-x-mut', 11.5);
       return { y: y, fq: fq, d: dotAt(s, PX, y, 4.5, C_Q) };
     });
-    label(s, PX, Y0 + 3 * RH + 34, '位置 pos：0', 'demo-x-mut', 11);
-    label(s, PX + PW, Y0 + 3 * RH + 34, '40', 'demo-x-mut', 11, 'end');
-    var cur = hline(s, PX, Y0 - 24, PX, Y0 + 3 * RH + 20, C_Q, 1.4, '4 3');
-    var posTxt = tone(s, PX + PW, 50, '', C_Q, 12, 'end');
-    rich(s, 24, 52, '示意：$d_{model}=16$ 的前四对', 11, 'demo-x-mut');
-    /* 两个表盘：玩具 d_model = 4，两对 sin / cos 每步各转 1 和 0.01 弧度 */
-    var dials = [1, 0.01].map(function (fq, i) {
-      var cx = 100 + i * 150, cy = 330, r = 36;
-      ringAt(s, cx, cy, r, C_BORDER, 1.4);
-      var hand = arrow(s, i ? C_ACCENT : C_WARN, 2.6);
-      label(s, cx, cy + r + 18, i ? '后两维：每步 0.01 弧度' : '前两维：每步 1 弧度', 'demo-x-ink2', 11.5, 'middle');
-      return { cx: cx, cy: cy, r: r, fq: fq, hand: hand };
-    });
-    rich(s, 300, 324, '玩具 $d_{model}=4$', 11, 'demo-x-mut');
-    var dialPos = tone(s, 300, 346, '', C_Q, 12);
-    var R = 424, W = 352;
+    var cur = hline(s, PX, Y0 - 22, PX, Y0 + 2 * RH + 18, C_Q, 1.4, '4 3');
+    label(s, PX, Y0 - 30, '同样的快慢，画成三条波（示意）', 'demo-x-mut', 11);
+    /* 第 1 段：开会不分先后 */
     var p1 = group(s);
-    label(p1, R, 64, '注意力本身不分先后', 'demo-x-ink', 14);
+    label(p1, R, 64, '开会不分先后', 'demo-x-ink', 14);
     var tokN = ['A', 'B', 'C', 'D'], tokC = [], outC = [];
     tokN.forEach(function (n, i) {
       tokC.push(chip(p1, R + i * 70, 96, 56, n, C_Q, { size: 13 }));
-      outC.push(chip(p1, R + i * 70, 176, 56, 'z(' + n + ')', C_V, { size: 12 }));
+      outC.push(chip(p1, R + i * 70, 176, 56, n + ' 的结果', C_V, { size: 11.5 }));
     });
-    label(p1, R, 156, '自注意力', 'demo-x-mut', 11);
-    label(p1, R, 246, '打乱输入，输出只是跟着换位', 'demo-x-ink2', 12);
-    rich(p1, R, 270, '所以要把位置信号**加进输入**（§3.5）', 12.5);
+    label(p1, R, 156, '开会', 'demo-x-mut', 11);
+    label(p1, R, 246, '打乱座位，结果只是跟着换位', 'demo-x-ink2', 12);
+    rich(p1, R, 270, '谁先谁后，它**自己分不出来**', 12.5);
+    /* 第 2 段：每张卡片带一只钟 */
     var p2 = group(s);
-    label(p2, R, 64, '正弦 / 余弦位置编码', 'demo-x-ink', 14);
-    math(p2, R, 104, 'PE_{(pos,2i)}=\\sin\\!\\left(pos/10000^{2i/d_{model}}\\right)', 14, 'start', 352);
-    math(p2, R, 140, 'PE_{(pos,2i+1)}=\\cos\\!\\left(pos/10000^{2i/d_{model}}\\right)', 14, 'start', 352);
-    rich(p2, R, 180, '波长从 $2\\pi$ 到 $10000\\cdot 2\\pi$，成几何级数', 12.5);
-    label(p2, R, 206, '和嵌入一样 512 维，直接相加', 'demo-x-ink2', 12);
-    var p3 = group(s);
-    rich(p3, R, 64, '玩具：$d_{model}=4$', 14, 'demo-x-ink');
-    label(p3, R, 96, 'PE(1)', 'demo-x-mono', 12); var pe1 = vecRow(p3, R + 56, 80, 4, 62, C_WARN, { h: 24 });
-    label(p3, R, 136, 'PE(2)', 'demo-x-mono', 12); var pe2 = vecRow(p3, R + 56, 120, 4, 62, C_WARN, { h: 24 });
-    rich(p3, R, 178, '$i=0$ 的频率是 1，$i=1$ 的是 $1/10000^{2/4}=1/100$', 12);
-    label(p3, R, 204, '前两维每步转 1 弧度，后两维只转 0.01 弧度', 'demo-x-ink2', 12);
-    var p4 = group(s);
-    label(p4, R, 64, '为什么选正弦：作者的假设', 'demo-x-ink', 14);
-    rich(p4, R, 96, '固定偏移 $k$：$PE_{pos+k}$ 是 $PE_{pos}$ 的线性函数', 12);
-    label(p4, R, 120, '每对 sin / cos 转过一个固定角度（左下的表盘）', 'demo-x-ink2', 12);
-    readHint(p4, R, 150, '表三 E 组，dev BLEU **越高越好**', 11.5);
-    var eb = [barRowAt(p4, R, 162, 110, '正弦（base）', C_ACCENT, 18, 11.5), barRowAt(p4, R, 190, 110, '可学习的位置嵌入', C_MUTED, 18, 11.5)];
-    label(p4, R, 240, '几乎一样；选正弦是因为可能外推到更长的序列', 'demo-x-ink2', 12);
-    label(p4, R, 262, '（论文没给外推的实验）', 'demo-x-mut', 11);
-    var p5 = group(s);
-    label(p5, R, 64, '机器人里，同一个正弦函数', 'demo-x-ink', 14);
-    [['Digit（第 014 期）', '16 个 token 加正弦位置编码'], ['Diffusion Policy（第 010 期）', '扩散步 $k$ 的正弦嵌入当第一个 token'], ['π₀（第 045 期）', '流匹配的时间 $\\tau$ 也用它编码']].forEach(function (r, i) {
-      var y = 84 + i * 62;
-      rectBox(p5, R, y, W, 52, C_ROBOT, C_SURFACE);
-      label(p5, R + 12, y + 21, r[0], 'demo-x-ink', 12.5);
-      rich(p5, R + 12, y + 42, r[1], 11.5, 'demo-x-ink2', 'start', W - 20);
+    label(p2, R, 64, '所以给每张卡片写上「第几步」', 'demo-x-ink', 14);
+    var mini = [1, 2, 3].map(function (q, j) {
+      chip(p2, R + j * 116, 92, 104, '第 ' + q + ' 步的卡片', C_ROBOT, { size: 11.5 });
+      return clockFace(p2, R + 52 + j * 116, 170, 34, HANDS);
     });
-    label(p5, R, 292, '编码的是「第几步」或「去噪到哪」（本站笔记）', 'demo-x-mut', 11);
+    label(p2, R, 236, '论文的说法：把位置信息加进卡片里', 'demo-x-ink2', 12);
+    /* 第 3 段：像钟表 */
+    var p3 = group(s);
+    label(p3, R, 64, '为什么要好几根针？', 'demo-x-ink', 14);
+    label(p3, R, 96, '只看快针：它转一圈就回到原处，', 'demo-x-ink2', 12);
+    label(p3, R, 118, '分不清第 1 步和第 9 步', 'demo-x-ink2', 12);
+    label(p3, R, 150, '加上慢针：远的两步也分得清', 'demo-x-ink2', 12);
+    rich(p3, R, 182, '几根针一起看，**每一步都不一样**', 12.5);
+    var pair = [1, 9].map(function (q, j) { return clockFace(p3, R + 60 + j * 150, 248, 34, HANDS); });
+    label(p3, R + 60, 300, '第 1 步', 'demo-x-mut', 11, 'middle');
+    label(p3, R + 210, 300, '第 9 步', 'demo-x-mut', 11, 'middle');
+    /* 第 4 段：论文的正弦波，表三 E 组 */
+    var p4 = group(s);
+    label(p4, R, 64, '论文用一组快慢不同的正弦波当指针', 'demo-x-ink', 14);
+    label(p4, R, 96, '换成让模型自己学一套「钟」，结果呢？', 'demo-x-ink2', 12);
+    readHint(p4, R, 124, '表三 E 组，翻译得分**越高越好**', 11.5);
+    var eb = [barRowAt(p4, R, 136, 110, '正弦波', C_ACCENT, 18, 11.5), barRowAt(p4, R, 164, 110, '自己学的', C_MUTED, 18, 11.5)];
+    label(p4, R, 218, '25.8 对 25.7，几乎一样', 'demo-x-ink2', 12);
+    label(p4, R, 242, '选正弦，是作者猜它更能用在更长的句子上', 'demo-x-ink2', 12);
+    /* 第 5 段：机器人里 */
+    var p5 = group(s);
+    label(p5, R, 64, '机器人里，也用这只钟', 'demo-x-ink', 14);
+    [['Digit（第 14 期）', '给 16 张卡片标上第几步'], ['扩散策略（第 10 期）', '标上「去噪到第几步」']].forEach(function (r2, i) {
+      var y = 86 + i * 66;
+      rectBox(p5, R, y, W, 54, C_ROBOT, C_SURFACE);
+      label(p5, R + 12, y + 22, r2[0], 'demo-x-ink', 12.5);
+      label(p5, R + 12, y + 43, r2[1], 'demo-x-ink2', 12);
+    });
+    label(p5, R, 240, '标的东西不一样，用的是同一只钟（本站笔记）', 'demo-x-mut', 11);
     function draw(t, clock) {
       var now = nowOf(t, clock);
-      var pos = (now * 4) % POS, x = PX + pos / POS * PW;
-      setLine(cur, x, Y0 - 24, x, Y0 + 3 * RH + 20);
-      waves.forEach(function (w) { moveDot(w.d, [x, w.y - 16 * Math.sin(pos * w.fq)]); });
-      posTxt.textContent = 'pos = ' + f1(pos);
-      var step = Math.floor(now * 1.5) % 7;
-      dials.forEach(function (d) { var a = step * d.fq; d.hand.set(d.cx, d.cy, d.cx + d.r * Math.sin(a), d.cy - d.r * Math.cos(a), 9); });
-      dialPos.textContent = 'pos = ' + step;
-      /* 第 1 段：B 和 C 换位，输出跟着换 */
+      var pos = now * 2;
+      clk.set(SPD.map(function (sp) { return pos * sp; }));
+      stepTxt.textContent = '第 ' + Math.floor(pos) + ' 步';
+      var px = (pos % 40) / 40, x = PX + px * PW;
+      setLine(cur, x, Y0 - 22, x, Y0 + 2 * RH + 18);
+      waves.forEach(function (w) { moveDot(w.d, [x, w.y - 13 * Math.sin(2 * Math.PI * (px * 40) * w.fq)]); });
+      mini.forEach(function (c, j) { c.set(SPD.map(function (sp) { return (j + 1) * sp; })); });
+      pair.forEach(function (c, j) { c.set(SPD.map(function (sp) { return [1, 9][j] * sp; })); });
       var sw = Math.floor(since(t, clock, 0.4) / 1.6) % 2, ph = seg((since(t, clock, 0.4) % 1.6), 0, 0.5);
-      var ex = sw ? ease(ph) : 1 - ease(ph), dx = 70 * ex, dy = 22 * Math.min(1, 2 * Math.sin(Math.PI * ex));  // 换位时一上一下绕开，不互相压住
+      var ex = sw ? ease(ph) : 1 - ease(ph), dx = 70 * ex, dy = 22 * Math.min(1, 2 * Math.sin(Math.PI * ex));
       [tokC, outC].forEach(function (row) {
         row[1].setAttribute('transform', 'translate(' + dx.toFixed(1) + ' ' + (-dy).toFixed(1) + ')');
         row[2].setAttribute('transform', 'translate(' + (-dx).toFixed(1) + ' ' + dy.toFixed(1) + ')');
       });
-      pe1.set(PE1, 3); pe2.set(PE2, 3);
       var u4 = seg(since(t, clock, 10.4), 0.3, 1.8);
-      eb[0].set((25.8 - 24) / 2.2 * 200 * u4, f1(24 + 1.8 * u4)); eb[1].set((25.7 - 24) / 2.2 * 200 * u4, f1(24 + 1.7 * u4));
+      eb[0].set((25.8 - 24) / 2.2 * 200 * u4, u4 > 0.9 ? '25.8' : ''); eb[1].set((25.7 - 24) / 2.2 * 200 * u4, u4 > 0.9 ? '25.7' : '');
       panels(t, [p1, p2, p3, p4, p5]);
     }
     return { el: s, draw: draw };
   }
 
-  /* ── scene 10: 一层里还有什么：残差、LayerNorm、FFN ── */
+  /* ── scene 10: 一层里有什么：讨论、各自想、保留原稿、调音量 ── */
   function buildSceneBlock() {
-    var s = sceneSvg('左边是一层编码器：下面进来 6 个 token，先过多头自注意力，加上绕过去的残差，做 LayerNorm，再过前馈网络，再加残差、再 LayerNorm；' +
-      '小点沿主路和两条残差路往上走，旁边写着乘 6；右边依次出现：残差与 LayerNorm 的式子；逐位置前馈网络；参数怎么数；残差 dropout；论文和代码的翻牌');
-    s.appendChild(svgText(24, 26, '一层编码器 = 两个子层，各包一层残差', 'demo-x-ink2', 13.5));
+    var s = sceneSvg('左边是一层：下面进来 6 张卡片，先「大家讨论」，绕过去的虚线是保留的原稿，汇合后「调音量」，再「各自想一想」，再保留原稿、再调音量；' +
+      '小点沿主路和两条虚线往上走，旁边写着叠 6 层；右边依次出现：四张卡片互相要信息；一张卡片单独过一个先变宽再变窄的小网络；一张作文纸上逐行添红色批注；' +
+      '高低不一的条被拉到差不多的高度；6 层一层层叠起来和参数的对比');
+    s.appendChild(svgText(24, 26, '一层里有什么：四个动作，叠 6 次', 'demo-x-ink2', 13.5));
     var BX = 70, BW = 220, CX = BX + BW / 2;
     var inRow = cellGrid(s, CX - 63, 372, 6, 6, 18, 3, C_ROBOT);
-    label(s, CX + 74, 386, '输入 token', 'demo-x-mut', 11);
-    var att = chip(s, BX, 304, BW, '多头自注意力', C_ACCENT, { size: 13, h: 34 });
-    var add1 = chip(s, BX, 252, BW, '相加 → LayerNorm', C_WARN, { size: 12.5, h: 30 });
-    var ffn = chip(s, BX, 182, BW, '前馈网络 512 → 2048 → 512', C_V, { size: 12.5, h: 34 });
-    var add2 = chip(s, BX, 130, BW, '相加 → LayerNorm', C_WARN, { size: 12.5, h: 30 });
+    label(s, CX + 74, 386, '进来的卡片', 'demo-x-mut', 11);
+    chip(s, BX, 304, BW, '① 大家讨论（注意力）', C_ACCENT, { size: 13, h: 34 });
+    chip(s, BX, 252, BW, '③ 加回原稿 → ④ 调音量', C_WARN, { size: 12.5, h: 30 });
+    chip(s, BX, 182, BW, '② 各自想一想（小网络）', C_V, { size: 13, h: 34 });
+    chip(s, BX, 130, BW, '③ 加回原稿 → ④ 调音量', C_WARN, { size: 12.5, h: 30 });
     var outRow = cellGrid(s, CX - 63, 76, 6, 6, 18, 3, C_ACCENT);
-    label(s, CX + 74, 90, '输出 token', 'demo-x-mut', 11);
-    label(s, BX + BW + 34, 236, '× 6 层', 'demo-x-ink', 15);
-    var skip1 = pathLine(s, [[CX, 360], [BX - 22, 360], [BX - 22, 267], [BX, 267]], C_MUTED, 1.6, '5 4');
-    var skip2 = pathLine(s, [[CX, 240], [BX - 22, 240], [BX - 22, 145], [BX, 145]], C_MUTED, 1.6, '5 4');
-    label(s, BX - 26, 316, '残差', 'demo-x-mut', 11, 'end');
-    label(s, BX - 26, 196, '残差', 'demo-x-mut', 11, 'end');
+    label(s, CX + 74, 90, '出去的卡片', 'demo-x-mut', 11);
+    label(s, BX + BW + 30, 236, '叠 6 层', 'demo-x-ink', 15);
+    pathLine(s, [[CX, 360], [BX - 22, 360], [BX - 22, 267], [BX, 267]], C_MUTED, 1.6, '5 4');
+    pathLine(s, [[CX, 240], [BX - 22, 240], [BX - 22, 145], [BX, 145]], C_MUTED, 1.6, '5 4');
+    label(s, BX - 26, 316, '原稿', 'demo-x-mut', 11, 'end');
+    label(s, BX - 26, 196, '原稿', 'demo-x-mut', 11, 'end');
     var mainF = [[CX, 370, CX, 340], [CX, 304, CX, 284], [CX, 252, CX, 218], [CX, 182, CX, 162], [CX, 130, CX, 98]].map(function () { return flowSeg(s, C_INK, 1, 2.8, 28, true); });
     var skipF = [flowSeg(s, C_MUTED, 2, 2.6, 40, true), flowSeg(s, C_MUTED, 2, 2.6, 40, true)];
-    void skip1; void skip2; void att; void add1; void ffn; void add2;
-    var R = 424, W = 352;
+    /* 第 1 段：讨论 */
     var p1 = group(s);
-    label(p1, R, 64, '残差 + LayerNorm（§3.1）', 'demo-x-ink', 14);
-    math(p1, R, 104, '\\mathrm{LayerNorm}(x+\\mathrm{Sublayer}(x))', 16);
-    label(p1, R, 144, '子层算出来的东西，加回原来的输入，再归一化', 'demo-x-ink2', 12);
-    rich(p1, R, 170, '所有子层和嵌入都输出 $d_{model}=512$ 维，残差才加得上', 12);
-    label(p1, R, 196, '残差来自 He 等，LayerNorm 来自 Ba 等', 'demo-x-mut', 11.5);
+    label(p1, R, 64, '① 大家讨论：每张卡片向别人要信息', 'demo-x-ink', 14);
+    var disc = [0, 1, 2, 3].map(function (q) { return chip(p1, R + 10 + q * 86, 120, 66, '卡片 ' + (q + 1), C_ROBOT, { size: 12 }); });
+    var dArcs = [];
+    for (var a = 0; a < 4; a++) for (var b = a + 1; b < 4; b++) {
+      var xa = R + 43 + a * 86, xb = R + 43 + b * 86;
+      var arc = paint(svgEl('path', { d: 'M ' + xa + ' 118 Q ' + (xa + xb) / 2 + ' ' + (118 - 22 * (b - a)) + ' ' + xb + ' 118', fill: 'none', 'stroke-width': 1.4 }), null, C_ACCENT);
+      p1.appendChild(arc); dArcs.push(arc);
+    }
+    label(p1, R, 190, '就是前面讲的注意力：谁和我像，就多听谁的', 'demo-x-ink2', 12);
+    /* 第 2 段：各自想 */
     var p2 = group(s);
-    label(p2, R, 64, '逐位置前馈网络（§3.3）', 'demo-x-ink', 14);
-    math(p2, R, 100, '\\mathrm{FFN}(x)=\\max(0,\\,xW_1+b_1)\\,W_2+b_2', 14, 'start', 352);
+    label(p2, R, 64, '② 各自想一想：每张卡片单独加工', 'demo-x-ink', 14);
     var NODES = [3, 8, 3], nx = [R + 60, R + 160, R + 260], nn = [];
-    NODES.forEach(function (n, c) {
-      nn.push([]);
-      for (var i = 0; i < n; i++) nn[c].push([nx[c], 178 - (n - 1) * 9 + i * 18]);
-    });
-    for (var c = 0; c < 2; c++) nn[c].forEach(function (a) { nn[c + 1].forEach(function (b) { hline(p2, a[0], a[1], b[0], b[1], C_BORDER, 0.7); }); });
+    NODES.forEach(function (n, c) { nn.push([]); for (var i = 0; i < n; i++) nn[c].push([nx[c], 170 - (n - 1) * 9 + i * 18]); });
+    for (var c = 0; c < 2; c++) nn[c].forEach(function (p) { nn[c + 1].forEach(function (q) { hline(p2, p[0], p[1], q[0], q[1], C_BORDER, 0.7); }); });
     var nDots = nn.map(function (col, c2) { return col.map(function (p) { return dotAt(p2, p[0], p[1], 5, c2 === 1 ? C_V : C_MUTED); }); });
-    label(p2, nx[0], 262, '512', 'demo-x-mono', 11.5, 'middle'); label(p2, nx[1], 262, '2048（ReLU）', 'demo-x-mono', 11.5, 'middle'); label(p2, nx[2], 262, '512', 'demo-x-mono', 11.5, 'middle');
-    var posTag = tone(p2, R, 290, '', C_ROBOT, 12);
-    label(p2, R, 312, '每个位置单独过、参数共用：相当于核宽为 1 的卷积', 'demo-x-ink2', 11.5);
+    label(p2, nx[0], 254, '收到的', 'demo-x-mut', 11, 'middle'); label(p2, nx[1], 254, '先展开成 4 倍', 'demo-x-mut', 11, 'middle'); label(p2, nx[2], 254, '再收回来', 'demo-x-mut', 11, 'middle');
+    label(p2, R, 286, '每张卡片过的是同一个小网络，互不打扰', 'demo-x-ink2', 12);
+    /* 第 3 段：保留原稿 */
     var p3 = group(s);
-    label(p3, R, 64, '按标准结构数一数参数（我们的计算）', 'demo-x-ink', 13.5);
-    readHint(p3, R, 88, '条越长参数越多；左边论文表三，右边我们数的', 11);
-    var pb = [
-      barRowAt(p3, R, 104, 110, 'base · 论文', C_ACCENT, 18, 11.5), barRowAt(p3, R, 128, 110, 'base · 我们数', C_MUTED, 18, 11.5),
-      barRowAt(p3, R, 162, 110, 'big · 论文', C_ACCENT, 18, 11.5), barRowAt(p3, R, 186, 110, 'big · 我们数', C_MUTED, 18, 11.5),
-      barRowAt(p3, R, 220, 110, 'Digit 行走', C_ROBOT, 18, 11.5)
-    ];
-    label(p3, R, 266, '共享嵌入 37000 × 512，Q、K、V 不带偏置', 'demo-x-mut', 11);
-    label(p3, R, 286, 'base 差 3%，big 差 0.5%，论文没给逐层参数', 'demo-x-mut', 11);
+    label(p3, R, 64, '③ 保留原稿：只批注，不重写', 'demo-x-ink', 14);
+    rectBox(p3, R, 86, 170, 180, C_BORDER, C_SURFACE2);
+    var draft = [], notes = [];
+    for (var q = 0; q < 6; q++) {
+      draft.push(hline(p3, R + 14, 110 + q * 24, R + 14 + 100 + 40 * rnd(q, 3), 110 + q * 24, C_MUTED, 3));
+      notes.push(hline(p3, R + 40 + 20 * rnd(q, 5), 102 + q * 24, R + 90 + 40 * rnd(q, 6), 102 + q * 24, C_RNN, 2.2));
+    }
+    label(p3, R + 186, 108, '灰线：原来的卡片', 'demo-x-ink2', 12);
+    label(p3, R + 186, 132, '红线：这一层的新想法', 'demo-x-ink2', 12);
+    label(p3, R + 186, 164, '新想法只是加上去，', 'demo-x-ink2', 12);
+    label(p3, R + 186, 186, '原稿一直都在', 'demo-x-ink2', 12);
+    label(p3, R + 186, 218, '叠很多层也不怕改坏', 'demo-x-ink2', 12);
+    label(p3, R, 290, '论文里叫「残差」', 'demo-x-mut', 11.5);
+    /* 第 4 段：调音量 */
     var p4 = group(s);
-    label(p4, R, 64, '残差 dropout 0.1（§5.4）', 'demo-x-ink', 14);
-    label(p4, R, 96, '每个子层的输出，在加回去之前随机丢掉 10%', 'demo-x-ink2', 12);
-    label(p4, R, 120, '嵌入 + 位置编码之和也做 dropout', 'demo-x-ink2', 12);
-    var dGrid = cellGrid(p4, R, 140, 80, 20, 14, 3, C_V);
-    label(p4, R, 240, '亮着的格子留下；暗的格子这一步被丢掉', 'demo-x-mut', 11.5);
-    readHint(p4, R, 266, '表三 D 组：去掉 dropout，dev BLEU 25.8 → 24.6', 11.5);
+    label(p4, R, 64, '④ 调音量：把数字拉回差不多的范围', 'demo-x-ink', 14);
+    var RAW = [0.95, 0.2, 0.7, 0.35, 0.85, 0.15, 0.6, 0.4], volB = RAW.map(function (v, q2) { return vbar(p4, R + 10 + q2 * 40, 26, C_WARN); });
+    hline(p4, R, 220, R + 330, 220, C_BORDER, 1.2);
+    label(p4, R, 250, '每张卡片的数字有大有小，调到同一个范围', 'demo-x-ink2', 12);
+    label(p4, R, 274, '论文里叫「层归一化」', 'demo-x-mut', 11.5);
+    /* 第 5 段：叠 6 层 */
     var p5 = group(s);
-    label(p5, R, 64, '论文 ↔ tensor2tensor 现在的默认', 'demo-x-ink', 14);
-    var flips = flipList(p5, R, 84, [['归一化放在哪', '子层之后', '子层之前'], ['预热步数', '4000', '8000'], ['Adam 的 $\\beta_2$', '0.98', '0.997']], 110, 140);
-    label(p5, R, 222, '默认的 transformer_base 继承 v2 / v3', 'demo-x-ink2', 12);
-    label(p5, R, 246, '复现论文要切回 transformer_base_v1', 'demo-x-ink2', 12);
+    label(p5, R, 64, '这样的一层，叠 6 次', 'demo-x-ink', 14);
+    var layers = [];
+    for (q = 0; q < 6; q++) { layers.push(rectBox(p5, R, 230 - q * 24, 120, 20, C_ACCENT, C_SURFACE2)); }
+    var pb = [barRowAt(p5, R + 140, 120, 60, '论文', C_ACCENT, 20, 12), barRowAt(p5, R + 140, 156, 60, 'Digit', C_ROBOT, 20, 12)];
+    label(p5, R + 140, 108, '要学的数有多少', 'demo-x-mut', 11);
+    label(p5, R + 140, 210, '论文约 6500 万个', 'demo-x-ink2', 12);
+    label(p5, R + 140, 234, 'Digit 只有约 140 万个', 'demo-x-ink2', 12);
     function draw(t, clock) {
       var now = nowOf(t, clock);
       inRow.fill(6); outRow.fill(6);
-      var segs = [[CX, 370, CX, 340], [CX, 304, CX, 284], [CX, 252, CX, 218], [CX, 182, CX, 162], [CX, 130, CX, 98]];
-      mainF.forEach(function (f, i) { f.at(now - i * 0.3, [segs[i][0], segs[i][1]], [segs[i][2], segs[i][3]], true); });
-      skipF[0].at(now, [BX - 22, 358], [BX - 22, 270], true);
-      skipF[1].at(now + 0.5, [BX - 22, 238], [BX - 22, 148], true);
-      /* 第 2 段：一个位置一个位置地过同一个网络 */
-      var pk = Math.floor(since(t, clock, 3.6) * 1.4) % 6, act = (since(t, clock, 3.6) * 1.4) % 1;
-      nDots.forEach(function (col, c3) { col.forEach(function (d, i) { d.style.opacity = (seg(act, c3 * 0.25, c3 * 0.25 + 0.2) > 0 ? (c3 === 1 && (i % 3 === 0) ? 0.3 : 1) : 0.3).toFixed(2); }); });
-      posTag.textContent = '现在过的是第 ' + (pk + 1) + ' 个位置';
-      var u3 = seg(since(t, clock, 7.0), 0.3, 2.0), base = PARAMS_BASE.total / 1e6, big = PARAMS_BIG.total / 1e6;
-      [[65, '65 M'], [base, f1(base) + ' M'], [213, '213 M'], [big, f1(big) + ' M'], [1.4, '1.4 M']].forEach(function (v, i) { pb[i].set(v[0] / 214 * 160 * u3, u3 > 0.95 ? v[1] : ''); });
-      var kk = Math.floor(since(t, clock, 10.4) * 2);
-      dGrid.cells.forEach(function (c4, j) { c4.style.opacity = rnd(j + 80 * kk, 3) < 0.1 ? 0.12 : 0.95; });
-      flips.set(since(t, clock, 13.4));
+      var pts = [[CX, 370, CX, 340], [CX, 304, CX, 284], [CX, 252, CX, 218], [CX, 182, CX, 162], [CX, 130, CX, 98]];
+      mainF.forEach(function (f, j) { f.at(now + j * 0.25, [pts[j][0], pts[j][1]], [pts[j][2], pts[j][3]], true); });
+      skipF[0].at(now, [BX - 22, 356], [BX - 22, 270], true);
+      skipF[1].at(now + 0.5, [BX - 22, 236], [BX - 22, 148], true);
+      dArcs.forEach(function (ar, q) { ar.style.opacity = (0.25 + 0.75 * Math.abs(Math.sin(now * 2 + q * 0.8))).toFixed(2); });
+      disc.forEach(function (d, q) { d.box.style.strokeWidth = Math.floor(now / 0.9) % 4 === q ? 2.6 : 1.3; });
+      var col = Math.floor(now * 2) % 3;
+      nDots.forEach(function (cl, c2) { cl.forEach(function (d) { d.style.opacity = c2 === col ? 1 : 0.35; }); });
+      var u3 = since(t, clock, 7.0) % 6;
+      notes.forEach(function (n, q2) { setOpacity(n, seg(u3, 0.4 + q2 * 0.5, 0.7 + q2 * 0.5)); });
+      var u4 = ease(seg(since(t, clock, 10.4) % 5, 1.0, 2.2)) * (1 - ease(seg(since(t, clock, 10.4) % 5, 4.2, 4.9)));
+      volB.forEach(function (b, q2) { b.set(220, 110 * (RAW[q2] * (1 - u4) + (0.55 + 0.06 * Math.sin(q2)) * u4)); });
+      var u5 = since(t, clock, 13.4);
+      layers.forEach(function (l, q2) { setOpacity(l, seg(u5, 0.3 + q2 * 0.25, 0.5 + q2 * 0.25)); });
+      var ub = ease(seg(u5, 0.8, 2.0));
+      pb[0].set(100 * ub, ub > 0.9 ? '6500 万' : ''); pb[1].set(100 * 1.4 / 65 * ub, ub > 0.9 ? '140 万' : '');
       panels(t, [p1, p2, p3, p4, p5]);
     }
     return { el: s, draw: draw };
   }
 
-  /* ── scene 11: 因果掩码：只看过去 ── */
+  /* ── scene 11: 不能偷看未来 ── */
   function buildSceneMask() {
-    var s = sceneSvg('左边是一张 6 × 6 的注意力表，行是机器人的 6 步 query、列是 6 步 key，右上三角一格格被盖上负无穷，剩下的格子按行重新分配权重，计数显示留下 21 / 36 对；' +
-      '右边依次出现：softmax 前把未来设成负无穷；输出右移一位；第 014 期项目页视频里 Digit 被台阶绊住、下一步抬得更高；代码里的负十的九次方；π₀ 的分块掩码与 MaskedMimic');
-    s.appendChild(svgText(24, 26, '一张注意力表：只留下「看过去」的格子', 'demo-x-ink2', 13.5));
+    var s = sceneSvg('左边是一张 6 × 6 的记分表，行是机器人的 6 步（谁在看）、列是被看的那一步；右上三角一格格被盖住，剩下的格子按行重新分比例，读出留下 21 / 36 对；' +
+      '右边依次出现：连续剧不剧透，未来几集盖着帘子；盖住的格子分不到比例；第 014 期项目页视频里 Digit 被台阶绊住；Digit 16 张卡片的下三角；MaskedMimic 的遮挡');
+    s.appendChild(svgText(24, 26, '记分表：盖住「未来」的格子', 'demo-x-ink2', 13.5));
     var N = MASK_N, GX = 92, GY = 72, CS = 40;
     var grid = attnGrid(s, GX, GY, N, CS, C_Q);
-    var negs = [];
+    var shades = [];
     for (var i = 0; i < N; i++) {
       var nm = i === N - 1 ? 't' : 't−' + (N - 1 - i);
       label(s, GX - 8, GY + i * CS + CS / 2 + 4, nm, 'demo-x-mono', 11, 'end');
       label(s, GX + i * CS + CS / 2 - 1, GY - 8, nm, 'demo-x-mono', 11, 'middle');
-      for (var j = 0; j < N; j++) negs.push({ i: i, j: j, tx: j > i ? label(s, GX + j * CS + CS / 2 - 1, GY + i * CS + CS / 2 + 4, '−∞', 'demo-x-ink', 11, 'middle') : null });
+      for (var j = 0; j < N; j++) if (j > i) {
+        var sh = paint(svgEl('rect', { x: GX + j * CS, y: GY + i * CS, width: CS - 2, height: CS - 2, rx: 2 }), C_MUTED);
+        s.appendChild(sh); shades.push({ el: sh, i: i, j: j });
+      }
     }
-    label(s, GX, GY + N * CS + 22, '行：query（哪一步在看）　列：key（被看的那一步）', 'demo-x-mut', 11);
+    label(s, GX, GY + N * CS + 22, '行：哪一步在看　列：被看的那一步', 'demo-x-mut', 11);
     var cnt = tone(s, GX, GY + N * CS + 44, '', C_Q, 12.5);
     var rowHi = rectBox(s, GX - 2, GY, N * CS, CS - 2, C_INK, 'none'); rowHi.style.fill = 'none'; rowHi.setAttribute('stroke-width', 2);
     var W0 = [];
     for (i = 0; i < N; i++) { W0.push([]); for (j = 0; j < N; j++) W0[i].push(0.3 + rnd(i * 7 + j, 11)); }
-    var R = 424, W = 352;
+    /* 第 1 段：连续剧 */
     var p1 = group(s);
-    label(p1, R, 64, '解码器的自注意力不能偷看未来', 'demo-x-ink', 14);
-    rich(p1, R, 96, 'softmax 之前，把非法连接的分数设成 $-\\infty$（§3.2.3）', 12);
-    math(p1, R, 136, 'e^{-\\infty}=0\\ \\Rightarrow\\ \\text{权重}=0', 15);
-    label(p1, R, 176, '左表：盖住的格子不参与，每一行剩下的重新加到 1', 'demo-x-ink2', 12);
-    rich(p1, R, 202, '$n$ 个位置留下 $n(n+1)/2$ 对：6 步是 21 / 36', 12);
+    label(p1, R, 64, '像追连续剧：不许剧透', 'demo-x-ink', 14);
+    var eps = [], curt = [];
+    for (i = 0; i < 6; i++) {
+      eps.push(chip(p1, R + i * 58, 100, 50, '第 ' + (i + 1) + ' 集', C_Q, { size: 11.5, h: 44 }));
+      var cr = paint(svgEl('rect', { x: R + i * 58, y: 100, width: 50, height: 44, rx: 7 }), C_MUTED); p1.appendChild(cr); curt.push(cr);
+    }
+    var nowTag = tone(p1, R, 172, '', C_Q, 12);
+    label(p1, R, 204, '讲第 3 集时，只能用前 3 集的内容', 'demo-x-ink2', 12);
+    label(p1, R, 228, '后面的几集，还盖着帘子', 'demo-x-ink2', 12);
+    /* 第 2 段 */
     var p2 = group(s);
-    label(p2, R, 64, '输出再右移一位（§3.1）', 'demo-x-ink', 14);
-    var IN = ['起始', '$y_1$', '$y_2$', '$y_3$'], OUT = ['$y_1$', '$y_2$', '$y_3$', '$y_4$'];
-    var inC = IN.map(function (n, k) { return chip(p2, R + k * 72, 96, 60, n, C_Q, { size: 13.5 }); });
-    var outC = OUT.map(function (n, k) { return chip(p2, R + k * 72, 176, 60, n, C_V, { size: 13.5 }); });
-    label(p2, R + W, 116, '输入', 'demo-x-mut', 11, 'end'); label(p2, R + W, 196, '要预测的', 'demo-x-mut', 11, 'end');
-    var shiftF = [0, 1, 2, 3].map(function () { return flowSeg(p2, C_MUTED, 1, 2.6, 24); });
-    label(p2, R, 236, '位置 i 的预测只依赖 i 之前已经知道的输出', 'demo-x-ink2', 12);
-    void inC; void outC;
+    label(p2, R, 64, '做法：把未来的格子盖住', 'demo-x-ink', 14);
+    label(p2, R, 96, '盖住的格子分不到比例，等于 0', 'demo-x-ink2', 12);
+    label(p2, R, 120, '每一行剩下的格子，重新分成 100%', 'demo-x-ink2', 12);
+    rich(p2, R, 152, '6 步的记分表，只剩 **21 / 36** 对能看', 12.5);
+    label(p2, R, 184, '（论文的写法是把分数设成负无穷大）', 'demo-x-mut', 11);
+    /* 第 3 段：机器人 */
     var p3 = group(s);
-    label(p3, R, 64, '机器人部署时，同样看不到未来', 'demo-x-ink', 14);
-    var clip = projClip(p3, 'rh_step', R, 80, 272, 153, '第 014 期项目页视频（未标倍速）：脚被台阶绊住');
-    label(p3, R, 268, 'Digit 的因果 Transformer：16 个 token 留下 136 / 256 对', 'demo-x-ink2', 11.5);
-    label(p3, R, 290, '论文说它只靠观测—动作历史，下一步就抬得更高、更快', 'demo-x-ink2', 11.5);
+    label(p3, R, 64, '机器人上场时，本来就看不到未来', 'demo-x-ink', 14);
+    var clip = projClip(p3, 'rh_step', R, 80, 272, 153, '第 14 期项目页视频（未标倍速）：脚被台阶绊住');
+    label(p3, R, 270, '只能根据刚才发生的，决定下一步', 'demo-x-ink2', 12);
+    label(p3, R, 294, '绊了一下之后，下一步抬得更高、更快', 'demo-x-ink2', 12);
+    /* 第 4 段：Digit 16 张卡片 */
     var p4 = group(s);
-    rich(p4, R, 64, '代码里 $-\\infty$ 写成 $-10^9$', 14, 'demo-x-ink');
-    rectBox(p4, R, 84, W, 70, C_BORDER, C_SURFACE);
-    label(p4, R + 12, 108, 'attention_bias_lower_triangle', 'demo-x-mono', 12);
-    label(p4, R + 12, 134, 'return -1e9 * (1.0 - band)', 'demo-x-mono', 12);
-    rich(p4, R, 186, '下三角带内加 0，带外加 $-10^9$：softmax 后同样是 0', 12);
-    rich(p4, R, 210, '半精度装不下 $-10^9$，另有 `large_compatible_negative`', 12);
+    label(p4, R, 64, 'Digit 的 16 张卡片：只看过去', 'demo-x-ink', 14);
+    var g16 = attnGrid(p4, R, 84, 16, 10, C_ROBOT);
+    label(p4, R + 180, 110, '下三角亮着：过去', 'demo-x-ink2', 12);
+    label(p4, R + 180, 134, '右上暗着：未来', 'demo-x-ink2', 12);
+    rich(p4, R + 180, 170, '留下 **136 / 256** 对', 12.5);
+    /* 第 5 段：MaskedMimic */
     var p5 = group(s);
-    label(p5, R, 64, '掩码还能是别的形状', 'demo-x-ink', 14);
-    var blk = attnGrid(p5, R, 86, 8, 18, C_ROBOT);
-    var BLOCK = [0, 0, 0, 0, 1, 2, 2, 2];
-    label(p5, R, 248, '前 4 格图文、1 格状态、3 格动作（示意）', 'demo-x-mut', 11);
-    label(p5, R + 160, 100, 'π₀：三块的分块因果掩码', 'demo-x-ink', 12.5);
-    label(p5, R + 160, 124, '块内互相看，块间只看前面的块', 'demo-x-ink2', 11.5);
-    label(p5, R + 160, 166, 'MaskedMimic（第 028 期）', 'demo-x-ink', 12.5);
-    label(p5, R + 160, 190, '没给的目标用注意力掩码排除，', 'demo-x-ink2', 11.5);
-    label(p5, R + 160, 210, 'token 数可以变', 'demo-x-ink2', 11.5);
+    label(p5, R, 64, '第 28 期 MaskedMimic：同样的遮挡', 'demo-x-ink', 14);
+    var mm = [], mmX = [];
+    var MMN = ['头', '左手', '右手', '骨盆', '左脚', '右脚'];
+    for (i = 0; i < 6; i++) {
+      mm.push(chip(p5, R + i * 58, 96, 50, MMN[i], C_ROBOT, { size: 11.5, h: 40 }));
+      mmX.push(cross(p5, R + i * 58 + 16, 106, 18, C_BAD));
+    }
+    label(p5, R, 176, '没给的目标，就把那张卡片盖住', 'demo-x-ink2', 12);
+    label(p5, R, 200, '给几个都行：只给手，或者只给头', 'demo-x-ink2', 12);
+    label(p5, R, 232, '（部位名是示意；本站第 28 期笔记）', 'demo-x-mut', 11);
     function draw(t, clock) {
       var now = nowOf(t, clock);
-      /* 盖住的格子一格一格出现：0.6 s 起，15 格用 2.4 s */
-      var cover = Math.floor(seg(t, 0.6, 3.0) * 15), idx = 0;
-      var masked = function (i2, j2) { if (j2 <= i2) return false; var k = 0; for (var a = 0; a < N; a++) for (var b = a + 1; b < N; b++) { if (a === i2 && b === j2) return k < cover; k++; } return false; };
-      var row = Math.floor(now / 1.2) % N;
+      var u = ease(seg(t, 0.5, 2.6)), nShown = Math.round(u * 15), k = 0;
+      shades.forEach(function (sh) { setOpacity(sh.el, k++ < nShown ? 0.85 : 0); });
+      var hiRow = Math.floor(now / 1.2) % N;
+      rowHi.setAttribute('y', (GY + hiRow * CS).toFixed(1));
       grid.set(function (i2, j2) {
-        if (masked(i2, j2)) return { a: 0.3, color: C_RNN };
-        var tot = 0;
-        for (var b = 0; b < N; b++) if (!masked(i2, b)) tot += W0[i2][b];
-        return { a: clamp(0.15 + 1.6 * W0[i2][j2] / tot, 0.15, 1) * (i2 === row ? 1 : 0.55) };
+        if (j2 > i2 && u > 0.99) return { a: 0.06 };
+        var row = W0[i2], denom = 0;
+        for (var q = 0; q < N; q++) if (!(q > i2 && u > 0.99)) denom += row[q];
+        return { a: clamp(row[j2] / denom * 2.2, 0.08, 0.95) };
       });
-      negs.forEach(function (n) { if (n.tx) setOpacity(n.tx, masked(n.i, n.j) ? 1 : 0); idx++; });
-      rowHi.setAttribute('y', (GY + row * CS - 1).toFixed(1));
-      cnt.textContent = '留下 ' + (36 - cover) + ' / 36 对' + (cover === 15 ? '（= 6 × 7 / 2）' : '');
-      shiftF.forEach(function (f, k) { f.at(now + k * 0.2, [R + k * 72 + 30, 128], [R + k * 72 + 30, 172], true); });
+      cnt.textContent = u > 0.99 ? '留下 ' + causalPairs(N) + ' / ' + N * N + ' 对（= 6 × 7 ÷ 2）' : '盖住中…';
+      /* 第 1 段：每 1.5 s 播到下一集 */
+      var ep = Math.floor(since(t, clock, 0.4) / 1.5) % 6;
+      curt.forEach(function (cr, q) { setOpacity(cr, q > ep ? 0.85 : 0); });
+      eps.forEach(function (e2, q) { e2.box.style.strokeWidth = q === ep ? 2.8 : 1.3; });
+      nowTag.textContent = '正在讲第 ' + (ep + 1) + ' 集';
       clip.at(K.clipSince(t, 7.0), winK(t, 2) > 0.05);
-      blk.set(function (i2, j2) { var ok = BLOCK[j2] <= BLOCK[i2]; return { a: ok ? 0.85 : 0.07, color: [C_Q, C_ACCENT, C_V][BLOCK[i2]] }; });
+      var m16 = 1 + Math.floor(since(t, clock, 10.4) * 6) % 17;
+      g16.set(function (i2, j2) { return { a: j2 > i2 ? 0.07 : i2 < m16 ? 0.85 : 0.2 }; });
+      var mmk = Math.floor(now / 1.5);
+      mmX.forEach(function (x, q) { setOpacity(x, rnd(q + 10 * mmk, 5) < 0.5 ? 1 : 0); });
+      /* 盖住的卡片只剩空框和叉，字不从叉底下透出来 */
+      mm.forEach(function (c2, q) { var hid = rnd(q + 10 * mmk, 5) < 0.5; setOpacity(c2.box, hid ? 0.45 : 1); setOpacity(c2.txt, hid ? 0 : 1); });
       panels(t, [p1, p2, p3, p4, p5]);
     }
     return { el: s, draw: draw };
   }
 
-  /* ── scene 12: 交叉注意力：去读另一串 token ── */
+  /* ── scene 12: 一边写，一边回头看原文（交叉注意力） ── */
   function buildSceneCross() {
-    var s = sceneSvg('左边两列：左列是编码器输出的英文 6 个 token，右列是解码器正在生成的德文 4 个 token；解码器当前的那个词向左边每个词连线，线越粗权重越大；' +
-      '右边依次出现：注意力的三种用法；交叉注意力的 Q、K、V 从哪来；GR00T N1、Diffusion Policy 怎么用交叉注意力；π₀ 把所有 token 拼成一串的另一种接法');
-    s.appendChild(svgText(24, 26, '交叉注意力：解码器去读编码器的输出', 'demo-x-ink2', 13.5));
+    var s = sceneSvg('左边两列：左列是英文原句 6 张卡片，右列是正在写的德文 4 张卡片；德文当前那个词向英文每个词连线，线越粗看得越多；' +
+      '右边依次出现：一个人一边写一边回头看原文；提问的在德文这边、资料在英文那边；两串卡片不一样长；扩散策略的动作一边去噪一边回头看观测；自己开会和回头看别人的对比');
+    s.appendChild(svgText(24, 26, '一边写德文，一边回头看英文', 'demo-x-ink2', 13.5));
     var EN = ['The', 'cat', 'sat', 'on', 'the', 'mat'], DE = ['Die', 'Katze', 'saß', 'auf'];
     var AL = [[0.7, 0.1, 0.05, 0.05, 0.05, 0.05], [0.15, 0.7, 0.05, 0.04, 0.03, 0.03], [0.05, 0.2, 0.65, 0.04, 0.03, 0.03], [0.03, 0.04, 0.1, 0.7, 0.08, 0.05]];
     var LX = 40, RX = 290, CW = 90;
     var enC = EN.map(function (w, i) { return chip(s, LX, 62 + i * 46, CW, w, C_K, { size: 12.5, h: 32 }); });
     var deC = DE.map(function (w, i) { return chip(s, RX, 62 + i * 46, CW, w, C_Q, { size: 12.5, h: 32 }); });
-    label(s, LX, 52, '编码器输出：K、V', 'demo-x-ink2', 11.5);
-    label(s, RX, 52, '解码器：Q', 'demo-x-ink2', 11.5);
+    label(s, LX, 52, '英文原句（被查的资料）', 'demo-x-ink2', 11.5);
+    label(s, RX, 52, '正在写的德文（提问）', 'demo-x-ink2', 11.5);
     var lines = EN.map(function () { return hline(s, 0, 0, 0, 0, C_Q, 1); });
-    var wTx = EN.map(function () { return label(s, 0, 0, '', 'demo-x-ink', 11, 'end'); });
-    label(s, 24, 350, '权重是我们编的示意：每个德文词主要看对应的英文词', 'demo-x-mut', 11);
-    label(s, 24, 372, '例句沿用第 1 幕；论文附录的可视化只画了编码器自注意力', 'demo-x-mut', 11);
-    var R = 424, W = 352;
+    label(s, 24, 350, '线越粗，看得越多（示意）：', 'demo-x-mut', 11);
+    label(s, 24, 372, '每个德文词主要看对应的那个英文词', 'demo-x-mut', 11);
+    /* 第 1 段：一边写一边回头看 */
     var p1 = group(s);
-    label(p1, R, 64, '论文里注意力的三种用法（§3.2.3）', 'demo-x-ink', 14);
-    [['编码器自注意力', 'Q、K、V 都来自编码器上一层', C_K], ['解码器自注意力', '带因果掩码，只看之前', C_Q], ['编码器—解码器注意力', 'Q 来自解码器，K、V 来自编码器', C_V]].forEach(function (r, i) {
-      var y = 84 + i * 60;
-      rectBox(p1, R, y, W, 50, r[2], C_SURFACE);
-      label(p1, R + 12, y + 21, r[0], 'demo-x-ink', 12.5);
-      label(p1, R + 12, y + 41, r[1], 'demo-x-ink2', 11.5);
-    });
+    label(p1, R, 64, '翻译的人都这样做', 'demo-x-ink', 14);
+    var writer = person(p1, R + 170, 120, 14, C_Q);
+    rectBox(p1, R, 96, 110, 120, C_K, C_SURFACE2);
+    label(p1, R + 55, 118, '英文原句', 'demo-x-ink2', 11.5, 'middle');
+    rectBox(p1, R + 236, 96, 110, 120, C_Q, C_SURFACE2);
+    label(p1, R + 291, 118, '德文译文', 'demo-x-ink2', 11.5, 'middle');
+    var orig = [0, 1, 2, 3].map(function (q) { return hline(p1, R + 14, 140 + q * 18, R + 96, 140 + q * 18, C_K, 3); });
+    var tr = [0, 1, 2, 3].map(function (q) { return hline(p1, R + 250, 140 + q * 18, R + 332, 140 + q * 18, C_Q, 3); });
+    var look = arrow(p1, C_K, 2, '4 3');
+    label(p1, R, 246, '写一个德文词，就回头看一眼英文原句', 'demo-x-ink2', 12);
+    void writer;
+    /* 第 2 段 */
     var p2 = group(s);
-    label(p2, R, 64, '交叉注意力', 'demo-x-ink', 14);
-    label(p2, R, 96, 'query：解码器上一层的输出', 'demo-x-ink2', 12);
-    label(p2, R, 120, 'key、value：编码器最后的输出', 'demo-x-ink2', 12);
-    label(p2, R, 144, '解码器每个位置都能看全部输入位置', 'demo-x-ink2', 12);
-    label(p2, R, 168, '仿照了 seq2seq 里经典的编码器—解码器注意力', 'demo-x-ink2', 12);
-    rich(p2, R, 204, '两串 token **长度可以不一样**：6 个读 4 个', 12.5);
-    function robotRow(g, key, imgH, y, title, lines2) {
-      var im = robotImg(g, key, R, y, imgH);
-      label(g, R + im.w + 12, y + 18, title, 'demo-x-ink', 13);
-      lines2.forEach(function (l, i) { label(g, R + im.w + 12, y + 44 + i * 22, l, 'demo-x-ink2', 11.5); });
-      return im;
-    }
+    label(p2, R, 64, '提问的在这边，资料在那边', 'demo-x-ink', 14);
+    chip(p2, R, 96, 160, '问题 Q：来自德文', C_Q, { size: 12 });
+    chip(p2, R, 140, 160, '标签 K：来自英文', C_K, { size: 12 });
+    chip(p2, R, 184, 160, '内容 V：来自英文', C_V, { size: 12 });
+    label(p2, R + 176, 116, '前面讲的都是', 'demo-x-ink2', 12);
+    label(p2, R + 176, 138, '「自己和自己开会」', 'demo-x-ink2', 12);
+    label(p2, R + 176, 170, '这次是去问', 'demo-x-ink2', 12);
+    label(p2, R + 176, 192, '「另一组人」', 'demo-x-ink2', 12);
+    label(p2, R, 246, '论文叫它交叉注意力', 'demo-x-mut', 11.5);
+    /* 第 3 段：两串不一样长 */
     var p3 = group(s);
-    label(p3, R, 64, 'GR00T N1（第 050 期）', 'demo-x-ink', 14);
-    robotRow(p3, 'gr1', 190, 80, 'DiT 动作头', ['16 个带噪动作 token 当 query', '视觉语言模型第 12 层的特征', '当 key 和 value', '自注意力看动作和状态，', '交叉注意力读视觉语言']);
-    var g3q = cellGrid(p3, R + 60, 236, 16, 16, 12, 3, C_Q), g3k = cellGrid(p3, R + 60, 276, 20, 20, 10, 2, C_K);
-    var fl3 = [0, 1, 2].map(function () { return flowSeg(p3, C_V, 1, 2.4, 20); });
+    label(p3, R, 64, '两串卡片可以不一样长', 'demo-x-ink', 14);
+    var c6 = cellGrid(p3, R, 100, 6, 6, 30, 6, C_K), c4 = cellGrid(p3, R, 170, 4, 4, 30, 6, C_Q);
+    label(p3, R + 230, 120, '英文 6 张', 'demo-x-ink2', 12);
+    label(p3, R + 230, 190, '德文 4 张', 'demo-x-ink2', 12);
+    label(p3, R, 246, '每张德文卡片，都能去看全部英文卡片', 'demo-x-ink2', 12);
+    /* 第 4 段：扩散策略 */
     var p4 = group(s);
-    label(p4, R, 64, 'Diffusion Policy 的 Transformer 版（第 010 期）', 'demo-x-ink', 13.5);
-    robotRow(p4, 'ur5', 90, 84, '去噪网络', ['带噪动作当 token，', '扩散步的正弦嵌入当第一个', '动作之间因果注意力', '观测经 MLP 嵌入，交叉注意力读入']);
-    label(p4, R, 270, '论文建议新任务先试 CNN 版：Transformer 版对超参敏感', 'demo-x-mut', 11);
+    label(p4, R, 64, '第 10 期扩散策略的 Transformer 版', 'demo-x-ink', 14);
+    robotImg(p4, 'ur5', R, 86, 70);
+    chip(p4, R, 172, 88, '观测', C_K, { size: 12 });
+    var noisy = [];
+    for (var q = 0; q < 8; q++) noisy.push(paint(svgEl('rect', { x: R + 130 + q * 26, y: 150, width: 20, height: 20, rx: 3 }), C_V));
+    noisy.forEach(function (n) { p4.appendChild(n); });
+    label(p4, R + 130, 104, '一串带噪声的动作，慢慢变干净', 'demo-x-mut', 11);
+    var obsF = [0, 1, 2].map(function () { return flowSeg(p4, C_K, 2, 3, 36); });
+    label(p4, R, 240, '动作一边去噪，一边回头看观测', 'demo-x-ink2', 12);
+    label(p4, R, 264, '（本站第 10 期笔记）', 'demo-x-mut', 11);
+    /* 第 5 段：两种开会 */
     var p5 = group(s);
-    label(p5, R, 64, 'π₀ 的另一种接法（第 045 期）', 'demo-x-ink', 14);
-    var cA = attnGrid(p5, R, 96, 6, 14, C_V);
-    label(p5, R + 42, 196, '交叉注意力', 'demo-x-ink2', 11.5, 'middle');
-    label(p5, R + 42, 216.5, '动作读视觉语言', 'demo-x-mut', 11, 'middle');
-    var cB = attnGrid(p5, R + 130, 96, 6, 14, C_ROBOT);
-    label(p5, R + 172, 196, '拼成一串', 'demo-x-ink2', 11.5, 'middle');
-    label(p5, R + 172, 216.5, '同一个自注意力', 'demo-x-mut', 11, 'middle');
-    robotImg(p5, 'ur5e', R + 262, 86, 120);
-    label(p5, R, 248, 'π₀：图文、状态、动作两套权重，只在自注意力里交互', 'demo-x-ink2', 11.5);
-    label(p5, R, 270, 'GR00T N1 笔记：它用交叉注意力，不用 π₀ 那种接法', 'demo-x-mut', 11);
+    label(p5, R, 64, '两种「开会」', 'demo-x-ink', 14);
+    var selfRow = [0, 1, 2, 3].map(function (q2) { return dotAt(p5, R + 20 + q2 * 36, 150, 8, C_Q); });
+    for (var a = 0; a < 4; a++) for (var b2 = a + 1; b2 < 4; b2++) p5.appendChild(paint(svgEl('path', { d: 'M ' + (R + 20 + a * 36) + ' 142 Q ' + (R + 20 + (a + b2) * 18) + ' ' + (142 - 14 * (b2 - a)) + ' ' + (R + 20 + b2 * 36) + ' 142', fill: 'none', 'stroke-width': 1.2 }), null, C_Q));
+    label(p5, R, 196, '自己和自己开会', 'demo-x-ink2', 12);
+    var topRow = [0, 1, 2, 3].map(function (q2) { return dotAt(p5, R + 200 + q2 * 36, 110, 8, C_K); });
+    var botRow = [0, 1, 2].map(function (q2) { return dotAt(p5, R + 218 + q2 * 36, 170, 8, C_Q); });
+    var crossL = [];
+    botRow.forEach(function (bd, q2) { topRow.forEach(function (td, q3) { crossL.push(hline(p5, R + 218 + q2 * 36, 162, R + 200 + q3 * 36, 118, C_V, 1.2)); }); });
+    label(p5, R + 190, 196, '回头去问另一组人', 'demo-x-ink2', 12);
+    label(p5, R, 240, '一个 Transformer 里，两种都会用到', 'demo-x-ink2', 12);
+    void selfRow;
     function draw(t, clock) {
       var now = nowOf(t, clock);
       var k = Math.floor(now / 1.4) % DE.length;
       deC.forEach(function (c, i) { c.box.style.strokeWidth = i === k ? 2.8 : 1.3; });
       EN.forEach(function (w, i) {
-        var a = AL[k][i];
+        var a2 = AL[k][i];
         setLine(lines[i], LX + CW, 78 + i * 46, RX, 78 + k * 46);
-        lines[i].style.strokeWidth = (0.6 + a * 7).toFixed(1);
-        lines[i].style.opacity = (0.25 + 0.75 * a).toFixed(2);
-        enC[i].box.style.fill = C_K; enC[i].box.style.fillOpacity = (a * 0.5).toFixed(2);
-        wTx[i].setAttribute('x', (LX + CW - 6).toFixed(1)); wTx[i].setAttribute('y', (74 + i * 46 - 14).toFixed(1));
-        wTx[i].textContent = '';
+        lines[i].style.strokeWidth = (0.6 + a2 * 7).toFixed(1);
+        lines[i].style.opacity = (0.25 + 0.75 * a2).toFixed(2);
+        enC[i].box.style.fill = C_K; enC[i].box.style.fillOpacity = (a2 * 0.5).toFixed(2);
       });
-      g3q.fill(16); g3k.fill(20);
-      fl3.forEach(function (f, j) { f.at(now + j * 0.3, [R + 66 + j * 60, 250], [R + 70 + j * 55, 274], true); });
-      cA.set(function (i, j) { return { a: (i >= 3 && j < 3) ? 0.85 : 0.07 }; });
-      cB.set(function (i, j) { var bi = i < 3 ? 0 : i < 4 ? 1 : 2, bj = j < 3 ? 0 : j < 4 ? 1 : 2; return { a: bj <= bi ? 0.85 : 0.07 }; });
+      /* 第 1 段：写一行，回头看一行 */
+      var s1 = since(t, clock, 0.4) % 6, line = Math.min(3, Math.floor(s1 / 1.3));
+      tr.forEach(function (l, q2) { setOpacity(l, q2 < line || (q2 === line && (s1 % 1.3) > 0.7) ? 1 : 0.1); });
+      orig.forEach(function (l, q2) { l.style.strokeWidth = q2 === line ? 5 : 3; });
+      look.set(R + 232, 146 + line * 18, R + 100, 140 + line * 18, 9);
+      setOpacity(look.g, (s1 % 1.3) < 0.8 ? 1 : 0.2);
+      c6.fill(6); c4.fill(1 + Math.floor(now * 1.5) % 4);
+      /* 第 4 段：噪声动作慢慢变干净 */
+      var dn = (since(t, clock, 10.4) % 5) / 4;
+      noisy.forEach(function (n, q2) {
+        var clean = 0.5 + 0.35 * Math.sin(q2 * 0.8), noise = rnd(q2 + 13 * Math.floor(now * 4), 9) - 0.5;
+        var y = 150 - 26 * (clean - 0.5 + noise * (1 - clamp(dn, 0, 1)));
+        n.setAttribute('y', y.toFixed(1));
+      });
+      obsF.forEach(function (f, q2) { f.at(now + q2 * 0.3, [R + 92, 192], [R + 150 + q2 * 70, 212], true); });
+      crossL.forEach(function (l, q2) { l.style.opacity = (0.2 + 0.7 * Math.abs(Math.sin(now * 2 + q2))).toFixed(2); });
       panels(t, [p1, p2, p3, p4, p5]);
     }
     return { el: s, draw: draw };
   }
-
-  /* ── scene 13: 训练整句并行，推理一个一个来 ── */
+  /* ── scene 13: 批改作业能一起改，写作文只能一个字一个字写 ── */
   function buildSceneDecode() {
-    var s = sceneSvg('左上是训练：目标整句已知，右移一位后一次送进解码器，5 个输出同时亮；左下是推理：每次只生成一个，接回输入再算下一次，计数一次次往上加；' +
-      '右边依次出现：自回归的说法；翻译时的 beam search；50 Hz 控制每步 20 ms 的时间尺；π₀ 一次推理 73 ms 的三段条和 KV 缓存；论文结论里「让生成不那么串行」');
-    s.appendChild(svgText(24, 26, '训练整句并行，推理一个一个来', 'demo-x-ink2', 13.5));
-    var TOK = ['$a_1$', '$a_2$', '$a_3$', '$a_4$', '$a_5$'], IN = ['起始', '$a_1$', '$a_2$', '$a_3$', '$a_4$'];
-    label(s, 24, 52, '训练：目标整句已知（右移一位 + 因果掩码）', 'demo-x-ink2', 12);
-    var trIn = IN.map(function (n, i) { return chip(s, 40 + i * 70, 62, 58, n, C_Q, { size: 13.5 }); });
-    chip(s, 40, 104, 338, '解码器（一次前向）', C_ACCENT, { size: 12.5, h: 30 });
-    var trOut = TOK.map(function (n, i) { return chip(s, 40 + i * 70, 146, 58, n, C_V, { size: 13.5 }); });
-    var trF = TOK.map(function () { return flowSeg(s, C_MUTED, 1, 2.4, 20, true); });
-    label(s, 24, 208, '推理：只能一个一个生成', 'demo-x-ink2', 12);
-    var infIn = IN.map(function (n, i) { return chip(s, 40 + i * 70, 218, 58, n, C_Q, { size: 13.5 }); });
-    chip(s, 40, 260, 338, '解码器（又一次前向）', C_ACCENT, { size: 12.5, h: 30 });
-    var infOut = TOK.map(function (n, i) { return chip(s, 40 + i * 70, 302, 58, n, C_V, { size: 13.5 }); });
-    /* 右边一支弯箭头：刚生成的接回输入（不从框里的字上穿过） */
+    var s = sceneSvg('左上是训练：德文答案整句都在，一次送进去，5 个格子同时打勾；左下是用的时候：一次只写出一个词，再接回输入写下一个，计数一次次往上加；' +
+      '右边依次出现：老师一次批完整页作业；一支笔一个字一个字写；机器人每 20 毫秒写一个动作的时间尺；写 50 个要算 50 次；论文结论');
+    s.appendChild(svgText(24, 26, '训练和使用，不一样快', 'demo-x-ink2', 13.5));
+    var IN = ['开头', 'Die', 'Katze', 'saß', 'auf'], OUT = ['Die', 'Katze', 'saß', 'auf', 'der'];
+    label(s, 24, 52, '训练：答案都在，整句一起改', 'demo-x-ink2', 12);
+    var trIn = IN.map(function (n, i) { return chip(s, 40 + i * 70, 62, 58, n, C_Q, { size: 12.5 }); });
+    chip(s, 40, 104, 338, 'Transformer（一次算完）', C_ACCENT, { size: 12.5, h: 30 });
+    var trOut = OUT.map(function (n, i) { return chip(s, 40 + i * 70, 146, 58, n, C_V, { size: 12.5 }); });
+    var trF = OUT.map(function () { return flowSeg(s, C_MUTED, 1, 2.4, 20, true); });
+    label(s, 24, 208, '使用：只能一个一个写', 'demo-x-ink2', 12);
+    var infIn = IN.map(function (n, i) { return chip(s, 40 + i * 70, 218, 58, n, C_Q, { size: 12.5 }); });
+    chip(s, 40, 260, 338, 'Transformer（又算一次）', C_ACCENT, { size: 12.5, h: 30 });
+    var infOut = OUT.map(function (n, i) { return chip(s, 40 + i * 70, 302, 58, n, C_V, { size: 12.5 }); });
     var back = pathLine(s, [[381, 318], [391, 318], [391, 234], [381, 234]], C_WARN, 1.8, '4 3');
     var backHead = arrowHead(s, C_WARN);
     backHead.set(388, 234, 379, 234, 7);
     label(s, 395, 280, '接回', 'demo-x-warn', 11.5);
     var nPass = tone(s, 378, 356, '', C_WARN, 12.5, 'end');
-    label(s, 24, 382, '每生成一个，就把它接回输入，再前向一次', 'demo-x-mut', 11);
-    var R = 424, W = 352;
+    label(s, 24, 382, '每写出一个，就接回输入，再算一次', 'demo-x-mut', 11);
+    /* 第 1 段：批改作业 */
     var p1 = group(s);
-    label(p1, R, 64, '解码器是自回归的（§3）', 'demo-x-ink', 14);
-    label(p1, R, 96, '生成下一个符号时，把已经生成的当作额外输入', 'demo-x-ink2', 12);
-    label(p1, R, 120, '训练时目标句整句已知：配合掩码一次算完所有位置', 'demo-x-ink2', 12);
-    label(p1, R, 144, '推理时没有答案：n 个 token 就要前向 n 次', 'demo-x-ink2', 12);
+    label(p1, R, 64, '训练：像老师批改作业', 'demo-x-ink', 14);
+    rectBox(p1, R, 84, 200, 170, C_BORDER, C_SURFACE2);
+    var hwTicks = [];
+    for (var q = 0; q < 5; q++) {
+      hline(p1, R + 16, 108 + q * 30, R + 140, 108 + q * 30, C_MUTED, 3);
+      hwTicks.push(tick(p1, R + 154, 96 + q * 30, 16, C_GOOD));
+    }
+    label(p1, R + 216, 116, '标准答案都在', 'demo-x-ink2', 12);
+    label(p1, R + 216, 140, '整页一起改', 'demo-x-ink2', 12);
+    label(p1, R + 216, 172, '再配上「不许', 'demo-x-ink2', 12);
+    label(p1, R + 216, 194, '偷看后面」', 'demo-x-ink2', 12);
+    label(p1, R + 216, 226, '一次就算完', 'demo-x-ink2', 12);
+    /* 第 2 段：写作文 */
     var p2 = group(s);
-    label(p2, R, 64, '翻译时怎么生成（§6.1）', 'demo-x-ink', 14);
-    var beams = [];
-    for (var b = 0; b < 4; b++) beams.push(pathLine(p2, [], b ? C_MUTED : C_V, b ? 1.4 : 2.4));
-    var bDots = [0, 1, 2, 3].map(function (b2) { return dotAt(p2, 0, 0, 4, b2 ? C_MUTED : C_V); });
-    label(p2, R + 230, 104, 'beam 宽 4', 'demo-x-ink2', 12);
-    rich(p2, R + 230, 128, '长度惩罚 $\\alpha=0.6$', 12);
-    label(p2, R + 230, 152, '最长：输入 + 50', 'demo-x-ink2', 12);
-    label(p2, R, 222, 'base 取最后 5 个检查点的平均，big 取 20 个', 'demo-x-ink2', 12);
+    label(p2, R, 64, '用的时候：像自己写作文', 'demo-x-ink', 14);
+    var WRD = ['今', '天', '天', '气', '很', '好'], wTx = WRD.map(function (w, j) { return label(p2, R + 20 + j * 40, 140, w, 'demo-x-ink', 24, 'middle'); });
+    var pen = paint(svgEl('path', { d: 'M 0 0 L 6 -22 L 12 -22 L 6 0 Z' }), C_WARN); p2.appendChild(pen);
+    label(p2, R, 196, '写一个字，读一遍前面写的，再写下一个', 'demo-x-ink2', 12);
+    label(p2, R, 220, '后面的字还不存在，没法一起写', 'demo-x-ink2', 12);
+    /* 第 3 段：机器人每 20 ms */
     var p3 = group(s);
-    label(p3, R, 64, '机器人：50 Hz 控制，每步只有 20 ms', 'demo-x-ink', 14);
+    label(p3, R, 64, '机器人：每 0.02 秒写一个动作', 'demo-x-ink', 14);
     var TX = R + 10, TWd = 330;
     hline(p3, TX, 140, TX + TWd, 140, C_BORDER, 1.4);
-    for (var q = 0; q <= 5; q++) { hline(p3, TX + q * TWd / 5, 134, TX + q * TWd / 5, 146, C_BORDER, 1.2); label(p3, TX + q * TWd / 5, 162, q * 20 + ' ms', 'demo-x-mut', 10.5, 'middle'); }
+    for (q = 0; q <= 5; q++) { hline(p3, TX + q * TWd / 5, 134, TX + q * TWd / 5, 146, C_BORDER, 1.2); label(p3, TX + q * TWd / 5, 162, q * 20 + ' 毫秒', 'demo-x-mut', 10.5, 'middle'); }
     var stepDots = [0, 1, 2, 3, 4].map(function (q2) { return dotAt(p3, TX + q2 * TWd / 5 + TWd / 10, 120, 6, C_ROBOT); });
     var cursor = hline(p3, TX, 104, TX, 150, C_ROBOT, 2);
     robotImg(p3, 'digit', R, 182, 110);
-    label(p3, R + 66, 210, 'Digit（第 014 期）：每 0.02 s 前向一次', 'demo-x-ink2', 12);
-    label(p3, R + 66, 234, '因果 Transformer 只出下一步的动作', 'demo-x-ink2', 12);
-    label(p3, R + 66, 258, '上一步的动作再接回下一步的输入', 'demo-x-ink2', 12);
+    label(p3, R + 66, 210, 'Digit（第 14 期）：', 'demo-x-ink2', 12);
+    label(p3, R + 66, 234, '每 0.02 秒算一次，只写下一步', 'demo-x-ink2', 12);
+    label(p3, R + 66, 258, '写好的动作，接回去当输入', 'demo-x-ink2', 12);
+    /* 第 4 段：越长越慢 */
     var p4 = group(s);
-    label(p4, R, 64, 'π₀：一次出一整块 50 步动作', 'demo-x-ink', 14);
-    var PB = [['图像编码', 14, C_Q], ['前缀前向', 32, C_ACCENT], ['10 次动作前向', 27, C_V]];
-    var pbX = R, pbW = 330 / 73, pbars = [];
-    PB.forEach(function (p, i) {
-      var x0 = pbX + PB.slice(0, i).reduce(function (a, c) { return a + c[1]; }, 0) * pbW;
-      pbars.push(hbar(p4, x0, 92, 26, p[2]));
-      label(p4, x0 + p[1] * pbW / 2, 136, p[0], 'demo-x-ink2', 11, 'middle');
-      label(p4, x0 + p[1] * pbW / 2, 156.5, p[1] + ' ms', 'demo-x-mono', 11, 'middle');
-    });
-    var tot4 = label(p4, R + W, 84, '', 'demo-x-ink', 12, 'end');
-    label(p4, R, 186, 'KV 缓存：图像和文字只前向一次，', 'demo-x-ink2', 12);
-    label(p4, R, 208, '10 步积分只重算 51 个后缀 token', 'demo-x-ink2', 12);
-    var chunk = cellGrid(p4, R, 226, 50, 50, 5.6, 1, C_V);
-    label(p4, R, 262, '50 Hz 下一块 1 s，执行 25 步就重新推理（ALOHA）', 'demo-x-mut', 11);
-    label(p4, R, 282, 'RTX 4090、板载；数字取自本站第 045 期笔记', 'demo-x-mut', 11);
+    label(p4, R, 64, '一个一个写，越长越慢', 'demo-x-ink', 14);
+    var many = cellGrid(p4, R, 92, 50, 10, 24, 6, C_V);
+    var manyTxt = tone(p4, R, 270, '', C_V, 13);
+    label(p4, R, 294, '写 50 个，就要算 50 次', 'demo-x-ink2', 12);
+    /* 第 5 段：论文结论 */
     var p5 = group(s);
-    label(p5, R, 64, '论文结论：下一步，让生成不那么串行', 'demo-x-ink', 14);
-    label(p5, R, 96, '原文：Making generation less sequential', 'demo-x-ink2', 12);
-    label(p5, R, 118, 'is another research goal of ours.（§7）', 'demo-x-ink2', 12);
-    rectBox(p5, R, 140, W, 96, C_ROBOT, C_SURFACE);
-    label(p5, R + 12, 164, '机器人后来这样走（我们的联系）', 'demo-x-ink', 12.5);
-    label(p5, R + 12, 188, 'π₀：流匹配 10 步，一次出 50 步动作', 'demo-x-ink2', 11.5);
-    label(p5, R + 12, 210, 'GR00T N1：一块 16 步，L40 上 63.9 ms', 'demo-x-ink2', 11.5);
-    label(p5, R + 12, 230, '不再一个 token 一个 token 地解码动作', 'demo-x-mut', 11);
+    label(p5, R, 64, '论文最后写：下一步，', 'demo-x-ink', 14);
+    label(p5, R, 88, '要让生成不那么「一个一个来」', 'demo-x-ink', 14);
+    rectBox(p5, R, 112, W, 86, C_ROBOT, C_SURFACE);
+    label(p5, R + 12, 138, '这是论文自己留下的问题', 'demo-x-ink', 12.5);
+    label(p5, R + 12, 162, '对机器人尤其要紧：每一步只有', 'demo-x-ink2', 12);
+    label(p5, R + 12, 184, '几十毫秒，等不起', 'demo-x-ink2', 12);
     function draw(t, clock) {
       var now = nowOf(t, clock);
       var tr = (now % 2.4) / 2.4;
       trOut.forEach(function (c) { setOpacity(c, tr > 0.4 ? 1 : 0.25); });
       trF.forEach(function (f, i) { f.at(now, [69 + i * 70, 92], [69 + i * 70, 102], tr < 0.4); });
-      /* 推理：每 0.9 s 生成一个，5 个之后重来 */
       var k = Math.floor((now % 5.4) / 0.9);
       infOut.forEach(function (c, i) { setOpacity(c, i < k ? 1 : i === k ? 0.6 + 0.4 * Math.sin(now * 8) : 0.12); });
       infIn.forEach(function (c, i) { setOpacity(c, i <= k ? 1 : 0.12); });
       setOpacity(back, k >= 1 && k <= 4 ? 1 : 0.25); setOpacity(backHead.node, k >= 1 && k <= 4 ? 1 : 0.25);
-      nPass.textContent = '第 ' + Math.min(5, k + 1) + ' 次前向';
-      /* beam：4 条路径往右长 */
-      var u2 = (since(t, clock, 3.6) % 3) / 3;
-      beams.forEach(function (bl, b2) {
-        var pts = [];
-        for (var j = 0; j <= 5; j++) pts.push([R + 10 + j * 38 * Math.min(1, u2 * 1.2), 128 + (j ? (b2 - 1.5) * 24 * Math.min(1, j / 2) + Math.sin(j + b2) * 5 : 0)]);
-        setPath(bl, pts);
-        moveDot(bDots[b2], pts[5]);
-      });
-      /* 时间尺：游标每 20 ms 走一格，到一格就亮一个点（放慢 40 倍） */
+      nPass.textContent = '第 ' + Math.min(5, k + 1) + ' 次';
+      /* 第 1 段：5 个勾同时出现 */
+      var h1 = (since(t, clock, 0.4) % 3) / 3;
+      hwTicks.forEach(function (tk) { setOpacity(tk, h1 > 0.35 ? 1 : 0); });
+      /* 第 2 段：一个字一个字写 */
+      var w2 = since(t, clock, 3.6) % 7, nW = Math.min(6, Math.floor(w2 / 0.9));
+      wTx.forEach(function (tx, j) { setOpacity(tx, j < nW ? 1 : 0.1); });
+      var px = R + 20 + Math.min(5, nW) * 40 + 10 + 4 * Math.sin(now * 14);
+      pen.setAttribute('transform', 'translate(' + px.toFixed(1) + ' 150)');
       var tm = (now * 0.5) % 1, cx = TX + tm * TWd;
       setLine(cursor, cx, 104, cx, 150);
       stepDots.forEach(function (d, j) { d.style.opacity = tm * 5 > j + 0.5 ? 1 : 0.2; });
-      var u4 = seg(since(t, clock, 10.4), 0.3, 2.3);
-      var acc = 0;
-      pbars.forEach(function (pb, i) { var w = clamp((u4 * 73 - acc) / PB[i][1], 0, 1) * PB[i][1] * pbW; setW(pb, w); acc += PB[i][1]; });
-      tot4.textContent = u4 > 0.98 ? '一次推理 73 ms' : '';
-      chunk.fill(Math.round(50 * seg(since(t, clock, 10.4), 2.4, 3.0)));
+      var m4 = Math.min(50, Math.floor((since(t, clock, 10.4) % 8) * 9));
+      many.fill(m4);
+      manyTxt.textContent = '已经算了 ' + m4 + ' 次';
       panels(t, [p1, p2, p3, p4, p5]);
     }
     return { el: s, draw: draw };
   }
 
-  /* ── scene 14: 训练配方：预热 4000 步 ── */
+  /* 一辆小车：车身 + 两个轮子；put(x, y) 把车底中点放在 (x, y) */
+  function carIcon(parent, color) {
+    var g = group(parent);
+    var body = paint(svgEl('path', { d: 'M -22 -6 L -22 -16 L -10 -16 L -4 -26 L 12 -26 L 18 -16 L 24 -16 L 24 -6 Z' }), color);
+    g.appendChild(body);
+    var w1 = dotAt(g, -12, -5, 5, C_INK), w2 = dotAt(g, 14, -5, 5, C_INK);
+    void w1; void w2;
+    return { g: g, put: function (x, y) { g.setAttribute('transform', 'translate(' + x.toFixed(1) + ' ' + y.toFixed(1) + ')'); } };
+  }
+
+  /* ── scene 14: 怎么训练：先热身，再慢慢收 ── */
   function buildSceneRecipe() {
-    var s = sceneSvg('左边是式 3 的学习率曲线：前 4000 步直线升高，之后按步数的负二分之一次方慢慢降，一个小点沿曲线走、读出当前步数和学习率；' +
-      '右边依次出现：两个数据集的大小和 batch；base 和 big 两条训练进度条赛跑；Adam 的参数和学习率的峰值；标签平滑把目标分布削平一点；机器人模型的训练配方');
-    s.appendChild(svgText(24, 26, '式 3：先预热，再按 1/√step 衰减', 'demo-x-ink2', 13.5));
-    var PX = 56, PY = 56, PW = 336, PH = 214, SMAX = 100000, LMAX = 7.5e-4;
+    var s = sceneSvg('左边是一条曲线：横轴是练了多少步，纵轴是每一步改动的大小，前 4000 步直线升高，之后慢慢降，一个小点沿曲线走；' +
+      '下面一辆小车在路上开，车速跟着曲线变，起步慢慢加速、后来慢慢松油门；右边依次出现：两套练习题的多少；8 张显卡练两个模型的进度条；热身 4000 步；' +
+      '随机让一部分数字请假的格子；扩散策略也先热身');
+    s.appendChild(svgText(24, 26, '学习的步子：先慢慢加大，再慢慢变小', 'demo-x-ink2', 13.5));
+    var PX = 56, PY = 56, PW = 336, PH = 190, SMAX = 100000, LMAX = 7.5e-4;
     rectBox(s, PX, PY, PW, PH, C_BORDER, C_SURFACE);
     function sx(v) { return PX + v / SMAX * PW; }
     function sy(v) { return PY + PH - v / LMAX * PH; }
@@ -1923,189 +2143,230 @@
     for (var st = 1; st <= SMAX; st += st < 6000 ? 100 : 1000) pts.push([sx(st), sy(lrate(st))]);
     var curve = pathLine(s, pts, C_ACCENT, 2.4);
     hline(s, sx(WARMUP), PY, sx(WARMUP), PY + PH, C_MUTED, 1, '4 4');
-    label(s, sx(WARMUP) + 6, PY + 16, '第 4000 步', 'demo-x-ink2', 11);
-    [0, 25000, 50000, 75000, 100000].forEach(function (v) { label(s, sx(v), PY + PH + 16, v ? (v / 1000) + 'k' : '0', 'demo-x-mut', 10.5, 'middle'); });
-    rich(s, PX - 6, PY + 8, '$7\\times10^{-4}$', 10.5, 'demo-x-mut', 'end', 56);
-    label(s, PX - 6, PY + PH, '0', 'demo-x-mut', 10.5, 'end');
-    label(s, PX + PW, PY + PH + 36.5, '训练步数（base 训 10 万步）', 'demo-x-mut', 11, 'end');
+    label(s, sx(WARMUP) + 6, PY + 16, '第 4000 步：最大', 'demo-x-ink2', 11);
+    [0, 25000, 50000, 75000, 100000].forEach(function (v) { label(s, sx(v), PY + PH + 16, v ? (v / 10000) + ' 万' : '0', 'demo-x-mut', 10.5, 'middle'); });
+    label(s, PX + PW, PY + PH + 36, '练了多少步（小模型练 10 万步）', 'demo-x-mut', 11, 'end');
+    label(s, PX - 6, PY + 14, '大', 'demo-x-mut', 11, 'end');
+    label(s, PX - 6, PY + PH - 6, '小', 'demo-x-mut', 11, 'end');
+    label(s, 24, PY + PH / 2, '步子', 'demo-x-mut', 11);
     var mk = dotAt(s, PX, PY + PH, 5.5, C_WARN);
-    var rd = rich(s, PX + 70, PY + 62, '', 12, 'demo-x-warn', 'start', 260);
-    math(s, 24, 352, 'lrate=d_{model}^{-0.5}\\cdot\\min\\left(step^{-0.5},\\ step\\cdot warmup^{-1.5}\\right)', 13, 'start', 380);
-    var R = 424, W = 352;
+    label(s, 24, 316, '像开车：起步慢慢踩油门，上路后慢慢松开', 'demo-x-ink2', 12);
+    hline(s, 30, 372, 390, 372, C_BORDER, 2);
+    var dash = [];
+    for (var q = 0; q < 9; q++) dash.push(hline(s, 0, 372, 0, 372, C_MUTED, 2, '10 8'));
+    var car = carIcon(s, C_WARN);
+    var spd = tone(s, 390, 340, '', C_WARN, 12, 'end');
+    /* 第 1 段：练习题 */
     var p1 = group(s);
-    label(p1, R, 64, '训练数据（§5.1）', 'demo-x-ink', 14);
+    label(p1, R, 64, '练习题有多少', 'demo-x-ink', 14);
     var db = [barRowAt(p1, R, 86, 96, '英→德', C_Q, 20, 12), barRowAt(p1, R, 116, 96, '英→法', C_V, 20, 12)];
-    label(p1, R, 160, '英德 BPE 共享约 37000 个子词；英法 32000 个', 'demo-x-ink2', 12);
-    label(p1, R, 184, '按句长分桶；每个 batch 约 25000 个源 token', 'demo-x-ink2', 12);
-    label(p1, R, 206, '加 25000 个目标 token', 'demo-x-ink2', 12);
+    label(p1, R, 168, '每一题是一对句子：英文和它的译文', 'demo-x-ink2', 12);
+    label(p1, R, 192, '一次拿出几百句一起练', 'demo-x-ink2', 12);
+    /* 第 2 段：8 张显卡 */
     var p2 = group(s);
-    label(p2, R, 64, '一台机器，8 张 P100（§5.2）', 'demo-x-ink', 14);
-    var race = [barRowAt(p2, R, 92, 60, 'base', C_ACCENT, 20, 12), barRowAt(p2, R, 130, 60, 'big', C_WARN, 20, 12)];
-    label(p2, R, 184, 'base：每步约 0.4 s，10 万步，12 小时', 'demo-x-ink2', 12);
-    label(p2, R, 208, 'big：每步 1.0 s，30 万步，3.5 天', 'demo-x-ink2', 12);
+    label(p2, R, 64, '一台电脑、8 张显卡，练多久', 'demo-x-ink', 14);
+    var race = [barRowAt(p2, R, 92, 60, '小模型', C_ACCENT, 20, 12), barRowAt(p2, R, 130, 60, '大模型', C_WARN, 20, 12)];
     var clk = tone(p2, R + W, 76, '', C_INK, 12, 'end');
+    label(p2, R, 184, '小模型：12 小时', 'demo-x-ink2', 12);
+    label(p2, R, 208, '大模型：3 天半', 'demo-x-ink2', 12);
+    /* 第 3 段：热身 */
     var p3 = group(s);
-    label(p3, R, 64, 'Adam + 预热（§5.3）', 'demo-x-ink', 14);
-    rich(p3, R, 96, '$\\beta_1=0.9$，$\\beta_2=0.98$，$\\epsilon=10^{-9}$', 12.5);
-    rich(p3, R, 126, '前 4000 步线性升高，之后按 1 / √$step$ 降', 12.5);
-    rich(p3, R, 158, '峰值（第 4000 步）$\\approx 6.99\\times10^{-4}$', 12.5);
-    rich(p3, R, 186, '第 10 万步 $\\approx 1.40\\times10^{-4}$', 12.5);
-    label(p3, R, 216, '左边曲线上的小点就是现在的学习率', 'demo-x-mut', 11.5);
+    label(p3, R, 64, '先热身 4000 步', 'demo-x-ink', 14);
+    label(p3, R, 96, '刚开始什么都不会，猛改容易「摔跤」', 'demo-x-ink2', 12);
+    label(p3, R, 120, '所以先小步走，越走越大', 'demo-x-ink2', 12);
+    label(p3, R, 144, '第 4000 步最大，之后越走越小', 'demo-x-ink2', 12);
+    var stepsRow = [];
+    for (q = 0; q < 10; q++) stepsRow.push(paint(svgEl('rect', { x: R + q * 34, y: 178, width: 4, height: 30, rx: 2 }), C_ACCENT));
+    stepsRow.forEach(function (r) { p3.appendChild(r); });
+    label(p3, R, 256, '每根竖条：一步改动有多大（示意）', 'demo-x-mut', 11);
+    label(p3, R, 280, '论文里叫「学习率预热」', 'demo-x-mut', 11);
+    /* 第 4 段：随机请假 */
     var p4 = group(s);
-    label(p4, R, 64, '两种正则（§5.4）', 'demo-x-ink', 14);
-    label(p4, R, 92, '标签平滑 0.1：正确答案不再拿满分', 'demo-x-ink2', 12);
-    var LS = [];
-    for (var c = 0; c < 6; c++) LS.push(vbar(p4, R + 20 + c * 34, 24, c ? C_MUTED : C_V));
-    hline(p4, R + 14, 200, R + 222, 200, C_BORDER, 1.2);
-    var lsTxt = tone(p4, R + 236, 150, '', C_INK, 12), lsName = label(p4, R + 236, 172, '', 'demo-x-mut', 11.5);
-    label(p4, R, 222, '困惑度变差（模型更不确定），BLEU 反而更高', 'demo-x-ink2', 12);
-    label(p4, R, 246, '残差 dropout 0.1（上一幕）', 'demo-x-ink2', 12);
-    label(p4, R, 268, '柱高是示意：6 个候选词，不是 37000 个', 'demo-x-mut', 11);
+    label(p4, R, 64, '随机请假：每次让 10% 的数字休息', 'demo-x-ink', 14);
+    var leave = cellGrid(p4, R, 88, 40, 10, 26, 6, C_V);
+    label(p4, R, 238, '逼其他数字也学会干活，不只靠某一个', 'demo-x-ink2', 12);
+    label(p4, R, 262, '论文里叫 dropout，只在训练时用', 'demo-x-mut', 11);
+    /* 第 5 段：扩散策略 */
     var p5 = group(s);
-    label(p5, R, 64, '机器人模型的训练配方（本站笔记）', 'demo-x-ink', 14);
-    [['Diffusion Policy（第 010 期）', '余弦学习率 + 线性预热', 'CNN 版 500 步，Transformer 版 1000 步'], ['GR00T N1（第 050 期）', 'AdamW，学习率 $10^{-4}$', 'batch 16384，20 万步']].forEach(function (r, i) {
-      var y = 84 + i * 86;
-      rectBox(p5, R, y, W, 74, C_ROBOT, C_SURFACE);
-      label(p5, R + 12, y + 22, r[0], 'demo-x-ink', 12.5);
-      rich(p5, R + 12, y + 44, r[1], 11.5);
-      label(p5, R + 12, y + 64, r[2], 'demo-x-ink2', 11.5);
-    });
+    label(p5, R, 64, '机器人模型也这么练', 'demo-x-ink', 14);
+    rectBox(p5, R, 84, W, 80, C_ROBOT, C_SURFACE);
+    label(p5, R + 12, 110, '第 10 期 扩散策略', 'demo-x-ink', 12.5);
+    label(p5, R + 12, 134, '也先热身：500 步（Transformer 版 1000 步）', 'demo-x-ink2', 12);
+    label(p5, R + 12, 154, '再慢慢把步子变小', 'demo-x-ink2', 12);
+    label(p5, R, 196, '（本站第 10 期笔记）', 'demo-x-mut', 11);
     function draw(t, clock) {
       var now = nowOf(t, clock);
       curve.style.strokeDasharray = '1400';
       curve.style.strokeDashoffset = String(1400 * (1 - ease(seg(t, 0.3, 2.4))));
-      var u = (now * 0.08) % 1, st2 = Math.max(1, u * u * SMAX);
-      moveDot(mk, [sx(st2), sy(lrate(st2))]);
-      var ex = lrate(st2).toExponential(2).split('e');
-      rd.setText('第 ' + Math.round(st2).toLocaleString('en-US') + ' 步：$' + ex[0] + '\\times10^{' + Number(ex[1]) + '}$');
+      var u = (now * 0.08) % 1, st2 = Math.max(1, u * u * SMAX), lr = lrate(st2);
+      moveDot(mk, [sx(st2), sy(lr)]);
+      /* 小车：车速 ∝ 步子大小；路面虚线往后退 */
+      var v = lr / LR_PEAK, off = (now * 140 * v) % 36;
+      dash.forEach(function (d, q2) { var x = 30 + q2 * 40 - off; setLine(d, Math.max(30, x), 372, Math.max(30, Math.min(390, x + 18)), 372); });
+      car.put(80 + 220 * v, 366);
+      spd.textContent = '步子：' + Math.round(v * 100) + '%';
       var u1 = seg(since(t, clock, 0.4), 0.3, 1.6);
-      db[0].set(4.5 / 36 * 220 * u1, f1(4.5 * u1) + ' M 句对'); db[1].set(220 * u1, Math.round(36 * u1) + ' M 句');
+      db[0].set(4.5 / 36 * 220 * u1, Math.round(450 * u1) + ' 万对'); db[1].set(220 * u1, Math.round(3600 * u1) + ' 万对');
       var u2 = since(t, clock, 3.6) * 8;
-      race[0].set(Math.min(1, u2 / 12) * 240, Math.min(12, u2) >= 12 ? '12 小时 ✓' : f1(Math.min(12, u2)) + ' 小时');
-      race[1].set(Math.min(1, u2 / 84) * 240, f1(Math.min(84, u2) / 24) + ' 天');
+      race[0].set(Math.min(1, u2 / 12) * 220, Math.min(12, u2) >= 12 ? '12 小时 ✓' : f1(Math.min(12, u2)) + ' 小时');
+      race[1].set(Math.min(1, u2 / 84) * 220, f1(Math.min(84, u2) / 24) + ' 天');
       clk.textContent = '过了 ' + f1(Math.min(84, u2) / 24) + ' 天';
-      /* 每 2.4 s 在「独热」和「平滑后」之间切一次；ε = 0.1 分给 6 个候选词（示意） */
-      var on = Math.floor(since(t, clock, 10.4) / 2.4) % 2, mix = ease(seg((since(t, clock, 10.4) % 2.4), 0, 0.6)), u = on ? mix : 1 - mix;
-      LS.forEach(function (b, i) { var v = i ? 0.1 / 6 * u : 1 - 0.1 * u + 0.1 / 6 * u; b.set(200, Math.max(1.5, v * 100)); });
-      lsTxt.textContent = u > 0.5 ? '约 0.92 / 0.017' : '1 / 0';
-      lsName.textContent = u > 0.5 ? '平滑后' : '独热';
+      var u3 = since(t, clock, 7.0) % 5;
+      stepsRow.forEach(function (r, q2) {
+        /* 第 q2 + 1 千步：前 4000 步线性升高，之后按 1/√step 降 */
+        var h = 62 * (q2 < 4 ? (q2 + 1) / 4 : Math.sqrt(4 / (q2 + 1)));
+        r.setAttribute('y', (234 - h).toFixed(1)); r.setAttribute('height', h.toFixed(1));
+        setOpacity(r, u3 > q2 * 0.35 ? 1 : 0.1);
+      });
+      var lk = Math.floor(now / 0.8);
+      leave.cells.forEach(function (c, q2) { c.style.opacity = rnd(q2 + 40 * lk, 3) < 0.1 ? 0.12 : 0.9; });
       panels(t, [p1, p2, p3, p4, p5]);
     }
     return { el: s, draw: draw };
   }
 
-  /* ── scene 15: 表二：翻译结果与训练开销 ── */
+  /* ── scene 15: 成绩：翻得更好，花得更少（表二） ── */
+  var COST_SHARE = [
+    ['小模型（这篇）', 3.3e18, true], ['ConvS2S', 9.6e18], ['MoE', 2.0e19], ['GNMT + RL', 2.3e19], ['大模型（这篇）', 2.3e19, true], ['ConvS2S 集成', 7.7e19], ['GNMT + RL 集成', 1.8e20]
+  ];
   function buildSceneTable2() {
-    var s = sceneSvg('左边是表 2 英译德的七根横条，条从 23 分画起，两根 Transformer 的条是蓝色，竖虚线是此前最好的 26.36；右边依次出现：读法；' +
-      'big 比此前最好高出 2 分以上；按对数轴画的训练开销；英译法的 41.8 和正文的 41.0；FLOPs 是怎么估出来的');
-    s.appendChild(svgText(24, 26, '表二：英译德 BLEU（newstest2014）', 'demo-x-ink2', 13.5));
+    var s = sceneSvg('左边是表 2 英译德的七根横条，条从 23 分画起，两根 Transformer 的条是蓝色，竖虚线是以前最好的 26.36；右边依次出现：分数怎么来；' +
+      '大模型比以前最好高出 2 分以上；训练花的力气按「几份」画的条；英译法的两根条；计算量是怎么估出来的');
+    s.appendChild(svgText(24, 26, '论文表二：英译德的翻译成绩', 'demo-x-ink2', 13.5));
     var LX = 24, LW = 120, BW = 230, B0 = 23, B1 = 29;
     function bx(v) { return LX + LW + (v - B0) / (B1 - B0) * BW; }
-    var bars = TABLE2.map(function (r, i) { return { r: r, b: barRowAt(s, LX, 56 + i * 38, LW, r.zh, r.ours ? C_ACCENT : C_MUTED, 24, 12) }; });
-    var best = hline(s, bx(26.36), 48, bx(26.36), 56 + 7 * 38, C_WARN, 1.4, '5 4');
-    label(s, bx(26.36), 342, '此前最好 26.36', 'demo-x-ink2', 11, 'middle');
+    var ZH = ['GNMT + RL', 'ConvS2S', 'MoE', 'GNMT + RL 集成', 'ConvS2S 集成', '小模型（这篇）', '大模型（这篇）'];
+    /* 虚线只画在两行之间的空隙里：不从条和 26.03 这些读数上穿过 */
+    for (var g2 = 0; g2 <= 7; g2++) hline(s, bx(26.36), g2 ? 56 + g2 * 38 - 13 : 48, bx(26.36), 56 + g2 * 38 - 1, C_WARN, 1.4, '4 3');
+    var bars = TABLE2.map(function (r, i) { return { r: r, b: barRowAt(s, LX, 56 + i * 38, LW, ZH[i], r.ours ? C_ACCENT : C_MUTED, 24, 12) }; });
+    label(s, bx(26.36), 342, '以前最好 26.36', 'demo-x-ink2', 11, 'middle');
     [23, 25, 27, 29].forEach(function (v) { label(s, bx(v), 362, String(v), 'demo-x-mut', 10.5, 'middle'); });
-    void best;
-    var R = 424, W = 352;
+    label(s, 24, 388, '「集成」是把好几个模型的答案合起来', 'demo-x-mut', 11);
+    /* 第 1 段 */
     var p1 = group(s);
-    label(p1, R, 64, '先看怎么读', 'demo-x-ink', 14);
-    readHint(p1, R, 92, '横条是 BLEU，**越长越好**', 12);
-    label(p1, R, 120, '条从 23 分画起，差别看得更清楚', 'demo-x-ink2', 12);
-    label(p1, R, 144, '蓝色两根是 Transformer，灰色是之前的模型', 'demo-x-ink2', 12);
-    label(p1, R, 168, '橙色虚线：之前最好的集成模型', 'demo-x-ink2', 12);
+    label(p1, R, 64, '这个分数怎么来', 'demo-x-ink', 14);
+    label(p1, R, 96, '拿机器的译文和人工译文比一比，', 'demo-x-ink2', 12);
+    label(p1, R, 118, '重合的词越多，分越高（论文叫 BLEU）', 'demo-x-ink2', 12);
+    var mt = ['Die', 'Katze', 'sitzt', 'auf', 'der', 'Matte'], hu = ['Die', 'Katze', 'saß', 'auf', 'der', 'Matte'];
+    var mtC = mt.map(function (w, j) { return chip(p1, R + j * 58, 140, 52, w, C_Q, { size: 11.5 }); });
+    hu.forEach(function (w, j) { chip(p1, R + j * 58, 180, 52, w, C_V, { size: 11.5 }); });
+    readHint(p1, R, 240, '横条**越长越好**；条从 23 分画起', 12);
+    label(p1, R, 264, '蓝色两根是 Transformer，灰色是以前的模型', 'demo-x-ink2', 12);
+    /* 第 2 段 */
     var p2 = group(s);
-    label(p2, R, 64, '英译德：big 28.4', 'demo-x-ink', 14);
+    label(p2, R, 64, '大模型 28.4 分', 'demo-x-ink', 14);
     var gap = tone(p2, R, 100, '', C_ACCENT, 14);
-    label(p2, R, 130, '此前最好是 ConvS2S 集成的 26.36', 'demo-x-ink2', 12);
-    label(p2, R, 154, 'base 27.3 也超过了之前所有单模型和集成', 'demo-x-ink2', 12);
-    label(p2, R, 178, 'big 在 8 张 P100 上训了 3.5 天', 'demo-x-ink2', 12);
+    label(p2, R, 130, '以前最好的是好几个模型合起来的 26.36', 'demo-x-ink2', 12);
+    label(p2, R, 154, '小模型 27.3，也超过了以前所有的', 'demo-x-ink2', 12);
+    /* 第 3 段：花的力气 */
     var p3 = group(s);
-    label(p3, R, 64, '训练开销（英德，FLOPs）', 'demo-x-ink', 14);
-    readHint(p3, R, 88, '对数轴，**越短越省**', 11.5);
-    var order = [5, 1, 2, 0, 6, 4, 3];
-    var fb = order.map(function (k, i) { return { k: k, b: barRowAt(p3, R, 100 + i * 24, 120, TABLE2[k].zh, TABLE2[k].ours ? C_ACCENT : C_MUTED, 16, 11, true) }; });
+    label(p3, R, 64, '训练花了多少力气', 'demo-x-ink', 14);
+    readHint(p3, R, 88, '以小模型为 1 份，**越短越省**', 11.5);
+    var cb = COST_SHARE.map(function (c, i) { return { c: c, b: barRowAt(p3, R, 100 + i * 24, 120, c[0], c[2] ? C_ACCENT : C_MUTED, 16, 11) }; });
+    label(p3, R, 282, '每往右一大格，就多 10 倍（按倍数画）', 'demo-x-mut', 11);
+    /* 第 4 段：英译法 */
     var p4 = group(s);
-    label(p4, R, 64, '英译法：41.8，还是 41.0？', 'demo-x-ink', 14);
-    var frb = [barRowAt(p4, R, 88, 120, 'ConvS2S 集成', C_MUTED, 20, 12), barRowAt(p4, R, 118, 120, 'Transformer big', C_ACCENT, 20, 12)];
-    label(p4, R, 172, '表二和摘要写 41.8，§6.1 正文写 41.0', 'demo-x-ink2', 12);
-    label(p4, R, 196, '本站笔记按表取 41.8，并记下这处出入', 'demo-x-ink2', 12);
-    label(p4, R, 220, '英法 big 的 dropout 用 0.1，不是 0.3', 'demo-x-ink2', 12);
-    label(p4, R, 244, '条从 38 分画起', 'demo-x-mut', 11);
+    label(p4, R, 64, '英译法也一样：41.8 分', 'demo-x-ink', 14);
+    var frb = [barRowAt(p4, R, 88, 120, 'ConvS2S 集成', C_MUTED, 20, 12), barRowAt(p4, R, 118, 120, '大模型（这篇）', C_ACCENT, 20, 12)];
+    label(p4, R, 172, '一个模型，就超过了以前合起来的', 'demo-x-ink2', 12);
+    label(p4, R, 196, '（正文有一处写成 41.0，本站按表取 41.8）', 'demo-x-mut', 11);
+    label(p4, R, 220, '条从 38 分画起', 'demo-x-mut', 11);
+    /* 第 5 段：怎么估的 */
     var p5 = group(s);
-    label(p5, R, 64, 'FLOPs 是估出来的', 'demo-x-ink', 14);
-    label(p5, R, 94, '训练时间 × GPU 数 × 单卡持续算力（脚注 5）', 'demo-x-ink2', 12);
-    math(p5, R, 134, '43200\\,\\mathrm{s}\\times 8\\times 9.5\\times10^{12}\\approx 3.3\\times10^{18}', 14, 'start', 352);
-    label(p5, R, 166, '12 小时 = 43200 秒，P100 取 9.5 TFLOPS', 'demo-x-ink2', 12);
-    math(p5, R, 204, '302400\\,\\mathrm{s}\\times 8\\times 9.5\\times10^{12}\\approx 2.3\\times10^{19}', 14, 'start', 352);
-    label(p5, R, 236, 'big：3.5 天，正好对上表里的两格（我们的验算）', 'demo-x-ink2', 12);
+    label(p5, R, 64, '「力气」是估出来的', 'demo-x-ink', 14);
+    var mul = [['练的时间', '12 小时'], ['显卡数量', '8 张'], ['每张卡的速度', '每秒 9.5 万亿次']].map(function (m, j) {
+      chip(p5, R, 92 + j * 46, 130, m[0], C_ACCENT, { size: 12 });
+      return label(p5, R + 146, 111 + j * 46, m[1], 'demo-x-ink', 12.5);
+    });
+    label(p5, R, 252, '三样乘起来，就是小模型那 1 份', 'demo-x-ink2', 12);
+    label(p5, R, 276, '不是实际测的（我们验算过，对得上）', 'demo-x-mut', 11);
     function draw(t, clock) {
+      var now = nowOf(t, clock);
       var u = seg(t, 0.4, 2.4);
       bars.forEach(function (b) { b.b.set((b.r.de - B0) / (B1 - B0) * BW * u, u > 0.95 ? String(b.r.de) : ''); });
       bars.forEach(function (b) { b.b.bar.style.opacity = (winK(t, 1) > 0.5 && b.r.ours) || winK(t, 1) < 0.5 ? 0.9 : 0.35; });
+      mtC.forEach(function (c, j) { c.box.style.stroke = j === 2 ? C_RNN : C_GOOD; c.box.style.strokeWidth = (1.3 + 1.2 * Math.abs(Math.sin(now * 2 + j))).toFixed(2); });
       var u2 = seg(since(t, clock, 3.6), 0.3, 1.6);
-      gap.textContent = '高出 ' + f2((28.4 - 26.36) * u2) + ' 分';
+      gap.textContent = '比以前最好高出 ' + f2((28.4 - 26.36) * u2) + ' 分';
       var u3 = seg(since(t, clock, 7.0), 0.3, 1.8);
-      fb.forEach(function (f) { var L = Math.log10(TABLE2[f.k].flops), ex = TABLE2[f.k].flops.toExponential(1).split('e+'); f.b.set((L - 18) / 2.4 * 150 * u3, u3 > 0.95 ? '$' + ex[0] + '\\times10^{' + ex[1] + '}$' : ''); });
+      cb.forEach(function (c) { var share = c.c[1] / 3.3e18, L = Math.log10(share); c.b.set((0.15 + L / 1.8) * 120 * u3, u3 > 0.95 ? (share < 1.5 ? '1 份' : '约 ' + Math.round(share) + ' 份') : ''); });
       var u4 = seg(since(t, clock, 10.4), 0.3, 1.6);
       frb[0].set((41.29 - 38) / 4 * 190 * u4, f2(38 + 3.29 * u4)); frb[1].set((41.8 - 38) / 4 * 190 * u4, f1(38 + 3.8 * u4));
+      var u5 = since(t, clock, 13.4);
+      mul.forEach(function (m, j) { setOpacity(m, seg(u5, 0.4 + j * 0.7, 0.8 + j * 0.7)); });
       panels(t, [p1, p2, p3, p4, p5]);
-      void clock;
     }
     return { el: s, draw: draw };
   }
 
-  /* ── scene 16: 表三、表四：消融与句法分析 ── */
+  /* ── scene 16: 拆零件试试（表三、表四） ── */
+  var TABLE3_PLAIN = [
+    { g: 'C', zh: '只有 2 层', bleu: 23.7 }, { g: 'C', zh: '4 层', bleu: 25.3 }, { g: 'C', zh: '8 层', bleu: 25.5 },
+    { g: 'C', zh: '档案更短（256）', bleu: 24.5 }, { g: 'C', zh: '档案更长（1024）', bleu: 26.0 },
+    { g: 'C', zh: '小网络更窄', bleu: 25.4 }, { g: 'C', zh: '小网络更宽', bleu: 26.2 },
+    { g: 'D', zh: '不请假', bleu: 24.6 }, { g: 'D', zh: '请假 20%', bleu: 25.5 },
+    { g: 'E', zh: '自己学的钟', bleu: 25.7 },
+    { g: 'big', zh: '大模型', bleu: 26.4 }
+  ];
   function buildSceneTable3() {
-    var s = sceneSvg('左边是表 3 的十三根横条，条从 23 分画起，竖虚线是 base 的 25.8，讲到哪一组就亮哪一组；右边依次出现：读法；模型越大越好；dropout 和标签平滑；' +
-      '可学习的位置嵌入；表 4 句法分析的四根条');
-    s.appendChild(svgText(24, 26, '表三：改一处，看 dev BLEU 怎么变', 'demo-x-ink2', 13.5));
-    var LX = 24, LW = 120, BW = 220, B0 = 23, B1 = 27;
+    var s = sceneSvg('左边是表 3 的十一根横条，条从 23 分画起，竖虚线是原版的 25.8，讲到哪一组就亮哪一组；右边依次出现：读法和图例；模型越大越好；随机请假很有用；' +
+      '钟换成自己学的；表 4 换一个任务的四根条');
+    s.appendChild(svgText(24, 26, '论文表三：每次只改一样，看分数怎么变', 'demo-x-ink2', 13.5));
+    var LX = 24, LW = 130, BW = 210, B0 = 23, B1 = 27;
     function bx(v) { return LX + LW + (v - B0) / (B1 - B0) * BW; }
     var GC = { C: C_ACCENT, D: C_WARN, E: C_V, big: C_ROBOT };
-    var rows = TABLE3.map(function (r, i) { return { r: r, b: barRowAt(s, LX, 46 + i * 24, LW, r.zh, GC[r.g], 16, 11.5) }; });
-    hline(s, bx(BASE_DEV), 40, bx(BASE_DEV), 46 + 13 * 24, C_INK, 1.4, '5 4');
-    label(s, bx(BASE_DEV), 46 + 13 * 24 + 16, 'base 25.8', 'demo-x-ink2', 11, 'middle');
-    [23, 25, 27].forEach(function (v) { label(s, bx(v), 46 + 13 * 24 + 34, String(v), 'demo-x-mut', 10.5, 'middle'); });
-    var R = 424, W = 352;
+    /* 虚线只画在两行之间的空隙里：不从 25.5 这些读数上穿过 */
+    for (var g3 = 0; g3 <= 11; g3++) hline(s, bx(BASE_DEV), g3 ? 46 + g3 * 27 - 8 : 40, bx(BASE_DEV), 46 + g3 * 27 - 1, C_INK, 1.4, '3 2');
+    var rows = TABLE3_PLAIN.map(function (r, i) { return { r: r, b: barRowAt(s, LX, 46 + i * 27, LW, r.zh, GC[r.g], 18, 11.5) }; });
+    label(s, bx(BASE_DEV), 46 + 11 * 27 + 16, '原版 25.8', 'demo-x-ink2', 11, 'middle');
+    [23, 25, 27].forEach(function (v) { label(s, bx(v), 46 + 11 * 27 + 34, String(v), 'demo-x-mut', 10.5, 'middle'); });
+    /* 第 1 段 */
     var p1 = group(s);
-    label(p1, R, 64, '读法', 'demo-x-ink', 14);
-    readHint(p1, R, 92, 'dev BLEU（newstest2013），**越长越好**', 12);
-    label(p1, R, 120, '虚线是 base 的 25.8：越过虚线就是变好', 'demo-x-ink2', 12);
-    label(p1, R, 144, '这里没做检查点平均，所以比表二的数低', 'demo-x-ink2', 12);
-    legendRow(p1, R, 176, [['C 组：大小', C_ACCENT], ['D 组：正则', C_WARN], ['E 组：位置', C_V], ['big', C_ROBOT]], 11);
+    label(p1, R, 64, '拆零件试试：每次只改一样', 'demo-x-ink', 14);
+    readHint(p1, R, 92, '翻译得分，**越长越好**', 12);
+    label(p1, R, 120, '竖虚线是原版的 25.8：越过它就是变好', 'demo-x-ink2', 12);
+    label(p1, R, 144, '这里换了一套考题，所以分数比表二低', 'demo-x-ink2', 12);
+    legendRow(p1, R, 178, [['大小', C_ACCENT], ['请假', C_WARN], ['钟', C_V], ['大模型', C_ROBOT]], 11.5);
+    /* 第 2 段 */
     var p2 = group(s);
-    label(p2, R, 64, 'C 组：模型越大越好', 'demo-x-ink', 14);
-    label(p2, R, 96, '只有 2 层：23.7；8 层：25.5', 'demo-x-ink2', 12);
-    rich(p2, R, 120, '$d_{model}=1024$：26.0；$d_{ff}=4096$：26.2', 12);
-    label(p2, R, 144, 'big（1024 维、16 头）：26.4，2.13 亿参数', 'demo-x-ink2', 12);
-    label(p2, R, 168, '论文的话：正如预期，模型越大越好', 'demo-x-mut', 11.5);
+    label(p2, R, 64, '模型越大，越好', 'demo-x-ink', 14);
+    label(p2, R, 96, '只有 2 层：23.7 分', 'demo-x-ink2', 12);
+    label(p2, R, 120, '档案更长、小网络更宽：26.0、26.2', 'demo-x-ink2', 12);
+    label(p2, R, 144, '大模型：26.4 分', 'demo-x-ink2', 12);
+    label(p2, R, 176, '论文的话：和预期一样', 'demo-x-mut', 11.5);
+    /* 第 3 段 */
     var p3 = group(s);
-    label(p3, R, 64, 'D 组：dropout 很有用', 'demo-x-ink', 14);
-    label(p3, R, 96, '去掉 dropout：24.6，掉了 1.2 分', 'demo-x-ink2', 12);
-    label(p3, R, 120, '去掉标签平滑：25.3；加到 0.2：25.7', 'demo-x-ink2', 12);
-    label(p3, R, 144, '论文：dropout 对防止过拟合非常有帮助', 'demo-x-mut', 11.5);
+    label(p3, R, 64, '随机请假很有用', 'demo-x-ink', 14);
+    label(p3, R, 96, '不请假：掉到 24.6，少了 1.2 分', 'demo-x-ink2', 12);
+    label(p3, R, 120, '论文：它很能防止「死记硬背」', 'demo-x-ink2', 12);
+    var lv = cellGrid(p3, R, 140, 20, 10, 22, 6, C_WARN);
+    /* 第 4 段 */
     var p4 = group(s);
-    label(p4, R, 64, 'E 组：位置编码的形式无所谓', 'demo-x-ink', 14);
-    label(p4, R, 96, '可学习的位置嵌入：25.7，几乎和正弦一样', 'demo-x-ink2', 12);
-    label(p4, R, 120, '困惑度都是 4.92', 'demo-x-ink2', 12);
+    label(p4, R, 64, '钟换成自己学的：差不多', 'demo-x-ink', 14);
+    label(p4, R, 96, '自己学的钟 25.7，原版的正弦钟 25.8', 'demo-x-ink2', 12);
+    label(p4, R, 120, '用哪一种钟，影响不大', 'demo-x-ink2', 12);
+    /* 第 5 段：表四 */
     var p5 = group(s);
-    label(p5, R, 64, '表四：搬到英语句法分析', 'demo-x-ink', 14);
-    readHint(p5, R, 88, 'WSJ 第 23 节 F1，**越长越好**；条从 90 画起', 11);
-    var pb = TABLE4.map(function (r, i) { return { r: r, b: barRowAt(p5, R, 100 + i * 28, 170, r.zh, r.ours ? C_ACCENT : C_MUTED, 18, 11.5) }; });
-    label(p5, R, 226, '4 层、1024 维，几乎没为这个任务调参', 'demo-x-ink2', 12);
-    label(p5, R, 250, '只用 WSJ 的 4 万句，也超过了 BerkeleyParser', 'demo-x-ink2', 12);
+    label(p5, R, 64, '论文表四：换个任务也能用', 'demo-x-ink', 14);
+    label(p5, R, 92, '任务：分析英文句子的结构', 'demo-x-ink2', 12);
+    readHint(p5, R, 116, '得分**越长越好**；条从 90 分画起', 11);
+    var T4 = [['这篇：练 4 万句', 91.3, true], ['以前的方法：4 万句', 91.7], ['这篇：再加 1700 万句', 92.7, true], ['以前最好的一种', 93.3]];
+    var pb = T4.map(function (r, i) { return { r: r, b: barRowAt(p5, R, 128 + i * 28, 150, r[0], r[2] ? C_ACCENT : C_MUTED, 18, 11.5) }; });
+    label(p5, R, 254, '几乎没有专门调，也接近最好的方法', 'demo-x-ink2', 12);
     function draw(t, clock) {
+      var now = nowOf(t, clock);
       var u = seg(t, 0.4, 2.2);
-      var on = [null, 'C', 'D', 'E', null];
-      var k = 0;
+      var on = [null, 'C', 'D', 'E', null], k = 0;
       [0, 1, 2, 3, 4].forEach(function (j) { if (winK(t, j) > 0.5) k = j; });
       rows.forEach(function (r) {
         r.b.set((r.r.bleu - B0) / (B1 - B0) * BW * u, u > 0.95 ? f1(r.r.bleu) : '');
         var lit = !on[k] || r.r.g === on[k] || (k === 1 && r.r.g === 'big');
         r.b.bar.style.opacity = lit ? 0.9 : 0.25;
       });
+      var lk = Math.floor(now / 0.8);
+      lv.cells.forEach(function (c, q) { c.style.opacity = rnd(q + 20 * lk, 3) < 0.2 ? 0.12 : 0.9; });
       var u5 = seg(since(t, clock, 13.4), 0.3, 1.8);
-      pb.forEach(function (p) { p.b.set((p.r.f1 - 90) / 3.5 * 150 * u5, u5 > 0.95 ? String(p.r.f1) : ''); });
+      pb.forEach(function (p) { p.b.set((p.r[1] - 90) / 3.5 * 140 * u5, u5 > 0.95 ? String(p.r[1]) : ''); });
       panels(t, [p1, p2, p3, p4, p5]);
     }
     return { el: s, draw: draw };
@@ -2113,269 +2374,189 @@
 
   /* ── scene 17: 局限，以及机器人怎么接着用 ── */
   function buildSceneLimits() {
-    var s = sceneSvg('左边是第 014 期真实世界人形行走图 8A 的读图柱：只换学生网络，Transformer、LSTM、TCN、MLP 的成功率，旁边是 Digit；' +
-      '右边依次出现：注意力表随序列变长平方增长；训练并行、生成串行；几处理由是猜测；机器人这边的证据；tensor2tensor 与论文的三处不同');
-    s.appendChild(svgText(24, 26, '这篇没有机器人实验；证据在第 014 期', 'demo-x-ink2', 13.5));
+    var s = sceneSvg('左边是第 014 期真实世界人形行走图 8A 的读图柱：同一个行走任务只换大脑，Transformer、LSTM、TCN、MLP 的成功率，旁边是 Digit；' +
+      '右边依次出现：人数翻倍对数翻四倍的格子；一个一个写的格子；三处作者的猜测；机器人这边的证据；同一个零件装进三台机器人');
+    s.appendChild(svgText(24, 26, '这篇没有机器人实验；证据在第 14 期', 'demo-x-ink2', 13.5));
     robotImg(s, 'digit', 20, 70, 200);
     var fb = RH_FIG8A.map(function (r, i) { return barRowAt(s, 120, 96 + i * 44, 84, r[0], i ? C_MUTED : C_ROBOT, 26, 12.5); });
-    readHint(s, 128, 76, '成功率，**越长越好**', 11.5);
-    label(s, 24, 318, '第 014 期论文图 8A（读图）：只换学生网络，', 'demo-x-mut', 11);
+    readHint(s, 128, 76, '走成功的比例，**越长越好**', 11.5);
+    label(s, 24, 318, '第 14 期论文图 8A（读图）：同一个任务，只换大脑，', 'demo-x-mut', 11);
     label(s, 24, 338, '3 个场景共 30 次；那篇的结果，不是这篇的', 'demo-x-mut', 11);
-    var R = 424, W = 352;
+    /* 第 1 段 */
     var p1 = group(s);
-    rich(p1, R, 64, '局限一：每层 $n^2$', 14, 'demo-x-ink');
+    label(p1, R, 64, '局限一：人一多，要聊的对数暴涨', 'demo-x-ink', 14);
     var grow = attnGrid(p1, R, 84, 16, 9, C_RNN);
     var gTxt = tone(p1, R + 160, 110, '', C_RNN, 13);
-    label(p1, R + 160, 140, '序列长一倍，表大四倍', 'demo-x-ink2', 12);
-    label(p1, R, 252, '图像、音频、视频这类长输入会很贵', 'demo-x-ink2', 12);
-    label(p1, R, 276, '论文打算研究只看局部的受限注意力（§7）', 'demo-x-ink2', 12);
+    label(p1, R + 160, 140, '人数翻一倍，对数变四倍', 'demo-x-ink2', 12);
+    label(p1, R, 252, '图片、声音、视频切出来的卡片很多，会很贵', 'demo-x-ink2', 12);
+    label(p1, R, 276, '论文想过：只和邻座聊', 'demo-x-ink2', 12);
+    /* 第 2 段 */
     var p2 = group(s);
-    label(p2, R, 64, '局限二：生成仍然串行', 'demo-x-ink', 14);
-    label(p2, R, 96, '训练整句并行，不等于生成也并行', 'demo-x-ink2', 12);
-    var gen = cellGrid(p2, R, 116, 12, 12, 22, 4, C_V);
-    label(p2, R, 168, '每生成一个，还要再前向一次', 'demo-x-ink2', 12);
-    label(p2, R, 192, '论文把「让生成不那么串行」列为下一步', 'demo-x-ink2', 12);
+    label(p2, R, 64, '局限二：写的时候，还是一个一个来', 'demo-x-ink', 14);
+    var gen = cellGrid(p2, R, 96, 12, 12, 22, 4, C_V);
+    label(p2, R, 156, '训练能一起改，用起来还得一个一个写', 'demo-x-ink2', 12);
+    label(p2, R, 180, '论文把这一条列为下一步的目标', 'demo-x-ink2', 12);
+    /* 第 3 段 */
     var p3 = group(s);
-    label(p3, R, 64, '局限三：几处理由是猜测或假设', 'demo-x-ink', 14);
-    var claims = [['除以 √$d_k$', '原文 “We suspect”'], ['正弦位置编码', '假设好学相对位置、可能外推'], ['注意力可视化', '挑出来的例子，不是解释']];
-    claims.forEach(function (c, i) {
+    label(p3, R, 64, '局限三：几处理由，是作者的猜测', 'demo-x-ink', 14);
+    [['分数除以 8', '猜：不让一个人盖过全场'], ['正弦当钟', '猜：更能用在长句子上'], ['评委在找「它」', '只是挑出来的例子']].forEach(function (c, i) {
       var y = 84 + i * 50;
       rectBox(p3, R, y, W, 42, C_BORDER, C_SURFACE);
-      rich(p3, R + 12, y + 26, c[0], 12.5, 'demo-x-ink', 'start', 124);
-      label(p3, R + 140, y + 26, c[1], 'demo-x-ink2', 11.5);
+      label(p3, R + 12, y + 26, c[0], 'demo-x-ink', 12.5);
+      label(p3, R + 150, y + 26, c[1], 'demo-x-ink2', 11.5);
     });
-    label(p3, R, 252, '都没有单独的实验验证', 'demo-x-mut', 11.5);
+    label(p3, R, 252, '都没有专门的实验来证明', 'demo-x-mut', 11.5);
+    /* 第 4 段 */
     var p4 = group(s);
-    label(p4, R, 64, '机器人这边的证据：第 014 期', 'demo-x-ink', 14);
-    label(p4, R, 96, '同样的行走任务，只换学生网络（读图）：', 'demo-x-ink2', 12);
-    label(p4, R, 120, 'Transformer 约 97%，比 MLP 高约 22 个百分点', 'demo-x-ink2', 12);
-    label(p4, R, 144, '那篇的理由：更容易随数据和算力扩展，', 'demo-x-ink2', 12);
-    label(p4, R, 166, '也更方便接入更多种输入', 'demo-x-ink2', 12);
-    rich(p4, R, 200, '这篇论文本身**没有**任何控制或强化学习的结论', 12);
+    label(p4, R, 64, '机器人这边的证据：第 14 期', 'demo-x-ink', 14);
+    label(p4, R, 96, '同一个行走任务，只换大脑（读图）：', 'demo-x-ink2', 12);
+    label(p4, R, 120, 'Transformer 约 97%，MLP 约 75%', 'demo-x-ink2', 12);
+    label(p4, R, 152, '那篇的理由：数据和算力越多越好用，', 'demo-x-ink2', 12);
+    label(p4, R, 174, '也方便接进更多种输入', 'demo-x-ink2', 12);
+    /* 第 5 段：同一个零件，装进不同的机器人 */
     var p5 = group(s);
-    label(p5, R, 64, '官方代码 tensor2tensor（已归档）', 'demo-x-ink', 14);
-    var flips = flipList(p5, R, 84, [['位置编码', 'sin / cos 交错', '先全 sin 再全 cos'], ['归一化', '子层之后', '默认子层之前'], ['掩码', '$-\\infty$', '$-10^9$']], 90, 150);
-    label(p5, R, 222, '代码注释自己写了：和论文略有不同', 'demo-x-mut', 11.5);
+    label(p5, R, 64, '同一个零件，装进不同的机器人', 'demo-x-ink', 14);
+    var rb = [['digit', 130, '行走'], ['ur5', 64, '机械臂'], ['g1', 130, '人形（示意）']].map(function (r, j) {
+      var im = robotImg(p5, r[0], R + 10 + j * 118, 250 - r[1], r[1]);
+      label(p5, R + 10 + j * 118 + im.w / 2, 272, r[2], 'demo-x-ink2', 12, 'middle');
+      return chip(p5, R + j * 118, 86, 104, 'Transformer', C_ACCENT, { size: 11.5, h: 24 });
+    });
+    label(p5, R, 300, '换的是卡片和输出；中间的零件，来自这篇论文', 'demo-x-ink2', 12);
     function draw(t, clock) {
       var now = nowOf(t, clock);
       var u = seg(t, 0.4, 2.2);
-      fb.forEach(function (b, i) { b.set(RH_FIG8A[i][1] / 100 * 150 * u, u > 0.95 ? '≈' + RH_FIG8A[i][1] + '%' : ''); });
+      fb.forEach(function (b, i) { b.set(RH_FIG8A[i][1] / 100 * 150 * u, u > 0.95 ? '约 ' + RH_FIG8A[i][1] + '%' : ''); });
       var lv = Math.floor(since(t, clock, 0.4) / 1.3) % 3, n = [4, 8, 16][lv];
       grow.set(function (i, j) { return { a: i < n && j < n ? 0.75 : 0.05 }; });
-      gTxt.textContent = n + ' 个 token → ' + n * n + ' 对';
+      gTxt.textContent = n + ' 个人 → ' + n * n + ' 对';
       gen.fill(1 + Math.floor(since(t, clock, 3.6) * 2) % 12);
-      flips.set(since(t, clock, 13.4));
-      panels(t, [p1, p2, p3, p4, p5]);
+      var u5 = since(t, clock, 13.4);
+      rb.forEach(function (c, j) { var dv = clamp(1 - (u5 - 0.4 - j * 0.6) / 0.6, 0, 1); moveG(c, 0, -10 * dv); setOpacity(c, 1 - dv); });
       void now;
+      panels(t, [p1, p2, p3, p4, p5]);
     }
     return { el: s, draw: draw };
   }
-
   var TF_SCENES = [
-    {
-      title: '为什么机器人要读一篇翻译论文',
-      dur: 16,
-      build: buildSceneWhy,
-      cues: [
-        { at: 0.4, s: '这是一篇 2017 年的**机器翻译**论文：英译德、英译法，全文没有一个机器人。' },
-        { at: 3.6, s: '第 014 期的 Digit：读最近 16 步观测—动作的**因果 Transformer**，直接出关节目标。' },
-        { at: 7.0, s: 'π₀ 把图像、文字、状态和 50 步动作放进同一个 Transformer；GR00T N1 的动作头是 DiT。' },
-        { at: 10.4, s: 'Diffusion Policy 有 Transformer 版去噪网络；MaskedMimic 的策略也是 Transformer。' },
-        { at: 13.4, s: '它们换掉的是输入的 token 和输出头，中间那块注意力，来自这篇论文。' }
-      ]
-    },
-    {
-      title: '一步等一步：RNN 的串行瓶颈',
-      dur: 16,
-      build: buildSceneSerial,
-      cues: [
-        { at: 0.4, s: 'RNN：$h_t = f(h_{t-1}, x_t)$，第 $t$ 步必须等前一步算完才能开始。' },
-        { at: 3.6, s: '序列越长串行越久：6 步、16 步、50 步，RNN 就要一步一步走这么多次。' },
-        { at: 7.0, s: '第 1 步的信息要经过 $n-1$ 次更新才到最后；路径越长，越难学。' },
-        { at: 10.4, s: '卷积能并行，但要堆很多层才连通：ConvS2S $O(n/k)$，ByteNet $O(\\log_k n)$。' },
-        { at: 13.4, s: 'Transformer：**不用循环，也不用卷积**，一层之内任意两步直接相连。' }
-      ]
-    },
-    {
-      title: '表一：三种层，比三件事',
-      dur: 16,
-      build: buildSceneTable1,
-      cues: [
-        { at: 0.4, s: '表一比三件事：每层计算量、串行操作数、任意两个位置之间的最长路径，都是越小越好。' },
-        { at: 3.6, s: '序列比宽度短（$n<d$）时，自注意力 $O(n^2 \\cdot d)$ 比循环 $O(n \\cdot d^2)$ 更便宜。' },
-        { at: 7.0, s: '按量级粗算：Digit 16 步、宽 192，便宜约 12 倍；π₀ 867 个 token、宽 2048，约 2.4 倍。' },
-        { at: 10.4, s: '序列太长时：只看邻域 $r$ 的受限自注意力，$O(r \\cdot n \\cdot d)$，论文留作后续工作。' },
-        { at: 13.4, s: '机器人里 $n$ 涨得最快的是图像：π₀ 三路相机就占 768 个 token。' }
-      ]
-    },
-    {
-      title: '机器人的 token 是什么',
-      dur: 16,
-      build: buildSceneToken,
-      cues: [
-        { at: 0.4, s: '论文先把每个词查表变成 512 维向量，再乘 $\\sqrt{d_{model}} \\approx 22.6$。' },
-        { at: 3.6, s: '词表是 BPE 子词：英德共享约 37000 个；每个 batch 约 25000 + 25000 个 token。' },
-        { at: 7.0, s: '第 014 期的 Digit：每一步的观测—动作，用 MLP 嵌成一个 192 维的 token。' },
-        { at: 10.4, s: 'π₀：一张 224 × 224 的图切成 256 个 token；三路相机加文字、状态、动作，一共 867 个。' },
-        { at: 13.4, s: 'GR00T N1 每帧 64 个图像 token。输入是什么都行，只要变成一串等宽的向量。' }
-      ]
-    },
-    {
-      title: 'Q、K、V：一份输入，三种角色',
-      dur: 16,
-      build: buildSceneQKV,
-      cues: [
-        { at: 0.4, s: '注意力：拿一个 query 去和一组 key 比，按相似度把对应的 value 加权求和。' },
-        { at: 3.6, s: '打个比方：Q 是第 $t$ 步要找什么，K 是每一步贴的标签，V 是每一步交出来的内容。' },
-        { at: 7.0, s: '自注意力里 Q、K、V 都来自同一串输入，各乘一个可学习矩阵：512 维投到每头 64 维。' },
-        { at: 10.4, s: '相似度用点积，不用加性注意力：点积就是矩阵乘法，更快也更省显存。' },
-        { at: 13.4, s: '所有 query 一次算完：$QK^\\top$ 一下给出一张 $n \\times n$ 的分数表。' }
-      ]
-    },
-    {
-      title: '手算一次注意力',
-      dur: 16,
-      build: buildSceneAttention,
-      cues: [
-        { at: 0.4, s: '一行公式：$\\mathrm{softmax}(QK^\\top/\\sqrt{d_k})\\,V$。拿机器人最近 3 步、$d_k=4$ 的玩具走一遍。' },
-        { at: 3.6, s: '第 $t$ 步的 $q=[1,0,1,0]$，和三步的 key 点积：**1 / 2 / 1**。' },
-        { at: 7.0, s: '除以 $\\sqrt{4}=2$ 得 0.5 / 1 / 0.5；softmax：**0.274 / 0.452 / 0.274**。' },
-        { at: 10.4, s: 'value 按权重相加：输出 $=[0.548,\\ 0.726]$，第 $t-1$ 步拿得最多。' },
-        { at: 13.4, s: '真实模型里 $q$、$k$、$v$ 都是学出来的投影；一句话：谁和我像，就多拿谁的 value。' }
-      ]
-    },
-    {
-      title: '为什么要除以 $\\sqrt{d_k}$',
-      dur: 16,
-      build: buildSceneScale,
-      cues: [
-        { at: 0.4, s: '脚注 4：若 $q$、$k$ 的分量独立、均值 0、方差 1，点积的方差就是 $d_k$。' },
-        { at: 3.6, s: '论文 $d_k = 64$：点积标准差 **8**；除以 8 以后，标准差回到 1。' },
-        { at: 7.0, s: '同一组分数 12 / 4 / −4 / 6：直接进 softmax，最大项拿走 **0.997**；除以 8 只拿 0.506。' },
-        { at: 10.4, s: 'softmax 在最大项处的梯度 $p(1-p)$：**0.0028** 对 **0.250**，差约 89 倍。' },
-        { at: 13.4, s: '论文说这是猜测；每头 48、256 维的机器人模型，不缩放时标准差是 6.9、16。' }
-      ]
-    },
-    {
-      title: '多头：8 个 64 维的头',
-      dur: 16,
-      build: buildSceneHeads,
-      cues: [
-        { at: 0.4, s: '一个头只给一组权重：不同的关系会被**平均**到一起（§3.2.2）。' },
-        { at: 3.6, s: '多头：512 维切成 8 个 64 维的头，并行算完再拼接、乘 $W^O$；总计算量和单头差不多。' },
-        { at: 7.0, s: '表三 A 组，计算量不变、只改头数：1 头 24.9，8 头 25.8，32 头又掉到 25.4。' },
-        { at: 10.4, s: '表三 B 组只把 $d_k$ 缩到 16、32：25.1、25.4，判断相容性并不容易。' },
-        { at: 13.4, s: '附录图里不同的头盯着不同的词；Digit 用 4 个头，π₀ 的 Gemma 8 个头共用一组 K、V。' }
-      ]
-    },
-    {
-      title: '位置编码：把顺序加回来',
-      dur: 16,
-      build: buildScenePE,
-      cues: [
-        { at: 0.4, s: '注意力本身不分先后：打乱顺序，输出只是跟着换位。位置得**加进输入**。' },
-        { at: 3.6, s: '每一维配一条正弦：维度越高频率越低，波长从 $2\\pi$ 到 $10000\\cdot 2\\pi$。' },
-        { at: 7.0, s: '玩具 $d_{model}=4$：前两维每步转 1 弧度，后两维每步只转 0.01 弧度。' },
-        { at: 10.4, s: '作者**假设** $PE_{pos+k}$ 是 $PE_{pos}$ 的线性函数；表三 E 组可学习的嵌入 25.7 对 25.8。' },
-        { at: 13.4, s: '机器人里：Digit 的 16 步、扩散策略的去噪步、π₀ 的流匹配时间，都用这个正弦函数编码。' }
-      ]
-    },
-    {
-      title: '残差、LayerNorm 和前馈网络',
-      dur: 16,
-      build: buildSceneBlock,
-      cues: [
-        { at: 0.4, s: '每个子层外面包一层残差，再做 LayerNorm：$\\mathrm{LayerNorm}(x+\\mathrm{Sublayer}(x))$。' },
-        { at: 3.6, s: '逐位置前馈网络 512 → 2048 → 512：每个位置单独过，参数共用。' },
-        { at: 7.0, s: '按标准结构数参数：base 约 6300 万（论文 6500 万），big 约 2.14 亿（论文 2.13 亿）。' },
-        { at: 10.4, s: '残差 dropout 0.1：每个子层的输出，加回去之前先随机丢掉一些。' },
-        { at: 13.4, s: 'tensor2tensor 后来默认 pre-norm、预热 8000 步；复现要切回 v1 配置。' }
-      ]
-    },
-    {
-      title: '因果掩码：只看过去',
-      dur: 16,
-      build: buildSceneMask,
-      cues: [
-        { at: 0.4, s: '解码器的自注意力只能看过去：softmax 之前，把未来位置的分数设成 $-\\infty$。' },
-        { at: 3.6, s: '输出再右移一位：位置 $i$ 的预测只依赖 $i$ 之前已经知道的输出。' },
-        { at: 7.0, s: '机器人部署时也看不到未来：Digit 的 16 个 token，因果掩码留下 136 / 256 对。' },
-        { at: 10.4, s: '代码里 $-\\infty$ 写成 $-10^9$：softmax 之后同样是 0；半精度另换一个能表示的大负数。' },
-        { at: 13.4, s: '掩码还有别的形状：π₀ 用三块的分块因果掩码；MaskedMimic 用它挡掉没给的目标。' }
-      ]
-    },
-    {
-      title: '交叉注意力：去读另一串 token',
-      dur: 16,
-      build: buildSceneCross,
-      cues: [
-        { at: 0.4, s: '三种用法：编码器自注意力、带掩码的解码器自注意力、编码器—解码器注意力。' },
-        { at: 3.6, s: '第三种就是交叉注意力：query 来自解码器，key 和 value 来自编码器的输出。' },
-        { at: 7.0, s: 'GR00T N1：16 个带噪动作 token 当 query，交叉注意力去读视觉语言模型的特征。' },
-        { at: 10.4, s: 'Diffusion Policy 的 Transformer 版：带噪动作之间因果注意力，观测用交叉注意力读进来。' },
-        { at: 13.4, s: 'π₀ 换了一种接法：图文、状态、动作拼成一串，只在自注意力里交互。' }
-      ]
-    },
-    {
-      title: '训练整句并行，推理一个一个来',
-      dur: 16,
-      build: buildSceneDecode,
-      cues: [
-        { at: 0.4, s: '解码器是自回归的：每生成一个 token，就把它接回输入，再生成下一个。' },
-        { at: 3.6, s: '翻译时用 beam search：beam 宽 4、长度惩罚 0.6，最长到输入长度加 50。' },
-        { at: 7.0, s: '机器人 50 Hz 控制，每步只有 20 ms：Digit 每一步前向一次，只出下一步的动作。' },
-        { at: 10.4, s: 'π₀ 一次出 50 步动作：流匹配 10 次前向、前缀用 KV 缓存，板载一次 73 ms。' },
-        { at: 13.4, s: '论文结论：下一步要让生成不那么串行；机器人后来用动作块加流匹配走了这一步。' }
-      ]
-    },
-    {
-      title: '训练配方：预热 4000 步',
-      dur: 16,
-      build: buildSceneRecipe,
-      cues: [
-        { at: 0.4, s: '训练数据：英德 450 万句对、英法 3600 万句；每个 batch 约 25000 + 25000 个 token。' },
-        { at: 3.6, s: '一台机器 8 张 P100：base 每步 0.4 秒、10 万步 12 小时；big 每步 1 秒、30 万步 3.5 天。' },
-        { at: 7.0, s: '峰值约 $6.99\\times10^{-4}$：先**线性预热 4000 步**，之后按 $1/\\sqrt{step}$ 慢慢下降。' },
-        { at: 10.4, s: '标签平滑 0.1：困惑度变差，BLEU 反而更高；另有残差 dropout 0.1。' },
-        { at: 13.4, s: '机器人模型也这么配：Diffusion Policy 线性预热 500 / 1000 步，GR00T N1 用 AdamW。' }
-      ]
-    },
-    {
-      title: '表二：翻译结果与训练开销',
-      dur: 16,
-      build: buildSceneTable2,
-      cues: [
-        { at: 0.4, s: '表二，英译德：横条越长 BLEU 越高；条从 23 分画起，虚线是此前最好的 26.36。' },
-        { at: 3.6, s: 'big 模型 **28.4**，比此前最好的集成模型高 2 分以上；base 27.3 也超过了之前所有结果。' },
-        { at: 7.0, s: '训练开销按对数画：base 只要 $3.3\\times10^{18}$ 次浮点运算，是表里最省的。' },
-        { at: 10.4, s: '英译法 big 41.8，单模型最好；正文第 6.1 节却写成 41.0，两处对不上。' },
-        { at: 13.4, s: 'FLOPs 是估算：12 小时 × 8 张卡 × 9.5 TFLOPS ≈ $3.3\\times10^{18}$，正好是 base 那一格。' }
-      ]
-    },
-    {
-      title: '表三、表四：消融与句法分析',
-      dur: 16,
-      build: buildSceneTable3,
-      cues: [
-        { at: 0.4, s: '表三的消融，读法：dev BLEU 越高越好，虚线是 base 的 25.8。' },
-        { at: 3.6, s: '模型越大越好：只有 2 层 23.7；$d_{model}$ 1024 是 26.0，$d_{ff}$ 4096 是 26.2，big 26.4。' },
-        { at: 7.0, s: 'dropout 很有用：去掉它掉到 24.6；去掉标签平滑是 25.3。' },
-        { at: 10.4, s: 'E 组：正弦换成可学习的位置嵌入，25.7，和 base 几乎一样。' },
-        { at: 13.4, s: '表四，英语句法分析：4 层模型几乎不调参，半监督 92.7，这块零件能搬到别的任务。' }
-      ]
-    },
-    {
-      title: '局限，以及机器人怎么接着用',
-      dur: 16,
-      build: buildSceneLimits,
-      cues: [
-        { at: 0.4, s: '局限一：每层 $n^2$。图像、音频、视频这类长序列很贵，论文打算研究只看局部的注意力。' },
-        { at: 3.6, s: '局限二：训练整句并行，生成仍然一个一个来；论文把这列为下一步的目标。' },
-        { at: 7.0, s: '局限三：除以 $\\sqrt{d_k}$、选正弦，理由都是猜测或假设，没有单独的实验。' },
-        { at: 10.4, s: '证据在第 014 期：同一个行走任务，Transformer 约 97%，MLP 约 75%（读图）。' },
-        { at: 13.4, s: '官方代码 tensor2tensor 已归档：位置编码的排布、归一化的位置、掩码的写法都和论文不同。' }
-      ]
-    }
+    { title: '一篇研究「翻译」的论文', dur: 16, build: buildSceneWhy, cues: [
+      { at: 0.4, s: '这是一篇**研究翻译**的论文：教电脑把英文翻成德文；不是「翻译过来的论文」。' },
+      { at: 3.6, s: '它造的零件叫 Transformer：进去的换成观测、出来的换成动作，就能用在机器人上。' },
+      { at: 7.0, s: '第 14 期的 Digit：大脑就是一个 Transformer，看最近 16 步，决定下一步。' },
+      { at: 10.4, s: '前面见过它：第 10 期扩散策略有 Transformer 版，第 28 期 MaskedMimic 用它的「遮挡」。' },
+      { at: 13.4, s: '三站：老办法为什么慢 → 注意力怎么算 → 成绩和机器人怎么用。' }
+    ] },
+    { title: '传话游戏：老办法为什么慢', dur: 16, build: buildSceneSerial, cues: [
+      { at: 0.4, s: '老办法（循环网络）像传话游戏：第 $t$ 步要等前一步传完才能开始。' },
+      { at: 3.6, s: '人越多越慢：6 个人传 6 次，16 个人传 16 次。' },
+      { at: 7.0, s: '传得越远越走样：第一步的信息，传到最后已经模糊了。' },
+      { at: 10.4, s: '卷积只能和邻座说话：要叠好几层，两头的人才连得上。' },
+      { at: 13.4, s: 'Transformer 不传话，直接开会：一轮就完，话一手就到。' }
+    ] },
+    { title: '开会的代价：论文表一', dur: 16, build: buildSceneTable1, cues: [
+      { at: 0.4, s: '论文表一比三件事：要等几轮、话转几手、一共聊多少；前两件开会赢。' },
+      { at: 3.6, s: '人不多时开会反而省：Digit 16 步，粗算省约 12 倍（我们的估算）。' },
+      { at: 7.0, s: '代价是平方：人数翻一倍，要聊的对数翻四倍。' },
+      { at: 10.4, s: '人太多时，可以只和邻座聊；论文把它留给以后研究。' },
+      { at: 13.4, s: '开会快、话不走样；代价是人一多就很贵。' }
+    ] },
+    { title: '先把输入切成一张张卡片', dur: 16, build: buildSceneToken, cues: [
+      { at: 0.4, s: 'Transformer 只吃一种东西：一串卡片（token）；一个词一张，长词切几块。' },
+      { at: 3.6, s: '每张卡片换成一串数字，像档案：意思相近的词，档案也相近。' },
+      { at: 7.0, s: '机器人：每 0.02 秒看到的，加上一步动作，压成一张卡片；Digit 留 16 张。' },
+      { at: 10.4, s: '图片也能切：切成小方块，一块一张卡片。' },
+      { at: 13.4, s: '只要卡片一样长，后面的零件一个都不用改。' }
+    ] },
+    { title: 'Q、K、V：像去图书馆查资料', dur: 16, build: buildSceneQKV, cues: [
+      { at: 0.4, s: '注意力像查资料：拿着问题 Q，对着标签 K 找，再抄下内容 V。' },
+      { at: 3.6, s: '机器人：Q 是这一步想知道什么，K 和 V 是过去每一步的标签和内容。' },
+      { at: 7.0, s: '三样都从同一张卡片抄出来，「抄写规则」是训练学出来的。' },
+      { at: 10.4, s: '标签越像问题，抄得越多；不像的几乎不抄。' },
+      { at: 13.4, s: '每一步拿着自己的问题，同时去查：一次算完，不用排队。' }
+    ] },
+    { title: '手算一次：打分、分比例、混合', dur: 16, build: buildSceneAttention, cues: [
+      { at: 0.4, s: '只有三步：打分、分比例、按比例混合；数字是编的小例子。' },
+      { at: 3.6, s: '打分：对应位置相乘再相加，三步得 **1 / 2 / 1** 分。' },
+      { at: 7.0, s: '先缩小一半，再换成比例：**27% / 45% / 27%**，像按票数分披萨。' },
+      { at: 10.4, s: '按比例混合三份内容：结果 $[0.548,\\ 0.726]$，第 $t-1$ 步分得最多。' },
+      { at: 13.4, s: '一句话：谁和我像，就多听谁的。' }
+    ] },
+    { title: '为什么要先把分数缩小', dur: 16, build: buildSceneScale, cues: [
+      { at: 0.4, s: '卡片上的数字越多，打出来的分差得越大：64 个数字时常差到十几。' },
+      { at: 3.6, s: '分差太大：最高分拿走 **99.7%**，盖过全场。' },
+      { at: 7.0, s: '还学不动：告诉网络往哪改的信号，只剩 0.0028，差了约 89 倍。' },
+      { at: 10.4, s: '办法：分数先除以 $\\sqrt{64} = 8$，像把音量关小，比例回到 51%。' },
+      { at: 13.4, s: '论文说这是作者的猜测；Digit 每次比 48 个数字，也一样要除。' }
+    ] },
+    { title: '多头：请 8 个评委', dur: 16, build: buildSceneHeads, cues: [
+      { at: 0.4, s: '只请一个评委：既要看近处又要看开头，只好平均成一团。' },
+      { at: 3.6, s: '请 8 个评委：每人只管一件事，各打各的分，最后合起来。' },
+      { at: 7.0, s: '工作量不变：512 个数字，拆成 8 份 × 64 个。' },
+      { at: 10.4, s: '论文表三：1 个评委 24.9 分，8 个 25.8，32 个反而掉到 25.4。' },
+      { at: 13.4, s: '论文附录里，有个评委在找「它」指的是谁；Digit 用了 4 个评委。' }
+    ] },
+    { title: '位置编码：给卡片装一只钟', dur: 16, build: buildScenePE, cues: [
+      { at: 0.4, s: '开会不分先后：打乱座位，结果只是跟着换位。' },
+      { at: 3.6, s: '所以要给每张卡片写上「第几步」：装一只钟。' },
+      { at: 7.0, s: '快针分清相邻两步，慢针分清远近；几根一起看，每一步都不一样。' },
+      { at: 10.4, s: '论文用快慢不同的正弦波当指针；换成自己学的，25.7 对 25.8。' },
+      { at: 13.4, s: '机器人里：Digit 给 16 步标上第几步，扩散策略标上去噪到第几步。' }
+    ] },
+    { title: '一层里有什么', dur: 16, build: buildSceneBlock, cues: [
+      { at: 0.4, s: '一层有四个动作，第一个是**讨论**：每张卡片向别人要信息。' },
+      { at: 3.6, s: '第二个是**各自想**：每张卡片单独过小网络。' },
+      { at: 7.0, s: '第三个是**保留原稿**：新想法只是加上去，原稿一直都在。' },
+      { at: 10.4, s: '第四个是**调音量**：把每张卡片的数字拉回差不多的范围。' },
+      { at: 13.4, s: '这样的一层叠 6 次；论文约 6500 万个要学的数，Digit 只有约 140 万。' }
+    ] },
+    { title: '因果掩码：不许剧透', dur: 16, build: buildSceneMask, cues: [
+      { at: 0.4, s: '像追连续剧：讲第 3 集时，只能用前 3 集的内容，不许剧透。' },
+      { at: 3.6, s: '把未来的格子盖住，分到的比例变成 0：6 步只剩 21 / 36 对。' },
+      { at: 7.0, s: '机器人上场时本来就看不到未来：只能根据刚才发生的，决定下一步。' },
+      { at: 10.4, s: 'Digit 的 16 张卡片只看过去：留下 136 / 256 对。' },
+      { at: 13.4, s: '第 28 期 MaskedMimic 用同样的遮挡：盖住没给的目标。' }
+    ] },
+    { title: '交叉注意力：回头看原文', dur: 16, build: buildSceneCross, cues: [
+      { at: 0.4, s: '每写一个德文词，就回头看一眼英文原句。' },
+      { at: 3.6, s: '提问的在德文这边，标签和内容在英文那边：这叫交叉注意力。' },
+      { at: 7.0, s: '两串卡片可以不一样长：每张德文卡片都能看全部英文卡片。' },
+      { at: 10.4, s: '第 10 期扩散策略的 Transformer 版：动作一边去噪，一边回头看观测。' },
+      { at: 13.4, s: '自己和自己开会、回头问另一组人：一个 Transformer 里两种都有。' }
+    ] },
+    { title: '训练一起改，使用一个个写', dur: 16, build: buildSceneDecode, cues: [
+      { at: 0.4, s: '训练像批改作业：答案都在，配上「不许偷看」，整句一次改完。' },
+      { at: 3.6, s: '用的时候像写作文：写一个字，读一遍前面写的，再写下一个。' },
+      { at: 7.0, s: '机器人每 0.02 秒写一个动作，写好的再接回去当输入。' },
+      { at: 10.4, s: '一个一个写：写 50 个，就要算 50 次。' },
+      { at: 13.4, s: '论文的下一步：生成不再「一个一个来」。' }
+    ] },
+    { title: '怎么训练：先热身', dur: 16, build: buildSceneRecipe, cues: [
+      { at: 0.4, s: '练习题：英译德 450 万对，英译法 3600 万对。' },
+      { at: 3.6, s: '一台电脑 8 张显卡：小模型练 12 小时，大模型练 3 天半。' },
+      { at: 7.0, s: '步子先热身：前 4000 步慢慢加大，之后慢慢变小，像开车起步。' },
+      { at: 10.4, s: '随机请假：训练时每次让 10% 的数字休息，逼大家都学会。' },
+      { at: 13.4, s: '第 10 期扩散策略也先热身：500 步，Transformer 版 1000 步。' }
+    ] },
+    { title: '表二：翻得更好，花得更少', dur: 16, build: buildSceneTable2, cues: [
+      { at: 0.4, s: '翻译得分：机器译文和人工译文越像，分越高；横条越长越好。' },
+      { at: 3.6, s: '大模型 **28.4** 分，比以前最好的高 2 分以上；小模型 27.3 也超过了。' },
+      { at: 7.0, s: '花的力气：以小模型为 1 份，以前的模型要几份到几十份。' },
+      { at: 10.4, s: '英译法也一样：大模型 41.8 分，一个模型超过了以前合起来的。' },
+      { at: 13.4, s: '力气是估出来的：练的时间 × 显卡数量 × 每张卡的速度。' }
+    ] },
+    { title: '表三：拆零件试试', dur: 16, build: buildSceneTable3, cues: [
+      { at: 0.4, s: '表三：每次只改一样；越过虚线（原版 25.8）就是变好。' },
+      { at: 3.6, s: '越大越好：2 层 23.7 分，大模型 26.4 分。' },
+      { at: 7.0, s: '随机请假很有用：不请假，分数掉到 24.6。' },
+      { at: 10.4, s: '钟换成自己学的：25.7 对 25.8，差不多。' },
+      { at: 13.4, s: '表四换个任务（分析句子结构），几乎不调也接近最好。' }
+    ] },
+    { title: '局限，和机器人怎么接着用', dur: 16, build: buildSceneLimits, cues: [
+      { at: 0.4, s: '局限一：人一多，要聊的对数暴涨；图片、视频切出的卡片很多。' },
+      { at: 3.6, s: '局限二：训练一起改，用的时候一个一个写。' },
+      { at: 7.0, s: '局限三：除以 8、用正弦，理由都是作者猜的。' },
+      { at: 10.4, s: '证据在第 14 期：同一个行走任务，Transformer 约 97%，MLP 约 75%。' },
+      { at: 13.4, s: '这篇没有机器人实验；但它造的零件，后来装进了很多机器人。' }
+    ] }
   ];
   /* 要点里数字和单位之间用不换行空格（公式里不动），免得单位单独落到下一行开头（HOMIE 2026-10-21） */
   function nb(str) {
@@ -2386,12 +2567,12 @@
   function buildExplainerDemo(host) {
     K.explainer(host, {
       title: '十七幕动画：从机器人的角度读 Transformer',
-      sub: '约 272 秒自动播放。空格播放/暂停，← → 换幕；每一幕先讲论文的做法，再对照本站机器人论文怎么用同一块零件。手算例子与笔记「🚶 具体实例」用的是同一组数字。',
+      sub: '约 272 秒自动播放。空格播放/暂停，← → 换幕；写给第一次接触的人：用传话、开会、查资料、评委、钟这些比喻讲，再对照机器人怎么用同一块零件。手算例子与笔记「🚶 具体实例」用的是同一组数字。',
       ariaLabel: 'Transformer 十七幕讲解动画',
       notes: [
-        '取数依据：表 1–4、式 1–3 和 §3、§5、§6 的数字照抄 arXiv 1706.03762 v7（读的是 arXiv 上的 LaTeX 源码）；论文首页写明，注明出处后允许在学术作品里复制它的图表，第 1、8 幕的图就是源文件里的原图。',
-        '机器人那一侧的数字取自本站笔记，**不是这篇论文的内容**：Digit 的因果 Transformer（第 014 期真实世界人形行走，16 步、192 维、4 头、140 万参数，图 8A 是读图值）、Diffusion Policy（第 010 期）、MaskedMimic（第 028 期）、π₀（867 个 token、73 ms，Gemma 的头数取自 openpi 的 `gemma.py`）、GR00T N1。',
-        '第 5、6、11 幕的向量、权重和第 8、12 幕的注意力图案是笔记构造的**玩具**，只演示机制；第 3 幕的「便宜多少倍」和第 10 幕的参数是我们按表一的量级、按标准结构算的。第 1、11 幕的视频剪自第 014 期论文的项目页，第 2、5 幕格子里的 G1 借第 032 期 HOMIE 的回放贴图，都只作示意。'
+        '取数依据：表 1–4、式 1–3 和 §3、§5、§6 的数字照抄 arXiv 1706.03762 v7（读的是 arXiv 上的 LaTeX 源码）；论文首页写明，注明出处后允许在学术作品里复制它的图表，第 8 幕的附录图就是源文件里的原图。',
+        '这一版按看片反馈改写：观众只看过前面几期，所以少用专业名词，多用比喻（传话游戏、开会、查资料、评委、钟、连续剧、批改作业）和小例子；比喻只帮助理解，**不是论文的说法**。',
+        '机器人那一侧的数字取自本站笔记，**不是这篇论文的内容**：Digit（第 014 期真实世界人形行走，16 步、4 个头、140 万参数，图 8A 是读图值）、扩散策略（第 010 期）、MaskedMimic（第 028 期）。第 6 幕的向量、第 7 幕的分数、第 8 幕各评委看哪一步都是笔记构造的**玩具**；第 3 幕的「省约 12 倍」是我们按论文的量级粗算的。第 1、11 幕的视频剪自第 014 期论文的项目页，第 2、4、8 幕格子里的 G1 借第 032 期 HOMIE 的回放贴图，都只作示意。'
       ],
       scenes: TF_SCENES
     });
@@ -2403,8 +2584,8 @@
   function buildVideoDemo(host) {
     K.video(host, {
       title: '配音讲解视频：从机器人的角度读 Transformer',
-      sub: '17 分 38 秒竖屏视频（1080×1920），中文配音 + 字幕。画面就是上面的十七幕动画，旁白把每一幕讲细；适合手机上看或转发。',
-      size: '19.4 MB',
+      sub: '15 分 16 秒竖屏视频（1080×1920），中文配音 + 字幕。画面就是上面的十七幕动画，旁白用同样的比喻把每一幕讲细；适合手机上看或转发。',
+      size: '17.1 MB',
       fileName: 'Transformer_讲解视频.mp4'
     });
   }

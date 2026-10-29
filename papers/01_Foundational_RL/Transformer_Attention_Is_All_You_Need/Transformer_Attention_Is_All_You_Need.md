@@ -10,7 +10,7 @@ demos: ["transformer"]
 # Attention Is All You Need (Transformer)
 **用注意力代替循环：一层之内任意两个位置直接相连、训练整句并行——后来 Digit 的行走控制器、扩散策略、π₀ 和 GR00T N1 的骨架都是这块零件**
 
-> 📅 阅读日期: 2026-09-30（2026-10-29 从机器人的角度重写，动画从七幕重做成十七幕，补三个交互演示，重录配音视频）
+> 📅 阅读日期: 2026-09-30（2026-10-29 从机器人的角度重写，动画从七幕重做成十七幕，补三个交互演示，重录配音视频；同日按看片反馈把动画和旁白改成写给第一次接触的人的比喻版）
 >
 > 🏷️ 板块: 01_Foundational_RL / 基础架构（放在基础板块，是因为本站的 Diffusion Policy、真实世界人形行走、MaskedMimic、GR00T N1、π₀、π₀.₅ 都建立在它上面）
 >
@@ -39,8 +39,8 @@ demos: ["transformer"]
 Transformer 把序列建模里的「时间步循环」换成「一层之内所有位置两两算注意力」：串行步数从 $O(n)$ 降到 $O(1)$，任意两个位置之间的路径长度也是 $O(1)$，训练可以整句并行。核心公式只有一行 $\mathrm{softmax}(QK^\top/\sqrt{d_k})V$，再加多头、正弦位置编码、残差 + LayerNorm、逐位置 FFN 和因果掩码。它是一篇**机器翻译**论文，不含任何机器人或强化学习内容；放进本站基础板块，是因为机器人模型换掉的只是**输入的 token 和输出头**，中间的注意力块原样沿用：[Digit 的行走控制器](../../03_High_Impact_Selection/Real-World_Humanoid_Locomotion_with_RL/Real-World_Humanoid_Locomotion_with_RL.html)把最近 16 步的「观测—动作」当 16 个 token、用因果掩码只看过去；[π₀](../../03_High_Impact_Selection/Pi0_A_Vision-Language-Action_Flow_Model_for_General_Robot_Control/Pi0_A_Vision-Language-Action_Flow_Model_for_General_Robot_Control.html) 把图像、文字、状态和 50 步动作拼成一串 867 个 token；[GR00T N1](../../03_High_Impact_Selection/GR00T_N1_Humanoid_Foundation_Model/GR00T_N1_Humanoid_Foundation_Model.html) 的动作头用交叉注意力去读视觉语言模型的特征。
 
 > 🎮 **本文内嵌 1 段讲解动画 + 1 段配音视频 + 3 个可交互演示**（不用装任何东西）：
-> 1. [十七幕动画：从机器人的角度读 Transformer](#tf-explainer-anim) —— 约 272 秒，每一幕先讲论文的做法，再对照本站机器人论文怎么用同一块零件
-> 2. [配音讲解视频](#tf-video) —— 同样十七幕，加中文配音与字幕，17 分 38 秒竖屏，可下载
+> 1. [十七幕动画：从机器人的角度读 Transformer](#tf-explainer-anim) —— 约 272 秒，写给第一次接触的人：每一幕先给一个生活里的比喻（传话、开会、查资料、分披萨、评委、时钟、追剧……），再配一个小例子，最后对照本站机器人论文怎么用同一块零件
+> 2. [配音讲解视频](#tf-video) —— 同样十七幕，加中文配音与字幕，15 分 16 秒竖屏，可下载
 > 3. [注意力计算器](#demo-attention) —— 机器人最近 3 步的玩具向量：选哪一步当 query、缩不缩放、加不加因果掩码
 > 4. [$\sqrt{d_k}$ 实验](#demo-scale) —— 维度越大点积散得越开，softmax 多尖、梯度还剩多少；可以拖到 Digit 的 48 维、π₀ 的 256 维
 > 5. [表一计算器](#demo-cost) —— 序列多长、宽度多少，自注意力才比循环层便宜；因果掩码留下多少对
@@ -71,13 +71,13 @@ Transformer 把序列建模里的「时间步循环」换成「一层之内所�
 
 <div class="paper-demo" data-demo="tf-explainer"><p class="demo-fallback">（本节含动画演示，需要启用 JavaScript）</p></div>
 
-> 十七幕按论文的顺序排：为什么机器人要读一篇翻译论文 → RNN 的串行瓶颈 → 表一 → 机器人的 token → Q、K、V → 手算一次注意力 → 为什么除以 $\sqrt{d_k}$ → 多头 → 位置编码 → 残差、LayerNorm 和前馈网络 → 因果掩码 → 交叉注意力 → 训练并行、推理逐个 → 训练配方 → 表二 → 表三、表四 → 局限与机器人。每一幕先讲论文，再对照机器人那边怎么用同一块零件。
+> 十七幕按论文的顺序排，但写给**只看过本站前面几期、第一次接触这篇论文**的人：一篇研究「翻译」的论文（教电脑把英文翻成德文，不是「翻译过来的论文」）→ 传话游戏：老办法为什么慢 → 开会的代价（表一）→ 先把输入切成一张张卡片 → Q、K、V：像去图书馆查资料 → 手算一次：打分、分比例、混合 → 为什么要先把分数缩小 → 多头：请 8 个评委 → 位置编码：给卡片装一只钟 → 一层里有什么 → 因果掩码：不许剧透 → 交叉注意力：回头看原文 → 训练一起改、使用一个个写 → 怎么训练：先热身 → 表二 → 表三 → 局限和机器人怎么接着用。每一幕先给一个比喻和小例子，专业名词只在讲完以后提一次「论文叫它……」；机器人那边只用前面几期讲过的 Digit（第 014 期）、扩散策略（第 010 期）和 MaskedMimic（第 028 期）。
 >
-> 画面里的素材：论文图 1、图 2 右与附录图 3、4 的裁剪（arXiv 源文件里的原图；论文首页写明注明出处后可在学术作品里复制图表）；第 1、11 幕 Digit 的两段视频剪自第 014 期[真实世界人形行走的项目页](https://learning-humanoid-locomotion.github.io/)（项目页没有标倍速）；格子里走路的 G1 借第 032 期 [HOMIE](../../03_High_Impact_Selection/HOMIE_Humanoid_Loco-Manipulation_with_Isomorphic_Exoskeleton_Cockpit/HOMIE_Humanoid_Loco-Manipulation_with_Isomorphic_Exoskeleton_Cockpit.html) 在 MuJoCo 里回放官方策略的贴图，**只作示意**；Digit、UR5、UR5e、GR-1 的真机图取自 [Robot_Description_Gallery_Online](https://github.com/ImChong/Robot_Description_Gallery_Online)（按各家开源 URDF 渲染）。第 6 幕的向量、第 7 幕的分数是笔记构造的玩具数，第 17 幕的柱子是第 014 期论文图 8A 的读图近似值。
+> 比喻是我们为了讲解加的，不是论文的说法：「开会」指自注意力、「查资料」指 Q / K / V、「评委」指注意力头、「时钟」指位置编码、「保留原稿」指残差、「调整音量」指层归一化、「随机请假」指 dropout。画面里的素材：论文附录图 4 的裁剪（arXiv 源文件里的原图；论文首页写明注明出处后可在学术作品里复制图表）；第 1、11 幕 Digit 的两段视频和第 4 幕切成小方块的那一帧取自第 014 期[真实世界人形行走的项目页](https://learning-humanoid-locomotion.github.io/)（项目页没有标倍速）；格子里走路的 G1 借第 032 期 [HOMIE](../../03_High_Impact_Selection/HOMIE_Humanoid_Loco-Manipulation_with_Isomorphic_Exoskeleton_Cockpit/HOMIE_Humanoid_Loco-Manipulation_with_Isomorphic_Exoskeleton_Cockpit.html) 在 MuJoCo 里回放官方策略的贴图，**只作示意**；Digit、UR5、G1 的真机图取自 [Robot_Description_Gallery_Online](https://github.com/ImChong/Robot_Description_Gallery_Online)（按各家开源 URDF 渲染）。第 6 幕的向量、第 7 幕的分数、第 8 幕各评委看哪一步都是我们编的玩具数，第 17 幕的柱子是第 014 期论文图 8A 的读图近似值。
 
 ## 📺 配音讲解视频（可下载） {#tf-video}
 
-<div class="paper-demo" data-demo="tf-video" data-src="media/tf_explainer_video.mp4" data-poster="media/tf_explainer_video_poster.jpg"><p class="demo-fallback">（本节含讲解视频播放器，需要启用 JavaScript；也可以直接<a href="media/tf_explainer_video.mp4" download="Transformer_讲解视频.mp4">下载 mp4（19.4 MB）</a>）</p></div>
+<div class="paper-demo" data-demo="tf-video" data-src="media/tf_explainer_video.mp4" data-poster="media/tf_explainer_video_poster.jpg"><p class="demo-fallback">（本节含讲解视频播放器，需要启用 JavaScript；也可以直接<a href="media/tf_explainer_video.mp4" download="Transformer_讲解视频.mp4">下载 mp4（17.1 MB）</a>）</p></div>
 
 > 📖 **动画之后的正文默认全部折叠**：机器人的角度、问题、方法的每一块按小节收起，实验、局限、具体实例、源码对照、面试和附录各收成一块。想细读哪一块就点开，内容一字未删；流程图和三个交互演示留在外面。目录里的标题可以直接点，会自动展开所在折叠块，左侧目录顶部还有「展开全部文字」。
 
@@ -736,10 +736,10 @@ A：论文本身没有。后来的模型用它做主干：π₀ 的 PaliGemma（
 
 <h3 id="动画与视频的素材">动画与视频的素材</h3>
 
-- 论文图 1（结构）、图 2 右（多头注意力）、附录图 3（"making … more difficult"）、图 4（"its" → "Law"）：从 arXiv 源文件里的原图裁剪，放在 `assets/img/papers/transformer/`。论文首页写明，注明出处后允许在新闻或学术作品里复制其中的表格和图。
-- 第 1、11 幕的 Digit 视频：剪自第 014 期[真实世界人形行走的项目页](https://learning-humanoid-locomotion.github.io/)（项目页没有标倍速），放在 `assets/img/papers/transformer/clips/`，只做讲解引用。
+- 论文附录图 4（"its" → "Law"）：从 arXiv 源文件里的原图裁剪，放在 `assets/img/papers/transformer/`。论文首页写明，注明出处后允许在新闻或学术作品里复制其中的表格和图。
+- 第 1、11 幕的 Digit 视频（第 4 幕切成小方块的是第 1 幕那段的首帧）：剪自第 014 期[真实世界人形行走的项目页](https://learning-humanoid-locomotion.github.io/)（项目页没有标倍速），放在 `assets/img/papers/transformer/clips/`，只做讲解引用。
 - 格子里走路的 G1：第 032 期 HOMIE 在 MuJoCo 里回放官方 `deploy.onnx` 的贴图，只作示意。
-- Digit、UR5、UR5e、GR-1 的真机图：[Robot_Description_Gallery_Online](https://github.com/ImChong/Robot_Description_Gallery_Online) 按各家开源 URDF 渲染的缩略图。
+- Digit、UR5、G1 的真机图：[Robot_Description_Gallery_Online](https://github.com/ImChong/Robot_Description_Gallery_Online) 按各家开源 URDF 渲染的缩略图。
 
 <h3 id="相关阅读">相关阅读</h3>
 
