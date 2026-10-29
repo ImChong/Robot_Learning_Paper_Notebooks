@@ -1347,7 +1347,7 @@
   /* ── scene 9: 阻尼：让目标跟着手走 ── */
   var FOLLOW_PARTS = [[9.5, '硬 + 全局跟踪：推不动'], [8.0, '软 + 全局跟踪：推得动，松手回来'], [13.0, '软 + 阻尼跟随：人牵着就走']];
   function buildSceneDamper() {
-    var s = sceneSvg('左边是项目页的三段视频，讲到哪种模式就放哪一段：硬加全局跟踪、软加全局跟踪、软加阻尼跟随。右边上方是一维的示意：黄圈是目标、白点是手、蓝箭头是人拉的力，' +
+    var s = sceneSvg('左边是项目页的三段视频，讲到哪种模式就放哪一段：硬加全局跟踪、软加全局跟踪、软加阻尼跟随。右边上方是一维的示意：黄圈是目标、和文字同色的圆点是手、蓝箭头是人拉的力，' +
       '按当前的模式走：只有弹簧时松手就弹回，加了阻尼后目标跟着手走。下面依次出现：只有弹簧、阻尼的式子、三种模式和一个算例');
     s.appendChild(svgText(24, 26, '阻尼：让目标跟着手走（人机交互的三种模式）', 'demo-x-ink2', 13.5));
     var clip = partClip(s, 'follow', 24, 44, 380, 214, FOLLOW_PARTS, '项目页视频（1x）：同一个人推、拉 G1 的手');
@@ -2306,7 +2306,7 @@
     var row3 = controlsRow(root);
     slider(row3, { label: '一次扰动的持续时间 $T$', min: 1, max: 3, step: 0.1, value: 2, format: function (v) { return f1(v) + ' s'; }, onInput: function (v) { state.T = v; render(); } });
     var st2 = stage(root, 170);
-    note(root, ['正视图：横轴是机器人的左右（$y$，右边是它的左手边）、纵轴是高低（$z$），单位 m；粉点是算奖励用的目标、黄圈是策略看到的目标、白点是手、蓝箭头是外力。',
+    note(root, ['正视图：横轴是机器人的左右（$y$，右边是它的左手边）、纵轴是高低（$z$），单位 m；粉点是算奖励用的目标、黄圈是策略看到的目标、和文字同色的圆点是手、蓝箭头是外力。',
       '「部署」时观测里就是 $g$，手按学到的规律停在 $g+f/k$。这是按论文的式子画的；v1 那张图里 20 N、$1/k=0.05$ 只让开 0.27 m，比 $f/k=1$ m 小得多（例 3），论文没解释。',
       '$1/k$ 的单位论文没写，这里按 m/N 算；训练时 $1/k$ 在什么范围里抽，论文也没写。下面的梯形是附录 B 的力的时间曲线（峰值取上面的 $|f|$）。']);
     render();
@@ -2346,7 +2346,7 @@
       dotC(obs, 10, C.warn, true);
       dotC(hand, 5, C.text);
       text(ctx, '奖励用的目标', sx(rew[0]) + 12, sy(rew[1]) + 16, C.purple, 'left', '11px sans-serif');
-      text(ctx, '看到的目标', sx(obs[0]) + 12, sy(obs[1]) - 12, C.warn, 'left', '11px sans-serif');
+      text(ctx, '看到的目标', sx(obs[0]), sy(obs[1]) - 16, C.warn, 'center', '11px sans-serif');
       if (state.view === 'train') {
         verdict.set(state.mode === 'chip'
           ? '训练：策略看到 $g-f/k$，奖励用原来的 $g$。手停在 $g$ 时三点位置项是 **1.000**；硬顶在看到的目标上只有 **' + f3(threePtReward(L)) + '**（例 2）。参考动作一点没改。'
@@ -2407,7 +2407,7 @@
       line(ctx, r.gs.map(function (g, i) { return [px(i * r.dt), py(g)]; }), C.warn, 2, [5, 4]);
       line(ctx, r.xs.map(function (x, i) { return [px(i * r.dt), py(x)]; }), C.text, 2.4);
       line(ctx, r.fs.map(function (f, i) { return [px(i * r.dt), py(f / Math.max(1, state.F) * ymax * 0.25)]; }), C.accent, 1.6);
-      text(ctx, '白线：手　黄虚线：目标　蓝线：拉力（缩放后）', x0 + 4, y1 + 4, C.text, 'left', '11px sans-serif');
+      text(ctx, '手：和文字同色的线　目标：黄虚线　拉力：蓝线（缩放后）', x0 + 4, y1 + 4, C.text, 'left', '11px sans-serif');
       verdict.set(state.mode === 'stiff' ? '硬：手一直停在目标上，拉力全被顶回去。' : state.mode === 'spring'
         ? '软 + 全局跟踪：拉的时候让开最多 **' + f3(mx) + ' m**，松手后回到 **' + f3(end) + ' m**（原来的目标）。'
         : '软 + 阻尼跟随：目标跟着手走，松手后留在 **' + f3(end) + ' m**；拉力峰值时目标的速度 $\\alpha f/(k\\Delta t)=' + f2(v) + '$ m/s。', 'good');
