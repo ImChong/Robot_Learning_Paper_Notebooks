@@ -883,6 +883,18 @@
     "display_name": "Loco-Manipulation and WBC",
     "papers": [
       {
+        "title": "Memory before Goal: Role of Pre-History Memory for Humanoid Loco-Manipulation",
+        "path": "papers/04_Loco-Manipulation_and_WBC/Memory_before_Goal__Role_of_Pre-History_Memory_for_Humanoid_Loco-Manipulation/Memory_before_Goal__Role_of_Pre-History_Memory_for_Humanoid_Loco-Manipulation.md",
+        "url": "/papers/04_Loco-Manipulation_and_WBC/Memory_before_Goal__Role_of_Pre-History_Memory_for_Humanoid_Loco-Manipulation/Memory_before_Goal__Role_of_Pre-History_Memory_for_Humanoid_Loco-Manipulation.html",
+        "dir": "Memory_before_Goal__Role_of_Pre-History_Memory_for_Humanoid_Loco-Manipulation",
+        "arxiv": "2610.31166",
+        "summary_zh": "动态场景里的移动操作是非马尔可夫的：可乐先停在哪个座位、灯闪了几次，决策那一刻都已经看不到了，而人形头部相机还会随转身、走路把线索甩出视野。",
+        "published_date_zh": "2026年10月22日（arXiv v1）",
+        "published_date_en": "Oct 22, 2026 (arXiv v1)",
+        "zhname": "Memory before Goal：前史记忆在人形移动操作中的作用",
+        "zh_title": "Memory before Goal：前史记忆在人形移动操作中的作用"
+      },
+      {
         "title": "CSF: Contextual Safety Filtering for Motion Generators",
         "path": "papers/04_Loco-Manipulation_and_WBC/CSF__Contextual_Safety_Filtering_for_Motion_Generators/CSF__Contextual_Safety_Filtering_for_Motion_Generators.md",
         "url": "/papers/04_Loco-Manipulation_and_WBC/CSF__Contextual_Safety_Filtering_for_Motion_Generators/CSF__Contextual_Safety_Filtering_for_Motion_Generators.html",
