@@ -180,7 +180,9 @@ def chunks(text, start, dur, limit=17):
             # 也不在数字和单位之间断（「10.5 / cm 涨到」），不在一个小数中间断（「2. / 042」）
             unit = [k for k in range(1, len(p)) if p[:k].rstrip()[-1:].isdigit() and p[k:].lstrip()[:1].isascii() and p[k:].lstrip()[:1].isalpha()]
             num = [k for k in range(1, len(p)) if (p[k - 1].isdigit() or p[k - 1] == ".") and (p[k].isdigit() or p[k] == ".")]
-            ok = [k for k in range(1, len(p)) if not (word_char(p[k - 1]) and word_char(p[k])) and not (m[k - 1] and m[k]) and k not in unit and k not in num]
+            # DISPLAY 里用不换行空格连住的词组（「Diffusion\u00a0Policy」）也不切开（iDP3 2026-10-29）
+            ok = [k for k in range(1, len(p)) if not (word_char(p[k - 1]) and word_char(p[k])) and not (m[k - 1] and m[k]) and k not in unit and k not in num
+                  and "\u00a0" not in p[k - 1:k + 1]]
             near = [k for k in ok if abs(k - mid) <= 5]
             sp = [k for k in near if p[k] == " "]
             k = min(sp or near or ok or [mid], key=lambda k: abs(k - mid))
