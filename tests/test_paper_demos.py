@@ -402,6 +402,13 @@ def test_spatial_axes_are_red_green_blue():
     for axis in "XYZ":
         assert f"axis{axis}: 'var(--demo-axis-{axis.lower()})'" in kit
 
+IDP3_NOTE = (
+    ROOT
+    / "papers"
+    / "03_High_Impact_Selection"
+    / "iDP3_Generalizable_Humanoid_Manipulation_with_3D_Diffusion_Policies"
+    / "iDP3_Generalizable_Humanoid_Manipulation_with_3D_Diffusion_Policies.md"
+)
 EXPLAINER_BUNDLES = (
     "ppo", "awr", "deepmimic", "amp", "add", "ase", "calm", "pulse", "sonic", "groot",
     "gmr", "omniretarget", "diffusion_policy", "beyondmimic", "cosmos", "umr", "php", "pbfm",
@@ -409,7 +416,7 @@ EXPLAINER_BUNDLES = (
     "domain_randomization", "quadterrain", "realhumanoid", "asap", "inekf", "berkeley_humanoid",
     "toddlerbot", "exbody", "h2o", "omnih2o", "hover", "maskedmimic", "exbody2", "hugwbc", "homie", "twist", "twist2",
     "falcon", "hdmi", "viral",
-    "doorman",
+    "doorman", "idp3",
 )
 
 # 幕数由论文决定，不是统一模板：PPO / DeepMimic / AMP / ADD 的核心概念正好各 5 个，
@@ -656,6 +663,11 @@ EXPLAINER_SCENES = {
     # （式 1–3）、图 6 右的缓冲区大小各一幕；学生（DAgger）、GRPO（式 4–5）、图 6 左各一幕；第 3.4 节的程序化的门与视觉随机化各一幕；
     # 表 1、图 5、泛化与失败、局限与代码各一幕。压成 14 幕会让窄桥的链和重置的快照栈、或 GRPO 的组内优势和图 6 左的曲线抢同一帧。
     "doorman": (DOORMAN_NOTE, 17),
+    # iDP3 十八幕：问题一幕（表 I：只在一个场景里会干活）；图 2 的系统四块一幕；平台（25 个自由度、推车）、头上的 L515、遥操作
+    # （Relaxed IK、腰和头的算法、延迟）、观测—动作—数据各一幕，因为它们各有自己的图和代码里的数；方法按 DP3 的世界坐标系 + 标定 + 分割
+    # 一幕、四处改动（相机坐标系、4096 个点、金字塔编码器、16 步）各一幕、扩散与我们的复现一幕；结果按实验设置、表 II、图 7、表 IV、
+    # 为什么 3D 更稳（图 4、6、8）各一幕，局限与代码一幕。压成 15 幕会让四处改动的表 III 三组柱子、或图 8 的视角泛化和表 IV 的格子抢同一帧。
+    "idp3": (IDP3_NOTE, 18),
 
     "humanml3d": (HUMANML3D_NOTE, 12),
 }
@@ -2131,7 +2143,8 @@ def test_narrated_video_placeholders_point_at_files_that_exist():
     for demo in ("calm-video", "pulse-video", "dp-video", "bm-video", "lcp-video", "cosmos-video", "groot-video",
                  "tf-video", "pi0-video", "pi05-video", "soccer-video", "sonic-video", "gmr-video",
                  "omniretarget-video", "humanml3d-video", "smp-video", "dr-video", "qt-video", "rh-video", "inekf-video", "bh-video",
-                 "tb-video", "exbody-video", "h2o-video", "hover-video", "exbody2-video", "hugwbc-video", "homie-video", "doorman-video"):
+                 "tb-video", "exbody-video", "h2o-video", "hover-video", "exbody2-video", "hugwbc-video", "homie-video", "doorman-video",
+                 "idp3-video"):
         assert demo in seen, f"{demo} 应该挂在对应的论文笔记里"
 
 
@@ -5920,3 +5933,144 @@ def test_doorman_project_page_clips():
     assert sum(p.stat().st_size for p in clip_dir.iterdir()) < 2.5e6
     note = DOORMAN_NOTE.read_text(encoding="utf-8")
     assert "剪自[项目页](https://doorman-humanoid.github.io/)的视频" in note
+
+
+def test_idp3_explainer_demos_and_worked_example_share_the_paper_numbers():
+    """iDP3：十八幕动画、三个演示、配音旁白与笔记「🚶 具体实例」用同一组数。
+
+    表 I–IV、图 7 照抄 arXiv 2410.10803 v3；动作 25 维、编码器的参数、DDIM 的时间步照抄官方代码；点云、示范动作与去噪过程是
+    官方示例数据和官方倒水模型的真实输出（我们照源码重写推理、在 CPU 上跑），以 base64 嵌进 bundle，这里解码后用 Python 再算一遍。
+    """
+    js = (DEMO_JS_DIR / "idp3.js").read_text(encoding="utf-8")
+    note = IDP3_NOTE.read_text(encoding="utf-8")
+    narration = (ROOT / "scripts" / "paper_video" / "papers" / "idp3.py").read_text(encoding="utf-8")
+    intro = (ROOT / "scripts" / "paper_video" / "papers" / "idp3.js").read_text(encoding="utf-8")
+
+    for line in (
+        "{ key: 'r3mft', zh: 'DP（微调 R3M）', s: 99, a: 147 },",
+        "{ key: 'idp3', zh: 'iDP3', s: 75, a: 139 }",
+        "{ zh: 'iDP3', tele: [1, 1, 1, 0], gen: [1, 1, 1], ep: 2253 }",
+        "pick: { dp: [9, 3, 2, 2], idp3: [9, 9, 9, 9] },",
+        "pour: { dp: [9, 1, 0, 1], idp3: [9, 9, 9, 9] },",
+        "var TRAIN_MIN = { dp: 80, idp3: 30 };",
+        "var ENC_PARAMS = 270080, MODEL_PARAMS = 68797337;",
+        "var HORIZON = { obs: 2, pred: 16, exec: 15 };",
+        "var DDIM_T = [45, 40, 35, 30, 25, 20, 15, 10, 5, 0];",
+        "var CPU_S = 0.167;",
+    ):
+        assert line in js, line
+    for k in ("'idp3-explainer'", "'idp3-video'", "'idp3-points'", "'idp3-denoise'", "'idp3-results'", "K.video(host"):
+        assert k in js, k
+
+    # 表 II、表 III：成功 / 尝试与成功率（例 8）
+    t2 = [(int(a), int(b)) for a, b in re.findall(r"zh: '[^']+', s: (\d+), a: (\d+) \}", js[js.index("var TABLE2") : js.index("var TABLE3")])]
+    assert t2 == [(24, 106), (0, 0), (62, 138), (99, 147), (58, 127), (75, 139)]
+    assert [_fmt(100 * a / b, 1) for a, b in t2 if b] == ["22.6", "44.9", "67.3", "45.7", "54.0"]
+    t3 = [(int(a), int(b)) for a, b in re.findall(r"s: (\d+), a: (\d+) \}", js[js.index("var TABLE3") : js.index("var TABLE4")])]
+    assert t3 == [(58, 127), (49, 131), (66, 134), (75, 139), (56, 129), (65, 128), (75, 139), (72, 132), (0, 0), (33, 88), (75, 139), (55, 130)]
+    rates = [_fmt(100 * a / b, 1) for a, b in t3 if b]
+    assert rates == ["45.7", "37.4", "49.3", "54.0", "43.4", "50.8", "54.0", "54.5", "37.5", "54.0", "42.3"]
+    for x in ("| 99/147 | 67.3% |", "| **75/139** | **54.0%** |", "8192 **54.5%**", "Conv 37.4%"):
+        assert x in note, x
+    assert "147 次尝试抓成 99 次，成功率 67.3%" in narration and "8192 个点是 54.5%" in narration
+    # 表 IV 与图 7（例 9）
+    dp_ood, idp3_ood = 3 + 1 + 2 + 0 + 2 + 1, 9 * 6
+    assert (dp_ood, idp3_ood, _fmt(80 / 30, 2)) == (9, 54, "2.67")
+    assert "$3+1+2+0+2+1=9$ 次 / 60 次（15%）" in note and "$9\\times6=54$ 次 / 60 次（90%）" in note
+    assert "60 次里成功 9 次，也就是 15%" in narration and "成功 54 次，是 90%" in narration
+    # 例 1：25 个自由度、32 维状态
+    assert 1 + 2 + 5 * 2 + 6 * 2 == 25 and 3 + 3 + 7 * 2 + 6 * 2 == 32
+    assert "=25$$" in note and "$3+3+7\\times2+6\\times2=32$" in note
+    # 例 2：腰和头的角度
+    waist = math.degrees(math.atan2(0.30, 1.55 - 0.53 * 1.70))
+    assert (_fmt(0.53 * 1.70, 3), _fmt(waist, 1), _fmt(40 - waist, 1)) == ("0.901", "24.8", "15.2")
+    assert "=24.8°$" in note and "=40°-24.8°=15.2°$" in note and "腰就前倾 24.8 度" in narration
+    assert "var TELE = { height: 1.70, waistRatio: 0.53, headZ: 1.55, stoop: 0.30, total: 40, clip: 30, w: [60, 6, 2] };" in js
+    # 例 5：编码器的参数
+    h = 128
+    parts = [3 * h + h, 4 * (h * h + h), 4 * (2 * h * h + h), 4 * h * h + h, 32 * 64 + 64 + 64 * 64 + 64]
+    assert parts == [512, 66048, 131584, 65664, 6272] and sum(parts) == 270080
+    assert (128 + 64) * 2 == 384 and 384 + 128 == 512
+    assert "**270,080**" in note and "68,797,337" in note and "27 万零 80 个参数" in narration
+    # 例 6：一次推理执行 15 步
+    assert 300 // 15 == 20 and math.ceil(1000 / 15) == 67
+    assert "倒水一回合 300 步要推理 20 次，抓放 1000 步要推理 67 次" in note and "大约推理 20 次" in narration
+    # 例 7：squaredcos_cap_v2 下 DDIM 十个时间步的 ᾱ
+    def ab(x):
+        return math.cos((x + 0.008) / 1.008 * math.pi / 2) ** 2
+
+    betas = [min(1 - ab((i + 1) / 50) / ab(i / 50), 0.999) for i in range(50)]
+    cum, acc = [], 1.0
+    for b in betas:
+        acc *= 1 - b
+        cum.append(acc)
+    abar = [_fmt(cum[t], 4) for t in (45, 40, 35, 30, 25, 20, 15, 10, 5, 0)]
+    assert abar == ["0.0155", "0.0766", "0.1786", "0.3116", "0.4627", "0.6174", "0.7608", "0.8791", "0.9609", "0.9983"]
+    assert "| $\\bar\\alpha_t$ | " + " | ".join(abar) + " |" in note and _fmt(math.sqrt(cum[45]), 3) == "0.124"
+
+    # 嵌进 bundle 的真实数据：点云、示范动作、去噪过程
+    def i16(b64):
+        raw = base64.b64decode(b64)
+        return struct.unpack(f"<{len(raw) // 2}h", raw)
+
+    pcs = {int(k): (int(n), int(u), float(a), float(b)) for k, n, u, a, b in
+           re.findall(r"(\d+): \{ n: (\d+), unique: (\d+), zmin: ([\d.]+), zmax: ([\d.]+),", js)}
+    assert sorted(pcs) == [0, 60, 150] and pcs[150][1] == 8410 and pcs[0][1] == 8047
+    assert (_fmt(pcs[0][2], 2), _fmt(pcs[0][3], 2), _fmt(pcs[150][2], 2), _fmt(pcs[150][3], 2)) == ("0.62", "1.00", "0.39", "0.78")
+    assert "深度在 0.62–1.00 m" in note and "深度在 0.39–0.78 m" in note and "不重复的点 8410 个" in note
+    assert "第 150 帧不重复的只有 8410 个" in narration
+    act = i16(re.search(r"var ACT_B64 = '([^']+)'", js).group(1))
+    assert len(act) == 282 * 25 and "var ACT_N = 282;" in js
+    tr = {int(k): (i16(xt), i16(x0)) for k, xt, x0 in re.findall(r"(\d+): \{ t: \[[^\]]*\],\s*xt: '([^']+)',\s*x0: '([^']+)'", js)}
+    assert sorted(tr) == [105, 195]
+    xt, x0 = tr[105]
+    first = [x0[k * 25 + j] / 1e4 for k in range(16) for j in range(25)]
+    final = [x0[(9 * 16 + k) * 25 + j] / 1e4 for k in range(16) for j in range(25)]
+    diff = [abs(a - b) for a, b in zip(first, final, strict=True)]
+    assert (_fmt(sum(diff) / len(diff), 4), _fmt(max(diff), 4)) == ("0.0018", "0.0093")
+    shoulder = [final[k * 25 + 8] for k in range(16)]
+    demo = [act[(104 + k) * 25 + 8] / 1e4 for k in range(16)]
+    assert (_fmt(max(shoulder), 3), _fmt(min(shoulder), 3), _fmt(max(demo), 3), _fmt(min(demo), 3)) == ("-0.535", "-0.658", "-0.529", "-0.658")
+    assert "−0.535 到 −0.658 rad" in note and "−0.529 到 −0.658" in note and "平均只差 0.0018，最多 0.0093" in note
+    # 示范的抖动（例 6）：手指的二阶差分比一阶还大
+    def jitter(j):
+        v = [act[f * 25 + j] / 1e4 for f in range(282)]
+        d1 = [abs(v[f + 1] - v[f]) for f in range(281)]
+        d2 = [abs(v[f + 2] - 2 * v[f + 1] + v[f]) for f in range(280)]
+        return sum(d1) / len(d1), sum(d2) / len(d2)
+
+    arm = [jitter(j) for j in range(3, 13)]
+    hand = [jitter(j) for j in range(13, 25)]
+    assert _fmt(sum(a for a, _ in arm) / 10, 3) == "0.011" and _fmt(sum(b for _, b in arm) / 10, 3) == "0.004"
+    assert all(b > a for a, b in hand[:6]) and all(b > a for a, b in hand[6:])
+    assert "手臂关节平均变化 0.011 rad，二阶差分 0.004" in note and "二阶差分只有 0.004" in narration
+    # CPU 推理与开环误差（例 10）
+    assert "4 核 CPU 上每次 0.167 s" in note and "一次推理 0.167 秒" in narration
+    assert 'var ERR = {"waist": 0.0013, "head": 0.0016, "larm": 0.0051, "rarm": 0.0053, "rhand": 0.007, "lhand": 0.0054};' in js
+    assert "腰 0.0013、头 0.0016、左臂 0.0051、右臂 0.0053、右手 0.0070、左手 0.0054" in note
+
+    # 旁白：片头三句 + 18 幕各五段 + 片尾五句；片尾只预告下一篇（Transformer）；绕开多音字与会被切错的词（用 WordBoundary 对照 jieba 查过）
+    spoken = re.findall(r'"([^"]*)"\),', narration[narration.index("SCRIPT = [") : narration.index("DISPLAY = [")])
+    assert len(spoken) == 3 + 18 * 5 + 5
+    assert not any(re.search(r"\d\s*[，,]\s*\d", t) for t in spoken)
+    assert "下一篇讲 Transformer" in narration and "Transformer" in intro and not any("CHIP" in t for t in spoken)
+    for bad in ("一行", "得先", "当前", "背着", "转了", "长得", "越长", "试得", "有放回地", "正运动学", "头上装", "均方误差"):
+        assert not any(bad in t for t in spoken), bad
+    assert "## 🎬 十八幕动画" in note and 'demos: ["idp3"]' in note
+    assert "__VIDEO_" not in js and "__VIDEO_" not in note
+
+
+def test_idp3_project_page_clips():
+    """iDP3：真机画面剪自项目页的视频（6 段，按幕懒加载）；seqClip 的分段时长加起来要等于片段时长。"""
+    js = (DEMO_JS_DIR / "idp3.js").read_text(encoding="utf-8")
+    clip_dir = ROOT / "assets/img/papers/idp3/clips"
+    used = set(re.findall(r"(?:projClip|seqClip)\(\w+, '(\w+)'", js))
+    assert used == {"hero", "teleop", "origin", "view", "newscene", "ego"}
+    assert {p.name for p in clip_dir.iterdir()} == {f"{u}.{ext}" for u in used for ext in ("mp4", "webp")}
+    for name, clip in (("HERO_PARTS", "hero"), ("VIEW_PARTS", "view"), ("NEW_PARTS", "newscene"), ("EGO_PARTS", "ego")):
+        block = js[js.index(f"var {name} = ") : js.index(";", js.index(f"var {name} = "))]
+        total = sum(float(x) for x in re.findall(r"\[([0-9.]+), '", block))
+        assert abs(total - _mp4_seconds(clip_dir / f"{clip}.mp4")) < 0.05, (name, total)
+    assert sum(p.stat().st_size for p in clip_dir.iterdir()) < 3e6
+    note = IDP3_NOTE.read_text(encoding="utf-8")
+    assert "剪自[项目页](https://humanoid-manipulation.github.io/)的视频" in note
