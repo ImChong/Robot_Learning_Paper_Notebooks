@@ -81,7 +81,7 @@ demos: ["doorman"]
 
 > 📖 **动画之后的正文默认全部折叠**：动画覆盖到的那几节（要解决什么问题、方法详解、实验结果）按小节收起，再往后的具体实例、源码对照、在路线中的位置、面试和附录各整块收起。想细读哪一块就点开对应的折叠条，内容一字未删；流程图和三个交互演示留在外面，目录里的标题依旧可以直接点，会自动展开所在折叠块，左侧目录顶部还有「展开全部文字」一键铺开。
 >
-> 这一期**没有复现实验**：官方没有放出训好的 DoorMan 模型，也没有 GRPO 那一阶段的代码。动画第 1、5、9、12、13、15、16 幕的真机与仿真画面剪自[项目页](https://doorman-humanoid.github.io/)的视频（真机开门、学生实际看到的 RGB 输入、无纹理与换纹理的仿真开门、程序化生成的门、遥操作对照、换把手和换墙面、三个失败案例），画面里标了项目页写的「1x」，只做讲解引用。第 2、7、12、16 幕用论文图 2、图 3、图 4、图 1 的裁剪；第 8、11、14、15 幕的曲线和柱子照论文图 6、表 1、图 5 的数重画（图 6 是从论文的矢量图里按网格线抽出的折线）。第 3 幕的 G1 走路贴图借用第 032 期 HOMIE 的复现（官方 `deploy.onnx` 在 MuJoCo 里的回放），只用来示意「腿交给 HOMIE」，不是 DoorMan 的画面。第 7 幕右边的样本分配是标明的玩具模型（只看每个阶段进不进得到下一阶段），和「🚶 具体实例」例 6、交互演示用同一组数。
+> 这一期**没有复现实验**：官方没有放出训好的 DoorMan 模型，也没有 GRPO 那一阶段的代码。动画第 1、5、9、12、13、15、16 幕的真机与仿真画面剪自[项目页](https://doorman-humanoid.github.io/)的视频（真机开门、学生实际看到的 RGB 输入、无纹理与换纹理的仿真开门、程序化生成的门、遥操作对照、换把手和换墙面、三个失败案例），画面里标了项目页写的「1x」，只做讲解引用。第 2、7、12、16 幕用论文图 2、图 3、图 4、图 1 的裁剪；第 8、11、14、15 幕的曲线和柱子照论文图 6、表 1、图 5 的数重画（图 6 是从论文的矢量图里按网格线抽出的折线）。第 3 幕的 G1 走路贴图借用第 032 期 HOMIE 的复现（官方 `deploy.onnx` 在 MuJoCo 里的回放），只用来示意「腿交给 HOMIE」，不是 DoorMan 的画面。第 3、4、10、16 幕的 G1 手和俯视全身是我们用 [Robot_Retarget_Online](https://github.com/ImChong/Robot_Retarget_Online) 的带 Dex3 三指手 G1 模型渲染的：手指按官方配置 `door_open_homie_lstm.yaml` 里张开（`pos_0`）与握住（`pos_1`）的 7 个关节角插值，用手的碰撞网格量过不穿模；第 4 幕根部和门上的坐标系按 x 红、y 绿、z 蓝画，门的原点照官方 `door.py` 放在门洞中间的墙面上。这些都是示意姿态，不是策略的输出。第 7 幕右边的样本分配是标明的玩具模型（只看每个阶段进不进得到下一阶段），和「🚶 具体实例」例 6、交互演示用同一组数。
 
 ---
 
@@ -828,5 +828,6 @@ README 的推荐参数和配置文件的默认值不一样（教师 1024 对 409
 - 论文：Xue, He, Wang, Ben, Xiao, Luo, Da, Castañeda, Shi, Sastry, Fan, Zhu, *Opening the Sim-to-Real Door for Humanoid Pixel-to-Action Policy Transfer*, [arXiv 2512.01061](https://arxiv.org/abs/2512.01061)（v1 的 LaTeX 源码），CVPR 2026。
 - 项目页：[doorman-humanoid.github.io](https://doorman-humanoid.github.io/)（三个阶段的 GPU 用量、「快 7.15 s」、失败案例）；动画和视频里的真机与仿真画面剪自项目页的视频，只做讲解引用。
 - 代码：[NVlabs/GR00T-VisualSim2Real](https://github.com/NVlabs/GR00T-VisualSim2Real/tree/doorman)，`doorman` 分支 `016c70c`（2026-04-20）。
+- 第 3、4、10、16 幕的 G1 模型：[Robot_Retarget_Online](https://github.com/ImChong/Robot_Retarget_Online) 的 `unitree_g1_with_hands`（MuJoCo 正运动学 + 它的 three.js 材质离线渲染）。
 - 第 3 幕的 G1 走路贴图：本仓库第 032 期 [HOMIE](../../03_High_Impact_Selection/HOMIE_Humanoid_Loco-Manipulation_with_Isomorphic_Exoskeleton_Cockpit/HOMIE_Humanoid_Loco-Manipulation_with_Isomorphic_Exoskeleton_Cockpit.html) 笔记的复现贴图。
 - 上游清单：[YanjieZe/awesome-humanoid-robot-learning](https://github.com/YanjieZe/awesome-humanoid-robot-learning) · Loco-Manipulation and Whole-Body-Control。

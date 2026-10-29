@@ -37,6 +37,7 @@
   var PAPER_IMG_BASE = IMG_BASE ? IMG_BASE + 'doorman/' : '';
   var CLIP_BASE = PAPER_IMG_BASE ? PAPER_IMG_BASE + 'clips/' : '';
   var HOMIE_3D_BASE = IMG_BASE ? IMG_BASE + 'homie/g1_3d/' : '';
+  var DM_3D_BASE = PAPER_IMG_BASE ? PAPER_IMG_BASE + 'g1_3d/' : '';
   var el = K.el,
     fmt = K.fmt,
     clamp = K.clamp,
@@ -549,6 +550,61 @@
       }
     };
   }
+  /* G1 的模型（第 3、4、10、16 幕）：Robot_Retarget_Online 的带 Dex3 三指手 G1（g1_mocap_29dof_with_hands.xml），
+     我们按下面的关节角做正运动学、照它的 three.js 材质与灯光离线渲染成透明底贴图（正交相机），放在 doorman/g1_3d/。
+     HAND：右手 21 档手指原语，u = 0, 0.05, …, 1 在官方 door_open_homie_lstm.yaml 的 pos_0（张开的预抓姿态）与
+       pos_1（握住）之间线性插值；3/4 视角、1200 px/m，7 列 3 行；pts 是 u = 0 时 8 个刚体的中心
+       （掌、食指两节、中指两节、拇指三节；掌取手掌网格的中心，其余取这一节两端的中点），用手掌网格量过，21 档都不穿模。
+     TOP：俯视全身，机器人朝上（+x）、左手（+y）在画面左边，前臂往前伸、两手在预抓姿态；330 px/m；
+       root 是根部（骨盆）在贴图里的位置，lh / rh 是左右手掌心。 */
+  var HAND = { file: 'g1_hand_r.webp', cw: 230, ch: 176, n: 21, cols: 7,
+    pts: [[128.9, 42.7], [192.4, 70.7], [205.5, 116.5], [172.7, 42.4], [185.9, 88.2], [108.0, 56.9], [93.4, 90.7], [80.2, 139.9]] };
+  var TOP = { file: 'g1_top.webp', w: 144, h: 165, R: 330, root: [70, 137.4], lh: [17.4, 28.0], rh: [133.0, 56.7] };
+  /* 右手贴图：put(x, y, k, u, mirror) 把贴图左上角放在 (x, y)、缩放 k，u ∈ [0, 1] 取最近的一档；mirror 左右翻转当左手用 */
+  function g1Hand(parent) {
+    var g = group(parent), rows = Math.ceil(HAND.n / HAND.cols);
+    g.setAttribute('class', 'demo-x-g1mesh');
+    var box = svgEl('svg', { overflow: 'hidden', preserveAspectRatio: 'none', width: 0, height: 0 });
+    var img = svgEl('image', { x: 0, y: 0, width: HAND.cw * HAND.cols, height: HAND.ch * rows, preserveAspectRatio: 'none' });
+    box.appendChild(img);
+    g.appendChild(box);
+    var woke = false, lastF = -1;
+    return {
+      g: g,
+      put: function (x, y, k, u, mirror) {
+        if (!woke && DM_3D_BASE) { woke = true; img.setAttribute('href', DM_3D_BASE + HAND.file); }
+        var f = Math.round(clamp(u, 0, 1) * (HAND.n - 1));
+        box.setAttribute('x', (mirror ? 0 : x).toFixed(1)); box.setAttribute('y', y.toFixed(1));
+        box.setAttribute('width', (HAND.cw * k).toFixed(1)); box.setAttribute('height', (HAND.ch * k).toFixed(1));
+        g.setAttribute('transform', mirror ? 'translate(' + (x + HAND.cw * k).toFixed(1) + ' 0) scale(-1 1)' : '');
+        if (f !== lastF) {
+          box.setAttribute('viewBox', [(f % HAND.cols) * HAND.cw, Math.floor(f / HAND.cols) * HAND.ch, HAND.cw, HAND.ch].join(' '));
+          lastF = f;
+        }
+        /* 第 0 档 8 个刚体中心在画面上的位置 */
+        return HAND.pts.map(function (p) { return [mirror ? x + (HAND.cw - p[0]) * k : x + p[0] * k, y + p[1] * k]; });
+      }
+    };
+  }
+  /* 俯视全身：put(x, y, s, yaw) 把根部放在 (x, y)，s 是像素/米，yaw 是偏航角（rad，从上往下看逆时针，往画面左边转）；
+     返回根部的 x、y 轴在画面上的方向和两手掌心的位置 */
+  function g1Top(parent) {
+    var g = group(parent);
+    g.setAttribute('class', 'demo-x-g1mesh');
+    var img = svgEl('image', { x: -TOP.root[0], y: -TOP.root[1], width: TOP.w, height: TOP.h, preserveAspectRatio: 'none' });
+    g.appendChild(img);
+    var woke = false;
+    return {
+      g: g,
+      put: function (x, y, s, yaw) {
+        if (!woke && DM_3D_BASE) { woke = true; img.setAttribute('href', DM_3D_BASE + TOP.file); }
+        var k = s / TOP.R, c = Math.cos(yaw), sn = Math.sin(yaw);
+        g.setAttribute('transform', 'translate(' + x.toFixed(1) + ' ' + y.toFixed(1) + ') rotate(' + (-yaw * 180 / Math.PI).toFixed(2) + ') scale(' + k.toFixed(4) + ')');
+        function map(p) { var vx = (p[0] - TOP.root[0]) * k, vy = (p[1] - TOP.root[1]) * k; return [x + vx * c + vy * sn, y - vx * sn + vy * c]; }
+        return { ex: [-sn, -c], ey: [-c, sn], lh: map(TOP.lh), rh: map(TOP.rh) };
+      }
+    };
+  }
   /* 一行字的宽度估计（中文按 1 个字号、其余按 0.55 个字号），排版用 */
   function textW(str, size) {
     var w = 0;
@@ -571,7 +627,8 @@
     var g = group(parent);
     hline(g, x1, wy, hx - L - 4, wy, C_BORDER, 5);
     hline(g, hx + 4, wy, x2, wy, C_BORDER, 5);
-    var arc = paint(svgEl('path', { d: 'M ' + (hx - L) + ' ' + wy + ' A ' + L + ' ' + L + ' 0 0 1 ' + hx + ' ' + (wy - L), fill: 'none', 'stroke-width': 1, 'stroke-dasharray': '3 4' }), null, C_BORDER);
+    /* 开门的圆弧只画到 50°，不越出左边的框 */
+    var arc = paint(svgEl('path', { d: 'M ' + (hx - L) + ' ' + wy + ' A ' + L + ' ' + L + ' 0 0 1 ' + (hx - L * Math.cos(0.87)).toFixed(1) + ' ' + (wy - L * Math.sin(0.87)).toFixed(1), fill: 'none', 'stroke-width': 1, 'stroke-dasharray': '3 4' }), null, C_BORDER);
     g.appendChild(arc);
     var panel = hline(g, hx, wy, hx - L, wy, C_DOOR, 5);
     var handle = dotAt(g, hx - 0.9 * L, wy + 6, 4.5, C_DOOR);
@@ -586,44 +643,6 @@
       }
     };
   }
-  /* 俯视的机器人：一个圆、一个朝向箭头、两只手 */
-  function robotTop(parent, color) {
-    var g = group(parent);
-    var body = ringAt(g, 0, 0, 16, color || C_MUTED, 2.4);
-    body.style.fill = C_SURFACE;
-    var dir = hline(g, 0, 0, 0, 0, color || C_MUTED, 2.4);
-    var hl = dotAt(g, 0, 0, 4.5, color || C_MUTED), hr = dotAt(g, 0, 0, 4.5, color || C_MUTED);
-    return {
-      g: g,
-      put: function (x, y, rightHand) {
-        body.setAttribute('cx', x.toFixed(1)); body.setAttribute('cy', y.toFixed(1));
-        setLine(dir, x, y - 6, x, y - 26);
-        moveDot(hl, [x - 20, y - 12]);
-        moveDot(hr, rightHand || [x + 20, y - 12]);
-        return { body: [x, y], hand: rightHand || [x + 20, y - 12] };
-      }
-    };
-  }
-  /* 一只三指手（侧视示意，像一个夹爪）：掌在左，上面两根手指、下面一根拇指往右伸；u ∈ [0, 1] 从张开（p0）到握住（p1） */
-  function handIcon(parent, x, y, color) {
-    var g = group(parent);
-    var palm = paint(svgEl('rect', { x: x - 34, y: y - 16, width: 30, height: 32, rx: 7 }), C_SURFACE, color);
-    palm.style.strokeWidth = 2.4;
-    g.appendChild(palm);
-    var fingers = [0, 1, 2].map(function (i) { var f = pathLine(g, [[0, 0], [0, 0], [0, 0]], color, i === 1 ? 5 : 4); if (i === 1) f.style.opacity = 0.55; return f; });
-    return {
-      g: g,
-      set: function (u) {
-        /* [根部 y, 第一节张开角, 握住角, 第二节相对角（张开 / 握住）] */
-        [[-11, -0.55, 0.25, 0.1, 1.35], [-5, -0.35, 0.3, 0.1, 1.3], [11, 0.55, -0.25, -0.1, -1.35]].forEach(function (F, i) {
-          var a1 = F[1] + (F[2] - F[1]) * u, a2 = a1 + F[3] + (F[4] - F[3]) * u;
-          var p0 = [x - 4, y + F[0]], p1 = [p0[0] + 20 * Math.cos(a1), p0[1] + 20 * Math.sin(a1)], p2 = [p1[0] + 16 * Math.cos(a2), p1[1] + 16 * Math.sin(a2)];
-          setPath(fingers[i], [p0, p1, p2]);
-        });
-      }
-    };
-  }
-
   /* ── scene 1: 开门：人形的硬骨头 ── */
   function buildSceneIntro() {
     var s = sceneSvg('左边是项目页的视频：宇树 G1 只靠头上相机的 RGB 自己走过去开门、穿门，右上的小窗是策略实际看到的画面；右边依次出现：' +
@@ -825,7 +844,7 @@
   function buildSceneAction() {
     var s = sceneSvg('左边一台 G1 原地走路（借第 032 期 HOMIE 的回放贴图），脚下的刻度往后退，蓝色箭头是速度命令；右边依次出现：论文说要输出的 43 个关节角；' +
       '代码里策略只输出的 19 格（3 格速度命令、14 格手臂、2 格手指原语），腿的 15 格由 HOMIE 输出；增量累加的小柱子一格一格长高；' +
-      '一只三指手在张开和握住之间来回；走路和站立两个 HOMIE 模型随命令大小切换');
+      'G1 右手（Dex3 三指手）的模型在张开的预抓姿态和握住之间来回；走路和站立两个 HOMIE 模型随命令大小切换');
     s.appendChild(svgText(24, 26, '腿交给 HOMIE，策略只出 19 维', 'demo-x-ink2', 13.5));
     var GX = 140, GY = 318, gw = g1Walk(s);
     var ground = group(s);
@@ -873,13 +892,14 @@
     /* 第 4 段：手指原语 */
     var p4 = group(s);
     label(p4, R, 64, '手指原语：每只手 7 个关节只由 1 个数控制', 'demo-x-ink', 14);
-    var hand = handIcon(p4, R + 70, 150, C_FIN);
+    var hand = g1Hand(p4);
     var SX = R + 150, SW = 280;
     hline(p4, SX, 150, SX + SW, 150, C_BORDER, 3);
     var sDot = dotAt(p4, SX, 150, 7, C_FIN);
     rich(p4, SX, 176, '$p_0$ 张开', 11.5);
     rich(p4, SX + SW, 176, '握住 $p_1$', 11.5, null, 'end');
     rich(p4, R, 230, '$u=\\operatorname{clip}(0.25\\,c,\\,-1,\\,1)$，在 $p_0$ 和 $p_1$ 之间线性插值', 12.5);
+    label(p4, SX, 204, 'G1 右手（Dex3）模型，按代码的 7 个关节角渲染', 'demo-x-mut', 11);
     /* 第 5 段：两个 HOMIE 模型 */
     var p5 = group(s);
     label(p5, R, 64, '两个预训练的 HOMIE 模型，按命令大小切换', 'demo-x-ink', 14);
@@ -920,7 +940,7 @@
       });
       cTxt.textContent = 'c = ' + f1(c) + ' → 命令 ' + f2(c * 0.25);
       var u = 0.5 + 0.5 * Math.sin(now * 1.6);
-      hand.set(u);
+      hand.put(R - 6, 92, 0.62, u);
       moveDot(sDot, [SX + u * SW, 150]);
       var cmd = 0.5 + 0.42 * Math.sin(since(t, clock, 13.4) * 0.9), walk = cmd > 0.5;
       moveDot(cmdDot, [GX0 + cmd * GW, GY5]);
@@ -938,30 +958,38 @@
 
   /* ── scene 4: 特权教师看什么 ── */
   function buildSceneTeacher() {
-    var s = sceneSvg('左边是俯视图：墙上一扇右侧门轴的门，机器人从下面走近；教师能看到的东西依次画出来：根部到门的变换（紫色箭头）、手到门把的变换（黄色虚线）、' +
-      '手上的接触力（红色短箭头）、根部线速度（蓝色箭头）、门的宽度；右边依次出现：特权信息清单、246 维的拼法（色带一段段长出）、手上 16 个刚体、网络结构、' +
-      '最后这些信息在部署时都被划掉');
+    var s = sceneSvg('左边是俯视图：墙上一扇右侧门轴的门，一台 G1（模型渲染）从下面走近；机器人根部和门上各画一个坐标系，x 红、y 绿、z 蓝（z 朝上，画成圆点）；' +
+      '教师能看到的东西依次画出来：根部到门的位姿（紫色箭头）、手到门把的位姿（紫色虚线）、手上的接触力（短箭头）、根部线速度（长箭头）、门的宽度；' +
+      '右边依次出现：特权信息清单、246 维的拼法（色带一段段长出）、手上 16 个刚体（G1 两只手的模型上标出）、网络结构、最后这些信息在部署时都被划掉');
     s.appendChild(svgText(24, 26, '特权教师：看得见门、门把和手上的力', 'demo-x-ink2', 13.5));
     rectBox(s, 24, 44, 380, 268, C_BORDER, C_SURFACE2);
-    label(s, 34, 62, '俯视示意', 'demo-x-mut', 10.5);
-    var HX = 300, WY = 158, L = 104;
+    label(s, 34, 62, '俯视：G1 是模型渲染，门是示意', 'demo-x-mut', 10.5);
+    /* 门宽约 0.95 m 画成 133 px：约 140 px/m，G1 也按这个比例画 */
+    var HX = 326, WY = 160, L = 133, PXM = 140;
     var door = doorTop(s, 34, 394, HX, WY, L);
-    var bot = robotTop(s, C_MUTED);
+    var bot = g1Top(s);
+    /* 坐标系：门的原点在门洞中间的墙面上（官方 door.py 的 root），x 穿过门洞、y 沿墙往左；根部的 x 朝前、y 朝左；z 都朝上 */
+    /* 根部的坐标系画在机器人身上，不写字母（颜色和门的坐标系一样），免得字压在机器人上 */
+    var fDoor = K.svgAxes({ len: 24, size: 11 }), fRoot = K.svgAxes({ len: 24, labels: false });
+    var frLab = group(s);
+    label(frLab, HX - L / 2 + 14, WY + 22, '门坐标系', 'demo-x-ink2', 11);
+    label(frLab, 128, 306, '根部坐标系', 'demo-x-ink2', 11);
     var aRD = arrow(s, C_PURPLE, 2.4), rdTxt = rich(s, 0, 0, '$\\xi_{RD}$ 根部 → 门', 11.5);
-    var hh = hline(s, 0, 0, 0, 0, C_DOOR, 2.4, '5 4'), hhTxt = rich(s, 0, 0, '手 → 门把', 11.5);
-    var forces = [0, 1, 2].map(function () { return arrow(s, C_PEN, 2); });
+    var hh = hline(s, 0, 0, 0, 0, C_PURPLE, 2, '5 4'), hhTxt = rich(s, 0, 0, '手 → 门把', 11.5);
+    var forces = [0, 1, 2].map(function () { return arrow(s, C_INK, 1.8); });
     var fTxt = label(s, 0, 0, '接触力', 'demo-x-ink2', 11);
-    var vR = arrow(s, C_CMD, 2.6), vTxt = rich(s, 0, 0, '$v_R$ 根部线速度', 11.5);
+    var vR = arrow(s, C_INK, 2.4), vTxt = rich(s, 0, 0, '$v_R$ 根部线速度', 11.5);
+    s.appendChild(fDoor.g); s.appendChild(fRoot.g);
     var dimG = group(s);
-    hline(dimG, HX - L, WY - 26, HX, WY - 26, C_MUTED, 1.2);
-    hline(dimG, HX - L, WY - 32, HX - L, WY - 20, C_MUTED, 1.2);
-    hline(dimG, HX, WY - 32, HX, WY - 20, C_MUTED, 1.2);
-    label(dimG, HX - L / 2, WY - 34, '门宽 0.8–1.1 m', 'demo-x-ink2', 10.5, 'middle');
+    hline(dimG, HX - L, WY - 46, HX, WY - 46, C_MUTED, 1.2);
+    hline(dimG, HX - L, WY - 52, HX - L, WY - 40, C_MUTED, 1.2);
+    hline(dimG, HX, WY - 52, HX, WY - 40, C_MUTED, 1.2);
+    label(dimG, HX - L / 2, WY - 54, '门宽 0.8–1.1 m', 'demo-x-ink2', 10.5, 'middle');
     var R = 424, W = 352;
     /* 第 1 段：特权信息清单 */
     var p1 = group(s);
     label(p1, R, 64, '只有仿真里才有的特权信息', 'demo-x-ink', 14);
-    var PRIV = [['机器人根部 → 门的位姿', C_PURPLE], ['左右手 → 门把的位姿', C_DOOR], ['手上各刚体的接触力', C_PEN], ['根部线速度', C_CMD]];
+    var PRIV = [['机器人根部 → 门的位姿', C_PURPLE], ['左右手 → 门把的位姿', C_PURPLE], ['手上各刚体的接触力', C_INK], ['根部线速度', C_INK]];
     var privG = PRIV.map(function (p, i) { var g = group(p1); chip(g, R, 80 + i * 42, W, p[0], p[1], { size: 12.5, left: true, h: 32 }); return g; });
     label(p1, R, 266, '以前的工作用手写的估计器估其中一部分', 'demo-x-mut', 11);
     /* 第 2 段：246 维 */
@@ -982,15 +1010,19 @@
     var p3 = group(s);
     label(p3, R, 64, '手上的接触力', 'demo-x-ink', 14);
     rich(p3, R, 88, '论文：18 个刚体 × 6 维；代码：**16 个 × 3 维 = 48**', 12);
-    var bodies = [];
-    [R + 70, R + 250].forEach(function (cx, hIdx) {
-      var palm = rectBox(p3, cx - 26, 150, 52, 40, C_PEN, C_SURFACE);
-      void palm;
-      var pts = [[0, 170], [-14, 136], [-14, 112], [8, 136], [8, 112], [30 * (hIdx ? -1 : 1), 160], [42 * (hIdx ? -1 : 1), 146], [52 * (hIdx ? -1 : 1), 132]];
-      pts.forEach(function (p) { bodies.push(dotAt(p3, cx + p[0], p[1], 6, C_PEN)); });
-      label(p3, cx, 214, hIdx ? '右手 8 个' : '左手 8 个', 'demo-x-ink2', 11.5, 'middle');
+    /* G1 两只手的模型（右手的贴图，左手左右翻转），8 个刚体的中心标成点，依次点亮 */
+    var bodies = [], HK = 0.6;
+    [false, true].forEach(function (right, hIdx) {
+      var hx = right ? R + 194 : R + 6, hy = 100;
+      var pts = g1Hand(p3).put(hx, hy, HK, 0, !right);
+      pts.forEach(function (p) {
+        var d = dotAt(p3, p[0], p[1], 4.6, C_INK);
+        d.style.stroke = C_SURFACE2; d.style.strokeWidth = 1.6;
+        bodies.push(d);
+      });
+      label(p3, hx + HAND.cw * HK / 2, 226, right ? '右手 8 个' : '左手 8 个', 'demo-x-ink2', 11.5, 'middle');
     });
-    label(p3, R, 248, '掌 1 + 食指 2 + 中指 2 + 拇指 3', 'demo-x-mut', 11);
+    label(p3, R, 252, '掌 1 + 食指 2 + 中指 2 + 拇指 3（G1 模型渲染）', 'demo-x-mut', 11);
     /* 第 4 段：网络 */
     var p4 = group(s);
     label(p4, R, 64, '教师网络（代码）', 'demo-x-ink', 14);
@@ -1010,19 +1042,30 @@
     rich(p5, R, 268, '→ 只能交给看 **RGB** 的学生自己推断', 13);
     function draw(t, clock) {
       var now = nowOf(t, clock);
-      var th = 0.12 + 0.12 * Math.sin(now * 0.8), d = door.set(th);
-      var by = 236 + 6 * Math.sin(now * 1.3), bx = 244;
-      var hand = [d.handle[0] + 3, d.handle[1] + 12];
-      bot.put(bx, by, hand);
-      var u1 = seg(t, 0.8, 1.2), u2 = seg(t, 1.5, 1.9), u3 = seg(t, 2.2, 2.6), u4 = seg(t, 2.9, 3.3);
-      aRD.set(bx - 4, by - 18, HX - L / 2, WY + 8, 9); setOpacity(aRD.g, u1);
-      rdTxt.setX(262); rdTxt.setY(198); setOpacity(rdTxt, u1);
-      setLine(hh, bx + 20, by - 12, hand[0], hand[1]); hh.style.opacity = u2;
-      hhTxt.setX(272); hhTxt.setY(254); setOpacity(hhTxt, u2);
-      forces.forEach(function (f, i) { var a = -0.5 + i * 0.5, L2 = 14 + 4 * Math.sin(now * 3 + i); f.set(hand[0], hand[1], hand[0] + L2 * Math.sin(a), hand[1] - L2 * Math.cos(a), 6); setOpacity(f.g, u3); });
-      fTxt.setAttribute('x', (hand[0] - 62).toFixed(1)); fTxt.setAttribute('y', (hand[1] + 16).toFixed(1)); fTxt.style.opacity = u3;
-      vR.set(bx - 30, by + 26, bx - 30, by - 6, 8); setOpacity(vR.g, u4);
-      vTxt.setX(36); vTxt.setY(by + 16); setOpacity(vTxt, u4);
+      var th = 0.22 + 0.08 * Math.sin(now * 0.8), d = door.set(th);
+      /* G1 站在门前约 0.8 m、往左偏一点（偏航 0.2 rad 上下），前后轻轻晃 */
+      var yaw = 0.22 + 0.04 * Math.sin(now * 0.6), sway = 3 * Math.sin(now * 1.3);
+      var bx = 240 - sway * Math.sin(yaw), by = 272 - sway * Math.cos(yaw);
+      var b = bot.put(bx, by, PXM, yaw), ex = b.ex, ey = b.ey, lh = b.lh;
+      var u0 = seg(t, 0.5, 0.8), u1 = seg(t, 0.8, 1.2), u2 = seg(t, 1.5, 1.9), u3 = seg(t, 2.2, 2.6), u4 = seg(t, 2.9, 3.3);
+      var DO = [HX - L / 2, WY];
+      fDoor.set(DO, [0, -1], [-1, 0], { toward: true, label: [-10, 13] });
+      fRoot.set([bx, by], ex, ey, { toward: true, label: [10, 14] });
+      setOpacity(fDoor.g, u0); setOpacity(fRoot.g, u0); setOpacity(frLab, u0);
+      var rx = DO[0] - bx, ry = DO[1] - by, rl = Math.hypot(rx, ry);
+      aRD.set(bx + rx / rl * 12, by + ry / rl * 12, DO[0] - rx / rl * 9, DO[1] - ry / rl * 9, 9); setOpacity(aRD.g, u1);
+      rdTxt.setX(284); rdTxt.setY(214); setOpacity(rdTxt, u1);
+      setLine(hh, lh[0], lh[1], d.handle[0], d.handle[1]); hh.style.opacity = u2;
+      hhTxt.setX(104); hhTxt.setY(196); setOpacity(hhTxt, u2);
+      forces.forEach(function (f, i) {
+        var a = -0.5 + i * 0.5, L2 = 13 + 3 * Math.sin(now * 3 + i), ca = Math.cos(a), sa = Math.sin(a);
+        var fx = ex[0] * ca - ex[1] * sa, fy = ex[0] * sa + ex[1] * ca;
+        f.set(lh[0], lh[1], lh[0] + L2 * fx, lh[1] + L2 * fy, 5.5); setOpacity(f.g, u3);
+      });
+      fTxt.setAttribute('x', (lh[0] - 66).toFixed(1)); fTxt.setAttribute('y', (lh[1] + 18).toFixed(1)); fTxt.style.opacity = u3;
+      var vx0 = bx - ey[0] * 36 - ex[0] * 6, vy0 = by - ey[1] * 36 - ex[1] * 6;
+      vR.set(vx0, vy0, vx0 + ex[0] * 34, vy0 + ex[1] * 34, 8); setOpacity(vR.g, u4);
+      vTxt.setX(vx0 + 10); vTxt.setY(vy0 + 4); setOpacity(vTxt, u4);
       setOpacity(dimG, seg(t, 3.0, 3.4));
       privG.forEach(function (g, i) { setOpacity(g, 0.25 + 0.75 * [u1, u2, u3, u4][i]); });
       var u = seg(since(t, clock, 3.6), 0.3, 2.3);
@@ -1510,7 +1553,7 @@
   /* ── scene 10: 部分可观与 GRPO ── */
   function buildSceneGRPO() {
     var s = sceneSvg('左边是一组 8 条回合，每行一条从左往右走的轨迹，结尾打勾或打叉；下面算出这组的平均和标准差，每行右边长出这条回合的优势（绿色向右是正、红色向左是负）；' +
-      '右边依次出现：教师和学生成功率的差距、PPO 和 GRPO 的区别、优势公式、奖励的组成、俯视的视野锥：门把快出画面时学生转身把它留在画面里');
+      '右边依次出现：教师和学生成功率的差距、PPO 和 GRPO 的区别、优势公式、奖励的组成、俯视的 G1（模型渲染）和头上相机的视野：门把快出画面时视野变红，学生转身把它留在画面里');
     s.appendChild(svgText(24, 26, '学生停在五到七成：用 GRPO 在自己的回合上接着练', 'demo-x-ink2', 13.5));
     var G = EX_GROUP, A = grpoAdv(G), RX = 34, RY = 66, RH = 28;
     rectBox(s, 24, 44, 380, 300, C_BORDER, C_SURFACE2);
@@ -1562,8 +1605,9 @@
     var p5 = group(s);
     label(p5, R, 64, '学会教师没示范过的事', 'demo-x-ink', 14);
     var VX = R + 100, VY = 228;
+    /* 俯视的 G1（模型渲染）和头上相机的视野：门把出了视野，视野变红 */
+    var bot5 = g1Top(p5);
     var cone = paint(svgEl('path', { d: 'M 0 0', 'stroke-width': 1.2 }), C_STU, C_STU); cone.style.fillOpacity = 0.15; p5.appendChild(cone);
-    var bodyC = ringAt(p5, VX, VY, 14, C_STU, 2.4); bodyC.style.fill = C_SURFACE;
     var hdl = dotAt(p5, VX + 40, 110, 6, C_DOOR);
     var inView = label(p5, R + 200, 150, '', 'demo-x-ink', 12);
     label(p5, R + 200, 196, '让门把留在画面里', 'demo-x-ink2', 12);
@@ -1599,7 +1643,8 @@
       moveDot(hdl, [hx, 120]);
       var hAng = Math.atan2(120 - VY, hx - VX), vis = Math.abs(hAng - ang) < 0.35;
       inView.textContent = vis ? '门把在画面里 ✓' : '门把快出画面了';
-      bodyC.style.stroke = vis ? '' : C_BAD;
+      bot5.put(VX, VY, 120, Math.atan2(-Math.cos(ang), -Math.sin(ang)));
+      cone.style.fill = vis ? C_STU : C_BAD; cone.style.stroke = vis ? C_STU : C_BAD;
       setOpacity(p1, win(t, 0.3, 3.6));
       setOpacity(p2, win(t, 3.6, 7.0));
       setOpacity(p3, win(t, 7.0, 10.4));
@@ -2010,7 +2055,7 @@
   var T16 = { h: 0.4, p: 15.4, f: 33.4, f2: 42.93, f3: 51.3, sum: 60.97 };
   function buildSceneGeneral() {
     var s = sceneSvg('左边按讲到的内容换片段，每段放完再换：先是换把手的第一视角（三段），再是换墙面颜色（三段），最后是项目页的三个失败案例；' +
-      '右边依次出现：论文图 1 的把手一排；仿真里程序生成的五种把手和真机的把手；图 1 的墙面一排和三对颜色；三个失败各自的小动画：被门框挡住、抓空、门本来虚掩着');
+      '右边依次出现：论文图 1 的把手一排；仿真里程序生成的五种把手和真机的把手；图 1 的墙面一排和三对颜色；三个失败各自的小动画：俯视的 G1 模型被门框挡住、G1 右手的模型抓空、门本来虚掩着');
     s.appendChild(svgText(24, 26, '真机泛化与失败（论文图 1、项目页）', 'demo-x-ink2', 13.5));
     var cH = seqClip(s, 'handles', 24, 44, 380, 214, '项目页视频：换把手（第一视角）', HANDLE_PARTS);
     var cP = seqClip(s, 'panels', 24, 44, 380, 214, '项目页视频：换墙面', PANEL_PARTS);
@@ -2057,12 +2102,12 @@
     /* ① 俯视：墙上一道门，机器人从下往上走，偏左，肩膀撞上左边门框 */
     var a1 = frows[0].y, wallY = a1 + 22;
     hline(p4, R + 6, wallY, R + 38, wallY, C_MUTED, 4); hline(p4, R + 72, wallY, R + 104, wallY, C_MUTED, 4);
-    var bot1 = ringAt(p4, R + 44, a1 + 56, 9, C_STU, 2.4);
+    var bot1 = g1Top(p4), hit1 = ringAt(p4, 0, 0, 7, C_BAD, 2.2);
     /* ② 侧视：门把在上面，手伸到估计的位置（低了一截），中间一条虚线是估错的距离 */
     var a2 = frows[1].y;
     hline(p4, R + 84, a2 + 6, R + 84, a2 + 62, C_DOOR, 3);
     var knob2 = dotAt(p4, R + 76, a2 + 24, 5, C_DOOR);
-    var hand2 = dotAt(p4, R + 16, a2 + 42, 6, C_STU);
+    var hand2 = g1Hand(p4);
     var err2 = hline(p4, R + 76, a2 + 24, R + 76, a2 + 42, C_BAD, 1.6, '3 3');
     void knob2;
     /* ③ 俯视：训练时门总是关着（虚线），真机上门本来就开了一条缝（实线，轻轻晃） */
@@ -2097,12 +2142,15 @@
         r.cat.style.fontWeight = fk < 0 ? 700 : 400;
       });
       /* ① 每 3 s 一轮：走到门框高度时撞上、变红、停住 */
-      var u1 = (now % 3) / 3, yy = a1 + 56 - 40 * Math.min(1, u1 / 0.6), hit = u1 >= 0.6;
-      bot1.setAttribute('cy', yy.toFixed(1));
-      bot1.style.stroke = hit ? C_BAD : C_STU;
+      /* 机器人比门洞中线偏左 11 px：左肩（离根部约 0.17 m）走到墙线就撞上 */
+      var u1 = (now % 3) / 3, yy = a1 + 58 - 32 * Math.min(1, u1 / 0.6), hit = u1 >= 0.6;
+      bot1.put(R + 44, yy, 70, 0);
+      moveDot(hit1, [R + 44 - 12, wallY]);
+      hit1.style.opacity = hit ? 1 : 0;
       /* ② 手伸向估计的位置，比门把低了 18 px，合拢时抓空 */
-      var u2 = (now % 2.6) / 2.6, hxp = R + 16 + 60 * Math.min(1, u2 / 0.6);
-      moveDot(hand2, [hxp, a2 + 42]);
+      var u2 = (now % 2.6) / 2.6, hxp = R + 44 + 32 * Math.min(1, u2 / 0.6);
+      /* G1 右手的模型：指尖一侧对准估计的位置，到了以后合拢、抓空 */
+      hand2.put(hxp - 36, a2 + 30, 0.18, seg(u2, 0.62, 0.8));
       err2.style.opacity = u2 > 0.6 ? 1 : 0;
       /* ③ 虚掩的门在 15°–25° 之间轻轻晃 */
       var ang3 = (20 + 5 * Math.sin(now * 1.8)) * Math.PI / 180;
