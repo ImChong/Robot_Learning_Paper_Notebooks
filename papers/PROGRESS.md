@@ -110,7 +110,7 @@
 
 | #   | 论文                                                                                                                                                               | 日期         | 🌟  | 状态   |
 | --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- | --- | ---- |
-| 1134  | [Memory before Goal: Role of Pre-History Memory for Humanoid Loco-Manipulation](https://arxiv.org/abs/2610.31166) | 2026.10 |  | ⏳ 待读 |
+| 1134  | [Memory before Goal: Role of Pre-History Memory for Humanoid Loco-Manipulation](https://arxiv.org/abs/2610.31166) ✅ [笔记](04_Loco-Manipulation_and_WBC/Memory_before_Goal__Role_of_Pre-History_Memory_for_Humanoid_Loco-Manipulation/Memory_before_Goal__Role_of_Pre-History_Memory_for_Humanoid_Loco-Manipulation.md) | 2026.10 |  | ✅ 已总结 |
 | 1135  | [Robot Motion Transition with Human Motion Prior](https://arxiv.org/abs/2610.30817) | 2026.10 |  | ⏳ 待读 |
 | 1136  | [Motion Retargeting with Spatiotemporal Preferences for Humanoid Loco-Manipulation](https://arxiv.org/abs/2610.30540) | 2026.10 |  | ⏳ 待读 |
 | 1137  | [SP-HLM: Sparse-Pose-Driven Motion Generation and Whole-Body Control for Humanoid Loco-Manipulation](https://arxiv.org/abs/2610.30044) | 2026.10 |  | ⏳ 待读 |
