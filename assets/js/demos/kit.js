@@ -456,7 +456,10 @@
       good: v('--demo-good', '#4ec9a4'),
       bad: v('--demo-bad', '#e06c75'),
       warn: v('--demo-warn', '#d7a75f'),
-      purple: v('--demo-purple', '#c586c0')
+      purple: v('--demo-purple', '#c586c0'),
+      axisX: v('--demo-axis-x', '#ff5a52'),
+      axisY: v('--demo-axis-y', '#3fcf5e'),
+      axisZ: v('--demo-axis-z', '#4a8dff')
     };
   }
 
@@ -995,6 +998,55 @@
     });
   }
 
+  /* A coordinate frame drawn in space: x red, y green, z blue (AGENTS.md「讲解动画与视频」).
+     set(o, ex, ey, ez) takes the origin and each axis as its projected screen
+     vector (length 1 = `len` px; foreshortened axes come out shorter), or null
+     to hide it. An axis that points at the viewer is { toward: true } and is
+     drawn as ⊙ on the origin, one pointing away is { toward: false } (⊗). */
+  function svgAxes(opts) {
+    var o = opts || {};
+    var len = o.len || 24, w = o.width || 2, fs = o.size || 11;
+    var g = svgEl('g', { class: 'demo-x-axes' });
+    var parts = ['x', 'y', 'z'].map(function (name) {
+      var col = X_COLORS['axis' + name.toUpperCase()];
+      var line = paint(svgEl('line', { 'stroke-width': w, 'stroke-linecap': 'round' }), null, col);
+      var head = paint(svgEl('path', { d: 'M 0 0' }), col);
+      var ring = paint(svgEl('circle', { r: 4.6, 'stroke-width': 1.6 }), 'none', col);
+      var mark = paint(svgEl('path', { d: 'M 0 0', 'stroke-width': 1.6 }), col, col);
+      var txt = svgText(0, 0, o.labels === false ? '' : (o.names ? o.names[name] : name), null, fs, 'middle');
+      txt.style.fill = col;
+      txt.style.fontWeight = 700;
+      [line, head, ring, mark, txt].forEach(function (n) { g.appendChild(n); });
+      return { line: line, head: head, ring: ring, mark: mark, txt: txt };
+    });
+    function show(n, on) { n.style.display = on ? '' : 'none'; }
+    function set(org, ex, ey, ez) {
+      [ex, ey, ez].forEach(function (v, i) {
+        var p = parts[i], x0 = org[0], y0 = org[1];
+        var flat = v && v.toward === undefined, dot = v && v.toward !== undefined;
+        show(p.line, flat); show(p.head, flat); show(p.ring, dot); show(p.mark, dot); show(p.txt, !!v);
+        if (flat) {
+          var dx = v[0] * len, dy = v[1] * len, L = Math.hypot(dx, dy) || 1, ux = dx / L, uy = dy / L;
+          var hx = x0 + dx, hy = y0 + dy, bx = hx - ux * 6, by = hy - uy * 6;
+          p.line.setAttribute('x1', x0.toFixed(1)); p.line.setAttribute('y1', y0.toFixed(1));
+          p.line.setAttribute('x2', bx.toFixed(1)); p.line.setAttribute('y2', by.toFixed(1));
+          p.head.setAttribute('d', 'M ' + hx.toFixed(1) + ' ' + hy.toFixed(1) + ' L ' + (bx - uy * 3.4).toFixed(1) + ' ' + (by + ux * 3.4).toFixed(1) +
+            ' L ' + (bx + uy * 3.4).toFixed(1) + ' ' + (by - ux * 3.4).toFixed(1) + ' Z');
+          p.txt.setAttribute('x', (hx + ux * 8).toFixed(1)); p.txt.setAttribute('y', (hy + uy * 8 + fs * 0.36).toFixed(1));
+        } else if (dot) {
+          p.ring.setAttribute('cx', x0.toFixed(1)); p.ring.setAttribute('cy', y0.toFixed(1));
+          p.mark.setAttribute('d', v.toward
+            ? 'M ' + (x0 - 1.4) + ' ' + y0 + ' a 1.4 1.4 0 1 0 2.8 0 a 1.4 1.4 0 1 0 -2.8 0'
+            : 'M ' + (x0 - 3) + ' ' + (y0 - 3) + ' L ' + (x0 + 3) + ' ' + (y0 + 3) + ' M ' + (x0 + 3) + ' ' + (y0 - 3) + ' L ' + (x0 - 3) + ' ' + (y0 + 3));
+          var off = v.label || [-9, 11];
+          p.txt.setAttribute('x', (x0 + off[0]).toFixed(1)); p.txt.setAttribute('y', (y0 + off[1]).toFixed(1));
+        }
+      });
+    }
+    if (o.origin) set(o.origin, o.x || null, o.y || null, o.z || null);
+    return { g: g, set: set };
+  }
+
   /* An arrowhead <marker>; ids are document-global, so pass a bundle-unique one. */
   function arrowMarker(svg, id, color) {
     var defs = svgEl('defs', {});
@@ -1014,6 +1066,9 @@
     bad: 'var(--demo-bad)',
     warn: 'var(--demo-warn)',
     purple: 'var(--demo-purple)',
+    axisX: 'var(--demo-axis-x)',
+    axisY: 'var(--demo-axis-y)',
+    axisZ: 'var(--demo-axis-z)',
     muted: 'var(--demo-muted)',
     grid: 'var(--demo-grid)',
     border: 'var(--demo-border)',
@@ -1430,6 +1485,7 @@
     setOpacity: setOpacity,
     sceneSvg: sceneSvg,
     arrowMarker: arrowMarker,
+    svgAxes: svgAxes,
     stickFigure: stickFigure,
     poseWalk: poseWalk,
     polyPath: polyPath,

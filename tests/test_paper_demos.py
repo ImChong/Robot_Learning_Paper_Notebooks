@@ -381,6 +381,27 @@ def test_demo_assets_are_theme_aware():
     assert "data-theme" in kit
 
 
+
+def test_spatial_axes_are_red_green_blue():
+    """空间里的坐标系一律 x 红、y 绿、z 蓝（AGENTS.md「讲解动画与视频」，2026-10-29）：颜色在两套主题里都有定义，
+    和主题的 bad / good / accent 分开；共享的 K.svgAxes 按这三个变量上色。"""
+    import colorsys
+    import re
+
+    css = DEMO_CSS.read_text(encoding="utf-8")
+    for axis, (lo, hi) in (("x", (-20, 20)), ("y", (100, 150)), ("z", (200, 240))):
+        values = re.findall(r"--demo-axis-" + axis + r":\s*(#[0-9a-fA-F]{6});", css)
+        assert len(values) == 2, f"--demo-axis-{axis} 需要在深色与浅色主题下各定义一次"
+        for v in values:
+            r, g, b = (int(v[i:i + 2], 16) / 255 for i in (1, 3, 5))
+            hue = colorsys.rgb_to_hsv(r, g, b)[0] * 360
+            hue = hue - 360 if hue > 180 and axis == "x" else hue
+            assert lo <= hue <= hi, f"--demo-axis-{axis} 的 {v} 不是{'红绿蓝'['xyz'.index(axis)]}色（色相 {hue:.0f}°）"
+    kit = DEMO_KIT.read_text(encoding="utf-8")
+    assert "svgAxes: svgAxes" in kit
+    for axis in "XYZ":
+        assert f"axis{axis}: 'var(--demo-axis-{axis.lower()})'" in kit
+
 EXPLAINER_BUNDLES = (
     "ppo", "awr", "deepmimic", "amp", "add", "ase", "calm", "pulse", "sonic", "groot",
     "gmr", "omniretarget", "diffusion_policy", "beyondmimic", "cosmos", "umr", "php", "pbfm",
