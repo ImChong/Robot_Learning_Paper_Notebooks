@@ -2926,6 +2926,18 @@
     "display_name": "Locomotion",
     "papers": [
       {
+        "title": "Humanoid Mobility via Attention-based Contacts",
+        "path": "papers/05_Locomotion/Humanoid_Mobility_via_Attention-based_Contacts/Humanoid_Mobility_via_Attention-based_Contacts.md",
+        "url": "/papers/05_Locomotion/Humanoid_Mobility_via_Attention-based_Contacts/Humanoid_Mobility_via_Attention-based_Contacts.html",
+        "dir": "Humanoid_Mobility_via_Attention-based_Contacts",
+        "arxiv": "2610.31608",
+        "summary_zh": "纯 RL 的地形策略鲁棒但学不出协调的多肢体动作；参考跟踪动作自然，但部署时必须有人在线生成参考轨迹。",
+        "published_date_zh": "2026年10月22日（arXiv v1）",
+        "published_date_en": "Oct 22, 2026 (arXiv v1)",
+        "zhname": "ACP：基于注意力接触规划的人形全身移动",
+        "zh_title": "ACP：基于注意力接触规划的人形全身移动"
+      },
+      {
         "title": "Push the Limit: Learning High-Speed Sprinting and Aggressive Cornering on a Full-Scale Humanoid",
         "path": "papers/05_Locomotion/Push_the_Limit__High-Speed_Sprinting_and_Aggressive_Cornering_on_a_Full-Scale_Humanoid/Push_the_Limit__High-Speed_Sprinting_and_Aggressive_Cornering_on_a_Full-Scale_Humanoid.md",
         "url": "/papers/05_Locomotion/Push_the_Limit__High-Speed_Sprinting_and_Aggressive_Cornering_on_a_Full-Scale_Humanoid/Push_the_Limit__High-Speed_Sprinting_and_Aggressive_Cornering_on_a_Full-Scale_Humanoid.html",
