@@ -336,7 +336,7 @@ def test_notes_declare_their_demos_in_reading_order():
         PBFM_NOTE: ("pbfm", ["pbfm-explainer"]),
         GENTLE_NOTE: ("gentle", ["gentle-explainer"]),
         HUMANML3D_NOTE: ("humanml3d", ["humanml3d-explainer", "humanml3d-video", "humanml3d-clip", "humanml3d-length", "humanml3d-rprec"]),
-        TRANSFORMER_NOTE: ("transformer", ["tf-explainer", "tf-video"]),
+        TRANSFORMER_NOTE: ("transformer", ["tf-explainer", "tf-video", "tf-cost", "tf-attention", "tf-scale"]),
         PI0_NOTE: ("pi0", ["pi0-explainer", "pi0-video"]),
         PI05_NOTE: ("pi05", ["pi05-explainer", "pi05-video"]),
         SOCCER_NOTE: ("op3soccer", ["soccer-explainer", "soccer-video", "soccer-filter", "soccer-lambda", "soccer-pool"]),
@@ -477,9 +477,14 @@ EXPLAINER_BUNDLES = (
 # 受力暴露的多样性 / 安全力阈值 / 教师—学生与柔顺奖励 / 定量证据与局限）。「交互力长什么样」
 # 与「什么时候、在哪几个 link、多硬」是两件事（式 3–4 vs 附录 A 的调度），阈值又有自己的
 # 截断公式与 ISO 换算，合并会让 4 个子步的积分表、平衡点表与压强换算挤在同一帧。
-# Transformer 是七件（RNN 的串行瓶颈 / 缩放点积注意力手算 / 为什么除以 √d_k / 多头 /
-# 位置编码 / 编码器—解码器与因果掩码 / 训练配方与结果）。「一次注意力怎么算」与「为什么要缩放」
-# 是两组数（d_k = 4 的手算 vs d_k = 64 的饱和），合成一幕会让权重条和梯度对比抢同一块画面。
+# Transformer 是十七件（2026-10-29 从七幕重做，从机器人的角度讲）：为什么机器人要读一篇翻译论文 /
+# RNN 的串行瓶颈 / 表一 / 机器人的 token / Q、K、V / 手算一次注意力 / 为什么除以 √d_k / 多头 / 位置编码 /
+# 残差、LayerNorm 和前馈网络 / 因果掩码 / 交叉注意力 / 训练并行、推理逐个 / 训练配方 / 表二 / 表三、表四 /
+# 局限与机器人。论文按 §3.1–3.5、§4、§5、§6 一节一块：表一单独一幕（三列、两条量级曲线、Digit 与 π₀ 的倍数）；
+# 嵌入（§3.4）是「机器人的 token」，Q / K / V 的角色与一次手算是两件事（类比 vs d_k = 4 的数），缩放又是
+# d_k = 64 的另一组数；因果掩码与交叉注意力是 §3.2.3 的两种用法，各有机器人的接法（Digit 的 136 对、
+# GR00T N1 的交叉注意力）；「训练并行、推理逐个」配机器人的 20 ms 与 π₀ 的 73 ms；结果按表二、表三 + 表四各一幕。
+# 压回七幕会让 π₀ 的 867 个 token 和 Q / K / V 的流向、或表二的柱和表三的消融抢同一帧。
 # π₀ 是七件（三道坎 / 两套权重 / 分块掩码与 KV 缓存 / 流匹配 / 动作块与推理预算 / 数据与配方 /
 # 实验与边界）。「两套权重」回答参数怎么分，「掩码」回答注意力怎么连，二者在附录 B 是分开的两段；
 # 「流匹配」和「推理预算」也各有一张图（积分路径 vs 附录 D 的耗时表）。
@@ -580,7 +585,7 @@ EXPLAINER_SCENES = {
     "pbfm": (PBFM_NOTE, 7),
     "gentle": (GENTLE_NOTE, 7),
     "lcp": (LCP_NOTE, 10),
-    "transformer": (TRANSFORMER_NOTE, 7),
+    "transformer": (TRANSFORMER_NOTE, 17),
     "pi0": (PI0_NOTE, 7),
     "pi05": (PI05_NOTE, 7),
     "op3soccer": (SOCCER_NOTE, 12),
@@ -2136,13 +2141,12 @@ def test_narrated_video_placeholders_point_at_files_that_exist():
 
 
 def test_vla_explainers_share_numbers_with_their_notes():
-    """Transformer / π₀ / π₀.₅ 的动画算例与笔记「🚶 具体实例」共用同一组数（OP3 足球见下一个测试）。
+    """π₀ / π₀.₅ 的动画算例与笔记「🚶 具体实例」共用同一组数（Transformer、OP3 足球各有单独的测试）。
 
     这些数由各自 bundle 里的小函数现算（softmax、Beta CDF、n^0.43、分桶、1 − 0.8^n ……），
     笔记里是手算结果；改了一边忘了另一边，这里会拦下来。
     """
     cases = {
-        TRANSFORMER_NOTE: ("transformer", ["q = [1, 0, 1, 0]", "[0.548,\\ 0.726]", "0.274", "0.452", "6.99", "89 倍"]),
         PI0_NOTE: ("pi0", ["64.7%", "7.24", "816", "73", "−1.2", "0.8"]),
         PI05_NOTE: ("pi05", ["97.6%", "**166**", "280k", "80k", "11%"]),
     }
@@ -2153,9 +2157,6 @@ def test_vla_explainers_share_numbers_with_their_notes():
         assert "## 🚶 具体实例" in text and "## 🎬 七幕动画" in text
 
     # 动画里现算的关键数字：直接复算一遍，确保与笔记里的手算一致
-    w = [math.exp(x) for x in (0.5, 1.0, 0.5)]
-    assert [round(x / sum(w), 3) for x in w] == [0.274, 0.452, 0.274]
-    assert round(512 ** -0.5 * 4000 ** -0.5 * 1e4, 2) == 6.99
     assert round((1 - ((0.999 - 0.5) / 0.999) ** 1.5) * 100, 1) == 64.7
     assert round(100 ** 0.43, 2) == 7.24
     assert sum(1 for k in range(256) if -1 + 2 * k / 256 <= 0.3) - 1 == 166
@@ -2163,6 +2164,75 @@ def test_vla_explainers_share_numbers_with_their_notes():
     js = (DEMO_JS_DIR / "pi0.js").read_text(encoding="utf-8")
     assert "eps = -1.2, a = 0.8, steps = 10" in js
     assert "nBig = 100, nSmall = 1, p = 0.43" in js
+
+
+def test_transformer_explainer_demos_and_worked_example_share_the_paper_numbers():
+    """Transformer 十七幕动画、三个演示、配音旁白与笔记「🚶 具体实例」共用同一组数：
+
+    例 1 机器人最近 3 步的一次注意力（玩具向量）、例 2 d_k = 64 不缩放时的饱和、例 3 因果掩码留下的对数、
+    例 5 按标准结构数的参数、例 6 按表一粗算 Digit 与 π₀、例 7 式 (3) 的学习率。这里用 Python 重算一遍。
+    """
+    js = (DEMO_JS_DIR / "transformer.js").read_text(encoding="utf-8")
+    note = TRANSFORMER_NOTE.read_text(encoding="utf-8")
+    narration = (ROOT / "scripts/paper_video/papers/transformer.py").read_text(encoding="utf-8")
+    for line in (
+        "var q = [1, 0, 1, 0];",
+        "var keys = [[1, 0, 0, 0], [1, 1, 1, 0], [0, 0, 1, 1]];",
+        "var vals = [[1, 0], [0, 1], [1, 1]];",
+        "var raw = [12, 4, -4, 6];",
+        "var D_MODEL = 512, D_FF = 2048, N_HEADS = 8, D_K = 64, N_LAYERS = 6, WARMUP = 4000, VOCAB = 37000;",
+        "var PI0_TOK = { img: 256, cams: 3, text: 48, state: 1, act: 50 };",
+        "var MASK_N = 6, RH_CTX = 16;",
+        "{ key: 'rh', zh: 'Digit 行走（第 014 期）', n: RH_CTX, d: 192 }",
+        "var RH_FIG8A = [['Transformer', 97], ['LSTM', 89], ['TCN', 86], ['MLP', 75]];",
+    ):
+        assert line in js, line
+
+    def softmax(xs):
+        m = max(xs)
+        e = [math.exp(x - m) for x in xs]
+        return [x / sum(e) for x in e]
+
+    # 例 1：点积 1 / 2 / 1，除以 √4 后 softmax，加权求和
+    q, keys, vals = [1, 0, 1, 0], [[1, 0, 0, 0], [1, 1, 1, 0], [0, 0, 1, 1]], [[1, 0], [0, 1], [1, 1]]
+    raw = [sum(a * b for a, b in zip(q, k, strict=True)) for k in keys]
+    w = softmax([r / 2 for r in raw])
+    out = [sum(w[i] * vals[i][j] for i in range(3)) for j in range(2)]
+    assert raw == [1, 2, 1] and [round(x, 3) for x in w] == [0.274, 0.452, 0.274]
+    assert [round(x, 3) for x in out] == [0.548, 0.726]
+    # 例 2：d_k = 64，同一组分数缩放前后最大项的梯度 p(1 − p)
+    p_raw, p_scaled = softmax([12, 4, -4, 6]), softmax([12 / 8, 4 / 8, -4 / 8, 6 / 8])
+    g_raw, g_scaled = p_raw[0] * (1 - p_raw[0]), p_scaled[0] * (1 - p_scaled[0])
+    assert round(p_raw[0], 3) == 0.997 and round(p_scaled[0], 3) == 0.506
+    assert round(g_raw, 4) == 0.0028 and round(g_scaled, 3) == 0.250 and round(g_scaled / g_raw) == 89
+    assert round(math.sqrt(48), 1) == 6.9
+    # 例 3：因果掩码留下 n(n + 1)/2 对
+    assert (6 * 7 // 2, 16 * 17 // 2) == (21, 136)
+    # 例 5：tensor2tensor 的投影不带偏置、FFN 带偏置、每个 LayerNorm 2d 个参数，嵌入共享只算一次
+    def params(d, dff, vocab=37000, n=6):
+        attn, ffn, ln = 4 * d * d, 2 * d * dff + dff + d, 2 * d
+        enc, dec = attn + ffn + 2 * ln, 2 * attn + ffn + 3 * ln
+        return vocab * d, enc, dec, vocab * d + n * (enc + dec)
+    assert params(512, 2048) == (18_944_000, 3_150_336, 4_199_936, 63_045_632)
+    assert params(1024, 4096)[3] == 214_171_648
+    # 例 6：自注意力 n²d 对循环层 nd²，比值 d / n
+    n_pi0 = 3 * 256 + 48 + 1 + 50
+    assert n_pi0 == 867 and n_pi0 ** 2 == 751_689 and 192 / 16 == 12 and round(2048 / n_pi0, 1) == 2.4
+    # 例 7：第 4000 步与第 10 万步的学习率
+    assert round(512 ** -0.5 * 4000 ** -0.5 * 1e4, 2) == 6.99
+    assert round(512 ** -0.5 * 100000 ** -0.5 * 1e4, 2) == 1.40
+
+    assert "## 🎬 十七幕动画" in note and "## 🚶 具体实例" in note
+    for needle in (
+        "q = [1, 0, 1, 0]", "[0.548,\\ 0.726]", "w = [0.274,\\ 0.452,\\ 0.274]", "相差约 89 倍", "136 / 256",
+        "63,045,632", "214,171,648", "751,689", "$192/16 = 12$", "$2048/867 \\approx 2.4$", "6.99\\times10^{-4}",
+        "1.40\\times10^{-4}",
+    ):
+        assert needle in note, needle
+    # 旁白是写给第一次接触的人的比喻版（2026-10-29 第二版），念的是百分比和整数，π₀ 那几个数只留在笔记里
+    for needle in ("27%、45%、27%", "0.548 和 0.726", "99.7%", "0.0028", "0.25", "89 倍", "51%", "6.9", "21 对", "136",
+                   "6500 万", "140 万", "12 倍"):
+        assert needle in narration, needle
 
 
 def test_sonic_worked_example_shares_numbers_with_its_explainer():
