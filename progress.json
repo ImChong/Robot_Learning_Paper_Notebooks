@@ -41,15 +41,15 @@
         "13_Physics-Based_Animation",
         "14_Human_Motion"
       ],
-      "last_module": "04_Loco-Manipulation_and_WBC",
-      "last_index": 1134,
-      "last_title": "Memory before Goal: Role of Pre-History Memory for Humanoid Loco-Manipulation (arXiv:2610.31166)",
-      "next_module": "05_Locomotion",
-      "last_completed_date": "2026-10-29",
-      "note": "本日轮转到 04_Loco-Manipulation_and_WBC。PROGRESS Loco-Manipulation and Whole-Body-Control 章节中尚无笔记的最新论文是 Memory before Goal (arXiv:2610.31166, 2026-10-22, MBZUAI)，即 PROGRESS #1134，已确认在上游 README。WholeBodyMem 用冻结 SAM3 跟踪任务物体、按物体事件因果选择 3–7 帧关键帧（每帧 77 个原生 token）与物体 token，由 Ψ₀ 式动作专家交叉注意力 + FiLM 读取；HuMeGo 记忆任务成功 29.1% → 72.6%，SIMPLE 70.2% → 86.9%，真机 G1 22/60 → 53/60。未开源，含整体流程 mermaid 与算例，无源码运行时序图。下一篇轮转到 05_Locomotion。",
-      "last_date": "2026-10-29",
+      "last_module": "05_Locomotion",
+      "last_index": 1151,
+      "last_title": "Humanoid Mobility via Attention-based Contacts (arXiv:2610.31608)",
+      "next_module": "06_Manipulation",
+      "last_completed_date": "2026-10-30",
+      "note": "本日轮转到 05_Locomotion。PROGRESS Locomotion 章节中尚无笔记的最新论文是 Humanoid Mobility via Attention-based Contacts (arXiv:2610.31608, 2026-10-22, ETH Zürich RSL × Apple × NVIDIA)，即 PROGRESS #1151，已确认在上游 README。接触条件跟踪器只看 9 个部位的接触目标，注意力接触规划器在 17×11 地形点上为每个部位选下一次接触点，用跟踪器成功回合的事后标签自监督训练，再在无参考地形上 RL 微调自举；13.2 分钟数据，G1 一个策略爬梯 / 爬箱 / 翻墙 / 梅花桩，组合赛道 92.5% vs MGMT 58.8%。未开源，含整体流程 mermaid 与算例，无源码运行时序图。下一篇轮转到 06_Manipulation。",
+      "last_date": "2026-10-30",
       "next_candidate": null,
-      "last_completed": "Memory before Goal: Role of Pre-History Memory for Humanoid Loco-Manipulation (arXiv:2610.31166)"
+      "last_completed": "Humanoid Mobility via Attention-based Contacts (arXiv:2610.31608)"
     },
     "last_summary_index": 532,
     "last_summary_date": "2026-09-18",
@@ -1860,6 +1860,17 @@
         "project_page": "https://memory-before-goal.github.io",
         "code": "",
         "source": "⏳ 未开源(论文与项目页均无代码仓库) · 无源码运行时序图 · HuMeGo 基准 + SIMPLE · Unitree G1 + Dex3 · MBZUAI"
+      },
+      {
+        "date": "2026-10-30",
+        "index": 1151,
+        "title": "Humanoid Mobility via Attention-based Contacts",
+        "folder": "papers/05_Locomotion/Humanoid_Mobility_via_Attention-based_Contacts",
+        "module": "05_Locomotion",
+        "arxiv": "2610.31608",
+        "project_page": "",
+        "code": "",
+        "source": "⏳ 未开源(论文无代码仓库与项目页) · 无源码运行时序图 · Isaac Lab 仿真 + 真机 · Unitree G1 · ETH Zürich RSL × Apple × NVIDIA"
       }
     ],
     "last_completed_index": 588,

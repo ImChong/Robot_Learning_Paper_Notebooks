@@ -552,7 +552,7 @@
 
 | #   | 论文                                                                                                                                                              | 日期      | 🌟  | 状态   |
 | --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- | --- | ---- |
-| 1151  | [Humanoid Mobility via Attention-based Contacts](https://arxiv.org/abs/2610.31608) | 2026.10 |  | ⏳ 待读 |
+| 1151  | [Humanoid Mobility via Attention-based Contacts](https://arxiv.org/abs/2610.31608) ✅ [笔记](05_Locomotion/Humanoid_Mobility_via_Attention-based_Contacts/Humanoid_Mobility_via_Attention-based_Contacts.md) | 2026.10 |  | ✅ 已总结 |
 | 1152  | [MPBRS: Multi-Potential-Based Reward Shaping for Unified Reward Configuration in Humanoid Locomotion](https://arxiv.org/abs/2610.30334) | 2026.10 |  | ⏳ 待读 |
 | 1153  | [Do Earth-Trained Humanoid Controllers Walk on the Moon? Gravity, Terrain, and Soil Transfer](https://arxiv.org/abs/2610.30080) | 2026.10 |  | ⏳ 待读 |
 | 1154  | [Test-Time Motion Steering for Perceptive Humanoid Fall Recovery](https://arxiv.org/abs/2610.30061) | 2026.10 |  | ⏳ 待读 |
