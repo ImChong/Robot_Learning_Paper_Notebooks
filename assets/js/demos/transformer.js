@@ -725,7 +725,7 @@
   /* ── scene 1: 一篇研究「翻译」的论文 ── */
   function buildSceneWhy() {
     var s = sceneSvg('左边是一台「翻译机」：英文单词卡片一张张飞进中间写着 Transformer 的方框，齿轮转动，下面一张张冒出德文；右边依次出现：' +
-      '「研究翻译的论文」打勾、「翻译过来的论文」打叉；同一个零件在「翻译机」和「机器人的大脑」两个槽之间来回搬；第 014 期 Digit 在户外走的视频和 16 张卡片；' +
+      '「这篇论文研究机器翻译」打勾；同一个零件在「翻译机」和「机器人的大脑」两个槽之间来回搬；第 014 期 Digit 在户外走的视频和 16 张卡片；' +
       '前面讲过的扩散策略、MaskedMimic 两张卡片；这一期的三站路线，一个小点沿路线走');
     s.appendChild(svgText(24, 26, '机器翻译：让电脑把英文自动翻成德文', 'demo-x-ink2', 13.5));
     var EN = ['The', 'cat', 'sat', 'on', 'the', 'mat'], DE = ['Die', 'Katze', 'saß', 'auf', 'der', 'Matte'];
@@ -742,18 +742,14 @@
     var dIn = dotAt(s, 0, 0, 6, C_Q), dOut = dotAt(s, 0, 0, 6, C_V);
     rich(s, 24, 340, '论文题目：《注意力就是你所需要的一切》', 12.5);
     label(s, 24, 364, '2017 年，8 位作者，工作在谷歌完成', 'demo-x-ink2', 12);
-    /* 第 1 段：是哪一种「翻译论文」 */
+    /* 第 1 段：这篇论文研究什么 */
     var p1 = group(s);
-    label(p1, R, 64, '「翻译论文」是哪一种意思？', 'demo-x-ink', 14);
+    label(p1, R, 64, '这篇论文研究什么？', 'demo-x-ink', 14);
     var okBox = rectBox(p1, R, 84, W, 66, C_GOOD, C_SURFACE);
     var okMark = tick(p1, R + 12, 102, 24, C_GOOD);
-    rich(p1, R + 50, 110, '**研究翻译的论文**（就是这篇）', 13);
+    rich(p1, R + 50, 110, '**机器翻译**', 13);
     label(p1, R + 50, 134, '教电脑把一种语言自动翻成另一种', 'demo-x-ink2', 12);
-    rectBox(p1, R, 164, W, 66, C_BAD, C_SURFACE);
-    var noMark = cross(p1, R + 15, 184, 18, C_BAD);
-    rich(p1, R + 50, 190, '不是「从外语翻译过来的论文」', 13);
-    label(p1, R + 50, 214, '它本来就是用英文写的', 'demo-x-ink2', 12);
-    label(p1, R, 262, '全文只做翻译：没有机器人，也没有强化学习', 'demo-x-ink2', 12);
+    label(p1, R, 182, '全文只做翻译：没有机器人，也没有强化学习', 'demo-x-ink2', 12);
     /* 第 2 段：零件被搬进了机器人 */
     var p2 = group(s);
     label(p2, R, 64, '它造的零件，后来被搬进了机器人', 'demo-x-ink', 14);
@@ -827,10 +823,9 @@
         moveDot(dOut, [205 + (cxk - 205) * b2, 222 + 26 * b2]);
         setOpacity(dIn, u < 0.47 ? 1 : 0); setOpacity(dOut, u > 0.5 && u < 0.92 ? 1 : 0);
       } else { setOpacity(dIn, 0); setOpacity(dOut, 0); }
-      /* 第 1 段：先打勾，再打叉 */
+      /* 第 1 段：打勾 */
       var s1 = since(t, clock, 0.4);
       setOpacity(okMark, seg(s1, 0.6, 1.0));
-      setOpacity(noMark, seg(s1, 1.6, 2.0));
       okBox.style.strokeWidth = (1.3 + 1.4 * seg(s1, 0.6, 1.0)).toFixed(2);
       /* 第 2 段：零件在两个槽之间来回搬（4 s 一趟） */
       /* 零件在左槽淡出、一颗点从上面绕过去、在右槽淡入；8 s 一来回 */
@@ -2442,7 +2437,7 @@
   }
   var TF_SCENES = [
     { title: '一篇研究「翻译」的论文', dur: 16, build: buildSceneWhy, cues: [
-      { at: 0.4, s: '这是一篇**研究翻译**的论文：教电脑把英文翻成德文；不是「翻译过来的论文」。' },
+      { at: 0.4, s: '这是一篇**研究翻译**的论文：教电脑把英文自动翻成德文。' },
       { at: 3.6, s: '它造的零件叫 Transformer：进去的换成观测、出来的换成动作，就能用在机器人上。' },
       { at: 7.0, s: '第 14 期的 Digit：大脑就是一个 Transformer，看最近 16 步，决定下一步。' },
       { at: 10.4, s: '前面见过它：第 10 期扩散策略有 Transformer 版，第 28 期 MaskedMimic 用它的「遮挡」。' },
@@ -2587,7 +2582,7 @@
   function buildVideoDemo(host) {
     K.video(host, {
       title: '配音讲解视频：从机器人的角度读 Transformer',
-      sub: '15 分 44 秒竖屏视频（1080×1920），中文配音 + 字幕。画面就是上面的十七幕动画，旁白用同样的比喻把每一幕讲细；适合手机上看或转发。',
+      sub: '15 分 43 秒竖屏视频（1080×1920），中文配音 + 字幕。画面就是上面的十七幕动画，旁白用同样的比喻把每一幕讲细；适合手机上看或转发。',
       size: '17.6 MB',
       fileName: 'Transformer_讲解视频.mp4'
     });
