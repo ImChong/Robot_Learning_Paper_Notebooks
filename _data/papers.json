@@ -1814,6 +1814,18 @@
     "display_name": "Manipulation",
     "papers": [
       {
+        "title": "EmbodyHOI: Embodiment-Aware Generation of Hand-Object Interactions for Humanoid Dexterous Manipulation",
+        "path": "papers/06_Manipulation/EmbodyHOI__Embodiment-Aware_Generation_of_Hand-Object_Interactions_for_Humanoid_Dexterous_Manipulation/EmbodyHOI__Embodiment-Aware_Generation_of_Hand-Object_Interactions_for_Humanoid_Dexterous_Manipulation.md",
+        "url": "/papers/06_Manipulation/EmbodyHOI__Embodiment-Aware_Generation_of_Hand-Object_Interactions_for_Humanoid_Dexterous_Manipulation/EmbodyHOI__Embodiment-Aware_Generation_of_Hand-Object_Interactions_for_Humanoid_Dexterous_Manipulation.html",
+        "dir": "EmbodyHOI__Embodiment-Aware_Generation_of_Hand-Object_Interactions_for_Humanoid_Dexterous_Manipulation",
+        "arxiv": "2610.27242",
+        "summary_zh": "EmbodyHOI 的看法是可达性应当在交互生成的过程中约束它：在冻结生成器的每个流匹配 ODE 步里解码出当前手腕轨迹，对目标人形做「手臂关节 + 站位平移」联合 LM 求解，再通过隐式微分把 IK 能量的梯度送回手部潜 token（物…",
+        "published_date_zh": "2026年10月19日（arXiv v1）",
+        "published_date_en": "Oct 19, 2026 (arXiv v1)",
+        "zhname": "EmbodyHOI：面向人形灵巧操作、感知本体的手-物交互生成",
+        "zh_title": "EmbodyHOI：面向人形灵巧操作、感知本体的手-物交互生成"
+      },
+      {
         "title": "Spark-0: Scaling Spatially Aligned Tactile Pretraining for Robot Dexterous Manipulation",
         "path": "papers/06_Manipulation/Spark-0__Spatially_Aligned_Tactile_Pretraining_for_Robot_Dexterous_Manipulation/Spark-0__Spatially_Aligned_Tactile_Pretraining_for_Robot_Dexterous_Manipulation.md",
         "url": "/papers/06_Manipulation/Spark-0__Spatially_Aligned_Tactile_Pretraining_for_Robot_Dexterous_Manipulation/Spark-0__Spatially_Aligned_Tactile_Pretraining_for_Robot_Dexterous_Manipulation.html",

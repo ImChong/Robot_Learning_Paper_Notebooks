@@ -41,15 +41,15 @@
         "13_Physics-Based_Animation",
         "14_Human_Motion"
       ],
-      "last_module": "05_Locomotion",
-      "last_index": 1151,
-      "last_title": "Humanoid Mobility via Attention-based Contacts (arXiv:2610.31608)",
-      "next_module": "06_Manipulation",
-      "last_completed_date": "2026-10-30",
-      "note": "本日轮转到 05_Locomotion。PROGRESS Locomotion 章节中尚无笔记的最新论文是 Humanoid Mobility via Attention-based Contacts (arXiv:2610.31608, 2026-10-22, ETH Zürich RSL × Apple × NVIDIA)，即 PROGRESS #1151，已确认在上游 README。接触条件跟踪器只看 9 个部位的接触目标，注意力接触规划器在 17×11 地形点上为每个部位选下一次接触点，用跟踪器成功回合的事后标签自监督训练，再在无参考地形上 RL 微调自举；13.2 分钟数据，G1 一个策略爬梯 / 爬箱 / 翻墙 / 梅花桩，组合赛道 92.5% vs MGMT 58.8%。未开源，含整体流程 mermaid 与算例，无源码运行时序图。下一篇轮转到 06_Manipulation。",
-      "last_date": "2026-10-30",
+      "last_module": "06_Manipulation",
+      "last_index": 1157,
+      "last_title": "EmbodyHOI: Embodiment-Aware Generation of Hand-Object Interactions for Humanoid Dexterous Manipulation (arXiv:2610.27242)",
+      "next_module": "07_Teleoperation",
+      "last_completed_date": "2026-10-31",
+      "note": "本日轮转到 06_Manipulation。PROGRESS Manipulation 章节中尚无笔记的最新论文是 EmbodyHOI (arXiv:2610.27242, 2026-10-19, CMU)，即 PROGRESS #1157，已确认在上游 README。冻结的 MAD-HOI 流匹配生成器每个 ODE 步对目标人形做手臂关节 + 站位联合可微 IK，IK 能量梯度只加到手部 token；G1 手腕重定向误差 8.9 cm → 0.6 cm，50 个随机 ARCTIC 任务成功率 68% → 79%，H1-2 四任务 62% → 76%；事后 IK 修正与同算力 best-of-32 能量更低却训出更差策略。未开源，含整体流程 mermaid 与算例，无源码运行时序图。下一篇轮转到 07_Teleoperation。",
+      "last_date": "2026-10-31",
       "next_candidate": null,
-      "last_completed": "Humanoid Mobility via Attention-based Contacts (arXiv:2610.31608)"
+      "last_completed": "EmbodyHOI: Embodiment-Aware Generation of Hand-Object Interactions for Humanoid Dexterous Manipulation (arXiv:2610.27242)"
     },
     "last_summary_index": 532,
     "last_summary_date": "2026-09-18",
@@ -1871,6 +1871,17 @@
         "project_page": "",
         "code": "",
         "source": "⏳ 未开源(论文无代码仓库与项目页) · 无源码运行时序图 · Isaac Lab 仿真 + 真机 · Unitree G1 · ETH Zürich RSL × Apple × NVIDIA"
+      },
+      {
+        "date": "2026-10-31",
+        "index": 1157,
+        "title": "EmbodyHOI: Embodiment-Aware Generation of Hand-Object Interactions for Humanoid Dexterous Manipulation",
+        "folder": "papers/06_Manipulation/EmbodyHOI__Embodiment-Aware_Generation_of_Hand-Object_Interactions_for_Humanoid_Dexterous_Manipulation",
+        "module": "06_Manipulation",
+        "arxiv": "2610.27242",
+        "project_page": "https://embodyhoi.github.io/",
+        "code": "",
+        "source": "⏳ 未开源(论文称将发布引导代码、参考与策略) · 无源码运行时序图 · Genesis 仿真 · ARCTIC · Unitree G1 / H1-2 + XHand · CMU"
       }
     ],
     "last_completed_index": 588,
