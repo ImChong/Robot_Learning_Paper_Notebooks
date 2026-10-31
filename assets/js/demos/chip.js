@@ -632,7 +632,7 @@
   /* ── scene 1: 会跑会跳，却搬不动东西 ── */
   function buildSceneIntro() {
     var s = sceneSvg('左边是项目页的视频：宇树 G1 一边抱着箱子一边跑，手一直贴着箱子；右边依次出现：人形已经会的动作打勾、要用力的操作打问号；' +
-      '太硬撞飞箱子、太软举不起重物两段小动画；机械臂的弹簧—阻尼；扛住和让位两条路；最后是 CHIP 的柔顺度旋钮');
+      '太硬撞飞箱子、太软举不起重物两段小动画；机械臂的弹簧与力—位移直线；扛住和让位两条路；最后是 CHIP 的柔顺度旋钮');
     s.appendChild(svgText(24, 26, '人形会跑会跳，搬东西却还很难', 'demo-x-ink2', 13.5));
     var clip = projClip(s, 'hero', 24, 44, 380, 214, '项目页视频（1x）：抱着箱子跑过圣诞树，手一直贴着箱子');
     label(s, 24, 300, '同一个控制器：腿是敏捷的，手是软的', 'demo-x-ink2', 11.5);
@@ -672,14 +672,21 @@
     var p3 = group(s);
     label(p3, R, 62, '机械臂：阻抗控制', 'demo-x-ink', 14);
     label(p3, R, 84, '末端像一根弹簧，按位移给力', 'demo-x-ink2', 12);
-    var gx = R + 40, gy = 150;
+    var gx = R + 40, gy = 122;
     var gRing = ringAt(p3, gx, gy, 9, C_OBS, 2.5);
     void gRing;
-    tone(p3, gx, gy + 30, '目标 g', C_OBS, 12, 'middle');
+    tone(p3, gx, gy + 28, '目标 g', C_OBS, 12, 'middle');
     var sp3 = spring(p3, C_INK, 7, 7), hand3 = dotAt(p3, gx + 120, gy, 9, C_INK), f3a = forceArrow(p3, C_F);
-    var hand3t = label(p3, gx + 120, gy + 30, '手 x', 'demo-x-ink2', 12, 'middle');
-    math(p3, R, 222, 'x = g + \\tfrac{1}{k}\\,f', 17);
-    label(p3, R, 252, '人形的敏捷来自 RL 跟踪：任何偏离都狠狠纠正，没有柔顺的写法', 'demo-x-ink2', 11.5);
+    var hand3t = label(p3, gx + 120, gy + 28, '手 x', 'demo-x-ink2', 12, 'middle');
+    /* 力—位移小图：点跟着上面的弹簧在直线上走（位移 = 力 × 1/k） */
+    var pb1 = plotBox(p3, R + 40, 160, 190, 66, 0, 1, 0, 1);
+    pathLine(pb1.g, [[pb1.px(0), pb1.py(0)], [pb1.px(1), pb1.py(1)]], C_SOFT, 2.2);
+    var hk1 = dotAt(pb1.g, pb1.px(0), pb1.py(0), 5.5, C_INK), hk1v = hline(pb1.g, 0, 0, 0, 0, C_F, 1.4, '3 3'), hk1h = hline(pb1.g, 0, 0, 0, 0, C_INK, 1.4, '3 3');
+    label(p3, R + 135, 244, '力 f →', 'demo-x-mut', 11, 'middle');
+    label(p3, R + 34, 196, '位移', 'demo-x-mut', 11, 'end');
+    math(p3, R + 246, 200, 'x - g = \\tfrac{1}{k}\\,f', 15);
+    label(p3, R + 246, 232, '一条过原点的直线', 'demo-x-mut', 11);
+    label(p3, R, 266, '人形的敏捷来自 RL 跟踪：任何偏离都狠狠纠正，没有柔顺的写法', 'demo-x-ink2', 11.5);
     /* 第 4 段：两条路 */
     var p4 = group(s);
     label(p4, R, 62, '两条路', 'demo-x-ink', 14);
@@ -719,6 +726,9 @@
       moveDot(hand3, [gx + d3, gy]);
       hand3t.setAttribute('x', (gx + d3).toFixed(1));
       f3a.set([gx + d3 + 12, gy], [1, 0], 50 * fz, 'f');
+      moveDot(hk1, [pb1.px(fz), pb1.py(fz)]);
+      setLine(hk1v, pb1.px(fz), pb1.py(0), pb1.px(fz), pb1.py(fz));
+      setLine(hk1h, pb1.px(0), pb1.py(fz), pb1.px(fz), pb1.py(fz));
       /* 两条路：同样的推力，左边不动、右边让开 */
       var fp = 0.5 + 0.5 * Math.sin(now * 1.8);
       fA.set([R + 84 + 12, 160], [1, 0], 52 * fp, 'f');
@@ -744,7 +754,7 @@
   /* ── scene 2: 前人怎么教柔顺（图 3b、c） ── */
   function buildScenePrior() {
     var s = sceneSvg('左边是论文图 3 的 (b) 和 (c)：粉点是算奖励用的参考、黄点是策略看到的目标、蓝箭头是扰动力；讲到哪种做法就框出哪一张。' +
-      '右边依次出现：四足上合成弹簧—阻尼参考的做法；GentleHumanoid 把奖励里的关键点按 g + f/k 挪开；SoftMimic 用逆运动学改整条手臂；' +
+      '右边依次出现：四足上合成弹簧—阻尼参考的做法；GentleHumanoid 把奖励里的关键点按 g + f/k 挪开（奖励随手的位置变化的曲线，峰跟着力走）；SoftMimic 用逆运动学改整条手臂；' +
       '稠密的参考要一起改；GentleHumanoid 去掉了关节级跟踪奖励、跟踪误差变大');
     s.appendChild(svgText(24, 26, '以前的做法：改算奖励用的参考', 'demo-x-ink2', 13.5));
     var fig = paperPart(s, 'fig3', 0.335, 0.075, 1, 1, 24, 44, 380, '论文图 3（b）（c）：粉点 = 算奖励的参考，黄点 = 策略看到的目标，蓝箭头 = 扰动力');
@@ -763,13 +773,22 @@
     /* 第 2 段：GentleHumanoid（图 3b） */
     var p2 = group(s);
     label(p2, R, 62, 'GentleHumanoid：改奖励里的关键点（图 3b）', 'demo-x-ink', 14);
-    math(p2, R, 104, 'r=\\exp\\!\\big(-\\lVert x_{\\mathrm{eef}}-g_{\\mathrm{ptb}}\\rVert\\big),\\ \\ g_{\\mathrm{ptb}}=g+\\tfrac{1}{k}f', 15);
-    var o2 = [R + 120, 170];
-    var obs2 = ringAt(p2, o2[0], o2[1], 9, C_OBS, 2.5), ref2 = dotAt(p2, o2[0], o2[1], 8, C_REF), f2a = forceArrow(p2, C_F);
+    var o2 = [R + 110, 102];
+    hline(p2, R + 30, o2[1], R + 330, o2[1], C_BORDER, 1.4);
+    var obs2 = ringAt(p2, o2[0], o2[1], 9, C_OBS, 2.5), ref2 = dotAt(p2, o2[0], o2[1], 7, C_REF), hand2 = dotAt(p2, o2[0], o2[1], 4.5, C_INK), f2a = forceArrow(p2, C_F);
     void obs2;
-    tone(p2, o2[0] - 14, o2[1] + 32, '看到的：g', C_OBS, 12, 'end');
-    var ref2t = tone(p2, o2[0], o2[1] + 32, '奖励用：g + f/k', C_REF, 12, 'start');
-    label(p2, R, 244, '策略看原目标，奖励却要它跟着力挪开', 'demo-x-ink2', 12);
+    tone(p2, o2[0] - 14, o2[1] + 5, '看到的 g', C_OBS, 12, 'end');
+    var ref2t = tone(p2, o2[0], o2[1] - 16, '奖励用 g + f/k', C_REF, 12, 'middle');
+    /* 奖励随手的位置变化：横轴和上面那条线对齐，峰跟着粉点（g + f/k）走 */
+    var pb2 = plotBox(p2, R + 30, 118, 300, 84, 0, 1, 0, 1.08);
+    var curve2 = pathLine(pb2.g, [], C_REF, 2.4);
+    hline(pb2.g, o2[0], 118, o2[0], 202, C_OBS, 1.4, '4 3');
+    var onG2 = dotAt(pb2.g, o2[0], 0, 5, C_OBS), onH2 = dotAt(pb2.g, o2[0], 0, 5, C_INK);
+    var rG2 = halo(label(p2, 0, 0, '', 'demo-x-ink', 11.5));
+    label(p2, R + 24, 124, '奖励', 'demo-x-mut', 11, 'end');
+    label(p2, R + 330, 219, '手的位置 →', 'demo-x-mut', 11, 'end');
+    readHint(p2, R, 240, '横轴：手的位置；纵轴：奖励。最高点在粉点，跟着力挪开', 11.5);
+    label(p2, R, 264, '策略看原目标，奖励却要它跟着力挪开', 'demo-x-ink2', 12);
     /* 第 3 段：SoftMimic（图 3c） */
     var p3 = group(s);
     label(p3, R, 62, 'SoftMimic：用逆运动学改整条手臂（图 3c）', 'demo-x-ink', 14);
@@ -813,9 +832,19 @@
       });
       /* GentleHumanoid：力推着奖励的目标挪开 */
       var fz = 0.5 + 0.5 * Math.sin(now * 1.7);
-      f2a.set([o2[0] + 12, o2[1]], [1, 0], 70 * fz, 'f');
-      moveDot(ref2, [o2[0] + 60 * fz, o2[1]]);
-      ref2t.setAttribute('x', (o2[0] + 6).toFixed(1));
+      var pk2 = o2[0] + 120 * fz, hx2 = o2[0] + 120 * (0.5 + 0.5 * Math.sin(now * 1.7 - 0.5));
+      f2a.set([pk2 + 10, o2[1]], [1, 0], 50 * fz, '');
+      moveDot(ref2, [pk2, o2[1]]);
+      moveDot(hand2, [hx2, o2[1]]);
+      ref2t.setAttribute('x', pk2.toFixed(1));
+      var r2 = function (x) { return Math.exp(-Math.abs(x - pk2) / 55); }, pts2 = [];
+      for (var q = 0; q <= 60; q++) { var xq = R + 30 + q * 5; pts2.push([xq, pb2.py(r2(xq))]); }
+      setPath(curve2, pts2);
+      moveDot(onG2, [o2[0], pb2.py(r2(o2[0]))]);
+      moveDot(onH2, [hx2, pb2.py(r2(hx2))]);
+      rG2.setAttribute('x', (o2[0] + 8).toFixed(1));
+      rG2.setAttribute('y', (pb2.py(r2(o2[0])) - 10).toFixed(1));
+      rG2.textContent = fz > 0.15 ? '停在 g：' + f2(r2(o2[0])) : '';
       /* SoftMimic：整条手臂跟着力挪 */
       var a3 = 0.5 + 0.5 * Math.sin(now * 1.5);
       var el0 = [sh[0] - 30, sh[1] + 50], wr0 = [sh[0] + 10, sh[1] + 96];
@@ -848,7 +877,7 @@
   /* ── scene 3: 事后扰动：改观测，不改参考 ── */
   function buildSceneHindsight() {
     var s = sceneSvg('左边是 G1 的模型（站姿示意）：粉点是参考里两只手腕和头的位置，也是算奖励用的目标；蓝箭头是加在手上的外力，按梯形一推一放；' +
-      '黄圈是策略看到的目标 g − f/k，往力的反方向挪开；机器人停在粉点就拿满分。右边依次出现：关键洞见、事后目标的式子与算例、两种停法的奖励、学到的规律、论文图 3a 与三种写法的对比');
+      '黄圈是策略看到的目标 g − f/k，往力的反方向挪开；机器人停在粉点就拿满分。右边依次出现：关键洞见、事后目标的数轴与「外力—挪开距离」的曲线、两种停法的奖励、学到的规律、论文图 3a 与三种写法的对比');
     s.appendChild(svgText(24, 26, '事后扰动：参考不改，只改策略看到的目标', 'demo-x-ink2', 13.5));
     var robot = g1Yield(s);
     var P = robot.put(G1X, G1Y, G1K, 0);
@@ -877,11 +906,28 @@
     /* 第 2 段：式子与算例 */
     var p2 = group(s);
     label(p2, R, 62, '训练时策略看到的目标', 'demo-x-ink', 14);
-    math(p2, R, 106, 'g_{\\mathrm{hind}} = g - \\tfrac{1}{k}\\,f', 20);
-    rich(p2, R, 146, '例：右手腕 $g=(0.22,\\,-0.23,\\,0.82)$ m', 12.5);
-    rich(p2, R, 172, '往外 $f=(0,\\,-5,\\,0)$ N，$1/k=0.02$', 12.5);
-    rich(p2, R, 198, '→ $g_{\\mathrm{hind}}=(0.22,\\,-0.13,\\,0.82)$ m', 12.5);
-    label(p2, R, 228, '往力的反方向（往里）挪 0.10 m', 'demo-x-ink2', 12);
+    math(p2, R + 352, 66, 'g_{\\mathrm{hind}} = g - \\tfrac{1}{k}\\,f', 15, 'end');
+    /* 数轴：右手腕的横向坐标（m），往左是往外；粉点 g 不动，黄圈随外力往里挪 f/k（例 1：5 N、1/k = 0.02 → 0.10 m） */
+    var nx = function (v) { return R + 30 + (v + 0.36) / 0.30 * 300; }, ny = 112;
+    hline(p2, nx(-0.36), ny, nx(-0.06), ny, C_BORDER, 1.6);
+    [-0.33, -0.23, -0.13].forEach(function (v) {
+      hline(p2, nx(v), ny - 5, nx(v), ny + 5, C_BORDER, 1.6);
+      label(p2, nx(v), ny + 22, f2(v), 'demo-x-mut', 11, 'middle');
+    });
+    label(p2, R, 92, '右手腕的横向坐标 y（m）', 'demo-x-ink2', 11.5);
+    label(p2, nx(-0.36), ny + 44, '← 往外', 'demo-x-mut', 11);
+    label(p2, nx(-0.06), ny + 44, '往里 →', 'demo-x-mut', 11, 'end');
+    var nRef = dotAt(p2, nx(-0.23), ny, 7, C_REF), nObs = ringAt(p2, nx(-0.23), ny, 9, C_OBS, 2.6), nF = forceArrow(p2, C_F);
+    void nRef;
+    var nBr = hline(p2, 0, ny - 18, 0, ny - 18, C_OBS, 1.6), nBrT = label(p2, 0, ny - 24, '', 'demo-x-ink', 11.5, 'middle');
+    /* 最近 6 s 的曲线：蓝色面积是外力，黄线是黄圈挪开的距离，和左边的 G1 同一个时钟 */
+    var pb32 = plotBox(p2, R + 30, 172, 300, 64, 0, 6, 0, 1.15);
+    var fArea = paint(svgEl('path', { d: 'M 0 0', 'stroke-width': 0 }), C_F);
+    fArea.style.opacity = 0.28; pb32.g.appendChild(fArea);
+    var shL = pathLine(pb32.g, [], C_OBS, 2.4);
+    label(p2, R + 24, 180, '5 N', 'demo-x-mut', 11, 'end');
+    label(p2, R + 336, 180, '0.10 m', 'demo-x-mut', 11);
+    readHint(p2, R, 256, '横轴：时间；蓝：外力，黄：黄圈挪开的距离，两条一起涨落', 11.5);
     /* 第 3 段：奖励按原参考算 */
     var p3 = group(s);
     label(p3, R, 62, '奖励照旧按原来的 g 算', 'demo-x-ink', 14);
@@ -923,6 +969,19 @@
       fR.set([P.rw[0] - 9, P.rw[1]], [-1, 0], F * 9, 'f', [-2, -10]);
       fL.set([P.lw[0] + 9, P.lw[1]], [1, 0], F * 9, 'f', [2, -10]);
       fTxt.textContent = '外力 ' + f1(F) + ' N → 看到的目标往里挪 ' + f2(F * EX.ik) + ' m';
+      var sh = F * EX.ik;
+      moveDot(nObs, [nx(-0.23 + sh), ny]);
+      nF.set([nx(-0.23) - 10, ny], [-1, 0], F * 10, '');
+      setLine(nBr, nx(-0.23), ny - 18, nx(-0.23 + sh), ny - 18);
+      nBrT.setAttribute('x', ((nx(-0.23) + nx(-0.23 + sh)) / 2).toFixed(1));
+      nBrT.textContent = sh > 0.012 ? f2(sh) + ' m' : '';
+      var hist = [];
+      for (var q = 0; q <= 120; q++) {
+        var tq = now - 6 + q * 0.05, Fq = tq < 0 ? 0 : trap(((tq % 4) + 4) % 4 / 3, 5);
+        hist.push([pb32.px(q * 0.05), pb32.py(Fq / 5)]);
+      }
+      setPath(shL, hist);
+      fArea.setAttribute('d', 'M ' + pb32.px(0).toFixed(1) + ' ' + pb32.py(0).toFixed(1) + ' L ' + hist.map(function (p) { return p[0].toFixed(1) + ' ' + p[1].toFixed(1); }).join(' L ') + ' L ' + pb32.px(6).toFixed(1) + ' ' + pb32.py(0).toFixed(1) + ' Z');
       var w1 = (now % 3) / 3;
       moveDot(mv1, [a1[0] + (b1[0] - a1[0]) * w1, a1[1]]);
       arr1.set([a1[0] + 16, a1[1] - 4], [1, 0], (b1[0] - a1[0] - 32) * Math.min(1, w1 * 1.3), '');
@@ -943,7 +1002,7 @@
   /* ── scene 4: 部署时：一根看不见的弹簧 ── */
   function buildSceneSpring() {
     var s = sceneSvg('左边是 G1 的模型：黄圈是部署时的命令目标 g，固定不动；蓝箭头是外力，按梯形一推一放；手按 f/k 往外让开，1/k 依次取 0、0.02、0.03。' +
-      '右边依次出现：部署时观测里就是 g；手停在 g + f/k；力和位移的三条直线；v1 论文里 20 N 下末端位移随 1/k 的曲线，蓝色 CHIP、红色只改奖励的基线；最后叠上按式子算的虚线');
+      '右边依次出现：部署时观测里就是 g；手停在 g + f/k，外力与让开距离的时间曲线；力和位移的三条直线；v1 论文里 20 N 下末端位移随 1/k 的曲线，蓝色 CHIP、红色只改奖励的基线；最后叠上按式子算的虚线');
     s.appendChild(svgText(24, 26, '部署时：手按 f / k 让开，像一根弹簧', 'demo-x-ink2', 13.5));
     var robot = g1Yield(s);
     var P0 = robot.put(G1X, G1Y, G1K, 0);
@@ -963,10 +1022,18 @@
     label(p1, gg[0], gg[1] + 40, '看到的 = 想要的（不减任何东西）', 'demo-x-ink2', 12, 'middle');
     var p2 = group(s);
     label(p2, R, 62, '手上来了力：停在目标外 f / k 处', 'demo-x-ink', 14);
-    math(p2, R, 112, 'x_{\\mathrm{eef}} \\approx g + \\tfrac{1}{k}\\,f', 22);
-    label(p2, R, 150, '训练时学到的规律，原样用在真正的目标上', 'demo-x-ink2', 12);
-    rich(p2, R, 178, '例 3：5 N、$1/k=0.02$ → 让开 0.10 m', 12.5);
-    rich(p2, R, 202, '$1/k=0$：一点不让，就是普通的硬跟踪', 12.5);
+    math(p2, R, 92, 'x_{\\mathrm{eef}} \\approx g + \\tfrac{1}{k}\\,f', 16);
+    label(p2, R + 150, 90, '训练时学到的规律，原样用上', 'demo-x-mut', 11);
+    /* 最近 12 s 的曲线，和左边的 G1 同一个时钟：蓝色面积是外力（每次峰值都是 5 N），实线是手让开的距离；1/k 依次是 0、0.02、0.03 */
+    var pb42 = plotBox(p2, R + 34, 106, 296, 112, 0, 12, 0, 0.2);
+    var fArea4 = paint(svgEl('path', { d: 'M 0 0', 'stroke-width': 0 }), C_F);
+    fArea4.style.opacity = 0.22; pb42.g.appendChild(fArea4);
+    var dLine4 = pathLine(pb42.g, [], C_INK, 2.4);
+    [0.05, 0.10, 0.15].forEach(function (v) { hline(pb42.g, pb42.px(0), pb42.py(v), pb42.px(12), pb42.py(v), C_BORDER, 1, '2 4'); label(p2, R + 28, pb42.py(v) + 4, f2(v), 'demo-x-mut', 11, 'end'); });
+    label(p2, R + 28, 114, 'm', 'demo-x-mut', 11, 'end');
+    var pkT4 = [0, 1, 2].map(function () { return halo(label(p2, 0, 0, '', 'demo-x-ink', 11, 'middle')); });
+    label(p2, R + 330, 234, '时间 →', 'demo-x-mut', 11, 'end');
+    readHint(p2, R, 254, '蓝：外力，每次 5 N；实线：手让开的距离，1/k 越大越高', 11.5);
     /* 第 3 段：力—位移的三条直线 */
     var p3 = group(s);
     label(p3, R, 62, '胡克定律：位移 = 力 × 1/k', 'demo-x-ink', 14);
@@ -1008,6 +1075,25 @@
       fR.set([P.rw[0] - 8, P.rw[1]], [-1, 0], F * 9, 'f', [-2, -10]);
       fL.set([P.lw[0] + 8, P.lw[1]], [1, 0], F * 9, 'f', [2, -10]);
       kTxt.textContent = '1/k = ' + (ik ? f2(ik) : '0') + (ik ? '（软一点）' : '（硬）');
+      var fh = [], dh = [];
+      for (var q = 0; q <= 240; q++) {
+        var tq = now - 12 + q * 0.05;
+        if (tq < 0) { fh.push([pb42.px(q * 0.05), pb42.py(0)]); dh.push([pb42.px(q * 0.05), pb42.py(0)]); continue; }
+        var cq = Math.floor(tq / 4), kq = [0, 0.02, 0.03][cq % 3], Fq = trap((tq % 4) / 3, 5);
+        fh.push([pb42.px(q * 0.05), pb42.py(Fq / 5 * 0.15)]);
+        dh.push([pb42.px(q * 0.05), pb42.py(Fq * kq)]);
+      }
+      setPath(dLine4, dh);
+      fArea4.setAttribute('d', 'M ' + pb42.px(0).toFixed(1) + ' ' + pb42.py(0).toFixed(1) + ' L ' + fh.map(function (p) { return p[0].toFixed(1) + ' ' + p[1].toFixed(1); }).join(' L ') + ' L ' + pb42.px(12).toFixed(1) + ' ' + pb42.py(0).toFixed(1) + ' Z');
+      /* 每个鼓包的峰（各自 4 s 周期的 1.5 s 处）标上 1/k 和让开多少 */
+      pkT4.forEach(function (n, j) {
+        var c0 = cyc - j, tp = c0 * 4 + 1.5, xq = tp - (now - 12);
+        var kq = [0, 0.02, 0.03][((c0 % 3) + 3) % 3];
+        if (c0 < 0 || xq < 2.2 || xq > 9.8 || now < tp) { n.textContent = ''; return; }
+        n.setAttribute('x', pb42.px(xq).toFixed(1));
+        n.setAttribute('y', (pb42.py(5 * kq) - 8).toFixed(1));
+        n.textContent = '1/k = ' + (kq ? f2(kq) : '0') + '：' + f2(5 * kq) + ' m';
+      });
       dTxt.textContent = '外力 ' + f1(F) + ' N → 手往外让开 ' + f2(d) + ' m';
       /* v1 曲线一点点画出来 */
       var u4 = seg(since(t, clock, 10.4), 0.3, 2.3), n = Math.max(1, Math.round(u4 * (DISP_K.length - 1)));
@@ -1348,7 +1434,7 @@
   var FOLLOW_PARTS = [[9.5, '硬 + 全局跟踪：推不动'], [8.0, '软 + 全局跟踪：推得动，松手回来'], [13.0, '软 + 阻尼跟随：人牵着就走']];
   function buildSceneDamper() {
     var s = sceneSvg('左边是项目页的三段视频，讲到哪种模式就放哪一段：硬加全局跟踪、软加全局跟踪、软加阻尼跟随。右边上方是一维的示意：黄圈是目标、和文字同色的圆点是手、蓝箭头是人拉的力，' +
-      '按当前的模式走：只有弹簧时松手就弹回，加了阻尼后目标跟着手走。下面依次出现：只有弹簧、阻尼的式子、三种模式和一个算例');
+      '按当前的模式走：只有弹簧时松手就弹回，加了阻尼后目标跟着手走。下面依次出现：只有弹簧、阻尼的时间曲线（人拉的力、手、目标）、三种模式和一个算例');
     s.appendChild(svgText(24, 26, '阻尼：让目标跟着手走（人机交互的三种模式）', 'demo-x-ink2', 13.5));
     var clip = partClip(s, 'follow', 24, 44, 380, 214, FOLLOW_PARTS, '项目页视频（1x）：同一个人推、拉 G1 的手');
     var R = 424, TY = 110;
@@ -1361,9 +1447,29 @@
     label(p1, R, 180, '只有弹簧：松手后手弹回目标', 'demo-x-ink', 13.5);
     label(p1, R, 204, '想让人牵着走，目标自己也得动', 'demo-x-ink2', 12);
     var p2 = group(s);
-    label(p2, R, 180, '仿照 FACET：每步把目标往手挪一点', 'demo-x-ink', 13.5);
-    math(p2, R, 222, 'g_t = \\alpha\\, x_{\\mathrm{eef}} + (1-\\alpha)\\, g_{t-1}', 17);
-    label(p2, R, 256, '论文没给 α', 'demo-x-mut', 11);
+    label(p2, R, 176, '仿照 FACET：每步把目标往手挪一点', 'demo-x-ink', 13.5);
+    /* 一个 4 s 周期的曲线（和上面的一维示意同一个时钟）：蓝色面积是人拉的力，实线是手，黄虚线是目标；游标是现在 */
+    var pb9 = plotBox(p2, R + 30, 188, 300, 74, 0, 4, 0, 1);
+    var fA9 = paint(svgEl('path', { d: 'M 0 0', 'stroke-width': 0 }), C_F);
+    fA9.style.opacity = 0.22; pb9.g.appendChild(fA9);
+    var gL9 = pathLine(pb9.g, [], C_OBS, 2.4, '5 3'), xL9 = pathLine(pb9.g, [], C_INK, 2.2);
+    var cur9 = hline(pb9.g, 0, 188, 0, 262, C_PURPLE, 1.4);
+    (function () {
+      var fp = [], gp = [], xp = [], top = 0;
+      for (var q = 0; q < 100; q++) { var r9 = sim(2, q * 0.04); top = Math.max(top, r9.g + r9.d); }
+      for (var q2 = 0; q2 < 100; q2++) {
+        var tq = q2 * 0.04, rq = sim(2, tq);
+        fp.push([pb9.px(tq), pb9.py(rq.F * 0.6)]);
+        gp.push([pb9.px(tq), pb9.py(rq.g / top * 0.95)]);
+        xp.push([pb9.px(tq), pb9.py((rq.g + rq.d) / top * 0.95)]);
+      }
+      setPath(gL9, gp); setPath(xL9, xp);
+      fA9.setAttribute('d', 'M ' + pb9.px(0).toFixed(1) + ' ' + pb9.py(0).toFixed(1) + ' L ' + fp.map(function (p) { return p[0].toFixed(1) + ' ' + p[1].toFixed(1); }).join(' L ') + ' L ' + pb9.px(3.96).toFixed(1) + ' ' + pb9.py(0).toFixed(1) + ' Z');
+    })();
+    label(p2, R + 336, 266, '时间', 'demo-x-mut', 11);
+    legendRow(p2, R, 282, [['人拉的力', C_F, 56], ['手', C_INK, 20], ['目标（虚线）', C_OBS, 74]], 11);
+    math(p2, R, 308, 'g_t = \\alpha\\, x + (1-\\alpha)\\, g_{t-1}', 13);
+    label(p2, R + 200, 306, '论文没给 α', 'demo-x-mut', 11);
     var p3 = group(s);
     label(p3, R, 180, '① 硬 + 全局跟踪', 'demo-x-ink', 13.5);
     label(p3, R, 204, '1/k 小：顶住推力，一直贴着全局轨迹', 'demo-x-ink2', 12);
@@ -1395,6 +1501,8 @@
       setOpacity(sp.node, k === 0 || r.d < 18 ? 0 : 1);
       pull.set([xpx + 10, TY], [1, 0], 60 * r.F, r.F > 0.05 ? '人拉' : '', [0, -10]);
       setPath(gTrail, k === 2 ? [[base, TY], [gpx, TY]] : []);
+      var x9 = pb9.px(now % 4);
+      setLine(cur9, x9, 188, x9, 262);
       setOpacity(p1, win(t, 0.3, 3.6));
       setOpacity(p2, win(t, 3.6, 7.0));
       setOpacity(p3, win(t, 7.0, 10.4));
@@ -1407,7 +1515,7 @@
   /* ── scene 10: 全局三点与定位 ── */
   function buildSceneGlobal() {
     var s = sceneSvg('左边是 G1 的模型：粉点是全局策略跟踪的三个点——头（带朝向，画出坐标系：红、绿、蓝分别是 x、y、z）和两只手腕（只有位置）；' +
-      '脚下是世界坐标系。右边依次出现：目标的式子；俯视图里三点往前挪时分不清该走还是伸手，看未来 5 帧就分得清；三路定位的频率；两台机器人的点云配准到同一张地图；跑在台式机上');
+      '脚下是世界坐标系。右边依次出现：头 6 格、两手腕各 3 格的目标，轮到哪行左边哪个点放大；俯视图里三点往前挪时分不清该走还是伸手，看未来 5 帧就分得清；三路定位的频率；两台机器人的点云配准到同一张地图；跑在台式机上');
     s.appendChild(svgText(24, 26, '全局三点：多台机器人要用同一个坐标系', 'demo-x-ink2', 13.5));
     var robot = g1Yield(s);
     var P = robot.put(G1X, G1Y, G1K, 0);
@@ -1423,9 +1531,19 @@
     var R = 424;
     var p1 = group(s);
     label(p1, R, 62, '全局策略跟踪的目标（世界坐标系）', 'demo-x-ink', 14);
-    math(p1, R, 106, 'g=\\{p_{\\mathrm{head}},\\, r_{\\mathrm{head}},\\, p_{\\mathrm{lwrist}},\\, p_{\\mathrm{rwrist}}\\}', 16);
-    label(p1, R, 140, '头：位置 + 朝向（6D）；手腕：只要位置（3D）', 'demo-x-ink2', 12);
-    label(p1, R, 164, '奖励多两项：三个点在世界坐标系里的误差', 'demo-x-ink2', 12);
+    /* 三行格子：头 6 格（位置 3 + 朝向 3），两只手腕各 3 格（只有位置）；一行一行亮，左边对应的点跟着放大 */
+    var rows10 = [['头', 6], ['左手腕', 3], ['右手腕', 3]].map(function (r, i) {
+      var y = 88 + i * 34, cells = [];
+      label(p1, R, y + 16, r[0], 'demo-x-ink', 12);
+      for (var c = 0; c < r[1]; c++) {
+        var cell = paint(svgEl('rect', { x: R + 60 + c * 30, y: y, width: 24, height: 22, rx: 3 }), c < 3 ? C_REF : C_PURPLE);
+        p1.appendChild(cell); cells.push(cell);
+      }
+      label(p1, R + 60 + r[1] * 30 + 6, y + 16, r[1] === 6 ? '位置 3 + 朝向 3' : '只要位置 3', 'demo-x-mut', 11);
+      return cells;
+    });
+    legendRow(p1, R, 206, [['位置', C_REF, 30], ['朝向', C_PURPLE, 30]], 11);
+    label(p1, R, 236, '奖励多两项：三个点在世界坐标系里的误差', 'demo-x-ink2', 12);
     /* 第 2 段：歧义与未来 5 帧（俯视） */
     var p2 = group(s);
     label(p2, R, 62, '三个点往前挪：该走过去，还是伸手？', 'demo-x-ink', 13.5);
@@ -1471,7 +1589,15 @@
     label(p5, R, 184, '多机协作要高频、不靠外部设施的定位', 'demo-x-ink2', 12);
     function draw(t, clock) {
       var now = nowOf(t, clock);
-      kps.forEach(function (d) { d.setAttribute('r', (5.5 + 1.2 * Math.sin(now * 3)).toFixed(2)); });
+      /* 第 1 段：三行格子轮流亮，左边对应的点（头、左手腕、右手腕）放大 */
+      var s10 = since(t, clock, 0.4), row10 = Math.floor(s10 / 1.6) % 3;
+      rows10.forEach(function (cells, i) {
+        cells.forEach(function (c, j) { c.style.opacity = t < 3.6 && i === row10 ? (s10 % 1.6 > j * 0.12 ? 1 : 0.35) : 0.55; });
+      });
+      kps.forEach(function (d, i) {
+        var big = t < 3.6 && [0, 2, 1][row10] === i;
+        d.setAttribute('r', ((big ? 9 : 5.5) + 1.2 * Math.sin(now * 3)).toFixed(2));
+      });
       /* 俯视：目标往上（前）挪 */
       var u2 = (now % 3) / 3, adv = 40 * u2;
       moveDot(tA[0], [R + 84 - 12, 170 - adv]); moveDot(tA[1], [R + 84 + 12, 170 - adv]);
@@ -2140,7 +2266,7 @@
       build: buildSceneDamper,
       cues: [
         { at: 0.4, s: '只有弹簧时，松手后手会弹回目标。' },
-        { at: 3.6, s: '仿照 FACET 加一个阻尼：每步把目标往手挪一点，$g_t=\\alpha x+(1-\\alpha)g_{t-1}$。' },
+        { at: 3.6, s: '仿照 FACET 加一个阻尼：人拉时目标一步步追着手走，松手后停在新位置、不弹回。' },
         { at: 7.0, s: '项目页的三种模式：① 硬 + 全局跟踪，推不动。' },
         { at: 10.4, s: '② 软 + 全局跟踪：推得动，松手后回到轨迹。' },
         { at: 13.4, s: '③ 软 + 阻尼跟随：目标跟着手走，人牵着就走。' }
@@ -2279,8 +2405,8 @@
   function buildVideoDemo(host) {
     K.video(host, {
       title: '配音讲解视频：CHIP 十八幕全流程',
-      sub: '18 分 50 秒竖屏视频（1080×1920），中文配音 + 字幕。画面就是上面的十八幕动画，旁白把每一幕讲细；适合手机上看或转发。',
-      size: '22.4 MB',
+      sub: '19 分 37 秒竖屏视频（1080×1920），中文配音 + 字幕。画面就是上面的十八幕动画，旁白把每一幕讲细；适合手机上看或转发。',
+      size: '23.4 MB',
       fileName: 'CHIP_讲解视频.mp4'
     });
   }

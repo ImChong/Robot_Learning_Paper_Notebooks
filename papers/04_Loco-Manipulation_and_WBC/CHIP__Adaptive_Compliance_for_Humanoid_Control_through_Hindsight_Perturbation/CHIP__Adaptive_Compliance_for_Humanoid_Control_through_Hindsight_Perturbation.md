@@ -79,7 +79,7 @@ demos: ["chip"]
 
 ## 📺 配音讲解视频（可下载） {#chip-video}
 
-<div class="paper-demo" data-demo="chip-video" data-src="media/chip_explainer_video.mp4" data-poster="media/chip_explainer_video_poster.jpg"><p class="demo-fallback">（本节含讲解视频播放器，需要启用 JavaScript；也可以直接<a href="media/chip_explainer_video.mp4" download="CHIP_讲解视频.mp4">下载 mp4（22.4 MB）</a>）</p></div>
+<div class="paper-demo" data-demo="chip-video" data-src="media/chip_explainer_video.mp4" data-poster="media/chip_explainer_video_poster.jpg"><p class="demo-fallback">（本节含讲解视频播放器，需要启用 JavaScript；也可以直接<a href="media/chip_explainer_video.mp4" download="CHIP_讲解视频.mp4">下载 mp4（23.4 MB）</a>）</p></div>
 
 > 📖 **动画之后的正文默认全部折叠**：动画覆盖到的那几节（要解决什么问题、方法详解、两个应用、实验结果）按小节收起，再往后的具体实例、资源对照、在路线中的位置、面试和附录各整块收起。想细读哪一块就点开对应的折叠条，内容一字未删；流程图和三个交互演示留在外面，目录里的标题依旧可以直接点，会自动展开所在折叠块，左侧目录顶部还有「展开全部文字」一键铺开。
 >
@@ -751,10 +751,11 @@ v2（2026-02-09）带着审稿修改的标记（`\added` / `\deleted` / `\replac
 ## 💬 讨论记录
 
 <details class="paper-fold" markdown="1">
-<summary>📖 展开文字：2026-06-21 · 初读；2026-10-29 · 对照两版源码和项目页时看到的几件事</summary>
+<summary>📖 展开文字：2026-06-21 · 初读；2026-10-29 · 对照两版源码和项目页时看到的几件事；2026-10-31 · 公式改成会动的图</summary>
 
 - **2026-06-21 · 初读**：按摘要写了速读版。
 - **2026-10-29 · 第二版**：对照 v1、v2 的 LaTeX 源码和项目页逐条核查重写。看到的几件事：v2 删掉了一张最能直接说明「柔顺度可控」的图（20 N 下的位移），而这张图的量级和式子对不上；项目页的柔顺度一律写成 $10/k$；代码到现在也没放出。速读版里「用回溯的扰动信息推断 / 标注柔顺行为」的说法不准确，事后扰动改的是观测里的目标，不是标注。
+- **2026-10-31 · 看片反馈**：「公式多用曲线和动效等演示，纯公式显示看不懂」。动画第 1、2、3、4、9、10 幕原先以式子和几行算式为主，改成会动的图：力—位移直线、奖励随手的位置变化的曲线（峰跟着力挪）、右手腕横向坐标的数轴、和机器人同一个时钟的外力 / 让开距离滚动曲线、阻尼的时间曲线、目标的格子；式子缩小留在图旁，旁白改成讲图怎么读。
 
 </details>
 

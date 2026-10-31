@@ -5976,7 +5976,7 @@ def test_chip_explainer_demos_and_worked_example_share_the_paper_numbers():
     ptb = [a + ik * b for a, b in zip(g, f, strict=True)]
     assert [_fmt(x, 2) for x in hind] == ["0.22", "-0.13", "0.82"] and _fmt(ptb[1], 2) == "-0.33"
     assert "=(0.22,\\,-0.13,\\,0.82)\\ \\text{m}$$" in note and "g+f/k=(0.22,\\,-0.33,\\,0.82)" in note
-    assert "黄圈就往里挪 0.10 米" in narration
+    assert "黄圈从负 0.23 往里挪到负 0.13，挪了 0.10 米" in narration
     # 例 2：三点位置项（σ = 0.3 m，三个点平均）
     r = math.exp(-(0.10**2) / 3 / 0.3**2)
     assert _fmt(0.10**2 / 3 / 0.09, 4) == "0.0370" and _fmt(r, 4) == "0.9636" and _fmt(r, 3) == "0.964"
@@ -6027,7 +6027,8 @@ def test_chip_explainer_demos_and_worked_example_share_the_paper_numbers():
     assert len(spoken) == 98
     assert not any(re.search(r"\d\s*[，,]\s*\d", t) for t in spoken)
     assert "上一期结尾预告：机器人不只要扛住外力" in narration and "下一篇讲 i D P 3" in narration and "iDP3" in intro
-    for bad in ("上一期的 Falcon", "隐式", "权重合计", "实现上", "8 个月", "一行", "几乎"):
+    # 2026-10-31 看片反馈「公式多用曲线和动效演示」：第 9 幕不再逐项念阻尼的式子；两个听写模型都听岔的「峰」「数轴」「实线」「鼓包」「涨落」换了说法
+    for bad in ("上一期的 Falcon", "隐式", "权重合计", "实现上", "8 个月", "一行", "几乎", "g t 等于", "峰跟着", "数轴", "实线", "鼓包", "涨落"):
         assert not any(bad in t for t in spoken), bad
     assert "## 🎬 十八幕动画" in note and 'demos: ["chip"]' in note
     assert "__VIDEO_" not in js and "__VIDEO_" not in note

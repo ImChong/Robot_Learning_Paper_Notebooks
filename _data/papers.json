@@ -1497,7 +1497,7 @@
         "arxiv": "2512.14689",
         "summary_zh": "CHIP（adaptive Compliance Humanoid control through hIndsight Perturbation）是一个给关键点跟踪控制器用的即插即用模块。",
         "explainer_scenes": 18,
-        "video_seconds": 1129,
+        "video_seconds": 1176,
         "published_date_zh": "2025年12月",
         "published_date_en": "Dec 2025",
         "zhname": "CHIP：用「事后扰动」实现人形控制的自适应柔顺",
