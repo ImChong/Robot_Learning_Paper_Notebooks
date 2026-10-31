@@ -773,22 +773,26 @@
     /* 第 2 段：GentleHumanoid（图 3b） */
     var p2 = group(s);
     label(p2, R, 62, 'GentleHumanoid：改奖励里的关键点（图 3b）', 'demo-x-ink', 14);
-    var o2 = [R + 110, 102];
-    hline(p2, R + 30, o2[1], R + 330, o2[1], C_BORDER, 1.4);
-    var obs2 = ringAt(p2, o2[0], o2[1], 9, C_OBS, 2.5), ref2 = dotAt(p2, o2[0], o2[1], 7, C_REF), hand2 = dotAt(p2, o2[0], o2[1], 4.5, C_INK), f2a = forceArrow(p2, C_F);
+    /* 一维的例子：手的目标在 0 cm，往外（右）推 5 N、1/k = 0.02 → 该让开 10 cm。1 cm = 15 px */
+    var cm2 = function (v) { return R + 90 + v * 15; }, y2 = 116;
+    label(p2, R, 82, '例：目标 0 cm，往外推 5 N、1/k = 0.02 → 手该让开 10 cm', 'demo-x-ink2', 11.5);
+    hline(p2, cm2(-4), y2, cm2(16), y2, C_BORDER, 1.6);
+    [0, 5, 10].forEach(function (v) {
+      hline(p2, cm2(v), y2 - 5, cm2(v), y2 + 5, C_BORDER, 1.6);
+      label(p2, cm2(v), y2 + 25, v + ' cm', 'demo-x-mut', 11, 'middle');
+    });
+    var obs2 = ringAt(p2, cm2(0), y2, 9, C_OBS, 2.5), ref2 = dotAt(p2, cm2(0), y2, 7, C_REF), hand2 = dotAt(p2, cm2(0), y2, 5, C_INK), f2a = forceArrow(p2, C_F);
     void obs2;
-    tone(p2, o2[0] - 14, o2[1] + 5, '看到的 g', C_OBS, 12, 'end');
-    var ref2t = tone(p2, o2[0], o2[1] - 16, '奖励用 g + f/k', C_REF, 12, 'middle');
-    /* 奖励随手的位置变化：横轴和上面那条线对齐，峰跟着粉点（g + f/k）走 */
-    var pb2 = plotBox(p2, R + 30, 118, 300, 84, 0, 1, 0, 1.08);
+    var hand2t = label(p2, cm2(0), y2 - 13, '手', 'demo-x-ink', 11.5, 'middle');
+    /* 打分曲线：横轴和上面的刻度对齐，最高点在粉点（g + f/k），跟着推力挪 */
+    var pb2 = plotBox(p2, cm2(-4), 150, 300, 68, 0, 1, 0, 1.12);
     var curve2 = pathLine(pb2.g, [], C_REF, 2.4);
-    hline(pb2.g, o2[0], 118, o2[0], 202, C_OBS, 1.4, '4 3');
-    var onG2 = dotAt(pb2.g, o2[0], 0, 5, C_OBS), onH2 = dotAt(pb2.g, o2[0], 0, 5, C_INK);
-    var rG2 = halo(label(p2, 0, 0, '', 'demo-x-ink', 11.5));
-    label(p2, R + 24, 124, '奖励', 'demo-x-mut', 11, 'end');
-    label(p2, R + 330, 219, '手的位置 →', 'demo-x-mut', 11, 'end');
-    readHint(p2, R, 240, '横轴：手的位置；纵轴：奖励。最高点在粉点，跟着力挪开', 11.5);
-    label(p2, R, 264, '策略看原目标，奖励却要它跟着力挪开', 'demo-x-ink2', 12);
+    hline(pb2.g, cm2(0), 150, cm2(0), 218, C_OBS, 1.4, '4 3');
+    var onG2 = dotAt(pb2.g, cm2(0), 0, 5, C_OBS), onH2 = dotAt(pb2.g, cm2(0), 0, 5, C_INK);
+    var rG2 = label(p2, R, 236, '', 'demo-x-ink', 11.5);
+    label(p2, cm2(-4) - 6, 160, '得分', 'demo-x-mut', 11, 'end');
+    legendRow(p2, R, 258, [['手', C_INK, 20], ['打分要的位置 g + f/k', C_REF, 128], ['策略看到的目标 g', C_OBS, 100]], 11);
+    readHint(p2, R, 280, '横轴：手的位置；纵轴：得分。最高点跟着推力挪到 10 cm', 11.5);
     /* 第 3 段：SoftMimic（图 3c） */
     var p3 = group(s);
     label(p3, R, 62, 'SoftMimic：用逆运动学改整条手臂（图 3c）', 'demo-x-ink', 14);
@@ -832,19 +836,18 @@
       });
       /* GentleHumanoid：力推着奖励的目标挪开 */
       var fz = 0.5 + 0.5 * Math.sin(now * 1.7);
-      var pk2 = o2[0] + 120 * fz, hx2 = o2[0] + 120 * (0.5 + 0.5 * Math.sin(now * 1.7 - 0.5));
-      f2a.set([pk2 + 10, o2[1]], [1, 0], 50 * fz, '');
-      moveDot(ref2, [pk2, o2[1]]);
-      moveDot(hand2, [hx2, o2[1]]);
-      ref2t.setAttribute('x', pk2.toFixed(1));
-      var r2 = function (x) { return Math.exp(-Math.abs(x - pk2) / 55); }, pts2 = [];
-      for (var q = 0; q <= 60; q++) { var xq = R + 30 + q * 5; pts2.push([xq, pb2.py(r2(xq))]); }
+      /* 推力 0–5 N → 打分要的位置 0–10 cm；手追着它走，慢半拍 */
+      var pk2 = cm2(10 * fz), hx2 = cm2(10 * (0.5 + 0.5 * Math.sin(now * 1.7 - 0.5)));
+      f2a.set([pk2 + 10, y2], [1, 0], 40 * fz, '');
+      moveDot(ref2, [pk2, y2]);
+      moveDot(hand2, [hx2, y2]);
+      hand2t.setAttribute('x', hx2.toFixed(1));
+      var r2 = function (x) { return Math.exp(-Math.abs(x - pk2) / 60); }, pts2 = [];
+      for (var q = 0; q <= 60; q++) { var xq = cm2(-4) + q * 5; pts2.push([xq, pb2.py(r2(xq))]); }
       setPath(curve2, pts2);
-      moveDot(onG2, [o2[0], pb2.py(r2(o2[0]))]);
+      moveDot(onG2, [cm2(0), pb2.py(r2(cm2(0)))]);
       moveDot(onH2, [hx2, pb2.py(r2(hx2))]);
-      rG2.setAttribute('x', (o2[0] + 8).toFixed(1));
-      rG2.setAttribute('y', (pb2.py(r2(o2[0])) - 10).toFixed(1));
-      rG2.textContent = fz > 0.15 ? '停在 g：' + f2(r2(o2[0])) : '';
+      rG2.textContent = '手若停在黄圈（黄虚线）：只得 ' + f2(r2(cm2(0))) + ' 分';
       /* SoftMimic：整条手臂跟着力挪 */
       var a3 = 0.5 + 0.5 * Math.sin(now * 1.5);
       var el0 = [sh[0] - 30, sh[1] + 50], wr0 = [sh[0] + 10, sh[1] + 96];
@@ -852,7 +855,7 @@
       setPath(ghost, [sh, el0, wr0]);
       setPath(arm, [sh, el1, wr1]);
       moveDot(jd[0], sh); moveDot(jd[1], el1); moveDot(jd[2], wr1);
-      f3a.set([wr1[0] - 10, wr1[1]], [-1, 0.15], 30 * a3 + 2, 'f', [-6, -8]);
+      f3a.set([wr1[0] - 10, wr1[1]], [-1, 0.15], 30 * a3 + 2, '');
       /* 稠密参考：一列一列地挪 */
       var col = Math.floor(since(t, clock, 10.4) * 5) % 16;
       cells.forEach(function (c, i) {
@@ -901,33 +904,34 @@
     tone(p1, a1[0], a1[1] + 34, '本来的目标 g − f/k', C_OBS, 12, 'middle');
     tone(p1, b1[0], b1[1] + 34, '参考里的 g', C_REF, 12, 'middle');
     var mv1 = dotAt(p1, a1[0], a1[1], 5, C_INK), arr1 = forceArrow(p1, C_F);
-    label(p1, R + 165, 118, '被力 f 推开 f/k', 'demo-x-ink2', 12, 'middle');
+    var mv1t = label(p1, a1[0], a1[1] - 16, '手', 'demo-x-ink', 11.5, 'middle');
+    label(p1, R + 165, 100, '被力 f 推开 f/k', 'demo-x-ink2', 12, 'middle');
     label(p1, R, 222, '于是原参考可以原封不动地拿来算奖励', 'demo-x-ink2', 12);
     /* 第 2 段：式子与算例 */
     var p2 = group(s);
-    label(p2, R, 62, '训练时策略看到的目标', 'demo-x-ink', 14);
-    math(p2, R + 352, 66, 'g_{\\mathrm{hind}} = g - \\tfrac{1}{k}\\,f', 15, 'end');
-    /* 数轴：右手腕的横向坐标（m），往左是往外；粉点 g 不动，黄圈随外力往里挪 f/k（例 1：5 N、1/k = 0.02 → 0.10 m） */
-    var nx = function (v) { return R + 30 + (v + 0.36) / 0.30 * 300; }, ny = 112;
-    hline(p2, nx(-0.36), ny, nx(-0.06), ny, C_BORDER, 1.6);
-    [-0.33, -0.23, -0.13].forEach(function (v) {
+    label(p2, R, 62, '训练时：参考不改，只改策略看到的目标', 'demo-x-ink', 14);
+    label(p2, R, 82, '同一个例子：往外推 5 N、1/k = 0.02', 'demo-x-ink2', 11.5);
+    math(p2, R + 352, 84, 'g_{\\mathrm{hind}} = g - \\tfrac{1}{k}\\,f', 14, 'end');
+    /* 一维：参考（打分）在 0 cm 不动；推力往外（右），策略看到的目标往里（左）挪 f/k = 10 cm；手停在参考上。1 cm = 15 px */
+    var nx = function (v) { return R + 240 + v * 15; }, ny = 130;
+    hline(p2, nx(-14), ny, nx(6), ny, C_BORDER, 1.6);
+    [-10, -5, 0].forEach(function (v) {
       hline(p2, nx(v), ny - 5, nx(v), ny + 5, C_BORDER, 1.6);
-      label(p2, nx(v), ny + 22, f2(v), 'demo-x-mut', 11, 'middle');
+      label(p2, nx(v), ny + 25, sgn(v) + ' cm', 'demo-x-mut', 11, 'middle');
     });
-    label(p2, R, 92, '右手腕的横向坐标 y（m）', 'demo-x-ink2', 11.5);
-    label(p2, nx(-0.36), ny + 44, '← 往外', 'demo-x-mut', 11);
-    label(p2, nx(-0.06), ny + 44, '往里 →', 'demo-x-mut', 11, 'end');
-    var nRef = dotAt(p2, nx(-0.23), ny, 7, C_REF), nObs = ringAt(p2, nx(-0.23), ny, 9, C_OBS, 2.6), nF = forceArrow(p2, C_F);
-    void nRef;
+    var nObs = ringAt(p2, nx(0), ny, 9, C_OBS, 2.6), nRef = dotAt(p2, nx(0), ny, 7, C_REF), nHand = dotAt(p2, nx(0), ny, 5, C_INK), nF = forceArrow(p2, C_F);
+    void nRef; void nHand;
+    label(p2, nx(0) + 12, ny - 9, '手', 'demo-x-ink', 11.5);
     var nBr = hline(p2, 0, ny - 18, 0, ny - 18, C_OBS, 1.6), nBrT = label(p2, 0, ny - 24, '', 'demo-x-ink', 11.5, 'middle');
-    /* 最近 6 s 的曲线：蓝色面积是外力，黄线是黄圈挪开的距离，和左边的 G1 同一个时钟 */
-    var pb32 = plotBox(p2, R + 30, 172, 300, 64, 0, 6, 0, 1.15);
+    legendRow(p2, R, 179, [['手', C_INK, 20], ['参考 = 打分 g', C_REF, 82], ['策略看到的 g − f/k', C_OBS, 112]], 11);
+    /* 最近 6 s 的曲线：蓝色面积是推力，黄线是黄圈挪开的距离，和左边的 G1 同一个时钟 */
+    var pb32 = plotBox(p2, R + 30, 192, 300, 50, 0, 6, 0, 1.15);
     var fArea = paint(svgEl('path', { d: 'M 0 0', 'stroke-width': 0 }), C_F);
     fArea.style.opacity = 0.28; pb32.g.appendChild(fArea);
     var shL = pathLine(pb32.g, [], C_OBS, 2.4);
-    label(p2, R + 24, 180, '5 N', 'demo-x-mut', 11, 'end');
-    label(p2, R + 336, 180, '0.10 m', 'demo-x-mut', 11);
-    readHint(p2, R, 256, '横轴：时间；蓝：外力，黄：黄圈挪开的距离，两条一起涨落', 11.5);
+    label(p2, R + 24, 200, '5 N', 'demo-x-mut', 11, 'end');
+    label(p2, R + 336, 200, '10 cm', 'demo-x-mut', 11);
+    readHint(p2, R, 264, '横轴：时间；蓝：推力，黄：黄圈挪开的距离，两条一起涨落', 11.5);
     /* 第 3 段：奖励按原参考算 */
     var p3 = group(s);
     label(p3, R, 62, '奖励照旧按原来的 g 算', 'demo-x-ink', 14);
@@ -950,14 +954,17 @@
     /* 第 5 段：图 3a 与三种写法 */
     var p5 = group(s);
     label(p5, R, 62, '三种写法（论文图 3）', 'demo-x-ink', 14);
-    var rows = [['(a) CHIP', '看 g − f/k', '奖励用 g'], ['(b) GentleHumanoid', '看 g', '奖励用 g + f/k'], ['(c) SoftMimic', '看 g', 'IK 改整条手臂']];
+    label(p5, R, 84, '同一个例子（推 5 N、1/k = 0.02，该让开 10 cm）', 'demo-x-mut', 11);
+    label(p5, R + 140, 104, '策略看到', 'demo-x-mut', 11);
+    label(p5, R + 232, 104, '打分按', 'demo-x-mut', 11);
+    var rows = [['(a) CHIP', '−10 cm', '0 cm（原参考）'], ['(b) GentleHumanoid', '0 cm', '+10 cm'], ['(c) SoftMimic', '0 cm', 'IK 改整条手臂']];
     rows.forEach(function (r, i) {
-      var y = 88 + i * 42;
-      chip(p5, R, y, 130, r[0], i ? C_BORDER : C_GOOD, { size: 12, h: 30, left: true });
-      label(p5, R + 140, y + 20, r[1], 'demo-x-ink2', 12);
-      label(p5, R + 240, y + 20, r[2], 'demo-x-ink2', 12);
+      var y = 112 + i * 38;
+      chip(p5, R, y, 130, r[0], i ? C_BORDER : C_GOOD, { size: 12, h: 28, left: true });
+      label(p5, R + 140, y + 19, r[1], 'demo-x-ink2', 12);
+      label(p5, R + 232, y + 19, r[2], 'demo-x-ink2', 12);
     });
-    label(p5, R, 236, 'CHIP 只改观测里三个稀疏的点，参考一个点都不动', 'demo-x-ink2', 12);
+    label(p5, R, 240, 'CHIP 只改观测里三个稀疏的点，参考一个点都不动', 'demo-x-ink2', 12);
     function draw(t, clock) {
       var now = nowOf(t, clock);
       /* 外力：4 s 一次，3 s 梯形 + 1 s 空着；峰值 5 N，1/k = 0.02 → 让开 0.10 m = 18.6 px */
@@ -970,11 +977,11 @@
       fL.set([P.lw[0] + 9, P.lw[1]], [1, 0], F * 9, 'f', [2, -10]);
       fTxt.textContent = '外力 ' + f1(F) + ' N → 看到的目标往里挪 ' + f2(F * EX.ik) + ' m';
       var sh = F * EX.ik;
-      moveDot(nObs, [nx(-0.23 + sh), ny]);
-      nF.set([nx(-0.23) - 10, ny], [-1, 0], F * 10, '');
-      setLine(nBr, nx(-0.23), ny - 18, nx(-0.23 + sh), ny - 18);
-      nBrT.setAttribute('x', ((nx(-0.23) + nx(-0.23 + sh)) / 2).toFixed(1));
-      nBrT.textContent = sh > 0.012 ? f2(sh) + ' m' : '';
+      moveDot(nObs, [nx(-100 * sh), ny]);
+      nF.set([nx(0) + 10, ny], [1, 0], F * 8, '');
+      setLine(nBr, nx(-100 * sh), ny - 18, nx(0) - 10, ny - 18);
+      nBrT.setAttribute('x', ((nx(-100 * sh) + nx(0)) / 2).toFixed(1));
+      nBrT.textContent = sh > 0.012 ? Math.round(100 * sh) + ' cm' : '';
       var hist = [];
       for (var q = 0; q <= 120; q++) {
         var tq = now - 6 + q * 0.05, Fq = tq < 0 ? 0 : trap(((tq % 4) + 4) % 4 / 3, 5);
@@ -984,6 +991,7 @@
       fArea.setAttribute('d', 'M ' + pb32.px(0).toFixed(1) + ' ' + pb32.py(0).toFixed(1) + ' L ' + hist.map(function (p) { return p[0].toFixed(1) + ' ' + p[1].toFixed(1); }).join(' L ') + ' L ' + pb32.px(6).toFixed(1) + ' ' + pb32.py(0).toFixed(1) + ' Z');
       var w1 = (now % 3) / 3;
       moveDot(mv1, [a1[0] + (b1[0] - a1[0]) * w1, a1[1]]);
+      mv1t.setAttribute('x', (a1[0] + (b1[0] - a1[0]) * w1).toFixed(1));
       arr1.set([a1[0] + 16, a1[1] - 4], [1, 0], (b1[0] - a1[0] - 32) * Math.min(1, w1 * 1.3), '');
       var u3 = seg(since(t, clock, 7.0), 0.3, 1.5);
       b3a.set(150 * u3, u3 > 0.05 ? f3(1) : '');
@@ -1025,13 +1033,14 @@
     math(p2, R, 92, 'x_{\\mathrm{eef}} \\approx g + \\tfrac{1}{k}\\,f', 16);
     label(p2, R + 150, 90, '训练时学到的规律，原样用上', 'demo-x-mut', 11);
     /* 最近 12 s 的曲线，和左边的 G1 同一个时钟：蓝色面积是外力（每次峰值都是 5 N），实线是手让开的距离；1/k 依次是 0、0.02、0.03 */
-    var pb42 = plotBox(p2, R + 34, 106, 296, 112, 0, 12, 0, 0.2);
+    var pb42 = plotBox(p2, R + 34, 106, 296, 112, 0, 12, 0, 0.26);
     var fArea4 = paint(svgEl('path', { d: 'M 0 0', 'stroke-width': 0 }), C_F);
     fArea4.style.opacity = 0.22; pb42.g.appendChild(fArea4);
     var dLine4 = pathLine(pb42.g, [], C_INK, 2.4);
     [0.05, 0.10, 0.15].forEach(function (v) { hline(pb42.g, pb42.px(0), pb42.py(v), pb42.px(12), pb42.py(v), C_BORDER, 1, '2 4'); label(p2, R + 28, pb42.py(v) + 4, f2(v), 'demo-x-mut', 11, 'end'); });
     label(p2, R + 28, 114, 'm', 'demo-x-mut', 11, 'end');
     var pkT4 = [0, 1, 2].map(function () { return halo(label(p2, 0, 0, '', 'demo-x-ink', 11, 'middle')); });
+    var pkK4 = [0, 1, 2].map(function () { return halo(label(p2, 0, 0, '', 'demo-x-mut', 11, 'middle')); });
     label(p2, R + 330, 234, '时间 →', 'demo-x-mut', 11, 'end');
     readHint(p2, R, 254, '蓝：外力，每次 5 N；实线：手让开的距离，1/k 越大越高', 11.5);
     /* 第 3 段：力—位移的三条直线 */
@@ -1058,7 +1067,7 @@
     var cChip = pathLine(pb.g, [], C_ACCENT, 2.6), cRt = pathLine(pb.g, [], C_BAD, 2.6);
     var cHk = pathLine(pb.g, [], C_MUTED, 2, '6 4');
     var mk = dotAt(pb.g, pb.px(0.05), pb.py(0.27), 5, C_ACCENT);
-    var mkT = halo(label(p4, pb.px(0.05) + 8, pb.py(0.27) + 18, '0.05 → 0.27 m', 'demo-x-ink', 11.5));
+    var mkT = halo(label(p4, pb.px(0.05) + 8, pb.py(0.27) + 30, '0.05 → 0.27 m', 'demo-x-ink', 11.5));
     legendRow(p4, R, 268, [['CHIP', C_ACCENT, 34], ['只改奖励的基线', C_BAD, 96]], 11);
     readHint(p4, R, 292, '横轴 1/k、纵轴 20 N 下的位移；线越高越软', 11.5);
     var p5 = group(s);
@@ -1089,10 +1098,12 @@
       pkT4.forEach(function (n, j) {
         var c0 = cyc - j, tp = c0 * 4 + 1.5, xq = tp - (now - 12);
         var kq = [0, 0.02, 0.03][((c0 % 3) + 3) % 3];
-        if (c0 < 0 || xq < 2.2 || xq > 9.8 || now < tp) { n.textContent = ''; return; }
-        n.setAttribute('x', pb42.px(xq).toFixed(1));
-        n.setAttribute('y', (pb42.py(5 * kq) - 8).toFixed(1));
-        n.textContent = '1/k = ' + (kq ? f2(kq) : '0') + '：' + f2(5 * kq) + ' m';
+        var nk = pkK4[j];
+        if (c0 < 0 || xq < 1.4 || xq > 10.6 || now < tp) { n.textContent = ''; nk.textContent = ''; return; }
+        n.setAttribute('x', pb42.px(xq).toFixed(1)); nk.setAttribute('x', pb42.px(xq).toFixed(1));
+        nk.setAttribute('y', '120'); n.setAttribute('y', '142');
+        nk.textContent = '1/k = ' + (kq ? f2(kq) : '0');
+        n.textContent = f2(5 * kq) + ' m';
       });
       dTxt.textContent = '外力 ' + f1(F) + ' N → 手往外让开 ' + f2(d) + ' m';
       /* v1 曲线一点点画出来 */
@@ -1148,16 +1159,18 @@
     /* 下面第 4 段：三样不需要的 */
     var p4 = group(s);
     ['不用合成数据', '不加奖励项', '不学力估计器'].forEach(function (w, j) {
-      chip(p4, 24 + j * 180, 290, 160, w, C_GOOD, { size: 12.5, h: 32 });
+      chip(p4, 24 + j * 170, 290, 150, w, C_GOOD, { size: 12.5, h: 32 });
     });
-    var crosses = [0, 1, 2].map(function (j) { return cross(p4, 24 + j * 180 + 140, 300, 12, C_BAD); });
-    label(p4, 24, 352, '只有一个策略、一个 PPO 目标（摘要：「既不要数据增广，也不要额外调奖励」）', 'demo-x-ink2', 12);
+    var crosses = [0, 1, 2].map(function (j) { return cross(p4, 24 + j * 170 + 130, 300, 12, C_BAD); });
+    label(p4, 24, 350, '只有一个策略、一个 PPO 目标', 'demo-x-ink2', 12);
+    label(p4, 24, 372, '摘要：「既不要数据增广，也不要额外调奖励」', 'demo-x-mut', 11.5);
     /* 第 5 段：即插即用 */
     var p5 = group(s);
-    rectBox(p5, 544, 280, 248, 100, C_BORDER, C_SURFACE2);
-    label(p5, 668, 300, '关键点跟踪框架', 'demo-x-ink', 12.5, 'middle');
-    label(p5, 668, 351, '局部：SONIC、OmniH2O', 'demo-x-ink2', 11, 'middle');
-    label(p5, 668, 372, '全局：CLONE、HEAD', 'demo-x-ink2', 11, 'middle');
+    rectBox(p5, 538, 280, 238, 100, C_BORDER, C_SURFACE2);
+    label(p5, 657, 300, '关键点跟踪框架', 'demo-x-ink', 12.5, 'middle');
+    label(p5, 657, 351, '局部：SONIC、OmniH2O', 'demo-x-ink2', 11, 'middle');
+    label(p5, 657, 372, '全局：CLONE、HEAD', 'demo-x-ink2', 11, 'middle');
+    label(p5, 24, 400, 'SONIC：英伟达用超过一亿帧动作数据训出来的通用人形动作跟踪控制器', 'demo-x-mut', 11);
     var plug = group(p5);
     rectBox(plug, 0, 311, 64, 22, C_GOOD, C_SURFACE);
     label(plug, 32, 326, 'CHIP', 'demo-x-ink', 12, 'middle');
@@ -1176,7 +1189,7 @@
       yel.forEach(function (c, j) { c.style.opacity = j < nY ? 1 : 0; });
       crosses.forEach(function (c, j) { setOpacity(c, seg(since(t, clock, 10.4), 0.5 + j * 0.5, 0.8 + j * 0.5)); });
       var u5 = seg(since(t, clock, 13.4), 0.4, 1.6);
-      plug.setAttribute('transform', 'translate(' + (636 - 32 * u5).toFixed(1) + ' 0)');
+      plug.setAttribute('transform', 'translate(' + (657 - 32 * u5).toFixed(1) + ' 0)');
       setOpacity(plug, u5);
       cards.forEach(function (c, j) {
         var at = [0.3, 3.6, 7.0][j], next = [3.6, 7.0, 10.4][j];
@@ -1241,7 +1254,7 @@
     label(p4, R, 62, '大小按梯形走（图 9）', 'demo-x-ink', 14);
     var pb = plotBox(p4, R + 34, 76, 300, 140, 0, 1, 0, 40);
     pathLine(pb.g, [[pb.px(0), pb.py(0)], [pb.px(0.25), pb.py(40)], [pb.px(0.75), pb.py(40)], [pb.px(1), pb.py(0)]], C_F, 2.6);
-    [0, 0.25, 0.75, 1].forEach(function (v) { label(p4, pb.px(v), 232, String(v), 'demo-x-mut', 11, 'middle'); });
+    [0, 0.25, 0.75, 1].forEach(function (v) { label(p4, pb.px(v), 236, String(v), 'demo-x-mut', 11, 'middle'); });
     label(p4, R + 28, pb.py(40) + 9, '40 N', 'demo-x-mut', 11, 'end');
     var cur = hline(p4, 0, 76, 0, 216, C_WARN, 1.6), curDot = dotAt(p4, 0, 0, 5, C_WARN);
     readHint(p4, R, 256, '横轴是一次扰动里的相对时间、纵轴是力的大小', 11.5);
@@ -1386,12 +1399,12 @@
     var p1 = group(s);
     label(p1, R, 62, '形式：误差越小越接近 1', 'demo-x-ink', 14);
     math(p1, R, 100, 'r = \\exp\\!\\big(-\\lVert e\\rVert^2/\\sigma^2\\big)', 18);
-    var pb = plotBox(p1, R + 30, 122, 260, 120, 0, 0.6, 0, 1);
+    var pb = plotBox(p1, R + 30, 122, 260, 120, 0, 0.6, 0, 1.2);
     var cv = [];
     for (var e = 0; e <= 0.6; e += 0.01) cv.push([pb.px(e), pb.py(Math.exp(-e * e / 0.09))]);
     pathLine(pb.g, cv, C_ACCENT, 2.4);
     dotAt(pb.g, pb.px(0.1), pb.py(Math.exp(-0.01 / 0.09)), 5, C_WARN);
-    halo(label(p1, pb.px(0.1) + 8, pb.py(Math.exp(-0.01 / 0.09)) + 4, '0.1 m → ' + f3(Math.exp(-0.01 / 0.09)), 'demo-x-ink', 11.5));
+    halo(label(p1, pb.px(0.1) + 8, pb.py(Math.exp(-0.01 / 0.09)) - 8, '0.1 m → ' + f3(Math.exp(-0.01 / 0.09)), 'demo-x-ink', 11.5));
     label(p1, R + 30, 258, '0', 'demo-x-mut', 11, 'middle');
     label(p1, R + 290, 258, '0.6 m', 'demo-x-mut', 11, 'middle');
     readHint(p1, R, 280, '横轴是位置误差、纵轴是得分（σ = 0.3 m）', 11);
@@ -1536,13 +1549,13 @@
       var y = 88 + i * 34, cells = [];
       label(p1, R, y + 16, r[0], 'demo-x-ink', 12);
       for (var c = 0; c < r[1]; c++) {
-        var cell = paint(svgEl('rect', { x: R + 60 + c * 30, y: y, width: 24, height: 22, rx: 3 }), c < 3 ? C_REF : C_PURPLE);
+        var cell = paint(svgEl('rect', { x: R + 60 + c * 30, y: y, width: 24, height: 22, rx: 3 }), c < 3 ? C_REF : C_WARN);
         p1.appendChild(cell); cells.push(cell);
       }
       label(p1, R + 60 + r[1] * 30 + 6, y + 16, r[1] === 6 ? '位置 3 + 朝向 3' : '只要位置 3', 'demo-x-mut', 11);
       return cells;
     });
-    legendRow(p1, R, 206, [['位置', C_REF, 30], ['朝向', C_PURPLE, 30]], 11);
+    legendRow(p1, R, 206, [['位置', C_REF, 30], ['朝向', C_WARN, 30]], 11);
     label(p1, R, 236, '奖励多两项：三个点在世界坐标系里的误差', 'demo-x-ink2', 12);
     /* 第 2 段：歧义与未来 5 帧（俯视） */
     var p2 = group(s);
@@ -1552,7 +1565,7 @@
     label(p2, R + 84, 96, '只看当前一帧', 'demo-x-ink2', 12, 'middle');
     label(p2, R + 268, 96, '看未来 0.2 s（5 帧）', 'demo-x-ink2', 12, 'middle');
     var bA = ringAt(p2, R + 84, 190, 14, C_INK, 2), bB = ringAt(p2, R + 268, 190, 14, C_INK, 2);
-    var tA = [dotAt(p2, 0, 0, 4.5, C_REF), dotAt(p2, 0, 0, 4.5, C_REF)], qA = tone(p2, R + 84, 216, '?', C_WARN, 14, 'middle');
+    var tA = [dotAt(p2, 0, 0, 4.5, C_REF), dotAt(p2, 0, 0, 4.5, C_REF)], qA = tone(p2, R + 84, 222, '?', C_WARN, 14, 'middle');
     var fut = [];
     for (var i = 0; i < 5; i++) fut.push(dotAt(p2, 0, 0, 3.5, C_REF));
     label(p2, R, 248, '论文：5 帧、每步隔 4 帧，就能消掉这种歧义', 'demo-x-ink2', 11.5);
@@ -1581,7 +1594,7 @@
     }
     var cloudA = [], cloudB = [];
     for (var c = 0; c < 18; c++) { cloudA.push(dotAt(p4, 0, 0, 2.6, C_PURPLE)); cloudB.push(dotAt(p4, 0, 0, 2.6, C_WARN)); }
-    label(p4, R, 262, '先用 Fast-LIO2 建图，开机时各自把实时点云配准上去', 'demo-x-ink2', 11.5);
+    label(p4, R, 274, '先用 Fast-LIO2 建图，开机时各自把实时点云配准上去', 'demo-x-ink2', 11.5);
     var p5 = group(s);
     label(p5, R, 62, '算在哪', 'demo-x-ink', 14);
     chip(p5, R, 80, 340, '全局策略 + 状态估计：i7-13700K + RTX 3090 台式机', C_ACCENT, { size: 12, h: 32 });
@@ -1602,10 +1615,10 @@
       var u2 = (now % 3) / 3, adv = 40 * u2;
       moveDot(tA[0], [R + 84 - 12, 170 - adv]); moveDot(tA[1], [R + 84 + 12, 170 - adv]);
       qA.style.opacity = 0.4 + 0.6 * Math.abs(Math.sin(now * 3));
-      var by = 190 - 40 * u2;
+      var by = 190 - 30 * u2;
       moveDot(bB, [R + 268, by]);
       moveDot(bA, [R + 84, 190]);
-      fut.forEach(function (d, j) { moveDot(d, [R + 268, by - 22 - j * 10]); d.style.opacity = 1 - j * 0.15; });
+      fut.forEach(function (d, j) { moveDot(d, [R + 268, by - 20 - j * 8]); d.style.opacity = 1 - j * 0.15; });
       var x3 = R + 100 + ((now % 2) / 2) * 200;
       setLine(cur3, x3, 88, x3, 228);
       /* 两团点云从偏开的位置转回地图上（4 s 一循环） */
@@ -1750,7 +1763,7 @@
     label(p2, R, Y + 24, '比一直很硬的高 75 个百分点，比没训过外力的高 40 个', 'demo-x-ink2', 11.5);
     var p3 = group(s);
     label(p3, R, Y, 'FALCON 为什么最差：两边都硬着往里推', 'demo-x-ink', 13);
-    var bx3 = paint(svgEl('rect', { x: R + 150, y: Y + 14, width: 56, height: 36, rx: 3 }), C_WARN);
+    var bx3 = paint(svgEl('rect', { x: R + 150, y: Y + 18, width: 56, height: 36, rx: 3 }), C_WARN);
     bx3.style.opacity = 0.8; p3.appendChild(bx3);
     var a3L = forceArrow(p3, C_F), a3R = forceArrow(p3, C_F);
     var p4 = group(s);
@@ -1770,11 +1783,11 @@
         setOpacity(b.b.b.node, t >= 3.6 && t < 7.0 && b.i !== 4 ? 0.35 : 1);
       });
       /* 两只硬手对顶：箱子被挤得往上蹦（2 s 一循环） */
-      var q = (now % 2) / 2, pop = q > 0.5 ? Math.sin((q - 0.5) / 0.5 * Math.PI) * 18 : 0;
-      bx3.setAttribute('y', (Y + 14 - pop).toFixed(1));
+      var q = (now % 2) / 2, pop = q > 0.5 ? Math.sin((q - 0.5) / 0.5 * Math.PI) * 8 : 0;
+      bx3.setAttribute('y', (Y + 18 - pop).toFixed(1));
       bx3.setAttribute('transform', 'rotate(' + (pop * 0.8).toFixed(1) + ' ' + (R + 178) + ' ' + (Y + 32) + ')');
-      a3L.set([R + 92, Y + 32], [1, 0], 52, '硬', [-30, 4]);
-      a3R.set([R + 264, Y + 32], [-1, 0], 52, '硬', [30, 4]);
+      a3L.set([R + 92, Y + 36], [1, 0], 52, '硬', [-26, -8]);
+      a3R.set([R + 264, Y + 36], [-1, 0], 52, '硬', [26, -8]);
       setOpacity(p1, win(t, 0.3, 3.6));
       setOpacity(p2, win(t, 3.6, 7.0));
       setOpacity(p3, win(t, 7.0, 10.4));
@@ -1938,6 +1951,17 @@
     var p4 = group(s);
     label(p4, R, Y, '拔笔帽：两手都要硬', 'demo-x-ink', 13.5);
     label(p4, R, Y + 24, '项目页：一手硬一手软时力不够，拔不开', 'demo-x-ink2', 12);
+    /* 第 5 段：左边换成论文图 7a（上半张），照片之间的竖条按旁白依次框出：蓝 → 橙 → 绿 */
+    var f7 = paperPart(s, 'fig7', 0, 0.03, 1, 0.452, 24, 44, 380, '论文图 7a：照片之间的竖条是在线调柔顺度的命令');
+    var BARS7 = [[[314, 133, 350], [314, 358, 565]], [[625, 133, 350], [933, 133, 350], [625, 358, 565]], [[933, 358, 565]]];
+    var LEG7 = [[40, 48, 432, 92], [430, 48, 852, 92], [852, 48, 1190, 92]];
+    var k7 = 380 / 1250, fx = function (u) { return 24 + u * k7; }, fy = function (v) { return 44 + (v - 0.03 * 1257) * k7; };
+    var hl7 = [0, 1, 2].map(function (i) {
+      var g = group(s), c = [C_ACCENT, C_WARN, C_GOOD][i];
+      BARS7[i].forEach(function (b) { rectBox(g, fx(b[0]) - 6, fy(b[1]) + 1, 12, (b[2] - b[1]) * k7 - 2, c, 'none').style.strokeWidth = '2.5'; });
+      var L = LEG7[i]; rectBox(g, fx(L[0]), fy(L[1]), (L[2] - L[0]) * k7, (L[3] - L[1]) * k7, c, 'none').style.strokeWidth = '2.5';
+      return g;
+    });
     var p5 = group(s);
     label(p5, R, Y, '论文图 7a 的竖条：在线调柔顺度的命令', 'demo-x-ink', 13.5);
     [['调硬：1/k → 0', C_ACCENT], ['调软：1/k → 0.05', C_WARN], ['保持不变', C_GOOD]].forEach(function (it, i) {
@@ -1947,7 +1971,7 @@
     label(p5, R, Y + 70, '虚线圈：青色是硬模式（0），品红是柔顺模式（0.05）', 'demo-x-mut', 11);
     function draw(t, clock) {
       var map = t < 3.6 ? [2, 0.4] : t < 7.0 ? [1, 3.6] : t < 13.4 ? [0, t < 10.4 ? 7.0 : 10.4] : [2, 13.4];
-      clip.at(map[0], K.clipSince(t, map[1]), true);
+      clip.at(map[0], K.clipSince(t, map[1]), t < 13.7);
       var pos = map[0] === 0 ? 0.15 : map[0] === 1 ? 0.5 : 0.85;
       var cx = R + 40 + pos * (tw - 40);
       cur.setAttribute('d', 'M ' + (cx - 7).toFixed(1) + ' 44 L ' + (cx + 7).toFixed(1) + ' 44 L ' + cx.toFixed(1) + ' 56 Z');
@@ -1956,6 +1980,12 @@
       setOpacity(p3, win(t, 7.0, 10.4));
       setOpacity(p4, win(t, 10.4, 13.4));
       setOpacity(p5, win(t, 13.4));
+      /* 讲竖条时左边换成论文图 7a，蓝、橙、绿竖条轮流框出（每种 2 s，从这一段开头算） */
+      var u7 = seg(t, 13.4, 13.7);
+      setOpacity(clip.g, 1 - u7);
+      setOpacity(f7.g, u7);
+      var i7 = t < 13.4 ? -1 : Math.floor(K.clipSince(t, 13.4) / 2) % 3;
+      hl7.forEach(function (g, i) { setOpacity(g, i === i7 ? 0.5 + 0.5 * Math.abs(Math.sin((clock == null ? t : clock) * 3)) : 0); });
     }
     return { el: s, draw: draw };
   }
@@ -2005,7 +2035,7 @@
     var band = paint(svgEl('rect', { x: fx(5), y: 128, width: fx(15) - fx(5), height: 24, rx: 4 }), C_WARN);
     band.style.opacity = 0.4; p3.appendChild(band);
     label(p3, (fx(5) + fx(15)) / 2, 120, '截断的阈值', 'demo-x-ink2', 11, 'middle');
-    [0, 10, 20, 30, 40].forEach(function (v) { label(p3, fx(v), 160, v + ' N', 'demo-x-mut', 11, 'middle'); });
+    [0, 10, 20, 30, 40].forEach(function (v) { label(p3, fx(v), 168, v + ' N', 'demo-x-mut', 11, 'middle'); });
     var chipLine = pathLine(p3, [], C_GOOD, 3);
     label(p3, R, 196, 'CHIP：外力超出这个范围，仍能按 1/k 分出不同的柔顺', 'demo-x-ink2', 11.5);
     label(p3, R, 220, '而且 1/k 对应胡克定律，看一眼重量就能估', 'demo-x-ink2', 11.5);
@@ -2074,6 +2104,7 @@
     fbox.forEach(function (b) { chip(p1, R + 40, b[2], 280, b[0], b[1], { size: 12, h: 30 }); });
     var fl = [0, 1, 2].map(function () { return flowSeg(p1, C_MUTED, 2, 3, 40); });
     label(p1, R, 284, 'VLA 输出里含柔顺度，是我们按第 IV-B 节的理解', 'demo-x-mut', 11);
+    label(p1, R, 306, 'GR00T N1.5：英伟达开放权重的 VLA，看画面和指令、输出动作', 'demo-x-ink2', 11);
     /* 第 2–4 段：三个任务（累积） */
     var p2 = group(s);
     label(p2, R, 62, '三个任务（每个 20 次，2 分钟内完成才算）', 'demo-x-ink', 13);
@@ -2405,8 +2436,8 @@
   function buildVideoDemo(host) {
     K.video(host, {
       title: '配音讲解视频：CHIP 十八幕全流程',
-      sub: '19 分 37 秒竖屏视频（1080×1920），中文配音 + 字幕。画面就是上面的十八幕动画，旁白把每一幕讲细；适合手机上看或转发。',
-      size: '23.4 MB',
+      sub: '20 分 9 秒竖屏视频（1080×1920），中文配音 + 字幕。画面就是上面的十八幕动画，旁白把每一幕讲细；适合手机上看或转发。',
+      size: '24.0 MB',
       fileName: 'CHIP_讲解视频.mp4'
     });
   }
