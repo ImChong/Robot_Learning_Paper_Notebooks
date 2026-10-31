@@ -168,6 +168,13 @@ DOORMAN_NOTE = (
     / "Opening_the_Sim-to-Real_Door_for_Humanoid_Pixel-to-Action_Policy_Transfer"
     / "Opening_the_Sim-to-Real_Door_for_Humanoid_Pixel-to-Action_Policy_Transfer.md"
 )
+CHIP_NOTE = (
+    ROOT
+    / "papers"
+    / "04_Loco-Manipulation_and_WBC"
+    / "CHIP__Adaptive_Compliance_for_Humanoid_Control_through_Hindsight_Perturbation"
+    / "CHIP__Adaptive_Compliance_for_Humanoid_Control_through_Hindsight_Perturbation.md"
+)
 PHP_NOTE = (
     ROOT
     / "papers"
@@ -409,7 +416,7 @@ EXPLAINER_BUNDLES = (
     "domain_randomization", "quadterrain", "realhumanoid", "asap", "inekf", "berkeley_humanoid",
     "toddlerbot", "exbody", "h2o", "omnih2o", "hover", "maskedmimic", "exbody2", "hugwbc", "homie", "twist", "twist2",
     "falcon", "hdmi", "viral",
-    "doorman",
+    "doorman", "chip",
 )
 
 # 幕数由论文决定，不是统一模板：PPO / DeepMimic / AMP / ADD 的核心概念正好各 5 个，
@@ -656,6 +663,13 @@ EXPLAINER_SCENES = {
     # （式 1–3）、图 6 右的缓冲区大小各一幕；学生（DAgger）、GRPO（式 4–5）、图 6 左各一幕；第 3.4 节的程序化的门与视觉随机化各一幕；
     # 表 1、图 5、泛化与失败、局限与代码各一幕。压成 14 幕会让窄桥的链和重置的快照栈、或 GRPO 的组内优势和图 6 左的曲线抢同一帧。
     "doorman": (DOORMAN_NOTE, 17),
+    # CHIP 十八幕：问题两幕（会跑会跳却搬不动东西、前人的两种改法：GentleHumanoid 改奖励、SoftMimic 用逆向运动学改参考）；
+    # 第 III 节的事后扰动（$g-f/k$ 进观测、奖励照抄原参考）、部署时的胡克定律（含 v1 删掉的 20 N 位移图）、三个好处各一幕；
+    # 第 IV 节按力的采样（附录 B 的梯形）、策略的输入（图 2）、奖励（表 III）、阻尼（三种人机交互）、全局三点与定位各一幕；
+    # 结果按应用一节一节讲：两台抱（图 5）、表 II、局部三点与遥操作（图 4）、表 I、两只手两种刚度（图 7a）、连续的柔顺度
+    # （图 7b、c 与 Gemini）、GR00T N1.5（图 8）各一幕，局限一幕。压成 15 幕会让事后目标的三个点和胡克定律的三条线、
+    # 或表 II 的柱和表 I 的四张柱状图抢同一帧。
+    "chip": (CHIP_NOTE, 18),
 
     "humanml3d": (HUMANML3D_NOTE, 12),
 }
@@ -2131,7 +2145,8 @@ def test_narrated_video_placeholders_point_at_files_that_exist():
     for demo in ("calm-video", "pulse-video", "dp-video", "bm-video", "lcp-video", "cosmos-video", "groot-video",
                  "tf-video", "pi0-video", "pi05-video", "soccer-video", "sonic-video", "gmr-video",
                  "omniretarget-video", "humanml3d-video", "smp-video", "dr-video", "qt-video", "rh-video", "inekf-video", "bh-video",
-                 "tb-video", "exbody-video", "h2o-video", "hover-video", "exbody2-video", "hugwbc-video", "homie-video", "doorman-video"):
+                 "tb-video", "exbody-video", "h2o-video", "hover-video", "exbody2-video", "hugwbc-video", "homie-video", "doorman-video",
+                 "chip-video"):
         assert demo in seen, f"{demo} 应该挂在对应的论文笔记里"
 
 
@@ -5920,3 +5935,118 @@ def test_doorman_project_page_clips():
     assert sum(p.stat().st_size for p in clip_dir.iterdir()) < 2.5e6
     note = DOORMAN_NOTE.read_text(encoding="utf-8")
     assert "剪自[项目页](https://doorman-humanoid.github.io/)的视频" in note
+
+
+def test_chip_explainer_demos_and_worked_example_share_the_paper_numbers():
+    """CHIP：十八幕动画、三个演示、配音旁白与笔记「🚶 具体实例」用同一组数。
+
+    表 I–III、第 IV–V 节与附录 B 照抄 arXiv 2512.14689 v2；「20 N 下末端位移」是 v1 的图（v2 删掉了），数从矢量图里按网格线抽；
+    Gemini 的预测与 $10/k$ 取自项目页。官方代码没有放出，例 5 的阻尼 $\alpha=0.1$、50 Hz 是假设。例 1–6、8–10 在这里用 Python 再算一遍。
+    """
+    js = (DEMO_JS_DIR / "chip.js").read_text(encoding="utf-8")
+    note = CHIP_NOTE.read_text(encoding="utf-8")
+    narration = (ROOT / "scripts" / "paper_video" / "papers" / "chip.py").read_text(encoding="utf-8")
+    intro = (ROOT / "scripts" / "paper_video" / "papers" / "chip.js").read_text(encoding="utf-8")
+
+    for line in (
+        "{ key: 'c0', zh: 'CHIP 1/k = 0', v: [0.08, 0.09, 0.02, 0.09], sd: [0.04, 0.04, 0.02, 0.06] },",
+        "{ key: 'gh', zh: 'GentleHumanoid 硬（15 N）', v: [null, null, 0.04, 0.15], sd: [null, null, 0.03, 0.08] },",
+        "{ key: 'falcon', zh: 'FALCON', v: [0.09, 0.08, 0.02, 0.08], sd: [0.04, 0.04, 0.02, 0.05] },",
+        "{ key: 'noforce', zh: '不加外力训', v: [0.11, 0.09, 0.02, 0.08], sd: [0.04, 0.05, 0.02, 0.05] }",
+        "var T2_TRIALS = 5;",
+        "var GRASP_K = 0.04;",
+        "var DISP_CHIP = [0.06, 0.11, 0.20, 0.27, 0.29, 0.33, 0.38, 0.39, 0.51];",
+        "var FORCE = { fmax: 40, tmin: 1, tmax: 3, up: 0.25, down: 0.75 };",
+        "var EX = { g: [0.22, -0.23, 0.82], f: [0, -5, 0], ik: 0.02 };",
+        "var EX_TRAP = { T: 2, F: 24, at: [0.3, 1.0, 1.8] };",
+        "var DAMP = { alpha: 0.1, hz: 50 };",
+        "var FIG7B = [[0.05, '空箱', 0], [0.03, '约 4 磅', 4], [0.02, '约 7 磅', 7]];",
+        "var ANCHORS = [[0.5, '空箱'], [0.2, '约 7 磅']];",
+        "var VLA_N = 20;",
+        "var TRAIN = { gpus: 64, envs: 4096, days: 4 };",
+        "var FUTURE = { sec: 0.2, frames: 5 };",
+    ):
+        assert line in js, line
+    for k in ("'chip-explainer'", "'chip-video'", "'chip-hindsight'", "'chip-damper'", "'chip-results'", "K.video(host"):
+        assert k in js, k
+
+    # 例 1：事后目标 g − f/k，GentleHumanoid 的 g + f/k
+    g, f, ik = (0.22, -0.23, 0.82), (0, -5, 0), 0.02
+    hind = [a - ik * b for a, b in zip(g, f, strict=True)]
+    ptb = [a + ik * b for a, b in zip(g, f, strict=True)]
+    assert [_fmt(x, 2) for x in hind] == ["0.22", "-0.13", "0.82"] and _fmt(ptb[1], 2) == "-0.33"
+    assert "=(0.22,\\,-0.13,\\,0.82)\\ \\text{m}$$" in note and "g+f/k=(0.22,\\,-0.33,\\,0.82)" in note
+    assert "黄圈从负 0.23 往里挪到负 0.13，挪了 0.10 米" in narration
+    # 例 2：三点位置项（σ = 0.3 m，三个点平均）
+    r = math.exp(-(0.10**2) / 3 / 0.3**2)
+    assert _fmt(0.10**2 / 3 / 0.09, 4) == "0.0370" and _fmt(r, 4) == "0.9636" and _fmt(r, 3) == "0.964"
+    assert "r=e^{-0.0370}=0.9636" in note and "只有 0.964" in narration
+    rw = [x[2] for x in re.findall(r"\['([^']+)', '([^']+)', (-?[\d.]+), 't'\]", js)]
+    assert sum(float(x) for x in rw) == 6.5 and "七项加起来，一共 6.5" in narration and "合计 7.5" in narration
+    # 例 3：部署时手停在 g + f/k；v1 的图只有式子的 27% / 33%
+    assert [_fmt(5 * k, 3) for k in (0.001, 0.02, 0.03, 0.05)] == ["0.005", "0.100", "0.150", "0.250"]
+    assert [_fmt(1 / k, 1) for k in (0.02, 0.03, 0.05)] == ["50.0", "33.3", "20.0"]
+    assert (round(100 * 0.27 / (20 * 0.05)), round(100 * 0.20 / (20 * 0.03))) == (27, 33)
+    assert "| 5 N 时让开 [m] | 0 | 0.005 | 0.10 | 0.15 | 0.25 |" in note and "实测只有式子的 27%" in note
+    assert "20 牛乘 0.05 应该让开 1 米，图上只有 0.27 米" in narration
+    # 例 4：梯形力
+    def trap(u, F):
+        return 0 if u <= 0 or u >= 1 else F * u / 0.25 if u < 0.25 else F if u < 0.75 else F * (1 - u) / 0.25
+
+    assert [_fmt(trap(t / 2, 24), 1) for t in (0.3, 1.0, 1.8)] == ["14.4", "24.0", "9.6"]
+    assert _fmt(0.75 * 24 * 2, 0) == "36" and _fmt(0.75 * 24, 0) == "18"
+    assert "=14.4$ N" in note and "=9.6$ N" in note and "0.75FT=36$ N·s" in note
+    assert "0.3 秒时是 14.4 牛，1.8 秒时是 9.6 牛" in narration
+    # 例 5：阻尼（假设 α = 0.1、50 Hz）
+    step = 0.1 * 5 * 0.02
+    assert _fmt(step, 2) == "0.01" and _fmt(step * 50, 1) == "0.5" and _fmt(5 / (step * 50), 0) == "10"
+    assert "b=f/v=5/0.5=10$ N·s/m" in note and "目标每步挪 1 厘米，也就是每秒 0.5 米" in narration
+    # 例 6：表 II（每格 5 次）
+    t2 = [[float(x) for x in v.split(", ")] for v in re.findall(r"\{ zh: '[^']+', v: \[([\d., ]+)\] \}", js)[:4]]
+    assert len(t2) == 4
+    counts = [sum(round(5 * row[j]) for row in t2) for j in range(3)]
+    assert counts == [16, 1, 8] and [_fmt(c / 20, 2) for c in counts] == ["0.80", "0.05", "0.40"]
+    assert "| CHIP | 3 + 4 + 5 + 4 | 16 / 20 | 0.8 |" in note and "| FALCON | 0 + 0 + 1 + 0 | 1 / 20 | 0.05 |" in note
+    assert "Chip 0.8，一直很硬的 Falcon 只有 0.05，没加外力训练的 0.4" in narration and "高 75 个百分点" in narration
+    # 例 7：表 I
+    assert "Falcon 0.09，没加外力训练的策略 0.11" in narration and "位置误差是 Chip 的 2 到 2.5 倍" in narration
+    # 例 8：柔顺度与重量（项目页的 10/k）
+    assert [_fmt(10 * b, 1) for b in (0.05, 0.03, 0.02)] == ["0.5", "0.3", "0.2"]
+    assert (_fmt(4 * 0.45359237, 2), _fmt(7 * 0.45359237, 2)) == ("1.81", "3.18")
+    assert "4 磅 $=1.81$ kg、7 磅 $=3.18$ kg" in note and "0.25 正好落在 0.2 和 0.3 之间" in narration
+    # 例 9：VLA（每个任务 20 次）
+    vla = [(int(d), int(p)) for d, p in re.findall(r"demos: (\d+), succ: (\d+)", js)]
+    assert vla == [(400, 60), (200, 80), (200, 90)] and [p * 20 // 100 for _, p in vla] == [12, 16, 18]
+    assert "60% = 12 次" in note and "$400+200+200=800$" in note
+    # 例 10：训练规模
+    assert (64 * 4096, 64 * 4 * 24) == (262144, 6144)
+    assert "262{,}144" in note and "6{,}144" in note and "一共 26 万多个并行环境，6144 个显卡小时" in narration
+
+    # 旁白：98 句；片头接 DoorMan 的片尾预告，片尾只预告下一篇（iDP3）；FALCON 是第 35 期，不说「上一期」
+    spoken = re.findall(r'"([^"]*)"\),', narration[narration.index("SCRIPT = [") : narration.index("DISPLAY = [")])
+    assert len(spoken) == 98
+    assert not any(re.search(r"\d\s*[，,]\s*\d", t) for t in spoken)
+    assert "上一期结尾预告：机器人不只要扛住外力" in narration and "下一篇讲 i D P 3" in narration and "iDP3" in intro
+    # 2026-10-31 看片反馈「公式多用曲线和动效演示」：第 9 幕不再逐项念阻尼的式子；两个听写模型都听岔的「峰」「数轴」「实线」「鼓包」「涨落」换了说法
+    for bad in ("上一期的 Falcon", "隐式", "权重合计", "实现上", "8 个月", "一行", "几乎", "g t 等于", "峰跟着", "数轴", "实线", "鼓包", "涨落"):
+        assert not any(bad in t for t in spoken), bad
+    assert "## 🎬 十八幕动画" in note and 'demos: ["chip"]' in note
+    assert "__VIDEO_" not in js and "__VIDEO_" not in note
+
+
+def test_chip_project_page_clips():
+    """CHIP：真机画面剪自项目页的视频（10 段，按幕懒加载）；partClip / seqClip 的分段时长加起来要等于片段时长。"""
+    js = (DEMO_JS_DIR / "chip.js").read_text(encoding="utf-8")
+    clip_dir = ROOT / "assets/img/papers/chip/clips"
+    used = set(re.findall(r"(?:projClip|seqClip|partClip)\(\w+, '(\w+)'", js))
+    assert used == {"hero", "follow", "lift", "fail", "phone", "write", "anchor", "extreme", "gemini", "vla"}
+    assert {p.name for p in clip_dir.iterdir()} == {f"{u}.{ext}" for u in used for ext in ("mp4", "webp")}
+    for name, clip in (("FOLLOW_PARTS", "follow"), ("LIFT_PARTS", "lift"), ("FAIL_PARTS", "fail"), ("PHONE_PARTS", "phone"),
+                       ("WRITE_PARTS", "write"), ("ANCHOR_PARTS", "anchor"), ("EXTREME_PARTS", "extreme"),
+                       ("GEMINI_PARTS", "gemini"), ("VLA_PARTS", "vla")):
+        block = js[js.index(f"var {name} = ") : js.index(";", js.index(f"var {name} = "))]
+        total = sum(float(x) for x in re.findall(r"\[([0-9.]+), '", block))
+        assert abs(total - _mp4_seconds(clip_dir / f"{clip}.mp4")) < 0.05, (name, total)
+    assert sum(p.stat().st_size for p in clip_dir.iterdir()) < 3.5e6
+    note = CHIP_NOTE.read_text(encoding="utf-8")
+    assert "剪自[项目页](https://nvlabs.github.io/CHIP/)的视频" in note
