@@ -49,6 +49,7 @@
 | `viral` | `assets/js/demos/viral.js` 十八幕（`viral-explainer`） | 约 22 分 42 秒 |
 | `doorman` | `assets/js/demos/doorman.js` 十七幕（`doorman-explainer`） | 约 19 分 6 秒 |
 | `chip` | `assets/js/demos/chip.js` 十八幕（`chip-explainer`） | 约 20 分 9 秒 |
+| `idp3` | `assets/js/demos/idp3.js` 十八幕（`idp3-explainer`） | 约 28 分 12 秒 |
 
 - 画面：直接复用 `<paper>.js` 分镜的 `draw(t)`，数字与笔记算例一致；前后加片头、总结页（`papers/<paper>.js`）。
 - 分镜 `draw(t, clock)` 的第二个参数是这一幕的真实时间：旁白比动画长、画面停在 `to` 之前时它照样往前走，步态这类循环动作可以用它继续动（网页播放器只传 `t`）。
@@ -158,6 +159,8 @@ ffmpeg -y -f concat -safe 0 -i out/beyondmimic/concat.txt \
 2026-10-18 MaskedMimic 第 1、2 幕只换了项目页片段、旁白没动，时间线不变，帧号直接对上：只重渲第 1 幕和第 2 幕最后一段（到下一幕起点后 0.5 s，共 1,722 帧，两路并行约 2.5 分钟），接缝两侧新旧帧的灰度平均差 0.07–0.15。把五段 `trim` 放进一条 `concat` 滤镜同时解两遍同一个分段文件，内存不够被杀掉；改成每段旧画面单独 `trim` 编成 CRF 19、新渲的分段直接用，再和后面三个没动的分段一起走 concat demuxer（`-c copy`），只有第一个分段重编码一次。
 
 2026-10-24 TWIST2 只改了第 5 幕一段 7 s 的示意图、旁白没动，用不着重编码：重渲的区间取在旧分段的**关键帧**上（`ffprobe -skip_frame nokey` 列出关键帧，x264 默认 250 帧一个、闭合 GOP），这次是第 8731–9231 帧（`render.mjs twist2 chunk 8731,9231`，51 s）；旧分段用 `ffmpeg -i chunk_7731-15462.mp4 -map 0:v -c copy -f segment -segment_frames 1000,1500 -reset_timestamps 1 oldseg_%d.mp4` 在同样两个关键帧处切成整文件，再把整文件按顺序交给 concat demuxer（`-c copy`）拼起来、配上完整旁白，逐位不变：接缝两侧抽帧和来源的差都是 0，帧数 30,925、时间步全是 1/30 s。别用 concat 列表里的 `inpoint` / `outpoint` 去切：有 B 帧时按解码时间戳切，接缝会多出或少掉一两帧、时间戳乱掉。另外，被 `clip-path` 裁掉的部分照样算进分镜的外框：新画的示意图里滚动的刻度跑出了框，整幕的 `fitStages()` 缩放从 1.216 变成 1.211，那一幕所有帧都跟着变了，局部重渲接不上；先看日志里的 `scene N: viewBox … zoom …` 和上一版一样，再渲。
+
+2026-11-01 iDP3 已经分八段交付后，片头一句旁白「IROS」改读 i ross，短了 0.576 s，内容上只动了 1of8。用户反馈「只重渲染对应 of 片段即可」：应当只渲第 0 帧到新的第一个切点（`render.mjs idp3 chunk 0,7360`），后面接上一版分段从旧切点起的画面（逐帧相同，整体前移 0.576 s、即 17 帧，最多差半帧），网页版与带关键帧的原片都从这次拼接重编码，只重发 1of8；这次误整片重渲，多花了约 17 分钟渲染。
 
 所以下一次整片重渲之前，先别删上一版的 `chunk_*.mp4`。
 
