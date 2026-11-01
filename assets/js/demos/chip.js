@@ -878,20 +878,26 @@
   var G1X = 96, G1Y = 40, G1K = 0.62, PXM = YIELD.R * G1K;
 
   /* ── scene 3: 事后扰动：改观测，不改参考 ──
-     2026-11-01 第三轮看片反馈「第 3 幕还是没看懂」：改成一维的两条数轴，按「倒推 → 正推 → 部署」一步步演。
+     2026-11-01 第三轮看片反馈「第 3 幕还是没看懂」「训练时告诉策略 −10，怎么实现部署时手走到 +10」：
+     改成一维的两条数轴，按「倒推 → 正推 → 策略的视角 → 部署 → 对照」一步步演。
      上面一条是训练：参考里手在 0 cm（粉点），看成「已经被推过之后」的位置；推 5 N、1/k = 0.02 → 推开 10 cm，
      倒推出策略看到的目标 g − f/k = −10 cm（黄圈）；手从黄圈出发被推开 10 cm，正好停在粉点上，满分。
-     下面一条是部署：直接给真目标 0 cm，推 5 N，手停在 +10 cm。两条的规律一样：手停的位置 = 看到的目标 + f/k。
-     「倒推」是我们对论文 hindsight 思路的通俗讲法 */
+     右边的表是策略的视角：它看不到粉点，只看得到目标和推力，训练题的答案都是「看到的目标 + 10 cm」（表里另外两行是编的例子）。
+     下面一条是部署：输入是同一种，直接给真目标 0 cm，推 5 N，照同一条规则停在 +10 cm。
+     「倒推」「学到一条规则」是我们对论文 hindsight 思路的通俗讲法 */
   function buildSceneHindsight() {
     var s = sceneSvg('两条一维数轴，单位是厘米。上面一条是训练：粉点是参考里手的位置 0 厘米，看成已经被推过之后的位置；蓝箭头是往外 5 牛的推力，' +
       '柔顺度 0.02，推开 10 厘米；倒推回去，黄圈落在负 10 厘米，这就是告诉策略的目标；白点是手，从黄圈出发被推开 10 厘米，正好停在粉点上，满分。' +
-      '下面一条是部署：黄圈直接放在真目标 0 厘米，被推 5 牛，手停在正 10 厘米，也就是让开了。最上面是论文的式子 g − f/k，最下面是两条共用的规律');
+      '右边是策略的视角：三道训练题，看到的目标和推力在左两列，答案在右列，答案都是看到的目标加 10 厘米；最后一行是部署，问号揭开是正 10 厘米。' +
+      '下面一条是部署：黄圈直接放在真目标 0 厘米，被推 5 牛，手停在正 10 厘米，也就是让开了。最上面是论文的式子 g − f/k，最下面是共用的规律');
     s.appendChild(svgText(24, 26, '事后扰动：倒推出训练时告诉策略的目标', 'demo-x-ink2', 13.5));
-    var CM = 14, X0 = 330;
+    var CM = 13, X0 = 310;
     function nx(v) { return X0 + v * CM; }
-    var Y1 = 190, Y2 = 332, RC = 556;
+    var Y1 = 190, Y2 = 332, RC = 512;
     var PUSH = 10, FLEN = 34;
+    /* 每段旁白的长度（s，按配音的时间线）：网页播放器只给分镜时间，按比例换成旁白里的秒数，出场时刻两边共用 */
+    var VL = { 10.4: 24.0, 14.0: 19.6, 17.6: 12.5 }, WL = { 10.4: 3.6, 14.0: 3.6, 17.6: 2.4 };
+    function vt(t, clock, cue) { return clock == null ? Math.max(0, t - cue) * VL[cue] / WL[cue] : since(t, clock, cue); }
     /* 上方：论文的式子与代入 */
     var pF = group(s);
     label(pF, 24, 80, '论文的式子', 'demo-x-mut', 11.5);
@@ -925,22 +931,46 @@
         backT: tone(g, 0, y - 50, '', C_OBS, 12, 'middle'),
         obsT: tone(g, nx(0), y + 50, '', C_OBS, 12, 'middle'),
         refT: withRef ? tone(g, nx(0), y + 50, '参考 g（打分用）', C_REF, 12, 'middle') : null,
-        refT2: withRef ? label(g, nx(0), y + 70, '看成「被推之后」的位置', 'demo-x-mut', 11, 'middle') : null,
-        handC: label(g, 0, y + 50, '', 'demo-x-ink', 12, 'middle'),
-        res1: label(g, RC, y - 8, '', 'demo-x-ink', 12.5),
-        res2: tone(g, RC, y + 16, '', C_GOOD, 12.5)
+        refT2: withRef ? label(g, nx(0), y + 70, '', 'demo-x-mut', 11, 'middle') : null,
+        handC: label(g, 0, y + 50, '', 'demo-x-ink', 12, 'middle')
       };
       if (r.win) setOpacity(r.win, 0);
       return r;
     }
     var A = row(Y1, '训练时', true), B = row(Y2, '部署时', false);
-    /* 下方：两条共用的规律 */
+    var res1 = label(s, RC, Y1 - 8, '', 'demo-x-ink', 12.5), res2 = tone(s, RC, Y1 + 16, '', C_GOOD, 12.5);
+    /* 右边：策略的视角——看到的目标、推力 → 答案（打分用，策略看不到） */
+    var pT = group(s);
+    label(pT, RC, 124, '策略的视角', 'demo-x-ink', 13.5);
+    label(pT, RC, 146, '只看得到前两列；第三列是打分用的答案', 'demo-x-mut', 11);
+    var C1 = RC + 22, C2 = RC + 92, C3 = RC + 168, C4 = RC + 232;
+    tone(pT, C2, 172, '看到的目标', C_OBS, 11.5, 'middle');
+    tone(pT, C3, 172, '推力', C_F, 11.5, 'middle');
+    tone(pT, C4, 172, '答案', C_REF, 11.5, 'middle');
+    hline(pT, RC, 180, RC + 264, 180, C_BORDER, 1.2);
+    var hiA = rectBox(pT, RC + 40, 189, 222, 22, C_GOOD, C_SURFACE2), hiB = rectBox(pT, RC + 40, 277, 222, 22, C_GOOD, C_SURFACE2);
+    rectBox(pT, RC, 185, 264, 78, C_BORDER, 'none', '4 3');
+    label(pT, C1, 229, '训练', 'demo-x-ink2', 12, 'middle');
+    var QS = [['−10 cm', '0 cm', 9.2, 10.6], ['+5 cm', '+15 cm', 10.9, 12.0], ['−3 cm', '+7 cm', 12.9, 14.0]];
+    var qRows = QS.map(function (q, i) {
+      var y = 205 + i * 24, g = group(pT);
+      tone(g, C2, y, q[0], C_OBS, 12.5, 'middle');
+      tone(g, C3, y, '外推 5 N', C_F, 12.5, 'middle');
+      return { g: g, ans: tone(pT, C4, y, q[1], C_REF, 12.5, 'middle') };
+    });
+    var pD = group(pT);
+    rectBox(pD, RC, 273, 264, 30, C_BORDER, 'none', '4 3');
+    label(pD, C1, 293, '部署', 'demo-x-ink2', 12, 'middle');
+    tone(pD, C2, 293, '0 cm', C_OBS, 12.5, 'middle');
+    tone(pD, C3, 293, '外推 5 N', C_F, 12.5, 'middle');
+    var dQ = tone(pD, C4, 293, '?', C_WARN, 14, 'middle'), dA = tone(pD, C4, 293, '+10 cm', C_GOOD, 12.5, 'middle');
+    var sameT = label(pT, RC, 321, '输入是同一种：目标 + 推力', 'demo-x-mut', 11);
+    var oursT = label(pT, RC, 342, '「学到一条规则」是我们的理解', 'demo-x-mut', 11);
+    /* 下方：共用的规律 */
     var pR = group(s);
-    var ruleBox = rectBox(pR, 134, 390, 392, 26, C_GOOD, C_SURFACE);
-    label(pR, 330, 408, '规律只有一条：手停的位置 = 看到的目标 + 10 cm', 'demo-x-ink', 12.5, 'middle');
-    label(pR, RC, 408, '（推 5 N、柔顺度 0.02 时）', 'demo-x-mut', 11);
-    void ruleBox;
-    /* 括号：从 a 到 b（cm），w 是透明度 */
+    rectBox(pR, 128, 390, 648, 26, C_GOOD, C_SURFACE);
+    label(pR, 452, 408, '规律只有一条：手停的位置 = 看到的目标 + 10 cm（推 5 N、柔顺度 0.02 时）', 'demo-x-ink', 12.5, 'middle');
+    /* 括号：从 a 到 b（cm） */
     function bracket(r, y, a, b, txt) {
       var xa = nx(Math.min(a, b)), xb = nx(Math.max(a, b)), on = Math.abs(b - a) > 0.4;
       setLine(r.br, xa, y - 40, xb, y - 40);
@@ -950,74 +980,79 @@
       r.brT.textContent = on ? txt : '';
       [r.br, r.brA, r.brB].forEach(function (n) { setOpacity(n, on ? 1 : 0); });
     }
-    function putHand(r, y, v, op) {
+    function putHand(r, y, v, op, push) {
       moveDot(r.hand, [nx(v), y]);
       r.handT.setAttribute('x', nx(v).toFixed(1));
       setOpacity(r.hand, op); setOpacity(r.handT, op);
-      r.f.set([nx(v) - 9 - FLEN, y], [1, 0], op > 0.5 ? FLEN : 0, '推 5 N', [-FLEN - 2, -16]);
+      r.f.set([nx(v) - 9 - FLEN, y], [1, 0], op > 0.5 && push ? FLEN : 0, '推 5 N', [-FLEN - 2, -16]);
     }
     /* 手从 a 走到 b（cm）：4 s 一循环，0.4–1.9 s 走，3.6–4 s 淡出、下一圈从头 */
-    function walk(sec, a, b, loop) {
-      var p = loop ? sec % 4 : Math.min(sec, 2), e = clamp((p - 0.4) / 1.5, 0, 1);
+    function walk(sec, a, b) {
+      var p = sec % 4, e = clamp((p - 0.4) / 1.5, 0, 1);
       e = 1 - Math.pow(1 - e, 2);
-      var op = loop ? Math.min(seg(p, 0, 0.3) + (sec < 4 ? 1 : 0), 1) * (1 - seg(p, 3.6, 4)) : 1;
+      var op = Math.min(seg(p, 0, 0.3) + (sec < 4 ? 1 : 0), 1) * (1 - seg(p, 3.6, 4));
       return { v: a + (b - a) * e, op: op, done: e >= 0.999 };
     }
     function draw(t, clock) {
       var now = nowOf(t, clock);
-      var s2 = since(t, clock, 3.6), s3 = since(t, clock, 7.0), s4 = since(t, clock, 10.4);
-      var st = t < 3.6 ? 1 : t < 7.0 ? 2 : t < 10.4 ? 3 : t < 13.4 ? 4 : 5;
+      var s2 = since(t, clock, 3.6), s3 = since(t, clock, 7.0);
+      var v4 = vt(t, clock, 10.4), v5 = vt(t, clock, 14.0);
+      var st = t < 3.6 ? 1 : t < 7.0 ? 2 : t < 10.4 ? 3 : t < 14.0 ? 4 : t < 17.6 ? 5 : 6;
       /* 上面一条：训练 */
       var obsV = st === 1 ? 0 : st === 2 ? -PUSH * (1 - Math.pow(1 - clamp((s2 - 1.2) / 1.8, 0, 1), 2)) : -PUSH;
       moveDot(A.obs, [nx(obsV), Y1]);
       setOpacity(A.obs, st === 1 ? 0 : 1);
       A.obsT.setAttribute('x', nx(obsV).toFixed(1));
-      A.obsT.textContent = st === 1 || obsV > -7 ? '' : st === 5 ? '−10：训练时给的目标' : '告诉策略的目标';
-      if (st === 1) {
-        putHand(A, Y1, 0, 1);
-        bracket(A, Y1, 0, 0, '');
-        A.back.set(0, 0, 0, 0); setOpacity(A.back.g, 0); A.backT.textContent = '';
-        A.res1.textContent = '往外推 5 N，柔顺度 0.02';
-        A.res2.textContent = '→ 推开 0.02 × 5 = 10 cm'; A.res2.style.fill = C_F;
-        setOpacity(A.win, 0);
-      } else if (st === 2) {
-        putHand(A, Y1, 0, 0);
-        bracket(A, Y1, 0, 0, '');
-        setOpacity(A.back.g, obsV < -0.4 ? 1 : 0);
+      A.obsT.textContent = st === 1 || obsV > -7 ? '' : st === 6 ? '−10：训练时给的目标' : '告诉策略的目标';
+      setOpacity(A.back.g, st === 2 && obsV < -0.4 ? 1 : 0);
+      A.backT.textContent = st === 2 && obsV < -2 ? '倒推 10 cm' : '';
+      if (st === 2) {
         A.back.set(nx(0) - 4, Y1 - 40, nx(obsV) + 4, Y1 - 40, 8);
         A.backT.setAttribute('x', ((nx(0) + nx(obsV)) / 2).toFixed(1));
-        A.backT.textContent = obsV < -2 ? '倒推 10 cm' : '';
-        A.res1.textContent = '被推之前，本来想去哪？';
-        A.res2.textContent = s2 > 3.0 ? '0 − 10 = −10 cm（黄圈）' : ''; A.res2.style.fill = C_OBS;
-        setOpacity(A.win, 0);
-      } else {
-        setOpacity(A.back.g, 0); A.backT.textContent = '';
-        var w = st === 3 ? walk(s3, -PUSH, 0, true) : { v: 0, op: 1, done: true };
-        putHand(A, Y1, w.v, w.op);
-        bracket(A, Y1, -PUSH, w.v, '被推开 10 cm');
-        setOpacity(A.win, w.done ? w.op : 0);
-        A.res1.textContent = '手：−10 + 10 = 0 cm';
-        A.res2.textContent = w.done || st > 3 ? '正好落在参考上 → 满分 ✓' : ''; A.res2.style.fill = C_GOOD;
       }
-      A.handC.textContent = '';
+      var wa = st === 3 ? walk(s3, -PUSH, 0) : { v: 0, op: st === 2 ? 0 : 1, done: st > 3 };
+      putHand(A, Y1, wa.v, wa.op, st !== 2);
+      bracket(A, Y1, st >= 3 ? -PUSH : 0, wa.v, '被推开 10 cm');
+      setOpacity(A.win, st >= 3 && wa.done ? wa.op : 0);
+      /* 第 4 段起：策略看不到粉点 */
+      var hide = st >= 4 ? seg(v4, 0.1, 0.6) : 0;
+      setOpacity(A.ref, 1 - 0.65 * hide);
+      A.refT2.textContent = hide > 0.5 ? '策略看不到它，只按它打分' : '看成「被推之后」的位置';
+      /* 右上：前三段的读数 */
+      res1.textContent = ['往外推 5 N，柔顺度 0.02', '被推之前，本来想去哪？', '手：−10 + 10 = 0 cm'][Math.min(st, 3) - 1];
+      res2.textContent = st === 1 ? '→ 推开 0.02 × 5 = 10 cm' : st === 2 ? (s2 > 3.0 ? '0 − 10 = −10 cm（黄圈）' : '') : (wa.done ? '正好落在参考上 → 满分 ✓' : '');
+      res2.style.fill = st === 1 ? C_F : st === 2 ? C_OBS : C_GOOD;
+      setOpacity(res1, win(t, 0.3, 10.4)); setOpacity(res2, win(t, 0.3, 10.4));
+      /* 右边的表 */
+      setOpacity(pT, st >= 4 ? seg(v4, 4.9, 5.4) : 0);
+      qRows.forEach(function (q, i) {
+        setOpacity(q.g, seg(v4, QS[i][2], QS[i][2] + 0.4));
+        var pulse = st === 4 && v4 > 15.0 && v4 < 18.4 ? 0.55 + 0.45 * Math.cos(now * 5) : 1;
+        setOpacity(q.ans, seg(v4, QS[i][3], QS[i][3] + 0.4) * pulse);
+      });
+      setOpacity(pD, st >= 5 ? seg(v5, 0.1, 0.5) : 0);
+      var solved = st >= 6 || v5 >= 14.4;
+      setOpacity(dQ, solved ? 0 : 1); setOpacity(dA, solved ? 1 : 0);
+      setOpacity(sameT, st >= 5 ? seg(v5, 2.3, 2.7) : 0);
+      setOpacity(oursT, st >= 4 ? seg(v4, 18.4, 18.8) : 0);
+      setOpacity(hiA, st === 6 ? 0.55 + 0.45 * Math.cos(now * 4) : 0);
+      setOpacity(hiB, st === 6 ? 0.55 + 0.45 * Math.cos(now * 4) : 0);
       /* 下面一条：部署 */
       moveDot(B.obs, [nx(0), Y2]);
       B.obsT.textContent = '告诉策略的目标';
-      var wb = st === 4 ? walk(s4, 0, PUSH, true) : { v: PUSH, op: 1, done: true };
-      putHand(B, Y2, wb.v, wb.op);
+      var go = st === 5 ? v5 - 10.75 : 99;
+      var wb = st === 6 ? { v: PUSH, op: 1, done: true } : go < 0 ? { v: 0, op: 1, done: false } : walk(go, 0, PUSH);
+      putHand(B, Y2, wb.v, wb.op, go >= 0);
       bracket(B, Y2, 0, wb.v, '让开 10 cm');
       B.handC.setAttribute('x', nx(PUSH).toFixed(1));
-      B.handC.textContent = st === 5 ? '+10：部署时手停的位置' : '';
-      B.res1.textContent = '目标直接给 0 cm';
-      B.res2.textContent = wb.done ? '手：0 + 10 = +10 cm → 让开了' : '';
-      /* 第 5 段：两段括号一起闪 */
-      var pulse = st === 5 ? 0.55 + 0.45 * Math.cos(now * 4) : 1;
-      [A, B].forEach(function (r) { [r.br, r.brA, r.brB, r.brT].forEach(function (n) { if (n.style.opacity !== '0') setOpacity(n, pulse); }); });
+      B.handC.textContent = st === 6 ? '+10：部署时手停的位置' : '';
+      /* 第 6 段：两段括号一起闪 */
+      var pulse6 = st === 6 ? 0.55 + 0.45 * Math.cos(now * 4) : 1;
+      [A, B].forEach(function (r) { [r.br, r.brA, r.brB, r.brT].forEach(function (n) { if (n.style.opacity !== '0') setOpacity(n, pulse6); }); });
       setOpacity(A.g, win(t, 0.3));
-      setOpacity(B.g, win(t, 10.4));
+      setOpacity(B.g, win(t, 14.0));
       setOpacity(pF, win(t, 3.6));
-      var ruleOn = clock == null ? seg(t, 9.4, 9.8) : seg(s3, 9.0, 9.4);
-      setOpacity(pR, t >= 10.4 ? 1 : st === 3 ? ruleOn : 0);
+      setOpacity(pR, st >= 4 ? seg(v4, 15.0, 15.4) : 0);
       subs.forEach(function (n, i) { setOpacity(n, st === 2 ? seg(s2, 0.4 + 0.5 * Math.min(i, 3) + (i >= 4 ? 1.5 : 0), 0.7 + 0.5 * Math.min(i, 3) + (i >= 4 ? 1.5 : 0)) : 1); });
     }
     return { el: s, draw: draw };
@@ -2275,14 +2310,15 @@
     },
     {
       title: '事后扰动：改观测，不改参考',
-      dur: 16,
+      dur: 20,
       build: buildSceneHindsight,
       cues: [
         { at: 0.4, s: '把参考里手的位置（0 cm）看成「已经被推过之后」：推 5 N、柔顺度 0.02，推开了 10 cm。' },
         { at: 3.6, s: '倒推：被推之前手本来想去 $g-f/k$ = 0 − 10 = −10 cm（黄圈），训练时把它告诉策略。' },
-        { at: 7.0, s: '手从黄圈出发、被推开 10 cm，正好停在参考上，满分；策略学到：停在看到的目标外 10 cm。' },
-        { at: 10.4, s: '部署时直接给真目标 0 cm；被推 5 N，手停在 +10 cm，也就是让开了。' },
-        { at: 13.4, s: '−10 是训练时给的目标，+10 是部署时手停的位置；规律只有一条，参考一个点都不改。' }
+        { at: 7.0, s: '手从黄圈出发、被推开 10 cm，正好停在参考上，满分。' },
+        { at: 10.4, s: '策略看不到粉点，只看得到目标和推力；训练题的答案都是「看到的目标 + 10 cm」，它学到的是这条规则。' },
+        { at: 14.0, s: '部署时输入是同一种：直接给真目标 0 cm，被推 5 N，照同一条规则停在 +10 cm，也就是让开了。' },
+        { at: 17.6, s: '−10 是训练题里的一道题，+10 是部署时算出来的答案；规律只有一条，参考一个点都不改。' }
       ]
     },
     {
@@ -2474,7 +2510,7 @@
   function buildExplainerDemo(host) {
     K.explainer(host, {
       title: '十八幕动画：CHIP 全流程速览',
-      sub: '约 288 秒自动播放。空格播放/暂停，← → 换幕；真机画面剪自项目页的视频，曲线和柱子照论文的数重画，G1 是按示意姿态渲染的模型。',
+      sub: '约 292 秒自动播放。空格播放/暂停，← → 换幕；真机画面剪自项目页的视频，曲线和柱子照论文的数重画，G1 是按示意姿态渲染的模型。',
       ariaLabel: 'CHIP 十八幕讲解动画',
       notes: [
         '取数依据：表 I–III、附录 B 和第 IV–V 节的数字照抄 arXiv 2512.14689 v2（读的是 LaTeX 源码）；第 4 幕「20 N 下末端位移」那张图只在 v1 里有，数是从 v1 的矢量图里按网格线抽的；Gemini 预测的柔顺度（10/k）取自项目页。',

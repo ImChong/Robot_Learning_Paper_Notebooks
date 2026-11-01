@@ -5757,7 +5757,7 @@ def test_viral_explainer_demos_and_worked_example_share_the_paper_numbers():
 
     # 旁白：98 句；数字列举不只隔一个逗号；片尾只预告下一篇（DoorMan）；绕开多音字
     spoken = re.findall(r'"([^"]*)"\),', narration[narration.index("SCRIPT = [") : narration.index("DISPLAY = [")])
-    assert len(spoken) == 98
+    assert len(spoken) == 99
     assert not any(re.search(r"\d\s*[，,]\s*\d", t) for t in spoken)
     assert "下一篇讲 Door Man" in narration and "DoorMan" in intro and spoken[-1].endswith("都在 Robot Learning Paper Notebooks。我们下期见。")
     for bad in ("差不多", "几乎", "一行", "重点", "时长", "重置", "累加", "重画", "所处", "论文图", "背隙", "卡住"):
@@ -5979,8 +5979,12 @@ def test_chip_explainer_demos_and_worked_example_share_the_paper_numbers():
     # 2026-10-31 第二轮看片反馈「用更简单的例子」：第 2、3 幕的旁白改用一维的厘米例子（5 N × 0.02 = 10 cm）
     assert "手应该让开 10 厘米" in narration
     # 2026-11-01 第三轮：第 3 幕改成两条数轴「倒推 → 正推 → 部署」：训练时看到 −10、停在 0，部署时看到 0、停在 +10
-    assert "往回倒推 10 厘米，就是负 10 厘米" in narration and "也就是正 10 厘米" in narration
-    assert "var PUSH = 10, FLEN = 34;" in js and "'规律只有一条：手停的位置 = 看到的目标 + 10 cm'" in js
+    assert "往回倒推 10 厘米，就是负 10 厘米" in narration and "停在正 10 厘米" in narration
+    assert "var PUSH = 10, FLEN = 34;" in js and "规律只有一条：手停的位置 = 看到的目标 + 10 cm" in js
+    # 「策略的视角」表：三道训练题的答案都是看到的目标 + 10 cm，部署时 0 → +10
+    qs = re.findall(r"\['([−+]?\d+) cm', '([−+]?\d+) cm', [\d.]+, [\d.]+\]", js)
+    assert len(qs) == 3 and all(int(b.replace("−", "-")) - int(a.replace("−", "-")) == 10 for a, b in qs)
+    assert "看到负 10，答案是 0；看到正 5，答案是正 15；看到负 3，答案是正 7" in narration
     # 例 2：三点位置项（σ = 0.3 m，三个点平均）
     r = math.exp(-(0.10**2) / 3 / 0.3**2)
     assert _fmt(0.10**2 / 3 / 0.09, 4) == "0.0370" and _fmt(r, 4) == "0.9636" and _fmt(r, 3) == "0.964"
@@ -6026,9 +6030,9 @@ def test_chip_explainer_demos_and_worked_example_share_the_paper_numbers():
     assert (64 * 4096, 64 * 4 * 24) == (262144, 6144)
     assert "262{,}144" in note and "6{,}144" in note and "一共 26 万多个并行环境，6144 个显卡小时" in narration
 
-    # 旁白：98 句；片头接 DoorMan 的片尾预告，片尾只预告下一篇（iDP3）；FALCON 是第 35 期，不说「上一期」
+    # 旁白：99 句（2026-11-01 第 3 幕多一段「策略的视角」）；片头接 DoorMan 的片尾预告，片尾只预告下一篇（iDP3）；FALCON 是第 35 期，不说「上一期」
     spoken = re.findall(r'"([^"]*)"\),', narration[narration.index("SCRIPT = [") : narration.index("DISPLAY = [")])
-    assert len(spoken) == 98
+    assert len(spoken) == 99
     assert not any(re.search(r"\d\s*[，,]\s*\d", t) for t in spoken)
     assert "上一期结尾预告：机器人不只要扛住外力" in narration and "下一篇讲 i D P 3" in narration and "iDP3" in intro
     # 2026-10-31 看片反馈「公式多用曲线和动效演示」：第 9 幕不再逐项念阻尼的式子；两个听写模型都听岔的「峰」「数轴」「实线」「鼓包」「涨落」换了说法
