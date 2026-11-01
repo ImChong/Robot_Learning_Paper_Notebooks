@@ -552,7 +552,7 @@
 
 | #   | 论文                                                                                                                                                              | 日期      | 🌟  | 状态   |
 | --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- | --- | ---- |
-| 1151  | [Humanoid Mobility via Attention-based Contacts](https://arxiv.org/abs/2610.31608) | 2026.10 |  | ⏳ 待读 |
+| 1151  | [Humanoid Mobility via Attention-based Contacts](https://arxiv.org/abs/2610.31608) ✅ [笔记](05_Locomotion/Humanoid_Mobility_via_Attention-based_Contacts/Humanoid_Mobility_via_Attention-based_Contacts.md) | 2026.10 |  | ✅ 已总结 |
 | 1152  | [MPBRS: Multi-Potential-Based Reward Shaping for Unified Reward Configuration in Humanoid Locomotion](https://arxiv.org/abs/2610.30334) | 2026.10 |  | ⏳ 待读 |
 | 1153  | [Do Earth-Trained Humanoid Controllers Walk on the Moon? Gravity, Terrain, and Soil Transfer](https://arxiv.org/abs/2610.30080) | 2026.10 |  | ⏳ 待读 |
 | 1154  | [Test-Time Motion Steering for Perceptive Humanoid Fall Recovery](https://arxiv.org/abs/2610.30061) | 2026.10 |  | ⏳ 待读 |
@@ -767,7 +767,7 @@
 
 | #   | 论文                                                                                                                                                        | 日期      | 🌟  | 状态   |
 | --- | --------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- | --- | ---- |
-| 1157  | [EmbodyHOI: Embodiment-Aware Generation of Hand-Object Interactions for Humanoid Dexterous Manipulation](https://arxiv.org/abs/2610.27242) | 2026.10 |  | ⏳ 待读 |
+| 1157  | [EmbodyHOI: Embodiment-Aware Generation of Hand-Object Interactions for Humanoid Dexterous Manipulation](https://arxiv.org/abs/2610.27242) ✅ [笔记](06_Manipulation/EmbodyHOI__Embodiment-Aware_Generation_of_Hand-Object_Interactions_for_Humanoid_Dexterous_Manipulation/EmbodyHOI__Embodiment-Aware_Generation_of_Hand-Object_Interactions_for_Humanoid_Dexterous_Manipulation.md) | 2026.10 |  | ✅ 已总结 |
 | 1158  | [Data-Efficient Learning from Demonstration for Humanoid Robots via Feature-Level Perception and Prompt-Based Object Detection](https://arxiv.org/abs/2610.26170) | 2026.10 |  | ⏳ 待读 |
 | 1159  | [Compositional Humanoid Manipulation through Isomorphic Teleoperation and Independent Skill Routing](https://arxiv.org/abs/2610.26169) | 2026.10 |  | ⏳ 待读 |
 | 1126  | [Spark-0: Scaling Spatially Aligned Tactile Pretraining for Robot Dexterous Manipulation](https://arxiv.org/abs/2610.22342) ✅ [笔记](06_Manipulation/Spark-0__Spatially_Aligned_Tactile_Pretraining_for_Robot_Dexterous_Manipulation/Spark-0__Spatially_Aligned_Tactile_Pretraining_for_Robot_Dexterous_Manipulation.md) | 2026.10 | 🌟 | ✅ 已总结 |
@@ -873,7 +873,7 @@
 
 | #   | 论文                                                                                                                                                             | 日期      | 🌟  | 状态   |
 | --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- | --- | ---- |
-| 1160  | [HuMiT: Low-Latency Whole-Body Humanoid Teleoperation via Compact Reference Tracking](https://arxiv.org/abs/2610.29903) | 2026.10 |  | ⏳ 待读 |
+| 1160  | [HuMiT: Low-Latency Whole-Body Humanoid Teleoperation via Compact Reference Tracking](https://arxiv.org/abs/2610.29903) ✅ [笔记](07_Teleoperation/HuMiT__Low-Latency_Whole-Body_Humanoid_Teleoperation_via_Compact_Reference_Tracking/HuMiT__Low-Latency_Whole-Body_Humanoid_Teleoperation_via_Compact_Reference_Tracking.md) | 2026.10 |  | ✅ 已总结 |
 | 1161  | [Evaluating Lightweight Contact Feedback in Dual-Operator Collaborative Humanoid Teleoperation](https://arxiv.org/abs/2610.24257) | 2026.10 |  | ⏳ 待读 |
 | 714  | [Toward Humanoid Robots in Construction: A Teleoperation Feasibility Study](https://arxiv.org/abs/2610.00718) ✅ [笔记](07_Teleoperation/Toward_Humanoid_Robots_in_Construction__A_Teleoperation_Feasibility_Study/Toward_Humanoid_Robots_in_Construction__A_Teleoperation_Feasibility_Study.md) | 2026.10 |  | ✅ 已总结 |
 | 715  | [NEXUS: Perceptive Whole-Body Control for Terrain-Adaptive Teleoperation](https://arxiv.org/abs/2609.39000) | 2026.09 |  | ⏳ 待读 |

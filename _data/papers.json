@@ -1497,7 +1497,9 @@
         "url": "/papers/04_Loco-Manipulation_and_WBC/CHIP__Adaptive_Compliance_for_Humanoid_Control_through_Hindsight_Perturbation/CHIP__Adaptive_Compliance_for_Humanoid_Control_through_Hindsight_Perturbation.html",
         "dir": "CHIP__Adaptive_Compliance_for_Humanoid_Control_through_Hindsight_Perturbation",
         "arxiv": "2512.14689",
-        "summary_zh": "CHIP（adaptive Compliance Humanoid control through hIndsight Perturbation）是一个即插即用模块，让控制器获得可控的末端执行器刚度（柔顺），同时保住对动态参考动作的敏捷跟…",
+        "summary_zh": "CHIP（adaptive Compliance Humanoid control through hIndsight Perturbation）是一个给关键点跟踪控制器用的即插即用模块。",
+        "explainer_scenes": 18,
+        "video_seconds": 1225,
         "published_date_zh": "2025年12月",
         "published_date_en": "Dec 2025",
         "zhname": "CHIP：用「事后扰动」实现人形控制的自适应柔顺",
@@ -1815,6 +1817,18 @@
   "06_Manipulation": {
     "display_name": "Manipulation",
     "papers": [
+      {
+        "title": "EmbodyHOI: Embodiment-Aware Generation of Hand-Object Interactions for Humanoid Dexterous Manipulation",
+        "path": "papers/06_Manipulation/EmbodyHOI__Embodiment-Aware_Generation_of_Hand-Object_Interactions_for_Humanoid_Dexterous_Manipulation/EmbodyHOI__Embodiment-Aware_Generation_of_Hand-Object_Interactions_for_Humanoid_Dexterous_Manipulation.md",
+        "url": "/papers/06_Manipulation/EmbodyHOI__Embodiment-Aware_Generation_of_Hand-Object_Interactions_for_Humanoid_Dexterous_Manipulation/EmbodyHOI__Embodiment-Aware_Generation_of_Hand-Object_Interactions_for_Humanoid_Dexterous_Manipulation.html",
+        "dir": "EmbodyHOI__Embodiment-Aware_Generation_of_Hand-Object_Interactions_for_Humanoid_Dexterous_Manipulation",
+        "arxiv": "2610.27242",
+        "summary_zh": "EmbodyHOI 的看法是可达性应当在交互生成的过程中约束它：在冻结生成器的每个流匹配 ODE 步里解码出当前手腕轨迹，对目标人形做「手臂关节 + 站位平移」联合 LM 求解，再通过隐式微分把 IK 能量的梯度送回手部潜 token（物…",
+        "published_date_zh": "2026年10月19日（arXiv v1）",
+        "published_date_en": "Oct 19, 2026 (arXiv v1)",
+        "zhname": "EmbodyHOI：面向人形灵巧操作、感知本体的手-物交互生成",
+        "zh_title": "EmbodyHOI：面向人形灵巧操作、感知本体的手-物交互生成"
+      },
       {
         "title": "Spark-0: Scaling Spatially Aligned Tactile Pretraining for Robot Dexterous Manipulation",
         "path": "papers/06_Manipulation/Spark-0__Spatially_Aligned_Tactile_Pretraining_for_Robot_Dexterous_Manipulation/Spark-0__Spatially_Aligned_Tactile_Pretraining_for_Robot_Dexterous_Manipulation.md",
@@ -2510,6 +2524,19 @@
     "display_name": "Teleoperation",
     "papers": [
       {
+        "title": "HuMiT: Low-Latency Whole-Body Humanoid Teleoperation via Compact Reference Tracking",
+        "path": "papers/07_Teleoperation/HuMiT__Low-Latency_Whole-Body_Humanoid_Teleoperation_via_Compact_Reference_Tracking/HuMiT__Low-Latency_Whole-Body_Humanoid_Teleoperation_via_Compact_Reference_Tracking.md",
+        "url": "/papers/07_Teleoperation/HuMiT__Low-Latency_Whole-Body_Humanoid_Teleoperation_via_Compact_Reference_Tracking/HuMiT__Low-Latency_Whole-Body_Humanoid_Teleoperation_via_Compact_Reference_Tracking.html",
+        "dir": "HuMiT__Low-Latency_Whole-Body_Humanoid_Teleoperation_via_Compact_Reference_Tracking",
+        "arxiv": "2610.29903",
+        "has_open_source": true,
+        "summary_zh": "HuMiT 问「部署时真的需要完整参考吗」，答案是一份紧凑参考目标（CRT）就够：根部高度、根部线速度和角速度、双腕双踝 4 个关键点相对根部的位置与 6D 朝向，全部是当前帧。",
+        "published_date_zh": "2026年10月21日（arXiv v1）",
+        "published_date_en": "Oct 21, 2026 (arXiv v1)",
+        "zhname": "HuMiT：基于紧凑参考跟踪的低延迟人形全身遥操作",
+        "zh_title": "HuMiT：基于紧凑参考跟踪的低延迟人形全身遥操作"
+      },
+      {
         "title": "Beyond Retargeting: Low-Latency and Robust Humanoid Whole-Body Teleoperation with Learned Atomic Motion Primitives",
         "path": "papers/07_Teleoperation/Beyond_Retargeting__Low-Latency_Robust_Humanoid_Whole-Body_Teleoperation_with_Atomic_Motion_Primitives/Beyond_Retargeting__Low-Latency_Robust_Humanoid_Whole-Body_Teleoperation_with_Atomic_Motion_Primitives.md",
         "url": "/papers/07_Teleoperation/Beyond_Retargeting__Low-Latency_Robust_Humanoid_Whole-Body_Teleoperation_with_Atomic_Motion_Primitives/Beyond_Retargeting__Low-Latency_Robust_Humanoid_Whole-Body_Teleoperation_with_Atomic_Motion_Primitives.html",
@@ -2927,6 +2954,18 @@
   "05_Locomotion": {
     "display_name": "Locomotion",
     "papers": [
+      {
+        "title": "Humanoid Mobility via Attention-based Contacts",
+        "path": "papers/05_Locomotion/Humanoid_Mobility_via_Attention-based_Contacts/Humanoid_Mobility_via_Attention-based_Contacts.md",
+        "url": "/papers/05_Locomotion/Humanoid_Mobility_via_Attention-based_Contacts/Humanoid_Mobility_via_Attention-based_Contacts.html",
+        "dir": "Humanoid_Mobility_via_Attention-based_Contacts",
+        "arxiv": "2610.31608",
+        "summary_zh": "纯 RL 的地形策略鲁棒但学不出协调的多肢体动作；参考跟踪动作自然，但部署时必须有人在线生成参考轨迹。",
+        "published_date_zh": "2026年10月22日（arXiv v1）",
+        "published_date_en": "Oct 22, 2026 (arXiv v1)",
+        "zhname": "ACP：基于注意力接触规划的人形全身移动",
+        "zh_title": "ACP：基于注意力接触规划的人形全身移动"
+      },
       {
         "title": "Push the Limit: Learning High-Speed Sprinting and Aggressive Cornering on a Full-Scale Humanoid",
         "path": "papers/05_Locomotion/Push_the_Limit__High-Speed_Sprinting_and_Aggressive_Cornering_on_a_Full-Scale_Humanoid/Push_the_Limit__High-Speed_Sprinting_and_Aggressive_Cornering_on_a_Full-Scale_Humanoid.md",

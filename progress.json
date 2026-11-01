@@ -41,15 +41,15 @@
         "13_Physics-Based_Animation",
         "14_Human_Motion"
       ],
-      "last_module": "04_Loco-Manipulation_and_WBC",
-      "last_index": 1134,
-      "last_title": "Memory before Goal: Role of Pre-History Memory for Humanoid Loco-Manipulation (arXiv:2610.31166)",
-      "next_module": "05_Locomotion",
-      "last_completed_date": "2026-10-29",
-      "note": "本日轮转到 04_Loco-Manipulation_and_WBC。PROGRESS Loco-Manipulation and Whole-Body-Control 章节中尚无笔记的最新论文是 Memory before Goal (arXiv:2610.31166, 2026-10-22, MBZUAI)，即 PROGRESS #1134，已确认在上游 README。WholeBodyMem 用冻结 SAM3 跟踪任务物体、按物体事件因果选择 3–7 帧关键帧（每帧 77 个原生 token）与物体 token，由 Ψ₀ 式动作专家交叉注意力 + FiLM 读取；HuMeGo 记忆任务成功 29.1% → 72.6%，SIMPLE 70.2% → 86.9%，真机 G1 22/60 → 53/60。未开源，含整体流程 mermaid 与算例，无源码运行时序图。下一篇轮转到 05_Locomotion。",
-      "last_date": "2026-10-29",
+      "last_module": "07_Teleoperation",
+      "last_index": 1160,
+      "last_title": "HuMiT: Low-Latency Whole-Body Humanoid Teleoperation via Compact Reference Tracking (arXiv:2610.29903)",
+      "next_module": "08_Navigation",
+      "last_completed_date": "2026-11-01",
+      "note": "本日轮转到 07_Teleoperation。PROGRESS Teleoperation 章节中尚无笔记的最新论文是 HuMiT (arXiv:2610.29903, 2026-10-21, 清华 IIIS × 港中文等)，即 PROGRESS #1160，已确认在上游 README。部署时策略只看 43 维紧凑参考（根部高度 + 速度 + 双腕双踝 SE(3)，当前帧），PICO 骨架只做 T 字姿势缩放，在线无 IK、无未来帧；完整参考只给奖励与 critic。端到端 65 ms（SONIC 245、TWIST2 120 ms），与 HuMiT-Full 跟踪精度基本持平，真机 G1 接球 2/10。开源训练插件 xiaohu-art/Track，含整体流程 mermaid、算例与源码运行时序图。下一篇轮转到 08_Navigation。",
+      "last_date": "2026-11-01",
       "next_candidate": null,
-      "last_completed": "Memory before Goal: Role of Pre-History Memory for Humanoid Loco-Manipulation (arXiv:2610.31166)"
+      "last_completed": "HuMiT: Low-Latency Whole-Body Humanoid Teleoperation via Compact Reference Tracking (arXiv:2610.29903)"
     },
     "last_summary_index": 532,
     "last_summary_date": "2026-09-18",
@@ -1860,6 +1860,39 @@
         "project_page": "https://memory-before-goal.github.io",
         "code": "",
         "source": "⏳ 未开源(论文与项目页均无代码仓库) · 无源码运行时序图 · HuMeGo 基准 + SIMPLE · Unitree G1 + Dex3 · MBZUAI"
+      },
+      {
+        "date": "2026-10-30",
+        "index": 1151,
+        "title": "Humanoid Mobility via Attention-based Contacts",
+        "folder": "papers/05_Locomotion/Humanoid_Mobility_via_Attention-based_Contacts",
+        "module": "05_Locomotion",
+        "arxiv": "2610.31608",
+        "project_page": "",
+        "code": "",
+        "source": "⏳ 未开源(论文无代码仓库与项目页) · 无源码运行时序图 · Isaac Lab 仿真 + 真机 · Unitree G1 · ETH Zürich RSL × Apple × NVIDIA"
+      },
+      {
+        "date": "2026-10-31",
+        "index": 1157,
+        "title": "EmbodyHOI: Embodiment-Aware Generation of Hand-Object Interactions for Humanoid Dexterous Manipulation",
+        "folder": "papers/06_Manipulation/EmbodyHOI__Embodiment-Aware_Generation_of_Hand-Object_Interactions_for_Humanoid_Dexterous_Manipulation",
+        "module": "06_Manipulation",
+        "arxiv": "2610.27242",
+        "project_page": "https://embodyhoi.github.io/",
+        "code": "",
+        "source": "⏳ 未开源(论文称将发布引导代码、参考与策略) · 无源码运行时序图 · Genesis 仿真 · ARCTIC · Unitree G1 / H1-2 + XHand · CMU"
+      },
+      {
+        "date": "2026-11-01",
+        "index": 1160,
+        "title": "HuMiT: Low-Latency Whole-Body Humanoid Teleoperation via Compact Reference Tracking",
+        "folder": "papers/07_Teleoperation/HuMiT__Low-Latency_Whole-Body_Humanoid_Teleoperation_via_Compact_Reference_Tracking",
+        "module": "07_Teleoperation",
+        "arxiv": "2610.29903",
+        "project_page": "https://xiaohu-art.github.io/Track/",
+        "code": "https://github.com/xiaohu-art/Track",
+        "source": "✅ 开源训练插件 xiaohu-art/Track（MIT，Isaac Lab + active-adaptation；无 PICO 遥操作与真机部署代码）· 含源码运行时序图 · Isaac Sim 仿真 + 真机 · Unitree G1 · 清华 IIIS × 港中文等"
       }
     ],
     "last_completed_index": 588,
