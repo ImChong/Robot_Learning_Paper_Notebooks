@@ -873,7 +873,7 @@
 
 | #   | 论文                                                                                                                                                             | 日期      | 🌟  | 状态   |
 | --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- | --- | ---- |
-| 1160  | [HuMiT: Low-Latency Whole-Body Humanoid Teleoperation via Compact Reference Tracking](https://arxiv.org/abs/2610.29903) | 2026.10 |  | ⏳ 待读 |
+| 1160  | [HuMiT: Low-Latency Whole-Body Humanoid Teleoperation via Compact Reference Tracking](https://arxiv.org/abs/2610.29903) ✅ [笔记](07_Teleoperation/HuMiT__Low-Latency_Whole-Body_Humanoid_Teleoperation_via_Compact_Reference_Tracking/HuMiT__Low-Latency_Whole-Body_Humanoid_Teleoperation_via_Compact_Reference_Tracking.md) | 2026.10 |  | ✅ 已总结 |
 | 1161  | [Evaluating Lightweight Contact Feedback in Dual-Operator Collaborative Humanoid Teleoperation](https://arxiv.org/abs/2610.24257) | 2026.10 |  | ⏳ 待读 |
 | 714  | [Toward Humanoid Robots in Construction: A Teleoperation Feasibility Study](https://arxiv.org/abs/2610.00718) ✅ [笔记](07_Teleoperation/Toward_Humanoid_Robots_in_Construction__A_Teleoperation_Feasibility_Study/Toward_Humanoid_Robots_in_Construction__A_Teleoperation_Feasibility_Study.md) | 2026.10 |  | ✅ 已总结 |
 | 715  | [NEXUS: Perceptive Whole-Body Control for Terrain-Adaptive Teleoperation](https://arxiv.org/abs/2609.39000) | 2026.09 |  | ⏳ 待读 |

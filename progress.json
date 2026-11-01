@@ -41,15 +41,15 @@
         "13_Physics-Based_Animation",
         "14_Human_Motion"
       ],
-      "last_module": "06_Manipulation",
-      "last_index": 1157,
-      "last_title": "EmbodyHOI: Embodiment-Aware Generation of Hand-Object Interactions for Humanoid Dexterous Manipulation (arXiv:2610.27242)",
-      "next_module": "07_Teleoperation",
-      "last_completed_date": "2026-10-31",
-      "note": "本日轮转到 06_Manipulation。PROGRESS Manipulation 章节中尚无笔记的最新论文是 EmbodyHOI (arXiv:2610.27242, 2026-10-19, CMU)，即 PROGRESS #1157，已确认在上游 README。冻结的 MAD-HOI 流匹配生成器每个 ODE 步对目标人形做手臂关节 + 站位联合可微 IK，IK 能量梯度只加到手部 token；G1 手腕重定向误差 8.9 cm → 0.6 cm，50 个随机 ARCTIC 任务成功率 68% → 79%，H1-2 四任务 62% → 76%；事后 IK 修正与同算力 best-of-32 能量更低却训出更差策略。未开源，含整体流程 mermaid 与算例，无源码运行时序图。下一篇轮转到 07_Teleoperation。",
-      "last_date": "2026-10-31",
+      "last_module": "07_Teleoperation",
+      "last_index": 1160,
+      "last_title": "HuMiT: Low-Latency Whole-Body Humanoid Teleoperation via Compact Reference Tracking (arXiv:2610.29903)",
+      "next_module": "08_Navigation",
+      "last_completed_date": "2026-11-01",
+      "note": "本日轮转到 07_Teleoperation。PROGRESS Teleoperation 章节中尚无笔记的最新论文是 HuMiT (arXiv:2610.29903, 2026-10-21, 清华 IIIS × 港中文等)，即 PROGRESS #1160，已确认在上游 README。部署时策略只看 43 维紧凑参考（根部高度 + 速度 + 双腕双踝 SE(3)，当前帧），PICO 骨架只做 T 字姿势缩放，在线无 IK、无未来帧；完整参考只给奖励与 critic。端到端 65 ms（SONIC 245、TWIST2 120 ms），与 HuMiT-Full 跟踪精度基本持平，真机 G1 接球 2/10。开源训练插件 xiaohu-art/Track，含整体流程 mermaid、算例与源码运行时序图。下一篇轮转到 08_Navigation。",
+      "last_date": "2026-11-01",
       "next_candidate": null,
-      "last_completed": "EmbodyHOI: Embodiment-Aware Generation of Hand-Object Interactions for Humanoid Dexterous Manipulation (arXiv:2610.27242)"
+      "last_completed": "HuMiT: Low-Latency Whole-Body Humanoid Teleoperation via Compact Reference Tracking (arXiv:2610.29903)"
     },
     "last_summary_index": 532,
     "last_summary_date": "2026-09-18",
@@ -1882,6 +1882,17 @@
         "project_page": "https://embodyhoi.github.io/",
         "code": "",
         "source": "⏳ 未开源(论文称将发布引导代码、参考与策略) · 无源码运行时序图 · Genesis 仿真 · ARCTIC · Unitree G1 / H1-2 + XHand · CMU"
+      },
+      {
+        "date": "2026-11-01",
+        "index": 1160,
+        "title": "HuMiT: Low-Latency Whole-Body Humanoid Teleoperation via Compact Reference Tracking",
+        "folder": "papers/07_Teleoperation/HuMiT__Low-Latency_Whole-Body_Humanoid_Teleoperation_via_Compact_Reference_Tracking",
+        "module": "07_Teleoperation",
+        "arxiv": "2610.29903",
+        "project_page": "https://xiaohu-art.github.io/Track/",
+        "code": "https://github.com/xiaohu-art/Track",
+        "source": "✅ 开源训练插件 xiaohu-art/Track（MIT，Isaac Lab + active-adaptation；无 PICO 遥操作与真机部署代码）· 含源码运行时序图 · Isaac Sim 仿真 + 真机 · Unitree G1 · 清华 IIIS × 港中文等"
       }
     ],
     "last_completed_index": 588,
