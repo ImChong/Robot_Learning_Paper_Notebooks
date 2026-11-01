@@ -20,7 +20,7 @@ arXiv 2410.10803 v1–v3，IROS 2025）讲解视频的旁白：assets/js/demos/i
 主动画各幕不预告下一篇。
 
 读音（edge-tts 的 zh-CN-YunxiNeural，旧地址 EDGE_TTS_LEGACY=1）：iDP3 写成「i D P 3」、DP3「D P 3」、GR-1「G R 杠 1」（写「G R 1」时 faster-whisper 听成「G21」，R 和 1 连成了「二一」）、L515「L 515」、
-R3M「R 3 M」、DDIM「D D I M」、CPU / MLP / VLA / URDF / IROS / RTX 逐字母写，字幕都换回；ResNet18 写「ResNet 18」，U-Net 写「U Net」，
+R3M「R 3 M」、DDIM「D D I M」、CPU / MLP / VLA / URDF / RTX 逐字母写，IROS 写「i ross」（2026-11-01 用户指定读作 i ross；英文听写是「I Ross」，逐字母写读成 I-R-O-S），字幕都换回；ResNet18 写「ResNet 18」，U-Net 写「U Net」，
 FiLM 写「Film」，AdamW 写「Adam W」；「均方误差」照 HDMI 写「均方误叉」、字幕换回；「去噪」写「去躁」、字幕换回（2026-11-01：两个 faster-whisper 模型都把「去噪」
 听成「聚造 / 剧造」，同音的「去躁」听得出「去」）；「视界」听成「世界」，改说「预测的步数」；「表四」放在句末听成「表示」、「十五分之一秒」听成「一分十五秒」、
 「八分之三」被吞掉，都换了说法；表号、图号念中文数字（「表一，」后面紧跟停顿；「论文的图二里」听成「图案里」，改说「论文图二中」）。
@@ -34,7 +34,7 @@ TEX_NUMBERS = True
 # scene: "intro" / 0..17 (storyboard scene index) / "outro"; [from, to] is storyboard time
 SCRIPT = [
     ("intro", 0, 2.4, "上一期结尾预告：用机器人自己视角的 3D 点云训练扩散策略，只在一个场景采数据，换个场景也能用。这一期就讲 i D P 3：只用一个场景里采的示范，一台全尺寸人形就能在没见过的厨房、会议室、办公室里，自己抓放、倒水、擦桌子。"),
-    ("intro", 2.4, 5.0, "它来自斯坦福等五所大学，发表在 I R O S 2025；第一作者也是 3D 扩散策略 D P 3 的作者。"),
+    ("intro", 2.4, 5.0, "它来自斯坦福等五所大学，发表在 i ross 2025；第一作者也是 3D 扩散策略 D P 3 的作者。"),
     ("intro", 5.0, 8.4, "官方放出了训好的模型，还有一份示例数据；这一期我们照源码重写了推理，在 C P U 上跑了官方的倒水模型；画面里的 G R 杠 1，是按示范记录的关节角渲染的。18 幕动画讲清楚。"),
 
     (0, 0.0, 3.6, "先看问题。左边是项目页的视频，按 4 倍速播放：傅利叶的 G R 杠 1 人形，在没见过的会议室、厨房、办公区里，自己抓放、倒水、擦桌子，画面里全部是策略自己做的。右边是关键：训练数据只来自一个场景，也就是论文图五里的那张桌子。"),
@@ -173,7 +173,7 @@ DISPLAY = [
     ("R T X 4090", "RTX 4090"),
     ("Point V L A", "PointVLA"),
     ("V L A", "VLA"),
-    ("I R O S", "IROS"),
+    ("i ross", "IROS"),
     ("U R D F", "URDF"),
     ("ResNet 18", "ResNet18"),
     ("Omni H 2 O", "OmniH2O"),
