@@ -1512,7 +1512,7 @@
       moveDot(hand, [xpx, TY]);
       sp.set(gpx + 10, TY, xpx - 8, TY);
       setOpacity(sp.node, k === 0 || r.d < 18 ? 0 : 1);
-      pull.set([xpx + 10, TY], [1, 0], 60 * r.F, r.F > 0.05 ? '人拉' : '', [0, -10]);
+      pull.set([xpx + 10, TY], [1, 0], 60 * r.F, r.F > 0.05 ? '人拉' : '', [0, -15]);
       setPath(gTrail, k === 2 ? [[base, TY], [gpx, TY]] : []);
       var x9 = pb9.px(now % 4);
       setLine(cur9, x9, 188, x9, 262);
@@ -1560,15 +1560,41 @@
     /* 第 2 段：歧义与未来 5 帧（俯视） */
     var p2 = group(s);
     label(p2, R, 62, '三个点往前挪：该走过去，还是伸手？', 'demo-x-ink', 13.5);
-    rectBox(p2, R, 76, 168, 150, C_BORDER, C_SURFACE2);
-    rectBox(p2, R + 184, 76, 168, 150, C_BORDER, C_SURFACE2);
+    rectBox(p2, R, 76, 168, 168, C_BORDER, C_SURFACE2);
+    rectBox(p2, R + 184, 76, 168, 168, C_BORDER, C_SURFACE2);
     label(p2, R + 84, 96, '只看当前一帧', 'demo-x-ink2', 12, 'middle');
     label(p2, R + 268, 96, '看未来 0.2 s（5 帧）', 'demo-x-ink2', 12, 'middle');
-    var bA = ringAt(p2, R + 84, 190, 14, C_INK, 2), bB = ringAt(p2, R + 268, 190, 14, C_INK, 2);
-    var tA = [dotAt(p2, 0, 0, 4.5, C_REF), dotAt(p2, 0, 0, 4.5, C_REF)], qA = tone(p2, R + 84, 222, '?', C_WARN, 14, 'middle');
-    var fut = [];
-    for (var i = 0; i < 5; i++) fut.push(dotAt(p2, 0, 0, 3.5, C_REF));
-    label(p2, R, 248, '论文：5 帧、每步隔 4 帧，就能消掉这种歧义', 'demo-x-ink2', 11.5);
+    /* 俯视示意的机器人：躯干（椭圆）、头（中间的圆）、两只手；粉圈是三个目标点（头、两手腕） */
+    function topBot(parent, ghost) {
+      var g = group(parent);
+      var arms = [hline(g, 0, 0, 0, 0, C_INK, 2.4), hline(g, 0, 0, 0, 0, C_INK, 2.4)];
+      var torso = paint(svgEl('ellipse', { cx: 0, cy: 0, rx: 18, ry: 7.5, 'stroke-width': 2.4 }), C_SURFACE, C_INK);
+      g.appendChild(torso);
+      var head = dotAt(g, 0, 0, 6, C_INK), hands = [dotAt(g, 0, 0, 4.2, C_INK), dotAt(g, 0, 0, 4.2, C_INK)];
+      if (ghost) { g.style.opacity = 0.75; torso.setAttribute('stroke-dasharray', '3 2'); arms.forEach(function (a) { a.setAttribute('stroke-dasharray', '3 2'); }); }
+      return { g: g, set: function (bx, by, hd, hl, hr) {
+        torso.setAttribute('cx', bx.toFixed(1)); torso.setAttribute('cy', by.toFixed(1));
+        setLine(arms[0], bx - 15, by, hl[0], hl[1]); setLine(arms[1], bx + 15, by, hr[0], hr[1]);
+        moveDot(head, hd); moveDot(hands[0], hl); moveDot(hands[1], hr);
+      } };
+    }
+    function targets(parent) { return [ringAt(parent, 0, 0, 7.5, C_REF, 2.4), ringAt(parent, 0, 0, 7.5, C_REF, 2.4), ringAt(parent, 0, 0, 7.5, C_REF, 2.4)]; }
+    var Y0 = 194, HX = 18, HY = 14;
+    /* 左框：三个目标点往前挪，两种解释轮流出现 */
+    var tgA = targets(p2), botA = topBot(p2, false), ghA = topBot(p2, true);
+    var qA = tone(p2, R + 84, 228, '', C_WARN, 12, 'middle');
+    /* 右框：两小格，未来 5 帧一直往前（走）／停在够得着的地方（伸手） */
+    var xW = R + 226, xR = R + 310;
+    var tgW = targets(p2), botW = topBot(p2, false), tgR = targets(p2), botR = topBot(p2, false);
+    var futW = [], futR = [];
+    for (var i = 0; i < 10; i++) { futW.push(dotAt(p2, 0, 0, 2.8, C_REF)); futR.push(dotAt(p2, 0, 0, 2.8, C_REF)); }
+    hline(p2, R + 268, 106, R + 268, 240, C_BORDER, 1, '3 3');
+    label(p2, xW, 216, '一直往前', 'demo-x-ink2', 11, 'middle');
+    label(p2, xW, 236, '→ 走过去', 'demo-x-ink', 11, 'middle');
+    label(p2, xR, 216, '停在够得着处', 'demo-x-ink2', 11, 'middle');
+    label(p2, xR, 236, '→ 伸手', 'demo-x-ink', 11, 'middle');
+    legendRow(p2, R, 262, [['目标点（头、两手腕）', C_REF, 112], ['机器人（俯视示意）', C_INK, 104], ['未来 5 帧', C_REF, 52]], 11);
+    label(p2, R, 284, '论文：5 帧、每步隔 4 帧，就能消掉这种歧义', 'demo-x-ink2', 11.5);
     /* 第 3 段：定位频率（固定画 0.2 s） */
     var p3 = group(s);
     label(p3, R, 62, '定位（照 BeyondMimic）：三路融合成 50 Hz', 'demo-x-ink', 13.5);
@@ -1594,7 +1620,7 @@
     }
     var cloudA = [], cloudB = [];
     for (var c = 0; c < 18; c++) { cloudA.push(dotAt(p4, 0, 0, 2.6, C_PURPLE)); cloudB.push(dotAt(p4, 0, 0, 2.6, C_WARN)); }
-    label(p4, R, 274, '先用 Fast-LIO2 建图，开机时各自把实时点云配准上去', 'demo-x-ink2', 11.5);
+    label(p4, R, 284, '先用 Fast-LIO2 建图，开机时各自把实时点云配准上去', 'demo-x-ink2', 11.5);
     var p5 = group(s);
     label(p5, R, 62, '算在哪', 'demo-x-ink', 14);
     chip(p5, R, 80, 340, '全局策略 + 状态估计：i7-13700K + RTX 3090 台式机', C_ACCENT, { size: 12, h: 32 });
@@ -1611,27 +1637,39 @@
         var big = t < 3.6 && [0, 2, 1][row10] === i;
         d.setAttribute('r', ((big ? 9 : 5.5) + 1.2 * Math.sin(now * 3)).toFixed(2));
       });
-      /* 俯视：目标往上（前）挪 */
-      var u2 = (now % 3) / 3, adv = 40 * u2;
-      moveDot(tA[0], [R + 84 - 12, 170 - adv]); moveDot(tA[1], [R + 84 + 12, 170 - adv]);
-      qA.style.opacity = 0.4 + 0.6 * Math.abs(Math.sin(now * 3));
-      var by = 190 - 30 * u2;
-      moveDot(bB, [R + 268, by]);
-      moveDot(bA, [R + 84, 190]);
-      fut.forEach(function (d, j) { moveDot(d, [R + 268, by - 20 - j * 8]); d.style.opacity = 1 - j * 0.15; });
+      /* 俯视：目标往上（前）挪；3 s 一循环，最后 0.6 s 停住 */
+      var u2 = Math.min(1, (now % 3) / 2.4), ease = function (v) { return 1 - Math.pow(1 - Math.min(1, v), 2); };
+      var setT = function (tg, cx, d, dh) { moveDot(tg[0], [cx, Y0 - (dh == null ? d : dh)]); moveDot(tg[1], [cx - HX, Y0 - HY - d]); moveDot(tg[2], [cx + HX, Y0 - HY - d]); };
+      /* 左：当前一帧的目标往前 30 px；实线机器人原地，虚影轮流演「整个走过去」和「伸胳膊探头」 */
+      var cxA = R + 84, dA = 30 * u2, walkGhost = Math.floor(now / 3) % 2 === 0;
+      setT(tgA, cxA, dA);
+      botA.set(cxA, Y0, [cxA, Y0], [cxA - HX, Y0 - HY], [cxA + HX, Y0 - HY]);
+      if (walkGhost) ghA.set(cxA, Y0 - dA, [cxA, Y0 - dA], [cxA - HX, Y0 - HY - dA], [cxA + HX, Y0 - HY - dA]);
+      else ghA.set(cxA, Y0 - 0.4 * dA, [cxA, Y0 - dA], [cxA - HX, Y0 - HY - dA], [cxA + HX, Y0 - HY - dA]);
+      qA.textContent = walkGhost ? '走过去？' : '伸胳膊探头？';
+      /* 右 1：走——目标匀速往前，未来 5 帧也一直往前，机器人整个跟着走 */
+      var dW = 26 * u2;
+      setT(tgW, xW, dW);
+      botW.set(xW, Y0 - dW, [xW, Y0 - dW], [xW - HX, Y0 - HY - dW], [xW + HX, Y0 - HY - dW]);
+      futW.forEach(function (d, i) { var j = i % 5, sx = i < 5 ? -HX : HX; moveDot(d, [xW + sx, Y0 - HY - dW - 11 - 6 * j]); d.style.opacity = 0.9 - j * 0.15; });
+      /* 右 2：伸手——目标越走越慢，未来 5 帧挤在够得着的地方，躯干不动、手伸出去 */
+      var dR = 26 * ease(u2);
+      setT(tgR, xR, dR, 0.4 * dR);
+      botR.set(xR, Y0, [xR, Y0 - 0.4 * dR], [xR - HX, Y0 - HY - dR], [xR + HX, Y0 - HY - dR]);
+      futR.forEach(function (d, i) { var j = i % 5, sx = i < 5 ? -HX : HX; moveDot(d, [xR + sx, Y0 - HY - 26 * ease(u2 + 0.12 * (j + 1)) - 3]); d.style.opacity = 0.9 - j * 0.15; });
       var x3 = R + 100 + ((now % 2) / 2) * 200;
       setLine(cur3, x3, 88, x3, 228);
       /* 两团点云从偏开的位置转回地图上（4 s 一循环） */
       var u4 = clamp(((now % 4) - 0.5) / 2.2, 0, 1), e4 = 1 - Math.pow(1 - u4, 3);
       cloudA.forEach(function (d, j) {
-        var p = mapPts[j * 2], ang = (1 - e4) * 0.35;
+        var p = mapPts[j * 2], ang = (1 - e4) * 0.12;
         var dx = p[0] - (R + 175), dy = p[1] - 160;
-        moveDot(d, [R + 175 + dx * Math.cos(ang) - dy * Math.sin(ang) - (1 - e4) * 40, 160 + dx * Math.sin(ang) + dy * Math.cos(ang) + (1 - e4) * 20]);
+        moveDot(d, [R + 175 + dx * Math.cos(ang) - dy * Math.sin(ang) - (1 - e4) * 40, 160 + dx * Math.sin(ang) + dy * Math.cos(ang) + (1 - e4) * 6]);
       });
       cloudB.forEach(function (d, j) {
-        var p = mapPts[(j * 2 + 37) % mapPts.length], ang = -(1 - e4) * 0.3;
+        var p = mapPts[(j * 2 + 37) % mapPts.length], ang = -(1 - e4) * 0.12;
         var dx = p[0] - (R + 175), dy = p[1] - 160;
-        moveDot(d, [R + 175 + dx * Math.cos(ang) - dy * Math.sin(ang) + (1 - e4) * 36, 160 + dx * Math.sin(ang) + dy * Math.cos(ang) - (1 - e4) * 18]);
+        moveDot(d, [R + 175 + dx * Math.cos(ang) - dy * Math.sin(ang) + (1 - e4) * 36, 160 + dx * Math.sin(ang) + dy * Math.cos(ang) + (1 - e4) * 4]);
       });
       setOpacity(p1, win(t, 0.3, 3.6));
       setOpacity(p2, win(t, 3.6, 7.0));
