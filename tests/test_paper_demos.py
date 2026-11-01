@@ -5757,7 +5757,7 @@ def test_viral_explainer_demos_and_worked_example_share_the_paper_numbers():
 
     # 旁白：98 句；数字列举不只隔一个逗号；片尾只预告下一篇（DoorMan）；绕开多音字
     spoken = re.findall(r'"([^"]*)"\),', narration[narration.index("SCRIPT = [") : narration.index("DISPLAY = [")])
-    assert len(spoken) == 99
+    assert len(spoken) == 98
     assert not any(re.search(r"\d\s*[，,]\s*\d", t) for t in spoken)
     assert "下一篇讲 Door Man" in narration and "DoorMan" in intro and spoken[-1].endswith("都在 Robot Learning Paper Notebooks。我们下期见。")
     for bad in ("差不多", "几乎", "一行", "重点", "时长", "重置", "累加", "重画", "所处", "论文图", "背隙", "卡住"):
