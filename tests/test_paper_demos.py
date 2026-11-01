@@ -5977,11 +5977,14 @@ def test_chip_explainer_demos_and_worked_example_share_the_paper_numbers():
     assert [_fmt(x, 2) for x in hind] == ["0.22", "-0.13", "0.82"] and _fmt(ptb[1], 2) == "-0.33"
     assert "=(0.22,\\,-0.13,\\,0.82)\\ \\text{m}$$" in note and "g+f/k=(0.22,\\,-0.33,\\,0.82)" in note
     # 2026-10-31 第二轮看片反馈「用更简单的例子」：第 2、3 幕的旁白改用一维的厘米例子（5 N × 0.02 = 10 cm）
-    assert "手应该让开 10 厘米" in narration and "目标在往里 10 厘米的地方" in narration
+    assert "手应该让开 10 厘米" in narration
+    # 2026-11-01 第三轮：第 3 幕改成两条数轴「倒推 → 正推 → 部署」：训练时看到 −10、停在 0，部署时看到 0、停在 +10
+    assert "往回倒推 10 厘米，就是负 10 厘米" in narration and "也就是正 10 厘米" in narration
+    assert "var PUSH = 10, FLEN = 34;" in js and "'规律只有一条：手停的位置 = 看到的目标 + 10 cm'" in js
     # 例 2：三点位置项（σ = 0.3 m，三个点平均）
     r = math.exp(-(0.10**2) / 3 / 0.3**2)
     assert _fmt(0.10**2 / 3 / 0.09, 4) == "0.0370" and _fmt(r, 4) == "0.9636" and _fmt(r, 3) == "0.964"
-    assert "r=e^{-0.0370}=0.9636" in note and "只有 0.964" in narration
+    assert "r=e^{-0.0370}=0.9636" in note
     rw = [x[2] for x in re.findall(r"\['([^']+)', '([^']+)', (-?[\d.]+), 't'\]", js)]
     assert sum(float(x) for x in rw) == 6.5 and "七项加起来，一共 6.5" in narration and "合计 7.5" in narration
     # 例 3：部署时手停在 g + f/k；v1 的图只有式子的 27% / 33%
