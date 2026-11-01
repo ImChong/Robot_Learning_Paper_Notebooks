@@ -5982,6 +5982,8 @@ def test_chip_explainer_demos_and_worked_example_share_the_paper_numbers():
     assert "往回道推 10 厘米，就是负 10 厘米" in narration and "停在正 10 厘米" in narration
     # 「倒推」的「倒」被读成 dǎo：旁白写同音的「道推」（dào），字幕换回「倒推」
     assert "倒推" not in narration[narration.index("SCRIPT = [") : narration.index("DISPLAY = [")] and '("道推", "倒推")' in narration
+    # 2026-11-01：只陈述事实，不加「手根本让不出 1 米」这类自己的论断
+    assert "根本" not in narration and "肩到手腕" not in js and "图上是 0.27 米" in narration
     assert "var PUSH = 10, FLEN = 34;" in js and "规律只有一条：手停的位置 = 看到的目标 + 10 cm" in js
     # 「策略的视角」表：三道训练题的答案都是看到的目标 + 10 cm，部署时 0 → +10
     qs = re.findall(r"\['([−+]?\d+) cm', '([−+]?\d+) cm', [\d.]+, [\d.]+\]", js)
@@ -5997,8 +5999,8 @@ def test_chip_explainer_demos_and_worked_example_share_the_paper_numbers():
     assert [_fmt(5 * k, 3) for k in (0.001, 0.02, 0.03, 0.05)] == ["0.005", "0.100", "0.150", "0.250"]
     assert [_fmt(1 / k, 1) for k in (0.02, 0.03, 0.05)] == ["50.0", "33.3", "20.0"]
     assert (round(100 * 0.27 / (20 * 0.05)), round(100 * 0.20 / (20 * 0.03))) == (27, 33)
-    assert "| 5 N 时让开 [m] | 0 | 0.005 | 0.10 | 0.15 | 0.25 |" in note and "实测只有式子的 27%" in note
-    assert "20 牛乘 0.05 应该让开 1 米，图上只有 0.27 米" in narration
+    assert "| 5 N 时让开 [m] | 0 | 0.005 | 0.10 | 0.15 | 0.25 |" in note and "实测是式子的 27%" in note
+    assert "20 牛乘 0.05 应该让开 1 米，图上是 0.27 米" in narration
     # 例 4：梯形力
     def trap(u, F):
         return 0 if u <= 0 or u >= 1 else F * u / 0.25 if u < 0.25 else F if u < 0.75 else F * (1 - u) / 0.25
