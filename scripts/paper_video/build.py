@@ -78,9 +78,24 @@ def space_cjk(s):
     return "".join(out)
 
 
+TEX_NUMBERS = getattr(PAPER, "TEX_NUMBERS", False)
+NUM_RE = re.compile(r"(?<![\w.\\])(−?)(\d{1,3}(?:,\d{3})+|\d+(?:\.\d+)?)(%?)(?![\w.])")
+
+
+def tex_numbers(s):
+    """字幕里独立的数字写成 $…$ 交给 KaTeX（论文设 TEX_NUMBERS = True 时）：「262,144」变 $262{,}144$，不会在逗号处断行；
+    已经在 $…$ 里的、贴着字母的（G1、L40S、N1.5、3D、图 7a）不动。"""
+    parts = re.split(r"(\$[^$]*\$)", s)
+    for i in range(0, len(parts), 2):
+        parts[i] = NUM_RE.sub(lambda m: "$" + ("-" if m.group(1) else "") + m.group(2).replace(",", "{,}") + ("\\%" if m.group(3) else "") + "$", parts[i])
+    return "".join(parts)
+
+
 def display(s):
     for a, b in DISPLAY:
         s = s.replace(a, b)
+    if TEX_NUMBERS:
+        s = tex_numbers(s)
     return space_cjk(s) if SPACE_CJK else s
 
 
@@ -166,7 +181,9 @@ def chunks(text, start, dur, limit=17):
     inside = math_mask(text)
     for k, ch in enumerate(text):
         cur += ch
-        if ch in "，、；：。！？,;:" and not inside[k]:
+        # 千分位的逗号（262,144）不是断句的地方
+        thousands = ch == "," and 0 < k < len(text) - 1 and text[k - 1].isdigit() and text[k + 1].isdigit()
+        if ch in "，、；：。！？,;:" and not inside[k] and not thousands:
             parts.append(cur)
             cur = ""
     if cur:
