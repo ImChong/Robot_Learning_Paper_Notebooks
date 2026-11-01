@@ -5979,7 +5979,9 @@ def test_chip_explainer_demos_and_worked_example_share_the_paper_numbers():
     # 2026-10-31 第二轮看片反馈「用更简单的例子」：第 2、3 幕的旁白改用一维的厘米例子（5 N × 0.02 = 10 cm）
     assert "手应该让开 10 厘米" in narration
     # 2026-11-01 第三轮：第 3 幕改成两条数轴「倒推 → 正推 → 部署」：训练时看到 −10、停在 0，部署时看到 0、停在 +10
-    assert "往回倒推 10 厘米，就是负 10 厘米" in narration and "停在正 10 厘米" in narration
+    assert "往回道推 10 厘米，就是负 10 厘米" in narration and "停在正 10 厘米" in narration
+    # 「倒推」的「倒」被读成 dǎo：旁白写同音的「道推」（dào），字幕换回「倒推」
+    assert "倒推" not in narration[narration.index("SCRIPT = [") : narration.index("DISPLAY = [")] and '("道推", "倒推")' in narration
     assert "var PUSH = 10, FLEN = 34;" in js and "规律只有一条：手停的位置 = 看到的目标 + 10 cm" in js
     # 「策略的视角」表：三道训练题的答案都是看到的目标 + 10 cm，部署时 0 → +10
     qs = re.findall(r"\['([−+]?\d+) cm', '([−+]?\d+) cm', [\d.]+, [\d.]+\]", js)
