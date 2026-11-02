@@ -41,15 +41,15 @@
         "13_Physics-Based_Animation",
         "14_Human_Motion"
       ],
-      "last_module": "07_Teleoperation",
-      "last_index": 1160,
-      "last_title": "HuMiT: Low-Latency Whole-Body Humanoid Teleoperation via Compact Reference Tracking (arXiv:2610.29903)",
-      "next_module": "08_Navigation",
-      "last_completed_date": "2026-11-01",
-      "note": "本日轮转到 07_Teleoperation。PROGRESS Teleoperation 章节中尚无笔记的最新论文是 HuMiT (arXiv:2610.29903, 2026-10-21, 清华 IIIS × 港中文等)，即 PROGRESS #1160，已确认在上游 README。部署时策略只看 43 维紧凑参考（根部高度 + 速度 + 双腕双踝 SE(3)，当前帧），PICO 骨架只做 T 字姿势缩放，在线无 IK、无未来帧；完整参考只给奖励与 critic。端到端 65 ms（SONIC 245、TWIST2 120 ms），与 HuMiT-Full 跟踪精度基本持平，真机 G1 接球 2/10。开源训练插件 xiaohu-art/Track，含整体流程 mermaid、算例与源码运行时序图。下一篇轮转到 08_Navigation。",
-      "last_date": "2026-11-01",
+      "last_module": "08_Navigation",
+      "last_index": 1162,
+      "last_title": "Adaptive Traversal Tubes for Posture-Aware Navigation of Bipedal Humanoids (arXiv:2610.27688)",
+      "next_module": "09_State_Estimation",
+      "last_completed_date": "2026-11-02",
+      "note": "本日轮转到 08_Navigation。PROGRESS Navigation 章节中尚无笔记的最新论文是 Adaptive Traversal Tubes (arXiv:2610.27688, 2026-10-20, Zijian Ge)，即 PROGRESS #1162，已确认在上游 README（🌟）。ATT 沿参考路径算几何与社交统一的有界宽度场 w(s)，IVH 以肩宽 / 身体厚度为阈值用 smoothstep 连续映射为正面 → 侧身的朝向与全向速度命令，执行层是自录正面 / 侧步 / 过渡视频经 GVHMR + GMR 训练的 AMP 策略，可换回 G1 默认控制器。仅方法的预印本，定量实验待补；源码未公开（项目仓库只有演示视频），含整体流程 mermaid 与算例，无源码运行时序图。下一篇轮转到 09_State_Estimation。",
+      "last_date": "2026-11-02",
       "next_candidate": null,
-      "last_completed": "HuMiT: Low-Latency Whole-Body Humanoid Teleoperation via Compact Reference Tracking (arXiv:2610.29903)"
+      "last_completed": "Adaptive Traversal Tubes for Posture-Aware Navigation of Bipedal Humanoids (arXiv:2610.27688)"
     },
     "last_summary_index": 532,
     "last_summary_date": "2026-09-18",
@@ -1893,6 +1893,17 @@
         "project_page": "https://xiaohu-art.github.io/Track/",
         "code": "https://github.com/xiaohu-art/Track",
         "source": "✅ 开源训练插件 xiaohu-art/Track（MIT，Isaac Lab + active-adaptation；无 PICO 遥操作与真机部署代码）· 含源码运行时序图 · Isaac Sim 仿真 + 真机 · Unitree G1 · 清华 IIIS × 港中文等"
+      },
+      {
+        "date": "2026-11-02",
+        "index": 1162,
+        "title": "Adaptive Traversal Tubes for Posture-Aware Navigation of Bipedal Humanoids",
+        "folder": "papers/08_Navigation/Adaptive_Traversal_Tubes_for_Posture-Aware_Navigation_of_Bipedal_Humanoids",
+        "module": "08_Navigation",
+        "arxiv": "2610.27688",
+        "project_page": "https://github.com/lborogzj997/Humanoid-Navigation-in-Crowds-and-Narrow-Spaces",
+        "code": "",
+        "source": "⏳ 未开源（项目仓库只有 README 与演示视频，称投稿后放代码）· 无源码运行时序图 · 仅方法的预印本、定量实验待补 · MuJoCo 仿真 + 真机演示 · Unitree G1 · Zijian Ge"
       }
     ],
     "last_completed_index": 588,

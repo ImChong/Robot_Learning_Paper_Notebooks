@@ -950,7 +950,7 @@
 
 | #   | 论文                                                                                                                                                         | 日期      | 🌟  | 状态   |
 | --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- | --- | ---- |
-| 1162  | [Adaptive Traversal Tubes for Posture-Aware Navigation of Bipedal Humanoids](https://arxiv.org/abs/2610.27688) | 2026.10 | 🌟 | ⏳ 待读 |
+| 1162  | [Adaptive Traversal Tubes for Posture-Aware Navigation of Bipedal Humanoids](https://arxiv.org/abs/2610.27688) ✅ [笔记](08_Navigation/Adaptive_Traversal_Tubes_for_Posture-Aware_Navigation_of_Bipedal_Humanoids/Adaptive_Traversal_Tubes_for_Posture-Aware_Navigation_of_Bipedal_Humanoids.md) | 2026.10 | 🌟 | ✅ 已总结 |
 | 706  | [What the Elevation Map Cannot See: Semantic-Aware Locomotion and Execution-Aware Navigation for Humanoid Robot](https://arxiv.org/abs/2610.07396) ✅ [笔记](08_Navigation/What_the_Elevation_Map_Cannot_See__Semantic-Aware_Locomotion_and_Execution-Aware_Navigation/What_the_Elevation_Map_Cannot_See__Semantic-Aware_Locomotion_and_Execution-Aware_Navigation.md) | 2026.10 |  | ✅ 已总结 |
 | 707  | [DODGER: Safety-Guided Reinforcement Learning for Robot Navigation Among Dynamic Obstacles](https://arxiv.org/abs/2609.38873) | 2026.09 |  | ⏳ 待读 |
 | 708  | [Learning Safe Humanoid Navigation from Reduced Order Models](https://arxiv.org/abs/2609.19272) | 2026.09 |  | ⏳ 待读 |
