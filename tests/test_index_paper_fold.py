@@ -1,4 +1,4 @@
-"""Homepage paper-list fold: exempt categories and CSS hooks."""
+"""Homepage paper-list fold: every category (and subcategory) folds to 5, plus CSS hooks."""
 
 from pathlib import Path
 
@@ -7,12 +7,14 @@ INDEX = ROOT / "index.html"
 STYLE = ROOT / "assets" / "css" / "style.css"
 
 
-def test_index_declares_fold_exempt_categories():
+def test_index_folds_every_category_to_five():
     text = INDEX.read_text(encoding="utf-8")
-    assert "01_Foundational_RL" in text
-    assert "02_Motion_Retargeting" in text
-    assert "03_High_Impact_Selection" in text
+    # 01 / 02 / 03 used to be exempt; now every list folds to 5 cards by default.
+    assert "fold_exempt" not in text
     assert "fold_limit = 5" in text
+    # 03 is grouped into subcategories, so subcategory lists must fold too.
+    assert "sub_should_fold" in text
+    assert 'data-fold-id="{{ sub_fold_id }}"' in text
     assert "paper-list-item-folded" in text
     assert "paper-list-more-btn" in text
     assert "paper-list-all-btn" in text
@@ -43,6 +45,8 @@ def test_style_hides_folded_items_when_collapsed():
     assert "body.index-search-active .paper-list-toggle-group" in css
     assert ".paper-list-toggle-group" in css
     assert ".paper-list-toggle-btn" in css
+    # .paper-list-toggle-btn sets display: block, which would override [hidden].
+    assert ".paper-list-toggle-btn[hidden]" in css
     assert "min-height: 44px" in css
     assert "body:has(.index-layout) .site-footer" in css
     assert "body:has(.index-layout)" in css

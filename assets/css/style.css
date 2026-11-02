@@ -746,6 +746,11 @@ a.index-chip-link:hover .index-chip-arrow {
   margin: 0;
 }
 
+/* display: block 会盖过 hidden 属性，脚本藏起的「展开全部 / 收起」要显式隐藏 */
+.paper-list-toggle-btn[hidden] {
+  display: none;
+}
+
 .paper-list-toggle-btn:hover {
   border-color: var(--link);
   background: var(--accent-soft);
