@@ -3257,6 +3257,18 @@
     "display_name": "Navigation",
     "papers": [
       {
+        "title": "Adaptive Traversal Tubes for Posture-Aware Navigation of Bipedal Humanoids",
+        "path": "papers/08_Navigation/Adaptive_Traversal_Tubes_for_Posture-Aware_Navigation_of_Bipedal_Humanoids/Adaptive_Traversal_Tubes_for_Posture-Aware_Navigation_of_Bipedal_Humanoids.md",
+        "url": "/papers/08_Navigation/Adaptive_Traversal_Tubes_for_Posture-Aware_Navigation_of_Bipedal_Humanoids/Adaptive_Traversal_Tubes_for_Posture-Aware_Navigation_of_Bipedal_Humanoids.html",
+        "dir": "Adaptive_Traversal_Tubes_for_Posture-Aware_Navigation_of_Bipedal_Humanoids",
+        "arxiv": "2610.27688",
+        "summary_zh": "轮式机器人的底盘占地是固定的，遇到窄门只能判「过不去」，遇到行人只能绕或减速；人形却可以转身侧着走，把迎面宽度从肩宽缩到身体厚度。",
+        "published_date_zh": "2026年10月20日（arXiv v1，cs.RO，CC BY 4.0）",
+        "published_date_en": "Oct 20, 2026 (arXiv v1, cs.RO, CC BY 4.0)",
+        "zhname": "ATT：面向双足人形姿态感知导航的自适应通行管道",
+        "zh_title": "ATT：面向双足人形姿态感知导航的自适应通行管道"
+      },
+      {
         "title": "TAPNAV: Humanoid Navigation through Tactile Active Perception",
         "path": "papers/08_Navigation/TAPNAV__Humanoid_Navigation_through_Tactile_Active_Perception/TAPNAV__Humanoid_Navigation_through_Tactile_Active_Perception.md",
         "url": "/papers/08_Navigation/TAPNAV__Humanoid_Navigation_through_Tactile_Active_Perception/TAPNAV__Humanoid_Navigation_through_Tactile_Active_Perception.html",
