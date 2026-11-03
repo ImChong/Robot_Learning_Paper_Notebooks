@@ -41,15 +41,15 @@
         "13_Physics-Based_Animation",
         "14_Human_Motion"
       ],
-      "last_module": "08_Navigation",
-      "last_index": 1162,
-      "last_title": "Adaptive Traversal Tubes for Posture-Aware Navigation of Bipedal Humanoids (arXiv:2610.27688)",
-      "next_module": "09_State_Estimation",
-      "last_completed_date": "2026-11-02",
-      "note": "本日轮转到 08_Navigation。PROGRESS Navigation 章节中尚无笔记的最新论文是 Adaptive Traversal Tubes (arXiv:2610.27688, 2026-10-20, Zijian Ge)，即 PROGRESS #1162，已确认在上游 README（🌟）。ATT 沿参考路径算几何与社交统一的有界宽度场 w(s)，IVH 以肩宽 / 身体厚度为阈值用 smoothstep 连续映射为正面 → 侧身的朝向与全向速度命令，执行层是自录正面 / 侧步 / 过渡视频经 GVHMR + GMR 训练的 AMP 策略，可换回 G1 默认控制器。仅方法的预印本，定量实验待补；源码未公开（项目仓库只有演示视频），含整体流程 mermaid 与算例，无源码运行时序图。下一篇轮转到 09_State_Estimation。",
-      "last_date": "2026-11-02",
+      "last_module": "09_State_Estimation",
+      "last_index": 1163,
+      "last_title": "Vision as Proprioception: Estimating Humanoid Robot Pose from Video (arXiv:2610.25288)",
+      "next_module": "10_Sim-to-Real",
+      "last_completed_date": "2026-11-03",
+      "note": "本日轮转到 09_State_Estimation。PROGRESS State Estimation 章节中尚无笔记的最新论文是 Vision as Proprioception / HumanoidPose (arXiv:2610.25288, 2026-10-18, ETH Zürich)，即 PROGRESS #1163，已确认在上游 README（🌟）。只看外部 RGB 视频恢复人形全身关节角与世界坐标根部：冻结 PromptHMR 编码器 + 由 MJCF 关节几何描述生成查询的共享解码器，一个模型服务 16 种人形；全合成数据训练、检测器在网上视频自训练；三台真机 MPJAE 比最强基线低 18–32%。源码未放出（仓库仅 README），时序图按论文第 III 节整理。下一篇轮转到 10_Sim-to-Real。",
+      "last_date": "2026-11-03",
       "next_candidate": null,
-      "last_completed": "Adaptive Traversal Tubes for Posture-Aware Navigation of Bipedal Humanoids (arXiv:2610.27688)"
+      "last_completed": "Vision as Proprioception: Estimating Humanoid Robot Pose from Video (arXiv:2610.25288)"
     },
     "last_summary_index": 532,
     "last_summary_date": "2026-09-18",
@@ -1904,6 +1904,17 @@
         "project_page": "https://github.com/lborogzj997/Humanoid-Navigation-in-Crowds-and-Narrow-Spaces",
         "code": "",
         "source": "⏳ 未开源（项目仓库只有 README 与演示视频，称投稿后放代码）· 无源码运行时序图 · 仅方法的预印本、定量实验待补 · MuJoCo 仿真 + 真机演示 · Unitree G1 · Zijian Ge"
+      },
+      {
+        "date": "2026-11-03",
+        "index": 1163,
+        "title": "Vision as Proprioception: Estimating Humanoid Robot Pose from Video",
+        "folder": "papers/09_State_Estimation/Vision_as_Proprioception__Estimating_Humanoid_Robot_Pose_from_Video",
+        "module": "09_State_Estimation",
+        "arxiv": "2610.25288",
+        "project_page": "https://siplab.org/projects/HumanoidPose",
+        "code": "https://github.com/eth-siplab/HumanoidPose",
+        "source": "⏳ 源码未放出（官方仓库 eth-siplab/HumanoidPose 仅 README，Code and models: Coming soon）· 推理时序图按论文第 III 节整理 · 合成数据训练 + 三台真机评测 · Unitree G1 / EngineAI PM01 / Fourier N1 · ETH Zürich"
       }
     ],
     "last_completed_index": 588,

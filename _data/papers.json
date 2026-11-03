@@ -3608,6 +3608,19 @@
     "display_name": "State Estimation",
     "papers": [
       {
+        "title": "Vision as Proprioception: Estimating Humanoid Robot Pose from Video",
+        "path": "papers/09_State_Estimation/Vision_as_Proprioception__Estimating_Humanoid_Robot_Pose_from_Video/Vision_as_Proprioception__Estimating_Humanoid_Robot_Pose_from_Video.md",
+        "url": "/papers/09_State_Estimation/Vision_as_Proprioception__Estimating_Humanoid_Robot_Pose_from_Video/Vision_as_Proprioception__Estimating_Humanoid_Robot_Pose_from_Video.html",
+        "dir": "Vision_as_Proprioception__Estimating_Humanoid_Robot_Pose_from_Video",
+        "arxiv": "2610.25288",
+        "has_open_source": true,
+        "summary_zh": "机器人自己的关节编码器当然知道自己的姿态，但外部观察者常常拿不到这些读数——别人的机器人、隐私或通信限制、网上的宣传视频、AI 生成的视频里根本不存在编码器。",
+        "published_date_zh": "2026年10月18日（arXiv v1，cs.RO）",
+        "published_date_en": "Oct 18, 2026 (arXiv v1, cs.RO)",
+        "zhname": "HumanoidPose：视觉即本体感受，从视频估计人形机器人位姿",
+        "zh_title": "HumanoidPose：视觉即本体感受，从视频估计人形机器人位姿"
+      },
+      {
         "title": "PRIMO: Prior-Informed Odometry from Human-Motion Tracking for Humanoid Robots",
         "path": "papers/09_State_Estimation/PRIMO__Prior-Informed_Odometry_from_Human-Motion_Tracking_for_Humanoid_Robots/PRIMO__Prior-Informed_Odometry_from_Human-Motion_Tracking_for_Humanoid_Robots.md",
         "url": "/papers/09_State_Estimation/PRIMO__Prior-Informed_Odometry_from_Human-Motion_Tracking_for_Humanoid_Robots/PRIMO__Prior-Informed_Odometry_from_Human-Motion_Tracking_for_Humanoid_Robots.html",
