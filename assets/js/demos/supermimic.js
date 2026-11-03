@@ -2787,8 +2787,8 @@
   function buildVideoDemo(host) {
     K.video(host, {
       title: '配音讲解视频：SuperMimic 十八幕全流程',
-      sub: '22 分 1 秒竖屏视频（1080×1920），中文配音 + 字幕。画面就是上面的十八幕动画，旁白把每一幕讲细；适合手机上看或转发。',
-      size: '24.4 MB',
+      sub: '23 分 9 秒竖屏视频（1080×1920），中文配音 + 字幕。画面就是上面的十八幕动画，旁白把每一幕讲细；适合手机上看或转发。',
+      size: '25.7 MB',
       fileName: 'SuperMimic_讲解视频.mp4'
     });
   }

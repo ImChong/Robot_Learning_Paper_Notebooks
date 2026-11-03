@@ -902,7 +902,7 @@
         "arxiv": "2610.28480",
         "summary_zh": "SuperMimic 认为，大规模动作跟踪之所以贵，是因为模型无关的强化学习没有把所有动作共享的那套人形动力学单独学下来，每段动作都要靠仿真采样重新估计「这个动作会导致什么」。",
         "explainer_scenes": 18,
-        "video_seconds": 1321,
+        "video_seconds": 1389,
         "zhname": "SuperMimic：用一个可微世界模型扩展人形全身控制",
         "zh_title": "SuperMimic：用一个可微世界模型扩展人形全身控制"
       },
