@@ -385,7 +385,7 @@ $$\mathcal L_V(\psi)=\mathbb E\sum _ {t=0}^{H-1}(V_t-\hat R_t)^2,\qquad \hat R_t
 ## 🧪 我们的复现（Uni-SuperMimic 放出的模型，不是论文的实验）
 
 <details class="paper-fold" markdown="1">
-<summary>📖 展开文字：为什么选 Uni-SuperMimic；我们怎么跑（独立重写、CPU 上的 MuJoCo）；40 段评测与它报的一致；世界模型 vs 仿真器三组对照；8 步误差；BPTT 与似然比的余弦相似度</summary>
+<summary>📖 展开文字：为什么选 Uni-SuperMimic；我们怎么跑（独立重写、CPU 上的 MuJoCo，再用官方代码核对）；40 段评测与官方评测一致；世界模型 vs 仿真器三组对照；8 步误差；BPTT 与似然比的余弦相似度</summary>
 
 <h3 id="复现-选哪个仓库">选哪个仓库</h3>
 
@@ -402,13 +402,16 @@ $$\mathcal L_V(\psi)=\mathbb E\sum _ {t=0}^{H-1}(V_t-\hat R_t)^2,\qquad \hat R_t
 
 <h3 id="复现-怎么跑">怎么跑</h3>
 
-我们没有安装它的包，而是照它的代码独立重写了评测路径（参考动作 30 → 50 Hz 重采样、观测、目标、动作映射、奖励、终止、世界模型的增量积分），用 `torch.load(..., weights_only=True)` 载入 `lafan1_ckpt_012000.pt`（存档记录训练 12,000 次迭代、墙钟 5000 秒、仿真 1.23 亿步、学习率 2e-4），在 CPU 上的 MuJoCo 3.11 里按评测协议跑（摩擦 1.0、无随机化、无噪声、从第一帧放到最后）。G1 模型和网格来自 LAFAN1 重定向数据集（`lvhaidong/LAFAN1_Retargeting_Dataset`）。
+最初没有安装它的包，而是照它的代码独立重写了评测路径（参考动作 30 → 50 Hz 重采样、观测、目标、动作映射、奖励、终止、世界模型的增量积分），用 `torch.load(..., weights_only=True)` 载入 `lafan1_ckpt_012000.pt`（存档记录训练 12,000 次迭代、墙钟 5000 秒、仿真 1.23 亿步、学习率 2e-4），在 CPU 上的 MuJoCo 3.11 里按评测协议跑（摩擦 1.0、无随机化、无噪声、从第一帧放到最后）。G1 模型和网格来自 LAFAN1 重定向数据集（`lvhaidong/LAFAN1_Retargeting_Dataset`）。
+
+**用官方代码核对**（2026-11-03，用户授权安装第三方包之后）：在它的仓库里 `uv sync`，用它自己的 `tools/prepare_supermimic_assets.py` 准备 G1 与 40 段 LAFAN1，再用官方评测 `unisupermimic-eval --backend mujoco` 在 CPU 上评同一个存档。发布页只放了存档、没放训练目录里的 `run_config.json`，评测要读它，我们用仓库自己的 `extract_contract_snapshot()` 从默认（mjwarp 训练）配置生成了一份；存档里记录的超参数只有迭代数和学习率与默认配置不同，都只影响训练。结果是 0.8278 / 0.8306 / 0 失败，和重写版差 1–2 × 10⁻⁴。世界模型也单独比过：同一份权重、同一组输入，官方的 `WorldModel.step` 和重写版自回归 8 步逐位相同（最大差 0）。所以这一节和视频里的数字仍是重写版跑出来的，与官方代码一致。
 
 <h3 id="复现-40-段评测">40 段评测</h3>
 
 | | 平均归一化回报 | 按帧加权 | 失败 |
 |---|---|---|---|
 | 我们（CPU MuJoCo） | **0.8277** | **0.8304** | **0 / 40** |
+| Uni-SuperMimic 官方评测（CPU MuJoCo，我们跑） | 0.8278 | 0.8306 | 0 / 40 |
 | Uni-SuperMimic README（mjwarp） | 0.8272 | 0.8300 | 0 / 40 |
 | 论文图 4a（官方，1 卡 1.2 h） | 0.82 | — | — |
 
@@ -548,7 +551,7 @@ SONIC：$22+44+3+9+28+15+8+50=179$；SuperMimic 1 卡：$2+1+3+0+8+0+0+11=25$；
 
 <h3 id="实例-11-我们的复现">例 11：我们的复现</h3>
 
-- 40 段：平均 0.8277、按帧加权 0.8304、0 失败（Uni-SuperMimic 报 0.8272 / 0.8300 / 0）。
+- 40 段：平均 0.8277、按帧加权 0.8304、0 失败（Uni-SuperMimic 报 0.8272 / 0.8300 / 0；用它的官方评测在 CPU MuJoCo 上跑是 0.8278 / 0.8306 / 0）。
 - 世界模型 vs 仿真：摔倒再起身 8 s，高度最多相差 3.6 cm；摩擦 0.3 时滑过 2.82 / 2.86 m（对照 0.99 m）。
 - 8 步后根部位置相差 1.6–5.7 mm。
 - 梯度方向：BPTT 1 条 0.981，似然比 1024 条 0.922。
@@ -654,9 +657,10 @@ PPO 的似然比估计只看采样动作的回报好坏，方向要靠大量样�
 ## 💬 讨论记录
 
 <details class="paper-fold" markdown="1">
-<summary>📖 展开文字：2026-11-03 · 前沿扩充：选复现仓库、独立重写评测、世界模型对照与梯度实验</summary>
+<summary>📖 展开文字：2026-11-03 · 前沿扩充：选复现仓库、独立重写评测、世界模型对照与梯度实验，再用官方代码核对</summary>
 
 - **2026-11-03 · 初版**：这一期是主线之外的前沿扩充（论文 2026-10-20 挂出、CoRL 2026 Oral）。官方代码没有放出，项目页的网页演示许可证禁止提取，所以复现用社区的 Uni-SuperMimic：它放出了世界模型和策略的权重。为了不运行第三方的包，我们照它的代码独立重写了评测和世界模型的回放，在 CPU 上的 MuJoCo 里跑；40 段的结果和它自己报的差 0.0005，说明移植是对的。在此之上做了论文项目页那三组「世界模型 vs 仿真器」的对照（策略开 / 关、地面变滑），以及 BPTT 与似然比的余弦相似度。参考了 [Robotics_Notebooks 的 SuperMimic 条目](https://imchong.github.io/Robotics_Notebooks/detail.html?id=entity-paper-supermimic) 列出的社区仓库。
+- **2026-11-03 · 用官方代码核对**：用户授权安装第三方包后，装上 Uni-SuperMimic，用它的 `unisupermimic-eval --backend mujoco` 评同一个存档：0.8278 / 0.8306 / 0 失败，和重写版差 1–2 × 10⁻⁴；世界模型同输入自回归 8 步与重写版逐位相同。数字和视频不用改。
 
 </details>
 
