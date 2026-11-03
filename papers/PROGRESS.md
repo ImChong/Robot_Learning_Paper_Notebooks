@@ -133,7 +133,7 @@
 | 1138  | [SMR: Learning Streaming Motion Retargeting for Humanoids from Human Semantic](https://arxiv.org/abs/2610.29169) | 2026.10 |  | ⏳ 待读 |
 | 1139  | [One Policy, Many Styles: Where to Aggregate Preferences for Steerable Humanoid Control?](https://arxiv.org/abs/2610.28925) | 2026.10 |  | ⏳ 待读 |
 | 1140  | [VLM-Guided Contact Retargeting and Generative Partner Modeling for Humanoid-Human Interaction](https://arxiv.org/abs/2610.28523) | 2026.10 |  | ⏳ 待读 |
-| 1141  | [SuperMimic: Scaling Humanoid Whole-Body Control with One Differentiable World Model](https://arxiv.org/abs/2610.28480) | 2026.10 |  | ⏳ 待读 |
+| 1141  | [SuperMimic: Scaling Humanoid Whole-Body Control with One Differentiable World Model](https://arxiv.org/abs/2610.28480) ✅ [笔记](04_Loco-Manipulation_and_WBC/SuperMimic__Scaling_Humanoid_Whole-Body_Control_with_One_Differentiable_World_Model/SuperMimic__Scaling_Humanoid_Whole-Body_Control_with_One_Differentiable_World_Model.md) | 2026.10 |  | ✅ 已总结 |
 | 1142  | [Fast Motion Retargeting Pipeline for Scalable Humanoid Robot Learning](https://arxiv.org/abs/2610.28470) | 2026.10 |  | ⏳ 待读 |
 | 1143  | [HAF-VLA: Hierarchical Action Flow Framework for Humanoid Vision-Language-Action Control](https://arxiv.org/abs/2610.26584) | 2026.10 |  | ⏳ 待读 |
 | 1144  | [OmniInteract: Towards Unified Whole-Body Interaction Control for Dual Humanoids](https://arxiv.org/abs/2610.26043) | 2026.10 |  | ⏳ 待读 |

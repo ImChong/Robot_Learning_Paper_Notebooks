@@ -895,6 +895,18 @@
         "zh_title": "Memory before Goal：前史记忆在人形移动操作中的作用"
       },
       {
+        "title": "SuperMimic: Scaling Humanoid Whole-Body Control with One Differentiable World Model",
+        "path": "papers/04_Loco-Manipulation_and_WBC/SuperMimic__Scaling_Humanoid_Whole-Body_Control_with_One_Differentiable_World_Model/SuperMimic__Scaling_Humanoid_Whole-Body_Control_with_One_Differentiable_World_Model.md",
+        "url": "/papers/04_Loco-Manipulation_and_WBC/SuperMimic__Scaling_Humanoid_Whole-Body_Control_with_One_Differentiable_World_Model/SuperMimic__Scaling_Humanoid_Whole-Body_Control_with_One_Differentiable_World_Model.html",
+        "dir": "SuperMimic__Scaling_Humanoid_Whole-Body_Control_with_One_Differentiable_World_Model",
+        "arxiv": "2610.28480",
+        "summary_zh": "SuperMimic 认为，大规模动作跟踪之所以贵，是因为模型无关的强化学习没有把所有动作共享的那套人形动力学单独学下来，每段动作都要靠仿真采样重新估计「这个动作会导致什么」。",
+        "explainer_scenes": 18,
+        "video_seconds": 1275,
+        "zhname": "SuperMimic：用一个可微世界模型扩展人形全身控制",
+        "zh_title": "SuperMimic：用一个可微世界模型扩展人形全身控制"
+      },
+      {
         "title": "CSF: Contextual Safety Filtering for Motion Generators",
         "path": "papers/04_Loco-Manipulation_and_WBC/CSF__Contextual_Safety_Filtering_for_Motion_Generators/CSF__Contextual_Safety_Filtering_for_Motion_Generators.md",
         "url": "/papers/04_Loco-Manipulation_and_WBC/CSF__Contextual_Safety_Filtering_for_Motion_Generators/CSF__Contextual_Safety_Filtering_for_Motion_Generators.html",

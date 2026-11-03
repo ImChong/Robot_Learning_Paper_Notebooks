@@ -68,6 +68,7 @@
    │
    └─ ⑦ 世界模型 World Model：       Dreamer / PlaNet (2019) ⇢ UniPi (2023)（潜空间想象学策略 → 文本条件视频当规划器）
                                     Cosmos (2025) → DreamDojo (2026) → 1X World Model (2025)；HAIC (2026)（动力学感知 WM）
+                                    SONIC (2025) → SuperMimic (2026)（⇠ HAIC；可微世界模型 + BPTT，1 张 H100 训通用动作跟踪）
             ↓（世界模型"会做梦"预测未来 / 动力学，再升级为可直接当策略的模型）
        ⑧ 世界-动作模型 WAM：         Cosmos → Cosmos Policy (2026)（⇠ Dreamer；视频模型一次后训练兼任策略、世界模型、价值函数）
                                     DreamZero (2026)（World Action Models are Zero-shot Policies）
