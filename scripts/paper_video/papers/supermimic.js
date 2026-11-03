@@ -71,11 +71,7 @@ window.PaperVideo = {
       });
       return p;
     });
-    /* 下一篇的主题（不写集数）：这一期是主线之外的前沿扩充，下一期回到发布清单的 iDP3 —— 用自身视角的 3D 点云训扩散策略 */
-    var next = h('div', 'pt', root);
-    next.style.fontSize = '28px'; next.style.padding = '12px 30px';
-    next.style.borderStyle = 'dashed';
-    K.rich(next, '**下一篇**：回到主线 —— 用自身视角的 3D 点云训扩散策略，一个场景采的数据，换个' + '场景也能用'.split('').join('⁠'));
+    /* 这一期是主线之外的前沿扩充，片尾不预告下一期 */
     var foot = h('div', 'meta', root,
       '<b>完整笔记 · 3 个交互演示 · 十八幕动画</b><br>imchong.github.io/Robot_Learning_Paper_Notebooks');
     foot.style.textAlign = 'center';
@@ -84,11 +80,10 @@ window.PaperVideo = {
     return {
       root: root,
       draw: function (st, t) {
-        V.stack(pts.concat([next, foot]), [14, 14, 20, 20], V.SAFE_TOP + 148, V.contentBottom());
+        V.stack(pts.concat([foot]), [14, 14, 24], V.SAFE_TOP + 148, V.contentBottom());
         fadeUp(head, t, 0.0);
         pts.forEach(function (p, k) { fadeUp(p, t, [1.0, 3.4, 5.8][k]); });
-        fadeUp(next, t, 7.0);
-        fadeUp(foot, t, 9.5);
+        fadeUp(foot, t, 7.0);
         foot.style.transform = 'none';  // 紧挨字幕，只淡入不上滑
       }
     };
