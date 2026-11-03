@@ -2278,7 +2278,7 @@
     var cRL = cs1.line(stepCurve(0.84, 0.05), C_SM, 2.4), cDS = cs1.line(stepCurve(0.51, 0.08), C_BASE, 2.4);
     var brR = group(fa), brD = group(fa);
     hline(brR, cs1.px(4.7), cs1.py(1), cs1.px(4.7), cs1.py(0.84), C_SM, 2); tone(brR, cs1.px(4.7) - 6, cs1.py(0.92) + 4, '差 0.16', C_SM, 11, 'end');
-    hline(brD, cs1.px(4.3), cs1.py(1), cs1.px(4.3), cs1.py(0.51), C_BASE, 2); tone(brD, cs1.px(4.3) - 6, cs1.py(0.7) + 4, '差 0.49', C_BASE, 11, 'end');
+    hline(brD, cs1.px(3.75), cs1.py(1), cs1.px(3.75), cs1.py(0.51), C_BASE, 2); tone(brD, cs1.px(3.75) - 6, cs1.py(0.7) + 4, '差 0.49', C_BASE, 11, 'end');
     legendRow(fa, X0 + 30, 322, [['命令 1.0 m/s', C_INK, 70, '6 4'], ['强化学习的编码器', C_SM, 96, 'line'], ['蒸馏的编码器', C_BASE, 72, 'line']], 11);
     label(fa, 450, 96, '从站着开始，给一个固定的速度命令，跑 5 秒', 'demo-x-ink2', 12);
     label(fa, 450, 120, '取最后 2 秒的平均速度，和命令差多少', 'demo-x-ink2', 12);
@@ -2293,7 +2293,8 @@
     label(fb, X0 + 100, 97, '强化学习 0.16', 'demo-x-ink2', 11.5, 'end'); label(fb, X0 + 100, 125, '蒸馏 0.49', 'demo-x-ink2', 11.5, 'end');
     var bigC = [X0 + 150, 228], RB = 80;
     var bigRing = paint(svgEl('path', { d: 'M0 0', 'fill-rule': 'evenodd' }), C_SM); fb.appendChild(bigRing);
-    var tO = tone(fb, bigC[0] + 72, bigC[1] - 38, '外圈面积 ∝ 较大的误差 0.49', C_SM, 11.5), tI = tone(fb, bigC[0] + 52, bigC[1] + 4, '孔的面积 ∝ 较小的误差 0.16', C_INK, 11.5);
+    var tO = tone(fb, bigC[0] + 72, bigC[1] - 38, '外圈面积 ∝ 较大的误差 0.49', C_SM, 11.5), tI = tone(fb, bigC[0] + 92, bigC[1] + 4, '孔的面积 ∝ 较小的误差 0.16', C_INK, 11.5);
+    hline(fb, bigC[0] + 28, bigC[1], bigC[0] + 86, bigC[1], C_INK, 1.2, '2 3');
     label(fb, 470, 96, '颜色：谁的误差更小——蓝是强化学习，黄是蒸馏', 'demo-x-ink2', 12);
     label(fb, 470, 120, '圈越大：较差的那个越差', 'demo-x-ink2', 12);
     label(fb, 470, 144, '环越粗：两者差得越多', 'demo-x-ink2', 12);
@@ -2354,7 +2355,7 @@
     label(fd, X0, 52, '另两张图：纵轴换成转弯的角速度', 'demo-x-ink', 13.5);
     var P2 = plane(fd, 'vx_wz', X0 + 30, 92, 190, { ticks: true }), P3 = plane(fd, 'vy_wz', X0 + 270, 92, 190, { ticks: true });
     var fellHl = [];
-    [P2, P3].forEach(function (Pp) { Pp.rings.forEach(function (r0) { if (r0.fell) fellHl.push(ringAt(fd, r0.cx, r0.cy, 12, C_BAD, 2)); }); });
+    [P2, P3].forEach(function (Pp) { Pp.rings.forEach(function (r0) { if (r0.fell) fellHl.push(ringAt(fd, r0.cx, r0.cy, 9, C_BAD, 2)); }); });
     legendRow(fd, 530, 96, [['蒸馏 4 次都摔倒', C_INK, 90, 'ring']], 11);
     label(fd, 530, 122, '一共 7 个命令', 'demo-x-ink2', 12);
     label(fd, 530, 146, '都在边平移、边快速转弯', 'demo-x-ink2', 12);
@@ -2414,7 +2415,7 @@
       /* ⑤ 总数 */
       var ue = clamp(since(t, clock, 22.4) / 2, 0, 1);
       tb1.set(110 * ue, Math.round(650 * ue) + ' 个'); tb2.set(110 * 15 / 650 * ue, Math.round(15 * ue) + ' 个'); tb3.set(110 * 7 / 650 * ue, Math.round(7 * ue) + ' 个');
-      tm1.set(110 * 0.16 / 0.49 * ue, (0.16 * ue).toFixed(2)); tm2.set(110 * ue, (0.49 * ue).toFixed(2));
+      tm1.set(110 * 0.16 / 0.49 * ue, ue > 0 ? '0.16' : ''); tm2.set(110 * ue, ue > 0 ? '0.49' : '');
       setOpacity(fe, win(t, 22.4));
     }
     return { el: s, draw: draw };
