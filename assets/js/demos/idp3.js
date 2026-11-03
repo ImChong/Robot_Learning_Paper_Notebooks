@@ -1136,25 +1136,34 @@ var SIDE_RHAND = 'ygQfBqMEQAaGBFEGcwRPBmkETwZmBGMGaQSOBpoEnQbiBMIGIwUAB1gFSAeABY
   }
 
   /* ── scene 6: 学什么：观测、动作与数据 ── */
+  /* 侧视里机器人面前的桌子（示意）：桌面在机器人前方 0.28–0.8 m、离底座 table_z 高（我们从点云粗估的桌面高度），
+     下面两条短桌腿；原先只画一条橙线，2026-11-03 看片反馈「中间的黄线看不懂」，改画成桌子并直接标注 */
   function sideTableLine(parent) {
-    /* 侧视贴图里桌面的边：机器人前方 0.3–0.8 m、离底座 table_z 高的一条线（我们从点云粗估的桌面高度） */
-    return hline(parent, 0, 0, 0, 0, C_WAIST, 3);
+    var g = group(parent);
+    var top = paint(svgEl('rect', { x: 0, y: 0, width: 0, height: 6, rx: 2 }), C_WAIST); g.appendChild(top);
+    var l1 = hline(g, 0, 0, 0, 0, C_WAIST, 3), l2 = hline(g, 0, 0, 0, 0, C_WAIST, 3);
+    var t1 = label(g, 0, 0, '桌子', 'demo-x-ink', 11.5), t2 = label(g, 0, 0, '高度按点云估', 'demo-x-mut', 11);
+    return { g: g, top: top, l1: l1, l2: l2, t1: t1, t2: t2 };
   }
-  function placeTable(ln, ox, oy, k, lab) {
+  function placeTable(tb, ox, oy, k) {
     var a = sideProject([0.28, 0.05, SIDE.table_z]), b = sideProject([0.8, 0.05, SIDE.table_z]);
-    setLine(ln, ox + a[0] * k, oy + a[1] * k, ox + b[0] * k, oy + b[1] * k);
-    if (lab) { lab.setAttribute('x', (ox + b[0] * k).toFixed(1)); lab.setAttribute('y', (oy + b[1] * k + 18).toFixed(1)); }
+    var ax = ox + a[0] * k, ay = oy + a[1] * k, bx = ox + b[0] * k;
+    tb.top.setAttribute('x', ax.toFixed(1)); tb.top.setAttribute('y', (ay - 3).toFixed(1)); setW(tb.top, bx - ax);
+    setLine(tb.l1, ax + 8, ay + 3, ax + 8, ay + 40); setLine(tb.l2, bx - 8, ay + 3, bx - 8, ay + 40);
+    tb.t1.setAttribute('x', (bx + 8).toFixed(1)); tb.t1.setAttribute('y', (ay + 4).toFixed(1));
+    tb.t2.setAttribute('x', (bx + 8).toFixed(1)); tb.t2.setAttribute('y', (ay + 24).toFixed(1));
   }
   function buildSceneData() {
     var s = sceneSvg('左边是我们按示范记录的关节角渲染的 GR-1 侧面，来回播放倒水示范的第 1 段，右上角是同一帧机器人自己相机的彩色图；右边依次是：' +
       '一帧观测的组成；右臂五个关节在整段示范里的动作曲线和当前帧的竖线；关节角和末端位姿的对比；三个任务 300 段示范的格子；官方示例数据');
     s.appendChild(svgText(24, 26, '学什么：观测 → 目标关节角', 'demo-x-ink2', 13.5));
     var g1 = gr1Side(s), OX = 16, OY = 40, KW = 300, tl = sideTableLine(s);
+    s.insertBefore(tl.g, s.childNodes[1]);  /* 桌子画在机器人后面一层：侧视里手伸到桌面以下时不像穿进桌子 */
     var rgb = egoRgb(s);
     rectBox(s, 299, 43, 116, 116, C_HEAD, 'none');
     label(s, 357, 177, '机器人自己看到的', 'demo-x-mut', 10.5, 'middle');
     var fl = label(s, 24, 340, '', 'demo-x-ink2', 11.5);
-    label(s, 24, 360, '倒水示范第 1 段（官方示例数据）· 我们渲染 · 橙线是我们按点云估的桌面', 'demo-x-mut', 10.5);
+    label(s, 24, 360, '倒水示范第 1 段（官方示例数据）· 我们渲染 · 桌子是示意', 'demo-x-mut', 10.5);
     var R = 436;
     var p1 = group(s);
     label(p1, R, 56, '一帧观测 → 一个动作', 'demo-x-ink', 14);
@@ -2710,8 +2719,8 @@ var SIDE_RHAND = 'ygQfBqMEQAaGBFEGcwRPBmkETwZmBGMGaQSOBpoEnQbiBMIGIwUAB1gFSAeABY
   function buildVideoDemo(host) {
     K.video(host, {
       title: '配音讲解视频：iDP3 十八幕全流程',
-      sub: '28 分 12 秒竖屏视频（1080×1920），中文配音 + 字幕。画面就是上面的十八幕动画，旁白把每一幕讲细；适合手机上看或转发。',
-      size: '36.6 MB',
+      sub: '28 分 15 秒竖屏视频（1080×1920），中文配音 + 字幕。画面就是上面的十八幕动画，旁白把每一幕讲细；适合手机上看或转发。',
+      size: '36.0 MB',
       fileName: 'iDP3_讲解视频.mp4'
     });
   }
