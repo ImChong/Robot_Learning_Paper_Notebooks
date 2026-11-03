@@ -260,13 +260,20 @@
       set: function (w, txt) { setW(b, w); v.setAttribute('x', (x + labelW + Math.max(0, w) + 6).toFixed(1)); v.textContent = txt; }
     };
   }
+  /* 图例：items 每项 [文字, 颜色, 文字宽, 样式]。样式省略 = 色块（柱、条、面积）；'line' = 实线；'6 4' 这类 = 同样的虚线；
+     'x' = 叉号；'ring' = 圆环；'dot' = 圆点。曲线的图例画成和曲线一样的线段，读者才对得上 */
   function legendRow(parent, x, y, items, size) {
     var g = group(parent), cx = x;
     items.forEach(function (it) {
-      g.appendChild(paint(svgEl('rect', { x: cx, y: y - 8, width: 12, height: 10, rx: 2 }), it[1]));
-      var t = label(g, cx + 16, y, it[0], 'demo-x-ink2', size || 10.5);
-      cx += 16 + (it[2] || it[0].length * (size || 10.5) * 0.95) + 16;
-      void t;
+      var st = it[3], sw = 12, my = y - 3.5;
+      if (st == null) g.appendChild(paint(svgEl('rect', { x: cx, y: y - 8, width: 12, height: 10, rx: 2 }), it[1]));
+      else if (st === 'x') cross(g, cx + 1, my - 5, 10, it[1]);
+      else if (st === 'ring') ringAt(g, cx + 6, my, 4.5, it[1], 2);
+      else if (st === 'dot') dotAt(g, cx + 6, my, 4.5, it[1]);
+      else if (st === 'box') { var bx = rectBox(g, cx, y - 9, 14, 11, it[1], 'none'); bx.style.fill = 'none'; }
+      else { sw = 26; var l = hline(g, cx, my, cx + sw, my, it[1], 2.6, st === 'line' ? null : st); l.setAttribute('stroke-linecap', 'butt'); }
+      label(g, cx + sw + 5, y, it[0], 'demo-x-ink2', size || 10.5);
+      cx += sw + 5 + (it[2] || it[0].length * (size || 10.5) * 0.95) + 16;
     });
     return g;
   }
@@ -714,7 +721,7 @@
       a.set(R + 74, 92 + i * 36, R + 112, 146, 6);
     });
     boxText(p3, R + 116, 120, 92, 52, '同一台 G1\n同样的接触', C_SIM, { size: 12 });
-    label(p3, R + 228, 92, 'PPO：从带噪的样本里估梯度', 'demo-x-ink2', 11.5);
+    label(p3, R + 222, 92, 'PPO：从带噪样本估梯度', 'demo-x-ink2', 11.5);
     var cx3 = R + 280, cy3 = 166, noisy = [];
     for (var j = 0; j < 9; j++) noisy.push(arrow(p3, C_BASE, 1.4));
     var trueA = arrow(p3, C_GRAD, 2.6);
@@ -1105,8 +1112,8 @@
     ringAt(p3, jc[0], jc[1], 6, C_INK, 2);
     var spLine = hline(p3, 0, 0, 0, 0, C_INK, 5), spSet = hline(p3, 0, 0, 0, 0, C_BASE, 2, '5 4');
     var spr = spring(p3, C_GOOD, 5, 4);
-    tone(p3, R + 176, 154, '虚线 = 设定点', C_BASE, 11.5);
-    label(p3, R + 176, 176, '实线 = 关节实际的角度', 'demo-x-ink2', 11.5);
+    legendRow(p3, R + 176, 154, [['设定点', C_BASE, 40, '5 4']], 11.5);
+    legendRow(p3, R + 176, 176, [['关节实际的角度', C_INK, 84, 'line']], 11.5);
     tone(p3, R + 176, 198, 'PD 像弹簧，把关节往设定点拉', C_GOOD, 11.5);
     label(p3, R + 176, 226, '增益很低：设定点更像力矩', 'demo-x-ink2', 11.5);
     label(p3, R + 176, 246, '（照 BeyondMimic）', 'demo-x-mut', 11);
@@ -1150,7 +1157,7 @@
       tape.forEach(function (r, i) {
         var x = R + 64 + 284 - (i * 28) - off + 28;
         r.setAttribute('x', x.toFixed(1));
-        r.style.opacity = x > R + 62 && x < R + 340 ? 0.85 : 0.18;
+        r.style.opacity = x > R + 62 && x < R + 340 ? 0.85 : x + 24 > R + 364 || x < R + 30 ? 0 : 0.18;
       });
       fut.forEach(function (r, i) { r.style.opacity = 0.25 + 0.75 * clamp(since(t, clock, 3.6) * 4 - i * 0.3, 0, 1) * (1 - i * 0.06); });
       /* 关节：设定点在摆，实际角度慢一拍跟着走 */
@@ -1211,12 +1218,19 @@
     var axes = K.svgAxes({ len: 46, size: 12 });
     p2.appendChild(axes.g);
     var head = paint(svgEl('path', { d: 'M 0 0', fill: 'none', 'stroke-width': 1.4 }), null, C_MUTED);
-    p2.appendChild(head);
-    label(p2, R + 150, 104, '位置增量写在「朝向系」里：', 'demo-x-ink2', 11.5);
-    label(p2, R + 150, 124, '跟着机器人转、但不跟着它歪', 'demo-x-ink2', 11.5);
-    label(p2, R + 150, 150, '红、绿、蓝分别是 x、y、z', 'demo-x-mut', 11);
-    label(p2, R, 206, '旋转、速度的增量写在身体系里；关节直接加', 'demo-x-ink2', 12);
-    label(p2, R, 230, '同一个动作换个方向走，输入输出都一样', 'demo-x-ink2', 12);
+    p2.insertBefore(head, axes.g);
+    /* 骨盆的方框（示意）和身体朝前的白箭头：先左右转身，再前倾、侧倒 */
+    var bodyP = paint(svgEl('path', { d: 'M 0 0', 'stroke-width': 1.6, 'stroke-linejoin': 'round', 'fill-opacity': 0.12 }), C_MUTED, C_MUTED);
+    p2.insertBefore(bodyP, axes.g);
+    var fwd = arrow(p2, C_INK, 2.4);
+    label(p2, R + 150, 100, '位置的增量写在「朝向系」里', 'demo-x-ink2', 11.5);
+    var ph1 = tone(p2, R + 150, 124, '转身：朝向系跟着转', C_GOOD, 11.5);
+    var ph2 = tone(p2, R + 150, 146, '前倾、侧倾：它保持水平', C_GOOD, 11.5);
+    label(p2, R + 150, 168, 'z 轴一直朝上', 'demo-x-ink2', 11.5);
+    legendRow(p2, R + 150, 192, [['身体朝前的方向', C_INK, 84, 'line'], ['骨盆（示意）', C_MUTED, 66]], 11);
+    var phT = label(p2, R + 70, 214, '', 'demo-x-mut', 11, 'middle');
+    label(p2, R, 240, '旋转、速度的增量写在身体系里；关节直接加', 'demo-x-ink2', 12);
+    label(p2, R, 262, '同一个动作换个方向走，输入输出都一样', 'demo-x-ink2', 12);
     var p3 = group(s);
     label(p3, R, 62, '再配三个头：可以学，也可以按公式算', 'demo-x-ink', 14);
     [['奖励 $\\hat{r}$', '和参考比，按公式算'], ['观测 $\\hat{\\bar{o}}$', '从状态里取'], ['终止 $\\hat{d}$', '高度、倾斜 → 概率']].forEach(function (h0, i) {
@@ -1243,19 +1257,46 @@
       return ch5.line(pts, [C_GOOD, C_ACCENT, C_WARN, C_PURPLE, C_BAD][i], 1.8, null, 1);
     });
     label(p5, R + 40, 88, '归一化误差', 'demo-x-mut', 11);
-    legendRow(p5, R, 280, [['走路', C_GOOD, 24], ['冲刺', C_ACCENT, 24], ['跳', C_WARN, 12], ['跳舞', C_PURPLE, 24], ['摔倒再起身', C_BAD, 60]], 11);
-    var leg5 = label(p5, R, 304, '', 'demo-x-ink2', 11.5);
+    legendRow(p5, R, 270, [['走路', C_GOOD, 24, 'line'], ['冲刺', C_ACCENT, 24, 'line'], ['跳跃', C_WARN, 24, 'line']], 11);
+    legendRow(p5, R, 290, [['跳舞', C_PURPLE, 24, 'line'], ['摔倒再起身', C_BAD, 60, 'line']], 11);
+    var leg5 = label(p5, R, 316, '', 'demo-x-ink2', 11.5);
+    label(p5, R, 336, '每段动作从仿真里取 373 个起点，喂同样的动作往前推', 'demo-x-mut', 11);
     function draw(t, clock) {
       var now = nowOf(t, clock);
       fls.forEach(function (f, i) { f.at(now + i * 0.2, [146, 80 + i * 52], [174, 140], true); });
       flo.at(now, [274, 140], [298, 140], true);
       rr.forEach(function (r0, i) { r0.at(now, 31 + i, 0.9); });
-      /* 朝向系：机器人的航向慢慢转，x、y 跟着转，z 一直朝上 */
-      var yaw = 0.6 * Math.sin(now * 0.7), o2 = [R + 70, 150];
-      axes.set(o2, [Math.cos(yaw) * 0.9, Math.sin(yaw) * 0.45], [-Math.sin(yaw) * 0.9, Math.cos(yaw) * 0.45], [0, -1]);
+      /* 朝向系：前 4 秒机器人左右转身，x、y 跟着转；后 4 秒前倾、侧倒，朝向系保持水平，z 一直朝上 */
+      var o2 = [R + 70, 166], tau = since(t, clock, 3.6) % 8, yaw = 0, pit = 0, rol = 0;
+      if (tau < 4) yaw = 0.75 * Math.sin(Math.PI * tau / 2);
+      else if (tau < 6) pit = 0.55 * Math.pow(Math.sin(Math.PI * (tau - 4) / 2), 2);
+      else rol = 0.5 * Math.pow(Math.sin(Math.PI * (tau - 6) / 2), 2);
+      var turning = tau < 4;
+      ph1.style.opacity = turning ? 1 : 0.35; ph2.style.opacity = turning ? 0.35 : 1;
+      phT.textContent = turning ? '左右转身' : tau < 6 ? '往前倾' : '往旁边侧倾';
+      var cyw = Math.cos(yaw), syw = Math.sin(yaw), cp = Math.cos(pit), sp = Math.sin(pit), cr = Math.cos(rol), sr = Math.sin(rol);
+      /* R = Rz(yaw) · Ry(pit) · Rx(rol)；pit > 0 时身体前方往下倾 */
+      function rot(v) {
+        var x1 = v[0], y1 = cr * v[1] - sr * v[2], z1 = sr * v[1] + cr * v[2];
+        var x2 = cp * x1 + sp * z1, z2 = -sp * x1 + cp * z1;
+        return [cyw * x2 - syw * y1, syw * x2 + cyw * y1, z2];
+      }
+      var CY = 0.8, SPC = Math.sin(0.35), CPC = Math.cos(0.35), KS = 46;
+      function scr(v) { return [-Math.sin(CY) * v[0] + Math.cos(CY) * v[1], -(-Math.cos(CY) * SPC * v[0] - Math.sin(CY) * SPC * v[1] + CPC * v[2])]; }
+      function at(v) { var q = scr(v); return [o2[0] + KS * q[0], o2[1] + KS * q[1]]; }
+      axes.set(o2, scr([cyw, syw, 0]), scr([-syw, cyw, 0]), scr([0, 0, 1]));
       var e1 = [], N = 40;
-      for (var q = 0; q <= N; q++) { var a = q / N * Math.PI * 2; e1.push([o2[0] + Math.cos(a) * 52, o2[1] + Math.sin(a) * 18]); }
+      for (var q = 0; q <= N; q++) { var a = q / N * Math.PI * 2; e1.push(at([Math.cos(a) * 1.25, Math.sin(a) * 1.25, 0])); }
       setPath(head, e1);
+      var hx = 0.32, hy = 0.42, hz = 0.2, zc = 0.62, cs = [];
+      [-1, 1].forEach(function (a1) { [-1, 1].forEach(function (b1) { [-1, 1].forEach(function (c1) { cs.push([a1 * hx, b1 * hy, zc + c1 * hz]); }); }); });
+      var P = cs.map(function (c0) { return at(rot(c0)); }), d = '';
+      [[0, 1], [2, 3], [4, 5], [6, 7], [0, 2], [1, 3], [4, 6], [5, 7], [0, 4], [1, 5], [2, 6], [3, 7]].forEach(function (e) {
+        d += 'M' + P[e[0]][0].toFixed(1) + ' ' + P[e[0]][1].toFixed(1) + 'L' + P[e[1]][0].toFixed(1) + ' ' + P[e[1]][1].toFixed(1);
+      });
+      bodyP.setAttribute('d', d);
+      var c0 = at(rot([0, 0, zc])), c1 = at(rot([0.95, 0, zc]));
+      fwd.set(c0[0], c0[1], c1[0], c1[1], 8);
       /* 8 步：预测从日志出发，一步步偏开 */
       var u4 = (since(t, clock, 10.4) % 3.0) / 3.0;
       for (var j2 = 0; j2 < 8; j2++) {
@@ -1267,7 +1308,7 @@
       }
       var u5 = clamp(since(t, clock, 13.4) / 2.0, 0, 1);
       lines5.forEach(function (l) { l.set(1 + 7 * u5); });
-      leg5.textContent = '8 步（0.16 秒）后根部位置差 ' + f1(E.walk1_subject1.rootMm) + '–' + f1(E.fallAndGetUp1_subject1.rootMm) + ' 毫米';
+      leg5.textContent = '8 步（0.16 秒）后根部位置平均差 ' + f1(E.walk1_subject1.rootMm) + '–' + f1(E.fallAndGetUp1_subject1.rootMm) + ' 毫米';
       setOpacity(p1, win(t, 0.3, 3.6));
       setOpacity(p2, win(t, 3.6, 7.0));
       setOpacity(p3, win(t, 7.0, 10.4));
@@ -1286,7 +1327,7 @@
     var parts = [
       { key: 'fall', sim: 'fall_sim', wm: 'fall_wm', name: '策略开着：摔倒、躺下、再爬起来', a: 0.4, b: 10.4 },
       { key: 'off', sim: 'off_sim', wm: 'off_wm', name: '策略关掉：动作全给 0，跑步中扑倒', a: 10.4, b: 13.4 },
-      { key: 'slip', sim: 'slip_sim', wm: 'slip_wm', name: '地面变滑：摩擦 1.0 → 0.3，急停时打滑', a: 13.4, b: 1e9 }
+      { key: 'slip', sim: 'slip_sim', wm: 'slip_wm', name: '地面变滑：开始急停的第 0 秒起，摩擦 1.0 → 0.3', a: 13.4, b: 1e9 }
     ];
     var frames = [];
     [X1, X2].forEach(function (x) { frames.push(rectBox(s, x, TY, TW, TH, C_BORDER, C_SURFACE2)); });
@@ -1321,11 +1362,15 @@
         p.lC = c.line(dist(E.rootCtrl), C_MUTED, 1.8, '2 3');
         p.lS = c.line(dist(E.rootSim), C_SIM, 2.2);
         p.lW = c.line(dist(E.rootWm), C_WM, 2.2, '6 4');
+        hline(g, c.px(0), 76, c.px(0), 76 + chh, C_WARN, 2, '3 3');
+        tone(g, c.px(0) + 6, 92, '第 0 秒（开始急停）：μ 1.0 → 0.3', C_WARN, 11);
       }
       p.c = c; p.T = T;
       p.cur = hline(g, 0, 0, 0, 0, C_WARN, 1.4);
-      legendRow(g, R + 28, 248, p.key === 'slip' ? [['仿真 μ 0.3', C_SIM, 62], ['世界模型 μ 0.3', C_WM, 86], ['仿真 μ 1.0', C_MUTED, 62]] : [['仿真器', C_SIM, 40], ['世界模型', C_WM, 52]], 11);
-      p.stat = [label(g, R, 274, '', 'demo-x-ink2', 12), label(g, R, 294, '', 'demo-x-ink2', 12), label(g, R, 314, '', 'demo-x-mut', 11)];
+      if (p.key === 'slip') { legendRow(g, R + 28, 248, [['仿真 μ 0.3', C_SIM, 58, 'line'], ['世界模型 μ 0.3', C_WM, 82, '6 4']], 11); legendRow(g, R + 28, 268, [['仿真 μ 1.0（对照）', C_MUTED, 100, '2 3']], 11); }
+      else legendRow(g, R + 28, 248, [['仿真器', C_SIM, 40, 'line'], ['世界模型', C_WM, 52, '6 4']], 11);
+      var sy0 = p.key === 'slip' ? 294 : 274;
+      p.stat = [label(g, R, sy0, '', 'demo-x-ink2', 12), label(g, R, sy0 + 20, '', 'demo-x-ink2', 12), label(g, R, sy0 + 40, '', 'demo-x-mut', 11)];
       p.pg = g;
       return p;
     });
@@ -1341,7 +1386,7 @@
         var n = REPRO[p.key].hSim.length, f = seqFrame(since(t, clock, p.a), n, 25, 1.0);
         p.spS.put(X1, TY, SC, f); p.spW.put(X2, TY, SC, f);
         p.grS.draw(f); p.grW.draw(f);
-        p.clock.textContent = f1(f / 25) + ' s';
+        p.clock.textContent = f1(f / 25) + ' s' + (p.key === 'slip' ? '  μ = 0.3' : '');
         var tt = f / 25, X = p.c.px(tt);
         setLine(p.cur, X, 76, X, 76 + chh);
         p.lS.set(tt); p.lW.set(tt); if (p.lC) p.lC.set(tt);
@@ -1352,7 +1397,7 @@
       parts[1].stat[0].textContent = '同样的动作（全是 0）喂给两边';
       parts[1].stat[1].textContent = '2 秒后高度：仿真 ' + f2(O.hSim[O.hSim.length - 1]) + ' m，世界模型 ' + f2(O.hWm[O.hWm.length - 1]) + ' m';
       parts[1].stat[2].textContent = '世界模型也预测它会倒下';
-      parts[2].stat[0].textContent = '双脚贴地滑过：仿真 ' + f2(SL.slideSim) + ' m，世界模型 ' + f2(SL.slideWm) + ' m';
+      parts[2].stat[0].textContent = '之后 3 秒双脚贴地滑过：仿真 ' + f2(SL.slideSim) + ' m，世界模型 ' + f2(SL.slideWm) + ' m';
       parts[2].stat[1].textContent = '摩擦不变的话只有 ' + f2(SL.slideCtrl) + ' m';
       parts[2].stat[2].textContent = '告诉世界模型摩擦，它就预测得出滑';
     }
@@ -1412,7 +1457,7 @@
     for (var q = 0; q <= 100; q++) { var e = q / 200; hard.push([e, e < 0.25 ? 1 : 0]); soft.push([e, 1 - 1 / (1 + Math.exp(-(e - 0.25) / 0.02))]); }
     c3.line(hard, C_BAD, 1.8, '5 4');
     c3.line(soft, C_GOOD, 2.4);
-    legendRow(p3, R + 28, 264, [['硬终止（仿真器）', C_BAD, 96], ['模型预测的存活概率', C_GOOD, 120]], 11);
+    legendRow(p3, R + 28, 264, [['硬终止（仿真器）', C_BAD, 96, '5 4'], ['模型预测的存活概率', C_GOOD, 120, 'line']], 11);
     label(p3, R, 290, '每一步乘 1 − 终止概率，连乘起来就是 c', 'demo-x-ink2', 12);
     var p4 = group(s);
     label(p4, R, 62, 'PPO：把动力学当黑箱', 'demo-x-ink', 14);
@@ -1433,6 +1478,8 @@
     });
     legendRow(p5, R, 282, [['BPTT（沿模型求导）', C_GRAD, 112], ['似然比（PPO 的做法）', C_BASE, 124]], 11);
     var note5 = label(p5, R, 306, '', 'demo-x-ink2', 11.5);
+    label(p5, R, 326, '冲刺片段里同一个状态，想象 32 步', 'demo-x-mut', 11);
+    label(p5, R, 346, '参考方向 = 2048 条 BPTT 梯度的平均', 'demo-x-mut', 11);
     function draw(t, clock) {
       var now = nowOf(t, clock);
       /* 轨迹：前向一步步出现（奖励条长出来），再整体往回传梯度，循环 */
@@ -1493,9 +1540,13 @@
       cellsT.push(tone(s, x + 18, 206, '', C_CRIT, 12, 'middle'));
       if (k === 0) { label(s, 6, 151, '奖励', 'demo-x-mut', 11); label(s, 6, 179, '估值', 'demo-x-mut', 11); tone(s, 6, 209, '目标', C_CRIT, 11); }
     }
-    label(s, 24, 236, '从最后一步往回算：$\\hat{R}_6 = V_6$，每往前一步混一次', 'demo-x-ink2', 11.5);
-    label(s, 24, 258, '目标算好后固定，评论家去拟合它（最小二乘）', 'demo-x-ink2', 11.5);
-    label(s, 24, 280, '$\\gamma=0.99$，$\\lambda=0.95$；这里的奖励和估值是玩具数字', 'demo-x-mut', 11);
+    /* 正在算的那一格：后一步的估值（×5%）和后一步的目标（×95%）流进来，再加上这一步的奖励 */
+    var aV = arrow(s, C_MUTED, 1.6), aT = arrow(s, C_CRIT, 1.8);
+    var hlR = rectBox(s, 0, 0, 34, 18, C_CRIT, 'none'); hlR.style.fill = 'none';
+    tone(s, 24, 246, '最下面一排「目标」：评论家要去拟合的值', C_CRIT, 11.5);
+    label(s, 24, 268, '目标 = 这一步的奖励 + 0.99 ×（5% 后一步估值 + 95% 后一步目标）', 'demo-x-ink2', 11.5);
+    label(s, 24, 290, '最后一步的目标就是它的估值；奖励和估值是玩具数字', 'demo-x-mut', 11);
+    legendRow(s, 24, 314, [['后一步的估值 ×5%', C_MUTED, 92, 'line'], ['后一步的目标 ×95%', C_CRIT, 98, 'line'], ['这一步的奖励', C_CRIT, 72, 'box']], 11);
     var R = 440;
     var p1 = group(s);
     label(p1, R, 62, '评论家怎么训', 'demo-x-ink', 14);
@@ -1517,7 +1568,7 @@
     var dc = PAPER.fig4b_critic.map(function (p) { return dotAt(c3.g, c3.px(p[0]), c3.py(p[1]), 4, C_SM); });
     var dn = PAPER.fig4b_nocritic.map(function (p) { return ringAt(c3.g, c3.px(p[0]), c3.py(p[1]), 4, C_MUTED, 1.6); });
     void lc; void ln3; void dc; void dn;
-    legendRow(p3, R + 28, 282, [['有评论家', C_SM, 52], ['没有评论家', C_MUTED, 62]], 11);
+    legendRow(p3, R + 28, 282, [['有评论家', C_SM, 52, 'line'], ['没有评论家', C_MUTED, 62, '5 4']], 11);
     label(p3, R, 304, '越高越好；没有评论家时 H ≤ 16 训不起来', 'demo-x-mut', 11);
     var p4 = group(s);
     label(p4, R, 62, '论文图四 c：训到回报 0.82 要几小时', 'demo-x-ink', 14);
@@ -1528,7 +1579,7 @@
     cross(c4.g, c4.px(8) - 5, c4.py(5) - 5 + 6, 9, C_SM); cross(c4.g, c4.px(8) - 5, c4.py(4.4) - 5, 9, C_MUTED); cross(c4.g, c4.px(16) - 5, c4.py(5) - 5 + 6, 9, C_MUTED);
     var hiBand = paint(svgEl('rect', { x: c4.px(32) - 8, y: 82, width: 16, height: 140 }), C_SM);
     hiBand.style.opacity = 0.12; c4.g.insertBefore(hiBand, c4.g.firstChild.nextSibling);
-    legendRow(p4, R + 28, 282, [['有评论家', C_SM, 52], ['没有评论家', C_MUTED, 62], ['× 没训到', C_INK, 52]], 11);
+    legendRow(p4, R + 28, 282, [['有评论家', C_SM, 52, 'line'], ['没有评论家', C_MUTED, 62, '5 4'], ['没训到', C_INK, 40, 'x']], 11);
     label(p4, R, 304, '越低越好；默认 H = 32 最快（0.88 小时）', 'demo-x-mut', 11);
     var p5 = group(s);
     label(p5, R, 62, '被推一把：T 字站着，0.5–4 m/s 的速度冲击', 'demo-x-ink', 14);
@@ -1550,6 +1601,13 @@
         var on = u * 8 > (6 - k);
         c0.textContent = on ? f2(Rh[k]) : '';
       });
+      var kn = 6 - Math.floor(u * 8), xk = 54 + 52 * kn, xn = xk + 52, showA = kn >= 0 && kn <= 5;
+      [aV.g, aT.g, hlR].forEach(function (n) { n.style.opacity = showA ? 1 : 0; });
+      if (showA) {
+        aV.set(xn - 12, 180, xk + 14, 196, 7);
+        aT.set(xn - 16, 202, xk + 18, 202, 7);
+        hlR.setAttribute('x', (xk + 9).toFixed(1)); hlR.setAttribute('y', '135');
+      }
       /* 推一把：有评论家的晃几下就停，没有的一直晃 */
       var tt = since(t, clock, 13.4) % 4;
       [0, 1].forEach(function (i) {
@@ -1787,7 +1845,7 @@
     tone(s, 396, c.py(0.9012) - 6, 'SONIC 0.90', C_BASE, 11, 'end');
     var l1 = c.line(PAPER.fig3a_1, C_SM, 2.6), l2 = c.line(PAPER.fig3a_2, C_PURPLE, 2.2);
     var m3 = ringAt(c.g, c.px(3), c.py(0.9363), 6, C_GOOD, 2.4);
-    legendRow(s, 60, 294, [['1 张 H100', C_SM, 54], ['2 张 H100', C_PURPLE, 54], ['SONIC（128 张 L40）', C_BASE, 112]], 11);
+    legendRow(s, 60, 294, [['1 张 H100', C_SM, 54, 'line'], ['2 张 H100', C_PURPLE, 54, 'line'], ['SONIC（128 张 L40）', C_BASE, 112, '6 4']], 11);
     /* 预算两行 */
     var bud = group(s);
     function budRow(y, a, b, txtA, txtB, big) {
@@ -1836,9 +1894,9 @@
       acc[2].textContent = '显卡小时：约 ' + countTo(7200, u3) + ' 倍';
       acc[3].textContent = '墙钟时间：168 ÷ 3 = ' + countTo(56, u3) + ' 倍';
       var u4 = clamp(since(t, clock, 13.4) / 1.6, 0, 1);
-      q1.set(120 * Math.log10(2.3) / Math.log10(7200) * u4, '2.3 倍');
-      q2.set(120 * Math.log10(5.5) / Math.log10(7200) * u4, '≤ 5.5 倍');
-      q3.set(120 * u4, '约 7200 倍');
+      q1.set(100 * Math.log10(2.3) / Math.log10(7200) * u4, '2.3 倍');
+      q2.set(100 * Math.log10(5.5) / Math.log10(7200) * u4, '≤ 5.5 倍');
+      q3.set(100 * u4, '约 7200 倍');
       setOpacity(p1, win(t, 0.3, 3.6));
       setOpacity(p2, win(t, 3.6, 10.4));
       setOpacity(p3, win(t, 10.4, 13.4));
@@ -1865,7 +1923,7 @@
     var cc = chart(lg, 60, 60, 340, 170, { x0: 0, x1: 10, y0: 0, y1: 500 });
     cc.g.firstChild.style.opacity = 0;
     var a1 = cc.line(PAPER.figA1_1, C_SM, 2.2), a2 = cc.line(PAPER.figA1_2, C_PURPLE, 2.2);
-    legendRow(L, 60, 288, [['1 张 H100', C_SM, 54], ['2 张 H100', C_PURPLE, 54], ['SONIC 179', C_BASE, 56]], 11);
+    legendRow(L, 60, 288, [['1 张 H100', C_SM, 54, 'line'], ['2 张 H100', C_PURPLE, 54, 'line'], ['SONIC 179', C_BASE, 56, '6 4']], 11);
     label(L, 24, 312, '每 4000 次迭代存一次档，拿全部 129,514 段打分（越低越好）', 'demo-x-mut', 11);
     var R = 440;
     var rows = FAILS.map(function (f, i) {
@@ -1904,13 +1962,13 @@
     var s = sceneSvg('论文图 4a 的重画：LAFAN1 的 40 段动作，横轴是墙钟时间（0–18 小时），纵轴是评测的归一化回报，蓝线是 SuperMimic 1 张卡，三条黄橙线是在仿真器里跑 PPO 的 1、4、8 张卡，灰色虚线是 0.82；' +
       '右边依次出现：两边相同的设置清单、SuperMimic 到 0.82 的时刻、PPO 18 小时的终点、我们用复现模型在 40 段上重测的每段回报');
     s.appendChild(svgText(24, 26, '论文图四 a：同样的设置，在仿真器里跑 PPO', 'demo-x-ink2', 13.5));
-    var c = chart(s, 60, 60, 340, 180, { x0: 0, x1: 18, y0: 0, y1: 0.9, xt: [[0, '0'], [3, '3'], [6, '6'], [9, '9'], [12, '12'], [15, '15'], [18, '18 h']], yt: [[0, '0'], [0.4, '0.4'], [0.82, '0.82']], xl: '墙钟时间（小时）' });
-    c.line([[0, 0.82], [18, 0.82]], C_MUTED, 1.4, '5 4');
+    var c = chart(s, 60, 60, 340, 180, { x0: 0, x1: 19, y0: 0, y1: 0.9, xt: [[0, '0'], [3, '3'], [6, '6'], [9, '9'], [12, '12'], [15, '15'], [18, '18 h']], yt: [[0, '0'], [0.4, '0.4'], [0.82, '0.82']], xl: '墙钟时间（小时）' });
+    c.line([[0, 0.82], [19, 0.82]], C_MUTED, 1.4, '5 4');
     var lp = [c.line(PAPER.fig4a_ppo1, C_BASE, 1.8, '2 3'), c.line(PAPER.fig4a_ppo4, C_BASE, 2, '6 3'), c.line(PAPER.fig4a_ppo8, C_BASE, 2.2)];
     var ls = c.line(PAPER.fig4a_sm, C_SM, 2.8);
     var m12 = ringAt(c.g, c.px(1.2), c.py(0.82), 6, C_GOOD, 2.4);
-    legendRow(s, 60, 300, [['SuperMimic 1 张', C_SM, 84], ['PPO 8 张（实线）', C_BASE, 96]], 11);
-    label(s, 60, 320, 'PPO 4 张：长虚线；1 张：点线', 'demo-x-mut', 11);
+    legendRow(s, 60, 300, [['SuperMimic 1 张', C_SM, 84, 'line'], ['目标 0.82', C_MUTED, 50, '5 4']], 11);
+    legendRow(s, 60, 320, [['PPO 8 张', C_BASE, 48, 'line'], ['PPO 4 张', C_BASE, 48, '6 3'], ['PPO 1 张', C_BASE, 48, '2 3']], 11);
     label(s, 24, 340, '每个点是一个存档，在 40 段上打分；越高越好', 'demo-x-mut', 11);
     var R = 440;
     var p1 = group(s);
@@ -1967,7 +2025,7 @@
     var prop = cb.line([[1, 0.539], [4, 2.156]], C_MUTED, 1.6, '5 4');
     var lb = cb.line(PAPER.fig3b, C_SM, 2.4);
     var db = PAPER.fig3b.map(function (p) { return dotAt(cb.g, cb.px(p[0]), cb.py(p[1]), 4.5, C_SM); });
-    tone(p1, cb.px(12), cb.py(0.6), '虚线：和数据量成正比', C_MUTED, 11);
+    legendRow(p1, 420, 178, [['论文实测', C_SM, 50, 'line'], ['和数据量成正比', C_MUTED, 84, '5 4']], 11);
     var cc = chart(p1, 60, 222, 300, 76, { logx: true, x0: 0.7, x1: 400, y0: 0, y1: 0.012, xt: xtD, yt: [[0, '0'], [0.01, '0.01']], xl: '数据量（小时，对数刻度）' });
     label(p1, 60, 214, '8 步预测误差（归一化）', 'demo-x-mut', 11);
     var lc = cc.line(PAPER.fig3c, C_SM, 2.4);
@@ -1991,11 +2049,11 @@
       tone(g, b[0] > 40000 ? ca.px(b[0]) - 6 : ca.px(b[0]) + 6, (ca.py(b[1]) + ca.py(b[2])) / 2 + 4, b[3], C_INK, 12, b[0] > 40000 ? 'end' : 'start');
       return g;
     });
-    legendRow(p2, 470, 262, [['世界模型', C_SM, 52], ['MuJoCo Warp', C_BASE, 74]], 11);
+    legendRow(p2, 470, 262, [['世界模型', C_SM, 52, 'line'], ['MuJoCo Warp', C_BASE, 74, 'line']], 11);
     label(p2, 470, 110, '一步 = 50 Hz 的一个控制步', 'demo-x-ink2', 12);
     label(p2, 470, 134, 'MuJoCo Warp 要算 4 个 5 ms 的子步', 'demo-x-ink2', 12);
     label(p2, 470, 170, '常用的 2k–16k 个环境：快 10 倍以上', 'demo-x-ink', 12.5);
-    label(p2, 470, 196, '64k 个环境：快 62 倍', 'demo-x-ink', 12.5);
+    label(p2, 470, 196, '65,536 个环境：快 62 倍', 'demo-x-ink', 12.5);
     label(p2, 470, 222, 'MuJoCo Warp 这时已经到顶', 'demo-x-mut', 11.5);
     /* 第三段 */
     var p3 = group(s);
@@ -2006,15 +2064,17 @@
     var b64 = group(p3);
     hline(b64, c5.px(Math.log10(9.317e8)), c5.py(0.841), c5.px(Math.log10(5.956e10)), c5.py(0.841), C_INK, 1.6, '3 3');
     tone(b64, c5.px(10.3), c5.py(0.841) - 7, '64 倍', C_INK, 12.5, 'middle');
-    legendRow(p3, 470, 306, [['SuperMimic', C_SM, 64]], 11);
-    legendRow(p3, 470, 326, [['世界模型里跑 PPO（16k × 32 实线）', C_BASE, 190]], 11);
+    legendRow(p3, 470, 286, [['SuperMimic', C_SM, 64, 'line']], 11);
+    label(p3, 470, 306, '世界模型里跑 PPO（图例照论文）：', 'demo-x-mut', 11);
+    legendRow(p3, 470, 326, [['16k × 32', C_BASE, 50, 'line'], ['8k × 32', C_BASE, 44, '7 3']], 11);
+    legendRow(p3, 470, 346, [['8k × 24', C_BASE, 44, '4 3'], ['4k × 32', C_BASE, 44, '2 3']], 11);
     label(p3, 470, 110, '同样在世界模型里想象', 'demo-x-ink2', 12);
     label(p3, 470, 134, '只换更新策略的办法', 'demo-x-ink2', 12);
     label(p3, 470, 170, 'PPO：采样估梯度', 'demo-x-ink2', 12);
     label(p3, 470, 194, 'SuperMimic：沿模型求导', 'demo-x-ink2', 12);
     label(p3, 470, 230, '所以省下的不只是仿真速度，', 'demo-x-ink', 12.5);
     label(p3, 470, 254, '梯度本身也更有用', 'demo-x-ink', 12.5);
-    label(p3, 470, 284, '数据：LAFAN1 里走、跑、冲刺', 'demo-x-mut', 11);
+    label(p3, 470, 368, '数据：LAFAN1 里走、跑、冲刺', 'demo-x-mut', 11);
     function draw(t, clock) {
       var u1 = clamp(since(t, clock, 3.6) / 2, 0, 1);
       lb.set(Math.pow(264, u1)); lc.set(Math.pow(264, clamp(since(t, clock, 0.4) / 2, 0, 1)));
@@ -2103,7 +2163,7 @@
       });
       return { g: g, rings: rings };
     });
-    legendRow(s, R, 326, [['强化学习更好', C_SM, 76], ['蒸馏更好', C_BASE, 52], ['蒸馏摔倒', C_INK, 52]], 11);
+    legendRow(s, R, 326, [['强化学习更好', C_SM, 76, 'dot'], ['蒸馏更好', C_BASE, 52, 'dot'], ['蒸馏摔倒', C_INK, 52, 'dot']], 11);
     var st = [label(s, R + 222, 96, '', 'demo-x-ink', 13), label(s, R + 222, 122, '', 'demo-x-ink2', 12), label(s, R + 222, 144, '', 'demo-x-ink2', 12), label(s, R + 222, 168, '', 'demo-x-ink2', 12), label(s, R + 222, 190, '', 'demo-x-ink2', 12)];
     label(s, R + 222, 222, '外圈：较大的误差', 'demo-x-mut', 11);
     label(s, R + 222, 243, '内孔：较小的误差', 'demo-x-mut', 11);
@@ -2141,12 +2201,61 @@
       label(g, 38, y + 46, l0[1], 'demo-x-ink2', 11.5);
       return { g: g, r: r };
     });
-    var mini = group(L);
-    /* 三张小动画：编码器 / 仿真到真机的箭头 / 平地上的台阶 */
-    var m1 = dotAt(mini, 360, 76, 5, C_WARN), m2 = dotAt(mini, 360, 146, 5, C_WM);
-    var step = pathLine(mini, [[330, 236], [350, 236], [350, 222], [370, 222], [370, 208], [392, 208]], C_MUTED, 2);
-    void step;
     var R = 424;
+    /* 右边：三条局限各一段动画 */
+    /* ① 速度奖励的梯度只流进速度编码器，解码器不动；所以同时训和先后训最后一样 */
+    var pa = group(s);
+    label(pa, R, 52, '① 只用速度奖励时，梯度只到编码器', 'demo-x-ink', 13.5);
+    boxText(pa, R, 70, 116, 38, '动作编码器', C_SM, { size: 12 });
+    var encV = boxText(pa, R, 124, 116, 38, '速度编码器', C_WARN, { size: 12 });
+    boxText(pa, R + 146, 98, 40, 38, '$z$', C_INK, { size: 13 });
+    boxText(pa, R + 214, 92, 120, 50, '共用解码器\n权重不动', C_MUTED, { size: 11.5, dash: '5 4' });
+    boxText(pa, R + 214, 176, 120, 32, '速度跟踪奖励', C_GOOD, { size: 11.5 });
+    hline(pa, R + 116, 89, R + 146, 110, C_MUTED, 1.4); hline(pa, R + 116, 143, R + 146, 124, C_MUTED, 1.4); hline(pa, R + 186, 117, R + 214, 117, C_MUTED, 1.4);
+    var gA = flowSeg(pa, C_GOOD, 3, 3.4, 50);
+    tone(pa, R + 140, 196, '梯度', C_GOOD, 11);
+    label(pa, R, 240, '同时训', 'demo-x-ink2', 11.5); label(pa, R, 276, '先后训', 'demo-x-ink2', 11.5);
+    var tb = [[226, C_SM], [236, C_WARN], [262, C_SM], [272, C_WARN]].map(function (q) { return hbar(pa, R + 52, q[0], 7, q[1]); });
+    var same = tone(pa, R + 246, 256, '最后一样', C_GOOD, 12.5);
+    legendRow(pa, R, 304, [['动作编码器', C_SM, 60], ['速度编码器', C_WARN, 60]], 11);
+    /* ② 世界模型只从仿真日志学：真机数据还没用上；它可导，也能拿来做系统辨识 */
+    var pb = group(s);
+    label(pb, R, 52, '② 世界模型只从仿真数据学', 'demo-x-ink', 13.5);
+    rectBox(pb, R, 66, 124, 124, C_BORDER, C_SURFACE2);
+    var spB = g1Sprite(pb, 'fall_sim');
+    label(pb, R + 62, 206, '仿真日志（我们的复现）', 'demo-x-mut', 11, 'middle');
+    boxText(pb, R + 190, 104, 96, 44, '世界模型', C_WM, { size: 12.5 });
+    var fB = flowSeg(pb, C_SIM, 3, 3.4, 60);
+    var real = paperPart(pb, 'roll', 0, 0, 0.155, 1, R + 196, 178, 64);
+    void real;
+    label(pb, R + 228, 256, '真机数据（论文图 6）', 'demo-x-mut', 11, 'middle');
+    var rArr = arrow(pb, C_WARN, 1.8, '5 4');
+    tone(pb, R + 270, 196, '还没用上：', C_WARN, 11);
+    tone(pb, R + 270, 216, '可以拿来修正', C_WARN, 11);
+    tone(pb, R + 270, 236, '世界模型', C_WARN, 11);
+    label(pb, R, 236, '可导：也能做系统辨识', 'demo-x-ink2', 11.5);
+    var cid = chart(pb, R, 248, 124, 46, { x0: 0, x1: 1, y0: 0, y1: 1.4 });
+    var lossPts = [];
+    for (var q2 = 0; q2 <= 40; q2++) { var xq = q2 / 40; lossPts.push([xq, 0.08 + 2.6 * (xq - 0.68) * (xq - 0.68)]); }
+    cid.line(lossPts, C_MUTED, 1.8);
+    var idDot = dotAt(pb, 0, 0, 4.5, C_GOOD);
+    label(pb, R, 312, '横轴：仿真参数（如摩擦）', 'demo-x-mut', 11);
+    label(pb, R, 332, '纵轴：和真机数据的差距', 'demo-x-mut', 11);
+    /* ③ 只在平地上：地形和物体交互还没做 */
+    var pc = group(s);
+    label(pc, R, 52, '③ 只在平地上训练', 'demo-x-ink', 13.5);
+    rectBox(pc, R, 66, 212, 222, C_BORDER, C_SURFACE2);
+    var spC = g1Sprite(pc, 'slip_sim');
+    var grC = groundGrid(pc, spC, R, 66, 212, 222);
+    pc.insertBefore(grC.g, spC.g);
+    label(pc, R + 106, 304, '平地（我们的复现：冲刺、急停）', 'demo-x-mut', 11, 'middle');
+    var terr = group(pc);
+    pathLine(terr, [[R + 232, 284], [R + 262, 284], [R + 262, 262], [R + 292, 262], [R + 292, 240], [R + 322, 240], [R + 322, 218], [R + 352, 218], [R + 352, 284], [R + 232, 284]], C_MUTED, 2, '5 4');
+    var boxT = rectBox(terr, R + 262, 158, 54, 42, C_MUTED, 'none', '5 4'); boxT.style.fill = 'none';
+    label(terr, R + 289, 150, '箱子', 'demo-x-mut', 11, 'middle');
+    label(terr, R + 300, 300, '楼梯', 'demo-x-mut', 11, 'middle');
+    tone(pc, R + 232, 92, '地形、物体交互：', C_WARN, 12);
+    label(pc, R + 232, 114, '论文说还在做', 'demo-x-ink2', 12);
     var p4 = group(s);
     label(p4, R, 52, '官方代码没放出；社区有几个复现', 'demo-x-ink', 13.5);
     var repoRows = REPOS.map(function (r0, i) {
@@ -2171,9 +2280,27 @@
         setOpacity(l.g, on ? 1 : 0.15);
         l.r.style.stroke = on && t < [3.6, 7.0, 10.4][i] ? C_WARN : C_BORDER;
       });
-      moveDot(m1, [330 + 50 * (0.5 + 0.5 * Math.sin(now * 2)), 76]);
-      moveDot(m2, [330 + 50 * ((now * 0.5) % 1), 146]);
-      setOpacity(mini, win(t, 0.3, 10.4));
+      /* ① */
+      gA.at(now, [R + 212, 192], [R + 118, 150], t < 3.6);
+      encV.r.style.strokeWidth = (1.3 + 1.4 * (0.5 + 0.5 * Math.sin(now * 4))).toFixed(2);
+      var uA = (since(t, clock, 0.4) % 4) / 4, WA = 170;
+      setW(tb[0], WA * uA); setW(tb[1], WA * uA);
+      setW(tb[2], WA * clamp(2 * uA, 0, 1)); setW(tb[3], WA * clamp(2 * uA - 1, 0, 1));
+      same.style.opacity = uA > 0.92 ? 1 : 0.3;
+      setOpacity(pa, win(t, 0.3, 3.6));
+      /* ② */
+      spB.put(R + 6, 70, 0.4, seqFrame(since(t, clock, 3.6), 201, 25, 0.6));
+      fB.at(now, [R + 126, 126], [R + 188, 126], t >= 3.6 && t < 7.0);
+      rArr.set(R + 228, 176, R + 228, 152, 8);
+      var kB = Math.floor(since(t, clock, 3.6) / 0.5) % 9, xB = 0.08;
+      for (var j3 = 0; j3 < kB; j3++) xB -= 0.3 * 2 * 2.6 * (xB - 0.68) * 0.35;
+      moveDot(idDot, [cid.px(xB), cid.py(0.08 + 2.6 * (xB - 0.68) * (xB - 0.68))]);
+      setOpacity(pb, win(t, 3.6, 7.0));
+      /* ③ */
+      var fC = seqFrame(since(t, clock, 7.0), 76, 25, 0.6);
+      spC.put(R + 5, 72, 0.72, fC); grC.draw(fC);
+      terr.style.opacity = (0.55 + 0.45 * Math.sin(now * 2.4)).toFixed(2);
+      setOpacity(pc, win(t, 7.0, 10.4));
       repoRows.forEach(function (b, i) { b.style.strokeWidth = i === 0 && t >= 11.4 ? 2.6 : 1.3; });
       fl.set(since(t, clock, 13.4));
       setOpacity(p4, win(t, 10.4, 13.4));
@@ -2424,8 +2551,8 @@
   function buildVideoDemo(host) {
     K.video(host, {
       title: '配音讲解视频：SuperMimic 十八幕全流程',
-      sub: '21 分 16 秒竖屏视频（1080×1920），中文配音 + 字幕。画面就是上面的十八幕动画，旁白把每一幕讲细；适合手机上看或转发。',
-      size: '23.5 MB',
+      sub: '22 分 1 秒竖屏视频（1080×1920），中文配音 + 字幕。画面就是上面的十八幕动画，旁白把每一幕讲细；适合手机上看或转发。',
+      size: '24.4 MB',
       fileName: 'SuperMimic_讲解视频.mp4'
     });
   }

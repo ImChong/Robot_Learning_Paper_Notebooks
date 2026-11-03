@@ -78,7 +78,7 @@ demos: ["supermimic"]
 
 ## 📺 配音讲解视频（可下载） {#sm-video}
 
-<div class="paper-demo" data-demo="sm-video" data-src="media/supermimic_explainer_video.mp4" data-poster="media/supermimic_explainer_video_poster.jpg"><p class="demo-fallback">（本节含讲解视频播放器，需要启用 JavaScript；也可以直接<a href="media/supermimic_explainer_video.mp4" download="SuperMimic_讲解视频.mp4">下载 mp4（23.5 MB）</a>）</p></div>
+<div class="paper-demo" data-demo="sm-video" data-src="media/supermimic_explainer_video.mp4" data-poster="media/supermimic_explainer_video_poster.jpg"><p class="demo-fallback">（本节含讲解视频播放器，需要启用 JavaScript；也可以直接<a href="media/supermimic_explainer_video.mp4" download="SuperMimic_讲解视频.mp4">下载 mp4（24.4 MB）</a>）</p></div>
 
 > 📖 **动画之后的正文默认全部折叠**：动画覆盖到的那几节（要解决什么问题、方法详解、实验结果、我们的复现）按小节收起，再往后的具体实例、资源对照、在路线中的位置、面试和附录各整块收起。想细读哪一块就点开对应的折叠条，内容一字未删；流程图和三个交互演示留在外面，目录里的标题依旧可以直接点，会自动展开所在折叠块，左侧目录顶部还有「展开全部文字」一键铺开。
 >
@@ -661,6 +661,7 @@ PPO 的似然比估计只看采样动作的回报好坏，方向要靠大量样�
 
 - **2026-11-03 · 初版**：这一期是主线之外的前沿扩充（论文 2026-10-20 挂出、CoRL 2026 Oral）。官方代码没有放出，项目页的网页演示许可证禁止提取，所以复现用社区的 Uni-SuperMimic：它放出了世界模型和策略的权重。为了不运行第三方的包，我们照它的代码独立重写了评测和世界模型的回放，在 CPU 上的 MuJoCo 里跑；40 段的结果和它自己报的差 0.0005，说明移植是对的。在此之上做了论文项目页那三组「世界模型 vs 仿真器」的对照（策略开 / 关、地面变滑），以及 BPTT 与似然比的余弦相似度。参考了 [Robotics_Notebooks 的 SuperMimic 条目](https://imchong.github.io/Robotics_Notebooks/detail.html?id=entity-paper-supermimic) 列出的社区仓库。
 - **2026-11-03 · 用官方代码核对**：用户授权安装第三方包后，装上 Uni-SuperMimic，用它的 `unisupermimic-eval --backend mujoco` 评同一个存档：0.8278 / 0.8306 / 0 失败，和重写版差 1–2 × 10⁻⁴；世界模型同输入自回归 8 步与重写版逐位相同。数字和视频不用改。
+- **2026-11-03 · 看片反馈（11 条）**：第 6 幕「跟着它转、但不跟着它歪」改成动图（骨盆先左右转身，朝向系跟着转；再前倾、侧倾，朝向系保持水平）；第 6 幕的 1.6–5.7 mm、第 8 幕的梯度余弦补上是在什么情况下量的；第 7 幕标出摩擦是在急停的第 0 秒变成 0.3；第 9 幕讲清「目标」是评论家要拟合的值、后一步的估值占 5%、目标占 95%；第 12 幕「约 7200 倍」被裁掉一截，修好并全篇查了一遍裁剪；第 18 幕三条局限各配一段动画；曲线的图例改成同样线型的线段；旁白和字幕不再一个说「系数」一个写「权重」；片尾不预告下一期。
 
 </details>
 
