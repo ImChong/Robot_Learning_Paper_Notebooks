@@ -3843,6 +3843,18 @@
     "display_name": "Sim-to-Real",
     "papers": [
       {
+        "title": "Delay Randomization Widens the Delay Margin of Learned Humanoid Motion Trackers",
+        "path": "papers/10_Sim-to-Real/Delay_Randomization_Widens_the_Delay_Margin_of_Learned_Humanoid_Motion_Trackers/Delay_Randomization_Widens_the_Delay_Margin_of_Learned_Humanoid_Motion_Trackers.md",
+        "url": "/papers/10_Sim-to-Real/Delay_Randomization_Widens_the_Delay_Margin_of_Learned_Humanoid_Motion_Trackers/Delay_Randomization_Widens_the_Delay_Margin_of_Learned_Humanoid_Motion_Trackers.html",
+        "dir": "Delay_Randomization_Widens_the_Delay_Margin_of_Learned_Humanoid_Motion_Trackers",
+        "arxiv": "2610.32277",
+        "summary_zh": "学出来的人形控制器一般在 GPU 仿真里训、再在另一个仿真器里做 sim-to-sim 检查，但检查通常是「同步」的——不加指令延迟。",
+        "published_date_zh": "2026年10月23日（arXiv v1，cs.RO）",
+        "published_date_en": "Oct 23, 2026 (arXiv v1, cs.RO)",
+        "zhname": "延迟随机化拓宽学习型人形动作跟踪器的延迟裕度",
+        "zh_title": "延迟随机化拓宽学习型人形动作跟踪器的延迟裕度"
+      },
+      {
         "title": "Contact-UAN: Unsupervised Actuator Networks as a Residual World Model for Humanoid Control",
         "path": "papers/10_Sim-to-Real/Contact-UAN__Unsupervised_Actuator_Networks_as_a_Residual_World_Model/Contact-UAN__Unsupervised_Actuator_Networks_as_a_Residual_World_Model.md",
         "url": "/papers/10_Sim-to-Real/Contact-UAN__Unsupervised_Actuator_Networks_as_a_Residual_World_Model/Contact-UAN__Unsupervised_Actuator_Networks_as_a_Residual_World_Model.html",

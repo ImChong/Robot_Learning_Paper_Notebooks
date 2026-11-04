@@ -41,15 +41,15 @@
         "13_Physics-Based_Animation",
         "14_Human_Motion"
       ],
-      "last_module": "09_State_Estimation",
-      "last_index": 1163,
-      "last_title": "Vision as Proprioception: Estimating Humanoid Robot Pose from Video (arXiv:2610.25288)",
-      "next_module": "10_Sim-to-Real",
-      "last_completed_date": "2026-11-03",
-      "note": "本日轮转到 09_State_Estimation。PROGRESS State Estimation 章节中尚无笔记的最新论文是 Vision as Proprioception / HumanoidPose (arXiv:2610.25288, 2026-10-18, ETH Zürich)，即 PROGRESS #1163，已确认在上游 README（🌟）。只看外部 RGB 视频恢复人形全身关节角与世界坐标根部：冻结 PromptHMR 编码器 + 由 MJCF 关节几何描述生成查询的共享解码器，一个模型服务 16 种人形；全合成数据训练、检测器在网上视频自训练；三台真机 MPJAE 比最强基线低 18–32%。源码未放出（仓库仅 README），时序图按论文第 III 节整理。下一篇轮转到 10_Sim-to-Real。",
-      "last_date": "2026-11-03",
+      "last_module": "10_Sim-to-Real",
+      "last_index": 1190,
+      "last_title": "Delay Randomization Widens the Delay Margin of Learned Humanoid Motion Trackers (arXiv:2610.32277)",
+      "next_module": "11_Simulation_Benchmark",
+      "last_completed_date": "2026-11-04",
+      "note": "本日轮转到 10_Sim-to-Real。PROGRESS Sim-to-Real 章节中尚无笔记的最新论文是 Delay Randomization Widens the Delay Margin (arXiv:2610.32277, 2026-10-23, CCNY)，即 PROGRESS #1190，已确认在上游 README。BeyondMimic 配方在 mjlab 训练 24 关节人形跟踪 5 段视频动作，独立 CPU MuJoCo 评测器扫恒定指令延迟：不随机化裕度 20–30 ms（40 ms 存活 15%），0–50 ms 延迟随机化后裕度 50–70 ms（40 ms 存活 95%），等量续训的 control 组不改善；最初的 sim-to-sim 差距来自评测器缺地面与步长错误。未开源，评测时序图按论文第 3 节整理。下一篇轮转到 11_Simulation_Benchmark。",
+      "last_date": "2026-11-04",
       "next_candidate": null,
-      "last_completed": "Vision as Proprioception: Estimating Humanoid Robot Pose from Video (arXiv:2610.25288)"
+      "last_completed": "Delay Randomization Widens the Delay Margin of Learned Humanoid Motion Trackers (arXiv:2610.32277)"
     },
     "last_summary_index": 532,
     "last_summary_date": "2026-09-18",
@@ -1915,6 +1915,17 @@
         "project_page": "https://siplab.org/projects/HumanoidPose",
         "code": "https://github.com/eth-siplab/HumanoidPose",
         "source": "⏳ 源码未放出（官方仓库 eth-siplab/HumanoidPose 仅 README，Code and models: Coming soon）· 推理时序图按论文第 III 节整理 · 合成数据训练 + 三台真机评测 · Unitree G1 / EngineAI PM01 / Fourier N1 · ETH Zürich"
+      },
+      {
+        "date": "2026-11-04",
+        "index": 1190,
+        "title": "Delay Randomization Widens the Delay Margin of Learned Humanoid Motion Trackers",
+        "folder": "papers/10_Sim-to-Real/Delay_Randomization_Widens_the_Delay_Margin_of_Learned_Humanoid_Motion_Trackers",
+        "module": "10_Sim-to-Real",
+        "arxiv": "2610.32277",
+        "project_page": "",
+        "code": "",
+        "source": "⏳ 未开源（论文与 arXiv 页面无代码链接）· 评测时序图按论文第 3 节整理 · mjlab 训练 + 独立 CPU MuJoCo 评测 + Isaac Lab 对照 · 24 关节人形 · Shaoqin Li、Yi Sun（CCNY）"
       }
     ],
     "last_completed_index": 588,
