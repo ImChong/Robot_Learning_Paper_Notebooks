@@ -1024,7 +1024,7 @@
 
 | #   | 论文                                                                                                                                             | 日期      | 🌟  | 状态   |
 | --- | ---------------------------------------------------------------------------------------------------------------------------------------------- | ------- | --- | ---- |
-| 1190  | [Delay Randomization Widens the Delay Margin of Learned Humanoid Motion Trackers](https://arxiv.org/abs/2610.32277) | 2026.10 |  | ⏳ 待读 |
+| 1190  | [Delay Randomization Widens the Delay Margin of Learned Humanoid Motion Trackers](https://arxiv.org/abs/2610.32277) ✅ [笔记](10_Sim-to-Real/Delay_Randomization_Widens_the_Delay_Margin_of_Learned_Humanoid_Motion_Trackers/Delay_Randomization_Widens_the_Delay_Margin_of_Learned_Humanoid_Motion_Trackers.md) | 2026.10 |  | ✅ 已总结 |
 | 1127  | [Contact-UAN: Unsupervised Actuator Networks as a Residual World Model for Humanoid Control](https://arxiv.org/abs/2610.18991) ✅ [笔记](10_Sim-to-Real/Contact-UAN__Unsupervised_Actuator_Networks_as_a_Residual_World_Model/Contact-UAN__Unsupervised_Actuator_Networks_as_a_Residual_World_Model.md) | 2026.10 |  | ✅ 已总结 |
 | 692  | [Informationally Decoupled Trajectory Design for Sim-to-Real System Identification](https://arxiv.org/abs/2610.10905) ✅ [笔记](10_Sim-to-Real/IDTD__Informationally_Decoupled_Trajectory_Design_for_Sim-to-Real_System_Identification/IDTD__Informationally_Decoupled_Trajectory_Design_for_Sim-to-Real_System_Identification.md) | 2026.10 |  | ✅ 已总结 |
 | 693  | [Bundled Contact Gradients: Stabilizing Differentiable Simulation for Deployable Dynamic Tasks](https://arxiv.org/abs/2609.30951) | 2026.09 |  | ⏳ 待读 |
