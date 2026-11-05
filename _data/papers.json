@@ -4366,6 +4366,19 @@
         "zh_title": "RoboSteer：行为基础模型的行为可操控性基准"
       },
       {
+        "title": "BiGym 2.0: Benchmarking Learned and Agent-Developed Policies for Humanoid Household Manipulation",
+        "path": "papers/11_Simulation_Benchmark/BiGym2__Benchmarking_Learned_and_Agent-Developed_Policies_for_Humanoid_Household_Manipulation/BiGym2__Benchmarking_Learned_and_Agent-Developed_Policies_for_Humanoid_Household_Manipulation.md",
+        "url": "/papers/11_Simulation_Benchmark/BiGym2__Benchmarking_Learned_and_Agent-Developed_Policies_for_Humanoid_Household_Manipulation/BiGym2__Benchmarking_Learned_and_Agent-Developed_Policies_for_Humanoid_Household_Manipulation.html",
+        "dir": "BiGym2__Benchmarking_Learned_and_Agent-Developed_Policies_for_Humanoid_Household_Manipulation",
+        "arxiv": "2610.07594",
+        "has_open_source": true,
+        "summary_zh": "BiGym 原版的 H1 用浮动底座直接设定骨盆位姿、腿只跟着高度播放运动学轨迹，等于一台全向移动底盘；BiGym 2.0 换成 29 自由度 G1 + 两个 Dex1 夹爪，底盘命令改成「速度 + 高度（+ 躯干俯仰）」交给冻结的 GR…",
+        "published_date_zh": "2026年10月6日（arXiv v1，cs.RO）",
+        "published_date_en": "Oct 6, 2026 (arXiv v1, cs.RO)",
+        "zhname": "BiGym 2.0：人形家务操作中学习型策略与智能体编写策略的基准",
+        "zh_title": "BiGym 2.0：人形家务操作中学习型策略与智能体编写策略的基准"
+      },
+      {
         "title": "CLAP: Cross-Embodiment Video World Models are Zero-Shot Physical Simulators",
         "path": "papers/11_Simulation_Benchmark/CLAP__Cross-Embodiment_Video_World_Models_are_Zero-Shot_Physical_Simulators/CLAP__Cross-Embodiment_Video_World_Models_are_Zero-Shot_Physical_Simulators.md",
         "url": "/papers/11_Simulation_Benchmark/CLAP__Cross-Embodiment_Video_World_Models_are_Zero-Shot_Physical_Simulators/CLAP__Cross-Embodiment_Video_World_Models_are_Zero-Shot_Physical_Simulators.html",
