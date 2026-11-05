@@ -41,15 +41,15 @@
         "13_Physics-Based_Animation",
         "14_Human_Motion"
       ],
-      "last_module": "10_Sim-to-Real",
-      "last_index": 1190,
-      "last_title": "Delay Randomization Widens the Delay Margin of Learned Humanoid Motion Trackers (arXiv:2610.32277)",
-      "next_module": "11_Simulation_Benchmark",
-      "last_completed_date": "2026-11-04",
-      "note": "本日轮转到 10_Sim-to-Real。PROGRESS Sim-to-Real 章节中尚无笔记的最新论文是 Delay Randomization Widens the Delay Margin (arXiv:2610.32277, 2026-10-23, CCNY)，即 PROGRESS #1190，已确认在上游 README。BeyondMimic 配方在 mjlab 训练 24 关节人形跟踪 5 段视频动作，独立 CPU MuJoCo 评测器扫恒定指令延迟：不随机化裕度 20–30 ms（40 ms 存活 15%），0–50 ms 延迟随机化后裕度 50–70 ms（40 ms 存活 95%），等量续训的 control 组不改善；最初的 sim-to-sim 差距来自评测器缺地面与步长错误。未开源，评测时序图按论文第 3 节整理。下一篇轮转到 11_Simulation_Benchmark。",
-      "last_date": "2026-11-04",
+      "last_module": "11_Simulation_Benchmark",
+      "last_index": 672,
+      "last_title": "BiGym 2.0: Benchmarking Learned and Agent-Developed Policies for Humanoid Household Manipulation (arXiv:2610.07594)",
+      "next_module": "12_Hardware_Design",
+      "last_completed_date": "2026-11-05",
+      "note": "本日轮转到 11_Simulation_Benchmark。PROGRESS Simulation Benchmark 章节中尚无笔记的最新论文是 BiGym 2.0 (arXiv:2610.07594, 2026-10-06, Imperial College London)，即 PROGRESS #672，已确认在上游 README（🌟）。BiGym 改到 G1 + 冻结 GR00T-WBC，20 个家务任务各 60 条 VR 示范，复位恢复控制器状态保证可复现；同接口比较 π₀.₅、ACT/DP、CQN-AS/DrQ-v2+/DEAS 与冷启动编程智能体（GPT-6 Astra、Claude Opus 5.5），π₀.₅ 九任务平均 75% 最高，程序领先双手伸手，多物体搬运与跨工作台叠积木仍难。源码开源，时序图按 eval/runner.py、loco/env.py、lowerbody.py 整理。下一篇轮转到 12_Hardware_Design。",
+      "last_date": "2026-11-05",
       "next_candidate": null,
-      "last_completed": "Delay Randomization Widens the Delay Margin of Learned Humanoid Motion Trackers (arXiv:2610.32277)"
+      "last_completed": "BiGym 2.0: Benchmarking Learned and Agent-Developed Policies for Humanoid Household Manipulation (arXiv:2610.07594)"
     },
     "last_summary_index": 532,
     "last_summary_date": "2026-09-18",
@@ -1926,6 +1926,17 @@
         "project_page": "",
         "code": "",
         "source": "⏳ 未开源（论文与 arXiv 页面无代码链接）· 评测时序图按论文第 3 节整理 · mjlab 训练 + 独立 CPU MuJoCo 评测 + Isaac Lab 对照 · 24 关节人形 · Shaoqin Li、Yi Sun（CCNY）"
+      },
+      {
+        "date": "2026-11-05",
+        "index": 672,
+        "title": "BiGym 2.0: Benchmarking Learned and Agent-Developed Policies for Humanoid Household Manipulation",
+        "folder": "papers/11_Simulation_Benchmark/BiGym2__Benchmarking_Learned_and_Agent-Developed_Policies_for_Humanoid_Household_Manipulation",
+        "module": "11_Simulation_Benchmark",
+        "arxiv": "2610.07594",
+        "project_page": "https://bigym2.github.io/",
+        "code": "https://github.com/swirl-uk/BiGym2",
+        "source": "✅ 已开源（swirl-uk/BiGym2，Apache-2.0）· 时序图按 bigym/loco/eval/runner.py、loco/env.py、loco/lowerbody.py、adapters/groot_wbc.py 整理 · MuJoCo + 冻结 GR00T-WBC · Unitree G1 + Dex1 · Imperial College London"
       }
     ],
     "last_completed_index": 588,
