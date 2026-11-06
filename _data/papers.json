@@ -4089,6 +4089,17 @@
     "display_name": "Hardware Design",
     "papers": [
       {
+        "title": "A fully articulated humanoid dexterous hand with human-level joint structure enabled by linkage-based actuation",
+        "path": "papers/12_Hardware_Design/Torch-Hand__Fully_Articulated_Humanoid_Dexterous_Hand_with_Linkage-Based_Actuation/Torch-Hand__Fully_Articulated_Humanoid_Dexterous_Hand_with_Linkage-Based_Actuation.md",
+        "url": "/papers/12_Hardware_Design/Torch-Hand__Fully_Articulated_Humanoid_Dexterous_Hand_with_Linkage-Based_Actuation/Torch-Hand__Fully_Articulated_Humanoid_Dexterous_Hand_with_Linkage-Based_Actuation.html",
+        "dir": "Torch-Hand__Fully_Articulated_Humanoid_Dexterous_Hand_with_Linkage-Based_Actuation",
+        "arxiv": "2610.36789",
+        "published_date_zh": "2026年10月27日（arXiv v1）",
+        "published_date_en": "Oct 27, 2026 (arXiv v1)",
+        "zhname": "Torch-Hand：人手级关节结构、全连杆驱动的 21 自由度人形灵巧手",
+        "zh_title": "Torch-Hand：人手级关节结构、全连杆驱动的 21 自由度人形灵巧手"
+      },
+      {
         "title": "PHD-Hand: A Printable Humanoid Dexterous Hand with Linkage-Driven 3-DOA Digits",
         "path": "papers/12_Hardware_Design/PHD-Hand__Printable_Humanoid_Dexterous_Hand_with_Linkage-Driven_3-DOA_Digits/PHD-Hand__Printable_Humanoid_Dexterous_Hand_with_Linkage-Driven_3-DOA_Digits.md",
         "url": "/papers/12_Hardware_Design/PHD-Hand__Printable_Humanoid_Dexterous_Hand_with_Linkage-Driven_3-DOA_Digits/PHD-Hand__Printable_Humanoid_Dexterous_Hand_with_Linkage-Driven_3-DOA_Digits.html",
