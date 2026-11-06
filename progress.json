@@ -41,15 +41,15 @@
         "13_Physics-Based_Animation",
         "14_Human_Motion"
       ],
-      "last_module": "11_Simulation_Benchmark",
-      "last_index": 672,
-      "last_title": "BiGym 2.0: Benchmarking Learned and Agent-Developed Policies for Humanoid Household Manipulation (arXiv:2610.07594)",
-      "next_module": "12_Hardware_Design",
-      "last_completed_date": "2026-11-05",
-      "note": "本日轮转到 11_Simulation_Benchmark。PROGRESS Simulation Benchmark 章节中尚无笔记的最新论文是 BiGym 2.0 (arXiv:2610.07594, 2026-10-06, Imperial College London)，即 PROGRESS #672，已确认在上游 README（🌟）。BiGym 改到 G1 + 冻结 GR00T-WBC，20 个家务任务各 60 条 VR 示范，复位恢复控制器状态保证可复现；同接口比较 π₀.₅、ACT/DP、CQN-AS/DrQ-v2+/DEAS 与冷启动编程智能体（GPT-6 Astra、Claude Opus 5.5），π₀.₅ 九任务平均 75% 最高，程序领先双手伸手，多物体搬运与跨工作台叠积木仍难。源码开源，时序图按 eval/runner.py、loco/env.py、lowerbody.py 整理。下一篇轮转到 12_Hardware_Design。",
-      "last_date": "2026-11-05",
+      "last_module": "12_Hardware_Design",
+      "last_index": 1191,
+      "last_title": "A fully articulated humanoid dexterous hand with human-level joint structure enabled by linkage-based actuation (arXiv:2610.36789)",
+      "next_module": "13_Physics-Based_Animation",
+      "last_completed_date": "2026-11-06",
+      "note": "本日轮转到 12_Hardware_Design。PROGRESS Hardware Design 章节中尚无笔记的最新论文是 Torch-Hand（arXiv:2610.36789，2026-10-27，浙江大学 Grasp Lab），即 PROGRESS #1191，已确认在上游 README。21 关节 / 16 电机全连杆灵巧手：电机全放手掌，每台经丝杠—滑块—曲柄滑块驱动一个关节，DIP / 拇指 IP 用可压缩连杆被动联动；重复定位 ±0.031 mm 内、指尖力 60 N 级、提 40 kg 哑铃。未开源，只给整体流程 mermaid。下一篇轮转到 13_Physics-Based_Animation。",
+      "last_date": "2026-11-06",
       "next_candidate": null,
-      "last_completed": "BiGym 2.0: Benchmarking Learned and Agent-Developed Policies for Humanoid Household Manipulation (arXiv:2610.07594)"
+      "last_completed": "A fully articulated humanoid dexterous hand with human-level joint structure enabled by linkage-based actuation (arXiv:2610.36789)"
     },
     "last_summary_index": 532,
     "last_summary_date": "2026-09-18",
@@ -1937,6 +1937,17 @@
         "project_page": "https://bigym2.github.io/",
         "code": "https://github.com/swirl-uk/BiGym2",
         "source": "✅ 已开源（swirl-uk/BiGym2，Apache-2.0）· 时序图按 bigym/loco/eval/runner.py、loco/env.py、loco/lowerbody.py、adapters/groot_wbc.py 整理 · MuJoCo + 冻结 GR00T-WBC · Unitree G1 + Dex1 · Imperial College London"
+      },
+      {
+        "date": "2026-11-06",
+        "index": 1191,
+        "title": "A fully articulated humanoid dexterous hand with human-level joint structure enabled by linkage-based actuation",
+        "folder": "papers/12_Hardware_Design/Torch-Hand__Fully_Articulated_Humanoid_Dexterous_Hand_with_Linkage-Based_Actuation",
+        "module": "12_Hardware_Design",
+        "arxiv": "2610.36789",
+        "project_page": "",
+        "code": "",
+        "source": "⏳ 未开源（论文与 arXiv 页面无代码 / CAD 链接）· 只给整体流程 mermaid · 21 关节 / 16 电机全连杆灵巧手 · Jihao Li、Huixu Dong 等（浙江大学 Grasp Lab）"
       }
     ],
     "last_completed_index": 588,
