@@ -2493,10 +2493,10 @@ var SIDE_RHAND = 'ygQfBqMEQAaGBFEGcwRPBmkETwZmBGMGaQSOBpoEnQbiBMIGIwUAB1gFSAeABY
       dur: 16,
       build: buildSceneSystem,
       cues: [
-        { at: 0.4, s: '论文图 2：这是一整套真机系统，不只是一个算法。' },
+        { at: 0.4, s: '论文图 2：整套真机系统，不只是一个算法。' },
         { at: 3.6, s: '① 平台：GR-1 + 灵巧手 + 锁住的腿 + 推车 + 头上的激光雷达。' },
         { at: 7.0, s: '② 数据：人戴 Vision Pro，全上半身遥操作。' },
-        { at: 10.4, s: '③ 学习：第一视角的点云进 iDP3，输出一串动作。' },
+        { at: 10.4, s: '③ 学习：第一视角点云进 iDP3，输出动作。' },
         { at: 13.4, s: '④ 部署：只在一个场景训练，泛化到很多场景。' }
       ]
     },
@@ -2506,8 +2506,8 @@ var SIDE_RHAND = 'ygQfBqMEQAaGBFEGcwRPBmkETwZmBGMGaQSOBpoEnQbiBMIGIwUAB1gFSAeABY
       build: buildScenePlatform,
       cues: [
         { at: 0.4, s: '动作 25 维：腰俯仰 1 + 头 2 + 两臂各 5 + 两手各 6（代码）。' },
-        { at: 3.6, s: '腿锁住，换推车来移动；推车也让腰前倾时不倒。' },
-        { at: 7.0, s: '每条手臂只用 5 个关节：腕部横滚、俯仰固定为 0。' },
+        { at: 3.6, s: '腿锁住，靠推车移动；腰前倾时也靠它不倒。' },
+        { at: 7.0, s: '单臂只用 5 个关节：腕部横滚、俯仰固定为 0。' },
         { at: 10.4, s: '可升降的推车：桌子高低不同，不用复杂的全身控制。' },
         { at: 13.4, s: '引言写 29 个自由度，3.1 节写 25；代码里状态 32 维。' }
       ]
