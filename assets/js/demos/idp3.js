@@ -1032,7 +1032,7 @@ var SIDE_RHAND = 'ygQfBqMEQAaGBFEGcwRPBmkETwZmBGMGaQSOBpoEnQbiBMIGIwUAB1gFSAeABY
   /* ── scene 5: 遥操作：Vision Pro 跟头和手腕 ── */
   function buildSceneTeleop() {
     var s = sceneSvg('左边是项目页的遥操作视频；右边依次是：Vision Pro 的三组数据流向手臂、腰和头、手；一条两节的手臂跟着目标点走（Relaxed IK 的示意）；' +
-      '一个人往前探头时腰角按公式变化；画面传回头显；人和机器人的动作差 0.5 s 的两条曲线');
+      '一个人往前探头时，GR-1（按 URDF 渲染）的腰和头按公式前倾、低头，虚线是它的视线；画面传回头显；人和机器人的动作差 0.5 s 的两条曲线');
     s.appendChild(svgText(24, 26, '遥操作：人戴 Vision Pro，机器人跟着做', 'demo-x-ink2', 13.5));
     var clip = projClip(s, 'teleop', 24, 44, 380, 214, '项目页视频（4 倍速）：全上半身遥操作');
     label(s, 24, 300, '腰也跟着人动：工作空间大很多', 'demo-x-ink2', 11.5);
@@ -1070,20 +1070,31 @@ var SIDE_RHAND = 'ygQfBqMEQAaGBFEGcwRPBmkETwZmBGMGaQSOBpoEnQbiBMIGIwUAB1gFSAeABY
     label(p2, R, 290, 'GR-1：我们按示范第 1 段的关节角渲染', 'demo-x-mut', 11);
     tone(p2, R, 312, '○ 人的手腕（目标；示意：领先两帧）', C_WARN, 11.5);
     tone(p2, R, 334, '● 机器人的右手', C_HAND, 11.5);
+    /* 第 5 幕的 GR-1 侧面（我们渲染，`r3d/make_waist.py`）：人往前探 s = 0…0.30 m 分 25 帧，每帧腰、头俯仰（度）、头和 0.5 m 外视线在贴图里的像素 */
+    var WAIST = { cw: 240, ch: 520, n: 25, waistX: 90, ground: 506, wd: [0.0, 1.1, 2.21, 3.31, 4.41, 5.5, 6.59, 7.68, 8.76, 9.83, 10.9, 11.96, 13.01, 14.06, 15.09, 16.11, 17.13, 18.13, 19.12, 20.1, 21.07, 22.02, 22.96, 23.89, 24.81], hd: [30.0, 30.0, 30.0, 30.0, 30.0, 30.0, 30.0, 30.0, 30.0, 30.0, 29.1, 28.04, 26.99, 25.94, 24.91, 23.89, 22.87, 21.87, 20.88, 19.9, 18.93, 17.98, 17.04, 16.11, 15.19], hx: [122.1, 124.3, 126.6, 128.8, 131.0, 133.1, 135.3, 137.4, 139.5, 141.6, 143.7, 145.8, 147.8, 149.9, 151.9, 153.9, 155.9, 157.8, 159.7, 161.6, 163.4, 165.2, 166.9, 168.7, 170.3], hy: [85.1, 85.7, 86.4, 87.2, 87.9, 88.7, 89.6, 90.4, 91.3, 92.3, 92.8, 93.2, 93.7, 94.2, 94.7, 95.3, 95.9, 96.5, 97.1, 97.8, 98.5, 99.2, 99.9, 100.7, 101.5], gx: [252.0, 252.8, 253.5, 254.1, 254.7, 255.2, 255.7, 256.1, 256.5, 256.8, 258.6, 260.7, 262.8, 264.8, 266.8, 268.8, 270.8, 272.7, 274.6, 276.5, 278.3, 280.1, 281.8, 283.6, 285.2], gy: [160.1, 163.2, 166.4, 169.5, 172.7, 175.8, 179.0, 182.1, 185.3, 188.4, 189.2, 189.6, 190.1, 190.6, 191.1, 191.7, 192.3, 192.9, 193.5, 194.2, 194.9, 195.6, 196.3, 197.1, 197.9] , nx: [90.3, 92.5, 94.8, 97.0, 99.2, 101.4, 103.6, 105.8, 107.9, 110.1, 112.2, 114.3, 116.4, 118.4, 120.4, 122.4, 124.4, 126.3, 128.2, 130.1, 131.9, 133.7, 135.5, 137.2, 138.9], ny: [86.2, 86.2, 86.2, 86.4, 86.5, 86.7, 87.0, 87.2, 87.5, 87.9, 88.3, 88.7, 89.2, 89.7, 90.2, 90.8, 91.4, 92.0, 92.6, 93.3, 94.0, 94.7, 95.4, 96.2, 97.0] };
     var p3 = group(s);
     label(p3, R, 56, '腰和头：由人头的位姿算出来', 'demo-x-ink', 14);
-    var S5 = 125, gy = 330, hipX = R + 70, hipY = gy - 0.901 * S5;
-    hline(p3, R + 10, gy, R + 180, gy, C_BORDER, 2);
+    /* 左边是人（操作员，火柴人），右边是 GR-1：同一比例（125 px/m）、站在同一条地线上 */
+    var S5 = 125, gy = 330, hipX = R + 30, hipY = gy - 0.901 * S5;
+    hline(p3, R + 6, gy, R + 186, gy, C_BORDER, 2);
+    label(p3, hipX + 4, 104, '人', 'demo-x-mut', 11.5, 'middle');
     hline(p3, hipX, gy, hipX, hipY, C_MUTED, 6);
     var spine = hline(p3, hipX, hipY, hipX, hipY - 70, C_WAIST, 6), hd = dotAt(p3, hipX, hipY - 80, 11, C_HEAD);
     var vline = hline(p3, hipX, hipY, hipX, hipY - 96, C_BORDER, 1.2, '3 3');
     void vline;
+    var KW = S5 / 300, wX = R + 120, wS = sprite(p3, 'waist.webp', WAIST.cw, WAIST.ch, WAIST.n, WAIST.n);
+    var wRef = hline(p3, 0, 0, 0, 0, C_BORDER, 1.2, '3 3'), torso = hline(p3, 0, 0, 0, 0, C_WAIST, 3.5);
+    torso.style.opacity = 0.9;
+    var gazeL = hline(p3, 0, 0, 0, 0, C_HEAD, 1.8, '4 3');
+    label(p3, wX + 6, 104, 'GR-1（我们渲染）', 'demo-x-mut', 11.5, 'middle');
     var ang = label(p3, R + 10, gy + 24, '', 'demo-x-ink', 12);
     math(p3, R + 190, 120, '\\theta_{\\text{腰}}=\\operatorname{atan2}(s,\\ h-0.901)', 14);
     label(p3, R + 190, 156, 'h：头高 · s：往前探多少', 'demo-x-ink2', 11.5);
     label(p3, R + 190, 178, '假设身高 1.70 m、腰高 0.53 倍', 'demo-x-mut', 11);
     var ex = rich(p3, R + 190, 214, '', 12, 'demo-x-ink2', 'start', 170);
     label(p3, R + 190, 238, '头俯仰 = 总俯仰 − 腰；截到 ±30°', 'demo-x-mut', 11);
+    tone(p3, R + 190, 270, '橙线与竖虚线的夹角：腰角', C_WAIST, 11);
+    tone(p3, R + 190, 290, '蓝虚线：GR-1 头的视线', C_HEAD, 11);
     var p4 = group(s);
     label(p4, R, 56, '画面实时传回头显', 'demo-x-ink', 14);
     rectBox(p4, R, 110, 120, 44, C_IDP3, C_SURFACE); label(p4, R + 60, 137, '头上的 L515', 'demo-x-ink', 12, 'middle');
@@ -1121,10 +1132,19 @@ var SIDE_RHAND = 'ygQfBqMEQAaGBFEGcwRPBmkETwZmBGMGaQSOBpoEnQbiBMIGIwUAB1gFSAeABY
       moveDot(tgt, [R - 10 + sideHand(fk2)[0] * KA, 72 + sideHand(fk2)[1] * KA]);
       moveDot(gDot, gP(0.36 * Math.sin(now * 1.1)));
       setOpacity(p3, win(t, 3.6 + 3.4, 10.4));
-      var sv = 0.15 + 0.15 * Math.sin(now * 0.8), hz = 1.55, th = Math.atan2(sv, hz - 0.901), Ls = Math.hypot(sv, hz - 0.901) * S5;
+      /* s 取贴图的 25 档，人和 GR-1 用同一档 */
+      var wk = Math.round((0.5 + 0.5 * Math.sin(now * 0.8)) * (WAIST.n - 1)), sv = 0.30 * wk / (WAIST.n - 1);
+      var hz = 1.55, th = Math.atan2(sv, hz - 0.901), Ls = Math.hypot(sv, hz - 0.901) * S5;
       var hTop = [hipX + Ls * Math.sin(th), hipY - Ls * Math.cos(th)];
       setLine(spine, hipX, hipY, hipX + (Ls - 14) * Math.sin(th), hipY - (Ls - 14) * Math.cos(th)); moveDot(hd, hTop);
-      ang.textContent = '腰 ' + f1(th * 180 / Math.PI) + '°（s = ' + f2(sv) + ' m）';
+      var wx0 = wX - KW * WAIST.waistX, wy0 = gy - KW * WAIST.ground;
+      wS.put(wx0, wy0, WAIST.cw * KW, wk);
+      /* 橙线：腰关节到脖子（和人的脊柱同色），它和竖直虚线的夹角就是腰俯仰 */
+      var px = wx0 + KW * WAIST.waistX, py = wy0 + KW * 201.95;
+      setLine(wRef, px, py, px, py - 64); setLine(torso, px, py, wx0 + KW * WAIST.nx[wk], wy0 + KW * WAIST.ny[wk]);
+      var hx = wx0 + KW * WAIST.hx[wk], hy = wy0 + KW * WAIST.hy[wk];
+      setLine(gazeL, hx, hy, hx + 0.4 * KW * (WAIST.gx[wk] - WAIST.hx[wk]), hy + 0.4 * KW * (WAIST.gy[wk] - WAIST.hy[wk]));
+      ang.textContent = '腰 ' + f1(WAIST.wd[wk]) + '° · 头 ' + f1(WAIST.hd[wk]) + '°（s = ' + f2(sv) + ' m）';
       ex.setText('例：h = 1.55、s = 0.30 → **' + f1(waistDeg(TELE.headZ, TELE.stoop)) + '°**');
       setOpacity(p4, win(t, 10.4, 13.4));
       f4.at(now, [R + 124, 132], [R + 232, 132], true);
@@ -1144,29 +1164,26 @@ var SIDE_RHAND = 'ygQfBqMEQAaGBFEGcwRPBmkETwZmBGMGaQSOBpoEnQbiBMIGIwUAB1gFSAeABY
   }
 
   /* ── scene 6: 学什么：观测、动作与数据 ── */
-  /* 侧视里机器人面前的桌子（示意）：桌面在机器人前方 0.28–0.8 m、离底座 table_z 高（我们从点云粗估的桌面高度），
-     下面两条短桌腿；原先只画一条橙线，2026-11-03 看片反馈「中间的黄线看不懂」，改画成桌子并直接标注 */
+  /* 侧视里机器人面前的桌子（示意）：2026-11-03 原先是一条橙线，改画成平面的桌子；2026-11-07 看片反馈「桌子也用 3D 演示，透视和机器人一致」，
+     改成和 GR-1 同一个场景、同一台相机逐帧渲染（`r3d/make_side_table.py` → side_table.webp），遮挡关系才对。
+     桌面在机器人前方 0.28–0.75 m、横向 −0.50–0.30 m；高度按点云估（抓放杯子的几帧里桌面约 −0.08 m，以骨盆为原点），
+     手和手臂网格在桌面范围内最低到 −0.100 m，所以取 −0.11 m，免得手指穿进桌面。这里只标注，桌子本身在贴图里 */
+  var TABLE_TOP = [0.75, 0.30, -0.11];
   function sideTableLine(parent) {
     var g = group(parent);
-    var top = paint(svgEl('rect', { x: 0, y: 0, width: 0, height: 6, rx: 2 }), C_WAIST); g.appendChild(top);
-    var l1 = hline(g, 0, 0, 0, 0, C_WAIST, 3), l2 = hline(g, 0, 0, 0, 0, C_WAIST, 3);
     var t1 = label(g, 0, 0, '桌子', 'demo-x-ink', 11.5), t2 = label(g, 0, 0, '高度按点云估', 'demo-x-mut', 11);
-    return { g: g, top: top, l1: l1, l2: l2, t1: t1, t2: t2 };
+    return { g: g, t1: t1, t2: t2 };
   }
   function placeTable(tb, ox, oy, k) {
-    var a = sideProject([0.28, 0.05, SIDE.table_z]), b = sideProject([0.8, 0.05, SIDE.table_z]);
-    var ax = ox + a[0] * k, ay = oy + a[1] * k, bx = ox + b[0] * k;
-    tb.top.setAttribute('x', ax.toFixed(1)); tb.top.setAttribute('y', (ay - 3).toFixed(1)); setW(tb.top, bx - ax);
-    setLine(tb.l1, ax + 8, ay + 3, ax + 8, ay + 40); setLine(tb.l2, bx - 8, ay + 3, bx - 8, ay + 40);
-    tb.t1.setAttribute('x', (bx + 8).toFixed(1)); tb.t1.setAttribute('y', (ay + 4).toFixed(1));
-    tb.t2.setAttribute('x', (bx + 8).toFixed(1)); tb.t2.setAttribute('y', (ay + 24).toFixed(1));
+    var b = sideProject(TABLE_TOP), bx = ox + b[0] * k, by = oy + b[1] * k;
+    tb.t1.setAttribute('x', (bx + 8).toFixed(1)); tb.t1.setAttribute('y', (by + 4).toFixed(1));
+    tb.t2.setAttribute('x', (bx + 8).toFixed(1)); tb.t2.setAttribute('y', (by + 24).toFixed(1));
   }
   function buildSceneData() {
     var s = sceneSvg('左边是我们按示范记录的关节角渲染的 GR-1 侧面，来回播放倒水示范的第 1 段，右上角是同一帧机器人自己相机的彩色图；右边依次是：' +
       '一帧观测的组成；右臂五个关节在整段示范里的动作曲线和当前帧的竖线；关节角和末端位姿的对比；三个任务 300 段示范的格子；官方示例数据');
     s.appendChild(svgText(24, 26, '学什么：观测 → 目标关节角', 'demo-x-ink2', 13.5));
-    var g1 = gr1Side(s), OX = 16, OY = 40, KW = 300, tl = sideTableLine(s);
-    s.insertBefore(tl.g, s.childNodes[1]);  /* 桌子画在机器人后面一层：侧视里手伸到桌面以下时不像穿进桌子 */
+    var g1 = sprite(s, 'side_table.webp', SIDE.cam.w, SIDE.cam.h, 10, SIDE.n), OX = 16, OY = 40, KW = 300, tl = sideTableLine(s);
     var rgb = egoRgb(s);
     rectBox(s, 299, 43, 116, 116, C_HEAD, 'none');
     label(s, 357, 177, '机器人自己看到的', 'demo-x-mut', 10.5, 'middle');
