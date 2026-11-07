@@ -926,8 +926,11 @@ var SIDE_RHAND = 'ygQfBqMEQAaGBFEGcwRPBmkETwZmBGMGaQSOBpoEnQbiBMIGIwUAB1gFSAeABY
     var pcv = pcView(s), cloud = pcOf(60), bin = depthBin(cloud, 0.35, 0.9);
     var rgb = egoRgb(s);
     label(s, 30, 352, '示例数据第 60 帧 · 4096 个点 · 近蓝远红', 'demo-x-mut', 11);
-    var axes = K.svgAxes({ len: 30, width: 2.4, size: 12 });
+    /* 相机坐标系的三根轴：原点当成点云里一个固定的点（相机坐标 (−0.23, 0.03, 0.50) m），
+       和点云用同一个 camProj 投影，所以跟着点云一起左右摆 */
+    var axes = K.svgAxes({ len: 1, width: 2.4, size: 12 });
     s.appendChild(axes.g);
+    var axCloud = { xyz: [-0.23, 0.03, 0.50] };
     var R = 424;
     var p1 = group(s);
     label(p1, R, 56, 'L515：固态激光雷达，装在头上', 'demo-x-ink', 14);
@@ -996,10 +999,15 @@ var SIDE_RHAND = 'ygQfBqMEQAaGBFEGcwRPBmkETwZmBGMGaQSOBpoEnQbiBMIGIwUAB1gFSAeABY
       var proj = boxed(camProj(cloud, 214, 172, 330, yaw, 0.05), 28, 48, 400, 330);
       pcv.draw(cloud, cloud.n, proj, bin, 2.2);
       rgb.put(306, 48, 94, 20);
-      /* 相机坐标系的轴：画在点云框的左下角，按同样的旋转投影 */
-      var o = [62, 276], L = 30, cy = Math.cos(yaw), sy = Math.sin(yaw);
-      axes.set(o, [cy, 0], [0, 1], { toward: false });
-      void sy; void L;
+      /* 相机坐标系的轴：原点和点云同一个投影（跟着点云一起摆）；三根轴按同样的转角旋转，
+         深度方向按斜 40°、0.6 倍的斜投影画（透视下 z 会贴着 x，看不清），z 随转角左右摆 */
+      var a0 = camProj(axCloud, 214, 172, 330, yaw, 0.05)(0);
+      var cyw = Math.cos(yaw), syw = Math.sin(yaw), cp = Math.cos(0.05), sp = Math.sin(0.05);
+      var av = [[1, 0, 0], [0, 1, 0], [0, 0, 1]].map(function (v) {
+        var lat = cyw * v[0] + syw * v[2], dep = -syw * v[0] + cyw * v[2], ver = cp * v[1] - sp * dep;
+        return [32 * (lat + 0.6 * dep * Math.cos(0.7)), 32 * (ver - 0.6 * dep * Math.sin(0.7))];
+      });
+      axes.set(a0, av[0], av[1], av[2]);
       axes.g.style.opacity = t >= 13.4 ? seg(t, 13.7, 14.1) : 0.35;
       setOpacity(p1, win(t, 0.4, 3.6));
       setOpacity(p2, win(t, 3.6, 7.0));
