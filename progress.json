@@ -41,15 +41,15 @@
         "13_Physics-Based_Animation",
         "14_Human_Motion"
       ],
-      "last_module": "12_Hardware_Design",
-      "last_index": 1191,
-      "last_title": "A fully articulated humanoid dexterous hand with human-level joint structure enabled by linkage-based actuation (arXiv:2610.36789)",
-      "next_module": "13_Physics-Based_Animation",
-      "last_completed_date": "2026-11-06",
-      "note": "本日轮转到 12_Hardware_Design。PROGRESS Hardware Design 章节中尚无笔记的最新论文是 Torch-Hand（arXiv:2610.36789，2026-10-27，浙江大学 Grasp Lab），即 PROGRESS #1191，已确认在上游 README。21 关节 / 16 电机全连杆灵巧手：电机全放手掌，每台经丝杠—滑块—曲柄滑块驱动一个关节，DIP / 拇指 IP 用可压缩连杆被动联动；重复定位 ±0.031 mm 内、指尖力 60 N 级、提 40 kg 哑铃。未开源，只给整体流程 mermaid。下一篇轮转到 13_Physics-Based_Animation。",
-      "last_date": "2026-11-06",
+      "last_module": "13_Physics-Based_Animation",
+      "last_index": 1130,
+      "last_title": "Walk Like This: Stylized Locomotion for Physics-Based Characters through Example-Driven Diffusion (arXiv:2610.18147)",
+      "next_module": "14_Human_Motion",
+      "last_completed_date": "2026-11-07",
+      "note": "本日轮转到 13_Physics-Based_Animation。PROGRESS Physics-Based Character Animation 章节中尚无笔记的最新论文是 Walk Like This（arXiv:2610.18147，2026-10-13，Disney Research Zürich / ETH Zürich，CoRL 2026），即 PROGRESS #1130，已确认在上游 README。风格示例 + 摇杆：风格编码器（register token、单位向量）条件化自回归动作扩散，同一段动作取两个窗口实现无标签风格解耦；推理时注意力偏置（风格 +2、过去 −1）与速度纠偏；RL 跟踪器在扩散生成数据上训练、开环部署，G1 零样本。未开源，只给整体流程 mermaid。下一篇轮转到 14_Human_Motion。",
+      "last_date": "2026-11-07",
       "next_candidate": null,
-      "last_completed": "A fully articulated humanoid dexterous hand with human-level joint structure enabled by linkage-based actuation (arXiv:2610.36789)"
+      "last_completed": "Walk Like This: Stylized Locomotion for Physics-Based Characters through Example-Driven Diffusion (arXiv:2610.18147)"
     },
     "last_summary_index": 532,
     "last_summary_date": "2026-09-18",
@@ -1948,6 +1948,17 @@
         "project_page": "",
         "code": "",
         "source": "⏳ 未开源（论文与 arXiv 页面无代码 / CAD 链接）· 只给整体流程 mermaid · 21 关节 / 16 电机全连杆灵巧手 · Jihao Li、Huixu Dong 等（浙江大学 Grasp Lab）"
+            },
+      {
+        "date": "2026-11-07",
+        "index": 1130,
+        "title": "Walk Like This: Stylized Locomotion for Physics-Based Characters through Example-Driven Diffusion",
+        "folder": "papers/13_Physics-Based_Animation/Walk_Like_This__Stylized_Locomotion_for_Physics-Based_Characters_through_Example-Driven_Diffusion",
+        "module": "13_Physics-Based_Animation",
+        "arxiv": "2610.18147",
+        "project_page": "https://www.youtube.com/watch?v=roFnS6N7nJ4",
+        "code": "",
+        "source": "⏳ 未开源（论文与 arXiv 页面无代码链接）· 只给整体流程 mermaid · 风格编码器 + 自回归动作扩散 + RL 跟踪 · Joshua Aurand、Moritz Bächer 等（Disney Research Zürich、ETH Zürich）"
       }
     ],
     "last_completed_index": 588,

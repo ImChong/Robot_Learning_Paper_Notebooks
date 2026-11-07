@@ -4752,6 +4752,17 @@
         "zh_title": "PhysibleMDM：通过噪声优化在推理时为动作扩散模型施加物理可行性约束"
       },
       {
+        "title": "Walk Like This: Stylized Locomotion for Physics-Based Characters through Example-Driven Diffusion",
+        "path": "papers/13_Physics-Based_Animation/Walk_Like_This__Stylized_Locomotion_for_Physics-Based_Characters_through_Example-Driven_Diffusion/Walk_Like_This__Stylized_Locomotion_for_Physics-Based_Characters_through_Example-Driven_Diffusion.md",
+        "url": "/papers/13_Physics-Based_Animation/Walk_Like_This__Stylized_Locomotion_for_Physics-Based_Characters_through_Example-Driven_Diffusion/Walk_Like_This__Stylized_Locomotion_for_Physics-Based_Characters_through_Example-Driven_Diffusion.html",
+        "dir": "Walk_Like_This__Stylized_Locomotion_for_Physics-Based_Characters_through_Example-Driven_Diffusion",
+        "arxiv": "2610.18147",
+        "published_date_zh": "2026年10月13日（arXiv v1）",
+        "published_date_en": "Oct 13, 2026 (arXiv v1)",
+        "zhname": "Walk Like This：示例驱动扩散实现物理角色的风格化行走",
+        "zh_title": "Walk Like This：示例驱动扩散实现物理角色的风格化行走"
+      },
+      {
         "title": "From Digital Human Interactions to Physics-Based Humanoid Skills: Physics-Grounded Post-Training of Interaction Generators",
         "path": "papers/13_Physics-Based_Animation/DIGHT__Physics-Grounded_Post-Training_of_Interaction_Generators/DIGHT__Physics-Grounded_Post-Training_of_Interaction_Generators.md",
         "url": "/papers/13_Physics-Based_Animation/DIGHT__Physics-Grounded_Post-Training_of_Interaction_Generators/DIGHT__Physics-Grounded_Post-Training_of_Interaction_Generators.html",
