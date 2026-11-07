@@ -2534,7 +2534,7 @@ var SIDE_RHAND = 'ygQfBqMEQAaGBFEGcwRPBmkETwZmBGMGaQSOBpoEnQbiBMIGIwUAB1gFSAeABY
         { at: 3.6, s: '腿锁住，靠推车移动；腰前倾时也靠它不倒。' },
         { at: 7.0, s: '单臂只用 5 个关节：腕部横滚、俯仰固定为 0。' },
         { at: 10.4, s: '可升降的推车：桌子高低不同，不用复杂的全身控制。' },
-        { at: 13.4, s: '引言写 29 个自由度，3.1 节写 25；代码里状态 32 维。' }
+        { at: 13.4, s: '自由度：引言 29，3.1 节 25，代码状态 32 维。' }
       ]
     },
     {
@@ -2545,7 +2545,7 @@ var SIDE_RHAND = 'ygQfBqMEQAaGBFEGcwRPBmkETwZmBGMGaQSOBpoEnQbiBMIGIwUAB1gFSAeABY
         { at: 0.4, s: '头上一台 **RealSense L515** 固态激光雷达，拍第一视角的点云。' },
         { at: 3.6, s: 'D435 深度不够准，Mid-360 分辨率和频率不够；L515 也不完美。' },
         { at: 7.0, s: '代码只留离相机 **0.1–1 m** 的点。' },
-        { at: 10.4, s: '每个像素按内参反投影成一个点：$x=(u-c_x)z/f_x$。' },
+        { at: 10.4, s: '像素按内参反投影成点：$x=(u-c_x)z/f_x$。' },
         { at: 13.4, s: '所有点都在相机坐标系：x 右、y 下、z 前。' }
       ]
     },
@@ -2568,8 +2568,8 @@ var SIDE_RHAND = 'ygQfBqMEQAaGBFEGcwRPBmkETwZmBGMGaQSOBpoEnQbiBMIGIwUAB1gFSAeABY
       cues: [
         { at: 0.4, s: '观测：点云 + 32 维关节角，看最近 2 帧；动作：25 个目标关节角。' },
         { at: 3.6, s: '左边的 GR-1 照示范的关节角摆；右边是右臂 5 个关节的动作。' },
-        { at: 7.0, s: '试过末端位姿，噪声更大反而不准，所以用关节角。' },
-        { at: 10.4, s: '三个任务各 10 段 × 10 次；抓杯子的消融每段 20 次。' },
+        { at: 7.0, s: '末端位姿噪声大、反而不准，所以用关节角。' },
+        { at: 10.4, s: '各任务 10 段 × 10 次；抓杯子消融每段 20 次。' },
         { at: 13.4, s: '官方示例数据：倒水 2 段、541 帧。' }
       ]
     },
@@ -2614,10 +2614,10 @@ var SIDE_RHAND = 'ygQfBqMEQAaGBFEGcwRPBmkETwZmBGMGaQSOBpoEnQbiBMIGIwUAB1gFSAeABY
       dur: 16,
       build: buildSceneEncoder,
       cues: [
-        { at: 0.4, s: '论文：MLP 换成金字塔卷积，动作更平滑、更准。' },
+        { at: 0.4, s: '论文：改用金字塔卷积，动作更平滑、更准。' },
         { at: 3.6, s: '代码：核大小为 1 的卷积，每层把全局最大值拼回每个点。' },
         { at: 7.0, s: '表 III：单换卷积反而变差（49/131），加金字塔才变好（75/139）。' },
-        { at: 10.4, s: '编码器 **270,080** 个参数；两帧拼成 384 维当条件。' },
+        { at: 10.4, s: '编码器 **270,080** 个参数，两帧拼成 384 维。' },
         { at: 13.4, s: '我们的理解：起作用的是「局部 + 全局、多层拼接」的结构。' }
       ]
     },
@@ -2628,7 +2628,7 @@ var SIDE_RHAND = 'ygQfBqMEQAaGBFEGcwRPBmkETwZmBGMGaQSOBpoEnQbiBMIGIwUAB1gFSAeABY
       cues: [
         { at: 0.4, s: '人手在抖、传感器有噪声：预测 4 步学不会人类示范。' },
         { at: 3.6, s: '表 III：4 步 0/0，一次都没尝试；16 步 75/139。' },
-        { at: 7.0, s: '代码：看 2 帧，预测 16 步，执行其中 15 步再推理。' },
+        { at: 7.0, s: '代码：看 2 帧、预测 16 步、执行 15 步再推理。' },
         { at: 10.4, s: '示例数据：手指指令的加速度比速度还大。' },
         { at: 13.4, s: '32 步又变差：55/130。' }
       ]
@@ -2640,7 +2640,7 @@ var SIDE_RHAND = 'ygQfBqMEQAaGBFEGcwRPBmkETwZmBGMGaQSOBpoEnQbiBMIGIwUAB1gFSAeABY
       cues: [
         { at: 0.4, s: '训练 50 步，推理用 DDIM 10 步：$t$ 从 45 走到 0，$\\bar\\alpha_t$ 越来越大。' },
         { at: 3.6, s: '代码：网络直接预测**干净的动作**，不是噪声。' },
-        { at: 7.0, s: '去噪网络：一维条件 U-Net，观测经 FiLM 进每一块。' },
+        { at: 7.0, s: '去噪：一维条件 U-Net，观测经 FiLM 进每一块。' },
         { at: 10.4, s: '我们在 4 核 CPU 上：一次推理 **0.167 s**，出 15 步动作。' },
         { at: 13.4, s: '第一步预测的干净动作，就已经接近最终输出。' }
       ]
@@ -2651,10 +2651,10 @@ var SIDE_RHAND = 'ygQfBqMEQAaGBFEGcwRPBmkETwZmBGMGaQSOBpoEnQbiBMIGIwUAB1gFSAeABY
       build: buildSceneSetup,
       cues: [
         { at: 0.4, s: '基准：抓起一个轻杯子、挪到一边；杯子和手差不多大。' },
-        { at: 3.6, s: '四种设置：第一视角 / 第三人称 × 1 或 2 段示范。' },
+        { at: 3.6, s: '四种设置：第一 / 第三人称 × 1 或 2 段示范。' },
         { at: 7.0, s: '杯子在 10 × 20 cm 里随机放。' },
         { at: 10.4, s: '每个方法 3 回合 × 1000 步，约 130 次。' },
-        { at: 13.4, s: '既数抓成次数（准不准），也数尝试次数（顺不顺）。' }
+        { at: 13.4, s: '抓成次数看准不准，尝试次数看顺不顺。' }
       ]
     },
     {
@@ -2677,7 +2677,7 @@ var SIDE_RHAND = 'ygQfBqMEQAaGBFEGcwRPBmkETwZmBGMGaQSOBpoEnQbiBMIGIwUAB1gFSAeABY
         { at: 0.4, s: '图 7：DP 80 分钟，iDP3 30 分钟。' },
         { at: 3.6, s: '点数放大到 DP3 的 4 倍，仍然更快。' },
         { at: 7.0, s: '我们的补充：R3M 约 1100 万参数，iDP3 编码器 27 万。' },
-        { at: 10.4, s: 'AdamW，学习率 $10^{-4}$，批大小 64，301 轮（代码）。' },
+        { at: 10.4, s: '代码：AdamW、学习率 $10^{-4}$、批 64、301 轮。' },
         { at: 13.4, s: '论文没写是哪种设置；README 说训练用一张 RTX 4090。' }
       ]
     },
@@ -2686,7 +2686,7 @@ var SIDE_RHAND = 'ygQfBqMEQAaGBFEGcwRPBmkETwZmBGMGaQSOBpoEnQbiBMIGIwUAB1gFSAeABY
       dur: 16,
       build: buildSceneTable4,
       cues: [
-        { at: 0.4, s: '训练场景：DP（微调 R3M）和 iDP3 都是 9/10 左右。' },
+        { at: 0.4, s: '训练场景：DP（微调 R3M）和 iDP3 都约 9/10。' },
         { at: 3.6, s: '新物体：DP 3/10、1/10，iDP3 9/10、9/10。' },
         { at: 7.0, s: '新视角：DP 2/10、0/10，iDP3 还是 9/10。' },
         { at: 10.4, s: '新场景（厨房）：DP 2/10、1/10，iDP3 9/10。' },
@@ -2698,7 +2698,7 @@ var SIDE_RHAND = 'ygQfBqMEQAaGBFEGcwRPBmkETwZmBGMGaQSOBpoEnQbiBMIGIwUAB1gFSAeABY
       dur: 16,
       build: buildSceneWhy,
       cues: [
-        { at: 0.4, s: '图 8 上排：相机被大幅移动，iDP3 照样抓起杯子。' },
+        { at: 0.4, s: '图 8 上排：相机大幅移动，iDP3 照样抓起。' },
         { at: 3.6, s: '图 8 下排：DP 连训练过的杯子都抓不起来。' },
         { at: 7.0, s: '图 6：新场景里 DP 抓训练过的杯子时来回抖。' },
         { at: 10.4, s: '加了颜色抖动，DP 也抓不起新物体。' },
