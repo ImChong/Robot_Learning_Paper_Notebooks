@@ -11,7 +11,7 @@
 
 ## 在线演示
 
-[![站点使用演示：展开学习路线图，搜索 DeepMimic 并打开论文笔记，通过目录跳转到训练流程，点击流程图进入大图查看器](media/site-demo.gif)](https://imchong.github.io/Robot_Learning_Paper_Notebooks/)
+[![站点使用演示：展开分系学习路线图，搜索 DeepMimic 并打开论文笔记，打开目录跳转到小节，点击流程图进入大图查看器](media/site-demo.gif)](https://imchong.github.io/Robot_Learning_Paper_Notebooks/)
 
 ↑ 点击动图进入[在线站点](https://imchong.github.io/Robot_Learning_Paper_Notebooks/)。展开**推荐学习路线图**了解阅读顺序；按论文标题或 arXiv 编号**即时搜索**；打开笔记后通过**目录**定位章节，点击流程图可进入大图查看器，支持缩放与拖拽。
 
