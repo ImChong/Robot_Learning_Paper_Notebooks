@@ -3554,7 +3554,7 @@ body.sponsor-dialog-open {
    --link/--link-hover. Both ramps pass the ordinal checks (monotone lightness,
    adjacent ΔL ≥ 0.06, faintest step ≥ 2:1 vs surface). */
 .updates-heatmap {
-  --hm-cell-min: 9px; /* cell width floor: below it the container scrolls */
+  --hm-cell-min: 5px; /* cell width floor: below it the container scrolls */
   --hm-gap: 3px;
   --hm-level-0: #272727;
   --hm-level-1: #1d4f8c;
@@ -3568,6 +3568,10 @@ body.sponsor-dialog-open {
   padding: 16px 16px 12px;
   margin-bottom: 24px;
   font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 760px) {
+  .updates-heatmap { --hm-gap: 2px; }
 }
 
 [data-theme="light"] .updates-heatmap {
@@ -3589,7 +3593,6 @@ body.sponsor-dialog-open {
    newest week via scrollLeft). */
 .updates-heatmap-inner {
   min-width: max-content;
-  max-width: 100%;
 }
 
 .updates-heatmap-months {
