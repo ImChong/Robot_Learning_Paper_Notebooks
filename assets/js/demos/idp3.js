@@ -978,6 +978,7 @@ var SIDE_RHAND = 'ygQfBqMEQAaGBFEGcwRPBmkETwZmBGMGaQSOBpoEnQbiBMIGIwUAB1gFSAeABY
     var phRay = hline(p4, PH.cx, PH.cy, 0, 0, C_WARN, 1.8, '5 4');
     var phPix = dotAt(p4, PH.cx + PH.f, PH.cy + PH.off, 4.5, C_WARN), phPt = dotAt(p4, 0, 0, 6, C_PURPLE);
     var phX = hline(p4, 0, PH.cy, 0, 0, C_PURPLE, 2.4), phZ = hline(p4, PH.cx + 30, PH.cy - 56, 0, PH.cy - 56, C_MUTED, 2);
+    p4.insertBefore(phX, phPix);  /* 竖线垫在两个点下面 */
     label(p4, PH.cx + PH.f - 30, PH.cy + 76, '黄点：像素，偏离中心 120 像素', 'demo-x-ink2', 11);
     var phZl = label(p4, 0, PH.cy - 62, '', 'demo-x-ink2', 11.5, 'middle'), phXl = label(p4, 0, 0, '', 'demo-x-ink', 12);
     var phEq = rich(p4, R, 268, '', 12, 'demo-x-ink2', 'start', 430);
@@ -1017,8 +1018,8 @@ var SIDE_RHAND = 'ygQfBqMEQAaGBFEGcwRPBmkETwZmBGMGaQSOBpoEnQbiBMIGIwUAB1gFSAeABY
       hbars.forEach(function (h, b) { var hh = h.v / hmax * 150 * seg(u, 0.2 + b * 0.03, 0.6 + b * 0.03); h.r.setAttribute('y', (hy - hh).toFixed(1)); h.r.setAttribute('height', hh.toFixed(1)); });
       setOpacity(p4, win(t, 10.4, 13.4));
       var zz = 0.7 + 0.3 * Math.sin(now * 0.8), pz = PH.cx + zz * PH.m, xo = PH.off / PH.f * zz * PH.m;
-      /* 光线从相机出发，过像素点；起点让开 z 轴的字 */
-      setLine(phRay, PH.cx + 36, PH.cy + 36 * PH.off / PH.f, pz + 10, PH.cy + xo * (1 + 10 / (zz * PH.m)));
+      /* 光线从相机出发，过像素点，止于粉点的圆心（粉点画在上面、盖住线头）；起点让开 z 轴的字 */
+      setLine(phRay, PH.cx + 36, PH.cy + 36 * PH.off / PH.f, pz, PH.cy + xo);
       moveDot(phPt, [pz, PH.cy + xo]); setLine(phX, pz, PH.cy, pz, PH.cy + xo);
       setLine(phZ, PH.cx + 30, PH.cy - 56, pz, PH.cy - 56);
       phZl.setAttribute('x', ((PH.cx + 30 + pz) / 2).toFixed(1)); phZl.textContent = '深度 z = ' + f2(zz) + ' m';
@@ -1080,8 +1081,9 @@ var SIDE_RHAND = 'ygQfBqMEQAaGBFEGcwRPBmkETwZmBGMGaQSOBpoEnQbiBMIGIwUAB1gFSAeABY
     label(p3, hipX + 4, 104, '人', 'demo-x-mut', 11.5, 'middle');
     hline(p3, hipX, gy, hipX, hipY, C_MUTED, 6);
     var spine = hline(p3, hipX, hipY, hipX, hipY - 70, C_WAIST, 6), hd = dotAt(p3, hipX, hipY - 80, 11, C_HEAD);
-    var vline = hline(p3, hipX, hipY, hipX, hipY - 96, C_BORDER, 1.2, '3 3');
-    void vline;
+    /* 竖直参考虚线：停在人站直时的头心（头比腰高 1.55 − 0.901 m），被头点盖住，不从头顶露出来 */
+    var vline = hline(p3, hipX, hipY, hipX, hipY - (1.55 - 0.901) * S5, C_BORDER, 1.2, '3 3');
+    p3.insertBefore(vline, spine);  /* 虚线垫在脊柱和头点下面，头点盖住它的上端 */
     var KW = S5 / 300, wX = R + 120, wS = sprite(p3, 'waist.webp', WAIST.cw, WAIST.ch, WAIST.n, WAIST.n);
     var wRef = hline(p3, 0, 0, 0, 0, C_BORDER, 1.2, '3 3'), torso = hline(p3, 0, 0, 0, 0, C_WAIST, 3.5);
     torso.style.opacity = 0.9;
@@ -1519,6 +1521,7 @@ var SIDE_RHAND = 'ygQfBqMEQAaGBFEGcwRPBmkETwZmBGMGaQSOBpoEnQbiBMIGIwUAB1gFSAeABY
     var gridV = group(spB.g);
     for (var gx = 0; gx <= 6; gx++) hline(gridV, R + 181 + gx * 25, 81, R + 181 + gx * 25, 181, C_BORDER, 0.8, '2 3');
     for (var gy = 0; gy <= 4; gy++) hline(gridV, R + 181, 81 + gy * 25, R + 331, 81 + gy * 25, C_BORDER, 0.8, '2 3');
+    spB.g.insertBefore(gridV, spB.dots[0]);  /* 体素网格垫在点下面，点压住网格线 */
     readHint(p5, R, 232, '灰点是全部的点，亮的是挑中的（示意）', 10.5, 340);
     label(p5, R, 254, 'FPS 要挑 n 次、每次比一遍所有点；体素一次挑完', 'demo-x-ink2', 11);
     label(p5, R, 280, '采到的点覆盖整个 3D 空间，推理更快', 'demo-x-ink2', 11.5);
