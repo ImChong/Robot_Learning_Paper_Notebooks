@@ -8,7 +8,9 @@
  * - 鼠标：悬停小条时弹出，移开收起；点小条照常进入笔记。
  * - 触屏 / 手写笔：第一次点小条只弹清单、不跳转，再点一次或点别处收起；
  *   点卡片的其他地方照常进入笔记。
- * - 键盘：Tab 聚焦到卡片时弹出，Esc 收起。
+ * - 键盘：Tab 聚焦到卡片（或详情页里可聚焦的小条）时弹出，Esc 收起。
+ *
+ * 首页（论文卡片、图例）和论文详情页（日期模块最下面那一行，见 _layouts/paper.html）共用。
  * - 读屏：小条自身的 aria-label 已经写明分数和缺项，清单只是视觉上的展开，aria-hidden。
  *
  * 全页只建一个浮层（不给 400 多张卡片各放一份清单）。
@@ -28,6 +30,11 @@
   var MAX = data.max || data.items.length;
 
   var SELECTOR = '.paper-health[data-health-score], [data-health-legend]';
+
+  // 详情页的小条不在链接里：让键盘也能聚焦到它（构建后的 HTML 清洗会去掉手写的 tabindex）。
+  Array.prototype.forEach.call(document.querySelectorAll('#paper-body .paper-health[data-health-score]'), function (el) {
+    el.tabIndex = 0;
+  });
 
   var tip = document.createElement('div');
   tip.className = 'note-health-tip';
@@ -162,11 +169,11 @@
     else show(target, true);
   });
 
-  // 键盘：聚焦到带健康度的卡片（或图例）时弹出，离开时收起。
+  // 键盘：聚焦到带健康度的卡片、图例或详情页的小条时弹出，离开时收起。
   document.addEventListener('focusin', function (e) {
     var el = e.target;
     if (!el || !el.matches) return;
-    var target = el.matches('[data-health-legend]') ? el
+    var target = el.matches(SELECTOR) ? el
       : el.matches('.paper-card') ? el.querySelector('.paper-health[data-health-score]') : null;
     if (!target) return;
     var visible = true;

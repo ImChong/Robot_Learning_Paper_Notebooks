@@ -19,8 +19,63 @@ layout: default
       </div>
     </aside>
 
+    {%- comment -%}
+      笔记健康度（scripts/note_health.py 在 prepare_pages 时算出，_data/papers.json）：
+      接在笔记开头「📅 阅读日期 / 总结日期 / 收录日期」那个引用块的最下面一行。只在第一个引用块
+      就是这个日期模块时插入；没有日期模块、或没算出健康度的笔记不加（不会显示成满分）。
+      这一行在 #paper-body 里，用的标签和属性（span / i / role / aria-* / data-*）都在
+      scripts/sanitize_paper_html.py 的白名单里；tabindex 不在白名单里，由 note-health.js 运行时加上。
+    {%- endcomment -%}
+    {%- comment -%}
+      按地址找 papers.json 里的条目。非 ASCII 的目录名（如 Ψ₀）在非 UTF-8 locale 下 page.path
+      会是二进制编码、比不上，所以用解码后的 page.url 比对 url 字段。
+    {%- endcomment -%}
+    {%- assign ph_url = page.url | url_decode -%}
+    {%- assign ph_entry = nil -%}
+    {%- for ph_cat in site.data.papers -%}
+      {%- assign ph_entry = ph_cat[1].papers | where: "url", ph_url | first -%}
+      {%- unless ph_entry -%}
+        {%- for ph_sub in ph_cat[1].subcategories -%}
+          {%- assign ph_entry = ph_sub.papers | where: "url", ph_url | first -%}
+          {%- if ph_entry -%}{%- break -%}{%- endif -%}
+        {%- endfor -%}
+      {%- endunless -%}
+      {%- if ph_entry -%}{%- break -%}{%- endif -%}
+    {%- endfor -%}
+    {%- assign ph_body = content -%}
+    {%- assign ph_shown = false -%}
+    {%- if ph_entry and ph_entry.health_score != nil -%}
+      {%- assign ph_first = content | split: '</blockquote>' | first -%}
+      {%- if ph_first contains '<blockquote' -%}
+        {%- assign ph_quote = ph_first | split: '<blockquote' | last -%}
+        {%- if ph_quote contains '阅读日期' or ph_quote contains '总结日期' or ph_quote contains '收录日期' -%}
+          {%- assign ph_max = site.data.note_health.max | default: 6 -%}
+          {%- assign ph_score = ph_entry.health_score -%}
+          {%- capture ph_gaps_zh -%}{%- for g in ph_entry.health_gaps -%}{%- assign ph_item = site.data.note_health.items | where: "key", g | first -%}{%- unless forloop.first -%}、{%- endunless -%}{{ ph_item.zh | default: g }}{%- endfor -%}{%- endcapture -%}
+          {%- capture ph_gaps_en -%}{%- for g in ph_entry.health_gaps -%}{%- assign ph_item = site.data.note_health.items | where: "key", g | first -%}{%- unless forloop.first -%}, {% endunless -%}{{ ph_item.en | default: g | downcase }}{%- endfor -%}{%- endcapture -%}
+          {%- if ph_entry.health_gaps.size > 0 -%}
+            {%- assign ph_note_zh = '缺：' | append: ph_gaps_zh -%}
+            {%- assign ph_note_en = 'Missing: ' | append: ph_gaps_en -%}
+          {%- else -%}
+            {%- assign ph_note_zh = '六项齐全' -%}
+            {%- assign ph_note_en = 'All six items present' -%}
+          {%- endif -%}
+          {%- if ph_entry.health_status -%}
+            {%- assign ph_status = site.data.note_health.status[ph_entry.health_status] -%}
+            {%- assign ph_note_zh = ph_note_zh | append: '（' | append: ph_status.zh | append: '，封顶 ' | append: ph_status.cap | append: '/' | append: ph_max | append: '）' -%}
+            {%- assign ph_note_en = ph_note_en | append: ' (' | append: ph_status.en | append: ', capped at ' | append: ph_status.cap | append: '/' | append: ph_max | append: ')' -%}
+          {%- endif -%}
+          {%- capture ph_line -%}
+  <p class="paper-health-line"><span class="paper-health-label"><span aria-hidden="true">🩺 </span><span data-en="Note health:" data-zh="笔记健康度:">笔记健康度:</span></span><span class="paper-health paper-health--{{ ph_score }}" role="img" data-health-score="{{ ph_score }}" data-health-gaps="{{ ph_entry.health_gaps | join: ' ' | escape }}"{% if ph_entry.health_status %} data-health-status="{{ ph_entry.health_status | escape }}"{% endif %} aria-label="{{ ph_entry.health_label_zh | escape }}" data-en-aria-label="{{ ph_entry.health_label_en | escape }}" data-zh-aria-label="{{ ph_entry.health_label_zh | escape }}"><span class="paper-health-bar" aria-hidden="true">{% for i in (1..ph_max) %}<i{% if i <= ph_score %} class="is-on"{% endif %}></i>{% endfor %}</span><span class="paper-health-score" aria-hidden="true">{{ ph_score }}/{{ ph_max }}</span></span><span class="paper-health-gaps" aria-hidden="true" data-en="{{ ph_note_en | escape }}" data-zh="{{ ph_note_zh | escape }}">{{ ph_note_zh | escape }}</span></p>
+</blockquote>
+          {%- endcapture -%}
+          {%- assign ph_body = content | replace_first: '</blockquote>', ph_line -%}
+          {%- assign ph_shown = true -%}
+        {%- endif -%}
+      {%- endif -%}
+    {%- endif %}
     <div class="paper-body" id="paper-body">
-      {{ content }}
+      {{ ph_body }}
     </div>
 
     <aside class="right-sidebar" id="right-sidebar">
@@ -55,6 +110,13 @@ layout: default
   ]
 }
 </script>
+
+{%- if ph_shown -%}
+{%- comment -%} 健康度小条的逐项清单（悬停 / 点按 / 聚焦弹出），与首页共用 assets/js/note-health.js。 {%- endcomment -%}
+<script type="application/json" id="note-health-data">{{ site.data.note_health | jsonify }}</script>
+{%- assign note_health_js = site.static_files | where: "path", "/assets/js/note-health.js" | first %}
+<script src="{{ '/assets/js/note-health.js' | relative_url }}{% if note_health_js %}?v={{ note_health_js.modified_time | date: '%s' }}{% endif %}" defer></script>
+{%- endif %}
 
 {% assign paper_js = site.static_files | where: "path", "/assets/js/paper.js" | first %}
 <script src="{{ '/assets/js/paper.js' | relative_url }}{% if paper_js %}?v={{ paper_js.modified_time | date: '%s' }}{% endif %}" defer></script>

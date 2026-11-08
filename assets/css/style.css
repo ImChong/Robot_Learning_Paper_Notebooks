@@ -3000,6 +3000,29 @@ body.mermaid-lightbox-open {
   margin-bottom: 0;
 }
 
+/* 论文详情页：日期模块（第一个引用块）最下面的笔记健康度一行，见 _layouts/paper.html */
+.paper-body blockquote .paper-health-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+}
+
+.paper-health-line .paper-health-score,
+.paper-health-line .paper-health-gaps {
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.paper-health-line .paper-health-gaps {
+  color: var(--text-muted);
+}
+
+.paper-health-line .paper-health:focus-visible {
+  outline: 2px solid var(--link);
+  outline-offset: 2px;
+}
+
 /* Code */
 .paper-body code {
   font-family: var(--font-mono);

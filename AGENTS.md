@@ -70,7 +70,7 @@ chore(Progress): 更新论文阅读进度
 
 ### 笔记健康度（首页卡片的六格小条）
 
-首页每张论文卡片的日期旁边有一条 0/6～6/6 的六格小条（issue #701，参考 [Robotics_Notebooks](https://github.com/ImChong/Robotics_Notebooks) 的节点健康度）。它说明**笔记写到了哪一步、原文核验到了哪一步**，不是论文质量或结论可靠性的评级。分数由 `scripts/note_health.py` 在 `prepare_pages.py` 时按笔记当前内容重算，写进 `_data/papers.json` 的 `health_score` / `health_gaps` / `health_label_zh` / `health_label_en`（封顶时另有 `health_status`），六项的名称与判据写进 `_data/note_health.json`；卡片模板与 `assets/js/note-health.js` 只负责展示，不要在卡片里手写分数。首页「推荐学习路线图」的节点（分系视图与全局总览）在年份旁画同一套小条，节点悬浮卡片标题下写「笔记健康度 N/6，缺：……」，读屏的 aria-label 也带上；数据同样来自 `_data/papers.json`（`_includes/roadmap-tree.html` 输出到 `#roadmap-node-details`），路线图本身不用手改。
+首页每张论文卡片的日期旁边有一条 0/6～6/6 的六格小条（issue #701，参考 [Robotics_Notebooks](https://github.com/ImChong/Robotics_Notebooks) 的节点健康度）。它说明**笔记写到了哪一步、原文核验到了哪一步**，不是论文质量或结论可靠性的评级。分数由 `scripts/note_health.py` 在 `prepare_pages.py` 时按笔记当前内容重算，写进 `_data/papers.json` 的 `health_score` / `health_gaps` / `health_label_zh` / `health_label_en`（封顶时另有 `health_status`），六项的名称与判据写进 `_data/note_health.json`；卡片模板与 `assets/js/note-health.js` 只负责展示，不要在卡片里手写分数。首页「推荐学习路线图」的节点（分系视图与全局总览）在年份旁画同一套小条，节点悬浮卡片标题下写「笔记健康度 N/6，缺：……」，读屏的 aria-label 也带上；数据同样来自 `_data/papers.json`（`_includes/roadmap-tree.html` 输出到 `#roadmap-node-details`），路线图本身不用手改。论文详情页在开头「📅 阅读日期 / 总结日期 / 收录日期」那个引用块的最下面加一行「🩺 笔记健康度: ▮▮▮▮▯▯ 4/6 缺：……」（`_layouts/paper.html` 渲染时插入，悬停 / 点按小条同样弹逐项清单）；没有日期模块的笔记（目前只有 Cosmos）不加。
 
 | 项 | 判据（每项 1 分） |
 |----|----|

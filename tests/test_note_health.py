@@ -375,3 +375,32 @@ def test_roadmap_nodes_and_cards_show_health():
     # 节点的 aria-label 也带上健康度（中英随语言切换时 labelNode 会重算）。
     label_node = js.split("function labelNode(node) {", 1)[1].split("\n  }\n", 1)[0]
     assert "info.health_label_zh" in label_node and "info.health_label" in label_node
+
+
+def test_paper_page_appends_health_to_the_reading_date_block():
+    """详情页：健康度接在开头日期模块（第一个引用块）的最下面一行，HTML 清洗后仍保留。"""
+    layout = (ROOT / "_layouts" / "paper.html").read_text(encoding="utf-8")
+    assert "replace_first: '</blockquote>', ph_line" in layout
+    for key in ("阅读日期", "总结日期", "收录日期"):
+        assert f"ph_quote contains '{key}'" in layout
+    assert "ph_entry.health_score != nil" in layout
+    # 非 UTF-8 locale 下 page.path 可能是二进制编码，按解码后的 url 找条目。
+    assert 'page.url | url_decode' in layout and 'where: "url", ph_url' in layout
+    assert 'id="note-health-data"' in layout and "/assets/js/note-health.js" in layout
+
+    from scripts.sanitize_paper_html import sanitize_paper_body_fragment
+
+    line = layout.split("{%- capture ph_line -%}", 1)[1].split("{%- endcapture -%}", 1)[0]
+    rendered = (
+        line.replace("{{ ph_score }}", "4")
+        .replace("{{ ph_max }}", "6")
+        .replace("{% for i in (1..ph_max) %}<i{% if i <= ph_score %} class=\"is-on\"{% endif %}></i>{% endfor %}", "<i class=\"is-on\"></i><i></i>")
+    )
+    rendered = re.sub(r"\{%.*?%\}", "", rendered)
+    rendered = re.sub(r"\{\{.*?\}\}", "x", rendered)
+    cleaned = sanitize_paper_body_fragment("<blockquote>" + rendered)
+    for kept in ('class="paper-health-line"', 'role="img"', "data-health-score=", "data-health-gaps=",
+                 "data-zh-aria-label=", 'class="paper-health-bar"', '<i class="is-on">'):
+        assert kept in cleaned, kept
+    js = (ROOT / "assets" / "js" / "note-health.js").read_text(encoding="utf-8")
+    assert "#paper-body .paper-health[data-health-score]" in js and "el.tabIndex = 0" in js
