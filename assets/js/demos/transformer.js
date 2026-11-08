@@ -1197,29 +1197,31 @@
 
   /* ── scene 5: Q、K、V：像去图书馆查资料 ── */
   function buildSceneQKV() {
-    var s = sceneSvg('左边是一间小图书馆：一个人举着蓝色的问题卡（Q），手电筒的光照向三本书，每本书上方贴着橙色的标签（K），里面是绿色的内容（V）；' +
-      '光越亮的书，飞回笔记本的绿色纸片越大；右边依次出现：Q、K、V 三张卡片的意思；换到机器人；同一张卡片抄成三张；越像越多抄；三个人同时查');
+    var s = sceneSvg('左边是一间小图书馆：一个人拿着蓝色的问题卡（Q），三本书上各贴一个橙色标签（K），书里是绿色内容（V）；' +
+      '一张蓝色的小 Q 卡一本一本停到每本书的标签上方，停到哪本，那本书上方就亮出它分到的比例（27%、45%、27%）；对完三本，绿色纸片按比例大小飞进下面的笔记本，' +
+      '笔记本里每一步一行，条越长抄得越多；右边依次出现：Q、K、V 三张卡片的意思；换到机器人；同一张卡片抄成三张；越像越多抄；三个人同时查');
     s.appendChild(svgText(24, 26, '注意力：像去图书馆查资料', 'demo-x-ink2', 13.5));
-    var reader = person(s, 66, 138, 14, C_Q);
+    var reader = person(s, 60, 146, 14, C_Q);
     chip(s, 20, 196, 96, 'Q：我要找什么', C_Q, { size: 11.5, h: 30 });
-    var BX = [196, 268, 340], BW = 50, BY = 74, BH = 150, WT = ATT.w;
-    var beams = BX.map(function (bx) {
-      var p = paint(svgEl('path', { d: 'M 86 138 L ' + bx + ' ' + (BY + 22) + ' L ' + (bx + BW) + ' ' + (BY + 22) + ' Z' }), C_Q);
-      s.appendChild(p); return p;
-    });
+    var BX = [196, 268, 340], BW = 50, BY = 92, BH = 132, WT = ATT.w, WMAX = Math.max.apply(null, WT);
     var books = BX.map(function (bx, i) {
       rectBox(s, bx, BY, BW, BH, C_MUTED, C_SURFACE2);
-      chip(s, bx + 5, BY + 8, BW - 10, 'K', C_K, { size: 12, h: 26 });
-      chip(s, bx + 5, BY + 100, BW - 10, 'V', C_V, { size: 12, h: 26 });
-      label(s, bx + BW / 2, BY + 74, STEPS[i], 'demo-x-mono', 11.5, 'middle');
-      return tone(s, bx + BW / 2, BY - 10, '', C_INK, 12.5, 'middle');
+      var k = chip(s, bx + 5, BY + 8, BW - 10, 'K', C_K, { size: 12, h: 26 });
+      chip(s, bx + 5, BY + 96, BW - 10, 'V', C_V, { size: 12, h: 26 });
+      label(s, bx + BW / 2, BY + 68, STEPS[i], 'demo-x-mono', 11.5, 'middle');
+      return { k: k, pct: tone(s, bx + BW / 2, BY - 8, '', C_INK, 12.5, 'middle') };
     });
-    /* 笔记本放在书的正下方：纸片竖着往下落，不从百分比和说明文字上划过 */
-    label(s, 186, 300, '抄进笔记本', 'demo-x-ink2', 11.5, 'end');
-    rectBox(s, 196, 262, 194, 72, C_V, C_SURFACE);
-    label(s, 196, 358, '书上方是标签（K），书里是内容（V）', 'demo-x-ink2', 11.5);
+    /* 小 Q 卡：从问题卡右上角飞出，一本一本停在书的上方（%读数的上面），不从字上划过 */
+    var qCard = chip(s, 0, 0, 30, 'Q', C_Q, { size: 12, h: 22 });
+    var Q_HOME = [104, 186], DOCK_Y = 54;
+    /* 笔记本放在书的正下方：每一步一行，纸片从 V 框下沿竖着往下落到自己那一行 */
+    label(s, 186, 290, '抄进笔记本', 'demo-x-ink2', 11.5, 'end');
+    rectBox(s, 196, 246, 194, 78, C_V, C_SURFACE);
+    var ROW_Y = [256, 278, 300], BAR_X = 236, BAR_W = 140;
+    ROW_Y.forEach(function (y, i) { label(s, 206, y + 11, STEPS[i], 'demo-x-mono', 11); });
     var pages = BX.map(function () { var r = paint(svgEl('rect', { x: 0, y: 0, width: 10, height: 10, rx: 2 }), C_V); s.appendChild(r); return r; });
-    var piles = [0, 1, 2].map(function (i) { return hbar(s, 206, 272 + i * 18, 13, C_V); });
+    var piles = ROW_Y.map(function (y) { return hbar(s, BAR_X, y, 13, C_V); });
+    label(s, 24, 350, '小 Q 卡依次对每本书的标签：越像，分到的比例越高', 'demo-x-ink2', 11.5);
     /* 第 1 段：三样东西 */
     var p1 = group(s);
     label(p1, R, 64, '查资料要三样东西', 'demo-x-ink', 14);
@@ -1268,21 +1270,43 @@
     label(p5, R, 292, '不用排队：这就是它比传话快的原因', 'demo-x-ink2', 12);
     function draw(t, clock) {
       var now = nowOf(t, clock);
-      var pulse = 0.75 + 0.25 * Math.sin(now * 3);
-      beams.forEach(function (b, i) { b.style.opacity = (WT[i] * 0.55 * pulse).toFixed(3); });
-      books.forEach(function (bt, i) { bt.textContent = Math.round(WT[i] * 100) + '%'; });
       reader.set(C_Q, 1);
-      /* 纸片从书里飞回笔记本：2.4 s 一趟 */
-      pages.forEach(function (pg, i) {
-        var u = ((now + i * 0.3) % 2.4) / 2.4, e2 = ease(clamp(u / 0.7, 0, 1));
-        var sz = 6 + 22 * WT[i];
-        var x0 = BX[i] + BW / 2, y0 = BY + 132, x1 = 222, y1 = 278 + i * 18;  /* 从 V 框下沿出发，不压住「V」 */
-        pg.setAttribute('x', (x0 + (x1 - x0) * e2 - sz / 2).toFixed(1)); pg.setAttribute('y', (y0 + (y1 - y0) * e2 - sz / 2).toFixed(1));
-        pg.setAttribute('width', sz.toFixed(1)); pg.setAttribute('height', sz.toFixed(1));
-        pg.style.opacity = u < 0.75 ? 0.85 : 0;
+      /* 左边 7.2 s 一轮：0–0.8 s 小 Q 卡飞到第一本；每本停 0.8 s、换下一本 0.4 s；3.6–4.0 s 淡出；
+         4.0–5.0 s 纸片按比例大小飞进笔记本，4.4–5.6 s 条长到各自的比例；5.6 s 后停住看结果 */
+      var cyc = now % 7.2;
+      var dock = BX.map(function (bx) { return [bx + BW / 2, DOCK_Y]; });
+      var qp, qa = 1;
+      if (cyc < 0.8) {
+        /* 先往上、再往右（二次贝塞尔，控制点在问题卡正上方），不擦过第一本书的读数 */
+        var e0 = ease(cyc / 0.8), m0 = 1 - e0;
+        qp = [m0 * m0 * Q_HOME[0] + 2 * m0 * e0 * Q_HOME[0] + e0 * e0 * dock[0][0], m0 * m0 * Q_HOME[1] + 2 * m0 * e0 * DOCK_Y + e0 * e0 * DOCK_Y];
+        qa = clamp(cyc / 0.3, 0, 1);
+      }
+      else if (cyc < 1.6) qp = dock[0];
+      else if (cyc < 2.0) { var e1 = ease((cyc - 1.6) / 0.4); qp = [dock[0][0] + (dock[1][0] - dock[0][0]) * e1, DOCK_Y]; }
+      else if (cyc < 2.8) qp = dock[1];
+      else if (cyc < 3.2) { var e2 = ease((cyc - 2.8) / 0.4); qp = [dock[1][0] + (dock[2][0] - dock[1][0]) * e2, DOCK_Y]; }
+      else { qp = dock[2]; qa = 1 - clamp((cyc - 3.6) / 0.4, 0, 1); }
+      qCard.setAttribute('transform', 'translate(' + (qp[0] - 15).toFixed(1) + ' ' + (qp[1] - 11).toFixed(1) + ')');
+      setOpacity(qCard, qa);
+      var visitAt = [0.8, 2.0, 3.2];
+      books.forEach(function (b, i) {
+        var here = cyc >= visitAt[i] && cyc < visitAt[i] + 0.8;
+        var seen = cyc >= visitAt[i];
+        b.k.box.style.strokeWidth = here ? (2.2 + 0.8 * Math.abs(Math.sin(now * 6))).toFixed(2) : '1.3';
+        b.pct.textContent = seen ? Math.round(WT[i] * 100) + '%' : '?';
+        b.pct.style.opacity = seen ? 1 : 0.35;
       });
-      var fillU = clamp((now % 9.6) / 9.6 * 1.2, 0, 1);
-      piles.forEach(function (pl, i) { setW(pl, 170 * WT[i] / 0.452 * 0.9 * fillU); });
+      pages.forEach(function (pg, i) {
+        var u = clamp((cyc - 4.0 - i * 0.15) / 0.85, 0, 1), e3 = ease(u);
+        var sz = 6 + 22 * WT[i] / WMAX * 0.6;
+        var x0 = BX[i] + BW / 2, y0 = BY + 126, x1 = BAR_X + BAR_W * WT[i] / WMAX - sz / 2 - 2, y1 = ROW_Y[i] + 6;
+        pg.setAttribute('x', (x0 + (x1 - x0) * e3 - sz / 2).toFixed(1)); pg.setAttribute('y', (y0 + (y1 - y0) * e3 - sz / 2).toFixed(1));
+        pg.setAttribute('width', sz.toFixed(1)); pg.setAttribute('height', sz.toFixed(1));
+        pg.style.opacity = u > 0 && u < 1 ? 0.85 : 0;
+      });
+      var grow = ease(clamp((cyc - 4.4) / 1.2, 0, 1));
+      piles.forEach(function (pl, i) { setW(pl, BAR_W * WT[i] / WMAX * grow); });
       [0, 1, 2].forEach(function (j) {
         fl3[j][0].at(now + j * 0.3, [R + 94, 148], [R + 138, 104 + j * 46], true);
         fl3[j][1].at(now + j * 0.3, [R + 212, 104 + j * 46], [R + 248, 104 + j * 46], true);
@@ -2582,7 +2606,7 @@
   function buildVideoDemo(host) {
     K.video(host, {
       title: '配音讲解视频：从机器人的角度读 Transformer',
-      sub: '15 分 43 秒竖屏视频（1080×1920），中文配音 + 字幕。画面就是上面的十七幕动画，旁白用同样的比喻把每一幕讲细；适合手机上看或转发。',
+      sub: '15 分 46 秒竖屏视频（1080×1920），中文配音 + 字幕。画面就是上面的十七幕动画，旁白用同样的比喻把每一幕讲细；适合手机上看或转发。',
       size: '17.6 MB',
       fileName: 'Transformer_讲解视频.mp4'
     });
