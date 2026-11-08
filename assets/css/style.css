@@ -2117,6 +2117,31 @@ details[open] > .roadmap-entry:hover .roadmap-entry-arrow { transform: rotate(-9
   font-variant-numeric: tabular-nums;
 }
 
+/* 年份 + 笔记健康度六格小条（同首页卡片的配色）；节点太窄时小条换到下一行。 */
+.tt-node-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0 4px;
+  max-width: 100%;
+}
+
+.tt-node-health {
+  padding: 0;
+  margin: 0;
+  cursor: inherit;
+}
+
+.tt-node-health .paper-health-bar {
+  gap: 1px;
+}
+
+.tt-node-health .paper-health-bar i {
+  width: 3px;
+  height: 8px;
+}
+
 /* 含配音讲解视频：右上角的播放徽标，像天赋图标角上的等级数字。
    徽标大半露在节点上沿外面，只压住边框和内边距，不会盖到节点名。 */
 .tt-node-badge {
@@ -4413,6 +4438,24 @@ a.updates-item-link:hover {
   font-size: 12px;
   line-height: 16px;
   font-variant-numeric: tabular-nums;
+}
+
+.roadmap-node-card__health {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 16px;
+  font-variant-numeric: tabular-nums;
+}
+
+.roadmap-node-card__health .paper-health {
+  flex-shrink: 0;
+  padding: 0;
+  margin: 0;
+  cursor: inherit;
 }
 
 .roadmap-node-card__action {

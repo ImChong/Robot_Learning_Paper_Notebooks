@@ -360,3 +360,18 @@ def test_health_colours_are_defined_for_both_themes():
         assert css.count(token + ":") == 2, f"{token} 需要在深色与浅色主题下各定义一次"
     for score in range(7):
         assert f".paper-health--{score}" in css
+
+
+def test_roadmap_nodes_and_cards_show_health():
+    """学习路线图：节点年份旁画同一套六格小条，悬浮卡片与读屏文字带上分数和缺项。"""
+    tree = (ROOT / "_includes" / "roadmap-tree.html").read_text(encoding="utf-8")
+    assert "{%- if tt_paper.health_score != nil %}" in tree
+    assert "tt-node-health paper-health paper-health--{{ tt_paper.health_score }}" in tree
+    detail = tree.split("{%- capture tt_detail -%}", 1)[1].split("{%- endcapture -%}", 1)[0]
+    for field in ("health_score", "health_gaps", "health_status", "health_label_en", "health_label_zh"):
+        assert f"tt_paper.{field} | jsonify" in detail, field
+    js = (ROOT / "assets" / "js" / "roadmap.js").read_text(encoding="utf-8")
+    assert "healthRow(body, info, zh)" in js
+    # 节点的 aria-label 也带上健康度（中英随语言切换时 labelNode 会重算）。
+    label_node = js.split("function labelNode(node) {", 1)[1].split("\n  }\n", 1)[0]
+    assert "info.health_label_zh" in label_node and "info.health_label" in label_node
