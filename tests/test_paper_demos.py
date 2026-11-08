@@ -168,6 +168,13 @@ DOORMAN_NOTE = (
     / "Opening_the_Sim-to-Real_Door_for_Humanoid_Pixel-to-Action_Policy_Transfer"
     / "Opening_the_Sim-to-Real_Door_for_Humanoid_Pixel-to-Action_Policy_Transfer.md"
 )
+SUPERMIMIC_NOTE = (
+    ROOT
+    / "papers"
+    / "04_Loco-Manipulation_and_WBC"
+    / "SuperMimic__Scaling_Humanoid_Whole-Body_Control_with_One_Differentiable_World_Model"
+    / "SuperMimic__Scaling_Humanoid_Whole-Body_Control_with_One_Differentiable_World_Model.md"
+)
 CHIP_NOTE = (
     ROOT
     / "papers"
@@ -423,7 +430,7 @@ EXPLAINER_BUNDLES = (
     "domain_randomization", "quadterrain", "realhumanoid", "asap", "inekf", "berkeley_humanoid",
     "toddlerbot", "exbody", "h2o", "omnih2o", "hover", "maskedmimic", "exbody2", "hugwbc", "homie", "twist", "twist2",
     "falcon", "hdmi", "viral",
-    "doorman", "chip", "idp3",
+    "doorman", "chip", "idp3", "supermimic",
 )
 
 # 幕数由论文决定，不是统一模板：PPO / DeepMimic / AMP / ADD 的核心概念正好各 5 个，
@@ -682,6 +689,7 @@ EXPLAINER_SCENES = {
     # 一幕、四处改动（相机坐标系、4096 个点、金字塔编码器、16 步）各一幕、扩散与我们的复现一幕；结果按实验设置、表 II、图 7、表 IV、
     # 为什么 3D 更稳（图 4、6、8）各一幕，局限与代码一幕。压成 15 幕会让四处改动的表 III 三组柱子、或图 8 的视角泛化和表 IV 的格子抢同一帧。
     "idp3": (IDP3_NOTE, 18),
+    "supermimic": (SUPERMIMIC_NOTE, 18),
 
     "humanml3d": (HUMANML3D_NOTE, 12),
 }
@@ -5991,7 +5999,11 @@ def test_chip_explainer_demos_and_worked_example_share_the_paper_numbers():
     # 2026-10-31 第二轮看片反馈「用更简单的例子」：第 2、3 幕的旁白改用一维的厘米例子（5 N × 0.02 = 10 cm）
     assert "手应该让开 10 厘米" in narration
     # 2026-11-01 第三轮：第 3 幕改成两条数轴「倒推 → 正推 → 部署」：训练时看到 −10、停在 0，部署时看到 0、停在 +10
-    assert "往回倒推 10 厘米，就是负 10 厘米" in narration and "停在正 10 厘米" in narration
+    assert "往回道推 10 厘米，就是负 10 厘米" in narration and "停在正 10 厘米" in narration
+    # 「倒推」的「倒」被读成 dǎo：旁白写同音的「道推」（dào），字幕换回「倒推」
+    assert "倒推" not in narration[narration.index("SCRIPT = [") : narration.index("DISPLAY = [")] and '("道推", "倒推")' in narration
+    # 2026-11-01：只陈述事实，不加「手根本让不出 1 米」这类自己的论断
+    assert "根本" not in narration and "肩到手腕" not in js and "图上是 0.27 米" in narration
     assert "var PUSH = 10, FLEN = 34;" in js and "规律只有一条：手停的位置 = 看到的目标 + 10 cm" in js
     # 「策略的视角」表：三道训练题的答案都是看到的目标 + 10 cm，部署时 0 → +10
     qs = re.findall(r"\['([−+]?\d+) cm', '([−+]?\d+) cm', [\d.]+, [\d.]+\]", js)
@@ -6007,8 +6019,8 @@ def test_chip_explainer_demos_and_worked_example_share_the_paper_numbers():
     assert [_fmt(5 * k, 3) for k in (0.001, 0.02, 0.03, 0.05)] == ["0.005", "0.100", "0.150", "0.250"]
     assert [_fmt(1 / k, 1) for k in (0.02, 0.03, 0.05)] == ["50.0", "33.3", "20.0"]
     assert (round(100 * 0.27 / (20 * 0.05)), round(100 * 0.20 / (20 * 0.03))) == (27, 33)
-    assert "| 5 N 时让开 [m] | 0 | 0.005 | 0.10 | 0.15 | 0.25 |" in note and "实测只有式子的 27%" in note
-    assert "20 牛乘 0.05 应该让开 1 米，图上只有 0.27 米" in narration
+    assert "| 5 N 时让开 [m] | 0 | 0.005 | 0.10 | 0.15 | 0.25 |" in note and "实测是式子的 27%" in note
+    assert "20 牛乘 0.05 应该让开 1 米，图上是 0.27 米" in narration
     # 例 4：梯形力
     def trap(u, F):
         return 0 if u <= 0 or u >= 1 else F * u / 0.25 if u < 0.25 else F if u < 0.75 else F * (1 - u) / 0.25
@@ -6071,6 +6083,8 @@ def test_chip_project_page_clips():
     assert sum(p.stat().st_size for p in clip_dir.iterdir()) < 3.5e6
     note = CHIP_NOTE.read_text(encoding="utf-8")
     assert "剪自[项目页](https://nvlabs.github.io/CHIP/)的视频" in note
+
+
 def test_idp3_explainer_demos_and_worked_example_share_the_paper_numbers():
     """iDP3：十八幕动画、三个演示、配音旁白与笔记「🚶 具体实例」用同一组数。
 
@@ -6210,3 +6224,101 @@ def test_idp3_project_page_clips():
     assert sum(p.stat().st_size for p in clip_dir.iterdir()) < 3e6
     note = IDP3_NOTE.read_text(encoding="utf-8")
     assert "剪自[项目页](https://humanoid-manipulation.github.io/)的视频" in note
+
+
+def _supermimic_var(js: str, name: str):
+    """supermimic.js 里 gen_data.py 生成的 `var NAME = {...};`（一行 JSON）。"""
+    m = re.search(r"var " + name + r" = (\{.*?\});\n", js)
+    assert m, name
+    return json.loads(m.group(1))
+
+
+def test_supermimic_explainer_demos_and_worked_example_share_the_paper_numbers():
+    """SuperMimic：十八幕动画、三个演示、配音旁白与笔记「🚶 具体实例」用同一组数。
+
+    图 3–5、图 7、附录图 A.1 的坐标照抄 arXiv 2610.28480 v1 的 LaTeX（图 5b、图 7 来自源文件附带的 CSV）；表 1、表 A.1–A.7 照抄。
+    `REPRO` 是我们用 Uni-SuperMimic 放出的 LAFAN1 模型在 CPU 上的 MuJoCo 里跑的复现（不是论文的实验）。例 1–10 在这里用 Python 再算一遍。
+    """
+    js = (DEMO_JS_DIR / "supermimic.js").read_text(encoding="utf-8")
+    note = SUPERMIMIC_NOTE.read_text(encoding="utf-8")
+    narration = (ROOT / "scripts" / "paper_video" / "papers" / "supermimic.py").read_text(encoding="utf-8")
+    paper = _supermimic_var(js, "PAPER")
+    repro = _supermimic_var(js, "REPRO")
+    fig7 = _supermimic_var(js, "FIG7")
+    for k in ("'sm-explainer'", "'sm-video'", "'sm-wm'", "'sm-grad'", "'sm-compute'", "K.video(host"):
+        assert k in js, k
+
+    # 例 1：算力账本
+    assert 128 * 168 == 21504 and round(21504 / 3) == 7168 and 168 / 3 == 56 and round(21504 / 19.6) == 1097
+    for s in ("21,504", "7168", "约 7200 倍", "56 倍", "1097"):
+        assert s in note, s
+    assert "约 7200 倍" in narration and "56 倍" in narration
+    # 例 2：每步奖励上限与归一化
+    assert round((4 * 1.0 + 2 * 0.5) * 0.02, 6) == 0.1 and round(249 * 0.1 / 49.9, 3) == 0.499
+    assert "0.499" in note
+    # 例 3、4、6
+    assert round(math.exp(-0.01 / 0.09), 3) == 0.895 and "0.895" in note
+    assert round(math.degrees(math.acos(0.2)), 1) == 78.5 and round(math.degrees(math.acos(0.3)), 1) == 72.5
+    assert round(0.99 ** 32, 3) == 0.725 and "0.725" in note and "0.725" in narration
+    for e, alive in ((0.21, 0.881), (0.25, 0.5), (0.29, 0.119)):
+        assert round(1 - 1 / (1 + math.exp(-(e - 0.25) / 0.02)), 3) == alive
+    # 例 5：髋俯仰的 PD 与动作缩放（BeyondMimic 的常数）
+    w = 2 * math.pi * 10
+    assert round(0.01017752 * w * w, 2) == 40.18 and round(0.25 * 88 / (0.01017752 * w * w), 3) == 0.548
+    # 例 7：GAE 玩具，与动画第 9 幕同一组数
+    rr, vv = [0.08, 0.09, 0.07, 0.09, 0.08, 0.06], [1.2, 1.1, 1.3, 1.0, 1.15, 1.05, 1.1]
+    assert "var rr = [0.08, 0.09, 0.07, 0.09, 0.08, 0.06], vv = [1.2, 1.1, 1.3, 1.0, 1.15, 1.05, 1.1]" in js
+    R = [0.0] * 7
+    R[6] = vv[6]
+    for i in range(5, -1, -1):
+        R[i] = rr[i] + 0.99 * (0.05 * vv[i + 1] + 0.95 * R[i + 1])
+    assert [round(x, 3) for x in R[:6]] == [1.456, 1.405, 1.33, 1.287, 1.213, 1.149]
+    # 例 8：重置采样的玩具，与第 11 幕同一组数
+    bins = [0.95, 0.9, 0.35, 0.2, 0.85, 0.92, 0.6, 0.97, 0.88, 0.45]
+    assert "var BINS = [0.95, 0.9, 0.35, 0.2, 0.85, 0.92, 0.6, 0.97, 0.88, 0.45];" in js
+    ex = [math.exp(-25 * b) for b in bins]
+    p = [0.05 + 0.4 * e / sum(ex) + 0.01 for e in ex]
+    assert round(max(p), 3) == 0.45 and "0.450" in note
+    # 例 9：数据过滤
+    assert 142220 - 12553 == 129667 and 129667 - 153 == 129514 and round(264.56 * 3600 / 129514, 2) == 7.35
+    # 例 10：失败表与图 7
+    assert 22 + 44 + 3 + 9 + 28 + 15 + 8 + 50 == 179 and 2 + 1 + 3 + 0 + 8 + 0 + 0 + 11 == 25
+    rings = [r for pl in fig7.values() for r in pl]
+    assert len(rings) == 672 and sum(r[4] for r in rings) == 657 and sum(1 - r[4] for r in rings) == 15 and sum(r[5] for r in rings) == 7
+    # 论文曲线的关键点
+    assert paper["fig3b"] == [[1, 0.539], [7, 1.35], [40, 1.908], [264, 1.892]]
+    assert paper["fig4c_critic"][1] == [32, 0.88] and paper["fig4a_ppo8"][-1] == [18.0328, 0.7218]
+    assert round(paper["fig5a_wm"][-1][1] / paper["fig5a_mjw"][-1][1]) == 62
+    # 例 11：我们的复现（数在 REPRO 里，笔记和旁白写的是同一组）
+    ev = repro["eval"]
+    assert ev["n"] == 40 and ev["failed"] == 0 and round(ev["mean"], 4) == 0.8277 and round(ev["framew"], 4) == 0.8304
+    assert round(sum(c[1] for c in ev["clips"]) / 40, 4) == round(ev["mean"], 4)
+    assert "0.8277" in note and "0.8304" in note and "平均回报 0.83" in narration
+    assert round(repro["fall"]["maxHeightGap"] * 100, 1) == 3.6 and "3.6 cm" in note and "3.6 厘米" in narration
+    sl = repro["slip"]
+    assert (sl["slideSim"], sl["slideWm"], sl["slideCtrl"]) == (2.82, 2.86, 0.99)
+    for s in ("2.82 m", "2.86 m", "0.99 m"):
+        assert s in note, s
+    assert "2.82 米" in narration and "2.86 米" in narration
+    g = repro["grad"]["rows"]
+    assert g[0][0] == 1 and round(g[0][1], 2) == 0.98 and g[-1][0] == 1024 and round(g[-1][3], 2) == 0.92
+    assert "0.981 / 0.969" in note and "0.922 / 0.889" in note
+    e8 = repro["err8"]
+    assert round(e8["walk1_subject1"]["rootMm"], 1) == 1.6 and round(e8["fallAndGetUp1_subject1"]["rootMm"], 1) == 5.7
+    assert "1.6 到 5.7 毫米" in narration and "1.6 mm" in note
+
+
+def test_supermimic_project_page_clips():
+    """SuperMimic：第 1、16 幕的仿真合集与真机画面剪自项目页 supermimic.github.io 的视频（3 段，按幕懒加载）。"""
+    js = (DEMO_JS_DIR / "supermimic.js").read_text(encoding="utf-8")
+    clip_dir = ROOT / "assets/img/papers/supermimic/clips"
+    used = set(re.findall(r"projClip\(\w+, '(\w+)'", js))
+    assert used == {"hero", "roll", "bay"}
+    assert {p.name for p in clip_dir.iterdir()} == {f"{u}.{ext}" for u in used for ext in ("mp4", "webp")}
+    assert sum(p.stat().st_size for p in clip_dir.iterdir()) < 2.0e6
+    assert js.count("项目页视频") >= 3
+    note = SUPERMIMIC_NOTE.read_text(encoding="utf-8")
+    assert "剪自[项目页](https://supermimic.github.io/)的视频" in note
+    sheets = _supermimic_var(js, "SHEETS")
+    g1_dir = ROOT / "assets/img/papers/supermimic/g1_3d"
+    assert {p.name for p in g1_dir.iterdir()} == {m["file"] for m in sheets.values()}

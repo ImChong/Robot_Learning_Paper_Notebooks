@@ -41,15 +41,15 @@
         "13_Physics-Based_Animation",
         "14_Human_Motion"
       ],
-      "last_module": "07_Teleoperation",
-      "last_index": 1160,
-      "last_title": "HuMiT: Low-Latency Whole-Body Humanoid Teleoperation via Compact Reference Tracking (arXiv:2610.29903)",
-      "next_module": "08_Navigation",
-      "last_completed_date": "2026-11-01",
-      "note": "本日轮转到 07_Teleoperation。PROGRESS Teleoperation 章节中尚无笔记的最新论文是 HuMiT (arXiv:2610.29903, 2026-10-21, 清华 IIIS × 港中文等)，即 PROGRESS #1160，已确认在上游 README。部署时策略只看 43 维紧凑参考（根部高度 + 速度 + 双腕双踝 SE(3)，当前帧），PICO 骨架只做 T 字姿势缩放，在线无 IK、无未来帧；完整参考只给奖励与 critic。端到端 65 ms（SONIC 245、TWIST2 120 ms），与 HuMiT-Full 跟踪精度基本持平，真机 G1 接球 2/10。开源训练插件 xiaohu-art/Track，含整体流程 mermaid、算例与源码运行时序图。下一篇轮转到 08_Navigation。",
-      "last_date": "2026-11-01",
+      "last_module": "14_Human_Motion",
+      "last_index": 1133,
+      "last_title": "PartiGen: Part-Aware Representations for Language-Conditioned Humanoid Motion Generation (arXiv:2610.13373)",
+      "next_module": "04_Loco-Manipulation_and_WBC",
+      "last_completed_date": "2026-11-08",
+      "note": "本日轮转到 14_Human_Motion。PROGRESS Human Motion Analysis and Synthesis 章节中尚无笔记的最新论文是 PartiGen（arXiv:2610.13373，2026-10-09，复旦 / 上海创智学院 / 上海交大等），即 PROGRESS #1133，已确认在上游 README。直接在 G1 关节空间做文本生成动作：BP-MVAE 按四组解剖掩码分头注意力、融合成 128 维全身潜变量并加 G1 正运动学监督；DA-LDM 以文本 + 历史自回归生成片段，EOS 头在 320 帧候选里逐帧挑终点；冻结 GRIT 跟踪器执行。未开源，只给整体流程 mermaid。下一篇轮转回 04_Loco-Manipulation_and_WBC。",
+      "last_date": "2026-11-08",
       "next_candidate": null,
-      "last_completed": "HuMiT: Low-Latency Whole-Body Humanoid Teleoperation via Compact Reference Tracking (arXiv:2610.29903)"
+      "last_completed": "PartiGen: Part-Aware Representations for Language-Conditioned Humanoid Motion Generation (arXiv:2610.13373)"
     },
     "last_summary_index": 532,
     "last_summary_date": "2026-09-18",
@@ -1893,6 +1893,83 @@
         "project_page": "https://xiaohu-art.github.io/Track/",
         "code": "https://github.com/xiaohu-art/Track",
         "source": "✅ 开源训练插件 xiaohu-art/Track（MIT，Isaac Lab + active-adaptation；无 PICO 遥操作与真机部署代码）· 含源码运行时序图 · Isaac Sim 仿真 + 真机 · Unitree G1 · 清华 IIIS × 港中文等"
+      },
+      {
+        "date": "2026-11-02",
+        "index": 1162,
+        "title": "Adaptive Traversal Tubes for Posture-Aware Navigation of Bipedal Humanoids",
+        "folder": "papers/08_Navigation/Adaptive_Traversal_Tubes_for_Posture-Aware_Navigation_of_Bipedal_Humanoids",
+        "module": "08_Navigation",
+        "arxiv": "2610.27688",
+        "project_page": "https://github.com/lborogzj997/Humanoid-Navigation-in-Crowds-and-Narrow-Spaces",
+        "code": "",
+        "source": "⏳ 未开源（项目仓库只有 README 与演示视频，称投稿后放代码）· 无源码运行时序图 · 仅方法的预印本、定量实验待补 · MuJoCo 仿真 + 真机演示 · Unitree G1 · Zijian Ge"
+      },
+      {
+        "date": "2026-11-03",
+        "index": 1163,
+        "title": "Vision as Proprioception: Estimating Humanoid Robot Pose from Video",
+        "folder": "papers/09_State_Estimation/Vision_as_Proprioception__Estimating_Humanoid_Robot_Pose_from_Video",
+        "module": "09_State_Estimation",
+        "arxiv": "2610.25288",
+        "project_page": "https://siplab.org/projects/HumanoidPose",
+        "code": "https://github.com/eth-siplab/HumanoidPose",
+        "source": "⏳ 源码未放出（官方仓库 eth-siplab/HumanoidPose 仅 README，Code and models: Coming soon）· 推理时序图按论文第 III 节整理 · 合成数据训练 + 三台真机评测 · Unitree G1 / EngineAI PM01 / Fourier N1 · ETH Zürich"
+      },
+      {
+        "date": "2026-11-04",
+        "index": 1190,
+        "title": "Delay Randomization Widens the Delay Margin of Learned Humanoid Motion Trackers",
+        "folder": "papers/10_Sim-to-Real/Delay_Randomization_Widens_the_Delay_Margin_of_Learned_Humanoid_Motion_Trackers",
+        "module": "10_Sim-to-Real",
+        "arxiv": "2610.32277",
+        "project_page": "",
+        "code": "",
+        "source": "⏳ 未开源（论文与 arXiv 页面无代码链接）· 评测时序图按论文第 3 节整理 · mjlab 训练 + 独立 CPU MuJoCo 评测 + Isaac Lab 对照 · 24 关节人形 · Shaoqin Li、Yi Sun（CCNY）"
+      },
+      {
+        "date": "2026-11-05",
+        "index": 672,
+        "title": "BiGym 2.0: Benchmarking Learned and Agent-Developed Policies for Humanoid Household Manipulation",
+        "folder": "papers/11_Simulation_Benchmark/BiGym2__Benchmarking_Learned_and_Agent-Developed_Policies_for_Humanoid_Household_Manipulation",
+        "module": "11_Simulation_Benchmark",
+        "arxiv": "2610.07594",
+        "project_page": "https://bigym2.github.io/",
+        "code": "https://github.com/swirl-uk/BiGym2",
+        "source": "✅ 已开源（swirl-uk/BiGym2，Apache-2.0）· 时序图按 bigym/loco/eval/runner.py、loco/env.py、loco/lowerbody.py、adapters/groot_wbc.py 整理 · MuJoCo + 冻结 GR00T-WBC · Unitree G1 + Dex1 · Imperial College London"
+      },
+      {
+        "date": "2026-11-06",
+        "index": 1191,
+        "title": "A fully articulated humanoid dexterous hand with human-level joint structure enabled by linkage-based actuation",
+        "folder": "papers/12_Hardware_Design/Torch-Hand__Fully_Articulated_Humanoid_Dexterous_Hand_with_Linkage-Based_Actuation",
+        "module": "12_Hardware_Design",
+        "arxiv": "2610.36789",
+        "project_page": "",
+        "code": "",
+        "source": "⏳ 未开源（论文与 arXiv 页面无代码 / CAD 链接）· 只给整体流程 mermaid · 21 关节 / 16 电机全连杆灵巧手 · Jihao Li、Huixu Dong 等（浙江大学 Grasp Lab）"
+            },
+      {
+        "date": "2026-11-07",
+        "index": 1130,
+        "title": "Walk Like This: Stylized Locomotion for Physics-Based Characters through Example-Driven Diffusion",
+        "folder": "papers/13_Physics-Based_Animation/Walk_Like_This__Stylized_Locomotion_for_Physics-Based_Characters_through_Example-Driven_Diffusion",
+        "module": "13_Physics-Based_Animation",
+        "arxiv": "2610.18147",
+        "project_page": "https://www.youtube.com/watch?v=roFnS6N7nJ4",
+        "code": "",
+        "source": "⏳ 未开源（论文与 arXiv 页面无代码链接）· 只给整体流程 mermaid · 风格编码器 + 自回归动作扩散 + RL 跟踪 · Joshua Aurand、Moritz Bächer 等（Disney Research Zürich、ETH Zürich）"
+      },
+      {
+        "date": "2026-11-08",
+        "index": 1133,
+        "title": "PartiGen: Part-Aware Representations for Language-Conditioned Humanoid Motion Generation",
+        "folder": "papers/14_Human_Motion/PartiGen__Part-Aware_Representations_for_Language-Conditioned_Humanoid_Motion_Generation",
+        "module": "14_Human_Motion",
+        "arxiv": "2610.13373",
+        "project_page": "https://andyhuangzz01.github.io/partigen-paper/",
+        "code": "",
+        "source": "⏳ 未开源（论文与项目页无代码仓库）· 只给整体流程 mermaid · 部位感知 VAE + 潜空间扩散 + EOS 时长 + 冻结 GRIT 跟踪 · Chuxuan Huang、Zhanxiang Cao、Yue Gao 等（复旦、上海创智学院、上海交大）"
       }
     ],
     "last_completed_index": 588,

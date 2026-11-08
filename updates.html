@@ -242,7 +242,7 @@ description: "论文笔记站点的更新记录：按日列出新增与修订的
       var monthLabel = '';
       if (month !== prevMonth) {
         // Skip a label that would land within 2 columns of the previous one.
-        if (week - lastLabelWeek >= 2) {
+        if (week - lastLabelWeek >= 2 && week <= WEEKS - 3) {
           monthLabel = t.formatMonth(month + 1);
           lastLabelWeek = week;
         }

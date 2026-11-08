@@ -357,6 +357,21 @@
       col: 2
       after: [Cosmos, HumDex]
       url: /papers/06_Manipulation/DreamDojo_A_Generalist_Robot_World_Model_from_Large-Scale_Human_Videos/DreamDojo_A_Generalist_Robot_World_Model_from_Large-Scale_Human_Videos.html
+    - id: SuperMimic
+      label: "Super\u200BMimic"
+      year: "2026"
+      row: 2
+      col: 3
+      after: [SONIC]
+      related: [HAIC]
+      notes:
+        SONIC:
+          en: same task, one GPU instead of 128
+          zh: 同一个任务，1 张卡追上 128 张卡
+        HAIC:
+          en: also trains humanoid control with a dynamics world model
+          zh: 同样用动力学世界模型训人形控制
+      url: /papers/04_Loco-Manipulation_and_WBC/SuperMimic__Scaling_Humanoid_Whole-Body_Control_with_One_Differentiable_World_Model/SuperMimic__Scaling_Humanoid_Whole-Body_Control_with_One_Differentiable_World_Model.html
     - id: WM1X
       label: 1X World Model
       label_zh: 1X 世界模型

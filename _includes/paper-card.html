@@ -1,12 +1,32 @@
+{%- comment -%}
+  首页论文卡片。第二行是发表时间与笔记健康度（0–6，scripts/note_health.py 在 prepare_pages 时算出）：
+  六格小条，亮格数 = 得分；悬停 / 触屏点按 / 键盘聚焦时由 assets/js/note-health.js 弹出逐项清单，
+  读屏读 aria-label。没有算出健康度的条目不显示小条（不会被当成满分）。
+{%- endcomment -%}
+{%- assign card_zh = include.paper.zh_title | default: include.paper.zhname -%}
+{%- assign has_pub = false -%}
+{%- if include.paper.published_date_zh or include.paper.published_date -%}{%- assign has_pub = true -%}{%- endif -%}
+{%- assign has_health = false -%}
+{%- if include.paper.health_score != nil -%}{%- assign has_health = true -%}{%- endif -%}
 <a href="{{ site.baseurl }}{{ include.paper.url | escape }}" class="paper-card">
   <span class="paper-card-text">
-    {% assign card_zh = include.paper.zh_title | default: include.paper.zhname %}
     <span class="paper-title" data-en="{{ include.paper.title | escape }}" data-zh="{{ card_zh | escape }}">{{ include.paper.title | escape }}</span>
-    {% if include.paper.published_date_zh or include.paper.published_date %}
-      {% assign pub_zh = include.paper.published_date_zh | default: include.paper.published_date %}
-      {% assign pub_en = include.paper.published_date_en | default: pub_zh %}
+    {%- if has_pub or has_health %}
+    <span class="paper-card-meta">
+      {%- if has_pub -%}
+        {%- assign pub_zh = include.paper.published_date_zh | default: include.paper.published_date -%}
+        {%- assign pub_en = include.paper.published_date_en | default: pub_zh %}
       <span class="paper-published" data-en="{{ pub_en | escape }}" data-zh="{{ pub_zh | escape }}">{{ pub_en | escape }}</span>
-    {% endif %}
+      {%- endif -%}
+      {%- if has_health -%}
+        {%- assign hs = include.paper.health_score -%}
+        {%- assign health_max = site.data.note_health.max | default: 6 %}
+      <span class="paper-health paper-health--{{ hs }}" role="img" data-health-score="{{ hs }}" data-health-gaps="{{ include.paper.health_gaps | join: ' ' | escape }}"{% if include.paper.health_status %} data-health-status="{{ include.paper.health_status | escape }}"{% endif %} aria-label="{{ include.paper.health_label_en | escape }}" data-en-aria-label="{{ include.paper.health_label_en | escape }}" data-zh-aria-label="{{ include.paper.health_label_zh | escape }}"><span class="paper-health-bar" aria-hidden="true">{% for i in (1..health_max) %}<i{% if i <= hs %} class="is-on"{% endif %}></i>{% endfor %}</span><span class="paper-health-score" aria-hidden="true">{{ hs }}/{{ health_max }}</span></span>
+      {%- endif %}
+    </span>
+    {%- endif %}
   </span>
-  {% if include.paper.has_open_source %}<span class="paper-opensource" role="img" aria-label="笔记含开源源码链接" title="笔记含开源源码链接"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-star"></use></svg></span>{% endif %}
+  {%- if include.paper.has_open_source %}
+  <span class="paper-opensource" role="img" aria-label="笔记含开源源码链接" title="笔记含开源源码链接"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-star"></use></svg></span>
+  {%- endif %}
 </a>

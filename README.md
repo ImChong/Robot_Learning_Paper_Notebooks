@@ -2,8 +2,8 @@
 
 [![GitHub Pages](https://img.shields.io/badge/GitHub%20Pages-Live-brightgreen.svg)](https://imchong.github.io/Robot_Learning_Paper_Notebooks/)
 [![License](https://img.shields.io/badge/License-BSD_3--Clause-blue.svg)](LICENSE)
-[![Papers](https://img.shields.io/badge/Papers-1392-orange.svg)](papers/PROGRESS.md)
-[![Notes](https://img.shields.io/badge/Notes-412-green.svg)](papers/)
+[![Papers](https://img.shields.io/badge/Papers-1425-orange.svg)](papers/PROGRESS.md)
+[![Notes](https://img.shields.io/badge/Notes-420-green.svg)](papers/)
 
 人形机器人学习方向的每日论文精读笔记，逐篇部署为 [在线网页](https://imchong.github.io/Robot_Learning_Paper_Notebooks/)。
 
@@ -11,7 +11,7 @@
 
 ## 在线演示
 
-[![站点使用演示：展开学习路线图，搜索 DeepMimic 并打开论文笔记，通过目录跳转到训练流程，点击流程图进入大图查看器](media/site-demo.gif)](https://imchong.github.io/Robot_Learning_Paper_Notebooks/)
+[![站点使用演示：展开分系学习路线图，搜索 DeepMimic 并打开论文笔记，打开目录跳转到小节，点击流程图进入大图查看器](media/site-demo.gif)](https://imchong.github.io/Robot_Learning_Paper_Notebooks/)
 
 ↑ 点击动图进入[在线站点](https://imchong.github.io/Robot_Learning_Paper_Notebooks/)。展开**推荐学习路线图**了解阅读顺序；按论文标题或 arXiv 编号**即时搜索**；打开笔记后通过**目录**定位章节，点击流程图可进入大图查看器，支持缩放与拖拽。
 
@@ -68,6 +68,7 @@
    │
    └─ ⑦ 世界模型 World Model：       Dreamer / PlaNet (2019) ⇢ UniPi (2023)（潜空间想象学策略 → 文本条件视频当规划器）
                                     Cosmos (2025) → DreamDojo (2026) → 1X World Model (2025)；HAIC (2026)（动力学感知 WM）
+                                    SONIC (2025) → SuperMimic (2026)（⇠ HAIC；可微世界模型 + BPTT，1 张 H100 训通用动作跟踪）
             ↓（世界模型"会做梦"预测未来 / 动力学，再升级为可直接当策略的模型）
        ⑧ 世界-动作模型 WAM：         Cosmos → Cosmos Policy (2026)（⇠ Dreamer；视频模型一次后训练兼任策略、世界模型、价值函数）
                                     DreamZero (2026)（World Action Models are Zero-shot Policies）

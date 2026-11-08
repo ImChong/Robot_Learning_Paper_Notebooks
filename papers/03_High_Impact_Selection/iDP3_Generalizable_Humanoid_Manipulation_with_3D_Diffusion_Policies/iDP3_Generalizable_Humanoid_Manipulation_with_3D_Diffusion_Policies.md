@@ -6,6 +6,9 @@ subcategory: "Teleoperation & Imitation Learning"
 zhname: "iDP3：基于改进版 3D 扩散策略的可泛化人形操作"
 arxiv: "2410.10803"
 demos: ["idp3"]
+original_check: done
+original_check_date: 2026-10-29
+original_check_scope: arXiv v1–v3 的 LaTeX 源码（正文 + 附录）+ 项目页 + 两个官方仓库（f5b27fa、8221c58）
 ---
 
 # iDP3: Generalizable Humanoid Manipulation with Improved 3D Diffusion Policies
