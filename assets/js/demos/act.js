@@ -37,6 +37,11 @@
   var PAPER_IMG_BASE = IMG_BASE ? IMG_BASE + 'act/' : '';
   var CLIP_BASE = PAPER_IMG_BASE ? PAPER_IMG_BASE + 'clips/' : '';
   var SIM_BASE = PAPER_IMG_BASE ? PAPER_IMG_BASE + 'sim/' : '';
+  /* 机械臂模型的离线渲染（我们做的，model/）：主臂 WidowX 250、从臂 ViperX 300 用 MuJoCo Menagerie 的 trossen_wx250s / trossen_vx300s
+     （BSD-3），夹爪、交接、挪方块用官方 ACT 的 MJCF；MuJoCo 自带渲染器，近似正交的相机，透明底。MODEL 里是贴图表的格子尺寸
+     和按同一台相机投影到格子里的点（手、关节、目标、方块），以及取自官方仿真人类示范的关节角序列 */
+  var MODEL_BASE = PAPER_IMG_BASE ? PAPER_IMG_BASE + 'model/' : '';
+  var MODEL = /*MODEL*/{"pair":{"steps":[0,4,8,12,16,20,24,28,32,36,40,44,48,52,56,60,64,68,72,76,80,84,88,92,96,100,104,108,112,116,120,124,128,132,136,140,144,148,152,156,160,164,168,172,176,180,184,188,192,196,200],"every":4,"leader":{"cw":219,"ch":164,"cols":10,"n":51,"hand":[[181.9,61.3],[182.0,61.8],[182.0,62.7],[182.4,62.7],[183.6,63.8],[186.0,65.5],[189.2,71.6],[191.1,79.9],[192.3,87.2],[192.1,93.0],[192.0,96.1],[191.7,99.7],[192.2,101.8],[192.9,104.5],[194.0,107.1],[195.8,110.6],[197.8,113.9],[199.2,118.0],[200.3,121.6],[201.5,124.3],[202.3,127.2],[203.1,130.0],[204.5,133.0],[206.1,135.7],[207.6,136.6],[208.3,137.0],[207.5,137.5],[207.4,136.4],[205.8,135.3],[205.0,132.8],[205.6,129.2],[205.9,127.3],[206.3,126.7],[207.0,125.2],[206.2,125.3],[206.0,125.4],[205.9,127.1],[205.2,130.8],[206.0,132.0],[205.9,133.4],[205.6,136.4],[205.4,141.2],[205.8,144.5],[206.0,147.0],[206.1,148.2],[205.9,148.4],[206.3,147.2],[207.2,144.8],[207.6,142.3],[207.5,140.3],[208.4,136.2]],"base":[90.0,156.0],"ppm":400},"follower":{"cw":266,"ch":193,"cols":10,"n":51,"hand":[[211.1,62.9],[211.3,72.4],[211.7,74.3],[212.1,74.7],[212.7,74.9],[214.1,75.2],[218.2,79.6],[221.2,87.3],[223.2,95.2],[224.0,101.8],[224.1,106.7],[224.1,110.8],[224.1,114.2],[224.7,116.7],[225.9,120.4],[227.7,124.3],[230.1,128.2],[232.6,131.9],[234.3,136.0],[235.8,139.3],[237.4,142.1],[238.4,145.7],[239.9,149.0],[241.9,152.0],[244.8,152.7],[247.5,152.6],[248.5,152.4],[248.2,152.6],[246.9,152.8],[244.7,152.6],[242.5,151.8],[241.9,149.5],[242.3,147.1],[243.0,145.5],[243.2,144.1],[242.5,144.1],[242.6,143.9],[242.2,146.0],[242.3,148.5],[243.0,150.0],[242.7,152.4],[242.6,156.7],[242.7,161.9],[243.5,164.7],[243.8,167.2],[243.5,169.0],[243.4,169.4],[243.6,168.6],[244.3,166.5],[244.3,164.3],[244.3,161.8]],"base":[111.6,183.4],"ppm":400}},"ik":{"cw":405,"ch":192,"cols":10,"n":26,"rate":[0,4.21,4.07,3.95,3.86,3.8,3.75,3.73,3.72,3.72,3.75,3.78,3.84,3.91,4.0,4.11,4.25,4.41,4.63,4.89,5.24,5.7,6.36,7.4,9.38,16.85],"xs":[0.3,0.3185,0.3369,0.3554,0.3739,0.3923,0.4108,0.4293,0.4478,0.4662,0.4847,0.5032,0.5216,0.5401,0.5586,0.577,0.5955,0.614,0.6325,0.6509,0.6694,0.6879,0.7063,0.7248,0.7433,0.7617],"dx_cm":1.8,"kA":[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25],"target":[[202.3,85.5],[209.7,85.5],[217.1,85.5],[224.5,85.5],[231.8,85.5],[239.2,85.5],[246.6,85.5],[254.0,85.5],[261.4,85.5],[268.8,85.5],[276.2,85.5],[283.6,85.5],[291.0,85.5],[298.4,85.5],[305.8,85.5],[313.2,85.5],[320.6,85.5],[328.0,85.5],[335.4,85.5],[342.8,85.5],[350.2,85.5],[357.5,85.5],[364.9,85.5],[372.3,85.5],[379.7,85.5],[387.1,85.5]],"ppm":400,"base":[82.7,183.5]},"grip":{"cw":139,"ch":158,"cols":7,"n":21,"g":[0.0,0.1,0.1,0.1,0.2,0.2,0.3,0.3,0.4,0.5,0.5,0.6,0.6,0.7,0.7,0.8,0.8,0.8,0.9,0.9,1.0],"ppm":900,"cube":[71.3,137.6]},"joints":{"cw":301,"ch":300,"cols":1,"n":1,"joints":[{"name":"waist","p":[118.1,221.2],"a0":[118.4,251.3],"a1":[117.9,191.0]},{"name":"shoulder","p":[117.9,197.0],"a0":[141.1,203.5],"a1":[95.0,190.6]},{"name":"elbow","p":[110.5,42.2],"a0":[134.0,47.7],"a1":[87.3,36.7]},{"name":"forearm_roll","p":[182.7,32.6],"a0":[161.4,35.4],"a1":[203.7,29.8]},{"name":"wrist_angle","p":[217.5,28.0],"a0":[240.9,33.2],"a1":[194.5,22.8]},{"name":"wrist_rotate","p":[233.3,49.7],"a0":[219.8,31.1],"a1":[246.7,68.1]},{"name":"gripper","p":[255.2,79.9]}],"ppm":520},"reach":{"cw":233,"ch":171,"cols":1,"n":1,"tip":[217.4,153.7],"base":[74.1,153.7],"table":[217.4,153.7],"ppm":360},"handover":{"cw":332,"ch":129,"cols":5,"n":10,"eps":[0,5,10,15,20,25,30,35,40,45],"steps":[297,358,279,304,300,309,237,305,343,260],"cube":[[163.8,44.5],[156.3,43.2],[160.6,40.3],[157.5,35.7],[163.0,41.4],[162.1,42.9],[165.3,42.9],[165.5,42.4],[159.4,43.8],[155.4,40.3]],"spread_cm":[5.6,6.1,5.0],"std_cm":[1.4,1.2,1.1],"n_all":50},"perturb":{"cw":332,"ch":129,"cols":10,"n":61,"steps":[40,44,48,52,56,60,64,68,72,76,80,84,88,92,96,100,104,108,112,116,120,124,128,132,136,140,144,148,152,156,160,164,168,172,176,180,184,188,192,196,200,204,208,212,216,220,224,228,232,236,240,244,248,252,256,260,264,268,272,276,280],"cube":[[194.4,101.2],[194.4,101.2],[194.4,101.2],[194.4,101.2],[194.4,101.2],[194.4,101.2],[194.4,101.2],[194.4,101.2],[194.4,101.2],[194.4,101.2],[194.4,101.2],[194.4,101.2],[194.4,101.2],[194.4,101.2],[194.4,101.2],[202.7,101.2],[202.7,101.2],[202.7,101.3],[202.9,101.4],[203.0,101.7],[203.1,101.7],[203.1,101.8],[203.2,101.9],[203.1,101.9],[203.2,102.0],[203.1,102.0],[203.1,101.8],[203.1,101.4],[202.6,101.2],[201.3,97.7],[198.9,92.2],[196.5,85.7],[194.1,78.4],[191.7,70.4],[189.5,62.9],[188.2,56.3],[187.4,49.6],[187.2,46.0],[186.8,43.7],[186.2,42.4],[185.2,41.8],[184.4,41.8],[183.7,41.9],[182.9,41.8],[181.8,41.6],[180.7,41.4],[179.4,41.2],[178.0,41.0],[176.6,40.8],[175.0,40.7],[173.5,40.7],[172.4,40.7],[171.7,40.9],[171.6,40.9],[171.4,41.3],[171.4,41.5],[171.2,41.4],[170.9,41.3],[170.9,41.4],[171.0,41.5],[171.1,41.4]],"t_move":100,"shift":[0.04,0.0],"touch":153,"lift":153,"success":246,"tries":9,"ok":3},"gripseq":{"ep":0,"t0":170,"every":2,"lead":[1.048,1.048,1.048,1.048,1.048,1.022,1.0,0.928,0.811,0.653,0.506,0.401,0.305,0.25,0.214,0.21,0.21,0.209,0.209,0.209,0.21,0.209,0.209,0.209,0.209,0.209,0.209,0.209,0.209,0.21,0.209,0.21,0.21,0.21,0.21,0.21,0.21,0.21,0.209,0.21,0.21,0.209,0.209,0.21,0.21,0.21,0.21,0.21,0.21,0.21,0.209,0.21,0.21,0.21,0.21,0.21,0.21,0.21,0.21,0.21,0.21,0.21,0.21,0.21,0.211,0.214],"foll":[0.97,0.97,0.97,0.97,0.97,0.97,0.97,0.97,0.957,0.918,0.852,0.768,0.679,0.605,0.609,0.605,0.593,0.574,0.57,0.571,0.562,0.57,0.571,0.582,0.59,0.596,0.601,0.601,0.607,0.611,0.618,0.621,0.624,0.622,0.623,0.623,0.627,0.633,0.632,0.635,0.636,0.636,0.635,0.637,0.636,0.637,0.636,0.637,0.635,0.637,0.635,0.638,0.635,0.637,0.636,0.635,0.633,0.636,0.636,0.636,0.636,0.638,0.643,0.65,0.66,0.673]}}/*/MODEL*/;
   var el = K.el,
     fmt = K.fmt,
     clamp = K.clamp,
@@ -593,6 +598,41 @@
       }
     };
   }
+  /* model/ 下的贴图表：meta = { cw, ch, cols, n }；put(x, y, w, frame) 把第 frame 格放在左上角 (x, y)、宽 w，返回缩放比 k
+     （格子里的点 p 画到 x + p[0] × k、y + p[1] × k） */
+  function modelSheet(parent, file, meta) {
+    var g = group(parent), rows = Math.ceil(meta.n / meta.cols);
+    g.setAttribute('class', 'demo-x-g1mesh');
+    var box = svgEl('svg', { overflow: 'hidden', preserveAspectRatio: 'none', width: 0, height: 0 });
+    var img = svgEl('image', { x: 0, y: 0, width: meta.cw * meta.cols, height: meta.ch * rows, preserveAspectRatio: 'none' });
+    box.appendChild(img);
+    g.appendChild(box);
+    var woke = false, lastF = -1, X = 0, Y = 0, k = 1;
+    return {
+      g: g,
+      /* 每格四周裁掉 1 像素（免得取样带进相邻格子），所以宽 w 对应格子里的 cw − 2 像素 */
+      put: function (x, y, w, frame) {
+        if (!woke && MODEL_BASE) { woke = true; img.setAttribute('href', MODEL_BASE + file); }
+        var f = clamp(Math.round(frame || 0), 0, meta.n - 1);
+        X = x; Y = y; k = w / (meta.cw - 2);
+        box.setAttribute('x', x.toFixed(1)); box.setAttribute('y', y.toFixed(1));
+        box.setAttribute('width', w.toFixed(1)); box.setAttribute('height', ((meta.ch - 2) * k).toFixed(1));
+        if (f !== lastF) {
+          box.setAttribute('viewBox', [(f % meta.cols) * meta.cw + 1, Math.floor(f / meta.cols) * meta.ch + 1, meta.cw - 2, meta.ch - 2].join(' '));
+          lastF = f;
+        }
+        return k;
+      },
+      /* 格子里的点 → 画面坐标（按最近一次 put） */
+      at: function (p) { return [X + (p[0] - 1) * k, Y + (p[1] - 1) * k]; },
+      h: function (w) { return (meta.ch - 2) * w / (meta.cw - 2); }
+    };
+  }
+  /* 来回放：0 … n−1 … 0（不从末格跳回首格） */
+  function pingFrame(u, n) {
+    var L = 2 * (n - 1), v = ((Math.floor(u) % L) + L) % L;
+    return v < n ? v : L - v;
+  }
   /* 回合里的第几步：按秒数 × 50 Hz 循环，放完停 1 s 再从头 */
   function loopStep(sec, n) {
     var L = (n || 400) / 50 + 1, u = ((sec % L) + L) % L;
@@ -624,31 +664,6 @@
     var sw = 0, s = 0;
     list.forEach(function (p, i) { var w = Math.exp(-m * i); sw += w; s += w * p[1]; });
     return sw ? s / sw : 0;
-  }
-
-  /* 平面两节臂：base 在 (x, y)，两节长 l1、l2，关节角 a1（从水平往上）、a2（相对第一节）；夹爪张开 g（0…1） */
-  function armPlanar(parent, color, w) {
-    var g = group(parent);
-    var base = paint(svgEl('rect', { x: 0, y: 0, width: 26, height: 10, rx: 3 }), color);
-    var l1 = hline(g, 0, 0, 0, 0, color, w || 7), l2 = hline(g, 0, 0, 0, 0, color, (w || 7) * 0.8);
-    var j1 = dotAt(g, 0, 0, (w || 7) * 0.75, color), j2 = dotAt(g, 0, 0, (w || 7) * 0.65, color);
-    var f1 = hline(g, 0, 0, 0, 0, color, 3), f2 = hline(g, 0, 0, 0, 0, color, 3);
-    g.appendChild(base);
-    l1.style.strokeLinecap = 'round'; l2.style.strokeLinecap = 'round';
-    return {
-      g: g,
-      set: function (x, y, L1, L2, a1, a2, grip) {
-        base.setAttribute('x', (x - 13).toFixed(1)); base.setAttribute('y', (y).toFixed(1));
-        var ex = x + L1 * Math.cos(a1), ey = y - L1 * Math.sin(a1);
-        var hx = ex + L2 * Math.cos(a1 + a2), hy = ey - L2 * Math.sin(a1 + a2);
-        setLine(l1, x, y, ex, ey); setLine(l2, ex, ey, hx, hy);
-        moveDot(j1, [x, y]); moveDot(j2, [ex, ey]);
-        var dir = a1 + a2, ux = Math.cos(dir), uy = -Math.sin(dir), px = -uy, py = ux, o = 3 + 6 * (grip == null ? 0.5 : grip);
-        setLine(f1, hx + px * o, hy + py * o, hx + px * o + ux * 12, hy + py * o + uy * 12);
-        setLine(f2, hx - px * o, hy - py * o, hx - px * o + ux * 12, hy - py * o + uy * 12);
-        return [hx, hy];
-      }
-    };
   }
 
   /* ── scene 1: 精细活，低成本硬件做得到吗 ── */
@@ -686,22 +701,29 @@
     });
     label(p2, R, 236, '附录 A 的估价，条按价钱等比例画；ALOHA 是论文自己的系统', 'demo-x-mut', 11);
     label(p2, R, 258, '论文要问：学习能不能让便宜、不精确的硬件也做精细活？', 'demo-x-ink2', 11.5);
-    /* 第 3 段：ViperX 的准度 5–8 mm：落点散成一圈 */
+    /* 第 3 段：ViperX 的准度 5–8 mm：左边是 ViperX 300 的模型（Menagerie）指尖朝下够桌面上的目标，右边放大镜里落点散成一圈 */
     var p3 = group(s);
     label(p3, R, 62, '便宜的臂不够准', 'demo-x-ink', 14);
-    var tx = R + 110, ty = 166, PX = 9;
+    var RM = MODEL && MODEL.reach, reach = RM ? modelSheet(p3, 'reach.webp', RM) : null, RW = 176;
+    var tip3 = [R + 160, 196];
+    if (reach) { reach.put(R, 80, RW, 0); tip3 = reach.at(RM.tip); }
+    hline(p3, R, tip3[1], tip3[0] + 16, tip3[1], C_MUTED, 1.2).setAttribute('stroke-dasharray', '3 3');
+    var tx = R + 290, ty = 140, PX = 7, LR = 62;
+    var lens = ringAt(p3, tx, ty, LR, C_INK2 || C_MUTED, 1.6);
+    void lens;
+    ringAt(p3, tip3[0], tip3[1], 5, C_INK2 || C_MUTED, 1.4);
+    hline(p3, tip3[0] + 4, tip3[1] - 3, tx - LR * 0.86, ty + LR * 0.5, C_MUTED, 1).setAttribute('stroke-dasharray', '3 3');
+    hline(p3, tip3[0] + 2, tip3[1] - 5, tx - LR * 0.5, ty - LR * 0.86, C_MUTED, 1).setAttribute('stroke-dasharray', '3 3');
     ringAt(p3, tx, ty, 8 * PX, C_BAD, 1.4).setAttribute('stroke-dasharray', '4 4');
     ringAt(p3, tx, ty, 5 * PX, C_WARN, 1.4).setAttribute('stroke-dasharray', '4 4');
-    hline(p3, tx - 10, ty, tx + 10, ty, C_INK, 1.6); hline(p3, tx, ty - 10, tx, ty + 10, C_INK, 1.6);
+    hline(p3, tx - 8, ty, tx + 8, ty, C_INK, 1.6); hline(p3, tx, ty - 8, tx, ty + 8, C_INK, 1.6);
     var hits = [];
-    for (var h = 0; h < 18; h++) hits.push(dotAt(p3, tx, ty, 3.4, C_ACCENT));
-    tone(p3, R + 230, 214, '黄虚线圈：5 mm', C_WARN, 11.5);
-    tone(p3, R + 230, 236, '红虚线圈：8 mm', C_BAD, 11.5);
-    label(p3, R + 230, 120, 'ViperX（图 2 右）', 'demo-x-ink', 12);
-    label(p3, R + 230, 144, '重复精度 1 mm', 'demo-x-ink2', 11.5);
-    label(p3, R + 230, 166, '准度 5–8 mm', 'demo-x-ink2', 11.5);
-    label(p3, R + 230, 188, '负载 750 g', 'demo-x-ink2', 11.5);
-    label(p3, R, 270, '蓝点：照着同一个目标点去，落点散在几毫米的圈里（示意）', 'demo-x-mut', 11);
+    for (var h = 0; h < 18; h++) hits.push(dotAt(p3, tx, ty, 3, C_ACCENT));
+    label(p3, R, 226, '左：ViperX 300 的模型，指尖朝下；右：放大的指尖附近', 'demo-x-mut', 11);
+    label(p3, R, 248, 'ViperX（图 2 右）：重复精度 1 mm，准度 5–8 mm，负载 750 g', 'demo-x-ink2', 11.5);
+    tone(p3, R, 270, '黄虚线圈：5 mm', C_WARN, 11.5);
+    tone(p3, R + 120, 270, '红虚线圈：8 mm', C_BAD, 11.5);
+    label(p3, R, 292, '蓝点：照着同一个目标点去，落点散在几毫米的圈里（示意）', 'demo-x-mut', 11);
     /* 第 4 段：人也没有工业级的本体感觉，靠看着纠正 */
     var p4 = group(s);
     label(p4, R, 62, '人也不靠精确的本体感觉', 'demo-x-ink', 14);
@@ -770,7 +792,8 @@
   /* ── scene 2: ALOHA：两对主从臂 ── */
   function buildSceneAloha() {
     var s = sceneSvg('左边是项目页的遥操作视频，依次是插内存条、颠乒乓球、从钱包里抽信用卡、扎扎带，画面里标着倍速。右边依次出现：' +
-      '小的主臂和大的从臂关节角同步摆动；逆运动学在奇异点附近解跳变；握把、剪刀机构和橡皮筋；价格相加；复现了 Shadow 系统 15 个例子里的 14 个');
+      '主臂 WidowX 250 和从臂 ViperX 300 的模型按官方仿真人类示范的关节角一起动；ViperX 的模型往外够目标，越接近伸直，目标每挪 1 厘米关节要转的角度越大；' +
+      '夹爪的开合、主臂的重量和橡皮筋；价格相加；复现了 Shadow 系统 15 个例子里的 14 个');
     s.appendChild(svgText(24, 26, 'ALOHA：人扳动小臂，大臂跟着做', 'demo-x-ink2', 13.5));
     var clip = seqClip(s, 'teleop', 24, 44, 380, 214, '项目页视频：遥操作，倍速以画面里的标签为准',
       [[3.6, '插内存条（10 倍速）'], [4.6, '颠乒乓球（实时）'], [3.6, '抽信用卡（10 倍速）'], [5.6, '扎扎带（10 倍速）']]);
@@ -778,28 +801,35 @@
     /* 第 1 段：主臂 → 从臂，关节对关节 */
     var p1 = group(s);
     label(p1, R, 62, '关节对关节：主臂的角度直接发给从臂', 'demo-x-ink', 13.5);
-    var lead = armPlanar(p1, C_LEAD, 5), foll = armPlanar(p1, C_FOLL, 8);
-    hline(p1, R, 222, R + 352, 222, C_BORDER, 2);
-    tone(p1, R + 50, 266, '主臂 WidowX（人扳）', C_LEAD, 11.5, 'middle');
-    tone(p1, R + 236, 266, '从臂 ViperX（干活）', C_FOLL, 11.5, 'middle');
-    var angT = label(p1, R + 176, 100, '', 'demo-x-ink2', 11.5, 'middle');
+    /* 主臂 WidowX 250、从臂 ViperX 300 的模型（Menagerie），同一台相机、同一比例：关节角取官方仿真人类示范第 0 条的右臂，
+       主臂 = action（主臂的关节角），从臂 = observation.state，第 0–200 步每 4 步一格（按 50 Hz 的原速放） */
+    var PM = MODEL && MODEL.pair, PK = 0.6, GROUND = 222;
+    var leadS = PM ? modelSheet(p1, 'pair_leader.webp', PM.leader) : null, follS = PM ? modelSheet(p1, 'pair_follower.webp', PM.follower) : null;
+    hline(p1, R, GROUND, R + 352, GROUND, C_BORDER, 2);
+    tone(p1, R + 62, 246, '主臂 WidowX 250（人扳）', C_LEAD, 11.5, 'middle');
+    tone(p1, R + 248, 246, '从臂 ViperX 300（干活）', C_FOLL, 11.5, 'middle');
+    var angT = label(p1, R + 176, 92, '', 'demo-x-ink2', 11.5, 'middle');
     var sync = flowSeg(p1, C_LEAD, 3, 2.6, 60);
-    label(p1, R, 290, '两种臂同一家公司出的，大致是按比例放大的同一个结构', 'demo-x-mut', 11);
+    label(p1, R, 270, '两种臂同一家公司出的，大致是按比例放大的同一个结构', 'demo-x-mut', 11);
+    label(p1, R, 292, '模型来自 MuJoCo Menagerie；关节角取官方仿真人类示范第 0 条', 'demo-x-mut', 11);
     /* 第 2 段：为什么不用 VR 手柄 + 逆运动学 */
     var p2 = group(s);
     label(p2, R, 62, '为什么不用 VR 手柄 + 逆运动学', 'demo-x-ink', 13.5);
     label(p2, R, 86, '6 自由度、没有冗余；精细活常在奇异点附近', 'demo-x-ink2', 12);
-    var ikArm = armPlanar(p2, C_BAD, 6);
+    /* ViperX 300 的模型：目标（黄圈）在同一高度往外拉，夹爪保持水平，按真实的连杆长度解逆运动学（我们算的） */
+    var IKM = MODEL && MODEL.ik, ikS = IKM ? modelSheet(p2, 'ik.webp', IKM) : null;
     var ikTgt = ringAt(p2, 0, 0, 7, C_WARN, 2.2);
-    var ikWarn = tone(p2, R + 280, 140, '', C_BAD, 12, 'middle');
-    label(p2, R, 236, '目标点（黄圈）往外拉到臂快伸直时，逆运动学解在两支间跳（示意）', 'demo-x-mut', 11);
-    label(p2, R, 258, '关节空间映射：不用解，带宽高、延迟低', 'demo-x-ink2', 12);
+    label(p2, R, 248, '目标每往外挪 1 cm，肩和肘一共要转：', 'demo-x-ink2', 11.5);
+    var ikBar = hbar(p2, R + 214, 239, 12, C_BAD), ikVal = label(p2, R + 214, 249, '', 'demo-x-ink', 11.5);
+    label(p2, R, 270, 'ViperX 300 的模型算的：中段约 4°，快伸直时 17°', 'demo-x-mut', 11);
+    label(p2, R, 292, '关节空间映射：不用解，带宽高、延迟低', 'demo-x-ink2', 12);
     /* 第 3 段：握把、剪刀、橡皮筋 */
     var p3 = group(s);
     label(p3, R, 62, '几件 3D 打印的小东西', 'demo-x-ink', 13.5);
     rectBox(p3, R, 76, 352, 54, C_BORDER, C_SURFACE2);
     label(p3, R + 12, 98, '握把 + 剪刀机构：夹爪开合是连续的', 'demo-x-ink2', 11.5);
-    var gripBar = hbar(p3, R + 12, 110, 8, C_LEAD), gripTxt = label(p3, R + 340, 118, '', 'demo-x-ink', 11.5, 'end');
+    var GM = MODEL && MODEL.grip, gripS = GM ? modelSheet(p3, 'grip.webp', GM) : null;
+    var gripTxt = label(p3, R + 12, 120, '', 'demo-x-ink', 11.5);
     rectBox(p3, R, 138, 352, 54, C_BORDER, C_SURFACE2);
     label(p3, R + 12, 160, '主臂的重量：手抖被滤掉，也快不起来', 'demo-x-ink2', 11.5);
     var shakeIn = pathLine(p3, [], C_MUTED, 1.2), shakeOut = pathLine(p3, [], C_LEAD, 2);
@@ -831,21 +861,26 @@
     function draw(t, clock) {
       var now = nowOf(t, clock);
       clip.at(K.clipSince(t, 0), true);
-      var a1 = 0.9 + 0.35 * Math.sin(now * 1.3), a2 = -1.3 + 0.45 * Math.sin(now * 0.9 + 1), g = 0.5 + 0.5 * Math.sin(now * 2.1);
-      var hl = lead.set(R + 40, 212, 60, 52, a1, a2, g), hf = foll.set(R + 200, 212, 80, 68, a1, a2, g);
-      angT.textContent = '同样的关节角';
-      sync.at(now, [hl[0] + 16, hl[1]], [hf[0] - 16, hf[1]], true);
-      /* 逆运动学：目标沿水平往外拉，到臂快伸直时肘部上下翻 */
-      var u = 0.5 - 0.5 * Math.cos(now * 1.1), bx = R + 120, by = 200, L1 = 70, L2 = 62;
-      var gx = bx + 40 + 88 * u, gy = 150;
-      moveDot(ikTgt, [gx, gy]);
-      var dx = gx - bx, dy = by - gy, d = Math.min(L1 + L2 - 0.5, Math.hypot(dx, dy));
-      var c2 = clamp((d * d - L1 * L1 - L2 * L2) / (2 * L1 * L2), -1, 1), flip = u > 0.86 ? (Math.floor(now * 6) % 2 ? 1 : -1) : 1;
-      var q2 = flip * Math.acos(c2), q1 = Math.atan2(dy, dx) - Math.atan2(L2 * Math.sin(q2), L1 + L2 * Math.cos(q2));
-      ikArm.set(bx, by, L1, L2, q1, q2, 0.5);
-      ikWarn.textContent = u > 0.86 ? '解在跳' : '';
+      if (PM) {
+        var pf = pingFrame(now * 50 / PM.every, PM.steps.length);
+        leadS.put(R + 62 - PM.leader.base[0] * PK, GROUND - PM.leader.base[1] * PK, PM.leader.cw * PK, pf);
+        follS.put(R + 248 - PM.follower.base[0] * PK, GROUND - PM.follower.base[1] * PK, PM.follower.cw * PK, pf);
+        var hl = leadS.at(PM.leader.hand[pf]), hf = follS.at(PM.follower.hand[pf]);
+        angT.textContent = '同样的关节角（示范第 ' + PM.steps[pf] + ' 步）';
+        sync.at(now, [hl[0] + 6, hl[1]], [hf[0] - 8, hf[1]], true);
+      }
+      /* 逆运动学：目标沿水平往外拉；越接近伸直，每 1 cm 要转的角度越大 */
+      if (IKM) {
+        var u = 0.5 - 0.5 * Math.cos(now * 0.9), kk = Math.round(u * (IKM.kA.length - 1));
+        ikS.put(R + 10, 92, 290, IKM.kA[kk]);
+        moveDot(ikTgt, ikS.at(IKM.target[kk]));
+        var rate = IKM.rate[Math.max(1, kk)];
+        setW(ikBar, 6 * rate); ikVal.setAttribute('x', (R + 220 + 6 * rate).toFixed(1));
+        ikVal.textContent = f1(rate) + '°';
+      }
       var gg = 0.5 + 0.5 * Math.sin(now * 1.7);
-      setW(gripBar, 250 * gg); gripTxt.textContent = '开度 ' + Math.round(gg * 100) + '%';
+      if (GM) gripS.put(R + 290, 79, 40, Math.round(gg * (GM.n - 1)));
+      gripTxt.textContent = '开度 ' + Math.round(gg * 100) + '%';
       var pin = [], pout = [];
       for (var k = 0; k <= 60; k++) {
         var xx = R + 228 + k * 2, base = 166 + 8 * Math.sin(now * 2 + k * 0.08);
@@ -871,7 +906,8 @@
   /* ── scene 3: 记下什么：4 台相机与主臂关节角 ── */
   function buildSceneData() {
     var s = sceneSvg('左边是项目页的视频：执行时策略看到的 4 路画面，左上顶部相机、右上前方相机、下面两路是左右手腕相机。右边依次出现：' +
-      '论文图 2 左的相机位置；观测是 4 张图加 14 个关节角；动作取主臂的关节角，主从之差就是压多紧；一条示范 400–700 步；训练时随机抽一步配上接下来 k 步');
+      '论文图 2 左的相机位置；ViperX 300 的模型标出 6 个关节和夹爪，两条臂合起来 14 个数；夹爪的模型夹住方块，主臂给的开度（半透明）比从臂实际的开度合得更紧，' +
+      '开度取官方仿真人类示范第 0 条；一条示范 400–700 步；训练时随机抽一步配上接下来 k 步');
     s.appendChild(svgText(24, 26, '记下什么：4 路画面、14 个关节角', 'demo-x-ink2', 13.5));
     var clip = projClip(s, 'obs', 24, 44, 380, 285, '项目页视频：执行时策略看到的 4 路画面（装电池）');
     label(s, 24, 368, '左上顶部、右上前方（转了 90°）、左下左手腕、右下右手腕', 'demo-x-ink2', 11.5);
@@ -885,26 +921,50 @@
     /* 第 2 段：观测 */
     var p2 = group(s);
     label(p2, R, 62, '观测：4 张图 + 从臂的 14 个关节角', 'demo-x-ink', 13.5);
+    /* ViperX 300 的模型（Menagerie），6 个关节的转轴位置与方向按同一台相机投影；G 是夹爪 */
+    var JM = MODEL && MODEL.joints, jS = JM ? modelSheet(p2, 'joints.webp', JM) : null, jMarks = [];
+    var JN = ['腰（左右转）', '肩（前后摆）', '肘', '前臂（自转）', '腕（俯仰）', '腕（自转）', '夹爪开度'];
+    if (JM) {
+      jS.put(R, 74, 150, 0);
+      JM.joints.forEach(function (j, i) {
+        if (j.a0) { var ax = hline(p2, 0, 0, 0, 0, i === 6 ? C_WARN : C_FOLL, 1.6); var a = jS.at(j.a0), b = jS.at(j.a1); setLine(ax, a[0], a[1], b[0], b[1]); }
+      });
+      /* 关节上只画小点；轮到哪个关节，就从右边清单的那一行引一条线过去、点放大（数字不压在机器人上） */
+      JM.joints.forEach(function (j, i) {
+        var q = jS.at(j.p);
+        /* 点、圈和引线用墨色：机械臂本身着的是蓝色，同色的标记看不清 */
+        var dot = dotAt(p2, q[0], q[1], 2.8, C_INK), ring = ringAt(p2, q[0], q[1], 7, C_INK, 2);
+        var ly = 88 + i * 20 - 4, lead = hline(p2, R + 164, ly, q[0] + 8, q[1], C_INK, 1.2, '3 2');
+        jMarks.push({ dot: dot, ring: ring, lead: lead });
+      });
+    }
+    var jRows = JN.map(function (n, i) { return tone(p2, R + 170, 88 + i * 20, (i === 6 ? 'G  ' : (i + 1) + '  ') + n, i === 6 ? C_WARN : C_FOLL, 11.5); });
     var cells2 = [];
     for (var i = 0; i < 14; i++) {
       var x = R + i * 25 + (i >= 7 ? 2 : 0);
-      cells2.push(paint(svgEl('rect', { x: x, y: 96, width: 21, height: 30, rx: 3 }), i % 7 === 6 ? C_WARN : C_FOLL));
+      cells2.push(paint(svgEl('rect', { x: x, y: 234, width: 21, height: 22, rx: 3 }), i % 7 === 6 ? C_WARN : C_FOLL));
       p2.appendChild(cells2[i]);
     }
-    label(p2, R, 146, '左臂 6 个关节 + 夹爪', 'demo-x-ink2', 11.5);
-    label(p2, R + 352, 146, '右臂 6 个关节 + 夹爪', 'demo-x-ink2', 11.5, 'end');
-    legendRow(p2, R, 178, [['关节角', C_FOLL, 52], ['夹爪开度', C_WARN, 70]], 11.5);
-    label(p2, R, 216, '6 + 1 + 6 + 1 = 14', 'demo-x-ink', 13);
-    label(p2, R, 244, '动作也是 14 维：下一步两条从臂的目标关节角', 'demo-x-ink2', 12);
+    label(p2, R, 274, '左臂 6 个关节 + 夹爪', 'demo-x-ink2', 11.5);
+    label(p2, R + 352, 274, '右臂 6 个关节 + 夹爪', 'demo-x-ink2', 11.5, 'end');
+    label(p2, R, 298, '6 + 1 + 6 + 1 = 14；动作也是 14 维：两条从臂下一步的目标', 'demo-x-ink2', 11.5);
     /* 第 3 段：动作是主臂的关节角 */
     var p3 = group(s);
     label(p3, R, 62, '动作记的是主臂，不是从臂', 'demo-x-ink', 13.5);
-    var block = paint(svgEl('rect', { x: R + 200, y: 100, width: 26, height: 120, rx: 3 }), C_MUTED);
-    p3.appendChild(block);
-    var fo3 = dotAt(p3, 0, 160, 10, C_FOLL), le3 = ringAt(p3, 0, 160, 10, C_LEAD, 2.6);
-    var gap3 = hline(p3, 0, 234, 0, 234, C_BAD, 2.4), gapT = tone(p3, 0, 252, '', C_BAD, 11.5, 'middle');
-    tone(p3, R + 40, 118, '主臂的目标（黄圈）', C_LEAD, 11.5);
-    tone(p3, R + 40, 138, '从臂的实际位置（蓝点）', C_FOLL, 11.5);
+    /* 官方 ACT 模型的右夹爪（ViperX 300），方块画在我们复现里夹住时的位置；开度取官方仿真人类示范第 0 条第 170–300 步：
+       实心 = 从臂实际的开度（observation.state），半透明 = 主臂给的开度（action） */
+    var GM3 = MODEL && MODEL.grip, GS = MODEL && MODEL.gripseq;
+    var cube3 = null, folG = null, leadG = null, GX = R + 20, GY = 76, GW = 120;
+    if (GM3) {
+      cube3 = modelSheet(p3, 'grip_cube.webp', { cw: GM3.cw, ch: GM3.ch, cols: 1, n: 1 });
+      folG = modelSheet(p3, 'grip.webp', GM3); leadG = modelSheet(p3, 'grip.webp', GM3);
+      leadG.g.style.opacity = 0.38;
+    }
+    var gapBar = hbar(p3, R + 170, 186, 12, C_BAD), gapT = label(p3, R + 170, 214, '', 'demo-x-ink', 11.5);
+    tone(p3, R + 170, 100, '实心：从臂实际的开度', C_FOLL, 11.5);
+    tone(p3, R + 170, 122, '半透明：主臂给的开度', C_LEAD, 11.5);
+    var ro3 = label(p3, R + 170, 150, '', 'demo-x-ink2', 11.5), ro3b = label(p3, R + 170, 170, '', 'demo-x-ink2', 11.5);
+    label(p3, R, 252, '官方仿真人类示范第 0 条；方块按复现里夹住的位置画', 'demo-x-mut', 11);
     label(p3, R, 276, '碰到东西后从臂停住，主臂还能往里压', 'demo-x-ink2', 12);
     label(p3, R, 298, '两者之差经过电机的 PID，就是压得多紧', 'demo-x-ink2', 12);
     /* 第 4 段：一条示范多长 */
@@ -928,12 +988,21 @@
       var now = nowOf(t, clock);
       clip.at(K.clipSince(t, 0), true);
       cells2.forEach(function (c, i) { c.style.opacity = 0.35 + 0.65 * (0.5 + 0.5 * Math.sin(now * 2.4 - i * 0.45)); });
-      /* 主臂往里压：从臂到方块表面就停 */
-      var push = 0.5 - 0.5 * Math.cos(now * 1.3), lx = R + 120 + 110 * push, fx = Math.min(lx, R + 186);
-      moveDot(le3, [lx, 160]); moveDot(fo3, [fx, 160]);
-      setLine(gap3, fx, 234, Math.max(fx, lx), 234);
-      gapT.setAttribute('x', ((fx + Math.max(fx, lx)) / 2).toFixed(1));
-      gapT.textContent = lx - fx > 6 ? '差 → 压力' : '';
+      /* 关节标号跟着下面的格子轮流亮 */
+      var ji = Math.floor(now * 1.2) % 7;
+      jMarks.forEach(function (m, i) { m.ring.style.opacity = i === ji ? 1 : 0; m.lead.style.opacity = i === ji ? 1 : 0; m.dot.style.opacity = i === ji ? 1 : 0.6; });
+      jRows.forEach(function (r, i) { r.style.opacity = i === ji ? 1 : 0.55; });
+      cells2.forEach(function (c, i) { if (i % 7 === ji) c.style.opacity = 1; });
+      /* 主臂往里压：从臂碰到方块就停住（示范里的真实开度） */
+      if (GM3 && GS) {
+        var gi = pingFrame(now * 50 / GS.every, GS.lead.length), gl = GS.lead[gi], gf = GS.foll[gi], toF = function (g) { return clamp(g, 0, 1) * (GM3.n - 1); };
+        cube3.put(GX, GY, GW, 0); folG.put(GX, GY, GW, toF(gf)); leadG.put(GX, GY, GW, toF(gl));
+        ro3.textContent = '从臂 ' + f2(gf) + '（碰到方块就停）';
+        ro3b.textContent = '主臂 ' + f2(gl) + '（第 ' + (GS.t0 + gi * GS.every) + ' 步）';
+        var gap = Math.max(0, gf - gl);
+        setW(gapBar, 240 * gap);
+        gapT.textContent = gap > 0.05 ? '差 ' + f2(gap) + ' → 压力' : '';
+      }
       var u4 = seg(since(t, clock, 10.4), 0.2, 2.0), secs = 8 + 6 * (0.5 + 0.5 * Math.sin(now * 0.8));
       setW(tl, 350 * secs / 14 * K.ease(u4));
       tlT.textContent = u4 > 0.95 ? f1(secs) + ' 秒 × 50 = ' + Math.round(secs * 50) + ' 步' : '';
@@ -1295,7 +1364,7 @@
   /* ── scene 7: 人的示范不唯一 ── */
   function buildSceneHuman() {
     var s = sceneSvg('左边是仿真里 50 条人的示范（官方放出的方块交接人类示范）：每条细线是一条示范里右夹爪的目标开度，圆点是合上的那一步，' +
-      '下面是合上时刻的分布。右边依次出现：同一个场景每次做得不一样；交接的位置每次不同；两种走法平均起来会撞上（示意）；表一里从脚本示范换到人的示范都掉了；我们数的时刻');
+      '下面是合上时刻的分布。右边依次出现：同一个场景每次做得不一样；官方仿真模型按 10 条人的示范摆出交接那一刻，交接点每次不同；两种走法平均起来会撞上（示意）；表一里从脚本示范换到人的示范都掉了；我们数的时刻');
     s.appendChild(svgText(24, 26, '50 条人的示范：右夹爪什么时候合上', 'demo-x-ink2', 13.5));
     var pb = plotBox(s, 24, 44, 380, 200, 0, 400, -0.05, 1.35);
     var lines = [], marks = [];
@@ -1322,11 +1391,18 @@
     var p2 = group(s);
     label(p2, R, 62, '交接的位置每次都不一样', 'demo-x-ink', 13.5);
     label(p2, R, 86, '论文的例子：备胶带时在空中把胶带交给左手', 'demo-x-ink2', 12);
+    /* 官方 ACT 模型按官方仿真人类示范第 0、5、…、45 条在左夹爪合上那一步的关节角摆出来；方块不在数据里，
+       按我们复现里右夹爪夹住它的位置画。紫点是这 10 条里方块的位置 */
+    var HM = MODEL && MODEL.handover, hoS = HM ? modelSheet(p2, 'handover.webp', HM) : null, HOX = R + 6, HOY = 96, HOW = 340;
     var meet = [];
-    for (i = 0; i < 10; i++) meet.push(dotAt(p2, R + 176 + 60 * (rnd(i, 3) - 0.5), 160 + 50 * (rnd(i, 7) - 0.5), 3.4, C_HUMAN));
-    var gl = armPlanar(p2, C_FOLL, 6), gr = armPlanar(p2, C_FOLL, 6);
-    label(p2, R, 236, '策略该学的是「别撞上、接得住」', 'demo-x-ink2', 12);
-    label(p2, R, 258, '而不是死记交接点在哪', 'demo-x-ink2', 12);
+    if (HM) {
+      hoS.put(HOX, HOY, HOW, 0);
+      HM.cube.forEach(function (c) { meet.push(dotAt(p2, hoS.at(c)[0], hoS.at(c)[1], 3.4, C_HUMAN)); });
+    }
+    var hoT = label(p2, R + 352, 242, '', 'demo-x-ink2', 11, 'end');
+    tone(p2, R, 264, '50 条示范：交接点在约 6 × 6 × 5 cm 的范围里变', C_HUMAN, 11.5);
+    label(p2, R, 286, '策略该学的是「别撞上、接得住」，而不是死记交接点在哪', 'demo-x-ink2', 11.5);
+    label(p2, R, 308, '官方仿真模型；方块没存在数据里，按复现里夹住的位置画', 'demo-x-mut', 11);
     /* 第 3 段：两种走法平均 → 撞 */
     var p3 = group(s);
     label(p3, R, 62, '两种走法平均一下，正好撞上', 'demo-x-ink', 13.5);
@@ -1379,12 +1455,12 @@
         for (var j = 0; j <= 30; j++) { var x = R + 10 + j * 9.4, w = Math.max(0, 1 - Math.abs(x - (R + 290)) / 120); pts.push([x, 160 + off * (1 - w) + 6 * Math.sin(j * 0.5 + k + now) * (1 - w) + 30 * w]); }
         setPath(pl, pts);
       });
-      var mi = Math.floor(now / 0.9) % 10, mp = [R + 176 + 60 * (rnd(mi, 3) - 0.5), 160 + 50 * (rnd(mi, 7) - 0.5)];
-      meet.forEach(function (d, k) { d.style.opacity = k === mi ? 1 : 0.35; });
-      var dL = Math.hypot(mp[0] - (R + 40), mp[1] - 210), aL = Math.atan2(210 - mp[1], mp[0] - (R + 40));
-      gl.set(R + 40, 210, dL * 0.55, dL * 0.5, aL + 0.5, -1.0, 0.3);
-      var dR = Math.hypot(R + 312 - mp[0], mp[1] - 210), aR = Math.atan2(210 - mp[1], mp[0] - (R + 312));
-      gr.set(R + 312, 210, dR * 0.55, dR * 0.5, aR - 0.5, 1.0, 0.3);
+      if (HM) {
+        var mi = Math.floor(now / 1.2) % HM.n;
+        hoS.put(HOX, HOY, HOW, mi);
+        meet.forEach(function (d, k) { d.style.opacity = k === mi ? 1 : 0.4; });
+        hoT.textContent = '第 ' + HM.eps[mi] + ' 条示范，第 ' + HM.steps[mi] + ' 步';
+      }
       var u3 = seg(since(t, clock, 7.0), 0.5, 2.5), n3 = Math.round(30 * u3);
       setPath(avg, av.slice(0, n3 + 1));
       bang.textContent = n3 >= 13 ? '撞' : '';
@@ -2003,7 +2079,8 @@
   /* ── scene 14: 表二与真机的细节 ── */
   function buildSceneTable2() {
     var s = sceneSvg('左边是项目页的两段实时视频：先是有人在策略伸手的时候把杯子挪开，策略跟着改道；再是桌上放了干扰物，策略照样装电池。' +
-      '右边依次出现：表二四个任务最后一步的成功率；穿魔术贴扎带每一步掉一半；失败的原因；项目页里的反应能力；干扰物');
+      '右边依次出现：表二四个任务最后一步的成功率；穿魔术贴扎带每一步掉一半；失败的原因；我们在仿真里试的：右手伸过去的途中把方块挪开 4 厘米，' +
+      '这一次策略改道夹到了方块，9 次里成功 3 次；干扰物');
     s.appendChild(svgText(24, 26, '表二：剩下的真机任务，只和 BeT 比', 'demo-x-ink2', 13.5));
     var PARTS = [[14, '有人把杯子挪开（实时）'], [16, '桌上放了干扰物（实时）']];
     var clips = [projClip(s, 'reactive', 24, 44, 380, 214, '项目页视频：学到的策略'), projClip(s, 'distract', 24, 44, 380, 214, '项目页视频：学到的策略')];
@@ -2046,8 +2123,14 @@
     label(p4, R, 62, '项目页：会对新的扰动作出反应', 'demo-x-ink', 13.5);
     label(p4, R, 90, '左边第一段：手伸过去的时候，有人把杯子挪走', 'demo-x-ink2', 12);
     label(p4, R, 114, '策略看着新位置重新去够，不是背下来的轨迹', 'demo-x-ink2', 12);
-    var tgt4 = ringAt(p4, 0, 180, 9, C_WARN, 2.4), hd4 = dotAt(p4, 0, 180, 7, C_GOOD);
-    label(p4, R, 246, '项目页也放了失败的例子：扰动来得太晚，就没救回来', 'demo-x-mut', 11);
+    /* 我们的复现（runs/perturb_0）：第 0 个方块位置，第 100 步把方块往右（+x）挪 4 cm，时间集成照常跑；这一次第 153 步夹到、第 246 步交接完成。
+       3 个方块位置 × 3 个方向一共 9 次，3 次成功；不挪时这 3 个位置都成功 */
+    var PT = MODEL && MODEL.perturb, ptS = PT ? modelSheet(p4, 'perturb.webp', PT) : null, PX4 = R + 6, PY4 = 124, PW4 = 340;
+    var ghost = paint(svgEl('rect', { x: 0, y: 0, width: 10, height: 10, rx: 1.5, fill: 'none', 'stroke-width': 1.6, 'stroke-dasharray': '2.5 2' }), null, C_WARN);
+    p4.appendChild(ghost);
+    var stepT = label(p4, R, 272, '', 'demo-x-ink2', 11.5);
+    tone(p4, R, 294, '我们的复现：伸手途中挪 4 cm，9 次里 3 次仍完成交接', C_GOOD, 11.5);
+    label(p4, R, 316, '项目页也放了失败的例子：扰动来得太晚，就没救回来', 'demo-x-mut', 11);
     /* 第 5 段：干扰物 */
     var p5 = group(s);
     label(p5, R, 62, '项目页：对一定程度的干扰物也稳', 'demo-x-ink', 13.5);
@@ -2068,10 +2151,17 @@
         f.r.setAttribute('x', (R + 236 - f.w * u / 2).toFixed(1)); setW(f.r, f.w * u);
         f.t.textContent = u > 0.9 ? f.v + '%' : '';
       });
-      var ph = (now % 4) / 4, tx = ph < 0.45 ? R + 300 : R + 200;
-      moveDot(tgt4, [tx, ph < 0.45 ? 180 : 160]);
-      var hx = R + 40 + (ph < 0.45 ? 200 * ph / 0.45 : 200 - 40 * (ph - 0.45) / 0.55);
-      moveDot(hd4, [hx, 180 - (ph < 0.45 ? 0 : 20 * (ph - 0.45) / 0.55)]);
+      if (PT) {
+        /* 按 50 Hz 原速往前放（每格 4 步），放完停 1 s 再从头 */
+        var nL = PT.n + 12, pfi = Math.min(PT.n - 1, Math.floor(now * 50 / 4) % nL), stp = PT.steps[pfi];
+        ptS.put(PX4, PY4, PW4, pfi);
+        var iOld = PT.steps.indexOf(PT.t_move - 4), old = ptS.at(PT.cube[iOld]);
+        var moved = stp >= PT.t_move;
+        ghost.setAttribute('x', (old[0] - 5).toFixed(1)); ghost.setAttribute('y', (old[1] - 5).toFixed(1));
+        ghost.style.opacity = moved ? 1 : 0;
+        stepT.textContent = '第 ' + stp + ' 步：' + (stp >= PT.success ? '交接完成' : stp >= PT.touch ? '夹到了，正往左手送' :
+          moved ? '方块被往右挪了 4 cm（黄虚线框是原位置）' : '右手伸向方块');
+      }
       setOpacity(p1, win(t, 0.3, 3.6));
       setOpacity(p2, win(t, 3.6, 7.0));
       setOpacity(p3, win(t, 7.0, 10.4));
@@ -2262,7 +2352,7 @@
 
   /* ── scene 17: 局限、代码与之后 ── */
   function buildSceneLimits() {
-    var s = sceneSvg('左边是三段小动画：要两只手好几根手指一起用的儿童安全药瓶；要很大力气的事，电机的力矩不够；剥糖纸，拿起和拉两端都行，剥开 0 次。' +
+    var s = sceneSvg('左边是三段小动画：要两只手好几根手指一起用的儿童安全药瓶（旁边是 ViperX 夹爪的模型，只有两根平行的手指）；要很大力气的事，电机的力矩不够；剥糖纸，拿起和拉两端都行，剥开 0 次。' +
       '右边依次出现：硬件的局限；策略学不会的两个任务；论文、项目页和代码对不上的几处；开源了什么；我们的复现');
     s.appendChild(svgText(24, 26, '做不到的：论文附录 F 自己列的', 'demo-x-ink2', 13.5));
     /* (a) 儿童安全瓶 */
@@ -2272,6 +2362,9 @@
     s.appendChild(bottle); s.appendChild(lid);
     var x1 = cross(s, 168, 150, 18);
     void x1;
+    /* ViperX 夹爪的模型（官方 ACT 的 MJCF）：只有两根平行的手指 */
+    var GM17 = MODEL && MODEL.grip;
+    if (GM17) modelSheet(s, 'grip.webp', GM17).put(34, 84, 46, GM17.n - 1);
     label(s, 117, 186, '要多根手指，一手按一手拧', 'demo-x-ink2', 11, 'middle');
     /* (b) 力气 */
     rectBox(s, 218, 44, 186, 150, C_BORDER, C_SURFACE2);
@@ -2368,7 +2461,7 @@
       build: buildSceneAloha,
       cues: [
         { at: 0.4, s: '人扳动小的主臂 WidowX，大的从臂 ViperX 照着同样的关节角动。' },
-        { at: 3.6, s: '不用 VR 加逆运动学：6 自由度没有冗余，精细活常在奇异点附近，解会跳。' },
+        { at: 3.6, s: '不用 VR 加逆运动学：6 自由度没有冗余；快伸直时目标每挪 1 cm，关节要转 17°。' },
         { at: 7.0, s: '握把和剪刀机构让夹爪连续开合；主臂的重量滤掉手抖；橡皮筋抵掉一部分重力。' },
         { at: 10.4, s: '2 × 5,600 + 2 × 3,300 = 17,800 美元；加上相机等配件不到 2 万。' },
         { at: 13.4, s: '照着 Shadow 系统的 15 个演示做，做出 14 个；没有手，转不了保定球。' }
@@ -2514,7 +2607,7 @@
         { at: 0.4, s: '打开杯盖 84%、扎带 20%、备胶带 64%、穿鞋 92%；BeT 最后一步都是 0。' },
         { at: 3.6, s: '扎带每一步大约掉一半：92% → 40% → 20%。' },
         { at: 7.0, s: '失败：夹爪合得太早、插得不够准；黑扎带在黑桌面上很难看清。' },
-        { at: 10.4, s: '项目页：杯子被挪开，策略会重新去够。' },
+        { at: 10.4, s: '项目页：杯子被挪开，策略会重新去够；复现里挪 4 cm，9 次成功 3 次。' },
         { at: 13.4, s: '对一定程度的干扰物也稳；视频是挑出来的例子，不是统计。' }
       ]
     },
@@ -2563,11 +2656,12 @@
   function buildExplainerDemo(host) {
     K.explainer(host, {
       title: '十七幕动画：ACT 全流程速览',
-      sub: '约 272 秒自动播放。空格播放/暂停，← → 换幕；真机画面剪自项目页的视频，柱和曲线照论文的数重画，仿真画面和曲线是我们的复现。',
+      sub: '约 272 秒自动播放。空格播放/暂停，← → 换幕；真机画面剪自项目页的视频，柱和曲线照论文的数重画，仿真画面和曲线是我们的复现；机械臂都是模型的离线渲染。',
       ariaLabel: 'ACT 十七幕讲解动画',
       notes: [
         '取数依据：表 I、表 II、附录的超参数与用户研究照抄 arXiv 2304.13705 v1（读的是 LaTeX 源码）；图 6 (a)–(c) 的数取自源文件 figures/fm_data.pdf 里被裁掉的原始数据表；图 6 (d) 用正文给的平均用时。',
         '复现（不是论文的实验）：权重是 HF lerobot/act_aloha_sim_transfer_cube_human 的 original_act_repo 分支（用官方仓库在人的仿真示范上训 2000 轮）；前向和方块交接的 MuJoCo 环境是我们照官方代码（tonyzhaozh/act @ 742c753）自己写的，资产用官方 XML；人的示范是官方放出的仿真数据（LeRobot 转存的版本）。',
+        '机械臂的模型：主臂 WidowX 250、从臂 ViperX 300 用 MuJoCo Menagerie 的 trossen_wx250s / trossen_vx300s（BSD-3），夹爪、交接和挪方块用官方 ACT 的 MJCF；第 2、3、7 幕的关节角和夹爪开度取自官方仿真人类示范，第 14 幕是我们挪方块的那次复现。',
         '真机片段剪自项目页 tonyzhaozh.github.io/aloha 的视频（画面里标着实时或倍速），只做讲解引用。'
       ],
       scenes: ACT_SCENES
@@ -2579,8 +2673,8 @@
   function buildVideoDemo(host) {
     K.video(host, {
       title: '配音讲解视频：ACT 十七幕全流程',
-      sub: '23 分 58 秒竖屏视频（1080×1920），中文配音 + 字幕。画面就是上面的十七幕动画，旁白把每一幕讲细；适合手机上看或转发。',
-      size: '28.1 MB',
+      sub: '24 分 39 秒竖屏视频（1080×1920），中文配音 + 字幕。画面就是上面的十七幕动画，旁白把每一幕讲细；适合手机上看或转发。',
+      size: '29.2 MB',
       fileName: 'ACT_讲解视频.mp4'
     });
   }

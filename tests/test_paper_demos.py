@@ -6516,3 +6516,36 @@ def test_act_project_page_clips():
     assert "剪自[项目页](https://tonyzhaozh.github.io/aloha/)的视频" in note
     sim = ROOT / "assets/img/papers/act/sim"
     assert {p.name for p in sim.iterdir()} == {"te_ep0.webp", "chunk_ep0.webp", "top6.webp"}
+
+
+def test_act_model_renders_match_the_data_they_quote():
+    """ACT：分镜里的机械臂是模型的离线渲染（model/），贴图表与嵌入的 MODEL 对得上，旁白和笔记引用的数取自同一份数据。"""
+    js = (DEMO_JS_DIR / "act.js").read_text(encoding="utf-8")
+    model = json.loads(re.search(r"/\*MODEL\*/(.*?)/\*/MODEL\*/", js, re.S).group(1))
+    used = set(re.findall(r"modelSheet\(\w+, '([\w.]+)'", js))
+    model_dir = ROOT / "assets/img/papers/act/model"
+    assert {p.name for p in model_dir.iterdir()} == used
+    assert sum(p.stat().st_size for p in model_dir.iterdir()) < 1.6e6
+    assert "armPlanar" not in js
+    for key in ("ik", "grip", "joints", "reach", "handover", "perturb"):
+        m = model[key]
+        assert m["n"] <= m["cols"] * -(-m["n"] // m["cols"]) and m["cw"] > 0 and m["ch"] > 0
+    assert len(model["pair"]["leader"]["hand"]) == len(model["pair"]["steps"]) == model["pair"]["follower"]["n"]
+    # 第 2 幕：逆运动学，目标每挪 1 cm 肩 + 肘转的角度：中段约 4°，最后一格 17°
+    rate = model["ik"]["rate"]
+    assert 3.5 < min(rate[1:]) < 4.3 and round(rate[-1]) == 17 and rate[-1] == max(rate)
+    # 第 3 幕：示范第 0 条夹住方块以后，从臂约 0.64、主臂 0.21
+    gs = model["gripseq"]
+    hold = [i for i, t in enumerate(range(gs["t0"], gs["t0"] + gs["every"] * len(gs["foll"]), gs["every"])) if t >= 230]
+    assert _fmt(sum(gs["foll"][i] for i in hold) / len(hold), 2) == "0.64" and all(abs(gs["lead"][i] - 0.21) < 0.01 for i in hold)
+    # 第 14 幕：挪 4 cm，9 次里 3 次
+    pt = model["perturb"]
+    assert (pt["tries"], pt["ok"], pt["t_move"], pt["shift"], pt["touch"], pt["success"]) == (9, 3, 100, [0.04, 0.0], 153, 246)
+    assert model["handover"]["spread_cm"] == [5.6, 6.1, 5.0] and model["handover"]["eps"] == list(range(0, 50, 5))
+    narration = (ROOT / "scripts" / "paper_video" / "papers" / "act.py").read_text(encoding="utf-8")
+    spoken = "".join(re.findall(r'"([^"]*)"\),', narration[narration.index("SCRIPT = [") : narration.index("DISPLAY = [")]))
+    for frag in ("中段大约 4 度，快要伸直的时候 17 度", "停在 0.64 左右", "压到 0.21", "6 乘 6 乘 5 厘米", "一共 9 次，3 次还能完成交接"):
+        assert frag in spoken, frag
+    note = ACT_NOTE.read_text(encoding="utf-8")
+    for frag in ("中段约 4°，快伸直时到 17°", "约 0.64", "是 0.21", "5.6、6.1、5.0 cm", "9 次里 3 次仍完成交接", "trossen_wx250s"):
+        assert frag in note, frag

@@ -51,7 +51,7 @@
 | `chip` | `assets/js/demos/chip.js` 十八幕（`chip-explainer`） | 约 20 分 9 秒 |
 | `idp3` | `assets/js/demos/idp3.js` 十八幕（`idp3-explainer`） | 约 29 分 8 秒 |
 | `supermimic` | `assets/js/demos/supermimic.js` 十八幕（`sm-explainer`） | 约 23 分 9 秒 |
-| `act` | `assets/js/demos/act.js` 十七幕（`act-explainer`；仿真画面、曲线与注意力是我们在 CPU 上的复现） | 约 24 分钟 |
+| `act` | `assets/js/demos/act.js` 十七幕（`act-explainer`；仿真画面、曲线与注意力是我们在 CPU 上的复现，机械臂是模型渲染） | 约 25 分钟 |
 
 - 画面：直接复用 `<paper>.js` 分镜的 `draw(t)`，数字与笔记算例一致；前后加片头、总结页（`papers/<paper>.js`）。
 - 分镜 `draw(t, clock)` 的第二个参数是这一幕的真实时间：旁白比动画长、画面停在 `to` 之前时它照样往前走，步态这类循环动作可以用它继续动（网页播放器只传 `t`）。

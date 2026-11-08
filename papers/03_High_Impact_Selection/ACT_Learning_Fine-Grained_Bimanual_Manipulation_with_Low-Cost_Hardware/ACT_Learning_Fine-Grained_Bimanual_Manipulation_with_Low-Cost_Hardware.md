@@ -86,11 +86,11 @@ original_check_scope: arXiv v1 的 LaTeX 源码全文（正文 + 附录 A–F）
 
 ## 📺 配音讲解视频（可下载） {#act-video}
 
-<div class="paper-demo" data-demo="act-video" data-src="media/act_explainer_video.mp4" data-poster="media/act_explainer_video_poster.jpg"><p class="demo-fallback">（本节含讲解视频播放器，需要启用 JavaScript；也可以直接<a href="media/act_explainer_video.mp4" download="ACT_讲解视频.mp4">下载 mp4（28.1 MB）</a>）</p></div>
+<div class="paper-demo" data-demo="act-video" data-src="media/act_explainer_video.mp4" data-poster="media/act_explainer_video_poster.jpg"><p class="demo-fallback">（本节含讲解视频播放器，需要启用 JavaScript；也可以直接<a href="media/act_explainer_video.mp4" download="ACT_讲解视频.mp4">下载 mp4（29.2 MB）</a>）</p></div>
 
 > 📖 **动画之后的正文默认全部折叠**：动画覆盖到的那几节（要解决什么问题、硬件、算法、实验）按小节收起，再往后的复现、局限、具体实例和附录各整块收起。想细读哪一块就点开对应的折叠条，内容一字未删；流程图和三个交互演示留在外面，目录里的标题依旧可以直接点，会自动展开所在折叠块。
 >
-> 动画第 1、2、3、12、14 幕的真机画面剪自[项目页](https://tonyzhaozh.github.io/aloha/)的视频（学到的策略打开杯盖、遥操作合集、执行时的 4 路观测、装电池 / 打开杯盖 / 备胶带 / 穿鞋的实时回放、杯子被挪开和放了干扰物），画面里自带的「实时」「10 倍速」「1x」标签照原样保留，只做讲解引用。第 3、5、6、8、12 幕用论文图 1–5 的裁剪；第 13–16 幕的柱和曲线照论文的数重画（图 6 (a)–(c) 取自源文件里的原始表）。第 5、6、10–12 幕的仿真画面、曲线和注意力热图是**我们的复现**：MuJoCo 2.3.7 按官方 XML 离线渲染，不是论文的图。
+> 动画第 1、2、3、12、14 幕的真机画面剪自[项目页](https://tonyzhaozh.github.io/aloha/)的视频（学到的策略打开杯盖、遥操作合集、执行时的 4 路观测、装电池 / 打开杯盖 / 备胶带 / 穿鞋的实时回放、杯子被挪开和放了干扰物），画面里自带的「实时」「10 倍速」「1x」标签照原样保留，只做讲解引用。第 3、5、6、8、12 幕用论文图 1–5 的裁剪；第 13–16 幕的柱和曲线照论文的数重画（图 6 (a)–(c) 取自源文件里的原始表）。第 5、6、10–12 幕的仿真画面、曲线和注意力热图是**我们的复现**：MuJoCo 2.3.7 按官方 XML 离线渲染，不是论文的图。第 1、2、3、7、14、17 幕的机械臂也是模型的离线渲染（不是示意图）：主臂 WidowX 250、从臂 ViperX 300 用 [MuJoCo Menagerie](https://github.com/google-deepmind/mujoco_menagerie) 的 `trossen_wx250s` / `trossen_vx300s`（BSD-3），夹爪、交接和挪方块用官方 ACT 的 MJCF；第 2 幕两条臂的关节角取自官方仿真人类示范第 0 条的右臂（主臂 = `action`，从臂 = `observation.state`），第 3 幕的夹爪开度取同一条第 170–300 步，第 7 幕是 10 条人的示范在左夹爪合上那一步的姿态，第 14 幕是下面「伸手途中挪方块」成功的那一次。
 
 ---
 
@@ -157,7 +157,7 @@ flowchart TB
 
 **遥操作：关节空间映射**。不把 VR 手柄或相机捕捉的手的位姿映射到末端位姿（任务空间），而是用同一家公司的小号 WidowX（3,300 美元）当主臂：人扳主臂，从臂按同样的关节角跟。论文列的两个好处：
 
-1. 精细活常在机器人的**奇异点附近**操作，这台臂只有 6 个自由度、没有冗余，现成的逆运动学经常失败；关节空间映射在关节限位内保证高带宽控制，计算更少、延迟更低。
+1. 精细活常在机器人的**奇异点附近**操作（我们按 ViperX 300 的连杆长度算了一下：夹爪保持水平、目标在同一高度往外拉，目标每挪 1 cm，肩和肘一共要转的角度在中段约 4°，快伸直时到 17°；动画第 2 幕），这台臂只有 6 个自由度、没有冗余，现成的逆运动学经常失败；关节空间映射在关节限位内保证高带宽控制，计算更少、延迟更低。
 2. 主臂的**重量**让人动不了太快，也滤掉小的抖动；论文观察到精细任务上比拿 VR 手柄的表现更好。
 
 另外加了 3D 打印的「**握把 + 剪刀**」机构（减小反驱电机要用的力，夹爪能连续开合，而不是只有开 / 合），和一个**橡皮筋**的配重机构（抵掉主臂一部分重力，能连续操作 30 分钟以上）。
@@ -365,7 +365,7 @@ $k=1$ 就是不分块，$k$ = 回合长度就是完全开环。论文把 $k=200$
 ## 🔬 我们的复现（CPU，不是论文的实验）
 
 <details class="paper-fold" markdown="1">
-<summary>📖 展开文字：权重、环境、怎么跑、开环分块与时间集成的成功率、接缝的跳变、注意力、z 几乎不带信息、和官方实现可能不一样的地方</summary>
+<summary>📖 展开文字：权重、环境、怎么跑、开环分块与时间集成的成功率、接缝的跳变、注意力、z 几乎不带信息、主从开度之差、交接点、伸手途中挪方块、和官方实现可能不一样的地方</summary>
 
 **为什么这样做**：官方仓库没有放训好的权重；自动安全检查也不让我们直接运行克隆下来的仓库代码。所以：
 
@@ -389,6 +389,9 @@ $k=1$ 就是不分块，$k$ = 回合长度就是完全开环。论文把 $k=200$
 - **重叠的预测会分歧**：时间集成第 0 个回合里，右夹爪快要合上的那几步，同一步收到的 100 个预测从「还张着」到「已经合上」都有（例 3）。
 - **z 几乎不带信息**：见上面「用 CVAE 建模人的示范」最后一段。
 - **注意力**：解码器的交叉注意力（8 头、100 个查询平均）大部分落在图像的 300 个 token 上（6 个时刻都是 99.5%–99.8%），关节角 0.1%–0.3%，$z$ 0.1%–0.2%；最亮的格子在方块和夹爪附近。注意力只是一种读法，不能直接当成因果解释。
+- **主臂压得比从臂紧**：官方仿真人类示范第 0 条，右夹爪夹住方块以后（第 200–300 步），从臂的开度停在约 0.64（`observation.state`，归一化后 1 张开、0 合上），主臂给的开度是 0.21（`action`）；两者之差就是第 III 节说的「压得多紧」（动画第 3 幕）。
+- **交接点每次不同**：官方 50 条人的示范在左夹爪合上那一步，按右夹爪的位置估的方块中心（方块的位置不在数据里，按我们复现里右夹爪夹住时的相对位置算）在 x、y、z 上分别跨 5.6、6.1、5.0 cm，标准差 1.4、1.2、1.1 cm（动画第 7 幕）。
+- **伸手途中挪方块**：第 0、1、2 个方块位置，第 100 步（右手快够到的时候）把方块往 ±x 或 ±y 挪 4 cm（都留在官方的随机区间里），时间集成照常跑：9 次里 3 次仍完成交接（第 0 个位置往 +x，第 1 个位置往 ±x）；其余 6 次里 4 次没碰到、1 次只碰到、1 次夹起来了没交接成。不挪时这 3 个位置都成功。动画第 14 幕放的是第 0 个位置往 +x 那次（第 153 步夹到、第 246 步交接完成）。项目页的真机视频是挑出来的例子，这个数也只有 9 次，只说明「有时能改道」。
 - **速度**：4 核 CPU 上一次推理 0.13 秒（论文在 2080 Ti 上约 0.01 秒），时间集成每步都要推理，赶不上 50 Hz。
 
 **可能和官方实现不一样的地方**：我们没用 dm_control，渲染用 `mujoco.Renderer`（同一个 MuJoCo 渲染器，默认的可视化选项）；没跑官方的脚本策略和训练。复现只覆盖这一个检查点、一个仿真任务。
@@ -548,5 +551,6 @@ $$D _ {\mathrm{KL}}=-\tfrac12\sum _ {j=1}^{32}\left(1+\log\sigma_j^2-\mu_j^2-\si
 - 项目页：[tonyzhaozh.github.io/aloha](https://tonyzhaozh.github.io/aloha/)（RSS 2023、真机块大小 90、实时回放与遥操作视频）；动画和视频里的真机画面剪自项目页的视频，只做讲解引用。
 - 官方代码：[tonyzhaozh/act](https://github.com/tonyzhaozh/act)（commit `742c753`）；硬件：[tonyzhaozh/aloha](https://github.com/tonyzhaozh/aloha)。
 - 复现用的权重与数据：[lerobot/act_aloha_sim_transfer_cube_human](https://huggingface.co/lerobot/act_aloha_sim_transfer_cube_human)（`original_act_repo` 分支）、[lerobot/aloha_sim_transfer_cube_human](https://huggingface.co/datasets/lerobot/aloha_sim_transfer_cube_human)（官方仿真人类示范的转存）。
+- 机械臂模型：[MuJoCo Menagerie](https://github.com/google-deepmind/mujoco_menagerie) 的 `trossen_wx250s`（WidowX 250，主臂）与 `trossen_vx300s`（ViperX 300，从臂），Trossen Robotics，BSD-3-Clause；夹爪与双臂场景用官方 ACT 仓库 `assets/` 里的 MJCF。
 - π₀ 关于时间集成的那句话：[arXiv 2410.24164](https://arxiv.org/abs/2410.24164) 的 LaTeX 源码附录 Inference 一节（「We tried temporal ensembling early on and found that it hurt policy performance」）。
 - EgoMimic（下一期）：[arXiv 2410.24221](https://arxiv.org/abs/2410.24221) 的摘要。
