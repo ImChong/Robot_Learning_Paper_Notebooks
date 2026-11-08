@@ -1669,7 +1669,9 @@
     }
     label(s, BX, 370, '8 个评委各打各的分，再把意见拼回来', 'demo-x-mut', 11);
     var drops = [];
-    for (j = 0; j < 8; j++) drops.push(flowSeg(s, HEAD_COLORS[j], 1, 2.6, 18, true));
+    /* 2026-11-08：每份档案连到它的评委、评委连到拼回去的那一段（原先只有小点没有线） */
+    var rises = [];
+    for (j = 0; j < 8; j++) { drops.push(flowSeg(s, HEAD_COLORS[j], 1, 2.6, 18)); rises.push(flowSeg(s, HEAD_COLORS[j], 1, 2.6, 18)); }
     /* 第 1 段：一个评委 */
     var p1 = group(s);
     label(p1, R, 64, '只请一个评委：只能平均成一团', 'demo-x-ink', 14);
@@ -1730,6 +1732,7 @@
       for (var q = 0; q < 8; q++) {
         var cx = BX + q * hw + hw / 2 - 1.5;
         drops[q].at(now + q * 0.2, [cx, 240], [cx, 262], true);
+        rises[q].at(now + q * 0.2 + 0.6, [cx, 302], [cx, 332], true);
         judges[q].set(HEAD_COLORS[q], 0.6 + 0.4 * Math.abs(Math.sin(now * 2 + q)));
       }
       /* 第 1 段：一个评委，每一步都只分到一点 */
@@ -1854,9 +1857,18 @@
     chip(s, BX, 130, BW, '③ 加回原稿 → ④ 调音量', C_WARN, { size: 12.5, h: 30 });
     var outRow = cellGrid(s, CX - 63, 76, 6, 6, 18, 3, C_ACCENT);
     label(s, CX + 74, 90, '出去的卡片', 'demo-x-mut', 11);
-    label(s, BX + BW + 30, 236, '叠 6 层', 'demo-x-ink', 15);
-    pathLine(s, [[CX, 360], [BX - 22, 360], [BX - 22, 267], [BX, 267]], C_MUTED, 1.6, '5 4');
-    pathLine(s, [[CX, 240], [BX - 22, 240], [BX - 22, 145], [BX, 145]], C_MUTED, 1.6, '5 4');
+    /* 2026-11-08 看片反馈「第十幕缺连线」：主路原先只有小点没有线，补上带箭头的实线；原稿支路从主路分出来（分叉处一个节点），
+       汇进「加回原稿」时带箭头；「叠 6 层」用括号标出重复的是哪一段 */
+    [[CX, 370, CX, 340], [CX, 304, CX, 284], [CX, 252, CX, 218], [CX, 182, CX, 162], [CX, 130, CX, 98]].forEach(function (q) {
+      arrow(s, C_MUTED, 1.6).set(q[0], q[1], q[2], q[3], 7);
+    });
+    pathLine(s, [[BX + BW + 8, 130], [BX + BW + 16, 130], [BX + BW + 16, 338], [BX + BW + 8, 338]], C_MUTED, 1.4);
+    label(s, BX + BW + 24, 240, '叠 6 层', 'demo-x-ink', 15);
+    pathLine(s, [[CX, 360], [BX - 22, 360], [BX - 22, 267], [BX - 2, 267]], C_MUTED, 1.6, '5 4');
+    pathLine(s, [[CX, 240], [BX - 22, 240], [BX - 22, 145], [BX - 2, 145]], C_MUTED, 1.6, '5 4');
+    arrowHead(s, C_MUTED).set(BX - 12, 267, BX, 267, 7);
+    arrowHead(s, C_MUTED).set(BX - 12, 145, BX, 145, 7);
+    dotAt(s, CX, 360, 3.4, C_MUTED); dotAt(s, CX, 240, 3.4, C_MUTED);
     label(s, BX - 26, 316, '原稿', 'demo-x-mut', 11, 'end');
     label(s, BX - 26, 196, '原稿', 'demo-x-mut', 11, 'end');
     var mainF = [[CX, 370, CX, 340], [CX, 304, CX, 284], [CX, 252, CX, 218], [CX, 182, CX, 162], [CX, 130, CX, 98]].map(function () { return flowSeg(s, C_INK, 1, 2.8, 28, true); });
@@ -2035,7 +2047,8 @@
   /* ── scene 12: 一边写，一边回头看原文（交叉注意力） ── */
   function buildSceneCross() {
     var s = sceneSvg('左边两列：左列是英文原句 6 张卡片，右列是正在写的德文 4 张卡片；德文当前那个词向英文每个词连线，线越粗看得越多；' +
-      '右边依次出现：一个人一边写一边回头看原文；提问的在德文这边、资料在英文那边；两串卡片不一样长；扩散策略的动作一边去噪一边回头看观测；自己开会和回头看别人的对比');
+      '右边依次出现：一个人一边写一边回头看原文；提问的在德文这边、资料在英文那边；两串卡片不一样长，正在写的那张德文卡片连向全部 6 张英文卡片；扩散策略：左边两张观测卡片（被查的），右边 16 个带噪声抖动的动作格子（提问的），' +
+      '亮着的那个动作格子连向两张观测卡片，去噪一次次进行，格子越来越整齐；自己开会和回头看别人的对比');
     s.appendChild(svgText(24, 26, '一边写德文，一边回头看英文', 'demo-x-ink2', 13.5));
     var EN = ['The', 'cat', 'sat', 'on', 'the', 'mat'], DE = ['Die', 'Katze', 'saß', 'auf'];
     var AL = [[0.7, 0.1, 0.05, 0.05, 0.05, 0.05], [0.15, 0.7, 0.05, 0.04, 0.03, 0.03], [0.05, 0.2, 0.65, 0.04, 0.03, 0.03], [0.03, 0.04, 0.1, 0.7, 0.08, 0.05]];
@@ -2074,22 +2087,35 @@
     /* 第 3 段：两串不一样长 */
     var p3 = group(s);
     label(p3, R, 64, '两串卡片可以不一样长', 'demo-x-ink', 14);
+    /* 正在写的那张德文卡片连向全部 6 张英文卡片（2026-11-08 补的线；线先画，格子盖在上面） */
+    var see6 = [0, 1, 2, 3, 4, 5].map(function () { return hline(p3, 0, 0, 0, 0, C_Q, 1.3); });
     var c6 = cellGrid(p3, R, 100, 6, 6, 30, 6, C_K), c4 = cellGrid(p3, R, 170, 4, 4, 30, 6, C_Q);
     label(p3, R + 230, 120, '英文 6 张', 'demo-x-ink2', 12);
     label(p3, R + 230, 190, '德文 4 张', 'demo-x-ink2', 12);
     label(p3, R, 246, '每张德文卡片，都能去看全部英文卡片', 'demo-x-ink2', 12);
-    /* 第 4 段：扩散策略 */
+    /* 第 4 段：扩散策略（2026-11-08 看片反馈「右侧观测的示意看不懂」：原先是 UR5、一个「观测」框和几块高低不一的绿方块，
+       看不出谁在看谁。改成和左边同一套画法：被查的观测卡片在左（橙），提问的动作格子在右（蓝），亮着的动作格子连向两张观测卡片；
+       动作格子带噪声上下抖，去噪一次次进行，格子越来越整齐。依据：Chi 等 arXiv 2303.04137 v5 图 2(c) 的图注——观测的嵌入接进每个
+       解码层的多头交叉注意力；数字取附录 Transformer 版超参数表的真机推 T 一行：观测 2 步、预测 16 个动作、推理去噪 16 次） */
     var p4 = group(s);
     label(p4, R, 64, '第 10 期扩散策略的 Transformer 版', 'demo-x-ink', 14);
-    robotImg(p4, 'ur5', R, 86, 70);
-    chip(p4, R, 172, 88, '观测', C_K, { size: 12 });
-    var noisy = [];
-    for (var q = 0; q < 8; q++) noisy.push(paint(svgEl('rect', { x: R + 130 + q * 26, y: 150, width: 20, height: 20, rx: 3 }), C_V));
-    noisy.forEach(function (n) { p4.appendChild(n); });
-    label(p4, R + 130, 104, '一串带噪声的动作，慢慢变干净', 'demo-x-mut', 11);
-    var obsF = [0, 1, 2].map(function () { return flowSeg(p4, C_K, 2, 3, 36); });
-    label(p4, R, 240, '动作一边去噪，一边回头看观测', 'demo-x-ink2', 12);
-    label(p4, R, 264, '（Chi 等，arXiv 2303.04137 §3.1）', 'demo-x-mut', 11);
+    label(p4, R, 88, '和左边一样：提问的换成动作，被查的换成观测', 'demo-x-mut', 11.5);
+    label(p4, R, 116, '机器人的观测（被查的）', 'demo-x-ink2', 11.5);
+    label(p4, R + 190, 116, '要输出的动作（提问的）', 'demo-x-ink2', 11.5);
+    function acX(j) { return R + 190 + (j % 8) * 20; }
+    function acY(j) { return 132 + Math.floor(j / 8) * 30; }
+    var askL = [0, 1].map(function () { return hline(p4, 0, 0, 0, 0, C_Q, 1.6); });
+    var obsC = ['观测：上一步', '观测：这一步'].map(function (w, i) { return chip(p4, R, 128 + i * 40, 120, w, C_K, { size: 12, h: 30 }); });
+    var acts = [];
+    for (var q = 0; q < 16; q++) { acts.push(paint(svgEl('rect', { x: acX(q), y: acY(q), width: 16, height: 16, rx: 3 }), C_Q)); p4.appendChild(acts[q]); }
+    label(p4, R + 190, 204, '16 个动作，一起去噪', 'demo-x-mut', 11);
+    label(p4, R, 234, '去噪：', 'demo-x-ink2', 12);
+    var dnTxt = tone(p4, R + 42, 234, '', C_INK, 12);
+    rectBox(p4, R + 170, 223, 176, 14, C_BORDER, C_SURFACE2);
+    var dnBar = hbar(p4, R + 172, 225, 10, C_Q);
+    label(p4, R, 264, '动作一边去噪，一边用交叉注意力回头看观测', 'demo-x-ink2', 12);
+    label(p4, R, 288, '原论文图 2(c)：观测接进每一层的交叉注意力', 'demo-x-mut', 11);
+    label(p4, R, 308, '真机推 T：观测 2 步、动作 16 个、去噪 16 次（附录表）', 'demo-x-mut', 11);
     /* 第 5 段：两种开会 */
     var p5 = group(s);
     label(p5, R, 64, '两种「开会」', 'demo-x-ink', 14);
@@ -2120,15 +2146,24 @@
       orig.forEach(function (l, q2) { l.style.strokeWidth = q2 === line ? 5 : 3; });
       look.set(R + 232, 146 + line * 18, R + 100, 140 + line * 18, 9);
       setOpacity(look.g, (s1 % 1.3) < 0.8 ? 1 : 0.2);
-      c6.fill(6); c4.fill(1 + Math.floor(now * 1.5) % 4);
-      /* 第 4 段：噪声动作慢慢变干净 */
-      var dn = (since(t, clock, 10.4) % 5) / 4;
-      noisy.forEach(function (n, q2) {
-        var clean = 0.5 + 0.35 * Math.sin(q2 * 0.8), noise = rnd(q2 + 13 * Math.floor(now * 4), 9) - 0.5;
-        var y = 150 - 26 * (clean - 0.5 + noise * (1 - clamp(dn, 0, 1)));
-        n.setAttribute('y', y.toFixed(1));
+      var nDe = 1 + Math.floor(now * 1.5) % 4;
+      c6.fill(6); c4.fill(nDe);
+      see6.forEach(function (l, q2) { setLine(l, R + (nDe - 1) * 36 + 15, 172, R + q2 * 36 + 15, 128); l.style.opacity = (0.35 + 0.5 * Math.abs(Math.sin(now * 2 + q2))).toFixed(2); });
+      /* 第 4 段：8 s 一轮——16 次去噪每次 0.4 s，最后 1.6 s 停在干净的动作；亮着的动作格子每 0.5 s 换一个，连向两张观测卡片 */
+      var dc = since(t, clock, 10.4) % 8, done = Math.min(16, Math.floor(dc / 0.4)), noiseLv = 1 - done / 16;
+      dnTxt.textContent = '第 ' + done + ' / 16 次';
+      setW(dnBar, 172 * done / 16);
+      var hot = Math.floor(now * 2) % 16;
+      acts.forEach(function (r4, q2) {
+        var jit = (rnd(q2 + 17 * Math.floor(now * 5), 9) - 0.5) * 18 * noiseLv;
+        r4.setAttribute('y', (acY(q2) + jit).toFixed(1));
+        r4.style.fillOpacity = (0.35 + 0.55 * (1 - noiseLv) + (q2 === hot ? 0.1 : 0)).toFixed(2);
+        r4.style.stroke = q2 === hot ? C_INK : 'none';
+        r4.style.strokeWidth = '1.5';
       });
-      obsF.forEach(function (f, q2) { f.at(now + q2 * 0.3, [R + 92, 192], [R + 150 + q2 * 70, 212], true); });
+      var hy = acY(hot) + 8 + (rnd(hot + 17 * Math.floor(now * 5), 9) - 0.5) * 18 * noiseLv;
+      askL.forEach(function (l, q2) { setLine(l, acX(hot) + 8, hy, R + 120, 143 + q2 * 40); l.style.opacity = (0.5 + 0.4 * Math.abs(Math.sin(now * 3 + q2))).toFixed(2); });
+      obsC.forEach(function (c, q2) { c.box.style.strokeWidth = (1.3 + 1.2 * Math.abs(Math.sin(now * 3 + q2))).toFixed(2); });
       crossL.forEach(function (l, q2) { l.style.opacity = (0.2 + 0.7 * Math.abs(Math.sin(now * 2 + q2))).toFixed(2); });
       panels(t, [p1, p2, p3, p4, p5]);
     }
@@ -2144,7 +2179,14 @@
     var trIn = IN.map(function (n, i) { return chip(s, 40 + i * 70, 62, 58, n, C_Q, { size: 12.5 }); });
     chip(s, 40, 104, 338, 'Transformer（一次算完）', C_ACCENT, { size: 12.5, h: 30 });
     var trOut = OUT.map(function (n, i) { return chip(s, 40 + i * 70, 146, 58, n, C_V, { size: 12.5 }); });
-    var trF = OUT.map(function () { return flowSeg(s, C_MUTED, 1, 2.4, 20, true); });
+    var trF = OUT.map(function () { return flowSeg(s, C_MUTED, 1, 2.4, 20); });
+    /* 2026-11-08：输入 → Transformer → 输出 之间补上箭头（原先只有小点没有线） */
+    IN.forEach(function (n, i) {
+      var x = 69 + i * 70;
+      arrow(s, C_MUTED, 1.3).set(x, 134, x, 145, 6);
+      arrow(s, C_MUTED, 1.3).set(x, 246, x, 259, 6);
+      arrow(s, C_MUTED, 1.3).set(x, 290, x, 301, 6);
+    });
     label(s, 24, 208, '使用：只能一个一个写', 'demo-x-ink2', 12);
     var infIn = IN.map(function (n, i) { return chip(s, 40 + i * 70, 218, 58, n, C_Q, { size: 12.5 }); });
     chip(s, 40, 260, 338, 'Transformer（又算一次）', C_ACCENT, { size: 12.5, h: 30 });
@@ -2231,20 +2273,11 @@
     return { el: s, draw: draw };
   }
 
-  /* 一辆小车：车身 + 两个轮子；put(x, y) 把车底中点放在 (x, y) */
-  function carIcon(parent, color) {
-    var g = group(parent);
-    var body = paint(svgEl('path', { d: 'M -22 -6 L -22 -16 L -10 -16 L -4 -26 L 12 -26 L 18 -16 L 24 -16 L 24 -6 Z' }), color);
-    g.appendChild(body);
-    var w1 = dotAt(g, -12, -5, 5, C_INK), w2 = dotAt(g, 14, -5, 5, C_INK);
-    void w1; void w2;
-    return { g: g, put: function (x, y) { g.setAttribute('transform', 'translate(' + x.toFixed(1) + ' ' + y.toFixed(1) + ')'); } };
-  }
 
   /* ── scene 14: 怎么训练：先热身，再慢慢收 ── */
   function buildSceneRecipe() {
     var s = sceneSvg('左边是一条曲线：横轴是练了多少步，纵轴是每一步改动的大小，前 4000 步直线升高，之后慢慢降，一个小点沿曲线走；' +
-      '下面一辆小车在路上开，车速跟着曲线变，起步慢慢加速、后来慢慢松油门；右边依次出现：两套练习题的多少；8 张显卡练两个模型的进度条；热身 4000 步；' +
+      '下面一排脚印跟着小点一个个出现，脚印之间的距离就是那时的步子：开头很密，过了第 4000 步最稀，后面又慢慢变密；右边依次出现：两套练习题的多少；8 张显卡练两个模型的进度条；热身 4000 步；' +
       '随机让一部分数字请假的格子；扩散策略也先热身');
     s.appendChild(svgText(24, 26, '学习的步子：先慢慢加大，再慢慢变小', 'demo-x-ink2', 13.5));
     var PX = 56, PY = 56, PW = 336, PH = 190, SMAX = 100000, LMAX = 7.5e-4;
@@ -2262,12 +2295,21 @@
     label(s, PX - 6, PY + PH - 6, '小', 'demo-x-mut', 11, 'end');
     label(s, 24, PY + PH / 2, '步子', 'demo-x-mut', 11);
     var mk = dotAt(s, PX, PY + PH, 5.5, C_WARN);
-    label(s, 24, 316, '像开车：起步慢慢踩油门，上路后慢慢松开', 'demo-x-ink2', 12);
-    hline(s, 30, 372, 390, 372, C_BORDER, 2);
-    var dash = [];
-    for (var q = 0; q < 9; q++) dash.push(hline(s, 0, 372, 0, 372, C_MUTED, 2, '10 8'));
-    var car = carIcon(s, C_WARN);
-    var spd = tone(s, 390, 340, '', C_WARN, 12, 'end');
+    /* 2026-11-08 看片反馈「开车的画面完全没看懂」：原先下面是一辆车速跟着曲线变的小车，画面没说车代表什么，也和曲线对不上。
+       换成字面意义上的「步子」：一排脚印跟着曲线上的小点一个个出现，相邻两个脚印的距离 ∝ 那时的学习率（示意）——
+       开头很密（热身），过了第 4000 步最稀，后面又慢慢变密 */
+    label(s, 24, 302, '步子：每练一次，模型里的数字改多少', 'demo-x-ink2', 12);
+    label(s, 24, 324, '下面的脚印：两个脚印离得越远，步子越大（示意）', 'demo-x-mut', 11);
+    var FP_N = 24, FPX0 = 34, FPW = 340, fpU = [], strides = [];
+    for (var q = 0; q < FP_N; q++) { fpU.push((q + 1) / FP_N); strides.push(lrate(Math.max(1, fpU[q] * fpU[q] * SMAX)) / LR_PEAK); }
+    var sumS = strides.reduce(function (a2, b2) { return a2 + b2; }, 0), accS = 0;
+    var feet = strides.map(function (st3, q2) {
+      accS += st3;
+      var e = paint(svgEl('ellipse', { cx: (FPX0 + FPW * accS / sumS).toFixed(1), cy: q2 % 2 ? 348 : 362, rx: 5.5, ry: 3.4 }), C_WARN);
+      s.appendChild(e);
+      return e;
+    });
+    var fpTxt = tone(s, 390, 384, '', C_WARN, 11.5, 'end');
     /* 第 1 段：练习题 */
     var p1 = group(s);
     label(p1, R, 64, '练习题有多少', 'demo-x-ink', 14);
@@ -2312,11 +2354,14 @@
       curve.style.strokeDashoffset = String(1400 * (1 - ease(seg(t, 0.3, 2.4))));
       var u = (now * 0.08) % 1, st2 = Math.max(1, u * u * SMAX), lr = lrate(st2);
       moveDot(mk, [sx(st2), sy(lr)]);
-      /* 小车：车速 ∝ 步子大小；路面虚线往后退 */
-      var v = lr / LR_PEAK, off = (now * 140 * v) % 36;
-      dash.forEach(function (d, q2) { var x = 30 + q2 * 40 - off; setLine(d, Math.max(30, x), 372, Math.max(30, Math.min(390, x + 18)), 372); });
-      car.put(80 + 220 * v, 366);
-      spd.textContent = '步子：' + Math.round(v * 100) + '%';
+      /* 脚印：曲线上的小点走到哪，脚印就留到哪；最新的那个描大一点 */
+      var nFeet = 0;
+      fpU.forEach(function (fu) { if (u >= fu) nFeet++; });
+      feet.forEach(function (e, q2) {
+        setOpacity(e, q2 < nFeet ? 1 : 0.1);
+        e.setAttribute('rx', q2 === nFeet - 1 ? '7.5' : '5.5');
+      });
+      fpTxt.textContent = '这一步的步子：最大时的 ' + Math.round(lr / LR_PEAK * 100) + '%';
       var u1 = seg(since(t, clock, 0.4), 0.3, 1.6);
       db[0].set(4.5 / 36 * 220 * u1, Math.round(450 * u1) + ' 万对'); db[1].set(220 * u1, Math.round(3600 * u1) + ' 万对');
       var u2 = since(t, clock, 3.6) * 8;
@@ -2700,8 +2745,8 @@
   function buildVideoDemo(host) {
     K.video(host, {
       title: '配音讲解视频：从机器人的角度读 Transformer',
-      sub: '16 分 39 秒竖屏视频（1080×1920），中文配音 + 字幕。画面就是上面的十七幕动画，旁白用同样的比喻把每一幕讲细；适合手机上看或转发。',
-      size: '18.4 MB',
+      sub: '16 分 49 秒竖屏视频（1080×1920），中文配音 + 字幕。画面就是上面的十七幕动画，旁白用同样的比喻把每一幕讲细；适合手机上看或转发。',
+      size: '18.7 MB',
       fileName: 'Transformer_讲解视频.mp4'
     });
   }
