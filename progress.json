@@ -41,15 +41,15 @@
         "13_Physics-Based_Animation",
         "14_Human_Motion"
       ],
-      "last_module": "14_Human_Motion",
-      "last_index": 1133,
-      "last_title": "PartiGen: Part-Aware Representations for Language-Conditioned Humanoid Motion Generation (arXiv:2610.13373)",
-      "next_module": "04_Loco-Manipulation_and_WBC",
+      "last_module": "04_Loco-Manipulation_and_WBC",
+      "last_index": 1168,
+      "last_title": "Humanoid Dodgeball: Learning Fast Dynamic Obstacle Avoidance Motions for Humanoids (arXiv:2610.40003)",
+      "next_module": "05_Locomotion",
       "last_completed_date": "2026-11-08",
-      "note": "本日轮转到 14_Human_Motion。PROGRESS Human Motion Analysis and Synthesis 章节中尚无笔记的最新论文是 PartiGen（arXiv:2610.13373，2026-10-09，复旦 / 上海创智学院 / 上海交大等），即 PROGRESS #1133，已确认在上游 README。直接在 G1 关节空间做文本生成动作：BP-MVAE 按四组解剖掩码分头注意力、融合成 128 维全身潜变量并加 G1 正运动学监督；DA-LDM 以文本 + 历史自回归生成片段，EOS 头在 320 帧候选里逐帧挑终点；冻结 GRIT 跟踪器执行。未开源，只给整体流程 mermaid。下一篇轮转回 04_Loco-Manipulation_and_WBC。",
+      "note": "本日轮转回 04_Loco-Manipulation_and_WBC。PROGRESS Loco-Manipulation and WBC 章节中尚无笔记的最新论文是 Humanoid Dodgeball（arXiv:2610.40003，2026-10-29，NUS / EngineAI），即 PROGRESS #1168，已确认在上游 README。按部位球体算预测威胁（所需加速度）与近场威胁，威胁加权的逃离 / 距离 / 根部方向奖励，四个按方向分开的 AMP 判别器，捕获点恢复奖励；G1 / PM01 仿真与 PM01 真机。未开源，只给整体流程 mermaid；全文已读，记 original_check: done。下一篇轮转到 05_Locomotion。",
       "last_date": "2026-11-08",
       "next_candidate": null,
-      "last_completed": "PartiGen: Part-Aware Representations for Language-Conditioned Humanoid Motion Generation (arXiv:2610.13373)"
+      "last_completed": "Humanoid Dodgeball: Learning Fast Dynamic Obstacle Avoidance Motions for Humanoids (arXiv:2610.40003)"
     },
     "last_summary_index": 532,
     "last_summary_date": "2026-09-18",
@@ -1948,7 +1948,7 @@
         "project_page": "",
         "code": "",
         "source": "⏳ 未开源（论文与 arXiv 页面无代码 / CAD 链接）· 只给整体流程 mermaid · 21 关节 / 16 电机全连杆灵巧手 · Jihao Li、Huixu Dong 等（浙江大学 Grasp Lab）"
-            },
+      },
       {
         "date": "2026-11-07",
         "index": 1130,
@@ -1970,6 +1970,17 @@
         "project_page": "https://andyhuangzz01.github.io/partigen-paper/",
         "code": "",
         "source": "⏳ 未开源（论文与项目页无代码仓库）· 只给整体流程 mermaid · 部位感知 VAE + 潜空间扩散 + EOS 时长 + 冻结 GRIT 跟踪 · Chuxuan Huang、Zhanxiang Cao、Yue Gao 等（复旦、上海创智学院、上海交大）"
+      },
+      {
+        "date": "2026-11-08",
+        "index": 1168,
+        "title": "Humanoid Dodgeball: Learning Fast Dynamic Obstacle Avoidance Motions for Humanoids",
+        "folder": "papers/04_Loco-Manipulation_and_WBC/Humanoid_Dodgeball__Learning_Fast_Dynamic_Obstacle_Avoidance_Motions_for_Humanoids",
+        "module": "04_Loco-Manipulation_and_WBC",
+        "arxiv": "2610.40003",
+        "project_page": "https://humanoid-dodge.github.io/",
+        "code": "",
+        "source": "⏳ 未开源（论文与项目页无代码仓库）· 只给整体流程 mermaid · 威胁感知奖励 + 四方向 AMP + 捕获点恢复 · Aoqian Zhang、Fan Shi、Shuzhi Sam Ge 等（NUS、EngineAI、大连理工）"
       }
     ],
     "last_completed_index": 588,

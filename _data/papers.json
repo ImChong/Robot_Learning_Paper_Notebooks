@@ -1315,6 +1315,25 @@
     "display_name": "Loco-Manipulation and WBC",
     "papers": [
       {
+        "title": "Humanoid Dodgeball: Learning Fast Dynamic Obstacle Avoidance Motions for Humanoids",
+        "path": "papers/04_Loco-Manipulation_and_WBC/Humanoid_Dodgeball__Learning_Fast_Dynamic_Obstacle_Avoidance_Motions_for_Humanoids/Humanoid_Dodgeball__Learning_Fast_Dynamic_Obstacle_Avoidance_Motions_for_Humanoids.md",
+        "url": "/papers/04_Loco-Manipulation_and_WBC/Humanoid_Dodgeball__Learning_Fast_Dynamic_Obstacle_Avoidance_Motions_for_Humanoids/Humanoid_Dodgeball__Learning_Fast_Dynamic_Obstacle_Avoidance_Motions_for_Humanoids.html",
+        "dir": "Humanoid_Dodgeball__Learning_Fast_Dynamic_Obstacle_Avoidance_Motions_for_Humanoids",
+        "arxiv": "2610.40003",
+        "summary_zh": "人形机器人已经会踢球、打网球、跑酷，但还不会躲开飞来的东西——它没法像无人机那样直接平移，必须协调全身和落脚点，还要躲完不摔。",
+        "health_score": 4,
+        "health_gaps": [
+          "animation",
+          "video"
+        ],
+        "health_label_zh": "笔记健康度 4/6，缺：动画讲解、讲解视频",
+        "health_label_en": "Note health 4/6; missing: explainer animation, explainer video",
+        "published_date_zh": "2026年10月29日（arXiv v1）",
+        "published_date_en": "Oct 29, 2026 (arXiv v1)",
+        "zhname": "Humanoid Dodgeball：人形机器人快速动态避障动作学习",
+        "zh_title": "Humanoid Dodgeball：人形机器人快速动态避障动作学习"
+      },
+      {
         "title": "Memory before Goal: Role of Pre-History Memory for Humanoid Loco-Manipulation",
         "path": "papers/04_Loco-Manipulation_and_WBC/Memory_before_Goal__Role_of_Pre-History_Memory_for_Humanoid_Loco-Manipulation/Memory_before_Goal__Role_of_Pre-History_Memory_for_Humanoid_Loco-Manipulation.md",
         "url": "/papers/04_Loco-Manipulation_and_WBC/Memory_before_Goal__Role_of_Pre-History_Memory_for_Humanoid_Loco-Manipulation/Memory_before_Goal__Role_of_Pre-History_Memory_for_Humanoid_Loco-Manipulation.html",
