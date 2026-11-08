@@ -2619,7 +2619,7 @@ var SIDE_RHAND = 'ygQfBsoEIAa2BC4GowRABpwETgaRBFMGhgRRBn4ETwZ3BE8GcwRPBm4ETwZqBF
       cues: [
         { at: 0.4, s: 'Vision Pro 给出头、手腕、手指的位姿，分别算出三组关节角。' },
         { at: 3.6, s: '手臂：Relaxed IK 跟手腕；位置、朝向、关节速度三项加权。' },
-        { at: 7.0, s: '腰和头由人头的位姿算：例子里腰前倾 **24.8°**。' },
+        { at: 7.0, s: '腰和头由人头的位姿算：例子里腰前倾 **24.6°**。' },
         { at: 10.4, s: '机器人的画面实时传回头显；手指映射到 0–1000。' },
         { at: 13.4, s: '激光雷达占带宽和 CPU，延迟约 **0.5 s**。' }
       ]
