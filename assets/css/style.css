@@ -595,10 +595,9 @@ a.index-chip-link:hover .index-chip-arrow {
 /* Open-source legend sits right above the paper list it annotates. */
 .index-main .index-legend {
   display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  align-items: center;
-  gap: 4px 16px;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
   font-size: 12px;
   line-height: 16px;
   color: var(--text-secondary);
