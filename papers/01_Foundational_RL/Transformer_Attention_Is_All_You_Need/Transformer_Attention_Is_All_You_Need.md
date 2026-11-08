@@ -40,7 +40,7 @@ Transformer 把序列建模里的「时间步循环」换成「一层之内所�
 
 > 🎮 **本文内嵌 1 段讲解动画 + 1 段配音视频 + 3 个可交互演示**（不用装任何东西）：
 > 1. [十七幕动画：从机器人的角度读 Transformer](#tf-explainer-anim) —— 约 272 秒，写给第一次接触的人：每一幕先给一个生活里的比喻（传话、开会、查资料、分披萨、评委、时钟、追剧……），再配一个小例子，最后对照本站机器人论文怎么用同一块零件
-> 2. [配音讲解视频](#tf-video) —— 同样十七幕，加中文配音与字幕，15 分 46 秒竖屏，可下载
+> 2. [配音讲解视频](#tf-video) —— 同样十七幕，加中文配音与字幕，16 分 39 秒竖屏，可下载
 > 3. [注意力计算器](#demo-attention) —— 机器人最近 3 步的玩具向量：选哪一步当 query、缩不缩放、加不加因果掩码
 > 4. [$\sqrt{d_k}$ 实验](#demo-scale) —— 维度越大点积散得越开，softmax 多尖、梯度还剩多少；可以拖到 Digit 的 48 维、π₀ 的 256 维
 > 5. [表一计算器](#demo-cost) —— 序列多长、宽度多少，自注意力才比循环层便宜；因果掩码留下多少对
@@ -77,7 +77,7 @@ Transformer 把序列建模里的「时间步循环」换成「一层之内所�
 
 ## 📺 配音讲解视频（可下载） {#tf-video}
 
-<div class="paper-demo" data-demo="tf-video" data-src="media/tf_explainer_video.mp4" data-poster="media/tf_explainer_video_poster.jpg"><p class="demo-fallback">（本节含讲解视频播放器，需要启用 JavaScript；也可以直接<a href="media/tf_explainer_video.mp4" download="Transformer_讲解视频.mp4">下载 mp4（17.6 MB）</a>）</p></div>
+<div class="paper-demo" data-demo="tf-video" data-src="media/tf_explainer_video.mp4" data-poster="media/tf_explainer_video_poster.jpg"><p class="demo-fallback">（本节含讲解视频播放器，需要启用 JavaScript；也可以直接<a href="media/tf_explainer_video.mp4" download="Transformer_讲解视频.mp4">下载 mp4（18.4 MB）</a>）</p></div>
 
 > 📖 **动画之后的正文默认全部折叠**：机器人的角度、问题、方法的每一块按小节收起，实验、局限、具体实例、源码对照、面试和附录各收成一块。想细读哪一块就点开，内容一字未删；流程图和三个交互演示留在外面。目录里的标题可以直接点，会自动展开所在折叠块，左侧目录顶部还有「展开全部文字」。
 
@@ -458,11 +458,17 @@ flowchart LR
 
 <h3 id="实例-例-1一次注意力">例 1：一次注意力</h3>
 
-**点积：**
+**点积：** 把 $q$ 和每个 $k$ 上下对齐，同一位置的两个数相乘，再加起来（动画第 6 幕一格一格算的就是这个）：
 
 $$
-q\cdot k_{t-2} = 1,\qquad q\cdot k_{t-1} = 1+0+1+0 = 2,\qquad q\cdot k_{t} = 0+0+1+0 = 1
+\begin{aligned}
+q\cdot k_{t-2} &= 1\times1 + 0\times0 + 1\times0 + 0\times0 = 1+0+0+0 = 1\\
+q\cdot k_{t-1} &= 1\times1 + 0\times1 + 1\times1 + 0\times0 = 1+0+1+0 = 2\\
+q\cdot k_{t} &= 1\times0 + 0\times0 + 1\times1 + 0\times1 = 0+0+1+0 = 1
+\end{aligned}
 $$
+
+这个例子里只有 0 和 1，所以点积就是「两边都是 1 的格子有几个」：$t-1$ 步对上两格，最像。真实模型里卡片上是有正有负的小数，同号相乘加分、异号相乘扣分。论文把这种注意力叫 Scaled Dot-Product Attention（缩放点积注意力，§3.2.1），「缩放」就是下面的除以 $\sqrt{d_k}$。
 
 **缩放与 softmax：** 除以 $\sqrt{4} = 2$ 得 $[0.5,\ 1.0,\ 0.5]$。$e^{0.5} = 1.6487$，$e^{1} = 2.7183$，和为 $1.6487\times2 + 2.7183 = 6.0157$：
 

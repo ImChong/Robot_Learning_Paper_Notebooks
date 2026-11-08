@@ -1322,19 +1322,25 @@
   }
 
   /* ── scene 6: 手算一次：打分 → 分比例 → 按比例混合 ── */
+  /* 2026-11-08 看片反馈「打分没看懂，讲细一点，最好带着计算」：打分拆成四段——第 t−2 步一格一句地相乘再相加、
+     其余两步同样算、「两个都是 1 才加分」、这叫点积。旁白一句对一个时间窗，窗长按合成出来的旁白定（每句时长 + 0.3 s 停顿），
+     这样画面在念到哪一格时亮出哪一格；各段里的出场时刻按 WordBoundary 量出的词的时刻排 */
+  /* end 要和 TF_SCENES 里第 6 幕的时长 76.3 一样（测试按字面数字加总各幕时长，所以那里写数字、不写 S6.end） */
+  var S6 = { b0: 3.6, b: [12.9, 16.1, 19.3, 22.7], b5: 26.1, c1: 32.7, c2: 41.3, c3: 46.8, c4: 57.6, d: 67.3, e: 70.7, f: 73.7, end: 76.3 };
   function buildSceneAttention() {
-    var s = sceneSvg('左上是第 t 步的问题卡（4 格）和三步的标签卡各 4 格，右边依次出现打分 1、2、1，缩小一半后的 0.5、1、0.5，和换成比例后的三根条；' +
-      '左下是一个平面，三条内容箭头按比例缩短、首尾相接，加出结果点 [0.548, 0.726]；右边依次是三步走、打分、像分披萨一样的饼图、混合、一句话');
+    var s = sceneSvg('左上是第 t 步的问题卡（4 格）和三步的标签卡各 4 格；右边先把问题卡和第 t−2 步的标签卡上下对齐，一格一格亮出 1×1=1、0×0=0、1×0=0、0×0=0，' +
+      '加起来是 1 分；接着同样算第 t−1 步（2 分）和第 t 步（1 分），两边都是 1 的格子亮起来，写着「这叫点积」；然后是缩小一半后的 0.5、1、0.5，' +
+      '换成比例的三根条和像分披萨的饼图；左下是一个平面，三条内容箭头按比例缩短、首尾相接，加出结果点 [0.548, 0.726]；最后一句话');
     s.appendChild(svgText(24, 26, '小例子：机器人最近 3 步，每张卡片 4 个数字', 'demo-x-ink2', 13.5));
     label(s, 24, 62, '问题 Q（第 t 步）', 'demo-x-ink2', 12);
     var qRow = vecRow(s, 136, 46, 4, 24, C_Q, { h: 24 });
-    var kRows = [], c1 = [], c2 = [], bars = [], wTxt = [];
+    var kRows = [], kLabels = [], c1 = [], c2 = [], bars = [], wTxt = [];
     label(s, 258, 92, '打分', 'demo-x-mut', 11.5, 'middle');
     label(s, 300, 92, '÷ 2', 'demo-x-mut', 11.5, 'middle');
     label(s, 352, 92, '比例', 'demo-x-mut', 11.5, 'middle');
     STEPS.forEach(function (st, i) {
       var y = 100 + i * 34;
-      label(s, 24, y + 17, '标签 K（' + st + '）', 'demo-x-ink2', 12);
+      kLabels.push(label(s, 24, y + 17, '标签 K（' + st + '）', 'demo-x-ink2', 12));
       kRows.push(vecRow(s, 136, y, 4, 24, C_K, { h: 24 }));
       c1.push(tone(s, 258, y + 17, '', C_INK, 13, 'middle'));
       c2.push(tone(s, 300, y + 17, '', C_INK, 13, 'middle'));
@@ -1350,58 +1356,141 @@
     var outTxt = tone(s, OX + 12, OY - 1.2 * S + 6, '', C_Q, 12.5);
     label(s, 270, 270, '内容 V', 'demo-x-mut', 11.5);
     STEPS.forEach(function (st, i) { label(s, 270, 294 + i * 24, st + '：[' + ATT.vals[i].join(', ') + ']', 'demo-x-ink2', 12); });
+    /* 一排格子：cells 是 [{ box, txt }]，xs 是每格左边的 x */
+    function cellRow(parent, xs, y, w, h, vals, color, size) {
+      return xs.map(function (x, j) {
+        var b = rectBox(parent, x, y, w, h, color, C_SURFACE);
+        return { box: b, txt: label(parent, x + w / 2, y + h / 2 + size / 2 - 1, vals ? String(vals[j]) : '', 'demo-x-ink', size, 'middle') };
+      });
+    }
+    function prodStr(i, j) { return ATT.q[j] + '×' + ATT.keys[i][j] + '=' + ATT.q[j] * ATT.keys[i][j]; }
     /* 第 1 段 */
     var p1 = group(s);
     label(p1, R, 64, '手算一次，只有三步', 'demo-x-ink', 14);
     var steps1 = ['① 打分', '② 分比例', '③ 按比例混合'].map(function (n, j) { return chip(p1, R + j * 118, 90, 108, n, C_ACCENT, { size: 13, h: 34 }); });
     label(p1, R, 160, '数字是我们编的，只为看清每一步', 'demo-x-mut', 11.5);
     label(p1, R, 184, '内容只给 2 个数字，好画在左下的平面上', 'demo-x-mut', 11.5);
-    /* 第 2 段：打分 */
+    /* 第 2 段：第 t−2 步，一格一格算 */
     var p2 = group(s);
-    label(p2, R, 64, '① 打分：对应位置相乘，再相加', 'demo-x-ink', 14);
-    ['t−2：1×1 + 0 + 1×0 + 0 = 1', 't−1：1×1 + 0 + 1×1 + 0 = 2', 't：1×0 + 0 + 1×1 + 0 = 1'].forEach(function (str, j) { label(p2, R, 100 + j * 28, str, 'demo-x-mono', 12.5); });
-    label(p2, R, 200, '第 t−1 步的标签和问题最像：2 分', 'demo-x-ink2', 12);
-    /* 第 3 段：分比例，像分披萨 */
+    label(p2, R, 64, '① 打分：上下对齐，逐格相乘，再相加', 'demo-x-ink', 14);
+    var BXS = [0, 1, 2, 3].map(function (j) { return R + 96 + j * 64; }), BW6 = 56;
+    var gQ2 = group(p2), gK2 = group(p2), gX2 = group(p2);
+    label(gQ2, R, 103, '问题 Q', 'demo-x-ink2', 12);
+    cellRow(gQ2, BXS, 84, BW6, 28, ATT.q, C_Q, 14);
+    label(gK2, R, 139, '标签 K（t−2）', 'demo-x-ink2', 11.5);
+    cellRow(gK2, BXS, 120, BW6, 28, ATT.keys[0], C_K, 14);
+    label(gX2, R, 186, '相乘', 'demo-x-ink2', 12);
+    var prod2 = cellRow(gX2, BXS, 164, BW6, 34, null, C_MUTED, 13);
+    var frame2 = rectBox(p2, 0, 78, BW6 + 10, 126, C_ACCENT, 'none', '5 4');
+    frame2.style.strokeWidth = '2';
+    var sum2 = rich(p2, R, 236, '加起来：$1+0+0+0=1$，第 t−2 步是 **1 分**', 13);
+    var note2 = label(p2, R, 262, '四格里，只有第一格两边都是 1', 'demo-x-mut', 11.5);
+    /* 第 3 段：其余两步 + 都是 1 才加分 + 点积 */
     var p3 = group(s);
-    label(p3, R, 64, '② 分比例：像按票数分披萨', 'demo-x-ink', 14);
-    var pz = pie(p3, R + 64, 160, 58);
-    /* 每一块写上是哪一步，跟左边的表对得上 */
-    var pzTxt = STEPS.map(function (st) { var tx = label(p3, R + 64, 160, st, 'demo-x-ink', 12, 'middle'); tx.style.fill = '#15171c'; tx.style.fontWeight = '700'; return tx; });
-    label(p3, R + 150, 108, '先把分数缩小一半：', 'demo-x-ink2', 12);
-    label(p3, R + 150, 130, '0.5 / 1 / 0.5', 'demo-x-ink', 12.5);
-    label(p3, R + 150, 156, '再换成加起来 100% 的比例：', 'demo-x-ink2', 12);
-    var pctTxt = tone(p3, R + 150, 178, '', C_INK, 12.5);
-    label(p3, R + 150, 206, '分数高的，分得多，', 'demo-x-ink2', 12);
-    label(p3, R + 150, 226, '但别人也有一份', 'demo-x-ink2', 12);
-    label(p3, R, 258, '论文把这一步叫 softmax', 'demo-x-mut', 11.5);
-    /* 第 4 段：混合 */
+    label(p3, R, 64, '其余两步，同样算', 'demo-x-ink', 14);
+    var SXS = [0, 1, 2, 3].map(function (j) { return R + 92 + j * 38; }), SW6 = 32;
+    var blocks = [1, 2].map(function (i, n) {
+      var y0 = 80 + n * 92;
+      label(p3, R, y0 + 16, '问题 Q', 'demo-x-ink2', 11.5);
+      var qq = cellRow(p3, SXS, y0, SW6, 22, ATT.q, C_Q, 12);
+      label(p3, R, y0 + 42, '标签 K（' + STEPS[i] + '）', 'demo-x-ink2', 11.5);
+      var kk = cellRow(p3, SXS, y0 + 26, SW6, 22, ATT.keys[i], C_K, 12);
+      label(p3, R, y0 + 68, '相乘', 'demo-x-ink2', 11.5);
+      return { i: i, q: qq, k: kk, pr: cellRow(p3, SXS, y0 + 52, SW6, 22, null, C_MUTED, 12), sum: tone(p3, R + 252, y0 + 44, '', C_INK, 15) };
+    });
+    var note3a = label(p3, R, 272, '两边都是 1 的格子才加分：对上越多，分越高', 'demo-x-ink2', 12);
+    var note3b = rich(p3, R, 296, '这种算法叫**点积**；论文的注意力叫「缩放点积注意力」', 12);
+    /* 第 4 段：分比例，像分披萨 */
     var p4 = group(s);
-    label(p4, R, 64, '③ 按比例，把三份内容加起来', 'demo-x-ink', 14);
-    math(p4, R, 104, '0.274\\,[1,0]+0.452\\,[0,1]+0.274\\,[1,1]', 14, 'start', 352);
-    math(p4, R, 140, '=[' + f3(ATT.out[0]) + ',\\ ' + f3(ATT.out[1]) + ']', 15);
-    label(p4, R, 180, '左下：三条绿箭头接起来，终点就是结果', 'demo-x-ink2', 12);
-    label(p4, R, 204, 't−1 那条最长：它分得最多', 'demo-x-ink2', 12);
-    /* 第 5 段 */
+    label(p4, R, 64, '② 分比例：像按票数分披萨', 'demo-x-ink', 14);
+    var pz = pie(p4, R + 64, 160, 58);
+    /* 每一块写上是哪一步，跟左边的表对得上 */
+    var pzTxt = STEPS.map(function (st) { var tx = label(p4, R + 64, 160, st, 'demo-x-ink', 12, 'middle'); tx.style.fill = '#15171c'; tx.style.fontWeight = '700'; return tx; });
+    label(p4, R + 150, 108, '先把分数缩小一半：', 'demo-x-ink2', 12);
+    label(p4, R + 150, 130, '0.5 / 1 / 0.5', 'demo-x-ink', 12.5);
+    label(p4, R + 150, 156, '再换成加起来 100% 的比例：', 'demo-x-ink2', 12);
+    var pctTxt = tone(p4, R + 150, 178, '', C_INK, 12.5);
+    label(p4, R + 150, 206, '分数高的，分得多，', 'demo-x-ink2', 12);
+    label(p4, R + 150, 226, '但别人也有一份', 'demo-x-ink2', 12);
+    label(p4, R, 258, '论文把这一步叫 softmax', 'demo-x-mut', 11.5);
+    /* 第 5 段：混合 */
     var p5 = group(s);
-    label(p5, R, 64, '一句话：谁和我像，就多听谁的', 'demo-x-ink', 14);
-    label(p5, R, 96, '真实模型里，问题、标签、内容都是学出来的', 'demo-x-ink2', 12);
-    rectBox(p5, R, 120, W, 80, C_ROBOT, C_SURFACE);
-    label(p5, R + 12, 144, '第 14 期论文里的说法', 'demo-x-ink', 12.5);
-    label(p5, R + 12, 168, '模型可以拿历史里「想要的状态」和「实际的状态」', 'demo-x-ink2', 11.5);
-    label(p5, R + 12, 188, '作比较，想办法调整动作（论文引言）', 'demo-x-ink2', 11.5);
+    label(p5, R, 64, '③ 按比例，把三份内容加起来', 'demo-x-ink', 14);
+    math(p5, R, 104, '0.274\\,[1,0]+0.452\\,[0,1]+0.274\\,[1,1]', 14, 'start', 352);
+    math(p5, R, 140, '=[' + f3(ATT.out[0]) + ',\\ ' + f3(ATT.out[1]) + ']', 15);
+    label(p5, R, 180, '左下：三条绿箭头接起来，终点就是结果', 'demo-x-ink2', 12);
+    label(p5, R, 204, 't−1 那条最长：它分得最多', 'demo-x-ink2', 12);
+    /* 第 6 段 */
+    var p6 = group(s);
+    label(p6, R, 64, '一句话：谁和我像，就多听谁的', 'demo-x-ink', 14);
+    label(p6, R, 96, '真实模型里，问题、标签、内容都是学出来的', 'demo-x-ink2', 12);
+    rectBox(p6, R, 120, W, 80, C_ROBOT, C_SURFACE);
+    label(p6, R + 12, 144, '第 14 期论文里的说法', 'demo-x-ink', 12.5);
+    label(p6, R + 12, 168, '模型可以拿历史里「想要的状态」和「实际的状态」', 'demo-x-ink2', 11.5);
+    label(p6, R + 12, 188, '作比较，想办法调整动作（论文引言）', 'demo-x-ink2', 11.5);
     var PC = [C_Q, C_V, C_K];
+    /* 第 t−1 步四格、第 t 步各格的乘法亮出的时刻（念到「1 乘 1 等于 1」…的时刻，WordBoundary 量的） */
+    var C1_COL = [1.5, 2.7, 3.9, 5.0], C2_COL = [2.4, 2.4, 1.6, 2.4];
     function draw(t, clock) {
       var now = nowOf(t, clock);
       qRow.set(ATT.q);
       kRows.forEach(function (r, i) { r.set(ATT.keys[i]); });
-      var a1 = seg(t, 3.9, 4.5), a2 = seg(t, 7.2, 7.8), a3 = seg(t, 7.9, 9.0);
-      c1.forEach(function (c, i) { c.textContent = a1 > 0 ? String(ATT.raw[i]) : ''; setOpacity(c, a1); });
+      /* 左表：打分列算完一步亮一个；正在算的那一行、那一格跟着右边亮 */
+      var scoreAt = [S6.b5 + 5.0, S6.c1 + 6.9, S6.c2 + 4.1];
+      c1.forEach(function (c, i) { var a = seg(t, scoreAt[i], scoreAt[i] + 0.4); c.textContent = a > 0 ? String(ATT.raw[i]) : ''; setOpacity(c, a); });
+      var row = t >= S6.b0 && t < S6.c1 ? 0 : t >= S6.c1 && t < S6.c2 ? 1 : t >= S6.c2 && t < S6.c3 ? 2 : -1;
+      var col = -1;
+      if (row === 0) S6.b.forEach(function (bt, j) { if (t >= bt) col = j; });
+      if (row === 0 && t >= S6.b5) col = -1;
+      if (row === 1) C1_COL.forEach(function (ct, j) { if (t >= S6.c1 + ct) col = j; });
+      if (row === 1 && t >= S6.c1 + 6.4) col = -1;
+      if (row === 2) col = t >= S6.c2 + 1.0 && t < S6.c2 + 2.4 ? 2 : -1;
+      kRows.forEach(function (r, i) { setOpacity(r.g, row < 0 || row === i ? 1 : 0.3); setOpacity(kLabels[i], row < 0 || row === i ? 1 : 0.4); });
+      [qRow].concat(kRows).forEach(function (r, k) {
+        r.cells.forEach(function (c, j) { c.style.strokeWidth = col === j && (k === 0 || k - 1 === row) ? '3' : '1.2'; });
+      });
+      var a2 = seg(t, S6.d + 0.2, S6.d + 0.8), a3 = seg(t, S6.d + 0.9, S6.d + 2.0);
       c2.forEach(function (c, i) { c.textContent = a2 > 0 ? f1(ATT.scaled[i]) : ''; setOpacity(c, a2); });
       bars.forEach(function (b, i) { setW(b, ATT.w[i] * 90 * ease(a3)); wTxt[i].setAttribute('x', (326 + ATT.w[i] * 90 * ease(a3)).toFixed(1)); wTxt[i].textContent = a3 > 0.95 ? Math.round(ATT.w[i] * 100) + '%' : ''; });
-      qRow.cells.forEach(function (c) { c.style.strokeWidth = t > 3.6 && t < 7.0 ? (1.2 + Math.abs(Math.sin(now * 4))).toFixed(1) : 1.2; });
       steps1.forEach(function (c, j) { c.box.style.strokeWidth = Math.floor(now / 1.2) % 3 === j ? 2.8 : 1.3; });
-      /* 第 3 段：饼图从三等份长成 27 / 45 / 27 */
-      var u3 = ease(seg(since(t, clock, 7.0), 0.4, 1.8));
+      /* 第 2 段：标签卡在念到「上下对齐」时往上挪到问题卡正下方；念到「相乘」时出现空的乘积格 */
+      var al = ease(seg(t, S6.b0 + 5.8, S6.b0 + 6.6));
+      gK2.setAttribute('transform', 'translate(0 ' + (22 * (1 - al)).toFixed(1) + ')');
+      setOpacity(gK2, seg(t, S6.b0 + 2.0, S6.b0 + 2.5));
+      setOpacity(gX2, seg(t, S6.b0 + 7.7, S6.b0 + 8.2));
+      prod2.forEach(function (pc, j) {
+        var on = t >= S6.b[j] + 0.9;
+        pc.txt.textContent = on ? prodStr(0, j) : '';
+        pc.box.style.stroke = on && ATT.q[j] * ATT.keys[0][j] ? C_V : C_MUTED;
+        pc.box.style.strokeWidth = on && ATT.q[j] * ATT.keys[0][j] ? '2.2' : '1.3';
+      });
+      var fcol = -1;
+      S6.b.forEach(function (bt, j) { if (t >= bt) fcol = j; });
+      if (t >= S6.b5) fcol = -1;
+      frame2.setAttribute('x', fcol >= 0 ? (BXS[fcol] - 5).toFixed(1) : BXS[0] - 5);
+      setOpacity(frame2, fcol >= 0 ? 1 : 0);
+      setOpacity(sum2, seg(t, S6.b5 + 1.3, S6.b5 + 1.8));
+      setOpacity(note2, seg(t, S6.b5 + 3.6, S6.b5 + 4.1));
+      /* 第 3 段：第 t−1 步按念到的时刻一格一格亮；第 t 步先亮第三格，再亮其余三格 */
+      blocks.forEach(function (bk, n) {
+        var base = n === 0 ? S6.c1 : S6.c2, at = n === 0 ? C1_COL : C2_COL;
+        var hot = t >= S6.c3 + 3.0;  /* 念到「都是 1 的格子」：两边都是 1 的乘积格描绿 */
+        bk.pr.forEach(function (pc, j) {
+          var on = t >= base + at[j], one = ATT.q[j] * ATT.keys[bk.i][j];
+          pc.txt.textContent = on ? String(one) : '';
+          pc.box.style.stroke = on && one ? C_V : C_MUTED;
+          pc.box.style.strokeWidth = on && one && hot ? (2.2 + 0.8 * Math.abs(Math.sin(now * 4))).toFixed(2) : on && one ? '2.2' : '1.3';
+          [bk.q[j], bk.k[j]].forEach(function (c) { c.box.style.strokeWidth = (t >= base + at[j] - 0.1 && t < base + at[j] + 1.0) || (hot && one) ? '2.6' : '1.3'; });
+        });
+        var sAt = n === 0 ? S6.c1 + 6.9 : S6.c2 + 4.1;
+        bk.sum.textContent = t >= sAt ? '= ' + ATT.raw[bk.i] + ' 分' : '';
+        bk.sum.style.fontWeight = n === 0 && t >= S6.c3 + 7.0 ? '700' : '400';
+        bk.sum.style.fill = n === 0 && t >= S6.c3 + 7.0 ? C_V : C_INK;
+      });
+      setOpacity(note3a, seg(t, S6.c3 + 0.3, S6.c3 + 0.8));
+      setOpacity(note3b, seg(t, S6.c4 + 2.8, S6.c4 + 3.3));
+      /* 第 4 段：饼图从三等份长成 27 / 45 / 27 */
+      var u3 = ease(seg(since(t, clock, S6.d), 0.4, 1.8));
       var fr3 = ATT.w.map(function (w) { return 1 / 3 + (w - 1 / 3) * u3; }), ang = -Math.PI / 2;
       pz.set(fr3, PC);
       fr3.forEach(function (f, i) {
@@ -1410,7 +1499,7 @@
         pzTxt[i].setAttribute('y', (160 + 34 * Math.sin(mid) + 4).toFixed(1));
       });
       pctTxt.textContent = u3 > 0.98 ? ATT.w.map(function (w) { return Math.round(w * 100) + '%'; }).join(' / ') : '';
-      var u = ease(seg(since(t, clock, 10.4), 0.3, 2.4)), px = OX, py = OY;
+      var u = ease(seg(since(t, clock, S6.e), 0.3, 2.4)), px = OX, py = OY;
       ATT.vals.forEach(function (v, i) {
         vArr[i].set(OX, OY, OX + v[0] * S, OY - v[1] * S, 8);
         var sx = (u > 0 ? px : OX), sy = (u > 0 ? py : OY), w = u > 0 ? ATT.w[i] : 1;
@@ -1425,7 +1514,8 @@
       outTxt.textContent = u > 0.98 ? '结果 [' + f3(ATT.out[0]) + ', ' + f3(ATT.out[1]) + ']' : '';
       outTxt.setAttribute('x', (OX + ATT.out[0] * S + 10).toFixed(1));
       outTxt.setAttribute('y', (OY - ATT.out[1] * S - 8).toFixed(1));
-      panels(t, [p1, p2, p3, p4, p5]);
+      var ws = [0.3, S6.b0, S6.c1, S6.d, S6.e, S6.f];
+      [p1, p2, p3, p4, p5, p6].forEach(function (p, k) { setOpacity(p, win(t, ws[k], k < 5 ? ws[k + 1] : null)); });
     }
     return { el: s, draw: draw };
   }
@@ -1725,7 +1815,7 @@
       label(p5, R + 12, y + 22, r2[0], 'demo-x-ink', 12.5);
       label(p5, R + 12, y + 43, r2[1], 'demo-x-ink2', 12);
     });
-    label(p5, R, 240, '标的东西不一样，用的是同一类正弦钟（各自原论文）', 'demo-x-mut', 11);
+    label(p5, R, 240, '标记的东西不一样，用的是同一类正弦钟（各自原论文）', 'demo-x-mut', 11);
     function draw(t, clock) {
       var now = nowOf(t, clock);
       var pos = now * 2;
@@ -2495,12 +2585,16 @@
       { at: 10.4, s: '标签越像问题，抄得越多；不像的几乎不抄。' },
       { at: 13.4, s: '每一步拿着自己的问题，同时去查：一次算完，不用排队。' }
     ] },
-    { title: '手算一次：打分、分比例、混合', dur: 16, build: buildSceneAttention, cues: [
+    { title: '手算一次：打分、分比例、混合', dur: 76.3, build: buildSceneAttention, cues: [
       { at: 0.4, s: '只有三步：打分、分比例、按比例混合；数字是编的小例子。' },
-      { at: 3.6, s: '打分：对应位置相乘再相加，三步得 **1 / 2 / 1** 分。' },
-      { at: 7.0, s: '先缩小一半，再换成比例：**27% / 45% / 27%**，像按票数分披萨。' },
-      { at: 10.4, s: '按比例混合三份内容：结果 $[0.548,\\ 0.726]$，第 $t-1$ 步分得最多。' },
-      { at: 13.4, s: '一句话：谁和我像，就多听谁的。' }
+      { at: S6.b0, s: '打分：上下对齐，同一格的两个数相乘。' },
+      { at: S6.b5, s: '四个乘积加起来：$1+0+0+0=1$，第 $t-2$ 步 **1** 分。' },
+      { at: S6.c1, s: '同样算：第 $t-1$ 步 **2** 分，第 $t$ 步 **1** 分。' },
+      { at: S6.c3, s: '两边都是 1 的格子才加分：对上越多，分越高。' },
+      { at: S6.c4, s: '对应位置相乘再相加，叫**点积**。' },
+      { at: S6.d, s: '先缩小一半，再换成比例：**27% / 45% / 27%**，像按票数分披萨。' },
+      { at: S6.e, s: '按比例混合三份内容：结果 $[0.548,\\ 0.726]$，第 $t-1$ 步分得最多。' },
+      { at: S6.f, s: '一句话：谁和我像，就多听谁的。' }
     ] },
     { title: '为什么要先把分数缩小', dur: 16, build: buildSceneScale, cues: [
       { at: 0.4, s: '比的数字越多，分数差得越大：论文每次比 64 个数字。' },
@@ -2589,7 +2683,7 @@
   function buildExplainerDemo(host) {
     K.explainer(host, {
       title: '十七幕动画：从机器人的角度读 Transformer',
-      sub: '约 272 秒自动播放。空格播放/暂停，← → 换幕；写给第一次接触的人：用传话、开会、查资料、评委、钟这些比喻讲，再对照机器人怎么用同一块零件。手算例子与笔记「🚶 具体实例」用的是同一组数字。',
+      sub: '约 332 秒自动播放。空格播放/暂停，← → 换幕；写给第一次接触的人：用传话、开会、查资料、评委、钟这些比喻讲，再对照机器人怎么用同一块零件。手算例子与笔记「🚶 具体实例」用的是同一组数字。',
       ariaLabel: 'Transformer 十七幕讲解动画',
       notes: [
         '取数依据：表 1–4、式 1–3 和 §3、§5、§6 的数字照抄 arXiv 1706.03762 v7（读的是 arXiv 上的 LaTeX 源码）；论文首页写明，注明出处后允许在学术作品里复制它的图表，第 8 幕的附录图就是源文件里的原图。',
@@ -2606,8 +2700,8 @@
   function buildVideoDemo(host) {
     K.video(host, {
       title: '配音讲解视频：从机器人的角度读 Transformer',
-      sub: '15 分 46 秒竖屏视频（1080×1920），中文配音 + 字幕。画面就是上面的十七幕动画，旁白用同样的比喻把每一幕讲细；适合手机上看或转发。',
-      size: '17.6 MB',
+      sub: '16 分 39 秒竖屏视频（1080×1920），中文配音 + 字幕。画面就是上面的十七幕动画，旁白用同样的比喻把每一幕讲细；适合手机上看或转发。',
+      size: '18.4 MB',
       fileName: 'Transformer_讲解视频.mp4'
     });
   }
