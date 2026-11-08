@@ -9,6 +9,9 @@
 个别播放器不去掉 AAC 末尾的填充，接缝处会多出十几毫秒，落在静音里听不出来。
 
 用法：python3 split.py <paper> [段数，默认 3]  ->  out/<paper>/parts/<paper>_<k>of<n>.mp4
+      python3 split.py <paper> --at 211.78,569.045,978.815  ->  在给定时刻附近（±1 s 内、离旁白至少 0.4 s）的关键帧切
+按时间等分的切点常常让码率高的那段超过 30 MiB（ACT 2026-11-08：第 1 幕起有项目页片段，前 445 s 就有 34 MiB）。
+这时按体积挑旁白里 ≥ 0.9 s 的停顿，用 `-force_key_frames` 在停顿中点重编码原片（CRF 19），再用 --at 传进来。
 """
 import json
 import subprocess
@@ -49,7 +52,8 @@ def silences(pcm, sr, min_len=0.5, thr=60.0):
 
 def main():
     paper = sys.argv[1]
-    parts = int(sys.argv[2]) if len(sys.argv) > 2 else 3
+    at = [float(x) for x in sys.argv[3].split(",")] if len(sys.argv) > 3 and sys.argv[2] == "--at" else None
+    parts = len(at) + 1 if at else int(sys.argv[2]) if len(sys.argv) > 2 else 3
     out = HERE / "out" / paper
     src, narr = out / f"{paper}_video.mp4", out / "narration.wav"
     with wave.open(str(narr)) as w:
@@ -62,7 +66,12 @@ def main():
     def margin(k):
         return max((min(k - a, b - k) for a, b in quiet if a <= k <= b), default=-1.0)
     cuts = []
-    for j in range(1, parts):
+    for t in at or []:
+        ok = [k for k in keys if margin(k) >= MARGIN and abs(k - t) <= 1.0]
+        if not ok:
+            sys.exit(f"{t}: ±1 s 内没有离旁白 ≥ {MARGIN} s 的关键帧，先用 -force_key_frames 在这里放一个")
+        cuts.append(min(ok, key=lambda k: abs(k - t)))
+    for j in range(1, parts if not at else 1):
         target = total * j / parts
         for m in (MARGIN, 0.25, 0.08):
             ok = [k for k in keys if margin(k) >= m and (not cuts or k > cuts[-1] + 1) and abs(k - target) <= total / parts / 3]

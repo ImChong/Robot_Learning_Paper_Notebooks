@@ -175,6 +175,13 @@ SUPERMIMIC_NOTE = (
     / "SuperMimic__Scaling_Humanoid_Whole-Body_Control_with_One_Differentiable_World_Model"
     / "SuperMimic__Scaling_Humanoid_Whole-Body_Control_with_One_Differentiable_World_Model.md"
 )
+ACT_NOTE = (
+    ROOT
+    / "papers"
+    / "03_High_Impact_Selection"
+    / "ACT_Learning_Fine-Grained_Bimanual_Manipulation_with_Low-Cost_Hardware"
+    / "ACT_Learning_Fine-Grained_Bimanual_Manipulation_with_Low-Cost_Hardware.md"
+)
 CHIP_NOTE = (
     ROOT
     / "papers"
@@ -430,7 +437,7 @@ EXPLAINER_BUNDLES = (
     "domain_randomization", "quadterrain", "realhumanoid", "asap", "inekf", "berkeley_humanoid",
     "toddlerbot", "exbody", "h2o", "omnih2o", "hover", "maskedmimic", "exbody2", "hugwbc", "homie", "twist", "twist2",
     "falcon", "hdmi", "viral",
-    "doorman", "chip", "idp3", "supermimic",
+    "doorman", "chip", "idp3", "supermimic", "act",
 )
 
 # 幕数由论文决定，不是统一模板：PPO / DeepMimic / AMP / ADD 的核心概念正好各 5 个，
@@ -695,6 +702,12 @@ EXPLAINER_SCENES = {
     # 为什么 3D 更稳（图 4、6、8）各一幕，局限与代码一幕。压成 15 幕会让四处改动的表 III 三组柱子、或图 8 的视角泛化和表 IV 的格子抢同一帧。
     "idp3": (IDP3_NOTE, 18),
     "supermimic": (SUPERMIMIC_NOTE, 18),
+    # ACT 十七幕：问题一幕（精细活与低成本硬件）；ALOHA 的主从臂与关节空间映射一幕、记录什么（4 台相机、主臂关节角、示范长度）一幕；
+    # 算法按第 IV 节的三个设计：复合误差与停顿一幕、动作分块一幕、时间集成一幕（$w_i=e^{-m i}$ 与代码的 $m=0.01$）、人的示范一幕、
+    # CVAE 一幕、编码器（[CLS] + 关节 + k 个动作）一幕、策略的 1202 个 token 一幕、解码器（k 个查询、7 层只用 1 层）一幕；
+    # 实验按第 V 节的 8 个任务、表一、表二各一幕，消融按图 6 (a)(b) 与 (c)(d) 两幕，局限与代码一幕。
+    # 压成 14 幕会让分块的接缝和时间集成的 100 个预测、或编码器的 102 个 token 和策略的 1202 个 token 抢同一帧。
+    "act": (ACT_NOTE, 17),
 
     "humanml3d": (HUMANML3D_NOTE, 12),
 }
@@ -2171,7 +2184,7 @@ def test_narrated_video_placeholders_point_at_files_that_exist():
                  "tf-video", "pi0-video", "pi05-video", "soccer-video", "sonic-video", "gmr-video",
                  "omniretarget-video", "humanml3d-video", "smp-video", "dr-video", "qt-video", "rh-video", "inekf-video", "bh-video",
                  "tb-video", "exbody-video", "h2o-video", "hover-video", "exbody2-video", "hugwbc-video", "homie-video", "doorman-video",
-                 "chip-video", "idp3-video"):
+                 "chip-video", "idp3-video", "act-video"):
         assert demo in seen, f"{demo} 应该挂在对应的论文笔记里"
 
 
@@ -6394,3 +6407,112 @@ def test_supermimic_project_page_clips():
     sheets = _supermimic_var(js, "SHEETS")
     g1_dir = ROOT / "assets/img/papers/supermimic/g1_3d"
     assert {p.name for p in g1_dir.iterdir()} == {m["file"] for m in sheets.values()}
+
+
+def _act_repro(js: str):
+    """act.js 里 /*REPRO*/ … /*/REPRO*/ 之间是我们复现导出的 JSON（不是论文的实验）。"""
+    return json.loads(re.search(r"/\*REPRO\*/(.*?)/\*/REPRO\*/", js, re.S).group(1))
+
+
+def _act_pred(rep, key, q, j):
+    """解码 te 的 base64 uint8：第 q 次查询对第 q + j 步的预测（act.js 的 pred()）。"""
+    raw = base64.b64decode(rep["te"][key + "_pred"])
+    lo, hi = rep["te"][key + "_scale"]
+    return lo + (hi - lo) * raw[q * 100 + j] / 255
+
+
+def test_act_explainer_demos_and_worked_example_share_the_paper_numbers():
+    """ACT：十七幕动画、三个演示、配音旁白与笔记「🚶 具体实例」用同一组数。
+
+    表 I、表 II、表 III、用户研究照抄 arXiv 2304.13705 v1；图 6 (a)–(c) 取自源文件 figures/fm_data.pdf 里被裁掉的原始数据表；
+    m = 0.01、只用第 1 层解码器、32 维的 z 取自官方代码 tonyzhaozh/act @ 742c753。复现的数（成功率、接缝的跳变、第 152 步的
+    100 个预测、KL）以 JSON 嵌在 bundle 里，这里解码后用 Python 再算一遍，并核对笔记与旁白里写的是同一组数。
+    """
+    js = (DEMO_JS_DIR / "act.js").read_text(encoding="utf-8")
+    note = ACT_NOTE.read_text(encoding="utf-8")
+    narration = (ROOT / "scripts" / "paper_video" / "papers" / "act.py").read_text(encoding="utf-8")
+    intro = (ROOT / "scripts" / "paper_video" / "papers" / "act.js").read_text(encoding="utf-8")
+    for line in (
+        "v: { bc: [[34, 3], [17, 1], [1, 0]], bet: [[60, 16], [51, 13], [27, 1]], rt1: [[44, 4], [33, 2], [2, 0]], vinn: [[13, 17], [9, 11], [3, 0]], act: [[97, 82], [90, 60], [86, 50]] } },",
+        "v: { bc: [[5, 0], [1, 0], [1, 0]], bet: [[21, 0], [4, 0], [3, 0]], rt1: [[2, 0], [0, 0], [1, 0]], vinn: [[6, 0], [1, 0], [1, 0]], act: [[93, 76], [90, 66], [32, 20]] } },",
+        "v: { bc: [0, 0, 0], bet: [8, 0, 0], rt1: [4, 0, 0], vinn: [28, 0, 0], act: [92, 96, 88] } },",
+        "v: { bc: [0, 0, 0], bet: [4, 0, 0], rt1: [4, 0, 0], vinn: [20, 0, 0], act: [100, 100, 96] } }",
+        "{ task: '打开杯盖', subs: ['推倒', '抓起', '撬开盖'], bet: [12, 0, 0], act: [100, 96, 84] },",
+        "{ task: '穿魔术贴扎带', subs: ['拿起', '抓尾巴', '穿进去'], bet: [24, 0, 0], act: [92, 40, 20] },",
+        "{ task: '备胶带', subs: ['抓', '切', '交接', '挂上'], bet: [8, 0, 0, 0], act: [96, 92, 72, 64] },",
+        "{ task: '穿鞋', subs: ['拿起', '套上', '托住', '粘好'], bet: [12, 0, 0, 0], act: [100, 92, 92, 92] }",
+        "var FIG6A = { k: [1, 10, 100, 200, 400], act: [1, 21, 44, 42, 41], bc: [1, 1, 24, 25, 20], vinn: [0, 6, 23, 27.25, 37] };",
+        "var FIG6B = { act: [44, 47.3], bc: [25, 29], vinn: [37, 17] };",
+        "var FIG6C = { scripted: [59, 58], human: [35.3, 2] };",
+        "var FIG6D = { zip: [33, 20], cups: [16, 10], slower: 62, n: 6, trials: 3 };",
+        "var PRICE = { viperx: 5600, widowx: 3300, aloha: 18000, alohaAll: 20000, dexpilot: 100000, telekinesis: 18000, shadow: 400000 };",
+        "var DATA = { demos: 50, velcro: 100, sec: [8, 14], steps: [400, 700], min: [10, 20], wall: [30, 60], hz: 50 };",
+        "var PAGE = { chunk: 90, len: [600, 1000] };",
+        "var CANDY = { pick: 10, pull: 8, unwrap: 0, n: 10, candies: [3, 5] };",
+    ):
+        assert line in js, line
+    for k in ("'act-explainer'", "'act-video'", "'act-ensemble'", "'act-tokens'", "'act-results'", "K.video(host"):
+        assert k in js, k
+
+    # 例 1、4：有效步数与 token 数
+    assert (400 // 100, 480 // 32, 640 // 32, 4 * 15 * 20 + 2, 100 + 2, 100 * 14) == (4, 15, 20, 1202, 102, 1400)
+    # 例 2：时间集成的权重（官方代码 m = 0.01，i = 0 最老）
+    w = [math.exp(-0.01 * i) for i in range(100)]
+    s = sum(w)
+    assert (_fmt(s, 2), _fmt(100 * w[0] / s, 2), _fmt(100 * w[-1] / s, 2), _fmt(100 * sum(w[:50]) / s, 0)) == ("63.53", "1.57", "0.58", "62")
+    assert "k = 0.01" not in js and r"w_i = e^{-m\\,i}" in js and "exp_weights = np.exp(-0.01 * np.arange(n))" in note
+    assert "最老的权重 $1/63.53\\approx 1.57\\%$" in note and "最新的是 0.37" in narration and "老的一半一共占 62%" in narration
+    # 例 5：参数量（每层解码器 5,384,832；没用到的 6 层 + is_pad_head）
+    layer = 2 * (3 * 512 * 512 + 3 * 512 + 512 * 512 + 512) + (512 * 3200 + 3200 + 3200 * 512 + 512) + 3 * 1024
+    assert layer == 5384832 and 6 * layer == 32308992
+    rep = _act_repro(js)
+    assert rep["params_all"] == rep["params_used"] + 6 * layer + 513
+    assert f"{rep['params_used']:,}".replace(",", "{,}") in note and f"{rep['params_all']:,}".replace(",", "{,}") in note
+    assert 80e6 < rep["params_all"] < 85e6 and 51e6 < rep["params_used"] < 52e6
+    # 例 6、7、10、11
+    assert (2000 * 40 // 8, 2 * 5600 + 2 * 3300, 86 - 27, 50 - 1, 32 - 3, 20 - 0) == (10000, 17800, 59, 49, 29, 20)
+    assert _fmt((33 / 20 - 1 + 16 / 10 - 1) / 2 * 100, 1) == "62.5" and "$(65\\%+60\\%)/2=62.5\\%$" in note
+    # 复现：成功率、接缝、第 152 步的预测、KL（笔记和旁白写的是同一组数）
+    succ = rep["succ"]
+    assert succ["n"] == 50 and f"{succ['chunk']} / 50" in note and f"{succ['te']} / 50" in note
+    assert f"成功 {succ['chunk']} 次" in narration and f"成功 {succ['te']} 次" in narration
+    ch = rep["chunk"]
+    jumps = [abs(ch["exec"][t] - ch["exec"][t - 1]) for t in (100, 200, 300)]
+    assert _fmt(max(jumps), 3) == _fmt(ch["jump_max"], 3) and f"{ch['jump_max']:.2f}" in narration
+    preds = [_act_pred(rep, "rgrip", q, 152 - q) for q in range(53, 153)]
+    ens = sum(wi * p for wi, p in zip(w, preds, strict=True)) / s
+    assert _fmt(ens, 2) in note and _fmt(max(preds), 2) in note and _fmt(min(preds), 2) in note
+    assert abs(ens - rep["te"]["rgrip_exec"][152]) < 0.01, "离线重算的加权平均应等于回合里真的发出去的目标（量化误差以内）"
+    assert f"{rep['cvae']['kl']:.4f}" in note and f"{rep['cvae']['kl']:.4f}" in narration
+    assert f"{rep['cpu_s']:.2f}" in narration
+    assert len(rep["human"]["rgrip"]) == 50 and len(rep["human"]["close"]) == 50
+    assert f"第 {rep['human']['close_min']} 步到第 {rep['human']['close_max']} 步" in narration
+
+    # 旁白：片头接 Transformer 的片尾预告，片尾只预告下一篇（EgoMimic）；数字之间不只隔一个逗号
+    spoken = re.findall(r'"([^"]*)"\),', narration[narration.index("SCRIPT = [") : narration.index("DISPLAY = [")])
+    assert len(spoken) == 91 and not any("@" in t for t in spoken)
+    assert not any(re.search(r"\d\s*[，,]\s*\d", t) for t in spoken)
+    assert "上一期结尾预告：用 Transformer 一次写出一整段动作" in narration and "下一篇讲 EgoMimic" in narration and "EgoMimic" in intro
+    for bad in ("长什么样", "一行", "调到", "重画", "换成人的", "魔术贴扎带", "数据长", "每一步差一点"):
+        assert not any(bad in t for t in spoken), bad
+    assert "## 🎬 十七幕动画" in note and 'demos: ["act"]' in note and "@@" not in note
+    assert "/*VIDEO_" not in js
+
+
+def test_act_project_page_clips():
+    """ACT：真机画面剪自项目页的视频（9 段，按幕懒加载），总量不失控；出处写在笔记里。"""
+    js = (DEMO_JS_DIR / "act.js").read_text(encoding="utf-8")
+    clip_dir = ROOT / "assets/img/papers/act/clips"
+    used = set(re.findall(r"(?:projClip|seqClip)\(\w+, '(\w+)'", js))
+    used |= set(re.findall(r"\['(battery|cup|tape|shoe)', '(?:cup)'", js))
+    used |= {"battery", "cup", "tape", "shoe", "reactive", "distract"} if "['battery', 'cup', 'tape', 'shoe'].map" in js else set()
+    assert used == {"hero", "teleop", "obs", "battery", "cup", "tape", "shoe", "reactive", "distract"}
+    assert {p.name for p in clip_dir.iterdir()} == {f"{u}.{ext}" for u in used for ext in ("mp4", "webp")}
+    assert sum(p.stat().st_size for p in clip_dir.iterdir()) < 3.0e6
+    block = js[js.index("var clip = seqClip(s, 'teleop'") : js.index("]);", js.index("var clip = seqClip(s, 'teleop'"))]
+    total = sum(float(x) for x in re.findall(r"\[([0-9.]+), '", block))
+    assert abs(total - _mp4_seconds(clip_dir / "teleop.mp4")) < 0.1, total
+    note = ACT_NOTE.read_text(encoding="utf-8")
+    assert "剪自[项目页](https://tonyzhaozh.github.io/aloha/)的视频" in note
+    sim = ROOT / "assets/img/papers/act/sim"
+    assert {p.name for p in sim.iterdir()} == {"te_ep0.webp", "chunk_ep0.webp", "top6.webp"}
