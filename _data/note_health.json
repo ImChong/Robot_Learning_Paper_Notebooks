@@ -1,0 +1,59 @@
+{
+  "max": 6,
+  "items": [
+    {
+      "key": "metadata",
+      "zh": "元数据与来源",
+      "en": "Metadata & source",
+      "hint_zh": "标题、基本信息表、可追溯的原文链接与发表时间",
+      "hint_en": "Title, basic-info table, a traceable paper link and its date"
+    },
+    {
+      "key": "skeleton",
+      "zh": "阅读骨架",
+      "en": "Reading skeleton",
+      "hint_zh": "研究问题、核心方法、实验 / 结果、局限 / 结论四组小节都有实质内容",
+      "hint_en": "Problem, method, results and limitations sections with real content"
+    },
+    {
+      "key": "verification",
+      "zh": "原文核验",
+      "en": "Full-text check",
+      "hint_zh": "front matter 明确记下 original_check: done 与核验日期",
+      "hint_en": "Front matter records original_check: done with a date"
+    },
+    {
+      "key": "animation",
+      "zh": "动画讲解",
+      "en": "Explainer animation",
+      "hint_zh": "能加载的分镜动画或交互演示，空占位不算",
+      "hint_en": "A storyboard animation or interactive demo that actually loads"
+    },
+    {
+      "key": "video",
+      "zh": "讲解视频",
+      "en": "Explainer video",
+      "hint_zh": "能播放的讲解视频：播放器已注册、mp4 在仓库里",
+      "hint_en": "A playable explainer video whose mp4 is in the repository"
+    },
+    {
+      "key": "example",
+      "zh": "具体实例",
+      "en": "Worked example",
+      "hint_zh": "带数字、能逐步核对的具体实例小节",
+      "hint_en": "A worked example with concrete numbers you can check"
+    }
+  ],
+  "status": {
+    "stub": {
+      "zh": "占位稿",
+      "en": "stub",
+      "cap": 2
+    },
+    "draft": {
+      "zh": "草稿",
+      "en": "draft",
+      "cap": 4
+    }
+  }
+}
