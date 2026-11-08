@@ -6196,8 +6196,8 @@ def test_idp3_explainer_demos_and_worked_example_share_the_paper_numbers():
     assert "手臂关节平均变化 0.011 rad，二阶差分 0.004" in note and "二阶差分只有 0.004" in narration
     # CPU 推理与开环误差（例 10）
     assert "4 核 CPU 上每次 0.167 s" in note and "一次推理 0.167 秒" in narration
-    assert 'var ERR = {"waist": 0.0013, "head": 0.0016, "larm": 0.0051, "rarm": 0.0053, "rhand": 0.007, "lhand": 0.0054};' in js
-    assert "腰 0.0013、头 0.0016、左臂 0.0051、右臂 0.0053、右手 0.0070、左手 0.0054" in note
+    assert 'var ERR = {"waist": 0.0013, "head": 0.0016, "larm": 0.0051, "rarm": 0.0053, "lhand": 0.007, "rhand": 0.0054};' in js
+    assert "腰 0.0013、头 0.0016、左臂 0.0051、右臂 0.0053、左手 0.0070、右手 0.0054" in note
 
     # 旁白：片头三句 + 18 幕各五段 + 片尾五句；片尾只预告下一篇（Transformer）；绕开多音字与会被切错的词（用 WordBoundary 对照 jieba 查过）
     spoken = re.findall(r'"([^"]*)"\),', narration[narration.index("SCRIPT = [") : narration.index("DISPLAY = [")])

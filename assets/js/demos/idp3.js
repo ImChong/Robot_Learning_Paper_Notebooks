@@ -147,7 +147,7 @@
       x0: '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' }
   };
   /* 开环预测和示范记录的平均绝对误差（541 帧 × 第 1–15 步）与 CPU 推理时间（4 线程，我们的机器） */
-  var ERR = {"waist": 0.0013, "head": 0.0016, "larm": 0.0051, "rarm": 0.0053, "rhand": 0.007, "lhand": 0.0054};
+  var ERR = {"waist": 0.0013, "head": 0.0016, "larm": 0.0051, "rarm": 0.0053, "lhand": 0.007, "rhand": 0.0054};
   var CPU_S = 0.167;
   var WAIST = [0.039000000804662704, 0.04100000113248825, 0.09700000286102295, 0.15600000321865082, 0.19099999964237213, 0.20999999344348907, 0.20999999344348907, 0.20999999344348907, 0.210999995470047, 0.21199999749660492, 0.21199999749660492, 0.21199999749660492, 0.21299999952316284, 0.21400000154972076, 0.22300000488758087, 0.2370000034570694, 0.2639999985694885, 0.29100000858306885, 0.32199999690055847, 0.35100001096725464, 0.37700000405311584, 0.4000000059604645, 0.4230000078678131, 0.4429999887943268, 0.46299999952316284, 0.4819999933242798, 0.49799999594688416, 0.5149999856948853, 0.531000018119812, 0.5509999990463257, 0.5690000057220459, 0.5830000042915344, 0.5929999947547913, 0.6000000238418579, 0.6050000190734863, 0.6069999933242798, 0.6069999933242798, 0.6069999933242798, 0.6069999933242798, 0.6079999804496765, 0.6079999804496765, 0.6079999804496765, 0.6079999804496765, 0.6079999804496765, 0.6079999804496765, 0.6079999804496765, 0.6079999804496765, 0.6079999804496765, 0.6079999804496765, 0.6079999804496765, 0.6079999804496765, 0.6079999804496765, 0.6079999804496765, 0.6079999804496765, 0.6079999804496765, 0.6079999804496765, 0.609000027179718, 0.6110000014305115, 0.6129999756813049, 0.6140000224113464, 0.6140000224113464, 0.6140000224113464, 0.6140000224113464, 0.6140000224113464, 0.6140000224113464, 0.6140000224113464, 0.6140000224113464, 0.6140000224113464, 0.6140000224113464, 0.6140000224113464, 0.6140000224113464, 0.6140000224113464, 0.6140000224113464, 0.6140000224113464, 0.6140000224113464, 0.6140000224113464, 0.6140000224113464, 0.6140000224113464, 0.6140000224113464, 0.6140000224113464, 0.6140000224113464, 0.6140000224113464, 0.6140000224113464, 0.6140000224113464, 0.6140000224113464, 0.6140000224113464, 0.6140000224113464, 0.6140000224113464, 0.6140000224113464, 0.6140000224113464, 0.6140000224113464, 0.6140000224113464, 0.6140000224113464, 0.6140000224113464, 0.6140000224113464, 0.6140000224113464, 0.6140000224113464, 0.6140000224113464, 0.6140000224113464, 0.6140000224113464, 0.6140000224113464, 0.6140000224113464, 0.6140000224113464, 0.6140000224113464, 0.6140000224113464, 0.6140000224113464, 0.6140000224113464, 0.6150000095367432, 0.6169999837875366, 0.6200000047683716, 0.621999979019165, 0.621999979019165, 0.621999979019165, 0.6230000257492065, 0.6230000257492065, 0.6230000257492065, 0.6230000257492065, 0.6230000257492065, 0.6230000257492065, 0.6230000257492065, 0.6230000257492065, 0.6230000257492065, 0.6230000257492065, 0.6230000257492065, 0.6230000257492065, 0.6230000257492065, 0.6230000257492065, 0.6230000257492065, 0.6230000257492065, 0.6230000257492065, 0.6230000257492065, 0.6230000257492065, 0.6230000257492065, 0.6230000257492065, 0.6230000257492065, 0.6230000257492065, 0.6230000257492065, 0.6230000257492065, 0.6230000257492065, 0.6230000257492065, 0.6230000257492065, 0.6230000257492065, 0.6230000257492065, 0.6230000257492065, 0.6230000257492065, 0.6230000257492065, 0.6230000257492065, 0.6230000257492065, 0.6230000257492065, 0.6230000257492065, 0.6230000257492065, 0.6230000257492065, 0.6230000257492065, 0.6230000257492065, 0.6230000257492065, 0.6230000257492065, 0.625, 0.6290000081062317, 0.6320000290870667, 0.6320000290870667, 0.6320000290870667, 0.6320000290870667, 0.6320000290870667, 0.6320000290870667, 0.6320000290870667, 0.6309999823570251, 0.6309999823570251, 0.625, 0.6140000224113464, 0.597000002861023, 0.5720000267028809, 0.5419999957084656, 0.5120000243186951, 0.4860000014305115, 0.45899999141693115, 0.4350000023841858, 0.4180000126361847, 0.4020000100135803, 0.38600000739097595, 0.3709999918937683, 0.3630000054836273, 0.35899999737739563, 0.35600000619888306, 0.3540000021457672, 0.3529999852180481, 0.3529999852180481, 0.3529999852180481, 0.3529999852180481, 0.3529999852180481, 0.3529999852180481, 0.3529999852180481, 0.3529999852180481, 0.3529999852180481, 0.3529999852180481, 0.3529999852180481, 0.3529999852180481, 0.3529999852180481, 0.3529999852180481, 0.3529999852180481, 0.3529999852180481, 0.3529999852180481, 0.3529999852180481, 0.3529999852180481, 0.3529999852180481, 0.3529999852180481, 0.3529999852180481, 0.3529999852180481, 0.35199999809265137, 0.34700000286102295, 0.3400000035762787, 0.3319999873638153, 0.32600000500679016, 0.32199999690055847, 0.3190000057220459, 0.31700000166893005, 0.31700000166893005, 0.31700000166893005, 0.31700000166893005, 0.31700000166893005, 0.31700000166893005, 0.31700000166893005, 0.31700000166893005, 0.31700000166893005, 0.31700000166893005, 0.31700000166893005, 0.31700000166893005, 0.31700000166893005, 0.31700000166893005, 0.31700000166893005, 0.31700000166893005, 0.31700000166893005, 0.31700000166893005, 0.31700000166893005, 0.31700000166893005, 0.31700000166893005, 0.31700000166893005, 0.31700000166893005, 0.31700000166893005, 0.31700000166893005, 0.31700000166893005, 0.31700000166893005, 0.31700000166893005, 0.31700000166893005, 0.31700000166893005, 0.31700000166893005, 0.31700000166893005, 0.31700000166893005, 0.31700000166893005, 0.31700000166893005, 0.31700000166893005, 0.31700000166893005, 0.31700000166893005, 0.31700000166893005, 0.31700000166893005, 0.31700000166893005, 0.31700000166893005, 0.31700000166893005, 0.31700000166893005, 0.31700000166893005, 0.31700000166893005, 0.31700000166893005, 0.31700000166893005, 0.31700000166893005, 0.31700000166893005, 0.31700000166893005, 0.31700000166893005, 0.31700000166893005, 0.3160000145435333, 0.3160000145435333, 0.3160000145435333, 0.31299999356269836, 0.3070000112056732, 0.29899999499320984, 0.2930000126361847, 0.28999999165534973, 0.289000004529953, 0.28600001335144043, 0.28299999237060547, 0.2770000100135803, 0.2709999978542328, 0.2669999897480011, 0.2639999985694885];
 var SIDE_RHAND = 'ygQfBssEIAa2BC4GowRABpwETgaRBFMGhgRRBn4ETwZ3BE8GcwRPBm4ETwZqBFAGaQRPBmkETwZoBFcGZgRjBmEEdgZiBIQGaQSOBnYElQaHBJkGmgSdBrAEpAbHBLIG4gTCBvsE1QYQBeoGIwUABzQFFgdHBS4HWAVIB2gFXwd1BXEHgAWDB4cFmAeIBaoHiAW2B4UFvweFBcUHhgXIB4YFyweGBc0HhAXPB4MF0AeDBdAHgwXQB4MF0AeCBdMHggXTB4IF1QeDBdgHgwXcB4YF3weGBeEHiAXhB4kF4weIBecHiAXrB4oF8AeIBfIHhgX0B4UF+AeHBfoHiAX8B4cF/QeHBf4HhgX/B4cF/weIBQAIiAUDCIcFAwiHBQQIhgUGCIUFBwiEBQkIhAUJCIQFCQiEBQkIhAUKCIQFCwiCBQ0IgAUOCH4FEwh9BRYIfgUZCH4FGgh/BRoIfgUbCH0FHwh8BSIIfAUkCHwFJwh7BSoIfAUsCHsFLwh8BTAIfQUyCH4FMwh+BTMIgAU0CH8FNAiABTQIggUyCIYFLwiMBSYIlwUbCKsFCwjBBfoH0gXtB+EF5QfsBeAH9AXbB/0F1gcDBtMHCAbRBw4GzQcVBsoHGgbHByEGwwcsBr0HNga6B0IGuQdQBroHXQa8B2kGvgd1BsEHfgbEB4gGxweRBsoHmQbLB6AG0AelBtUHqwbaB7EG3we3BuMHugbmB78G6AfEBugHyQbmB80G5QfQBuMH1AbhB9gG3wfbBtwH3gbcB+IG2gfpBtQH8gbRB/MG0Af7BsoH/wbJB/8GyQf/BskH/wbJBwAHxQcDB7sHAgewB/sGpQf0BpAH8gZvB/AGTwftBjAH6gYTB+kG/wblBvUG4QbyBtsG8gbSBu4GyAbmBr0G1gatBsAGnQaiBosGhAZ7BmsGaAZNBlcGMQZIBhwGOgYHBiwG7gUgBtoFGAbKBRIGvgUNBrMFCQarBQcGqgUFBqoFBQaqBQoGoQUVBpUFIQaMBS4GhwU+BoQFSgaEBVQGhAVdBn8FZAZ6BWoGdAVwBnIFdwZyBXoGdQV9BnYFfgZzBX4GcQV+Bm0FewZsBXkGaQV2BmgFdQZjBW8GYAVpBloFYgZRBVwGTAVYBksFVgZIBVMGRgVQBkkFTgZOBU4GTgVNBk4FTAZQBU0GTAVNBkkFTwZBBVMGNgVZBicFXQYfBVwGKAVWBj8FSwZfBT4GgwUtBqoFGAbTBf4F/AXlBRwGywU4BrQFSwabBV0GhwVrBnQFeAZkBX8GVwWDBk0FhgZGBYUGQAWDBjwFgQY4BYAGNAWCBjAFgwYuBYMGLAWDBioFgwYnBYYGJQWIBiIFigYhBYwGHwWNBh8FjgYfBY4GHAWRBhoFkwYXBZUGFgWWBhQFmAYRBZoGDwWbBgwFmwYJBZ0GCAWeBgUFnQYEBZ0GAQWcBgAFlQb7BJAG+ASMBvQEiQbwBIoG7ASIBusEhAboBH4G5AR4BuQEcwbhBHEG';
@@ -804,7 +804,7 @@ var SIDE_RHAND = 'ygQfBssEIAa2BC4GowRABpwETgaRBFMGhgRRBn4ETwZ3BE8GcwRPBm4ETwZqBF
     s.appendChild(svgText(24, 26, '上半身 25 个自由度，腿锁住，站在推车上', 'demo-x-ink2', 13.5));
     var g1 = gr1Front(s), K0 = 0.78, OX = 36, OY = 36;
     function at(name) { var p = FRONT.labels[name]; return [OX + p[0] * K0, OY + p[1] * K0]; }
-    label(s, OX + 117, OY + FRONT.cam.h * K0 + 14, 'GR-1（我们按示范的关节角渲染）', 'demo-x-mut', 10.5, 'middle');
+    label(s, OX + 117, OY + FRONT.cam.h * K0 + 14, 'GR-1（按示范的关节角渲染，头固定）', 'demo-x-mut', 10.5, 'middle');
     var groups = [
       ['link_waist_pitch'], ['link_head_yaw'],
       ['l_upper_arm_pitch', 'r_upper_arm_pitch', 'l_lower_arm_pitch', 'r_lower_arm_pitch', 'l_hand_yaw', 'r_hand_yaw'],
@@ -845,7 +845,7 @@ var SIDE_RHAND = 'ygQfBssEIAa2BC4GowRABpwETgaRBFMGhgRRBn4ETwZ3BE8GcwRPBm4ETwZqBF
     label(p2, R + 100, floor2 + 22, '用腿站着：要自己保持平衡', 'demo-x-ink2', 11.5, 'middle');
     label(p2, R + 320, floor2 + 22, '站在推车上：腰前倾也稳', 'demo-x-ink2', 11.5, 'middle');
     label(p2, R, 296, 'HumanPlus、OmniH2O 用上了腿，受硬件限制，移动操作仍然有限', 'demo-x-mut', 11.5);
-    label(p2, R, 318, '论文：这套系统和 3D 算法，有腿、没腿的人形都能用', 'demo-x-ink2', 12);
+    label(p2, R, 318, '论文认为：也能推广到有腿、没腿的人形', 'demo-x-ink2', 12);
     label(p2, R, 340, '两台 GR-1 是我们的渲染，晃动和推车是示意', 'demo-x-mut', 11);
     /* 第 3 段：每臂 5 个关节 */
     var p3 = group(s);
@@ -881,9 +881,9 @@ var SIDE_RHAND = 'ygQfBssEIAa2BC4GowRABpwETgaRBFMGhgRRBn4ETwZ3BE8GcwRPBm4ETwZqBF
     /* 第 5 段：29 / 25 / 32 */
     var p5 = group(s);
     label(p5, R, 56, '自由度的几个数', 'demo-x-ink', 14);
-    /* 一格一个自由度，按部位上色；引言的 29 没写怎么拆，画成一整段 */
+    /* 一格一个自由度，按部位上色；引言的 29、3.1 节的 25 都没写怎么拆（3.1 节只说头、腰、手臂、手），画成一整段 */
     var DU = 8.6, LEG = '#7d8590';
-    var rowsDOF = [['引言', [[29, C_WARN]]], ['3.1 节', [[1, C_WAIST], [2, C_HEAD], [10, C_ARM], [12, C_HAND]]],
+    var rowsDOF = [['引言', [[29, C_WARN]]], ['3.1 节', [[25, C_ACCENT]]],
       ['URDF', [[12, LEG], [3, C_WAIST], [3, C_HEAD], [14, C_ARM]]], ['代码：状态', [[3, C_WAIST], [3, C_HEAD], [14, C_ARM], [12, C_HAND]]],
       ['代码：动作', [[1, C_WAIST], [2, C_HEAD], [10, C_ARM], [12, C_HAND]]]];
     var numG = rowsDOF.map(function (row, k) {
@@ -924,7 +924,7 @@ var SIDE_RHAND = 'ygQfBssEIAa2BC4GowRABpwETgaRBFMGhgRRBn4ETwZ3BE8GcwRPBm4ETwZqBF
       g1c.put(cartX, top, FRONT.cam.w * KC, 0);
       var tableY = top + handY * KC + 30;
       table.setAttribute('y', tableY.toFixed(1)); setLine(legT1, R + 26, tableY + 10, R + 26, floorY); setLine(legT2, R + 234, tableY + 10, R + 234, floorY);
-      tLab.setAttribute('y', (tableY - 10).toFixed(1)); tLab.textContent = '桌子比最低时高 ' + Math.round(rise / KC / 230 * 100) + ' cm';
+      tLab.setAttribute('y', (tableY - 10).toFixed(1)); tLab.textContent = '桌子（示意）';
       setOpacity(p5, win(t, 13.4));
       numG.forEach(function (g, k) { setOpacity(g, seg(since(t, clock, 13.4), 0.2 + k * 0.4, 0.6 + k * 0.4)); });
     }
@@ -954,7 +954,7 @@ var SIDE_RHAND = 'ygQfBssEIAa2BC4GowRABpwETgaRBFMGhgRRBn4ETwZ3BE8GcwRPBm4ETwZqBF
     label(p1, R + 170, 144, '和彩色图一起拍', 'demo-x-mut', 11.5);
     var p2 = group(s);
     label(p2, R, 56, '为什么是 L515', 'demo-x-ink', 14);
-    var cams = [['RealSense D435', '深度不够准：DP3、RISE 用它效果差', 0], ['Livox Mid-360', '分辨率和频率跟不上实时操作', 0], ['RealSense L515', '能用，但点云也不完全准', 1]];
+    var cams = [['RealSense D435', '深度不够准：DP3 用它效果差（论文引 DP3、RISE）', 0], ['Livox Mid-360', '分辨率和频率跟不上实时操作', 0], ['RealSense L515', '能用，但点云也不完全准', 1]];
     var camG = cams.map(function (c, k) {
       var g = group(p2), y = 78 + k * 60;
       rectBox(g, R, y, 352, 52, c[2] ? C_IDP3 : C_BAD, C_SURFACE);
@@ -1047,10 +1047,10 @@ var SIDE_RHAND = 'ygQfBssEIAa2BC4GowRABpwETgaRBFMGhgRRBn4ETwZ3BE8GcwRPBm4ETwZqBF
 
   /* ── scene 5: 遥操作：Vision Pro 跟头和手腕 ── */
   function buildSceneTeleop() {
-    var s = sceneSvg('左边是项目页的遥操作视频；右边依次是：Vision Pro 的三组数据流向手臂、腰和头、手；一条两节的手臂跟着目标点走（Relaxed IK 的示意）；' +
+    var s = sceneSvg('左边是项目页的遥操作视频；右边依次是：Vision Pro 的三组数据流向手臂、腰和头、手；GR-1 侧面回放，右手（绿点）跟着领先 6 帧的目标（黄圈）走（Relaxed IK 的示意）；' +
       '一个人往前探头时，GR-1（按 URDF 渲染）的腰和头按公式前倾、低头，虚线是它的视线；画面传回头显；人和机器人的动作差 0.5 s 的两条曲线');
     s.appendChild(svgText(24, 26, '遥操作：人戴 Vision Pro，机器人跟着做', 'demo-x-ink2', 13.5));
-    var clip = projClip(s, 'teleop', 24, 44, 380, 214, '项目页视频（4 倍速）：全上半身遥操作');
+    var clip = projClip(s, 'teleop', 24, 44, 380, 214, '项目页视频（未标倍速）：全上半身遥操作');
     label(s, 24, 300, '腰也跟着人动：工作空间大很多', 'demo-x-ink2', 11.5);
     label(s, 24, 320, '桌子高低不同时尤其有用（引言）', 'demo-x-mut', 11);
     var R = 424;
@@ -1084,7 +1084,7 @@ var SIDE_RHAND = 'ygQfBssEIAa2BC4GowRABpwETgaRBFMGhgRRBn4ETwZ3BE8GcwRPBm4ETwZqBF
     var gDot = dotAt(p2, 0, 0, 5, C_WARN);
     readHint(p2, R + 210, 282, '横轴误差，纵轴代价', 10.5, 160);
     label(p2, R, 290, 'GR-1：我们按示范第 1 段的关节角渲染', 'demo-x-mut', 11);
-    tone(p2, R, 312, '○ 人的手腕（目标；示意：领先两帧）', C_WARN, 11.5);
+    tone(p2, R, 312, '○ 人的手腕（目标；示意：领先 6 帧）', C_WARN, 11.5);
     tone(p2, R, 334, '● 机器人的右手', C_HAND, 11.5);
     /* 第 5 幕的 GR-1 侧面（我们渲染，`r3d/make_waist.py`）：人往前探 s = 0…0.30 m 分 25 帧，每帧腰、头俯仰（度）、头和 0.5 m 外视线在贴图里的像素 */
     var WAIST = { cw: 240, ch: 520, n: 25, waistX: 90, ground: 506, wd: [0.0, 1.1, 2.21, 3.31, 4.41, 5.5, 6.59, 7.68, 8.76, 9.83, 10.9, 11.96, 13.01, 14.06, 15.09, 16.11, 17.13, 18.13, 19.12, 20.1, 21.07, 22.02, 22.96, 23.89, 24.81], hd: [30.0, 30.0, 30.0, 30.0, 30.0, 30.0, 30.0, 30.0, 30.0, 30.0, 29.1, 28.04, 26.99, 25.94, 24.91, 23.89, 22.87, 21.87, 20.88, 19.9, 18.93, 17.98, 17.04, 16.11, 15.19], hx: [122.1, 124.3, 126.6, 128.8, 131.0, 133.1, 135.3, 137.4, 139.5, 141.6, 143.7, 145.8, 147.8, 149.9, 151.9, 153.9, 155.9, 157.8, 159.7, 161.6, 163.4, 165.2, 166.9, 168.7, 170.3], hy: [85.1, 85.7, 86.4, 87.2, 87.9, 88.7, 89.6, 90.4, 91.3, 92.3, 92.8, 93.2, 93.7, 94.2, 94.7, 95.3, 95.9, 96.5, 97.1, 97.8, 98.5, 99.2, 99.9, 100.7, 101.5], gx: [252.0, 252.8, 253.5, 254.1, 254.7, 255.2, 255.7, 256.1, 256.5, 256.8, 258.6, 260.7, 262.8, 264.8, 266.8, 268.8, 270.8, 272.7, 274.6, 276.5, 278.3, 280.1, 281.8, 283.6, 285.2], gy: [160.1, 163.2, 166.4, 169.5, 172.7, 175.8, 179.0, 182.1, 185.3, 188.4, 189.2, 189.6, 190.1, 190.6, 191.1, 191.7, 192.3, 192.9, 193.5, 194.2, 194.9, 195.6, 196.3, 197.1, 197.9] , nx: [90.3, 92.5, 94.8, 97.0, 99.2, 101.4, 103.6, 105.8, 107.9, 110.1, 112.2, 114.3, 116.4, 118.4, 120.4, 122.4, 124.4, 126.3, 128.2, 130.1, 131.9, 133.7, 135.5, 137.2, 138.9], ny: [86.2, 86.2, 86.2, 86.4, 86.5, 86.7, 87.0, 87.2, 87.5, 87.9, 88.3, 88.7, 89.2, 89.7, 90.2, 90.8, 91.4, 92.0, 92.6, 93.3, 94.0, 94.7, 95.4, 96.2, 97.0] };
@@ -1109,7 +1109,7 @@ var SIDE_RHAND = 'ygQfBssEIAa2BC4GowRABpwETgaRBFMGhgRRBn4ETwZ3BE8GcwRPBm4ETwZqBF
     label(p3, R + 190, 156, 'h：头高 · s：往前探多少', 'demo-x-ink2', 11.5);
     label(p3, R + 190, 178, '假设身高 1.70 m、腰高 0.53 倍', 'demo-x-mut', 11);
     var ex = rich(p3, R + 190, 214, '', 12, 'demo-x-ink2', 'start', 170);
-    label(p3, R + 190, 238, '头俯仰 = 总俯仰 − 腰；截到 ±30°', 'demo-x-mut', 11);
+    label(p3, R + 190, 238, '头 = 总俯仰 − 腰；都截到 ±30°', 'demo-x-mut', 11);
     tone(p3, R + 190, 270, '橙线与竖虚线的夹角：腰角', C_WAIST, 11);
     tone(p3, R + 190, 290, '蓝虚线：GR-1 头的视线', C_HEAD, 11);
     var p4 = group(s);
@@ -1120,16 +1120,16 @@ var SIDE_RHAND = 'ygQfBssEIAa2BC4GowRABpwETgaRBFMGhgRRBn4ETwZ3BE8GcwRPBm4ETwZqBF
     label(p4, R + 178, 100, '彩色图', 'demo-x-ink2', 11.5, 'middle');
     label(p4, R, 196, 'JPEG 质量 40（代码），沉浸式反馈', 'demo-x-ink2', 12);
     label(p4, R, 220, '借鉴 OpenTeleVision（一套用 Vision Pro 看机器人画面的遥操作系统）', 'demo-x-mut', 11.5);
-    /* 手指：人手弯曲 40°–170° 线性映射到灵巧手的 0–1000（代码）；角度来回变，两个刻度上的点一起走 */
+    /* 手指：四指弯曲 40°–170° 线性映射到灵巧手的 0–1000（代码 retarget.py；拇指弯曲 15°–30°、旋转 80°–150° 另算）；角度来回变，两个刻度上的点一起走 */
     var FG = { x0: R + 100, x1: R + 300 };
-    label(p4, R, 262, '人手弯曲', 'demo-x-ink2', 11.5); label(p4, R, 302, '灵巧手指令', 'demo-x-ink2', 11.5);
+    label(p4, R, 262, '四指弯曲', 'demo-x-ink2', 11.5); label(p4, R, 302, '灵巧手指令', 'demo-x-ink2', 11.5);
     p4.appendChild(paint(svgEl('rect', { x: FG.x0, y: 252, width: FG.x1 - FG.x0, height: 12, rx: 6 }), C_SURFACE, C_BORDER));
     p4.appendChild(paint(svgEl('rect', { x: FG.x0, y: 292, width: FG.x1 - FG.x0, height: 12, rx: 6 }), C_SURFACE, C_BORDER));
     label(p4, FG.x0 - 8, 262, '40°', 'demo-x-mut', 11, 'end'); label(p4, FG.x1 + 8, 262, '170°', 'demo-x-mut', 11);
     label(p4, FG.x0 - 8, 302, '0', 'demo-x-mut', 11, 'end'); label(p4, FG.x1 + 8, 302, '1000', 'demo-x-mut', 11);
     var fgLink = hline(p4, 0, 264, 0, 292, C_MUTED, 1.2, '3 3'), fgA = dotAt(p4, 0, 258, 6, C_WARN), fgB = dotAt(p4, 0, 298, 6, C_HAND);
     var fgV = label(p4, 0, 243, '', 'demo-x-ink', 11.5, 'middle');
-    label(p4, R, 344, '关节目标再过一道滤波器，动作更平稳（代码）', 'demo-x-mut', 11);
+    label(p4, R, 344, '腰、头、手臂的目标再过一道滤波器，手指不用（代码）', 'demo-x-mut', 11);
     var p5 = group(s);
     label(p5, R, 56, '延迟约 0.5 s', 'demo-x-ink', 14);
     var px0 = R + 10, px1 = R + 350, pyc = 170;
@@ -1161,7 +1161,7 @@ var SIDE_RHAND = 'ygQfBssEIAa2BC4GowRABpwETgaRBFMGhgRRBn4ETwZ3BE8GcwRPBm4ETwZqBF
       setLine(wRef, px, py, px, py - 64); setLine(torso, px, py, wx0 + KW * WAIST.nx[wk], wy0 + KW * WAIST.ny[wk]);
       var hx = wx0 + KW * WAIST.hx[wk], hy = wy0 + KW * WAIST.hy[wk];
       setLine(gazeL, hx, hy, hx + 0.4 * KW * (WAIST.gx[wk] - WAIST.hx[wk]), hy + 0.4 * KW * (WAIST.gy[wk] - WAIST.hy[wk]));
-      ang.textContent = '腰 ' + f1(WAIST.wd[wk]) + '° · 头 ' + f1(WAIST.hd[wk]) + '°（s = ' + f2(sv) + ' m）';
+      ang.textContent = '腰 ' + f1(WAIST.wd[wk]) + '° · 头 ' + f1(WAIST.hd[wk]) + '°（s = ' + f2(sv) + ' m，设共低头 ' + TELE.total + '°）';
       ex.setText('例：h = 1.55、s = 0.30 → **' + f1(waistDeg(TELE.headZ, TELE.stoop)) + '°**');
       setOpacity(p4, win(t, 10.4, 13.4));
       f4.at(now, [R + 124, 132], [R + 232, 132], true);
@@ -1188,7 +1188,7 @@ var SIDE_RHAND = 'ygQfBssEIAa2BC4GowRABpwETgaRBFMGhgRRBn4ETwZ3BE8GcwRPBm4ETwZqBF
   var TABLE_TOP = [0.75, 0.30, -0.11];
   function sideTableLine(parent) {
     var g = group(parent);
-    var t1 = label(g, 0, 0, '桌子', 'demo-x-ink', 11.5), t2 = label(g, 0, 0, '高度按点云估', 'demo-x-mut', 11);
+    var t1 = label(g, 0, 0, '桌子（示意）', 'demo-x-ink', 11.5), t2 = label(g, 0, 0, '比点云低约 3 cm', 'demo-x-mut', 11);
     return { g: g, t1: t1, t2: t2 };
   }
   function placeTable(tb, ox, oy, k) {
@@ -1198,7 +1198,7 @@ var SIDE_RHAND = 'ygQfBssEIAa2BC4GowRABpwETgaRBFMGhgRRBn4ETwZ3BE8GcwRPBm4ETwZqBF
   }
   function buildSceneData() {
     var s = sceneSvg('左边是我们按示范记录的关节角渲染的 GR-1 侧面，来回播放倒水示范的第 1 段，右上角是同一帧机器人自己相机的彩色图；右边依次是：' +
-      '一帧观测的组成；右臂五个关节在整段示范里的动作曲线和当前帧的竖线；关节角和末端位姿的对比；三个任务 300 段示范的格子；官方示例数据');
+      '一帧观测的组成；右臂五个关节在整段示范里的动作曲线和当前帧的竖线；关节角和末端位姿的对比；三个任务一共 300 次操作的格子；官方示例数据');
     s.appendChild(svgText(24, 26, '学什么：观测 → 目标关节角', 'demo-x-ink2', 13.5));
     var g1 = gr1SideTable(s), OX = 16, OY = 40, KW = 300, tl = sideTableLine(s);
     var rgb = egoRgb(s);
@@ -1258,13 +1258,15 @@ var SIDE_RHAND = 'ygQfBssEIAa2BC4GowRABpwETgaRBFMGhgRRBn4ETwZ3BE8GcwRPBm4ETwZqBF
     label(p5, ED.x1, ED.y + 40, '第 2 段 · 259 帧', 'demo-x-ink2', 11.5, 'end');
     var edCur = hline(p5, 0, ED.y - 6, 0, ED.y + 28, C_INK, 2);
     readHint(p5, R, ED.y + 64, '一条 = 示例数据的 541 帧；白竖线 = 左边 GR-1 这一帧', 10.5, 340);
-    var files = [['原始数据', C_MUTED], ['训练数据', C_ACCENT], ['训好的模型', C_IDP3]];
+    /* 官方 Google Drive 文件夹（README 2024-11-04）：raw_{grasp,pour,wipe}、三个任务的模型，另有 raw_data_example、training_data_example 各一份 */
+    var files = [['原始数据', '三个任务', C_MUTED], ['训练数据', '一份示例', C_ACCENT], ['训好的模型', '三个任务', C_IDP3]];
     files.forEach(function (fz, q) {
       var x = R + q * 112, y = 178;
-      p5.appendChild(paint(svgEl('path', { d: 'M' + x + ' ' + y + ' h68 l14 14 v44 h-82 z', 'stroke-width': 1.4 }), C_SURFACE, fz[1]));
-      label(p5, x + 41, y + 36, fz[0], 'demo-x-ink2', 11.5, 'middle');
+      p5.appendChild(paint(svgEl('path', { d: 'M' + x + ' ' + y + ' h68 l14 14 v44 h-82 z', 'stroke-width': 1.4 }), C_SURFACE, fz[2]));
+      label(p5, x + 41, y + 27, fz[0], 'demo-x-ink2', 11.5, 'middle');
+      label(p5, x + 41, y + 50, fz[1], 'demo-x-mut', 11, 'middle');
     });
-    label(p5, R, 262, '三个任务各一份，放在官方 Google Drive', 'demo-x-ink2', 12);
+    label(p5, R, 262, '都在官方 Google Drive；另有一份原始数据示例', 'demo-x-ink2', 12);
     label(p5, R, 286, '代码默认最多用 90 段示范训练', 'demo-x-mut', 11.5);
     function draw(t, clock) {
       /* 2026-11-08 看片反馈「机器人动作很多跳变」：原先每 3 帧一张、10 张/秒，一张停 3 个视频帧、手一跳最多 15 像素；改成逐帧 30 帧/秒（速度不变） */
@@ -1304,7 +1306,7 @@ var SIDE_RHAND = 'ygQfBssEIAa2BC4GowRABpwETgaRBFMGhgRRBn4ETwZ3BE8GcwRPBm4ETwZqBF
     var crop = paint(svgEl('path', { d: 'M 0 0', 'stroke-width': 2.2, 'stroke-dasharray': '5 4', 'stroke-linejoin': 'round' }), 'none', C_WARN);
     s.appendChild(crop);
     var errL = label(s, 24, 346, '', 'demo-x-ink', 12);
-    label(s, 24, 366, '相机位姿是我们按点云里的桌面粗估的（朝下约 39°）', 'demo-x-mut', 10.5);
+    label(s, 24, 366, '相机位姿是我们按点云里的桌面粗估的（相对头的前方朝下约 39°）', 'demo-x-mut', 10.5);
     var R = 440;
     var p1 = group(s);
     label(p1, R, 56, '要把点变到世界坐标系', 'demo-x-ink', 14);
@@ -1416,7 +1418,7 @@ var SIDE_RHAND = 'ygQfBssEIAa2BC4GowRABpwETgaRBFMGhgRRBn4ETwZ3BE8GcwRPBm4ETwZqBF
   /* ── scene 8: 改动一：直接用相机坐标系（图 3） ── */
   function buildSceneEgo() {
     var s = sceneSvg('左边是 GR-1 侧面回放，头上画着相机坐标系的三根轴（红 x、绿 y、蓝 z），跟着腰前倾、后仰；右边依次是：论文图 3；第 0 帧和第 150 帧的点云从相机自己的视角看；' +
-      '像素变成点的公式；训练和部署都在相机坐标系；没有分割的代价');
+      '点云怎么来（只用内参）；训练和部署都在相机坐标系；没有分割的代价');
     s.appendChild(svgText(24, 26, '改动一：直接用相机坐标系的点云', 'demo-x-ink2', 13.5));
     var g1 = gr1Side(s), OX = 20, OY = 40, KW = 300;
     /* 相机坐标系直接画在头上相机的位置（2026-11-08 看片反馈；原先画在头旁边的引出框里）：原点和三根轴按渲染贴图的同一台正交相机投影，
@@ -1574,7 +1576,8 @@ var SIDE_RHAND = 'ygQfBssEIAa2BC4GowRABpwETgaRBFMGhgRRBn4ETwZ3BE8GcwRPBm4ETwZqBF
 
   /* ── scene 10: 改动三：金字塔卷积编码器 ── */
   function buildSceneEncoder() {
-    var s = sceneSvg('左边是代码里编码器的结构图：4096 个点逐点过第一层，再过四层，每层取所有点的最大值、拼回每个点，四层的输出拼起来压成 128 维；小点沿着结构往下流；' +
+    var s = sceneSvg('左边是代码里编码器的结构图：4096 个点逐点过第一层，再过四层，每层取所有点的最大值、拼回每个点；四层各用一种深浅的绿色，每层的输出接到右侧，' +
+      '叠成一摞四块（这就是论文说的金字塔：把不同层的特征拼起来），拼成 512 维再压成 128 维；小点沿着结构往下流；' +
       '右边依次是论文的说法、代码里的实现、表 III 编码器一组的柱子、参数量与输出维数、我们的理解');
     s.appendChild(svgText(24, 26, '改动三：金字塔式的卷积编码器', 'demo-x-ink2', 13.5));
     var L0 = 34, L1 = 404;
@@ -1584,27 +1587,45 @@ var SIDE_RHAND = 'ygQfBssEIAa2BC4GowRABpwETgaRBFMGhgRRBn4ETwZ3BE8GcwRPBm4ETwZqBF
     var cin = rectBox(s, L0, 74, 170, 24, C_ACCENT, C_SURFACE);
     void cin;
     label(s, L0 + 85, 90, '逐点 3 → 128', 'demo-x-ink', 11.5, 'middle');
+    /* 2026-11-08 看片反馈「没看出来哪里像金字塔」：论文 3.3 节说的是 pyramid features from different layers（把不同层的特征拼起来）；
+       代码 multi_stage_pointnet.py 里四层一样宽（128）、点数也不变，把每层的输出存进 feat_list、最后 torch.cat 成 512 维。
+       所以这里不画尖顶，而是把四层各涂一种深浅的绿，每层的输出接到右侧叠成一摞——四块就是金字塔的四级 */
+    var SHADE = [0.3, 0.5, 0.72, 1], STK = L0 + 318, STW = 52;
     var stages = [0, 1, 2, 3].map(function (k) {
       var y = 112 + k * 44, g = group(s);
-      rectBox(g, L0, y, 170, 26, C_ARM, C_SURFACE);
+      var box = rectBox(g, L0, y, 170, 26, C_IDP3, C_SURFACE);
+      box.setAttribute('stroke-opacity', String(0.45 + 0.55 * SHADE[k]));
       label(g, L0 + 85, y + 17, '第 ' + (k + 1) + ' 层：逐点 128 → 128', 'demo-x-ink', 11, 'middle');
-      var mx = ringAt(g, L0 + 214, y + 13, 13, C_WARN, 2.4);
-      label(g, L0 + 214, y + 17, 'max', 'demo-x-ink', 10.5, 'middle');
-      rectBox(g, L0 + 244, y, 56, 26, C_ARM, C_SURFACE);
-      label(g, L0 + 272, y + 17, '256→128', 'demo-x-ink2', 10.5, 'middle');
-      hline(g, L0 + 300, y + 13, L0 + 340 + k * 8, y + 13, C_IDP3, 1.2, '3 4');
-      var tap = dotAt(g, L0 + 340 + k * 8, y + 13, 4, C_IDP3);
-      return { mx: mx, tap: tap, y: y, x: L0 + 340 + k * 8 };
+      var mx = ringAt(g, L0 + 206, y + 13, 15, C_WARN, 2.4);
+      label(g, L0 + 206, y + 17, 'max', 'demo-x-ink', 10, 'middle');
+      rectBox(g, L0 + 232, y, 56, 26, C_BORDER, C_SURFACE);
+      label(g, L0 + 260, y + 17, '256→128', 'demo-x-ink2', 10.5, 'middle');
+      hline(g, L0 + 288, y + 13, STK, y + 13, C_IDP3, 1.4);
+      /* 这一层的输出：一摞里的一块，深浅和这一层一样 */
+      var blkR = rectBox(g, STK, y, STW, 26, C_IDP3, C_IDP3);
+      blkR.setAttribute('fill-opacity', String(SHADE[k]));
+      var bl = label(g, STK + STW / 2, y + 17, String(k + 1), k >= 2 ? 'demo-x-ink' : 'demo-x-ink2', 11.5, 'middle');
+      return { mx: mx, blk: blkR, bl: bl, y: y };
     });
-    label(s, L0 + 214, 105, '取最大', 'demo-x-mut', 10.5, 'middle');
-    label(s, L0 + 272, 105, '拼回每个点', 'demo-x-mut', 10.5, 'middle');
-    var cat = rectBox(s, L0, 290, 370, 26, C_IDP3, C_SURFACE);
-    void cat;
-    label(s, L0 + 185, 307, '四层拼成 512 → 128 → 所有点取 max', 'demo-x-ink', 11.5, 'middle');
+    label(s, L0 + 206, 105, '取最大', 'demo-x-mut', 10.5, 'middle');
+    label(s, L0 + 260, 105, '拼回每个点', 'demo-x-mut', 10.5, 'middle');
+    label(s, STK + STW / 2, 105, '金字塔四级', 'demo-x-ink2', 10.5, 'middle');
+    /* 一摞四块框成一列，往下并进「拼成 512」：金字塔 = 四层的输出叠在一起 */
+    var stkCol = rectBox(s, STK - 5, 108, STW + 10, 167, C_IDP3, 'none', '4 3');
+    stkCol.setAttribute('stroke-opacity', '0.6');
+    s.insertBefore(stkCol, stages[0].blk.parentNode);
+    hline(s, STK + STW / 2, 275, STK + STW / 2, 297, C_IDP3, 1.6);
+    /* 拼起来的 512 维：四段并排、各 128，深浅和四级一样；说明写在上面，字不压在段与段的分界上 */
+    label(s, L0, 289, '四级并排拼成 512 维 → 压成 128 → 所有点取 max', 'demo-x-ink', 11);
+    SHADE.forEach(function (a, k) {
+      var sg = rectBox(s, L0 + k * 92.5, 297, 92.5, 22, C_IDP3, C_IDP3);
+      sg.setAttribute('fill-opacity', String(0.12 + 0.45 * a));
+      label(s, L0 + k * 92.5 + 46.25, 312, '第 ' + (k + 1) + ' 级 · 128', k >= 2 ? 'demo-x-ink' : 'demo-x-ink2', 11, 'middle');
+    });
     var outB = rectBox(s, L0 + 75, 330, 220, 26, C_IDP3, C_SURFACE);
     void outB;
     label(s, L0 + 185, 347, '点云特征 128 维 + 关节角 64 维', 'demo-x-ink', 11.5, 'middle');
-    var fDown = flowSeg(s, C_MUTED, 4, 3, 40), fTap = stages.map(function () { return flowSeg(s, C_IDP3, 2, 2.6, 50); });
+    var fDown = flowSeg(s, C_MUTED, 4, 3, 40), fTap = stages.map(function () { return flowSeg(s, C_IDP3, 2, 2.6, 30, true); });
     var R = 430;
     var p1 = group(s);
     label(p1, R, 56, '论文：把 MLP 换成金字塔卷积', 'demo-x-ink', 14);
@@ -1614,12 +1635,14 @@ var SIDE_RHAND = 'ygQfBssEIAa2BC4GowRABpwETgaRBFMGhgRRBn4ETwZ3BE8GcwRPBm4ETwZqBF
     label(p2, R, 56, '代码：MultiStagePointNetEncoder', 'demo-x-ink', 14);
     label(p2, R, 84, '卷积核大小是 1：每个点做同一个线性变换', 'demo-x-ink2', 12);
     label(p2, R, 108, '每层把全局最大值拼回每个点（局部 + 全局）', 'demo-x-ink2', 12);
-    label(p2, R, 132, '激活 LeakyReLU(0) 就是 ReLU，没有 LayerNorm', 'demo-x-ink2', 12);
-    label(p2, R, 168, '我们的理解：和全连接的差别在结构，不在「卷积」', 'demo-x-mut', 11.5);
+    label(p2, R, 132, '四层一样宽（128）、点数不变', 'demo-x-ink2', 12);
+    label(p2, R, 156, '金字塔：四层的输出都接出来，拼成 512 维', 'demo-x-ink2', 12);
+    label(p2, R, 180, '激活 LeakyReLU(0) 就是 ReLU，没有 LayerNorm', 'demo-x-ink2', 12);
+    label(p2, R, 216, '我们的理解：和全连接的差别在结构，不在「卷积」', 'demo-x-mut', 11.5);
     var p3 = group(s);
     label(p3, R, 56, '表 III：编码器', 'demo-x-ink', 14);
     var rows3 = TABLE3.enc.map(function (r, k) { return attemptRow(p3, R, 84 + k * 40, 132, r.zh, k === 3 ? C_IDP3 : C_MUTED, 18, 11); });
-    readHint(p3, R, 268, '淡条 = 尝试，亮的一段 = 抓成；单换卷积反而变差', 10.5, 340);
+    readHint(p3, R, 268, '淡条 = 尝试，亮的一段 = 抓成；单换卷积，抓成反而变少', 10.5, 340);
     var p4 = group(s);
     label(p4, R, 56, '有多大', 'demo-x-ink', 14);
     var parC = rich(p4, R, 86, '', 14, 'demo-x-ink', 'start', 340);
@@ -1642,9 +1665,9 @@ var SIDE_RHAND = 'ygQfBssEIAa2BC4GowRABpwETgaRBFMGhgRRBn4ETwZ3BE8GcwRPBm4ETwZqBF
     /* 整个模型 6880 万参数里，编码器只占 0.39%：一根条里一条细线 */
     label(p4, R, 284, '整个模型 6880 万参数', 'demo-x-ink2', 11.5);
     var totB = hbar(p4, R, 292, 12, C_MUTED, 0.45), encB = hbar(p4, R, 292, 12, C_IDP3, 1);
-    label(p4, R + 340, 284, '绿 = 点云编码器 0.39%', 'demo-x-ink2', 11.5, 'end');
+    label(p4, R + 340, 284, '绿 = 编码器 0.39%', 'demo-x-ink2', 11.5, 'end');
     var p5 = group(s);
-    label(p5, R, 56, '金字塔才是关键', 'demo-x-ink', 14);
+    label(p5, R, 56, '按抓成次数看：金字塔是关键', 'demo-x-ink', 14);
     /* 哑铃图：灰点 = 不加金字塔，绿点 = 加上金字塔；横轴是抓成次数 */
     var DX = function (v) { return R + 120 + (v - 40) / 40 * 210; };
     [40, 60, 80].forEach(function (v) {
@@ -1671,7 +1694,9 @@ var SIDE_RHAND = 'ygQfBssEIAa2BC4GowRABpwETgaRBFMGhgRRBn4ETwZ3BE8GcwRPBm4ETwZqBF
       stages.forEach(function (st, k) {
         st.mx.style.strokeWidth = k === act ? 4 : 2;
         st.mx.style.opacity = k === act ? 1 : 0.5;
-        fTap[k].at(now, [st.x, st.y + 20], [st.x, 286], t >= 3.6);
+        st.blk.style.strokeWidth = k === act ? 3 : 1.4;
+        /* 每层的输出沿横线流进右侧那一块 */
+        fTap[k].at(now + k * 0.4, [L0 + 292, st.y + 13], [STK - 4, st.y + 13], true);
       });
       setOpacity(p1, win(t, 0.4, 3.6));
       setOpacity(p2, win(t, 3.6, 7.0));
@@ -1680,7 +1705,7 @@ var SIDE_RHAND = 'ygQfBssEIAa2BC4GowRABpwETgaRBFMGhgRRBn4ETwZ3BE8GcwRPBm4ETwZqBF
       rows3.forEach(function (r, k) { var d = TABLE3.enc[k]; r.set(d.a / 150 * 170 * u3, d.s / 150 * 170 * u3, d.s + '/' + d.a); });
       setOpacity(p4, win(t, 10.4, 13.4));
       var s4 = since(t, clock, 10.4);
-      parC.setText('点云编码器 **' + countTo(ENC_PARAMS, seg(s4, 0.2, 1.6)) + '** 个参数');
+      parC.setText('编码器（点云 + 关节角）**' + countTo(ENC_PARAMS, seg(s4, 0.2, 1.6)) + '** 个参数');
       blk.forEach(function (b, k) {
         /* 先把这一帧（下排）挪到右半，再把上一帧挪到左半：两排不交叉 */
         var um = k < 2 ? seg(s4, 3.4, 4.2) : seg(s4, 2.6, 3.4), e = um * um * (3 - 2 * um);
@@ -1704,7 +1729,7 @@ var SIDE_RHAND = 'ygQfBssEIAa2BC4GowRABpwETgaRBFMGhgRRBn4ETwZ3BE8GcwRPBm4ETwZqBF
   /* ── scene 11: 改动四：一次预测 16 步 ── */
   var JIT_CH = 13, JIT_A = 100, JIT_B = 260;
   function buildSceneHorizon() {
-    var s = sceneSvg('左边是示范里右手小指的指令（灰色），一个方框沿时间滑动：框里先是 4 步，再变成 16 步，绿线是我们用官方模型在那一帧预测的 16 步；' +
+    var s = sceneSvg('左边是示范里左手小指的指令（灰色），一个方框沿时间滑动：框里先是 4 步，再变成 16 步，绿线是我们用官方模型在那一帧预测的 16 步；' +
       '右边依次是论文的说法、表 III 预测视界一组的柱子（4 步那一行一次都没尝试）、看 2 帧预测 16 步执行 15 步的格子、示例数据里抖动的读数、我们对 32 步变差的理解');
     s.appendChild(svgText(24, 26, '改动四：一次预测 16 步', 'demo-x-ink2', 13.5));
     var gx0 = 34, gx1 = 404, gy0 = 56, gy1 = 300;
@@ -1721,7 +1746,7 @@ var SIDE_RHAND = 'ygQfBssEIAa2BC4GowRABpwETgaRBFMGhgRRBn4ETwZ3BE8GcwRPBm4ETwZqBF
     win4.style.fill = 'rgba(255,170,0,0.08)';
     var predLine = pathLine(s, [], C_IDP3, 2.6);
     var predDot = dotAt(s, 0, 0, 4, C_IDP3);
-    label(s, gx0, 318, '横轴：第 100–260 帧；纵轴：右手小指的指令（1 = 张开）', 'demo-x-ink2', 11);
+    label(s, gx0, 318, '横轴：第 100–260 帧；纵轴：左手小指的指令（1 = 张开）', 'demo-x-ink2', 11);
     legendRow(s, gx0, 340, [['示范记录', C_MUTED, 50], ['官方模型预测的 16 步', C_IDP3, 122], ['方框：一次预测几步', C_WARN, 100]], 11);
     var winL = label(s, 0, 47, '', 'demo-x-ink', 11.5, 'middle');
     var R = 430;
@@ -1795,11 +1820,12 @@ var SIDE_RHAND = 'ygQfBssEIAa2BC4GowRABpwETgaRBFMGhgRRBn4ETwZ3BE8GcwRPBm4ETwZqBF
       /* 滑动的窗：从第 60 帧走到第 205 帧，来回走 */
       var span = JIT_B - JIT_A - 16, ph = (now * 9) % (2 * span), fr = JIT_A + (ph < span ? ph : 2 * span - ph);
       var len = t < 3.6 ? 4 : 16;
-      win4.setAttribute('x', px(fr).toFixed(1)); win4.setAttribute('width', (px(fr + len) - px(fr)).toFixed(1));
-      win4.style.stroke = C_WARN;
-      winL.setAttribute('x', ((px(fr) + px(fr + len)) / 2).toFixed(1)); winL.textContent = len + ' 步';
-      /* 最近的一个推理时刻（每 15 帧一次）的 16 步预测 */
+      /* 最近的一个推理时刻（每 15 帧一次）的 16 步预测；画 16 步时方框就对齐这次预测（第 0 步是上一帧），每 15 帧跳一格 */
       var ci = clamp(Math.round(fr / 15), 0, PRED_I.length - 1), i0 = PRED_I[ci], pts = [];
+      var fb = len === 16 ? i0 - 1 : fr;
+      win4.setAttribute('x', px(fb).toFixed(1)); win4.setAttribute('width', (px(fb + len) - px(fb)).toFixed(1));
+      win4.style.stroke = C_WARN;
+      winL.setAttribute('x', ((px(fb) + px(fb + len)) / 2).toFixed(1)); winL.textContent = len + ' 步';
       for (var k2 = 0; k2 < 16; k2++) { var fk = i0 - 1 + k2; if (fk >= JIT_A && fk < JIT_B) pts.push([px(fk), py(predAt(ci, k2, JIT_CH))]); }
       setPath(predLine, pts);
       predLine.style.opacity = t >= 3.6 ? 1 : 0.25;
@@ -1871,7 +1897,7 @@ var SIDE_RHAND = 'ygQfBssEIAa2BC4GowRABpwETgaRBFMGhgRRBn4ETwZ3BE8GcwRPBm4ETwZqBF
     label(p2, R, 56, '网络直接预测干净的动作', 'demo-x-ink', 14);
     chip(p2, R, 78, 340, 'iDP3：`prediction_type: sample`（代码）', C_IDP3, { h: 32, left: true });
     chip(p2, R, 118, 340, '2D 基线 DP：预测噪声（`epsilon`）', C_DP, { h: 32, left: true });
-    /* 小示意：带噪的一段动作进网络，iDP3 出的是干净的一段（绿），DP 出的是噪声（紫） */
+    /* 小示意（画面上写明）：带噪的一段动作进网络，iDP3 出的是干净的一段（绿），DP 出的是噪声（紫） */
     var NQ = 20, qx = function (k, x0) { return x0 + k / (NQ - 1) * 74; };
     var noisy = [], clean = [], eps = [];
     for (var q = 0; q < NQ; q++) {
@@ -1889,6 +1915,7 @@ var SIDE_RHAND = 'ygQfBssEIAa2BC4GowRABpwETgaRBFMGhgRRBn4ETwZ3BE8GcwRPBm4ETwZqBF
     label(p2, R + 346, 256, 'DP：噪声', 'demo-x-ink2', 11, 'end');
     label(p2, R, 282, '损失：预测和真实动作的均方误差', 'demo-x-ink2', 12);
     label(p2, R, 304, '动作先按最小最大值缩放到 [−1, 1]', 'demo-x-mut', 11.5);
+    label(p2, R + 170, 234, '三条曲线是示意', 'demo-x-mut', 11, 'middle');
     var p3 = group(s);
     label(p3, R, 56, '去噪网络：一维条件 U-Net', 'demo-x-ink', 14);
     var chans = [256, 512, 1024, 512, 256];
@@ -1919,7 +1946,8 @@ var SIDE_RHAND = 'ygQfBssEIAa2BC4GowRABpwETgaRBFMGhgRRBn4ETwZ3BE8GcwRPBm4ETwZqBF
     label(p4, TB.x + TB.w, TB.y + 40, '1 s', 'demo-x-mut', 11, 'middle');
     legendRow(p4, R, 214, [['我们一次推理 0.167 s', C_BAD, 116]], 11);
     readHint(p4, R, 240, '一格 1/15 s；按 15 Hz 执行，15 步约 1 s（我们的换算）', 11, 340);
-    label(p4, R, 268, '论文：只用机载 CPU，实时 15 Hz', 'demo-x-ink2', 12);
+    label(p4, R, 268, '论文：只靠机载电脑，实时 15 Hz；仓库说明：用的是 CPU', 'demo-x-ink2', 12);
+    label(p4, R, 292, '论文没说 15 Hz 指的是推理还是执行', 'demo-x-mut', 11);
     var p5 = group(s);
     label(p5, R, 56, '我们跑出来的一个现象', 'demo-x-ink', 14);
     label(p5, R, 84, '每一步网络预测的干净动作，离最终输出多远', 'demo-x-ink2', 12);
@@ -1993,7 +2021,7 @@ var SIDE_RHAND = 'ygQfBssEIAa2BC4GowRABpwETgaRBFMGhgRRBn4ETwZ3BE8GcwRPBm4ETwZqBF
     var s = sceneSvg('左边是项目页的视频：训练场景里连续抓放；右边依次是：任务；四种设置的格子；杯子在 10 × 20 cm 里随机出现；评测的次数一格一格数上去；' +
       '平滑的路径和来回抖的路径对比');
     s.appendChild(svgText(24, 26, '实验设置：抓起杯子、挪到一边', 'demo-x-ink2', 13.5));
-    var clip = projClip(s, 'origin', 24, 44, 380, 214, '项目页视频（4 倍速）：训练场景里的 iDP3');
+    var clip = projClip(s, 'origin', 24, 44, 380, 214, '项目页视频（未标倍速）：训练场景里的 iDP3');
     label(s, 24, 300, '主要基准：抓放（Pick&Place）', 'demo-x-ink2', 11.5);
     label(s, 24, 320, '表 II、表 III 都在这个任务上', 'demo-x-mut', 11);
     var R = 424;
@@ -2023,7 +2051,7 @@ var SIDE_RHAND = 'ygQfBssEIAa2BC4GowRABpwETgaRBFMGhgRRBn4ETwZ3BE8GcwRPBm4ETwZqBF
     var cupTrail = [0, 1, 2, 3, 4].map(function () { return dotAt(p3, 0, 0, 6, C_ACCENT); });
     var cupDot = dotAt(p3, 0, 0, 9, C_ACCENT);
     legendRow(p3, R, 262, [['蓝点：这一次杯子放的位置', C_ACCENT, 150], ['橙框：随机范围', C_WARN, 84]], 11);
-    label(p3, R, 286, '淡的蓝点是前几次放过的位置', 'demo-x-mut', 11);
+    label(p3, R, 286, '淡的蓝点是前几次放过的位置；框的朝向和点都是示意', 'demo-x-mut', 11);
     var p4 = group(s);
     label(p4, R, 56, '每个方法评测多少次', 'demo-x-ink', 14);
     var grid = cellGrid(p4, R, 78, 130, 26, 10, 3, C_IDP3);
@@ -2203,7 +2231,7 @@ var SIDE_RHAND = 'ygQfBssEIAa2BC4GowRABpwETgaRBFMGhgRRBn4ETwZ3BE8GcwRPBm4ETwZqBF
       p1.appendChild(eighth[q]);
     }
     readHint(p1, R, 168, '一格 10 分钟：DP 占满 8 格，iDP3 只用 3 格', 11, 330);
-    rich(p1, R, 196, '约 DP 的 **3/8**，三成多一点', 13, 'demo-x-ink', 'start', 300);
+    rich(p1, R, 196, '约 DP 的 **3/8**（37.5%）', 13, 'demo-x-ink', 'start', 300);
     var p2 = group(s);
     label(p2, R, 56, '点数放大了，仍然更快', 'demo-x-ink', 14);
     /* 两个方块：1024 个点和 4096 个点（每个小点代表 16 个） */
@@ -2216,7 +2244,7 @@ var SIDE_RHAND = 'ygQfBssEIAa2BC4GowRABpwETgaRBFMGhgRRBn4ETwZ3BE8GcwRPBm4ETwZqBF
     label(p2, R, 248, '图注：示范越多，这个优势越明显', 'demo-x-ink2', 12);
     var p3 = group(s);
     label(p3, R, 56, '编码器有多大（我们的补充）', 'demo-x-ink', 14);
-    var encB = [['R3M（ResNet18）', 11000000, C_DP], ['iDP3 点云编码器', ENC_PARAMS, C_IDP3]].map(function (e, k) {
+    var encB = [['R3M（ResNet18）', 11000000, C_DP], ['iDP3 编码器（含关节角）', ENC_PARAMS, C_IDP3]].map(function (e, k) {
       var y = 84 + k * 50, g = group(p3);
       label(g, R, y + 14, e[0], 'demo-x-ink2', 12);
       var r = hbar(g, R, y + 22, 16, e[2], 0.9);
@@ -2303,7 +2331,7 @@ var SIDE_RHAND = 'ygQfBssEIAa2BC4GowRABpwETgaRBFMGhgRRBn4ETwZ3BE8GcwRPBm4ETwZqBF
     label(p1, R, 56, '数据和对比', 'demo-x-ink', 14);
     label(p1, R, 86, '每个任务 10 段示范，每段 10 次', 'demo-x-ink2', 12);
     rectBox(p1, R + 40, 102, 110, 110, C_WARN, 'none', '5 4');
-    label(p1, R + 95, 230, '10 × 10 cm', 'demo-x-ink2', 11.5, 'middle');
+    label(p1, R + 95, 230, '抓放、倒水：10 × 10 cm', 'demo-x-ink2', 11.5, 'middle');
     var p1Cup = dotAt(p1, 0, 0, 8, C_ACCENT);
     label(p1, R + 164, 150, '蓝点：物体', 'demo-x-ink2', 11);
     label(p1, R + 164, 170, '这一次放的位置', 'demo-x-mut', 11);
@@ -2329,7 +2357,7 @@ var SIDE_RHAND = 'ygQfBssEIAa2BC4GowRABpwETgaRBFMGhgRRBn4ETwZ3BE8GcwRPBm4ETwZqBF
       var x = R + (k % 2) * 118, y = 104 + Math.floor(k / 2) * 66, g = group(p4);
       rectBox(g, x, y, 108, 54, k === 1 ? C_WARN : C_BORDER, C_SURFACE, k > 1 ? '4 3' : null);
       label(g, x + 54, y + 22, n, 'demo-x-ink', 12, 'middle');
-      label(g, x + 54, y + 42, k === 0 ? '两个都测' : k === 1 ? '两个都测' : '只测 iDP3', 'demo-x-mut', 11, 'middle');
+      label(g, x + 54, y + 42, k === 0 ? '两个都测' : k === 1 ? '两个都测' : '只部署 iDP3', 'demo-x-mut', 11, 'middle');
       return g;
     });
     label(p4, R, 256, '其他场景没再测 DP：论文说那里基线都不行', 'demo-x-ink2', 11.5);
@@ -2377,9 +2405,9 @@ var SIDE_RHAND = 'ygQfBssEIAa2BC4GowRABpwETgaRBFMGhgRRBn4ETwZ3BE8GcwRPBm4ETwZqBF
   function buildSceneWhy() {
     var s = sceneSvg('左边按旁白换三段项目页视频：视角泛化的 iDP3 与 DP、新场景里的 DP 与 iDP3、第一视角的点云可视化；右边依次是论文图 8 的上下两排、图 6 的上下两排、图 4 的点云和我们的理解');
     s.appendChild(svgText(24, 26, '为什么 3D 更稳', 'demo-x-ink2', 13.5));
-    var cView = seqClip(s, 'view', 24, 44, 380, 214, '项目页视频（4 倍速）：视角泛化', VIEW_PARTS);
-    var cNew = seqClip(s, 'newscene', 24, 44, 380, 214, '项目页视频（4 倍速）：新场景（厨房）', NEW_PARTS);
-    var cEgo = seqClip(s, 'ego', 24, 44, 380, 190, '项目页视频（4 倍速）：第一视角的彩色图和点云', EGO_PARTS);
+    var cView = seqClip(s, 'view', 24, 44, 380, 214, '项目页视频（未标倍速）：视角泛化', VIEW_PARTS);
+    var cNew = seqClip(s, 'newscene', 24, 44, 380, 214, '项目页视频（未标倍速）：新场景（厨房）', NEW_PARTS);
+    var cEgo = seqClip(s, 'ego', 24, 44, 380, 190, '项目页视频（未标倍速）：第一视角的彩色图和点云', EGO_PARTS);
     var R = 424;
     var p1 = group(s);
     label(p1, R, 56, '论文图 8 上排：iDP3', 'demo-x-ink', 14);
@@ -2464,7 +2492,7 @@ var SIDE_RHAND = 'ygQfBssEIAa2BC4GowRABpwETgaRBFMGhgRRBn4ETwZ3BE8GcwRPBm4ETwZqBF
     label(p1, R, 146, 'ALOHA 这类系统现在更好采灵巧操作', 'demo-x-mut', 11.5);
     var p2 = group(s);
     label(p2, R, 56, '我们看到的', 'demo-x-ink', 14);
-    /* 三张小卡：一个基准任务；每格 10 次；训练场景里 2D 基线更准 */
+    /* 三张小卡：一个基准任务；每格 10 次；训练场景里最强的 2D 基线（微调 R3M，表 II）更准 */
     var seeA = group(p2);
     rectBox(seeA, R, 74, 106, 120, C_BORDER, C_SURFACE);
     var cupS = paint(svgEl('rect', { x: R + 38, y: 104, width: 30, height: 38, rx: 5 }), C_ACCENT); seeA.appendChild(cupS);
@@ -2479,7 +2507,7 @@ var SIDE_RHAND = 'ygQfBssEIAa2BC4GowRABpwETgaRBFMGhgRRBn4ETwZ3BE8GcwRPBm4ETwZqBF
     rectBox(seeC, R + 234, 74, 106, 120, C_BORDER, C_SURFACE);
     var rC1 = hbar(seeC, R + 246, 100, 12, C_DP, 0.9), rC2 = hbar(seeC, R + 246, 120, 12, C_IDP3, 0.9);
     label(seeC, R + 287, 162, '训练场景里', 'demo-x-ink2', 11, 'middle');
-    label(seeC, R + 287, 184, '2D 基线更准', 'demo-x-ink2', 11, 'middle');
+    label(seeC, R + 287, 184, '最强 2D 基线更准', 'demo-x-ink2', 11, 'middle');
     legendRow(p2, R, 222, [['DP（微调 R3M）67.3%', C_DP, 118], ['iDP3 54.0%', C_IDP3, 64]], 11);
     label(p2, R, 248, '新场景里基线只测了厨房', 'demo-x-mut', 11.5);
     var p3 = group(s);
@@ -2642,7 +2670,7 @@ var SIDE_RHAND = 'ygQfBssEIAa2BC4GowRABpwETgaRBFMGhgRRBn4ETwZ3BE8GcwRPBm4ETwZqBF
       cues: [
         { at: 0.4, s: '论文：改用金字塔卷积，动作更平滑、更准。' },
         { at: 3.6, s: '代码：核大小为 1 的卷积，每层把全局最大值拼回每个点。' },
-        { at: 7.0, s: '表 III：单换卷积反而变差（49/131），加金字塔才变好（75/139）。' },
+        { at: 7.0, s: '表 III：单换卷积，抓成反而变少（49/131）；加金字塔才变好（75/139）。' },
         { at: 10.4, s: '编码器 **270,080** 个参数，两帧拼成 384 维。' },
         { at: 13.4, s: '我们的理解：起作用的是「局部 + 全局、多层拼接」的结构。' }
       ]
@@ -2728,7 +2756,7 @@ var SIDE_RHAND = 'ygQfBssEIAa2BC4GowRABpwETgaRBFMGhgRRBn4ETwZ3BE8GcwRPBm4ETwZqBF
         { at: 3.6, s: '图 8 下排：DP 连训练过的杯子都抓不起来。' },
         { at: 7.0, s: '图 6：新场景里 DP 抓训练过的杯子时来回抖。' },
         { at: 10.4, s: '加了颜色抖动，DP 也抓不起新物体。' },
-        { at: 13.4, s: '图 4：点云没有颜色和纹理，换光照、换物体都不影响（我们的理解）。' }
+        { at: 13.4, s: '图 4：点云没有颜色和纹理，换光照、换物体颜色都不影响（我们的理解）。' }
       ]
     },
     {
@@ -2770,8 +2798,8 @@ var SIDE_RHAND = 'ygQfBssEIAa2BC4GowRABpwETgaRBFMGhgRRBn4ETwZ3BE8GcwRPBm4ETwZqBF
   function buildVideoDemo(host) {
     K.video(host, {
       title: '配音讲解视频：iDP3 十八幕全流程',
-      sub: '28 分 16 秒竖屏视频（1080×1920），中文配音 + 字幕。画面就是上面的十八幕动画，旁白把每一幕讲细；适合手机上看或转发。',
-      size: '36.2 MB',
+      sub: '29 分 6 秒竖屏视频（1080×1920），中文配音 + 字幕。画面就是上面的十八幕动画，旁白把每一幕讲细；适合手机上看或转发。',
+      size: '37.2 MB',
       fileName: 'iDP3_讲解视频.mp4'
     });
   }
@@ -2796,7 +2824,7 @@ var SIDE_RHAND = 'ygQfBssEIAa2BC4GowRABpwETgaRBFMGhgRRBn4ETwZ3BE8GcwRPBm4ETwZqBF
     var sN = stats.add('画出的点'), sU = stats.add('这一帧不重复的点（存了 10000 个）'), sZ = stats.add('深度范围');
     var st = stage(root, 320);
     var verdict = verdictBox(root);
-    note(root, ['点云是官方 Google Drive 上 `training_data_example` 里的原始数据：相机坐标系，x 朝右、y 朝下、z 朝前；采数据时每帧有放回地抽了 10000 个点存盘，所以有重复。这里去掉重复后随机取点，第 0、60 帧只存了 4096 个，选 8192 时按 4096 画。',
+    note(root, ['点云是官方 Google Drive 上 `training_data_example` 里的原始数据：相机坐标系，x 朝右、y 朝下、z 朝前；采数据时每帧有放回地抽了 10000 个点存盘，所以有重复。这里去掉重复后随机取点，第 0、60 帧本页只嵌入了 4096 个，选 8192 时按 4096 画。',
       '「机器人坐标系」用的相机安装位姿是我们拟合出来的（相机相对头部朝下约 39°），论文没给；侧视图是从机器人右前方看。',
       '颜色在 iDP3 里不用（`use_pc_color: false`），这里只是让你认出东西。']);
     function render() {
@@ -2836,7 +2864,7 @@ var SIDE_RHAND = 'ygQfBssEIAa2BC4GowRABpwETgaRBFMGhgRRBn4ETwZ3BE8GcwRPBm4ETwZqBF
   }
 
   // ─── 演示 2：扩散去噪播放器 ─────────────────────────────────────────────
-  var DEN_GROUPS = [['右臂', [8, 9, 10, 11, 12]], ['左臂', [3, 4, 5, 6, 7]], ['右手', [13, 14, 15, 16, 17, 18]], ['左手', [19, 20, 21, 22, 23, 24]], ['腰和头', [0, 1, 2]]];
+  var DEN_GROUPS = [['右臂', [8, 9, 10, 11, 12]], ['左臂', [3, 4, 5, 6, 7]], ['左手', [13, 14, 15, 16, 17, 18]], ['右手', [19, 20, 21, 22, 23, 24]], ['腰和头', [0, 1, 2]]];
   function buildDenoiseDemo(host) {
     var root = card(host, {
       title: '扩散去噪播放器（官方倒水模型，CPU 上的真实推理）',
@@ -2854,7 +2882,8 @@ var SIDE_RHAND = 'ygQfBssEIAa2BC4GowRABpwETgaRBFMGhgRRBn4ETwZ3BE8GcwRPBm4ETwZqBF
     var verdict = verdictBox(root);
     note(root, ['权重是官方 Google Drive 的 `gr1_dex-3d-idp3-pour_seed0`（EMA 模型），数据是同一处的 `training_data_example`；前向照官方源码重写成我们自己的 PyTorch 代码，DDIM 一步照抄 diffusers 0.11.1；4 核 CPU 上一次推理约 ' + f3(CPU_S) + ' s。',
       '第 $k$ 步对应第 $i-1+k$ 帧（看 2 帧，第 0 步是上一帧）；执行的是第 1–15 步。手的数值是 0–1 的指令（1 = 张开）。',
-      '这两段示范很可能在模型的训练集里（我们的推测），所以和示范贴得很近只说明推理跑通了；开环平均误差：右臂 ' + f3(ERR.rarm) + '、左臂 ' + f3(ERR.larm) + '、右手 ' + f3(ERR.rhand) + '、左手 ' + f3(ERR.lhand) + '。']);
+      '这两段示范很可能在模型的训练集里（我们的推测），所以和示范贴得很近只说明推理跑通了；开环平均误差：右臂 ' + f3(ERR.rarm) + '、左臂 ' + f3(ERR.larm) + '、左手 ' + f3(ERR.lhand) + '、右手 ' + f3(ERR.rhand) + '。',
+      '手按实际的左右标：动作第 13–18 维在代码注释里叫右手，可示例数据里它是先去抓杯子的那只手，第一视角画面里在左边，状态里也存在左手那 6 维（我们的判断）。']);
     function render() {
       var tr = traceOf(state.frame), J = DEN_GROUPS[state.grp][1], g = begin(st), ctx = g.ctx, C = g.P;
       var i0 = parseInt(state.frame, 10), sI = Math.min(state.step, 9), fin = state.step >= 10;
@@ -2905,7 +2934,7 @@ var SIDE_RHAND = 'ygQfBssEIAa2BC4GowRABpwETgaRBFMGhgRRBn4ETwZ3BE8GcwRPBm4ETwZqBF
     var verdict = verdictBox(root);
     var tb = table(root);
     note(root, ['表 II、表 III 的数是四种设置（1st-1、1st-2、3rd-1、3rd-2）合计的「抓成 / 尝试」；0/0 表示一次都没尝试。表 IV 每格是 10 次里成功几次，DP 是表 II 最强的「微调 R3M」版本，擦桌子没测泛化。',
-      '成功率是我们按「抓成 / 尝试」算的：表 III 里加粗的是成功次数，按成功率 8192 个点（54.5%）略高于 4096（54.0%）。']);
+      '成功率是我们按「抓成 / 尝试」算的：表 III 里每列抓成次数最多的那一格加粗，按成功率 8192 个点（54.5%）略高于 4096（54.0%）。']);
     /* 横向条：标签列和条宽都随画布宽度缩放，手机上条也不至于只剩一小截 */
     function bars(ctx, C, g, rows, mx) {
       var bh = Math.min(26, (g.h - 40) / rows.length - 10), narrow = g.w < 520;
@@ -2929,7 +2958,7 @@ var SIDE_RHAND = 'ygQfBssEIAa2BC4GowRABpwETgaRBFMGhgRRBn4ETwZ3BE8GcwRPBm4ETwZqBF
         tb.row(['', '抓成 / 尝试', '成功率'], true);
         src.forEach(function (r) { tb.row([r.zh, r.s + '/' + r.a, r.a ? f1(100 * r.s / r.a) + '%' : '—']); });
         verdict.set({ t2: '训练场景里 DP（微调 R3M）最准（99/147）；iDP3 75/139，明显好过其余基线；原版 DP3 一次都没尝试。',
-          enc: '单换卷积反而变差（49/131）；加金字塔才变好：Linear + Pyramid 66/134，Conv + Pyramid 75/139。',
+          enc: '单换卷积，抓成反而变少（49/131）；加金字塔才变好：Linear + Pyramid 66/134，Conv + Pyramid 75/139。',
           pts: '1024 → 4096：抓成 56 → 75 次；8192 是 72/132，成功率 54.5%，和 4096 差不多——饱和了。',
           hor: '预测 4 步：0/0，策略连尝试都没有；8 步 33/88；16 步 75/139；32 步又降到 55/130。' }[v], 'good');
       } else if (v === 't4') {
@@ -2971,7 +3000,7 @@ var SIDE_RHAND = 'ygQfBssEIAa2BC4GowRABpwETgaRBFMGhgRRBn4ETwZ3BE8GcwRPBm4ETwZqBF
         });
         tb.row(['系统', '遥操作：臂手 / 头 / 腰 / 腿', '泛化：物体 / 视角 / 场景', '真机评测次数'], true);
         TABLE1.forEach(function (r) { tb.row([r.zh, r.tele.map(function (x) { return x ? '✓' : '·'; }).join(' '), r.gen.map(function (x) { return x ? '✓' : '·'; }).join(' '), String(r.ep)]); });
-        verdict.set('只有 iDP3 头、腰都遥操作，物体、视角、场景三种泛化都有，真机评测 2253 次。', 'good');
+        verdict.set('头、腰都遥操作的只有 iDP3；物体、视角、场景三种泛化都有的是 iDP3 和 ManiWhere；真机评测 2253 次。', 'good');
       }
     }
     registerRenderer(render);

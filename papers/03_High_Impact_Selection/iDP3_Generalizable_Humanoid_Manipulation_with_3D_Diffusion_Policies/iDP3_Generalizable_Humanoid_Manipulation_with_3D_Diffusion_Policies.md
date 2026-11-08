@@ -29,7 +29,7 @@ original_check_scope: arXiv v1–v3 的 LaTeX 源码（正文 + 附录）+ 项�
 | **arXiv** | [2410.10803](https://arxiv.org/abs/2410.10803)（v1 2024-10-14，v2 2025-02-19，v3 2025-09-09） |
 | **PDF** | [arXiv PDF](https://arxiv.org/pdf/2410.10803) |
 | **项目主页** | [humanoid-manipulation.github.io](https://humanoid-manipulation.github.io/)（野外场景的自主视频、遥操作、视角 / 物体 / 场景泛化的对照、第一视角点云的可视化；页面写明视频是 4 倍速） |
-| **代码（学习与部署）** | [YanjieZe/Improved-3D-Diffusion-Policy](https://github.com/YanjieZe/Improved-3D-Diffusion-Policy)：iDP3 与 2D 基线（Diffusion Policy + R3M）的训练、部署脚本；[Google Drive](https://drive.google.com/drive/folders/1f5Ln_d14OQ5eSjPDGnD7T4KQpacMhgCB) 放了三个任务的原始数据、训练数据和训好的模型 |
+| **代码（学习与部署）** | [YanjieZe/Improved-3D-Diffusion-Policy](https://github.com/YanjieZe/Improved-3D-Diffusion-Policy)：iDP3 与 2D 基线（Diffusion Policy + R3M）的训练、部署脚本；[Google Drive](https://drive.google.com/drive/folders/1f5Ln_d14OQ5eSjPDGnD7T4KQpacMhgCB) 放了三个任务的原始数据（`raw_grasp` / `raw_pour` / `raw_wipe`）和训好的模型，另有原始数据、训练数据各一份示例（`raw_data_example`、`training_data_example`） |
 | **代码（遥操作）** | [YanjieZe/Humanoid-Teleoperation](https://github.com/YanjieZe/Humanoid-Teleoperation)：Vision Pro App、机载的遥操作与采数据脚本、GR1 的 URDF |
 | **会议** | IROS 2025 |
 | **作者** | Yanjie Ze、Zixuan Chen、Wenhao Wang、Tianyi Chen、Xialin He、Ying Yuan、Xue Bin Peng、Jiajun Wu |
@@ -44,7 +44,7 @@ original_check_scope: arXiv v1–v3 的 LaTeX 源码（正文 + 附录）+ 项�
 
 ## 🎯 一句话总结
 
-> iDP3 让一台全尺寸人形只靠**一个场景**采的示范，就能在没见过的厨房、会议室、办公室里自己完成抓放、倒水、擦桌子。它是一整套真机系统：① **平台**：傅利叶 GR-1 只开上半身 25 个自由度（腰 1、头 2、两臂各 5、两手各 6，代码的拼法），腿锁住、换成**可升降的推车**解决桌子高低不一的问题，头上装一台 **L515 激光雷达相机**拍点云；② **数据**：人戴 **Apple Vision Pro**，手腕位姿用 Relaxed IK 解出手臂关节角，头的朝向同时算出**腰和头**的角度，相机画面实时传回头显；③ **学习**：在 3D 扩散策略 DP3 上做四处改动，合称 **iDP3**——**点云直接用相机坐标系**，不用标定相机、也不用分割物体；没有分割，就把**点数从 1024 放大到 4096**，把整个场景都看进来；编码器从 MLP 换成**金字塔式的卷积编码器**，动作更平滑、更准；**一次预测 16 步**，扛住人手抖动和传感器噪声。代码里扩散训练 50 步、DDIM 推理 10 步，每次出 16 步动作、执行其中 15 步，机载 CPU 上约 15 Hz。实验：抓杯子在训练场景里，微调过的 R3M + Diffusion Policy 最准（99/147 次抓成），iDP3 是 75/139；可一换物体、换视角、换场景，2D 基线掉到 0–3/10，iDP3 仍是 9/10。消融里预测 4 步的 DP3 一次都没尝试抓；点数到 4096 就饱和。训练时间 iDP3 30 分钟、Diffusion Policy 80 分钟。
+> iDP3 让一台全尺寸人形只靠**一个场景**采的示范，就能在没见过的厨房、会议室、办公室里自己完成抓放、倒水、擦桌子。这篇论文做的是一整套真机系统，iDP3 是其中的学习算法：① **平台**：傅利叶 GR-1 只开上半身 25 个自由度（腰 1、头 2、两臂各 5、两手各 6，代码的拼法），腿锁住、换成**可升降的推车**解决桌子高低不一的问题，头上装一台 **L515 激光雷达相机**拍点云；② **数据**：人戴 **Apple Vision Pro**，手腕位姿用 Relaxed IK 解出手臂关节角，头的朝向同时算出**腰和头**的角度，相机画面实时传回头显；③ **学习**：在 3D 扩散策略 DP3 上做四处改动，合称 **iDP3**——**点云直接用相机坐标系**，不用标定相机、也不用分割物体；没有分割，就把**点数从 1024 放大到 4096**，把整个场景都看进来；编码器从 MLP 换成**金字塔式的卷积编码器**，动作更平滑、更准；**一次预测 16 步**，扛住人手抖动和传感器噪声。代码里扩散训练 50 步、DDIM 推理 10 步，每次出 16 步动作、执行其中 15 步；论文说只靠机载电脑就能实时推理（15 Hz），官方 README 写明用的是机载电脑的 CPU。实验：抓杯子在训练场景里，微调过的 R3M + Diffusion Policy 最准（99/147 次抓成），iDP3 是 75/139；可一换物体、换视角、换场景，2D 基线掉到 0–3/10，iDP3 仍是 9/10。消融里预测 4 步的 DP3 一次都没尝试抓；点数到 4096 就饱和。训练时间 iDP3 30 分钟、Diffusion Policy 80 分钟。
 
 > 🎮 **本文内嵌 1 段讲解动画、1 段配音视频和 3 个交互演示**（不用装任何东西）：
 > [十八幕动画：iDP3 全流程](#idp3-explainer-anim) —— 约 288 秒串完「只在一个场景里会干活（表 I）→ 系统四块（图 2）→ 平台：上半身 25 个自由度 → 头上的激光雷达相机 → 遥操作：Vision Pro 跟头和手腕 → 学什么：观测、动作与数据 → DP3：世界坐标系 + 标定 + 分割 → 改动一：直接用相机坐标系（图 3）→ 改动二：点放大到 4096 → 改动三：金字塔卷积编码器 → 改动四：一次预测 16 步 → 扩散：10 步出一段动作 → 实验设置：抓杯子 → 表 II：和基线比 → 训练时间（图 7）→ 表 IV：新物体、新视角、新场景 → 为什么 3D 更稳（图 4–8）→ 局限与代码」
@@ -82,7 +82,7 @@ original_check_scope: arXiv v1–v3 的 LaTeX 源码（正文 + 附录）+ 项�
 
 ## 📺 配音讲解视频（可下载） {#idp3-video}
 
-<div class="paper-demo" data-demo="idp3-video" data-src="media/idp3_explainer_video.mp4" data-poster="media/idp3_explainer_video_poster.jpg"><p class="demo-fallback">（本节含讲解视频播放器，需要启用 JavaScript；也可以直接<a href="media/idp3_explainer_video.mp4" download="iDP3_讲解视频.mp4">下载 mp4（36.2 MB）</a>）</p></div>
+<div class="paper-demo" data-demo="idp3-video" data-src="media/idp3_explainer_video.mp4" data-poster="media/idp3_explainer_video_poster.jpg"><p class="demo-fallback">（本节含讲解视频播放器，需要启用 JavaScript；也可以直接<a href="media/idp3_explainer_video.mp4" download="iDP3_讲解视频.mp4">下载 mp4（37.2 MB）</a>）</p></div>
 
 > 📖 **动画之后的正文默认全部折叠**：动画覆盖到的那几节（要解决什么问题、系统与方法、实验结果）按小节收起，再往后的具体实例、源码对照、在路线中的位置、面试和附录各整块收起。想细读哪一块就点开对应的折叠条，内容一字未删；流程图和三个交互演示留在外面，目录里的标题依旧可以直接点，会自动展开所在折叠块，左侧目录顶部还有「展开全部文字」一键铺开。
 >
@@ -184,7 +184,7 @@ flowchart LR
         L4 --> L5
     end
     subgraph DEP["部署（3.4 节）"]
-        E1["机载 CPU 实时推理（15 Hz）<br/>换场景不用标定、不用分割"]
+        E1["机载电脑实时推理（15 Hz）<br/>换场景不用标定、不用分割"]
     end
     PLAT --> DATA --> LEARN --> DEP
 
@@ -361,7 +361,7 @@ $$x=\frac{(u-c_x)\,z}{f_x},\qquad y=\frac{(v-c_y)\,z}{f_y}$$
 
 **表 III（编码器）**：Linear（DP3）58/127、Conv 49/131、Linear + Pyramid 66/134、**Conv + Pyramid（iDP3）75/139**。单换成卷积反而变差（49/131），加上金字塔才明显变好。
 
-编码器的参数量是 **270,080**，和官方倒水模型检查点里的完全一致（例 5）。关节角另过一个 32 → 64 → 64 的 MLP，和点云特征拼成每帧 192 维；两帧观测拼成 384 维，作为扩散网络的条件。
+编码器的参数量是 **270,080**（点云部分 263,808，加上关节角的 MLP 6,272），和官方倒水模型检查点里的完全一致（例 5）。关节角过的就是这个 32 → 64 → 64 的 MLP，和点云特征拼成每帧 192 维；两帧观测拼成 384 维，作为扩散网络的条件。
 
 </details>
 
@@ -383,7 +383,7 @@ $$x=\frac{(u-c_x)\,z}{f_x},\qquad y=\frac{(v-c_y)\,z}{f_y}$$
 ### 扩散：10 步出一段动作（3.3 节实现细节、3.4 节、代码、我们的复现）
 
 <details class="paper-fold" markdown="1">
-<summary>📖 展开文字：所有方法都训练 300 轮、AdamW；扩散训练 50 步、DDIM 推理 10 步；代码里网络直接预测干净的动作而不是噪声；部署不用标定和分割、只用机载 CPU 实时推理（15 Hz）；我们用官方倒水模型在 CPU 上跑了一遍</summary>
+<summary>📖 展开文字：所有方法都训练 300 轮、AdamW；扩散训练 50 步、DDIM 推理 10 步；代码里网络直接预测干净的动作而不是噪声；部署不用标定和分割、只靠机载电脑实时推理（15 Hz，README 说用的是 CPU）；我们用官方倒水模型在 CPU 上跑了一遍</summary>
 
 **论文**（3.3 节实现细节）：iDP3 和所有方法都训练 300 轮，用 AdamW；扩散过程训练 50 步、推理用 DDIM 10 步。**部署**（3.4 节）：不依赖相机标定和人工分割，所以搬到新场景不用额外的标定或分割；只用机器人机载的计算实时推理（**15 Hz**），开放世界部署变得可行。
 
@@ -483,7 +483,7 @@ $$x=\frac{(u-c_x)\,z}{f_x},\qquad y=\frac{(v-c_y)\,z}{f_y}$$
 
 图 7：**DP 80 分钟、iDP3 30 分钟**（v1 是一张小表：Image 80 min、3D 30 min）。论文说，用 3D 表征让 iDP3 比 Diffusion Policy 省训练时间，就算视觉输入放大之后也是；示范越多，这个优势越明显（图注）。论文没写这是哪种设置、用的什么 GPU；官方 README 说训练用的是一张 RTX 4090。
 
-我们的补充（例 5）：iDP3 的点云编码器只有 27 万个参数，2D 基线的 R3M 是 ResNet18（约 1100 万个参数）、输入 224 × 224 的图像；这大概是训练更快的原因之一（我们的推测，论文没分析）。
+我们的补充（例 5）：iDP3 的编码器（点云 + 关节角）只有 27 万个参数，2D 基线的 R3M 是 ResNet18（约 1100 万个参数）、输入 224 × 224 的图像；这大概是训练更快的原因之一（我们的推测，论文没分析）。
 
 </details>
 
@@ -568,7 +568,7 @@ $$x=\frac{(u-c_x)\,z}{f_x},\qquad y=\frac{(v-c_y)\,z}{f_y}$$
 
 $$\underbrace{1} _ {\text{腰俯仰}}+\underbrace{2} _ {\text{头俯仰、偏航}}+\underbrace{5\times2} _ {\text{两臂}}+\underbrace{6\times2} _ {\text{两手}}=25$$
 
-机器人状态：$3+3+7\times2+6\times2=32$。动作 25 维里的顺序是：腰、头俯仰、头偏航、左臂 5 个、右臂 5 个、**右手 6 个、左手 6 个**（部署脚本把第 13–18 维发给右手、第 19–24 维发给左手）。每只 Inspire 手的 6 维是小指、无名指、中指、食指、拇指弯曲、拇指旋转，1 表示张开。
+机器人状态：$3+3+7\times2+6\times2=32$。动作 25 维里的顺序是：腰、头俯仰、头偏航、左臂 5 个、右臂 5 个、**右手 6 个、左手 6 个**（部署脚本把第 13–18 维发给右手、第 19–24 维发给左手）。不过在官方示例数据里，第 13–18 维是先去抓杯子的那只手：它在第 96 帧合上，这时伸出去的是左臂（第 3–7 维），第一视角画面里抓杯子的是左边那只手；状态里跟着它走的是第 26–31 维（相关系数 0.96），第 20–25 维跟的是第 19–24 维（0.98）。遥操作仓库的 `HandCommunication` 有一个对调左右手 IP 的开关，我们推测实机上左右手是对调过的，所以动画、演示和下面的误差都按实际的左右标：第 13–18 维叫左手。每只 Inspire 手的 6 维是小指、无名指、中指、食指、拇指弯曲、拇指旋转，1 表示张开。
 
 <h3 id="实例-2-腰和头的角度怎么算">例 2：腰和头的角度怎么算</h3>
 
@@ -657,7 +657,7 @@ $h=128$，四层：
 
 - 输入：示例数据第 1 段（282 帧）第 $i$ 帧和第 $i-1$ 帧的点云（各随机取 4096 个点）与 32 维状态；噪声固定种子。
 - 推理：4 核 CPU 上每次 0.167 s（541 次的平均，中位数 0.165 s）。
-- 输出的 16 步里第 $k$ 步对应第 $i-1+k$ 帧；拿第 1–15 步和示范里记录的动作比，平均绝对误差：腰 0.0013、头 0.0016、左臂 0.0051、右臂 0.0053、右手 0.0070、左手 0.0054（关节角是 rad，手是 0–1 的指令）。
+- 输出的 16 步里第 $k$ 步对应第 $i-1+k$ 帧；拿第 1–15 步和示范里记录的动作比，平均绝对误差：腰 0.0013、头 0.0016、左臂 0.0051、右臂 0.0053、左手 0.0070、右手 0.0054（关节角是 rad，手是 0–1 的指令；手按实际的左右，见例 1）。
 - 去噪：第 105 帧（左手握着杯子、右手伸向瓶子），右肩俯仰在 16 步上的最终输出是 −0.535 到 −0.658 rad，示范记录的是 −0.529 到 −0.658；第一步网络预测的 $\hat x_0$ 和最终输出在 25 个关节、16 步上平均只差 0.0018，最多 0.0093。19 个记录了去噪过程的帧里，第一步的 $\hat x_0$ 和最终输出平均差 0.0035。
 - 这两段示范很可能在模型的训练集里（训练配置用的 `cap_pour3`，示例数据也是倒水），所以误差小只说明我们的重写和官方一致、推理跑通了，不能当成泛化的证据（我们的推测）。
 
@@ -838,7 +838,7 @@ v1 的视角泛化表（v2 起删去）：DP 3/10、DP + 冻结 R3M 7/38、DP + 
 ## 📎 参考来源
 
 - 论文：Ze, Chen, Wang, Chen, He, Yuan, Peng, Wu, *Generalizable Humanoid Manipulation with 3D Diffusion Policies*（v1 题为 *…with Improved 3D Diffusion Policies*），[arXiv 2410.10803](https://arxiv.org/abs/2410.10803)（v1–v3 的 LaTeX 源码），IROS 2025。
-- 项目页：[humanoid-manipulation.github.io](https://humanoid-manipulation.github.io/)；动画和视频里的真机画面剪自项目页的视频（页面写明 4 倍速），只做讲解引用。
+- 项目页：[humanoid-manipulation.github.io](https://humanoid-manipulation.github.io/)；动画和视频里的真机画面剪自项目页的视频（页首的自主视频写明 4 倍速，遥操作、泛化对照、第一视角这几节没标倍速），只做讲解引用。
 - 代码：[YanjieZe/Improved-3D-Diffusion-Policy](https://github.com/YanjieZe/Improved-3D-Diffusion-Policy)（`f5b27fa`，2025-06-16）、[YanjieZe/Humanoid-Teleoperation](https://github.com/YanjieZe/Humanoid-Teleoperation)（`8221c58`，2025-02-18）。
 - 数据和模型：官方 Google Drive 的 `training_data_example` 与 `gr1_dex-3d-idp3-pour_seed0`。
 - GR-1 的渲染：遥操作仓库的 `teleop-zenoh/urdf/GR1T2`；Inspire 手来自 [dexsuite/dex-urdf](https://github.com/dexsuite/dex-urdf)；材质与灯光照 [Robot_Retarget_Online](https://github.com/ImChong/Robot_Retarget_Online)。
