@@ -49,7 +49,7 @@
 | `viral` | `assets/js/demos/viral.js` 十八幕（`viral-explainer`） | 约 22 分 42 秒 |
 | `doorman` | `assets/js/demos/doorman.js` 十七幕（`doorman-explainer`） | 约 19 分 6 秒 |
 | `chip` | `assets/js/demos/chip.js` 十八幕（`chip-explainer`） | 约 20 分 9 秒 |
-| `idp3` | `assets/js/demos/idp3.js` 十八幕（`idp3-explainer`） | 约 29 分 6 秒 |
+| `idp3` | `assets/js/demos/idp3.js` 十八幕（`idp3-explainer`） | 约 29 分 8 秒 |
 | `supermimic` | `assets/js/demos/supermimic.js` 十八幕（`sm-explainer`） | 约 23 分 9 秒 |
 
 - 画面：直接复用 `<paper>.js` 分镜的 `draw(t)`，数字与笔记算例一致；前后加片头、总结页（`papers/<paper>.js`）。

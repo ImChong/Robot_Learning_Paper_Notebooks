@@ -6132,10 +6132,12 @@ def test_idp3_explainer_demos_and_worked_example_share_the_paper_numbers():
     assert 1 + 2 + 5 * 2 + 6 * 2 == 25 and 3 + 3 + 7 * 2 + 6 * 2 == 32
     assert "=25$$" in note and "$3+3+7\\times2+6\\times2=32$" in note
     # 例 2：腰和头的角度
-    waist = math.degrees(math.atan2(0.30, 1.55 - 0.53 * 1.70))
-    assert (_fmt(0.53 * 1.70, 3), _fmt(waist, 1), _fmt(40 - waist, 1)) == ("0.901", "24.8", "15.2")
-    assert "=24.8°$" in note and "=40°-24.8°=15.2°$" in note and "腰就前倾 24.8 度" in narration
-    assert "var TELE = { height: 1.70, waistRatio: 0.53, headZ: 1.55, stoop: 0.30, total: 40, clip: 30, w: [60, 6, 2] };" in js
+    # 头绕胯转：头到胯的距离保持 1.55 − 0.901 = 0.649 m，往前探 0.27 m 时头高降到 1.49 m
+    head_z = 0.53 * 1.70 + math.sqrt((1.55 - 0.53 * 1.70) ** 2 - 0.27**2)
+    waist = math.degrees(math.atan2(0.27, 1.49 - 0.53 * 1.70))
+    assert (_fmt(0.53 * 1.70, 3), _fmt(head_z, 2), _fmt(waist, 1), _fmt(40 - waist, 1)) == ("0.901", "1.49", "24.6", "15.4")
+    assert "=24.6°$" in note and "=40°-24.6°=15.4°$" in note and "腰就前倾 24.6 度" in narration
+    assert "var TELE = { height: 1.70, waistRatio: 0.53, headZ: 1.49, stoop: 0.27, total: 40, clip: 30, w: [60, 6, 2] };" in js
     # 例 5：编码器的参数
     h = 128
     parts = [3 * h + h, 4 * (h * h + h), 4 * (2 * h * h + h), 4 * h * h + h, 32 * 64 + 64 + 64 * 64 + 64]
