@@ -42,14 +42,14 @@
         "14_Human_Motion"
       ],
       "last_module": "04_Loco-Manipulation_and_WBC",
-      "last_index": 1134,
-      "last_title": "Memory before Goal: Role of Pre-History Memory for Humanoid Loco-Manipulation (arXiv:2610.31166)",
+      "last_index": 1168,
+      "last_title": "Humanoid Dodgeball: Learning Fast Dynamic Obstacle Avoidance Motions for Humanoids (arXiv:2610.40003)",
       "next_module": "05_Locomotion",
-      "last_completed_date": "2026-10-29",
-      "note": "本日轮转到 04_Loco-Manipulation_and_WBC。PROGRESS Loco-Manipulation and Whole-Body-Control 章节中尚无笔记的最新论文是 Memory before Goal (arXiv:2610.31166, 2026-10-22, MBZUAI)，即 PROGRESS #1134，已确认在上游 README。WholeBodyMem 用冻结 SAM3 跟踪任务物体、按物体事件因果选择 3–7 帧关键帧（每帧 77 个原生 token）与物体 token，由 Ψ₀ 式动作专家交叉注意力 + FiLM 读取；HuMeGo 记忆任务成功 29.1% → 72.6%，SIMPLE 70.2% → 86.9%，真机 G1 22/60 → 53/60。未开源，含整体流程 mermaid 与算例，无源码运行时序图。下一篇轮转到 05_Locomotion。",
-      "last_date": "2026-10-29",
+      "last_completed_date": "2026-11-08",
+      "note": "本日轮转回 04_Loco-Manipulation_and_WBC。PROGRESS Loco-Manipulation and WBC 章节中尚无笔记的最新论文是 Humanoid Dodgeball（arXiv:2610.40003，2026-10-29，NUS / EngineAI），即 PROGRESS #1168，已确认在上游 README。按部位球体算预测威胁（所需加速度）与近场威胁，威胁加权的逃离 / 距离 / 根部方向奖励，四个按方向分开的 AMP 判别器，捕获点恢复奖励；G1 / PM01 仿真与 PM01 真机。未开源，只给整体流程 mermaid；全文已读，记 original_check: done。下一篇轮转到 05_Locomotion。",
+      "last_date": "2026-11-08",
       "next_candidate": null,
-      "last_completed": "Memory before Goal: Role of Pre-History Memory for Humanoid Loco-Manipulation (arXiv:2610.31166)"
+      "last_completed": "Humanoid Dodgeball: Learning Fast Dynamic Obstacle Avoidance Motions for Humanoids (arXiv:2610.40003)"
     },
     "last_summary_index": 532,
     "last_summary_date": "2026-09-18",
@@ -1860,6 +1860,127 @@
         "project_page": "https://memory-before-goal.github.io",
         "code": "",
         "source": "⏳ 未开源(论文与项目页均无代码仓库) · 无源码运行时序图 · HuMeGo 基准 + SIMPLE · Unitree G1 + Dex3 · MBZUAI"
+      },
+      {
+        "date": "2026-10-30",
+        "index": 1151,
+        "title": "Humanoid Mobility via Attention-based Contacts",
+        "folder": "papers/05_Locomotion/Humanoid_Mobility_via_Attention-based_Contacts",
+        "module": "05_Locomotion",
+        "arxiv": "2610.31608",
+        "project_page": "",
+        "code": "",
+        "source": "⏳ 未开源(论文无代码仓库与项目页) · 无源码运行时序图 · Isaac Lab 仿真 + 真机 · Unitree G1 · ETH Zürich RSL × Apple × NVIDIA"
+      },
+      {
+        "date": "2026-10-31",
+        "index": 1157,
+        "title": "EmbodyHOI: Embodiment-Aware Generation of Hand-Object Interactions for Humanoid Dexterous Manipulation",
+        "folder": "papers/06_Manipulation/EmbodyHOI__Embodiment-Aware_Generation_of_Hand-Object_Interactions_for_Humanoid_Dexterous_Manipulation",
+        "module": "06_Manipulation",
+        "arxiv": "2610.27242",
+        "project_page": "https://embodyhoi.github.io/",
+        "code": "",
+        "source": "⏳ 未开源(论文称将发布引导代码、参考与策略) · 无源码运行时序图 · Genesis 仿真 · ARCTIC · Unitree G1 / H1-2 + XHand · CMU"
+      },
+      {
+        "date": "2026-11-01",
+        "index": 1160,
+        "title": "HuMiT: Low-Latency Whole-Body Humanoid Teleoperation via Compact Reference Tracking",
+        "folder": "papers/07_Teleoperation/HuMiT__Low-Latency_Whole-Body_Humanoid_Teleoperation_via_Compact_Reference_Tracking",
+        "module": "07_Teleoperation",
+        "arxiv": "2610.29903",
+        "project_page": "https://xiaohu-art.github.io/Track/",
+        "code": "https://github.com/xiaohu-art/Track",
+        "source": "✅ 开源训练插件 xiaohu-art/Track（MIT，Isaac Lab + active-adaptation；无 PICO 遥操作与真机部署代码）· 含源码运行时序图 · Isaac Sim 仿真 + 真机 · Unitree G1 · 清华 IIIS × 港中文等"
+      },
+      {
+        "date": "2026-11-02",
+        "index": 1162,
+        "title": "Adaptive Traversal Tubes for Posture-Aware Navigation of Bipedal Humanoids",
+        "folder": "papers/08_Navigation/Adaptive_Traversal_Tubes_for_Posture-Aware_Navigation_of_Bipedal_Humanoids",
+        "module": "08_Navigation",
+        "arxiv": "2610.27688",
+        "project_page": "https://github.com/lborogzj997/Humanoid-Navigation-in-Crowds-and-Narrow-Spaces",
+        "code": "",
+        "source": "⏳ 未开源（项目仓库只有 README 与演示视频，称投稿后放代码）· 无源码运行时序图 · 仅方法的预印本、定量实验待补 · MuJoCo 仿真 + 真机演示 · Unitree G1 · Zijian Ge"
+      },
+      {
+        "date": "2026-11-03",
+        "index": 1163,
+        "title": "Vision as Proprioception: Estimating Humanoid Robot Pose from Video",
+        "folder": "papers/09_State_Estimation/Vision_as_Proprioception__Estimating_Humanoid_Robot_Pose_from_Video",
+        "module": "09_State_Estimation",
+        "arxiv": "2610.25288",
+        "project_page": "https://siplab.org/projects/HumanoidPose",
+        "code": "https://github.com/eth-siplab/HumanoidPose",
+        "source": "⏳ 源码未放出（官方仓库 eth-siplab/HumanoidPose 仅 README，Code and models: Coming soon）· 推理时序图按论文第 III 节整理 · 合成数据训练 + 三台真机评测 · Unitree G1 / EngineAI PM01 / Fourier N1 · ETH Zürich"
+      },
+      {
+        "date": "2026-11-04",
+        "index": 1190,
+        "title": "Delay Randomization Widens the Delay Margin of Learned Humanoid Motion Trackers",
+        "folder": "papers/10_Sim-to-Real/Delay_Randomization_Widens_the_Delay_Margin_of_Learned_Humanoid_Motion_Trackers",
+        "module": "10_Sim-to-Real",
+        "arxiv": "2610.32277",
+        "project_page": "",
+        "code": "",
+        "source": "⏳ 未开源（论文与 arXiv 页面无代码链接）· 评测时序图按论文第 3 节整理 · mjlab 训练 + 独立 CPU MuJoCo 评测 + Isaac Lab 对照 · 24 关节人形 · Shaoqin Li、Yi Sun（CCNY）"
+      },
+      {
+        "date": "2026-11-05",
+        "index": 672,
+        "title": "BiGym 2.0: Benchmarking Learned and Agent-Developed Policies for Humanoid Household Manipulation",
+        "folder": "papers/11_Simulation_Benchmark/BiGym2__Benchmarking_Learned_and_Agent-Developed_Policies_for_Humanoid_Household_Manipulation",
+        "module": "11_Simulation_Benchmark",
+        "arxiv": "2610.07594",
+        "project_page": "https://bigym2.github.io/",
+        "code": "https://github.com/swirl-uk/BiGym2",
+        "source": "✅ 已开源（swirl-uk/BiGym2，Apache-2.0）· 时序图按 bigym/loco/eval/runner.py、loco/env.py、loco/lowerbody.py、adapters/groot_wbc.py 整理 · MuJoCo + 冻结 GR00T-WBC · Unitree G1 + Dex1 · Imperial College London"
+      },
+      {
+        "date": "2026-11-06",
+        "index": 1191,
+        "title": "A fully articulated humanoid dexterous hand with human-level joint structure enabled by linkage-based actuation",
+        "folder": "papers/12_Hardware_Design/Torch-Hand__Fully_Articulated_Humanoid_Dexterous_Hand_with_Linkage-Based_Actuation",
+        "module": "12_Hardware_Design",
+        "arxiv": "2610.36789",
+        "project_page": "",
+        "code": "",
+        "source": "⏳ 未开源（论文与 arXiv 页面无代码 / CAD 链接）· 只给整体流程 mermaid · 21 关节 / 16 电机全连杆灵巧手 · Jihao Li、Huixu Dong 等（浙江大学 Grasp Lab）"
+      },
+      {
+        "date": "2026-11-07",
+        "index": 1130,
+        "title": "Walk Like This: Stylized Locomotion for Physics-Based Characters through Example-Driven Diffusion",
+        "folder": "papers/13_Physics-Based_Animation/Walk_Like_This__Stylized_Locomotion_for_Physics-Based_Characters_through_Example-Driven_Diffusion",
+        "module": "13_Physics-Based_Animation",
+        "arxiv": "2610.18147",
+        "project_page": "https://www.youtube.com/watch?v=roFnS6N7nJ4",
+        "code": "",
+        "source": "⏳ 未开源（论文与 arXiv 页面无代码链接）· 只给整体流程 mermaid · 风格编码器 + 自回归动作扩散 + RL 跟踪 · Joshua Aurand、Moritz Bächer 等（Disney Research Zürich、ETH Zürich）"
+      },
+      {
+        "date": "2026-11-08",
+        "index": 1133,
+        "title": "PartiGen: Part-Aware Representations for Language-Conditioned Humanoid Motion Generation",
+        "folder": "papers/14_Human_Motion/PartiGen__Part-Aware_Representations_for_Language-Conditioned_Humanoid_Motion_Generation",
+        "module": "14_Human_Motion",
+        "arxiv": "2610.13373",
+        "project_page": "https://andyhuangzz01.github.io/partigen-paper/",
+        "code": "",
+        "source": "⏳ 未开源（论文与项目页无代码仓库）· 只给整体流程 mermaid · 部位感知 VAE + 潜空间扩散 + EOS 时长 + 冻结 GRIT 跟踪 · Chuxuan Huang、Zhanxiang Cao、Yue Gao 等（复旦、上海创智学院、上海交大）"
+      },
+      {
+        "date": "2026-11-08",
+        "index": 1168,
+        "title": "Humanoid Dodgeball: Learning Fast Dynamic Obstacle Avoidance Motions for Humanoids",
+        "folder": "papers/04_Loco-Manipulation_and_WBC/Humanoid_Dodgeball__Learning_Fast_Dynamic_Obstacle_Avoidance_Motions_for_Humanoids",
+        "module": "04_Loco-Manipulation_and_WBC",
+        "arxiv": "2610.40003",
+        "project_page": "https://humanoid-dodge.github.io/",
+        "code": "",
+        "source": "⏳ 未开源（论文与项目页无代码仓库）· 只给整体流程 mermaid · 威胁感知奖励 + 四方向 AMP + 捕获点恢复 · Aoqian Zhang、Fan Shi、Shuzhi Sam Ge 等（NUS、EngineAI、大连理工）"
       }
     ],
     "last_completed_index": 588,

@@ -5,10 +5,12 @@
   没有 JS 时所有系依次排开，节点照样能点。
 
   节点悬浮卡片的数据：按节点的笔记地址在 _data/papers.json 里找到那篇论文，只输出卡片要用的
-  字段（标题、板块、发表时间、arXiv、开源、简介、讲解动画幕数、配音视频时长）；节点上的 ▶
-  也按 video_seconds 加。
+  字段（标题、板块、发表时间、arXiv、开源、简介、讲解动画幕数、配音视频时长、笔记健康度）；
+  节点上的 ▶ 也按 video_seconds 加，年份旁的六格小条按 health_score 画（同首页卡片，
+  scripts/note_health.py 算出；没有笔记或没算出分数的节点不画）。
 {%- endcomment -%}
 {%- assign tt_details = "" -%}
+{%- assign tt_health_max = site.data.note_health.max | default: 6 -%}
 {%- assign tt_total = 0 -%}
 {%- for branch in site.data.roadmap -%}
 {%- assign tt_total = tt_total | plus: branch.nodes.size -%}
@@ -94,7 +96,14 @@
             {%- else %}
             <span class="tt-node-name">{{ node.label | escape }}</span>
             {%- endif %}
+            {%- if tt_paper.health_score != nil %}
+            <span class="tt-node-meta">
+              <span class="tt-node-year">{{ node.year }}</span>
+              <span class="tt-node-health paper-health paper-health--{{ tt_paper.health_score }}" aria-hidden="true"><span class="paper-health-bar">{% for i in (1..tt_health_max) %}<i{% if i <= tt_paper.health_score %} class="is-on"{% endif %}></i>{% endfor %}</span></span>
+            </span>
+            {%- else %}
             <span class="tt-node-year">{{ node.year }}</span>
+            {%- endif %}
             {%- if tt_paper.video_seconds %}
             <span class="tt-node-badge" aria-hidden="true"><svg class="icon" focusable="false"><use href="#i-play"></use></svg></span>
             {%- endif %}
@@ -112,7 +121,12 @@
         "open_source": {{ tt_paper.has_open_source | default: false | jsonify | replace: '<', '\u003c' | replace: '>', '\u003e' | replace: '&', '\u0026' }},
         "summary_zh": {{ tt_paper.summary_zh | jsonify | replace: '<', '\u003c' | replace: '>', '\u003e' | replace: '&', '\u0026' }},
         "scenes": {{ tt_paper.explainer_scenes | jsonify | replace: '<', '\u003c' | replace: '>', '\u003e' | replace: '&', '\u0026' }},
-        "video_seconds": {{ tt_paper.video_seconds | jsonify | replace: '<', '\u003c' | replace: '>', '\u003e' | replace: '&', '\u0026' }}
+        "video_seconds": {{ tt_paper.video_seconds | jsonify | replace: '<', '\u003c' | replace: '>', '\u003e' | replace: '&', '\u0026' }},
+        "health_score": {{ tt_paper.health_score | jsonify | replace: '<', '\u003c' | replace: '>', '\u003e' | replace: '&', '\u0026' }},
+        "health_gaps": {{ tt_paper.health_gaps | jsonify | replace: '<', '\u003c' | replace: '>', '\u003e' | replace: '&', '\u0026' }},
+        "health_status": {{ tt_paper.health_status | jsonify | replace: '<', '\u003c' | replace: '>', '\u003e' | replace: '&', '\u0026' }},
+        "health_label": {{ tt_paper.health_label_en | jsonify | replace: '<', '\u003c' | replace: '>', '\u003e' | replace: '&', '\u0026' }},
+        "health_label_zh": {{ tt_paper.health_label_zh | jsonify | replace: '<', '\u003c' | replace: '>', '\u003e' | replace: '&', '\u0026' }}
       }
           {%- endcapture -%}
           {%- if tt_details == "" -%}
