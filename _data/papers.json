@@ -8395,6 +8395,25 @@
         "zh_title": "TRACE：面向人形动作扩散的类型化、参考感知对话式编辑"
       },
       {
+        "title": "PartiGen: Part-Aware Representations for Language-Conditioned Humanoid Motion Generation",
+        "path": "papers/14_Human_Motion/PartiGen__Part-Aware_Representations_for_Language-Conditioned_Humanoid_Motion_Generation/PartiGen__Part-Aware_Representations_for_Language-Conditioned_Humanoid_Motion_Generation.md",
+        "url": "/papers/14_Human_Motion/PartiGen__Part-Aware_Representations_for_Language-Conditioned_Humanoid_Motion_Generation/PartiGen__Part-Aware_Representations_for_Language-Conditioned_Humanoid_Motion_Generation.html",
+        "dir": "PartiGen__Part-Aware_Representations_for_Language-Conditioned_Humanoid_Motion_Generation",
+        "arxiv": "2610.13373",
+        "health_score": 3,
+        "health_gaps": [
+          "verification",
+          "animation",
+          "video"
+        ],
+        "health_label_zh": "笔记健康度 3/6，缺：原文核验、动画讲解、讲解视频",
+        "health_label_en": "Note health 3/6; missing: full-text check, explainer animation, explainer video",
+        "published_date_zh": "2026年10月9日（arXiv v1）；v2 2026年10月17日，v3 2026年11月5日",
+        "published_date_en": "Oct 9, 2026 (arXiv v1); v2 Oct 17, 2026, v3 Nov 5, 2026",
+        "zhname": "PartiGen：面向语言条件人形动作生成的身体部位感知表示",
+        "zh_title": "PartiGen：面向语言条件人形动作生成的身体部位感知表示"
+      },
+      {
         "title": "Streaming Multi-Track Timeline Control for 3D Human Motion Generation",
         "path": "papers/14_Human_Motion/TimelineControl__Streaming_Multi-Track_Timeline_Control_for_3D_Human_Motion/TimelineControl__Streaming_Multi-Track_Timeline_Control_for_3D_Human_Motion.md",
         "url": "/papers/14_Human_Motion/TimelineControl__Streaming_Multi-Track_Timeline_Control_for_3D_Human_Motion/TimelineControl__Streaming_Multi-Track_Timeline_Control_for_3D_Human_Motion.html",
