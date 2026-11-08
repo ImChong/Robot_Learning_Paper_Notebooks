@@ -41,15 +41,15 @@
         "13_Physics-Based_Animation",
         "14_Human_Motion"
       ],
-      "last_module": "13_Physics-Based_Animation",
-      "last_index": 1130,
-      "last_title": "Walk Like This: Stylized Locomotion for Physics-Based Characters through Example-Driven Diffusion (arXiv:2610.18147)",
-      "next_module": "14_Human_Motion",
-      "last_completed_date": "2026-11-07",
-      "note": "本日轮转到 13_Physics-Based_Animation。PROGRESS Physics-Based Character Animation 章节中尚无笔记的最新论文是 Walk Like This（arXiv:2610.18147，2026-10-13，Disney Research Zürich / ETH Zürich，CoRL 2026），即 PROGRESS #1130，已确认在上游 README。风格示例 + 摇杆：风格编码器（register token、单位向量）条件化自回归动作扩散，同一段动作取两个窗口实现无标签风格解耦；推理时注意力偏置（风格 +2、过去 −1）与速度纠偏；RL 跟踪器在扩散生成数据上训练、开环部署，G1 零样本。未开源，只给整体流程 mermaid。下一篇轮转到 14_Human_Motion。",
-      "last_date": "2026-11-07",
+      "last_module": "14_Human_Motion",
+      "last_index": 1133,
+      "last_title": "PartiGen: Part-Aware Representations for Language-Conditioned Humanoid Motion Generation (arXiv:2610.13373)",
+      "next_module": "04_Loco-Manipulation_and_WBC",
+      "last_completed_date": "2026-11-08",
+      "note": "本日轮转到 14_Human_Motion。PROGRESS Human Motion Analysis and Synthesis 章节中尚无笔记的最新论文是 PartiGen（arXiv:2610.13373，2026-10-09，复旦 / 上海创智学院 / 上海交大等），即 PROGRESS #1133，已确认在上游 README。直接在 G1 关节空间做文本生成动作：BP-MVAE 按四组解剖掩码分头注意力、融合成 128 维全身潜变量并加 G1 正运动学监督；DA-LDM 以文本 + 历史自回归生成片段，EOS 头在 320 帧候选里逐帧挑终点；冻结 GRIT 跟踪器执行。未开源，只给整体流程 mermaid。下一篇轮转回 04_Loco-Manipulation_and_WBC。",
+      "last_date": "2026-11-08",
       "next_candidate": null,
-      "last_completed": "Walk Like This: Stylized Locomotion for Physics-Based Characters through Example-Driven Diffusion (arXiv:2610.18147)"
+      "last_completed": "PartiGen: Part-Aware Representations for Language-Conditioned Humanoid Motion Generation (arXiv:2610.13373)"
     },
     "last_summary_index": 532,
     "last_summary_date": "2026-09-18",
@@ -1959,6 +1959,17 @@
         "project_page": "https://www.youtube.com/watch?v=roFnS6N7nJ4",
         "code": "",
         "source": "⏳ 未开源（论文与 arXiv 页面无代码链接）· 只给整体流程 mermaid · 风格编码器 + 自回归动作扩散 + RL 跟踪 · Joshua Aurand、Moritz Bächer 等（Disney Research Zürich、ETH Zürich）"
+      },
+      {
+        "date": "2026-11-08",
+        "index": 1133,
+        "title": "PartiGen: Part-Aware Representations for Language-Conditioned Humanoid Motion Generation",
+        "folder": "papers/14_Human_Motion/PartiGen__Part-Aware_Representations_for_Language-Conditioned_Humanoid_Motion_Generation",
+        "module": "14_Human_Motion",
+        "arxiv": "2610.13373",
+        "project_page": "https://andyhuangzz01.github.io/partigen-paper/",
+        "code": "",
+        "source": "⏳ 未开源（论文与项目页无代码仓库）· 只给整体流程 mermaid · 部位感知 VAE + 潜空间扩散 + EOS 时长 + 冻结 GRIT 跟踪 · Chuxuan Huang、Zhanxiang Cao、Yue Gao 等（复旦、上海创智学院、上海交大）"
       }
     ],
     "last_completed_index": 588,
