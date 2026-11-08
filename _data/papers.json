@@ -353,12 +353,10 @@
         "summary_zh": "Transformer 把序列建模里的「时间步循环」换成「一层之内所有位置两两算注意力」：串行步数从 $O(n)$ 降到 $O(1)$，任意两个位置之间的路径长度也是 $O(1)$，训练可以整句并行。",
         "explainer_scenes": 17,
         "video_seconds": 1006,
-        "health_score": 5,
-        "health_gaps": [
-          "verification"
-        ],
-        "health_label_zh": "笔记健康度 5/6，缺：原文核验",
-        "health_label_en": "Note health 5/6; missing: full-text check",
+        "health_score": 6,
+        "health_gaps": [],
+        "health_label_zh": "笔记健康度 6/6，六项齐全",
+        "health_label_en": "Note health 6/6; all six items present",
         "published_date_zh": "2017年6月12日（arXiv v1），NIPS 2017",
         "published_date_en": "Jun 12, 2017 (arXiv v1), NIPS 2017",
         "zhname": "Transformer：注意力就是你所需要的一切",

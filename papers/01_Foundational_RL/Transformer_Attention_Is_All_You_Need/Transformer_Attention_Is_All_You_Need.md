@@ -5,6 +5,9 @@ title: "Attention Is All You Need (Transformer)"
 category: "基础强化学习 Foundational RL"
 zhname: "Transformer：注意力就是你所需要的一切"
 demos: ["transformer"]
+original_check: done
+original_check_date: 2026-10-29
+original_check_scope: arXiv v7 的 LaTeX 源码全文（第 1–7 节、式 1–3、表 1–4、附录注意力可视化图 3–5）+ 论文指向的官方实现 tensorflow/tensor2tensor（master，仓库已归档）
 ---
 
 # Attention Is All You Need (Transformer)
