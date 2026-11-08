@@ -19,6 +19,7 @@ from _common import (  # noqa: E402
     SKIP_DIRS,
     has_frontmatter,
     is_stub,
+    mp4_duration_seconds,
     normalize_kramdown_math_emphasis,
     normalize_kramdown_math_pipes,
     normalize_name,
@@ -26,6 +27,7 @@ from _common import (  # noqa: E402
     parse_frontmatter,
     stub_reason,
 )
+from note_health import compute_note_health, health_fields, health_items_data  # noqa: E402
 
 PROGRESS_PATH = os.path.join(PAPERS_DIR, "PROGRESS.md")
 
@@ -670,44 +672,6 @@ def extract_explainer_scenes(content):
     return _cn_numeral_to_int(match.group(1)) if match else None
 
 
-def mp4_duration_seconds(path):
-    """读 mp4 顶层 ``moov/mvhd`` 的时长（整秒，舍去零头，同笔记里「N 分 M 秒」的写法），读不到返回 None。"""
-    try:
-        with open(path, "rb") as f:
-            size = os.fstat(f.fileno()).st_size
-            pos = 0
-            while pos + 8 <= size:
-                f.seek(pos)
-                header = f.read(8)
-                box_size = int.from_bytes(header[:4], "big")
-                box_type = header[4:8]
-                header_len = 8
-                if box_size == 1:
-                    box_size = int.from_bytes(f.read(8), "big")
-                    header_len = 16
-                elif box_size == 0:
-                    box_size = size - pos
-                if box_size < header_len:
-                    return None
-                if box_type == b"moov":
-                    moov = f.read(box_size - header_len)
-                    i = moov.find(b"mvhd")
-                    if i < 4:
-                        return None
-                    body = moov[i + 4 :]
-                    if body[0] == 1:
-                        timescale = int.from_bytes(body[20:24], "big")
-                        duration = int.from_bytes(body[24:32], "big")
-                    else:
-                        timescale = int.from_bytes(body[12:16], "big")
-                        duration = int.from_bytes(body[16:20], "big")
-                    return duration // timescale if timescale else None
-                pos += box_size
-    except OSError:
-        return None
-    return None
-
-
 def extract_video_seconds(fpath, content):
     """正文 ``data-demo="*-video"`` 指向的 mp4 时长（秒），没有配音视频返回 None。"""
     match = _EXPLAINER_VIDEO_RE.search(content)
@@ -1132,6 +1096,16 @@ def process_papers():
                     if video_seconds:
                         paper_entry["video_seconds"] = video_seconds
 
+                # 笔记健康度（0–6）：每次构建都按当前内容重算，不沿用旧值——缺字段就是缺项。
+                health = compute_note_health(
+                    content,
+                    fpath,
+                    title=title,
+                    category_dir=category_dir,
+                    demo_dir=os.path.join(BASE_DIR, "assets", "js", "demos"),
+                )
+                paper_entry.update(health_fields(health))
+
                 published_date_raw = (
                     extract_published_date(content)
                     or existing_meta_for_paper.get("published_date_zh")
@@ -1264,6 +1238,11 @@ def process_papers():
 
     with open(os.path.join(data_dir, "papers.json"), "w", encoding="utf-8") as f:
         json.dump(sorted_data, f, ensure_ascii=False, indent=2)
+        f.write("\n")
+
+    # 健康度六项的名称与判据，首页悬浮框逐项列出 ✓ / ✗ 时读它。
+    with open(os.path.join(data_dir, "note_health.json"), "w", encoding="utf-8") as f:
+        json.dump(health_items_data(), f, ensure_ascii=False, indent=2)
         f.write("\n")
 
     total = sum(

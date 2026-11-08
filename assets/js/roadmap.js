@@ -5,7 +5,8 @@
    - 跨系：起点或终点在别的系的箭头不画在树里，换成树上方「前置」、下方「通往」两排
      标签，点一下切到那一系并闪一下那个节点；
    - 悬停 / 聚焦节点：点亮它在这一系里的整条前置链，弹出论文详情卡片（数据来自
-     #roadmap-node-details，由 _data/papers.json 生成）；这时卡片 pointer-events: none，不挡点击。
+     #roadmap-node-details，由 _data/papers.json 生成，含笔记健康度与缺项；节点上的六格小条
+     由模板画好）；这时卡片 pointer-events: none，不挡点击。
      触屏没有悬停：第一次点节点弹卡片，卡片能点，点卡片上的「点击阅读笔记」进入笔记；
    - 全局总览：一个窗口里把 11 系按 map_order 排开，所有节点和所有箭头（含跨系的）一起画，
      按窗口大小挑排法、缩放到放得下，也可以放大阅读（只上下滚）；悬停节点点亮它的整条前置路线（深色）和后续（浅色）。
@@ -460,6 +461,31 @@
     return m + ':' + (s < 10 ? '0' : '') + s;
   }
 
+  function healthMax() {
+    var dataEl = document.getElementById('note-health-data');
+    try {
+      return (dataEl && JSON.parse(dataEl.textContent).max) || 6;
+    } catch (e) {
+      return 6;
+    }
+  }
+
+  function hasHealth(info) {
+    return !!info && typeof info.health_score === 'number';
+  }
+
+  /* 笔记健康度：六格小条（样式同首页卡片）+「笔记健康度 4/6，缺：……」。 */
+  function healthRow(parent, info, zh) {
+    var row = cardPart(parent, 'div', 'roadmap-node-card__health');
+    var badge = cardPart(row, 'span', 'paper-health paper-health--' + info.health_score);
+    badge.setAttribute('aria-hidden', 'true');
+    var bar = cardPart(badge, 'span', 'paper-health-bar');
+    for (var i = 1, max = healthMax(); i <= max; i++) {
+      cardPart(bar, 'i', i <= info.health_score ? 'is-on' : '');
+    }
+    cardPart(row, 'span', 'roadmap-node-card__health-text', zh ? info.health_label_zh : info.health_label);
+  }
+
   function hasVideo(node, info) {
     return !!(info && info.video_seconds) || node.el.classList.contains('tt-node--video');
   }
@@ -501,6 +527,8 @@
     var subtitle = zh ? info.title : info.zh_title;
     cardPart(body, 'div', 'roadmap-node-card__title', title);
     if (subtitle && subtitle !== title) cardPart(body, 'div', 'roadmap-node-card__subtitle', subtitle);
+    // 健康度紧跟标题：触屏卡片只有 body 能滚，放在底部容易被挡住。
+    if (hasHealth(info)) healthRow(body, info, zh);
 
     if (info.summary_zh) {
       // 简介摘自中文笔记的「🎯 一句话总结」；公式交给页面已加载的 KaTeX。
@@ -626,6 +654,7 @@
     var info = getDetails()[node.id] || {};
     var name = (zh ? info.zh_title || info.title : info.title) || nodeLabel(node, zh);
     if (hasVideo(node, info)) name += zh ? '（含配音讲解视频）' : ' (narrated video included)';
+    if (hasHealth(info)) name += zh ? '；' + info.health_label_zh : '; ' + info.health_label;
     node.el.setAttribute('aria-label', name);
   }
 

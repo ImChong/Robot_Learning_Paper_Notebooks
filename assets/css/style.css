@@ -102,6 +102,12 @@
   --accent-soft: rgba(86, 156, 214, 0.14);
   --icon-star: #f5c542;
   --icon-pin: #f0605a;
+  /* 笔记健康度六格小条：没拿到的格是 off，0 分描红框，1–2 橙，3–4 黄，5–6 绿 */
+  --health-off: #474747;
+  --health-none: #f87171;
+  --health-low: #fb923c;
+  --health-mid: #facc15;
+  --health-high: #4ade80;
   --scrim: rgba(2, 6, 12, 0.55);
   --hero-from: #FFFFFF;
   --hero-to: #9B9B9B;
@@ -130,6 +136,11 @@
   --accent-soft: rgba(179, 27, 27, 0.08);
   --icon-star: #e3a008;
   --icon-pin: #d93a35;
+  --health-off: #d4d4d4;
+  --health-none: #dc2626;
+  --health-low: #ea580c;
+  --health-mid: #ca8a04;
+  --health-high: #16a34a;
   --scrim: rgba(20, 6, 6, 0.45);
   --hero-from: #000000;
   --hero-to: #666666;
@@ -584,9 +595,10 @@ a.index-chip-link:hover .index-chip-arrow {
 /* Open-source legend sits right above the paper list it annotates. */
 .index-main .index-legend {
   display: flex;
+  flex-wrap: wrap;
   justify-content: flex-end;
   align-items: center;
-  gap: 4px;
+  gap: 4px 16px;
   font-size: 12px;
   line-height: 16px;
   color: var(--text-secondary);
@@ -826,6 +838,166 @@ body.index-search-active .paper-list-toggle-group {
 .paper-card .paper-opensource .icon {
   width: 18px;
   height: 18px;
+}
+
+/* 卡片的第二行：发表时间 + 笔记健康度 */
+.paper-card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+  min-width: 0;
+}
+
+/* ===== 笔记健康度（scripts/note_health.py → _includes/paper-card.html）=====
+   六格小条，亮格数 = 得分；逐项清单由 assets/js/note-health.js 在悬停 / 点按 / 聚焦时弹出。
+   反映笔记的完整度与核验进度，不是论文质量评级。 */
+.paper-health {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  /* 小条只有 34×12px：四周透明内边距放大悬停 / 点按范围，负外边距抵消，不改变排版 */
+  padding: 4px;
+  margin: -4px;
+  border-radius: var(--radius-sm);
+  cursor: help;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.paper-health.is-tip-open {
+  background: var(--accent-soft);
+}
+
+.paper-health-bar {
+  display: inline-flex;
+  gap: 2px;
+}
+
+.paper-health-bar i {
+  width: 4px;
+  height: 12px;
+  background: var(--health-off);
+}
+
+.paper-health--0 .paper-health-bar i {
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--health-none);
+}
+
+.paper-health--1 .paper-health-bar i.is-on,
+.paper-health--2 .paper-health-bar i.is-on {
+  background: var(--health-low);
+}
+
+.paper-health--3 .paper-health-bar i.is-on,
+.paper-health--4 .paper-health-bar i.is-on {
+  background: var(--health-mid);
+}
+
+.paper-health--5 .paper-health-bar i.is-on,
+.paper-health--6 .paper-health-bar i.is-on {
+  background: var(--health-high);
+}
+
+.paper-health-score {
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+/* 首页图例里的示意小条：不是某篇笔记的分数 */
+.index-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.index-legend-health {
+  cursor: help;
+  border-radius: var(--radius-sm);
+}
+
+.index-legend-health:focus-visible {
+  outline: 2px solid var(--link);
+  outline-offset: 2px;
+}
+
+.index-legend-health .paper-health {
+  padding: 0;
+  margin: 0;
+  cursor: inherit;
+}
+
+.note-health-tip {
+  position: fixed;
+  z-index: var(--z-popover);
+  width: max-content;
+  max-width: min(320px, calc(100vw - 16px));
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--bg-secondary);
+  color: var(--text);
+  box-shadow: 0 8px 24px var(--card-shadow);
+  font-size: 12px;
+  line-height: 18px;
+  pointer-events: none;
+}
+
+.note-health-tip[hidden] {
+  display: none;
+}
+
+.note-health-tip-title {
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 600;
+}
+
+.note-health-tip-list {
+  list-style: none;
+  margin: 4px 0 0;
+  padding: 0;
+}
+
+.note-health-tip-item {
+  display: grid;
+  grid-template-columns: 16px minmax(0, 1fr);
+  margin: 2px 0 0;
+}
+
+.note-health-tip-mark {
+  font-weight: 700;
+}
+
+.note-health-tip-item.is-ok .note-health-tip-mark {
+  color: var(--health-high);
+}
+
+.note-health-tip-item.is-gap .note-health-tip-mark {
+  color: var(--health-none);
+}
+
+.note-health-tip-item.is-gap .note-health-tip-name {
+  font-weight: 600;
+}
+
+.note-health-tip-hint {
+  display: block;
+  color: var(--text-secondary);
+}
+
+.note-health-tip-cap,
+.note-health-tip-foot {
+  margin: 8px 0 0;
+  color: var(--text-secondary);
+}
+
+.note-health-tip-foot {
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+  color: var(--text-muted);
 }
 
 /* ===== Paper Layout with TOC =====
@@ -1945,6 +2117,31 @@ details[open] > .roadmap-entry:hover .roadmap-entry-arrow { transform: rotate(-9
   font-variant-numeric: tabular-nums;
 }
 
+/* 年份 + 笔记健康度六格小条（同首页卡片的配色）；节点太窄时小条换到下一行。 */
+.tt-node-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0 4px;
+  max-width: 100%;
+}
+
+.tt-node-health {
+  padding: 0;
+  margin: 0;
+  cursor: inherit;
+}
+
+.tt-node-health .paper-health-bar {
+  gap: 1px;
+}
+
+.tt-node-health .paper-health-bar i {
+  width: 3px;
+  height: 8px;
+}
+
 /* 含配音讲解视频：右上角的播放徽标，像天赋图标角上的等级数字。
    徽标大半露在节点上沿外面，只压住边框和内边距，不会盖到节点名。 */
 .tt-node-badge {
@@ -2801,6 +2998,29 @@ body.mermaid-lightbox-open {
 }
 .paper-body blockquote p:last-child {
   margin-bottom: 0;
+}
+
+/* 论文详情页：日期模块（第一个引用块）最下面的笔记健康度一行，见 _layouts/paper.html */
+.paper-body blockquote .paper-health-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+}
+
+.paper-health-line .paper-health-score,
+.paper-health-line .paper-health-gaps {
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.paper-health-line .paper-health-gaps {
+  color: var(--text-muted);
+}
+
+.paper-health-line .paper-health:focus-visible {
+  outline: 2px solid var(--link);
+  outline-offset: 2px;
 }
 
 /* Code */
@@ -4241,6 +4461,24 @@ a.updates-item-link:hover {
   font-size: 12px;
   line-height: 16px;
   font-variant-numeric: tabular-nums;
+}
+
+.roadmap-node-card__health {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 16px;
+  font-variant-numeric: tabular-nums;
+}
+
+.roadmap-node-card__health .paper-health {
+  flex-shrink: 0;
+  padding: 0;
+  margin: 0;
+  cursor: inherit;
 }
 
 .roadmap-node-card__action {

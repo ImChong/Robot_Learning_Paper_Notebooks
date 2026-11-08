@@ -65,8 +65,35 @@ chore(Progress): 更新论文阅读进度
 1. **核对元数据**：`zhname` 读起来像论文标题，不像方法流水线说明；简要描述只在 `**...**` 行。
 2. **重新生成索引**：`python3 scripts/prepare_pages.py`（论文 `.md` 变更后必须执行）。
 3. **确认 `zh_title`**：在 `_data/papers.json` 中检查对应条目已生成 `zh_title`，且与预期中文名称一致；若 `zhname` 被识别为方法摘要，`zh_title` 可能缺失——应修正 `zhname` 或添加 `zh_title`。
-4. **跑测试**：`pytest tests/test_prepare_pages.py -v`（含 `is_zhname_description` / `resolve_zh_card_title` 用例）。
+4. **跑测试**：`pytest tests/test_prepare_pages.py tests/test_note_health.py -v`（含 `is_zhname_description` / `resolve_zh_card_title` 与健康度用例）。
 5. **渲染验收（中文首页）**：`bundle exec jekyll serve` 后切换中文，抽查首页对应分类卡片**只显示论文名称**、无长段摘要；若改动影响可见 UI，PR 须附截图（见下文 Cursor Cloud 说明）。
+
+### 笔记健康度（首页卡片的六格小条）
+
+首页每张论文卡片的日期旁边有一条 0/6～6/6 的六格小条（issue #701，参考 [Robotics_Notebooks](https://github.com/ImChong/Robotics_Notebooks) 的节点健康度）。它说明**笔记写到了哪一步、原文核验到了哪一步**，不是论文质量或结论可靠性的评级。分数由 `scripts/note_health.py` 在 `prepare_pages.py` 时按笔记当前内容重算，写进 `_data/papers.json` 的 `health_score` / `health_gaps` / `health_label_zh` / `health_label_en`（封顶时另有 `health_status`），六项的名称与判据写进 `_data/note_health.json`；卡片模板与 `assets/js/note-health.js` 只负责展示，不要在卡片里手写分数。首页「推荐学习路线图」的节点（分系视图与全局总览）在年份旁画同一套小条，节点悬浮卡片标题下写「笔记健康度 N/6，缺：……」，读屏的 aria-label 也带上；数据同样来自 `_data/papers.json`（`_includes/roadmap-tree.html` 输出到 `#roadmap-node-details`），路线图本身不用手改。论文详情页在开头「📅 阅读日期 / 总结日期 / 收录日期」那个引用块的最下面加一行「🩺 笔记健康度: ▮▮▮▮▯▯ 4/6 缺：……」（`_layouts/paper.html` 渲染时插入，悬停 / 点按小条同样弹逐项清单）；没有日期模块的笔记（目前只有 Cosmos）不加。
+
+| 项 | 判据（每项 1 分） |
+|----|----|
+| 元数据与来源 | H1 标题；`## 📋 基本信息` 里有可追溯的原文链接（arXiv / DOI / 会议页 / PDF，或「论文 / 技术报告」行里的链接）和发表时间 / 版本 |
+| 阅读骨架 | 研究问题、核心方法、实验 / 结果、局限 / 结论四组小节都在，且正文不是 🚧 / 待补充占位（按标题关键词与 ❓ 🔧 ⚠️ 三个模板 emoji 认，硬件 / 基准板块多认几个别名，见 `_SKELETON_KEYWORDS`） |
+| 原文核验 | front matter 写了 `original_check: done` **和** `original_check_date: YYYY-MM-DD`；正文还写着「依据 arXiv 摘要整理」的不算 |
+| 动画讲解 | 正文有 `paper-demo` 占位，演示 id 在某个 bundle 的 `K.mount({...})` 里注册过，且该 bundle 写在 front matter 的 `demos:` 里（配音视频不算） |
+| 讲解视频 | `*-video` 占位已注册、`data-src` 指向的 mp4 在仓库里且读得出时长 |
+| 具体实例 | 有「具体实例 / 计算实例 / 手算 / 走一遍」一类小节，正文至少 200 字、5 个数字 |
+
+`status: draft` 封顶 4 分，`status: stub`（或自动识别出的占位稿）封顶 2 分。
+
+**原文核验只认明确记录**：读完论文全文（必要时含关键附录、官方源码）后，在 front matter 加
+
+```yaml
+original_check: done              # done | partial | abstract；不写 = 未记录
+original_check_date: 2026-11-08
+original_check_scope: 正文 + 附录 B + 官方代码   # 可选，写清核对了什么
+```
+
+没读完就写 `partial` 或不写，**不要因为笔记写得长就补 `done`**。现有笔记都还没有这个字段，所以目前最高 5/6，按实际核验进度逐篇补。
+
+**提交前**：改了笔记就跑 `python3 scripts/note_health.py --changed`（或列出具体笔记路径），把输出的表格贴进 PR 正文；`--all` 打印全部笔记与分数分布。`tests/test_note_health.py` 覆盖 0～6 分、缺项、封顶与占位不计分。
 
 ### 笔记之间的链接写 `.html`
 

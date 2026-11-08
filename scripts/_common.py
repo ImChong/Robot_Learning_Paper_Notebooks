@@ -8,6 +8,7 @@ Centralises logic that previously diverged between ``prepare_pages.py`` and
 * :func:`normalize_name` — fuzzy-match key for paper titles
 * :func:`parse_frontmatter` — minimal YAML front matter parser (no external deps)
 * :func:`iter_paper_md_files` — iterate paper notes while skipping todos/PROGRESS
+* :func:`mp4_duration_seconds` — read an explainer video's length (``prepare_pages`` and ``note_health``)
 """
 
 from __future__ import annotations
@@ -396,3 +397,41 @@ def iter_paper_md_files(papers_dir: str = PAPERS_DIR) -> Iterator[str]:
             for fname in sorted(os.listdir(paper_path)):
                 if fname.endswith(".md"):
                     yield os.path.join(paper_path, fname)
+
+
+def mp4_duration_seconds(path):
+    """读 mp4 顶层 ``moov/mvhd`` 的时长（整秒，舍去零头，同笔记里「N 分 M 秒」的写法），读不到返回 None。"""
+    try:
+        with open(path, "rb") as f:
+            size = os.fstat(f.fileno()).st_size
+            pos = 0
+            while pos + 8 <= size:
+                f.seek(pos)
+                header = f.read(8)
+                box_size = int.from_bytes(header[:4], "big")
+                box_type = header[4:8]
+                header_len = 8
+                if box_size == 1:
+                    box_size = int.from_bytes(f.read(8), "big")
+                    header_len = 16
+                elif box_size == 0:
+                    box_size = size - pos
+                if box_size < header_len:
+                    return None
+                if box_type == b"moov":
+                    moov = f.read(box_size - header_len)
+                    i = moov.find(b"mvhd")
+                    if i < 4:
+                        return None
+                    body = moov[i + 4 :]
+                    if body[0] == 1:
+                        timescale = int.from_bytes(body[20:24], "big")
+                        duration = int.from_bytes(body[24:32], "big")
+                    else:
+                        timescale = int.from_bytes(body[12:16], "big")
+                        duration = int.from_bytes(body[16:20], "big")
+                    return duration // timescale if timescale else None
+                pos += box_size
+    except OSError:
+        return None
+    return None
