@@ -2426,8 +2426,7 @@
     label(p4, R, 64, '英译法也一样：41.8 分', 'demo-x-ink', 14);
     var frb = [barRowAt(p4, R, 88, 120, 'ConvS2S 集成', C_MUTED, 20, 12), barRowAt(p4, R, 118, 120, '大模型（这篇）', C_ACCENT, 20, 12)];
     label(p4, R, 172, '一个模型，就超过了以前合起来的', 'demo-x-ink2', 12);
-    label(p4, R, 196, '（正文有一处写成 41.0，本站按表取 41.8）', 'demo-x-mut', 11);
-    label(p4, R, 220, '条从 38 分画起', 'demo-x-mut', 11);
+    label(p4, R, 196, '条从 38 分画起', 'demo-x-mut', 11);
     /* 第 5 段：怎么估的 */
     var p5 = group(s);
     label(p5, R, 64, '「力气」是估出来的', 'demo-x-ink', 14);
@@ -2532,7 +2531,7 @@
   /* ── scene 17: 局限，以及机器人怎么接着用 ── */
   function buildSceneLimits() {
     var s = sceneSvg('左边是第 014 期真实世界人形行走图 8A 的读图柱：同一个行走任务只换大脑，Transformer、LSTM、TCN、MLP 的成功率，旁边是 Digit；' +
-      '右边依次出现：人数翻倍对数翻四倍的格子；一个一个写的格子；三处作者的猜测；机器人这边的证据；同一个零件装进三台机器人');
+      '右边依次出现：人数翻倍对数翻四倍的格子；一个一个写的格子；两处作者的猜测；机器人这边的证据；同一个零件装进三台机器人');
     s.appendChild(svgText(24, 26, '这篇没有机器人实验；证据在第 14 期', 'demo-x-ink2', 13.5));
     robotImg(s, 'digit', 20, 70, 200);
     var fb = RH_FIG8A.map(function (r, i) { return barRowAt(s, 120, 96 + i * 44, 84, r[0], i ? C_MUTED : C_ROBOT, 26, 12.5); });
@@ -2556,13 +2555,13 @@
     /* 第 3 段 */
     var p3 = group(s);
     label(p3, R, 64, '局限三：几处理由，是作者的猜测', 'demo-x-ink', 14);
-    [['分数除以 8', '猜：不缩小，梯度会极小'], ['正弦当钟', '猜：更能用在长句子上'], ['评委在找「它」', '论文只给了几个例子']].forEach(function (c, i) {
+    [['分数除以 8', '猜：不缩小，梯度会极小'], ['正弦当钟', '猜：更能用在长句子上']].forEach(function (c, i) {
       var y = 84 + i * 50;
       rectBox(p3, R, y, W, 42, C_BORDER, C_SURFACE);
       label(p3, R + 12, y + 26, c[0], 'demo-x-ink', 12.5);
       label(p3, R + 150, y + 26, c[1], 'demo-x-ink2', 11.5);
     });
-    label(p3, R, 252, '这篇论文里都没有专门的实验来证明', 'demo-x-mut', 11.5);
+    label(p3, R, 202, '这篇论文里都没有专门的实验来证明', 'demo-x-mut', 11.5);
     /* 第 4 段 */
     var p4 = group(s);
     label(p4, R, 64, '机器人这边的证据：第 14 期', 'demo-x-ink', 14);
@@ -2745,8 +2744,8 @@
   function buildVideoDemo(host) {
     K.video(host, {
       title: '配音讲解视频：从机器人的角度读 Transformer',
-      sub: '16 分 49 秒竖屏视频（1080×1920），中文配音 + 字幕。画面就是上面的十七幕动画，旁白用同样的比喻把每一幕讲细；适合手机上看或转发。',
-      size: '18.7 MB',
+      sub: '16 分 46 秒竖屏视频（1080×1920），中文配音 + 字幕。画面就是上面的十七幕动画，旁白用同样的比喻把每一幕讲细；适合手机上看或转发。',
+      size: '18.6 MB',
       fileName: 'Transformer_讲解视频.mp4'
     });
   }
