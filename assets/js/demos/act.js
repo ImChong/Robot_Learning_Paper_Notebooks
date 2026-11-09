@@ -1492,9 +1492,18 @@
   }
 
   /* ── scene 8: CVAE：给动作一个风格变量 z ── */
+  /* 第 8 幕讲 L1、L2、KL 用的玩具（我们编的数，不是论文的）：四步的示范和预测，误差 e = 预测 − 示范；
+     L1 = 平均 |e| = 0.2，L2 = 平均 e² = 0.07；最后一步占总和的比例 62.5% → 89.3%。
+     KL 是一维正态 N(μ, σ²) 到标准正态的 ½(μ² + σ² − 1 − ln σ²)：重合 0，μ = 1 时 0.5，σ = 0.5 时 0.318；官方代码 policy.py 把 32 维加起来 */
+  var LOSS_TOY = { demo: [0.40, 0.65, 0.55, 0.75], err: [0.1, -0.1, 0.1, -0.5] };
+  var KL_TOY = [[0, 1], [1, 1], [0, 0.5]];
+  function klNormal(mu, sigma) {
+    return 0.5 * (mu * mu + sigma * sigma - 1 - 2 * Math.log(sigma));
+  }
   function buildSceneCvae() {
     var s = sceneSvg('左上是论文图 3：左边黄色的是 CVAE 的编码器，右边蓝色的是解码器也就是策略。左下是训练和测试两条流程：训练时编码器看示范的动作块算出 z，' +
-      '测试时编码器扔掉、z 取 0。右边依次出现：编码器和解码器各看什么；损失是 L1 加 β 倍 KL；β 越大 z 里的信息越少；测试时 z = 0；我们的复现里 z 几乎不带信息');
+      '测试时编码器扔掉、z 取 0。右边依次出现：编码器和解码器各看什么；损失是 L1 加 β 倍 KL；L1 的例子：四步的误差取绝对值再平均；L2 的例子：同样的误差先平方再平均，' +
+      '最后一步占的比例从六成多变成将近九成；KL 的例子：编码器给的钟形曲线和标准正态重合、挪开、变窄时 KL 怎么变；β 越大 z 里的信息越少；测试时 z = 0；我们的复现里 z 几乎不带信息');
     s.appendChild(svgText(24, 26, '把策略训成一个条件 VAE', 'demo-x-ink2', 13.5));
     var fig = paperPart(s, 'fig3', 0, 0, 1, 1, 24, 46, 380, '');
     void fig;
@@ -1534,7 +1543,56 @@
     var bt1 = label(bal, 0, 0, 'L1', 'demo-x-ink', 11.5, 'middle'), bt2 = label(bal, 0, 0, '10 × KL', 'demo-x-ink', 11.5, 'middle');
     paint(bal.appendChild(svgEl('path', { d: 'M ' + (R + 175) + ' 214 l -10 26 l 20 0 z' })), C_MUTED);
     label(p2, R, 262, '附录表 III：β = 10', 'demo-x-ink2', 12);
-    /* 第 3 段：β 越大，z 里的信息越少 */
+    /* 第 3、4 段：L1 和 L2，同一组误差（玩具） */
+    var pE = group(s);
+    var eTitle = label(pE, R, 62, '', 'demo-x-ink', 13.5);
+    var ep = plotBox(pE, R, 70, 352, 84, -0.5, 4.7, 0.2, 0.85);
+    var demoPts = LOSS_TOY.demo.map(function (v, i) { return [ep.px(i), ep.py(v)]; });
+    var predPts = LOSS_TOY.demo.map(function (v, i) { return [ep.px(i), ep.py(v + LOSS_TOY.err[i])]; });
+    pathLine(pE, demoPts, C_HUMAN, 1.8, '5 4');
+    pathLine(pE, predPts, C_ACCENT, 1.8);
+    var errSegs = LOSS_TOY.err.map(function () { return hline(pE, 0, 0, 0, 0, C_BAD, 3.2); });
+    demoPts.forEach(function (p) { dotAt(pE, p[0], p[1], 2.6, C_HUMAN); });
+    predPts.forEach(function (p) { dotAt(pE, p[0], p[1], 2.8, C_ACCENT); });
+    lineLegend(pE, R, 172, [['示范', C_HUMAN, '5 4'], ['预测', C_ACCENT], ['每步的差距', C_BAD]], 11);
+    var BASE = 246, UNIT = 112;
+    var eBars = LOSS_TOY.err.map(function (e, i) { return vbar(pE, ep.px(i) - 17, 34, i === 3 ? C_BAD : C_MUTED); });
+    var eVal = LOSS_TOY.err.map(function (e, i) { return label(pE, ep.px(i), 0, '', 'demo-x-ink', 11, 'middle'); });
+    hline(pE, R, BASE, R + 352, BASE, C_BORDER, 1.2);
+    LOSS_TOY.err.forEach(function (e, i) { label(pE, ep.px(i), BASE + 13, '第 ' + (i + 1) + ' 步', 'demo-x-mut', 10.5, 'middle'); });
+    var MX = R + 305, meanBar = vbar(pE, MX - 17, 34, C_GOOD);
+    var meanVal = tone(pE, MX, 0, '', C_GOOD, 11.5, 'middle');
+    tone(pE, MX, BASE + 13, '平均', C_GOOD, 10.5, 'middle');
+    var barKind = rich(pE, R + 352, 190, '', 11.5, 'demo-x-ink2', 'end');
+    var shareG = group(pE);
+    var shareSeg = [0, 1, 2, 3].map(function (i) { return paint(shareG.appendChild(svgEl('rect', { x: R, y: 268, width: 0, height: 12, rx: 2 })), i === 3 ? C_BAD : C_MUTED); });
+    var shareLbl = label(shareG, R, 298, '', 'demo-x-ink2', 11.5);
+    function lossToy(m) {
+      /* m = 0：L1（|e|），m = 1：L2（e²），中间按比例过渡 */
+      var vals = LOSS_TOY.err.map(function (e) { return (1 - m) * Math.abs(e) + m * e * e; });
+      var sum = vals.reduce(function (a, b) { return a + b; }, 0);
+      return { vals: vals, mean: sum / vals.length, share: vals.map(function (v) { return v / sum; }) };
+    }
+    /* 第 5 段：KL（玩具：一维正态和标准正态） */
+    var pK = group(s);
+    label(pK, R, 62, 'KL：两个分布相距多远', 'demo-x-ink', 13.5);
+    var kp = plotBox(pK, R, 74, 352, 112, -3.5, 3.5, 0, 0.85);
+    var stdCurve = pathLine(kp.g, [], C_MUTED, 2, '6 4'), encCurve = pathLine(kp.g, [], C_WARN, 2.6);
+    function bell(mu, sg) {
+      var pts = [];
+      for (var xx = -3.5; xx <= 3.501; xx += 0.07) pts.push([kp.px(xx), kp.py(Math.exp(-0.5 * (xx - mu) * (xx - mu) / (sg * sg)) / (sg * Math.sqrt(2 * Math.PI)))]);
+      return pts;
+    }
+    setPath(stdCurve, bell(0, 1));
+    var muDot = dotAt(pK, 0, kp.py(0) - 4, 4, C_WARN);
+    lineLegend(pK, R, 206, [['标准正态：均值 0、宽度 1', C_MUTED, '6 4'], ['编码器给的一维', C_WARN]], 11);
+    var klTxt = label(pK, R, 234, '', 'demo-x-ink', 14);
+    var klState = label(pK, R + 352, 234, '', 'demo-x-ink2', 12, 'end');
+    rectBox(pK, R, 244, 352, 12, C_BORDER, C_SURFACE2);
+    var klBar = hbar(pK, R, 244, 12, C_WARN, 0.9);
+    label(pK, R, 274, '条长 = KL；两条曲线完全重合时是 0', 'demo-x-mut', 11);
+    label(pK, R, 294, '官方代码：32 维各算一份，再加起来', 'demo-x-ink2', 11.5);
+    /* 第 6 段：β 越大，z 里的信息越少 */
     var p3 = group(s);
     label(p3, R, 62, 'β 越大，z 里装的信息越少', 'demo-x-ink', 13.5);
     var prior = ringAt(p3, R + 176, 156, 60, C_MUTED, 1.6);
@@ -1548,9 +1606,8 @@
     label(p4, R, 90, 'z = 0 是先验（标准正态）的均值', 'demo-x-ink2', 12);
     label(p4, R, 114, '同一个观测，输出总是同一段动作', 'demo-x-ink2', 12);
     label(p4, R, 138, '论文：这样评估更方便', 'demo-x-ink2', 12);
-    label(p4, R, 180, '另外两个选择（第 IV-C 节）：', 'demo-x-ink', 12);
-    label(p4, R, 204, '· 重建用 L1，不用 L2：动作学得更准', 'demo-x-ink2', 12);
-    label(p4, R, 228, '· 动作是关节角本身，不是增量：增量更差', 'demo-x-ink2', 12);
+    label(p4, R, 180, '另一个选择（第 IV-C 节）：', 'demo-x-ink', 12);
+    label(p4, R, 204, '· 动作是关节角本身，不是增量：增量更差', 'demo-x-ink2', 12);
     /* 第 5 段：我们的复现 */
     var p5 = group(s);
     label(p5, R, 62, '我们的复现：z 几乎没装东西', 'demo-x-ink', 13.5);
@@ -1564,7 +1621,7 @@
     label(p5, R, 268, '图 6c：去掉 CVAE，人的示范上 35.3% → 2%；机制论文没解释', 'demo-x-ink2', 11.5);
     function draw(t, clock) {
       var now = nowOf(t, clock);
-      var test = since(t, clock, 10.4) > 0 && t >= 10.4;
+      var test = since(t, clock, 20.6) > 0 && t >= 20.6;
       mode.textContent = test ? '测试：编码器不用，z = 0' : '训练：编码器从示范里算出 z';
       bxs.demo.style.opacity = test ? 0.25 : 1; bxs.enc.style.opacity = test ? 0.25 : 1;
       fz0.at(now, [88, 224], [88, 250], !test);
@@ -1579,7 +1636,46 @@
         pp[0].setAttribute('x', (cx - 35).toFixed(1)); pp[0].setAttribute('y', cy.toFixed(1));
         pp[1].setAttribute('x', cx.toFixed(1)); pp[1].setAttribute('y', (cy + 14).toFixed(1));
       });
-      var beta = 0.5 + 0.5 * Math.sin(since(t, clock, 7.0) * 0.9 - 1.57), spread = 50 * (1 - beta) + 4;
+      /* L1 / L2：误差线一根根出来，柱子跟着长；到 L2 那段，柱子从 |e| 变成 e²，横条的比例跟着变 */
+      var u = since(t, clock, 7.0), v = t >= 10.4 ? since(t, clock, 10.4) : 0;
+      var m = Math.min(1, Math.max(0, (v - 0.4) / 1.4));
+      m = m * m * (3 - 2 * m);
+      var toy = lossToy(m);
+      eTitle.textContent = m < 0.5 ? 'L1：每步的差距取绝对值，再平均' : 'L2：先平方，再平均';
+      LOSS_TOY.err.forEach(function (e, i) {
+        var a = Math.min(1, Math.max(0, (u - 0.3 - 0.45 * i) / 0.35));
+        var x = ep.px(i), y0 = predPts[i][1], y1 = demoPts[i][1];
+        setLine(errSegs[i], x, y1, x, y1 + (y0 - y1) * a);
+        errSegs[i].style.opacity = a > 0 ? 1 : 0;
+        var h = toy.vals[i] * UNIT * a;
+        eBars[i].set(BASE, h);
+        eVal[i].setAttribute('y', (BASE - Math.max(h, 5) - 5).toFixed(1));
+        eVal[i].textContent = a >= 1 ? (m < 0.5 ? f1(Math.abs(e)) : f2(e * e)) : '';
+      });
+      var mh = toy.mean * UNIT * Math.min(1, Math.max(0, (u - 2.2) / 0.35));
+      meanBar.set(BASE, mh);
+      meanVal.setAttribute('y', (BASE - Math.max(mh, 5) - 5).toFixed(1));
+      meanVal.textContent = u > 2.55 ? f2(toy.mean).replace(/0$/, '') : '';
+      barKind.setText(m < 0.5 ? '柱高 = $|e|$' : '柱高 = $e^2$');
+      var showShare = u > 2.6 ? 1 : 0, sx = R;
+      shareSeg.forEach(function (r, i) {
+        var w = 352 * toy.share[i];
+        r.setAttribute('x', sx.toFixed(1)); r.setAttribute('width', Math.max(0, w - 1.5).toFixed(1));
+        sx += w;
+      });
+      shareG.style.opacity = showShare;
+      shareLbl.textContent = '横条 = 各步占总和的比例：最后一步（红）占 ' + fmt(100 * toy.share[3], 1) + '%';
+      /* KL：重合 → 均值挪到 1 → 宽度缩成一半，循环；读数和条跟着曲线变 */
+      var w5 = since(t, clock, 13.8), P = clock == null ? 3.3 : 9, ph = (w5 % P) / P * 3, st = Math.floor(ph), fr = ph - st;
+      var A = KL_TOY[st % 3], B = KL_TOY[(st + 1) % 3], blend = Math.min(1, Math.max(0, (fr - 0.72) / 0.28));
+      blend = blend * blend * (3 - 2 * blend);
+      var mu = A[0] + (B[0] - A[0]) * blend, sg = A[1] + (B[1] - A[1]) * blend, kl = klNormal(mu, sg);
+      setPath(encCurve, bell(mu, sg));
+      moveDot(muDot, [kp.px(mu), kp.py(0) - 4]);
+      klTxt.textContent = 'KL = ' + f2(kl);
+      klState.textContent = blend > 0 ? '' : ['两条重合', '均值挪到 1', '宽度缩成一半'][st % 3];
+      setW(klBar, 352 * Math.min(1, kl / 0.6));
+      var beta = 0.5 + 0.5 * Math.sin(since(t, clock, 17.2) * 0.9 - 1.57), spread = 50 * (1 - beta) + 4;
       posts.forEach(function (c, k) {
         var a = k * 1.57 + 0.4;
         moveDot(c, [R + 176 + spread * Math.cos(a), 156 + spread * 0.7 * Math.sin(a)]);
@@ -1595,9 +1691,11 @@
       }
       setOpacity(p1, win(t, 0.3, 3.6));
       setOpacity(p2, win(t, 3.6, 7.0));
-      setOpacity(p3, win(t, 7.0, 10.4));
-      setOpacity(p4, win(t, 10.4, 13.4));
-      setOpacity(p5, win(t, 13.4));
+      setOpacity(pE, win(t, 7.0, 13.8));
+      setOpacity(pK, win(t, 13.8, 17.2));
+      setOpacity(p3, win(t, 17.2, 20.6));
+      setOpacity(p4, win(t, 20.6, 23.6));
+      setOpacity(p5, win(t, 23.6));
     }
     return { el: s, draw: draw };
   }
@@ -2545,14 +2643,17 @@
     },
     {
       title: 'CVAE：给动作一个风格变量 z',
-      dur: 16,
+      dur: 26.2,
       build: buildSceneCvae,
       cues: [
         { at: 0.4, s: '编码器给出风格变量 $z$：它看示范的动作块和关节角；解码器就是策略。' },
         { at: 3.6, s: '损失 = 重建（L1）+ $\\beta$ × KL，$\\beta = 10$。' },
-        { at: 7.0, s: '$\\beta$ 越大，$z$ 里能装的信息越少。' },
-        { at: 10.4, s: '测试时扔掉编码器，$z = 0$：同一个观测总是同一段动作。' },
-        { at: 13.4, s: '我们的复现：编码器给出的分布几乎就是标准正态，换 $z$ 动作几乎不变。' }
+        { at: 7.0, s: 'L1：每步的差距取绝对值再平均；例子里 0.1、0.1、0.1、0.5 → 0.2。' },
+        { at: 10.4, s: 'L2：先平方再平均（0.07），大误差的占比从六成多升到近九成。' },
+        { at: 13.8, s: 'KL：两个分布相距多远；重合是 0，均值挪到 1 是 0.5。' },
+        { at: 17.2, s: '$\\beta$ 越大，$z$ 里能装的信息越少。' },
+        { at: 20.6, s: '测试时扔掉编码器，$z = 0$：同一个观测总是同一段动作。' },
+        { at: 23.6, s: '我们的复现：编码器给出的分布几乎就是标准正态，换 $z$ 动作几乎不变。' }
       ]
     },
     {
@@ -2672,7 +2773,7 @@
   function buildExplainerDemo(host) {
     K.explainer(host, {
       title: '十七幕动画：ACT 全流程速览',
-      sub: '约 272 秒自动播放。空格播放/暂停，← → 换幕；真机画面剪自项目页的视频，柱和曲线照论文的数重画，仿真画面和曲线是我们的复现；机械臂都是模型的离线渲染。',
+      sub: '约 282 秒自动播放。空格播放/暂停，← → 换幕；真机画面剪自项目页的视频，柱和曲线照论文的数重画，仿真画面和曲线是我们的复现；机械臂都是模型的离线渲染。',
       ariaLabel: 'ACT 十七幕讲解动画',
       notes: [
         '取数依据：表 I、表 II、附录的超参数与用户研究照抄 arXiv 2304.13705 v1（读的是 LaTeX 源码）；图 6 (a)–(c) 的数取自源文件 figures/fm_data.pdf 里被裁掉的原始数据表；图 6 (d) 用正文给的平均用时。',
@@ -2689,8 +2790,8 @@
   function buildVideoDemo(host) {
     K.video(host, {
       title: '配音讲解视频：ACT 十七幕全流程',
-      sub: '24 分 47 秒竖屏视频（1080×1920），中文配音 + 字幕。画面就是上面的十七幕动画，旁白把每一幕讲细；适合手机上看或转发。',
-      size: '29.3 MB',
+      sub: '26 分 1 秒竖屏视频（1080×1920），中文配音 + 字幕。画面就是上面的十七幕动画，旁白把每一幕讲细；适合手机上看或转发。',
+      size: '30.6 MB',
       fileName: 'ACT_讲解视频.mp4'
     });
   }

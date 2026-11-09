@@ -6484,13 +6484,32 @@ def test_act_explainer_demos_and_worked_example_share_the_paper_numbers():
     assert _fmt(ens, 2) in note and _fmt(max(preds), 2) in note and _fmt(min(preds), 2) in note
     assert abs(ens - rep["te"]["rgrip_exec"][152]) < 0.01, "离线重算的加权平均应等于回合里真的发出去的目标（量化误差以内）"
     assert f"{rep['cvae']['kl']:.4f}" in note and f"{rep['cvae']['kl']:.4f}" in narration
+    # 例 9 / 第 8 幕：L1、L2 与 KL 的玩具（编的数）——四步的误差，平均 |e|、平均 e²、最后一步的占比；一维正态到标准正态的 KL
+    assert "var LOSS_TOY = { demo: [0.40, 0.65, 0.55, 0.75], err: [0.1, -0.1, 0.1, -0.5] };" in js
+    assert "var KL_TOY = [[0, 1], [1, 1], [0, 0.5]];" in js
+    err = [0.1, -0.1, 0.1, -0.5]
+    l1, l2 = sum(abs(e) for e in err) / 4, sum(e * e for e in err) / 4
+    assert (_fmt(l1, 2), _fmt(l2, 2)) == ("0.20", "0.07")
+    assert (_fmt(100 * 0.5 / sum(abs(e) for e in err), 1), _fmt(100 * 0.25 / sum(e * e for e in err), 1)) == ("62.5", "89.3")
+    pred = [d + e for d, e in zip([0.40, 0.65, 0.55, 0.75], err, strict=True)]
+    assert [_fmt(v, 2) for v in pred] == ["0.50", "0.55", "0.65", "0.25"] and "预测是 0.50 / 0.55 / 0.65 / 0.25" in note
+
+    def kl1(mu, sg):
+        return 0.5 * (mu * mu + sg * sg - 1 - 2 * math.log(sg))
+
+    assert [_fmt(kl1(mu, sg), 3) for mu, sg in ((0, 1), (1, 1), (0, 0.5))] == ["0.000", "0.500", "0.318"]
+    for frag in ("得到 0.2", "平均是 0.07", "L 1 里占六成多", "L 2 里占了将近九成", "K L 是 0；", "K L 是 0.5；", "K L 约 0.32", "32 维的 K L 加在一起"):
+        assert frag in narration, frag
+    assert "0.2$" in note and "0.07$" in note and "62.5\\%" in note and "89.3\\%" in note and "0.318" in note
+    script_part = narration[narration.index("SCRIPT = [") :]
+    assert "0.1 只是示意" not in script_part and "可见只是示意" in script_part
     assert f"{rep['cpu_s']:.2f}" in narration
     assert len(rep["human"]["rgrip"]) == 50 and len(rep["human"]["close"]) == 50
     assert f"第 {rep['human']['close_min']} 步到第 {rep['human']['close_max']} 步" in narration
 
     # 旁白：片头接 Transformer 的片尾预告，片尾只预告下一篇（EgoMimic）；数字之间不只隔一个逗号
     spoken = re.findall(r'"([^"]*)"\),', narration[narration.index("SCRIPT = [") : narration.index("DISPLAY = [")])
-    assert len(spoken) == 91 and not any("@" in t for t in spoken)
+    assert len(spoken) == 94 and not any("@" in t for t in spoken)
     assert not any(re.search(r"\d\s*[，,]\s*\d", t) for t in spoken)
     assert "上一期结尾预告：用 Transformer 一次写出一整段动作" in narration and "下一篇讲 EgoMimic" in narration and "EgoMimic" in intro
     for bad in ("长什么样", "一行", "调到", "重画", "换成人的", "魔术贴扎带", "数据长", "每一步差一点"):
