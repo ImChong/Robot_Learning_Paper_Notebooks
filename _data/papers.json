@@ -12,13 +12,10 @@
         "summary_zh": "PPO 通过一个简单的裁剪机制，让强化学习的策略更新既大胆又安全——每一步都在\"可控范围\"内改进，是目前人形机器人控制领域最常用的基础算法。",
         "explainer_scenes": 5,
         "video_seconds": 230,
-        "health_score": 4,
-        "health_gaps": [
-          "skeleton",
-          "verification"
-        ],
-        "health_label_zh": "笔记健康度 4/6，缺：阅读骨架、原文核验",
-        "health_label_en": "Note health 4/6; missing: reading skeleton, full-text check",
+        "health_score": 6,
+        "health_gaps": [],
+        "health_label_zh": "笔记健康度 6/6，六项齐全",
+        "health_label_en": "Note health 6/6; all six items present",
         "published_date_zh": "2017年7月20日（arXiv）",
         "published_date_en": "Jul 20, 2017 (arXiv)",
         "zhname": "近端策略优化算法 (PPO)",
