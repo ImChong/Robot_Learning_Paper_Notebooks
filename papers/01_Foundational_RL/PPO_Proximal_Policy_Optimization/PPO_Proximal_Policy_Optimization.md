@@ -4,6 +4,8 @@ paper_order: 1
 title: "Proximal Policy Optimization Algorithms (PPO)"
 category: "基础路线图"
 demos: ["ppo"]
+original_check: done
+original_check_date: 2026-11-09
 ---
 
 # Proximal Policy Optimization Algorithms (PPO)
@@ -134,11 +136,11 @@ $$r_t(\theta) = \frac{\pi_\theta(a_t \mid s_t)}{\pi _ {\theta _ {old}}(a_t \mid 
 <details class="paper-fold" markdown="1">
 <summary>📖 展开文字：裁剪公式、ε 的含义与好/坏动作对照表</summary>
 
-PPO 的精髓就一句话：**不管动作好坏，每次策略改变的幅度都要有上限。**
+PPO-Clip 对超出阈值后**继续增大有利优势的概率变化**削弱优化激励，并不对策略参数或概率比施加硬上限。
 
 $$L^{CLIP}(\theta) = \mathbb{E}_t \left[ \min\left( r_t(\theta) \cdot \hat{A}_t,\ \text{clip}(r_t(\theta),\ 1-\epsilon,\ 1+\epsilon) \cdot \hat{A}_t \right) \right]$$
 
-$\epsilon$ 通常取 0.2，意味着概率比被限制在 $[0.8, 1.2]$ 之间。
+原论文示例取 $\epsilon=0.2$，裁剪项使用 $[0.8,1.2]$ 区间；但实际概率比 $r_t$ 可以超出这个区间，PPO-Clip 不等同于 TRPO 的显式 KL 硬约束（原文 §3、式 (7)）。
 
 用表格看更直观：
 
@@ -170,14 +172,51 @@ flowchart TB
 
 ---
 
+## 📊 原论文实验与结果（全文核验）
+
+<details class="paper-fold" markdown="1">
+<summary>📖 展开：消融、连续控制、人形任务、Atari 与原文证据</summary>
+
+> **核验依据**：[Schulman et al., *Proximal Policy Optimization Algorithms*, arXiv:1707.06347v2，12 页](https://arxiv.org/pdf/1707.06347v2)（2017-08-28）。核对了正文 §1–§7、附录 A 的超参数表和附录 B 的 Atari 数据。下表来自论文报告，而非下文的 Humanoid-v4 教学算例。
+
+| 验证对象 | 论文原始设置与结果 | 原文位置 |
+|---|---|---|
+| **裁剪消融** | 7 个 MuJoCo-v1 环境，每个 3 个随机种子；21 次运行的平均归一化分数：无裁剪/惩罚 **−0.39**，$\epsilon=0.1$ 为 **0.76**，$\epsilon=0.2$ 为 **0.82**，$\epsilon=0.3$ 为 **0.70**。 | §6.1、Table 1 |
+| **连续控制对比** | HalfCheetah、Hopper、InvertedDoublePendulum、InvertedPendulum、Reacher、Swimmer、Walker2d 各训练 **100 万步**，对比 TRPO、CEM、A2C、vanilla PG 等方法。 | §6.2、Figure 3 |
+| **3D 人形展示** | **RoboschoolHumanoid** 前进、**RoboschoolHumanoidFlagrun** 追踪变化目标、**RoboschoolHumanoidFlagrunHarder** 受扰后恢复；论文未采用本页教学用的 Gym Humanoid-v4。 | §6.3、Figure 4–5 |
+| **Atari（49 款）** | 按整个训练期平均回报，PPO/ACER/A2C 分别胜 **30/18/1** 款；按最后 100 回合回报分别胜 **19/28/1** 款（另有 1 款平局）。 | §6.4、Table 2、附录 B |
+| **实验超参数** | MuJoCo 对比采用 horizon $T=2048$、Adam $3\times10^{-4}$、10 epochs、minibatch 64、$\gamma=0.99$、GAE $\lambda=0.95$。 | 附录 A、Table 3 |
+
+**结论范围**：论文证明的是这些指定基准上的实验效果；在 Atari 的“最终 100 回合回报”指标上，ACER 胜出的游戏比 PPO 多，不能泛化为 PPO 在任何指标上都最好。
+
+</details>
+
+---
+
+## ⚠️ 局限与结论（原文结论与工程推论分开）
+
+<details class="paper-fold" markdown="1">
+<summary>📖 展开：裁剪边界、on-policy 数据使用及实验外推限制</summary>
+
+- **Clip 并非硬信任域**：由 §3 的式 (7) 可见，PPO-Clip 降低超出区间后继续沿有利方向增大概率比的激励，并不显式限制 KL 或保证每次更新后性能单调提升。
+- **数据复用有边界**：Algorithm 1 先用当前策略采集样本，再在该批次做 $K$ 个 epoch 的更新；不能据此推导跨多个策略迭代无限复用旧轨迹依然有效。
+- **实证范围有限**：§6 的比较来自 MuJoCo、Roboschool 和 Atari，没有给出真机人形机器人的 sim-to-real 实验，也没有验证本笔记中的教学奖励函数。
+- **原论文结论（§7）**：PPO 只需一阶优化，在其测试的任务上以较简单的实现达到稳定、具有竞争力的学习效果；推广到新任务仍需独立评估。
+
+> 前三点是由论文公式、算法伪代码和实验覆盖范围提炼的**工程局限分析**；原文没有独立的 “Limitations” 章节，不能把这些话伪装成作者逐字结论。
+
+</details>
+
+---
+
 ## 🚶 具体实例：用 PPO 训练人形机器人走路
 
 <details class="paper-fold" markdown="1">
 <summary>📖 展开全文（16 节）：环境设定 / 第 0 步：初始化 / 第 1 步：收集经验（多环境并行） / Episode 生命周期（状态图）…</summary>
 
-> 💡 **平台说明**：PPO 原论文（2017）在 **OpenAI Gym**（MuJoCo 物理引擎）的连续控制任务（HalfCheetah-v1、Hopper-v1、Humanoid-v1 等）和 **Atari** 游戏上做实验。下面示例使用现代等效版本 **Humanoid-v4**，与原论文 v1 版本在接口和环境细节上略有差异，但算法逻辑完全相同。
+> 💡 **平台说明**：PPO 原论文 §6.1–6.2 使用 7 项 MuJoCo-v1 连续控制基准（HalfCheetah、Hopper、InvertedDoublePendulum、InvertedPendulum、Reacher、Swimmer、Walker2d）；§6.3 的 3 项人形展示使用 RoboschoolHumanoid 系列，**不是 Gym Humanoid-v1**。以下 Humanoid-v4 算例仅作教学解释，非论文实验复现。
 
-下面用 OpenAI Gym 的 **Humanoid-v4** 环境（对应原论文 Humanoid-v1），走一遍 PPO 从初始化到收敛的完整流程。Humanoid 是一个 17 关节、376 维观测、17 维动作的人形机器人，目标是学会稳定地向前走。
+下面使用 **Humanoid-v4 风格的教学算例**演示 PPO 流程。376 维观测、17 维连续动作及后文奖励与训练数值用于说明算法，**不能作为原论文或 Gymnasium 默认环境的精确复现配置**。
 
 <h3 id="环境设定">环境设定</h3>
 
@@ -1213,9 +1252,9 @@ flowchart TB
 <h3 id="f-实验结果">F. 实验结果</h3>
 
 论文在多个基准任务上验证了 PPO 的效果：
-- **连续控制 (MuJoCo)**：HalfCheetah, Hopper, Walker, Swimmer, Ant, Humanoid，超越 TRPO、A2C
-- **Atari 游戏**：在大多数游戏上取得优异表现
-- **机械臂控制**：成功完成复杂的连续操作任务
+- **MuJoCo 连续控制（§6.1–6.2）**：7 项任务为 HalfCheetah、Hopper、InvertedDoublePendulum、InvertedPendulum、Reacher、Swimmer、Walker2d；裁剪 $\epsilon=0.2$ 的平均归一化得分为 **0.82**（Table 1）。
+- **人形机器人（§6.3）**：使用 RoboschoolHumanoid、RoboschoolHumanoidFlagrun、RoboschoolHumanoidFlagrunHarder，而非 Gym Humanoid-v1。
+- **Atari（§6.4）**：49 款游戏，按完整训练期平均回报统计 PPO 赢 30 款、ACER 18 款；按最后 100 回合平均回报计 ACER 赢 28 款、PPO 赢 19 款（Table 2）。原论文没有报告机械臂操作实验。
 
 <h3 id="g-相关工作">G. 相关工作</h3>
 
