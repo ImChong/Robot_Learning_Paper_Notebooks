@@ -4937,6 +4937,25 @@
     "display_name": "Locomotion",
     "papers": [
       {
+        "title": "STEP: Spatiotemporal Training with Explicit Prediction for Perceptive Humanoid Locomotion",
+        "path": "papers/05_Locomotion/STEP__Spatiotemporal_Training_with_Explicit_Prediction_for_Perceptive_Humanoid_Locomotion/STEP__Spatiotemporal_Training_with_Explicit_Prediction_for_Perceptive_Humanoid_Locomotion.md",
+        "url": "/papers/05_Locomotion/STEP__Spatiotemporal_Training_with_Explicit_Prediction_for_Perceptive_Humanoid_Locomotion/STEP__Spatiotemporal_Training_with_Explicit_Prediction_for_Perceptive_Humanoid_Locomotion.html",
+        "dir": "STEP__Spatiotemporal_Training_with_Explicit_Prediction_for_Perceptive_Humanoid_Locomotion",
+        "arxiv": "2611.08097",
+        "summary_zh": "STEP 用多查询注意力把深度和本体压成 64 维状态，并在这个状态上同时监督跨模态关系（CM）与动作条件的下一步状态（Next），这些预测头只在训练时存在。",
+        "health_score": 4,
+        "health_gaps": [
+          "animation",
+          "video"
+        ],
+        "health_label_zh": "笔记健康度 4/6，缺：动画讲解、讲解视频",
+        "health_label_en": "Note health 4/6; missing: explainer animation, explainer video",
+        "published_date_zh": "2026年11月5日（arXiv v1）",
+        "published_date_en": "Nov 5, 2026 (arXiv v1)",
+        "zhname": "STEP：显式时空预测训练的感知式人形行走",
+        "zh_title": "STEP：显式时空预测训练的感知式人形行走"
+      },
+      {
         "title": "Humanoid Mobility via Attention-based Contacts",
         "path": "papers/05_Locomotion/Humanoid_Mobility_via_Attention-based_Contacts/Humanoid_Mobility_via_Attention-based_Contacts.md",
         "url": "/papers/05_Locomotion/Humanoid_Mobility_via_Attention-based_Contacts/Humanoid_Mobility_via_Attention-based_Contacts.html",

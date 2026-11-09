@@ -594,7 +594,7 @@
 
 | #   | 论文                                                                                                                                                              | 日期      | 🌟  | 状态   |
 | --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- | --- | ---- |
-| 1198  | [STEP: Spatiotemporal Training with Explicit Prediction for Perceptive Humanoid Locomotion](https://arxiv.org/abs/2611.08097) | 2026.11 |  | ⏳ 待读 |
+| 1198  | [STEP: Spatiotemporal Training with Explicit Prediction for Perceptive Humanoid Locomotion](https://arxiv.org/abs/2611.08097) ✅ [笔记](05_Locomotion/STEP__Spatiotemporal_Training_with_Explicit_Prediction_for_Perceptive_Humanoid_Locomotion/STEP__Spatiotemporal_Training_with_Explicit_Prediction_for_Perceptive_Humanoid_Locomotion.md) | 2026.11 |  | ✅ 已总结 |
 | 1199  | [Terrain-Indexed Motion Priors and Geometric Support for Extreme Humanoid Parkour](https://arxiv.org/abs/2611.08056) | 2026.11 |  | ⏳ 待读 |
 | 1200  | [ROOF: Learning Humanoid Fall Recovery under Overhead Constraints](https://arxiv.org/abs/2610.42097) | 2026.10 |  | ⏳ 待读 |
 | 1185  | [FORGE: Feasible Online Reduced-Order Reference Generation and Whole-Body Execution for Agile Humanoid Locomotion](https://arxiv.org/abs/2610.37974) | 2026.10 |  | ⏳ 待读 |
