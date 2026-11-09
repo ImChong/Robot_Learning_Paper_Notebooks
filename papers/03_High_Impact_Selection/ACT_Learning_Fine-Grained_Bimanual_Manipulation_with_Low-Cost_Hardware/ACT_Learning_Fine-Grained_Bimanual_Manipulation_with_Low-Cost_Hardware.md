@@ -86,11 +86,11 @@ original_check_scope: arXiv v1 的 LaTeX 源码全文（正文 + 附录 A–F）
 
 ## 📺 配音讲解视频（可下载） {#act-video}
 
-<div class="paper-demo" data-demo="act-video" data-src="media/act_explainer_video.mp4" data-poster="media/act_explainer_video_poster.jpg"><p class="demo-fallback">（本节含讲解视频播放器，需要启用 JavaScript；也可以直接<a href="media/act_explainer_video.mp4" download="ACT_讲解视频.mp4">下载 mp4（29.2 MB）</a>）</p></div>
+<div class="paper-demo" data-demo="act-video" data-src="media/act_explainer_video.mp4" data-poster="media/act_explainer_video_poster.jpg"><p class="demo-fallback">（本节含讲解视频播放器，需要启用 JavaScript；也可以直接<a href="media/act_explainer_video.mp4" download="ACT_讲解视频.mp4">下载 mp4（29.4 MB）</a>）</p></div>
 
 > 📖 **动画之后的正文默认全部折叠**：动画覆盖到的那几节（要解决什么问题、硬件、算法、实验）按小节收起，再往后的复现、局限、具体实例和附录各整块收起。想细读哪一块就点开对应的折叠条，内容一字未删；流程图和三个交互演示留在外面，目录里的标题依旧可以直接点，会自动展开所在折叠块。
 >
-> 动画第 1、2、3、12、14 幕的真机画面剪自[项目页](https://tonyzhaozh.github.io/aloha/)的视频（学到的策略打开杯盖、遥操作合集、执行时的 4 路观测、装电池 / 打开杯盖 / 备胶带 / 穿鞋的实时回放、杯子被挪开和放了干扰物），画面里自带的「实时」「10 倍速」「1x」标签照原样保留，只做讲解引用。第 3、5、6、8、12 幕用论文图 1–5 的裁剪；第 13–16 幕的柱和曲线照论文的数重画（图 6 (a)–(c) 取自源文件里的原始表）。第 5、6、10–12 幕的仿真画面、曲线和注意力热图是**我们的复现**：MuJoCo 2.3.7 按官方 XML 离线渲染，不是论文的图。第 1、2、3、7、14、17 幕的机械臂也是模型的离线渲染（不是示意图）：主臂 WidowX 250、从臂 ViperX 300 用 [MuJoCo Menagerie](https://github.com/google-deepmind/mujoco_menagerie) 的 `trossen_wx250s` / `trossen_vx300s`（BSD-3），夹爪、交接和挪方块用官方 ACT 的 MJCF；第 2 幕两条臂的关节角取自官方仿真人类示范第 0 条的右臂（主臂 = `action`，从臂 = `observation.state`），第 3 幕的夹爪开度取同一条第 170–300 步，第 7 幕是 10 条人的示范在左夹爪合上那一步的姿态，第 14 幕是下面「伸手途中挪方块」成功的那一次。
+> 动画第 1、2、3、12、14 幕的真机画面剪自[项目页](https://tonyzhaozh.github.io/aloha/)的视频（学到的策略打开杯盖、执行时穿魔术贴扎带的一台相机（项目页没标倍速）、遥操作合集、执行时的 4 路观测、装电池 / 打开杯盖 / 备胶带 / 穿鞋的实时回放、杯子被挪开和放了干扰物），画面里自带的「实时」「10 倍速」「1x」标签照原样保留，只做讲解引用。第 3、5、6、8、12 幕用论文图 1–5 的裁剪；第 13–16 幕的柱和曲线照论文的数重画（图 6 (a)–(c) 取自源文件里的原始表）。第 5、6、10–12 幕的仿真画面、曲线和注意力热图是**我们的复现**：MuJoCo 2.3.7 按官方 XML 离线渲染，不是论文的图。第 1、2、3、7、14、17 幕的机械臂也是模型的离线渲染（不是示意图）：主臂 WidowX 250、从臂 ViperX 300 用 [MuJoCo Menagerie](https://github.com/google-deepmind/mujoco_menagerie) 的 `trossen_wx250s` / `trossen_vx300s`（BSD-3），夹爪、交接和挪方块用官方 ACT 的 MJCF；第 2 幕两条臂的关节角取自官方仿真人类示范第 0 条的右臂（主臂 = `action`，从臂 = `observation.state`），第 3 幕的夹爪开度取同一条第 170–300 步，第 7 幕是 10 条人的示范在左夹爪合上那一步的姿态，第 14 幕是下面「伸手途中挪方块」成功的那一次。
 
 ---
 

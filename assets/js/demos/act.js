@@ -668,29 +668,40 @@
 
   /* ── scene 1: 精细活，低成本硬件做得到吗 ── */
   function buildSceneIntro() {
-    var s = sceneSvg('左边是项目页的视频：学到的策略用两只低成本机械臂打开一个透明调料杯的盖子。右边依次出现：几项毫米级的精细活；' +
+    var s = sceneSvg('左边是项目页的视频：学到的策略用两只低成本机械臂打开一个透明调料杯的盖子。右边依次出现：几项毫米级的精细活（项目页里穿魔术贴扎带的画面，旁边是侧面看的放大示意：带子 2 毫米厚、环上的缝 3 毫米，对准正中穿得过去，偏 1 毫米就撞在环上）；' +
       '以前的系统贵在哪里（价格条）；ViperX 机械臂的准度只有 5–8 毫米，落点散成一圈；人靠眼睛看着纠正；最后是这篇论文的两样东西：ALOHA 硬件和 ACT 算法');
     s.appendChild(svgText(24, 26, '精细活：拧开、撬开、塞进去，差几毫米就失败', 'demo-x-ink2', 13.5));
     var clip = projClip(s, 'hero', 24, 44, 380, 214, '项目页视频（实时）：学到的策略打开调料杯的盖子');
     label(s, 24, 300, '两只约 5,600 美元的机械臂，4 台网络摄像头', 'demo-x-ink2', 11.5);
     label(s, 24, 320, 'Stanford · UC Berkeley · Meta · RSS 2023', 'demo-x-mut', 11);
     var R = 424;
-    /* 第 1 段：毫米级的活：一根 2 mm 的扎带穿进 3 mm 的环（1 mm = 14 px） */
+    /* 第 1 段：毫米级的活。论文第 V-A 节：魔术贴扎带的环 3 mm × 25 mm，带子 2 mm × 10–25 mm（宽度随位置变）。
+       左：项目页「执行时的观测」里穿扎带那段，取其中一台相机（项目页没标倍速）；
+       右：侧面看的放大示意（1 mm = 14 px）——黄色是环上的缝（3 mm），灰色是带子（2 mm 厚）：
+       对准正中穿得过去、上下各剩 0.5 mm；偏 1 mm 就撞在环上（几何推出来的，示意） */
     var p1 = group(s);
     label(p1, R, 62, '论文里的几项精细活', 'demo-x-ink', 14);
-    [['魔术贴扎带：环宽 3 mm，带子 2 mm', C_WARN], ['仿真交接方块：间隙约 1 cm', C_ACCENT], ['仿真插销：间隙约 5 mm', C_PURPLE]].forEach(function (it, i) {
-      chip(p1, R, 76 + i * 34, 300, it[0], it[1], { size: 12, h: 28, left: true });
+    [['魔术贴扎带：环上的缝 3 mm，带子 2 mm 厚', C_WARN], ['仿真交接方块：间隙约 1 cm', C_ACCENT], ['仿真插销：间隙约 5 mm', C_PURPLE]].forEach(function (it, i) {
+      chip(p1, R, 74 + i * 30, 300, it[0], it[1], { size: 12, h: 26, left: true });
     });
-    var MM = 14, cx = R + 170, cy = 222;
-    hline(p1, cx - 1.5 * MM - 10, cy - 18, cx - 1.5 * MM - 10, cy + 18, C_INK, 3);
-    hline(p1, cx + 1.5 * MM + 10, cy - 18, cx + 1.5 * MM + 10, cy + 18, C_INK, 3);
-    var ring = rectBox(p1, cx - 1.5 * MM, cy - 16, 3 * MM, 32, C_WARN, 'none');
-    ring.setAttribute('stroke-width', 2.4);
-    var tie = paint(svgEl('rect', { x: 0, y: cy - 4, width: 90, height: 8, rx: 3 }), C_MUTED);
-    p1.appendChild(tie);
-    var tieTip = paint(svgEl('rect', { x: 0, y: cy - MM, width: 10, height: 2 * MM, rx: 2 }), C_INK2 || C_MUTED);
-    p1.appendChild(tieTip);
-    var mmTxt = label(p1, cx, cy + 40, '', 'demo-x-ink2', 11.5, 'middle');
+    var vel = projClip(p1, 'velcro', R, 178, 136, 102, '');
+    var MM = 14, wx = R + 262, cy = 230, sx0 = R + 150;
+    /* 环：侧面看是一堵带缝的墙，缝高 3 mm */
+    p1.appendChild(paint(svgEl('rect', { x: wx, y: cy - 1.5 * MM - 24, width: 16, height: 24, rx: 2 }), C_WARN));
+    p1.appendChild(paint(svgEl('rect', { x: wx, y: cy + 1.5 * MM, width: 16, height: 24, rx: 2 }), C_WARN));
+    tone(p1, wx + 8, cy - 1.5 * MM - 30, '环', C_WARN, 12, 'middle');
+    var dx = wx + 40;
+    hline(p1, dx, cy - 1.5 * MM, dx, cy + 1.5 * MM, C_INK2 || C_MUTED, 1.2);
+    hline(p1, dx - 4, cy - 1.5 * MM, dx + 4, cy - 1.5 * MM, C_INK2 || C_MUTED, 1.2);
+    hline(p1, dx - 4, cy + 1.5 * MM, dx + 4, cy + 1.5 * MM, C_INK2 || C_MUTED, 1.2);
+    label(p1, dx + 7, cy + 4, '缝 3 mm', 'demo-x-ink2', 11);
+    /* 带子：2 mm 厚，从左边推进来 */
+    var strap = paint(svgEl('rect', { x: sx0, y: cy - MM, width: 0, height: 2 * MM, rx: 2 }), C_MUTED);
+    p1.appendChild(strap);
+    label(p1, sx0 + 4, cy + 36, '带子 2 mm 厚', 'demo-x-ink2', 11.5);
+    var bump = dotAt(p1, wx, cy - 1.5 * MM, 6, C_BAD);
+    var mmTxt = label(p1, sx0 + 4, 290, '', 'demo-x-ink', 11.5);
+    label(p1, R, 310, '左：项目页视频（未标倍速）；右：侧面看的放大示意', 'demo-x-mut', 11);
     /* 第 2 段：以前的系统（附录 A 的估价） */
     var p2 = group(s);
     label(p2, R, 62, '以前：贵的机器人 + 精确的传感器', 'demo-x-ink', 14);
@@ -756,12 +767,17 @@
     function draw(t, clock) {
       var now = nowOf(t, clock);
       clip.at(K.clipSince(t, 0), true);
-      /* 扎带来回穿：带头 2 mm 宽，环 3 mm 宽，两边各留 0.5 mm */
-      var u = 0.5 - 0.5 * Math.cos(now * 1.4), hx = cx - 150 + 150 * u;
-      tie.setAttribute('x', (hx - 90).toFixed(1));
-      tieTip.setAttribute('x', (hx - 4).toFixed(1));
-      tieTip.setAttribute('height', (2 * MM).toFixed(1)); tieTip.setAttribute('y', (cy - MM).toFixed(1));
-      mmTxt.textContent = u > 0.85 ? '环 3 mm，带子 2 mm：每边只剩 0.5 mm' : '';
+      vel.at(K.clipSince(t, 0), true);
+      /* 两次尝试，5 s 一轮：先对准正中，穿过去；再偏上 1 mm，带头撞在环上 */
+      var ph = ((now % 5) + 5) % 5, second = ph >= 2.5, q = second ? ph - 2.5 : ph;
+      var off = second ? -MM : 0, stopX = second ? wx : wx + 30;
+      var tip = sx0 + (stopX - sx0) * K.ease(Math.min(1, q / 1.4));
+      strap.setAttribute('y', (cy - MM + off).toFixed(1)); setW(strap, tip - sx0);
+      var arrived = q >= 1.4;
+      bump.style.opacity = second && arrived ? 1 : 0;
+      mmTxt.textContent = !arrived ? (second ? '再试一次：偏上 1 mm' : '对准缝的正中推过去') :
+        (second ? '偏 1 mm：撞在环上' : '穿过去了：上下各只剩 0.5 mm');
+      mmTxt.style.fill = arrived ? (second ? C_BAD : C_GOOD) : '';
       var u2 = seg(since(t, clock, 3.6), 0.2, 1.6);
       bars2.forEach(function (b) {
         var w = 140 * b.v / PRICE.shadow * K.ease(u2) + 1;
@@ -2673,8 +2689,8 @@
   function buildVideoDemo(host) {
     K.video(host, {
       title: '配音讲解视频：ACT 十七幕全流程',
-      sub: '24 分 39 秒竖屏视频（1080×1920），中文配音 + 字幕。画面就是上面的十七幕动画，旁白把每一幕讲细；适合手机上看或转发。',
-      size: '29.2 MB',
+      sub: '24 分 48 秒竖屏视频（1080×1920），中文配音 + 字幕。画面就是上面的十七幕动画，旁白把每一幕讲细；适合手机上看或转发。',
+      size: '29.4 MB',
       fileName: 'ACT_讲解视频.mp4'
     });
   }

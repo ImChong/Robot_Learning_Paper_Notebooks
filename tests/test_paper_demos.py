@@ -6500,13 +6500,13 @@ def test_act_explainer_demos_and_worked_example_share_the_paper_numbers():
 
 
 def test_act_project_page_clips():
-    """ACT：真机画面剪自项目页的视频（9 段，按幕懒加载），总量不失控；出处写在笔记里。"""
+    """ACT：真机画面剪自项目页的视频（10 段，按幕懒加载），总量不失控；出处写在笔记里。"""
     js = (DEMO_JS_DIR / "act.js").read_text(encoding="utf-8")
     clip_dir = ROOT / "assets/img/papers/act/clips"
     used = set(re.findall(r"(?:projClip|seqClip)\(\w+, '(\w+)'", js))
     used |= set(re.findall(r"\['(battery|cup|tape|shoe)', '(?:cup)'", js))
     used |= {"battery", "cup", "tape", "shoe", "reactive", "distract"} if "['battery', 'cup', 'tape', 'shoe'].map" in js else set()
-    assert used == {"hero", "teleop", "obs", "battery", "cup", "tape", "shoe", "reactive", "distract"}
+    assert used == {"hero", "velcro", "teleop", "obs", "battery", "cup", "tape", "shoe", "reactive", "distract"}
     assert {p.name for p in clip_dir.iterdir()} == {f"{u}.{ext}" for u in used for ext in ("mp4", "webp")}
     assert sum(p.stat().st_size for p in clip_dir.iterdir()) < 3.0e6
     block = js[js.index("var clip = seqClip(s, 'teleop'") : js.index("]);", js.index("var clip = seqClip(s, 'teleop'"))]
