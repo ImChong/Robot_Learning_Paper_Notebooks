@@ -41,15 +41,15 @@
         "13_Physics-Based_Animation",
         "14_Human_Motion"
       ],
-      "last_module": "04_Loco-Manipulation_and_WBC",
-      "last_index": 1168,
-      "last_title": "Humanoid Dodgeball: Learning Fast Dynamic Obstacle Avoidance Motions for Humanoids (arXiv:2610.40003)",
-      "next_module": "05_Locomotion",
-      "last_completed_date": "2026-11-08",
-      "note": "本日轮转回 04_Loco-Manipulation_and_WBC。PROGRESS Loco-Manipulation and WBC 章节中尚无笔记的最新论文是 Humanoid Dodgeball（arXiv:2610.40003，2026-10-29，NUS / EngineAI），即 PROGRESS #1168，已确认在上游 README。按部位球体算预测威胁（所需加速度）与近场威胁，威胁加权的逃离 / 距离 / 根部方向奖励，四个按方向分开的 AMP 判别器，捕获点恢复奖励；G1 / PM01 仿真与 PM01 真机。未开源，只给整体流程 mermaid；全文已读，记 original_check: done。下一篇轮转到 05_Locomotion。",
-      "last_date": "2026-11-08",
+      "last_module": "05_Locomotion",
+      "last_index": 1198,
+      "last_title": "STEP: Spatiotemporal Training with Explicit Prediction for Perceptive Humanoid Locomotion (arXiv:2611.08097)",
+      "next_module": "06_Manipulation",
+      "last_completed_date": "2026-11-09",
+      "note": "本日轮转到 05_Locomotion。PROGRESS Locomotion 章节中尚无笔记的最新论文是 STEP（arXiv:2611.08097，2026-11-05，中国科大 / 松延动力等），即 PROGRESS #1198，已确认在上游 README。4 个可学习查询融合本体与深度成 64 维状态，训练时加跨模态掩码预测与动作条件下一步预测（EMA 目标 + SIGReg），与 PPO + AMP 一阶段联合训练；Noetix E1 真机 98/100。未开源，只给整体流程 mermaid。下一篇轮转到 06_Manipulation。",
+      "last_date": "2026-11-09",
       "next_candidate": null,
-      "last_completed": "Humanoid Dodgeball: Learning Fast Dynamic Obstacle Avoidance Motions for Humanoids (arXiv:2610.40003)"
+      "last_completed": "STEP: Spatiotemporal Training with Explicit Prediction for Perceptive Humanoid Locomotion (arXiv:2611.08097)"
     },
     "last_summary_index": 532,
     "last_summary_date": "2026-09-18",
@@ -1981,6 +1981,17 @@
         "project_page": "https://humanoid-dodge.github.io/",
         "code": "",
         "source": "⏳ 未开源（论文与项目页无代码仓库）· 只给整体流程 mermaid · 威胁感知奖励 + 四方向 AMP + 捕获点恢复 · Aoqian Zhang、Fan Shi、Shuzhi Sam Ge 等（NUS、EngineAI、大连理工）"
+      },
+      {
+        "date": "2026-11-09",
+        "index": 1198,
+        "title": "STEP: Spatiotemporal Training with Explicit Prediction for Perceptive Humanoid Locomotion",
+        "folder": "papers/05_Locomotion/STEP__Spatiotemporal_Training_with_Explicit_Prediction_for_Perceptive_Humanoid_Locomotion",
+        "module": "05_Locomotion",
+        "arxiv": "2611.08097",
+        "project_page": "",
+        "code": "",
+        "source": "⏳ 未开源（论文与 arXiv 页面无代码链接）· 只给整体流程 mermaid · 多查询融合 + 跨模态 / 下一步预测 + EMA 教师 + SIGReg · Youhao Lyu、Chenghao Sun、Wenhao Cui 等（中国科大、松延动力）"
       }
     ],
     "last_completed_index": 588,
