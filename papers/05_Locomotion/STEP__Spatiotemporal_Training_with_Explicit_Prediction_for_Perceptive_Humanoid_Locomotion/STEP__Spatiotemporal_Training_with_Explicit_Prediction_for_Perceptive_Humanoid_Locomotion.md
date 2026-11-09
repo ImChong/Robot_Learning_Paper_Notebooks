@@ -116,18 +116,18 @@ flowchart LR
         SIG["SIGReg 防坍缩"]
         PPO["PPO + AMP 风格奖励<br/>非对称特权 critic"]
     end
-    FUSE -. 掩码路径 .-> CM
+    FUSE -.->|掩码路径| CM
     S -.-> NX
     A -.-> NX
     S -.-> SIG
     ACT -.-> PPO
-    CM -.α_k 加权.-> LOSS["联合损失<br/>一阶段训练编码器 + 策略"]
+    CM -.->|αₖ 加权| LOSS["联合损失<br/>一阶段训练编码器 + 策略"]
     NX -.-> LOSS
     SIG -.-> LOSS
     PPO -.-> LOSS
-    LOSS -. 每次迭代后 EMA 0.99 .-> TEACH["EMA 教师"]
-    TEACH -.目标.-> CM
-    TEACH -.目标.-> NX
+    LOSS -.->|每次迭代后 EMA 0.99| TEACH["EMA 教师"]
+    TEACH -.->|预测目标| CM
+    TEACH -.->|预测目标| NX
 </div>
 
 ---
