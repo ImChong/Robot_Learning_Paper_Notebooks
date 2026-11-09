@@ -91,7 +91,7 @@ Isaac Lab + RSL-RL，PPO 每环境 24 步、5 轮、4 个 minibatch；六种地�
 
 ## 🧭 整体框架（mermaid）
 
-```mermaid
+<div class="mermaid">
 flowchart LR
     subgraph IN["观测（每 20 ms）"]
         H["本体历史 H_t<br/>5 × 77"]
@@ -128,7 +128,7 @@ flowchart LR
     LOSS -. 每次迭代后 EMA 0.99 .-> TEACH["EMA 教师"]
     TEACH -.目标.-> CM
     TEACH -.目标.-> NX
-```
+</div>
 
 ---
 
