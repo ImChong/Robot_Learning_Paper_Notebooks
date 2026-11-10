@@ -6498,7 +6498,7 @@ def test_act_explainer_demos_and_worked_example_share_the_paper_numbers():
         return 0.5 * (mu * mu + sg * sg - 1 - 2 * math.log(sg))
 
     assert [_fmt(kl1(mu, sg), 3) for mu, sg in ((0, 1), (1, 1), (0, 0.5))] == ["0.000", "0.500", "0.318"]
-    for frag in ("得到 0.2", "平均是 0.07", "L 1 里占六成多", "L 2 里占了将近九成", "K L 是 0；", "K L 是 0.5；", "K L 约 0.32", "32 维的 K L 加在一起"):
+    for frag in ("得到 0.2", "平均是 0.07", "L 1 里占六成多", "L 二里占了将近九成", "K L 是 0；", "K L 是 0.5；", "K L 约 0.32", "32 维的 K L 加在一起"):
         assert frag in narration, frag
     assert "0.2$" in note and "0.07$" in note and "62.5\\%" in note and "89.3\\%" in note and "0.318" in note
     script_part = narration[narration.index("SCRIPT = [") :]
