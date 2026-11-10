@@ -656,7 +656,7 @@
             "has_open_source": true,
             "summary_zh": "ACT / ALOHA 用一套不到 2 万美元的双臂遥操作硬件采示范，再用一个一次预测一段动作的模仿学习算法，让便宜、不精确的机械臂也做毫米级的双手活。",
             "explainer_scenes": 17,
-            "video_seconds": 1561,
+            "video_seconds": 1571,
             "health_score": 6,
             "health_gaps": [],
             "health_label_zh": "笔记健康度 6/6，六项齐全",

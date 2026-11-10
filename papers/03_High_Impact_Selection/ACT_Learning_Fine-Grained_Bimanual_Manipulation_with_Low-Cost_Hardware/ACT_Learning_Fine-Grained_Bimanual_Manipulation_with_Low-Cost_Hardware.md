@@ -86,7 +86,7 @@ original_check_scope: arXiv v1 的 LaTeX 源码全文（正文 + 附录 A–F）
 
 ## 📺 配音讲解视频（可下载） {#act-video}
 
-<div class="paper-demo" data-demo="act-video" data-src="media/act_explainer_video.mp4" data-poster="media/act_explainer_video_poster.jpg"><p class="demo-fallback">（本节含讲解视频播放器，需要启用 JavaScript；也可以直接<a href="media/act_explainer_video.mp4" download="ACT_讲解视频.mp4">下载 mp4（30.6 MB）</a>）</p></div>
+<div class="paper-demo" data-demo="act-video" data-src="media/act_explainer_video.mp4" data-poster="media/act_explainer_video_poster.jpg"><p class="demo-fallback">（本节含讲解视频播放器，需要启用 JavaScript；也可以直接<a href="media/act_explainer_video.mp4" download="ACT_讲解视频.mp4">下载 mp4（30.8 MB）</a>）</p></div>
 
 > 📖 **动画之后的正文默认全部折叠**：动画覆盖到的那几节（要解决什么问题、硬件、算法、实验）按小节收起，再往后的复现、局限、具体实例和附录各整块收起。想细读哪一块就点开对应的折叠条，内容一字未删；流程图和三个交互演示留在外面，目录里的标题依旧可以直接点，会自动展开所在折叠块。
 >

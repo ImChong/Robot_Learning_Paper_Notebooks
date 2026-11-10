@@ -573,8 +573,10 @@
   /* 仿真回合的贴图表（我们的复现，sim/）：官方 XML 的方块交接，MuJoCo 2.3.7 离线渲染，自由相机（看向 (0, 0.5, 0.24)，距离 1.32 m，
      方位 90°、俯 22°），每 2 步一格（25 帧/秒），透明底；第 n 格对应第 2n 步 */
   var SIM = { cw: 332, ch: 129, cols: 10, n: 200, every: 2 };
-  function simSprite(parent, file) {
+  /* crop = [x, y, w, h]（格子里的像素），只放这一块；不给就放整格 */
+  function simSprite(parent, file, crop) {
     var g = group(parent), rows = Math.ceil(SIM.n / SIM.cols);
+    var cr = crop || [1, 1, SIM.cw - 2, SIM.ch - 2];
     g.setAttribute('class', 'demo-x-g1mesh');
     var box = svgEl('svg', { overflow: 'hidden', preserveAspectRatio: 'none', width: 0, height: 0 });
     var img = svgEl('image', { x: 0, y: 0, width: SIM.cw * SIM.cols, height: SIM.ch * rows, preserveAspectRatio: 'none' });
@@ -586,15 +588,15 @@
       /* 左上角放在 (x, y)、宽 w；step = 回合里的第几步（0–399） */
       put: function (x, y, w, step) {
         if (!woke && SIM_BASE) { woke = true; img.setAttribute('href', SIM_BASE + file); }
-        var f = clamp(Math.round(step / SIM.every), 0, SIM.n - 1), k = w / SIM.cw;
+        var f = clamp(Math.round(step / SIM.every), 0, SIM.n - 1), k = w / (crop ? cr[2] : SIM.cw);
         box.setAttribute('x', x.toFixed(1)); box.setAttribute('y', y.toFixed(1));
-        box.setAttribute('width', w.toFixed(1)); box.setAttribute('height', (SIM.ch * k).toFixed(1));
+        box.setAttribute('width', w.toFixed(1)); box.setAttribute('height', ((crop ? cr[3] : SIM.ch) * k).toFixed(1));
         if (f !== lastF) {
           /* 每格四周裁掉 1 像素，免得双线性取样带进相邻格子的边（iDP3 2026-11-08） */
-          box.setAttribute('viewBox', [(f % SIM.cols) * SIM.cw + 1, Math.floor(f / SIM.cols) * SIM.ch + 1, SIM.cw - 2, SIM.ch - 2].join(' '));
+          box.setAttribute('viewBox', [(f % SIM.cols) * SIM.cw + cr[0], Math.floor(f / SIM.cols) * SIM.ch + cr[1], cr[2], cr[3]].join(' '));
           lastF = f;
         }
-        return SIM.ch * k;
+        return (crop ? cr[3] : SIM.ch) * k;
       }
     };
   }
@@ -1192,16 +1194,30 @@
     paperPart(p2, 'fig2te', 0, 0, 1, 0.33, R + 30, 78, 290, '');
     label(p2, R, 216, '第 0 步预测 0–3，第 4 步再预测 4–7', 'demo-x-ink2', 12);
     var hz2 = label(p2, R, 246, '', 'demo-x-ink', 13);
-    /* 第 3 段：心理学里的 chunking */
+    /* 第 3 段：心理学里的 chunking。同样四个姿势（复现回合里右手夹起方块的第 110–200 步，每 30 步一帧）排两排：
+       上排每个动作都看一次、决定一次；下排合成一个块，只在开头看一次，后面照着做完 */
     var p3 = group(s);
     label(p3, R, 62, '名字来自心理学：动作分块', 'demo-x-ink', 13.5);
-    label(p3, R, 86, '一串动作合成一个单元来存、来执行', 'demo-x-ink2', 12);
-    var small3 = [];
-    for (i = 0; i < 12; i++) { var r3 = paint(svgEl('rect', { x: 0, y: 112, width: 18, height: 18, rx: 3 }), C_ACCENT); p3.appendChild(r3); small3.push(r3); }
-    var unit3 = rectBox(p3, R, 104, 352, 34, C_GOOD, 'none');
-    var unitT = label(p3, R + 176, 158, '一个单元：捏住糖纸的一个角', 'demo-x-ink', 12, 'middle');
-    label(p3, R, 190, '论文的例子：一个块可以是「捏住糖纸的一个角」', 'demo-x-ink2', 11.5);
-    label(p3, R, 212, '或者「把电池塞进槽里」', 'demo-x-ink2', 11.5);
+    label(p3, R, 84, '一串动作合成一个单元，存起来、做起来都更省事', 'demo-x-ink2', 12);
+    var CH3 = [110, 140, 170, 200], TW = 80, TG = 8;
+    function row3(y) {
+      return CH3.map(function (st, i) {
+        var x = R + 4 + i * (TW + TG), sp = simSprite(p3, 'te_ep0.webp', [146, 18, 184, 104]);
+        var h = sp.put(x, y, TW, st);
+        return { x: x, y: y, h: h, sp: sp, st: st, frame: rectBox(p3, x - 2, y - 2, TW + 4, h + 4, C_BORDER, 'none') };
+      });
+    }
+    label(p3, R, 108, '一步一步：每个动作都看一次、决定一次', 'demo-x-ink2', 11.5);
+    var cntA = tone(p3, R + 352, 108, '', C_WARN, 11.5, 'end');
+    var rowA = row3(140);
+    var seeA = rowA.map(function (c) { return tone(p3, c.x + TW / 2, c.y - 10, '看', C_WARN, 11.5, 'middle'); });
+    label(p3, R, 214, '合成一个块：开头看一次，后面照着做完', 'demo-x-ink2', 11.5);
+    tone(p3, R + 352, 214, '决定 1 次', C_GOOD, 11.5, 'end');
+    var rowB = row3(250);
+    var blockB = rectBox(p3, R, 224, 352, rowB[0].h + 32, C_GOOD, 'none');
+    var seeB = tone(p3, rowB[0].x + TW / 2, 240, '看', C_WARN, 11.5, 'middle');
+    label(p3, R, 322, '复现回合第 110–200 步，每 30 步一帧（示意）', 'demo-x-mut', 11);
+    label(p3, R, 344, '论文的例子：「捏住糖纸的一个角」「把电池塞进槽里」', 'demo-x-ink2', 11.5);
     /* 第 4 段：停顿装进块里 */
     var p4 = group(s);
     label(p4, R, 62, '停顿可以装在一个块里', 'demo-x-ink', 13.5);
@@ -1246,9 +1262,17 @@
       var u1 = seg(since(t, clock, 0.4), 0.4, 2.4);
       many.forEach(function (r, i) { r.style.opacity = u1 * 8 > i ? 1 : 0.12; });
       hz2.textContent = '400 步 ÷ k = 100 → 只做 4 次决定';
-      var u3 = 0.5 - 0.5 * Math.cos(now * 1.2);
-      small3.forEach(function (r, i) { r.setAttribute('x', (R + 8 + i * (28 - 6 * u3)).toFixed(1)); r.style.opacity = 1 - 0.7 * u3; });
-      unit3.style.opacity = u3; unitT.style.opacity = u3;
+      /* 两排一起往右走：上排走到哪格，哪格亮黄、写「看」；下排只有第一格有「看」，走到的格子亮蓝（照着做） */
+      var per3 = clock == null ? 0.55 : 0.9, u3 = since(t, clock, 7.0) - 0.4, cyc3 = per3 * 4 + (clock == null ? 0.4 : 1.4);
+      var ph3 = u3 < 0 ? -1 : u3 % cyc3, cur3 = ph3 < 0 ? -1 : Math.min(3, Math.floor(ph3 / per3)), moving3 = ph3 >= 0 && ph3 < per3 * 4;
+      rowA.forEach(function (c, i) {
+        paint(c.frame, null, moving3 && i === cur3 ? C_WARN : C_BORDER);
+        seeA[i].style.opacity = i <= cur3 ? 1 : 0;
+      });
+      cntA.textContent = '决定 ' + (cur3 < 0 ? 0 : cur3 + 1) + ' 次';
+      rowB.forEach(function (c, i) { paint(c.frame, null, moving3 && i === cur3 ? C_ACCENT : C_BORDER); });
+      seeB.style.opacity = cur3 >= 0 ? 1 : 0;
+      void blockB;
       var pts4 = [];
       for (var k = 0; k <= 100; k++) { var x = k / 100, v = x < 0.4 ? 0.7 + 0.15 * Math.sin(x * 20) : x < 0.62 ? 0.04 : 0.6 + 0.2 * Math.sin(x * 14); pts4.push([sp4.px(x), sp4.py(v)]); }
       setPath(sp4l, pts4);
@@ -2612,7 +2636,7 @@
       cues: [
         { at: 0.4, s: '策略从 $\\pi_\\theta(a_t \\mid s_t)$ 改成 $\\pi_\\theta(a_{t:t+k} \\mid s_t)$：一次出 $k$ 个目标关节角。' },
         { at: 3.6, s: '每 $k$ 步才看一次，有效步数缩短 $k$ 倍（论文图 2 上半）。' },
-        { at: 7.0, s: '名字来自心理学：一串动作合成一个单元，比如「捏住糖纸的一个角」。' },
+        { at: 7.0, s: '一串动作合成一个块：不必每个动作都看一次，开头看一次就照着做完。' },
         { at: 10.4, s: '停顿可以写在一个块里，不用看历史，也就没有历史带来的因果混淆。' },
         { at: 13.4, s: '直接这样做，新观测每 $k$ 步才进来一次，块与块的接缝处会跳。' }
       ]
@@ -2790,8 +2814,8 @@
   function buildVideoDemo(host) {
     K.video(host, {
       title: '配音讲解视频：ACT 十七幕全流程',
-      sub: '26 分 1 秒竖屏视频（1080×1920），中文配音 + 字幕。画面就是上面的十七幕动画，旁白把每一幕讲细；适合手机上看或转发。',
-      size: '30.6 MB',
+      sub: '26 分 12 秒竖屏视频（1080×1920），中文配音 + 字幕。画面就是上面的十七幕动画，旁白把每一幕讲细；适合手机上看或转发。',
+      size: '30.8 MB',
       fileName: 'ACT_讲解视频.mp4'
     });
   }
