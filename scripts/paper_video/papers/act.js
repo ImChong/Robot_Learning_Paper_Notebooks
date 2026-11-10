@@ -14,15 +14,15 @@ window.PaperVideo = {
     m.style.padding = '22px 34px';
     /* 十七条目录排成两列：左列 01–09、右列 10–17，单列的话封面上最后一行会落到 3:4 裁剪线以下 */
     var toc = h('div', 'toc', root,
-      '<div><span>01</span>精细活，便宜硬件行吗</div><div><span>10</span>1202 个 token</div>' +
-      '<div><span>02</span>ALOHA：两对主从臂</div><div><span>11</span>解码器：一次写 k 步</div>' +
+      '<div><span>01</span>精细活，便宜硬件行吗</div><div><span>10</span>学生看的 1202 张卡片</div>' +
+      '<div><span>02</span>ALOHA：两对主从臂</div><div><span>11</span>解码器：100 道题</div>' +
       '<div><span>03</span>4 台相机与主臂关节角</div><div><span>12</span>8 个任务</div>' +
       '<div><span>04</span>一步错，步步错</div><div><span>13</span>表一：和基线比</div>' +
       '<div><span>05</span>动作分块</div><div><span>14</span>表二与真机细节</div>' +
       '<div><span>06</span>时间集成</div><div><span>15</span>消融：分块</div>' +
       '<div><span>07</span>人的示范不唯一</div><div><span>16</span>消融：CVAE 与 50 Hz</div>' +
-      '<div><span>08</span>CVAE 与风格变量 z</div><div><span>17</span>局限、代码与之后</div>' +
-      '<div><span>09</span>编码器与 [CLS]</div><div></div>');
+      '<div><span>08</span>CVAE：老师递纸条</div><div><span>17</span>局限、代码与之后</div>' +
+      '<div><span>09</span>编码器：老师写纸条</div><div></div>');
     toc.style.display = 'grid';
     toc.style.gridTemplateColumns = '1fr 1fr';
     toc.style.columnGap = '24px';

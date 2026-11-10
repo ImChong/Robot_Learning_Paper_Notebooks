@@ -6498,7 +6498,7 @@ def test_act_explainer_demos_and_worked_example_share_the_paper_numbers():
         return 0.5 * (mu * mu + sg * sg - 1 - 2 * math.log(sg))
 
     assert [_fmt(kl1(mu, sg), 3) for mu, sg in ((0, 1), (1, 1), (0, 0.5))] == ["0.000", "0.500", "0.318"]
-    for frag in ("得到 0.2", "平均是 0.07", "L 1 里占六成多", "L 二里占了将近九成", "K L 是 0；", "K L 是 0.5；", "K L 约 0.32", "32 维的 K L 加在一起"):
+    for frag in ("得到 0.2", "平均是 0.07", "L 1 里占六成多", "L 二里占了将近九成", "K L 是 0；", "K L 是 0.5；", "K L 约 0.32", "32 个数字，每个数字各算一份"):
         assert frag in narration, frag
     assert "0.2$" in note and "0.07$" in note and "62.5\\%" in note and "89.3\\%" in note and "0.318" in note
     script_part = narration[narration.index("SCRIPT = [") :]
@@ -6509,7 +6509,7 @@ def test_act_explainer_demos_and_worked_example_share_the_paper_numbers():
 
     # 旁白：片头接 Transformer 的片尾预告，片尾只预告下一篇（EgoMimic）；数字之间不只隔一个逗号
     spoken = re.findall(r'"([^"]*)"\),', narration[narration.index("SCRIPT = [") : narration.index("DISPLAY = [")])
-    assert len(spoken) == 94 and not any("@" in t for t in spoken)
+    assert len(spoken) == 95 and not any("@" in t for t in spoken)
     assert not any(re.search(r"\d\s*[，,]\s*\d", t) for t in spoken)
     assert "上一期结尾预告：用 Transformer 一次写出一整段动作" in narration and "下一篇讲 EgoMimic" in narration and "EgoMimic" in intro
     for bad in ("长什么样", "一行", "调到", "重画", "换成人的", "魔术贴扎带", "数据长", "每一步差一点"):
