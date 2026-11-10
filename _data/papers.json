@@ -2946,6 +2946,25 @@
     "display_name": "Manipulation",
     "papers": [
       {
+        "title": "AffectiveVLA: Safe and Intent-Aware VLA Control for Human-Humanoid Social Interaction",
+        "path": "papers/06_Manipulation/AffectiveVLA__Safe_and_Intent-Aware_VLA_Control_for_Human-Humanoid_Social_Interaction/AffectiveVLA__Safe_and_Intent-Aware_VLA_Control_for_Human-Humanoid_Social_Interaction.md",
+        "url": "/papers/06_Manipulation/AffectiveVLA__Safe_and_Intent-Aware_VLA_Control_for_Human-Humanoid_Social_Interaction/AffectiveVLA__Safe_and_Intent-Aware_VLA_Control_for_Human-Humanoid_Social_Interaction.html",
+        "dir": "AffectiveVLA__Safe_and_Intent-Aware_VLA_Control_for_Human-Humanoid_Social_Interaction",
+        "arxiv": "2611.07712",
+        "summary_zh": "AffectiveVLA 把「猜意图」从 VLA 里拆出来交给一个专门的小视频分类器（TinyViT + VideoLightFormer，p95 延迟 6.27 ms），只有连续三步高置信才放行并把意图写成提示词；VLA 只负责「怎么做…",
+        "health_score": 4,
+        "health_gaps": [
+          "animation",
+          "video"
+        ],
+        "health_label_zh": "笔记健康度 4/6，缺：动画讲解、讲解视频",
+        "health_label_en": "Note health 4/6; missing: explainer animation, explainer video",
+        "published_date_zh": "2026年11月5日（arXiv v1）",
+        "published_date_en": "Nov 5, 2026 (arXiv v1)",
+        "zhname": "AffectiveVLA：面向人与人形社交互动的安全、意图感知 VLA 控制",
+        "zh_title": "AffectiveVLA：面向人与人形社交互动的安全、意图感知 VLA 控制"
+      },
+      {
         "title": "EmbodyHOI: Embodiment-Aware Generation of Hand-Object Interactions for Humanoid Dexterous Manipulation",
         "path": "papers/06_Manipulation/EmbodyHOI__Embodiment-Aware_Generation_of_Hand-Object_Interactions_for_Humanoid_Dexterous_Manipulation/EmbodyHOI__Embodiment-Aware_Generation_of_Hand-Object_Interactions_for_Humanoid_Dexterous_Manipulation.md",
         "url": "/papers/06_Manipulation/EmbodyHOI__Embodiment-Aware_Generation_of_Hand-Object_Interactions_for_Humanoid_Dexterous_Manipulation/EmbodyHOI__Embodiment-Aware_Generation_of_Hand-Object_Interactions_for_Humanoid_Dexterous_Manipulation.html",

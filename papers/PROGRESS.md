@@ -818,7 +818,7 @@
 
 | #   | 论文                                                                                                                                                        | 日期      | 🌟  | 状态   |
 | --- | --------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- | --- | ---- |
-| 1196  | [AffectiveVLA: Safe and Intent-Aware VLA Control for Human-Humanoid Social Interaction](https://arxiv.org/abs/2611.07712) | 2026.11 |  | ⏳ 待读 |
+| 1196  | [AffectiveVLA: Safe and Intent-Aware VLA Control for Human-Humanoid Social Interaction](https://arxiv.org/abs/2611.07712) ✅ [笔记](06_Manipulation/AffectiveVLA__Safe_and_Intent-Aware_VLA_Control_for_Human-Humanoid_Social_Interaction/AffectiveVLA__Safe_and_Intent-Aware_VLA_Control_for_Human-Humanoid_Social_Interaction.md) | 2026.11 |  | ✅ 已总结 |
 | 1197  | [RoboTryOn: Synthesizing Dexterous Robot Demonstrations from Human Videos via Virtual Try-On](https://arxiv.org/abs/2611.05163) | 2026.11 |  | ⏳ 待读 |
 | 1184  | [Catch It All!: Generalizable Dynamic Catching with a Dexterous Hand](https://arxiv.org/abs/2610.39044) | 2026.10 |  | ⏳ 待读 |
 | 1157  | [EmbodyHOI: Embodiment-Aware Generation of Hand-Object Interactions for Humanoid Dexterous Manipulation](https://arxiv.org/abs/2610.27242) ✅ [笔记](06_Manipulation/EmbodyHOI__Embodiment-Aware_Generation_of_Hand-Object_Interactions_for_Humanoid_Dexterous_Manipulation/EmbodyHOI__Embodiment-Aware_Generation_of_Hand-Object_Interactions_for_Humanoid_Dexterous_Manipulation.md) | 2026.10 |  | ✅ 已总结 |
