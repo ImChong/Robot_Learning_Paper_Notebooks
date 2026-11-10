@@ -41,15 +41,15 @@
         "13_Physics-Based_Animation",
         "14_Human_Motion"
       ],
-      "last_module": "05_Locomotion",
-      "last_index": 1198,
-      "last_title": "STEP: Spatiotemporal Training with Explicit Prediction for Perceptive Humanoid Locomotion (arXiv:2611.08097)",
-      "next_module": "06_Manipulation",
-      "last_completed_date": "2026-11-09",
-      "note": "本日轮转到 05_Locomotion。PROGRESS Locomotion 章节中尚无笔记的最新论文是 STEP（arXiv:2611.08097，2026-11-05，中国科大 / 松延动力等），即 PROGRESS #1198，已确认在上游 README。4 个可学习查询融合本体与深度成 64 维状态，训练时加跨模态掩码预测与动作条件下一步预测（EMA 目标 + SIGReg），与 PPO + AMP 一阶段联合训练；Noetix E1 真机 98/100。未开源，只给整体流程 mermaid。下一篇轮转到 06_Manipulation。",
-      "last_date": "2026-11-09",
+      "last_module": "06_Manipulation",
+      "last_index": 1196,
+      "last_title": "AffectiveVLA: Safe and Intent-Aware VLA Control for Human-Humanoid Social Interaction (arXiv:2611.07712)",
+      "next_module": "07_Teleoperation",
+      "last_completed_date": "2026-11-10",
+      "note": "本日轮转到 06_Manipulation。PROGRESS Manipulation 章节中尚无笔记的最新论文是 AffectiveVLA（arXiv:2611.07712，2026-11-05，Skoltech），即 PROGRESS #1196，已确认在上游 README。双视角 RGB 意图分类器（TinyViT + VideoLightFormer，p95 6.27 ms）连续 3 步 > 0.6 才确认并写成 VLA 提示词，VLA 输出 64 维 SONIC token + 双手 6 维手指；按任务缩放 14 个手臂关节的 Kp/Kd，Vosk 语音锁存安全停；GR00T macro-F1 0.75 → 0.90。未开源，只给整体流程 mermaid。下一篇轮转到 07_Teleoperation。",
+      "last_date": "2026-11-10",
       "next_candidate": null,
-      "last_completed": "STEP: Spatiotemporal Training with Explicit Prediction for Perceptive Humanoid Locomotion (arXiv:2611.08097)"
+      "last_completed": "AffectiveVLA: Safe and Intent-Aware VLA Control for Human-Humanoid Social Interaction (arXiv:2611.07712)"
     },
     "last_summary_index": 532,
     "last_summary_date": "2026-09-18",
@@ -1992,6 +1992,17 @@
         "project_page": "",
         "code": "",
         "source": "⏳ 未开源（论文与 arXiv 页面无代码链接）· 只给整体流程 mermaid · 多查询融合 + 跨模态 / 下一步预测 + EMA 教师 + SIGReg · Youhao Lyu、Chenghao Sun、Wenhao Cui 等（中国科大、松延动力）"
+      },
+      {
+        "date": "2026-11-10",
+        "index": 1196,
+        "title": "AffectiveVLA: Safe and Intent-Aware VLA Control for Human-Humanoid Social Interaction",
+        "folder": "papers/06_Manipulation/AffectiveVLA__Safe_and_Intent-Aware_VLA_Control_for_Human-Humanoid_Social_Interaction",
+        "module": "06_Manipulation",
+        "arxiv": "2611.07712",
+        "project_page": "",
+        "code": "",
+        "source": "⏳ 未开源（论文与 arXiv 页面无代码链接）· 只给整体流程 mermaid · 意图门控 + 四个 VLA 微调对比 + 按任务调阻抗 + 语音锁存安全停 · Nikita Kuzmin、Dzmitry Tsetserukou 等（Skoltech）"
       }
     ],
     "last_completed_index": 588,
