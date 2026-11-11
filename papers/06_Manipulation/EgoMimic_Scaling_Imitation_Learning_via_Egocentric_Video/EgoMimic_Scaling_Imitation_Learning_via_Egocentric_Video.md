@@ -4,39 +4,61 @@ paper_order: 1
 title: "EgoMimic: Scaling Imitation Learning via Egocentric Video"
 category: "操作任务"
 zhname: "EgoMimic：通过第一视角视频扩展模仿学习"
+arxiv: "2410.24221"
+demos: ["egomimic"]
+original_check: done
+original_check_date: 2026-11-11
+original_check_scope: arXiv v1 的 LaTeX 源码全文（正文 + 附录）与 PDF 的图表编号 + 官方代码 SimarKareer/EgoMimic @ 6d63e9a + 项目页 + HF 上的官方样例数据（碗任务的两份）
 ---
 
 # EgoMimic: Scaling Imitation Learning via Egocentric Video
-**EgoMimic：通过第一视角视频扩展模仿学习**
+**人戴 Project Aria 眼镜录第一视角视频，配上手的 3D 跟踪，当成和机器人遥操作数据同等的示范：把手的轨迹换到当前相机坐标系、和机器人数据各自归一化、把手和机械臂都涂黑画一条红线，再用一个基于 ACT 的策略同时学两种数据；机器人数据 2 小时再加 1 小时人的数据，放玩具进碗的得分从 68 涨到 128，比 3 小时机器人数据训的 ACT（74）还高**
 
-> 📅 阅读日期: 2026-06-07
+> 📅 阅读日期: 2026-06-07（速读）；2026-11-11 第二版：对照 arXiv v1 的 LaTeX 源码（只有这一版）、官方代码 SimarKareer/EgoMimic @ 6d63e9a、项目页与 HF 上的官方样例数据逐条核查重写；新增十八幕讲解动画、三个交互演示和配音视频
 >
-> 🏷️ 板块: 06 Manipulation · 第一视角人类视频 · 跨具身模仿学习
+> 🏷️ 板块: 06_Manipulation · 第一视角人类视频 · 跨具身模仿学习 · 协同训练 · ACT
 >
-> 🧭 状态: 深度技术细节已填充（基于 arXiv:2410.24221 + 开源仓库）
+> ℹ️ 笔记对照 [arXiv 2410.24221](https://arxiv.org/abs/2410.24221)（v1，2024-10-31，读的是 LaTeX 源码；图表编号按 PDF）、[项目页](https://egomimic.github.io/)、官方代码 [SimarKareer/EgoMimic](https://github.com/SimarKareer/EgoMimic)（commit `6d63e9a`，只读没有运行；子模块 robomimic 没有一起读）和 HF 数据集 [gatech/EgoMimic](https://huggingface.co/datasets/gatech/EgoMimic)（`065ffc0`）。**我们的统计**（不是论文的实验）：碗任务的两份 HDF5 各四十多 GB，没有整份下载，只远程读了低维数组，和人、机器人各一段的图像；下面凡是标「官方样例数据」的数都出自这里。官方没有放出训好的权重，所以这一篇没有复现策略。
 
 ---
 
 ## 📋 基本信息
 
-| 项目 | 链接 |
+| 项目 | 链接 / 内容 |
 |------|------|
-| **arXiv** | [2410.24221](https://arxiv.org/abs/2410.24221) |
-| **HTML** | [arxiv.org/html/2410.24221v1](https://arxiv.org/html/2410.24221v1) |
-| **PDF** | [Download](https://arxiv.org/pdf/2410.24221) |
-| **项目主页** | [egomimic.github.io](https://egomimic.github.io) |
-| **源码（训练/数据处理）** | [SimarKareer/EgoMimic](https://github.com/SimarKareer/EgoMimic) |
-| **源码（硬件/Eve 机器人）** | [SimarKareer/EgoMimic-Eve](https://github.com/SimarKareer/EgoMimic-Eve) |
-| **作者** | Simar Kareer, Dhruv Patel, Ryan Punamiya, Pranay Mathur, Shuo Cheng, Chen Wang, Judy Hoffman, Danfei Xu |
-| **机构** | Georgia Institute of Technology · Stanford University |
-| **发布时间** | 2024-10 (arXiv) |
-| **机器人平台** | **Eve** — 双臂 ViperX 300S（6-DoF × 2）+ WidowX leader 遥操作 + Aria 头戴主视角 |
+| **arXiv** | [2410.24221](https://arxiv.org/abs/2410.24221)（只有 v1） |
+| **PDF** | [arxiv.org/pdf/2410.24221](https://arxiv.org/pdf/2410.24221) |
+| **项目主页** | [egomimic.github.io](https://egomimic.github.io/)（采集方式、三个任务的自主执行、没见过的场景、加不加人的数据的对比） |
+| **代码** | [SimarKareer/EgoMimic](https://github.com/SimarKareer/EgoMimic)（数据处理与训练）· [SimarKareer/EgoMimic-Eve](https://github.com/SimarKareer/EgoMimic-Eve)（硬件与真机软件，仓库说明把这台机器人叫 Eve） |
+| **数据** | [gatech/EgoMimic](https://huggingface.co/datasets/gatech/EgoMimic)（三个任务各一份人的、一份机器人的 HDF5；仓库说明称为样例数据） |
+| **发布时间** | 2024-10-31 (arXiv) |
+| **发表** | ICRA 2025（[DOI 10.1109/ICRA55743.2025.11127989](https://doi.org/10.1109/ICRA55743.2025.11127989)，第 13226–13233 页，Crossref 记录） |
+| **作者** | Simar Kareer、Dhruv Patel、Ryan Punamiya、Pranay Mathur、Shuo Cheng、Chen Wang、Judy Hoffman、Danfei Xu |
+| **机构** | Georgia Institute of Technology、Stanford University |
+| **硬件** | 人：Project Aria 眼镜（75 g）。机器人：两条 6 自由度 ViperX 300 S 倒装在可调高度的架子上，腕部 Intel RealSense D405，头顶另一副 Aria 眼镜；架子不含机械臂不到 1,000 美元；两条 WidowX 主臂遥操作 |
+| **训练** | 120,000 次迭代，总批大小 128，4 张 A40，约 24 小时（附录）；代码基于 robomimic |
+| **关键词** | Egocentric video, human embodiment data, co-training, cross-embodiment, imitation learning, ACT, Project Aria |
+
+---
+
+## 🗺️ 在学习路线图中的位置
+
+接在 [ACT](../../03_High_Impact_Selection/ACT_Learning_Fine-Grained_Bimanual_Manipulation_with_Low-Cost_Hardware/ACT_Learning_Fine-Grained_Bimanual_Manipulation_with_Low-Cost_Hardware.html) 之后：EgoMimic 的策略骨干就是 ACT（一次预测 100 步的动作块、CVAE 的风格变量 $z$、Transformer 编码器加解码器），硬件也照着 ALOHA 搭（ViperX 从臂、WidowX 主臂、关节空间遥操作）。它在 ACT 上加的是**另一种数据**：人的第一视角视频和手的轨迹。路线图上它还接在 [iDP3](../../03_High_Impact_Selection/iDP3_Generalizable_Humanoid_Manipulation_with_3D_Diffusion_Policies/iDP3_Generalizable_Humanoid_Manipulation_with_3D_Diffusion_Policies.html) 后面：两篇都把第一视角当成策略的主视觉，iDP3 靠相机坐标系里的点云换场景，EgoMimic 靠在新场景里录人的数据换场景。
 
 ---
 
 ## 🎯 一句话总结
 
-EgoMimic 把人类第一视角视频当作与机器人遥操作数据**同等地位**的具身示教源：用 Project Aria 眼镜被动采集 egocentric RGB + 3D 手部轨迹 + SLAM，配合仿人低成本双臂机器人 **Eve** 与三套跨域对齐（坐标系 / 动作分布 / 视觉外观），在 ACT 骨干上 co-train 统一策略——人类数据 1 小时带来的增益显著超过机器人数据 1 小时，并在仅见于人类视频的新物体/新场景中实现泛化。
+> EgoMimic 让人戴上 Project Aria 眼镜、用自己的手做一遍任务，把这段第一视角视频和手的 3D 轨迹当成和机器人遥操作数据同等的示范，和机器人数据一起训一个策略。遥操作采数据慢：论文的碗任务里，机器人 120 分钟采到 270 条示范，人 60 分钟采到 1400 条。以前用人的视频（如 MimicPlay），是从视频里学一个高层的规划器去指挥低层策略，低层策略仍然只吃机器人数据。这篇论文的主张是**不分高低层，人和机器人的数据进同一个网络**。为此要补四处差别。**坐标系**：人的头一直在动，所以把未来每一刻的手位置，用眼镜的 SLAM 位姿都换到当前这一帧的相机坐标系。**时间**：人比遥操作的机器人快，机器人的动作块取 4 秒、人取 1 秒，都是 100 个点。**分布**：手和夹爪在相机前的位置分布不同，各自减均值除以标准差。**外观**：用 SAM2 把手和机械臂都涂黑，再画一条红线。网络是 ACT，只多出一个输出头：**位姿头**预测末端或手在相机坐标系里的位置，人和机器人的数据都监督它；**关节头**预测关节角，只有机器人数据监督，真机用的是它。三个真机任务上，得分比 ACT 高 34%–228%；只在新场景里录人的数据、不录机器人数据，碗任务仍得 63 分（MimicPlay 4 分）。
+
+> 🎮 **本文内嵌 1 段讲解动画、1 段配音视频和 3 个交互演示**（不用装任何东西）：
+> [十八幕动画：EgoMimic 全流程](#egomimic-explainer-anim) —— 约 288 秒串完「机器人的数据从哪来 → 以前怎么用人的视频 → 眼镜：人的数据怎么采 → 机器人：尽量像人的上半身 → 两路数据各有什么 → 对齐一：头在动 → 对齐二：人比机器人快 → 对齐三：各自归一化 → 对齐四：遮住手和机械臂 → 一个策略，两个输出头 → 为什么用关节控制 → 训练与部署 → 三个任务与数据量 → 表三：和基线比 → 泛化：新颜色、新场景 → 多一小时给谁 → 消融 → 局限、代码与数据」
+> [配音讲解视频](#egomimic-video) —— 同样十八幕，加中文配音与字幕，竖屏，可下载
+> [坐标系实验台](#demo-frames) —— 官方样例数据里一段人的示范：拖时间，看未来 0.9 秒的手位置，换不换到当前相机坐标系差多少
+> [归一化实验台](#demo-norm) —— 官方样例数据里手和夹爪的位置分布，三个方向、归一化前后各是什么样
+> [论文的数字](#demo-results) —— 表二、表三、表四、图 7、图 8 重画，可切换
+
+> 🚶 [具体实例](#实例-环境设定)把论文里的数从头算一遍：采集效率、坐标变换的一维例子、时间对齐、归一化、表三的提升、消融的降幅、图 8 的那一小时、部署的节拍、代码里的损失。
 
 ---
 
@@ -44,292 +66,510 @@ EgoMimic 把人类第一视角视频当作与机器人遥操作数据**同等地
 
 | 缩写 | 全称 | 简单解释 |
 |------|------|----------|
-| **ACT** | Action Chunking with Transformers | 本文策略骨干；预测未来 action chunk |
-| **MPS** | Machine Perception Service | Aria 官方感知管线：SLAM + 手部 3D 追踪 |
-| **SLAM** | Simultaneous Localization and Mapping | 同时定位与建图；用于追踪眼镜位姿 |
-| **Aria** | Project Aria (Meta) | Meta 可穿戴多模态传感眼镜（75g） |
-| **SAM** | Segment Anything Model | 用于 mask 人手/机械臂，消除外观差异 |
-| **Co-training** | — | 人类数据与机器人数据在同一网络中联合训练 |
-| **EEF** | End-Effector | 末端执行器位姿空间 |
+| **Egocentric** | 第一视角 | 相机戴在头上，拍到的是自己眼前的画面和自己的手 |
+| **Human embodiment data** | 人的具身数据 | 论文的叫法：第一视角视频 + 手的 3D 轨迹，把人当成另一种「机器人」的示范 |
+| **Aria** | Project Aria | Meta 的研究用眼镜：前置广角 RGB 相机 + 两台侧面的黑白相机，论文写它重 75 g |
+| **MPS** | Machine Perception Services | Aria 的云端处理服务：从原始录像算出眼镜的位姿（SLAM）和手的位置 |
+| **SLAM** | Simultaneous Localization and Mapping | 同时定位与建图；这里用来知道每一帧眼镜在世界里的位姿 |
+| **ACT** | Action Chunking with Transformers | 上一篇的算法；这篇的策略骨干 |
+| **EEF** | End-effector | 末端执行器，这里指夹爪 |
+| **IK** | Inverse Kinematics | 逆运动学：由末端位姿反推关节角 |
+| **SAM2** | Segment Anything Model 2 | 给一个点提示，分割出那个物体的掩码；这里用来把手和机械臂涂黑 |
+| **Co-training** | 协同训练 | 两种数据（人、机器人）每一步各取一批，一起更新同一个网络 |
+| **SR / Pts** | Success Rate / Points | 成功率 / 得分（按完成的子步骤计分） |
 
 ---
 
-## ❓ 论文要解决什么问题？
+## 🎬 十八幕动画：EgoMimic 全流程 {#egomimic-explainer-anim}
 
-模仿学习（IL）在复杂操作上表现亮眼，但泛化仍脆弱；CV/NLP 靠互联网规模数据起飞，机器人却缺少等价数据源。
+<div class="paper-demo" data-demo="egomimic-explainer"><p class="demo-fallback">（本节含动画演示，需要启用 JavaScript）</p></div>
 
-现有扩数据路线各有瓶颈：
+## 📺 配音讲解视频（可下载） {#egomimic-video}
 
-1. **机器人遥操作**（ALOHA / GELLO / SpaceMouse / VR）：需要专用硬件 + 主动示教，成本高、规模难扩；
-2. **从人类视频学习**（MimicPlay 等）：通常只从视频提取**高层意图/规划**，低层策略仍只靠机器人数据训练，人类数据无法直接拉升执行性能；
-3. **具身 gap**：人类手部（egocentric、移动相机、高 DoF）与机器人执行器（关节空间、固定基座）在运动学、分布、视觉上差异巨大。
+<div class="paper-demo" data-demo="egomimic-video" data-src="media/egomimic_explainer_video.mp4" data-poster="media/egomimic_explainer_video_poster.jpg"><p class="demo-fallback">（本节含讲解视频播放器，需要启用 JavaScript；也可以直接<a href="media/egomimic_explainer_video.mp4" download="EgoMimic_讲解视频.mp4">下载 mp4（35.2 MB）</a>）</p></div>
 
-EgoMimic 的核心主张：**不要把人类视频当辅助信号，而是当作另一种具身 embodiment 的示教数据**，与人类/机器人数据在同一端到端策略里平等 co-train。
+> 📖 **动画之后的正文默认全部折叠**：动画覆盖到的那几节（要解决什么问题、硬件、对齐、策略、实验）按小节收起，再往后的数据统计、局限、具体实例和附录各整块收起。想细读哪一块就点开对应的折叠条；流程图和三个交互演示留在外面，目录里的标题依旧可以直接点，会自动展开所在折叠块。
+>
+> 动画第 1、3、4、12、13、15、16、18 幕的真机画面剪自[项目页](https://egomimic.github.io/)的视频（人戴眼镜做任务与遥操作机器人、实时重新规划、三个任务的自主执行、新场景、加不加人的数据的对比、户外），画面里自带的「2x speed」「4x speed」「8x speed」「Unseen Scene」「Failure / Success」标签照原样保留，只做讲解引用。第 3、5–7、9 幕的第一视角画面和轨迹取自 HF 上的**官方样例数据**（碗任务，人一段 300 帧、机器人一段的前 1200 步），画面上的小点是我们按官方代码的相机内参投上去的。第 3、4、7、10、14、15 幕用论文图 2、4、6、7、9 的裁剪；第 8 幕的散点和分布曲线是样例数据的统计，第 13–17 幕的柱和折线照论文的数重画；第 11 幕的 ViperX 300 是上一期 ACT 里用 MuJoCo Menagerie 的模型渲染的。
+
+---
+
+## ❓ 要解决什么问题
+
+<div class="mermaid">
+flowchart TB
+    A["模仿学习要更多数据<br/>遥操作：要机器人、要人专门示范"] --> B["人的第一视角视频<br/>眼镜就能录，手的 3D 轨迹也能跟踪"]
+    B --> C["以前：只从人的视频里学高层规划<br/>低层策略仍只吃机器人数据"]
+    B --> D["EgoMimic：人和机器人的数据<br/>同等对待，训一个策略"]
+    D --> E1["坐标系：换到当前相机"]
+    D --> E2["时间：人 1 秒对机器人 4 秒"]
+    D --> E3["分布：各自归一化"]
+    D --> E4["外观：涂黑 + 红线"]
+    E1 --> F["基于 ACT 的策略<br/>位姿头（人 + 机器人）<br/>关节头（只有机器人）"]
+    E2 --> F
+    E3 --> F
+    E4 --> F
+
+    style D fill:#e8f4fd,stroke:#1f78b4
+    style F fill:#e8f8e8,stroke:#27ae60
+</div>
+
+### 数据从哪来（引言）
+
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：端到端模仿学习换个场景就不稳；视觉和语言靠互联网数据，机器人没有；遥操作和手持夹爪都要专门的硬件和主动示范；论文设想的是被动采集</summary>
+
+- 引言的出发点：端到端模仿学习能学会复杂的操作，但遇到新场景、新任务仍然脆弱。论文借视觉和语言领域的经验，假设要靠大幅增加训练数据；而那两个领域的数据来自互联网，机器人没有对应的来源。
+- 已有的采集系统：ALOHA、GELLO 这类主从臂遥操作，和不用机器人的手持夹爪（UMI）。论文认为它们仍然需要专门的硬件，也需要人主动去做示范。
+- 论文的设想是**被动采集**（passive data collection）：理想的系统应当让人在没有打算采数据的时候，也顺带产生可用的数据。第一视角的人类视频符合这一点：它自带第一视角的相机、能当动作用的 3D 手部跟踪、和用来定位的 SLAM；消费级的 XR 设备和带相机的「智能眼镜」让这种数据有可能大规模采到。
+- 需要说明的是：论文实验里的人的数据，是照着同样三个任务专门录的（表二按任务列出了条数和分钟数），还不是日常生活里顺带录的。
+
+</details>
+
+### 以前怎么用人的视频（引言、相关工作、第 III-C 节）
+
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：MimicPlay 这类做法从人的视频里学高层规划、去条件化低层策略；低层策略只用遥操作数据训，性能受它限制；论文主张把人的数据当「一等」数据源</summary>
+
+- 引言对已有做法的概括：近期利用人类视频的工作，局限于从视频里抽取**高层的意图信息**，做成规划器去指导低层的条件策略（引的是 MimicPlay 和 HOP-Man）；这样的系统受低层策略的性能限制，而低层策略通常只用遥操作数据训练。
+- 论文的主张：不该把人的视频当成需要单独处理的辅助数据，而应当利用第一视角的人类数据和机器人数据本来就相近这一点，把两者看成同一个连续谱上的具身数据（原文是 first-class data source）。
+- 论文把系统分成四块（摘要与引言）：(i) 基于 Aria 眼镜的人的数据采集；(ii) 尽量缩小与人的运动学差别和相机差别的低成本双臂机器人；(iii) 跨域的数据对齐；(iv) 在人和机器人数据上协同训练的统一架构。
+
+</details>
 
 ---
 
 ## 🔧 方法详解
 
-### 1. 人类数据采集：Project Aria 眼镜
+### 眼镜：人的数据怎么采（第 III-A 节、附录 B、图 2）
 
-- **设备**：Meta Project Aria，眼镜形态仅 **75g**，可长时间佩戴，支持**被动式**数据采集（无需机器人、无需刻意示教意图）；
-- **传感器**：
-  - 前置 **wide-FoV RGB** → 策略主视觉输入；
-  - 两侧 **mono scene cameras** → 设备 SLAM + **3D 手部追踪**（手移出主 RGB 视野时仍可跟踪）；
-- **感知管线**：Aria **MPS**（Machine Perception Service）输出双手 3D 位姿 \( {}^{H}p \in \mathrm{SE}(3) \times \mathrm{SE}(3) \)；
-- **采集效率**：人类数据远高于机器人——Object-in-Bowl 任务 **60 min → 1400 条**示教（~23 条/min），同任务机器人 **120 min → 270 条**（~2 条/min）。
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：Aria 眼镜 75 g；前置广角 RGB 相机给策略看，两台侧面的黑白相机用来定位和跟踪手；手移出 RGB 画面仍能跟踪；原始数据传到 MPS，拿回眼镜的位姿和手的位置</summary>
 
-### 2. 机器人硬件：Eve（最小化 kinematic & camera gap）
+- 论文对采集系统的要求：可穿戴、符合人体工学、视野宽、能跟踪手的位置和设备的位姿。它选的是 Project Aria 眼镜：眼镜形态，论文写重 75 g，可以长时间佩戴。
+- 用到的传感器：**前置的广角 RGB 相机**给策略当视觉输入；**两台黑白的场景相机**（论文也叫侧面的 SLAM 相机）用来估计设备位姿和跟踪手。
+- 侧面相机的一个好处（第 III-A 节）：人在连续操作时，头和视线常常先于手移到下一处；手移出 RGB 相机的画面时，侧面的相机仍能跟踪到。
+- 处理流程（附录 B）：原始数据包括 RGB 相机、SLAM 相机、IMU、眼动相机、麦克风等带时间戳的传感器数据，上传到 Aria 的 MPS（云端服务），得到设备位姿、半稠密点云、相对设备坐标系的手部跟踪和视线。MPS 返回两份带时间戳的 CSV：世界系下的设备位姿、设备坐标系下的手的位置。论文再配上去畸变的 RGB 图像，做成 robomimic 能读的 HDF5。
+- 代码里的细节（`scripts/aria_process/aria_to_robomimic.py`、`aria_utils.py`）：手只取 `palm_position_device`（手掌的位置），不用手腕，也**没有朝向**，一只手 3 个数；图像去畸变成 480 × 640、再转 90°。
 
-仿 ALOHA 搭建低成本双臂系统 **Eve**（*Egocentric Videos Effortlessly*）：
+</details>
 
-| 组件 | 规格 |
-|------|------|
-| Follower 臂 | 2 × **ViperX 300S**（6-DoF），倒装于可调高度 torso 架上，运动学近似人上半身 |
-| 腕部相机 | 2 × Intel **RealSense D405** |
-| Leader 遥操作 | 2 × **WidowX** leader arms（ALOHA 式 leader-follower） |
-| 主视角传感器 | **第二副 Aria 眼镜**固定于 torso 顶部（与人眼高度对齐） |
-| 成本 | 机架 BOM < **$1000**（不含 ViperX 臂本身） |
+### 机器人：尽量像人的上半身（第 III-A 节、图 2）
 
-设计动机：Franka 等重型臂惯性大、运动慢、与人臂 kinematic 差太远；ViperX 更轻、更敏捷、尺寸接近人臂。机器人与人都用 **同一型号 Aria** 作主视角，对齐 FOV / 曝光 / 动态范围。
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：不用 Franka 的理由；两条 ViperX 300 S 倒装在可调高度的架子上；腕部 D405；架子不到 1,000 美元（不含臂）；WidowX 主臂遥操作；机器人的主相机也是一副 Aria 眼镜</summary>
 
-### 3. 数据处理与跨域对齐（三大 gap）
+- 为什么不用桌面上的 Franka Emika Panda 这类机械臂：论文说它们的运动学和人的手臂差得多；又重、惯量大，出于安全只能慢慢动，做不到接近人的速度。
+- 论文自己搭的机器人：两条 6 自由度的 **ViperX 300 S**，腕部各装一台 Intel RealSense D405，**倒着**装在一个可调高度的架子上当躯干，运动学上模仿人的上半身。论文说 ViperX 比较细、尺寸和人的手臂相近。整个架子不含 ViperX 机械臂不到 1,000 美元（论文说会公开物料清单）。另搭了一套主臂用来遥操作，和 ALOHA 类似（图 2 标的是 WidowX 主臂）。
+- **相机也对齐**：机器人的主视觉传感器是第二副 Aria 眼镜，装在躯干顶上、相当于人眼的位置，用来缩小相机本身带来的差别（视场、曝光、动态范围）。
+- 硬件仓库的说明把这台机器人叫 **Eve**（Egocentric Videos Effortlessly）；论文正文没有用这个名字。
 
-#### A. 统一坐标系（moving camera → camera-centered frame）
+</details>
 
-机器人 EEF 轨迹通常在固定相机/基座坐标系；人类 egocentric 数据相机帧 \(F_i\) 随头部运动不断变化。
+### 两路数据各有什么（第 III-B 节、表一）
 
-做法：将人手与机器人 EEF 的 action chunk \(a^{p}_{t:t+h}\) 全部变换到**当前观测相机帧** \(F_t\)：
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：人：第一视角图像、双手位姿、手的轨迹；机器人：第一视角 + 腕部图像、末端位姿 + 关节角、末端动作 + 关节动作；代码里手只有位置；人的数据没有抓取</summary>
 
-\[
-{}^{H}a^{p}_{i} = (T^{W}_{F_t})^{-1} T^{W}_{F_i} \, p^{F_i}_{i}, \quad i \in [t, t+h]
-\]
+| 来源 | 图像 | 本体感觉 | 动作 |
+|------|------|----------|------|
+| 人 $\mathcal{D}_H$ | 第一视角 | 手的 3D 位姿 ${}^Hp$ | 归一化的手的轨迹 ${}^Ha^p$ |
+| 机器人 $\mathcal{D}_R$ | 第一视角 + 腕部 | 末端位姿 ${}^Rp$、关节角 ${}^Rq$ | 末端动作 ${}^Ra^p$、关节动作 ${}^Ra^q$ |
 
-人类侧用 MPS 视觉惯性 SLAM 得 \(T^{W}_{F_i}\)；机器人侧用手眼标定固定相机帧。策略预测时无需建模未来头部运动。
+- 论文的写法：手和末端的位姿都记成 $SE(3)\times SE(3)$（两只手 / 两条臂），关节角 ${}^Rq\in\mathbb{R}^{2\times 7}$（每条臂 6 个关节加夹爪）。
+- 代码和官方样例数据里：手和末端都只有**位置**。单臂任务（碗）人的动作是 3 维、机器人的关节动作 7 维；双臂是 6 维和 14 维（`algo/egomimic.py` 第 78–83 行）。样例数据里 `obs/ee_pose` 的形状是 (N, 3)。
+- **人的数据里没有抓取**：Aria 只给手的位姿，没有手指开合。论文附录写明，抓取这个动作只由机器人的关节损失监督（夹爪算作一个关节）。
+- 论文算法 1 里机器人的输入是 $(I_t, p_t, q_t)$；官方配置里机器人的低维输入只有 `joint_positions`，人的是 `ee_pose`（`configs/egomimic_oboo.json`）。
 
-#### B. 动作分布对齐（Gaussian normalization）
+</details>
 
-人手与机器人 EEF 位姿分布仍有系统性差异（生物力学、执行风格、测量精度），尤其在 **y（左右）** 维度。不对齐时策略会为两域学**分离表示**，人类数据无法 scaling。
+### 对齐一：头在动，把轨迹换到当前相机坐标系（第 III-B 节）
 
-做法：对每类数据源的手/EEF **位姿与动作分别做 Gaussian 归一化**（逐域独立统计 \(\mu, \sigma\)）。消融显示去掉此项 Object-in-Bowl 得分 **-38%**。
+<div class="paper-demo" data-demo="egomimic-frames" id="demo-frames"><p class="demo-fallback">（本节含交互演示：坐标系实验台，需要启用 JavaScript）</p></div>
 
-#### C. 视觉外观对齐（SAM mask + 红线）
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：机器人的相机固定，人的相机跟着头动；动作块里每个未来的手位置，都用 SLAM 位姿换到观测那一帧的相机坐标系；官方样例数据里头动带来的偏移平均 4.6 cm</summary>
 
-人手与机械臂外观差异大。做法：
+- 问题：机器人的动作和本体感觉通常用固定的参考系（相机或基座）。第一视角的人的数据里相机在动，这个前提不成立。
+- 做法：沿用动作块的思路，为手和末端都构造动作块 $a^p _ {t:t+h}$。原始轨迹是一串 3D 位置 $[p^{F_t}_t, p^{F _ {t+1}} _ {t+1}, \dots, p^{F _ {t+h}} _ {t+h}]$，$F_i$ 是估计 $p_i$ 时相机的坐标系：机器人的 $F_i$ 不变，人的一直在变。目标是把每个位置都换到**观测那一帧**的相机坐标系 $F_t$，这样策略预测动作时不用考虑之后相机怎么动。人的数据用 MPS 的视觉惯性 SLAM 得到眼镜在世界系里的位姿 $T^W _ {F_i}$：
 
-1. 用 **SAM** 以手/EEF 投影点为 prompt，将手与机械臂 **黑色 mask 掉**；
-2. 叠加 **红色线段**标示末端方向；
-3. 部署时用 **SAM2 实时**在桌面端做同样 mask（训练/推理一致）。
+$$
+{}^{H}a^p_i=(T^W_{F_t})^{-1}\,T^W_{F_i}\,p^{F_i}_i,\qquad i\in[t,\dots,t+h]
+$$
 
-消融：去掉红线 **-13%**；去掉 mask+红线 **-26%**。
+- 机器人的数据同样换到相机坐标系，用的是手眼标定得到的固定外参（代码里是写死的 `EXTRINSICS["ariaJul29"]`）。
+- **官方样例数据里量到的**（碗任务人的数据，13,335 个样本）：把 0.9 秒后的手位置直接拿它自己那一帧的坐标来用，和换到当前帧以后相比，平均差 4.6 cm、中位数 2.5 cm、九成在 10.1 cm 以内、最大 64.6 cm；同一段时间里手自己平均挪了 19 cm。也就是说头动造成的假位移，平均相当于手真实位移的四分之一左右。
+- 代码里的实现（`aria_to_robomimic.py` 第 180–218 行）：`hand_in_camera_t_frame = inv(camera_t) · camera_i · palm`，和论文的式子一致。
 
-#### D. 时间对齐
+</details>
 
-人类完成任务比机器人快。仿 MimicPlay，将人类数据 **慢放 4×**：
+### 对齐二：人比机器人快（附录 A、表七、图 9）
 
-- 机器人：4 s horizon、chunk size 100（50 Hz 采集）；
-- 人类：1 s horizon、chunk size 100（30 Hz 采集）；
-- 两端均在 horizon 内均匀采样 100 个未来动作点。
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：照 MimicPlay 把人的数据「放慢」4 倍：机器人的动作块取 4 秒、人取 1 秒，都是 100 个点；代码里是 0.9 秒和 3.96 秒；样例数据里手的速度约是末端的 2.9 倍</summary>
 
-### 4. 联合策略架构（基于 ACT）
+- 论文附录：人和遥操作的机器人完成任务的速度不同，要在时间上对齐。照 MimicPlay 的做法把人的数据「放慢」，经验上取 4 倍。具体是：机器人的关节动作和位姿动作按 **4 秒**的时间跨度构造，人的按 **1 秒**；两边的动作块大小都是 100，即在这段时间里均匀取 100 个未来的点。这和录制频率无关：人的数据 30 Hz，机器人 50 Hz。
+- 图 9 把两种数据并排画出来（紫色是真实的动作）：人的四格相隔 1 秒，机器人的四格相隔 4 秒，图注说两边动作的长度相近。
+- 代码里没有一个叫「4 倍」的参数，是两边各自的取法合出来的：人取 10 个点、每 3 帧一个（`HORIZON = 10`、`STEP = 3.0`），最远到第 27 帧，按 30 帧每秒是 **0.9 秒**，再插值成 100 个点；机器人取 100 个点、每 2 步一个（`POINT_GAP = 2`、`FUTURE_POINTS_COUNT = 100`），最远到第 198 步，按 50 Hz 是 **3.96 秒**。
+- **官方样例数据里量到的**：一个动作块的路径长度，人平均 0.345 m、机器人 0.524 m；折成速度是 0.384 和 0.132 m/s，手约是末端的 **2.9 倍**。论文取的 4 倍是经验值，论文没有给测量。
 
-在 ACT Transformer 骨干上扩展，**除浅层 input/output head 外全部参数共享**：
+</details>
 
-| 数据域 | 视觉输入 | 本体感知 | 监督信号 |
-|--------|----------|----------|----------|
-| 人类 \(\mathcal{D}_H\) | Egocentric RGB（masked） | 双手 3D 位姿 \( {}^{H}p \) | Pose chunk \( {}^{H}a^{p} \) |
-| 机器人 \(\mathcal{D}_R\) | Egocentric RGB + 双腕相机 | EEF \( {}^{R}p \) + 关节 \( {}^{R}q \) | Pose \( {}^{R}a^{p} \) + Joint \( {}^{R}a^{q} \) |
+### 对齐三：各自归一化（第 III-B 节、附录 A、图 3a）
 
-**双头输出设计**（关键工程取舍）：
+<div class="paper-demo" data-demo="egomimic-norm" id="demo-norm"><p class="demo-fallback">（本节含交互演示：归一化实验台，需要启用 JavaScript）</p></div>
 
-- **Pose 头** \(f^p\)：人类与机器人共同监督 → 学习跨具身共享表征；
-- **Joint 头** \(f^q\)：仅机器人监督 → 部署时用 \(\hat{a}^{q}\) 关节空间控制；
-- 原因：6-DoF ViperX 冗余度低，笛卡尔 IK 易奇异/不平滑，**不能直接 EEF 控制**；pose 预测只为表征对齐，非部署动作。
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：硬件和坐标系对齐以后，手和末端的位置分布仍然不同；不处理的话策略会给两种数据各学一套表示；做法是两种数据各自减均值、除以标准差；去掉这一步得分掉 38%</summary>
 
-**联合损失**：
+- 论文的观察：硬件和数据处理对齐以后，示范里手和末端位姿的分布仍然不同。它给的原因是生物力学的差别、做任务方式的差别和测量精度的差别。
+- 为什么要管：论文引用两篇工作说，不处理这个差别，策略倾向于给两种数据源各学一套表示，人的数据就带不动性能。
+- 做法：对每种数据源的末端（手）位姿和动作**各自**做高斯归一化（附录写成 $\mathrm{norm}(p_t)=(p_t-\mu_p)/\sigma_p$，动作同样处理）。论文说这个简单的办法经验上有效，将来想试动作量化之类的替代方案。
+- 图 3 (a) 画的是 $y$ 这一维：归一化前机器人的分布集中在 0 附近，手的集中在 0.3 附近；归一化后两者叠在一起。图注把 $y$ 说成左右方向。
+- **官方样例数据里量到的**（碗任务，手 14,685 个样本、末端 12,000 个）：$y$ 的均值，手 0.236 m、末端 0.003 m，标准差 0.074 和 0.071 m，和图 3 (a) 的位置对得上。把这些点按官方代码的相机内参投到 640 × 480 的画面上，手平均落在 (408, 374)、末端落在 (386, 242)：$y$ 对应的是画面的**上下**方向，手更靠画面下方。$x$、$z$ 两维的均值相差不大（0.156 对 0.138、0.481 对 0.552 m）。
+- 消融（表四）：去掉动作归一化，碗任务从 128 分掉到 79 分，降 38%。
 
-\[
-\mathcal{L} = \mathcal{L}^{H}_{p} + \mathcal{L}^{R}_{p} + \mathcal{L}^{R}_{q}
-\]
+</details>
 
-各为对应 action chunk 的 MSE。训练脚本：`pl_train.py`（PyTorch Lightning + DDP），数据格式 robomimic-style HDF5。
+### 对齐四：遮住手和机械臂（第 III-B 节、附录 A、图 3b）
 
----
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：相机一样了，手和机械臂长得还是不一样；用 SAM2 把两者都涂黑，再画一条红线；机器人的提示点来自正运动学，人的来自手的位置；评测时在台式机上实时跑；样例数据里机器人的掩码有时涂过头</summary>
 
-## 🧭 整体流程（mermaid）
+- 问题：相机硬件对齐以后，人的手和机器人的外观差别仍然很大。
+- 做法：用 SAM2 把手和机器人都**遮掉**（涂黑），再在遮掉的区域上画一条红线，指示末端的方向。
+  - 机器人：用正运动学算出手腕、夹爪、前臂三个关键点在机器人坐标系里的 3D 坐标，经相机外参和内参投到图像上，当作 SAM2 的点提示；得到掩码后，从夹爪到肘画一条红线。
+  - 人：用手的 3D 位置投到图像上当提示；红线沿手的掩码外接框的对角画，从右下角到左上角。
+- 训练时两种数据都遮；评测时 SAM2 在一台台式机上实时跑，对机器人做同样的遮挡和红线。
+- 代码里的细节（`scripts/masking/utils.py`）：用的是 SAM2 的 tiny 模型（`sam2_hiera_tiny.pt`）；红线是 `cv2.line(..., color=(255, 0, 0), thickness=25)`；机器人的线画到 `upper_forearm_link`。
+- **官方样例数据里看到的**：人的那一段 300 帧，涂黑的面积中位数占画面 3.6%，最大 5.2%。机器人那一段的前 1200 步（每 2 步看一帧，共 600 帧），中位数 4.7%，但有 33 帧涂黑的面积超过四分之一、13 帧超过一半（比如第 950 步，整个桌面都黑了）。这些帧也在训练数据里。
+- 消融（表四）：去掉红线 128 → 112（降 13%）；红线和遮挡都去掉 → 95（降 26%）。
 
-<div class="mermaid">
-flowchart TB
-    subgraph HUMAN["🧑 人类被动采集（无需机器人）"]
-        A1["Project Aria 眼镜<br/>75g · 任意场地"]
-        A2["Wide-FoV RGB"]
-        A3["MPS：SLAM + 双手 3D 追踪"]
-    end
+</details>
 
-    subgraph ROBOT["🤖 Eve 双臂机器人"]
-        B1["2× ViperX 300S follower"]
-        B2["2× WidowX leader 遥操作"]
-        B3["Aria 头戴主视角 + D405 腕相机"]
-    end
+### 一个策略，两个输出头（第 III-C 节、图 4、图 10、算法 1）
 
-    subgraph ALIGN["🔧 跨域对齐"]
-        C1["相机系 action chunk 统一"]
-        C2["逐域 Gaussian 动作归一化"]
-        C3["SAM mask + 红线 · 时间 4× 慢放"]
-    end
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：建在 ACT 上；除了浅的输入头和输出头，参数全部共享；位姿头由人和机器人的数据共同监督，关节头只由机器人数据监督；两个头只隔一层线性层；腕部相机只在机器人数据里有</summary>
 
-    subgraph POLICY["🧠 统一 ACT 策略"]
-        D1["共享 Transformer 编码器"]
-        D2["Pose 头 ← 人+机共同监督"]
-        D3["Joint 头 ← 仅机器人监督"]
-    end
+- 已有做法常用分层结构：人的数据训高层策略，去条件化输出机器人动作的低层策略。论文认为这受低层策略限制，低层策略并没有直接从人的数据里得到好处。
+- 论文的结构建在 ACT 上（它说设计是通用的，可以用到别的基于 Transformer 的模仿学习算法上）。**除了两个浅的输入头和两个输出头，策略的参数全部共享**：
+  - 输入头把视觉和本体感觉的嵌入变换以后送进 Transformer；
+  - Transformer 处理这些特征；
+  - 两个输出头把 Transformer 的输出变成**位姿**预测或**关节**预测。
+- **位姿损失**同时监督人和机器人的数据（${}^Ha^p$ 与 ${}^Ra^p$），**关节损失**只监督机器人数据（${}^Ra^q$）。论文说，两个分支之间只隔一层线性层，等于逼着模型给两个域学共同的表示。
+- 图 10（附录）画得更细：归一化后的本体感觉过一层线性层变成一个 token；人和机器人的第一视角图像过遮挡模块，和机器人的腕部图像一起进同一个 ResNet18，变成视觉 token；再加一个来自 CVAE 编码器的风格 token $z$（图里没画，照 ACT）；全部进 Transformer 编码器—解码器；解码器的输出按类型过一层线性层，得到位姿动作或关节动作。
+- **输入长度可变**：腕部图像只在机器人数据里有。有腕部图像时，就像 ACT 那样把多出来的 token 接到 Transformer 的输入序列后面；论文说这样已经够用，将来想试 HPT 之类更复杂的跨具身方法。
+- 代码与论文对不上的几处（`algo/egomimic.py`、`algo/act.py`）：
+  - ResNet 是**每台相机一个**：第一视角的那个由人和机器人共用，腕部相机另有一个（论文写的是 shared ResNet18）。
+  - 分开的不只输入输出头：CVAE 编码器的输入投影（动作、本体感觉各一个）也按人和机器人分开。
+  - 主 Transformer 的编码器和解码器都是 7 层（都用 `dec_layers`），4 层是 CVAE 编码器的（论文表五写 Encoder layers 4、Decoder layers 7）。
 
-    subgraph TASKS["📊 真机长时程任务"]
-        E1["Continuous Object-in-Bowl"]
-        E2["Laundry 叠衣"]
-        E3["Groceries 装袋"]
-    end
+</details>
 
-    A1 --> A2 & A3
-    B2 --> B1
-    B1 --> B3
-    A2 & A3 --> ALIGN
-    B3 --> ALIGN
-    ALIGN --> POLICY
-    POLICY -->|关节空间控制| TASKS
+### 为什么用关节控制；抓取谁来教（第 III-C 节、附录 C）
 
-    style HUMAN fill:#fff7e0,stroke:#d4a017
-    style ROBOT fill:#f3e8ff,stroke:#8e44ad
-    style ALIGN fill:#e8f4fd,stroke:#1f78b4
-    style POLICY fill:#e8f8e8,stroke:#27ae60
-    style TASKS fill:#fde8e8,stroke:#c0392b
-</div>
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：末端位姿和手的位姿更像，但 6 自由度的 ViperX 用末端位姿控制，解的冗余少，会碰到奇异点和不平滑的解；所以真机用关节头，位姿头只为学共同表示；抓取只有机器人数据教</summary>
 
----
+- 机器人的动作空间是个难点。末端位姿在语义上更接近人手的位姿；但论文说，用基于笛卡尔空间的控制器（例如差分逆运动学）按末端位姿去控制它的机器人很难，因为 6 自由度的 ViperX 冗余少，实际轨迹里经常碰到奇异点或不平滑的解。
+- 所以**真机用关节空间控制**：执行的是关节头预测的 $\hat a^q _ {t:t+h}$；位姿预测留着，用来学人和机器人共同的表示。
+- 论文特别说明：要同时预测位姿和关节，是它这套硬件的缘故；更能胜任末端控制的机器人可以不要关节预测。
+- 人的数据没有抓取信息，夹爪的开合只由机器人的关节损失监督（附录 C）。
+- 代码里的评测脚本（`scripts/evaluation/eval_real.py`）确实只把关节头的输出发给机器人，没有逆运动学。
 
-## 💡 核心贡献
+</details>
 
-1. **全栈框架**：Aria 人类采集 + Eve 仿人双臂 + 对齐 + co-train 策略，端到端打通；
-2. **人类数据一等公民**：非分层规划器，而是与机器人数据同等进入端到端 action 预测；
-3. **三套对齐**：坐标系 / 分布 / 视觉，每项均有消融支撑；
-4. **有利 scaling 律**：同等 1 小时，人类数据价值 **>>** 机器人数据；
-5. **新场景泛化**：机器人仅在原场景有遥操作数据，人类在新场景采集即可泛化。
+### 训练与部署（算法 1、附录 C–F、表五、表七）
 
----
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：每一步各取一批人的数据和一批机器人的数据；机器人批：位姿 L1 + 关节 L1 + KL，人批：位姿 L1 + KL；12 万次迭代、4 张 A40、约 24 小时；部署时 1 Hz 推理、25 Hz 控制，预测 4 秒只执行第 1 秒</summary>
 
-## 📊 实验任务与数据规模
+- 训练（附录 C）：每一步取一批人的数据和一批机器人的数据，各自过同一个网络。
 
-| 任务 | 人类 # / min / (#/min) | 机器人 # / min / (#/min) |
-|------|------------------------|--------------------------|
-| Object-in-Bowl | 1400 / 60 / **23** | 270 / 120 / 2 |
-| Groceries | 160 / 80 / 2 | 300 / 300 / 1 |
-| Laundry | 590 / 100 / 6 | 430 / 300 / 1 |
+$$
+L_{\text{robot}}=L_1({}^R\hat a^p,{}^Ra^p)+L_1({}^R\hat a^j,{}^Ra^j)+KL,\qquad L_{\text{hand}}=L_1({}^H\hat a^p,{}^Ha^p)+KL,\qquad L=L_{\text{robot}}+L_{\text{hand}}
+$$
 
-**任务简述**：
+  $KL$ 是 CVAE 的正则项，照 ACT。正文的算法 1 把三项都写成 MSE，附录写的是 $L_1$；代码用的是 L1。
+- 代码里的损失（`algo/egomimic.py` 第 278–285 行、`algo/act.py` 第 506 行、`pl_utils/pl_model.py` 第 96–100 行）：每一批是「L1 + 20 × KL」（`kl_weight` 20，ACT 是 10）；人那一批的 L1 和 KL 再乘 `hand_lambda`（配置里是 1.0）；两批的损失**取平均**，不是相加。
+- 超参数（表五）：AdamW，初始学习率 5e-5，线性调度；隐藏维度 512、前馈维度 3200、8 个注意力头；数据增强是颜色抖动。
+- 算力（附录 D）：120,000 次迭代，总批大小 128，4 张 A40，约 24 小时。配置文件里每个数据加载器的批大小是 16；4 张卡 × 2 种数据 × 16 = 128（这个乘法是我们算的，代码里没有写）。
+- 部署（附录 F、表七）：推理 1 Hz、控制 25 Hz，在一台装 RTX 4090 的台式机上；预测的动作跨 4 秒，只执行第 1 秒的，然后重新推理（滚动时域）。机器人的传感器 50 Hz，Aria 相机 30 帧每秒。
+- 代码里对应的是 `query_frequency = 25`：每 25 个控制步推理一次、执行 100 步里的前 25 步；`TEMPORAL_AGG = False`，**没有用 ACT 的时间集成**。
+- 代码里一处和论文不一致：`eval_real.py` 里写死 `CAM_KEY = "front_img_1"`，在线的 SAM 遮挡只在它等于 `"front_img_1_line"` 时才跑；按放出来的脚本原样运行，评测时不会遮挡。论文写的是评测时实时遮挡。
 
-- **Object-in-Bowl**：40 s 内循环「抓毛绒玩具 → 放入碗 → 端起碗倒出 → 重置」；3 碗 × 5 玩具随机摆放；
-- **Laundry**：双臂折叠 T 恤（右袖 → 左袖 → 对折），±30° 随机朝向；
-- **Groceries**：左臂拎袋口、右臂依次放入 3 包薯片（软体袋把手抓取极难）。
-
-**基线**：ACT、MimicPlay（同 Transformer 骨干、去掉 goal conditioning）、EgoMimic w/o human（隔离架构增益 vs 数据增益）。
-
-### 域内性能（Table III）
-
-| 方法 | Bowl Pts | Laundry Pts / SR | Groceries Pts / SR / Open Bag |
-|------|----------|------------------|-------------------------------|
-| ACT | 39 | 82 / 55% | 82 / 22% / 54% |
-| MimicPlay | 71 | 78 / 50% | 53 / 8% / 40% |
-| EgoMimic (w/o human) | 68 | 104 / 73% | 92 / 28% / 60% |
-| **EgoMimic** | **128** | **114 / 88%** | **110 / 30% / 70%** |
-
-相对 ACT 得分提升 **34–228%**；绝对成功率提升 **8–33%**。基线常「差几英寸」够不到玩具/碗，人类手部数据显著改善**到达精度**。
-
-### 泛化实验
-
-| 设定 | 结果 |
-|------|------|
-| 未见颜色 T 恤 | ACT **25%** SR → EgoMimic **85%** SR |
-| 新场景 Object-in-Bowl（仅人类数据在新房间） | EgoMimic **63 pts**；MimicPlay 同信息仅 **4 pts** |
-
-### Scaling 实验（Object-in-Bowl）
-
-- **2h 机器人 + 1h 人类** 的 EgoMimic（128 pts）**>** **3h 纯机器人** 的 ACT（74 pts）；
-- 1h 人类 ≈ 1400 条 vs 1h 机器人 ≈ 135 条——人类数据 **采集效率与策略增益** 双高。
-
-### 消融（Object-in-Bowl）
-
-| 配置 | Pts |
-|------|-----|
-| EgoMimic（完整） | 128 |
-| w/o 红线 | 112 |
-| w/o 红线 + mask | 95 |
-| w/o 动作归一化 | 79 |
-| w/o 人类数据 | 68 |
+</details>
 
 ---
 
-## 🤖 工程价值
+## 📊 实验结果（第 IV 节）
 
-| 方向 | 含义 |
-|------|------|
-| **被动数据闭环** | 智能眼镜日常活动即可产出具身示教，迈向「互联网级」机器人数据 |
-| **人类>机器人 边际收益** | 在已有足够机器人种子数据后，优先扩人类视频比加机器人遥操作更划算 |
-| **跨具身表征** | Pose 共享头 + 分布对齐，为后续多机器人/多形态 foundation policy 铺路 |
-| **可复现开源** | 训练（EgoMimic）+ 硬件 CAD/ROS（Eve）+ Aria/MPS 处理脚本均已公开 |
+### 三个任务与数据量（第 IV-A 节、图 5、表二）
+
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：连续放玩具进碗、叠衣服、装购物袋；各自怎么计分、评测多少次；人的数据每分钟的条数是机器人的 2–10 倍；基线是 ACT、MimicPlay 和不加人数据的 EgoMimic</summary>
+
+- 论文要验证三个假设。H1：EgoMimic 能用人的数据提高域内的表现；H2：人的数据帮它泛化到新物体和新场景；H3：机器人数据够用以后，再采人的数据比再采机器人数据更值。
+- **连续放玩具进碗**（单臂）：夹起一个约 6 cm 长的小毛绒玩具放进碗里，再拿起碗把玩具倒回桌上，连续做 40 秒。3 个碗、5 个玩具里随机选，位置在 45 cm × 60 cm 的范围里随机。每放进一次或倒出一次得 1 分。9 种碗—玩具—位置的组合，共 45 次评测。
+- **叠衣服**（双臂）：T 恤的位置在 90 cm × 60 cm 的范围里随机，角度 ±30°。先叠右袖、再叠左袖、最后对折；每一步 1 分，三步都成才算成功。8 种组合，共 40 次。
+- **装购物袋**（双臂）：左臂捏住袋子提手的上沿把袋口拉开，右臂把 3 包薯片依次放进去。捏住提手 1 分、每放进一包 1 分；三包都放进去算成功，另记「打开袋子」的比例（论文说这是最难的一步）。10 个袋子位置，共 50 次。
+
+| 任务 | 人：条数 | 人：分钟 | 人：条/分钟 | 机器人：条数 | 机器人：分钟 | 机器人：条/分钟 |
+|------|------|------|------|------|------|------|
+| 放玩具进碗 | 1400 | 60 | 23 | 270 | 120 | 2 |
+| 装购物袋 | 160 | 80 | 2 | 300 | 300 | 1 |
+| 叠衣服 | 590 | 100 | 6 | 430 | 300 | 1 |
+
+- 论文补充：采机器人数据时会随机挪动机器人的位置，经验上能提高鲁棒性；人的数据里，碗任务特别容易采多，装购物袋因为每次要复位，慢一些。
+- **基线**：ACT；MimicPlay（为公平起见，换成和 EgoMimic 一样的 Transformer 骨干，去掉目标条件，因为 EgoMimic 是单任务策略）；以及 **EgoMimic（0% 人的数据）**，用来区分提升来自人的数据还是来自架构的改动（同时预测关节和位姿）。
+- MimicPlay 的实现（附录 E）：高层是 ResNet-18 加高斯混合模型，在人和机器人数据上预测 3D 轨迹；训好后把它的潜表示当成风格变量 $z$ 送进 ACT，低层的 ACT 只用机器人数据训。
+
+</details>
+
+### 表三：和基线比（第 IV-B 节）
+
+<div class="paper-demo" data-demo="egomimic-results" id="demo-results"><p class="demo-fallback">（本节含交互演示：论文的数字，需要启用 JavaScript）</p></div>
+
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：三个任务的得分与成功率；比 ACT 的得分高 34%–228%、成功率高 8–33 个百分点；比不加人数据的自己高 10%–88%；基线常常差几英寸够不到</summary>
+
+| 方法 | 碗：得分 | 叠衣服：得分 | 叠衣服：成功率 | 购物袋：得分 | 购物袋：成功率 | 购物袋：打开袋子 |
+|------|------|------|------|------|------|------|
+| ACT | 39 | 82 | 55% | 82 | 22% | 54% |
+| MimicPlay | 71 | 78 | 50% | 53 | 8% | 40% |
+| EgoMimic（不加人的数据） | 68 | 104 | 73% | 92 | 28% | 60% |
+| **EgoMimic** | **128** | **114** | **88%** | **110** | **30%** | **70%** |
+
+- 相对 ACT：得分高 34%–228%（购物袋 110 对 82、碗 128 对 39），成功率高 8–33 个百分点。提升最大的是碗任务。论文观察到基线常常差几英寸够不到玩具或碗，它据此认为人的数据帮策略够得更准。
+- 相对不加人数据的 EgoMimic：得分高 10%–88%，成功率高 2–15 个百分点。
+- 不加人的数据时，EgoMimic 在三个任务上都比 ACT 高（68 对 39、104 对 82、92 对 82）：论文自己也说，有一部分提升来自架构。
+- 购物袋的成功率，加了人的数据只从 28% 到 30%；这个任务人的数据也最少（160 条、80 分钟）。两者有没有关系论文没有讨论。
+- 引言里写的是相对提升「最高 200%」，摘要和结果一节写的是 228%。
+
+</details>
+
+### 泛化：新颜色、新场景（第 IV-B 节、图 7）
+
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：换一种没见过颜色的衣服，ACT 成功率 55% → 25%，EgoMimic 88% → 85%；换一个全新的场景、只在新场景里录人的数据，EgoMimic 得 63 分，MimicPlay 4 分</summary>
+
+- **新颜色**（图 7a，叠衣服的成功率，原来 → 没见过的颜色）：ACT 55% → 25%，MimicPlay 50% → 25%，EgoMimic（0% 人的数据）73% → 68%，EgoMimic 88% → 85%。
+- **新场景**（图 7b，碗任务的得分，原场景 → 新场景）：ACT 39 → 约 6（图上标 −86%），MimicPlay 71 → 4，EgoMimic（0% 人的数据）68 → 约 13（图上标 −80%），EgoMimic 128 → 63。约 6、约 13 是读图得到的，论文正文只给了 63 和 4。
+- 新场景的设定：背景和光照都没见过；EgoMimic 在新场景里**只有人的数据，没有任何额外的机器人数据**。项目页同一节的说法是：机器人数据在原场景、人的数据在新场景，一起训。
+- 论文的解读：MimicPlay 拿到的信息一样，但用分层的方式用人的数据，只得 4 分；这说明统一的架构促成了人和机器人共同的表示，分层架构成了泛化的瓶颈。
+- 新颜色的衣服有没有出现在人的数据里，论文没有写。
+
+</details>
+
+### 多一小时：人的数据还是机器人的数据（第 IV-B 节、图 8）
+
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：碗任务上加采数据；机器人 2 小时 + 人 1 小时的 EgoMimic 得 128 分，机器人 3 小时的 ACT 得 74 分；一小时人的数据是 1400 条，机器人是 135 条</summary>
+
+- 为了看两种数据的规模效应，论文在碗任务上又采了数据。图 8 的横轴是数据的小时数，纵轴是得分。
+  - 橙线是 ACT，只用机器人数据：0.5、1、2、3 小时分别约 2、29、39、74 分（39 和 74 论文正文和表三给了，另两个是读图）。
+  - 蓝线是 EgoMimic：机器人数据固定 2 小时，再加 0、0.25、0.5、1 小时人的数据，分别是 68、约 99、约 111、128 分（中间两个是读图）。
+- 结论：2 小时机器人数据加 1 小时人的数据（128 分），明显高过 3 小时机器人数据的 ACT（74 分）。一小时人的数据是 1400 条示范，一小时机器人数据只有 135 条。
+- 论文同时提醒：同样是 2 小时机器人数据，EgoMimic（68）已经比 ACT（39）高，所以有一部分差距来自架构。图上没有画「EgoMimic 架构 + 3 小时机器人数据」这个点。
+- 论文正文把这张图写成「Fig. 7」，PDF 里它是图 8（图 7 是泛化那张）。
+
+</details>
+
+### 消融（第 IV-B 节、表四）
+
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：碗任务上逐项去掉：完整 128、去掉红线 112、去掉红线和遮挡 95、去掉动作归一化 79、去掉人的数据 68</summary>
+
+| 设定 | 得分 | 相对完整版 |
+|------|------|------|
+| EgoMimic | 128 | — |
+| 去掉红线 | 112 | −13% |
+| 去掉红线和遮挡 | 95 | −26% |
+| 去掉动作归一化 | 79 | −38% |
+| 去掉人的数据 | 68 | −47% |
+
+- 都是协同训练（人 + 机器人）的设定，最后一行除外。去掉动作归一化以后（79）离不加人的数据（68）只差 11 分。
+- 坐标系变换和时间对齐没有单独的消融。
+
+</details>
 
 ---
 
-## 🎤 面试高频问题 & 参考回答
+## 🔬 官方样例数据里的统计（我们量的，不是论文的实验）
 
-**Q1：EgoMimic 与 MimicPlay / 传统 Learning from Video 有何本质不同？**
-A：MimicPlay 用人类视频训**高层规划器**，低层执行策略仍只吃机器人数据，人类规模无法直接提升执行精度。EgoMimic 把人类手部轨迹当作与机器人 joint 数据**同级的 action 监督**，共享 Transformer 表征端到端 co-train，人类数据直接改善「差几英寸够不到」类低层误差。
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：放出来的是哪些文件、多大；碗任务两份里各有多少数据；我们读了什么；量到的位置分布、速度、头动的偏移、掩码面积；和论文对不上的地方</summary>
 
-**Q2：为什么机器人用关节空间控制，却还要预测 pose？**
-A：Pose 与人手语义最接近，适合作为**跨具身对齐的公共监督信号**；6-DoF ViperX IK 冗余不足，笛卡尔控制易奇异，故部署走 joint 头。更强冗余臂（7-DoF+）可省掉 joint 头。
+- **文件**：HF `gatech/EgoMimic`（`065ffc0`）里有 6 个 HDF5：`bowlplace`、`groceries`、`smallclothfold` 各一份 `_human` 和 `_robot`，23–46 GB，合计约 243 GB。图像没有压缩（480 × 640 × 3，每帧 0.92 MB），所以文件大。仓库说明把它们叫样例数据。
+- **碗任务的两份**：人的数据 50 组，共 14,685 帧（按 30 帧每秒是 8.2 分钟）；机器人数据 4 组，每组 3000 步，共 12,000 步（按 50 Hz 是 4 分钟）。论文表二写的是 60 分钟和 120 分钟，所以放出来的只是一小部分。
+- **每组里有什么**：人的是 `obs/ee_pose` (N, 3)、`actions_xyz` (N, 10, 3)、`actions_xyz_act` (N, 100, 3) 和三路图像（原图 `front_img_1`、涂黑的 `_masked`、涂黑加红线的 `_line`）；机器人的另有 `obs/joint_positions` (N, 7)、`actions_joints_act` (N, 100, 7) 和 `right_wrist_img`。
+- **我们怎么读的**：用 HTTP 的范围请求只读低维数组（全部 54 组），图像只读了人第 0 组的 300 帧、机器人第 0 组前 1200 步里每 2 步一帧。没有运行官方仓库的代码。
+- **量到的数**（都只代表这份样例）：
+  - 位置（相机坐标系，米）：手的均值 (0.156, 0.236, 0.481)、标准差 (0.106, 0.074, 0.051)；末端的均值 (0.138, 0.003, 0.552)、标准差 (0.155, 0.071, 0.065)。
+  - 一个动作块的路径长度：人 0.345 m（0.9 秒）、机器人 0.524 m（3.96 秒）；速度 0.384 对 0.132 m/s，约 2.9 倍。
+  - 头动：0.9 秒后的手位置，换不换坐标系平均差 4.6 cm（中位数 2.5 cm、最大 64.6 cm）。
+  - 机器人的动作取自主臂：末端的动作和观测到的末端位置对齐时，最合适的滞后比「每 2 步一个点」多出约 5 步（0.1 秒）。
+  - 掩码：机器人那 600 帧里有 33 帧涂黑超过画面的四分之一。
+- **一个完整来回的时间**（看画面数的，各只看了一段）：人大约 100 帧（3.3 秒）做完「夹起玩具、放进碗、倒出来」，机器人大约 900 步（18 秒）。
 
-**Q3：移动 egocentric 相机下动作标签怎么定义？**
-A：用 SLAM 把手部轨迹逐帧变换到**当前观测相机系** \(F_t\)，预测 chunk 时假设相机 frozen，避免建模未来头动。
-
-**Q4：Gaussian 归一化为何重要？**
-A：人机 EEF 分布不同（尤其左右方向），不归一化网络会为两域学**分裂表征**，人类数据越多反而可能干扰。逐域归一化是简单但关键的 domain alignment。
-
-**Q5：Kinematic gap 完全消除了吗？**
-A：没有。硬件仿人 + 同传感器 + 对齐只能**最小化** gap；剩余差异靠 mask、归一化和大量人类数据弥补。未来工作包括新 robot embodiment 与仅人类示范的新行为（如叠裤子）。
-
-**Q6：和 iDP3 / HumDex 等工作的关系？**
-A：iDP3 聚焦人形 3D 扩散策略与单场景泛化；HumDex 聚焦便携 IMU 遥操作采机器人数据。EgoMimic 独特在**无机器人的人类被动采集 + 与机器人数据平等 co-train**，是 manipulation 数据 scaling 路线的重要一支。
+</details>
 
 ---
 
-## 🔗 相关阅读
+## ⚠️ 局限与讨论
 
-- [HumDex](../HumDex_Humanoid_Dexterous_Manipulation_Made_Easy/HumDex_Humanoid_Dexterous_Manipulation_Made_Easy.html)（人类视频→机器人数据另一路线）
-- [DreamDojo](../DreamDojo_A_Generalist_Robot_World_Model_from_Large-Scale_Human_Videos/DreamDojo_A_Generalist_Robot_World_Model_from_Large-Scale_Human_Videos.html)（大规模人类视频世界模型）
-- [ALOHA](https://arxiv.org/abs/2304.13705)（leader-follower 双臂遥操作基线）
-- [MimicPlay](https://arxiv.org/abs/2303.05799)（人类视频分层规划对照）
-- [ACT](https://arxiv.org/abs/2304.13705)（Action Chunking Transformer 策略骨干）
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：论文自己写的局限和打算；我们补充的：人的数据是专门录的、单任务、评测次数、没有单独消融的两项对齐、代码与论文对不上的几处、没有权重</summary>
+
+**论文自己写的**
+
+- 同时要位姿和关节两种预测，是因为它的机械臂不适合末端控制；换更合适的机器人可以省掉关节预测。
+- 人的数据没有抓取信息，夹爪开合只能靠机器人数据学。
+- 归一化是个简单办法，将来想试动作量化；可变长度的输入之外，想试 HPT 之类的跨具身方法。
+- 将来想做的：泛化到新的机器人本体；学**只在人的数据里**出现的全新行为，比如叠裤子而不是叠衣服。
+
+**我们补充的**
+
+- **「被动采集」还没有被检验**：实验里人的数据是照着三个任务专门录的，场景也是布置好的桌面。
+- **单任务**：每个任务单独训一个策略（论文说 EgoMimic 是为单任务策略设计的）。
+- **评测规模**：每个设定 40–50 次真机评测，表三没有给方差；图 7 的两个新设定各评了多少次，论文没有写。
+- **没有单独消融的**：坐标系变换、时间对齐的 4 倍、位姿头本身（去掉位姿头只留关节头会怎样）。
+- **架构和数据的功劳混在一起**：EgoMimic 不加人的数据就比 ACT 高，图 8 里两条线的差距有多少来自架构，图上分不出。
+- **代码与论文对不上的几处**：算法 1 写 MSE（附录和代码是 L1）；总损失是两批的平均而不是和，KL 乘 20；机器人的低维输入只有关节角；ResNet 每台相机一个；主 Transformer 是 7 + 7 层；评测脚本默认不做在线遮挡；人的时间跨度是 0.9 秒；正文把图 8 写成 Fig. 7；引言的「最高 200%」和别处的 228%。
+- **没有放出权重**，放出的数据是样例；论文的数字我们没有办法重跑。
+
+</details>
+
+---
+
+## 🚶 具体实例：把论文里的数从头算一遍
+
+<details class="paper-fold" markdown="1">
+<summary>📖 展开全文（10 节）：环境设定 / 例 1 采集效率 / 例 2 坐标变换的一维例子 / 例 3 时间对齐 / 例 4 归一化 / 例 5 表三的提升 / 例 6 消融的降幅 / 例 7 图 8 的那一小时 / 例 8 部署的节拍 / 例 9 代码里的损失</summary>
+
+<h3 id="实例-环境设定">环境设定</h3>
+
+- **论文**：arXiv 2410.24221 v1 的 LaTeX 源码（正文、算法 1、表一至表七、附录 A–F），图表编号按 PDF。
+- **代码**：SimarKareer/EgoMimic @ `6d63e9a`（`algo/egomimic.py`、`algo/act.py`、`pl_utils/pl_model.py`、`scripts/aria_process/aria_to_robomimic.py`、`scripts/aloha_process/aloha_to_robomimic.py`、`scripts/masking/utils.py`、`scripts/evaluation/eval_real.py`、`configs/egomimic_oboo.json`）。
+- **官方样例数据**：HF `gatech/EgoMimic` @ `065ffc0` 的 `bowlplace_human.hdf5`、`bowlplace_robot.hdf5`，统计见上一节。
+
+<h3 id="实例-1-采集效率">例 1：采集效率（表二）</h3>
+
+- 碗任务：人 $1400/60\approx 23.3$ 条每分钟，机器人 $270/120=2.25$ 条每分钟，相差 $23.3/2.25\approx 10.4$ 倍。结果一节的「一小时 1400 条对 135 条」就是 $270/2=135$。
+- 叠衣服：人 $590/100=5.9$，机器人 $430/300\approx 1.43$，约 4.1 倍。
+- 装购物袋：人 $160/80=2$，机器人 $300/300=1$，2 倍。
+- 表里的「条/分钟」是取整后的 23、2、2、1、6、1。
+
+<h3 id="实例-2-坐标变换的一维例子">例 2：坐标变换的一维例子</h3>
+
+只看左右这一个方向，单位厘米。手放在桌上不动，在世界里的位置是 30。
+
+- 第 $t$ 帧：头在 0，手在相机坐标系里是 $30-0=30$。
+- 1 秒后：头往右挪到 10，手还在 30，在这一帧的相机坐标系里是 $30-10=20$。
+- **不换坐标系**：把两个数直接连起来当动作，是「从 30 到 20」，看上去手往左挪了 10 cm；其实手没动，动的是头。
+- **换到第 $t$ 帧**：$(T^W _ {F_t})^{-1}T^W _ {F _ {t+1}}\,p$ 在一维里就是 $20+10-0=30$，动作是「从 30 到 30」，手没动。
+- 官方样例数据里（三维、真实的头动），这个差别平均 4.6 cm、最大 64.6 cm；演示「坐标系实验台」可以逐帧看。
+
+<h3 id="实例-3-时间对齐">例 3：时间对齐</h3>
+
+- 论文：机器人的动作块跨 4 秒，人的跨 1 秒，都是 100 个点；所以人的两个相邻点隔 $1/100=0.01$ 秒，机器人的隔 $4/100=0.04$ 秒，相差 4 倍。
+- 代码：人 10 个点 × 每 3 帧，最远第 $9\times 3=27$ 帧，$27/30=0.9$ 秒；机器人 100 个点 × 每 2 步，最远第 $99\times 2=198$ 步，$198/50=3.96$ 秒；$3.96/0.9=4.4$ 倍。
+- 样例数据里量到的速度：$0.345/0.9\approx 0.384$ m/s 对 $0.524/3.96\approx 0.132$ m/s，$0.384/0.132\approx 2.9$ 倍。
+- 也就是说按代码的取法，一个动作块里人的手走过的路（0.345 m）比机器人的（0.524 m）短一些，是它的 66%。
+
+<h3 id="实例-4-归一化">例 4：归一化</h3>
+
+用样例数据里 $y$ 这一维的统计：手 $\mu=0.2355$、$\sigma=0.0744$；末端 $\mu=0.0032$、$\sigma=0.0707$（米）。
+
+- 手在 $y=0.31$：$(0.31-0.2355)/0.0744\approx 1.00$。
+- 末端在 $y=0.074$：$(0.074-0.0032)/0.0707\approx 1.00$。
+- 两个原始值差了 0.236 m，归一化以后是同一个数：都表示「比各自的平均位置偏出一个标准差」。
+- 如果用同一套统计（比如都用末端的），手的 0.31 会变成 $(0.31-0.0032)/0.0707\approx 4.3$，落在末端数据几乎没有出现过的范围里。
+
+<h3 id="实例-5-表三的提升">例 5：表三的提升</h3>
+
+- 相对 ACT 的得分：碗 $128/39-1\approx 228\%$，叠衣服 $114/82-1\approx 39\%$，购物袋 $110/82-1\approx 34\%$。这就是摘要的「34%–228%」。
+- 相对 ACT 的成功率：叠衣服 $88-55=33$ 个百分点，购物袋 $30-22=8$ 个百分点。
+- 相对不加人数据的 EgoMimic：碗 $128/68-1\approx 88\%$，叠衣服 $114/104-1\approx 10\%$，购物袋 $110/92-1\approx 20\%$；成功率 $88-73=15$、$30-28=2$ 个百分点。
+
+<h3 id="实例-6-消融的降幅">例 6：消融的降幅（表四）</h3>
+
+- 去掉红线：$(128-112)/128=12.5\%$，论文写 13%。
+- 去掉红线和遮挡：$(128-95)/128\approx 25.8\%$，论文写 26%。
+- 去掉动作归一化：$(128-79)/128\approx 38.3\%$，论文写 38%。
+- 去掉人的数据：$(128-68)/128\approx 46.9\%$，论文写 47%。
+
+<h3 id="实例-7-图-8-的那一小时">例 7：图 8 的那一小时</h3>
+
+- 都从 2 小时机器人数据出发。EgoMimic 加 1 小时人的数据：$68\to 128$，多 60 分。ACT 加 1 小时机器人数据：$39\to 74$，多 35 分。
+- 终点相比：$128/74\approx 1.73$ 倍。
+- 那一小时里的示范条数：人 1400 条，机器人 135 条。
+- 注意两条线的起点不同（68 对 39），这 29 分是架构的差别；「同一个架构、第三个小时给机器人」的点图上没有。
+
+<h3 id="实例-8-部署的节拍">例 8：部署的节拍</h3>
+
+- 预测 100 步、跨 4 秒，所以相邻两步隔 $4/100=0.04$ 秒，正好是 25 Hz 的控制周期。
+- 每次只执行第 1 秒，即前 $25$ 步；所以每秒推理 1 次（1 Hz），代码里是 `query_frequency = 25`。
+- 一个 40 秒的碗任务回合：约 40 次推理、$40\times 25=1000$ 个控制步；每次推理算出的 100 步里有 75 步没有执行。
+- ACT 的时间集成是每一步都推理、把重叠的预测加权平均；这里没有用。
+
+<h3 id="实例-9-代码里的损失">例 9：代码里的损失</h3>
+
+设某一步里，机器人那一批的关节 L1 是 0.10、位姿 L1 是 0.06、KL 是 0.002；人那一批的位姿 L1 是 0.08、KL 是 0.003（数是我们编的，只为演示怎么合）。
+
+- 机器人批：$0.10+0.06+20\times 0.002=0.20$。
+- 人批：$(0.08+20\times 0.003)\times 1.0=0.14$（`hand_lambda` 是 1.0）。
+- 总损失取平均：$(0.20+0.14)/2=0.17$；按论文的写法相加是 0.34。两种写法只差一个常数 2，相当于学习率差一倍。
+
+</details>
 
 ---
 
 ## 📎 附录
 
-### A. 开源仓库结构速查
+<details class="paper-fold" markdown="1">
+<summary>📖 展开文字：BibTeX、开放问题、旧版笔记的改正</summary>
 
-**SimarKareer/EgoMimic**（训练）
+<h3 id="a-bibtex">A. BibTeX</h3>
 
-- `egomimic/scripts/aria_process/` — Aria 人类数据 → HDF5
-- `egomimic/scripts/aloha_process/` — 遥操作数据 → HDF5
-- `egomimic/algo/` — EgoMimic / ACT / MimicPlay 实现
-- `egomimic/scripts/pl_train.py` — Lightning 训练入口
+```bibtex
+@misc{kareer2024egomimicscalingimitationlearning,
+  title={EgoMimic: Scaling Imitation Learning via Egocentric Video},
+  author={Simar Kareer and Dhruv Patel and Ryan Punamiya and Pranay Mathur and Shuo Cheng and Chen Wang and Judy Hoffman and Danfei Xu},
+  year={2024},
+  eprint={2410.24221},
+  archivePrefix={arXiv},
+  primaryClass={cs.RO},
+  url={https://arxiv.org/abs/2410.24221},
+}
+```
 
-**SimarKareer/EgoMimic-Eve**（硬件）
+（照项目页给的写法。）
 
-- `hardware/` — Aria 支架、臂架、夹爪 CAD
-- `eve/` — ROS 节点、Aria 流、遥操作与采集脚本
-- 基于 [Trossen ALOHA ROS2](https://github.com/Interbotix/aloha) 扩展
+<h3 id="b-开放问题">B. 开放问题</h3>
 
-### B. 参考来源
+- 人的数据里没有抓取，那么只在人的数据里出现的新物体，机器人「够得到」之后能不能「抓得住」？新场景的 63 分里，失分在哪一步，论文没有拆。
+- 位姿头在部署时不用。它对关节头的帮助有多大，能不能用一个不带位姿头的对照量出来？
+- 「放慢 4 倍」是全局的一个常数；样例数据里量到的是 2.9 倍，不同任务、不同动作阶段大概也不一样。
+- 掩码涂过头的那些帧，对策略有没有影响？
 
-- [arXiv:2410.24221](https://arxiv.org/abs/2410.24221)
-- [Project Website](https://egomimic.github.io)
-- [GitHub: EgoMimic](https://github.com/SimarKareer/EgoMimic) · [GitHub: Eve](https://github.com/SimarKareer/EgoMimic-Eve)
+<h3 id="c-旧版笔记的改正">C. 旧版笔记的改正</h3>
+
+- 旧版把机器人叫 Eve 并当成论文的叫法：这个名字出自硬件仓库的说明，论文正文没有。
+- 旧版写「部署时用 SAM2 实时遮挡（训练 / 推理一致）」：这是论文的说法；放出来的评测脚本默认不遮挡，已在正文注明。
+- 旧版的联合损失没有区分论文的写法（相加、KL 不带权重、算法 1 写 MSE）和代码的写法（平均、KL × 20、L1），这一版分开写。
+- 旧版没有标图表编号；这一版按 PDF 的编号（图 3 是归一化与遮挡，图 4 是架构，图 7 是泛化，图 8 是规模），并注明正文里把图 8 写成了 Fig. 7。
+
+</details>
+
+---
+
+## 📎 参考来源
+
+- 论文：Kareer, Patel, Punamiya, Mathur, Cheng, Wang, Hoffman, Xu, *EgoMimic: Scaling Imitation Learning via Egocentric Video*, [arXiv 2410.24221](https://arxiv.org/abs/2410.24221)（v1 的 LaTeX 源码与 PDF）；ICRA 2025，[DOI 10.1109/ICRA55743.2025.11127989](https://doi.org/10.1109/ICRA55743.2025.11127989)。
+- 项目页：[egomimic.github.io](https://egomimic.github.io/)；动画和视频里的真机画面剪自项目页的视频，只做讲解引用。
+- 官方代码：[SimarKareer/EgoMimic](https://github.com/SimarKareer/EgoMimic)（commit `6d63e9a`）；硬件：[SimarKareer/EgoMimic-Eve](https://github.com/SimarKareer/EgoMimic-Eve)（仓库说明里「Eve」的出处）。
+- 官方样例数据：[gatech/EgoMimic](https://huggingface.co/datasets/gatech/EgoMimic)（`065ffc0`）的 `bowlplace_human.hdf5`、`bowlplace_robot.hdf5`；第 5–9 幕的第一视角画面、轨迹和「官方样例数据」的统计都出自这两份。
+- ACT（上一期）：[arXiv 2304.13705](https://arxiv.org/abs/2304.13705)；KL 的权重 10、时间集成见[上一篇笔记](../../03_High_Impact_Selection/ACT_Learning_Fine-Grained_Bimanual_Manipulation_with_Low-Cost_Hardware/ACT_Learning_Fine-Grained_Bimanual_Manipulation_with_Low-Cost_Hardware.html)对它的核对。
+- OpenVLA（视频片尾预告的下一期）：[arXiv 2406.09246](https://arxiv.org/abs/2406.09246) 的摘要。
