@@ -4236,6 +4236,26 @@
         "zh_title": "HuMiT：基于紧凑参考跟踪的低延迟人形全身遥操作"
       },
       {
+        "title": "Evaluating Lightweight Contact Feedback in Dual-Operator Collaborative Humanoid Teleoperation",
+        "path": "papers/07_Teleoperation/Evaluating_Lightweight_Contact_Feedback_in_Dual-Operator_Collaborative_Humanoid_Teleoperation/Evaluating_Lightweight_Contact_Feedback_in_Dual-Operator_Collaborative_Humanoid_Teleoperation.md",
+        "url": "/papers/07_Teleoperation/Evaluating_Lightweight_Contact_Feedback_in_Dual-Operator_Collaborative_Humanoid_Teleoperation/Evaluating_Lightweight_Contact_Feedback_in_Dual-Operator_Collaborative_Humanoid_Teleoperation.html",
+        "dir": "Evaluating_Lightweight_Contact_Feedback_in_Dual-Operator_Collaborative_Humanoid_Teleoperation",
+        "arxiv": "2610.24257",
+        "has_open_source": true,
+        "summary_zh": "两人各遥操作一台人形一起搬东西时，谁都摸不到箱子。",
+        "health_score": 4,
+        "health_gaps": [
+          "animation",
+          "video"
+        ],
+        "health_label_zh": "笔记健康度 4/6，缺：动画讲解、讲解视频",
+        "health_label_en": "Note health 4/6; missing: explainer animation, explainer video",
+        "published_date_zh": "2026年10月16日（arXiv v1；文中注明投稿 ICRA 2027）",
+        "published_date_en": "Oct 16, 2026 (arXiv v1; 文中注明投稿 ICRA 2027)",
+        "zhname": "XRT：双操作员协作人形遥操作中的轻量接触反馈评估",
+        "zh_title": "XRT：双操作员协作人形遥操作中的轻量接触反馈评估"
+      },
+      {
         "title": "Beyond Retargeting: Low-Latency and Robust Humanoid Whole-Body Teleoperation with Learned Atomic Motion Primitives",
         "path": "papers/07_Teleoperation/Beyond_Retargeting__Low-Latency_Robust_Humanoid_Whole-Body_Teleoperation_with_Atomic_Motion_Primitives/Beyond_Retargeting__Low-Latency_Robust_Humanoid_Whole-Body_Teleoperation_with_Atomic_Motion_Primitives.md",
         "url": "/papers/07_Teleoperation/Beyond_Retargeting__Low-Latency_Robust_Humanoid_Whole-Body_Teleoperation_with_Atomic_Motion_Primitives/Beyond_Retargeting__Low-Latency_Robust_Humanoid_Whole-Body_Teleoperation_with_Atomic_Motion_Primitives.html",

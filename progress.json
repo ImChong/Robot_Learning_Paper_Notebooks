@@ -41,15 +41,15 @@
         "13_Physics-Based_Animation",
         "14_Human_Motion"
       ],
-      "last_module": "06_Manipulation",
-      "last_index": 1196,
-      "last_title": "AffectiveVLA: Safe and Intent-Aware VLA Control for Human-Humanoid Social Interaction (arXiv:2611.07712)",
-      "next_module": "07_Teleoperation",
-      "last_completed_date": "2026-11-10",
-      "note": "本日轮转到 06_Manipulation。PROGRESS Manipulation 章节中尚无笔记的最新论文是 AffectiveVLA（arXiv:2611.07712，2026-11-05，Skoltech），即 PROGRESS #1196，已确认在上游 README。双视角 RGB 意图分类器（TinyViT + VideoLightFormer，p95 6.27 ms）连续 3 步 > 0.6 才确认并写成 VLA 提示词，VLA 输出 64 维 SONIC token + 双手 6 维手指；按任务缩放 14 个手臂关节的 Kp/Kd，Vosk 语音锁存安全停；GR00T macro-F1 0.75 → 0.90。未开源，只给整体流程 mermaid。下一篇轮转到 07_Teleoperation。",
-      "last_date": "2026-11-10",
+      "last_module": "07_Teleoperation",
+      "last_index": 1161,
+      "last_title": "Evaluating Lightweight Contact Feedback in Dual-Operator Collaborative Humanoid Teleoperation (arXiv:2610.24257)",
+      "next_module": "08_Navigation",
+      "last_completed_date": "2026-11-11",
+      "note": "本日轮转到 07_Teleoperation。PROGRESS Teleoperation 章节中尚无笔记的最新论文是 #1161（arXiv:2610.24257，2026-10-16，佐治亚理工），已确认在上游 README。XRT：两人各用 Quest 3 + SEW-Mimic 遥操作一台跪姿 G1 协作翻箱，Inspire 触觉皮肤量化四档后经指尖振动手套或五度阶梯音符反馈；16 组组内实验主观上振动完胜，客观绩效未测出差别，练习效应更大。源码 proj_XRT 已开源，附运行时序图。下一篇轮转到 08_Navigation。",
+      "last_date": "2026-11-11",
       "next_candidate": null,
-      "last_completed": "AffectiveVLA: Safe and Intent-Aware VLA Control for Human-Humanoid Social Interaction (arXiv:2611.07712)"
+      "last_completed": "Evaluating Lightweight Contact Feedback in Dual-Operator Collaborative Humanoid Teleoperation (arXiv:2610.24257)"
     },
     "last_summary_index": 532,
     "last_summary_date": "2026-09-18",
@@ -2003,6 +2003,17 @@
         "project_page": "",
         "code": "",
         "source": "⏳ 未开源（论文与 arXiv 页面无代码链接）· 只给整体流程 mermaid · 意图门控 + 四个 VLA 微调对比 + 按任务调阻抗 + 语音锁存安全停 · Nikita Kuzmin、Dzmitry Tsetserukou 等（Skoltech）"
+      },
+      {
+        "date": "2026-11-11",
+        "index": 1161,
+        "title": "Evaluating Lightweight Contact Feedback in Dual-Operator Collaborative Humanoid Teleoperation",
+        "folder": "papers/07_Teleoperation/Evaluating_Lightweight_Contact_Feedback_in_Dual-Operator_Collaborative_Humanoid_Teleoperation",
+        "module": "07_Teleoperation",
+        "arxiv": "2610.24257",
+        "project_page": "https://xrt-teleop.github.io",
+        "code": "https://github.com/Euler-Rodrigues-Lab/proj_XRT",
+        "source": "✅ 已开源（proj_XRT + XRT-Client + XRT_devices）· 整体框架 mermaid + proj_XRT 源码运行时序图 · 双人双 G1 协作翻箱 + 触觉皮肤四档量化 + 振动手套 / 五度阶梯音符 + 16 组组内用户研究 · Austin Graves、Shreyas Kousik、Mohsen Moghaddam 等（佐治亚理工）"
       }
     ],
     "last_completed_index": 588,
