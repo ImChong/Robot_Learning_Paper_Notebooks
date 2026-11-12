@@ -5509,6 +5509,25 @@
     "display_name": "Navigation",
     "papers": [
       {
+        "title": "Caging Vision-Language Navigation for Legged Robots via Barrier-Certified Safety Architecture",
+        "path": "papers/08_Navigation/Caging_Vision-Language_Navigation_for_Legged_Robots_via_Barrier-Certified_Safety_Architecture/Caging_Vision-Language_Navigation_for_Legged_Robots_via_Barrier-Certified_Safety_Architecture.md",
+        "url": "/papers/08_Navigation/Caging_Vision-Language_Navigation_for_Legged_Robots_via_Barrier-Certified_Safety_Architecture/Caging_Vision-Language_Navigation_for_Legged_Robots_via_Barrier-Certified_Safety_Architecture.html",
+        "dir": "Caging_Vision-Language_Navigation_for_Legged_Robots_via_Barrier-Certified_Safety_Architecture",
+        "arxiv": "2611.04972",
+        "summary_zh": "VLM / VLA 很会理解「出门左转、停在自行车旁」，但它输出的动作不知道机器人有多宽、眼前障碍在哪，也没有任何安全保证。",
+        "health_score": 4,
+        "health_gaps": [
+          "animation",
+          "video"
+        ],
+        "health_label_zh": "笔记健康度 4/6，缺：动画讲解、讲解视频",
+        "health_label_en": "Note health 4/6; missing: explainer animation, explainer video",
+        "published_date_zh": "2026年11月3日（arXiv v1，cs.RO，CC BY 4.0）；LaTeX 首页注明 Accepted to IEEE-RAS Humanoids 2026",
+        "published_date_en": "Nov 3, 2026 (arXiv v1, cs.RO, CC BY 4.0); LaTeX 首页注明 Accepted to IEEE-RAS Humanoids 2026",
+        "zhname": "Caging VLN：用屏障函数认证的足式机器人视觉语言导航安全架构",
+        "zh_title": "Caging VLN：用屏障函数认证的足式机器人视觉语言导航安全架构"
+      },
+      {
         "title": "Adaptive Traversal Tubes for Posture-Aware Navigation of Bipedal Humanoids",
         "path": "papers/08_Navigation/Adaptive_Traversal_Tubes_for_Posture-Aware_Navigation_of_Bipedal_Humanoids/Adaptive_Traversal_Tubes_for_Posture-Aware_Navigation_of_Bipedal_Humanoids.md",
         "url": "/papers/08_Navigation/Adaptive_Traversal_Tubes_for_Posture-Aware_Navigation_of_Bipedal_Humanoids/Adaptive_Traversal_Tubes_for_Posture-Aware_Navigation_of_Bipedal_Humanoids.html",

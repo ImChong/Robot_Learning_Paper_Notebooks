@@ -41,15 +41,15 @@
         "13_Physics-Based_Animation",
         "14_Human_Motion"
       ],
-      "last_module": "07_Teleoperation",
-      "last_index": 1161,
-      "last_title": "Evaluating Lightweight Contact Feedback in Dual-Operator Collaborative Humanoid Teleoperation (arXiv:2610.24257)",
-      "next_module": "08_Navigation",
-      "last_completed_date": "2026-11-11",
-      "note": "本日轮转到 07_Teleoperation。PROGRESS Teleoperation 章节中尚无笔记的最新论文是 #1161（arXiv:2610.24257，2026-10-16，佐治亚理工），已确认在上游 README。XRT：两人各用 Quest 3 + SEW-Mimic 遥操作一台跪姿 G1 协作翻箱，Inspire 触觉皮肤量化四档后经指尖振动手套或五度阶梯音符反馈；16 组组内实验主观上振动完胜，客观绩效未测出差别，练习效应更大。源码 proj_XRT 已开源，附运行时序图。下一篇轮转到 08_Navigation。",
-      "last_date": "2026-11-11",
+      "last_module": "08_Navigation",
+      "last_index": 1195,
+      "last_title": "Caging Vision-Language Navigation for Legged Robots via Barrier-Certified Safety Architecture (arXiv:2611.04972)",
+      "next_module": "09_State_Estimation",
+      "last_completed_date": "2026-11-12",
+      "note": "本日轮转到 08_Navigation。PROGRESS Navigation 章节中尚无笔记的最新论文是 #1195（arXiv:2611.04972，2026-11-03，特拉华大学 RPNG + 丰田），已确认在上游 README。不改 VLM/VLA，把离散动作投影成 SDF 安全目标，Bézier-MPPI 以 dEBF 软代价引导采样、逐条硬认证 h(x_k+1) ≥ 0.95 h(x_k)，否则零速备份，可证安全集前向不变；G1 四种前端碰撞率 80–100% → 0。未开源，只给整体流程 mermaid。下一篇轮转到 09_State_Estimation。",
+      "last_date": "2026-11-12",
       "next_candidate": null,
-      "last_completed": "Evaluating Lightweight Contact Feedback in Dual-Operator Collaborative Humanoid Teleoperation (arXiv:2610.24257)"
+      "last_completed": "Caging Vision-Language Navigation for Legged Robots via Barrier-Certified Safety Architecture (arXiv:2611.04972)"
     },
     "last_summary_index": 532,
     "last_summary_date": "2026-09-18",
@@ -2014,6 +2014,17 @@
         "project_page": "https://xrt-teleop.github.io",
         "code": "https://github.com/Euler-Rodrigues-Lab/proj_XRT",
         "source": "✅ 已开源（proj_XRT + XRT-Client + XRT_devices）· 整体框架 mermaid + proj_XRT 源码运行时序图 · 双人双 G1 协作翻箱 + 触觉皮肤四档量化 + 振动手套 / 五度阶梯音符 + 16 组组内用户研究 · Austin Graves、Shreyas Kousik、Mohsen Moghaddam 等（佐治亚理工）"
+      },
+      {
+        "date": "2026-11-12",
+        "index": 1195,
+        "title": "Caging Vision-Language Navigation for Legged Robots via Barrier-Certified Safety Architecture",
+        "folder": "papers/08_Navigation/Caging_Vision-Language_Navigation_for_Legged_Robots_via_Barrier-Certified_Safety_Architecture",
+        "module": "08_Navigation",
+        "arxiv": "2611.04972",
+        "project_page": "",
+        "code": "",
+        "source": "⏳ 未开源（论文与 arXiv 页面无代码链接）· 只给整体流程 mermaid · 语义层离散动作 → 目标投影 + Bézier-MPPI + dEBF 硬认证与零速备份 · G1 与 Vision 60 实机 · Abhijeet M. Kulkarni、Guoquan Huang 等（特拉华大学 RPNG）"
       }
     ],
     "last_completed_index": 588,
