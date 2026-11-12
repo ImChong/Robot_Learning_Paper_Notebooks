@@ -100,7 +100,7 @@ VLM / VLA 很会理解「出门左转、停在自行车旁」，但它输出的�
 
 ## 🧭 整体流程（mermaid）
 
-```mermaid
+<div class="mermaid">
 flowchart TD
     U["用户指令<br/>「出门左转，停在自行车旁」"] --> VLM
     CAM["机载 RGB 画面"] --> VLM
@@ -126,7 +126,7 @@ flowchart TD
     LOCO --> SENSE
     KGP -. 指令序列走完 .-> OBJ["开放词汇终点对齐<br/>Grounding-DINO + SAM2 → 3D 目标<br/>SEARCHING→APPROACHING→CLOSE，<0.5 m 停"]
     OBJ --> GOAL
-```
+</div>
 
 ---
 
