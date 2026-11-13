@@ -6155,6 +6155,27 @@
         "zh_title": "PRIMO：基于人体动作跟踪数据与结构先验的人形机器人本体里程计"
       },
       {
+        "title": "FOCUS: Foot Observation Confidence for Robust Humanoid Proprioceptive Odometry",
+        "path": "papers/09_State_Estimation/FOCUS__Foot_Observation_Confidence_for_Robust_Humanoid_Proprioceptive_Odometry/FOCUS__Foot_Observation_Confidence_for_Robust_Humanoid_Proprioceptive_Odometry.md",
+        "url": "/papers/09_State_Estimation/FOCUS__Foot_Observation_Confidence_for_Robust_Humanoid_Proprioceptive_Odometry/FOCUS__Foot_Observation_Confidence_for_Robust_Humanoid_Proprioceptive_Odometry.html",
+        "dir": "FOCUS__Foot_Observation_Confidence_for_Robust_Humanoid_Proprioceptive_Odometry",
+        "arxiv": "2609.02222",
+        "summary_zh": "通过学习双足正运动学观测的连续置信度，自适应融合 IMU 与足部速度约束，改善人形机器人本体里程计的鲁棒性。",
+        "health_score": 2,
+        "health_gaps": [
+          "verification",
+          "animation",
+          "video",
+          "example"
+        ],
+        "health_label_zh": "笔记健康度 2/6，缺：原文核验、动画讲解、讲解视频、具体实例",
+        "health_label_en": "Note health 2/6; missing: full-text check, explainer animation, explainer video, worked example",
+        "published_date_zh": "2026年9月2日（arXiv v1）",
+        "published_date_en": "Sep 2, 2026 (arXiv v1)",
+        "zhname": "FOCUS：面向鲁棒人形本体里程计的足部观测置信度",
+        "zh_title": "FOCUS：面向鲁棒人形本体里程计的足部观测置信度"
+      },
+      {
         "title": "A Multimodal Label Forecasting Method for Aperiodic Visuo-Motor Time Series",
         "path": "papers/09_State_Estimation/A_Multimodal_Label_Forecasting_Method_for_Aperiodic_Visuo-Motor_Time_Series/A_Multimodal_Label_Forecasting_Method_for_Aperiodic_Visuo-Motor_Time_Series.md",
         "url": "/papers/09_State_Estimation/A_Multimodal_Label_Forecasting_Method_for_Aperiodic_Visuo-Motor_Time_Series/A_Multimodal_Label_Forecasting_Method_for_Aperiodic_Visuo-Motor_Time_Series.html",
