@@ -41,21 +41,32 @@
         "13_Physics-Based_Animation",
         "14_Human_Motion"
       ],
-      "last_module": "08_Navigation",
-      "last_index": 1195,
-      "last_title": "Caging Vision-Language Navigation for Legged Robots via Barrier-Certified Safety Architecture (arXiv:2611.04972)",
-      "next_module": "09_State_Estimation",
-      "last_completed_date": "2026-11-12",
-      "note": "本日轮转到 08_Navigation。PROGRESS Navigation 章节中尚无笔记的最新论文是 #1195（arXiv:2611.04972，2026-11-03，特拉华大学 RPNG + 丰田），已确认在上游 README。不改 VLM/VLA，把离散动作投影成 SDF 安全目标，Bézier-MPPI 以 dEBF 软代价引导采样、逐条硬认证 h(x_k+1) ≥ 0.95 h(x_k)，否则零速备份，可证安全集前向不变；G1 四种前端碰撞率 80–100% → 0。未开源，只给整体流程 mermaid。下一篇轮转到 09_State_Estimation。",
-      "last_date": "2026-11-12",
+      "last_module": "09_State_Estimation",
+      "last_index": 701,
+      "last_title": "FOCUS: Foot Observation Confidence for Robust Humanoid Proprioceptive Odometry (arXiv:2609.02222)",
+      "next_module": "10_Sim-to-Real",
+      "last_completed_date": "2026-11-13",
+      "note": "2026-11-13：09_State_Estimation 轮转到 #701 FOCUS（arXiv:2609.02222v1）；已通读官方 HTML 全文，核对正文 I–V、式 1–12、表 I–V 与图注，original_check: done。补清训练加权速度与在线逐足混合的区别、仿真动态动作指标边界及表 IV 百分比显示值差异；未核实到官方源码，未声称复现实验。下一模块 10_Sim-to-Real。独立笔记轨道，未更改用户阅读游标。",
+      "last_date": "2026-11-13",
       "next_candidate": null,
-      "last_completed": "Caging Vision-Language Navigation for Legged Robots via Barrier-Certified Safety Architecture (arXiv:2611.04972)"
+      "last_completed": "FOCUS: Foot Observation Confidence for Robust Humanoid Proprioceptive Odometry (arXiv:2609.02222)"
     },
     "last_summary_index": 532,
     "last_summary_date": "2026-09-18",
     "last_summary_title": "ReActor: Reinforcement Learning for Physics-Aware Motion Retargeting",
     "next_summary_index": null,
     "log": [
+      {
+        "date": "2026-11-13",
+        "index": 701,
+        "title": "FOCUS: Foot Observation Confidence for Robust Humanoid Proprioceptive Odometry (arXiv:2609.02222)",
+        "folder": "papers/09_State_Estimation/FOCUS__Foot_Observation_Confidence_for_Robust_Humanoid_Proprioceptive_Odometry",
+        "module": "09_State_Estimation",
+        "arxiv": "2609.02222",
+        "project_page": "",
+        "code": "未核实到官方公开源码",
+        "source": "已通读 https://arxiv.org/html/2609.02222v1 官方全文（正文 I–V、式 1–12、表 I–V、图 1–6 图注及参考文献，无附录）；original_check: done（2026-11-13）。已复核训练/部署公式、实验基线与指标边界，并标注表 IV 42.7% 报告值与显示值复算约 42.8% 的差异；保留 Mermaid 方法流程图，未运行源码或复现实验。"
+      },
       {
         "date": "2026-09-13",
         "index": 588,
