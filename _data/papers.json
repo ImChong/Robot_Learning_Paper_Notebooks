@@ -6161,14 +6161,13 @@
         "dir": "FOCUS__Foot_Observation_Confidence_for_Robust_Humanoid_Proprioceptive_Odometry",
         "arxiv": "2609.02222",
         "summary_zh": "通过学习双足正运动学观测的连续置信度，自适应融合 IMU 与足部速度约束，改善人形机器人本体里程计的鲁棒性。",
-        "health_score": 3,
+        "health_score": 4,
         "health_gaps": [
-          "verification",
           "animation",
           "video"
         ],
-        "health_label_zh": "笔记健康度 3/6，缺：原文核验、动画讲解、讲解视频",
-        "health_label_en": "Note health 3/6; missing: full-text check, explainer animation, explainer video",
+        "health_label_zh": "笔记健康度 4/6，缺：动画讲解、讲解视频",
+        "health_label_en": "Note health 4/6; missing: explainer animation, explainer video",
         "published_date_zh": "2026年9月2日（arXiv v1）",
         "published_date_en": "Sep 2, 2026 (arXiv v1)",
         "zhname": "FOCUS：面向鲁棒人形本体里程计的足部观测置信度",

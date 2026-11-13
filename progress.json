@@ -46,7 +46,7 @@
       "last_title": "FOCUS: Foot Observation Confidence for Robust Humanoid Proprioceptive Odometry (arXiv:2609.02222)",
       "next_module": "10_Sim-to-Real",
       "last_completed_date": "2026-11-13",
-      "note": "2026-11-13：09_State_Estimation 轮转到 #701 FOCUS（arXiv:2609.02222），补录含 Mermaid 方法流程图的简明笔记；已核对 arXiv 元数据/摘要，但 PDF 和 HTML 原文未能直接读取，original_check: partial，未核实到官方源码，不绘制源码时序图。下一模块 10_Sim-to-Real。独立笔记轨道，未更改用户阅读游标。",
+      "note": "2026-11-13：09_State_Estimation 轮转到 #701 FOCUS（arXiv:2609.02222v1）；已通读官方 HTML 全文，核对正文 I–V、式 1–12、表 I–V 与图注，original_check: done。补清训练加权速度与在线逐足混合的区别、仿真动态动作指标边界及表 IV 百分比显示值差异；未核实到官方源码，未声称复现实验。下一模块 10_Sim-to-Real。独立笔记轨道，未更改用户阅读游标。",
       "last_date": "2026-11-13",
       "next_candidate": null,
       "last_completed": "FOCUS: Foot Observation Confidence for Robust Humanoid Proprioceptive Odometry (arXiv:2609.02222)"
@@ -65,7 +65,7 @@
         "arxiv": "2609.02222",
         "project_page": "",
         "code": "未核实到官方公开源码",
-        "source": "原文 PDF/HTML 未能直接读取；已核对 arXiv 元数据/摘要与公开方法解读，部分核验（original_check: partial），已绘制 Mermaid 方法流程图，待全文核验"
+        "source": "已通读 https://arxiv.org/html/2609.02222v1 官方全文（正文 I–V、式 1–12、表 I–V、图 1–6 图注及参考文献，无附录）；original_check: done（2026-11-13）。已复核训练/部署公式、实验基线与指标边界，并标注表 IV 42.7% 报告值与显示值复算约 42.8% 的差异；保留 Mermaid 方法流程图，未运行源码或复现实验。"
       },
       {
         "date": "2026-09-13",
