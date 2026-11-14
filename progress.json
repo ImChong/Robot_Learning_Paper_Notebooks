@@ -41,21 +41,32 @@
         "13_Physics-Based_Animation",
         "14_Human_Motion"
       ],
-      "last_module": "09_State_Estimation",
-      "last_index": 701,
-      "last_title": "FOCUS: Foot Observation Confidence for Robust Humanoid Proprioceptive Odometry (arXiv:2609.02222)",
-      "next_module": "10_Sim-to-Real",
-      "last_completed_date": "2026-11-13",
-      "note": "2026-11-13：09_State_Estimation 轮转到 #701 FOCUS（arXiv:2609.02222v1）；已通读官方 HTML 全文，核对正文 I–V、式 1–12、表 I–V 与图注，original_check: done。补清训练加权速度与在线逐足混合的区别、仿真动态动作指标边界及表 IV 百分比显示值差异；未核实到官方源码，未声称复现实验。下一模块 10_Sim-to-Real。独立笔记轨道，未更改用户阅读游标。",
-      "last_date": "2026-11-13",
+      "last_module": "10_Sim-to-Real",
+      "last_index": 693,
+      "last_title": "Bundled Contact Gradients: Stabilizing Differentiable Simulation for Deployable Dynamic Tasks (arXiv:2609.30951)",
+      "next_module": "11_Simulation_Benchmark",
+      "last_completed_date": "2026-11-14",
+      "note": "2026-11-14：10_Sim-to-Real 轮转至 #693 BCG（arXiv:2609.30951）。已通读官方 HTML v1 I–VI、算法 1、式 1–5、表 1–2、图注和官方项目页参数；original_check: done。补 Mermaid 方法流程与教学计算；官方项目页 Code (soon)，无可核验源码与源码时序图。下一模块 11_Simulation_Benchmark。独立推进，不修改用户阅读游标。",
+      "last_date": "2026-11-14",
       "next_candidate": null,
-      "last_completed": "FOCUS: Foot Observation Confidence for Robust Humanoid Proprioceptive Odometry (arXiv:2609.02222)"
+      "last_completed": "Bundled Contact Gradients: Stabilizing Differentiable Simulation for Deployable Dynamic Tasks (arXiv:2609.30951)"
     },
     "last_summary_index": 532,
     "last_summary_date": "2026-09-18",
     "last_summary_title": "ReActor: Reinforcement Learning for Physics-Aware Motion Retargeting",
     "next_summary_index": null,
     "log": [
+      {
+        "date": "2026-11-14",
+        "index": 693,
+        "title": "Bundled Contact Gradients: Stabilizing Differentiable Simulation for Deployable Dynamic Tasks (arXiv:2609.30951)",
+        "folder": "papers/10_Sim-to-Real/Bundled_Contact_Gradients__Stabilizing_Differentiable_Simulation_for_Deployable_Dynamic_Tasks",
+        "module": "10_Sim-to-Real",
+        "arxiv": "2609.30951",
+        "project_page": "https://bundledcontactgradients.github.io/",
+        "code": "官方项目页 Code (soon)，未发布",
+        "source": "已通读 https://arxiv.org/html/2609.30951v1 官方全文 I–VI、算法 1、式 1–5、表 1–2、图注及项目页参数；original_check: done；含 Mermaid flowchart 和教学计算；未复现实验。"
+      },
       {
         "date": "2026-11-13",
         "index": 701,
