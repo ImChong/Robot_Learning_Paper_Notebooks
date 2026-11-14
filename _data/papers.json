@@ -6585,6 +6585,25 @@
         "zh_title": "IDTD：面向 Sim-to-Real 系统辨识的信息解耦轨迹设计"
       },
       {
+        "title": "Bundled Contact Gradients: Stabilizing Differentiable Simulation for Deployable Dynamic Tasks",
+        "path": "papers/10_Sim-to-Real/Bundled_Contact_Gradients__Stabilizing_Differentiable_Simulation_for_Deployable_Dynamic_Tasks/Bundled_Contact_Gradients__Stabilizing_Differentiable_Simulation_for_Deployable_Dynamic_Tasks.md",
+        "url": "/papers/10_Sim-to-Real/Bundled_Contact_Gradients__Stabilizing_Differentiable_Simulation_for_Deployable_Dynamic_Tasks/Bundled_Contact_Gradients__Stabilizing_Differentiable_Simulation_for_Deployable_Dynamic_Tasks.html",
+        "dir": "Bundled_Contact_Gradients__Stabilizing_Differentiable_Simulation_for_Deployable_Dynamic_Tasks",
+        "arxiv": "2609.30951",
+        "summary_zh": "在高刚度接触处并行扰动多条可微仿真轨迹，平均状态与梯度，以稳定一阶运动模仿策略训练并实现 G1 零样本迁移。",
+        "health_score": 4,
+        "health_gaps": [
+          "animation",
+          "video"
+        ],
+        "health_label_zh": "笔记健康度 4/6，缺：动画讲解、讲解视频",
+        "health_label_en": "Note health 4/6; missing: explainer animation, explainer video",
+        "published_date_zh": "2026年9月25日（arXiv v1）",
+        "published_date_en": "Sep 25, 2026 (arXiv v1)",
+        "zhname": "BCG：通过接触梯度束稳定可部署动态任务的可微仿真",
+        "zh_title": "BCG：通过接触梯度束稳定可部署动态任务的可微仿真"
+      },
+      {
         "title": "Bridging the Sim-to-Real Gap in Parallel-Link Leg Mechanisms via Simulator-Side Dynamics Normalization",
         "path": "papers/10_Sim-to-Real/Bridging_the_Sim-to-Real_Gap_in_Parallel-Link_Leg_Mechanisms/Bridging_the_Sim-to-Real_Gap_in_Parallel-Link_Leg_Mechanisms.md",
         "url": "/papers/10_Sim-to-Real/Bridging_the_Sim-to-Real_Gap_in_Parallel-Link_Leg_Mechanisms/Bridging_the_Sim-to-Real_Gap_in_Parallel-Link_Leg_Mechanisms.html",
