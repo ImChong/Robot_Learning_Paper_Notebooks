@@ -26,6 +26,9 @@
     </span>
     {%- endif %}
   </span>
+  {%- if include.paper.video_seconds %}
+  <span class="paper-video" role="img" aria-label="Note includes narrated explainer video" data-en-aria-label="Note includes narrated explainer video" data-zh-aria-label="笔记含配音讲解视频" title="笔记含配音讲解视频"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-play"></use></svg></span>
+  {%- endif %}
   {%- if include.paper.has_open_source %}
   <span class="paper-opensource" role="img" aria-label="笔记含开源源码链接" title="笔记含开源源码链接"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-star"></use></svg></span>
   {%- endif %}

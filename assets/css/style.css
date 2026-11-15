@@ -828,6 +828,29 @@ body.index-search-active .paper-list-toggle-group {
   font-variant-numeric: tabular-nums;
 }
 
+.paper-card .paper-video {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--link);
+  color: var(--bg);
+  line-height: 1;
+}
+
+.paper-card .paper-video .icon {
+  width: 9px;
+  height: 9px;
+  margin-left: 1px;
+}
+
+.paper-card .paper-video + .paper-opensource {
+  margin-left: -4px;
+}
+
 .paper-card .paper-opensource {
   display: inline-flex;
   flex-shrink: 0;
@@ -910,6 +933,24 @@ body.index-search-active .paper-list-toggle-group {
   display: inline-flex;
   align-items: center;
   gap: 4px;
+}
+
+.index-legend-video .paper-video-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--link);
+  color: var(--bg);
+}
+
+.index-legend-video .paper-video-badge .icon {
+  width: 7px;
+  height: 7px;
+  margin-left: 1px;
+  color: var(--bg);
 }
 
 .index-legend-health {
