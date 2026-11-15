@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from scripts.note_health import compute_note_health
+from scripts import note_health as nh
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -16,7 +16,7 @@ PACT = (
 
 def test_pact_note_reaches_four_of_six_without_fake_media():
     content = PACT.read_text(encoding="utf-8")
-    health = compute_note_health(content, str(PACT))
+    health = nh.compute_note_health(content, str(PACT))
     assert health.score == 4, (health.score, health.reasons)
     assert health.gaps == ["animation", "video"]
     assert health.status is None
