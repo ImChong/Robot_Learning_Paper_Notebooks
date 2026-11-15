@@ -938,6 +938,52 @@ def check_stub(fpath, content):
         print(f"  [STUB] {rel} ({reason})")
 
 
+def build_paper_previews(sorted_data: dict) -> dict[str, dict]:
+    """Build compact per-URL preview metadata for hover cards across the site."""
+    previews: dict[str, dict] = {}
+    for cat_key, cat in sorted_data.items():
+        cat_en = cat.get("display_name") or cat_key
+        cat_zh = cat.get("zhname") or cat_en
+        groups = [cat.get("papers", [])] + [
+            sub.get("papers", []) for sub in cat.get("subcategories", [])
+        ]
+        for papers in groups:
+            for p in papers:
+                url = p.get("url")
+                if not url:
+                    continue
+                item: dict = {
+                    "t": p.get("title") or "",
+                    "zt": p.get("zh_title") or p.get("zhname") or "",
+                    "c": cat_en,
+                    "zc": cat_zh,
+                }
+                d = p.get("published_date_en") or p.get("published_date")
+                zd = p.get("published_date_zh") or p.get("published_date")
+                if d:
+                    item["d"] = d
+                if zd:
+                    item["zd"] = zd
+                if p.get("summary_zh"):
+                    item["s"] = p["summary_zh"]
+                if p.get("arxiv"):
+                    item["a"] = p["arxiv"]
+                if p.get("has_open_source"):
+                    item["os"] = 1
+                if p.get("health_score") is not None:
+                    item["hs"] = p["health_score"]
+                    if p.get("health_label_en"):
+                        item["hl"] = p["health_label_en"]
+                    if p.get("health_label_zh"):
+                        item["zhl"] = p["health_label_zh"]
+                if p.get("explainer_scenes"):
+                    item["es"] = p["explainer_scenes"]
+                if p.get("video_seconds"):
+                    item["vs"] = p["video_seconds"]
+                previews[url] = item
+    return previews
+
+
 def process_papers():
     """Walk through papers directory and add front matter."""
     progress_order = parse_progress_order()
@@ -1243,6 +1289,13 @@ def process_papers():
     # 健康度六项的名称与判据，首页悬浮框逐项列出 ✓ / ✗ 时读它。
     with open(os.path.join(data_dir, "note_health.json"), "w", encoding="utf-8") as f:
         json.dump(health_items_data(), f, ensure_ascii=False, indent=2)
+        f.write("\n")
+
+    # 悬停论文卡片或笔记超链接时按需加载的轻量预览索引。
+    assets_data_dir = os.path.join(BASE_DIR, "assets", "data")
+    os.makedirs(assets_data_dir, exist_ok=True)
+    with open(os.path.join(assets_data_dir, "paper-previews.json"), "w", encoding="utf-8") as f:
+        json.dump(build_paper_previews(sorted_data), f, ensure_ascii=False, separators=(",", ":"))
         f.write("\n")
 
     total = sum(
