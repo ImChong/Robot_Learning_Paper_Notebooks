@@ -46,7 +46,7 @@ original_check_scope: "arXiv HTML v1 全文：I–IX 节、数学模型、表 I�
 
 ### 方法流程图（依据论文 Fig. 1、III–V 节）
 
-```mermaid
+<div class="mermaid">
 flowchart TD
     A["输入：8 个手指姿态及各自任务力区域"] --> D["枚举腱绳拓扑与电机分配"]
     B["输入：电机峰值/连续力矩、速度、惯量"] --> D
@@ -59,7 +59,7 @@ flowchart TD
     H --> I["以 min(C_p) 排序并局部优化"]
     I --> J["输出共享路由、力臂、绞盘与非对称 N+1 结构"]
     J --> K["单指原型的指尖力验证"]
-```
+</div>
 
 ## 📊 实验与主要结论
 
