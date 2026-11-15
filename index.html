@@ -72,6 +72,7 @@ description: "人形机器人学习方向的每日论文精读笔记：强化学
   <div class="index-main" id="index-main">
 
     <p class="index-legend">
+      <span class="index-legend-item index-legend-video"><span class="paper-video-badge" aria-hidden="true"><svg class="icon" focusable="false"><use href="#i-play"></use></svg></span><span data-en="Note includes narrated explainer video" data-zh="笔记含配音讲解视频">Note includes narrated explainer video</span></span>
       <span class="index-legend-item"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-star"></use></svg><span data-en="Note links to open source code" data-zh="笔记含开源源码链接">Note links to open source code</span></span>
       {% if site.data.note_health %}
       <span class="index-legend-item index-legend-health" data-health-legend tabindex="0"><span class="paper-health paper-health--4" aria-hidden="true"><span class="paper-health-bar">{% for i in (1..site.data.note_health.max) %}<i{% if i <= 4 %} class="is-on"{% endif %}></i>{% endfor %}</span></span><span data-en="Note health 0–{{ site.data.note_health.max }}: completeness & verification, not paper rating" data-zh="笔记健康度 0–{{ site.data.note_health.max }}：完整度与核验，非论文评分">Note health 0–{{ site.data.note_health.max }}: completeness & verification, not paper rating</span></span>

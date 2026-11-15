@@ -342,6 +342,17 @@ def test_card_template_only_draws_the_bar_for_computed_scores():
     assert card.index("paper-health") < card.index("paper-opensource") < card.index("</a>")
 
 
+def test_card_template_and_legend_show_video_badge():
+    card = (ROOT / "_includes" / "paper-card.html").read_text(encoding="utf-8")
+    assert "include.paper.video_seconds" in card
+    assert 'class="paper-video"' in card and "#i-play" in card
+    assert card.index("paper-health") < card.index("paper-video") < card.index("paper-opensource")
+    index = (ROOT / "index.html").read_text(encoding="utf-8")
+    assert "index-legend-video" in index and "#i-play" in index
+    css = (ROOT / "assets" / "css" / "style.css").read_text(encoding="utf-8")
+    assert ".paper-card .paper-video" in css and ".index-legend-video .paper-video-badge" in css
+
+
 def test_index_ships_the_item_labels_and_tooltip_script():
     index = (ROOT / "index.html").read_text(encoding="utf-8")
     assert '<script type="application/json" id="note-health-data">{{ site.data.note_health | jsonify }}</script>' in index
