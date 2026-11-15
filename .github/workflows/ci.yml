@@ -23,19 +23,10 @@ jobs:
       - name: Install dev dependencies
         run: pip install -r requirements-dev.txt
 
-      - name: Regenerate paper index and verify PACT note health
+      - name: Verify generated paper indexes are committed
         run: |
           python3 scripts/prepare_pages.py
-          python3 scripts/note_health.py papers/12_Hardware_Design/PACT__Pose-Robust_Actuation_Co-Design_for_Tendon-Driven_Robotic_Hands/PACT__Pose-Robust_Actuation_Co-Design_for_Tendon-Driven_Robotic_Hands.md
-          python3 - <<'PY'
-          import json
-          from pathlib import Path
-          data = json.loads(Path("_data/papers.json").read_text(encoding="utf-8"))
-          matches = [p for p in data["12_Hardware_Design"]["papers"] if p.get("arxiv") == "2611.05302"]
-          assert len(matches) == 1, matches
-          print("PACT_GENERATED_JSON=" + json.dumps(matches[0], ensure_ascii=False))
-          PY
-          git status --short
+          git diff --exit-code -- _data/papers.json _data/note_health.json
 
       - name: Ruff (lint)
         run: ruff check scripts/ tests/
