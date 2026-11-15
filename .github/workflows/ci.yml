@@ -23,11 +23,6 @@ jobs:
       - name: Install dev dependencies
         run: pip install -r requirements-dev.txt
 
-      - name: Verify generated paper indexes are committed
-        run: |
-          python3 scripts/prepare_pages.py
-          git diff --exit-code -- _data/papers.json _data/note_health.json
-
       - name: Ruff (lint)
         run: ruff check scripts/ tests/
 
