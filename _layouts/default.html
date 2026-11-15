@@ -542,6 +542,9 @@
 
   {% assign scroll_reveal_js = site.static_files | where: "path", "/assets/js/scroll-reveal.js" | first %}
   <script src="{{ '/assets/js/scroll-reveal.js' | relative_url }}{% if scroll_reveal_js %}?v={{ scroll_reveal_js.modified_time | date: '%s' }}{% endif %}" defer></script>
+  {% assign paper_preview_js = site.static_files | where: "path", "/assets/js/paper-preview.js" | first %}
+  {% assign paper_previews_json = site.static_files | where: "path", "/assets/data/paper-previews.json" | first %}
+  <script src="{{ '/assets/js/paper-preview.js' | relative_url }}{% if paper_preview_js %}?v={{ paper_preview_js.modified_time | date: '%s' }}{% endif %}" defer data-previews-url="{{ '/assets/data/paper-previews.json' | relative_url }}{% if paper_previews_json %}?v={{ paper_previews_json.modified_time | date: '%s' }}{% endif %}" data-baseurl="{{ site.baseurl | escape }}" data-health-max="{{ site.data.note_health.max | default: 6 }}"></script>
 
   <button type="button" class="sidebar-toggle" id="sidebar-toggle"
           data-en-aria-label="Table of contents" data-zh-aria-label="目录"
