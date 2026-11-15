@@ -6958,6 +6958,22 @@
     "display_name": "Hardware Design",
     "papers": [
       {
+        "title": "PACT: Pose-Robust Actuation Co-Design for Tendon-Driven Robotic Hands",
+        "path": "papers/12_Hardware_Design/PACT__Pose-Robust_Actuation_Co-Design_for_Tendon-Driven_Robotic_Hands/PACT__Pose-Robust_Actuation_Co-Design_for_Tendon-Driven_Robotic_Hands.md",
+        "url": "/papers/12_Hardware_Design/PACT__Pose-Robust_Actuation_Co-Design_for_Tendon-Driven_Robotic_Hands/PACT__Pose-Robust_Actuation_Co-Design_for_Tendon-Driven_Robotic_Hands.html",
+        "dir": "PACT__Pose-Robust_Actuation_Co-Design_for_Tendon-Driven_Robotic_Hands",
+        "arxiv": "2611.05302",
+        "health_score": 4,
+        "health_gaps": [
+          "animation",
+          "video"
+        ],
+        "health_label_zh": "笔记健康度 4/6，缺：动画讲解、讲解视频",
+        "health_label_en": "Note health 4/6; missing: explainer animation, explainer video",
+        "zhname": "PACT：面向腱绳驱动机器人手的姿态鲁棒驱动协同设计",
+        "zh_title": "PACT：面向腱绳驱动机器人手的姿态鲁棒驱动协同设计"
+      },
+      {
         "title": "A fully articulated humanoid dexterous hand with human-level joint structure enabled by linkage-based actuation",
         "path": "papers/12_Hardware_Design/Torch-Hand__Fully_Articulated_Humanoid_Dexterous_Hand_with_Linkage-Based_Actuation/Torch-Hand__Fully_Articulated_Humanoid_Dexterous_Hand_with_Linkage-Based_Actuation.md",
         "url": "/papers/12_Hardware_Design/Torch-Hand__Fully_Articulated_Humanoid_Dexterous_Hand_with_Linkage-Based_Actuation/Torch-Hand__Fully_Articulated_Humanoid_Dexterous_Hand_with_Linkage-Based_Actuation.html",

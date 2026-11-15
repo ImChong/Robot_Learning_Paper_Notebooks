@@ -41,21 +41,33 @@
         "13_Physics-Based_Animation",
         "14_Human_Motion"
       ],
-      "last_module": "11_Simulation_Benchmark",
-      "last_index": 1164,
-      "last_title": "LocoManiLab: A Unified Testbed for Data, Policies, Controllers, and Deployment in Humanoid Loco-Manipulation (arXiv:2610.30876)",
-      "next_module": "12_Hardware_Design",
+      "last_module": "12_Hardware_Design",
+      "last_index": 1193,
+      "last_title": "PACT: Pose-Robust Actuation Co-Design for Tendon-Driven Robotic Hands (arXiv:2611.05302)",
+      "next_module": "13_Physics-Based_Animation",
       "last_completed_date": "2026-11-15",
-      "note": "2026-11-15：11_Simulation_Benchmark 轮转 #1164 LocoManiLab；已核对官方 HTML v4 全文及附录、项目页、公开 GitHub README 与 __main__.py；Mermaid 方法图、公开 CLI 命令级时序图、具体实例。未运行源码/测试；下一模块 12_Hardware_Design。用户阅读进度不变。",
+      "note": "2026-11-15 用户要求额外执行：12_Hardware_Design #1193 PACT；已通读 arXiv HTML v1 正文、数学模型与实验，含 Mermaid 方法流程图与计算实例；未确认公开源码。健康度脚本实算 4/6（缺动画讲解、讲解视频）；下一模块 13_Physics-Based_Animation。用户阅读进度不变。",
       "last_date": "2026-11-15",
       "next_candidate": null,
-      "last_completed": "LocoManiLab: A Unified Testbed for Data, Policies, Controllers, and Deployment in Humanoid Loco-Manipulation (arXiv:2610.30876)"
+      "last_completed": "PACT: Pose-Robust Actuation Co-Design for Tendon-Driven Robotic Hands (arXiv:2611.05302)"
     },
     "last_summary_index": 532,
     "last_summary_date": "2026-09-18",
     "last_summary_title": "ReActor: Reinforcement Learning for Physics-Aware Motion Retargeting",
     "next_summary_index": null,
     "log": [
+      {
+        "date": "2026-11-15",
+        "index": 1193,
+        "title": "PACT: Pose-Robust Actuation Co-Design for Tendon-Driven Robotic Hands (arXiv:2611.05302)",
+        "folder": "papers/12_Hardware_Design/PACT__Pose-Robust_Actuation_Co-Design_for_Tendon-Driven_Robotic_Hands",
+        "module": "12_Hardware_Design",
+        "arxiv": "2611.05302",
+        "project_page": "未确认",
+        "code": "未确认官方开源实现",
+        "source": "已通读官方 arXiv HTML v1 I–IX 节；PDF 未另行逐页复核；原文核验 done；健康度脚本实算 4/6（缺动画讲解、讲解视频）。",
+        "extra_run": true
+      },
       {
         "date": "2026-11-15",
         "index": 1164,
