@@ -46,7 +46,7 @@
       "last_title": "PACT: Pose-Robust Actuation Co-Design for Tendon-Driven Robotic Hands (arXiv:2611.05302)",
       "next_module": "13_Physics-Based_Animation",
       "last_completed_date": "2026-11-15",
-      "note": "2026-11-15 用户要求额外执行：12_Hardware_Design #1193 PACT；已通读 arXiv HTML v1 正文、数学模型与实验，含 Mermaid 方法流程图与计算实例；未确认公开源码。健康度脚本未运行，不报告分数；下一模块 13_Physics-Based_Animation。用户阅读进度不变。",
+      "note": "2026-11-15 用户要求额外执行：12_Hardware_Design #1193 PACT；已通读 arXiv HTML v1 正文、数学模型与实验，含 Mermaid 方法流程图与计算实例；未确认公开源码。健康度脚本实算 4/6（缺动画讲解、讲解视频）；下一模块 13_Physics-Based_Animation。用户阅读进度不变。",
       "last_date": "2026-11-15",
       "next_candidate": null,
       "last_completed": "PACT: Pose-Robust Actuation Co-Design for Tendon-Driven Robotic Hands (arXiv:2611.05302)"
@@ -65,7 +65,7 @@
         "arxiv": "2611.05302",
         "project_page": "未确认",
         "code": "未确认官方开源实现",
-        "source": "已通读官方 arXiv HTML v1 I–IX 节；PDF 未另行逐页复核；原文核验 done；健康度脚本未运行，不估分。",
+        "source": "已通读官方 arXiv HTML v1 I–IX 节；PDF 未另行逐页复核；原文核验 done；健康度脚本实算 4/6（缺动画讲解、讲解视频）。",
         "extra_run": true
       },
       {
