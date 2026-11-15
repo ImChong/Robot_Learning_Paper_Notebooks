@@ -1147,7 +1147,7 @@
 
 | #   | 论文                                                                                                                                                                     | 日期      | 🌟  | 状态   |
 | --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- | --- | ---- |
-| 1193  | [PACT: Pose-Robust Actuation Co-Design for Tendon-Driven Robotic Hands](https://arxiv.org/abs/2611.05302) | 2026.11 |  | ⏳ 待读 |
+| 1193  | [PACT: Pose-Robust Actuation Co-Design for Tendon-Driven Robotic Hands](https://arxiv.org/abs/2611.05302) ✅ [笔记](12_Hardware_Design/PACT__Pose-Robust_Actuation_Co-Design_for_Tendon-Driven_Robotic_Hands/PACT__Pose-Robust_Actuation_Co-Design_for_Tendon-Driven_Robotic_Hands.md) | 2026.11 |  | ✅ 已总结 |
 | 1194  | [RAIPAL: A Powerful and Agile Humanoid Arm for Human Tasks](https://arxiv.org/abs/2611.04334) | 2026.11 |  | ⏳ 待读 |
 | 1191  | [A fully articulated humanoid dexterous hand with human-level joint structure enabled by linkage-based actuation](https://arxiv.org/abs/2610.36789) ✅ [笔记](12_Hardware_Design/Torch-Hand__Fully_Articulated_Humanoid_Dexterous_Hand_with_Linkage-Based_Actuation/Torch-Hand__Fully_Articulated_Humanoid_Dexterous_Hand_with_Linkage-Based_Actuation.md) | 2026.10 |  | ✅ 已总结 |
 | 1165  | [PHD-Hand: A Printable Humanoid Dexterous Hand with Linkage-Driven 3-DOA Digits](https://arxiv.org/abs/2610.29030) ✅ [笔记](12_Hardware_Design/PHD-Hand__Printable_Humanoid_Dexterous_Hand_with_Linkage-Driven_3-DOA_Digits/PHD-Hand__Printable_Humanoid_Dexterous_Hand_with_Linkage-Driven_3-DOA_Digits.md) | 2026.10 |  | ✅ 已总结 |
