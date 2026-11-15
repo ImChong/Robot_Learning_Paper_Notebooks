@@ -13,6 +13,7 @@
 
 | 日期 | 论文索引 | 笔记 | 分类 | 源码 |
 |------|:---:|------|------|------|
+| 2026-11-15 | 1164 | [LocoManiLab: A Unified Testbed for Data, Policies, Controllers, and Deployment in Humanoid Loco-Manipulation](11_Simulation_Benchmark/LocoManiLab__Unified_Testbed_for_Humanoid_Loco-Manipulation/LocoManiLab__Unified_Testbed_for_Humanoid_Loco-Manipulation.md)（原文已核验） | Simulation Benchmark | [Gamma-Robot/LocoManiLab](https://github.com/Gamma-Robot/LocoManiLab)；含 CLI 级时序图 |
 | 2026-11-14 | 693 | [BCG: Bundled Contact Gradients](10_Sim-to-Real/Bundled_Contact_Gradients__Stabilizing_Differentiable_Simulation_for_Deployable_Dynamic_Tasks/Bundled_Contact_Gradients__Stabilizing_Differentiable_Simulation_for_Deployable_Dynamic_Tasks.md)（原文已核验） | Sim-to-Real | 项目页 Code (soon)，未发布官方源码；无源码时序图 |
 | 2026-11-13 | 701 | [FOCUS: Foot Observation Confidence for Robust Humanoid Proprioceptive Odometry](09_State_Estimation/FOCUS__Foot_Observation_Confidence_for_Robust_Humanoid_Proprioceptive_Odometry/FOCUS__Foot_Observation_Confidence_for_Robust_Humanoid_Proprioceptive_Odometry.md)（原文已核验） | State Estimation | 未核实到官方公开源码；无源码时序图 |
 | 2026-04-24 | 14 | [LATENT: Learning Athletic Humanoid Tennis Skills](04_Loco-Manipulation_and_WBC/LATENT__Learning_Athletic_Humanoid_Tennis_Skills_from_Imperfect_Human_Motion_Dat/LATENT__Learning_Athletic_Humanoid_Tennis_Skills_from_Imperfect_Human_Motion_Dat.md) | Loco-Manipulation / WBC | [GalaxyGeneralRobotics/LATENT](https://github.com/GalaxyGeneralRobotics/LATENT) |

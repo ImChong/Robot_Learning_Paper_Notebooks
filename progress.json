@@ -41,21 +41,32 @@
         "13_Physics-Based_Animation",
         "14_Human_Motion"
       ],
-      "last_module": "10_Sim-to-Real",
-      "last_index": 693,
-      "last_title": "Bundled Contact Gradients: Stabilizing Differentiable Simulation for Deployable Dynamic Tasks (arXiv:2609.30951)",
-      "next_module": "11_Simulation_Benchmark",
-      "last_completed_date": "2026-11-14",
-      "note": "2026-11-14：10_Sim-to-Real 轮转至 #693 BCG（arXiv:2609.30951）。已通读官方 HTML v1 I–VI、算法 1、式 1–5、表 1–2、图注和官方项目页参数；original_check: done。补 Mermaid 方法流程与教学计算；官方项目页 Code (soon)，无可核验源码与源码时序图。下一模块 11_Simulation_Benchmark。独立推进，不修改用户阅读游标。",
-      "last_date": "2026-11-14",
+      "last_module": "11_Simulation_Benchmark",
+      "last_index": 1164,
+      "last_title": "LocoManiLab: A Unified Testbed for Data, Policies, Controllers, and Deployment in Humanoid Loco-Manipulation (arXiv:2610.30876)",
+      "next_module": "12_Hardware_Design",
+      "last_completed_date": "2026-11-15",
+      "note": "2026-11-15：11_Simulation_Benchmark 轮转 #1164 LocoManiLab；已核对官方 HTML v4 全文及附录、项目页、公开 GitHub README 与 __main__.py；Mermaid 方法图、公开 CLI 命令级时序图、具体实例。未运行源码/测试；下一模块 12_Hardware_Design。用户阅读进度不变。",
+      "last_date": "2026-11-15",
       "next_candidate": null,
-      "last_completed": "Bundled Contact Gradients: Stabilizing Differentiable Simulation for Deployable Dynamic Tasks (arXiv:2609.30951)"
+      "last_completed": "LocoManiLab: A Unified Testbed for Data, Policies, Controllers, and Deployment in Humanoid Loco-Manipulation (arXiv:2610.30876)"
     },
     "last_summary_index": 532,
     "last_summary_date": "2026-09-18",
     "last_summary_title": "ReActor: Reinforcement Learning for Physics-Aware Motion Retargeting",
     "next_summary_index": null,
     "log": [
+      {
+        "date": "2026-11-15",
+        "index": 1164,
+        "title": "LocoManiLab: A Unified Testbed for Data, Policies, Controllers, and Deployment in Humanoid Loco-Manipulation (arXiv:2610.30876)",
+        "folder": "papers/11_Simulation_Benchmark/LocoManiLab__Unified_Testbed_for_Humanoid_Loco-Manipulation",
+        "module": "11_Simulation_Benchmark",
+        "arxiv": "2610.30876",
+        "project_page": "https://locomanilab.github.io/",
+        "code": "https://github.com/Gamma-Robot/LocoManiLab",
+        "source": "已阅读 arXiv HTML v4 正文与附录，官方项目页和 README；原文核验 done；代码仅核对 CLI 文档与 __main__.py，未执行。"
+      },
       {
         "date": "2026-11-14",
         "index": 693,

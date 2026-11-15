@@ -7404,6 +7404,26 @@
     "display_name": "Simulation Benchmark",
     "papers": [
       {
+        "title": "LocoManiLab: A Unified Testbed for Data, Policies, Controllers, and Deployment in Humanoid Loco-Manipulation",
+        "path": "papers/11_Simulation_Benchmark/LocoManiLab__Unified_Testbed_for_Humanoid_Loco-Manipulation/LocoManiLab__Unified_Testbed_for_Humanoid_Loco-Manipulation.md",
+        "url": "/papers/11_Simulation_Benchmark/LocoManiLab__Unified_Testbed_for_Humanoid_Loco-Manipulation/LocoManiLab__Unified_Testbed_for_Humanoid_Loco-Manipulation.html",
+        "dir": "LocoManiLab__Unified_Testbed_for_Humanoid_Loco-Manipulation",
+        "arxiv": "2610.30876",
+        "has_open_source": true,
+        "summary_zh": "统一 234 项人形移动操作任务、示范数据、策略和全身控制器接口，评测泛化、扰动鲁棒性及仿真到真机的表现。",
+        "health_score": 4,
+        "health_gaps": [
+          "animation",
+          "video"
+        ],
+        "health_label_zh": "笔记健康度 4/6，缺：动画讲解、讲解视频",
+        "health_label_en": "Note health 4/6; missing: explainer animation, explainer video",
+        "published_date_zh": "2026年10月22日（arXiv v1）",
+        "published_date_en": "Oct 22, 2026 (arXiv v1)",
+        "zhname": "LocoManiLab：人形移动操作的数据、策略、控制与部署统一测试平台",
+        "zh_title": "LocoManiLab：人形移动操作的数据、策略、控制与部署统一测试平台"
+      },
+      {
         "title": "RoboQuest: Generalist Physical Agents that Search, Inspect and Test",
         "path": "papers/11_Simulation_Benchmark/RoboQuest__Generalist_Physical_Agents_that_Search_Inspect_and_Test/RoboQuest__Generalist_Physical_Agents_that_Search_Inspect_and_Test.md",
         "url": "/papers/11_Simulation_Benchmark/RoboQuest__Generalist_Physical_Agents_that_Search_Inspect_and_Test/RoboQuest__Generalist_Physical_Agents_that_Search_Inspect_and_Test.html",
