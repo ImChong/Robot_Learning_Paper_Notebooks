@@ -41,21 +41,31 @@
         "13_Physics-Based_Animation",
         "14_Human_Motion"
       ],
-      "last_module": "12_Hardware_Design",
-      "last_index": 1193,
-      "last_title": "PACT: Pose-Robust Actuation Co-Design for Tendon-Driven Robotic Hands (arXiv:2611.05302)",
-      "next_module": "13_Physics-Based_Animation",
-      "last_completed_date": "2026-11-15",
-      "note": "2026-11-15 用户要求额外执行：12_Hardware_Design #1193 PACT；已通读 arXiv HTML v1 正文、数学模型与实验，含 Mermaid 方法流程图与计算实例；未确认公开源码。健康度脚本实算 4/6（缺动画讲解、讲解视频）；下一模块 13_Physics-Based_Animation。用户阅读进度不变。",
-      "last_date": "2026-11-15",
+      "last_module": "13_Physics-Based_Animation",
+      "last_index": 1131,
+      "last_title": "Scalable Multi-Human Cooperative Manipulation via Commander-Executor Coordination (arXiv:2610.14911)",
+      "next_module": "14_Human_Motion",
+      "last_completed_date": "2026-11-16",
+      "note": "2026-11-16：13_Physics-Based_Animation #1131 Commander-Executor；arXiv 摘要与图表镜像核验，官方全文未能访问，original_check partial；Mermaid 方法流程图；未核实可审阅源码。健康度脚本未运行，不报告分数；下一模块 14_Human_Motion；个人阅读进度不变。",
+      "last_date": "2026-11-16",
       "next_candidate": null,
-      "last_completed": "PACT: Pose-Robust Actuation Co-Design for Tendon-Driven Robotic Hands (arXiv:2611.05302)"
+      "last_completed": "Scalable Multi-Human Cooperative Manipulation via Commander-Executor Coordination (arXiv:2610.14911)"
     },
     "last_summary_index": 532,
     "last_summary_date": "2026-09-18",
     "last_summary_title": "ReActor: Reinforcement Learning for Physics-Aware Motion Retargeting",
     "next_summary_index": null,
     "log": [
+      {
+        "date": "2026-11-16",
+        "index": 1131,
+        "title": "Scalable Multi-Human Cooperative Manipulation via Commander-Executor Coordination (arXiv:2610.14911)",
+        "folder": "papers/13_Physics-Based_Animation/Scalable_Multi-Human_Cooperative_Manipulation_via_Commander-Executor_Coordination",
+        "module": "13_Physics-Based_Animation",
+        "arxiv": "2610.14911",
+        "code": "官方摘要指向 TJU-3DV/Co-Manipulation，尚未核实可审阅实现",
+        "source": "摘要与图表部分核验；官方 HTML/PDF 未能访问；original_check partial；健康度脚本未运行"
+      },
       {
         "date": "2026-11-15",
         "index": 1193,
