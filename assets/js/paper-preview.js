@@ -5,7 +5,7 @@
  * - 路线图节点（.tt-node）与卡片（#roadmap-node-card）已有专属悬浮卡片，此处跳过；
  * - 鼠标悬停在卡片内部的笔记健康度六格小条（.paper-health）上时，让位给 note-health.js 的逐项清单；
  * - 预览数据来自 assets/data/paper-previews.json，仅在首次悬停/聚焦论文链接时按需拉取并缓存；
- * - 浮层本身 pointer-events: none，不遮挡点击跳转。
+ * - 鼠标预览跟随光标，键盘聚焦时仍对齐链接；浮层 pointer-events: none，不遮挡点击跳转。
  */
 (function () {
   'use strict';
@@ -27,6 +27,7 @@
   var currentInfo = null;
   var pendingAnchor = null;
   var hoverTimer = 0;
+  var hoverPoint = null;
 
   function isZh() {
     return document.documentElement.getAttribute('data-lang-mode') === 'zh';
@@ -149,10 +150,21 @@
   function placeCard(anchor) {
     var gap = 10;
     var margin = 8;
-    var rect = anchor.getBoundingClientRect();
     card.style.maxHeight = '';
     var width = card.offsetWidth;
     var height = card.offsetHeight;
+    // 与 Robotics_Notebooks 的节点浮窗一致：靠近光标，右侧 / 下方放不下时翻到另一侧。
+    if (hoverPoint) {
+      var x = hoverPoint.x + 14;
+      var y = hoverPoint.y - gap;
+      if (x + width > window.innerWidth - margin) x = hoverPoint.x - width - 14;
+      if (y + height > window.innerHeight - margin) y -= height;
+      card.style.left = Math.round(Math.max(margin, Math.min(x, window.innerWidth - width - margin))) + 'px';
+      card.style.top = Math.round(Math.max(margin, Math.min(y, window.innerHeight - height - margin))) + 'px';
+      return;
+    }
+    // 键盘没有光标坐标，继续以聚焦的链接为锚点。
+    var rect = anchor.getBoundingClientRect();
     var left = Math.max(margin, Math.min(rect.left + rect.width / 2 - width / 2, window.innerWidth - width - margin));
     var below = window.innerHeight - margin - rect.bottom - gap;
     var above = rect.top - gap - margin;
@@ -191,6 +203,7 @@
     clearTimer();
     currentAnchor = null;
     currentInfo = null;
+    hoverPoint = null;
     if (card) card.hidden = true;
   }
 
@@ -215,6 +228,7 @@
     var anchor = e.target && e.target.closest ? e.target.closest('a[href]') : null;
     var path = resolvePaperPath(anchor);
     if (!path) return;
+    hoverPoint = { x: e.clientX, y: e.clientY };
     if (anchor === currentAnchor && card && !card.hidden) return;
 
     clearTimer();
@@ -227,6 +241,15 @@
       });
     }, HOVER_DELAY_MS);
   });
+
+  document.addEventListener('pointermove', function (e) {
+    if (e.pointerType === 'touch') return;
+    var anchor = pendingAnchor || currentAnchor;
+    if (!anchor || !anchor.contains(e.target)) return;
+    // 延迟显示和数据请求期间也记录最新位置，避免首次弹出时停在旧坐标。
+    hoverPoint = { x: e.clientX, y: e.clientY };
+    reposition();
+  }, { passive: true });
 
   document.addEventListener('pointerout', function (e) {
     if (e.pointerType === 'touch') return;
@@ -252,6 +275,8 @@
       visible = el.matches(':focus-visible');
     } catch (err) { /* fallback for older browsers */ }
     if (!visible) return;
+    clearTimer();
+    hoverPoint = null;
     pendingAnchor = el;
     previewFor(el, function () {
       return document.activeElement === el && el.isConnected;
