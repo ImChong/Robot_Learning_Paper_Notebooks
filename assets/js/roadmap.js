@@ -6,7 +6,7 @@
      标签，点一下切到那一系并闪一下那个节点；
    - 悬停 / 聚焦节点：点亮它在这一系里的整条前置链，弹出论文详情卡片（数据来自
      #roadmap-node-details，由 _data/papers.json 生成，含笔记健康度与缺项；节点上的六格小条
-     由模板画好）；这时卡片 pointer-events: none，不挡点击。
+     由模板画好）；鼠标预览跟随光标，卡片 pointer-events: none，不挡点击。
      触屏没有悬停：第一次点节点弹卡片，卡片能点，点卡片上的「点击阅读笔记」进入笔记；
    - 全局总览：一个窗口里把 11 系按 map_order 排开，所有节点和所有箭头（含跨系的）一起画，
      按窗口大小挑排法、缩放到放得下，也可以放大阅读（只上下滚）；悬停节点点亮它的整条前置路线（深色）和后续（浅色）。
@@ -431,6 +431,8 @@
   }
 
   var cardFor = null; // 卡片当前是给哪个节点元素弹的
+  var cardPoint = null; // 只有鼠标 / 手写笔悬停时跟随光标；键盘和触屏仍对齐节点
+  var cardRaf = 0;
   var lastPointer = '';
 
   function hideCard() {
@@ -439,6 +441,7 @@
       card.classList.remove('is-touch');
     }
     cardFor = null;
+    cardPoint = null;
   }
 
   // 这次点击是不是手指点的（键盘回车触发的 click 的 detail 是 0）。
@@ -571,10 +574,19 @@
   function placeCard(el, touch) {
     var gap = 10;
     var margin = 8;
-    var rect = el.getBoundingClientRect();
     card.style.maxHeight = '';
     var width = card.offsetWidth;
     var height = card.offsetHeight;
+    if (cardPoint && !touch) {
+      var x = cardPoint.x + 14;
+      var y = cardPoint.y - gap;
+      if (x + width > window.innerWidth - margin) x = cardPoint.x - width - 14;
+      if (y + height > window.innerHeight - margin) y -= height;
+      card.style.left = Math.round(Math.max(margin, Math.min(x, window.innerWidth - width - margin))) + 'px';
+      card.style.top = Math.round(Math.max(margin, Math.min(y, window.innerHeight - height - margin))) + 'px';
+      return;
+    }
+    var rect = el.getBoundingClientRect();
     var left = Math.max(margin, Math.min(rect.left + rect.width / 2 - width / 2, window.innerWidth - width - margin));
     var below = window.innerHeight - margin - rect.bottom - gap;
     var above = rect.top - gap - margin;
@@ -593,7 +605,7 @@
     card.style.top = top + 'px';
   }
 
-  function showCard(node, el, touch) {
+  function showCard(node, el, touch, point) {
     if (!card) {
       card = document.createElement('div');
       card.id = 'roadmap-node-card';
@@ -608,6 +620,7 @@
     card.querySelector('.roadmap-node-card__action').tabIndex = touch ? 0 : -1;
     card.hidden = false;
     cardFor = el || node.el;
+    cardPoint = point || null;
     placeCard(cardFor, touch);
   }
 
@@ -620,8 +633,17 @@
     el.addEventListener('pointerenter', function (e) {
       if (e.pointerType === 'touch') return;
       trace();
-      showCard(node, el, false);
+      showCard(node, el, false, { x: e.clientX, y: e.clientY });
     });
+    el.addEventListener('pointermove', function (e) {
+      if (e.pointerType === 'touch' || cardFor !== el || !card || card.hidden) return;
+      cardPoint = { x: e.clientX, y: e.clientY };
+      if (cardRaf) return;
+      cardRaf = requestAnimationFrame(function () {
+        cardRaf = 0;
+        if (cardFor && cardPoint && card && !card.hidden) placeCard(cardFor, false);
+      });
+    }, { passive: true });
     el.addEventListener('pointerleave', function (e) {
       if (e.pointerType === 'touch') return;
       untrace();
