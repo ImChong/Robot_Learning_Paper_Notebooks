@@ -45,7 +45,7 @@ original_check_scope: "核对 arXiv 摘要元数据及可访问的论文图表�
 
 ### Mermaid 方法流程图（依据摘要与图 1–3）
 
-```mermaid
+<div class="mermaid">
 flowchart TD
     A["自然语言任务 + 场景几何"] --> B["Commander：语义与几何规划"]
     B --> C["任务分解：各参与者角色与执行顺序"]
@@ -57,7 +57,7 @@ flowchart TD
     E --> H
     I["各角色局部观测"] --> H
     H --> J["协作搬运 / 交接 / 多人长时序操作"]
-```
+</div>
 
 ## 📊 实验与贡献（仅限已核对图表）
 
