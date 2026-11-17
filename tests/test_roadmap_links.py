@@ -142,14 +142,22 @@ def test_global_overview_window_shows_every_node_and_route():
     assert "bindNodeCard(node, copy, function () { traceMap(node); }, clearMapTrace);" in js
 
 
-def test_global_overview_blurs_without_colored_backdrop():
+def test_modal_backdrops_use_one_neutral_translucent_scrim():
     css = STYLE_CSS.read_text(encoding="utf-8")
-    # 总览只模糊底层页面，不再沿用主题色调的 --scrim 遮罩。
-    backdrop_css = css.split("\n.tt-map-backdrop {", 1)[1].split("}", 1)[0]
-    assert "background: transparent;" in backdrop_css
-    assert "var(--scrim)" not in backdrop_css
-    assert "backdrop-filter: blur(4px);" in backdrop_css
-    assert "-webkit-backdrop-filter: blur(4px);" in backdrop_css
+    # rgba 三个颜色通道相同，只使用一个主题无关的半透明遮罩变量。
+    tokens = css.split(":root {", 1)[1].split("}", 1)[0]
+    assert "--scrim: rgba(0, 0, 0, 0.25);" in tokens
+    assert css.count("--scrim:") == 1
+    for selector in (
+        ".sidebar-overlay",
+        ".tt-map-backdrop",
+        ".mermaid-lightbox__backdrop",
+        ".sponsor-dialog__backdrop",
+    ):
+        backdrop_css = css.split("\n" + selector + " {", 1)[1].split("}", 1)[0]
+        assert "background: var(--scrim);" in backdrop_css, selector
+        assert "backdrop-filter: blur(4px);" in backdrop_css, selector
+        assert "-webkit-backdrop-filter: blur(4px);" in backdrop_css, selector
 
 
 def test_global_overview_zooms_and_pans_with_mouse_keyboard_and_touch():
