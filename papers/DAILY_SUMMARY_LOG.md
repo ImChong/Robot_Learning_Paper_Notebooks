@@ -13,6 +13,7 @@
 
 | 日期 | 论文索引 | 笔记 | 分类 | 源码 |
 |------|:---:|------|------|------|
+| 2026-11-17 | 597 | [ReCHOIR: Contact-guided Human Object Interaction Retargeting to Diverse Characters](14_Human_Motion/ReCHOIR__Contact-guided_Human_Object_Interaction_Retargeting_to_Diverse_Characters/ReCHOIR__Contact-guided_Human_Object_Interaction_Retargeting_to_Diverse_Characters.md)（官方 PDF v1 全文及补充材料已核验） | Human Motion | 未确认官方公开源码；无源码时序图；健康度未验证（脚本未运行） |
 | 2026-11-16 | 1131 | [Scalable Multi-Human Cooperative Manipulation via Commander-Executor Coordination](13_Physics-Based_Animation/Scalable_Multi-Human_Cooperative_Manipulation_via_Commander-Executor_Coordination/Scalable_Multi-Human_Cooperative_Manipulation_via_Commander-Executor_Coordination.md)（原文部分核验，待全文复核） | Physics-Based Animation | 官方源码尚未核实可审阅；无源码时序图；健康度未验证（脚本未运行） |
 | 2026-11-15（额外执行） | 1193 | [PACT: Pose-Robust Actuation Co-Design for Tendon-Driven Robotic Hands](12_Hardware_Design/PACT__Pose-Robust_Actuation_Co-Design_for_Tendon-Driven_Robotic_Hands/PACT__Pose-Robust_Actuation_Co-Design_for_Tendon-Driven_Robotic_Hands.md)（HTML v1 原文已核验） | Hardware Design | 未确认官方公开源码；无源码时序图；**健康度 4/6（脚本实算；缺动画讲解、讲解视频）** |
 | 2026-11-15 | 1164 | [LocoManiLab: A Unified Testbed for Data, Policies, Controllers, and Deployment in Humanoid Loco-Manipulation](11_Simulation_Benchmark/LocoManiLab__Unified_Testbed_for_Humanoid_Loco-Manipulation/LocoManiLab__Unified_Testbed_for_Humanoid_Loco-Manipulation.md)（原文已核验） | Simulation Benchmark | [Gamma-Robot/LocoManiLab](https://github.com/Gamma-Robot/LocoManiLab)；含 CLI 级时序图 |
