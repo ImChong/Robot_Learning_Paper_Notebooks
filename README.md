@@ -11,9 +11,9 @@
 
 ## 在线演示
 
-[![站点使用演示：展开分系学习路线图，搜索 DeepMimic 并打开论文笔记，打开目录跳转到小节，点击流程图进入大图查看器](media/site-demo.gif)](https://imchong.github.io/Robot_Learning_Paper_Notebooks/)
+[![中文夜间模式站点使用演示：浏览中文笔记与健康度，切换分系路线图并放大全局总览，搜索 DeepMimic，使用目录、讲解动画、配音视频与交互实验](media/site-demo.gif)](https://imchong.github.io/Robot_Learning_Paper_Notebooks/)
 
-↑ 点击动图进入[在线站点](https://imchong.github.io/Robot_Learning_Paper_Notebooks/)。展开**推荐学习路线图**了解阅读顺序；按论文标题或 arXiv 编号**即时搜索**；打开笔记后通过**目录**定位章节，点击流程图可进入大图查看器，支持缩放与拖拽。
+↑ 动图使用**中文夜间模式**。点击动图进入[在线站点](https://imchong.github.io/Robot_Learning_Paper_Notebooks/)。展开**推荐学习路线图**按分系阅读，或打开**全局总览**缩放、平移查看前置路线；按论文标题或 arXiv 编号**即时搜索**。打开笔记后通过**目录**定位章节，观看**讲解动画 / 配音视频**，操作**交互实验**理解方法。笔记健康度六格条表示内容完整度与核验进度，不是论文评分。
 
 ## 规则
 
