@@ -142,6 +142,16 @@ def test_global_overview_window_shows_every_node_and_route():
     assert "bindNodeCard(node, copy, function () { traceMap(node); }, clearMapTrace);" in js
 
 
+def test_global_overview_blurs_without_colored_backdrop():
+    css = STYLE_CSS.read_text(encoding="utf-8")
+    # 总览只模糊底层页面，不再沿用主题色调的 --scrim 遮罩。
+    backdrop_css = css.split("\n.tt-map-backdrop {", 1)[1].split("}", 1)[0]
+    assert "background: transparent;" in backdrop_css
+    assert "var(--scrim)" not in backdrop_css
+    assert "backdrop-filter: blur(4px);" in backdrop_css
+    assert "-webkit-backdrop-filter: blur(4px);" in backdrop_css
+
+
 def test_global_overview_zooms_and_pans_with_mouse_keyboard_and_touch():
     js = ROADMAP_JS.read_text(encoding="utf-8")
     css = STYLE_CSS.read_text(encoding="utf-8")
