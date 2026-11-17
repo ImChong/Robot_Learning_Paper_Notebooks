@@ -41,21 +41,32 @@
         "13_Physics-Based_Animation",
         "14_Human_Motion"
       ],
-      "last_module": "13_Physics-Based_Animation",
-      "last_index": 1131,
-      "last_title": "Scalable Multi-Human Cooperative Manipulation via Commander-Executor Coordination (arXiv:2610.14911)",
-      "next_module": "14_Human_Motion",
-      "last_completed_date": "2026-11-16",
-      "note": "2026-11-16：13_Physics-Based_Animation #1131 Commander-Executor；arXiv 摘要与图表镜像核验，官方全文未能访问，original_check partial；Mermaid 方法流程图；未核实可审阅源码。健康度脚本未运行，不报告分数；下一模块 14_Human_Motion；个人阅读进度不变。",
-      "last_date": "2026-11-16",
+      "last_module": "14_Human_Motion",
+      "last_index": 597,
+      "last_title": "ReCHOIR: Contact-guided Human Object Interaction Retargeting to Diverse Characters (arXiv:2609.10982)",
+      "next_module": "04_Loco-Manipulation_and_WBC",
+      "last_completed_date": "2026-11-17",
+      "note": "2026-11-17：14_Human_Motion #597 ReCHOIR；官方 PDF v1 23 页正文及补充材料已核验，HTML 获取失败；Mermaid 方法图与具体计算实例；未确认可审阅源码。健康度脚本未运行，不报告分数；下一模块 04_Loco-Manipulation_and_WBC；个人阅读进度不变。",
+      "last_date": "2026-11-17",
       "next_candidate": null,
-      "last_completed": "Scalable Multi-Human Cooperative Manipulation via Commander-Executor Coordination (arXiv:2610.14911)"
+      "last_completed": "ReCHOIR: Contact-guided Human Object Interaction Retargeting to Diverse Characters (arXiv:2609.10982)"
     },
     "last_summary_index": 532,
     "last_summary_date": "2026-09-18",
     "last_summary_title": "ReActor: Reinforcement Learning for Physics-Aware Motion Retargeting",
     "next_summary_index": null,
     "log": [
+      {
+        "date": "2026-11-17",
+        "index": 597,
+        "title": "ReCHOIR: Contact-guided Human Object Interaction Retargeting to Diverse Characters (arXiv:2609.10982)",
+        "folder": "papers/14_Human_Motion/ReCHOIR__Contact-guided_Human_Object_Interaction_Retargeting_to_Diverse_Characters",
+        "module": "14_Human_Motion",
+        "arxiv": "2609.10982",
+        "project_page": "https://cherry-leki.github.io/projects/ReCHOIR/",
+        "code": "未确认官方公开源码",
+        "source": "已通读官方 PDF v1 共 23 页（正文及补充材料）；HTML 无法访问；原文核验 done；健康度脚本未运行。"
+      },
       {
         "date": "2026-11-16",
         "index": 1131,
