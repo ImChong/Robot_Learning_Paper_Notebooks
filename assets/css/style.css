@@ -2352,7 +2352,8 @@ body.tt-map-is-open {
 .tt-map-backdrop {
   position: absolute;
   inset: 0;
-  background: var(--scrim);
+  /* 只模糊底层页面，不叠加亮色主题的红或暗色主题的蓝色遮罩。 */
+  background: transparent;
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
 }
