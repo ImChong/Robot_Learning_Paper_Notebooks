@@ -30,6 +30,7 @@ description: "人形机器人学习方向的每日论文精读笔记：强化学
   </p>
 </header>
 
+<script>document.documentElement.classList.add('index-fold-ready');</script>
 <div class="index-layout">
   <aside class="toc-sidebar" id="toc-sidebar">
     <div class="toc-wrapper">
@@ -51,7 +52,7 @@ description: "人形机器人学习方向的每日论文精读笔记：强化学
             {% endfor %}
           {% endif %}
           <li class="toc-item toc-h2" data-toc-for="cat-{{ forloop.index }}">
-            <a href="#cat-{{ forloop.index }}" class="toc-link"><span data-en="{{ cat[1].display_name | escape }}" data-zh="{{ cat[1].zhname | escape }}">{{ cat[1].display_name | escape }}</span> <span class="toc-count">({{ total_count }})</span></a>
+            <a href="#cat-{{ forloop.index }}" class="toc-link"><span class="toc-index" aria-hidden="true">{{ cat[0] | slice: 0, 2 }}</span> <span data-en="{{ cat[1].display_name | escape }}" data-zh="{{ cat[1].zhname | escape }}">{{ cat[1].display_name | escape }}</span> <span class="toc-count">({{ total_count }})</span></a>
             {% if cat[1].subcategories %}
             <ul class="toc-sublist">
               {% for subcat in cat[1].subcategories %}
@@ -117,8 +118,13 @@ description: "人形机器人学习方向的每日论文精读笔记：强化学
   {% for cat in site.data.papers %}
     {% assign cat_key = cat[0] %}
     {% assign cat_data = cat[1] %}
+    {% assign keep_subcats = false %}
+    {% if cat_key == "03_High_Impact_Selection" %}
+      {% assign keep_subcats = true %}
+    {% endif %}
+    {% capture cat_controls %}{% if cat_data.subcategories %}{% if cat_data.papers.size > 0 %}cat-{{ forloop.index }}-list {% endif %}{% for subcat in cat_data.subcategories %}subcat-section-{{ forloop.parentloop.index }}-{{ forloop.index }}{% unless forloop.last %} {% endunless %}{% endfor %}{% elsif cat_data.papers.size > 0 %}cat-{{ forloop.index }}-list{% else %}cat-{{ forloop.index }}-empty{% endif %}{% endcapture %}
 
-    <div class="category-section" data-category="{{ cat_data.display_name | escape }}">
+    <div class="category-section is-cat-folded{% if keep_subcats %} category-section--keep-subcats{% endif %}" data-category="{{ cat_data.display_name | escape }}" data-category-key="{{ cat_key | escape }}">
       {% assign cat_papers_size = cat_data.papers | size %}
       {% assign main_total = cat_papers_size %}
       {% if cat_data.subcategories %}
@@ -127,13 +133,20 @@ description: "人形机器人学习方向的每日论文精读笔记：强化学
           {% assign main_total = main_total | plus: subcat_papers_size %}
         {% endfor %}
       {% endif %}
-        <h2 class="category-title" id="cat-{{ forloop.index }}"><span class="cat-index" aria-hidden="true">{{ cat_key | slice: 0, 2 }}</span> <span class="cat-name" data-en="{{ cat_data.display_name | escape }}" data-zh="{{ cat_data.zhname | escape }}">{{ cat_data.display_name | escape }}</span> <span class="paper-count">({{ main_total }})</span></h2>
+        <h2 class="category-title" id="cat-{{ forloop.index }}">
+          <button type="button" class="category-toggle" aria-expanded="false" aria-controls="{{ cat_controls | strip }}">
+            <span class="cat-index" aria-hidden="true">{{ cat_key | slice: 0, 2 }}</span>
+            <span class="cat-name" data-en="{{ cat_data.display_name | escape }}" data-zh="{{ cat_data.zhname | escape }}">{{ cat_data.display_name | escape }}</span>
+            <span class="paper-count">({{ main_total }})</span>
+            <span class="category-fold-icon" aria-hidden="true"><svg class="icon" focusable="false"><use href="#i-caret-right"></use></svg></span>
+          </button>
+        </h2>
       {% if cat_data.subtitle %}<p class="category-subtitle" data-en="{{ cat_data.subtitle | escape }}" data-zh="{{ cat_data.subtitle_zh | escape }}">{{ cat_data.subtitle | escape }}</p>{% endif %}
       {% if cat_data.sort_order_hint %}<p class="category-sort-hint" data-en="{{ cat_data.sort_order_hint | escape }}" data-zh="{{ cat_data.sort_order_hint_zh | escape }}">{{ cat_data.sort_order_hint | escape }}</p>{% endif %}
 
       {% if cat_data.subcategories %}
         {% if cat_data.papers.size > 0 %}
-        <ul class="paper-list">
+        <ul class="paper-list" id="cat-{{ forloop.index }}-list">
           {% for paper in cat_data.papers %}
           <li data-search="{{ paper.title | escape }} {{ paper.zhname | escape }} {{ paper.arxiv | escape }}">
             {% include paper-card.html paper=paper %}
@@ -143,10 +156,14 @@ description: "人形机器人学习方向的每日论文精读笔记：强化学
         {% endif %}
 
         {% for subcat in cat_data.subcategories %}
-        <div class="subcategory-section" data-subcategory="{{ subcat.name | escape }}">
+        {% capture sub_body_id %}subcat-{{ forloop.parentloop.index }}-{{ forloop.index }}-{% if subcat.papers.size > 0 %}list{% else %}empty{% endif %}{% endcapture %}
+        <div class="subcategory-section{% if keep_subcats %} is-subcat-folded{% endif %}" id="subcat-section-{{ forloop.parentloop.index }}-{{ forloop.index }}" data-subcategory="{{ subcat.name | escape }}">
           <h3 class="subcategory-title" id="subcat-{{ forloop.parentloop.index }}-{{ forloop.index }}">
-            <span class="subcat-name" data-en="{{ subcat.name | escape }}" data-zh="{{ subcat.zhname | escape }}">{{ subcat.name | escape }}</span>
-            <span class="paper-count">({{ subcat.papers | size }})</span>
+            <button type="button" class="subcategory-toggle" aria-expanded="{% if keep_subcats %}false{% else %}true{% endif %}" aria-controls="{{ sub_body_id }}">
+              <span class="subcat-name" data-en="{{ subcat.name | escape }}" data-zh="{{ subcat.zhname | escape }}">{{ subcat.name | escape }}</span>
+              <span class="paper-count">({{ subcat.papers | size }})</span>
+              <span class="subcategory-fold-icon" aria-hidden="true"><svg class="icon" focusable="false"><use href="#i-caret-right"></use></svg></span>
+            </button>
           </h3>
           {% if subcat.sort_order_hint %}<p class="subcategory-sort-hint" data-en="{{ subcat.sort_order_hint | escape }}" data-zh="{{ subcat.sort_order_hint_zh | escape }}">{{ subcat.sort_order_hint | escape }}</p>{% endif %}
           {% if subcat.papers.size > 0 %}
@@ -156,7 +173,7 @@ description: "人形机器人学习方向的每日论文精读笔记：强化学
             {% assign sub_fold_hidden = subcat.papers.size | minus: fold_limit %}
           {% endif %}
           {% capture sub_fold_id %}cat-{{ forloop.parentloop.index }}-sub-{{ forloop.index }}-papers{% endcapture %}
-          <ul class="paper-list{% if sub_should_fold %} has-paper-fold is-folded{% endif %}"{% if sub_should_fold %} data-fold-id="{{ sub_fold_id }}" data-fold-step="{{ fold_limit }}" data-fold-initial="{{ fold_limit }}"{% endif %}>
+          <ul class="paper-list{% if sub_should_fold %} has-paper-fold is-folded{% endif %}" id="{{ sub_body_id }}"{% if sub_should_fold %} data-fold-id="{{ sub_fold_id }}" data-fold-step="{{ fold_limit }}" data-fold-initial="{{ fold_limit }}"{% endif %}>
             {% for paper in subcat.papers %}
             <li{% if sub_should_fold and forloop.index > fold_limit %} class="paper-list-item-folded"{% endif %} data-search="{{ paper.title | escape }} {{ paper.zhname | escape }} {{ paper.arxiv | escape }}">
               {% include paper-card.html paper=paper %}
@@ -178,7 +195,7 @@ description: "人形机器人学习方向的每日论文精读笔记：强化学
           </div>
           {% endif %}
           {% else %}
-          <p class="empty-hint" data-en="No notes in this section yet." data-zh="这个分类还没有笔记。">No notes in this section yet.</p>
+          <p class="empty-hint" id="{{ sub_body_id }}" data-en="No notes in this section yet." data-zh="这个分类还没有笔记。">No notes in this section yet.</p>
           {% endif %}
         </div>
         {% endfor %}
@@ -188,7 +205,7 @@ description: "人形机器人学习方向的每日论文精读笔记：强化学
         {% assign should_fold = true %}
         {% assign fold_hidden = cat_data.papers.size | minus: fold_limit %}
       {% endif %}
-      <ul class="paper-list{% if should_fold %} has-paper-fold is-folded{% endif %}"{% if should_fold %} data-fold-id="cat-{{ forloop.index }}-papers" data-fold-step="{{ fold_limit }}" data-fold-initial="{{ fold_limit }}"{% endif %}>
+      <ul class="paper-list{% if should_fold %} has-paper-fold is-folded{% endif %}" id="cat-{{ forloop.index }}-list"{% if should_fold %} data-fold-id="cat-{{ forloop.index }}-papers" data-fold-step="{{ fold_limit }}" data-fold-initial="{{ fold_limit }}"{% endif %}>
         {% for paper in cat_data.papers %}
         <li{% if should_fold and forloop.index > fold_limit %} class="paper-list-item-folded"{% endif %} data-search="{{ paper.title | escape }} {{ paper.zhname | escape }} {{ paper.arxiv | escape }}">
           {% include paper-card.html paper=paper %}
@@ -210,7 +227,7 @@ description: "人形机器人学习方向的每日论文精读笔记：强化学
       </div>
       {% endif %}
       {% else %}
-      <p class="empty-hint" data-en="No notes in this section yet." data-zh="这个分类还没有笔记。">No notes in this section yet.</p>
+      <p class="empty-hint" id="cat-{{ forloop.index }}-empty" data-en="No notes in this section yet." data-zh="这个分类还没有笔记。">No notes in this section yet.</p>
       {% endif %}
     </div>
   {% endfor %}
@@ -293,6 +310,114 @@ description: "人形机器人学习方向的每日论文精读笔记：强化学
   var FOLD_PREFIX = 'paper-fold:';
   var foldLists = Array.from(document.querySelectorAll('.paper-list.has-paper-fold[data-fold-id]'));
   var foldStateBeforeSearch = null;
+  var sectionFoldStateBeforeSearch = null;
+  var refreshTocPositions = function() {};
+
+  function isCategoryExpanded(cat) {
+    return !cat.classList.contains('is-cat-folded');
+  }
+
+  function isSubcategoryExpanded(subcat) {
+    return !subcat.classList.contains('is-subcat-folded');
+  }
+
+  function setSubcategoryExpanded(subcat, expanded) {
+    subcat.classList.toggle('is-subcat-folded', !expanded);
+    var toggle = subcat.querySelector('.subcategory-toggle');
+    if (toggle) toggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+  }
+
+  function setCategoryExpanded(cat, expanded, syncSubcategories) {
+    cat.classList.toggle('is-cat-folded', !expanded);
+    var toggle = cat.querySelector('.category-toggle');
+    if (toggle) toggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+    if (syncSubcategories && cat.classList.contains('category-section--keep-subcats')) {
+      var subcats = cat.querySelectorAll('.subcategory-section');
+      for (var i = 0; i < subcats.length; i++) {
+        setSubcategoryExpanded(subcats[i], expanded);
+      }
+    }
+  }
+
+  function syncKeepSubcatsParent(cat) {
+    if (!cat || !cat.classList.contains('category-section--keep-subcats')) return;
+    var subcats = Array.from(cat.querySelectorAll('.subcategory-section'));
+    if (subcats.length === 0) return;
+    var allExpanded = subcats.every(isSubcategoryExpanded);
+    var allFolded = subcats.every(function(subcat) { return !isSubcategoryExpanded(subcat); });
+    if (allExpanded) {
+      setCategoryExpanded(cat, true, false);
+    } else if (allFolded && isCategoryExpanded(cat)) {
+      setCategoryExpanded(cat, false, false);
+    }
+  }
+
+  cachedCategories.forEach(function(catCache) {
+    var catToggle = catCache.el.querySelector('.category-toggle');
+    if (catToggle) {
+      catToggle.addEventListener('click', function() {
+        var next = !isCategoryExpanded(catCache.el);
+        setCategoryExpanded(catCache.el, next, true);
+        refreshTocPositions();
+      });
+    }
+    catCache.subcategories.forEach(function(subcatCache) {
+      var subToggle = subcatCache.el.querySelector('.subcategory-toggle');
+      if (subToggle) {
+        subToggle.addEventListener('click', function() {
+          var next = !isSubcategoryExpanded(subcatCache.el);
+          setSubcategoryExpanded(subcatCache.el, next);
+          syncKeepSubcatsParent(catCache.el);
+          refreshTocPositions();
+        });
+      }
+    });
+  });
+
+  function revealHashTarget(hash, shouldScroll, instant) {
+    if (!hash || hash.charAt(0) !== '#') return false;
+    var id = hash.slice(1);
+    try {
+      id = decodeURIComponent(id);
+    } catch (e) {}
+    if (!id) return false;
+    var target = document.getElementById(id);
+    if (!target) return false;
+
+    var subcat = target.closest('.subcategory-section');
+    var cat = target.closest('.category-section');
+    if (!cat && !subcat) return false;
+
+    if (subcat) {
+      setSubcategoryExpanded(subcat, true);
+      if (cat) {
+        if (cat.classList.contains('category-section--keep-subcats')) {
+          syncKeepSubcatsParent(cat);
+        } else {
+          setCategoryExpanded(cat, true, false);
+        }
+      }
+    } else if (cat) {
+      setCategoryExpanded(cat, true, true);
+    }
+
+    if (target.classList.contains('scroll-reveal') || target.classList.contains('is-revealed')) {
+      target.classList.remove('scroll-reveal', 'is-revealed');
+      target.style.removeProperty('--reveal-delay');
+    }
+
+    refreshTocPositions();
+
+    if (shouldScroll) {
+      var reduceMotion = false;
+      try {
+        reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      } catch (e) {}
+      var smooth = !instant && !reduceMotion && document.documentElement.classList.contains('smooth-scroll');
+      target.scrollIntoView({ behavior: smooth ? 'smooth' : 'auto', block: 'start' });
+    }
+    return true;
+  }
 
   function getLang() {
     return document.documentElement.getAttribute('data-lang-mode') === 'zh' ? 'zh' : 'en';
@@ -441,6 +566,15 @@ description: "人形机器人学习方向的每日论文精读笔记：强化学
         foldStateBeforeSearch.set(id, getVisibleCount(list));
         list.classList.remove('is-folded');
       });
+      sectionFoldStateBeforeSearch = cachedCategories.map(function(catCache) {
+        return {
+          cat: catCache,
+          expanded: isCategoryExpanded(catCache.el),
+          subcats: catCache.subcategories.map(function(subcatCache) {
+            return isSubcategoryExpanded(subcatCache.el);
+          })
+        };
+      });
       document.body.classList.add('index-search-active');
       return;
     }
@@ -450,6 +584,15 @@ description: "人形机器人学习方向的每日论文精读笔记：强化学
       applyVisibleCount(list, foldStateBeforeSearch.get(id), false);
     });
     foldStateBeforeSearch = null;
+    if (sectionFoldStateBeforeSearch) {
+      sectionFoldStateBeforeSearch.forEach(function(state) {
+        setCategoryExpanded(state.cat.el, state.expanded, false);
+        state.cat.subcategories.forEach(function(subcatCache, idx) {
+          setSubcategoryExpanded(subcatCache.el, state.subcats[idx]);
+        });
+      });
+      sectionFoldStateBeforeSearch = null;
+    }
     document.body.classList.remove('index-search-active');
   }
 
@@ -511,6 +654,7 @@ description: "人形机器人学习方向的每日论文精读笔记：强化学
 
         var targetSubcatDisplay = subcatHasMatch || query === '' ? '' : 'none';
         if (subcatCache.el.style.display !== targetSubcatDisplay) subcatCache.el.style.display = targetSubcatDisplay;
+        if (isSearching) setSubcategoryExpanded(subcatCache.el, subcatHasMatch);
         if (subcatCache.tocItem) {
           if (subcatCache.tocItem.style.display !== targetSubcatDisplay) subcatCache.tocItem.style.display = targetSubcatDisplay;
           var countEl = subcatCache.tocItem.querySelector('.toc-count');
@@ -542,6 +686,7 @@ description: "人形机器人学习方向的每日论文精读笔记：强化学
 
       var targetCatDisplay = catHasMatch || query === '' ? '' : 'none';
       if (catCache.el.style.display !== targetCatDisplay) catCache.el.style.display = targetCatDisplay;
+      if (isSearching) setCategoryExpanded(catCache.el, catHasMatch, false);
       if (catCache.tocItem) {
         if (catCache.tocItem.style.display !== targetCatDisplay) catCache.tocItem.style.display = targetCatDisplay;
         var countEl = catCache.tocItem.querySelector('.toc-count');
@@ -557,6 +702,8 @@ description: "人形机器人学习方向的每日论文精读笔记：强化学
       var targetNoResultsDisplay = hasAnyMatch || query === '' ? 'none' : 'block';
       if (noResults.style.display !== targetNoResultsDisplay) noResults.style.display = targetNoResultsDisplay;
     }
+
+    refreshTocPositions();
   }
 
   if (searchInput) {
@@ -572,73 +719,97 @@ description: "人形机器人学习方向的每日论文精读笔记：强化学
   }
 
   var sidebar = document.getElementById('toc-sidebar');
-  if (!sidebar) return;
-  var links = sidebar.querySelectorAll('.toc-link');
-  var targets = [];
-  links.forEach(function(a) {
-    var id = a.getAttribute('href').slice(1);
-    var el = document.getElementById(id);
-    if (el) targets.push({ link: a, el: el });
-  });
-  if (targets.length === 0) return;
-
-  var lastActive = -1;
-  // ⚡ Bolt Optimization: Cache layout positions to prevent layout thrashing on scroll
-  var cachedPositions = [];
-
-  function updatePositions() {
-    cachedPositions = targets.map(function(t) {
-      return t.el.getBoundingClientRect().top + window.scrollY;
+  if (sidebar) {
+    sidebar.addEventListener('click', function(e) {
+      if (e.defaultPrevented || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
+      var link = e.target.closest('a[href^="#"]');
+      if (!link) return;
+      var href = link.getAttribute('href');
+      revealHashTarget(href, window.location.hash === href, false);
     });
-  }
 
-  updatePositions();
-
-  if (window.ResizeObserver) {
-    var ro = new ResizeObserver(updatePositions);
-    ro.observe(document.body);
-  } else {
-    window.addEventListener('resize', function() {
-      clearTimeout(window.resizeTimeout);
-      window.resizeTimeout = setTimeout(updatePositions, 150);
+    var links = sidebar.querySelectorAll('.toc-link');
+    var targets = [];
+    links.forEach(function(a) {
+      var id = a.getAttribute('href').slice(1);
+      var el = document.getElementById(id);
+      if (el) targets.push({ link: a, el: el });
     });
-  }
 
-  function updateActive() {
-    // Probe just below the sticky header so the link reflects whatever
-    // section is currently anchored at the top of the viewport.
-    var probeY = 140;
-    var current = -1;
-    var scrollThreshold = window.scrollY + probeY;
+    if (targets.length > 0) {
+      var lastActive = -1;
+      // ⚡ Bolt Optimization: Cache layout positions to prevent layout thrashing on scroll
+      var cachedPositions = [];
 
-    for (var i = 0; i < cachedPositions.length; i++) {
-      if (cachedPositions[i] <= scrollThreshold) current = i;
-    }
-
-    // Only update DOM if the active section actually changed
-    if (current !== lastActive) {
-      // ⚡ Bolt Optimization: O(1) targeted DOM class toggling instead of O(N) loop
-      if (lastActive >= 0 && targets[lastActive]) {
-        targets[lastActive].link.classList.remove('active');
+      function updatePositions() {
+        cachedPositions = targets.map(function(t) {
+          if (!t.el.getClientRects().length) return Infinity;
+          return t.el.getBoundingClientRect().top + window.scrollY;
+        });
       }
-      if (current >= 0 && targets[current]) {
-        targets[current].link.classList.add('active');
-      }
-      lastActive = current;
-    }
-  }
 
-  var ticking = false;
-  // ⚡ Bolt Optimization: Throttle scroll event listener using requestAnimationFrame to prevent multiple calls per frame
-  window.addEventListener('scroll', function() {
-    if (!ticking) {
-      window.requestAnimationFrame(function() {
+      function updateActive() {
+        // Probe just below the sticky header so the link reflects whatever
+        // section is currently anchored at the top of the viewport.
+        var probeY = 140;
+        var current = -1;
+        var scrollThreshold = window.scrollY + probeY;
+
+        for (var i = 0; i < cachedPositions.length; i++) {
+          if (cachedPositions[i] <= scrollThreshold) current = i;
+        }
+
+        // Only update DOM if the active section actually changed
+        if (current !== lastActive) {
+          // ⚡ Bolt Optimization: O(1) targeted DOM class toggling instead of O(N) loop
+          if (lastActive >= 0 && targets[lastActive]) {
+            targets[lastActive].link.classList.remove('active');
+          }
+          if (current >= 0 && targets[current]) {
+            targets[current].link.classList.add('active');
+          }
+          lastActive = current;
+        }
+      }
+
+      refreshTocPositions = function() {
+        updatePositions();
         updateActive();
-        ticking = false;
+      };
+
+      updatePositions();
+
+      if (window.ResizeObserver) {
+        var ro = new ResizeObserver(updatePositions);
+        ro.observe(document.body);
+      } else {
+        window.addEventListener('resize', function() {
+          clearTimeout(window.resizeTimeout);
+          window.resizeTimeout = setTimeout(updatePositions, 150);
+        });
+      }
+
+      var ticking = false;
+      // ⚡ Bolt Optimization: Throttle scroll event listener using requestAnimationFrame to prevent multiple calls per frame
+      window.addEventListener('scroll', function() {
+        if (!ticking) {
+          window.requestAnimationFrame(function() {
+            updateActive();
+            ticking = false;
+          });
+          ticking = true;
+        }
       });
-      ticking = true;
+      updateActive();
     }
+  }
+
+  window.addEventListener('hashchange', function() {
+    revealHashTarget(window.location.hash, true, false);
   });
-  updateActive();
+
+  if (window.location.hash) {
+    revealHashTarget(window.location.hash, true, true);
+  }
 })();
 </script>
