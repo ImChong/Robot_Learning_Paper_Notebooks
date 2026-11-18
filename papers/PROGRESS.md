@@ -110,7 +110,7 @@
 
 | #   | 论文                                                                                                                                                               | 日期         | 🌟  | 状态   |
 | --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- | --- | ---- |
-| 1204  | [FORGE: Force-Aware Multi-Granularity Control for Efficient Humanoid Loco-Manipulation](https://arxiv.org/abs/2611.17142) | 2026.11 |  | ⏳ 待读 |
+| 1204  | [FORGE: Force-Aware Multi-Granularity Control for Efficient Humanoid Loco-Manipulation](https://arxiv.org/abs/2611.17142) ✅ [笔记](04_Loco-Manipulation_and_WBC/FORGE__Force-Aware_Multi-Granularity_Control_for_Efficient_Humanoid_Loco-Manipulation/FORGE__Force-Aware_Multi-Granularity_Control_for_Efficient_Humanoid_Loco-Manipulation.md) | 2026.11 |  | ✅ 已总结 |
 | 1205  | [BlinkMimic: Training a Humanoid Motion Tracker in Minutes on a Single GPU](https://arxiv.org/abs/2611.16422) | 2026.11 | 🌟 | ⏳ 待读 |
 | 1206  | [PERA: Plug-in Experts for Robotic Actions in Continual Whole-Body Control](https://arxiv.org/abs/2611.16188) | 2026.11 |  | ⏳ 待读 |
 | 1207  | [ILA: A Transferable Interface-Level Adapter for Compliant Humanoid Motion Tracking](https://arxiv.org/abs/2611.14985) | 2026.11 |  | ⏳ 待读 |

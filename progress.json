@@ -41,21 +41,32 @@
         "13_Physics-Based_Animation",
         "14_Human_Motion"
       ],
-      "last_module": "14_Human_Motion",
-      "last_index": 597,
-      "last_title": "ReCHOIR: Contact-guided Human Object Interaction Retargeting to Diverse Characters (arXiv:2609.10982)",
-      "next_module": "04_Loco-Manipulation_and_WBC",
-      "last_completed_date": "2026-11-17",
-      "note": "2026-11-17：14_Human_Motion #597 ReCHOIR；官方 PDF v1 23 页正文及补充材料已核验，HTML 获取失败；Mermaid 方法图与具体计算实例；未确认可审阅源码。健康度脚本未运行，不报告分数；下一模块 04_Loco-Manipulation_and_WBC；个人阅读进度不变。",
-      "last_date": "2026-11-17",
+      "last_module": "04_Loco-Manipulation_and_WBC",
+      "last_index": 1204,
+      "last_title": "FORGE: Force-Aware Multi-Granularity Control for Efficient Humanoid Loco-Manipulation (arXiv:2611.17142)",
+      "next_module": "05_Locomotion",
+      "last_completed_date": "2026-11-18",
+      "note": "2026-11-18：04_Loco-Manipulation_and_WBC #1204 FORGE；已核对 arXiv HTML v1 全文、项目页与官方仓库关键训练/评估入口，含 Mermaid 方法图和源码时序图；PDF 未另行逐页复核，源码未运行。健康度脚本未运行，不报告分数；下一模块 05_Locomotion；个人阅读进度不变。",
+      "last_date": "2026-11-18",
       "next_candidate": null,
-      "last_completed": "ReCHOIR: Contact-guided Human Object Interaction Retargeting to Diverse Characters (arXiv:2609.10982)"
+      "last_completed": "FORGE: Force-Aware Multi-Granularity Control for Efficient Humanoid Loco-Manipulation (arXiv:2611.17142)"
     },
     "last_summary_index": 532,
     "last_summary_date": "2026-09-18",
     "last_summary_title": "ReActor: Reinforcement Learning for Physics-Aware Motion Retargeting",
     "next_summary_index": null,
     "log": [
+      {
+        "date": "2026-11-18",
+        "index": 1204,
+        "title": "FORGE: Force-Aware Multi-Granularity Control for Efficient Humanoid Loco-Manipulation (arXiv:2611.17142)",
+        "folder": "papers/04_Loco-Manipulation_and_WBC/FORGE__Force-Aware_Multi-Granularity_Control_for_Efficient_Humanoid_Loco-Manipulation",
+        "module": "04_Loco-Manipulation_and_WBC",
+        "arxiv": "2611.17142",
+        "project_page": "https://bb0928.github.io/forge/",
+        "code": "https://github.com/bb0928/FORGE",
+        "source": "官方 HTML v1 正文 I–V、表 I–V 已核对；PDF 未独立逐页核对；官方源码入口已审阅未运行；健康度脚本未运行"
+      },
       {
         "date": "2026-11-17",
         "index": 597,
