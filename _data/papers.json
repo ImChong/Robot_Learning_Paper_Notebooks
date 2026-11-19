@@ -985,18 +985,15 @@
             "path": "papers/03_High_Impact_Selection/OpenVLA_An_Open-Source_Vision-Language-Action_Model/OpenVLA_An_Open-Source_Vision-Language-Action_Model.md",
             "url": "/papers/03_High_Impact_Selection/OpenVLA_An_Open-Source_Vision-Language-Action_Model/OpenVLA_An_Open-Source_Vision-Language-Action_Model.html",
             "dir": "OpenVLA_An_Open-Source_Vision-Language-Action_Model",
-            "arxiv": "2406.09246",
-            "health_score": 1,
-            "health_gaps": [
-              "skeleton",
-              "verification",
-              "animation",
-              "video",
-              "example"
-            ],
-            "health_label_zh": "笔记健康度 1/6，缺：阅读骨架、原文核验、动画讲解、讲解视频、具体实例（占位稿，封顶 2/6）",
-            "health_label_en": "Note health 1/6; missing: reading skeleton, full-text check, explainer animation, explainer video, worked example (stub, capped at 2/6)",
-            "health_status": "stub",
+            "arxiv": "2406.09246v3",
+            "has_open_source": true,
+            "summary_zh": "OpenVLA 以 7B 级开源视觉-语言模型 Prismatic-7B（DINOv2 + SigLIP 双视觉骨干拼成每格 2176 维特征、经 MLP 投到 Llama 2 7B 的 4096 维词空间）为底座，在 Open X-Em…",
+            "explainer_scenes": 17,
+            "video_seconds": 1213,
+            "health_score": 6,
+            "health_gaps": [],
+            "health_label_zh": "笔记健康度 6/6，六项齐全",
+            "health_label_en": "Note health 6/6; all six items present",
             "published_date_zh": "2024年6月13日（arXiv）",
             "published_date_en": "Jun 13, 2024 (arXiv)",
             "zhname": "OpenVLA：开源的视觉-语言-动作模型",
@@ -6155,25 +6152,6 @@
         "zh_title": "PRIMO：基于人体动作跟踪数据与结构先验的人形机器人本体里程计"
       },
       {
-        "title": "FOCUS: Foot Observation Confidence for Robust Humanoid Proprioceptive Odometry",
-        "path": "papers/09_State_Estimation/FOCUS__Foot_Observation_Confidence_for_Robust_Humanoid_Proprioceptive_Odometry/FOCUS__Foot_Observation_Confidence_for_Robust_Humanoid_Proprioceptive_Odometry.md",
-        "url": "/papers/09_State_Estimation/FOCUS__Foot_Observation_Confidence_for_Robust_Humanoid_Proprioceptive_Odometry/FOCUS__Foot_Observation_Confidence_for_Robust_Humanoid_Proprioceptive_Odometry.html",
-        "dir": "FOCUS__Foot_Observation_Confidence_for_Robust_Humanoid_Proprioceptive_Odometry",
-        "arxiv": "2609.02222",
-        "summary_zh": "通过学习双足正运动学观测的连续置信度，自适应融合 IMU 与足部速度约束，改善人形机器人本体里程计的鲁棒性。",
-        "health_score": 4,
-        "health_gaps": [
-          "animation",
-          "video"
-        ],
-        "health_label_zh": "笔记健康度 4/6，缺：动画讲解、讲解视频",
-        "health_label_en": "Note health 4/6; missing: explainer animation, explainer video",
-        "published_date_zh": "2026年9月2日（arXiv v1）",
-        "published_date_en": "Sep 2, 2026 (arXiv v1)",
-        "zhname": "FOCUS：面向鲁棒人形本体里程计的足部观测置信度",
-        "zh_title": "FOCUS：面向鲁棒人形本体里程计的足部观测置信度"
-      },
-      {
         "title": "A Multimodal Label Forecasting Method for Aperiodic Visuo-Motor Time Series",
         "path": "papers/09_State_Estimation/A_Multimodal_Label_Forecasting_Method_for_Aperiodic_Visuo-Motor_Time_Series/A_Multimodal_Label_Forecasting_Method_for_Aperiodic_Visuo-Motor_Time_Series.md",
         "url": "/papers/09_State_Estimation/A_Multimodal_Label_Forecasting_Method_for_Aperiodic_Visuo-Motor_Time_Series/A_Multimodal_Label_Forecasting_Method_for_Aperiodic_Visuo-Motor_Time_Series.html",
@@ -6192,6 +6170,25 @@
         "published_date_en": "Sep 7, 2026 (arXiv v1)",
         "zhname": "EMP：面向非周期视觉—运动时间序列的多模态标签预测方法",
         "zh_title": "EMP：面向非周期视觉—运动时间序列的多模态标签预测方法"
+      },
+      {
+        "title": "FOCUS: Foot Observation Confidence for Robust Humanoid Proprioceptive Odometry",
+        "path": "papers/09_State_Estimation/FOCUS__Foot_Observation_Confidence_for_Robust_Humanoid_Proprioceptive_Odometry/FOCUS__Foot_Observation_Confidence_for_Robust_Humanoid_Proprioceptive_Odometry.md",
+        "url": "/papers/09_State_Estimation/FOCUS__Foot_Observation_Confidence_for_Robust_Humanoid_Proprioceptive_Odometry/FOCUS__Foot_Observation_Confidence_for_Robust_Humanoid_Proprioceptive_Odometry.html",
+        "dir": "FOCUS__Foot_Observation_Confidence_for_Robust_Humanoid_Proprioceptive_Odometry",
+        "arxiv": "2609.02222v1",
+        "summary_zh": "FOCUS 不直接用网络预测机器人位姿，而是学习每只脚的 FK 速度约束在当前运动状态下有多可信，再以连续权重调整 EKF 的速度观测和不确定性。",
+        "health_score": 4,
+        "health_gaps": [
+          "animation",
+          "video"
+        ],
+        "health_label_zh": "笔记健康度 4/6，缺：动画讲解、讲解视频",
+        "health_label_en": "Note health 4/6; missing: explainer animation, explainer video",
+        "published_date_zh": "2026年9月2日（arXiv v1）",
+        "published_date_en": "Sep 2, 2026 (arXiv v1)",
+        "zhname": "FOCUS：面向鲁棒人形本体里程计的足部观测置信度",
+        "zh_title": "FOCUS：面向鲁棒人形本体里程计的足部观测置信度"
       },
       {
         "title": "KILVO: Kinematic-Inertial-LiDAR-Visual Odometry with Robust Multimodal Adaptation for Humanoid Robots",
@@ -6590,7 +6587,7 @@
         "url": "/papers/10_Sim-to-Real/Bundled_Contact_Gradients__Stabilizing_Differentiable_Simulation_for_Deployable_Dynamic_Tasks/Bundled_Contact_Gradients__Stabilizing_Differentiable_Simulation_for_Deployable_Dynamic_Tasks.html",
         "dir": "Bundled_Contact_Gradients__Stabilizing_Differentiable_Simulation_for_Deployable_Dynamic_Tasks",
         "arxiv": "2609.30951",
-        "summary_zh": "在高刚度接触处并行扰动多条可微仿真轨迹，平均状态与梯度，以稳定一阶运动模仿策略训练并实现 G1 零样本迁移。",
+        "summary_zh": "BCG 不通过降低接触刚度来换取平滑梯度，而是在触发高接触力时对接触链局部位置和速度做随机扰动，用短时并行分支的平均敏感度稳定 SHAC 的一阶策略更新。",
         "health_score": 4,
         "health_gaps": [
           "animation",
