@@ -41,21 +41,32 @@
         "13_Physics-Based_Animation",
         "14_Human_Motion"
       ],
-      "last_module": "04_Loco-Manipulation_and_WBC",
-      "last_index": 1204,
-      "last_title": "FORGE: Force-Aware Multi-Granularity Control for Efficient Humanoid Loco-Manipulation (arXiv:2611.17142)",
-      "next_module": "05_Locomotion",
-      "last_completed_date": "2026-11-18",
-      "note": "2026-11-18：04_Loco-Manipulation_and_WBC #1204 FORGE；已核对 arXiv HTML v1 全文、项目页与官方仓库关键训练/评估入口，含 Mermaid 方法图和源码时序图；PDF 未另行逐页复核，源码未运行。健康度脚本未运行，不报告分数；下一模块 05_Locomotion；个人阅读进度不变。",
-      "last_date": "2026-11-18",
+      "last_module": "05_Locomotion",
+      "last_index": 1224,
+      "last_title": "MotionSkill: From Bipedal Motion Video to Control across Embodiments (arXiv:2611.16346)",
+      "next_module": "06_Manipulation",
+      "last_completed_date": "2026-11-19",
+      "note": "2026-11-19：05_Locomotion #1224 MotionSkill；已通读 arXiv HTML v1 全文并核对 8 页 PDF 链接，含 Mermaid 方法流程图与计算实例；未确认官方源码。健康度脚本未运行，不报告分数；下一模块 06_Manipulation；个人阅读进度不变。",
+      "last_date": "2026-11-19",
       "next_candidate": null,
-      "last_completed": "FORGE: Force-Aware Multi-Granularity Control for Efficient Humanoid Loco-Manipulation (arXiv:2611.17142)"
+      "last_completed": "MotionSkill: From Bipedal Motion Video to Control across Embodiments (arXiv:2611.16346)"
     },
     "last_summary_index": 532,
     "last_summary_date": "2026-09-18",
     "last_summary_title": "ReActor: Reinforcement Learning for Physics-Aware Motion Retargeting",
     "next_summary_index": null,
     "log": [
+      {
+        "date": "2026-11-19",
+        "index": 1224,
+        "title": "MotionSkill: From Bipedal Motion Video to Control across Embodiments (arXiv:2611.16346)",
+        "folder": "papers/05_Locomotion/MotionSkill__From_Bipedal_Motion_Video_to_Control_across_Embodiments",
+        "module": "05_Locomotion",
+        "arxiv": "2611.16346",
+        "project_page": "未确认",
+        "code": "未确认官方公开源码",
+        "source": "已通读官方 arXiv HTML v1 I–V 节及图表；PDF 可访问但未另行逐页复核；原文核验 done；健康度脚本未运行，不估分。"
+      },
       {
         "date": "2026-11-18",
         "index": 1204,

@@ -614,7 +614,7 @@
 
 | #   | 论文                                                                                                                                                              | 日期      | 🌟  | 状态   |
 | --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- | --- | ---- |
-| 1224  | [MotionSkill: From Bipedal Motion Video to Control across Embodiments](https://arxiv.org/abs/2611.16346) | 2026.11 |  | ⏳ 待读 |
+| 1224  | [MotionSkill: From Bipedal Motion Video to Control across Embodiments](https://arxiv.org/abs/2611.16346) ✅ [笔记](05_Locomotion/MotionSkill__From_Bipedal_Motion_Video_to_Control_across_Embodiments/MotionSkill__From_Bipedal_Motion_Video_to_Control_across_Embodiments.md) | 2026.11 |  | ✅ 已总结 |
 | 1225  | [ReACT: Reflection-Consistent Modulation and Cross-Load Consistency for Humanoid Velocity Tracking Under Asymmetric Loads](https://arxiv.org/abs/2611.13929) | 2026.11 |  | ⏳ 待读 |
 | 1226  | [STRIDE: Learning Humanoid Locomotion in Minutes with Acceleration-Based Rewards](https://arxiv.org/abs/2611.08857) | 2026.11 |  | ⏳ 待读 |
 | 1198  | [STEP: Spatiotemporal Training with Explicit Prediction for Perceptive Humanoid Locomotion](https://arxiv.org/abs/2611.08097) ✅ [笔记](05_Locomotion/STEP__Spatiotemporal_Training_with_Explicit_Prediction_for_Perceptive_Humanoid_Locomotion/STEP__Spatiotemporal_Training_with_Explicit_Prediction_for_Perceptive_Humanoid_Locomotion.md) | 2026.11 |  | ✅ 已总结 |
