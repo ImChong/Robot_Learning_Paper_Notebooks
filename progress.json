@@ -41,21 +41,32 @@
         "13_Physics-Based_Animation",
         "14_Human_Motion"
       ],
-      "last_module": "05_Locomotion",
-      "last_index": 1224,
-      "last_title": "MotionSkill: From Bipedal Motion Video to Control across Embodiments (arXiv:2611.16346)",
-      "next_module": "06_Manipulation",
-      "last_completed_date": "2026-11-19",
-      "note": "2026-11-19：05_Locomotion #1224 MotionSkill；已通读 arXiv HTML v1 全文并核对 8 页 PDF 链接，含 Mermaid 方法流程图与计算实例；未确认官方源码。健康度脚本未运行，不报告分数；下一模块 06_Manipulation；个人阅读进度不变。",
-      "last_date": "2026-11-19",
+      "last_module": "06_Manipulation",
+      "last_index": 1227,
+      "last_title": "Bridging Task Planning and Execution for Language-Conditioned Bimanual Manipulation (arXiv:2611.12409)",
+      "next_module": "07_Teleoperation",
+      "last_completed_date": "2026-11-20",
+      "note": "2026-11-20：06_Manipulation #1227 Bridging Task Planning and Execution；官方 arXiv PDF v1 全 8 页已通读，含 Mermaid 方法图与计算实例；官方 HTML 读取失败、源码未确认；健康度脚本未运行，不估分；下一模块 07_Teleoperation。个人阅读进度不变。",
+      "last_date": "2026-11-20",
       "next_candidate": null,
-      "last_completed": "MotionSkill: From Bipedal Motion Video to Control across Embodiments (arXiv:2611.16346)"
+      "last_completed": "Bridging Task Planning and Execution for Language-Conditioned Bimanual Manipulation (arXiv:2611.12409)"
     },
     "last_summary_index": 532,
     "last_summary_date": "2026-09-18",
     "last_summary_title": "ReActor: Reinforcement Learning for Physics-Aware Motion Retargeting",
     "next_summary_index": null,
     "log": [
+      {
+        "date": "2026-11-20",
+        "index": 1227,
+        "title": "Bridging Task Planning and Execution for Language-Conditioned Bimanual Manipulation (arXiv:2611.12409)",
+        "folder": "papers/06_Manipulation/Bridging_Task_Planning_and_Execution_for_Language-Conditioned_Bimanual_Manipulation",
+        "module": "06_Manipulation",
+        "arxiv": "2611.12409",
+        "project_page": "https://advrhumanoids.github.io/bridging-planning-execution/",
+        "code": "未确认官方公开实现",
+        "source": "官方 arXiv PDF v1 8 页已通读；HTML 未能读取；原文核验 done；健康度未验证（脚本未运行）。"
+      },
       {
         "date": "2026-11-19",
         "index": 1224,
