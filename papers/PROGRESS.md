@@ -841,7 +841,7 @@
 
 | #   | 论文                                                                                                                                                        | 日期      | 🌟  | 状态   |
 | --- | --------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- | --- | ---- |
-| 1227  | [Bridging Task Planning and Execution for Language-Conditioned Bimanual Manipulation](https://arxiv.org/abs/2611.12409) | 2026.11 |  | ⏳ 待读 |
+| 1227  | [Bridging Task Planning and Execution for Language-Conditioned Bimanual Manipulation](https://arxiv.org/abs/2611.12409) ✅ [笔记](06_Manipulation/Bridging_Task_Planning_and_Execution_for_Language-Conditioned_Bimanual_Manipulation/Bridging_Task_Planning_and_Execution_for_Language-Conditioned_Bimanual_Manipulation.md) | 2026.11 |  | ✅ 已总结 |
 | 1228  | [Thermo-VLA: A Thermal-Aware Vision-Language-Action Model with Gated Residual Modulation for Robotic Manipulation](https://arxiv.org/abs/2611.11981) | 2026.11 |  | ⏳ 待读 |
 | 1229  | [Decoupled Asynchronous System for Humanoids (DASH): Latency-Agnostic Scaling of Vision-Language-Action Models for Humanoid Manipulation](https://arxiv.org/abs/2611.11854) | 2026.11 |  | ⏳ 待读 |
 | 1196  | [AffectiveVLA: Safe and Intent-Aware VLA Control for Human-Humanoid Social Interaction](https://arxiv.org/abs/2611.07712) ✅ [笔记](06_Manipulation/AffectiveVLA__Safe_and_Intent-Aware_VLA_Control_for_Human-Humanoid_Social_Interaction/AffectiveVLA__Safe_and_Intent-Aware_VLA_Control_for_Human-Humanoid_Social_Interaction.md) | 2026.11 |  | ✅ 已总结 |
