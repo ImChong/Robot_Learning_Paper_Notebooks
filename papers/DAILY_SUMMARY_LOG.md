@@ -13,6 +13,7 @@
 
 | 日期 | 论文索引 | 笔记 | 分类 | 源码 |
 |------|:---:|------|------|------|
+| 2026-11-20 | 1227 | [Bridging Task Planning and Execution for Language-Conditioned Bimanual Manipulation](06_Manipulation/Bridging_Task_Planning_and_Execution_for_Language-Conditioned_Bimanual_Manipulation/Bridging_Task_Planning_and_Execution_for_Language-Conditioned_Bimanual_Manipulation.md)（官方 PDF v1 全文已核验） | Manipulation | 官方源码未确认；无源码时序图；健康度未验证（脚本未运行） |
 | 2026-11-19 | 1224 | [MotionSkill: From Bipedal Motion Video to Control across Embodiments](05_Locomotion/MotionSkill__From_Bipedal_Motion_Video_to_Control_across_Embodiments/MotionSkill__From_Bipedal_Motion_Video_to_Control_across_Embodiments.md)（官方 HTML v1 已通读） | Locomotion | 未确认官方源码，无源码时序图；健康度未验证（脚本未运行） |
 | 2026-11-18 | 1204 | [FORGE: Force-Aware Multi-Granularity Control for Efficient Humanoid Loco-Manipulation](04_Loco-Manipulation_and_WBC/FORGE__Force-Aware_Multi-Granularity_Control_for_Efficient_Humanoid_Loco-Manipulation/FORGE__Force-Aware_Multi-Granularity_Control_for_Efficient_Humanoid_Loco-Manipulation.md)（HTML v1 全文已核验） | Loco-Manipulation / WBC | [bb0928/FORGE](https://github.com/bb0928/FORGE)；方法图 + 已读代码入口时序图；健康度未验证（脚本未运行） |
 | 2026-11-17 | 597 | [ReCHOIR: Contact-guided Human Object Interaction Retargeting to Diverse Characters](14_Human_Motion/ReCHOIR__Contact-guided_Human_Object_Interaction_Retargeting_to_Diverse_Characters/ReCHOIR__Contact-guided_Human_Object_Interaction_Retargeting_to_Diverse_Characters.md)（官方 PDF v1 全文及补充材料已核验） | Human Motion | 未确认官方公开源码；无源码时序图；健康度未验证（脚本未运行） |
