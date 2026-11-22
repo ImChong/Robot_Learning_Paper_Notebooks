@@ -81,18 +81,34 @@
   window.patchMermaidForeignObjects = function (root) {
     if (!isIos() && !isMobileViewport()) return;
     var scope = root && root.querySelectorAll ? root : document;
-    scope.querySelectorAll('.mermaid svg foreignObject').forEach(function (fo) {
+    var selector =
+      root && root.classList && root.classList.contains('mermaid')
+        ? 'svg foreignObject'
+        : '.mermaid svg foreignObject';
+    var fos = scope.querySelectorAll(selector);
+    if (!fos.length) return;
+    // Batch DOM writes -> reads -> writes to avoid per-node forced synchronous layout.
+    var items = [];
+    for (var i = 0; i < fos.length; i++) {
+      var fo = fos[i];
       var inner = fo.querySelector('.nodeLabel > div, .edgeLabel > div, .labelBkg');
-      if (!inner) return;
+      if (!inner) continue;
       inner.style.setProperty('display', 'block', 'important');
       inner.style.setProperty('white-space', 'normal', 'important');
       inner.style.setProperty('max-width', 'min(280px, calc(100vw - 3rem))', 'important');
       inner.style.setProperty('box-sizing', 'border-box', 'important');
-      var w = inner.scrollWidth;
-      var h = inner.scrollHeight;
-      if (w > 0) fo.setAttribute('width', String(Math.ceil(w)));
-      if (h > 0) fo.setAttribute('height', String(Math.ceil(h)));
-    });
+      items.push({ fo: fo, inner: inner, w: 0, h: 0 });
+    }
+    if (!items.length) return;
+    for (var j = 0; j < items.length; j++) {
+      items[j].w = items[j].inner.scrollWidth;
+      items[j].h = items[j].inner.scrollHeight;
+    }
+    for (var k = 0; k < items.length; k++) {
+      var item = items[k];
+      if (item.w > 0) item.fo.setAttribute('width', String(Math.ceil(item.w)));
+      if (item.h > 0) item.fo.setAttribute('height', String(Math.ceil(item.h)));
+    }
   };
 
   function scaledFlowchart(scale) {

@@ -154,6 +154,8 @@
 
   var pendingTex = [];
   var texWatch = null;
+  var texHtmlCache = Object.create(null);
+  var texHtmlCacheSize = 0;
 
   function queueTex(job) {
     pendingTex.push(job);
@@ -178,16 +180,39 @@
   function renderTex(target, tex, opts) {
     var o = opts || {};
     if (katexReady()) {
+      var str = String(tex);
+      var display = !!o.display;
+      var output = o.output || 'htmlAndMathml';
+      var cacheKey = (display ? '1' : '0') + '|' + output + '|' + str;
+      var cached = texHtmlCache[cacheKey];
+      if (cached !== undefined) {
+        target.innerHTML = cached;
+        return true;
+      }
       try {
-        window.katex.render(String(tex), target, {
-          displayMode: !!o.display,
-          output: o.output || 'htmlAndMathml',
-          /* Throw rather than paint KaTeX's red raw-TeX error on the page:
-             a typo in a formula then reads as plain text instead of shouting
-             at the reader. (`%`, `#`, `&` must be escaped inside \text{}.) */
-          throwOnError: true,
-          strict: false
-        });
+        if (typeof window.katex.renderToString === 'function') {
+          var html = window.katex.renderToString(str, {
+            displayMode: display,
+            output: output,
+            throwOnError: true,
+            strict: false
+          });
+          if (texHtmlCacheSize < 600) {
+            texHtmlCache[cacheKey] = html;
+            texHtmlCacheSize++;
+          }
+          target.innerHTML = html;
+        } else {
+          window.katex.render(str, target, {
+            displayMode: display,
+            output: output,
+            /* Throw rather than paint KaTeX's red raw-TeX error on the page:
+               a typo in a formula then reads as plain text instead of shouting
+               at the reader. (`%`, `#`, `&` must be escaped inside \text{}.) */
+            throwOnError: true,
+            strict: false
+          });
+        }
         return true;
       } catch (e) {
         /* A malformed formula must not take the whole demo down with it. */
@@ -245,6 +270,91 @@
     }
     if (at < s.length) target.appendChild(document.createTextNode(s.slice(at)));
     return parent;
+  }
+
+  /* Update an existing rich() container in place when only numeric values in
+     plain prose change, preserving KaTeX DOM trees across rapid slider drags. */
+  function extractRichTemplate(str) {
+    var s = String(str);
+    var tokenRe = /\*\*|`[^`]+`|\$[^$]+\$/g;
+    var numRe = /([\u2212-]?\d+(?:\.\d+)?)/g;
+    var parts = [];
+    var vals = [];
+    var skel = '';
+    var at = 0, m;
+    function pushProse(chunk) {
+      if (!chunk) return;
+      numRe.lastIndex = 0;
+      var nat = 0, nm;
+      while ((nm = numRe.exec(chunk)) !== null) {
+        if (nm.index > nat) {
+          var lit = chunk.slice(nat, nm.index);
+          parts.push({ t: 'txt', v: lit });
+          skel += lit;
+        }
+        parts.push({ t: 'slot', i: vals.length });
+        vals.push(nm[1]);
+        skel += '\u0000';
+        nat = nm.index + nm[0].length;
+      }
+      if (nat < chunk.length) {
+        var tail = chunk.slice(nat);
+        parts.push({ t: 'txt', v: tail });
+        skel += tail;
+      }
+    }
+    while ((m = tokenRe.exec(s)) !== null) {
+      if (m.index > at) pushProse(s.slice(at, m.index));
+      at = m.index + m[0].length;
+      skel += '\u0001' + m[0];
+      if (m[0] === '**') {
+        parts.push({ t: 'b' });
+      } else if (m[0].charAt(0) === '`') {
+        parts.push({ t: 'code', v: m[0].slice(1, -1) });
+      } else {
+        parts.push({ t: 'tex', v: m[0].slice(1, -1) });
+      }
+    }
+    if (at < s.length) pushProse(s.slice(at));
+    return { parts: parts, vals: vals, skel: skel };
+  }
+
+  function setRichSlotted(box, str, opts) {
+    var parsed = extractRichTemplate(str);
+    if (box._richSkel === parsed.skel && box._richSlots && parsed.vals.length === box._richSlots.length) {
+      for (var k = 0; k < parsed.vals.length; k++) {
+        if (box._richSlots[k].nodeValue !== parsed.vals[k]) {
+          box._richSlots[k].nodeValue = parsed.vals[k];
+        }
+      }
+      return;
+    }
+    box.textContent = '';
+    var target = box;
+    var slots = [];
+    for (var i = 0; i < parsed.parts.length; i++) {
+      var p = parsed.parts[i];
+      if (p.t === 'txt') {
+        target.appendChild(document.createTextNode(p.v));
+      } else if (p.t === 'slot') {
+        var tn = document.createTextNode(parsed.vals[p.i]);
+        slots.push(tn);
+        target.appendChild(tn);
+      } else if (p.t === 'b') {
+        if (target === box) {
+          target = el('b');
+          box.appendChild(target);
+        } else {
+          target = box;
+        }
+      } else if (p.t === 'code') {
+        target.appendChild(el('code', 'demo-code', p.v));
+      } else {
+        target.appendChild(tex(p.v, opts));
+      }
+    }
+    box._richSkel = parsed.skel;
+    box._richSlots = slots;
   }
 
   /* What a screen reader (an aria-label) should hear for a rich() string:
@@ -383,12 +493,23 @@
         var v = el('span', 'demo-stat-v', '—');
         box.appendChild(v);
         row.appendChild(box);
+        var lastText = null;
+        var lastTone = null;
         return {
           set: function (text, tone) {
-            v.textContent = '';
-            if (needsRichMarkup(text)) rich(v, text);
-            else v.textContent = text;
-            v.className = 'demo-stat-v' + (tone ? ' is-' + tone : '');
+            text = String(text);
+            var nextTone = tone || '';
+            if (text === lastText && nextTone === lastTone) return;
+            if (text !== lastText) {
+              lastText = text;
+              v.textContent = '';
+              if (needsRichMarkup(text)) rich(v, text);
+              else v.textContent = text;
+            }
+            if (nextTone !== lastTone) {
+              lastTone = nextTone;
+              v.className = 'demo-stat-v' + (nextTone ? ' is-' + nextTone : '');
+            }
           }
         };
       }
@@ -399,16 +520,29 @@
   function verdictBox(parent) {
     var box = el('div', 'demo-verdict');
     parent.appendChild(box);
+    var lastHtml = null;
+    var lastTone = null;
     return {
       set: function (html, tone) {
-        box.textContent = '';
-        if (html instanceof Node) {
-          box.appendChild(html);
-        } else {
-          // same tiny markup as note(): **bold** and $LaTeX$
-          rich(box, html);
+        var nextTone = tone || '';
+        var isNode = html instanceof Node;
+        if (!isNode && html === lastHtml && nextTone === lastTone) return;
+        if (isNode || html !== lastHtml) {
+          lastHtml = isNode ? null : html;
+          if (isNode) {
+            box._richSkel = null;
+            box._richSlots = null;
+            box.textContent = '';
+            box.appendChild(html);
+          } else {
+            // same tiny markup as note(): **bold** and $LaTeX$, keeping KaTeX nodes alive across numeric updates
+            setRichSlotted(box, html);
+          }
         }
-        box.className = 'demo-verdict' + (tone ? ' is-' + tone : '');
+        if (nextTone !== lastTone) {
+          lastTone = nextTone;
+          box.className = 'demo-verdict' + (nextTone ? ' is-' + nextTone : '');
+        }
       }
     };
   }
@@ -439,13 +573,19 @@
   }
 
   // ─── canvas kit ──────────────────────────────────────────────────────────
+  var cachedPalette = null;
+  var cachedPaletteTheme = null;
+
   function palette() {
+    var theme = document.documentElement.getAttribute('data-theme') || 'dark';
+    if (cachedPalette && cachedPaletteTheme === theme) return cachedPalette;
     var cs = getComputedStyle(document.documentElement);
     function v(name, fallback) {
       var got = cs.getPropertyValue(name);
       return (got && got.trim()) || fallback;
     }
-    return {
+    cachedPaletteTheme = theme;
+    cachedPalette = {
       text: v('--text', '#d4d4d4'),
       muted: v('--demo-muted', '#8a8a8a'),
       grid: v('--demo-grid', '#37373a'),
@@ -461,6 +601,7 @@
       axisY: v('--demo-axis-y', '#3fcf5e'),
       axisZ: v('--demo-axis-z', '#4a8dff')
     };
+    return cachedPalette;
   }
 
   function stage(parent, height) {
@@ -479,17 +620,28 @@
   }
 
   /* Prepare a HiDPI canvas and return a drawing context in CSS pixels. */
+  var widthEpoch = 1;
+
   function begin(st) {
     var canvas = st.canvas;
-    var cssW = Math.max(240, canvas.parentElement.clientWidth || 300);
+    if (!st._cssW || st._widthEpoch !== widthEpoch) {
+      var measured = canvas.parentElement ? canvas.parentElement.clientWidth : 0;
+      if (measured > 0) st._cssW = Math.max(240, measured);
+      st._widthEpoch = widthEpoch;
+    }
+    var cssW = st._cssW || 300;
     var cssH = st.height;
-    var dpr = window.devicePixelRatio || 1;
-    canvas.style.height = cssH + 'px';
-    canvas.width = Math.round(cssW * dpr);
-    canvas.height = Math.round(cssH * dpr);
-    var ctx = canvas.getContext('2d');
+    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+    var targetW = Math.round(cssW * dpr);
+    var targetH = Math.round(cssH * dpr);
+    if (st._cssH !== cssH) {
+      st._cssH = cssH;
+      canvas.style.height = cssH + 'px';
+    }
+    if (canvas.width !== targetW) canvas.width = targetW;
+    if (canvas.height !== targetH) canvas.height = targetH;
+    var ctx = st._ctx || (st._ctx = canvas.getContext('2d', { alpha: false }) || canvas.getContext('2d'));
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.clearRect(0, 0, cssW, cssH);
     var P = palette();
     ctx.fillStyle = P.surface2;
     ctx.fillRect(0, 0, cssW, cssH);
@@ -600,16 +752,36 @@
 
   // ─── re-render plumbing (theme switch + container resize) ────────────────
   var renderers = [];
+  var currentMountHost = null;
+
+  function isHostInClosedDetails(host) {
+    if (!host || !host.closest) return false;
+    var d = host.closest('details');
+    while (d) {
+      if (!d.open) return true;
+      d = d.parentElement ? d.parentElement.closest('details') : null;
+    }
+    return false;
+  }
 
   function registerRenderer(fn) {
-    renderers.push(fn);
+    renderers.push({ fn: fn, host: currentMountHost, lastW: null });
     return fn;
   }
 
-  function renderAll() {
+  function renderAll(scope, widthChangedOnly) {
+    if (scope || widthChangedOnly) widthEpoch++;
     for (var i = 0; i < renderers.length; i++) {
+      var entry = renderers[i];
+      if (scope && entry.host && !scope.contains(entry.host)) continue;
+      if (isHostInClosedDetails(entry.host)) continue;
+      if (widthChangedOnly && entry.host) {
+        var w = entry.host.clientWidth;
+        if (entry.lastW !== null && w === entry.lastW) continue;
+        entry.lastW = w;
+      }
       try {
-        renderers[i]();
+        entry.fn();
       } catch (e) {
         /* one broken demo must not take down the rest of the page */
       }
@@ -619,13 +791,16 @@
   var resizeTimer = null;
   window.addEventListener('resize', function () {
     clearTimeout(resizeTimer);
-    resizeTimer = setTimeout(renderAll, 120);
+    // Vertical address-bar show/hide on mobile fires resize without changing width; skip unchanged hosts.
+    resizeTimer = setTimeout(function () { renderAll(null, true); }, 120);
   });
 
   if (window.MutationObserver) {
     new MutationObserver(function (records) {
       for (var i = 0; i < records.length; i++) {
         if (records[i].attributeName === 'data-theme') {
+          cachedPalette = null;
+          cachedPaletteTheme = null;
           renderAll();
           return;
         }
@@ -895,7 +1070,18 @@
     if (clipTimer) return;
     clipTimer = window.setInterval(function () {
       var now = Date.now();
-      clips.forEach(function (c) { if (!c.v.paused && now - c.last > 400) c.v.pause(); });
+      var anyPlaying = false;
+      for (var i = 0; i < clips.length; i++) {
+        var c = clips[i];
+        if (!c.v.paused) {
+          if (now - c.last > 400) c.v.pause();
+          else anyPlaying = true;
+        }
+      }
+      if (!anyPlaying) {
+        window.clearInterval(clipTimer);
+        clipTimer = 0;
+      }
     }, 300);
   }
   function svgClip(x, y, w, h, src, opts) {
@@ -1232,18 +1418,39 @@
     frame.appendChild(cueBox);
     root.appendChild(frame);
 
+    var offline = !!window.__clipRender;
     var scenes = specs.map(function (spec) {
-      var built = spec.build();
+      return { spec: spec, built: false, wrap: null, draw: null };
+    });
+    var prefixDur = [];
+    var accDur = 0;
+    for (var pi = 0; pi < specs.length; pi++) {
+      prefixDur.push(accDur);
+      accDur += specs[pi].dur;
+    }
+
+    function ensureScene(i) {
+      var sc = scenes[i];
+      if (!sc || sc.built) return sc;
+      sc.built = true;
+      var built = sc.spec.build();
       var wrap = el('div', 'demo-x-scene');
       wrap.appendChild(built.el);
-      wrap.hidden = true;
+      wrap.hidden = i !== idx;
       stageEl.appendChild(wrap);
-      return { spec: spec, wrap: wrap, draw: built.draw };
-    });
+      sc.wrap = wrap;
+      sc.draw = built.draw;
+      return sc;
+    }
+
+    if (offline) {
+      for (var bi = 0; bi < scenes.length; bi++) ensureScene(bi);
+    }
 
     var chips = specs.map(function (spec, i) {
       var b = el('button', 'demo-x-chip');
       b.type = 'button';
+      b.setAttribute('aria-current', 'false');
       b.appendChild(el('span', 'demo-x-chip-n', sceneNo(i)));
       rich(b, spec.title);
       b.addEventListener('click', function () { go(i, true); });
@@ -1265,45 +1472,87 @@
 
     if (opts.notes) note(root, opts.notes);
 
-    var idx = 0, time = 0, playing = false, last = 0, started = false, autoPaused = false, raf = null;
+    var idx = 0, prevIdx = -1, time = 0, playing = false, last = 0, started = false, autoPaused = false, raf = null;
+    var totalClockStr = clockText(total);
+    var lastRatioKey = -1, lastClockSec = -1, lastPlayingLabel = null;
+    var cueNodes = [], cueAt = [], cueStates = [];
 
     function buildCues() {
       cueBox.textContent = '';
+      cueNodes = [];
+      cueAt = [];
+      cueStates = [];
       scenes[idx].spec.cues.forEach(function (cue) {
         var p = rich(el('p', 'demo-x-cue'), cue.s);
         p.setAttribute('data-at', cue.at);
         cueBox.appendChild(p);
+        cueNodes.push(p);
+        cueAt.push(parseFloat(cue.at));
+        cueStates.push(false);
       });
     }
 
     function paintFrame() {
-      var sc = scenes[idx];
-      sc.draw(Math.min(time, sc.spec.dur));
-      fill.style.width = (Math.min(time / sc.spec.dur, 1) * 100).toFixed(1) + '%';
-      var before = 0;
-      for (var k = 0; k < idx; k++) before += scenes[k].spec.dur;
-      clockEl.textContent = clockText(before + Math.min(time, sc.spec.dur)) + ' / ' + clockText(total);
-      var cues = cueBox.children;
-      for (k = 0; k < cues.length; k++) {
-        cues[k].classList.toggle('is-on', time >= parseFloat(cues[k].getAttribute('data-at')));
+      var sc = ensureScene(idx);
+      var clampedTime = Math.min(time, sc.spec.dur);
+      sc.draw(clampedTime);
+      var ratio = sc.spec.dur > 0 ? Math.min(time / sc.spec.dur, 1) : 1;
+      var ratioKey = Math.round(ratio * 500);
+      if (ratioKey !== lastRatioKey) {
+        lastRatioKey = ratioKey;
+        fill.style.transform = 'scaleX(' + (ratioKey / 500) + ')';
       }
-      playBtn.textContent = playing ? '暂停' : '播放';
+      var curSec = Math.floor(prefixDur[idx] + clampedTime);
+      if (curSec !== lastClockSec) {
+        lastClockSec = curSec;
+        clockEl.textContent = clockText(curSec) + ' / ' + totalClockStr;
+      }
+      for (var k = 0; k < cueNodes.length; k++) {
+        var on = time >= cueAt[k];
+        if (on !== cueStates[k]) {
+          cueStates[k] = on;
+          cueNodes[k].classList.toggle('is-on', on);
+        }
+      }
+      if (playing !== lastPlayingLabel) {
+        lastPlayingLabel = playing;
+        playBtn.textContent = playing ? '暂停' : '播放';
+      }
+    }
+
+    function warmNextScene(nextIdx) {
+      if (offline || nextIdx >= scenes.length || scenes[nextIdx].built) return;
+      var run = function () {
+        if (!scenes[nextIdx].built) ensureScene(nextIdx);
+      };
+      if (typeof window.requestIdleCallback === 'function') {
+        window.requestIdleCallback(run, { timeout: 600 });
+      } else {
+        window.setTimeout(run, 120);
+      }
     }
 
     function go(next, fromUser) {
       idx = clamp(next, 0, scenes.length - 1);
       time = reduceMotion ? scenes[idx].spec.dur : 0;
-      scenes.forEach(function (sc, i) { sc.wrap.hidden = i !== idx; });
+      ensureScene(idx);
+      if (prevIdx !== -1 && prevIdx !== idx) {
+        if (scenes[prevIdx].wrap) scenes[prevIdx].wrap.hidden = true;
+        if (chips[prevIdx]) chips[prevIdx].setAttribute('aria-current', 'false');
+      }
+      if (scenes[idx].wrap) scenes[idx].wrap.hidden = false;
       noEl.textContent = sceneNo(idx);
       titleEl.textContent = '';
       rich(titleEl, scenes[idx].spec.title);
-      chips.forEach(function (c, i) { c.setAttribute('aria-current', i === idx ? 'true' : 'false'); });
+      if (chips[idx]) chips[idx].setAttribute('aria-current', 'true');
+      prevIdx = idx;
       buildCues();
       if (fromUser && !reduceMotion) {
         playing = true;
         ensureLoop();
       }
       paintFrame();
+      warmNextScene(idx + 1);
     }
 
     function tick(now) {
@@ -1423,11 +1672,14 @@
         var builder = builders[host.getAttribute('data-demo')];
         if (!builder || host.getAttribute('data-demo-ready') === '1') continue;
         try {
+          currentMountHost = host;
           builder(host);
           host.setAttribute('data-demo-ready', '1');
         } catch (e) {
           host.innerHTML = '';
           host.appendChild(el('p', 'demo-fallback', '（交互演示加载失败，请刷新页面重试）'));
+        } finally {
+          currentMountHost = null;
         }
       }
     }

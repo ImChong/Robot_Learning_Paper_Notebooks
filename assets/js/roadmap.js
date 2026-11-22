@@ -292,30 +292,33 @@
     var frame = origin.getBoundingClientRect();
     if (!frame.width) return false;
     var boxes = {};
-    list.forEach(function (edge) {
-      [edge.from, edge.to].forEach(function (node) {
-        if (!boxes[node.id]) boxes[node.id] = boxOf(elementOf(node), frame, scale);
-      });
-    });
+    for (var i = 0; i < list.length; i++) {
+      var edge = list[i];
+      if (!boxes[edge.from.id]) boxes[edge.from.id] = boxOf(elementOf(edge.from), frame, scale);
+      if (!boxes[edge.to.id]) boxes[edge.to.id] = boxOf(elementOf(edge.to), frame, scale);
+    }
     placeLandings(list, boxes);
     var width = round(frame.width / scale);
     var height = round(frame.height / scale);
     svg.setAttribute('width', width);
     svg.setAttribute('height', height);
     svg.setAttribute('viewBox', '0 0 ' + width + ' ' + height);
-    svg.textContent = '';
-    // 跨系的箭头先画，压在系内箭头下面。
-    list.slice().sort(function (a, b) { return (b.cross ? 1 : 0) - (a.cross ? 1 : 0); }).forEach(function (edge) {
-      var shape = edgeShape(edge, boxes);
+    var sorted = list.slice().sort(function (a, b) { return (b.cross ? 1 : 0) - (a.cross ? 1 : 0); });
+    var frag = document.createDocumentFragment();
+    for (var j = 0; j < sorted.length; j++) {
+      var ed = sorted[j];
+      var shape = edgeShape(ed, boxes);
       var group = svgEl('g', {
-        class: 'tt-edge' + (edge.kind === 'related' ? ' is-related' : '') + (edge.cross ? ' is-cross' : ''),
-        'data-from': edge.from.id,
-        'data-to': edge.to.id
+        class: 'tt-edge' + (ed.kind === 'related' ? ' is-related' : '') + (ed.cross ? ' is-cross' : ''),
+        'data-from': ed.from.id,
+        'data-to': ed.to.id
       });
       group.appendChild(svgEl('path', { class: 'tt-edge-line', d: shape.line }));
       group.appendChild(svgEl('path', { class: 'tt-edge-head', d: shape.head }));
-      svg.appendChild(group);
-    });
+      frag.appendChild(group);
+    }
+    svg.textContent = '';
+    svg.appendChild(frag);
     return true;
   }
 
@@ -537,7 +540,12 @@
       // 简介摘自中文笔记的「🎯 一句话总结」；公式交给页面已加载的 KaTeX。
       var summary = cardPart(body, 'p', 'roadmap-node-card__summary', info.summary_zh);
       summary.setAttribute('lang', 'zh-CN');
-      if (typeof window.renderKaTeXIn === 'function') window.renderKaTeXIn(summary);
+      if (
+        typeof window.renderKaTeXIn === 'function' &&
+        (info.summary_zh.indexOf('$') !== -1 || info.summary_zh.indexOf('\\(') !== -1 || info.summary_zh.indexOf('\\[') !== -1)
+      ) {
+        window.renderKaTeXIn(summary);
+      }
     }
 
     var path = [];
@@ -912,19 +920,44 @@
     canvas.style.width = '100000px';
     var widest = 0;
     var total = 0;
-    clusters.forEach(function (cluster) {
-      widest = Math.max(widest, cluster.offsetWidth);
-      total += cluster.offsetWidth;
+    // Measure each cluster once at unconstrained width and simulate flex-wrap rows in pure arithmetic.
+    var dims = clusters.map(function (cluster) {
+      var cw = cluster.offsetWidth;
+      var ch = cluster.offsetHeight;
+      widest = Math.max(widest, cw);
+      total += cw;
+      return { w: cw, h: ch };
     });
     var canvasStyle = getComputedStyle(canvas);
-    var pad = parseFloat(canvasStyle.paddingLeft) + parseFloat(canvasStyle.paddingRight);
+    var padX = parseFloat(canvasStyle.paddingLeft) + parseFloat(canvasStyle.paddingRight);
+    var padY = parseFloat(canvasStyle.paddingTop) + parseFloat(canvasStyle.paddingBottom);
     var gap = parseFloat(canvasStyle.columnGap) || 0;
+    var rowGap = parseFloat(canvasStyle.rowGap) || 0;
     var whole = null;
     var read = null;
     var narrowest = null;
-    for (var width = Math.ceil(widest + pad); width <= total + pad + gap * clusters.length; width += 24) {
-      canvas.style.width = width + 'px';
-      var height = canvas.offsetHeight;
+    function wrappedHeight(boxWidth) {
+      var innerW = Math.max(1, boxWidth - padX);
+      var rowW = 0;
+      var rowH = 0;
+      var h = padY;
+      for (var i = 0; i < dims.length; i++) {
+        var cw = dims[i].w;
+        var ch = dims[i].h;
+        var nextW = rowW === 0 ? cw : rowW + gap + cw;
+        if (rowW > 0 && nextW > innerW) {
+          h += rowH + rowGap;
+          rowW = cw;
+          rowH = ch;
+        } else {
+          rowW = nextW;
+          if (ch > rowH) rowH = ch;
+        }
+      }
+      return Math.ceil(h + rowH);
+    }
+    for (var width = Math.ceil(widest + padX); width <= total + padX + gap * clusters.length; width += 24) {
+      var height = wrappedHeight(width);
       var layout = { width: width, height: height };
       if (!narrowest) narrowest = layout;
       var scale = Math.min(1, availW / width, availH / height);
@@ -1087,6 +1120,8 @@
         d: Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY)
       };
     }
+    var pendingTouchCenter = null;
+    var pinchRaf = 0;
     viewport.addEventListener('touchstart', function (e) {
       if (e.touches.length !== 2) return;
       var c = touchCenter(e.touches);
@@ -1098,13 +1133,26 @@
     viewport.addEventListener('touchmove', function (e) {
       if (!pinch || e.touches.length !== 2 || pinch.d < 1) return;
       e.preventDefault();
-      var c = touchCenter(e.touches);
-      setScale(clampScale(pinch.scale * c.d / pinch.d));
-      // 两指一起挪也跟着平移：始终让捏合开始时两指中间的那一点留在两指中间。
-      keepPoint(pinch.x, pinch.y, c.x, c.y);
+      pendingTouchCenter = touchCenter(e.touches);
+      if (pinchRaf) return;
+      pinchRaf = window.requestAnimationFrame(function () {
+        pinchRaf = 0;
+        var c = pendingTouchCenter;
+        if (!pinch || !c) return;
+        setScale(clampScale(pinch.scale * c.d / pinch.d));
+        // 两指一起挪也跟着平移：始终让捏合开始时两指中间的那一点留在两指中间。
+        keepPoint(pinch.x, pinch.y, c.x, c.y);
+      });
     }, { passive: false });
     function endPinch(e) {
-      if (e.touches.length < 2) pinch = null;
+      if (e.touches.length < 2) {
+        pinch = null;
+        pendingTouchCenter = null;
+        if (pinchRaf) {
+          window.cancelAnimationFrame(pinchRaf);
+          pinchRaf = 0;
+        }
+      }
     }
     viewport.addEventListener('touchend', endPinch);
     viewport.addEventListener('touchcancel', endPinch);

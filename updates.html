@@ -393,27 +393,21 @@ description: "论文笔记站点的更新记录：按日列出新增与修订的
       '</div>';
   }
 
-  function timelineHtml(lang, activeDate, windowDays, showAll) {
+  function filterBarHtml(lang, activeDate) {
     var t = I18N[lang];
-    var shown = activeDate && dayByDate[activeDate]
-      ? [dayByDate[activeDate]]
-      : filterDaysByWindow(days, windowDays, showAll);
-    var filterBar = '';
-    if (activeDate && dayByDate[activeDate]) {
-      filterBar = '<p class="updates-filter-bar">' +
-        escapeHtml(t.filterLabel(formatDate(activeDate, lang))) +
-        ' <button type="button" class="updates-clear-filter">' + escapeHtml(t.clearFilter) + '</button></p>';
-    }
-    var daysHtml = '';
-    for (var i = 0; i < shown.length; i++) {
-      daysHtml += dayHtml(shown[i], lang);
-    }
-    var actionsHtml = timelineActionsHtml(lang, shown, windowDays, showAll, activeDate);
+    if (!activeDate || !dayByDate[activeDate]) return '';
+    return '<p class="updates-filter-bar">' +
+      escapeHtml(t.filterLabel(formatDate(activeDate, lang))) +
+      ' <button type="button" class="updates-clear-filter">' + escapeHtml(t.clearFilter) + '</button></p>';
+  }
+
+  function timelineShellHtml(lang) {
+    var t = I18N[lang];
     return '<div class="updates-timeline">' +
       '<h2 class="updates-timeline-title">' + escapeHtml(t.timelineTitle) + '</h2>' +
-      filterBar +
-      '<div class="updates-timeline-days">' + daysHtml + '</div>' +
-      actionsHtml +
+      '<div class="updates-filter-slot"></div>' +
+      '<div class="updates-timeline-days"></div>' +
+      '<div class="updates-actions-slot"></div>' +
       '</div>';
   }
 
@@ -421,12 +415,99 @@ description: "论文笔记站点的更新记录：按日列出新增与修订的
   var currentWindowDays = TIMELINE_WINDOW_DAYS;
   var timelineShowAll = false;
 
+  var statsSlot = document.createElement('div');
+  var heatmapSlot = document.createElement('div');
+  var timelineSlot = document.createElement('div');
+  mount.textContent = '';
+  mount.appendChild(statsSlot);
+  mount.appendChild(heatmapSlot);
+  mount.appendChild(timelineSlot);
+
+  var heatmapCellsByDate = Object.create(null);
+  var renderedLang = '';
+  var filterSlot = null;
+  var daysWrap = null;
+  var actionsSlot = null;
+  var renderedCount = 0;
+  var renderedFilterDate = '';
+
+  function rebuildHeatmapAndStats(lang) {
+    statsSlot.innerHTML = statsHtml(lang);
+    heatmapSlot.innerHTML = heatmapHtml(lang, activeDate);
+    heatmapCellsByDate = Object.create(null);
+    var btns = heatmapSlot.querySelectorAll('button.updates-heatmap-cell[data-date]');
+    for (var i = 0; i < btns.length; i++) {
+      heatmapCellsByDate[btns[i].getAttribute('data-date')] = btns[i];
+    }
+    var scrollWrap = heatmapSlot.querySelector('.updates-heatmap-scroll');
+    if (scrollWrap) scrollWrap.scrollLeft = scrollWrap.scrollWidth; // rest on newest week
+  }
+
+  function syncHeatmapActiveCell(prevDate, nextDate) {
+    if (prevDate && heatmapCellsByDate[prevDate]) {
+      var prevBtn = heatmapCellsByDate[prevDate];
+      prevBtn.classList.remove('is-active');
+      prevBtn.setAttribute('aria-pressed', 'false');
+    }
+    if (nextDate && heatmapCellsByDate[nextDate]) {
+      var nextBtn = heatmapCellsByDate[nextDate];
+      nextBtn.classList.add('is-active');
+      nextBtn.setAttribute('aria-pressed', 'true');
+    }
+  }
+
+  function renderTimeline(lang, forceFull) {
+    if (forceFull || !daysWrap) {
+      timelineSlot.innerHTML = timelineShellHtml(lang);
+      filterSlot = timelineSlot.querySelector('.updates-filter-slot');
+      daysWrap = timelineSlot.querySelector('.updates-timeline-days');
+      actionsSlot = timelineSlot.querySelector('.updates-actions-slot');
+      renderedCount = 0;
+      renderedFilterDate = '';
+    }
+
+    var shown = activeDate && dayByDate[activeDate]
+      ? [dayByDate[activeDate]]
+      : filterDaysByWindow(days, currentWindowDays, timelineShowAll);
+
+    var nextFilterHtml = filterBarHtml(lang, activeDate);
+    if (filterSlot.innerHTML !== nextFilterHtml) filterSlot.innerHTML = nextFilterHtml;
+
+    if (activeDate && dayByDate[activeDate]) {
+      daysWrap.innerHTML = dayHtml(shown[0], lang);
+      renderedCount = 1;
+      renderedFilterDate = activeDate;
+    } else if (renderedFilterDate || forceFull) {
+      var allHtml = '';
+      for (var i = 0; i < shown.length; i++) allHtml += dayHtml(shown[i], lang);
+      daysWrap.innerHTML = allHtml;
+      renderedCount = shown.length;
+      renderedFilterDate = '';
+    } else if (shown.length > renderedCount) {
+      var appendHtml = '';
+      for (var j = renderedCount; j < shown.length; j++) appendHtml += dayHtml(shown[j], lang);
+      daysWrap.insertAdjacentHTML('beforeend', appendHtml);
+      renderedCount = shown.length;
+    } else if (shown.length < renderedCount) {
+      while (daysWrap.children.length > shown.length) {
+        daysWrap.removeChild(daysWrap.lastElementChild);
+      }
+      renderedCount = shown.length;
+    }
+
+    actionsSlot.innerHTML = timelineActionsHtml(lang, shown, currentWindowDays, timelineShowAll, activeDate);
+  }
+
   function render() {
     var lang = getLang();
-    mount.innerHTML = statsHtml(lang) + heatmapHtml(lang, activeDate) +
-      timelineHtml(lang, activeDate, currentWindowDays, timelineShowAll);
-    var scrollWrap = mount.querySelector('.updates-heatmap-scroll');
-    if (scrollWrap) scrollWrap.scrollLeft = scrollWrap.scrollWidth; // rest on newest week
+    var langChanged = lang !== renderedLang;
+    if (langChanged) {
+      renderedLang = lang;
+      rebuildHeatmapAndStats(lang);
+      renderTimeline(lang, true);
+      return;
+    }
+    renderTimeline(lang, false);
   }
 
   mount.addEventListener('click', function(ev) {
@@ -434,13 +515,17 @@ description: "论文笔记站点的更新记录：按日列出新增与修订的
     if (cell) {
       var date = cell.getAttribute('data-date') || '';
       if (!date) return;
+      var prev = activeDate;
       activeDate = date === activeDate ? '' : date;
-      render();
+      syncHeatmapActiveCell(prev, activeDate);
+      renderTimeline(getLang(), false);
       return;
     }
     if (ev.target.closest('.updates-clear-filter')) {
+      var prevDate = activeDate;
       activeDate = '';
-      render();
+      syncHeatmapActiveCell(prevDate, '');
+      renderTimeline(getLang(), false);
       return;
     }
     var moreBtn = ev.target.closest('.updates-day-more');
@@ -452,18 +537,18 @@ description: "论文笔记站点的更新记录：按日列出新增与修订的
     }
     if (ev.target.closest('button.updates-timeline-more-days')) {
       if (!timelineShowAll) currentWindowDays += TIMELINE_WINDOW_STEP;
-      render();
+      renderTimeline(getLang(), false);
       return;
     }
     if (ev.target.closest('button.updates-timeline-show-all')) {
       timelineShowAll = true;
-      render();
+      renderTimeline(getLang(), false);
       return;
     }
     if (ev.target.closest('button.updates-timeline-collapse')) {
       currentWindowDays = TIMELINE_WINDOW_DAYS;
       timelineShowAll = false;
-      render();
+      renderTimeline(getLang(), false);
       return;
     }
     if (ev.target.closest('button.updates-timeline-back-to-top')) {

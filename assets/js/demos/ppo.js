@@ -546,14 +546,20 @@
       var advOne = gae(state.steps, state.gamma, 1);
 
       d.forEach(function (v, i) {
-        if (!deltaCells[i]) return;
-        deltaCells[i].textContent = fmt(v, 1);
-        deltaCells[i].className = v >= 0 ? 'is-good' : 'is-bad';
+        var cell = deltaCells[i];
+        if (!cell) return;
+        var txt = fmt(v, 1);
+        var cls = v >= 0 ? 'is-good' : 'is-bad';
+        if (cell.textContent !== txt) cell.textContent = txt;
+        if (cell.className !== cls) cell.className = cls;
       });
       advCur.forEach(function (v, i) {
-        if (!advCells[i]) return;
-        advCells[i].textContent = fmt(v, 1);
-        advCells[i].className = v >= 0 ? 'is-good' : 'is-bad';
+        var cell = advCells[i];
+        if (!cell) return;
+        var txt = fmt(v, 1);
+        var cls = v >= 0 ? 'is-good' : 'is-bad';
+        if (cell.textContent !== txt) cell.textContent = txt;
+        if (cell.className !== cls) cell.className = cls;
       });
 
       sA0Zero.set(fmt(advZero[0], 1), advZero[0] >= 0 ? 'good' : 'bad');

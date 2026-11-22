@@ -15,28 +15,41 @@
   var main = document.querySelector('main');
   if (!main) return;
 
-  var REVEAL_MS = 800;
-  var STAGGER_MS = 70;
+  var REVEAL_MS = 450;
+  var STAGGER_MS = 45;
   var BATCH_MAX = 1000;
-  var SELECTOR = [
-    // 首页：分类标题 / 说明 / 展开按钮，子分类标题，论文卡片按行
-    '.category-section > :not(.paper-list):not(.subcategory-section)',
-    '.subcategory-section > :not(.paper-list)',
-    '.paper-list > li',
-    // 更新记录：按日
-    '.updates-day',
-    // 论文详情：正文按段落；折叠块展开后按块内段落
-    '#paper-body > :not(.paper-fold)',
-    '#paper-body > .paper-fold > summary',
-    '#paper-body > .paper-fold > :not(summary)',
-    '.paper-content > .paper-nav'
-  ].join(', ');
+  var hasPaperBody = !!document.getElementById('paper-body');
+  var hasUpdates = !hasPaperBody && !!main.querySelector('#updates-page, .updates-timeline');
+  var SELECTOR = hasPaperBody
+    ? '#paper-body > :not(.paper-fold), #paper-body > .paper-fold > summary, .paper-content > .paper-nav'
+    : hasUpdates
+      ? '.updates-day'
+      : [
+          '.category-section > :not(.paper-list):not(.subcategory-section)',
+          '.subcategory-section > :not(.paper-list)',
+          '.paper-list > li'
+        ].join(', ');
 
   var seen = new WeakSet();
+  var selfTargets = typeof Set === 'function' ? new Set() : null;
+  var mo = null;
+
+  function flushSelfMutations() {
+    if (!mo || !selfTargets || !selfTargets.size) return;
+    var extra = [];
+    var recs = mo.takeRecords();
+    for (var i = 0; i < recs.length; i++) {
+      if (!selfTargets.has(recs[i].target)) extra.push(recs[i]);
+    }
+    selfTargets.clear();
+    if (extra.length) onMutations(extra);
+  }
 
   function finish(el) {
+    if (selfTargets) selfTargets.add(el);
     el.classList.remove('scroll-reveal', 'is-revealed');
     el.style.removeProperty('--reveal-delay');
+    flushSelfMutations();
   }
 
   // 不收缩视口底边：页面末尾的元素滚到底时离视口底很近，收缩后可能永远进不了判定区
@@ -47,19 +60,41 @@
       var el = entries[i].target;
       var delay = Math.min(batch++, 4) * STAGGER_MS;
       observer.unobserve(el);
+      if (selfTargets) selfTargets.add(el);
       el.style.setProperty('--reveal-delay', delay + 'ms');
       el.classList.add('is-revealed');
       // 过渡结束后摘掉类名，恢复卡片原有的 hover transition
       window.setTimeout(finish, REVEAL_MS + delay + 50, el);
     }
+    flushSelfMutations();
   });
 
+  function isDomHiddenFast(el) {
+    if (el.hidden) return true;
+    var cls = el.classList;
+    if (cls && cls.contains('paper-list-item-folded')) {
+      var list = el.parentElement;
+      if (list && list.classList.contains('is-folded')) return true;
+    }
+    if (cls && cls.contains('updates-item-folded')) {
+      var day = el.closest && el.closest('.updates-day');
+      if (day && day.classList.contains('is-folded')) return true;
+    }
+    if (el.closest) {
+      var d = el.closest('details:not([open]), .is-cat-folded, .is-subcat-folded, [hidden]');
+      if (d && d !== el) return true;
+    }
+    return false;
+  }
+
   function register() {
+    if (document.body && document.body.classList.contains('index-search-active')) return;
     var fold = window.innerHeight || document.documentElement.clientHeight;
     var candidates = main.querySelectorAll(SELECTOR);
     var fresh = [];
     for (var i = 0; i < candidates.length; i++) {
-      if (!seen.has(candidates[i])) fresh.push(candidates[i]);
+      var cand = candidates[i];
+      if (!seen.has(cand) && !isDomHiddenFast(cand)) fresh.push(cand);
     }
     // 一次出现上千个时直接显示，逐个登记的开销不值得
     if (fresh.length > BATCH_MAX) {
@@ -77,14 +112,17 @@
     }
     for (var m = 0; m < below.length; m++) {
       if (below[m].parentElement && below[m].parentElement.closest('.scroll-reveal')) continue;
+      if (selfTargets) selfTargets.add(below[m]);
       below[m].classList.add('scroll-reveal');
       observer.observe(below[m]);
     }
+    flushSelfMutations();
   }
 
   var pending = false;
   function schedule() {
     if (pending) return;
+    if (document.body && document.body.classList.contains('index-search-active')) return;
     pending = true;
     window.requestAnimationFrame(function () {
       pending = false;
@@ -96,24 +134,40 @@
   // 讲解动画每帧改 class / style。这些变动不触发重新登记，否则每帧都要对整个 main 跑一遍
   // querySelectorAll（PPO 笔记切主题时，6 倍降速下多出约 0.7 s 主线程）。
   function inertTarget(node) {
-    return !!(node.closest && node.closest('svg, .mermaid, .paper-demo'));
+    return !!(node.closest && node.closest('svg, .mermaid, .paper-demo, #toc-sidebar, .paper-nav, .updates-heatmap'));
   }
 
   function onMutations(records) {
+    if (document.body && document.body.classList.contains('index-search-active')) return;
     for (var i = 0; i < records.length; i++) {
-      if (!inertTarget(records[i].target)) {
+      var r = records[i];
+      if (!inertTarget(r.target) && !(selfTargets && selfTargets.has(r.target))) {
         schedule();
         return;
       }
     }
   }
 
-  register();
-  // class / style / hidden / open 的变化都可能让元素从不可见变为可见（折叠卡片、搜索、<details>）
-  new MutationObserver(onMutations).observe(main, {
-    childList: true,
-    subtree: true,
-    attributes: true,
-    attributeFilter: ['hidden', 'open', 'class', 'style']
-  });
+  function start() {
+    register();
+    // class / hidden / open 的变化都可能让元素从不可见变为可见（折叠卡片、搜索、<details>）
+    mo = new MutationObserver(onMutations);
+    mo.observe(main, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['hidden', 'open', 'class']
+    });
+  }
+
+  // 等 DOMContentLoaded 与首轮脚本（paper.js / KaTeX / kit.js / 首页折叠）完成布局后再启动，
+  // 避免初始化重构 DOM 期间反复触发 register()。
+  function queueStart() {
+    window.setTimeout(start, 0);
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', queueStart, { once: true });
+  } else {
+    queueStart();
+  }
 })();
