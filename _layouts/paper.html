@@ -118,6 +118,8 @@ layout: default
 <script src="{{ '/assets/js/note-health.js' | relative_url }}{% if note_health_js %}?v={{ note_health_js.modified_time | date: '%s' }}{% endif %}" defer></script>
 {%- endif %}
 
+{% assign paper_icons_js = site.static_files | where: "path", "/assets/js/paper-icons.js" | first %}
+<script src="{{ '/assets/js/paper-icons.js' | relative_url }}{% if paper_icons_js %}?v={{ paper_icons_js.modified_time | date: '%s' }}{% endif %}" defer></script>
 {% assign paper_js = site.static_files | where: "path", "/assets/js/paper.js" | first %}
 <script src="{{ '/assets/js/paper.js' | relative_url }}{% if paper_js %}?v={{ paper_js.modified_time | date: '%s' }}{% endif %}" defer></script>
 
