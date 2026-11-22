@@ -1011,7 +1011,7 @@
 
 | #   | 论文                                                                                                                                                         | 日期      | 🌟  | 状态   |
 | --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- | --- | ---- |
-| 1233  | [LHNav: Long-Horizon Humanoid Navigation via Multirate Coordination and Physics-Grounded Action Data](https://arxiv.org/abs/2611.12136) | 2026.11 |  | ⏳ 待读 |
+| 1233  | [LHNav: Long-Horizon Humanoid Navigation via Multirate Coordination and Physics-Grounded Action Data](https://arxiv.org/abs/2611.12136) ✅ [笔记](08_Navigation/LHNav__Long-Horizon_Humanoid_Navigation_via_Multirate_Coordination_and_Physics-Grounded_Action_Data/LHNav__Long-Horizon_Humanoid_Navigation_via_Multirate_Coordination_and_Physics-Grounded_Action_Data.md) | 2026.11 |  | ✅ 已总结 |
 | 1234  | [HINT-VLM: Humanoid Interactive Navigation over Rough Terrain with Embodiment-Grounded Vision-Language Model](https://arxiv.org/abs/2611.11665) | 2026.11 |  | ⏳ 待读 |
 | 1235  | [Learning Humanoid Navigation from Human Data](https://arxiv.org/abs/2604.00416) | 2026.04 |  | ⏳ 待读 |
 | 1195  | [Caging Vision-Language Navigation for Legged Robots via Barrier-Certified Safety Architecture](https://arxiv.org/abs/2611.04972) ✅ [笔记](08_Navigation/Caging_Vision-Language_Navigation_for_Legged_Robots_via_Barrier-Certified_Safety_Architecture/Caging_Vision-Language_Navigation_for_Legged_Robots_via_Barrier-Certified_Safety_Architecture.md) | 2026.11 |  | ✅ 已总结 |
