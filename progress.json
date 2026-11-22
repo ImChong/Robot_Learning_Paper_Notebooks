@@ -41,21 +41,32 @@
         "13_Physics-Based_Animation",
         "14_Human_Motion"
       ],
-      "last_module": "07_Teleoperation",
-      "last_index": 715,
-      "last_title": "NEXUS: Perceptive Whole-Body Control for Terrain-Adaptive Teleoperation (arXiv:2609.39000)",
-      "next_module": "08_Navigation",
-      "last_completed_date": "2026-11-21",
-      "note": "2026-11-21：07_Teleoperation #715 NEXUS；已核对作者项目页完整方法与实机部署、arXiv 摘要；官方 PDF/HTML 全文未能读取，original_check partial；未核实公开源码；健康度脚本未运行，不估分。下一模块 08_Navigation。个人阅读进度不变。",
-      "last_date": "2026-11-21",
+      "last_module": "08_Navigation",
+      "last_index": 1233,
+      "last_title": "LHNav: Long-Horizon Humanoid Navigation via Multirate Coordination and Physics-Grounded Action Data (arXiv:2611.12136)",
+      "next_module": "09_State_Estimation",
+      "last_completed_date": "2026-11-22",
+      "note": "2026-11-22：08_Navigation #1233 LHNav；已通读官方 arXiv HTML v1 I–VI 节、表 I–VII，核对项目主页；官方 GitHub README 仅标题，未发现可审阅实现；PDF 未另行逐页核对；健康度脚本未运行，不估分。下一模块 09_State_Estimation。个人阅读进度不变。",
+      "last_date": "2026-11-22",
       "next_candidate": null,
-      "last_completed": "NEXUS: Perceptive Whole-Body Control for Terrain-Adaptive Teleoperation (arXiv:2609.39000)"
+      "last_completed": "LHNav: Long-Horizon Humanoid Navigation via Multirate Coordination and Physics-Grounded Action Data (arXiv:2611.12136)"
     },
     "last_summary_index": 532,
     "last_summary_date": "2026-09-18",
     "last_summary_title": "ReActor: Reinforcement Learning for Physics-Aware Motion Retargeting",
     "next_summary_index": null,
     "log": [
+      {
+        "date": "2026-11-22",
+        "index": 1233,
+        "title": "LHNav: Long-Horizon Humanoid Navigation via Multirate Coordination and Physics-Grounded Action Data (arXiv:2611.12136)",
+        "folder": "papers/08_Navigation/LHNav__Long-Horizon_Humanoid_Navigation_via_Multirate_Coordination_and_Physics-Grounded_Action_Data",
+        "module": "08_Navigation",
+        "arxiv": "2611.12136",
+        "project_page": "https://robbyant-research.github.io/LHNav/",
+        "code": "https://github.com/robbyant-research/LHNav（README 仅标题；未核实公开实现）",
+        "source": "官方 HTML v1 全文 I–VI、表 I–VII 已通读；PDF 未独立逐页核对；original_check done；健康度未验证（脚本未运行）。"
+      },
       {
         "date": "2026-11-21",
         "index": 715,
