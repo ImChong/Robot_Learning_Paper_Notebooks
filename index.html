@@ -269,18 +269,42 @@ description: "人形机器人学习方向的每日论文精读笔记：强化学
   var paperItems = document.querySelectorAll('.paper-list li[data-search]');
 
   // ⚡ Bolt Optimization: Cache DOM structure and search text once on page load to prevent expensive `querySelectorAll` and `getAttribute` during typing
+  var toggleByNode = typeof WeakMap === 'function' ? new WeakMap() : null;
+  var subcatsByCat = typeof WeakMap === 'function' ? new WeakMap() : null;
+
   var cachedCategories = Array.from(categories).map(function(cat) {
     var catTitle = cat.querySelector('.category-title');
     var catTocItem = catTitle ? document.querySelector('.toc-item[data-toc-for="' + catTitle.id + '"]') : null;
+    var catTocCount = catTocItem ? catTocItem.querySelector('.toc-count') : null;
+    if (catTocCount && catTocCount.dataset.origCount === undefined) {
+      catTocCount.dataset.origCount = catTocCount.textContent;
+    }
+    var catToggle = cat.querySelector('.category-toggle');
+    if (toggleByNode && catToggle) toggleByNode.set(cat, catToggle);
 
+    var subcatEls = [];
     var subcategories = Array.from(cat.querySelectorAll('.subcategory-section')).map(function(subcat) {
+      subcatEls.push(subcat);
       var subcatTitle = subcat.querySelector('.subcategory-title');
       var subcatTocItem = subcatTitle ? document.querySelector('.toc-item[data-toc-for="' + subcatTitle.id + '"]') : null;
+      var subcatTocCount = subcatTocItem ? subcatTocItem.querySelector('.toc-count') : null;
+      if (subcatTocCount && subcatTocCount.dataset.origCount === undefined) {
+        subcatTocCount.dataset.origCount = subcatTocCount.textContent;
+      }
+      var subToggle = subcat.querySelector('.subcategory-toggle');
+      if (toggleByNode && subToggle) toggleByNode.set(subcat, subToggle);
       var items = Array.from(subcat.querySelectorAll('li[data-search]')).map(function(item) {
         return { el: item, text: item.getAttribute('data-search').toLowerCase() };
       });
-      return { el: subcat, tocItem: subcatTocItem, items: items };
+      return {
+        el: subcat,
+        toggle: subToggle,
+        tocItem: subcatTocItem,
+        tocCount: subcatTocCount,
+        items: items
+      };
     });
+    if (subcatsByCat) subcatsByCat.set(cat, subcatEls);
 
     // Handle polyfill for :scope if needed, but for our case, children match is safer.
     // Instead of using :scope > .paper-list > li[data-search], we select .paper-list > li[data-search]
@@ -298,7 +322,9 @@ description: "人形机器人学习方向的每日论文精读笔记：强化学
 
     return {
       el: cat,
+      toggle: catToggle,
       tocItem: catTocItem,
+      tocCount: catTocCount,
       subcategories: subcategories,
       directItems: directItems
     };
@@ -309,6 +335,8 @@ description: "人形机器人学习方向的每日论文精读笔记：强化学
   var searchTimeout;
   var FOLD_PREFIX = 'paper-fold:';
   var foldLists = Array.from(document.querySelectorAll('.paper-list.has-paper-fold[data-fold-id]'));
+  var foldMetaByList = typeof WeakMap === 'function' ? new WeakMap() : null;
+  var foldMetas = [];
   var foldStateBeforeSearch = null;
   var sectionFoldStateBeforeSearch = null;
   var refreshTocPositions = function() {};
@@ -322,17 +350,23 @@ description: "人形机器人学习方向的每日论文精读笔记：强化学
   }
 
   function setSubcategoryExpanded(subcat, expanded) {
-    subcat.classList.toggle('is-subcat-folded', !expanded);
-    var toggle = subcat.querySelector('.subcategory-toggle');
-    if (toggle) toggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+    var cur = !subcat.classList.contains('is-subcat-folded');
+    if (cur !== !!expanded) {
+      subcat.classList.toggle('is-subcat-folded', !expanded);
+      var toggle = toggleByNode ? toggleByNode.get(subcat) : subcat.querySelector('.subcategory-toggle');
+      if (toggle) toggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+    }
   }
 
   function setCategoryExpanded(cat, expanded, syncSubcategories) {
-    cat.classList.toggle('is-cat-folded', !expanded);
-    var toggle = cat.querySelector('.category-toggle');
-    if (toggle) toggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+    var cur = !cat.classList.contains('is-cat-folded');
+    if (cur !== !!expanded) {
+      cat.classList.toggle('is-cat-folded', !expanded);
+      var toggle = toggleByNode ? toggleByNode.get(cat) : cat.querySelector('.category-toggle');
+      if (toggle) toggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+    }
     if (syncSubcategories && cat.classList.contains('category-section--keep-subcats')) {
-      var subcats = cat.querySelectorAll('.subcategory-section');
+      var subcats = subcatsByCat ? (subcatsByCat.get(cat) || []) : cat.querySelectorAll('.subcategory-section');
       for (var i = 0; i < subcats.length; i++) {
         setSubcategoryExpanded(subcats[i], expanded);
       }
@@ -341,7 +375,7 @@ description: "人形机器人学习方向的每日论文精读笔记：强化学
 
   function syncKeepSubcatsParent(cat) {
     if (!cat || !cat.classList.contains('category-section--keep-subcats')) return;
-    var subcats = Array.from(cat.querySelectorAll('.subcategory-section'));
+    var subcats = subcatsByCat ? (subcatsByCat.get(cat) || []) : Array.from(cat.querySelectorAll('.subcategory-section'));
     if (subcats.length === 0) return;
     var allExpanded = subcats.every(isSubcategoryExpanded);
     var allFolded = subcats.every(function(subcat) { return !isSubcategoryExpanded(subcat); });
@@ -353,18 +387,16 @@ description: "人形机器人学习方向的每日论文精读笔记：强化学
   }
 
   cachedCategories.forEach(function(catCache) {
-    var catToggle = catCache.el.querySelector('.category-toggle');
-    if (catToggle) {
-      catToggle.addEventListener('click', function() {
+    if (catCache.toggle) {
+      catCache.toggle.addEventListener('click', function() {
         var next = !isCategoryExpanded(catCache.el);
         setCategoryExpanded(catCache.el, next, true);
         refreshTocPositions();
       });
     }
     catCache.subcategories.forEach(function(subcatCache) {
-      var subToggle = subcatCache.el.querySelector('.subcategory-toggle');
-      if (subToggle) {
-        subToggle.addEventListener('click', function() {
+      if (subcatCache.toggle) {
+        subcatCache.toggle.addEventListener('click', function() {
           var next = !isSubcategoryExpanded(subcatCache.el);
           setSubcategoryExpanded(subcatCache.el, next);
           syncKeepSubcatsParent(catCache.el);
@@ -423,149 +455,159 @@ description: "人形机器人学习方向的每日论文精读笔记：强化学
     return document.documentElement.getAttribute('data-lang-mode') === 'zh' ? 'zh' : 'en';
   }
 
-  function getFoldedItems(list) {
-    return Array.from(list.querySelectorAll('li.paper-list-item-folded'));
-  }
-
-  function getVisibleCount(list) {
-    return list.querySelectorAll('li[data-search]').length - getFoldedItems(list).length;
-  }
-
-  function getFoldGroup(foldId) {
-    return document.querySelector('.paper-list-toggle-group[data-fold-id="' + foldId + '"]');
-  }
-
-  function updateFoldLabels(group, hiddenCount, step, initial) {
-    var moreBtn = group.querySelector('.paper-list-more-btn');
-    var allBtn = group.querySelector('.paper-list-all-btn');
-    var collapseBtn = group.querySelector('.paper-list-collapse-btn');
-    var useZh = getLang() === 'zh';
-    var moreCount = Math.min(step, hiddenCount);
-    if (moreBtn) {
-      moreBtn.textContent = useZh
-        ? '再展开 ' + moreCount + ' 篇 ▾'
-        : 'Show ' + moreCount + ' more ▾';
-    }
-    if (allBtn) {
-      allBtn.textContent = useZh
-        ? '展开全部 ' + hiddenCount + ' 篇 ▾'
-        : 'Show all ' + hiddenCount + ' notes ▾';
-    }
-    if (collapseBtn) {
-      collapseBtn.textContent = useZh
-        ? '收起到 ' + initial + ' 篇 ▴'
-        : 'Collapse to ' + initial + ' ▴';
-    }
-  }
-
-  function updateFoldUI(list, persist) {
+  function buildFoldMeta(list) {
     var foldId = list.getAttribute('data-fold-id');
-    var group = getFoldGroup(foldId);
-    var hiddenCount = getFoldedItems(list).length;
+    var group = foldId ? document.querySelector('.paper-list-toggle-group[data-fold-id="' + foldId + '"]') : null;
+    var items = Array.from(list.querySelectorAll('li[data-search]'));
     var step = parseInt(list.getAttribute('data-fold-step') || '5', 10);
     var initial = parseInt(list.getAttribute('data-fold-initial') || '5', 10);
-    var visibleCount = getVisibleCount(list);
-    var expandedBeyondDefault = visibleCount > initial;
-
-    if (hiddenCount === 0) {
-      list.classList.remove('is-folded');
-    } else {
-      list.classList.add('is-folded');
+    var foldedCount = 0;
+    for (var i = 0; i < items.length; i++) {
+      if (items[i].classList.contains('paper-list-item-folded')) foldedCount++;
     }
+    var meta = {
+      list: list,
+      foldId: foldId,
+      group: group,
+      moreBtn: group ? group.querySelector('.paper-list-more-btn') : null,
+      allBtn: group ? group.querySelector('.paper-list-all-btn') : null,
+      collapseBtn: group ? group.querySelector('.paper-list-collapse-btn') : null,
+      items: items,
+      step: step,
+      initial: initial,
+      visibleCount: items.length - foldedCount
+    };
+    if (foldMetaByList) foldMetaByList.set(list, meta);
+    foldMetas.push(meta);
+    return meta;
+  }
 
-    if (!group) return;
+  function updateFoldLabelsMeta(meta, hiddenCount) {
+    var useZh = getLang() === 'zh';
+    var moreCount = Math.min(meta.step, hiddenCount);
+    if (meta.moreBtn) {
+      var mText = useZh ? '再展开 ' + moreCount + ' 篇 ▾' : 'Show ' + moreCount + ' more ▾';
+      if (meta.moreBtn.textContent !== mText) meta.moreBtn.textContent = mText;
+    }
+    if (meta.allBtn) {
+      var aText = useZh ? '展开全部 ' + hiddenCount + ' 篇 ▾' : 'Show all ' + hiddenCount + ' notes ▾';
+      if (meta.allBtn.textContent !== aText) meta.allBtn.textContent = aText;
+    }
+    if (meta.collapseBtn) {
+      var cText = useZh ? '收起到 ' + meta.initial + ' 篇 ▴' : 'Collapse to ' + meta.initial + ' ▴';
+      if (meta.collapseBtn.textContent !== cText) meta.collapseBtn.textContent = cText;
+    }
+  }
 
-    var moreBtn = group.querySelector('.paper-list-more-btn');
-    var allBtn = group.querySelector('.paper-list-all-btn');
-    var collapseBtn = group.querySelector('.paper-list-collapse-btn');
+  function updateFoldUI(meta, persist) {
+    var list = meta.list;
+    var hiddenCount = meta.items.length - meta.visibleCount;
+    var expandedBeyondDefault = meta.visibleCount > meta.initial;
 
-    group.style.display = '';
-    if (moreBtn) moreBtn.hidden = hiddenCount === 0;
+    list.classList.toggle('is-folded', hiddenCount > 0);
+    if (!meta.group) return;
+
+    if (meta.group.style.display !== '') meta.group.style.display = '';
+    if (meta.moreBtn) meta.moreBtn.hidden = hiddenCount === 0;
     // 剩下的不到一步时，「再展开 N 篇」和「展开全部 N 篇」效果相同，只留前者
-    if (allBtn) allBtn.hidden = hiddenCount <= step;
-    if (collapseBtn) collapseBtn.hidden = !expandedBeyondDefault;
+    if (meta.allBtn) meta.allBtn.hidden = hiddenCount <= meta.step;
+    if (meta.collapseBtn) meta.collapseBtn.hidden = !expandedBeyondDefault;
 
-    updateFoldLabels(group, hiddenCount, step, initial);
+    updateFoldLabelsMeta(meta, hiddenCount);
 
-    if (persist && foldId) {
+    if (persist && meta.foldId) {
       try {
-        localStorage.setItem(FOLD_PREFIX + foldId, String(visibleCount));
+        localStorage.setItem(FOLD_PREFIX + meta.foldId, String(meta.visibleCount));
       } catch (e) {}
     }
   }
 
-  function applyVisibleCount(list, targetVisible, persist) {
-    var items = Array.from(list.querySelectorAll('li[data-search]'));
-    var initial = parseInt(list.getAttribute('data-fold-initial') || '5', 10);
-    var target = Math.max(initial, Math.min(items.length, targetVisible));
-    items.forEach(function(li, idx) {
-      if (idx < target) li.classList.remove('paper-list-item-folded');
-      else li.classList.add('paper-list-item-folded');
-    });
-    updateFoldUI(list, persist);
+  function applyVisibleCount(meta, targetVisible, persist) {
+    var items = meta.items;
+    var target = Math.max(meta.initial, Math.min(items.length, targetVisible));
+    var prev = meta.visibleCount;
+    if (target > prev) {
+      for (var i = Math.max(0, prev); i < target; i++) {
+        items[i].classList.remove('paper-list-item-folded');
+      }
+    } else if (target < prev) {
+      for (var j = target; j < prev; j++) {
+        items[j].classList.add('paper-list-item-folded');
+      }
+    }
+    meta.visibleCount = target;
+    updateFoldUI(meta, persist);
   }
 
   foldLists.forEach(function(list) {
-    var foldId = list.getAttribute('data-fold-id');
-    var group = getFoldGroup(foldId);
-    if (!group) return;
+    var meta = buildFoldMeta(list);
+    if (!meta.group) return;
 
     var saved = null;
     try {
-      saved = localStorage.getItem(FOLD_PREFIX + foldId);
+      saved = localStorage.getItem(FOLD_PREFIX + meta.foldId);
     } catch (e) {}
     if (saved === 'true') {
-      applyVisibleCount(list, list.querySelectorAll('li[data-search]').length, false);
+      applyVisibleCount(meta, meta.items.length, false);
     } else if (saved && saved !== 'false') {
       var target = parseInt(saved, 10);
-      if (!isNaN(target)) applyVisibleCount(list, target, false);
-      else updateFoldUI(list, false);
+      if (!isNaN(target)) applyVisibleCount(meta, target, false);
+      else updateFoldUI(meta, false);
     } else {
-      updateFoldUI(list, false);
+      updateFoldUI(meta, false);
     }
 
-    var moreBtn = group.querySelector('.paper-list-more-btn');
-    var allBtn = group.querySelector('.paper-list-all-btn');
-    var collapseBtn = group.querySelector('.paper-list-collapse-btn');
-    if (moreBtn) {
-      moreBtn.addEventListener('click', function() {
-        var step = parseInt(list.getAttribute('data-fold-step') || '5', 10);
-        applyVisibleCount(list, getVisibleCount(list) + step, true);
+    if (meta.moreBtn) {
+      meta.moreBtn.addEventListener('click', function() {
+        applyVisibleCount(meta, meta.visibleCount + meta.step, true);
       });
     }
-    if (allBtn) {
-      allBtn.addEventListener('click', function() {
-        applyVisibleCount(list, list.querySelectorAll('li[data-search]').length, true);
+    if (meta.allBtn) {
+      meta.allBtn.addEventListener('click', function() {
+        applyVisibleCount(meta, meta.items.length, true);
       });
     }
-    if (collapseBtn) {
-      collapseBtn.addEventListener('click', function() {
-        var initial = parseInt(list.getAttribute('data-fold-initial') || '5', 10);
-        applyVisibleCount(list, initial, true);
+    if (meta.collapseBtn) {
+      meta.collapseBtn.addEventListener('click', function() {
+        applyVisibleCount(meta, meta.initial, true);
       });
     }
   });
 
   document.addEventListener('cl-lang-changed', function() {
-    foldLists.forEach(function(list) {
-      var foldId = list.getAttribute('data-fold-id');
-      var group = getFoldGroup(foldId);
-      if (!group) return;
-      var step = parseInt(list.getAttribute('data-fold-step') || '5', 10);
-      var initial = parseInt(list.getAttribute('data-fold-initial') || '5', 10);
-      updateFoldLabels(group, getFoldedItems(list).length, step, initial);
-    });
+    for (var i = 0; i < foldMetas.length; i++) {
+      var meta = foldMetas[i];
+      if (!meta.group) continue;
+      updateFoldLabelsMeta(meta, meta.items.length - meta.visibleCount);
+    }
   });
+
+  function resetAllItemDisplays() {
+    for (var ci = 0; ci < cachedCategories.length; ci++) {
+      var catCache = cachedCategories[ci];
+      for (var si = 0; si < catCache.subcategories.length; si++) {
+        var subcatCache = catCache.subcategories[si];
+        for (var ii = 0; ii < subcatCache.items.length; ii++) {
+          if (subcatCache.items[ii].el.style.display === 'none') subcatCache.items[ii].el.style.removeProperty('display');
+        }
+        if (subcatCache.el.style.display === 'none') subcatCache.el.style.removeProperty('display');
+      }
+      for (var di = 0; di < catCache.directItems.length; di++) {
+        if (catCache.directItems[di].el.style.display === 'none') catCache.directItems[di].el.style.removeProperty('display');
+      }
+      if (catCache.el.style.display === 'none') catCache.el.style.removeProperty('display');
+    }
+  }
 
   function setSearchFoldMode(active) {
     if (active) {
       if (foldStateBeforeSearch) return;
       foldStateBeforeSearch = new Map();
-      foldLists.forEach(function(list) {
-        var id = list.getAttribute('data-fold-id');
-        foldStateBeforeSearch.set(id, getVisibleCount(list));
-        list.classList.remove('is-folded');
-      });
+      for (var i = 0; i < foldMetas.length; i++) {
+        var meta = foldMetas[i];
+        foldStateBeforeSearch.set(meta.foldId, meta.visibleCount);
+        meta.list.classList.remove('is-folded');
+      }
       sectionFoldStateBeforeSearch = cachedCategories.map(function(catCache) {
         return {
           cat: catCache,
@@ -579,10 +621,11 @@ description: "人形机器人学习方向的每日论文精读笔记：强化学
       return;
     }
     if (!foldStateBeforeSearch) return;
-    foldLists.forEach(function(list) {
-      var id = list.getAttribute('data-fold-id');
-      applyVisibleCount(list, foldStateBeforeSearch.get(id), false);
-    });
+    resetAllItemDisplays();
+    for (var j = 0; j < foldMetas.length; j++) {
+      var m = foldMetas[j];
+      applyVisibleCount(m, foldStateBeforeSearch.get(m.foldId), false);
+    }
     foldStateBeforeSearch = null;
     if (sectionFoldStateBeforeSearch) {
       sectionFoldStateBeforeSearch.forEach(function(state) {
@@ -596,21 +639,6 @@ description: "人形机器人学习方向的每日论文精读笔记：强化学
     document.body.classList.remove('index-search-active');
   }
 
-  function resetAllItemDisplays() {
-    cachedCategories.forEach(function(catCache) {
-      catCache.subcategories.forEach(function(subcatCache) {
-        subcatCache.items.forEach(function(itemCache) {
-          if (itemCache.el.style.display === 'none') itemCache.el.style.removeProperty('display');
-        });
-        if (subcatCache.el.style.display === 'none') subcatCache.el.style.removeProperty('display');
-      });
-      catCache.directItems.forEach(function(itemCache) {
-        if (itemCache.el.style.display === 'none') itemCache.el.style.removeProperty('display');
-      });
-      if (catCache.el.style.display === 'none') catCache.el.style.removeProperty('display');
-    });
-  }
-
   function runSearch() {
     if (!searchInput) return;
     var query = searchInput.value.toLowerCase().trim();
@@ -619,26 +647,24 @@ description: "人形机器人学习方向的每日论文精读笔记：强化学
 
     setSearchFoldMode(isSearching);
 
-    if (!isSearching) {
-      resetAllItemDisplays();
-    }
-
     if (roadmapTocItem) {
-      var targetRoadmapDisplay = query === '' ? '' : 'none';
+      var targetRoadmapDisplay = isSearching ? 'none' : '';
       if (roadmapTocItem.style.display !== targetRoadmapDisplay) roadmapTocItem.style.display = targetRoadmapDisplay;
     }
 
-    cachedCategories.forEach(function(catCache) {
+    for (var ci = 0; ci < cachedCategories.length; ci++) {
+      var catCache = cachedCategories[ci];
       var catHasMatch = false;
       var catTotalMatch = 0;
 
-      catCache.subcategories.forEach(function(subcatCache) {
+      for (var si = 0; si < catCache.subcategories.length; si++) {
+        var subcatCache = catCache.subcategories[si];
         var subcatHasMatch = false;
         var subcatMatchCount = 0;
 
-        subcatCache.items.forEach(function(itemCache) {
+        for (var ii = 0; ii < subcatCache.items.length; ii++) {
+          var itemCache = subcatCache.items[ii];
           if (!isSearching || itemCache.text.indexOf(query) !== -1) {
-            // ⚡ Bolt Optimization: Strict diff-check to prevent layout thrashing
             if (itemCache.el.style.display === 'none') itemCache.el.style.removeProperty('display');
             if (isSearching) {
               subcatHasMatch = true;
@@ -646,60 +672,56 @@ description: "人形机器人学习方向的每日论文精读笔记：强化学
               catHasMatch = true;
               hasAnyMatch = true;
             }
-          } else {
-            // ⚡ Bolt Optimization: Strict diff-check to prevent layout thrashing
-            if (itemCache.el.style.display !== 'none') itemCache.el.style.display = 'none';
+          } else if (itemCache.el.style.display !== 'none') {
+            itemCache.el.style.display = 'none';
           }
-        });
+        }
 
-        var targetSubcatDisplay = subcatHasMatch || query === '' ? '' : 'none';
+        var targetSubcatDisplay = subcatHasMatch || !isSearching ? '' : 'none';
         if (subcatCache.el.style.display !== targetSubcatDisplay) subcatCache.el.style.display = targetSubcatDisplay;
         if (isSearching) setSubcategoryExpanded(subcatCache.el, subcatHasMatch);
         if (subcatCache.tocItem) {
           if (subcatCache.tocItem.style.display !== targetSubcatDisplay) subcatCache.tocItem.style.display = targetSubcatDisplay;
-          var countEl = subcatCache.tocItem.querySelector('.toc-count');
+          var countEl = subcatCache.tocCount;
           if (countEl) {
-            if (countEl.dataset.origCount === undefined) countEl.dataset.origCount = countEl.textContent;
             var targetText = isSearching ? '(' + subcatMatchCount + ')' : countEl.dataset.origCount;
             if (countEl.textContent !== targetText) countEl.textContent = targetText;
           }
         }
         if (isSearching) catTotalMatch += subcatMatchCount;
-      });
+      }
 
       var directMatchCount = 0;
-      catCache.directItems.forEach(function(itemCache) {
-        if (!isSearching || itemCache.text.indexOf(query) !== -1) {
-          // ⚡ Bolt Optimization: Strict diff-check to prevent layout thrashing
-          if (itemCache.el.style.display === 'none') itemCache.el.style.removeProperty('display');
+      for (var di = 0; di < catCache.directItems.length; di++) {
+        var dItem = catCache.directItems[di];
+        if (!isSearching || dItem.text.indexOf(query) !== -1) {
+          if (dItem.el.style.display === 'none') dItem.el.style.removeProperty('display');
           if (isSearching) {
             catHasMatch = true;
             hasAnyMatch = true;
             directMatchCount++;
           }
-        } else {
-          // ⚡ Bolt Optimization: Strict diff-check to prevent layout thrashing
-          if (itemCache.el.style.display !== 'none') itemCache.el.style.display = 'none';
+        } else if (dItem.el.style.display !== 'none') {
+          dItem.el.style.display = 'none';
         }
-      });
+      }
       if (isSearching) catTotalMatch += directMatchCount;
 
-      var targetCatDisplay = catHasMatch || query === '' ? '' : 'none';
+      var targetCatDisplay = catHasMatch || !isSearching ? '' : 'none';
       if (catCache.el.style.display !== targetCatDisplay) catCache.el.style.display = targetCatDisplay;
       if (isSearching) setCategoryExpanded(catCache.el, catHasMatch, false);
       if (catCache.tocItem) {
         if (catCache.tocItem.style.display !== targetCatDisplay) catCache.tocItem.style.display = targetCatDisplay;
-        var countEl = catCache.tocItem.querySelector('.toc-count');
-        if (countEl) {
-          if (countEl.dataset.origCount === undefined) countEl.dataset.origCount = countEl.textContent;
-          var targetText = isSearching ? '(' + catTotalMatch + ')' : countEl.dataset.origCount;
-          if (countEl.textContent !== targetText) countEl.textContent = targetText;
+        var cCountEl = catCache.tocCount;
+        if (cCountEl) {
+          var cTargetText = isSearching ? '(' + catTotalMatch + ')' : cCountEl.dataset.origCount;
+          if (cCountEl.textContent !== cTargetText) cCountEl.textContent = cTargetText;
         }
       }
-    });
+    }
 
     if (noResults) {
-      var targetNoResultsDisplay = hasAnyMatch || query === '' ? 'none' : 'block';
+      var targetNoResultsDisplay = hasAnyMatch || !isSearching ? 'none' : 'block';
       if (noResults.style.display !== targetNoResultsDisplay) noResults.style.display = targetNoResultsDisplay;
     }
 
@@ -742,9 +764,10 @@ description: "人形机器人学习方向的每日论文精读笔记：强化学
       var cachedPositions = [];
 
       function updatePositions() {
+        var scrollY = window.scrollY;
         cachedPositions = targets.map(function(t) {
           if (!t.el.getClientRects().length) return Infinity;
-          return t.el.getBoundingClientRect().top + window.scrollY;
+          return t.el.getBoundingClientRect().top + scrollY;
         });
       }
 
@@ -772,20 +795,26 @@ description: "人形机器人学习方向的每日论文精读笔记：强化学
         }
       }
 
+      var tocRefreshPending = false;
       refreshTocPositions = function() {
-        updatePositions();
-        updateActive();
+        if (tocRefreshPending) return;
+        tocRefreshPending = true;
+        window.requestAnimationFrame(function() {
+          tocRefreshPending = false;
+          updatePositions();
+          updateActive();
+        });
       };
 
       updatePositions();
 
       if (window.ResizeObserver) {
-        var ro = new ResizeObserver(updatePositions);
+        var ro = new ResizeObserver(refreshTocPositions);
         ro.observe(document.body);
       } else {
         window.addEventListener('resize', function() {
           clearTimeout(window.resizeTimeout);
-          window.resizeTimeout = setTimeout(updatePositions, 150);
+          window.resizeTimeout = setTimeout(refreshTocPositions, 150);
         });
       }
 

@@ -118,11 +118,27 @@
    * to be read from the DOM. checkVisibility() would answer this, but it
    * returns false for *everything* before the first layout — which is exactly
    * when the TOC is built — so walk the ancestors instead. */
-  function isHidden(el) {
+  function collectClosedDetails(el) {
+    var details = [];
     var node = el.parentElement;
-    while (node) {
-      if (node.tagName === 'DETAILS' && !node.open) return true;
+    while (node && node !== document.body) {
+      if (node.tagName === 'DETAILS') details.push(node);
       node = node.parentElement;
+    }
+    return details;
+  }
+
+  function isHidden(el, cachedDetails) {
+    if (cachedDetails) {
+      for (var i = 0; i < cachedDetails.length; i++) {
+        if (cachedDetails[i].tagName === 'DETAILS' && !cachedDetails[i].open) return true;
+      }
+    } else {
+      var node = el.parentElement;
+      while (node) {
+        if (node.tagName === 'DETAILS' && !node.open) return true;
+        node = node.parentElement;
+      }
     }
     return el.offsetParent === null;
   }
@@ -133,27 +149,106 @@
 
   /* Mermaid lays a diagram out from its container's width; one that was first
      drawn inside a closed fold can come back collapsed or blank, so re-run the
-     page's renderer once for the fold that just opened. */
-  var mermaidRefreshed = [];
+     page's renderer once ONLY for the stale diagrams inside the fold that opened. */
+  var mermaidRefreshed = typeof WeakSet === 'function' ? new WeakSet() : [];
+
+  function hasRefreshed(details) {
+    return typeof mermaidRefreshed.has === 'function'
+      ? mermaidRefreshed.has(details)
+      : mermaidRefreshed.indexOf(details) !== -1;
+  }
+
+  function markRefreshed(details) {
+    if (typeof mermaidRefreshed.add === 'function') mermaidRefreshed.add(details);
+    else mermaidRefreshed.push(details);
+  }
+
+  var pendingFoldMermaids = [];
+  var foldMermaidRaf = 0;
+  var lazyMermaidObserver = null;
+  var lazyNearMermaids = typeof Set === 'function' ? new Set() : null;
+  var lazyFlushTimer = 0;
+
+  function flushLazyMermaids() {
+    lazyFlushTimer = 0;
+    if (!lazyNearMermaids || !lazyNearMermaids.size) return;
+    if (typeof window.runMermaid !== 'function') return;
+    var wake = [];
+    lazyNearMermaids.forEach(function (el) {
+      if (lazyMermaidObserver) lazyMermaidObserver.unobserve(el);
+      if (!el.querySelector('svg')) wake.push(el);
+    });
+    lazyNearMermaids.clear();
+    if (wake.length) window.runMermaid(wake);
+  }
+
+  function flushPendingFoldMermaids() {
+    foldMermaidRaf = 0;
+    var batch = pendingFoldMermaids.splice(0, pendingFoldMermaids.length);
+    if (!batch.length) return;
+    if (typeof window.mermaid === 'undefined' || typeof window.runMermaid !== 'function') return;
+
+    if (batch.length <= 3 || typeof window.IntersectionObserver !== 'function') {
+      window.runMermaid(batch);
+      return;
+    }
+
+    var vh = window.innerHeight || document.documentElement.clientHeight || 800;
+    var near = [];
+    var far = [];
+    for (var i = 0; i < batch.length; i++) {
+      var rect = batch[i].getBoundingClientRect();
+      if (rect.bottom >= -vh && rect.top <= vh * 2.5) near.push(batch[i]);
+      else far.push(batch[i]);
+    }
+    if (near.length) window.runMermaid(near);
+    if (far.length) {
+      if (!lazyMermaidObserver) {
+        lazyMermaidObserver = new window.IntersectionObserver(
+          function (entries) {
+            if (!lazyNearMermaids) return;
+            for (var j = 0; j < entries.length; j++) {
+              if (entries[j].isIntersecting) lazyNearMermaids.add(entries[j].target);
+              else lazyNearMermaids.delete(entries[j].target);
+            }
+            if (lazyFlushTimer) window.clearTimeout(lazyFlushTimer);
+            if (lazyNearMermaids.size) lazyFlushTimer = window.setTimeout(flushLazyMermaids, 120);
+          },
+          { rootMargin: '900px 0px' }
+        );
+        window.addEventListener(
+          'scroll',
+          function () {
+            if (lazyFlushTimer && lazyNearMermaids && lazyNearMermaids.size) {
+              window.clearTimeout(lazyFlushTimer);
+              lazyFlushTimer = window.setTimeout(flushLazyMermaids, 120);
+            }
+          },
+          { passive: true }
+        );
+      }
+      for (var k = 0; k < far.length; k++) lazyMermaidObserver.observe(far[k]);
+    }
+  }
 
   function refreshMermaidIn(details) {
-    if (mermaidRefreshed.indexOf(details) !== -1) return;
+    if (hasRefreshed(details)) return;
     var diagrams = details.querySelectorAll('.mermaid');
     if (!diagrams.length) return;
-    mermaidRefreshed.push(details);
-    var stale = false;
+    markRefreshed(details);
+    var staleNodes = [];
     for (var i = 0; i < diagrams.length; i++) {
       var svg = diagrams[i].querySelector('svg');
       if (!svg || svg.getBoundingClientRect().width < 50) {
-        stale = true;
-        break;
+        staleNodes.push(diagrams[i]);
       }
     }
-    if (!stale) return;
+    if (!staleNodes.length) return;
     if (typeof window.mermaid === 'undefined' || typeof window.runMermaid !== 'function') return;
-    window.requestAnimationFrame(function () {
-      window.runMermaid();
-    });
+    for (var j = 0; j < staleNodes.length; j++) pendingFoldMermaids.push(staleNodes[j]);
+    if (!foldMermaidRaf) {
+      foldMermaidRaf = window.requestAnimationFrame(flushPendingFoldMermaids);
+    }
   }
 
   /* Open every <details> the node is nested in. Returns true if any opened. */
@@ -174,18 +269,12 @@
     var body = document.getElementById('paper-body');
     if (!body) return;
 
-    // `toggle` does not bubble — listen in the capture phase.
-    document.addEventListener(
-      'toggle',
-      function (e) {
-        var target = e.target;
-        if (!target || target.tagName !== 'DETAILS') return;
-        if (!body.contains(target)) return;
-        // A canvas drawn inside a closed fold measured a zero-width parent, so
-        // let the demos re-render themselves at their real width now.
-        var kit = window.PaperDemoKit;
-        if (kit && typeof kit.renderAll === 'function') kit.renderAll();
-        if (target.open) refreshMermaidIn(target);
+    var foldNotifyPending = false;
+    function notifyFoldObservers() {
+      if (foldNotifyPending) return;
+      foldNotifyPending = true;
+      window.requestAnimationFrame(function () {
+        foldNotifyPending = false;
         for (var i = 0; i < foldObservers.length; i++) {
           try {
             foldObservers[i]();
@@ -193,6 +282,23 @@
             /* a broken observer must not break the fold */
           }
         }
+      });
+    }
+
+    // `toggle` does not bubble — listen in the capture phase.
+    document.addEventListener(
+      'toggle',
+      function (e) {
+        var target = e.target;
+        if (!target || target.tagName !== 'DETAILS') return;
+        if (!body.contains(target)) return;
+        // Only redraw demos and diagrams inside the newly opened fold.
+        if (target.open) {
+          var kit = window.PaperDemoKit;
+          if (kit && typeof kit.renderAll === 'function') kit.renderAll(target);
+          refreshMermaidIn(target);
+        }
+        notifyFoldObservers();
       },
       true
     );
@@ -376,22 +482,33 @@
     });
 
     var lastActive = -1;
-    // ⚡ Bolt Optimization: Cache layout positions to prevent layout thrashing on scroll
+    // Cache layout positions & each heading's enclosing <details> chain to avoid repeated DOM walks/layouts
     var cachedPositions = [];
+    var headingDetails = headingArr.map(collectClosedDetails);
 
     function updatePositions() {
-      cachedPositions = headingArr.map(function (h) {
+      cachedPositions = headingArr.map(function (h, idx) {
         // A heading inside a closed fold has no usable position — skip it so
         // the scroll-spy highlights the section the reader can actually see.
-        return isHidden(h) ? null : h.offsetTop;
+        return isHidden(h, headingDetails[idx]) ? null : h.offsetTop;
+      });
+    }
+
+    var posTicking = false;
+    function scheduleUpdatePositions() {
+      if (posTicking) return;
+      posTicking = true;
+      window.requestAnimationFrame(function () {
+        posTicking = false;
+        updatePositions();
       });
     }
 
     updatePositions();
-    onFoldToggle(updatePositions);
+    onFoldToggle(scheduleUpdatePositions);
 
     if (window.ResizeObserver) {
-      var ro = new ResizeObserver(updatePositions);
+      var ro = new ResizeObserver(scheduleUpdatePositions);
       ro.observe(document.body);
     } else {
       window.addEventListener('resize', function() {
@@ -559,6 +676,7 @@
     var body = document.getElementById('paper-body');
     if (!body) return;
     body.querySelectorAll('h1, h2, h3, h4, h5, h6').forEach(function (h) {
+      if (!h.firstElementChild || !h.querySelector('code')) return;
       var codes = h.querySelectorAll(':scope > code');
       for (var i = 0; i < codes.length; i++) {
         var code = codes[i];

@@ -51,6 +51,7 @@
 }
 
 .demo-card {
+  contain: layout style;
   border: 1px solid var(--demo-border);
   border-radius: 10px;
   background: var(--demo-surface);
@@ -420,6 +421,7 @@ a.demo-btn {
 }
 
 .demo-x-frame {
+  contain: layout style;
   border: 1px solid var(--demo-border);
   border-radius: 8px;
   background: var(--demo-surface);
@@ -589,7 +591,10 @@ a.demo-btn {
 
 .demo-x-track-fill {
   height: 100%;
-  width: 0;
+  width: 100%;
+  transform-origin: left center;
+  transform: scaleX(0);
+  will-change: transform;
   background: var(--demo-accent);
 }
 

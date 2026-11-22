@@ -200,7 +200,17 @@
     var cur = node.nodeType === 1 ? node : node.parentNode;
     while (cur && cur !== boundary && cur.nodeType === 1) {
       if (SKIP_TAGS[cur.tagName]) return true;
-      if (cur.matches && cur.matches(SKIP_SELECTOR)) return true;
+      var cl = cur.classList;
+      if (
+        cl &&
+        (cl.contains('mermaid') ||
+          cl.contains('katex') ||
+          cl.contains('paper-demo') ||
+          cl.contains('demo-box') ||
+          cl.contains('paper-icon'))
+      ) {
+        return true;
+      }
       cur = cur.parentNode;
     }
     return false;

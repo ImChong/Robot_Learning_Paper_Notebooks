@@ -122,7 +122,12 @@
     if (info.s) {
       var summary = cardPart(body, 'p', 'roadmap-node-card__summary', info.s);
       summary.setAttribute('lang', 'zh-CN');
-      if (typeof window.renderKaTeXIn === 'function') window.renderKaTeXIn(summary);
+      if (
+        typeof window.renderKaTeXIn === 'function' &&
+        (info.s.indexOf('$') !== -1 || info.s.indexOf('\\(') !== -1 || info.s.indexOf('\\[') !== -1)
+      ) {
+        window.renderKaTeXIn(summary);
+      }
     }
 
     if (info.vs) {

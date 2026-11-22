@@ -92,6 +92,9 @@
             el.hasAttribute('data-en-aria-label')) {
           translate(el);
         }
+        if (!el.firstElementChild) return;
+        var tag = el.tagName;
+        if (tag === 'SVG' || tag === 'SCRIPT' || tag === 'STYLE') return;
         var nested = el.querySelectorAll(
           '[data-en], [data-en-placeholder], [data-en-aria-label]'
         );
@@ -163,8 +166,10 @@
         root.classList.remove('paper-pending');
       };
 
+      {%- if page.layout == "paper" %}
       root.classList.add('paper-pending');
       setTimeout(window.revealPaperBody, REVEAL_TIMEOUT_MS);
+      {%- endif %}
     })();
   </script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -261,12 +266,23 @@
     {%- if page.demos and page.demos.size > 0 -%}{%- assign has_demos = true -%}{%- endif -%}
     {%- unless has_demos or content contains "$" -%}{%- assign needs_katex = false -%}{%- endunless -%}
   {%- endif -%}
+  {%- assign needs_mermaid = false -%}
+  {%- if page.layout == "paper" -%}{%- assign needs_mermaid = true -%}{%- endif -%}
+  {%- if page.layout == "paper" -%}
+    {%- unless content contains "language-mermaid" or content contains 'class="mermaid"' -%}
+      {%- assign needs_mermaid = false -%}
+    {%- endunless -%}
+  {%- endif -%}
+  {%- if needs_katex or needs_mermaid %}
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  {%- endif %}
   {%- if needs_katex %}
   <!-- KaTeX (pinned + SRI) -->
   <link rel="stylesheet"
         href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css"
         integrity="sha384-n8MVd4RsNIU0tAv4ct0nTaAbDJwPJzDEaqSD1odI+WdtXRGWt2kTvGFasHpSy3SV"
-        crossorigin="anonymous">
+        {% unless page.layout == "paper" %}media="print" onload="this.media='all'"
+        {% endunless %}crossorigin="anonymous">
   <script defer
           src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"
           integrity="sha384-XjKyOOlGwcjNTAIQHIpgOno0Hl1YQqzUOEleOLALmuqehneUG+vnGctmUb0ZY0l8"
@@ -279,13 +295,9 @@
   <script>window.katexEnabled = false;</script>
   {%- endif %}
   {%- comment -%}
-    Mermaid 只有论文页用得上（paper.js 把笔记里的流程图代码块换成图）。首页、更新记录、
-    404 没有一张图，以前照样下载 mermaid（约 710 KB）和 DOMPurify：手机 4 倍降速下
-    首页因此多传约 717 KB、多跑约 0.95 s 脚本。这些页不再加载，下面的引导脚本见
-    mermaidScriptState === 'absent' 直接返回。
+    Mermaid 只有带流程图的论文页用得上（paper.js 把笔记里的流程图代码块换成图）。首页、更新记录、
+    404 以及没有 mermaid 代码块的笔记不再下载 mermaid（约 710 KB）与 DOMPurify。
   {%- endcomment -%}
-  {%- assign needs_mermaid = false -%}
-  {%- if page.layout == "paper" -%}{%- assign needs_mermaid = true -%}{%- endif -%}
   {%- if needs_mermaid %}
   <!-- DOMPurify (pinned + SRI). Only mermaid's SVG goes through it, so it
        can wait for the parser like everything else below. -->
@@ -450,6 +462,18 @@
 
     var mermaidRunGeneration = 0;
 
+    var pendingFinishNodes = [];
+    var pendingScopedRun = false;
+
+    function isInsideClosedDetails(el) {
+      var d = el && el.closest ? el.closest('details') : null;
+      while (d) {
+        if (!d.open) return true;
+        d = d.parentElement ? d.parentElement.closest('details') : null;
+      }
+      return false;
+    }
+
     function runMermaid() {
       var readSource =
         typeof window.readMermaidBlockSource === 'function'
@@ -457,14 +481,26 @@
           : function(node) {
               return (node.getAttribute('data-original-code') || node.textContent || '').trim();
             };
-      var nodes = Array.prototype.slice.call(document.querySelectorAll('.mermaid'));
-      // 1. Snapshot source once (restore <br> as literal <br/>); re-render from snapshot on theme changes.
-      nodes.forEach(function(el) {
+      var target = arguments[0];
+      pendingScopedRun = Array.isArray(target) || !!(target && target.nodeType === 1);
+      var rawNodes = Array.isArray(target)
+        ? target
+        : Array.prototype.slice.call(
+            (target && target.querySelectorAll ? target : document).querySelectorAll('.mermaid')
+          );
+      // Snapshot source once (restore <br> as literal <br/>) and skip blocks inside closed folds.
+      var nodes = [];
+      for (var i = 0; i < rawNodes.length; i++) {
+        var el = rawNodes[i];
         if (!el.getAttribute('data-original-code')) {
           var source = readSource(el);
           if (source) el.setAttribute('data-original-code', source);
         }
-      });
+        if (!isInsideClosedDetails(el)) {
+          nodes.push(el);
+          pendingFinishNodes.push(el);
+        }
+      }
 
       renderMermaidBlocks(nodes).then(finishMermaidRun, finishMermaidRun);
     }
@@ -479,8 +515,10 @@
        so no frame shows it empty (an empty block collapses and the text
        below it jumps). A newer run (a second theme switch) stops this one. */
     function renderMermaidBlocks(nodes) {
+      var scoped = pendingScopedRun;
+      pendingScopedRun = false;
       if (!nodes.length) return Promise.resolve();
-      var generation = ++mermaidRunGeneration;
+      var generation = scoped ? mermaidRunGeneration : ++mermaidRunGeneration;
       var viewportHeight = window.innerHeight || document.documentElement.clientHeight || 0;
       var queue = nodes.map(function(el) {
         var rect = el.getBoundingClientRect();
@@ -522,14 +560,18 @@
     }
 
     function finishMermaidRun() {
-      document.querySelectorAll('.mermaid').forEach(function(el) {
+      var targets = pendingFinishNodes.length
+        ? pendingFinishNodes.splice(0, pendingFinishNodes.length)
+        : document.querySelectorAll('.mermaid');
+      for (var i = 0; i < targets.length; i++) {
+        var el = targets[i];
         if (typeof window.patchMermaidForeignObjects === 'function') {
           window.patchMermaidForeignObjects(el);
         }
         // A block mermaid could not render (bad syntax, a rejected run) would
         // stay blank behind its placeholder, so show its source again.
         if (!el.querySelector('svg')) el.classList.add('mermaid-unrendered');
-      });
+      }
       // Safety net only: the math is rendered from DOMContentLoaded below and
       // never lives inside a mermaid subtree, so this is a no-op unless KaTeX
       // arrived late. Guarded by ``__katexInitialized``.
@@ -569,94 +611,110 @@
   </button>
 
   <script>
-    /* ─── 浮动按钮避让页脚 ──────────────────────────────
-       左下角 #sidebar-toggle 与右下角 #back-to-top 都是 position: fixed，
-       滚到底部时会压住 .site-footer。这里按 footer 在视口内的可见高度实时
-       抬高两者共用的 --fab-bottom，保证按钮始终浮在页脚之上。 */
+    /* ─── 浮动按钮避让页脚 + 回到顶部（合并单一 rAF 与 ResizeObserver 缓存） ─────
+       左下角 #sidebar-toggle 与右下角 #back-to-top 都是 position: fixed。
+       将 --fab-bottom 仅写入两个按钮本身（而非 documentElement）以避免全页样式重算，
+       并缓存 scrollHeight / footerHeight，避免滚动回调中读取 scrollHeight 触发强制回流。 */
     (function() {
       var footer = document.querySelector('.site-footer');
-      if (!footer) return;
+      var fabEls = [
+        document.getElementById('sidebar-toggle'),
+        document.getElementById('back-to-top')
+      ];
+      var btn = fabEls[1];
+      var doc = document.documentElement;
 
       var BASE = 24;   // 默认离底距离，与 style.css 中 --fab-bottom 的回退值一致
       var GAP = 16;    // 按钮与页脚顶边之间的呼吸空隙
-      var last = -1;
-
-      function update() {
-        var rect = footer.getBoundingClientRect();
-        // footer 顶边高出视口底边多少，即页脚在屏幕底部占据的高度
-        var overlap = Math.max(0, window.innerHeight - rect.top);
-        var bottom = Math.max(BASE, Math.round(overlap) + GAP);
-        if (bottom !== last) {
-          last = bottom;
-          document.documentElement.style.setProperty('--fab-bottom', bottom + 'px');
-        }
-      }
-
-      var ticking = false;
-      function onScroll() {
-        if (ticking) return;
-        ticking = true;
-        window.requestAnimationFrame(function() {
-          update();
-          ticking = false;
-        });
-      }
-
-      window.addEventListener('scroll', onScroll, { passive: true });
-      window.addEventListener('resize', onScroll, { passive: true });
-      // 语言切换、字体加载等会改变页脚高度，可用时用 ResizeObserver 兜底
-      if (typeof ResizeObserver === 'function') {
-        new ResizeObserver(onScroll).observe(footer);
-      }
-
-      update();
-    })();
-  </script>
-
-  <script>
-    /* ─── Back to Top ───────────────────────────────── */
-    (function() {
-      var btn = document.getElementById('back-to-top');
-      if (!btn) return;
-
+      var lastBottom = -1;
       var visible = false;
       var lastProgress = -1;
+      var cachedScrollHeight = doc.scrollHeight;
+      var cachedViewHeight = window.innerHeight || doc.clientHeight || 0;
+      var cachedFooterHeight = footer ? (footer.offsetHeight || 160) : 0;
+
+      function measure() {
+        cachedViewHeight = window.innerHeight || doc.clientHeight || 0;
+        cachedScrollHeight = doc.scrollHeight;
+        if (footer) cachedFooterHeight = footer.offsetHeight || 160;
+      }
 
       function update() {
-        var doc = document.documentElement;
         var scrolled = window.pageYOffset || doc.scrollTop || 0;
-        var scrollable = doc.scrollHeight - window.innerHeight;
-        var progress = scrollable > 0 ? Math.min(1, Math.max(0, scrolled / scrollable)) : 0;
-        // Quantise to 1% before writing back, so the ring is not repainted every frame
-        var rounded = Math.round(progress * 100) / 100;
-        if (rounded !== lastProgress) {
-          lastProgress = rounded;
-          btn.style.setProperty('--btt-progress', String(rounded));
+        var viewH = cachedViewHeight || window.innerHeight || 0;
+        var scrollable = cachedScrollHeight - viewH;
+
+        if (footer) {
+          var bottom = BASE;
+          if (scrollable - scrolled <= cachedFooterHeight + 80) {
+            var rect = footer.getBoundingClientRect();
+            // footer 顶边高出视口底边多少，即页脚在屏幕底部占据的高度
+            var overlap = Math.max(0, window.innerHeight - rect.top);
+            bottom = Math.max(BASE, Math.round(overlap) + GAP);
+          }
+          if (bottom !== lastBottom) {
+            lastBottom = bottom;
+            var px = bottom + 'px';
+            for (var i = 0; i < fabEls.length; i++) {
+              if (fabEls[i]) fabEls[i].style.setProperty('--fab-bottom', px);
+            }
+          }
         }
-        // Appear after 0.6 viewport, or 35% of a short page's scroll range;
-        // pages with under 240px of scroll never get the button.
-        var shouldShow = scrollable >= 240 &&
-          scrolled > Math.min(window.innerHeight * 0.6, scrollable * 0.35);
-        if (shouldShow !== visible) {
-          visible = shouldShow;
-          btn.classList.toggle('is-visible', shouldShow);
-          btn.setAttribute('aria-hidden', shouldShow ? 'false' : 'true');
-          btn.tabIndex = shouldShow ? 0 : -1;
+
+        if (btn) {
+          var progress = scrollable > 0 ? Math.min(1, Math.max(0, scrolled / scrollable)) : 0;
+          var shouldShow = scrollable >= 240 &&
+            scrolled > Math.min(viewH * 0.6, scrollable * 0.35);
+          if (shouldShow !== visible) {
+            visible = shouldShow;
+            btn.classList.toggle('is-visible', shouldShow);
+            btn.setAttribute('aria-hidden', shouldShow ? 'false' : 'true');
+            btn.tabIndex = shouldShow ? 0 : -1;
+          }
+          if (shouldShow) {
+            // Quantise to 1% before writing back, so the ring is not repainted every frame
+            var rounded = Math.round(progress * 100) / 100;
+            if (rounded !== lastProgress) {
+              lastProgress = rounded;
+              btn.style.setProperty('--btt-progress', String(rounded));
+            }
+          }
         }
       }
 
       var ticking = false;
-      function onScroll() {
+      function scheduleUpdate(needsMeasure) {
+        if (needsMeasure) dirtyMeasure = true;
         if (ticking) return;
         ticking = true;
         window.requestAnimationFrame(function() {
+          if (dirtyMeasure) {
+            dirtyMeasure = false;
+            measure();
+          }
           update();
           ticking = false;
         });
       }
+      var dirtyMeasure = false;
+
+      function onScroll() {
+        scheduleUpdate(false);
+      }
+
+      function onResize() {
+        scheduleUpdate(true);
+      }
 
       window.addEventListener('scroll', onScroll, { passive: true });
       window.addEventListener('resize', onScroll, { passive: true });
+      window.addEventListener('resize', onResize, { passive: true });
+      window.addEventListener('load', onResize, { passive: true });
+      if (typeof ResizeObserver === 'function') {
+        var ro = new ResizeObserver(onResize);
+        if (document.body) ro.observe(document.body);
+        if (footer) ro.observe(footer);
+      }
 
       function scrollToTop() {
         var reduce = false;
@@ -666,12 +724,13 @@
         window.scrollTo({ top: 0, behavior: reduce ? 'instant' : 'smooth' });
       }
 
-      btn.addEventListener('click', scrollToTop);
+      if (btn) btn.addEventListener('click', scrollToTop);
       // Other "back to top" controls (the paper page's right sidebar) reuse it.
       document.querySelectorAll('[data-scroll-top]').forEach(function(el) {
         el.addEventListener('click', scrollToTop);
       });
 
+      measure();
       update();
     })();
   </script>
@@ -748,35 +807,25 @@
         if (langLabel) {
           langLabel.textContent = mode === 'zh' ? 'English' : '中文';
         }
-        // Update all data-en/data-zh elements
-        var els = document.querySelectorAll('[data-en]');
+        // Single DOM query pass across all translatable attributes
+        var useZh = mode === 'zh';
+        var textAttr = useZh ? 'data-zh' : 'data-en';
+        var phAttr = useZh ? 'data-zh-placeholder' : 'data-en-placeholder';
+        var ariaAttr = useZh ? 'data-zh-aria-label' : 'data-en-aria-label';
+        var els = document.querySelectorAll('[data-en], [data-en-placeholder], [data-en-aria-label]');
         for (var i = 0; i < els.length; i++) {
           var el = els[i];
-          // For elements with only data-en/data-zh (no child text nodes), swap textContent
-          var useZh = mode === 'zh';
-          var text = useZh ? el.getAttribute('data-zh') : el.getAttribute('data-en');
+          var text = el.getAttribute(textAttr);
           if (text !== null && el.textContent !== text) {
             el.textContent = text;
           }
-        }
-        // Update placeholders
-        var placeholders = document.querySelectorAll('[data-en-placeholder]');
-        for (var i = 0; i < placeholders.length; i++) {
-          var el = placeholders[i];
-          var useZh = mode === 'zh';
-          var text = useZh ? el.getAttribute('data-zh-placeholder') : el.getAttribute('data-en-placeholder');
-          if (text !== null && el.placeholder !== text) {
-            el.placeholder = text;
+          var ph = el.getAttribute(phAttr);
+          if (ph !== null && el.placeholder !== ph) {
+            el.placeholder = ph;
           }
-        }
-        // Update aria-labels
-        var arias = document.querySelectorAll('[data-en-aria-label]');
-        for (var i = 0; i < arias.length; i++) {
-          var el = arias[i];
-          var useZh = mode === 'zh';
-          var text = useZh ? el.getAttribute('data-zh-aria-label') : el.getAttribute('data-en-aria-label');
-          if (text !== null && el.getAttribute('aria-label') !== text) {
-            el.setAttribute('aria-label', text);
+          var aria = el.getAttribute(ariaAttr);
+          if (aria !== null && el.getAttribute('aria-label') !== aria) {
+            el.setAttribute('aria-label', aria);
           }
         }
         document.dispatchEvent(new CustomEvent('cl-lang-changed', { detail: { mode: mode } }));
@@ -873,11 +922,12 @@
       if (window.__katexInitialized) return true;
       if (typeof renderMathInElement === 'undefined') return false;
 
-      // ⚡ Bolt Optimization: Restrict KaTeX DOM parsing exclusively to the main content area
-      // (like #paper-body) rather than the entire document.body. This entirely skips thousands
-      // of irrelevant nodes in the TOC sidebar, header, and footer, preventing main thread blocking.
-      var mathContainer = document.getElementById('paper-body') || document.body;
-      window.renderKaTeXIn(mathContainer);
+      // Non-paper pages render math lazily inside tooltips/cards via renderKaTeXIn(),
+      // so skip scanning thousands of irrelevant DOM nodes on initial page load.
+      var mathContainer = document.getElementById('paper-body');
+      if (mathContainer) {
+        window.renderKaTeXIn(mathContainer);
+      }
       window.__katexInitialized = true;
       document.dispatchEvent(new CustomEvent('katex-ready'));
       return true;

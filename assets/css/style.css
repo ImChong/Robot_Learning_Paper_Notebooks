@@ -200,7 +200,8 @@ h1, h2, h3, h4, h5, h6 {
   text-wrap: balance;
 }
 
-p, li, blockquote {
+#paper-body p,
+#paper-body blockquote {
   text-wrap: pretty;
 }
 
@@ -321,7 +322,6 @@ html {
   right: 0;
   left: 0;
   z-index: var(--z-header);
-  backdrop-filter: blur(8px);
   padding-top: env(safe-area-inset-top, 0px);
 }
 
@@ -934,6 +934,11 @@ html.index-fold-ready body:not(.index-search-active) .subcategory-section.is-sub
 .paper-list {
   list-style: none;
   padding: 0;
+}
+
+.paper-list > li {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 76px;
 }
 
 .paper-list li {
@@ -1831,7 +1836,7 @@ body.index-search-active .paper-list-toggle-group {
   overflow-x: auto;
   overflow-y: visible;
   -webkit-overflow-scrolling: touch;
-  contain: inline-size;
+  contain: layout style inline-size;
   /* iOS 文本自动放大会让 foreignObject 内文字超出 Mermaid 渲染时测量的
      标签宽度，行尾字符被裁掉（如「并行环境」缺「境」）。 */
   -webkit-text-size-adjust: 100%;
@@ -3384,7 +3389,7 @@ body.mermaid-lightbox-open {
   overflow-x: auto;
   margin: 16px 0;
   line-height: 1.5;
-  contain: inline-size;
+  contain: layout style inline-size;
 }
 
 .paper-body pre code {
@@ -3453,7 +3458,7 @@ body.mermaid-lightbox-open {
   overflow-x: auto;
   overflow-y: hidden;
   padding: 8px 0;
-  contain: inline-size;
+  contain: layout style inline-size;
 }
 
 /* Mermaid htmlLabels render math inside SVG foreignObject; inline-size containment collapses width to 0. */
@@ -3818,7 +3823,7 @@ body.sponsor-dialog-open {
   font-size: 14px;
   line-height: 1.6;
   white-space: pre;
-  contain: inline-size;
+  contain: layout style inline-size;
   /* Grid layout so every row aligns to the same two columns (gutter + cell)
      and the cell track sizes to the widest line. Without this short rows are
      narrower than long rows and scrolling looks like ragged per-line drift. */
@@ -3993,7 +3998,7 @@ body.sponsor-dialog-open {
     max-width: 100%;
     overflow-x: hidden;
     overflow-x: clip;
-    contain: inline-size;
+    contain: layout style inline-size;
   }
 
   /* Inline code (in paragraphs/lists/tables): don't shatter identifiers at every
@@ -4332,6 +4337,8 @@ button.updates-heatmap-cell.is-active {
 
 .updates-day {
   margin-bottom: 24px;
+  content-visibility: auto;
+  contain-intrinsic-size: auto 180px;
 }
 
 .updates-day-date {
@@ -4877,22 +4884,19 @@ a.updates-item-link:hover {
    .is-revealed，过渡结束摘掉两者；JS 失败 / 减动 / 打印时内容照常可见。 */
 .scroll-reveal {
   opacity: 0;
-  transform: translate3d(0, 64px, 0);
-  filter: blur(12px);
+  transform: translate3d(0, 24px, 0);
 }
-/* 论文正文只淡入不上移、不模糊：目录与锚点跳转按 scrollIntoView 定位，位移会让落点偏移，
-   长文逐段模糊也影响阅读。 */
-#paper-body .scroll-reveal { transform: none; filter: none; }
+/* 论文正文只淡入不上移：目录与锚点跳转按 scrollIntoView 定位，位移会让落点偏移。 */
+#paper-body .scroll-reveal { transform: none; }
 .scroll-reveal.is-revealed {
   opacity: 1;
   transform: none;
-  filter: none;
-  transition: opacity .8s var(--ease), transform .8s var(--ease), filter .8s var(--ease);
+  transition: opacity .45s var(--ease), transform .45s var(--ease);
   transition-delay: var(--reveal-delay, 0ms);
 }
 @media (prefers-reduced-motion: reduce) {
-  .scroll-reveal { opacity: 1; transform: none; filter: none; }
+  .scroll-reveal { opacity: 1; transform: none; }
 }
 @media print {
-  .scroll-reveal { opacity: 1 !important; transform: none !important; filter: none !important; }
+  .scroll-reveal { opacity: 1 !important; transform: none !important; }
 }

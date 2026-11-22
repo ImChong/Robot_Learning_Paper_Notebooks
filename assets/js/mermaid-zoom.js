@@ -195,8 +195,20 @@
     return { x: e.clientX, y: e.clientY };
   }
 
+  var cachedViewportRect = null;
+
+  function refreshViewportMetrics() {
+    if (!viewport || !lightbox || lightbox.hidden) {
+      cachedViewportRect = null;
+      return null;
+    }
+    cachedViewportRect = viewport.getBoundingClientRect();
+    return cachedViewportRect;
+  }
+
   function viewportFocal(clientX, clientY) {
-    var vr = viewport.getBoundingClientRect();
+    var vr = cachedViewportRect || refreshViewportMetrics();
+    if (!vr) return { x: 0, y: 0 };
     return {
       x: clientX - (vr.left + vr.width / 2),
       y: clientY - (vr.top + vr.height / 2),
@@ -217,6 +229,7 @@
   }
 
   function beginPinch() {
+    refreshViewportMetrics();
     var pair = getPointerPair();
     var mid = pinchMidpoint(pair[0], pair[1]);
     var focal = viewportFocal(mid.x, mid.y);
@@ -264,13 +277,17 @@
   function wheelScaleFactor(e) {
     var delta = e.deltaY;
     if (e.deltaMode === 1) delta *= 16;
-    else if (e.deltaMode === 2) delta *= Math.max(viewport.clientHeight, 1);
+    else if (e.deltaMode === 2) {
+      var vr = cachedViewportRect || refreshViewportMetrics();
+      delta *= Math.max(vr ? vr.height : viewport.clientHeight, 1);
+    }
     return Math.exp(-delta * 0.002);
   }
 
   function onWheel(e) {
     if (!lightbox || lightbox.hidden) return;
     e.preventDefault();
+    if (!cachedViewportRect) refreshViewportMetrics();
     var focal = viewportFocal(e.clientX, e.clientY);
     setScaleAtFocal(focal.x, focal.y, state.scale * wheelScaleFactor(e));
   }
@@ -338,6 +355,7 @@
     lightbox.hidden = false;
     lightbox.classList.add('is-open');
     document.body.classList.add('mermaid-lightbox-open');
+    cachedViewportRect = null;
 
     if (!openWithSvgClone(sourceEl)) {
       setStagePreparing(false);

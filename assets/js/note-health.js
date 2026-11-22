@@ -118,11 +118,19 @@
     tip.style.top = Math.round(top) + 'px';
   }
 
+  var lastBuiltTarget = null;
+  var lastBuiltLang = null;
+
   function show(target, pin) {
     if (current && current !== target) current.classList.remove('is-tip-open');
     current = target;
     pinned = !!pin;
-    build(target);
+    var lang = document.documentElement.getAttribute('data-lang-mode') === 'zh' ? 'zh' : 'en';
+    if (lastBuiltTarget !== target || lastBuiltLang !== lang) {
+      build(target);
+      lastBuiltTarget = target;
+      lastBuiltLang = lang;
+    }
     tip.hidden = false;
     place(target);
     if (pinned) target.classList.add('is-tip-open');
