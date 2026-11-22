@@ -116,8 +116,12 @@ def test_shell_has_skip_link_404_and_share_image():
     assert (ROOT / "assets" / "img" / "og-default.png").is_file()
 
 
-def test_header_and_tab_icon_keep_the_original_design():
+def test_header_and_tab_icon_use_vector_brand_marks():
     header = (ROOT / "_includes" / "header.html").read_text(encoding="utf-8")
-    assert "📚 {{ site.title | escape }} | {{ site.description | escape }}" in header
-    assert "<text y='.9em' font-size='90'>📚</text>" in LAYOUT
+    assert "site-brand-mark" in header
+    assert "{{ site.title | escape }} | {{ site.description | escape }}" in header
+    assert "assets/icons/favicon-home.svg" in LAYOUT
+    assert "assets/icons/favicon-paper.svg" in LAYOUT
+    assert "assets/icons/favicon-updates.svg" in LAYOUT
+    assert "href=\"data:image/svg+xml," not in LAYOUT
     assert _STYLE_ALL.count("/* legacy-header:start */") == 1

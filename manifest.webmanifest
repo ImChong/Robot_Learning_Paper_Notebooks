@@ -1,0 +1,24 @@
+{
+  "name": "Robot Learning Paper Notebooks | 机器人学习论文笔记",
+  "short_name": "Paper Notebooks",
+  "description": "人形机器人学习方向的每日论文精读笔记：强化学习、动作重定向、全身控制、Sim-to-Real 等方向的中文笔记，附学习路线图、交互演示与讲解视频。",
+  "start_url": "/Robot_Learning_Paper_Notebooks/",
+  "scope": "/Robot_Learning_Paper_Notebooks/",
+  "display": "standalone",
+  "background_color": "#181818",
+  "theme_color": "#181818",
+  "icons": [
+    {
+      "src": "assets/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "assets/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
