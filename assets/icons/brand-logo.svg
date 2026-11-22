@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+  <style>
+    .book-stroke { stroke: #e8e8e4; }
+    .book-inner { stroke: #e8e8e4; stroke-opacity: 0.34; }
+    .active-stroke { stroke: #569cd6; }
+    .active-dot { fill: #569cd6; }
+    @media (prefers-color-scheme: light) {
+      .book-stroke { stroke: #333333; }
+      .book-inner { stroke: #333333; stroke-opacity: 0.32; }
+      .active-stroke { stroke: #b31b1b; }
+      .active-dot { fill: #b31b1b; }
+    }
+  </style>
+  <rect class="book-stroke" x="4.8" y="7" width="6.2" height="19" rx="1.4" stroke-width="2"/>
+  <rect class="book-stroke" x="11" y="5.5" width="6.4" height="20.5" rx="1.4" stroke-width="2"/>
+  <path class="book-inner" d="M7.2 11.2H8.6M7.2 21.8H8.6M13.4 10H15M13.4 21.8H15" stroke-width="1.5" stroke-linecap="round"/>
+  <path class="active-stroke" d="M18.6 8.2L24.2 6.8L27.4 24.4L21.8 25.8L18.6 8.2Z" stroke-width="2" stroke-linejoin="round"/>
+  <circle class="active-dot" cx="23" cy="16.3" r="1.25"/>
+</svg>

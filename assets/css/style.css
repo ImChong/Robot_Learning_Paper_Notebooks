@@ -309,9 +309,9 @@ html {
 }
 
 /* legacy-header:start */
-/* 页头保持改版前的设计（维护者 2026-10-26 的选择）：emoji 标题、文字 GitHub 链接、
-   带边框的按钮。这一段原样取自改版前的 style.css，只有 z-index 换成同值的 token，
-   并补回原先由全局 `*` 过渡提供的颜色过渡。tests/test_design_tokens.py 跳过这一段。 */
+/* 页头保持原有的紧凑布局（文字 GitHub 链接、带边框按钮），并已升级为矢量主标
+   （首页/更新页方案 C 叠书、详情笔记页方案 A 展开笔记）与 1.55px 单色线性 SVG 按钮图标
+   （参考 Robotics_Notebooks#4090）。tests/test_design_tokens.py 跳过这一段。 */
 /* ===== Header ===== */
 .site-header {
   background: var(--header-bg);
@@ -336,12 +336,24 @@ html {
 }
 
 .site-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
   font-family: 'Arial', 'Helvetica Neue', sans-serif;
   font-size: 1.15rem;
   font-weight: 700;
   color: var(--text);
   text-decoration: none;
   transition: color 0.3s ease;
+}
+.site-brand-mark {
+  width: 1.32em;
+  height: 1.32em;
+  flex-shrink: 0;
+  display: block;
+}
+.site-title-text {
+  min-width: 0;
 }
 .site-title:hover {
   color: var(--link);
@@ -377,6 +389,7 @@ html {
   cursor: pointer;
   font-size: 0.85rem;
   line-height: 1;
+  color: var(--text);
   min-width: 36px;
   height: 30px;
   text-align: center;
@@ -384,10 +397,27 @@ html {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  transition: border-color 0.3s ease;
+  transition: border-color 0.3s ease, color 0.3s ease;
 }
 .theme-toggle:hover {
   border-color: var(--link);
+  color: var(--link);
+}
+.icon-sun {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.icon-moon {
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+[data-theme="light"] .icon-sun {
+  display: none;
+}
+[data-theme="light"] .icon-moon {
+  display: inline-flex;
 }
 
 /* ===== Language Toggle ===== */
@@ -445,7 +475,23 @@ html {
   background: rgba(226, 86, 106, 0.12);
 }
 .sponsor-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   color: #e2566a;
+}
+.ui-icon {
+  width: 1em;
+  height: 1em;
+  display: inline-block;
+  flex-shrink: 0;
+  vertical-align: -0.15em;
+}
+.theme-toggle .ui-icon,
+.sponsor-toggle .ui-icon {
+  width: 15px;
+  height: 15px;
+  vertical-align: middle;
 }
 
 @media (max-width: 600px) {
@@ -461,7 +507,9 @@ html {
     box-sizing: border-box;
   }
   .site-title {
-    display: block;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
     flex: 1 1 0;
     width: auto;
     max-width: none;
@@ -471,7 +519,11 @@ html {
     white-space: nowrap;
     overflow: hidden;
     overflow-wrap: normal;
+  }
+  .site-title-text {
+    overflow: hidden;
     text-overflow: ellipsis;
+    white-space: nowrap;
   }
   .header-right {
     flex: 0 0 auto;
@@ -3801,8 +3853,13 @@ body.sponsor-dialog-open {
     white-space: nowrap;
     overflow: hidden;
     overflow-wrap: normal;
-    text-overflow: ellipsis;
     line-height: 1.3;
+  }
+
+  .site-title-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .header-right {

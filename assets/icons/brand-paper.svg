@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+  <style>
+    .book-stroke { stroke: #e8e8e4; }
+    .book-inner { stroke: #e8e8e4; stroke-opacity: 0.34; }
+    .curve-stroke { stroke: #569cd6; }
+    .curve-dot { fill: #569cd6; }
+    @media (prefers-color-scheme: light) {
+      .book-stroke { stroke: #333333; }
+      .book-inner { stroke: #333333; stroke-opacity: 0.32; }
+      .curve-stroke { stroke: #b31b1b; }
+      .curve-dot { fill: #b31b1b; }
+    }
+  </style>
+  <path class="book-stroke" d="M4.5 8.5C8 7 12.5 7 16 9.2C19.5 7 24 7 27.5 8.5V23.5C24 22 19.5 22 16 24.4C12.5 22 8 22 4.5 23.5V8.5Z" stroke-width="2" stroke-linejoin="round"/>
+  <path class="book-inner" d="M16 9.2V24.4M8.2 12.4H12.5M19.5 19.2H23.8" stroke-width="1.5" stroke-linecap="round"/>
+  <path class="curve-stroke" d="M8.6 19.3C11.8 18.6 13.6 16.5 16 15.2C18.4 13.9 20.4 12.6 23.4 11.8" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle class="curve-dot" cx="8.6" cy="19.3" r="2.1"/>
+  <circle class="curve-dot" cx="16" cy="15.2" r="2.2"/>
+  <circle class="curve-dot" cx="23.4" cy="11.8" r="2.2"/>
+</svg>
