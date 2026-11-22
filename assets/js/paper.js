@@ -288,6 +288,10 @@
   function fillTocLink(a, h) {
     if (h.querySelector('.katex, .katex-mathml')) {
       a.innerHTML = h.innerHTML;
+    } else if (h.querySelector('.paper-icon')) {
+      a.textContent = '';
+      var clone = h.cloneNode(true);
+      while (clone.firstChild) a.appendChild(clone.firstChild);
     } else {
       a.textContent = h.textContent;
     }
@@ -659,6 +663,9 @@
     /* Typeset #paper-body before the TOC clones heading markup — this
        listener runs before initKaTeX's inline DOMContentLoaded hook. */
     if (typeof window.initKaTeX === 'function') window.initKaTeX();
+    if (window.PaperNoteIcons && typeof window.PaperNoteIcons.hydrate === 'function') {
+      window.PaperNoteIcons.hydrate(document.getElementById('paper-body'));
+    }
     initTableWrappers();
     initFolds();
     initToc();

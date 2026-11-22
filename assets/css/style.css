@@ -3288,6 +3288,84 @@ body.mermaid-lightbox-open {
   outline-offset: 2px;
 }
 
+/* Paper note semantic SVG icons (assets/js/paper-icons.js, P2 + T2) */
+.paper-icon {
+  display: inline-block;
+  width: 1.05em;
+  height: 1.05em;
+  vertical-align: -0.17em;
+  flex-shrink: 0;
+  color: currentColor;
+}
+
+.paper-icon--leading {
+  margin-right: 0.42em;
+}
+
+.paper-icon--status {
+  margin-right: 0.2em;
+}
+
+.paper-icon--accent {
+  color: var(--link);
+}
+
+.paper-icon--muted {
+  color: var(--text-secondary);
+}
+
+.paper-icon--ok {
+  color: var(--health-high);
+}
+
+.paper-icon--err {
+  color: var(--health-none);
+}
+
+.paper-icon--warn {
+  color: var(--health-mid);
+}
+
+.paper-icon--star {
+  color: var(--icon-star);
+}
+
+.paper-body h2 > .paper-icon--heading,
+.paper-body h3 > .paper-icon--heading,
+.paper-body h4 > .paper-icon--heading {
+  width: 0.96em;
+  height: 0.96em;
+  vertical-align: -0.14em;
+  margin-right: 0.38em;
+}
+
+.paper-body details > summary > .paper-icon--summary {
+  width: 1.05em;
+  height: 1.05em;
+  vertical-align: -0.16em;
+  margin-left: 0.18em;
+  margin-right: 0.4em;
+}
+
+.paper-health-label .paper-icon {
+  margin-right: 0.35em;
+}
+
+/* T2: Sidebar TOC renders matching low-contrast monochrome SVG icons */
+.toc-link .paper-icon {
+  width: 1.08em;
+  height: 1.08em;
+  vertical-align: -0.18em;
+  margin-right: 0.42em;
+  color: currentColor;
+  opacity: 0.72;
+}
+
+.toc-link:hover .paper-icon,
+.toc-link.active .paper-icon {
+  opacity: 1;
+}
+
 /* Code */
 .paper-body code {
   font-family: var(--font-mono);
