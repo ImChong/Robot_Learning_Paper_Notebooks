@@ -22,6 +22,32 @@
     })();
   </script>
   <script>
+    /* Apply saved UI version (modern blueprint default vs classic skin) before first paint. */
+    (function () {
+      var UI_KEY = 'cl-ui';
+      function getSiteUi() {
+        try {
+          var search = window.location.search || '';
+          if (search.indexOf('ui=classic') !== -1) {
+            try { localStorage.setItem(UI_KEY, 'classic'); } catch (e) {}
+            return 'classic';
+          }
+          if (search.indexOf('ui=modern') !== -1) {
+            try { localStorage.setItem(UI_KEY, 'modern'); } catch (e) {}
+            return 'modern';
+          }
+          return localStorage.getItem(UI_KEY) === 'classic' ? 'classic' : 'modern';
+        } catch (e) {
+          return 'modern';
+        }
+      }
+      window.getSiteUi = getSiteUi;
+      if (getSiteUi() === 'classic') {
+        document.documentElement.setAttribute('data-ui', 'classic');
+      }
+    })();
+  </script>
+  <script>
     /* Apply saved language before first paint (avoids zh/en text flash).
 
        Two separate problems have to be solved before the first frame:
@@ -129,8 +155,10 @@
     })();
   </script>
   <style>
-    html { color-scheme: dark; background-color: #181818; }
-    html[data-theme="light"] { color-scheme: light; background-color: #ffffff; }
+    html { color-scheme: dark; background-color: #0a0b0d; }
+    html[data-theme="light"] { color-scheme: light; background-color: #f5f4f0; }
+    html[data-ui="classic"] { background-color: #181818; }
+    html[data-ui="classic"][data-theme="light"] { background-color: #ffffff; }
 
     /* Hold the paper body back until the post-parse pass has run.
 
@@ -229,22 +257,23 @@
   <meta property="og:image:alt" content="{{ site.title | escape }} · {{ site.description | escape }}">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:image" content="{{ og_image }}">
-  <meta name="theme-color" content="#181818" media="(prefers-color-scheme: dark)">
-  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0a0b0d" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#f5f4f0" media="(prefers-color-scheme: light)">
   {%- assign favicon_path = '/assets/icons/favicon-home.svg' -%}
   {%- if page.layout == 'paper' -%}
     {%- assign favicon_path = '/assets/icons/favicon-paper.svg' -%}
-  {%- elsif page.url == '/updates.html' -%}
+  {%- elsif page.url == '/updates.html' or page.url == '/analytics.html' -%}
     {%- assign favicon_path = '/assets/icons/favicon-updates.svg' -%}
   {%- endif -%}
   <link rel="icon" type="image/svg+xml" href="{{ favicon_path | relative_url }}">
   <link rel="apple-touch-icon" href="{{ '/assets/icons/apple-touch-icon.png' | relative_url }}">
   <link rel="manifest" href="{{ '/manifest.webmanifest' | relative_url }}">
   {%- comment -%}
-    Latin UI font (Geist, self-hosted). Preload the one subset every page uses so
-    headings do not swap fonts after first paint.
+    Latin UI fonts (Geist & Geist Mono, self-hosted). Preload the subsets every page uses so
+    headings and mono telemetry do not swap fonts after first paint.
   {%- endcomment %}
   <link rel="preload" href="{{ '/assets/fonts/geist-latin-wght-normal.woff2' | relative_url }}" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="{{ '/assets/fonts/geist-mono-latin-wght-normal.woff2' | relative_url }}" as="font" type="font/woff2" crossorigin>
   {%- comment -%}
     Cache-bust local assets with their last-modified time so a corrected
     stylesheet/script actually reaches returning visitors instead of a stale
@@ -252,6 +281,8 @@
   {%- endcomment -%}
   {% assign style_css = site.static_files | where: "path", "/assets/css/style.css" | first %}
   <link rel="stylesheet" href="{{ '/assets/css/style.css' | relative_url }}{% if style_css %}?v={{ style_css.modified_time | date: '%s' }}{% endif %}">
+  {% assign classic_css = site.static_files | where: "path", "/assets/css/classic.css" | first %}
+  <link rel="stylesheet" href="{{ '/assets/css/classic.css' | relative_url }}{% if classic_css %}?v={{ classic_css.modified_time | date: '%s' }}{% endif %}">
   {%- comment -%}
     KaTeX 只在用得上的页面加载（CSS + JS 约 300 KB，gzip 后约 90 KB，另有按需字体）：
     392 篇笔记里 298 篇一条公式也没有。规则：论文页正文不含「$」且没有交互演示
@@ -1131,6 +1162,17 @@
         });
       }
 
+      document.addEventListener('keydown', function(e) {
+        if (!(e.ctrlKey || e.metaKey) || !e.shiftKey) return;
+        if (e.key !== 'L' && e.key !== 'l') return;
+        var el = e.target;
+        if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT' || el.isContentEditable)) {
+          return;
+        }
+        e.preventDefault();
+        setTheme(targetTheme === 'dark' ? 'light' : 'dark', true, true);
+      });
+
       try {
         var scheme = window.matchMedia('(prefers-color-scheme: light)');
         var onSchemeChange = function() {
@@ -1139,6 +1181,36 @@
         if (scheme.addEventListener) scheme.addEventListener('change', onSchemeChange);
         else if (scheme.addListener) scheme.addListener(onSchemeChange);
       } catch (e) { /* no matchMedia */ }
+    })();
+
+    /* ─── UI Version Toggle (New Blueprint / Classic) ──────── */
+    (function() {
+      var UI_KEY = 'cl-ui';
+      var html = document.documentElement;
+      var btn = document.getElementById('ui-version-toggle');
+      if (!btn) return;
+
+      function syncButton(isClassic) {
+        btn.setAttribute('aria-pressed', isClassic ? 'true' : 'false');
+      }
+
+      function applyUi(mode, persist) {
+        var isClassic = mode === 'classic';
+        if (isClassic) html.setAttribute('data-ui', 'classic');
+        else html.removeAttribute('data-ui');
+        if (persist) {
+          try { localStorage.setItem(UI_KEY, isClassic ? 'classic' : 'modern'); } catch (e) {}
+        }
+        syncButton(isClassic);
+        document.dispatchEvent(new CustomEvent('cl-ui-changed', { detail: { mode: isClassic ? 'classic' : 'modern' } }));
+      }
+
+      syncButton(html.getAttribute('data-ui') === 'classic');
+
+      btn.addEventListener('click', function() {
+        var isClassic = html.getAttribute('data-ui') === 'classic';
+        applyUi(isClassic ? 'modern' : 'classic', true);
+      });
     })();
 
     /* Smooth anchor scrolling only after load, so the initial #hash jump is instant. */

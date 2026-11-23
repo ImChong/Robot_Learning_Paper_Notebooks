@@ -9,13 +9,10 @@ import re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-_STYLE_ALL = (ROOT / "assets" / "css" / "style.css").read_text(encoding="utf-8")
-# The site header keeps its pre-redesign look by the maintainer's choice; that block
-# is copied verbatim from the old stylesheet and is exempt from the rules below.
-STYLE = re.sub(
-    r"/\* legacy-header:start \*/.*?/\* legacy-header:end \*/", "", _STYLE_ALL, flags=re.S
-)
+STYLE = (ROOT / "assets" / "css" / "style.css").read_text(encoding="utf-8")
+CLASSIC_STYLE = (ROOT / "assets" / "css" / "classic.css").read_text(encoding="utf-8")
 LAYOUT = (ROOT / "_layouts" / "default.html").read_text(encoding="utf-8")
+INDEX = (ROOT / "index.html").read_text(encoding="utf-8")
 
 TYPE_SCALE_PX = {12, 14, 16, 18, 20, 24, 30, 36, 48}
 
@@ -124,4 +121,36 @@ def test_header_and_tab_icon_use_vector_brand_marks():
     assert "assets/icons/favicon-paper.svg" in LAYOUT
     assert "assets/icons/favicon-updates.svg" in LAYOUT
     assert "href=\"data:image/svg+xml," not in LAYOUT
-    assert _STYLE_ALL.count("/* legacy-header:start */") == 1
+    assert "/* legacy-header:start */" not in STYLE
+    assert 'class="main-nav"' in header
+    assert 'id="ui-version-toggle"' in header
+    assert 'class="kbd-hint"' in header
+
+
+def test_blueprint_palette_radii_minimal_home_and_analytics():
+    for token in ("#0a0b0d", "#5ca4ff", "#f5f4f0", "#b31b1b"):
+        assert token in STYLE, token
+    for radius in ("--radius-sm: 0px;", "--radius-md: 2px;", "--radius-lg: 2px;", "--radius-xl: 2px;", "--radius-2xl: 2px;"):
+        assert radius in STYLE, radius
+    # Homepage stays minimal: no embedded hero telemetry / health chart; links to analytics.html instead.
+    assert "hero-viewport" not in INDEX
+    assert "telemetry-bars" not in INDEX
+    assert 'class="index-meta-chips"' in INDEX
+    assert "/analytics.html" in INDEX
+
+    header = (ROOT / "_includes" / "header.html").read_text(encoding="utf-8")
+    updates = (ROOT / "updates.html").read_text(encoding="utf-8")
+    analytics = (ROOT / "analytics.html").read_text(encoding="utf-8")
+    assert "/analytics.html" in header
+    assert "/analytics.html" in updates
+    for marker in ('id="analytics-data"', 'id="analytics-app"', "analytics-bars", "analytics-cats", "analytics-explorer"):
+        assert marker in analytics, marker
+
+
+def test_classic_ui_switcher_and_theme_shortcut():
+    assert (ROOT / "assets" / "css" / "classic.css").is_file()
+    assert 'html[data-ui="classic"]' in CLASSIC_STYLE
+    assert "window.getSiteUi" in LAYOUT
+    assert "/assets/css/classic.css" in LAYOUT
+    assert "ui-version-toggle" in LAYOUT
+    assert "e.key !== 'L' && e.key !== 'l'" in LAYOUT

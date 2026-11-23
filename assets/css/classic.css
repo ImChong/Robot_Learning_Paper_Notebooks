@@ -1,0 +1,440 @@
+/* ===== Classic UI Skin (toggled via html[data-ui="classic"]) =====
+ * Restores the pre-blueprint Obsidian/VS Code & crisp-white arXiv-red visual theme,
+ * 4–16px rounded cards, classic compact header, and gradient hero heading.
+ * Loaded after style.css so all base structural rules and layout queries remain shared. */
+
+html[data-ui="classic"],
+html[data-ui="classic"][data-theme="dark"] {
+  --bg: #181818;
+  --bg-alt: #1f1f1f;
+  --bg-secondary: #1f1f1f;
+  --bg-hover: #272727;
+  --text: #d4d4d4;
+  --text-secondary: #a0a0a0;
+  --text-muted: #8a8a8a;
+  --link: #569cd6;
+  --link-hover: #9cdcfe;
+  --border: #313131;
+  --line: #313131;
+  --line-strong: #474747;
+  --code-bg: #1f1f1f;
+  --code-border: #313131;
+  --code-surface: #181818;
+  --code-gutter: #6a6a6a;
+  --header-bg: #252526;
+  --header-border: #3c3c3c;
+  --card-bg: #1f1f1f;
+  --card-shadow: rgba(2, 8, 16, 0.45);
+  --blockquote-border: #569cd6;
+  --blockquote-bg: #1f1f1f;
+  --table-stripe: #272727;
+  --kbd-bg: #272727;
+  --accent-soft: rgba(86, 156, 214, 0.14);
+  --on-accent: #181818;
+  --health-off: #474747;
+  --hero-from: #ffffff;
+  --hero-to: #9b9b9b;
+}
+
+html[data-ui="classic"][data-theme="light"] {
+  --bg: #ffffff;
+  --bg-alt: #f8f8f8;
+  --bg-secondary: #f8f8f8;
+  --bg-hover: #f1f1f1;
+  --text: #333333;
+  --text-secondary: #666666;
+  --text-muted: #767676;
+  --link: #b31b1b;
+  --link-hover: #8b1515;
+  --border: #e0e0e0;
+  --line: #e0e0e0;
+  --line-strong: #cccccc;
+  --code-bg: #f5f5f5;
+  --code-border: #e0e0e0;
+  --code-surface: #ffffff;
+  --code-gutter: #999999;
+  --header-bg: #fafafa;
+  --header-border: #dddddd;
+  --card-bg: #f8f8f8;
+  --card-shadow: rgba(90, 20, 20, 0.1);
+  --blockquote-border: #b31b1b;
+  --blockquote-bg: #fdf6f6;
+  --table-stripe: #f9f9f9;
+  --kbd-bg: #eeeeee;
+  --accent-soft: rgba(179, 27, 27, 0.08);
+  --on-accent: #ffffff;
+  --health-off: #d4d4d4;
+  --hero-from: #000000;
+  --hero-to: #666666;
+}
+
+html[data-ui="classic"] {
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+  --radius-2xl: 16px;
+  --ease: cubic-bezier(0.32, 0.72, 0, 1);
+  --dur: 700ms;
+  --dur-micro: 240ms;
+}
+
+/* Header */
+html[data-ui="classic"] .site-header {
+  background: var(--header-bg);
+  border-bottom: 1px solid var(--header-border);
+}
+
+html[data-ui="classic"] .header-inner,
+html[data-ui="classic"] body:has(.index-layout) .header-inner {
+  max-width: 960px;
+  padding: 8px 24px;
+  min-height: 56px;
+}
+
+html[data-ui="classic"] .header-start {
+  gap: 0;
+}
+
+html[data-ui="classic"] .site-title {
+  font-family: 'Arial', 'Helvetica Neue', sans-serif;
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+html[data-ui="classic"] .main-nav,
+html[data-ui="classic"] .kbd-hint {
+  display: none;
+}
+
+html[data-ui="classic"] .header-right {
+  gap: 1rem;
+}
+
+html[data-ui="classic"] .github-link {
+  font-family: 'Arial', sans-serif;
+  font-size: 0.85rem;
+  height: 30px;
+  padding: 0 2px;
+}
+
+html[data-ui="classic"] .theme-toggle,
+html[data-ui="classic"] .lang-toggle,
+html[data-ui="classic"] .version-toggle,
+html[data-ui="classic"] .sponsor-toggle {
+  border-radius: 6px;
+  padding: 0 0.6rem;
+  min-width: 36px;
+  height: 30px;
+  font-family: inherit;
+}
+
+html[data-ui="classic"] .lang-toggle,
+html[data-ui="classic"] .version-toggle {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+html[data-ui="classic"] .lang-toggle:hover,
+html[data-ui="classic"] .version-toggle:hover {
+  background: var(--link);
+  color: #fff;
+  border-color: var(--link);
+}
+
+html[data-ui="classic"] .theme-toggle:hover {
+  background: transparent;
+  border-color: var(--link);
+  color: var(--link);
+}
+
+html[data-ui="classic"] .version-toggle .ui-label-classic {
+  display: none;
+}
+
+html[data-ui="classic"] .version-toggle .ui-label-modern {
+  display: inline;
+}
+
+@media (max-width: 600px) {
+  html[data-ui="classic"] .header-inner {
+    padding: 0.6rem 0.5rem;
+    gap: 0.5rem;
+  }
+  html[data-ui="classic"] .site-title {
+    font-size: 1rem;
+  }
+  html[data-ui="classic"] .header-right {
+    gap: 0.35rem;
+  }
+  html[data-ui="classic"] .lang-toggle,
+  html[data-ui="classic"] .version-toggle,
+  html[data-ui="classic"] .theme-toggle,
+  html[data-ui="classic"] .sponsor-toggle {
+    min-width: 32px;
+    height: 30px;
+    padding: 0 0.45rem;
+  }
+}
+
+/* Container & Index Layout */
+html[data-ui="classic"] body:has(.index-layout) .container,
+html[data-ui="classic"] body:has(.index-layout) .footer-inner {
+  max-width: 960px;
+}
+
+@media (min-width: 1440px) {
+  html[data-ui="classic"] .index-layout {
+    grid-template-columns: 200px minmax(0, 1fr);
+    column-gap: 40px;
+    margin-left: -240px;
+  }
+}
+
+/* Classic Hero */
+html[data-ui="classic"] .index-header {
+  max-width: 680px;
+  padding-bottom: 0;
+  border-bottom: 0;
+  margin-bottom: 40px;
+}
+
+html[data-ui="classic"] .index-meta-chips {
+  display: flex;
+  margin-top: 24px;
+}
+
+html[data-ui="classic"] .index-chip {
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 20px;
+  background: var(--bg-secondary);
+  border-radius: var(--radius-lg);
+}
+
+html[data-ui="classic"] .index-chip .icon {
+  width: 16px;
+  height: 16px;
+}
+
+html[data-ui="classic"] .index-header h1 {
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--text);
+  background: linear-gradient(90deg, var(--hero-from), var(--hero-to));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  padding-bottom: 0.1em;
+  margin-bottom: 12px;
+}
+
+html[data-ui="classic"] .index-header .index-lede {
+  margin-top: 0;
+  font-size: 18px;
+  line-height: 28px;
+}
+
+/* Classic Search & Legend */
+html[data-ui="classic"] .search-kbd {
+  display: none;
+}
+
+html[data-ui="classic"] #paper-search {
+  padding-right: 16px;
+}
+
+html[data-ui="classic"] #paper-search:focus {
+  box-shadow: 0 0 0 4px var(--accent-soft);
+}
+
+html[data-ui="classic"] .index-main .index-legend {
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  font-family: inherit;
+  padding: 0;
+  margin: 0 0 8px;
+}
+
+/* Classic Paper Cards */
+html[data-ui="classic"] .category-title {
+  font-weight: 700;
+}
+
+html[data-ui="classic"] .paper-list {
+  border-top: 0;
+}
+
+html[data-ui="classic"] .paper-list li {
+  margin-bottom: 8px;
+  border-bottom: 0;
+}
+
+html[data-ui="classic"] .paper-card {
+  background: var(--card-bg);
+  border: 1px solid transparent;
+  border-radius: var(--radius-lg);
+  padding: 12px 16px;
+}
+
+html[data-ui="classic"] .paper-card:hover {
+  background: var(--bg-hover);
+  color: var(--link);
+}
+
+html[data-ui="classic"] .paper-card:active {
+  transform: scale(0.99);
+}
+
+html[data-ui="classic"] .paper-card .paper-title {
+  font-weight: 600;
+}
+
+html[data-ui="classic"] .paper-card .paper-published,
+html[data-ui="classic"] .paper-health-score,
+html[data-ui="classic"] .paper-list-toggle-btn {
+  font-family: inherit;
+}
+
+html[data-ui="classic"] .paper-list-toggle-btn {
+  font-size: 14px;
+  line-height: 20px;
+  background: transparent;
+}
+
+/* Classic Sidebars */
+@media (min-width: 1440px) {
+  html[data-ui="classic"] .toc-wrapper {
+    background: transparent;
+    border: 0;
+    padding: 12px 0;
+  }
+}
+
+html[data-ui="classic"] .right-sidebar-wrapper {
+  background: transparent;
+  border: 0;
+  padding: 12px 0;
+  font-family: inherit;
+}
+
+html[data-ui="classic"] .toc-title {
+  font-family: inherit;
+  text-transform: none;
+  letter-spacing: 0.02em;
+}
+
+/* Classic Paper Detail */
+html[data-ui="classic"] .breadcrumb {
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 20px;
+}
+
+html[data-ui="classic"] .paper-body h1,
+html[data-ui="classic"] .paper-body h2,
+html[data-ui="classic"] .paper-body h3 {
+  font-weight: 700;
+}
+
+/* Classic Updates, Analytics & 404 */
+html[data-ui="classic"] .updates-kicker,
+html[data-ui="classic"] .analytics-kicker-row {
+  display: none;
+}
+
+html[data-ui="classic"] .updates-header,
+html[data-ui="classic"] .analytics-header {
+  max-width: 720px;
+  margin-bottom: 32px;
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+html[data-ui="classic"] .updates-header h1,
+html[data-ui="classic"] .analytics-header h1 {
+  font-weight: 700;
+}
+
+html[data-ui="classic"] .analytics-kpis,
+html[data-ui="classic"] .analytics-overview,
+html[data-ui="classic"] .analytics-section {
+  border-radius: var(--radius-xl);
+}
+
+html[data-ui="classic"] .analytics-bars,
+html[data-ui="classic"] .analytics-bar-btn,
+html[data-ui="classic"] .analytics-crit-row,
+html[data-ui="classic"] .page-cross-link,
+html[data-ui="classic"] .analytics-tab,
+html[data-ui="classic"] .analytics-sort-btn,
+html[data-ui="classic"] .analytics-pill,
+html[data-ui="classic"] .analytics-chip,
+html[data-ui="classic"] .analytics-reset-btn {
+  border-radius: var(--radius-md);
+  font-family: inherit;
+}
+
+html[data-ui="classic"] .page-cross-link,
+html[data-ui="classic"] .analytics-tab,
+html[data-ui="classic"] .analytics-sort-btn,
+html[data-ui="classic"] .analytics-pill {
+  font-weight: 600;
+}
+
+html[data-ui="classic"] .updates-heatmap {
+  --hm-level-0: #272727;
+  --hm-level-1: #1d4f8c;
+  --hm-level-2: #2a6cb4;
+  --hm-level-3: #569cd6;
+  --hm-level-4: #9cdcfe;
+}
+
+html[data-ui="classic"][data-theme="light"] .updates-heatmap {
+  --hm-level-0: #ebedf0;
+  --hm-level-1: #eba39c;
+  --hm-level-2: #d96b60;
+  --hm-level-3: #b31b1b;
+  --hm-level-4: #8b1515;
+}
+
+html[data-ui="classic"] .updates-timeline-days::before {
+  width: 2px;
+}
+
+html[data-ui="classic"] .updates-day-dot {
+  border-radius: 50%;
+}
+
+html[data-ui="classic"] .not-found h1 {
+  font-weight: 700;
+  color: var(--text);
+  background: linear-gradient(90deg, var(--hero-from), var(--hero-to));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  padding-bottom: 0.1em;
+}
+
+/* Classic Shadows & Footer */
+html[data-ui="classic"] .note-health-tip {
+  box-shadow: 0 8px 24px var(--card-shadow);
+}
+
+html[data-ui="classic"] .roadmap-node-card,
+html[data-ui="classic"] .sponsor-dialog__panel,
+html[data-ui="classic"] .tt-map-panel,
+html[data-ui="classic"] .mermaid-lightbox__panel {
+  box-shadow: 0 16px 48px var(--card-shadow);
+}
+
+html[data-ui="classic"] .footer-inner {
+  font-family: inherit;
+}
+
+html[data-ui="classic"] .footer-top-item {
+  display: none;
+}
