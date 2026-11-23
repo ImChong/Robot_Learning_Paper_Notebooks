@@ -27,6 +27,11 @@ description: "人形机器人学习方向的每日论文精读笔记：强化学
       <span data-en="Update log" data-zh="更新记录">Update log</span>
       <span class="index-chip-arrow" aria-hidden="true"><svg class="icon" focusable="false"><use href="#i-arrow-right"></use></svg></span>
     </a>
+    <a href="{{ '/analytics.html' | relative_url }}" class="index-chip index-chip-link">
+      <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-chart-bar"></use></svg>
+      <span data-en="Analytics" data-zh="统计分析">Analytics</span>
+      <span class="index-chip-arrow" aria-hidden="true"><svg class="icon" focusable="false"><use href="#i-arrow-right"></use></svg></span>
+    </a>
   </p>
 </header>
 
@@ -87,6 +92,7 @@ description: "人形机器人学习方向的每日论文精读笔记：强化学
     <div class="search-container" role="search">
       <svg class="icon search-icon" aria-hidden="true" focusable="false"><use href="#i-magnifying-glass"></use></svg>
       <input type="text" id="paper-search" placeholder="Search by title or arXiv ID..." data-en-placeholder="Search by title or arXiv ID..." data-zh-placeholder="通过论文标题或 arXiv 编号搜索..." aria-label="Search papers" data-en-aria-label="Search papers" data-zh-aria-label="搜索论文">
+      <kbd class="search-kbd" aria-hidden="true">/</kbd>
     </div>
     <div class="roadmap-container" id="roadmap-title">
       <details>
@@ -839,6 +845,16 @@ description: "人形机器人学习方向的每日论文精读笔记：强化学
 
   if (window.location.hash) {
     revealHashTarget(window.location.hash, true, true);
+  }
+
+  if (searchInput) {
+    document.addEventListener('keydown', function(e) {
+      if (e.key !== '/' || e.ctrlKey || e.metaKey || e.altKey) return;
+      var el = e.target;
+      if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT' || el.isContentEditable)) return;
+      e.preventDefault();
+      searchInput.focus();
+    });
   }
 })();
 </script>

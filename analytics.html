@@ -1,0 +1,778 @@
+---
+layout: default
+title: "Analytics"
+description: "论文笔记站点的统计分析：0–6 笔记健康度分布、各板块完整度与缺项统计、覆盖率与精读筛选。"
+---
+{% assign latest_day = site.data.updates.days | first %}
+{% assign active_days = site.data.updates.days | size %}
+
+<div class="analytics-page">
+  <div class="analytics-header">
+    <div class="analytics-kicker-row">
+      <p class="analytics-kicker"><span data-en="[02] ARCHIVE ANALYTICS · HEALTH &amp; COVERAGE" data-zh="[02] 档案分析 · 笔记健康度与覆盖率">[02] ARCHIVE ANALYTICS · HEALTH &amp; COVERAGE</span></p>
+      {% if latest_day %}<span class="analytics-sync">SYNC {{ latest_day.d | escape }}</span>{% endif %}
+    </div>
+    <div class="updates-head-row">
+      <h1 data-en="Archive Analytics" data-zh="统计分析">Archive Analytics</h1>
+      <a href="{{ '/updates.html' | relative_url }}" class="page-cross-link">
+        <span data-en="Update log" data-zh="更新记录">Update log</span>
+        <span aria-hidden="true">→</span>
+      </a>
+    </div>
+    <p class="analytics-subtitle"
+       data-en="Completeness and original-text verification across the archive (0–6 health scale; measures note status, not paper quality). Click any bar, criterion, or track to filter notes below."
+       data-zh="统计全站笔记的完整度与原文核验进度（0–6 健康度衡量笔记编写进度，而非论文质量评分）。点击任意柱状条、判据或板块即可在下方筛选对应笔记。">Completeness and original-text verification across the archive (0–6 health scale; measures note status, not paper quality). Click any bar, criterion, or track to filter notes below.</p>
+  </div>
+
+  <div id="analytics-app" class="analytics-app" aria-live="polite">
+    <p class="empty-hint" data-en="Loading analytics..." data-zh="正在生成统计视图…">Loading analytics...</p>
+  </div>
+  <noscript>
+    <p class="empty-hint"
+       data-en="Enable JavaScript to inspect health distributions, category breakdowns, and filterable note lists."
+       data-zh="启用 JavaScript 后可查看健康度分布、板块统计与交互式筛选列表。">Enable JavaScript to inspect health distributions, category breakdowns, and filterable note lists.</p>
+  </noscript>
+
+  <nav class="analytics-footer-actions" aria-label="Analytics navigation" data-en-aria-label="Analytics navigation" data-zh-aria-label="统计页面导航">
+    <a href="{{ '/' | relative_url }}" class="page-cross-link">
+      <span aria-hidden="true">←</span>
+      <span data-en="Back to notes" data-zh="返回论文目录">Back to notes</span>
+    </a>
+    <a href="{{ '/updates.html' | relative_url }}" class="page-cross-link">
+      <span data-en="Update log" data-zh="更新记录">Update log</span>
+      <span aria-hidden="true">→</span>
+    </a>
+  </nav>
+</div>
+
+<script type="application/json" id="analytics-data">{
+  "latestDay": {{ latest_day.d | default: "" | jsonify }},
+  "activeDays": {{ active_days | default: 0 }},
+  "criteria": {{ site.data.note_health | jsonify | replace: '<', '\u003c' | replace: '>', '\u003e' | replace: '&', '\u0026' }},
+  "categories": [
+    {%- for cat in site.data.papers -%}
+    {%- unless forloop.first %},{% endunless -%}
+    {"code":{{ cat[0] | slice: 0, 2 | jsonify }},"en":{{ cat[1].display_name | jsonify | replace: '<', '\u003c' | replace: '>', '\u003e' | replace: '&', '\u0026' }},"zh":{{ cat[1].zhname | default: cat[1].display_name | jsonify | replace: '<', '\u003c' | replace: '>', '\u003e' | replace: '&', '\u0026' }}}
+    {%- endfor -%}
+  ],
+  "notes": [
+    {%- assign first_note = true -%}
+    {%- for cat in site.data.papers -%}
+      {%- assign cidx = forloop.index0 -%}
+      {%- for p in cat[1].papers -%}
+        {%- unless first_note %},{% endunless %}{% assign first_note = false -%}
+        {%- assign has_anim = 0 -%}{%- if p.explainer_scenes -%}{%- assign has_anim = 1 -%}{%- elsif p.health_gaps -%}{%- unless p.health_gaps contains 'animation' -%}{%- assign has_anim = 1 -%}{%- endunless -%}{%- endif -%}
+        {"t":{{ p.title | jsonify | replace: '<', '\u003c' | replace: '>', '\u003e' | replace: '&', '\u0026' }},"z":{{ p.zh_title | default: p.zhname | default: p.title | jsonify | replace: '<', '\u003c' | replace: '>', '\u003e' | replace: '&', '\u0026' }},"u":{{ p.url | jsonify | replace: '<', '\u003c' | replace: '>', '\u003e' | replace: '&', '\u0026' }},"c":{{ cidx }},"s":{{ p.health_score | default: 0 }},"g":{% if p.health_gaps %}{{ p.health_gaps | jsonify }}{% else %}[]{% endif %},"v":{% if p.video_seconds %}1{% else %}0{% endif %},"a":{{ has_anim }},"o":{% if p.has_open_source %}1{% else %}0{% endif %},"de":{{ p.published_date_en | default: p.published_date | default: "" | jsonify }},"dz":{{ p.published_date_zh | default: p.published_date | default: "" | jsonify }}}
+      {%- endfor -%}
+      {%- if cat[1].subcategories -%}
+        {%- for sc in cat[1].subcategories -%}
+          {%- for p in sc.papers -%}
+            {%- unless first_note %},{% endunless %}{% assign first_note = false -%}
+            {%- assign has_anim = 0 -%}{%- if p.explainer_scenes -%}{%- assign has_anim = 1 -%}{%- elsif p.health_gaps -%}{%- unless p.health_gaps contains 'animation' -%}{%- assign has_anim = 1 -%}{%- endunless -%}{%- endif -%}
+            {"t":{{ p.title | jsonify | replace: '<', '\u003c' | replace: '>', '\u003e' | replace: '&', '\u0026' }},"z":{{ p.zh_title | default: p.zhname | default: p.title | jsonify | replace: '<', '\u003c' | replace: '>', '\u003e' | replace: '&', '\u0026' }},"u":{{ p.url | jsonify | replace: '<', '\u003c' | replace: '>', '\u003e' | replace: '&', '\u0026' }},"c":{{ cidx }},"s":{{ p.health_score | default: 0 }},"g":{% if p.health_gaps %}{{ p.health_gaps | jsonify }}{% else %}[]{% endif %},"v":{% if p.video_seconds %}1{% else %}0{% endif %},"a":{{ has_anim }},"o":{% if p.has_open_source %}1{% else %}0{% endif %},"de":{{ p.published_date_en | default: p.published_date | default: "" | jsonify }},"dz":{{ p.published_date_zh | default: p.published_date | default: "" | jsonify }}}
+          {%- endfor -%}
+        {%- endfor -%}
+      {%- endif -%}
+    {%- endfor -%}
+  ]
+}</script>
+
+<script>
+(function() {
+  var dataEl = document.getElementById('analytics-data');
+  var mount = document.getElementById('analytics-app');
+  if (!dataEl || !mount) return;
+
+  var data = null;
+  try {
+    data = JSON.parse(dataEl.textContent);
+  } catch (e) {
+    data = null;
+  }
+  if (!data || !Array.isArray(data.notes) || !data.notes.length) return;
+
+  var BASE = {{ site.baseurl | jsonify }} || '';
+  var PAGE_STEP = 15;
+  var notes = data.notes;
+  var cats = Array.isArray(data.categories) ? data.categories : [];
+  var criteria = (data.criteria && Array.isArray(data.criteria.items)) ? data.criteria.items : [];
+  var maxScore = (data.criteria && typeof data.criteria.max === 'number') ? data.criteria.max : 6;
+  var totalNotes = notes.length;
+
+  var critByKey = {};
+  for (var ci = 0; ci < criteria.length; ci++) {
+    critByKey[criteria[ci].key] = criteria[ci];
+  }
+
+  var state = {
+    score: null,
+    cat: null,
+    gap: null,
+    media: 'all',
+    mode: 'health',
+    sort: 'default',
+    limit: PAGE_STEP
+  };
+
+  function readQueryState() {
+    if (typeof URLSearchParams !== 'function') return;
+    var p = new URLSearchParams(window.location.search);
+    var s = p.get('score');
+    if (s !== null && /^[0-6]$/.test(s)) state.score = Number(s);
+    var c = p.get('cat');
+    if (c !== null && /^\d+$/.test(c)) {
+      var idx = Number(c);
+      if (idx >= 0 && idx < cats.length) state.cat = idx;
+    }
+    var g = p.get('gap');
+    if (g && critByKey[g]) state.gap = g;
+    var m = p.get('media');
+    if (m === 'video' || m === 'demo' || m === 'oss') state.media = m;
+    var md = p.get('mode');
+    if (md === 'media' || md === 'health') state.mode = md;
+    var sr = p.get('sort');
+    if (sr === 'avg' || sr === 'count' || sr === 'default') state.sort = sr;
+  }
+
+  function writeQueryState() {
+    if (!window.history || typeof window.history.replaceState !== 'function') return;
+    if (typeof URLSearchParams !== 'function') return;
+    var p = new URLSearchParams();
+    if (state.score !== null) p.set('score', String(state.score));
+    if (state.cat !== null) p.set('cat', String(state.cat));
+    if (state.gap !== null) p.set('gap', state.gap);
+    if (state.media !== 'all') p.set('media', state.media);
+    if (state.mode !== 'health') p.set('mode', state.mode);
+    if (state.sort !== 'default') p.set('sort', state.sort);
+    var qs = p.toString();
+    var target = window.location.pathname + (qs ? '?' + qs : '') + window.location.hash;
+    window.history.replaceState(null, '', target);
+  }
+
+  readQueryState();
+
+  function getLang() {
+    return document.documentElement.getAttribute('data-lang-mode') === 'zh' ? 'zh' : 'en';
+  }
+
+  function escapeHtml(val) {
+    return String(val == null ? '' : val)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  var I18N = {
+    en: {
+      kpiTotal: 'TOTAL NOTES',
+      kpiTotalSub: function(c) { return c + ' research tracks'; },
+      kpiAvg: 'AVERAGE HEALTH',
+      kpiAvgSub: function(h6, h5) { return h6 + ' at 6/6 · ' + h5 + ' at 5/6'; },
+      kpiOss: 'OPEN SOURCE',
+      kpiOssSub: function(pct) { return pct + '% link official code'; },
+      kpiMedia: 'VIDEO / DEMO',
+      kpiMediaSub: function(v, a) { return v + ' videos · ' + a + ' interactive'; },
+      distTitle: '0–6 HEALTH DISTRIBUTION',
+      distHint: 'Click a column to filter notes',
+      tier0Label: '0/6',
+      tierLowLabel: '1–2/6',
+      tierMidLabel: '3–4/6',
+      tierHighLabel: '5–6/6',
+      tierUnit: '',
+      critTitle: 'SIX-ITEM COMPLETION',
+      critHint: 'Click a row to list missing notes',
+      critMiss: function(n) { return '−' + n + ' missing'; },
+      catsTitle: 'BY RESEARCH TRACK',
+      modeHealth: 'Health (0–6)',
+      modeMedia: 'Media & Code',
+      sortDefault: 'Order',
+      sortAvg: 'Avg Score',
+      sortCount: 'Notes',
+      legend0: '0/6',
+      legendLow: '1–2/6',
+      legendMid: '3–4/6',
+      legendHigh: '5–6/6',
+      legendOss: 'Open source',
+      legendVid: 'Narrated video',
+      catMetaHealth: function(avg, total) { return 'avg ' + avg.toFixed(2) + ' · ' + total; },
+      catMetaMedia: function(oss, vid, total) { return 'OSS ' + oss + ' · VID ' + vid + ' / ' + total; },
+      explorerTitle: 'NOTE EXPLORER',
+      explorerCount: function(shown, filtered, total) {
+        if (filtered === total) return 'Showing ' + shown + ' of ' + total + ' notes';
+        return 'Showing ' + shown + ' of ' + filtered + ' matched (' + total + ' total)';
+      },
+      mediaAll: 'All',
+      mediaVideo: 'Video',
+      mediaDemo: 'Explainer',
+      mediaOss: 'Open source',
+      chipScore: function(s) { return 'Health: ' + s + '/' + maxScore; },
+      chipCat: function(cat) { return cat.code + ' ' + cat.en; },
+      chipGap: function(item) { return 'Missing: ' + item.en; },
+      chipMedia: function(m) {
+        return m === 'video' ? 'Has video' : m === 'demo' ? 'Has explainer' : 'Open source';
+      },
+      reset: 'Reset filters',
+      clearHint: 'All filters cleared',
+      empty: 'No notes match the active filters.',
+      missingPrefix: 'Missing: ',
+      completeBadge: 'Complete',
+      videoAria: 'Includes narrated explainer video',
+      ossAria: 'Links to open source code',
+      showMore: function(n) { return 'Show ' + n + ' more ▾'; },
+      showAll: function(n) { return 'Show all ' + n + ' matched ▾'; },
+      collapseList: 'Collapse to top 15 ▴',
+      scrollTop: '↑ Back to top'
+    },
+    zh: {
+      kpiTotal: '收录论文笔记',
+      kpiTotalSub: function(c) { return c + ' 个研究板块'; },
+      kpiAvg: '平均健康度',
+      kpiAvgSub: function(h6, h5) { return '6/6 共 ' + h6 + ' 篇 · 5/6 共 ' + h5 + ' 篇'; },
+      kpiOss: '含开源源码',
+      kpiOssSub: function(pct) { return '占全库 ' + pct + '%'; },
+      kpiMedia: '视频 / 交互动画',
+      kpiMediaSub: function(v, a) { return v + ' 篇配音 · ' + a + ' 篇动画'; },
+      distTitle: '0–6 健康度分布',
+      distHint: '点击柱条筛选对应分数',
+      tier0Label: '0/6 分',
+      tierLowLabel: '1–2 分',
+      tierMidLabel: '3–4 分',
+      tierHighLabel: '5–6 分',
+      tierUnit: '篇',
+      critTitle: '六项判据达成率',
+      critHint: '点击条目查看缺失该项的笔记',
+      critMiss: function(n) { return '缺 ' + n + ' 篇'; },
+      catsTitle: '各板块完整度与覆盖率',
+      modeHealth: '按健康度堆叠',
+      modeMedia: '按视频与源码',
+      sortDefault: '默认序',
+      sortAvg: '按均分',
+      sortCount: '按篇数',
+      legend0: '0/6',
+      legendLow: '1–2/6',
+      legendMid: '3–4/6',
+      legendHigh: '5–6/6',
+      legendOss: '开源源码',
+      legendVid: '配音视频',
+      catMetaHealth: function(avg, total) { return '均 ' + avg.toFixed(2) + ' · ' + total + ' 篇'; },
+      catMetaMedia: function(oss, vid, total) { return '源码 ' + oss + ' · 视频 ' + vid + ' / ' + total; },
+      explorerTitle: '笔记筛选列表',
+      explorerCount: function(shown, filtered, total) {
+        if (filtered === total) return '当前显示 ' + shown + ' / 共 ' + total + ' 篇';
+        return '匹配 ' + filtered + ' 篇（当前显示 ' + shown + ' 篇 · 总库 ' + total + ' 篇）';
+      },
+      mediaAll: '全部',
+      mediaVideo: '含视频',
+      mediaDemo: '含动画',
+      mediaOss: '含源码',
+      chipScore: function(s) { return '健康度: ' + s + '/' + maxScore; },
+      chipCat: function(cat) { return cat.code + ' ' + cat.zh; },
+      chipGap: function(item) { return '缺项: ' + item.zh; },
+      chipMedia: function(m) {
+        return m === 'video' ? '含视频' : m === 'demo' ? '含动画' : '含源码';
+      },
+      reset: '重置筛选',
+      clearHint: '无筛选条件（全库按健康度排序）',
+      empty: '当前筛选条件下暂无匹配的笔记。',
+      missingPrefix: '缺：',
+      completeBadge: '六项齐全',
+      videoAria: '含配音讲解视频',
+      ossAria: '含开源源码链接',
+      showMore: function(n) { return '再展开 ' + n + ' 篇 ▾'; },
+      showAll: function(n) { return '展开全部 ' + n + ' 篇 ▾'; },
+      collapseList: '收起至前 15 篇 ▴',
+      scrollTop: '↑ 回到顶部'
+    }
+  };
+
+  // Precompute global stats & category aggregates once.
+  var scoreCounts = [0, 0, 0, 0, 0, 0, 0];
+  var gapCounts = {};
+  var ossTotal = 0;
+  var videoTotal = 0;
+  var demoTotal = 0;
+  var scoreSum = 0;
+  var catStats = [];
+
+  for (var i = 0; i < criteria.length; i++) gapCounts[criteria[i].key] = 0;
+  for (var j = 0; j < cats.length; j++) {
+    catStats.push({
+      idx: j,
+      code: cats[j].code,
+      en: cats[j].en,
+      zh: cats[j].zh,
+      total: 0,
+      sum: 0,
+      b0: 0,
+      bLow: 0,
+      bMid: 0,
+      bHigh: 0,
+      oss: 0,
+      vid: 0,
+      demo: 0
+    });
+  }
+
+  for (var ni = 0; ni < notes.length; ni++) {
+    var n = notes[ni];
+    var sc = Math.max(0, Math.min(maxScore, Number(n.s) || 0));
+    scoreCounts[sc] += 1;
+    scoreSum += sc;
+    if (n.o) ossTotal += 1;
+    if (n.v) videoTotal += 1;
+    if (n.a) demoTotal += 1;
+    var gaps = Array.isArray(n.g) ? n.g : [];
+    for (var gi = 0; gi < gaps.length; gi++) {
+      var gk = gaps[gi];
+      gapCounts[gk] = (gapCounts[gk] || 0) + 1;
+    }
+    var cs = catStats[n.c];
+    if (cs) {
+      cs.total += 1;
+      cs.sum += sc;
+      if (sc === 0) cs.b0 += 1;
+      else if (sc <= 2) cs.bLow += 1;
+      else if (sc <= 4) cs.bMid += 1;
+      else cs.bHigh += 1;
+      if (n.o) cs.oss += 1;
+      if (n.v) cs.vid += 1;
+      if (n.a) cs.demo += 1;
+    }
+  }
+
+  var maxScoreBin = 1;
+  for (var si = 0; si < scoreCounts.length; si++) {
+    if (scoreCounts[si] > maxScoreBin) maxScoreBin = scoreCounts[si];
+  }
+  var maxCatTotal = 1;
+  for (var k = 0; k < catStats.length; k++) {
+    catStats[k].avg = catStats[k].total ? catStats[k].sum / catStats[k].total : 0;
+    if (catStats[k].total > maxCatTotal) maxCatTotal = catStats[k].total;
+  }
+
+  function filterNotes() {
+    var out = [];
+    for (var i = 0; i < notes.length; i++) {
+      var n = notes[i];
+      if (state.score !== null && n.s !== state.score) continue;
+      if (state.cat !== null && n.c !== state.cat) continue;
+      if (state.gap !== null) {
+        var gs = Array.isArray(n.g) ? n.g : [];
+        if (gs.indexOf(state.gap) === -1) continue;
+      }
+      if (state.media === 'video' && !n.v) continue;
+      if (state.media === 'demo' && !n.a) continue;
+      if (state.media === 'oss' && !n.o) continue;
+      out.push(n);
+    }
+    out.sort(function(a, b) {
+      return (b.s - a.s) || (b.v - a.v) || (b.a - a.a) || (b.o - a.o) || a.t.localeCompare(b.t);
+    });
+    return out;
+  }
+
+  function sortedCats() {
+    var list = catStats.slice();
+    if (state.sort === 'avg') {
+      list.sort(function(a, b) { return (b.avg - a.avg) || (b.total - a.total) || (a.idx - b.idx); });
+    } else if (state.sort === 'count') {
+      list.sort(function(a, b) { return (b.total - a.total) || (b.avg - a.avg) || (a.idx - b.idx); });
+    }
+    return list;
+  }
+
+  function healthBandClass(s) {
+    if (s <= 0) return 'analytics-bar--0';
+    if (s <= 2) return 'analytics-bar--low';
+    if (s <= 4) return 'analytics-bar--mid';
+    return 'analytics-bar--high';
+  }
+
+  function healthBarsHtml(score) {
+    var html = '<span class="paper-health paper-health--' + score + '" aria-hidden="true"><span class="paper-health-bar">';
+    for (var i = 1; i <= maxScore; i++) {
+      html += '<i' + (i <= score ? ' class="is-on"' : '') + '></i>';
+    }
+    return html + '</span><span class="paper-health-score">' + score + '/' + maxScore + '</span></span>';
+  }
+
+  function render() {
+    var lang = getLang();
+    var t = I18N[lang];
+    var avg = totalNotes ? (scoreSum / totalNotes) : 0;
+    var ossPct = totalNotes ? Math.round((ossTotal * 100) / totalNotes) : 0;
+    var activeDays = Number(data.activeDays) || 0;
+
+    var t0 = scoreCounts[0] || 0;
+    var tLow = (scoreCounts[1] || 0) + (scoreCounts[2] || 0);
+    var tMid = (scoreCounts[3] || 0) + (scoreCounts[4] || 0);
+    var tHigh = (scoreCounts[5] || 0) + (scoreCounts[6] || 0);
+    var tiers = [
+      { cls: 'seg-0', label: t.tier0Label, count: t0 },
+      { cls: 'seg-low', label: t.tierLowLabel, count: tLow },
+      { cls: 'seg-mid', label: t.tierMidLabel, count: tMid },
+      { cls: 'seg-high', label: t.tierHighLabel, count: tHigh }
+    ];
+
+    var parts = [];
+
+    // 1. 4-cell KPI strip
+    parts.push('<div class="analytics-kpis">');
+    parts.push(
+      '<div class="analytics-kpi">' +
+        '<span class="analytics-kpi-key">' + escapeHtml(t.kpiTotal) + '</span>' +
+        '<span class="analytics-kpi-val">' + totalNotes + '</span>' +
+        '<span class="analytics-kpi-sub">' + escapeHtml(t.kpiTotalSub(cats.length)) + '</span>' +
+      '</div>'
+    );
+    parts.push(
+      '<div class="analytics-kpi">' +
+        '<span class="analytics-kpi-key">' + escapeHtml(t.kpiAvg) + '</span>' +
+        '<span class="analytics-kpi-val">' + avg.toFixed(2) + ' <span class="analytics-kpi-unit">/ ' + maxScore + '</span></span>' +
+        '<span class="analytics-kpi-sub">' + escapeHtml(t.kpiAvgSub(scoreCounts[6], scoreCounts[5])) + '</span>' +
+      '</div>'
+    );
+    parts.push(
+      '<div class="analytics-kpi">' +
+        '<span class="analytics-kpi-key">' + escapeHtml(t.kpiOss) + '</span>' +
+        '<span class="analytics-kpi-val">' + ossTotal + '</span>' +
+        '<span class="analytics-kpi-sub">' + escapeHtml(t.kpiOssSub(ossPct)) + '</span>' +
+      '</div>'
+    );
+    parts.push(
+      '<div class="analytics-kpi">' +
+        '<span class="analytics-kpi-key">' + escapeHtml(t.kpiMedia) + '</span>' +
+        '<span class="analytics-kpi-val">' + videoTotal + ' <span class="analytics-kpi-unit">/ ' + demoTotal + '</span></span>' +
+        '<span class="analytics-kpi-sub">' + escapeHtml(t.kpiMediaSub(videoTotal, demoTotal)) + '</span>' +
+      '</div>'
+    );
+    parts.push('</div>');
+
+    // 2. 7:5 Overview Frame: 0–6 Health Bars + Six-Item Completion
+    parts.push('<div class="analytics-overview">');
+
+    // Left: 0–6 Health Distribution
+    parts.push('<section class="analytics-panel analytics-panel--dist" aria-label="' + escapeHtml(t.distTitle) + '">');
+    parts.push('<div class="analytics-panel-head"><h2>' + escapeHtml(t.distTitle) + '</h2><span class="analytics-panel-hint">' + escapeHtml(t.distHint) + '</span></div>');
+    parts.push('<div class="analytics-bars">');
+    for (var s = 0; s <= maxScore; s++) {
+      var cnt = scoreCounts[s] || 0;
+      var hPct = cnt > 0 ? Math.max(6, Math.round((cnt * 100) / maxScoreBin)) : 0;
+      var share = totalNotes ? Math.round((cnt * 100) / totalNotes) : 0;
+      var active = state.score === s;
+      parts.push(
+        '<button type="button" class="analytics-bar-btn ' + healthBandClass(s) + (active ? ' is-active' : '') + '"' +
+          ' data-score="' + s + '" aria-pressed="' + (active ? 'true' : 'false') + '">' +
+          '<span class="analytics-bar-count">' + cnt + '</span>' +
+          '<span class="analytics-bar-track"><span class="analytics-bar-fill" style="height: ' + hPct + '%"></span></span>' +
+          '<span class="analytics-bar-label">' + s + '/' + maxScore + '</span>' +
+          '<span class="analytics-bar-pct">' + share + '%</span>' +
+        '</button>'
+      );
+    }
+    parts.push('</div>');
+    parts.push('<div class="analytics-tiers">');
+    for (var ti = 0; ti < tiers.length; ti++) {
+      var tr = tiers[ti];
+      var trPct = totalNotes ? Math.round((tr.count * 100) / totalNotes) : 0;
+      parts.push(
+        '<div class="analytics-tier">' +
+          '<span class="analytics-tier-top"><i class="' + tr.cls + '" aria-hidden="true"></i><span>' + escapeHtml(tr.label) + '</span></span>' +
+          '<span class="analytics-tier-val">' + tr.count + (t.tierUnit ? ' ' + t.tierUnit : '') + ' <span class="analytics-tier-pct">(' + trPct + '%)</span></span>' +
+        '</div>'
+      );
+    }
+    parts.push('</div></section>');
+
+    // Right: Six-Item Completion
+    parts.push('<section class="analytics-panel analytics-panel--criteria" aria-label="' + escapeHtml(t.critTitle) + '">');
+    parts.push('<div class="analytics-panel-head"><h2>' + escapeHtml(t.critTitle) + '</h2><span class="analytics-panel-hint">' + escapeHtml(t.critHint) + '</span></div>');
+    parts.push('<div class="analytics-criteria">');
+    for (var ci2 = 0; ci2 < criteria.length; ci2++) {
+      var cr = criteria[ci2];
+      var miss = gapCounts[cr.key] || 0;
+      var pass = Math.max(0, totalNotes - miss);
+      var pct = totalNotes ? Math.round((pass * 100) / totalNotes) : 0;
+      var isGapActive = state.gap === cr.key;
+      var critName = lang === 'zh' ? cr.zh : cr.en;
+      var critHint = lang === 'zh' ? cr.hint_zh : cr.hint_en;
+      parts.push(
+        '<button type="button" class="analytics-crit-row' + (isGapActive ? ' is-active' : '') + '"' +
+          ' data-gap="' + escapeHtml(cr.key) + '" aria-pressed="' + (isGapActive ? 'true' : 'false') + '"' +
+          ' title="' + escapeHtml(critHint) + '">' +
+          '<span class="analytics-crit-top">' +
+            '<span class="analytics-crit-name">' + escapeHtml(critName) + '</span>' +
+            '<span class="analytics-crit-stat">' + pass + '/' + totalNotes + ' (' + pct + '%)</span>' +
+          '</span>' +
+          '<span class="analytics-crit-track" aria-hidden="true"><span class="analytics-crit-fill" style="width: ' + pct + '%"></span></span>' +
+          '<span class="analytics-crit-bottom">' +
+            '<span class="analytics-crit-desc">' + escapeHtml(critHint) + '</span>' +
+            '<span class="analytics-crit-miss">' + escapeHtml(t.critMiss(miss)) + '</span>' +
+          '</span>' +
+        '</button>'
+      );
+    }
+    parts.push('</div></section>');
+    parts.push('</div>');
+
+    // 3. Per-Category Breakdown
+    parts.push('<section class="analytics-section" id="analytics-cats">');
+    parts.push('<div class="analytics-section-head">');
+    parts.push('<h2>' + escapeHtml(t.catsTitle) + '</h2>');
+    parts.push('<div class="analytics-head-controls">');
+    parts.push(
+      '<div class="analytics-tabs" role="group">' +
+        '<button type="button" class="analytics-tab' + (state.mode === 'health' ? ' is-active' : '') + '" data-mode="health" aria-pressed="' + (state.mode === 'health' ? 'true' : 'false') + '">' + escapeHtml(t.modeHealth) + '</button>' +
+        '<button type="button" class="analytics-tab' + (state.mode === 'media' ? ' is-active' : '') + '" data-mode="media" aria-pressed="' + (state.mode === 'media' ? 'true' : 'false') + '">' + escapeHtml(t.modeMedia) + '</button>' +
+      '</div>'
+    );
+    parts.push(
+      '<div class="analytics-sort" role="group">' +
+        '<button type="button" class="analytics-sort-btn' + (state.sort === 'default' ? ' is-active' : '') + '" data-sort="default" aria-pressed="' + (state.sort === 'default' ? 'true' : 'false') + '">' + escapeHtml(t.sortDefault) + '</button>' +
+        '<button type="button" class="analytics-sort-btn' + (state.sort === 'avg' ? ' is-active' : '') + '" data-sort="avg" aria-pressed="' + (state.sort === 'avg' ? 'true' : 'false') + '">' + escapeHtml(t.sortAvg) + '</button>' +
+        '<button type="button" class="analytics-sort-btn' + (state.sort === 'count' ? ' is-active' : '') + '" data-sort="count" aria-pressed="' + (state.sort === 'count' ? 'true' : 'false') + '">' + escapeHtml(t.sortCount) + '</button>' +
+      '</div>'
+    );
+    parts.push('</div></div>');
+
+    parts.push('<div class="analytics-cat-legend">');
+    if (state.mode === 'health') {
+      parts.push('<span class="analytics-legend-item"><i class="seg-0"></i>' + escapeHtml(t.legend0) + '</span>');
+      parts.push('<span class="analytics-legend-item"><i class="seg-low"></i>' + escapeHtml(t.legendLow) + '</span>');
+      parts.push('<span class="analytics-legend-item"><i class="seg-mid"></i>' + escapeHtml(t.legendMid) + '</span>');
+      parts.push('<span class="analytics-legend-item"><i class="seg-high"></i>' + escapeHtml(t.legendHigh) + '</span>');
+    } else {
+      parts.push('<span class="analytics-legend-item"><i class="seg-oss"></i>' + escapeHtml(t.legendOss) + '</span>');
+      parts.push('<span class="analytics-legend-item"><i class="seg-vid"></i>' + escapeHtml(t.legendVid) + '</span>');
+    }
+    parts.push('</div>');
+
+    parts.push('<div class="analytics-cat-list">');
+    var catRows = sortedCats();
+    for (var ri = 0; ri < catRows.length; ri++) {
+      var crRow = catRows[ri];
+      var catName = lang === 'zh' ? crRow.zh : crRow.en;
+      var catActive = state.cat === crRow.idx;
+      var barW = crRow.total ? Math.max(8, Math.round((crRow.total * 100) / maxCatTotal)) : 0;
+
+      var trackHtml = '';
+      var rightMeta = '';
+      if (state.mode === 'health') {
+        var w0 = crRow.total ? (crRow.b0 * 100) / crRow.total : 0;
+        var wLow = crRow.total ? (crRow.bLow * 100) / crRow.total : 0;
+        var wMid = crRow.total ? (crRow.bMid * 100) / crRow.total : 0;
+        var wHigh = crRow.total ? (crRow.bHigh * 100) / crRow.total : 0;
+        trackHtml =
+          '<span class="analytics-cat-track">' +
+            '<span class="analytics-cat-stack" style="width: ' + barW + '%">' +
+              (crRow.b0 ? '<span class="analytics-seg seg-0" style="width: ' + w0.toFixed(2) + '%"></span>' : '') +
+              (crRow.bLow ? '<span class="analytics-seg seg-low" style="width: ' + wLow.toFixed(2) + '%"></span>' : '') +
+              (crRow.bMid ? '<span class="analytics-seg seg-mid" style="width: ' + wMid.toFixed(2) + '%"></span>' : '') +
+              (crRow.bHigh ? '<span class="analytics-seg seg-high" style="width: ' + wHigh.toFixed(2) + '%"></span>' : '') +
+            '</span>' +
+          '</span>';
+        rightMeta = t.catMetaHealth(crRow.avg, crRow.total);
+      } else {
+        var ossW = maxCatTotal ? Math.round((crRow.oss * 100) / maxCatTotal) : 0;
+        var vidW = maxCatTotal ? Math.round((crRow.vid * 100) / maxCatTotal) : 0;
+        trackHtml =
+          '<span class="analytics-cat-track analytics-cat-track--dual">' +
+            '<span class="analytics-dual-row"><span class="analytics-dual-fill seg-oss" style="width: ' + ossW + '%"></span></span>' +
+            '<span class="analytics-dual-row"><span class="analytics-dual-fill seg-vid" style="width: ' + vidW + '%"></span></span>' +
+          '</span>';
+        rightMeta = t.catMetaMedia(crRow.oss, crRow.vid, crRow.total);
+      }
+
+      parts.push(
+        '<button type="button" class="analytics-cat-row' + (catActive ? ' is-active' : '') + '"' +
+          ' data-cat="' + crRow.idx + '" aria-pressed="' + (catActive ? 'true' : 'false') + '">' +
+          '<span class="analytics-cat-label">' +
+            '<span class="analytics-cat-code">' + escapeHtml(crRow.code) + '</span>' +
+            '<span class="analytics-cat-name">' + escapeHtml(catName) + '</span>' +
+          '</span>' +
+          trackHtml +
+          '<span class="analytics-cat-stat">' + escapeHtml(rightMeta) + '</span>' +
+        '</button>'
+      );
+    }
+    parts.push('</div></section>');
+
+    // 4. Interactive Note Explorer
+    var filtered = filterNotes();
+    var shownCount = Math.min(state.limit, filtered.length);
+    var hasFilter = state.score !== null || state.cat !== null || state.gap !== null || state.media !== 'all';
+
+    parts.push('<section class="analytics-section" id="analytics-explorer">');
+    parts.push('<div class="analytics-section-head">');
+    parts.push('<div class="analytics-explorer-title"><h2>' + escapeHtml(t.explorerTitle) + '</h2><span class="analytics-explorer-count">' + escapeHtml(t.explorerCount(shownCount, filtered.length, totalNotes)) + '</span></div>');
+    parts.push(
+      '<div class="analytics-media-pills" role="group">' +
+        '<button type="button" class="analytics-pill' + (state.media === 'all' ? ' is-active' : '') + '" data-media="all" aria-pressed="' + (state.media === 'all' ? 'true' : 'false') + '">' + escapeHtml(t.mediaAll) + '</button>' +
+        '<button type="button" class="analytics-pill' + (state.media === 'video' ? ' is-active' : '') + '" data-media="video" aria-pressed="' + (state.media === 'video' ? 'true' : 'false') + '">' + escapeHtml(t.mediaVideo) + '</button>' +
+        '<button type="button" class="analytics-pill' + (state.media === 'demo' ? ' is-active' : '') + '" data-media="demo" aria-pressed="' + (state.media === 'demo' ? 'true' : 'false') + '">' + escapeHtml(t.mediaDemo) + '</button>' +
+        '<button type="button" class="analytics-pill' + (state.media === 'oss' ? ' is-active' : '') + '" data-media="oss" aria-pressed="' + (state.media === 'oss' ? 'true' : 'false') + '">' + escapeHtml(t.mediaOss) + '</button>' +
+      '</div>'
+    );
+    parts.push('</div>');
+
+    if (hasFilter) {
+      parts.push('<div class="analytics-filter-bar">');
+      if (state.score !== null) {
+        parts.push('<button type="button" class="analytics-chip" data-clear="score"><span>' + escapeHtml(t.chipScore(state.score)) + '</span><span aria-hidden="true">×</span></button>');
+      }
+      if (state.cat !== null && cats[state.cat]) {
+        parts.push('<button type="button" class="analytics-chip" data-clear="cat"><span>' + escapeHtml(t.chipCat(cats[state.cat])) + '</span><span aria-hidden="true">×</span></button>');
+      }
+      if (state.gap !== null && critByKey[state.gap]) {
+        parts.push('<button type="button" class="analytics-chip" data-clear="gap"><span>' + escapeHtml(t.chipGap(critByKey[state.gap])) + '</span><span aria-hidden="true">×</span></button>');
+      }
+      if (state.media !== 'all') {
+        parts.push('<button type="button" class="analytics-chip" data-clear="media"><span>' + escapeHtml(t.chipMedia(state.media)) + '</span><span aria-hidden="true">×</span></button>');
+      }
+      parts.push('<button type="button" class="analytics-reset-btn" data-clear="all">' + escapeHtml(t.reset) + '</button>');
+      parts.push('</div>');
+    }
+
+    if (!filtered.length) {
+      parts.push('<div class="analytics-empty"><p>' + escapeHtml(t.empty) + '</p><button type="button" class="analytics-reset-btn" data-clear="all">' + escapeHtml(t.reset) + '</button></div>');
+    } else {
+      parts.push('<ul class="analytics-note-list">');
+      for (var fi = 0; fi < shownCount; fi++) {
+        var note = filtered[fi];
+        var noteTitle = lang === 'zh' ? note.z : note.t;
+        var catObj = cats[note.c] || { code: '--', en: '', zh: '' };
+        var catLabel = catObj.code + ' ' + (lang === 'zh' ? catObj.zh : catObj.en);
+        var dateLabel = lang === 'zh' ? note.dz : note.de;
+        var noteGaps = Array.isArray(note.g) ? note.g : [];
+        var gapNames = [];
+        for (var ngi = 0; ngi < noteGaps.length; ngi++) {
+          var gItem = critByKey[noteGaps[ngi]];
+          gapNames.push(gItem ? (lang === 'zh' ? gItem.zh : gItem.en) : noteGaps[ngi]);
+        }
+        var gapText = gapNames.length ? (t.missingPrefix + gapNames.join(lang === 'zh' ? '、' : ', ')) : t.completeBadge;
+
+        parts.push('<li><a class="analytics-note-card" href="' + escapeHtml(BASE + note.u) + '">');
+        parts.push('<span class="analytics-note-main">');
+        parts.push('<span class="analytics-note-title">' + escapeHtml(noteTitle) + '</span>');
+        parts.push('<span class="analytics-note-meta">');
+        parts.push('<span class="analytics-note-cat">' + escapeHtml(catLabel) + '</span>');
+        if (dateLabel) parts.push('<span class="analytics-note-date">' + escapeHtml(dateLabel) + '</span>');
+        parts.push(healthBarsHtml(note.s));
+        parts.push('<span class="analytics-note-gaps">' + escapeHtml(gapText) + '</span>');
+        parts.push('</span></span>');
+
+        parts.push('<span class="analytics-note-badges">');
+        if (note.v) {
+          parts.push('<span class="paper-video" aria-label="' + escapeHtml(t.videoAria) + '" title="' + escapeHtml(t.videoAria) + '"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-play"></use></svg></span>');
+        }
+        if (note.o) {
+          parts.push('<span class="paper-opensource" aria-label="' + escapeHtml(t.ossAria) + '" title="' + escapeHtml(t.ossAria) + '"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-star"></use></svg></span>');
+        }
+        parts.push('</span></a></li>');
+      }
+      parts.push('</ul>');
+
+      var remaining = filtered.length - shownCount;
+      if (remaining > 0 || state.limit > PAGE_STEP) {
+        parts.push('<div class="analytics-pager">');
+        if (remaining > 0) {
+          var nextStep = Math.min(PAGE_STEP, remaining);
+          parts.push('<button type="button" class="paper-list-toggle-btn" data-page="more">' + escapeHtml(t.showMore(nextStep)) + '</button>');
+          if (remaining > nextStep) {
+            parts.push('<button type="button" class="paper-list-toggle-btn" data-page="all">' + escapeHtml(t.showAll(filtered.length)) + '</button>');
+          }
+        } else {
+          parts.push('<button type="button" class="paper-list-toggle-btn" data-page="collapse">' + escapeHtml(t.collapseList) + '</button>');
+        }
+        parts.push('</div>');
+      }
+    }
+
+    parts.push('</section>');
+    mount.innerHTML = parts.join('');
+  }
+
+  mount.addEventListener('click', function(e) {
+    var btn = e.target.closest('button');
+    if (!btn || !mount.contains(btn)) return;
+
+    if (btn.hasAttribute('data-score')) {
+      var s = Number(btn.getAttribute('data-score'));
+      state.score = state.score === s ? null : s;
+      state.limit = PAGE_STEP;
+      writeQueryState();
+      render();
+      return;
+    }
+    if (btn.hasAttribute('data-gap')) {
+      var g = btn.getAttribute('data-gap');
+      state.gap = state.gap === g ? null : g;
+      state.limit = PAGE_STEP;
+      writeQueryState();
+      render();
+      return;
+    }
+    if (btn.hasAttribute('data-cat')) {
+      var c = Number(btn.getAttribute('data-cat'));
+      state.cat = state.cat === c ? null : c;
+      state.limit = PAGE_STEP;
+      writeQueryState();
+      render();
+      return;
+    }
+    if (btn.hasAttribute('data-mode')) {
+      state.mode = btn.getAttribute('data-mode') === 'media' ? 'media' : 'health';
+      writeQueryState();
+      render();
+      return;
+    }
+    if (btn.hasAttribute('data-sort')) {
+      state.sort = btn.getAttribute('data-sort') || 'default';
+      writeQueryState();
+      render();
+      return;
+    }
+    if (btn.hasAttribute('data-media')) {
+      var m = btn.getAttribute('data-media') || 'all';
+      state.media = (state.media === m && m !== 'all') ? 'all' : m;
+      state.limit = PAGE_STEP;
+      writeQueryState();
+      render();
+      return;
+    }
+    if (btn.hasAttribute('data-clear')) {
+      var cl = btn.getAttribute('data-clear');
+      if (cl === 'all') {
+        state.score = null;
+        state.cat = null;
+        state.gap = null;
+        state.media = 'all';
+      } else if (cl === 'score') {
+        state.score = null;
+      } else if (cl === 'cat') {
+        state.cat = null;
+      } else if (cl === 'gap') {
+        state.gap = null;
+      } else if (cl === 'media') {
+        state.media = 'all';
+      }
+      state.limit = PAGE_STEP;
+      writeQueryState();
+      render();
+      return;
+    }
+    if (btn.hasAttribute('data-page')) {
+      var pg = btn.getAttribute('data-page');
+      if (pg === 'more') state.limit += PAGE_STEP;
+      else if (pg === 'all') state.limit = notes.length;
+      else if (pg === 'collapse') state.limit = PAGE_STEP;
+      render();
+    }
+  });
+
+  render();
+  document.addEventListener('cl-lang-changed', render);
+})();
+</script>
