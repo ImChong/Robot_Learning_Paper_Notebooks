@@ -41,21 +41,31 @@
         "13_Physics-Based_Animation",
         "14_Human_Motion"
       ],
-      "last_module": "08_Navigation",
-      "last_index": 1233,
-      "last_title": "LHNav: Long-Horizon Humanoid Navigation via Multirate Coordination and Physics-Grounded Action Data (arXiv:2611.12136)",
-      "next_module": "09_State_Estimation",
-      "last_completed_date": "2026-11-22",
-      "note": "2026-11-22：08_Navigation #1233 LHNav；已通读官方 arXiv HTML v1 I–VI 节、表 I–VII，核对项目主页；官方 GitHub README 仅标题，未发现可审阅实现；PDF 未另行逐页核对；健康度脚本未运行，不估分。下一模块 09_State_Estimation。个人阅读进度不变。",
-      "last_date": "2026-11-22",
+      "last_module": "09_State_Estimation",
+      "last_index": 1236,
+      "last_title": "A Unified Inertial Encoder for Human and Humanoid Motion (arXiv:2611.10137)",
+      "next_module": "10_Sim-to-Real",
+      "last_completed_date": "2026-11-23",
+      "note": "2026-11-23：09_State_Estimation #1236 统一惯性编码器；已通读官方 arXiv HTML v1 I–V 节，核对项目页、公开训练与评估入口；PDF 未独立逐页核对；健康度脚本未运行，不估分。下一模块 10_Sim-to-Real。个人阅读进度不变。",
+      "last_date": "2026-11-23",
       "next_candidate": null,
-      "last_completed": "LHNav: Long-Horizon Humanoid Navigation via Multirate Coordination and Physics-Grounded Action Data (arXiv:2611.12136)"
+      "last_completed": "A Unified Inertial Encoder for Human and Humanoid Motion (arXiv:2611.10137)"
     },
-    "last_summary_index": 532,
-    "last_summary_date": "2026-09-18",
-    "last_summary_title": "ReActor: Reinforcement Learning for Physics-Aware Motion Retargeting",
+    "last_summary_index": 1236,
+    "last_summary_date": "2026-11-23",
+    "last_summary_title": "A Unified Inertial Encoder for Human and Humanoid Motion (arXiv:2611.10137)",
     "next_summary_index": null,
     "log": [
+      {
+        "date": "2026-11-23",
+        "index": 1236,
+        "title": "A Unified Inertial Encoder for Human and Humanoid Motion (arXiv:2611.10137)",
+        "folder": "papers/09_State_Estimation/A_Unified_Inertial_Encoder_for_Human_and_Humanoid_Motion",
+        "module": "09_State_Estimation",
+        "arxiv": "2611.10137",
+        "source": "官方 HTML v1 I–V 节、项目页、源码 README/src/train.py/src/eval_foundation.py；PDF 未独立复核；健康度脚本未运行",
+        "code": "https://github.com/amazon-far/Unified-Inertial-Encoder"
+      },
       {
         "date": "2026-11-22",
         "index": 1233,
@@ -2148,7 +2158,7 @@
         "source": "⏳ 未开源（论文与 arXiv 页面无代码链接）· 只给整体流程 mermaid · 语义层离散动作 → 目标投影 + Bézier-MPPI + dEBF 硬认证与零速备份 · G1 与 Vision 60 实机 · Abhijeet M. Kulkarni、Guoquan Huang 等（特拉华大学 RPNG）"
       }
     ],
-    "last_completed_index": 588,
+    "last_completed_index": 1236,
     "next_index": null
   },
   "papers": [
