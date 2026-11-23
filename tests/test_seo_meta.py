@@ -62,7 +62,7 @@ def test_canonical_is_absolute_and_index_free():
 
 
 def test_home_and_update_log_have_their_own_description():
-    for name in ("index.html", "updates.html"):
+    for name in ("index.html", "updates.html", "analytics.html"):
         front = (ROOT / name).read_text(encoding="utf-8").split("---\n", 2)[1]
         assert "description:" in front, name
 
