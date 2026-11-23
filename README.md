@@ -26,4 +26,4 @@
 
 论文目录以 [awesome-humanoid-robot-learning](https://github.com/YanjieZe/awesome-humanoid-robot-learning) 为基础。
 
-项目采用 [BSD 3-Clause 许可证](LICENSE)。维护说明见 [AGENTS.md](AGENTS.md)。
+项目采用 [BSD 3-Clause 许可证](LICENSE)。本地预览使用 `baseurl = /Robot_Learning_Paper_Notebooks`，构建与维护说明见 [AGENTS.md](AGENTS.md)。

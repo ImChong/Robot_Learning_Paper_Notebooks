@@ -26,4 +26,4 @@ Follow the roadmap or search by paper title or arXiv ID. The notes explain metho
 
 The paper list is based on [awesome-humanoid-robot-learning](https://github.com/YanjieZe/awesome-humanoid-robot-learning).
 
-Licensed under [BSD 3-Clause](LICENSE). For repository maintenance, see [AGENTS.md](AGENTS.md).
+Licensed under [BSD 3-Clause](LICENSE). The local preview uses `baseurl = /Robot_Learning_Paper_Notebooks`. See [AGENTS.md](AGENTS.md) for build and maintenance instructions.
