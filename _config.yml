@@ -29,6 +29,7 @@ plugins:
 # skills-lock.json，万一本地再用 npx skills 装回来也不会发布。
 exclude:
   - README.md
+  - README.en.md
   - AGENTS.md
   - progress.json
   - papers/PROGRESS.md
