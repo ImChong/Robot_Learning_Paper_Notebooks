@@ -13,6 +13,7 @@
 
 | 日期 | 论文索引 | 笔记 | 分类 | 源码 |
 |------|:---:|------|------|------|
+| 2026-11-24 | 1270 | [Towards Probabilistically Safe Reinforcement Learning: Theory and Deployment on Humanoid and Aerial Robots](10_Sim-to-Real/Towards_Probabilistically_Safe_Reinforcement_Learning/Towards_Probabilistically_Safe_Reinforcement_Learning.md)（HTML 部分核验） | Sim-to-Real | 源码未确认；健康度未验证（脚本未运行） |
 | 2026-11-23 | 1236 | [A Unified Inertial Encoder for Human and Humanoid Motion](09_State_Estimation/A_Unified_Inertial_Encoder_for_Human_and_Humanoid_Motion/A_Unified_Inertial_Encoder_for_Human_and_Humanoid_Motion.md)（官方 HTML v1 全文已核验，PDF 未独立逐页复核） | State Estimation | 官方源码 README、训练及评估入口已核对，含 Mermaid 源码时序图；**健康度未验证（脚本未运行）** |
 | 2026-11-22 | 1233 | [LHNav: Long-Horizon Humanoid Navigation via Multirate Coordination and Physics-Grounded Action Data](08_Navigation/LHNav__Long-Horizon_Humanoid_Navigation_via_Multirate_Coordination_and_Physics-Grounded_Action_Data/LHNav__Long-Horizon_Humanoid_Navigation_via_Multirate_Coordination_and_Physics-Grounded_Action_Data.md)（官方 HTML v1 全文已核验，PDF 未独立复核） | Navigation | GitHub README 仅标题，无可审阅源码；无源码时序图；**健康度未验证（脚本未运行）** |
 | 2026-11-21 | 715 | [NEXUS: Perceptive Whole-Body Control for Terrain-Adaptive Teleoperation](07_Teleoperation/NEXUS__Perceptive_Whole-Body_Control_for_Terrain-Adaptive_Teleoperation/NEXUS__Perceptive_Whole-Body_Control_for_Terrain-Adaptive_Teleoperation.md)（官方项目页已核对，PDF/HTML 全文未通读） | Teleoperation | 官方源码未核实；无源码时序图；健康度未验证（脚本未运行） |
