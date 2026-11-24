@@ -1115,7 +1115,7 @@
 
 | #   | 论文                                                                                                                                             | 日期      | 🌟  | 状态   |
 | --- | ---------------------------------------------------------------------------------------------------------------------------------------------- | ------- | --- | ---- |
-| 1270  | [Towards Probabilistically Safe Reinforcement Learning: Theory and Deployment on Humanoid and Aerial Robots](https://arxiv.org/abs/2611.19616) | 2026.11 |  | ⏳ 待读 |
+| 1270  | [Towards Probabilistically Safe Reinforcement Learning: Theory and Deployment on Humanoid and Aerial Robots](https://arxiv.org/abs/2611.19616) [笔记](10_Sim-to-Real/Towards_Probabilistically_Safe_Reinforcement_Learning/Towards_Probabilistically_Safe_Reinforcement_Learning.md) | 2026.11 |  | ✅ 已总结 |
 | 1237  | [Reading the Table: Sim-to-Real Game State Detection for the Chef's Hat Card Game](https://arxiv.org/abs/2611.15524) | 2026.11 |  | ⏳ 待读 |
 | 1190  | [Delay Randomization Widens the Delay Margin of Learned Humanoid Motion Trackers](https://arxiv.org/abs/2610.32277) ✅ [笔记](10_Sim-to-Real/Delay_Randomization_Widens_the_Delay_Margin_of_Learned_Humanoid_Motion_Trackers/Delay_Randomization_Widens_the_Delay_Margin_of_Learned_Humanoid_Motion_Trackers.md) | 2026.10 |  | ✅ 已总结 |
 | 1127  | [Contact-UAN: Unsupervised Actuator Networks as a Residual World Model for Humanoid Control](https://arxiv.org/abs/2610.18991) ✅ [笔记](10_Sim-to-Real/Contact-UAN__Unsupervised_Actuator_Networks_as_a_Residual_World_Model/Contact-UAN__Unsupervised_Actuator_Networks_as_a_Residual_World_Model.md) | 2026.10 |  | ✅ 已总结 |
