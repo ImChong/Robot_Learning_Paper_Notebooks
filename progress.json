@@ -41,15 +41,15 @@
         "13_Physics-Based_Animation",
         "14_Human_Motion"
       ],
-      "last_module": "09_State_Estimation",
-      "last_index": 1236,
-      "last_title": "A Unified Inertial Encoder for Human and Humanoid Motion (arXiv:2611.10137)",
-      "next_module": "10_Sim-to-Real",
-      "last_completed_date": "2026-11-23",
-      "note": "2026-11-23：09_State_Estimation #1236 统一惯性编码器；已通读官方 arXiv HTML v1 I–V 节，核对项目页、公开训练与评估入口；PDF 未独立逐页核对；健康度脚本未运行，不估分。下一模块 10_Sim-to-Real。个人阅读进度不变。",
-      "last_date": "2026-11-23",
+      "last_module": "10_Sim-to-Real",
+      "last_index": 1270,
+      "last_title": "Towards Probabilistically Safe Reinforcement Learning: Theory and Deployment on Humanoid and Aerial Robots",
+      "next_module": "11_Simulation_Benchmark",
+      "last_completed_date": "2026-11-24",
+      "note": "HTML 主要正文已核对；附录、PDF 和源码未完整核验；健康度未验证（脚本未运行）",
+      "last_date": "2026-11-24",
       "next_candidate": null,
-      "last_completed": "A Unified Inertial Encoder for Human and Humanoid Motion (arXiv:2611.10137)"
+      "last_completed": "Towards Probabilistically Safe Reinforcement Learning: Theory and Deployment on Humanoid and Aerial Robots"
     },
     "last_summary_index": 1236,
     "last_summary_date": "2026-11-23",
