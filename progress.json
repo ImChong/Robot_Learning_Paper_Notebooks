@@ -41,15 +41,15 @@
         "13_Physics-Based_Animation",
         "14_Human_Motion"
       ],
-      "last_module": "10_Sim-to-Real",
-      "last_index": 1270,
-      "last_title": "Towards Probabilistically Safe Reinforcement Learning: Theory and Deployment on Humanoid and Aerial Robots",
-      "next_module": "11_Simulation_Benchmark",
-      "last_completed_date": "2026-11-24",
-      "note": "HTML 主要正文已核对；附录、PDF 和源码未完整核验；健康度未验证（脚本未运行）",
-      "last_date": "2026-11-24",
+      "last_module": "11_Simulation_Benchmark",
+      "last_index": 1273,
+      "last_title": "PhyDEX: A Benchmark for Physical Reasoning in Vision-Language-Action Models via Dynamic Extrinsic Dexterity",
+      "next_module": "12_Hardware_Design",
+      "last_completed_date": "2026-11-25",
+      "note": "HTML 正文第 1–5 节及表 1–4 已核对；PDF/附录未复核；官方代码 Coming soon；健康度未验证（脚本未运行）",
+      "last_date": "2026-11-25",
       "next_candidate": null,
-      "last_completed": "Towards Probabilistically Safe Reinforcement Learning: Theory and Deployment on Humanoid and Aerial Robots"
+      "last_completed": "PhyDEX: A Benchmark for Physical Reasoning in Vision-Language-Action Models via Dynamic Extrinsic Dexterity"
     },
     "last_summary_index": 1236,
     "last_summary_date": "2026-11-23",
