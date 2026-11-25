@@ -1150,7 +1150,7 @@
 
 | #   | 论文                                                                                                                                         | 日期      | 🌟  | 状态   |
 | --- | ------------------------------------------------------------------------------------------------------------------------------------------ | ------- | --- | ---- |
-| 1273  | [PhyDEX: A Benchmark for Physical Reasoning in Vision-Language-Action Models via Dynamic Extrinsic Dexterity](https://arxiv.org/abs/2611.26565) | 2026.11 |  | ⏳ 待读 |
+| 1273  | [PhyDEX: A Benchmark for Physical Reasoning in Vision-Language-Action Models via Dynamic Extrinsic Dexterity](https://arxiv.org/abs/2611.26565) ✅ [笔记](11_Simulation_Benchmark/PhyDEX/PhyDEX.md) | 2026.11 |  | ✅ 已总结 |
 | 1274  | [LocoMuJoCo: A Comprehensive Imitation Learning Benchmark for Whole-Body Control](https://arxiv.org/abs/2611.26293) | 2026.11 | 🌟 | ⏳ 待读 |
 | 1275  | [Kamino: GPU-based Simulation of Rigid Multi-Body Physics with Kinematic Loops](https://arxiv.org/abs/2603.16536) | 2026.03 |  | ⏳ 待读 |
 | 1238  | [Elastra: A Simulation Framework for Elastic Bodies](https://arxiv.org/abs/2611.15112) | 2026.11 | 🌟 | ⏳ 待读 |
