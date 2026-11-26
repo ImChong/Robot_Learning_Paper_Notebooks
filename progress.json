@@ -41,15 +41,15 @@
         "13_Physics-Based_Animation",
         "14_Human_Motion"
       ],
-      "last_module": "11_Simulation_Benchmark",
-      "last_index": 1273,
-      "last_title": "PhyDEX: A Benchmark for Physical Reasoning in Vision-Language-Action Models via Dynamic Extrinsic Dexterity",
-      "next_module": "12_Hardware_Design",
-      "last_completed_date": "2026-11-25",
-      "note": "HTML 正文第 1–5 节及表 1–4 已核对；PDF/附录未复核；官方代码 Coming soon；健康度未验证（脚本未运行）",
-      "last_date": "2026-11-25",
+      "last_module": "12_Hardware_Design",
+      "last_index": 1271,
+      "last_title": "QDD-MM: A Simple and Compact Open-Source Muscle Module with Quasi-Direct-Drive Motor for Tendon-driven Robots",
+      "next_module": "13_Physics-Based_Animation",
+      "last_completed_date": "2026-11-26",
+      "note": "HTML I–IV 节、表 I 和官方 README 已核对；PDF 未独立复核，CAD 未下载，无电机控制软件；健康度未验证（脚本未运行）",
+      "last_date": "2026-11-26",
       "next_candidate": null,
-      "last_completed": "PhyDEX: A Benchmark for Physical Reasoning in Vision-Language-Action Models via Dynamic Extrinsic Dexterity"
+      "last_completed": "QDD-MM: A Simple and Compact Open-Source Muscle Module with Quasi-Direct-Drive Motor for Tendon-driven Robots"
     },
     "last_summary_index": 1236,
     "last_summary_date": "2026-11-23",
