@@ -13,6 +13,7 @@
 
 | 日期 | 论文索引 | 笔记 | 分类 | 源码 |
 |------|:---:|------|------|------|
+| 2026-11-26 | 1271 | [QDD-MM: A Simple and Compact Open-Source Muscle Module with Quasi-Direct-Drive Motor for Tendon-driven Robots](12_Hardware_Design/QDD-MM/QDD-MM.md)（HTML 正文已核验，PDF 未独立复核） | Hardware Design | 官方设计仓库 README 已核对，无电机控制软件；健康度未验证（脚本未运行） |
 | 2026-11-25 | 1273 | [PhyDEX: A Benchmark for Physical Reasoning in Vision-Language-Action Models via Dynamic Extrinsic Dexterity](11_Simulation_Benchmark/PhyDEX/PhyDEX.md)（HTML 正文已核对，PDF/附录未复核） | Simulation Benchmark | 官方代码尚未发布；健康度未验证（脚本未运行） |
 | 2026-11-24 | 1270 | [Towards Probabilistically Safe Reinforcement Learning: Theory and Deployment on Humanoid and Aerial Robots](10_Sim-to-Real/Towards_Probabilistically_Safe_Reinforcement_Learning/Towards_Probabilistically_Safe_Reinforcement_Learning.md)（HTML 部分核验） | Sim-to-Real | 源码未确认；健康度未验证（脚本未运行） |
 | 2026-11-23 | 1236 | [A Unified Inertial Encoder for Human and Humanoid Motion](09_State_Estimation/A_Unified_Inertial_Encoder_for_Human_and_Humanoid_Motion/A_Unified_Inertial_Encoder_for_Human_and_Humanoid_Motion.md)（官方 HTML v1 全文已核验，PDF 未独立逐页复核） | State Estimation | 官方源码 README、训练及评估入口已核对，含 Mermaid 源码时序图；**健康度未验证（脚本未运行）** |
