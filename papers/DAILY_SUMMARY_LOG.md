@@ -13,6 +13,7 @@
 
 | 日期 | 论文索引 | 笔记 | 分类 | 源码 |
 |------|:---:|------|------|------|
+| 2026-11-27 | 1276 | [MixReact: Physics-Based Reactive Humanoid Control from Multimodal Cues via a Discrete-Continuous Mixture of Transformers](13_Physics-Based_Animation/MixReact/MixReact.md)（草稿，原文复核待补） | Physics-Based Animation | 源码未确认；健康度未验证（脚本未运行） |
 | 2026-11-26 | 1271 | [QDD-MM: A Simple and Compact Open-Source Muscle Module with Quasi-Direct-Drive Motor for Tendon-driven Robots](12_Hardware_Design/QDD-MM/QDD-MM.md)（HTML 正文已核验，PDF 未独立复核） | Hardware Design | 官方设计仓库 README 已核对，无电机控制软件；健康度未验证（脚本未运行） |
 | 2026-11-25 | 1273 | [PhyDEX: A Benchmark for Physical Reasoning in Vision-Language-Action Models via Dynamic Extrinsic Dexterity](11_Simulation_Benchmark/PhyDEX/PhyDEX.md)（HTML 正文已核对，PDF/附录未复核） | Simulation Benchmark | 官方代码尚未发布；健康度未验证（脚本未运行） |
 | 2026-11-24 | 1270 | [Towards Probabilistically Safe Reinforcement Learning: Theory and Deployment on Humanoid and Aerial Robots](10_Sim-to-Real/Towards_Probabilistically_Safe_Reinforcement_Learning/Towards_Probabilistically_Safe_Reinforcement_Learning.md)（HTML 部分核验） | Sim-to-Real | 源码未确认；健康度未验证（脚本未运行） |
