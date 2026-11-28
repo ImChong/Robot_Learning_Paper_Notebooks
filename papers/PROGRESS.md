@@ -1378,7 +1378,7 @@
 
 | #   | 论文                                                                                                                                   | 日期      | 🌟  | 状态   |
 | --- | ------------------------------------------------------------------------------------------------------------------------------------ | ------- | --- | ---- |
-| 1281  | [Fast and Accurate Body Estimation in Pixels, World Space and Scenes](https://arxiv.org/abs/2611.25801) | 2026.11 | 🌟 | ⏳ 待读 |
+| 1281  | [Fast and Accurate Body Estimation in Pixels, World Space and Scenes](https://arxiv.org/abs/2611.25801) [笔记](14_Human_Motion/FAB/FAB.md) | 2026.11 | 🌟 | ✅ 已总结 |
 | 1282  | [Inhabitant: An Agent Framework for Long-Horizon Human-Scene Interaction with Spatial Control and Quantitative Feedback](https://arxiv.org/abs/2611.25005) | 2026.11 |  | ⏳ 待读 |
 | 1283  | [Eye, Robot: Learning Expressive Gaze Dynamics via a VLM-Guided Transformer-VAE](https://arxiv.org/abs/2610.19635) | 2026.10 |  | ⏳ 待读 |
 | 1243  | [CFGComposer: Compositional Audio-Text-to-Motion Generation via Copula Score Correction](https://arxiv.org/abs/2611.15101) | 2026.11 |  | ⏳ 待读 |
