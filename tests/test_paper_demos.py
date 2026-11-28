@@ -430,6 +430,13 @@ IDP3_NOTE = (
     / "iDP3_Generalizable_Humanoid_Manipulation_with_3D_Diffusion_Policies"
     / "iDP3_Generalizable_Humanoid_Manipulation_with_3D_Diffusion_Policies.md"
 )
+EGOMIMIC_NOTE = (
+    ROOT
+    / "papers"
+    / "06_Manipulation"
+    / "EgoMimic_Scaling_Imitation_Learning_via_Egocentric_Video"
+    / "EgoMimic_Scaling_Imitation_Learning_via_Egocentric_Video.md"
+)
 EXPLAINER_BUNDLES = (
     "ppo", "awr", "deepmimic", "amp", "add", "ase", "calm", "pulse", "sonic", "groot",
     "gmr", "omniretarget", "diffusion_policy", "beyondmimic", "cosmos", "umr", "php", "pbfm",
@@ -437,7 +444,7 @@ EXPLAINER_BUNDLES = (
     "domain_randomization", "quadterrain", "realhumanoid", "asap", "inekf", "berkeley_humanoid",
     "toddlerbot", "exbody", "h2o", "omnih2o", "hover", "maskedmimic", "exbody2", "hugwbc", "homie", "twist", "twist2",
     "falcon", "hdmi", "viral",
-    "doorman", "chip", "idp3", "supermimic", "act",
+    "doorman", "chip", "idp3", "supermimic", "act", "egomimic",
 )
 
 # 幕数由论文决定，不是统一模板：PPO / DeepMimic / AMP / ADD 的核心概念正好各 5 个，
@@ -708,6 +715,11 @@ EXPLAINER_SCENES = {
     # 实验按第 V 节的 8 个任务、表一、表二各一幕，消融按图 6 (a)(b) 与 (c)(d) 两幕，局限与代码一幕。
     # 压成 14 幕会让分块的接缝和时间集成的 100 个预测、或编码器的 102 个 token 和策略的 1202 个 token 抢同一帧。
     "act": (ACT_NOTE, 17),
+    # EgoMimic：问题与已有做法各一幕（数据从哪来、以前只教高层）；硬件按第 III-A 节分眼镜、机器人两幕，表一的两路数据一幕；
+    # 四处对齐（坐标系、时间、归一化、遮挡）各一幕；策略按图 4 的两个输出头、「为什么用关节控制」、训练与部署三幕；
+    # 实验按任务与数据量、表三、图 7 的泛化、图 8 的规模、表四的消融各一幕，局限与开源一幕。
+    # 压成 15 幕会让坐标变换的一维例子和时间对齐、或两个输出头和关节控制的理由抢同一帧。
+    "egomimic": (EGOMIMIC_NOTE, 18),
 
     "humanml3d": (HUMANML3D_NOTE, 12),
 }
@@ -2184,7 +2196,7 @@ def test_narrated_video_placeholders_point_at_files_that_exist():
                  "tf-video", "pi0-video", "pi05-video", "soccer-video", "sonic-video", "gmr-video",
                  "omniretarget-video", "humanml3d-video", "smp-video", "dr-video", "qt-video", "rh-video", "inekf-video", "bh-video",
                  "tb-video", "exbody-video", "h2o-video", "hover-video", "exbody2-video", "hugwbc-video", "homie-video", "doorman-video",
-                 "chip-video", "idp3-video", "act-video"):
+                 "chip-video", "idp3-video", "act-video", "egomimic-video"):
         assert demo in seen, f"{demo} 应该挂在对应的论文笔记里"
 
 
@@ -6568,3 +6580,126 @@ def test_act_model_renders_match_the_data_they_quote():
     note = ACT_NOTE.read_text(encoding="utf-8")
     for frag in ("中段约 4°，快伸直时到 17°", "约 0.64", "是 0.21", "5.6、6.1、5.0 cm", "9 次里 3 次仍完成交接", "trossen_wx250s"):
         assert frag in note, frag
+
+
+def _egomimic_data(js: str):
+    """egomimic.js 里 /*EGO*/ … /*/EGO*/ 之间是官方样例数据（HF gatech/EgoMimic，碗任务两份）上的统计与两段轨迹，不是论文的实验。"""
+    return json.loads(re.search(r"/\*EGO\*/(.*?)/\*/EGO\*/", js, re.S).group(1))
+
+
+def _egomimic_i16(b64: str, scale: float):
+    raw = base64.b64decode(b64)
+    return [x / scale for x in struct.unpack(f"<{len(raw) // 2}h", raw)]
+
+
+def test_egomimic_explainer_demos_and_worked_example_share_the_paper_numbers():
+    """EgoMimic：十八幕动画、三个演示、配音旁白与笔记「🚶 具体实例」用同一组数。
+
+    表一至表四、附录的超参数照抄 arXiv 2410.24221 v1；图 7、图 8 里正文没写出的数是读图（笔记和旁白都说了「约」）；
+    「代码里」的数取自官方代码 SimarKareer/EgoMimic @ 6d63e9a。样例数据上的统计以 JSON 嵌在 bundle 里，
+    这里把人的那一段轨迹解码后用 Python 重算头动的偏移，并核对笔记与旁白里写的是同一组数。
+    """
+    js = (DEMO_JS_DIR / "egomimic.js").read_text(encoding="utf-8")
+    note = EGOMIMIC_NOTE.read_text(encoding="utf-8")
+    narration = (ROOT / "scripts" / "paper_video" / "papers" / "egomimic.py").read_text(encoding="utf-8")
+    intro = (ROOT / "scripts" / "paper_video" / "papers" / "egomimic.js").read_text(encoding="utf-8")
+    for line in (
+        "{ task: '放玩具进碗', h: [1400, 60, 23], r: [270, 120, 2] },",
+        "{ task: '装购物袋', h: [160, 80, 2], r: [300, 300, 1] },",
+        "{ task: '叠衣服', h: [590, 100, 6], r: [430, 300, 1] }",
+        "bowl: { act: [39], mp: [71], ego0: [68], ego: [128] },",
+        "laundry: { act: [82, 55], mp: [78, 50], ego0: [104, 73], ego: [114, 88] },",
+        "groceries: { act: [82, 22, 54], mp: [53, 8, 40], ego0: [92, 28, 60], ego: [110, 30, 70] }",
+        "var TABLE4 = [['EgoMimic', 128], ['去掉红线', 112], ['去掉红线和遮挡', 95], ['去掉动作归一化', 79], ['去掉人的数据', 68]];",
+        "var FIG7A = { act: [55, 25], mp: [50, 25], ego0: [73, 68], ego: [88, 85] };",
+        "var FIG7B = { act: [39, 6], mp: [71, 4], ego0: [68, 13], ego: [128, 63] };",
+        "var FIG8 = { act: [[0.5, 2], [1, 29], [2, 39], [3, 74]], ego: [[2, 68], [2.25, 99], [2.5, 111], [3, 128]] };",
+        "var ALIGN = { slow: 4, robotSec: 4, humanSec: 1, chunk: 100, humanHz: 30, robotHz: 50 };",
+        "var TRAIN = { iters: 120000, batch: 128, gpus: 4, hours: 24, lr: '5e-5', hidden: 512, ff: 3200, heads: 8, enc: 4, dec: 7 };",
+        "var ROLLOUT = { inferHz: 1, controlHz: 25, horizonSec: 4, execSec: 1 };",
+        "var CODE = { klWeight: 20, handLambda: 1.0, latent: 32, humanPoints: 10, humanGap: 3, robotPoints: 100, robotGap: 2, query: 25, lineThickness: 25, batchPerLoader: 16 };",
+    ):
+        assert line in js, line
+    for k in ("'egomimic-explainer'", "'egomimic-video'", "'egomimic-frames'", "'egomimic-norm'", "'egomimic-results'", "K.video(host"):
+        assert k in js, k
+
+    # 例 1：采集效率（表二）
+    assert (_fmt(1400 / 60, 1), 270 / 120, _fmt(1400 / 60 / (270 / 120), 1), 270 // 2) == ("23.3", 2.25, "10.4", 135)
+    # 例 3：时间对齐（代码里的取法）
+    assert (9 * 3, 27 / 30, 99 * 2, 198 / 50, _fmt(3.96 / 0.9, 1)) == (27, 0.9, 198, 3.96, "4.4")
+    ego = _egomimic_data(js)
+    assert ego["counts"] == {"human": {"groups": 50, "samples": 14685}, "robot": {"groups": 4, "samples": 12000}}
+    assert (_fmt(14685 / 30 / 60, 1), 12000 / 50 / 60) == ("8.2", 4.0)
+    sp = ego["speed"]
+    assert (_fmt(sp["hand"]["chunk_m"] / 0.9, 3), _fmt(sp["robot"]["chunk_m"] / 3.96, 3)) == ("0.383", "0.132")
+    assert (_fmt(sp["hand"]["mps"], 2), _fmt(sp["robot"]["mps"], 2), _fmt(sp["ratio"], 1)) == ("0.38", "0.13", "2.9")
+    # 例 4：归一化（y 这一维）
+    hs, rs = ego["stats"]["hand"], ego["stats"]["robot"]
+    assert (hs["mean"][1], hs["std"][1], rs["mean"][1], rs["std"][1]) == (0.2355, 0.0744, 0.0032, 0.0707)
+    assert _fmt((0.31 - hs["mean"][1]) / hs["std"][1], 2) == "1.00" and _fmt((0.074 - rs["mean"][1]) / rs["std"][1], 2) == "1.00"
+    assert _fmt((0.31 - rs["mean"][1]) / rs["std"][1], 1) == "4.3"
+    # 例 5、6、7：表三的提升、表四的降幅、图 8
+    assert [round(100 * (a / b - 1)) for a, b in ((128, 39), (114, 82), (110, 82), (128, 68), (114, 104), (110, 92))] == [228, 39, 34, 88, 10, 20]
+    assert [_fmt(100 * (128 - v) / 128, 1) for v in (112, 95, 79, 68)] == ["12.5", "25.8", "38.3", "46.9"]
+    assert (128 - 68, 74 - 39, _fmt(128 / 74, 2), 68 - 39) == (60, 35, "1.73", 29)
+    # 例 8、9：部署的节拍、代码里的损失
+    assert (4 / 100, 100 // 4, 40 * 25, 100 - 25) == (0.04, 25, 1000, 75)
+    assert (_fmt(0.10 + 0.06 + 20 * 0.002, 2), _fmt((0.08 + 20 * 0.003) * 1.0, 2), _fmt((0.20 + 0.14) / 2, 2)) == ("0.20", "0.14", "0.17")
+    # 头动的偏移：把嵌入的那一段（人第 0 组，300 帧）解码后重算
+    he, ha, n = _egomimic_i16(ego["human"]["ee"], 1000), _egomimic_i16(ego["human"]["act"], 1000), ego["human"]["n"]
+    assert len(he) == 3 * n and len(ha) == 30 * n
+    d = [math.dist(he[3 * (t + 27) : 3 * (t + 27) + 3], ha[30 * t + 27 : 30 * t + 30]) for t in range(n - 27)]
+    assert abs(sum(d) / len(d) - ego["human"]["shift_mean"]) < 0.002 and abs(max(d) - ego["human"]["shift_max"]) < 0.002
+    assert d.index(max(d)) == ego["human"]["shift_at"]
+    assert all(math.dist(he[3 * t : 3 * t + 3], ha[30 * t : 30 * t + 3]) < 1e-9 for t in range(n)), "每个动作块的第一个点就是当前的手"
+    hd, mk = ego["head"], ego["mask"]
+    assert (hd["n"], hd["mean"], hd["median"], hd["p90"], hd["max"], hd["hand_move"]) == (13335, 0.046, 0.025, 0.101, 0.646, 0.19)
+    assert (mk["robot"]["over25"], mk["robot"]["over50"], mk["human"]["over25"]) == (33, 13, 0)
+    area = base64.b64decode(mk["robot"]["area"])
+    assert len(area) == 600 and sum(a / 255 > 0.25 for a in area) == 33 and sum(a / 255 > 0.5 for a in area) == 13
+    for s in ("平均差 4.6 cm、中位数 2.5 cm、九成在 10.1 cm 以内、最大 64.6 cm", "折成速度是 0.384 和 0.132 m/s", "手 0.236 m、末端 0.003 m",
+              "有 33 帧涂黑的面积超过四分之一、13 帧超过一半", "人的数据 50 组，共 14,685 帧", "$(0.20+0.14)/2=0.17$"):
+        assert s in note, s
+    for s in ("平均 4.6 厘米，最大的一次是 64.6 厘米", "手是 0.38 米每秒，夹爪末端是 0.13 米每秒", "有 33 帧超过四分之一，13 帧超过一半",
+              "人 60 分钟，采到 1400 条", "128 分；3 小时全是机器人，74 分"):
+        assert s in narration, s
+    # 第 11 幕的 ViperX 贴图表和读数取自上一期 ACT 的 MODEL.ik
+    act_ik = json.loads(re.search(r"/\*MODEL\*/(.*?)/\*/MODEL\*/", (DEMO_JS_DIR / "act.js").read_text(encoding="utf-8"), re.S).group(1))["ik"]
+    vx = json.loads(re.search(r"/\*VXIK\*/(.*?)/\*/VXIK\*/", js, re.S).group(1))
+    assert all(vx[k] == act_ik[k] for k in ("cw", "ch", "cols", "n", "rate", "target")) and (ROOT / "assets/img/papers/act/model/ik.webp").is_file()
+    # 旁白：片头接 ACT 的片尾预告，片尾只预告下一篇（OpenVLA）；数字之间不只隔一个逗号
+    spoken = re.findall(r'"([^"]*)"\),', narration[narration.index("SCRIPT = [") : narration.index("DISPLAY = [")])
+    assert len(spoken) == 96 and not any("@" in t for t in spoken)
+    assert not any(re.search(r"\d\s*[，,]\s*\d", t) for t in spoken)
+    assert "上一期结尾预告：人戴着眼镜，录下第一视角的视频" in narration and "下一篇讲 Open V L A" in narration and "OpenVLA" in intro
+    for bad in ("换成人", "换坐标系", "玩具有 5 个", "排比", "一行", "数了", "倒着", "只有 3 个数"):
+        assert not any(bad in t for t in spoken), bad
+    assert "## 🎬 十八幕动画" in note and 'demos: ["egomimic"]' in note and "@@" not in note and "@@" not in js
+    assert "/*VIDEO_" not in js
+
+
+def test_egomimic_clips_and_paper_figures():
+    """EgoMimic：真机画面剪自项目页的视频，第一视角的画面取自官方样例数据（共 15 段，按幕懒加载）；论文图按 PDF 的编号命名。"""
+    js = (DEMO_JS_DIR / "egomimic.js").read_text(encoding="utf-8")
+    clip_dir = ROOT / "assets/img/papers/egomimic/clips"
+    used = set(re.findall(r"(?:projClip|seqClip|dataClip)\(\w+, '(\w+)'", js))
+    assert used == {"collect_robot", "collect_human", "replan", "task_bowl", "task_laundry", "task_groceries", "newscene", "scale_0", "scale_100", "outdoor",
+                    "ds_human", "ds_robot", "ds_wrist", "ds_mask_human", "ds_mask_robot"}
+    assert {p.name for p in clip_dir.iterdir()} == {f"{u}.{ext}" for u in used for ext in ("mp4", "webp")}
+    assert sum(p.stat().st_size for p in clip_dir.iterdir()) < 3.0e6
+    # 遮挡三步的片段：三段的时长之和等于片段长度
+    for name in ("ds_mask_human", "ds_mask_robot"):
+        start = js.index(f"seqClip(g{'H' if name.endswith('human') else 'R'}, '{name}'")
+        block = js[start : js.index("]]);", start)]
+        total = sum(float(x) for x in re.findall(r"\[([0-9.]+), '", block))
+        assert abs(total - _mp4_seconds(clip_dir / f"{name}.mp4")) < 0.1, (name, total)
+    # dataClip 的最后一个参数是片段的时长（旁边的图靠它和画面对上同一帧）
+    for name, dur in re.findall(r"dataClip\(\w+, '(\w+)', [^;]*?, (\d+)\)", js):
+        assert abs(float(dur) - _mp4_seconds(clip_dir / f"{name}.mp4")) < 0.1, (name, dur)
+    figs = dict(re.findall(r"(fig\d+): \['(fig\d+_\w+\.webp)'", js))
+    assert set(figs) == {"fig2", "fig4", "fig6", "fig7", "fig9"}
+    img_dir = ROOT / "assets/img/papers/egomimic"
+    assert {p.name for p in img_dir.glob("*.webp")} == set(figs.values())
+    note = EGOMIMIC_NOTE.read_text(encoding="utf-8")
+    assert "真机画面剪自[项目页](https://egomimic.github.io/)的视频" in note and "官方样例数据" in note
+
