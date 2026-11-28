@@ -13,6 +13,7 @@
 
 | 日期 | 论文索引 | 笔记 | 分类 | 源码 |
 |------|:---:|------|------|------|
+| 2026-11-28 | 1281 | [Fast and Accurate Body Estimation in Pixels, World Space and Scenes](14_Human_Motion/FAB/FAB.md)；按用户要求跳过 MixReact 待复核项 | Human Motion | 官方源码入口已核对；健康度未验证（脚本未运行） |
 | 2026-11-27 | 1276 | [MixReact: Physics-Based Reactive Humanoid Control from Multimodal Cues via a Discrete-Continuous Mixture of Transformers](13_Physics-Based_Animation/MixReact/MixReact.md)（草稿，原文复核待补） | Physics-Based Animation | 源码未确认；健康度未验证（脚本未运行） |
 | 2026-11-26 | 1271 | [QDD-MM: A Simple and Compact Open-Source Muscle Module with Quasi-Direct-Drive Motor for Tendon-driven Robots](12_Hardware_Design/QDD-MM/QDD-MM.md)（HTML 正文已核验，PDF 未独立复核） | Hardware Design | 官方设计仓库 README 已核对，无电机控制软件；健康度未验证（脚本未运行） |
 | 2026-11-25 | 1273 | [PhyDEX: A Benchmark for Physical Reasoning in Vision-Language-Action Models via Dynamic Extrinsic Dexterity](11_Simulation_Benchmark/PhyDEX/PhyDEX.md)（HTML 正文已核对，PDF/附录未复核） | Simulation Benchmark | 官方代码尚未发布；健康度未验证（脚本未运行） |
