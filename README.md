@@ -7,7 +7,7 @@
 [![GitHub Pages](https://img.shields.io/badge/GitHub%20Pages-Live-brightgreen.svg)](https://imchong.github.io/Robot_Learning_Paper_Notebooks/)
 [![License](https://img.shields.io/badge/License-BSD_3--Clause-blue.svg)](LICENSE)
 [![Papers](https://img.shields.io/badge/Papers-1559-orange.svg)](papers/PROGRESS.md)
-[![Notes](https://img.shields.io/badge/Notes-441-green.svg)](papers/)
+[![Notes](https://img.shields.io/badge/Notes-442-green.svg)](papers/)
 
 ## 在线演示
 
