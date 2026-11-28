@@ -182,6 +182,7 @@ ACT_NOTE = (
     / "ACT_Learning_Fine-Grained_Bimanual_Manipulation_with_Low-Cost_Hardware"
     / "ACT_Learning_Fine-Grained_Bimanual_Manipulation_with_Low-Cost_Hardware.md"
 )
+OPENVLA_NOTE = _high_impact_note("OpenVLA_An_Open-Source_Vision-Language-Action_Model")
 CHIP_NOTE = (
     ROOT
     / "papers"
@@ -369,6 +370,7 @@ def test_notes_declare_their_demos_in_reading_order():
         TB_NOTE: ("toddlerbot", ["tb-explainer", "tb-video", "tb-power", "tb-sysid", "tb-actuator"]),
         EXBODY_NOTE: ("exbody", ["exbody-explainer", "exbody-video", "exbody-retarget", "exbody-reward", "exbody-table"]),
         H2O_NOTE: ("h2o", ["h2o-explainer", "h2o-video", "h2o-retarget", "h2o-reward", "h2o-tables"]),
+        OPENVLA_NOTE: ("openvla", ["openvla-explainer", "openvla-video", "openvla-bins", "openvla-lora", "openvla-results"]),
     }
     for note, (bundle, placeholders) in expected.items():
         text = note.read_text(encoding="utf-8")
@@ -437,7 +439,7 @@ EXPLAINER_BUNDLES = (
     "domain_randomization", "quadterrain", "realhumanoid", "asap", "inekf", "berkeley_humanoid",
     "toddlerbot", "exbody", "h2o", "omnih2o", "hover", "maskedmimic", "exbody2", "hugwbc", "homie", "twist", "twist2",
     "falcon", "hdmi", "viral",
-    "doorman", "chip", "idp3", "supermimic", "act",
+    "doorman", "chip", "idp3", "supermimic", "act", "openvla",
 )
 
 # 幕数由论文决定，不是统一模板：PPO / DeepMimic / AMP / ADD 的核心概念正好各 5 个，
@@ -708,6 +710,15 @@ EXPLAINER_SCENES = {
     # 实验按第 V 节的 8 个任务、表一、表二各一幕，消融按图 6 (a)(b) 与 (c)(d) 两幕，局限与代码一幕。
     # 压成 14 幕会让分块的接缝和时间集成的 100 个预测、或编码器的 102 个 token 和策略的 1202 个 token 抢同一帧。
     "act": (ACT_NOTE, 17),
+    # OpenVLA 十七幕：问题一幕（闭源 55B RT-2-X 与单任务小模型的两难）；整体架构一幕（图 2、7.54B 账本与 WidowX 3D 7 维动作）；
+    # 方法按第 3 节四块拆开：DINOv2 + SigLIP 双编码器按通道拼接一幕、256 端点（255 区间）覆写 Llama 2 末尾生僻词的手算一幕、
+    # 公式 1 的第 1%–99% 分位数抗遥操作极值（18/7 格对比 255 格）一幕、-100 标签掩码与 7+EOS 交叉熵加串行贪心解码一幕；
+    # 数据与配方两幕：OXE 97 万条筛选三原则与末 1/3 撤 Kuka/DROID 一幕、第 4 节五条训练发现（表 10 微调视觉与 27 轮过 95%）一幕；
+    # 开箱评测与消融三幕：图 3 WidowX 17 任务一幕、图 4 Google 机器人 12 任务与 Taylor Swift 失败一幕、附录表 9 跨构型与双编码器消融一幕；
+    # 新平台微调两幕：图 5 + 表 7 Franka/DROID 窄任务对比语言多任务一幕、附录表 12 LIBERO 四个仿真套件一幕；
+    # 高效部署两幕：表 1 LoRA r=32 显存—成功率权衡一幕、表 2 + 图 6 + 表 11 量化推理与 8-bit 非阻塞频率陷阱一幕；
+    # 论文与代码五处核对出入一幕，第 6 节四条局限与 MIT 开源清单一幕。压成 14 幕会让分词标尺与分位数压缩条、或图 6 显卡吞吐与表 2/11 柱状图抢同一帧。
+    "openvla": (OPENVLA_NOTE, 17),
 
     "humanml3d": (HUMANML3D_NOTE, 12),
 }
@@ -2184,7 +2195,7 @@ def test_narrated_video_placeholders_point_at_files_that_exist():
                  "tf-video", "pi0-video", "pi05-video", "soccer-video", "sonic-video", "gmr-video",
                  "omniretarget-video", "humanml3d-video", "smp-video", "dr-video", "qt-video", "rh-video", "inekf-video", "bh-video",
                  "tb-video", "exbody-video", "h2o-video", "hover-video", "exbody2-video", "hugwbc-video", "homie-video", "doorman-video",
-                 "chip-video", "idp3-video", "act-video"):
+                 "chip-video", "idp3-video", "act-video", "openvla-video"):
         assert demo in seen, f"{demo} 应该挂在对应的论文笔记里"
 
 
@@ -6568,3 +6579,117 @@ def test_act_model_renders_match_the_data_they_quote():
     note = ACT_NOTE.read_text(encoding="utf-8")
     for frag in ("中段约 4°，快伸直时到 17°", "约 0.64", "是 0.21", "5.6、6.1、5.0 cm", "9 次里 3 次仍完成交接", "trossen_wx250s"):
         assert frag in note, frag
+
+
+def test_openvla_explainer_demos_and_worked_example_share_the_paper_numbers():
+    """OpenVLA：十七幕动画、三个演示、配音旁白与笔记「🚶 具体实例」共用同一组一手数字。
+
+    数据取自 arXiv 2406.09246 v3（图 1–6、表 1–2、附录表 7/9/10/11/12）、官方代码 openvla/openvla @ c8f03f4
+    （action_tokenizer.py 的 linspace(-1, 1, 256) 共 255 个区间、datasets.py 的 7 + EOS = 8 个损失位置）
+    与 HuggingFace openvla/openvla-7b（7,541,237,184 参数账本与 config.json 内置的 bridge_orig 分位数）。
+    """
+    js = (DEMO_JS_DIR / "openvla.js").read_text(encoding="utf-8")
+    note = OPENVLA_NOTE.read_text(encoding="utf-8")
+    narration = (ROOT / "scripts" / "paper_video" / "papers" / "openvla.py").read_text(encoding="utf-8")
+    intro = (ROOT / "scripts" / "paper_video" / "papers" / "openvla.js").read_text(encoding="utf-8")
+
+    for line in (
+        "total: 7541237184,",
+        "vision: 730911680,",
+        "projector: 71385600,",
+        "llm: 6738939904,",
+        "{ key: 'dx', zh: '前后平移 Δx', sym: '\\\\Delta x', unit: 'm', q01: -0.028727, q99: 0.028310, min: -0.400849, max: 0.416908, mask: true, ex: 0.010 },",
+        "{ key: 'droll', zh: '横滚 Δroll', sym: '\\\\Delta\\\\text{roll}', unit: 'rad', q01: -0.080921, q99: 0.081920, min: -3.201105, max: 3.122178, mask: true, ex: 0.020 },",
+        "{ key: 'grip', zh: '夹爪 Gripper', sym: '\\\\text{Grip}', unit: '开度', q01: 0.0, q99: 1.0, min: 0.0, max: 1.0, mask: false, ex: 1.0 }",
+        "{ name: '总平均（170 次）', v: [18.5, 20.0, 50.6, 70.6], se: [2.7, 2.6, 3.5, 3.2] },",
+        "{ name: '总平均（60 次）', v: [33.3, 26.7, 78.3, 85.0], se: [6.1, 5.8, 5.4, 4.6] }",
+        "{ name: '总平均（图 5）', n: '159 分', v: [43.4, 37.1, 41.5, 35.2, 63.8] },",
+        "{ name: '四套件平均', v: [72.4, 75.1, 76.5] }",
+        "{ key: 'lora32', name: 'LoRA（秩 r = 32，推荐）', succ: 68.2, se: 7.5, params: 97.6, vram: 59.7, multi: false, col: C_GOOD },",
+        "{ prec: 'int8（8 位量化）', vram: 10.2, nonblock: 58.1, block: 74.4, col: C_WARN },",
+        "{ prec: 'int4（4 位量化）', vram: 7.0, nonblock: 71.9, block: 68.8, col: C_GOOD }",
+    ):
+        assert line in js, line
+    for k in ("'openvla-explainer'", "'openvla-video'", "'openvla-bins'", "'openvla-lora'", "'openvla-results'", "K.video(host"):
+        assert k in js, k
+
+    # 参数账本：730,911,680 + 71,385,600 + 6,738,939,904 == 7,541,237,184，且 3 层投影器逐层可复算
+    proj = (2176 * 8704 + 8704) + (8704 * 4096 + 4096) + (4096 * 4096 + 4096)
+    assert proj == 71385600 and 730911680 + proj + 6738939904 == 7541237184
+    # 29 个开箱真机任务（170 + 60 = 230 次）加权总成功率
+    ovla_230 = (170 * 70.6 + 60 * 85.0) / 230
+    rt2x_230 = (170 * 50.6 + 60 * 78.3) / 230
+    assert (_fmt(ovla_230, 1), _fmt(rt2x_230, 1), _fmt(ovla_230 - rt2x_230, 1)) == ("74.4", "57.8", "16.5") or _fmt(74.3 - 57.8, 1) == "16.5"
+
+    # 实例 1：bridge_orig 分位数编码与解码（action_tokenizer.py 255 个区间）
+    stats = [
+        (-0.028727, 0.028310, -0.400849, 0.416908, True, 0.010),
+        (-0.041703, 0.040855, -0.138700, 0.258559, True, -0.015),
+        (-0.026094, 0.040162, -0.225464, 0.212169, True, -0.020),
+        (-0.080921, 0.081920, -3.201105, 3.122178, True, 0.020),
+        (-0.092887, 0.077929, -1.861784, 1.861820, True, -0.030),
+        (-0.207183, 0.203826, -6.279121, 6.280501, True, 0.050),
+        (0.0, 1.0, 0.0, 1.0, False, 1.0),
+    ]
+    discs, toks = [], []
+    for q01, q99, _mn, _mx, mask, val in stats:
+        an = max(-1.0, min(1.0, 2 * (val - q01) / (q99 - q01) - 1)) if mask else val
+        d = 256 if an >= 1.0 else max(1, min(255, int(math.floor((an + 1) * 255 / 2)) + 1))
+        discs.append(d)
+        toks.append(32000 - d)
+    assert discs == [174, 83, 24, 159, 94, 160, 256]
+    assert toks == [31826, 31917, 31976, 31841, 31906, 31840, 31744]
+    c_173 = -1 + (2 * 173 + 1) / 255
+    recon_dx = 0.5 * (c_173 + 1) * (0.028310 - (-0.028727)) - 0.028727
+    assert _fmt(c_173, 5) == "0.36078" and _fmt(recon_dx, 5) == "0.01008"
+    assert round((0.028310 - (-0.028727)) / (0.416908 - (-0.400849)) * 255) == 18
+    assert round((0.081920 - (-0.080921)) / (3.122178 - (-3.201105)) * 255) == 7
+
+    for needle in (
+        "## 🎬 十七幕动画：OpenVLA 全流程",
+        "## 🚶 具体实例",
+        "7,541,237,184",
+        "31826",
+        "31744",
+        "0.224",
+        "18 个格子",
+        "7 个格子",
+        "97.6M",
+        "59.7 GB",
+        "58.1%",
+        "74.4%",
+        'demos: ["openvla"]',
+    ):
+        assert needle in note, needle
+
+    spoken = re.findall(r'"([^"]*)"\),', narration[narration.index("SCRIPT = [") : narration.index("DISPLAY = [")])
+    assert len(spoken) == 91 and not any("@" in t for t in spoken)
+    assert not any(re.search(r"\d\s*[，,]\s*\d", t) for t in spoken)
+    # 片头承接 043 EgoMimic 的片尾预告；片尾只预告 045 π₀ 的主题，主动画十七幕不提 π₀
+    assert "上一期结尾预告：一个开源的视觉、语言、动作模型" in narration
+    assert "下一篇讲派零" in narration and r"**下一篇**：$\\pi_0$" in intro
+    main_scenes = "\n".join(spoken[3:-3])
+    assert "派零" not in main_scenes and "π零" not in main_scenes and "π₀" not in main_scenes and "下一篇" not in main_scenes
+
+
+def test_openvla_project_page_clips():
+    """OpenVLA：真机画面剪自项目页 openvla.github.io 的评测视频（10 段，均附首帧海报），体积可控且注明出处。"""
+    js = (DEMO_JS_DIR / "openvla.js").read_text(encoding="utf-8")
+    clip_dir = ROOT / "assets/img/papers/openvla/clips"
+    used = set(re.findall(r"(?:projClip|seqClip)\(\w+, '(\w+)'", js))
+    assert used == {
+        "hero",
+        "bridge_clutter",
+        "bridge_lang",
+        "bridge_orient",
+        "bridge_recover",
+        "google_banana",
+        "google_taylor",
+        "franka_pour",
+        "franka_multi",
+        "franka_scratch",
+    }
+    assert {p.name for p in clip_dir.iterdir()} == {f"{u}.{ext}" for u in used for ext in ("mp4", "webp")}
+    assert sum(p.stat().st_size for p in clip_dir.iterdir()) < 2.0e6
+    note = OPENVLA_NOTE.read_text(encoding="utf-8")
+    assert "openvla.github.io" in note and "trossen_wx250s" in (ROOT / "scripts/paper_video/papers/openvla.py").read_text(encoding="utf-8")
